@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, OnInit, inject, ChangeDetectionStrategy, input } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
@@ -25,9 +25,13 @@ export class DotCopyLinkComponent implements OnInit {
     private dotClipboardUtil = inject(DotClipboardUtil);
     private dotMessageService = inject(DotMessageService);
 
-    @Input() copy = '';
-    @Input() label: string;
-    @Input() tooltipText: string;
+    readonly copy = input('');
+    // TODO: Skipped for migration because:
+    //  Your application code writes to the input. This prevents migration.
+    @Input() label!: string;
+    // TODO: Skipped for migration because:
+    //  Your application code writes to the input. This prevents migration.
+    @Input() tooltipText!: string;
 
     ngOnInit() {
         this.tooltipText = this.tooltipText || this.dotMessageService.get('Copy');
@@ -44,7 +48,7 @@ export class DotCopyLinkComponent implements OnInit {
         $event.stopPropagation();
 
         this.dotClipboardUtil
-            .copy(this.copy)
+            .copy(this.copy())
             .then(() => {
                 const original = this.tooltipText;
                 this.tooltipText = this.dotMessageService.get('Copied');

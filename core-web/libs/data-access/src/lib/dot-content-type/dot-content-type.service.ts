@@ -204,7 +204,9 @@ export class DotContentTypeService {
     getUrlById(id: string): Observable<string> {
         return this.getBaseTypes().pipe(
             mergeMap((structures: StructureTypeView[]) => structures),
-            map((x) => x?.types),
+            // `?? []` because `types` is null for a base type with no content types — `mergeMap`
+            // over null would throw rather than simply contributing nothing.
+            map((x) => x?.types ?? []),
             mergeMap((contentTypeViews: ContentTypeView[]) => contentTypeViews),
             filter(
                 (contentTypeView: ContentTypeView) =>

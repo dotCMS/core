@@ -9,7 +9,7 @@
 | -------------------- | ---------------------- | ----------- | ------------------------- | ----------- |
 | `items`              | --                     |             | `DotCardContentletItem[]` | `[]`        |
 | `showVideoThumbnail` | `show-video-thumbnail` |             | `boolean`                 | `true`      |
-| `value`              | `value`                |             | `string`                  | `undefined` |
+| `value`              | `value`                |             | `string \| undefined`     | `undefined` |
 
 
 ## Events

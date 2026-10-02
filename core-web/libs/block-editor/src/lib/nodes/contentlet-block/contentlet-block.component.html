@@ -12,13 +12,13 @@
         <ng-template #title>
             <div class="m-0! w-full overflow-hidden">
                 <h3 class="m-0! overflow-hidden p-0! text-ellipsis whitespace-nowrap">
-                    {{ data.title }}
+                    {{ data?.title }}
                 </h3>
             </div>
         </ng-template>
 
         <ng-template #subtitle>
-            <span>{{ data.contentType }}</span>
+            <span>{{ data?.contentType }}</span>
         </ng-template>
 
         <ng-template #footer>

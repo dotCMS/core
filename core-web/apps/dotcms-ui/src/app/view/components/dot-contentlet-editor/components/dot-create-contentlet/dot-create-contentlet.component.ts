@@ -40,19 +40,15 @@ export class DotCreateContentletComponent implements OnInit {
     private route = inject(ActivatedRoute);
 
     @Output() shutdown: EventEmitter<unknown> = new EventEmitter();
-    url$: Observable<string>;
+    url$!: Observable<string>;
     @Output()
-    custom: EventEmitter<unknown> = new EventEmitter();
+    custom: EventEmitter<CustomEvent> = new EventEmitter();
 
     ngOnInit() {
         this.url$ = merge(
             this.dotContentletEditorService.createUrl$,
-            this.route.data.pipe(map((x) => x?.url))
-        ).pipe(
-            filter((url: string) => {
-                return url !== undefined;
-            })
-        );
+            this.route.data.pipe(map((x) => x?.['url']))
+        ).pipe(filter((url): url is string => url !== undefined));
     }
 
     /**
@@ -94,10 +90,10 @@ export class DotCreateContentletComponent implements OnInit {
 
     /**
      * Handle custom event
-     * @param {unknown} event
+     * @param {CustomEvent} event
      * @memberof DotCreateContentletComponent
      */
-    onCustom(event: unknown): void {
+    onCustom(event: CustomEvent): void {
         this.custom.emit(event);
     }
 }

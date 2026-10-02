@@ -7,7 +7,7 @@
         (onSelect)="onSelect($event)"
         [minLength]="2"
         [ngModel]="val"
-        [suggestions]="suggestions$ | async"
+        [suggestions]="(suggestions$ | async) ?? []"
         [placeholder]="'page.selector.placeholder' | dm"
         #autoComplete
         inputStyleClass="w-full"
@@ -23,7 +23,7 @@
                     <span class="basis-1/2 truncate text-left">
                         {{ item.payload.path }}
                     </span>
-                    <span class="basis-1/2 truncate text-left pl-1">
+                    <span class="basis-1/2 truncate pl-1 text-left">
                         {{ item.payload.hostName }}
                     </span>
                 }
@@ -31,11 +31,11 @@
         </ng-template>
     </p-autoComplete>
     <dot-field-helper
-        class="absolute top-1/2 -translate-y-1/2 right-1"
+        class="absolute top-1/2 right-1 -translate-y-1/2"
         [message]="(folderSearch ? 'page.selector.folder.hint' : 'page.selector.hint') | dm" />
 </div>
 <small
-    class="block mt-1"
+    class="mt-1 block"
     [class]="isError ? 'p-invalid' : 'p-info'"
     [textContent]="message"
     data-testId="message"></small>

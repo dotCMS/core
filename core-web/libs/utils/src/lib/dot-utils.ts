@@ -127,18 +127,18 @@ export function getRunnableLink(url: string, currentPageUrlParams: DotPageToolUr
  */
 export function getImageAssetUrl(contentlet: DotCMSContentlet): string {
     if (!contentlet?.baseType) {
-        return contentlet.asset;
+        return contentlet['asset'];
     }
 
     switch (contentlet?.baseType) {
         case DotCMSBaseTypesContentTypes.FILEASSET:
-            return contentlet.fileAssetVersion || contentlet.fileAsset;
+            return contentlet['fileAssetVersion'] || contentlet['fileAsset'];
 
         case DotCMSBaseTypesContentTypes.DOTASSET:
-            return contentlet.assetVersion || contentlet.asset;
+            return contentlet['assetVersion'] || contentlet['asset'];
 
         default:
-            return contentlet?.asset || '';
+            return contentlet?.['asset'] || '';
     }
 }
 
@@ -149,8 +149,12 @@ export function getImageAssetUrl(contentlet: DotCMSContentlet): string {
  * @param limit - The maximum length of the truncated text.
  * @returns The truncated text with ellipsis if it exceeds the limit, otherwise the original text.
  */
-export function ellipsizeText(text: string, limit: number): string {
-    if (!text || typeof text !== 'string' || limit <= 0 || isNaN(limit)) {
+export function ellipsizeText(
+    text: string | null | undefined,
+    limit: number | null | undefined
+): string {
+    // `limit == null` is checked explicitly so the remaining comparisons narrow it to `number`.
+    if (!text || typeof text !== 'string' || limit == null || limit <= 0 || isNaN(limit)) {
         return '';
     }
 

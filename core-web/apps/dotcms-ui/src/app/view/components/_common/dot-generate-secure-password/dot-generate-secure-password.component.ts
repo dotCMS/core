@@ -32,12 +32,12 @@ export class DotGenerateSecurePasswordComponent implements OnInit, OnDestroy {
     private dotGenerateSecurePassword = inject(DotGenerateSecurePasswordService);
     private cdr = inject(ChangeDetectorRef);
 
-    copyBtnLabel: string;
-    dialogActions: DotDialogActions;
+    copyBtnLabel!: string;
+    dialogActions!: DotDialogActions;
     dialogShow = false;
-    revealBtnLabel: string;
+    revealBtnLabel!: string;
     typeInput = 'password';
-    value: string;
+    value!: string;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 

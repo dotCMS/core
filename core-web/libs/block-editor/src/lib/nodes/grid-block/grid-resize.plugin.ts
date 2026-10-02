@@ -163,7 +163,7 @@ export function GridResizePlugin(editor: Editor): Plugin {
             }
 
             const gridNode = view.state.doc.nodeAt(gridBlockPos);
-            const storedColumns: number[] = gridNode?.attrs?.columns ?? [6, 6];
+            const storedColumns: number[] = gridNode?.attrs?.['columns'] ?? [6, 6];
             const startRatio = storedColumns[0] / 12;
 
             const startX = e.clientX;

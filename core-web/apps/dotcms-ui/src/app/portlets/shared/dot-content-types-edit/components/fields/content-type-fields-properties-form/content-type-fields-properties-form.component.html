@@ -10,7 +10,7 @@
     }
     @if (relationships; as relationship) {
         <dot-relationship-tree
-            [contentType]="contentType"
+            [contentType]="$contentType()"
             [isParentField]="relationship.isParentField"
             [velocityVar]="relationship.velocityVar" />
     }

@@ -13,11 +13,11 @@ import { DotMessagePipe } from '@dotcms/ui';
 })
 export class DotLinkComponent {
     @Input()
-    label: string;
+    label!: string;
 
-    classNames: string;
+    classNames!: string;
 
-    link: string;
+    link!: string;
 
     @Input()
     set href(value: string) {

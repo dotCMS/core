@@ -84,6 +84,8 @@ describe('DotWysiwygPluginService — legacy host (no asset-picker launcher)', (
         vi.spyOn(dialogService, 'open').mockReturnValue({
             onClose: of(asset),
             close: closeSpy
+            // `as unknown` first: a `close` that is a `Mock` rather than a plain method makes
+            // the two shapes non-comparable in both directions, so a direct cast is a `TS2352`.
         } as unknown as DynamicDialogRef);
 
         spectator.service.initializePlugins(editor as never);
@@ -136,6 +138,8 @@ describe('DotWysiwygPluginService — legacy host (no asset-picker launcher)', (
             // Never emits: the dialog stays open for the duration of the test.
             onClose: new Subject(),
             close: closeSpy
+            // `as unknown` first: a `close` that is a `Mock` rather than a plain method makes
+            // the two shapes non-comparable in both directions, so a direct cast is a `TS2352`.
         } as unknown as DynamicDialogRef);
 
         spectator.service.initializePlugins(editor as never);
@@ -159,6 +163,8 @@ describe('DotWysiwygPluginService — legacy host (no asset-picker launcher)', (
         vi.spyOn(dialogService, 'open').mockReturnValue({
             onClose: new Subject(),
             close: closeSpy
+            // `as unknown` first: a `close` that is a `Mock` rather than a plain method makes
+            // the two shapes non-comparable in both directions, so a direct cast is a `TS2352`.
         } as unknown as DynamicDialogRef);
 
         spectator.service.initializePlugins(editor as never);
@@ -184,6 +190,8 @@ describe('DotWysiwygPluginService — legacy host (no asset-picker launcher)', (
         vi.spyOn(dialogService, 'open').mockReturnValue({
             onClose: of(undefined),
             close: closeSpy
+            // `as unknown` first: a `close` that is a `Mock` rather than a plain method makes
+            // the two shapes non-comparable in both directions, so a direct cast is a `TS2352`.
         } as unknown as DynamicDialogRef);
         button.onAction();
 

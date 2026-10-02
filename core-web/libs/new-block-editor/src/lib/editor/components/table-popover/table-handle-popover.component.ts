@@ -187,7 +187,8 @@ export class TableHandlePopoverComponent implements OnDestroy {
             this.manager.activePopover()?.id === 'table-column' &&
             (this.manager.tableColumnPayload()?.isHeader ?? false)
     );
-    protected readonly scopeOptions: ReadonlyArray<{ label: string; value: string }>;
+    // PrimeNG's `options` input takes a mutable array, so this cannot be `ReadonlyArray`.
+    protected readonly scopeOptions: { label: string; value: string }[];
 
     // ── Action registry ──────────────────────────────────────────────────────
 

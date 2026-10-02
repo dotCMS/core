@@ -70,7 +70,7 @@ const NEW_EDIT_CONTENT_CHECKBOX_SELECTOR = '#newEditContentLabel';
  */
 describe('ContentTypesFormComponent inside p-dialog - Integration Tests', () => {
     let fixture: ComponentFixture<DialogFocusHostComponent>;
-    let originalOffsetParent: PropertyDescriptor;
+    let originalOffsetParent: PropertyDescriptor | undefined;
 
     const queryElement = (selector: string): HTMLElement =>
         fixture.debugElement.query(By.css(selector))?.nativeElement ?? null;
@@ -92,8 +92,8 @@ describe('ContentTypesFormComponent inside p-dialog - Integration Tests', () => 
     const openDialogAndSettleFocus = ({
         focusOnShow,
         newContentEditorEnabled,
-        baseType = 'CONTENT',
-        id = null
+        baseType = DotCMSBaseTypesContentTypes.CONTENT,
+        id = undefined
     }: {
         focusOnShow: boolean;
         newContentEditorEnabled: boolean;
@@ -130,7 +130,8 @@ describe('ContentTypesFormComponent inside p-dialog - Integration Tests', () => 
         fixture.componentInstance.contentType = {
             ...dotcmsContentTypeBasicMock,
             baseType,
-            id
+            // Empty when the dialog opens for a content type that has not been saved.
+            id: id ?? ''
         };
         fixture.detectChanges();
         // The form focuses the Name input from afterNextRender, and those hooks run on the
@@ -160,7 +161,7 @@ describe('ContentTypesFormComponent inside p-dialog - Integration Tests', () => 
     });
 
     afterAll(() => {
-        Object.defineProperty(HTMLElement.prototype, 'offsetParent', originalOffsetParent);
+        Object.defineProperty(HTMLElement.prototype, 'offsetParent', originalOffsetParent!);
     });
 
     beforeEach(() => {
@@ -175,7 +176,10 @@ describe('ContentTypesFormComponent inside p-dialog - Integration Tests', () => 
     describe('create mode', () => {
         // The binding does not branch on baseType, but every base type reaches this same dialog
         // through create/:type — so the focus outcome is asserted for real, not just inferred.
-        it.each<DotCMSBaseTypesContentTypes>(['CONTENT', 'WIDGET'])(
+        it.each<DotCMSBaseTypesContentTypes>([
+            DotCMSBaseTypesContentTypes.CONTENT,
+            DotCMSBaseTypesContentTypes.WIDGET
+        ])(
             'should focus the name input instead of the new content banner checkbox for %s',
             (baseType) => {
                 openDialogAndSettleFocus({
@@ -204,14 +208,14 @@ describe('ContentTypesFormComponent inside p-dialog - Integration Tests', () => 
             openDialogAndSettleFocus({ focusOnShow: false, newContentEditorEnabled: true });
 
             const form = formComponent().form;
-            const newEditContentBefore = form.get('newEditContent').value;
+            const newEditContentBefore = form.get('newEditContent')!.value;
             const nameInput = document.activeElement as HTMLInputElement;
 
             nameInput.value = 'My Content Type';
             nameInput.dispatchEvent(new Event('input'));
 
-            expect(form.get('name').value).toBe('My Content Type');
-            expect(form.get('newEditContent').value).toBe(newEditContentBefore);
+            expect(form.get('name')!.value).toBe('My Content Type');
+            expect(form.get('newEditContent')!.value).toBe(newEditContentBefore);
         });
     });
 

@@ -1,7 +1,7 @@
 import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStoreFeature, type, withComputed, withMethods } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { forkJoin, of, pipe } from 'rxjs';
+import { EMPTY, forkJoin, of, pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
@@ -212,8 +212,11 @@ export function withContent() {
                                         const defaultSchemeId =
                                             schemeIds.length === 1 ? schemeIds[0] : null;
                                         // Parse the actions as an object with the schemeId as the key
+                                        const defaultScheme = defaultSchemeId
+                                            ? parsedSchemes[defaultSchemeId]
+                                            : undefined;
                                         const parsedCurrentActions = parseCurrentActions(
-                                            parsedSchemes[defaultSchemeId]?.actions || []
+                                            defaultScheme?.actions || []
                                         );
 
                                         const titleString = `${dotMessageService.get('New')} ${contentType.variable}`;
@@ -419,6 +422,12 @@ export function withContent() {
                             // Access the contentlet from the store and its id before calling the API
                             const contentlet = store.contentlet();
                             const contentType = store.contentType();
+
+                            // Both are null until the editor has loaded. Nothing to switch to the
+                            // legacy editor before then, and the redirect below needs the inode.
+                            if (!contentlet || !contentType) {
+                                return EMPTY;
+                            }
 
                             const payload = {
                                 ...contentType,

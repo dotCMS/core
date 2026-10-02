@@ -7,7 +7,7 @@ import { DotKeyValueField } from '../../../../../models';
 })
 export class KeyValueTableComponent {
     /** to get the current element */
-    @Element() el: HTMLElement;
+    @Element() el!: HTMLElement;
 
     /** (optional) Items to render in the list of key value */
     @Prop()
@@ -31,13 +31,13 @@ export class KeyValueTableComponent {
 
     /** Emit the index of the item deleted from the list */
     @Event()
-    delete: EventEmitter<number>;
+    delete!: EventEmitter<number>;
 
     /** Emit the notification of list reordered */
     @Event()
-    reorder: EventEmitter;
+    reorder!: EventEmitter;
 
-    dragSrcEl = null;
+    dragSrcEl: HTMLElement | null = null;
 
     render() {
         return (
@@ -59,10 +59,17 @@ export class KeyValueTableComponent {
 
     private bindDraggableEvents() {
         if (!this.disabled) {
-            const rows = this.el.querySelectorAll('key-value-table tr');
+            // Typed as row elements so `addEventListener` resolves through `HTMLElementEventMap`
+            // and hands each handler a `DragEvent`. Untyped, `Element`'s own event map has no drag
+            // events, so these fell back to the `(evt: Event) => void` overload instead.
+            const rows = this.el.querySelectorAll<HTMLTableRowElement>('key-value-table tr');
             rows.forEach((row) => {
                 row.setAttribute('draggable', 'true');
 
+                // NOTE: `.bind(this)` returns a fresh function every call, so these six removals
+                // never match the listeners added below and are no-ops. Pre-existing; left alone
+                // because fixing it means holding the bound references, which is a behaviour
+                // change rather than a typing one.
                 row.removeEventListener('dragstart', this.handleDragStart.bind(this), false);
                 row.removeEventListener('dragenter', this.handleDragEnter, false);
                 row.removeEventListener('dragover', this.handleDragOver.bind(this), false);
@@ -80,15 +87,18 @@ export class KeyValueTableComponent {
         }
     }
 
-    private removeElementById(elemId) {
-        document.getElementById(elemId).remove();
+    private removeElementById(elemId: string) {
+        // `?.` rather than a bare call: `getElementById` returns null for an absent id. The only
+        // caller that can reach that case wraps this in a try/catch precisely because it used to
+        // throw — the outcome is identical either way, nothing gets removed.
+        document.getElementById(elemId)?.remove();
     }
 
     private isPlaceholderInDOM() {
         return !!document.getElementById('dotKeyValuePlaceholder');
     }
 
-    private isCursorOnUpperSide(cursor, { top, bottom }) {
+    private isCursorOnUpperSide(cursor: { y: number }, { top, bottom }: DOMRect) {
         return cursor.y - top < (bottom - top) / 2;
     }
 
@@ -99,54 +109,64 @@ export class KeyValueTableComponent {
         return placeholder;
     }
 
-    private insertBeforeElement(newElem, element) {
-        element.parentNode.insertBefore(newElem, element);
+    private insertBeforeElement(newElem: Node, element: Element) {
+        element.parentNode?.insertBefore(newElem, element);
     }
 
-    private insertAfterElement(newElem, element) {
-        element.parentNode.insertBefore(newElem, element.nextSibling);
+    private insertAfterElement(newElem: Node, element: Element) {
+        element.parentNode?.insertBefore(newElem, element.nextSibling);
     }
 
-    private handleDragStart(e) {
-        this.dragSrcEl = e.target;
+    private handleDragStart(e: DragEvent) {
+        this.dragSrcEl = e.target as HTMLElement;
     }
 
-    private handleDragOver(e) {
+    private handleDragOver(e: DragEvent) {
         if (e.preventDefault) {
             e.preventDefault();
         }
         if (this.dragSrcEl != e.target) {
-            const contentlet = e.target.closest('tr');
+            // These handlers are bound to `<tr>` rows, so the target is always an element inside
+            // one; `closest` can still miss if the row has already been detached mid-drag, which
+            // the guard below covers.
+            const contentlet = (e.target as HTMLElement).closest('tr');
             const contentletPlaceholder = this.setPlaceholder();
             if (this.isPlaceholderInDOM()) {
                 this.removeElementById('dotKeyValuePlaceholder');
             }
 
-            if (this.isCursorOnUpperSide(e, contentlet.getBoundingClientRect())) {
-                this.insertBeforeElement(contentletPlaceholder, contentlet);
-            } else {
-                this.insertAfterElement(contentletPlaceholder, contentlet);
+            if (contentlet) {
+                if (this.isCursorOnUpperSide(e, contentlet.getBoundingClientRect())) {
+                    this.insertBeforeElement(contentletPlaceholder, contentlet);
+                } else {
+                    this.insertAfterElement(contentletPlaceholder, contentlet);
+                }
             }
         }
+
         return false;
     }
 
-    private handleDragEnter(e) {
-        e.target.classList.add('over');
+    private handleDragEnter(e: DragEvent) {
+        (e.target as HTMLElement).classList.add('over');
     }
 
-    private handleDragLeave(e) {
-        e.target.classList.remove('over');
+    private handleDragLeave(e: DragEvent) {
+        (e.target as HTMLElement).classList.remove('over');
     }
 
-    private handleDrop(e) {
+    private handleDrop(e: DragEvent) {
         if (e.stopPropagation) {
             e.stopPropagation(); // stops the browser from redirecting.
         }
         if (this.dragSrcEl != e.target) {
-            document
-                .getElementById('dotKeyValuePlaceholder')
-                .insertAdjacentElement('afterend', this.dragSrcEl);
+            const placeholder = document.getElementById('dotKeyValuePlaceholder');
+
+            // Both can be absent: the placeholder is only in the DOM while a drag is in flight,
+            // and `dragSrcEl` is null until `dragstart` has fired.
+            if (placeholder && this.dragSrcEl) {
+                placeholder.insertAdjacentElement('afterend', this.dragSrcEl);
+            }
         }
 
         return false;

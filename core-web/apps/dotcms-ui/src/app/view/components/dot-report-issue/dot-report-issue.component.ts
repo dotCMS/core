@@ -245,7 +245,7 @@ export class DotReportIssueComponent {
         };
 
         if (this.document.referrer) {
-            metadata.referrer = this.document.referrer;
+            metadata['referrer'] = this.document.referrer;
         }
 
         return {

@@ -53,16 +53,16 @@ export class EditorToolbarStore {
                 this.isLink.set(editor.isActive('link'));
                 this.isImageSelected.set(editor.isActive('dotImage'));
                 this.isImageLinked.set(
-                    editor.isActive('dotImage') && !!editor.getAttributes('dotImage').href
+                    editor.isActive('dotImage') && !!editor.getAttributes('dotImage')['href']
                 );
                 this.imageTextWrap.set(
                     editor.isActive('dotImage')
-                        ? (editor.getAttributes('dotImage').textWrap ?? null)
+                        ? (editor.getAttributes('dotImage')['textWrap'] ?? null)
                         : null
                 );
                 this.imageTextAlign.set(
                     editor.isActive('dotImage')
-                        ? (editor.getAttributes('dotImage').textAlign ?? null)
+                        ? (editor.getAttributes('dotImage')['textAlign'] ?? null)
                         : null
                 );
                 this.canUndo.set(editor.can().undo());

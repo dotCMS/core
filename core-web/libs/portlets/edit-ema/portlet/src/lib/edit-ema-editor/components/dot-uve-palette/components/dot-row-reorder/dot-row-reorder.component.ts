@@ -302,7 +302,7 @@ export class DotRowReorderComponent {
     /** Applies optimistic layout patch and persists rows on the store. */
     private persistRows(rows: DotPageAssetLayoutRow[]): void {
         this.optimisticUpdateRows(rows);
-        this.uveStore.updateRows(rows);
+        this.uveStore['updateRows'](rows);
     }
 
     private metadataDisplayName(metadata: DotPageAssetLayoutRow['metadata']): string | undefined {

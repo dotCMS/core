@@ -3,6 +3,7 @@ import { vi } from 'vitest';
 
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 
 import { DotAlertConfirmService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
@@ -33,6 +34,10 @@ class MockComponent implements OnSaveDeactivate {
     }
 }
 
+/** `canDeactivate` declares both router parameters `_route`/`_state` and reads neither. */
+const UNUSED_ROUTE = null as unknown as ActivatedRouteSnapshot;
+const UNUSED_STATE = null as unknown as RouterStateSnapshot;
+
 describe('DotSaveOnDeactivateService', () => {
     let dotSaveOnDeactivateService: DotSaveOnDeactivateService;
     let mockComponent: MockComponent;
@@ -58,42 +63,50 @@ describe('DotSaveOnDeactivateService', () => {
     it('should return true if there is not changes in the model', () => {
         vi.spyOn(mockComponent, 'shouldSaveBefore').mockReturnValue(false);
 
-        dotSaveOnDeactivateService.canDeactivate(mockComponent, null, null).subscribe((val) => {
-            expect(val).toBeTruthy();
-        });
+        dotSaveOnDeactivateService
+            .canDeactivate(mockComponent, UNUSED_ROUTE, UNUSED_STATE)
+            .subscribe((val) => {
+                expect(val).toBeTruthy();
+            });
     });
 
     it('should return true AND call onDeactivateSave', () => {
         vi.spyOn(mockComponent, 'onDeactivateSave');
         vi.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
-            conf.accept();
+            conf.accept!();
         });
-        dotSaveOnDeactivateService.canDeactivate(mockComponent, null, null).subscribe((val) => {
-            expect(val).toBeTruthy();
-            expect(mockComponent.onDeactivateSave).toHaveBeenCalled();
-        });
+        dotSaveOnDeactivateService
+            .canDeactivate(mockComponent, UNUSED_ROUTE, UNUSED_STATE)
+            .subscribe((val) => {
+                expect(val).toBeTruthy();
+                expect(mockComponent.onDeactivateSave).toHaveBeenCalled();
+            });
     });
 
     it('should return true if the user decide NOT to save the latest changes', () => {
         vi.spyOn(mockComponent, 'onDeactivateSave');
         vi.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
-            conf.reject();
+            conf.reject!();
         });
-        dotSaveOnDeactivateService.canDeactivate(mockComponent, null, null).subscribe((val) => {
-            expect(val).toBeTruthy();
-            expect(mockComponent.onDeactivateSave).toHaveBeenCalledTimes(0);
-        });
+        dotSaveOnDeactivateService
+            .canDeactivate(mockComponent, UNUSED_ROUTE, UNUSED_STATE)
+            .subscribe((val) => {
+                expect(val).toBeTruthy();
+                expect(mockComponent.onDeactivateSave).toHaveBeenCalledTimes(0);
+            });
     });
 
     it('should return false if the save fails and stay in the current route', () => {
         vi.spyOn(mockComponent, 'onDeactivateSave').mockReturnValue(observableOf(false));
         vi.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
-            conf.accept();
+            conf.accept!();
         });
 
-        dotSaveOnDeactivateService.canDeactivate(mockComponent, null, null).subscribe((val) => {
-            expect(val).toBeFalsy();
-            expect(mockComponent.onDeactivateSave).toHaveBeenCalledTimes(1);
-        });
+        dotSaveOnDeactivateService
+            .canDeactivate(mockComponent, UNUSED_ROUTE, UNUSED_STATE)
+            .subscribe((val) => {
+                expect(val).toBeFalsy();
+                expect(mockComponent.onDeactivateSave).toHaveBeenCalledTimes(1);
+            });
     });
 });

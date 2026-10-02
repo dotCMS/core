@@ -56,7 +56,7 @@ interface NodeTypeOption {
     command: () => boolean;
 }
 
-const BUBBLE_MENU_VISIBLE_NODES = {
+const BUBBLE_MENU_VISIBLE_NODES: Record<string, boolean> = {
     text: true,
     heading: true,
     dotImage: true,
@@ -267,7 +267,7 @@ export class DotBubbleMenuComponent implements OnInit {
     protected imageHasLink() {
         const image = this.editor().getAttributes('dotImage');
 
-        return !!image?.href;
+        return !!image?.['href'];
     }
 
     protected setImageTextWrap(value: 'left' | 'right') {
@@ -396,12 +396,12 @@ export class DotBubbleMenuComponent implements OnInit {
         // Use the found reference or the first item's reference
         this.dropdownItem.set(foundOption ?? this.nodeTypeOptions[0]);
         this.currentNodeType.set(baseNodeType);
-        this.showShould.set(BUBBLE_MENU_VISIBLE_NODES[baseNodeType]);
+        this.showShould.set(BUBBLE_MENU_VISIBLE_NODES[baseNodeType] ?? false);
 
         if (baseNodeType === 'dotImage') {
             const attrs = this.editor().getAttributes('dotImage');
-            this.imageTextWrap.set(attrs?.textWrap ?? null);
-            this.imageTextAlign.set(attrs?.textAlign ?? null);
+            this.imageTextWrap.set(attrs?.['textWrap'] ?? null);
+            this.imageTextAlign.set(attrs?.['textAlign'] ?? null);
         }
     }
 

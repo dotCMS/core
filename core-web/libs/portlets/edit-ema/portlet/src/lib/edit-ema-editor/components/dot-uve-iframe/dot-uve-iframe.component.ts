@@ -230,7 +230,7 @@ export class DotUveIframeComponent {
 
                     const hasLink = !!href;
                     const hasInlineEditTarget =
-                        !!target.closest('[data-mode]') || !!target.dataset?.mode;
+                        !!target.closest('[data-mode]') || !!target.dataset?.['mode'];
                     return hasLink || hasInlineEditTarget;
                 }),
                 takeUntil(this.iframeClickListener$),

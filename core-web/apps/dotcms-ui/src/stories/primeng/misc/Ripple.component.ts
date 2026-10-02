@@ -1,6 +1,6 @@
 import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 
-import { PrimeNGConfig } from 'primeng/api';
+import { PrimeNG } from 'primeng/config';
 
 @Component({
     changeDetection: ChangeDetectionStrategy.Eager,
@@ -12,9 +12,9 @@ import { PrimeNGConfig } from 'primeng/api';
     `
 })
 export class RippleComponent implements OnInit {
-    private primengConfig = inject(PrimeNGConfig);
+    private primengConfig = inject(PrimeNG);
 
     ngOnInit() {
-        this.primengConfig.ripple = true;
+        this.primengConfig.ripple.set(true);
     }
 }

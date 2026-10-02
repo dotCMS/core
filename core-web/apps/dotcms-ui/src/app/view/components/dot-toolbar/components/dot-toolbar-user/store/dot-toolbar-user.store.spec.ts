@@ -93,8 +93,8 @@ describe('DotToolbarUserStore', () => {
 
                 expect(items.length).toBeTruthy();
                 expect(userData).toEqual({
-                    email: mockAuth.loginAsUser.emailAddress,
-                    name: mockAuth.loginAsUser.name
+                    email: mockAuth.loginAsUser!.emailAddress,
+                    name: mockAuth.loginAsUser!.name
                 });
                 expect(showLoginAs).toBe(false);
                 expect(showMyAccount).toBe(false);

@@ -20,9 +20,9 @@ import { DotEditContentStore } from '../../store/edit-content.store';
 })
 export class MockFormComponent {
     // Host Props
-    formGroup: FormGroup;
-    field: DotCMSContentTypeField;
-    contentlet: DotCMSContentlet;
+    formGroup!: FormGroup;
+    field!: DotCMSContentTypeField;
+    contentlet!: DotCMSContentlet;
 }
 
 const TEXT_FIELD_MOCK = createFakeTextField({
@@ -58,7 +58,7 @@ describe('DotEditContentTextFieldComponent', () => {
             }
         );
         spectator.detectChanges();
-        textInput = spectator.query(byTestId(TEXT_FIELD_MOCK.variable));
+        textInput = spectator.query(byTestId(TEXT_FIELD_MOCK.variable))!;
         expect(textInput.getAttribute('id')).toBe(TEXT_FIELD_MOCK.variable);
     });
 
@@ -97,7 +97,7 @@ describe('DotEditContentTextFieldComponent', () => {
             );
             spectator.detectChanges();
 
-            textInput = spectator.query(byTestId(TEXT_FIELD_MOCK.variable));
+            textInput = spectator.query(byTestId(TEXT_FIELD_MOCK.variable))!;
         });
 
         it('should have the type as defined in the options', () => {

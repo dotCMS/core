@@ -6,18 +6,24 @@ import {
 } from '@dotcms/dotcms-models';
 import { getFieldVariableValue, setAttributesToTag } from '../utils';
 
+/**
+ * `field.defaultValue` and `field.values` are `string | null | undefined` on the content-type
+ * model — the API omits them for a field that has none, and sends null for some. Every Stencil
+ * prop they feed is `string | undefined`, so each is collapsed with `?? undefined` at the binding
+ * rather than widening a dozen component props to accept a null they would only have to re-handle.
+ */
 export const DotFormFields = {
     Text: (field: ContentTypeTextField) => (
         <dot-textfield
             hint={field.hint}
             label={field.name}
             name={field.variable}
-            ref={(el: HTMLElement) => {
+            ref={(el) => {
                 setAttributesToTag(el, field.fieldVariables);
             }}
             regex-check={field.regexCheck}
             required={field.required}
-            value={field.defaultValue}
+            value={field.defaultValue ?? undefined}
         />
     ),
     Textarea: (field: ContentTypeTextAreaField) => (
@@ -25,12 +31,12 @@ export const DotFormFields = {
             hint={field.hint}
             label={field.name}
             name={field.variable}
-            ref={(el: HTMLElement) => {
+            ref={(el) => {
                 setAttributesToTag(el, field.fieldVariables);
             }}
             regex-check={field.regexCheck}
             required={field.required}
-            value={field.defaultValue}
+            value={field.defaultValue ?? undefined}
         />
     ),
     Checkbox: (field: DotCMSContentTypeField) => (
@@ -38,12 +44,12 @@ export const DotFormFields = {
             hint={field.hint}
             label={field.name}
             name={field.variable}
-            options={field.values}
-            ref={(el: HTMLElement) => {
+            options={field.values ?? undefined}
+            ref={(el) => {
                 setAttributesToTag(el, field.fieldVariables);
             }}
             required={field.required}
-            value={field.defaultValue}
+            value={field.defaultValue ?? undefined}
         />
     ),
     'Multi-Select': (field: DotCMSContentTypeField) => (
@@ -51,12 +57,12 @@ export const DotFormFields = {
             hint={field.hint}
             label={field.name}
             name={field.variable}
-            options={field.values}
-            ref={(el: HTMLElement) => {
+            options={field.values ?? undefined}
+            ref={(el) => {
                 setAttributesToTag(el, field.fieldVariables);
             }}
             required={field.required}
-            value={field.defaultValue}
+            value={field.defaultValue ?? undefined}
         />
     ),
     'Key-Value': (field: DotCMSContentTypeField) => (
@@ -66,7 +72,7 @@ export const DotFormFields = {
             label={field.name}
             name={field.variable}
             required={field.required}
-            value={field.defaultValue}
+            value={field.defaultValue ?? undefined}
         />
     ),
     Select: (field: DotCMSContentTypeField) => (
@@ -74,12 +80,12 @@ export const DotFormFields = {
             hint={field.hint}
             label={field.name}
             name={field.variable}
-            options={field.values}
-            ref={(el: HTMLElement) => {
+            options={field.values ?? undefined}
+            ref={(el) => {
                 setAttributesToTag(el, field.fieldVariables);
             }}
             required={field.required}
-            value={field.defaultValue}
+            value={field.defaultValue ?? undefined}
         />
     ),
     Radio: (field: DotCMSContentTypeField) => (
@@ -87,12 +93,12 @@ export const DotFormFields = {
             hint={field.hint}
             label={field.name}
             name={field.variable}
-            options={field.values}
-            ref={(el: HTMLElement) => {
+            options={field.values ?? undefined}
+            ref={(el) => {
                 setAttributesToTag(el, field.fieldVariables);
             }}
             required={field.required}
-            value={field.defaultValue}
+            value={field.defaultValue ?? undefined}
         />
     ),
     Date: (field: DotCMSContentTypeField) => (
@@ -100,11 +106,11 @@ export const DotFormFields = {
             hint={field.hint}
             label={field.name}
             name={field.variable}
-            ref={(el: HTMLElement) => {
+            ref={(el) => {
                 setAttributesToTag(el, field.fieldVariables);
             }}
             required={field.required}
-            value={field.defaultValue}
+            value={field.defaultValue ?? undefined}
         />
     ),
     Time: (field: DotCMSContentTypeField) => (
@@ -112,11 +118,11 @@ export const DotFormFields = {
             hint={field.hint}
             label={field.name}
             name={field.variable}
-            ref={(el: HTMLElement) => {
+            ref={(el) => {
                 setAttributesToTag(el, field.fieldVariables);
             }}
             required={field.required}
-            value={field.defaultValue}
+            value={field.defaultValue ?? undefined}
         />
     ),
     'Date-and-Time': (field: DotCMSContentTypeField) => (
@@ -124,11 +130,11 @@ export const DotFormFields = {
             hint={field.hint}
             label={field.name}
             name={field.variable}
-            ref={(el: HTMLElement) => {
+            ref={(el) => {
                 setAttributesToTag(el, field.fieldVariables);
             }}
             required={field.required}
-            value={field.defaultValue}
+            value={field.defaultValue ?? undefined}
         />
     ),
     'Date-Range': (field: DotCMSContentTypeField) => (
@@ -137,7 +143,7 @@ export const DotFormFields = {
             label={field.name}
             name={field.variable}
             required={field.required}
-            value={field.defaultValue}
+            value={field.defaultValue ?? undefined}
         />
     ),
     Tag: (field: DotCMSContentTypeField) => (
@@ -152,17 +158,17 @@ export const DotFormFields = {
             label={field.name}
             name={field.variable}
             required={field.required}
-            value={field.defaultValue}
+            value={field.defaultValue ?? undefined}
         />
     ),
     Binary: (field: DotCMSContentTypeField) => (
         <dot-binary-file
-            accept={getFieldVariableValue(field.fieldVariables, 'accept')}
+            accept={getFieldVariableValue(field.fieldVariables, 'accept') ?? undefined}
             max-file-length={getFieldVariableValue(field.fieldVariables, 'maxFileLength')}
             hint={field.hint}
             label={field.name}
             name={field.variable}
-            ref={(el: HTMLElement) => {
+            ref={(el) => {
                 setAttributesToTag(el, field.fieldVariables);
             }}
             required={field.required}

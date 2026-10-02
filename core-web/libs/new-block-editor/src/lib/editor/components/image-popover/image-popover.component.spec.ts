@@ -60,7 +60,7 @@ describe('ImagePropertiesPopoverComponent — message keys match the bound attri
         spectator.component.form.controls.title.setValue('A tooltip');
         spectator.detectChanges();
 
-        expect(spectator.query<HTMLInputElement>('#edit-img-title').value).toBe('A tooltip');
+        expect(spectator.query<HTMLInputElement>('#edit-img-title')!.value).toBe('A tooltip');
     });
 
     it('labels that input with the `field.title.label` key', () => {
@@ -72,7 +72,7 @@ describe('ImagePropertiesPopoverComponent — message keys match the bound attri
     });
 
     it('places the `field.title.placeholder` key on that same input', () => {
-        expect(spectator.query<HTMLInputElement>('#edit-img-title').placeholder).toBe(
+        expect(spectator.query<HTMLInputElement>('#edit-img-title')!.placeholder).toBe(
             `${KEY}.placeholder`
         );
     });
@@ -84,10 +84,10 @@ describe('ImagePropertiesPopoverComponent — message keys match the bound attri
     it('keeps the url and alt fields on their own keys', () => {
         const base = 'dot.block.editor.dialog.image-properties.field';
 
-        expect(spectator.query<HTMLInputElement>('#edit-img-url').placeholder).toBe(
+        expect(spectator.query<HTMLInputElement>('#edit-img-url')!.placeholder).toBe(
             `${base}.url.placeholder`
         );
-        expect(spectator.query<HTMLInputElement>('#edit-img-alt').placeholder).toBe(
+        expect(spectator.query<HTMLInputElement>('#edit-img-alt')!.placeholder).toBe(
             `${base}.alt.placeholder`
         );
     });

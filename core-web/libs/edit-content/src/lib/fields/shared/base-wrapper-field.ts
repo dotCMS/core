@@ -28,6 +28,7 @@ export abstract class BaseWrapperField<
      * store at all. Falling back to "not submitted" there costs nothing and cannot throw.
      */
     protected editContentStore = inject(DotEditContentStore, { optional: true });
+
     /**
      * Parameterised so a wrapper can declare the arm it actually renders. `InputSignal` is
      * invariant, so a subclass narrowing `$field` to, say, `ContentTypeCalendarField` cannot
@@ -35,7 +36,14 @@ export abstract class BaseWrapperField<
      * default and are unaffected.
      */
     abstract $field: InputSignal<TField>;
-    abstract $contentlet: InputSignal<DotCMSContentlet>;
+
+    /**
+     * Nullable because this class's own members already assume it: `$showLabel` returns early on
+     * `!field` and `isRequired` reads `field?.required`. Every subclass declares its contentlet
+     * input the same way (`input.required<DotCMSContentlet | null>`), so `InputSignal` is exact
+     * here rather than needing the covariance `$field` relies on.
+     */
+    abstract $contentlet: InputSignal<DotCMSContentlet | null>;
 
     /**
      * Whether the field should present itself as being in error.
@@ -120,6 +128,12 @@ export abstract class BaseWrapperField<
         return control.disabled;
     }
 
+    /**
+     * `| null` states what the body always did: `ControlContainer.control` is nullable, `get()`
+     * returns null for an unknown name, and the field itself may not be bound yet. The old
+     * `as FormControl` hid all three — which is why every caller in this class and its subclasses
+     * already checks the result before using it.
+     */
     get formControl(): FormControl | null {
         // `$field` is `input.required` on most subclasses but NOT all: custom-field and json-field
         // both declare it with a `null` default, so destructuring it unguarded throws a TypeError

@@ -14,11 +14,22 @@ import { DotCopyContentModalService } from '@dotcms/ui';
 
 import { DotUveActionsHandlerService } from './dot-uve-actions-handler.service';
 
+import { DotEmaDialogComponent } from '../../components/dot-ema-dialog/dot-ema-dialog.component';
 import { UpdatedContentlet } from '../../edit-ema-editor/components/ema-page-dropzone/types';
 import { EDITOR_STATE, UVE_STATUS } from '../../shared/enums';
 import { UVEStore } from '../../store/dot-uve.store';
 import { PageType } from '../../store/models';
 import { InlineEditService } from '../inline-edit/inline-edit.service';
+
+/**
+ * `dialog` and `inlineEditingService` are required on `ActionsHandlerDependencies`: the handlers that
+ * use them dereference them directly, so they cannot be made optional without turning a programming
+ * error into a silent no-op. The actions exercised in this file never reach either, so these tests
+ * deliberately supply neither — recorded here once rather than as a cast at each of the twenty call
+ * sites below.
+ */
+const NO_DIALOG = null as unknown as DotEmaDialogComponent;
+const NO_INLINE_EDITING = null as unknown as InlineEditService;
 
 const MOCK_UPDATED_CONTENTLET: UpdatedContentlet = {
     dataset: {
@@ -79,8 +90,8 @@ describe('DotUveActionsHandlerService – UPDATE_CONTENTLET_INLINE_EDITING', () 
             },
             {
                 uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                dialog: null,
-                inlineEditingService: null,
+                dialog: NO_DIALOG,
+                inlineEditingService: NO_INLINE_EDITING,
                 contentWindow: null,
                 host: 'http://localhost',
                 onCopyContent: vi.fn()
@@ -102,8 +113,8 @@ describe('DotUveActionsHandlerService – UPDATE_CONTENTLET_INLINE_EDITING', () 
             },
             {
                 uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                dialog: null,
-                inlineEditingService: null,
+                dialog: NO_DIALOG,
+                inlineEditingService: NO_INLINE_EDITING,
                 contentWindow: null,
                 host: 'http://localhost',
                 onCopyContent: vi.fn()
@@ -125,8 +136,8 @@ describe('DotUveActionsHandlerService – UPDATE_CONTENTLET_INLINE_EDITING', () 
             },
             {
                 uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                dialog: null,
-                inlineEditingService: null,
+                dialog: NO_DIALOG,
+                inlineEditingService: NO_INLINE_EDITING,
                 contentWindow: null,
                 host: 'http://localhost',
                 onCopyContent: vi.fn()
@@ -144,8 +155,8 @@ describe('DotUveActionsHandlerService – UPDATE_CONTENTLET_INLINE_EDITING', () 
             { action: DotCMSUVEAction.UPDATE_CONTENTLET_INLINE_EDITING, payload: null },
             {
                 uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                dialog: null,
-                inlineEditingService: null,
+                dialog: NO_DIALOG,
+                inlineEditingService: NO_INLINE_EDITING,
                 contentWindow: null,
                 host: 'http://localhost',
                 onCopyContent: vi.fn()
@@ -170,8 +181,8 @@ describe('DotUveActionsHandlerService – UPDATE_CONTENTLET_INLINE_EDITING', () 
             },
             {
                 uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                dialog: null,
-                inlineEditingService: null,
+                dialog: NO_DIALOG,
+                inlineEditingService: NO_INLINE_EDITING,
                 contentWindow: null,
                 host: 'http://localhost',
                 onCopyContent: vi.fn()
@@ -212,8 +223,8 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
             { action: DotCMSUVEAction.SECTION_OFFSET, payload },
             {
                 uveStore: buildMockStore() as unknown as InstanceType<typeof UVEStore>,
-                dialog: null,
-                inlineEditingService: null,
+                dialog: NO_DIALOG,
+                inlineEditingService: NO_INLINE_EDITING,
                 contentWindow: null,
                 host: 'http://localhost',
                 onCopyContent: vi.fn(),
@@ -233,8 +244,8 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
                 },
                 {
                     uveStore: buildMockStore() as unknown as InstanceType<typeof UVEStore>,
-                    dialog: null,
-                    inlineEditingService: null,
+                    dialog: NO_DIALOG,
+                    inlineEditingService: NO_INLINE_EDITING,
                     contentWindow: null,
                     host: 'http://localhost',
                     onCopyContent: vi.fn()
@@ -255,7 +266,7 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
             {
                 uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
                 dialog: { createContentletFromPalette } as never,
-                inlineEditingService: null,
+                inlineEditingService: NO_INLINE_EDITING,
                 contentWindow: null,
                 host: 'http://localhost',
                 onCopyContent: vi.fn()
@@ -285,8 +296,8 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
                 },
                 {
                     uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                    dialog: null,
-                    inlineEditingService: null,
+                    dialog: NO_DIALOG,
+                    inlineEditingService: NO_INLINE_EDITING,
                     contentWindow: null,
                     host: 'http://localhost',
                     onCopyContent: vi.fn()
@@ -314,8 +325,8 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
                 },
                 {
                     uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                    dialog: null,
-                    inlineEditingService: null,
+                    dialog: NO_DIALOG,
+                    inlineEditingService: NO_INLINE_EDITING,
                     contentWindow: null,
                     host: 'http://localhost',
                     onCopyContent: vi.fn()
@@ -345,8 +356,8 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
                     },
                     {
                         uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                        dialog: null,
-                        inlineEditingService: null,
+                        dialog: NO_DIALOG,
+                        inlineEditingService: NO_INLINE_EDITING,
                         contentWindow: null,
                         host: 'http://localhost',
                         onCopyContent: vi.fn()
@@ -372,8 +383,8 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
                     },
                     {
                         uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                        dialog: null,
-                        inlineEditingService: null,
+                        dialog: NO_DIALOG,
+                        inlineEditingService: NO_INLINE_EDITING,
                         contentWindow: null,
                         host: 'http://localhost',
                         onCopyContent: vi.fn()
@@ -398,8 +409,8 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
                     },
                     {
                         uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                        dialog: null,
-                        inlineEditingService: null,
+                        dialog: NO_DIALOG,
+                        inlineEditingService: NO_INLINE_EDITING,
                         contentWindow: null,
                         host: 'http://localhost',
                         onCopyContent: vi.fn()
@@ -424,8 +435,8 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
                     },
                     {
                         uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                        dialog: null,
-                        inlineEditingService: null,
+                        dialog: NO_DIALOG,
+                        inlineEditingService: NO_INLINE_EDITING,
                         contentWindow: null,
                         host: 'http://localhost',
                         onCopyContent: vi.fn()
@@ -452,8 +463,8 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
                     },
                     {
                         uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                        dialog: null,
-                        inlineEditingService: null,
+                        dialog: NO_DIALOG,
+                        inlineEditingService: NO_INLINE_EDITING,
                         contentWindow: null,
                         host: 'http://localhost',
                         onCopyContent: vi.fn()
@@ -479,8 +490,8 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
                     },
                     {
                         uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                        dialog: null,
-                        inlineEditingService: null,
+                        dialog: NO_DIALOG,
+                        inlineEditingService: NO_INLINE_EDITING,
                         contentWindow: null,
                         host: 'http://localhost',
                         onCopyContent: vi.fn()
@@ -529,8 +540,8 @@ describe('DotUveActionsHandlerService – REGISTER_STYLE_SCHEMAS', () => {
             },
             {
                 uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                dialog: null,
-                inlineEditingService: null,
+                dialog: NO_DIALOG,
+                inlineEditingService: NO_INLINE_EDITING,
                 contentWindow: null,
                 host: 'http://localhost',
                 onCopyContent: vi.fn()
@@ -575,8 +586,8 @@ describe('DotUveActionsHandlerService – CLIENT_READY', () => {
 
     const buildDeps = (mockStore: ReturnType<typeof buildClientReadyStore>) => ({
         uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-        dialog: null,
-        inlineEditingService: null,
+        dialog: NO_DIALOG,
+        inlineEditingService: NO_INLINE_EDITING,
         contentWindow: null,
         host: 'http://localhost',
         onCopyContent: vi.fn()
@@ -691,8 +702,8 @@ describe('DotUveActionsHandlerService – COPY_CONTENTLET_INLINE_EDITING (field 
             },
             {
                 uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                dialog: null,
-                inlineEditingService: null,
+                dialog: NO_DIALOG,
+                inlineEditingService: NO_INLINE_EDITING,
                 contentWindow,
                 host: HOST,
                 onCopyContent: vi.fn()
@@ -730,7 +741,7 @@ describe('DotUveActionsHandlerService – COPY_CONTENTLET_INLINE_EDITING (field 
             },
             {
                 uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                dialog: null,
+                dialog: NO_DIALOG,
                 inlineEditingService,
                 contentWindow: null,
                 host: HOST,
@@ -761,8 +772,8 @@ describe('DotUveActionsHandlerService – COPY_CONTENTLET_INLINE_EDITING (field 
             },
             {
                 uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                dialog: null,
-                inlineEditingService: null,
+                dialog: NO_DIALOG,
+                inlineEditingService: NO_INLINE_EDITING,
                 contentWindow,
                 host: HOST,
                 onCopyContent: vi.fn()

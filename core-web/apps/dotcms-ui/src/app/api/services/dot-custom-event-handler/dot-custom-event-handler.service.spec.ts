@@ -136,8 +136,8 @@ describe('DotCustomEventHandlerService', () => {
         router = TestBed.inject(Router);
     };
 
-    const metadata = {};
-    const metadata2 = {};
+    const metadata: Record<string, boolean> = {};
+    const metadata2: Record<string, boolean> = {};
     metadata[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] = true;
     metadata2[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] = false;
 
@@ -291,7 +291,9 @@ describe('DotCustomEventHandlerService', () => {
                 }
             })
         );
-        expect<any>(dotUiColorsService.setColors).toHaveBeenCalledWith(fakeHtmlEl, {
+        // The service reads `document.documentElement` rather than querying for it, so there is
+        // nothing to stub — the root element jsdom already provides is the one it colours.
+        expect(dotUiColorsService.setColors).toHaveBeenCalledWith(document.documentElement, {
             primary: '#fff',
             secondary: '#000',
             background: '#ccc'

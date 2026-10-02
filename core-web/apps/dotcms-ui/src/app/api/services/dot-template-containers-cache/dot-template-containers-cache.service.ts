@@ -9,7 +9,7 @@ import { CONTAINER_SOURCE, DotContainer, DotContainerMap } from '@dotcms/dotcms-
     providedIn: 'root'
 })
 export class DotTemplateContainersCacheService {
-    private containers: DotContainerMap;
+    private containers!: DotContainerMap;
 
     set(containers: DotContainerMap): void {
         this.containers = containers;
@@ -27,8 +27,10 @@ export class DotTemplateContainersCacheService {
      * @memberof DotTemplateContainersCacheService
      */
     getContainerReference(dotContainer: DotContainer): string {
-        return dotContainer.source === CONTAINER_SOURCE.FILE
-            ? dotContainer.path
-            : dotContainer.identifier;
+        return (
+            (dotContainer.source === CONTAINER_SOURCE.FILE
+                ? dotContainer.path
+                : dotContainer.identifier) ?? ''
+        );
     }
 }

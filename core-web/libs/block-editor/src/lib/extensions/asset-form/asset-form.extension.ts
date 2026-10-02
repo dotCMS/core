@@ -68,15 +68,15 @@ export const BubbleAssetFormExtension = (viewContainerRef: ViewContainerRef) => 
         setUpTippy(editor);
         setUpComponent(editor, type);
 
-        formTippy.setProps({
+        formTippy?.setProps({
             content: element,
             getReferenceClientRect: getPosition,
             onClickOutside: () => onHide(editor)
         });
-        formTippy.show();
+        formTippy?.show();
     }
 
-    function onHide(editor): void {
+    function onHide(editor: Editor): void {
         if (preventClose) {
             return;
         }
@@ -122,7 +122,7 @@ export const BubbleAssetFormExtension = (viewContainerRef: ViewContainerRef) => 
         component.changeDetectorRef.detectChanges();
     }
 
-    function onPreventClose(editor, value) {
+    function onPreventClose(editor: Editor, value: boolean) {
         preventClose = value;
         editor.setOptions({ editable: !value });
     }

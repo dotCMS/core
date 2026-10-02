@@ -70,11 +70,13 @@ export interface DotTemplateBuilderState {
     rows: DotGridStackWidget[];
     containerMap: DotContainerMap;
     layoutProperties: DotTemplateLayoutProperties;
-    resizingRowID: string;
+    /** Null when no row is being resized — the store's own default. */
+    resizingRowID: string | null;
     themeId: string;
     shouldEmit: boolean;
     templateIdentifier: string;
-    defaultContainer?: DotContainer;
+    /** Null once `updateDefaultContainer` clears it; absent before it is ever set. */
+    defaultContainer?: DotContainer | null;
 }
 
 export type WidgetType = 'col' | 'row';
@@ -100,7 +102,8 @@ export enum TemplateBuilderBoxSize {
 export interface DotTemplateLayoutProperties {
     header: boolean;
     footer: boolean;
-    sidebar: DotLayoutSideBar;
+    /** Null when the sidebar is empty — TemplateBuilderComponent clears it so it is not saved. */
+    sidebar: DotLayoutSideBar | null;
 }
 
 /**

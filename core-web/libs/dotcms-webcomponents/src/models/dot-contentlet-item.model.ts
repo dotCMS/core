@@ -35,4 +35,10 @@ export interface DotContentletItem {
     titleImage: string;
     modDateMilis: number;
     icon?: string;
+    /**
+     * Present on some endpoints only, which is why `dot-contentlet-thumbnail` reads it
+     * defensively (`contentlet['image'] || …`) when deciding between the `/dA/` and
+     * `/contentAsset/` thumbnail URLs.
+     */
+    image?: string;
 }

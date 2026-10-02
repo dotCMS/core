@@ -11,27 +11,32 @@ import { DotTemplate } from '@dotcms/dotcms-models';
 import { DotTemplatesService } from '../../../../api/services/dot-templates/dot-templates.service';
 
 @Injectable()
-export class DotTemplateCreateEditResolver implements Resolve<DotTemplate> {
+export class DotTemplateCreateEditResolver implements Resolve<DotTemplate | null> {
     private service = inject(DotTemplatesService);
     private dotRouterService = inject(DotRouterService);
 
-    resolve(route: ActivatedRouteSnapshot, _state: RouterStateSnapshot): Observable<DotTemplate> {
+    resolve(
+        route: ActivatedRouteSnapshot,
+        _state: RouterStateSnapshot
+    ): Observable<DotTemplate | null> {
         const inode = route.paramMap.get('inode');
 
-        return inode
-            ? this.service.getFiltered({ filter: inode }).pipe(
-                  map((response: { templates: DotTemplate[]; totalRecords: number }) => {
-                      const templates = response.templates;
-                      if (templates.length) {
-                          const firstTemplate = templates.find((t) => t.inode === inode);
-                          if (firstTemplate) {
-                              return firstTemplate;
-                          }
-                      }
+        if (!inode) {
+            return this.service.getById(route.paramMap.get('id') ?? '');
+        }
 
-                      this.dotRouterService.gotoPortlet('templates');
-                  })
-              )
-            : this.service.getById(route.paramMap.get('id'));
+        return this.service.getFiltered({ filter: inode }).pipe(
+            map((response: { templates: DotTemplate[]; totalRecords: number }) => {
+                const firstTemplate = response.templates.find((t) => t.inode === inode);
+
+                if (firstTemplate) {
+                    return firstTemplate;
+                }
+
+                this.dotRouterService.gotoPortlet('templates');
+
+                return null;
+            })
+        );
     }
 }

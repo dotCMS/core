@@ -53,7 +53,7 @@ describe('DotAddToMenuService', () => {
     });
 
     it('should create a custom tool portlet', () => {
-        dotAddToMenuService.createCustomTool(customToolData).subscribe((response: string) => {
+        dotAddToMenuService.createCustomTool(customToolData).subscribe((response) => {
             expect(response).toEqual('ok');
         });
 
@@ -71,7 +71,7 @@ describe('DotAddToMenuService', () => {
     it('should throw null on create custom tool error 400', () => {
         vi.spyOn(dotHttpErrorManagerService, 'handle');
 
-        dotAddToMenuService.createCustomTool(customToolData).subscribe((response: string) => {
+        dotAddToMenuService.createCustomTool(customToolData).subscribe((response) => {
             expect(response).toEqual(null);
         });
 
@@ -84,7 +84,7 @@ describe('DotAddToMenuService', () => {
     it('should throw error 500 on create custom tool error', () => {
         vi.spyOn(dotHttpErrorManagerService, 'handle');
 
-        dotAddToMenuService.createCustomTool(customToolData).subscribe((response: string) => {
+        dotAddToMenuService.createCustomTool(customToolData).subscribe((response) => {
             expect(response).toEqual(null);
         });
 
@@ -101,7 +101,7 @@ describe('DotAddToMenuService', () => {
             layoutId: '123'
         };
 
-        dotAddToMenuService.addToLayout(layoutData).subscribe((response: string) => {
+        dotAddToMenuService.addToLayout(layoutData).subscribe((response) => {
             expect(response).toEqual('ok');
         });
 
@@ -123,7 +123,7 @@ describe('DotAddToMenuService', () => {
             layoutId: '123'
         };
 
-        dotAddToMenuService.addToLayout(layoutData).subscribe((response: string) => {
+        dotAddToMenuService.addToLayout(layoutData).subscribe((response) => {
             expect(response).toEqual(null);
         });
 

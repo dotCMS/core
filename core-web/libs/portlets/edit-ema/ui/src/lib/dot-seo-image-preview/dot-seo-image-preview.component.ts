@@ -10,7 +10,7 @@ import { DotMessagePipe } from '@dotcms/ui';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotSeoImagePreviewComponent {
-    @Input() image: string;
+    @Input() image = '';
     noImageAvailable = false;
 
     onImageError() {

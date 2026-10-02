@@ -6,6 +6,6 @@
         target="_blank"
         rel="noopener noreferrer">
         <i [class]="classNames()"></i>
-        <span>{{ label() | dm }}</span>
+        <span>{{ label() ?? '' | dm }}</span>
     </a>
 }

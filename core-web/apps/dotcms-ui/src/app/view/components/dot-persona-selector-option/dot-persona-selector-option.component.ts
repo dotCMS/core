@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
     Component,
     EventEmitter,
@@ -20,21 +19,14 @@ import { DotAvatarDirective, DotMessagePipe } from '@dotcms/ui';
     selector: 'dot-persona-selector-option',
     templateUrl: './dot-persona-selector-option.component.html',
     styleUrls: ['./dot-persona-selector-option.component.scss'],
-    imports: [
-        CommonModule,
-        AvatarModule,
-        BadgeModule,
-        ButtonModule,
-        DotMessagePipe,
-        DotAvatarDirective
-    ]
+    imports: [AvatarModule, BadgeModule, ButtonModule, DotMessagePipe, DotAvatarDirective]
 })
 export class DotPersonaSelectorOptionComponent {
     @Input() canDespersonalize = true;
 
-    @Input() persona: DotPersona;
+    @Input() persona!: DotPersona;
 
-    @Input() selected: boolean;
+    @Input() selected!: boolean;
 
     @Output() switch = new EventEmitter<DotPersona>();
 

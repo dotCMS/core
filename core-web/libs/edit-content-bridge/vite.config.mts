@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { defineConfig, LibraryFormats } from 'vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
 import { resolve } from 'path';
@@ -34,7 +34,7 @@ export default defineConfig(() => {
             lib: {
                 entry: resolve(import.meta.dirname, 'src/iife.ts'),
                 name: 'DotCustomFieldApi',
-                formats: ['iife'],
+                formats: ['iife'] as LibraryFormats[],
                 fileName: () => 'edit-content-bridge.js'
             },
             minify: true,

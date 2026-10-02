@@ -90,14 +90,14 @@ describe('key/value order recovery', () => {
             }}`;
             const result = recover(raw);
 
-            expect(result.metaData).toEqual({
+            expect(result['metaData']).toEqual({
                 name: 'file.txt',
                 isImage: false,
                 fileSize: 42,
                 sha256: 'abc'
             });
-            expect((result.metaData as Record<string, unknown>).name).toBe('file.txt');
-            expect(typeof result.fileAssetMetaData).toBe('object');
+            expect((result['metaData'] as Record<string, unknown>)['name']).toBe('file.txt');
+            expect(typeof result['fileAssetMetaData']).toBe('object');
         });
 
         it('should add nothing to a contentlet beyond its own namespace', () => {
@@ -120,12 +120,12 @@ describe('key/value order recovery', () => {
             }}`;
             const result = recover(raw);
 
-            expect(result.title).toBe('a title');
-            expect(result.languageId).toBe(1);
-            expect(result.live).toBe(true);
-            expect(result.categories).toEqual(['inode-1', 'inode-2']);
+            expect(result['title']).toBe('a title');
+            expect(result['languageId']).toBe(1);
+            expect(result['live']).toBe(true);
+            expect(result['categories']).toEqual(['inode-1', 'inode-2']);
             // Nested structure means it is not a Key/Value field.
-            expect(result.binaryField).toEqual({
+            expect(result['binaryField']).toEqual({
                 versionPath: '/x',
                 metaData: { width: 10 }
             });
@@ -207,8 +207,8 @@ describe('key/value order recovery', () => {
             const raw = '{"entity":{"keyValue":{"\\u0000__dotKeyValue__7":"suya","7":"nuestra"}}}';
             const result = recover(raw);
 
-            expect(typeof result.keyValue).toBe('object');
-            expect(result.keyValue).toEqual({
+            expect(typeof result['keyValue']).toBe('object');
+            expect(result['keyValue']).toEqual({
                 '\u0000__dotKeyValue__7': 'suya',
                 '7': 'nuestra'
             });

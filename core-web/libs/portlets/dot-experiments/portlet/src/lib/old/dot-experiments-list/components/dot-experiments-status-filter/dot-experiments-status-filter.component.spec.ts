@@ -8,6 +8,8 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotExperimentsStatusFilterComponent } from './dot-experiments-status-filter.component';
 
+import type { InferInputSignals } from '@openng/spectator';
+
 const messageServiceMock = new MockDotMessageService({
     'experimentspage.experiment.status.placeholder': 'Select Status',
     running: 'Running',
@@ -56,7 +58,7 @@ describe('DotExperimentsStatusFilterComponent', () => {
             props: {
                 options: OPTIONS_MOCK,
                 selectedItems: SELECTED_ITEMS_MOCK
-            } as unknown
+            } as unknown as InferInputSignals<DotExperimentsStatusFilterComponent>
         });
     });
 
@@ -68,14 +70,14 @@ describe('DotExperimentsStatusFilterComponent', () => {
         const multiSelect = spectator.query(MultiSelect);
 
         expect(multiSelect).toExist();
-        expect(multiSelect.options).toEqual(OPTIONS_MOCK);
+        expect(multiSelect!.options!).toEqual(OPTIONS_MOCK);
     });
 
     it('should get a list of selected options', () => {
         const multiSelect = spectator.query(MultiSelect);
 
         expect(multiSelect).toExist();
-        expect(multiSelect.value).toEqual(SELECTED_ITEMS_MOCK);
+        expect(multiSelect!.value!).toEqual(SELECTED_ITEMS_MOCK);
         expect(spectator.component.selectedItems).toEqual(SELECTED_ITEMS_MOCK);
     });
 });

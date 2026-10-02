@@ -18,7 +18,7 @@ import {
     ActionModel
 } from '../../services/api/rule/Rule';
 import { ServerSideTypeModel } from '../../services/api/serverside-field/ServerSideFieldModel';
-import { RuleActionActionEvent } from '../../services/models/rule-event.model';
+import { RuleActionEmitEvent } from '../../services/models/rule-event.model';
 import { DotServersideConditionComponent } from '../conditions/serverside-condition/dot-serverside-condition.component';
 
 @Component({
@@ -43,9 +43,9 @@ export class DotRuleActionComponent {
     );
 
     // Outputs
-    readonly updateRuleActionType = output<RuleActionActionEvent>();
-    readonly updateRuleActionParameter = output<RuleActionActionEvent>();
-    readonly deleteRuleAction = output<RuleActionActionEvent>();
+    readonly updateRuleActionType = output<RuleActionEmitEvent>();
+    readonly updateRuleActionParameter = output<RuleActionEmitEvent>();
+    readonly deleteRuleAction = output<RuleActionEmitEvent>();
 
     // State
     typeDropdownOptions$: Observable<{ label: string; value: string }[]> = of([]);

@@ -10,8 +10,8 @@ export class StringUtils {
      * @param indexLine
      * @returns string
      */
-    getLine(text: string, indexLine: number): string {
-        let line: string = null;
+    getLine(text: string, indexLine: number): string | null {
+        let line: string | null = null;
 
         if (text) {
             const lines = text.split('\n');
@@ -26,9 +26,9 @@ export class StringUtils {
      * @param str
      * @returns string
      */
-    camelize(str): string {
+    camelize(str: string): string {
         return str
-            .replace(/(?:^\w|[A-Z]|\b\w)/g, (letter, index) => {
+            .replace(/(?:^\w|[A-Z]|\b\w)/g, (letter: string, index: number) => {
                 return index === 0 ? letter.toLowerCase() : letter.toUpperCase();
             })
             .replace(/\s+/g, '');

@@ -11,7 +11,8 @@ import { ComponentStatus } from '@dotcms/dotcms-models';
 
 export interface AiGenerateContent {
     prompt: string;
-    content: string;
+    /** Null on the error path, where only `error` is populated. */
+    content: string | null;
     error?: string;
 }
 
@@ -19,7 +20,8 @@ export interface AiContentPromptState {
     prompt: string;
     generatedContent: AiGenerateContent[];
     selectedContent: string;
-    activeIndex: number;
+    /** Null until the first generation completes. */
+    activeIndex: number | null;
     status: ComponentStatus;
     showDialog: boolean;
     submitLabel: string;
@@ -51,7 +53,7 @@ export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
         this.activeIndex$,
         this.generatedContent$,
         (activeIndex, generatedContent) => {
-            return generatedContent[activeIndex];
+            return generatedContent[activeIndex ?? -1];
         }
     );
 
@@ -110,8 +112,8 @@ export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
                     tapResponse({
                         next: (response) => {
                             const newContent = { prompt, content: response };
-                            generatedContent[activeIndex]?.error
-                                ? (generatedContent[activeIndex] = newContent)
+                            generatedContent[activeIndex ?? -1]?.error
+                                ? (generatedContent[activeIndex ?? -1] = newContent)
                                 : generatedContent.push(newContent);
                             this.patchState({
                                 status: ComponentStatus.IDLE,
@@ -121,8 +123,8 @@ export class AiContentPromptStore extends ComponentStore<AiContentPromptState> {
                         },
                         error: (error: string) => {
                             const errorContent = { prompt, content: null, error };
-                            generatedContent[activeIndex]?.error
-                                ? (generatedContent[activeIndex] = errorContent)
+                            generatedContent[activeIndex ?? -1]?.error
+                                ? (generatedContent[activeIndex ?? -1] = errorContent)
                                 : generatedContent.push(errorContent);
                             this.patchState({
                                 status: ComponentStatus.IDLE,

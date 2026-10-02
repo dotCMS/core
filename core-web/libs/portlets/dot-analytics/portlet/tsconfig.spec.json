@@ -5,8 +5,6 @@
         "module": "preserve",
         "target": "es2016",
         "types": ["vitest/globals", "vitest/importMeta", "vite/client", "node", "vitest"],
-        "strict": false,
-        "noPropertyAccessFromIndexSignature": false,
         "isolatedModules": true,
         "moduleResolution": "bundler"
     },

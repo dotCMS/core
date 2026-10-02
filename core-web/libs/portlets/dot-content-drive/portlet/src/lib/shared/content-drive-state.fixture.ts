@@ -43,6 +43,7 @@ export function buildContentDriveState(
         status: DotContentDriveStatus.LOADING,
         pagination: DEFAULT_PAGINATION,
         sort: DEFAULT_SORT,
+        contextMenu: undefined,
         isTreeExpanded: DEFAULT_TREE_EXPANDED,
         isTreeForceCollapsed: false,
         pages: [DEFAULT_PAGE],

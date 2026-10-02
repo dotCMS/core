@@ -1,7 +1,7 @@
 import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { vi } from 'vitest';
 
-import { NgClass, NgFor, NgIf } from '@angular/common';
+import { NgFor, NgIf } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { By } from '@angular/platform-browser';
 
@@ -35,7 +35,7 @@ describe('DotTabButtonsComponent', () => {
             DotMessagePipe,
             { provide: DotMessageService, useValue: messageServiceMock }
         ],
-        imports: [NgFor, ButtonModule, NgIf, NgClass, TooltipModule, DotMessagePipe]
+        imports: [NgFor, ButtonModule, NgIf, TooltipModule, DotMessagePipe]
     });
 
     const optionsMock: SelectItem[] = [

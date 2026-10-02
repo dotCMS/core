@@ -41,7 +41,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
         ...state,
         rows: state.rows.map((row) => ({
             ...row,
-            willBoxFit: willBoxFitInRow(row.subGridOpts?.children)
+            willBoxFit: willBoxFitInRow(row.subGridOpts?.children ?? [])
         }))
     }));
 
@@ -140,7 +140,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      *
      * @memberof DotTemplateBuilderStore
      */
-    readonly setResizingRowID = this.updater((state, resizingRowID: string = null) => ({
+    readonly setResizingRowID = this.updater((state, resizingRowID: string | null = null) => ({
         ...state,
         resizingRowID,
         shouldEmit: true
@@ -155,7 +155,10 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
      */
     readonly addColumn = this.updater((state, column: DotGridStackNode) => {
         const { rows } = state;
-        const newColumn = createDotGridStackWidgetFromNode(column, state.defaultContainer);
+        const newColumn = createDotGridStackWidgetFromNode(
+            column,
+            state.defaultContainer ?? undefined
+        );
 
         return {
             ...state,
@@ -233,7 +236,10 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
     readonly updateColumnGridStackData = this.updater(
         (state, affectedColumns: DotGridStackNode[]) => {
             const { rows } = state;
-            affectedColumns = createDotGridStackWidgets(affectedColumns, state.defaultContainer);
+            affectedColumns = createDotGridStackWidgets(
+                affectedColumns,
+                state.defaultContainer ?? undefined
+            );
 
             return {
                 ...state,
@@ -325,7 +331,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
                         ...state.layoutProperties.sidebar,
                         location:
                             layoutProperties.sidebar?.location ??
-                            state.layoutProperties.sidebar.location
+                            state.layoutProperties.sidebar?.location
                     }
                 }
             };
@@ -361,7 +367,9 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
     readonly addSidebarContainer = this.updater((state, container: DotContainer) => {
         const { layoutProperties } = state;
 
-        if (!container) return state;
+        // `identifier` is optional on DotContainer, but it keys both the sidebar entry and
+        // the container map, so there is nothing to add without it.
+        if (!container?.identifier) return state;
 
         return {
             ...state,
@@ -371,7 +379,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
                 sidebar: {
                     ...layoutProperties.sidebar,
                     containers: [
-                        ...(layoutProperties.sidebar.containers ?? []),
+                        ...(layoutProperties.sidebar?.containers ?? []),
                         {
                             identifier: container.identifier
                         }
@@ -416,8 +424,8 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
                           id: oldRow.id, // But We do not want to lose the id, because this is the way GridStack knows that nothing changed
                           subGridOpts: {
                               ...(newRow?.subGridOpts || {}),
-                              children: newRow?.subGridOpts.children.map((newChild) => {
-                                  const oldChild = oldRow.subGridOpts.children.find(
+                              children: (newRow?.subGridOpts?.children ?? []).map((newChild) => {
+                                  const oldChild = (oldRow.subGridOpts?.children ?? []).find(
                                       (oldChild) => oldChild.x === newChild.x
                                   ); // Look at the column in the same X position
 
@@ -455,7 +463,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
                 ...layoutProperties,
                 sidebar: {
                     ...layoutProperties.sidebar,
-                    containers: (layoutProperties.sidebar.containers ?? []).filter(
+                    containers: (layoutProperties.sidebar?.containers ?? []).filter(
                         (_, i) => i !== index
                     )
                 }
@@ -483,12 +491,13 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
                     return row;
                 }
 
-                const updatedChildren = row.subGridOpts.children.map((child) => {
+                const updatedChildren = (row.subGridOpts?.children ?? []).map((child) => {
                     if (affectedColumn.id === child.id) {
                         if (!child.containers) child.containers = [];
 
                         child.containers.push({
-                            identifier: container.identifier
+                            // Guarded by the caller; `identifier` is optional on DotContainer.
+                            identifier: container.identifier ?? ''
                         });
                     }
 
@@ -502,7 +511,10 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
                 ...state,
                 rows: updatedItems,
                 shouldEmit: true,
-                containerMap: { ...state.containerMap, [container.identifier]: container }
+                containerMap: {
+                    ...state.containerMap,
+                    [container.identifier ?? '']: container
+                }
             };
         }
     );
@@ -527,9 +539,11 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
                     return row;
                 }
 
-                const updatedChildren = row.subGridOpts.children.map((child) => {
+                const updatedChildren = (row.subGridOpts?.children ?? []).map((child) => {
                     if (affectedColumn.id !== child.id) return child;
-                    child.containers = child.containers.filter((_, i) => i !== containerIndex);
+                    child.containers = (child.containers ?? []).filter(
+                        (_, i) => i !== containerIndex
+                    );
 
                     return child;
                 });

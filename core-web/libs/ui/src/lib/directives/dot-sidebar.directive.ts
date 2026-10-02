@@ -42,6 +42,10 @@ export class DotSidebarDirective {
      */
     @Input()
     set dotSize(size: string) {
+        if (!this.primeSidebar) {
+            return;
+        }
+
         if (size === SIDEBAR_SIZES.LG) {
             this.primeSidebar.style = { width: '60%' };
         } else if (size === SIDEBAR_SIZES.SM) {

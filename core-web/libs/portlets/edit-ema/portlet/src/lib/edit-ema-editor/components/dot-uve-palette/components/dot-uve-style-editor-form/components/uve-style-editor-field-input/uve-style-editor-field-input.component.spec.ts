@@ -7,8 +7,8 @@ import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { InputTextModule } from 'primeng/inputtext';
 
+import { StyleEditorFieldSchema } from '@dotcms/types/internal';
 import { DotMessagePipe } from '@dotcms/utils-testing';
-import { StyleEditorFieldSchema } from '@dotcms/uve';
 
 import { UveStyleEditorFieldInputComponent } from './uve-style-editor-field-input.component';
 
@@ -18,9 +18,10 @@ import { UveStyleEditorFieldInputComponent } from './uve-style-editor-field-inpu
     template: ''
 })
 export class MockFormComponent {
-    // Host Props
-    formGroup: FormGroup;
-    field: StyleEditorFieldSchema;
+    // Host Props — `!` because Spectator sets them through `hostProps`, not the constructor, which
+    // is exactly what `strictPropertyInitialization` cannot see.
+    formGroup!: FormGroup;
+    field!: StyleEditorFieldSchema;
 }
 
 const createMockField = (
@@ -67,7 +68,7 @@ describe('UveStyleEditorFieldInputComponent', () => {
             );
             spectator.detectChanges();
 
-            const label = spectator.query('.field label');
+            const label = spectator.query('.field label')!;
             expect(label).toBeTruthy();
             expect(label.textContent.trim()).toBe('Font Size');
         });
@@ -90,7 +91,7 @@ describe('UveStyleEditorFieldInputComponent', () => {
             );
             spectator.detectChanges();
 
-            const input = spectator.query('input');
+            const input = spectator.query('input')!;
             expect(input).toBeTruthy();
         });
 
@@ -112,7 +113,7 @@ describe('UveStyleEditorFieldInputComponent', () => {
             );
             spectator.detectChanges();
 
-            const input = spectator.query('input');
+            const input = spectator.query('input')!;
             expect(input.getAttribute('id')).toBe('test-field');
         });
 
@@ -134,7 +135,7 @@ describe('UveStyleEditorFieldInputComponent', () => {
             );
             spectator.detectChanges();
 
-            const label = spectator.query('.field label');
+            const label = spectator.query('.field label')!;
             expect(label.getAttribute('for')).toBe('test-field');
         });
     });

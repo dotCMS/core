@@ -108,13 +108,13 @@ export class DotLoopEditorComponent {
     ]
 })
 export class DotTextareaContentMockComponent implements ControlValueAccessor {
-    @Input() code;
-    @Input() height;
-    @Input() show;
-    @Input() value;
-    @Input() width;
+    @Input() code!: { mode: string; options: Record<string, unknown> };
+    @Input() height!: string;
+    @Input() show!: string[];
+    @Input() value!: string;
+    @Input() width!: string;
     @Output() monacoInit = new EventEmitter();
-    @Input() language;
+    @Input() language!: string;
     writeValue(): void {
         /* mock ControlValueAccessor */
     }
@@ -320,12 +320,12 @@ describe('DotContainerPropertiesComponent', () => {
         it('should render content types when max-content greater then zero', fakeAsync(() => {
             const comp = spectator.component;
             vi.spyOn(comp, 'showContentTypeAndCode');
-            comp.form.get('maxContentlets').setValue(0);
-            comp.form.get('maxContentlets').valueChanges.subscribe((value) => {
+            comp.form.get('maxContentlets')!.setValue(0);
+            comp.form.get('maxContentlets')!.valueChanges.subscribe((value) => {
                 expect(value).toBe(5);
             });
-            expect(comp.form.get('maxContentlets').updateOn).toBe('change');
-            comp.form.get('maxContentlets').setValue(5);
+            expect(comp.form.get('maxContentlets')!.updateOn).toBe('change');
+            comp.form.get('maxContentlets')!.setValue(5);
             tick(150);
             spectator.detectChanges();
             tick(50);
@@ -336,11 +336,11 @@ describe('DotContainerPropertiesComponent', () => {
 
         it('should clear the field', fakeAsync(() => {
             vi.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
-                conf.accept();
+                conf.accept!();
             });
             const comp = spectator.component;
             vi.spyOn(comp, 'clearContentConfirmationModal');
-            comp.form.get('maxContentlets').setValue(0);
+            comp.form.get('maxContentlets')!.setValue(0);
             tick(150);
             spectator.detectChanges();
             expect(comp.form.value).toEqual({
@@ -358,12 +358,12 @@ describe('DotContainerPropertiesComponent', () => {
 
         it('should clear the field when user click on clear button', () => {
             const comp = spectator.component;
-            comp.form.get('maxContentlets').setValue(0);
-            comp.form.get('maxContentlets').setValue(5);
+            comp.form.get('maxContentlets')!.setValue(0);
+            comp.form.get('maxContentlets')!.setValue(5);
             spectator.detectChanges();
             vi.spyOn(comp, 'clearContentConfirmationModal');
             vi.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
-                conf.accept();
+                conf.accept!();
             });
             spectator.click(byTestId('clearContent'));
             expect(comp.form.value).toEqual({
@@ -386,19 +386,19 @@ describe('DotContainerPropertiesComponent', () => {
         });
 
         it('should save button enable when data change', fakeAsync(() => {
-            spectator.component.form.get('title').setValue('Hello');
+            spectator.component.form.get('title')!.setValue('Hello');
             tick(150);
             spectator.detectChanges();
             const saveBtn = spectator.query(byTestId('saveBtn')) as HTMLButtonElement;
             expect(saveBtn.disabled).toBe(false);
-            spectator.component.form.get('title').setValue('FAQ');
+            spectator.component.form.get('title')!.setValue('FAQ');
             tick(150);
             spectator.detectChanges();
             expect((spectator.query(byTestId('saveBtn')) as HTMLButtonElement).disabled).toBe(true);
         }));
 
         it('should save button disable after save', fakeAsync(() => {
-            spectator.component.form.get('title').setValue('Hello');
+            spectator.component.form.get('title')!.setValue('Hello');
             tick(150);
             spectator.detectChanges();
             spectator.click(byTestId('saveBtn'));
@@ -419,8 +419,8 @@ describe('DotContainerPropertiesComponent', () => {
 
         it('should save button disable but code field is not required', fakeAsync(() => {
             const comp = spectator.component;
-            comp.form.get('maxContentlets').setValue(0);
-            comp.form.get('maxContentlets').setValue(5);
+            comp.form.get('maxContentlets')!.setValue(0);
+            comp.form.get('maxContentlets')!.setValue(5);
             tick(200);
             spectator.detectChanges();
             spectator.click(byTestId('saveBtn'));
@@ -428,14 +428,14 @@ describe('DotContainerPropertiesComponent', () => {
             expect((spectator.query(byTestId('saveBtn')) as HTMLButtonElement).disabled).toBe(true);
             expect(
                 (comp.form.get('containerStructures') as FormArray).controls[0]
-                    .get('code')
+                    .get('code')!
                     .hasValidator(Validators.required)
             ).toBe(false);
         }));
 
         it('should redirect to containers list after save', fakeAsync(() => {
             (dotRouterService.goToURL as Mock).mockClear();
-            spectator.component.form.get('title').setValue('Hello');
+            spectator.component.form.get('title')!.setValue('Hello');
             tick(150);
             spectator.detectChanges();
             spectator.click(byTestId('saveBtn'));

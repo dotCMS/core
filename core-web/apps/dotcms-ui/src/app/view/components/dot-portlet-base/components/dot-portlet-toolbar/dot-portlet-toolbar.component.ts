@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, input } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
@@ -16,13 +16,19 @@ import { DotPortletToolbarActions } from '../../../../../shared/models/dot-portl
     imports: [ToolbarModule, ButtonModule, MenuModule, DotMessagePipe]
 })
 export class DotPortletToolbarComponent {
-    @Input() title: string;
+    // TODO: Skipped for migration because:
+    //  This input is used in a control flow expression (e.g. `@if` or `*ngIf`)
+    //  and migrating would break narrowing currently.
+    @Input() title!: string;
 
-    @Input() cancelButtonLabel: string;
+    readonly cancelButtonLabel = input<string>();
 
-    @Input() actionsButtonLabel: string;
+    readonly actionsButtonLabel = input<string>();
 
-    @Input() actions: DotPortletToolbarActions;
+    // TODO: Skipped for migration because:
+    //  This input is used in a control flow expression (e.g. `@if` or `*ngIf`)
+    //  and migrating would break narrowing currently.
+    @Input() actions?: DotPortletToolbarActions;
 
     /**
      * Handle cancel button click
@@ -32,7 +38,7 @@ export class DotPortletToolbarComponent {
      */
     onCancelClick($event: MouseEvent): void {
         try {
-            this.actions.cancel($event);
+            this.actions?.cancel($event);
         } catch (error) {
             console.error(error);
         }
@@ -46,7 +52,9 @@ export class DotPortletToolbarComponent {
      */
     onPrimaryClick($event: Event): void {
         try {
-            this.actions.primary[0].command({ originalEvent: $event });
+            // Only reachable from the primary button, which the template renders behind
+            // `@if (actions?.primary?.length)`.
+            this.actions?.primary?.[0].command?.({ originalEvent: $event });
         } catch (error) {
             console.error(error);
         }

@@ -5,7 +5,7 @@ import { vi } from 'vitest';
 
 import { EnvironmentInjector, runInInjectionContext } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { RouterStateSnapshot } from '@angular/router';
+import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 
 import { DotExperimentsService } from '@dotcms/data-access';
 import { HealthStatusTypes } from '@dotcms/dotcms-models';
@@ -30,7 +30,10 @@ describe('dotAnalyticsHealthCheckResolver', () => {
 
     it('should return HealthStatusTypes.OK when healthCheck is successful', () => {
         const resolver = runInInjectionContext(TestBed.inject(EnvironmentInjector), () =>
-            dotAnalyticsHealthCheckResolver(null, {} as RouterStateSnapshot)
+            dotAnalyticsHealthCheckResolver(
+                null as unknown as ActivatedRouteSnapshot,
+                {} as RouterStateSnapshot
+            )
         );
 
         vi.spyOn(dotExperimentsService, 'healthCheck').mockReturnValue(of(HealthStatusTypes.OK));

@@ -1,4 +1,4 @@
-import { NgStyle, NgTemplateOutlet } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -26,7 +26,7 @@ const DROP_INDICATOR_HEIGHT_PX = 3;
 
 @Component({
     selector: 'dot-ema-page-dropzone',
-    imports: [DotPositionPipe, DotErrorPipe, DotMessagePipe, NgStyle, NgTemplateOutlet],
+    imports: [DotPositionPipe, DotErrorPipe, DotMessagePipe, NgTemplateOutlet],
     templateUrl: './ema-page-dropzone.component.html',
     styleUrls: ['./ema-page-dropzone.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -40,7 +40,16 @@ export class EmaPageDropzoneComponent {
 
     private readonly el = inject(ElementRef);
 
-    protected readonly $positionData = signal({
+    /**
+     * Where the pointer is, relative to the hovered element. The rects are null until the first
+     * `dragover` measures them — the seed values are what made the signal infer them as `null`
+     * only, so writing real `DOMRect`s into it did not type-check.
+     */
+    protected readonly $positionData = signal<{
+        position: 'before' | 'after' | '';
+        parentRect: DOMRect | null;
+        targetRect: DOMRect | null;
+    }>({
         position: '',
         parentRect: null,
         targetRect: null
@@ -66,14 +75,20 @@ export class EmaPageDropzoneComponent {
 
         const { parentRect, targetRect } = this.$positionData();
 
+        // `setPositionData` above has just written both, so this only tells the compiler what the
+        // call order already guarantees.
+        if (!parentRect || !targetRect) {
+            return;
+        }
+
         const isEmpty = empty === 'true';
 
         const opacity = isEmpty ? '0.1' : '1';
         // Adjust coordinates for zoom level
         const adjustedHeight = isEmpty
-            ? ((targetRect.height / this.zoomLevel()) as number)
+            ? targetRect.height / this.zoomLevel()
             : DROP_INDICATOR_HEIGHT_PX;
-        const top = this.getTop(isEmpty);
+        const top = this.getTop(isEmpty, parentRect, targetRect);
 
         this.pointerPosition = {
             left: `${(targetRect.left - parentRect.left) / this.zoomLevel()}px`,
@@ -106,8 +121,9 @@ export class EmaPageDropzoneComponent {
         });
     }
 
-    private getTop(isEmpty: boolean): string {
-        const { parentRect, targetRect, position } = this.$positionData();
+    /** Takes the rects from the caller, which has already established they were measured. */
+    private getTop(isEmpty: boolean, parentRect: DOMRect, targetRect: DOMRect): string {
+        const { position } = this.$positionData();
 
         // Adjust coordinates for zoom level
         // getBoundingClientRect() returns viewport coordinates, but we need

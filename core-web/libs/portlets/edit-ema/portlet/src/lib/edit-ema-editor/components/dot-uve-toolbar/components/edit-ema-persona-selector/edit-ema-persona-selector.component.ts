@@ -11,7 +11,8 @@ import {
     ViewChild,
     inject,
     signal,
-    ChangeDetectionStrategy
+    ChangeDetectionStrategy,
+    input
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -20,7 +21,7 @@ import { ButtonModule } from 'primeng/button';
 import { ChipModule } from 'primeng/chip';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { Listbox, ListboxModule } from 'primeng/listbox';
-import { PaginatorModule } from 'primeng/paginator';
+import { PaginatorModule, PaginatorState } from 'primeng/paginator';
 import { PopoverModule } from 'primeng/popover';
 
 import { catchError } from 'rxjs/operators';
@@ -55,7 +56,7 @@ interface PersonaSelector {
     templateUrl: './edit-ema-persona-selector.component.html'
 })
 export class EditEmaPersonaSelectorComponent implements AfterViewInit, OnChanges {
-    @ViewChild('listbox') listbox: Listbox;
+    @ViewChild('listbox') listbox!: Listbox;
 
     private readonly pageApiService = inject(DotPageApiService);
 
@@ -73,8 +74,11 @@ export class EditEmaPersonaSelectorComponent implements AfterViewInit, OnChanges
         itemsPerPage: 0
     });
 
-    @Input() pageId: string;
-    @Input() value: DotCMSViewAsPersona;
+    readonly pageId = input.required<string>();
+    // TODO: Skipped for migration because:
+    //  This input is used in a control flow expression (e.g. `@if` or `*ngIf`)
+    //  and migrating would break narrowing currently.
+    @Input() value!: DotCMSViewAsPersona;
 
     @Output() selected: EventEmitter<DotCMSViewAsPersona & { pageId: string }> = new EventEmitter();
     @Output() despersonalize: EventEmitter<
@@ -83,7 +87,7 @@ export class EditEmaPersonaSelectorComponent implements AfterViewInit, OnChanges
 
     protected photo = '';
     ngOnChanges(changes: SimpleChanges): void {
-        if (changes.pageId) {
+        if (changes['pageId']) {
             this.fetchPersonas();
         }
 
@@ -93,10 +97,13 @@ export class EditEmaPersonaSelectorComponent implements AfterViewInit, OnChanges
         }
 
         // We have a discrepancy between the type of the photo in the API and the type of the photo in GQL
+        // `?? ''` is the field's own declared default: a persona with no photo renders the
+        // placeholder, and the false branch is `string | undefined` because `versionPath` may be
+        // absent on the GQL shape.
         this.photo =
-            typeof this.value?.photo == 'string'
+            (typeof this.value?.photo == 'string'
                 ? this.value?.photo
-                : this.value?.photo?.versionPath;
+                : this.value?.photo?.versionPath) ?? '';
     }
 
     ngAfterViewInit(): void {
@@ -114,7 +121,7 @@ export class EditEmaPersonaSelectorComponent implements AfterViewInit, OnChanges
             return;
         }
 
-        this.selected.emit({ ...value, pageId: this.pageId });
+        this.selected.emit({ ...value, pageId: this.pageId() });
     }
 
     /**
@@ -139,7 +146,7 @@ export class EditEmaPersonaSelectorComponent implements AfterViewInit, OnChanges
         this.despersonalize.emit({
             ...persona,
             selected,
-            pageId: this.pageId
+            pageId: this.pageId()
         });
     }
 
@@ -151,7 +158,7 @@ export class EditEmaPersonaSelectorComponent implements AfterViewInit, OnChanges
     fetchPersonas(page = 0) {
         this.pageApiService
             .getPersonas({
-                pageId: this.pageId,
+                pageId: this.pageId(),
                 perPage: 5000,
                 page
             })
@@ -176,8 +183,8 @@ export class EditEmaPersonaSelectorComponent implements AfterViewInit, OnChanges
             );
     }
 
-    onPaginate(event) {
+    onPaginate(event: PaginatorState) {
         // PrimeNG paginator starts at 0, but the API starts at 1
-        this.fetchPersonas(event.page + 1);
+        this.fetchPersonas((event.page ?? 0) + 1);
     }
 }

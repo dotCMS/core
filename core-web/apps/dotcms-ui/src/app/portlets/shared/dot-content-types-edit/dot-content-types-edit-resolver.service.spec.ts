@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
 import { of as observableOf, throwError as observableThrowError } from 'rxjs';
 import { vi } from 'vitest';
@@ -14,7 +12,6 @@ import {
     DotRouterService
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
-import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { DotMessageDisplayServiceMock, LoginServiceMock } from '@dotcms/utils-testing';
 
@@ -78,7 +75,7 @@ describe('DotContentTypeEditResolver', () => {
             const contentType = { fake: 'content-type', object: 'right?' };
             getDataByIdSpy.mockReturnValue(observableOf(contentType));
 
-            spectator.service.resolve(route).subscribe((result: any) => {
+            spectator.service.resolve(route).subscribe((result) => {
                 expect(result).toEqual(contentType);
                 expect(getDataByIdSpy).toHaveBeenCalledWith('v1/contenttype', '123');
                 expect(getDataByIdSpy).toHaveBeenCalledTimes(1);
@@ -144,7 +141,7 @@ describe('DotContentTypeEditResolver', () => {
             const route = createRouteSnapshot((key) => (key === 'type' ? 'content' : null));
             getDataByIdSpy.mockReturnValue(observableOf(false));
 
-            spectator.service.resolve(route).subscribe((res: DotCMSContentType) => {
+            spectator.service.resolve(route).subscribe((res) => {
                 expect(res).toEqual({
                     baseType: 'content',
                     clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',

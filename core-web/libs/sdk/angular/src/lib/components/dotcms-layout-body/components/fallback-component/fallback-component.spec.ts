@@ -45,7 +45,7 @@ describe('FallbackComponent', () => {
 
     it('should display the fallback message when UserNoComponent is null', () => {
         // Set up contentlet with a content type
-        component.contentlet = {
+        spectator.setInput('contentlet', {
             contentType: 'testContentType',
             identifier: 'test-id',
             title: 'Test Title',
@@ -68,7 +68,7 @@ describe('FallbackComponent', () => {
             titleImage: '',
             url: '/test',
             working: true
-        } as DotCMSBasicContentlet;
+        } as DotCMSBasicContentlet);
 
         component.UserNoComponent = null;
 
@@ -85,11 +85,11 @@ describe('FallbackComponent', () => {
         // Create a Promise that resolves to MockComponent as UserNoComponent
         const mockComponentPromise = Promise.resolve(MockComponent) as DynamicComponentEntity;
         component.UserNoComponent = mockComponentPromise;
-        component.contentlet = {
+        spectator.setInput('contentlet', {
             contentType: 'testContentType',
             identifier: 'test-id',
             title: 'Test Title'
-        } as DotCMSBasicContentlet;
+        } as DotCMSBasicContentlet);
 
         spectator.detectChanges();
 
@@ -110,12 +110,12 @@ describe('FallbackComponent', () => {
 
         const mockComponentPromise = Promise.resolve(MockComponent) as DynamicComponentEntity;
         component.UserNoComponent = mockComponentPromise;
-        component.contentlet = mockContentlet;
+        spectator.setInput('contentlet', mockContentlet);
 
         spectator.detectChanges();
 
         // In this test setup, we're verifying the component configuration
         // rather than the actual rendering result
-        expect(component.contentlet).toEqual(mockContentlet);
+        expect(component.contentlet()).toEqual(mockContentlet);
     });
 });

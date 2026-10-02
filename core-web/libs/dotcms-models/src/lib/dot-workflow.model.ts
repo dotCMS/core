@@ -2,7 +2,8 @@ export interface DotCMSWorkflow {
     archived: boolean;
     creationDate: Date;
     defaultScheme: boolean;
-    description: string;
+    /** Null when the scheme has no description; the API omits rather than empties it. */
+    description: string | null;
     entryActionId: string | null;
     id: string;
     mandatory: boolean;
@@ -52,9 +53,12 @@ export interface DotProcessedWorkflowPayload {
 }
 
 export interface DotCMSWorkflowStatus {
-    scheme: DotCMSWorkflow;
-    step: WorkflowStep;
-    task: WorkflowTask;
+    /** Null for content that has not entered a workflow — like `step` and `task` below, the
+     *  endpoint sends null rather than omitting the key. */
+    scheme: DotCMSWorkflow | null;
+    /** Null for content that has not entered the workflow yet — no current step or task. */
+    step: WorkflowStep | null;
+    task: WorkflowTask | null;
     firstStep?: WorkflowStep;
 }
 
@@ -75,14 +79,16 @@ export interface WorkflowTask {
     belongsTo: string | null;
     createdBy: string;
     creationDate: number;
-    description: string;
+    description: string | null;
     dueDate: string | null;
     id: string;
     inode: string;
     languageId: number;
     modDate: number;
     new: boolean;
-    status: string;
+    /** Null for a task with no status — like the three nullable siblings above, the endpoint
+     *  sends null rather than omitting the key. */
+    status: string | null;
     title: string;
     webasset: string;
 }

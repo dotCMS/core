@@ -106,11 +106,17 @@ export function withSelectionAnchor() {
                     const wasLocked = s.$iframeLayoutLocked();
 
                     const selected = s.editorSelected();
-                    const selectedInode = selected?.payload?.contentlet?.inode;
+                    const selectedContentlet = selected?.payload?.contentlet;
+                    const selectedInode = selectedContentlet?.inode;
                     const selectedContainerId = selected?.payload?.container?.identifier;
                     const selectedContainerUuid = selected?.payload?.container?.uuid;
 
-                    if (!selectedInode || !selectedContainerId || !selectedContainerUuid) {
+                    if (
+                        !selectedContentlet ||
+                        !selectedInode ||
+                        !selectedContainerId ||
+                        !selectedContainerUuid
+                    ) {
                         if (wasLocked) {
                             s.setEditorState(EDITOR_STATE.IDLE);
                         }
@@ -173,8 +179,12 @@ export function withSelectionAnchor() {
                                 payload: {
                                     ...actionPayload,
                                     vtlFiles: actionPayload.vtlFiles ?? previousPayload?.vtlFiles,
+                                    // `selectedContentlet` is `previousPayload.contentlet`, already
+                                    // narrowed to present by the guard above. Spreading it as the
+                                    // base also gives the merge a complete `ContentletPayload`,
+                                    // which the optional `ActionPayload.contentlet` cannot.
                                     contentlet: {
-                                        ...previousPayload?.contentlet,
+                                        ...selectedContentlet,
                                         ...actionPayload.contentlet
                                     }
                                 }

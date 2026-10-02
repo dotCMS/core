@@ -38,9 +38,11 @@ export const LOGIN_LABELS = [
 export class DotLoginPageStateService {
     private loginService = inject(LoginService);
 
-    private dotLoginInformation$: BehaviorSubject<DotLoginInformation> = new BehaviorSubject(null);
+    /** Null until the login page state has been fetched. */
+    private dotLoginInformation$: BehaviorSubject<DotLoginInformation | null> =
+        new BehaviorSubject<DotLoginInformation | null>(null);
 
-    get(): Observable<DotLoginInformation> {
+    get(): Observable<DotLoginInformation | null> {
         return this.dotLoginInformation$.asObservable();
     }
 

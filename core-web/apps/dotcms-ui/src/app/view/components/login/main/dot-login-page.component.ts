@@ -3,7 +3,7 @@ import { RouterOutlet } from '@angular/router';
 
 import { CardModule } from 'primeng/card';
 
-import { map, take } from 'rxjs/operators';
+import { filter, map, take } from 'rxjs/operators';
 
 import { DotLoginUserSystemInformation } from '@dotcms/dotcms-models';
 
@@ -27,9 +27,11 @@ export class DotLoginPageComponent implements OnInit {
             .get()
             .pipe(
                 take(1),
-                map((x) => x?.entity)
+                // `entity` is absent until `set()` has fetched the login page state.
+                map((x) => x?.entity),
+                filter((entity): entity is DotLoginUserSystemInformation => !!entity)
             )
-            .subscribe((dotLoginUserSystemInformation: DotLoginUserSystemInformation) => {
+            .subscribe((dotLoginUserSystemInformation) => {
                 document.body.style.backgroundColor =
                     dotLoginUserSystemInformation.backgroundColor || '';
                 document.body.style.backgroundImage =

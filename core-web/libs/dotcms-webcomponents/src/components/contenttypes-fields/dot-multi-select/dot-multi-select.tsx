@@ -42,7 +42,7 @@ import { getDotAttributesFromElement, setDotAttributesToElement } from '../dot-f
 })
 export class DotMultiSelectComponent {
     @Element()
-    el: HTMLElement;
+    el!: HTMLElement;
 
     /** Value set from the dropdown option */
     @Prop({ mutable: true, reflect: true })
@@ -81,14 +81,14 @@ export class DotMultiSelectComponent {
     size = '3';
 
     @State()
-    _options: DotOption[];
+    _options!: DotOption[];
     @State()
-    status: DotFieldStatus;
+    status!: DotFieldStatus;
 
     @Event()
-    dotValueChange: EventEmitter<DotFieldValueEvent>;
+    dotValueChange!: EventEmitter<DotFieldValueEvent>;
     @Event()
-    dotStatusChange: EventEmitter<DotFieldStatusEvent>;
+    dotStatusChange!: EventEmitter<DotFieldStatusEvent>;
 
     _dotTouched = false;
     _dotPristine = true;
@@ -111,7 +111,7 @@ export class DotMultiSelectComponent {
     @Watch('options')
     optionsWatch(): void {
         const validOptions = checkProp<DotMultiSelectComponent, string>(this, 'options');
-        this._options = getDotOptionsFromFieldValue(validOptions);
+        this._options = getDotOptionsFromFieldValue(validOptions ?? '');
     }
 
     /**
@@ -145,7 +145,7 @@ export class DotMultiSelectComponent {
                         {this._options.map((item: DotOption) => {
                             return (
                                 <option
-                                    selected={this.value === item.value ? true : null}
+                                    selected={this.value === item.value ? true : undefined}
                                     value={item.value}>
                                     {item.label}
                                 </option>
@@ -163,8 +163,8 @@ export class DotMultiSelectComponent {
         this.optionsWatch();
     }
 
-    private shouldBeDisabled(): boolean {
-        return this.disabled ? true : null;
+    private shouldBeDisabled(): boolean | undefined {
+        return this.disabled ? true : undefined;
     }
 
     // Todo: find how to set proper TYPE in TS

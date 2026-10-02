@@ -55,20 +55,20 @@ describe('DotNotLicenseComponent', () => {
     });
 
     it('should set labels and attributes on Html elements', () => {
-        expect(spectator.query(byTestId('icon')).classList).toContain('pi');
-        expect(spectator.query(byTestId('icon')).classList).toContain('pi-update');
-        expect(spectator.query(byTestId('title')).textContent).toBe(
+        expect(spectator.query(byTestId('icon'))!.classList).toContain('pi');
+        expect(spectator.query(byTestId('icon'))!.classList).toContain('pi-update');
+        expect(spectator.query(byTestId('title'))!.textContent).toBe(
             messageServiceMock.get('portlet.title')
         );
         expect(
-            spectator.query(byTestId('description')).textContent.replace(/\s+/g, ' ').trim()
+            spectator.query(byTestId('description'))!.textContent.replace(/\s+/g, ' ').trim()
         ).toBe(
             'Enterprise Portlet is only available in dotCMS Enterprise Editions. For more information:'
         );
-        expect(spectator.query(byTestId('contact-us')).getAttribute('href')).toBe(
+        expect(spectator.query(byTestId('contact-us'))!.getAttribute('href')).toBe(
             'https://dotcms.com/contact-us/'
         );
-        expect(spectator.query(byTestId('request-a-trial')).getAttribute('href')).toBe(
+        expect(spectator.query(byTestId('request-a-trial'))!.getAttribute('href')).toBe(
             'https://dotcms.com/licensing/request-a-license-3/index'
         );
     });

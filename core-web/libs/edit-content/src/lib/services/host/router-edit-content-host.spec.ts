@@ -9,6 +9,7 @@ import { ActivatedRouteSnapshot, Router } from '@angular/router';
 import { DotMessageService } from '@dotcms/data-access';
 import { GlobalStore } from '@dotcms/store';
 
+import { EditContentHost } from './edit-content-host.model';
 import { RouterEditContentHost } from './router-edit-content-host';
 
 import {
@@ -99,7 +100,9 @@ describe('RouterEditContentHost', () => {
 
     it('reports that it does not navigate in place', () => {
         expect(host.inPlaceNavigation).toBe(false);
-        expect(host.inPlaceNavigation$).toBeUndefined();
+        // Read through the interface: `inPlaceNavigation$` is optional on `EditContentHost` and
+        // this implementation deliberately does not provide it, which is what the test asserts.
+        expect((host as EditContentHost).inPlaceNavigation$).toBeUndefined();
     });
 
     it('exposes the shared nav-store trail', () => {

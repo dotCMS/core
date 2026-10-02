@@ -40,7 +40,9 @@ function colorOf(dataset: ChartData<'line'>['datasets'][number]): string | null 
 export class DotExperimentsReportsChartComponent {
     readonly $isEmpty = input(true, { alias: 'isEmpty' });
     readonly $isLoading = input(true, { alias: 'isLoading' });
-    readonly $config = input<{ xAxisLabel: string; yAxisLabel: string }>(null, { alias: 'config' });
+    readonly $config = input<{ xAxisLabel: string; yAxisLabel: string } | null>(null, {
+        alias: 'config'
+    });
     readonly $data = input<ChartData<'line'> | null>(null, { alias: 'data' });
     readonly $isLinearAxis = input(false, { alias: 'isLinearAxis' });
 

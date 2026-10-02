@@ -1,5 +1,4 @@
-import { NgStyle } from '@angular/common';
-import { Component, inject, Input, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectionStrategy, input } from '@angular/core';
 
 import { EMPTY_CONTAINER_STYLE_ANGULAR } from '@dotcms/uve/internal';
 
@@ -14,18 +13,17 @@ import { DotCMSStore } from '../../../../../../store/dotcms.store';
  */
 @Component({
     selector: 'dotcms-container-not-found',
-    imports: [NgStyle],
     changeDetection: ChangeDetectionStrategy.Eager,
     template: `
         @if ($isDevMode()) {
-            <div [attr.data-testid]="'container-not-found'" [ngStyle]="emptyContainerStyle">
-                This container with identifier {{ identifier }} was not found.
+            <div [attr.data-testid]="'container-not-found'" [style]="emptyContainerStyle">
+                This container with identifier {{ identifier() }} was not found.
             </div>
         }
     `
 })
 export class ContainerNotFoundComponent implements OnInit {
-    @Input() identifier = 'unknown';
+    readonly identifier = input('unknown');
 
     #dotcmsContextService = inject(DotCMSStore);
 
@@ -34,7 +32,7 @@ export class ContainerNotFoundComponent implements OnInit {
 
     ngOnInit() {
         if (this.$isDevMode()) {
-            console.error(`Container with identifier ${this.identifier} not found`);
+            console.error(`Container with identifier ${this.identifier()} not found`);
         }
     }
 }

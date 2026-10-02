@@ -4,11 +4,11 @@ import {
     Directive,
     ElementRef,
     forwardRef,
-    Input,
     OnDestroy,
     OnInit,
     Renderer2,
-    inject
+    inject,
+    input
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
@@ -29,7 +29,7 @@ import { getEditorElement } from '../../utils';
     standalone: false
 })
 export class EditorDirective implements OnInit, ControlValueAccessor, OnDestroy {
-    @Input() editor!: Editor;
+    readonly editor = input.required<Editor>();
 
     private readonly el = inject(ElementRef<HTMLElement>);
     private readonly _renderer = inject(Renderer2);
@@ -49,7 +49,7 @@ export class EditorDirective implements OnInit, ControlValueAccessor, OnDestroy 
         }
 
         // v3 replaced the boolean second arg with an options object.
-        this.editor.chain().setContent(value, { emitUpdate: true }).run();
+        this.editor().chain().setContent(value, { emitUpdate: true }).run();
     }
 
     // Registers a callback function that is called when the control's value changes in the UI.
@@ -64,7 +64,7 @@ export class EditorDirective implements OnInit, ControlValueAccessor, OnDestroy 
 
     // Called by the forms api to enable or disable the element
     setDisabledState(isDisabled: boolean): void {
-        this.editor.setEditable(!isDisabled);
+        this.editor().setEditable(!isDisabled);
         this._renderer.setProperty(this.el.nativeElement, 'disabled', isDisabled);
     }
 
@@ -73,11 +73,12 @@ export class EditorDirective implements OnInit, ControlValueAccessor, OnDestroy 
             return;
         }
 
-        this.onChange(this.editor.getJSON() as JSONContent);
+        this.onChange(this.editor().getJSON() as JSONContent);
     };
 
     ngOnInit(): void {
-        if (!this.editor) {
+        const editor = this.editor();
+        if (!editor) {
             throw new Error('Required: Input `editor`');
         }
 
@@ -86,30 +87,30 @@ export class EditorDirective implements OnInit, ControlValueAccessor, OnDestroy 
         this.el.nativeElement.innerHTML = '';
 
         // insert the editor in the dom
-        const editorElement = getEditorElement(this.editor);
+        const editorElement = getEditorElement(editor);
         if (editorElement?.firstChild) {
             this.el.nativeElement.appendChild(editorElement.firstChild as ChildNode);
         }
 
         // update the options for the editor
-        this.editor.setOptions({ element: this.el.nativeElement });
+        editor.setOptions({ element: this.el.nativeElement });
 
         // update content to the editor
         if (innerHTML) {
             // v3 replaced the boolean second arg with an options object.
-            this.editor.chain().setContent(innerHTML, { emitUpdate: false }).run();
+            editor.chain().setContent(innerHTML, { emitUpdate: false }).run();
         }
 
         // register blur handler to update `touched` property
-        this.editor.on('blur', () => {
+        editor.on('blur', () => {
             this.onTouched();
         });
 
         // register transaction handler to emit changes on update
-        this.editor.on('transaction', this.handleChange);
+        editor.on('transaction', this.handleChange);
     }
 
     ngOnDestroy(): void {
-        this.editor.destroy();
+        this.editor().destroy();
     }
 }

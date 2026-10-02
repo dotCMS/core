@@ -22,7 +22,7 @@ export class DotAvatarDirective implements OnInit {
     @HostListener('onImageError')
     onImageError() {
         this.avatar.label = this.text[0]?.toUpperCase();
-        this.avatar.image = null;
+        this.avatar.image = undefined;
         this.cd.detectChanges();
     }
 }

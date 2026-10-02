@@ -1,23 +1,30 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
-
-import { of } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { vi } from 'vitest';
 
 import { TestBed, waitForAsync } from '@angular/core/testing';
-import { ActivatedRouteSnapshot, ParamMap } from '@angular/router';
+import { ActivatedRouteSnapshot } from '@angular/router';
 
 import { DotCreateContentletResolver } from './dot-create-contentlet.resolver.service';
 
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
 
+// A plain object rather than `vi.fn<T>(name, methods)`: that shape is `jasmine.createSpyObj`
+// migrated mechanically, and `vi.fn` accepts neither argument. The spec only assigns and reads
+// `paramMap` / `queryParamMap`.
 const activatedRouteSnapshotMock = {
-    toString: vi.fn(),
-    paramMap: {} as ParamMap,
-    queryParamMap: {} as ParamMap
-} as unknown as ActivatedRouteSnapshot;
+    paramMap: {} as { get?: () => string | null },
+    queryParamMap: {} as { get?: () => string | null }
+} as unknown as ActivatedRouteSnapshot & {
+    paramMap: { get?: () => string | null };
+    queryParamMap: { get?: () => string | null };
+};
 
 class DotContentletEditorServiceMock {
-    getActionUrl(_url: string) {}
+    // Matches the real service, which returns `Observable<string>`. Declared `void`, every
+    // `.mockReturnValue(of(...))` below was assigning an observable to a method that returns nothing.
+    getActionUrl(_url: string): Observable<string> {
+        return of('');
+    }
 }
 
 describe('DotCreateContentletResolver', () => {
@@ -45,7 +52,7 @@ describe('DotCreateContentletResolver', () => {
     it('should get and return the action url', () => {
         vi.spyOn(dotContentletEditorService, 'getActionUrl').mockReturnValue(of('urlTest'));
 
-        dotCreateContentletResolver.resolve(activatedRouteSnapshotMock).subscribe((url: string) => {
+        dotCreateContentletResolver.resolve(activatedRouteSnapshotMock).subscribe((url) => {
             expect(url).toEqual('urlTest');
         });
     });
@@ -54,7 +61,7 @@ describe('DotCreateContentletResolver', () => {
         activatedRouteSnapshotMock.queryParamMap.get = () => 'inode-1';
         vi.spyOn(dotContentletEditorService, 'getActionUrl').mockReturnValue(of('urlTest'));
 
-        dotCreateContentletResolver.resolve(activatedRouteSnapshotMock).subscribe((url: string) => {
+        dotCreateContentletResolver.resolve(activatedRouteSnapshotMock).subscribe((url) => {
             expect(url).toEqual('urlTest?folder=inode-1');
         });
     });
@@ -63,7 +70,7 @@ describe('DotCreateContentletResolver', () => {
         activatedRouteSnapshotMock.queryParamMap.get = () => 'inode-1';
         vi.spyOn(dotContentletEditorService, 'getActionUrl').mockReturnValue(of('urlTest?foo=bar'));
 
-        dotCreateContentletResolver.resolve(activatedRouteSnapshotMock).subscribe((url: string) => {
+        dotCreateContentletResolver.resolve(activatedRouteSnapshotMock).subscribe((url) => {
             expect(url).toEqual('urlTest?foo=bar&folder=inode-1');
         });
     });
@@ -72,7 +79,7 @@ describe('DotCreateContentletResolver', () => {
         activatedRouteSnapshotMock.queryParamMap.get = () => 'a b/c';
         vi.spyOn(dotContentletEditorService, 'getActionUrl').mockReturnValue(of('urlTest'));
 
-        dotCreateContentletResolver.resolve(activatedRouteSnapshotMock).subscribe((url: string) => {
+        dotCreateContentletResolver.resolve(activatedRouteSnapshotMock).subscribe((url) => {
             expect(url).toEqual('urlTest?folder=a%20b%2Fc');
         });
     });
@@ -80,7 +87,7 @@ describe('DotCreateContentletResolver', () => {
     it('should not append anything when there is no folder query param', () => {
         vi.spyOn(dotContentletEditorService, 'getActionUrl').mockReturnValue(of('urlTest'));
 
-        dotCreateContentletResolver.resolve(activatedRouteSnapshotMock).subscribe((url: string) => {
+        dotCreateContentletResolver.resolve(activatedRouteSnapshotMock).subscribe((url) => {
             expect(url).toEqual('urlTest');
         });
     });

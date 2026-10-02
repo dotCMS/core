@@ -11,27 +11,27 @@
             {{ 'History' | dm }}
         </p-tab>
     </p-tablist>
-    <p-tabpanels class="p-0 overflow-hidden grow basis-0">
-        <p-tabpanel [value]="0" data-testId="builder" class="h-full block">
+    <p-tabpanels class="grow basis-0 overflow-hidden p-0">
+        <p-tabpanel [value]="0" data-testId="builder" class="block h-full">
             @switch (item.type) {
                 @case ('advanced') {
                     <dot-template-advanced
                         (updateTemplate)="updateTemplate.emit($event)"
                         (save)="save.emit($event)"
                         (cancel)="cancel.emit()"
-                        [didTemplateChanged]="didTemplateChanged"
+                        [didTemplateChanged]="didTemplateChanged()"
                         [body]="item.body" />
                 }
                 @case ('design') {
                     <dotcms-template-builder-lib
-                        class="h-full overflow-hidden flex flex-col"
+                        class="flex h-full flex-col overflow-hidden"
                         (templateChange)="onTemplateItemChange($event)"
                         [layout]="item.layout"
                         [template]="{
-                            themeId: lastTemplate.theme ?? lastTemplate.themeId,
-                            identifier: lastTemplate.identifier
+                            themeId: lastTemplateThemeId,
+                            identifier: lastTemplateIdentifier
                         }"
-                        [containerMap]="item.containers"
+                        [containerMap]="item.containers ?? {}"
                         data-testId="new-template-builder">
                         <dot-global-message toolbar-left />
                     </dotcms-template-builder-lib>

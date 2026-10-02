@@ -27,28 +27,29 @@
                 }
             </div>
 
-            @if ($dialogActions() && $stepsVisible()) {
-                <footer class="dot-wizard__footer mt-5">
-                    @if ($dialogActions().cancel) {
-                        <button
-                            (click)="$dialogActions().cancel?.action()"
-                            [disabled]="$dialogActions().cancel?.disabled"
-                            [label]="$dialogActions().cancel?.label"
-                            class="dialog__button-cancel p-button-outlined"
-                            data-testid="dialog-close-button"
-                            pButton></button>
-                    }
-                    @if ($dialogActions().accept) {
-                        <button
-                            (click)="$dialogActions().accept?.action()"
-                            [disabled]="$dialogActions().accept?.disabled"
-                            [label]="$dialogActions().accept?.label"
-                            [loading]="isSaving"
-                            class="dialog__button-accept"
-                            data-testid="dialog-accept-button"
-                            pButton></button>
-                    }
-                </footer>
+            @if ($dialogActions(); as actions) {
+                @if ($stepsVisible()) {
+                    <footer class="dot-wizard__footer mt-5">
+                        @if (actions.cancel; as cancel) {
+                            <button
+                                (click)="cancel.action?.()"
+                                [disabled]="cancel.disabled"
+                                [label]="cancel.label"
+                                class="dialog__button-cancel p-button-outlined"
+                                data-testid="dialog-close-button"
+                                pButton></button>
+                        }
+                        @if (actions.accept; as accept) {
+                            <button
+                                (click)="accept.action?.()"
+                                [disabled]="accept.disabled"
+                                [label]="accept.label"
+                                class="dialog__button-accept"
+                                data-testid="dialog-accept-button"
+                                pButton></button>
+                        }
+                    </footer>
+                }
             }
         </div>
     }

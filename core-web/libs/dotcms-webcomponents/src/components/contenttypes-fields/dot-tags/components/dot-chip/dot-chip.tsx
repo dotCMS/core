@@ -6,7 +6,7 @@ import { Component, Prop, Element, Event, EventEmitter, h, Host } from '@stencil
 })
 export class DotChipComponent {
     @Element()
-    el: HTMLElement;
+    el!: HTMLElement;
 
     /** Chip's label */
     @Prop({ reflect: true })
@@ -21,7 +21,7 @@ export class DotChipComponent {
     disabled = false;
 
     @Event()
-    remove: EventEmitter<String>;
+    remove!: EventEmitter<String>;
 
     render() {
         const label = this.label ? `${this.deleteLabel} ${this.label}` : null;

@@ -11,17 +11,17 @@ This web component remains only for Stencil-internal use
 
 ## Properties
 
-| Property             | Attribute              | Description | Type                | Default     |
-| -------------------- | ---------------------- | ----------- | ------------------- | ----------- |
-| `alt`                | `alt`                  |             | `string`            | `''`        |
-| `backgroundImage`    | `background-image`     |             | `boolean`           | `false`     |
-| `contentlet`         | --                     |             | `DotContentletItem` | `undefined` |
-| `fieldVariable`      | `field-variable`       |             | `string`            | `''`        |
-| `height`             | `height`               |             | `string`            | `''`        |
-| `iconSize`           | `icon-size`            |             | `string`            | `''`        |
-| `playableVideo`      | `playable-video`       |             | `boolean`           | `false`     |
-| `showVideoThumbnail` | `show-video-thumbnail` |             | `boolean`           | `true`      |
-| `width`              | `width`                |             | `string`            | `''`        |
+| Property                  | Attribute              | Description                                                                                                                                                                                                                                                          | Type                | Default     |
+| ------------------------- | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- | ----------- |
+| `alt`                     | `alt`                  |                                                                                                                                                                                                                                                                      | `string`            | `''`        |
+| `backgroundImage`         | `background-image`     |                                                                                                                                                                                                                                                                      | `boolean`           | `false`     |
+| `contentlet` _(required)_ | --                     | Required in practice, not optional: `componentWillLoad` destructures it on the first line, so a missing contentlet has always thrown rather than degraded. Declared with a definite assignment so the eighteen accesses below read it directly, as they already did. | `DotContentletItem` | `undefined` |
+| `fieldVariable`           | `field-variable`       |                                                                                                                                                                                                                                                                      | `string`            | `''`        |
+| `height`                  | `height`               |                                                                                                                                                                                                                                                                      | `string`            | `''`        |
+| `iconSize`                | `icon-size`            |                                                                                                                                                                                                                                                                      | `string`            | `''`        |
+| `playableVideo`           | `playable-video`       |                                                                                                                                                                                                                                                                      | `boolean`           | `false`     |
+| `showVideoThumbnail`      | `show-video-thumbnail` |                                                                                                                                                                                                                                                                      | `boolean`           | `true`      |
+| `width`                   | `width`                |                                                                                                                                                                                                                                                                      | `string`            | `''`        |
 
 
 ## Dependencies

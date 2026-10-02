@@ -2,6 +2,7 @@ import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest
 import { Subject, of, throwError } from 'rxjs';
 import { Mock, Mocked, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { HttpErrorResponse } from '@angular/common/http';
 import { signal } from '@angular/core';
 
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
@@ -181,7 +182,7 @@ describe('DotCMSPagesStore', () => {
             });
 
             it('should set status=error and call httpErrorManagerService.handle(error) when request fails', () => {
-                const error = new Error('Pages failed');
+                const error = new HttpErrorResponse({ status: 500, statusText: 'Pages failed' });
                 dotPageListService.getPages.mockReturnValueOnce(throwError(() => error));
 
                 store.getPages({ search: 'x' });
@@ -295,7 +296,10 @@ describe('DotCMSPagesStore', () => {
                 dotPageListService.getPages.mockReturnValueOnce(of(createESResponse([p1, p2], 2)));
                 store.getPages();
 
-                const error = new Error('Single page failed');
+                const error = new HttpErrorResponse({
+                    status: 500,
+                    statusText: 'Single page failed'
+                });
                 dotPageListService.getSinglePage.mockReturnValueOnce(throwError(() => error));
 
                 store.updatePageNode('page-2');

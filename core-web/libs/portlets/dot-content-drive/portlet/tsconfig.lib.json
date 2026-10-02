@@ -7,6 +7,23 @@
         "inlineSources": true,
         "types": []
     },
-    "exclude": ["src/**/*.spec.ts", "src/test-setup.ts", "jest.config.ts", "src/**/*.test.ts"],
+    // Test fixtures are excluded alongside the specs. `src/lib/shared/mocks.ts` imports
+    // `@dotcms/utils-testing`, which references `jest`, and this config sets `types: []` — so as a
+    // root file of the production program it dragged in 27 `Cannot find name 'jest'` errors that had
+    // nothing to do with this library. Same defect as `template-builder` and `edit-content`.
+    //
+    // This only removes it as a *root* file: `exclude` filters the `include` glob and does not stop
+    // tsc pulling a file in when something imports it. Nothing in production imports these, which is
+    // what makes it safe — and they are still fully checked by tsconfig.spec.json.
+    "exclude": [
+        "src/**/*.spec.ts",
+        "src/test-setup.ts",
+        "jest.config.ts",
+        "src/**/*.test.ts",
+        "src/**/mocks.ts",
+        "src/**/mocks/*.ts",
+        "src/**/*.mock.ts",
+        "src/**/*.mocks.ts"
+    ],
     "include": ["src/**/*.ts"]
 }

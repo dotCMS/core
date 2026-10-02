@@ -195,7 +195,7 @@ describe('DotContentDriveShellComponent', () => {
                 getFeatureFlags: vi.fn().mockReturnValue(of({}))
             }),
             mockProvider(DotMessageService, {
-                get: vi.fn().mockImplementation((key: string) => key)
+                get: vi.fn().mockImplementation((key) => key as string)
             }),
             mockProvider(DotContentDriveNavigationService, {
                 editContent: vi.fn(),
@@ -326,7 +326,11 @@ describe('DotContentDriveShellComponent', () => {
                     // is gated, which is all the shell's own tests need.
                     hasPushPublishEnvironments: vi.fn().mockReturnValue(false),
                     patchFilters: vi.fn(),
-                    contextMenu: vi.fn().mockReturnValue(null),
+                    contextMenu: vi.fn().mockReturnValue({
+                        triggeredEvent: null,
+                        contentlet: null,
+                        showAddToBundle: false
+                    }),
                     dialog: dialogSignal,
                     dialogDrillDown: dialogDrillDownSignal,
                     // Read by the toolbar, which the shell renders for real.
@@ -2139,7 +2143,7 @@ describe('DotContentDriveShellComponent', () => {
             const listView = spectator.query(DotFolderListViewComponent);
 
             expect(listView).toBeTruthy();
-            expect(listView.$selection()).toEqual([MOCK_ITEMS[0]]);
+            expect(listView!.$selection()).toEqual([MOCK_ITEMS[0]]);
 
             // Not asserting the clear here: `selectedItems` is mocked as a plain vi.fn rather than a
             // signal, so changing its return value cannot notify change detection. What matters is
@@ -2366,7 +2370,7 @@ describe('DotContentDriveShellComponent', () => {
             // `restrictionLabel` is what keeps the default descriptions rendering.
             openViaButton(TARGET_FOLDER_DATA);
 
-            expect(spectator.query(DotUploadTypeSelectorComponent).$restrictionLabel()).toBe('');
+            expect(spectator.query(DotUploadTypeSelectorComponent)!.$restrictionLabel()).toBe('');
         });
 
         it('should open the upload menu with the selected folder when the upload button is clicked', () => {
@@ -2374,7 +2378,7 @@ describe('DotContentDriveShellComponent', () => {
 
             const selector = spectator.query(DotUploadTypeSelectorComponent);
             expect(selector).toBeTruthy();
-            expect(selector.$targetFolder()).toEqual(TARGET_FOLDER_DATA);
+            expect(selector!.$targetFolder()).toEqual(TARGET_FOLDER_DATA);
             expect(uploadService.uploadFilesByBaseType).not.toHaveBeenCalled();
         });
 
@@ -2390,8 +2394,8 @@ describe('DotContentDriveShellComponent', () => {
 
             const selector = spectator.query(DotUploadTypeSelectorComponent);
             expect(selector).toBeTruthy();
-            expect(selector.$files()).toBe(files);
-            expect(selector.$targetFolder()).toEqual(TARGET_FOLDER_DATA);
+            expect(selector!.$files()).toBe(files);
+            expect(selector!.$targetFolder()).toEqual(TARGET_FOLDER_DATA);
             expect(uploadService.uploadFilesByBaseType).not.toHaveBeenCalled();
         });
 
@@ -4739,8 +4743,11 @@ describe('DotContentDriveShellComponent', () => {
             expect(store.setPath).toHaveBeenCalledWith('/');
         });
 
-        it('should not set path when selectedNode is null', () => {
-            store.selectedNode.mockReturnValue(null);
+        it('should not set path when the selected node carries no data', () => {
+            // Not `null`: the state seeds `ALL_FOLDER` and `setSelectedNode` takes a required node,
+            // so a missing node is unreachable. A node without `data` is the case the effect's
+            // `!selectedNode?.data` guard actually exists for.
+            store.selectedNode.mockReturnValue({ key: 'no-data', label: '', leaf: true });
             store.setPath.mockClear();
 
             spectator.detectChanges();
@@ -5370,7 +5377,7 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
                 getFeatureFlags: vi.fn().mockReturnValue(of({}))
             }),
             mockProvider(DotMessageService, {
-                get: vi.fn().mockImplementation((key: string) => key)
+                get: vi.fn().mockImplementation((key) => key as string)
             }),
             mockProvider(DotContentDriveNavigationService, {
                 editContent: vi.fn(),
@@ -5452,7 +5459,11 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
                         .mockReturnValue({ field: 'modDate', order: DotContentDriveSortOrder.ASC }),
                     pages: vi.fn().mockReturnValue([DEFAULT_PAGE]),
                     selectedItems: vi.fn().mockReturnValue([]),
-                    contextMenu: vi.fn().mockReturnValue(null),
+                    contextMenu: vi.fn().mockReturnValue({
+                        triggeredEvent: null,
+                        contentlet: null,
+                        showAddToBundle: false
+                    }),
                     dialog: signal(undefined),
                     dragItems: vi.fn().mockReturnValue({ folders: [], contentlets: [] }),
                     userSearchableFields: vi.fn().mockReturnValue([]),
@@ -5546,7 +5557,7 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
         });
 
     it('opens the panel by identifier from a shared ?editContent= link on construction', () => {
-        deepLinkQueryParams.editContent = 'id-1';
+        deepLinkQueryParams['editContent'] = 'id-1';
         mountShell();
 
         expect(openEditByIdentifier).toHaveBeenCalledWith('id-1', undefined);
@@ -5555,23 +5566,23 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
     it('forwards the language from the link so the exact version reopens', () => {
         // An identifier has one version per language, so without this the resolver can only guess —
         // and it runs before the store's languages request has resolved.
-        deepLinkQueryParams.editContent = 'id-1';
-        deepLinkQueryParams.editContentLang = '2';
+        deepLinkQueryParams['editContent'] = 'id-1';
+        deepLinkQueryParams['editContentLang'] = '2';
         mountShell();
 
         expect(openEditByIdentifier).toHaveBeenCalledWith('id-1', 2);
     });
 
     it('ignores a non-numeric language on the link', () => {
-        deepLinkQueryParams.editContent = 'id-1';
-        deepLinkQueryParams.editContentLang = 'nope';
+        deepLinkQueryParams['editContent'] = 'id-1';
+        deepLinkQueryParams['editContentLang'] = 'nope';
         mountShell();
 
         expect(openEditByIdentifier).toHaveBeenCalledWith('id-1', undefined);
     });
 
     it('ignores the non-shareable `new` marker on construction', () => {
-        deepLinkQueryParams.editContent = 'new';
+        deepLinkQueryParams['editContent'] = 'new';
         mountShell();
 
         expect(openEditByIdentifier).not.toHaveBeenCalled();

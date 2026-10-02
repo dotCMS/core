@@ -82,7 +82,7 @@ export class DotGravatarDirective {
     #setLetter(): void {
         const letter = this.$firstLetter();
 
-        this.#avatar.image = null;
+        this.#avatar.image = undefined;
         this.#avatar.label = letter;
         this.#cd.detectChanges();
     }
@@ -93,7 +93,7 @@ export class DotGravatarDirective {
      * @param avatar - The URL of the avatar image
      */
     #setAvatar(avatar: string): void {
-        this.#avatar.label = null;
+        this.#avatar.label = undefined;
         this.#avatar.image = avatar;
         this.#cd.detectChanges();
     }
@@ -112,7 +112,7 @@ export class DotGravatarDirective {
      * If the Gravatar URL is not provided, sets the avatar to display a letter.
      * @param gravatarUrl - The URL of the Gravatar image
      */
-    readonly handleGravatarQuery = signalMethod<string>((gravatarUrl) => {
+    readonly handleGravatarQuery = signalMethod<string | null>((gravatarUrl) => {
         if (gravatarUrl) {
             this.#setAvatar(gravatarUrl);
         } else {

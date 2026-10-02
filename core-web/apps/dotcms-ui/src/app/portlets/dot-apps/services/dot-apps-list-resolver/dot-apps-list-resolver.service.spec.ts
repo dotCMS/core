@@ -40,9 +40,11 @@ describe('DotAppsListResolver', () => {
     it('should get and return apps list', () => {
         vi.spyOn(dotAppsService, 'get').mockReturnValue(of(appsResponse));
 
-        dotAppsListResolver.resolve(activatedRouteSnapshotMock).subscribe((apps: DotApp[]) => {
-            expect(apps).toEqual(appsResponse);
-        });
+        dotAppsListResolver
+            .resolve(activatedRouteSnapshotMock)
+            .subscribe((apps: DotApp[] | null) => {
+                expect(apps).toEqual(appsResponse);
+            });
         expect(dotAppsService.get).toHaveBeenCalledTimes(1);
     });
 });

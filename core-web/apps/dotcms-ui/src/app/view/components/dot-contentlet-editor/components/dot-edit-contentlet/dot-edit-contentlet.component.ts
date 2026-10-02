@@ -32,13 +32,13 @@ export class DotEditContentletComponent implements OnInit {
     private dotContentletEditorService = inject(DotContentletEditorService);
 
     @Input()
-    inode: string;
+    inode!: string;
     @Output()
     shutdown: EventEmitter<unknown> = new EventEmitter();
     @Output()
-    custom: EventEmitter<unknown> = new EventEmitter();
+    custom: EventEmitter<CustomEvent> = new EventEmitter();
 
-    url$: Observable<string>;
+    url$!: Observable<string>;
 
     ngOnInit() {
         this.url$ = this.dotContentletEditorService.editUrl$;

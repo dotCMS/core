@@ -52,5 +52,5 @@ export class DotEditContentRelationshipFieldComponent extends BaseWrapperField<C
      *
      * @memberof DotEditContentRelationshipFieldComponent
      */
-    $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
+    $contentlet = input.required<DotCMSContentlet | null>({ alias: 'contentlet' });
 }

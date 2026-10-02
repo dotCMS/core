@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
-import { DynamicControl } from './model';
+import { BubbleFormValues, DynamicControl } from './model';
 
 @Component({
     selector: 'dot-bubble-form',
@@ -20,34 +20,44 @@ import { DynamicControl } from './model';
     standalone: false
 })
 export class BubbleFormComponent {
-    @ViewChildren('group') inputs: QueryList<ElementRef>;
+    // Populated by Angular after the first change detection pass over the `@if (form)` block.
+    @ViewChildren('group') inputs!: QueryList<ElementRef>;
 
-    @Output() formValues = new EventEmitter();
+    @Output() formValues = new EventEmitter<BubbleFormValues>();
     @Output() hide = new EventEmitter<boolean>();
 
-    options: { customClass: string } = null;
-    dynamicControls: DynamicControl<unknown>[] = [];
-    form: FormGroup;
+    // Null until `buildForm` runs, and reset to null by `cleanForm`. The template gates the
+    // whole form on `@if (form)`, so the nullable declaration matches what it already handles.
+    options: { customClass: string } | null = null;
+    dynamicControls: DynamicControl<string | boolean>[] = [];
+    form: FormGroup | null = null;
 
     private readonly fb = inject(FormBuilder);
 
     onSubmit() {
-        this.formValues.emit({ ...this.form.value });
+        this.formValues.emit({ ...this.form?.value });
     }
 
-    setFormValues(values) {
-        this.form.setValue(values);
+    setFormValues(values: BubbleFormValues) {
+        this.form?.setValue(values);
     }
 
-    buildForm(controls: DynamicControl<unknown>[]) {
+    buildForm(controls: DynamicControl<string | boolean>[]) {
         this.dynamicControls = controls;
-        this.form = this.fb.group({});
+        const form = this.fb.group({});
         this.dynamicControls.forEach((control) => {
-            this.form.addControl(
+            // `key` is optional on DynamicControl; skipping is the only sane option, since
+            // `addControl` was previously being handed `undefined` as a control name.
+            if (!control.key) {
+                return;
+            }
+
+            form.addControl(
                 control.key,
                 this.fb.control(control.value || null, control.required ? Validators.required : [])
             );
         });
+        this.form = form;
     }
 
     cleanForm() {

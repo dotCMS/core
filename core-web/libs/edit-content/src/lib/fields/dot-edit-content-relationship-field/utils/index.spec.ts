@@ -1,3 +1,4 @@
+import { ContentTypeRelationshipField } from '@dotcms/dotcms-models';
 import { createFakeRelationshipField } from '@dotcms/utils-testing';
 
 import {
@@ -91,9 +92,11 @@ describe('Relationship Field Utils', () => {
 
         it('should return null when relationships property is missing', () => {
             const field = createFakeRelationshipField({
+                // Deliberately invalid: `relationships` is required on a relationship field.
+                // This is the "missing relationships" path the function guards against.
                 contentTypeId: null,
                 relationships: null
-            });
+            } as unknown as Partial<ContentTypeRelationshipField>);
 
             const result = getContentTypeIdFromRelationship(field);
             expect(result).toBeNull();
@@ -101,8 +104,9 @@ describe('Relationship Field Utils', () => {
 
         it('should return null when velocityVar is missing', () => {
             const field = createFakeRelationshipField({
+                // Deliberately invalid, as above.
                 relationships: null
-            });
+            } as unknown as Partial<ContentTypeRelationshipField>);
 
             const result = getContentTypeIdFromRelationship(field);
             expect(result).toBeNull();

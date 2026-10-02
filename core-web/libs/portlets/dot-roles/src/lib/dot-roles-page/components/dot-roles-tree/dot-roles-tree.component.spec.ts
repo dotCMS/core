@@ -58,8 +58,7 @@ describe('DotRolesTreeComponent', () => {
             mockProvider(ConfirmationService, {
                 confirm: vi.fn().mockImplementation((cfg) => cfg.accept?.()),
                 requireConfirmation$: EMPTY,
-                accept: EMPTY,
-                reject: EMPTY
+                accept: EMPTY
             })
         ],
         providers: [{ provide: DotMessageService, useValue: new MockDotMessageService(MESSAGES) }]

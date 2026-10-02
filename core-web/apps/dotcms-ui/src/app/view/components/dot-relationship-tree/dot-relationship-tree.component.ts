@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnChanges, ChangeDetectionStrategy, input } from '@angular/core';
 
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotIconComponent } from '@dotcms/ui';
@@ -11,12 +11,12 @@ import { DotIconComponent } from '@dotcms/ui';
     imports: [DotIconComponent]
 })
 export class DotRelationshipTreeComponent implements OnChanges {
-    @Input() velocityVar: string;
-    @Input() contentType: DotCMSContentType;
-    @Input() isParentField: boolean;
+    readonly velocityVar = input<string>();
+    readonly contentType = input<DotCMSContentType>();
+    readonly isParentField = input<boolean>();
 
-    child: string;
-    parent: string;
+    child!: string;
+    parent!: string;
 
     ngOnChanges(): void {
         this.setValues();
@@ -27,10 +27,10 @@ export class DotRelationshipTreeComponent implements OnChanges {
      * @memberof DotRelationshipTreeComponent
      */
     setValues(): void {
-        const [relatedContentType] = this.velocityVar?.split('.') || '';
-        const contentTypeName = this.contentType?.name;
+        const [relatedContentType] = this.velocityVar()?.split('.') || '';
+        const contentTypeName = this.contentType()?.name ?? '';
 
-        this.child = this.isParentField ? relatedContentType : contentTypeName;
-        this.parent = this.isParentField ? contentTypeName : relatedContentType;
+        this.child = this.isParentField() ? relatedContentType : contentTypeName;
+        this.parent = this.isParentField() ? contentTypeName : relatedContentType;
     }
 }

@@ -1,5 +1,5 @@
 import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
-import { vi } from 'vitest';
+import { afterEach, vi } from 'vitest';
 
 import { Injector } from '@angular/core';
 

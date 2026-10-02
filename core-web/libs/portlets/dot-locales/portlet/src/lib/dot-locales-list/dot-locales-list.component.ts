@@ -10,7 +10,7 @@ import { ChipModule } from 'primeng/chip';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmPopupModule } from 'primeng/confirmpopup';
 import { ContextMenu, ContextMenuModule } from 'primeng/contextmenu';
-import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { DialogService } from 'primeng/dynamicdialog';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
@@ -79,7 +79,7 @@ export class DotLocalesListComponent implements OnInit {
     openEditDialog(locale: DotLocaleRow | null, vm: DotLocaleListViewModel): void {
         const localeToEdit = locale ? vm.locales.find((l) => l.id === locale.id) : null;
 
-        const dialogRef: DynamicDialogRef = this.#dialogService.open(DotLocaleCreateEditComponent, {
+        const dialogRef = this.#dialogService.open(DotLocaleCreateEditComponent, {
             closable: true,
             closeOnEscape: true,
             draggable: false,
@@ -95,7 +95,7 @@ export class DotLocalesListComponent implements OnInit {
             }
         });
 
-        dialogRef.onClose
+        dialogRef?.onClose
             .pipe(
                 take(1),
                 filter((result) => result)
@@ -173,29 +173,26 @@ export class DotLocalesListComponent implements OnInit {
         acceptLabel: string,
         action: () => void
     ): void {
-        const dialogRef: DynamicDialogRef = this.#dialogService.open(
-            DotLocaleConfirmationDialogComponent,
-            {
-                width: '500px',
-                header: this.#dotMessageService.get(
-                    headerLabel,
+        const dialogRef = this.#dialogService.open(DotLocaleConfirmationDialogComponent, {
+            width: '500px',
+            header: this.#dotMessageService.get(
+                headerLabel,
+                `${locale.language} (${getLocaleISOCode(locale)})`
+            ),
+            data: {
+                acceptLabel: this.#dotMessageService.get(acceptLabel),
+                icon: 'warning',
+                ISOCode: getLocaleISOCode(locale),
+                locale,
+                message: this.#dotMessageService.get(
+                    messageLabel,
+                    `${defaultLocale.language} (${getLocaleISOCode(defaultLocale)})`,
                     `${locale.language} (${getLocaleISOCode(locale)})`
-                ),
-                data: {
-                    acceptLabel: this.#dotMessageService.get(acceptLabel),
-                    icon: 'warning',
-                    ISOCode: getLocaleISOCode(locale),
-                    locale,
-                    message: this.#dotMessageService.get(
-                        messageLabel,
-                        `${defaultLocale.language} (${getLocaleISOCode(defaultLocale)})`,
-                        `${locale.language} (${getLocaleISOCode(locale)})`
-                    )
-                }
+                )
             }
-        );
+        });
 
-        dialogRef.onClose
+        dialogRef?.onClose
             .pipe(
                 take(1),
                 filter((isConfirmed) => isConfirmed)

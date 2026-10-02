@@ -16,6 +16,7 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { IconField } from 'primeng/iconfield';
 import { InputIcon } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
+import type { InputIconPassThrough } from 'primeng/types/inputicon';
 
 import { debounce, tap } from 'rxjs/operators';
 
@@ -108,8 +109,11 @@ export class DotSearchInputComponent {
      * PT `root.style`, not a class: the style slot is applied through the host's `[style]` binding
      * (see `Bind`), a real inline style that beats the dynamically injected PrimeNG stylesheets
      * unconditionally. Hoisted so the object is not recreated on every change detection cycle.
+     *
+     * The value is a string because the PT `style` slot is typed as `Partial<CSSStyleDeclaration>`,
+     * whose properties are all strings — the same shape the DOM would store anyway.
      */
-    protected readonly ICON_PT = { root: { style: { zIndex: 2 } } };
+    protected readonly ICON_PT: InputIconPassThrough = { root: { style: { zIndex: '2' } } };
 
     /** The text field itself, so a host can hand it focus. */
     // NOTE: `private`, not `#`, despite TYPESCRIPT_STANDARDS.md:87. Angular's compiler rejects a

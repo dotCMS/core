@@ -15,10 +15,13 @@ export interface DotInputCalendarStatusEvent extends DotFieldStatusEvent {
 
 export interface DotFieldValueEvent extends DotFieldEvent {
     fieldType?: string;
-    value: string | File;
+    /** Null when the field has been cleared — `dot-binary-file` emits it from `setValue()`. */
+    value: string | File | null;
 }
 
 export interface DotBinaryFileEvent {
-    file: string | File;
-    errorType: DotBinaryMessageError;
+    /** Null on every failure path — an invalid paste, an over-size file, a cleared field. */
+    file: string | File | null;
+    /** Null when the change was accepted. `dot-binary-file` clears its own copy the same way. */
+    errorType: DotBinaryMessageError | null;
 }

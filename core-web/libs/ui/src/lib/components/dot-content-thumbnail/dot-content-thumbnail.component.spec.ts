@@ -57,7 +57,11 @@ describe('DotContentThumbnailComponent', () => {
     });
 
     const create = (thumbnail: DotContentThumbnail, props: Record<string, unknown> = {}) => {
-        spectator = createComponent({ props: { thumbnail, ...props } });
+        spectator = createComponent({
+            props: { thumbnail, ...props } as unknown as NonNullable<
+                Parameters<typeof createComponent>[0]
+            >['props']
+        });
     };
 
     describe('contentlet input', () => {
@@ -71,9 +75,13 @@ describe('DotContentThumbnailComponent', () => {
         } as unknown as DotCMSContentlet;
 
         it('resolves the thumbnail model from a contentlet', () => {
-            spectator = createComponent({ props: { contentlet } });
+            spectator = createComponent({
+                props: { contentlet } as unknown as NonNullable<
+                    Parameters<typeof createComponent>[0]
+                >['props']
+            });
 
-            const img = spectator.query<HTMLImageElement>(byTestId('dot-content-thumbnail-image'));
+            const img = spectator.query<HTMLImageElement>(byTestId('dot-content-thumbnail-image'))!;
 
             expect(img.getAttribute('src')).toBe('/dA/inode-123/500w/50q?r=99');
         });
@@ -83,18 +91,22 @@ describe('DotContentThumbnailComponent', () => {
                 props: {
                     contentlet: { ...contentlet, mimeType: 'video/mp4' } as DotCMSContentlet,
                     options: { playableVideo: true, fieldVariable: 'asset' }
-                }
+                } as unknown as NonNullable<Parameters<typeof createComponent>[0]>['props']
             });
 
             const video = spectator.query<HTMLVideoElement>(
                 byTestId('dot-content-thumbnail-video')
-            );
+            )!;
 
             expect(video.getAttribute('src')).toBe('/dA/inode-123/asset');
         });
 
         it('prefers an explicit thumbnail model over the contentlet', () => {
-            spectator = createComponent({ props: { contentlet, thumbnail: ICON_THUMBNAIL } });
+            spectator = createComponent({
+                props: { contentlet, thumbnail: ICON_THUMBNAIL } as unknown as NonNullable<
+                    Parameters<typeof createComponent>[0]
+                >['props']
+            });
 
             expect(spectator.query(byTestId('dot-content-thumbnail-icon'))).toBeTruthy();
         });
@@ -102,7 +114,7 @@ describe('DotContentThumbnailComponent', () => {
         it('renders the default icon when neither input is provided', () => {
             spectator = createComponent();
 
-            const icon = spectator.query(byTestId('dot-content-thumbnail-icon'));
+            const icon = spectator.query(byTestId('dot-content-thumbnail-icon'))!;
 
             expect(icon.textContent.trim()).toBe('insert_drive_file');
         });
@@ -112,7 +124,7 @@ describe('DotContentThumbnailComponent', () => {
         it('renders a cover-fit image for type image', () => {
             create(IMAGE_THUMBNAIL);
 
-            const img = spectator.query<HTMLImageElement>(byTestId('dot-content-thumbnail-image'));
+            const img = spectator.query<HTMLImageElement>(byTestId('dot-content-thumbnail-image'))!;
 
             expect(img).toBeTruthy();
             expect(img.getAttribute('src')).toBe(IMAGE_THUMBNAIL.src);
@@ -123,7 +135,7 @@ describe('DotContentThumbnailComponent', () => {
         it('renders svg like any other image (cover fit, raw vector src)', () => {
             create(SVG_THUMBNAIL);
 
-            const img = spectator.query<HTMLImageElement>(byTestId('dot-content-thumbnail-image'));
+            const img = spectator.query<HTMLImageElement>(byTestId('dot-content-thumbnail-image'))!;
 
             expect(img.getAttribute('src')).toBe(SVG_THUMBNAIL.src);
             expect(img.classList).toContain('thumbnail-image');
@@ -132,7 +144,7 @@ describe('DotContentThumbnailComponent', () => {
         it('renders a cover-fit image for type pdf', () => {
             create(PDF_THUMBNAIL);
 
-            const img = spectator.query<HTMLImageElement>(byTestId('dot-content-thumbnail-image'));
+            const img = spectator.query<HTMLImageElement>(byTestId('dot-content-thumbnail-image'))!;
 
             expect(img.getAttribute('src')).toBe(PDF_THUMBNAIL.src);
             expect(img.classList).toContain('thumbnail-image');
@@ -143,7 +155,7 @@ describe('DotContentThumbnailComponent', () => {
 
             const video = spectator.query<HTMLVideoElement>(
                 byTestId('dot-content-thumbnail-video')
-            );
+            )!;
 
             expect(video).toBeTruthy();
             expect(video.getAttribute('src')).toBe(PLAYABLE_VIDEO_THUMBNAIL.src);
@@ -155,7 +167,7 @@ describe('DotContentThumbnailComponent', () => {
 
             const video = spectator.query<HTMLVideoElement>(
                 byTestId('dot-content-thumbnail-video-frame')
-            );
+            )!;
 
             expect(video).toBeTruthy();
             expect(video.getAttribute('src')).toBe(FRAME_VIDEO_THUMBNAIL.src);
@@ -166,7 +178,7 @@ describe('DotContentThumbnailComponent', () => {
         it('renders the material icon glyph for type icon', () => {
             create(ICON_THUMBNAIL);
 
-            const icon = spectator.query(byTestId('dot-content-thumbnail-icon'));
+            const icon = spectator.query(byTestId('dot-content-thumbnail-icon'))!;
 
             expect(icon).toBeTruthy();
             expect(icon.textContent.trim()).toBe('audiotrack');
@@ -176,7 +188,7 @@ describe('DotContentThumbnailComponent', () => {
         it('falls back to insert_drive_file when the icon model has no glyph', () => {
             create({ ...ICON_THUMBNAIL, icon: '' });
 
-            const icon = spectator.query(byTestId('dot-content-thumbnail-icon'));
+            const icon = spectator.query(byTestId('dot-content-thumbnail-icon'))!;
 
             expect(icon.textContent.trim()).toBe('insert_drive_file');
         });
@@ -186,7 +198,7 @@ describe('DotContentThumbnailComponent', () => {
         it('auto-scales by default (no inline font-size)', () => {
             create(ICON_THUMBNAIL);
 
-            const icon = spectator.query<HTMLElement>(byTestId('dot-content-thumbnail-icon'));
+            const icon = spectator.query<HTMLElement>(byTestId('dot-content-thumbnail-icon'))!;
 
             expect(icon.style.fontSize).toBe('');
         });
@@ -194,7 +206,7 @@ describe('DotContentThumbnailComponent', () => {
         it('applies the explicit iconSize override', () => {
             create(ICON_THUMBNAIL, { iconSize: '48px' });
 
-            const icon = spectator.query<HTMLElement>(byTestId('dot-content-thumbnail-icon'));
+            const icon = spectator.query<HTMLElement>(byTestId('dot-content-thumbnail-icon'))!;
 
             expect(icon.style.fontSize).toBe('48px');
         });
@@ -204,11 +216,11 @@ describe('DotContentThumbnailComponent', () => {
         it('starts as loading for media types (pulse visible, media hidden)', () => {
             create(IMAGE_THUMBNAIL);
 
-            const loading = spectator.query(byTestId('dot-content-thumbnail-loading'));
+            const loading = spectator.query(byTestId('dot-content-thumbnail-loading'))!;
 
             expect(loading).toBeTruthy();
             expect(loading.classList).not.toContain('thumbnail-loading--hidden');
-            expect(spectator.query('dot-content-thumbnail-image').classList).toContain(
+            expect(spectator.query('dot-content-thumbnail-image')!.classList).toContain(
                 'thumbnail-media--hidden'
             );
         });
@@ -225,10 +237,10 @@ describe('DotContentThumbnailComponent', () => {
             spectator.dispatchFakeEvent(byTestId('dot-content-thumbnail-image'), 'load');
             spectator.detectChanges();
 
-            expect(spectator.query(byTestId('dot-content-thumbnail-loading')).classList).toContain(
+            expect(spectator.query(byTestId('dot-content-thumbnail-loading'))!.classList).toContain(
                 'thumbnail-loading--hidden'
             );
-            expect(spectator.query('dot-content-thumbnail-image').classList).not.toContain(
+            expect(spectator.query('dot-content-thumbnail-image')!.classList).not.toContain(
                 'thumbnail-media--hidden'
             );
         });
@@ -239,7 +251,7 @@ describe('DotContentThumbnailComponent', () => {
             spectator.dispatchFakeEvent(byTestId('dot-content-thumbnail-image'), 'error');
             spectator.detectChanges();
 
-            const icon = spectator.query(byTestId('dot-content-thumbnail-icon'));
+            const icon = spectator.query(byTestId('dot-content-thumbnail-icon'))!;
 
             expect(spectator.query(byTestId('dot-content-thumbnail-image'))).toBeFalsy();
             expect(icon).toBeTruthy();
@@ -260,7 +272,7 @@ describe('DotContentThumbnailComponent', () => {
             create(PLAYABLE_VIDEO_THUMBNAIL);
 
             expect(spectator.query(byTestId('dot-content-thumbnail-loading'))).toBeFalsy();
-            expect(spectator.query('dot-content-thumbnail-video').classList).not.toContain(
+            expect(spectator.query('dot-content-thumbnail-video')!.classList).not.toContain(
                 'thumbnail-media--hidden'
             );
         });
@@ -268,11 +280,11 @@ describe('DotContentThumbnailComponent', () => {
         it('keeps the skeleton for non-playable first-frame videos until loadeddata', () => {
             create(FRAME_VIDEO_THUMBNAIL);
 
-            const loading = spectator.query(byTestId('dot-content-thumbnail-loading'));
+            const loading = spectator.query(byTestId('dot-content-thumbnail-loading'))!;
 
             expect(loading).toBeTruthy();
             expect(loading.classList).not.toContain('thumbnail-loading--hidden');
-            expect(spectator.query('dot-content-thumbnail-video').classList).toContain(
+            expect(spectator.query('dot-content-thumbnail-video')!.classList).toContain(
                 'thumbnail-media--hidden'
             );
 
@@ -282,17 +294,19 @@ describe('DotContentThumbnailComponent', () => {
             );
             spectator.detectChanges();
 
-            expect(spectator.query(byTestId('dot-content-thumbnail-loading')).classList).toContain(
+            expect(spectator.query(byTestId('dot-content-thumbnail-loading'))!.classList).toContain(
                 'thumbnail-loading--hidden'
             );
-            expect(spectator.query('dot-content-thumbnail-video').classList).not.toContain(
+            expect(spectator.query('dot-content-thumbnail-video')!.classList).not.toContain(
                 'thumbnail-media--hidden'
             );
         });
 
         it('emits stateChange transitions', () => {
             spectator = createComponent({
-                props: { thumbnail: IMAGE_THUMBNAIL },
+                props: { thumbnail: IMAGE_THUMBNAIL } as unknown as NonNullable<
+                    Parameters<typeof createComponent>[0]
+                >['props'],
                 detectChanges: false
             });
 

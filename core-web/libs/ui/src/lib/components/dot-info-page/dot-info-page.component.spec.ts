@@ -14,7 +14,6 @@ const messageServiceMock = new MockDotMessageService({
 });
 
 describe('DotInfoPageComponent', () => {
-    let component: DotInfoPageComponent;
     let fixture: ComponentFixture<DotInfoPageComponent>;
 
     beforeEach(async () => {
@@ -24,7 +23,6 @@ describe('DotInfoPageComponent', () => {
         }).compileComponents();
 
         fixture = TestBed.createComponent(DotInfoPageComponent);
-        component = fixture.componentInstance;
     });
 
     it('should create', () => {
@@ -35,7 +33,7 @@ describe('DotInfoPageComponent', () => {
             buttonPath: '/pages',
             buttonText: 'button.text'
         };
-        component.info = info;
+        fixture.componentRef.setInput('info', info);
         fixture.detectChanges();
         const element = fixture.debugElement;
         expect(element.query(By.css('[data-testid="icon"]')).classes).toEqual({

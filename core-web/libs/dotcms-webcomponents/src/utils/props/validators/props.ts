@@ -18,7 +18,9 @@ export function stringValidator<T>(propInfo: PropValidationInfo<T>): void {
  *
  * @param PropValidationInfo propInfo
  */
-export function regexValidator<T>(propInfo: PropValidationInfo<T>): void {
+export function regexValidator<T extends { toString(): string }>(
+    propInfo: PropValidationInfo<T>
+): void {
     try {
         RegExp(propInfo.value.toString());
     } catch (e) {
@@ -42,7 +44,9 @@ export function numberValidator<T>(propInfo: PropValidationInfo<T>): void {
  *
  * @param PropValidationInfo propInfo
  */
-export function dateValidator<T>(propInfo: PropValidationInfo<T>): void {
+export function dateValidator<T extends { toString(): string }>(
+    propInfo: PropValidationInfo<T>
+): void {
     if (!dotValidateDate(propInfo.value.toString())) {
         throw new DotFieldPropError(propInfo, 'Date');
     }
@@ -59,7 +63,9 @@ const areRangeDatesValid = <T>(start: Date, end: Date, propInfo: PropValidationI
  *
  * @param PropValidationInfo propInfo
  */
-export function dateRangeValidator<T>(propInfo: PropValidationInfo<T>): void {
+export function dateRangeValidator<T extends { toString(): string }>(
+    propInfo: PropValidationInfo<T>
+): void {
     const [start, end] = propInfo.value.toString().split(',');
     if (!dotValidateDate(start) || !dotValidateDate(end)) {
         throw new DotFieldPropError(propInfo, 'Date');
@@ -72,7 +78,9 @@ export function dateRangeValidator<T>(propInfo: PropValidationInfo<T>): void {
  *
  * @param PropValidationInfo propInfo
  */
-export function timeValidator<T>(propInfo: PropValidationInfo<T>): void {
+export function timeValidator<T extends { toString(): string }>(
+    propInfo: PropValidationInfo<T>
+): void {
     if (!dotValidateTime(propInfo.value.toString())) {
         throw new DotFieldPropError(propInfo, 'Time');
     }

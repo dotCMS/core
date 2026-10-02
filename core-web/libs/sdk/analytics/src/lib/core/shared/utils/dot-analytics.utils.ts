@@ -538,9 +538,9 @@ export const getPageData = (
         path: browserData.doc_path,
         hash: browserData.doc_hash,
         search: browserData.doc_search,
-        title: browserData.page_title ?? (payloadProperties.title as string),
-        width: String(payloadProperties.width),
-        height: String(payloadProperties.height),
+        title: browserData.page_title ?? (payloadProperties['title'] as string),
+        width: String(payloadProperties['width']),
+        height: String(payloadProperties['height']),
         referrer: browserData.referrer
     };
 };
@@ -631,7 +631,7 @@ export const enrichPagePayloadOptimized = (
         doc_search: location.search,
         doc_host: location.hostname,
         doc_path: location.pathname,
-        title: (properties.title as string) ?? document?.title,
+        title: (properties['title'] as string) ?? document?.title,
         locale_id
     };
 
@@ -704,7 +704,7 @@ export function createThrottle<T extends (...args: unknown[]) => void>(
  * @returns The contentlet identifier or null if not found
  */
 export function extractContentletIdentifier(element: HTMLElement): string | null {
-    return element.dataset.dotIdentifier || null;
+    return element.dataset['dotIdentifier'] || null;
 }
 
 /**
@@ -714,11 +714,11 @@ export function extractContentletIdentifier(element: HTMLElement): string | null
  */
 export function extractContentletData(element: HTMLElement): ContentletData {
     return {
-        identifier: element.dataset.dotIdentifier || '',
-        inode: element.dataset.dotInode || '',
-        contentType: element.dataset.dotType || '',
-        title: element.dataset.dotTitle || '',
-        baseType: element.dataset.dotBasetype || ''
+        identifier: element.dataset['dotIdentifier'] || '',
+        inode: element.dataset['dotInode'] || '',
+        contentType: element.dataset['dotType'] || '',
+        title: element.dataset['dotTitle'] || '',
+        baseType: element.dataset['dotBasetype'] || ''
     };
 }
 

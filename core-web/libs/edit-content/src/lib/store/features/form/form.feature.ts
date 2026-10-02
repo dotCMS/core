@@ -4,7 +4,8 @@ import { FormValues } from '../../../models/dot-edit-content-form.interface';
 import { EditContentState } from '../../edit-content.store';
 
 export interface FormState {
-    formValues: FormValues;
+    // Null after a locale copy clears it — see `EditContentState.formValues`.
+    formValues: FormValues | null;
 }
 
 /**

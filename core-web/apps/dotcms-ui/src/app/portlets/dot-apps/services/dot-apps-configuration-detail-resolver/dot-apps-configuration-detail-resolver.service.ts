@@ -16,13 +16,13 @@ import { DotApp } from '@dotcms/dotcms-models';
  * @implements {Resolve<DotAppsResolverData>}
  */
 @Injectable()
-export class DotAppsConfigurationDetailResolver implements Resolve<DotApp> {
+export class DotAppsConfigurationDetailResolver implements Resolve<DotApp | null> {
     private dotAppsService = inject(DotAppsService);
 
-    resolve(route: ActivatedRouteSnapshot): Observable<DotApp> {
+    resolve(route: ActivatedRouteSnapshot): Observable<DotApp | null> {
         const appKey = route.paramMap.get('appKey');
         const id = route.paramMap.get('id');
 
-        return this.dotAppsService.getConfiguration(appKey, id).pipe(take(1));
+        return this.dotAppsService.getConfiguration(appKey ?? '', id ?? '').pipe(take(1));
     }
 }

@@ -30,7 +30,7 @@ export const Row = ({ row, index }: DotCMSRowRendererProps) => {
 
     return (
         <div id={`${DOT_SECTION_ID_PREFIX}${index}`} className={customRowClass}>
-            <div className={styles.row} data-dot-object={'row'}>
+            <div className={styles['row']} data-dot-object={'row'}>
                 {row.columns.map((column, index) => (
                     <Column key={index} column={column} />
                 ))}

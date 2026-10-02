@@ -2,6 +2,7 @@ import { patchState, signalStore, withComputed, withMethods, withState } from '@
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { EMPTY, firstValueFrom, forkJoin, of, pipe, Subject } from 'rxjs';
 
+import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
 
 import { catchError, debounceTime, map, switchMap, take, tap } from 'rxjs/operators';
@@ -819,7 +820,7 @@ export const DotRolesStore = signalStore(
 
                     return true;
                 } catch (error) {
-                    httpErrorManager.handle(error);
+                    httpErrorManager.handle(error as HttpErrorResponse);
                     // Roll the optimistic patch back — but only onto the role it
                     // came from. `previous` is role A's snapshot; writing it
                     // while role B is on screen would replace B's real grants,
@@ -853,7 +854,7 @@ export const DotRolesStore = signalStore(
                         roles: patchNodeChildren(store.roles(), roleId, loaded.roleChildren ?? [])
                     });
                 } catch (error) {
-                    httpErrorManager.handle(error);
+                    httpErrorManager.handle(error as HttpErrorResponse);
                 }
             },
 
@@ -877,7 +878,7 @@ export const DotRolesStore = signalStore(
                 try {
                     return await firstValueFrom(rolesService.searchTree(query).pipe(take(1)));
                 } catch (error) {
-                    httpErrorManager.handle(error);
+                    httpErrorManager.handle(error as HttpErrorResponse);
 
                     return [];
                 }
@@ -887,7 +888,7 @@ export const DotRolesStore = signalStore(
                 try {
                     return await firstValueFrom(rolesService.getById(roleId, false).pipe(take(1)));
                 } catch (error) {
-                    httpErrorManager.handle(error);
+                    httpErrorManager.handle(error as HttpErrorResponse);
 
                     return null;
                 }
@@ -972,7 +973,7 @@ export const DotRolesStore = signalStore(
                             // The role was created; only the tree refresh
                             // failed. Falling into the outer catch would report
                             // the create itself as failed, which is a lie.
-                            httpErrorManager.handle(error);
+                            httpErrorManager.handle(error as HttpErrorResponse);
                             patchState(store, { status: 'ERROR' });
                         }
                     }
@@ -1012,7 +1013,7 @@ export const DotRolesStore = signalStore(
 
                     return created;
                 } catch (error) {
-                    httpErrorManager.handle(error);
+                    httpErrorManager.handle(error as HttpErrorResponse);
 
                     return null;
                 }
@@ -1096,7 +1097,7 @@ export const DotRolesStore = signalStore(
 
                     return updated;
                 } catch (error) {
-                    httpErrorManager.handle(error);
+                    httpErrorManager.handle(error as HttpErrorResponse);
 
                     return null;
                 }
@@ -1161,7 +1162,7 @@ export const DotRolesStore = signalStore(
 
                     return result;
                 } catch (error) {
-                    httpErrorManager.handle(error);
+                    httpErrorManager.handle(error as HttpErrorResponse);
 
                     return null;
                 }
@@ -1198,7 +1199,7 @@ export const DotRolesStore = signalStore(
 
                     return result;
                 } catch (error) {
-                    httpErrorManager.handle(error);
+                    httpErrorManager.handle(error as HttpErrorResponse);
 
                     return null;
                 }
@@ -1265,7 +1266,7 @@ export const DotRolesStore = signalStore(
 
                     return result;
                 } catch (error) {
-                    httpErrorManager.handle(error);
+                    httpErrorManager.handle(error as HttpErrorResponse);
 
                     return null;
                 }

@@ -32,13 +32,13 @@ export class DotEmptyContainerComponent {
      * Principal configuration of the component
      */
     @Input()
-    configuration: PrincipalConfiguration;
+    configuration!: PrincipalConfiguration;
 
     /**
      * Button label to show in the container
      */
     @Input()
-    buttonLabel: string;
+    buttonLabel = '';
 
     /**
      * Change the button type to secondary

@@ -39,7 +39,7 @@ describe('DotCategoryFieldChipsComponent', () => {
 
     it('should left-align the chips list container', () => {
         spectator.detectChanges();
-        const container = spectator.query(byTestId('category-list'));
+        const container = spectator.query(byTestId('category-list'))!;
         expect(container.classList).toContain('justify-start');
         expect(container.classList).not.toContain('justify-center');
     });
@@ -67,7 +67,7 @@ describe('DotCategoryFieldChipsComponent', () => {
     it('should be show the more btn with the proper label', () => {
         spectator.setInput('max', 2);
         spectator.detectChanges();
-        const showBtn = spectator.query(ButtonDirective);
+        const showBtn = spectator.query(ButtonDirective)!;
         const size = spectator.component.$categories().length - spectator.component.$max();
         expect(showBtn.label).toBe(`${size} More`);
     });
@@ -76,14 +76,14 @@ describe('DotCategoryFieldChipsComponent', () => {
         spectator.setInput('max', 2);
         spectator.component.$showAll.set(true);
         spectator.detectChanges();
-        const showBtn = spectator.query(ButtonDirective);
+        const showBtn = spectator.query(ButtonDirective)!;
         expect(showBtn.label).toBe(`Less`);
     });
 
     it('should not show a btn and the label be null', () => {
         spectator.setInput('max', CATEGORIES_KEY_VALUE.length + 1);
         spectator.detectChanges();
-        const showBtn = spectator.query(ButtonDirective);
+        const showBtn = spectator.query(ButtonDirective)!;
         const label = spectator.component.$btnLabel();
         expect(showBtn).toBeNull();
         expect(label).toBeNull();
@@ -94,7 +94,7 @@ describe('DotCategoryFieldChipsComponent', () => {
             spectator.setInput('max', 2);
             spectator.component.$showAll.set(true);
             spectator.detectChanges();
-            const showBtn = spectator.query(byTestId('show-btn'));
+            const showBtn = spectator.query(byTestId('show-btn'))!;
             spectator.click(showBtn);
             expect(spectator.component.$showAll()).toBe(false);
         });
@@ -103,7 +103,7 @@ describe('DotCategoryFieldChipsComponent', () => {
             spectator.setInput('max', 2);
             spectator.component.$showAll.set(false);
             spectator.detectChanges();
-            const showBtn = spectator.query(byTestId('show-btn'));
+            const showBtn = spectator.query(byTestId('show-btn'))!;
             spectator.click(showBtn);
             expect(spectator.component.$showAll()).toBe(true);
         });

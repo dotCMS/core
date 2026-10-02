@@ -1,4 +1,4 @@
-import { Observable, of } from 'rxjs';
+import { EMPTY, Observable, of } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
@@ -89,7 +89,11 @@ export class DotEmaWorkflowActionsService {
                         if (this.isBulkAction(event)) {
                             return this.fireBulkWorkflowAction(event, payload).pipe(
                                 tap(() => {
-                                    embeddedFunction('fireActionLoadingIndicator', []);
+                                    // `?.`: the parameter is optional, and this was the only
+                                    // unconditional call to it. A caller that omitted it — the
+                                    // signature invites that — hit a TypeError here on any bulk
+                                    // action, after the action had already fired.
+                                    embeddedFunction?.('fireActionLoadingIndicator', []);
                                 }),
                                 map((response: DotActionBulkResult | MessageInfo) => {
                                     if ('summary' in response) {
@@ -228,10 +232,15 @@ export class DotEmaWorkflowActionsService {
             this.dotMessageService.get('Workflow-Action')
         );
 
-        return this.dotWizardService.open<DotWorkflowPayload>(wizardInput).pipe(
-            filter(() => !!wizardInput),
-            take(1)
-        );
+        // `setWizardInput` returns null for a workflow with no collectable inputs. The guard used
+        // to be a `filter(() => !!wizardInput)` *after* the call, so `open(null)` ran regardless and
+        // only its result was suppressed. Returning EMPTY completes without firing the action, which
+        // is what that filter was reaching for.
+        if (!wizardInput) {
+            return EMPTY;
+        }
+
+        return this.dotWizardService.open<DotWorkflowPayload>(wizardInput).pipe(take(1));
     }
 
     /**
@@ -244,7 +253,7 @@ export class DotEmaWorkflowActionsService {
      */
     fireBulkWorkflowAction(
         event: DotCMSWorkflowActionEvent,
-        data?: DotWorkflowPayload
+        data: DotWorkflowPayload
     ): Observable<DotActionBulkResult | MessageInfo> {
         return this.dotWorkflowActionsFireService.bulkFire(this.processBulkData(event, data)).pipe(
             take(1),
@@ -293,7 +302,7 @@ export class DotEmaWorkflowActionsService {
      */
     fireWorkflowAction(
         event: DotCMSWorkflowActionEvent,
-        data?: DotWorkflowPayload
+        data: DotWorkflowPayload
     ): Observable<DotCMSContentlet | MessageInfo> {
         return this.dotWorkflowActionsFireService
             .fireTo({
@@ -402,7 +411,7 @@ export class DotEmaWorkflowActionsService {
      */
     private processBulkData(
         event: DotCMSWorkflowActionEvent,
-        data?: DotWorkflowPayload
+        data: DotWorkflowPayload
     ): DotActionBulkRequestOptions {
         const processedData = this.processWorkflowPayload(data, event.workflow.actionInputs);
         const requestOptions: DotActionBulkRequestOptions = {
@@ -438,43 +447,47 @@ export class DotEmaWorkflowActionsService {
      * Get the error message based on the response status
      *
      * @private
-     * @param {HttpErrorResponse} [response]
+     * @param {HttpErrorResponse} response
      * @return {*}  {{
      *         detail: string;
      *         summary: string;
      *     }}
      * @memberof DotEmaWorkflowActionsService
      */
-    private getErrorMessage(response?: HttpErrorResponse): Observable<MessageInfo> {
-        return of(
-            {
-                [HttpCode.NOT_FOUND]: {
-                    summary: this.dotMessageService.get('dot.common.http.error.404.header'),
-                    detail: this.dotMessageService.get('dot.common.http.error.404.message')
-                },
+    private getErrorMessage(response: HttpErrorResponse): Observable<MessageInfo> {
+        const messages: Record<number, MessageInfo> = {
+            [HttpCode.NOT_FOUND]: {
+                summary: this.dotMessageService.get('dot.common.http.error.404.header'),
+                detail: this.dotMessageService.get('dot.common.http.error.404.message')
+            },
 
-                [HttpCode.UNAUTHORIZED]: {
-                    summary: this.dotMessageService.get('dot.common.http.error.403.header'),
-                    detail: this.dotMessageService.get('dot.common.http.error.403.message')
-                },
+            [HttpCode.UNAUTHORIZED]: {
+                summary: this.dotMessageService.get('dot.common.http.error.403.header'),
+                detail: this.dotMessageService.get('dot.common.http.error.403.message')
+            },
 
-                [HttpCode.FORBIDDEN]: {
-                    summary: this.dotMessageService.get('dot.common.http.error.403.header'),
-                    detail: this.dotMessageService.get('dot.common.http.error.403.message')
-                },
-                [HttpCode.SERVER_ERROR]: {
-                    summary: this.dotMessageService.get('dot.common.http.error.500.header'),
-                    detail: this.dotMessageService.get('dot.common.http.error.500.message')
-                },
-                [HttpCode.BAD_REQUEST]: {
-                    summary: this.dotMessageService.get('dot.common.http.error.400.header'),
-                    detail: this.dotMessageService.get('dot.common.http.error.400.message')
-                },
-                [HttpCode.NO_CONTENT]: {
-                    summary: this.dotMessageService.get('dot.common.http.error.204.header'),
-                    detail: this.dotMessageService.get('dot.common.http.error.204.message')
-                }
-            }[response.status]
-        );
+            [HttpCode.FORBIDDEN]: {
+                summary: this.dotMessageService.get('dot.common.http.error.403.header'),
+                detail: this.dotMessageService.get('dot.common.http.error.403.message')
+            },
+            [HttpCode.SERVER_ERROR]: {
+                summary: this.dotMessageService.get('dot.common.http.error.500.header'),
+                detail: this.dotMessageService.get('dot.common.http.error.500.message')
+            },
+            [HttpCode.BAD_REQUEST]: {
+                summary: this.dotMessageService.get('dot.common.http.error.400.header'),
+                detail: this.dotMessageService.get('dot.common.http.error.400.message')
+            },
+            [HttpCode.NO_CONTENT]: {
+                summary: this.dotMessageService.get('dot.common.http.error.204.header'),
+                detail: this.dotMessageService.get('dot.common.http.error.204.message')
+            }
+        };
+
+        // Six statuses are mapped; every other one — 409 and 502 among them — used to index the
+        // object literal to `undefined` and travel on through the success channel as if it were a
+        // `MessageInfo`, so the caller showed a toast with no summary and no detail. The 500 pair is
+        // already this file's generic "unknown error", so an unmapped status now reads as one.
+        return of(messages[response.status] ?? messages[HttpCode.SERVER_ERROR]);
     }
 }

@@ -1,4 +1,4 @@
-import { Observable, map, take } from 'rxjs';
+import { EMPTY, Observable, map, take } from 'rxjs';
 
 import { inject, Injectable } from '@angular/core';
 
@@ -56,6 +56,13 @@ export class AngularImageEditorLauncher implements DotImageEditorLauncher {
             contentStyle: { height: '100%', overflow: 'hidden', padding: '0' },
             styleClass: 'dot-image-editor-dialog'
         });
+
+        // `DialogService.open` returns null when it refuses to open a duplicate — the editor is
+        // already up, so this call has no outcome to report. `EMPTY` rather than `of(null)`:
+        // null is this method's documented "user cancelled" signal, and nobody cancelled.
+        if (!ref) {
+            return EMPTY;
+        }
 
         return ref.onClose.pipe(
             map((tempFile?: DotCMSTempFile) => tempFile ?? null),

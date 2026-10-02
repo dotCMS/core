@@ -11,8 +11,7 @@ import {
     DotMessageService,
     DotUiColorsService
 } from '@dotcms/data-access';
-import { ConfigParams, DotcmsConfigService, DotUiColors } from '@dotcms/dotcms-js';
-import { DotLicense } from '@dotcms/dotcms-models';
+import { ConfigParams, DotcmsConfigService } from '@dotcms/dotcms-js';
 
 import { DotNavLogoService } from './api/services/dot-nav-logo/dot-nav-logo.service';
 import { DotAlertConfirmComponent } from './view/components/_common/dot-alert-confirm/dot-alert-confirm';
@@ -58,17 +57,9 @@ export class AppComponent implements OnInit {
                 })
             )
             .subscribe(
-                ({
-                    buildDate,
-                    colors,
-                    navBar,
-                    license
-                }: {
-                    buildDate: string | null;
-                    colors: DotUiColors;
-                    navBar: string | null;
-                    license: DotLicense | null;
-                }) => {
+                // Not annotated: the two branches of the pipe above emit different literal shapes,
+                // and a parameter wider than either is what strictFunctionTypes rejects.
+                ({ buildDate, colors, navBar, license }) => {
                     // Initialize services with loaded or default values
                     if (buildDate) {
                         this.dotMessageService.init({ buildDate });

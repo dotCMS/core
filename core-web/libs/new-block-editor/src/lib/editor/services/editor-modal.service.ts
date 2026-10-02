@@ -178,7 +178,7 @@ export class EditorModalService implements OnDestroy {
 
     /** Opens the new picker for a resolved site. Split out so the lookup above stays readable. */
     private mountAssetPicker(editor: Editor, mode: DotAssetPickerMediaMode, site: DotSite): void {
-        const ref = this.assetPickerLauncher.open(
+        const ref = this.assetPickerLauncher?.open(
             // The launcher borrows this service's `DialogService` so the picker stays scoped to this
             // editor instance — see `ASSET_PICKER_LAUNCHER`.
             this.dialogService,
@@ -219,8 +219,14 @@ export class EditorModalService implements OnDestroy {
     private trackPicker(
         editor: Editor,
         mode: DotAssetPickerMediaMode,
-        ref: DynamicDialogRef
+        ref: DynamicDialogRef | null | undefined
     ): void {
+        // `DialogService.open` returns `null` when it refuses to open a duplicate of a component it
+        // already has open, so there is nothing to track or subscribe to.
+        if (!ref) {
+            return;
+        }
+
         this.pickerRefs.set(mode, ref);
 
         ref.onClose.subscribe((contentlet?: DotCMSContentlet) => {
@@ -259,11 +265,11 @@ export class EditorModalService implements OnDestroy {
             data: { context: editor.getText() }
         });
 
-        this.aiImageDialogRef.onClose.subscribe((selectedImage?: DotGeneratedAIImage) => {
-            if (selectedImage?.response?.contentlet) {
-                this.zone.run(() =>
-                    insertDotImageFromContentlet(editor, selectedImage.response.contentlet)
-                );
+        this.aiImageDialogRef?.onClose.subscribe((selectedImage?: DotGeneratedAIImage) => {
+            const contentlet = selectedImage?.response?.contentlet;
+
+            if (contentlet) {
+                this.zone.run(() => insertDotImageFromContentlet(editor, contentlet));
             }
             this.aiImageDialogRef = null;
             this.zone.run(() => this.aiImageOpen.set(false));
@@ -304,7 +310,7 @@ export class EditorModalService implements OnDestroy {
             style: { 'max-width': '90vw' }
         });
 
-        this.aiContentDialogRef.onClose.subscribe((html?: string) => {
+        this.aiContentDialogRef?.onClose.subscribe((html?: string) => {
             if (html) {
                 this.zone.run(() => editor.chain().focus().insertContent(html).run());
             }

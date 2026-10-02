@@ -48,7 +48,7 @@ describe('DotPushpublishTimelineItemComponent', () => {
 
     describe('Data Display', () => {
         it('should not render a tooltip on the content wrapper', () => {
-            const wrapper = spectator.query(byTestId('content-wrapper'));
+            const wrapper = spectator.query(byTestId('content-wrapper'))!;
             expect(wrapper).toBeTruthy();
             expect(wrapper.getAttribute('tooltipPosition')).toBeNull();
         });
@@ -60,13 +60,13 @@ describe('DotPushpublishTimelineItemComponent', () => {
             });
             spectator.detectChanges();
 
-            const timeDisplay = spectator.query(byTestId('time-display'));
+            const timeDisplay = spectator.query(byTestId('time-display'))!;
             expect(timeDisplay.textContent?.trim()).toBe('May 16, 2026 - 1:10 PM');
             expect(timeDisplay.textContent?.trim()).not.toMatch(/now|ago/i);
         });
 
         it('should display correct user name', () => {
-            const userName = spectator.query(byTestId('pushpublish-user'));
+            const userName = spectator.query(byTestId('pushpublish-user'))!;
             expect(userName.textContent?.trim()).toBe('Admin User');
         });
 
@@ -148,7 +148,7 @@ describe('DotPushpublishTimelineItemComponent', () => {
             spectator.setInput('item', newItem);
             spectator.detectChanges();
 
-            const userName = spectator.query(byTestId('pushpublish-user'));
+            const userName = spectator.query(byTestId('pushpublish-user'))!;
             expect(userName.textContent?.trim()).toBe('System Administrator');
 
             // Access the PrimeNG Avatar component instance to verify label property

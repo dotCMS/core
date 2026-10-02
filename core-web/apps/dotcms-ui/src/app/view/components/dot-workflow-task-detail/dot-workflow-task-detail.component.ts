@@ -36,8 +36,8 @@ export class DotWorkflowTaskDetailComponent implements OnInit {
     @Output()
     custom: EventEmitter<CustomEvent<Record<string, unknown>>> = new EventEmitter();
 
-    url$: Observable<string>;
-    header$: Observable<string>;
+    url$!: Observable<string>;
+    header$!: Observable<string>;
 
     ngOnInit() {
         this.url$ = this.dotWorkflowTaskDetailService.viewUrl$;

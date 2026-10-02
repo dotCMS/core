@@ -265,7 +265,10 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
             ...state,
             header: this.dotMessageService.get('edit.ema.page.dialog.header.search.form'),
             status: DialogStatus.LOADING,
-            url: null,
+            // `''`, not `null`: the state declares `url: string`, `resetDialog` already uses `''`
+            // for "no URL", and the template gates the iframe on `@if (ds.url)` — so the form
+            // dialog, which renders a form rather than a URL, behaves identically either way.
+            url: '',
             type: 'form',
             actionPayload: payload
         };

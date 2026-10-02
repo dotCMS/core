@@ -1,3 +1,5 @@
+import { Params } from '@angular/router';
+
 import { EXPERIMENT_RETURN_PARAM } from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/types';
 
@@ -12,11 +14,18 @@ import { UVEStore } from '../store/dot-uve.store';
  * the origin marker answers "where did this round trip start". Once the editor is back, neither
  * describes anything, so both go. Clearing them changes no rendered pixel, which is what lets the
  * control's return skip the page load entirely.
+ *
+ * Typed as router `Params`, which is what these are and why the values are `null`: `null` is
+ * Angular's own word for "drop this parameter from the address", and both constants are handed
+ * straight to `router.navigate`'s `queryParams` as well as to the store. `Params` carries them into
+ * `Partial<DotPageAssetParams>` unchanged — the alternative, widening `variantName`/`experimentId`
+ * to `string | null` on `DotPageApiParams`, pushes a null check onto every reader of them and onto
+ * the GraphQL variables, which is more than this file should decide.
  */
-export const CLEARED_EXPERIMENT_PARAMS = {
+export const CLEARED_EXPERIMENT_PARAMS: Params = {
     experimentId: null,
     [EXPERIMENT_RETURN_PARAM]: null
-} as const;
+};
 
 /**
  * Cleared on every way back, so no variant or experiment survives the return (FR-006).
@@ -30,11 +39,11 @@ export const CLEARED_EXPERIMENT_PARAMS = {
  *
  * `EDIT` is not a new choice. It is exactly where a return has always landed.
  */
-export const CLEARED_VARIANT_PARAMS = {
+export const CLEARED_VARIANT_PARAMS: Params = {
     ...CLEARED_EXPERIMENT_PARAMS,
     mode: UVE_MODE.EDIT,
     variantName: null
-} as const;
+};
 
 /**
  * Takes the editor off the variant — and only when they are actually on one.

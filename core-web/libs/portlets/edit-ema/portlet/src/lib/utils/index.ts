@@ -2,6 +2,7 @@ import { CurrentUser } from '@dotcms/dotcms-js';
 import {
     DEFAULT_VARIANT_ID,
     DotCMSContentlet,
+    DotContainer,
     DotContainerMap,
     DotDevice,
     DotExperiment
@@ -17,14 +18,15 @@ import {
 import { EmaDragItem } from '../edit-ema-editor/components/ema-page-dropzone/types';
 import { DotPageApiParams } from '../services/dot-page-api/dot-page-api.service';
 import { COMMON_ERRORS, DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
-import { CONTAINER_INSERT_ERROR } from '../shared/enums';
+import { CommonErrors, CONTAINER_INSERT_ERROR } from '../shared/enums';
 import {
-    ActionPayload,
     ContainerPayload,
+    ContentletActionPayload,
     ContentletDragPayload,
     ContentTypeDragPayload,
     DotPageAssetParams,
     DragDatasetItem,
+    InsertActionPayload,
     PageContainer
 } from '../shared/models';
 import { IframeAccessMode, Orientation } from '../store/models';
@@ -130,7 +132,12 @@ export function getHrefFromClickTarget(target: EventTarget | null): string | nul
  */
 export type InjectBaseTagData = {
     html: string;
-    url: string;
+    /**
+     * `| undefined`: the page URI is not always known, and `injectBaseTag` already returns the html
+     * untouched when it is missing — a behaviour its spec asserts directly. The declaration was the
+     * only thing claiming otherwise.
+     */
+    url: string | undefined;
     origin: string;
 };
 
@@ -208,7 +215,7 @@ export const TEMPORAL_DRAG_ITEM: EmaDragItem = {
  *   errorCode?: CONTAINER_INSERT_ERROR;
  * }}
  */
-export function insertContentletInContainer(action: ActionPayload): {
+export function insertContentletInContainer(action: InsertActionPayload): {
     pageContainers: PageContainer[];
     didInsert: boolean;
     errorCode?: CONTAINER_INSERT_ERROR;
@@ -276,13 +283,13 @@ export function insertContentletInContainer(action: ActionPayload): {
  * @param {ActionPayload} action
  * @return {*}  {PageContainer[]}
  */
-export function deleteContentletFromContainer(action: ActionPayload): {
+export function deleteContentletFromContainer(action: ContentletActionPayload): {
     pageContainers: PageContainer[];
     contentletsId: string[];
 } {
     const { pageContainers, container, contentlet, personaTag } = action;
 
-    let contentletsId = [];
+    let contentletsId: string[] = [];
 
     const containerIsOnPageResponse = pageContainers.find((pageContainer) =>
         areContainersEquals(pageContainer, container)
@@ -354,7 +361,7 @@ export function areContainersEquals(
  *   errorCode?: CONTAINER_INSERT_ERROR;
  * }}
  */
-function insertPositionedContentletInContainer(payload: ActionPayload): {
+function insertPositionedContentletInContainer(payload: InsertActionPayload): {
     pageContainers: PageContainer[];
     didInsert: boolean;
     errorCode?: CONTAINER_INSERT_ERROR;
@@ -362,8 +369,7 @@ function insertPositionedContentletInContainer(payload: ActionPayload): {
     let didInsert = false;
     let errorCode: CONTAINER_INSERT_ERROR | undefined;
 
-    const { pageContainers, container, contentlet, personaTag, newContentletId, position } =
-        payload;
+    const { pageContainers, container, personaTag, newContentletId, position } = payload;
 
     const containerIsOnPageResponse = pageContainers.find((pageContainer) =>
         areContainersEquals(pageContainer, container)
@@ -396,7 +402,11 @@ function insertPositionedContentletInContainer(payload: ActionPayload): {
                 return pageContainer;
             }
 
-            const index = pageContainer.contentletsId.indexOf(contentlet.identifier);
+            // No pivot contentlet means "append", which is what this already did:
+            // `indexOf(undefined)` is -1, and -1 falls through to the push below. `contentlet` is
+            // optional on `ClientData` because a drop onto an empty container has none.
+            const pivotId = payload.contentlet?.identifier;
+            const index = pivotId ? pageContainer.contentletsId.indexOf(pivotId) : -1;
 
             if (index !== -1) {
                 const offset = position === 'before' ? index : index + 1;
@@ -437,13 +447,8 @@ export function sanitizeURL(url?: string): string {
     return path.replace(/\/+/g, '/'); // Convert multiple slashes to single slash
 }
 
-/**
- * Get the personalization for the contentlet
- *
- * @param {DotCMSViewAsPersona} persona
- * @return {*}
- */
-export const getPersonalization = (persona: DotCMSViewAsPersona) => {
+/** `persona` is optional: the body's first branch is the "no persona" case. */
+export const getPersonalization = (persona?: DotCMSViewAsPersona) => {
     if (!persona || (!persona.contentType && !persona.keyTag)) {
         return `dot:default`;
     }
@@ -491,9 +496,12 @@ export function getFullPageURL({
     );
 
     const path = cleanPageURL(url);
-    const paramsAsString = new URLSearchParams({
-        ...searchParams
-    }).toString();
+    // `removeUndefinedValues` — the helper this file already exports — instead of spreading:
+    // the `delete` loop above strips undefined values but narrowing does not follow a `delete`,
+    // and `URLSearchParams` takes only defined strings.
+    const paramsAsString = new URLSearchParams(
+        removeUndefinedValues(searchParams) as Record<string, string>
+    ).toString();
 
     return paramsAsString ? `${path}?${paramsAsString}` : path;
 }
@@ -510,7 +518,12 @@ export function getFullPageURL({
  * @param {string} baseClientHost - The base client host to be used to compare with the clientHost query param.
  * @return {Object} A cleaned and formatted version of the query parameters.
  */
-export function normalizeQueryParams(params, baseClientHost?: string) {
+export function normalizeQueryParams(
+    // `null` as well as `undefined`: the view params use null for "no preset of that kind active",
+    // and Angular's `queryParams` reads a null value as "remove this parameter".
+    params: Record<string, string | null | undefined>,
+    baseClientHost?: string
+) {
     const queryParams = { ...params };
 
     if (queryParams[PERSONA_KEY] === DEFAULT_PERSONA.identifier) {
@@ -522,11 +535,15 @@ export function normalizeQueryParams(params, baseClientHost?: string) {
         delete queryParams[PERSONA_KEY];
     }
 
+    // Both guards are needed: without a `clientHost` there is nothing to compare, and the
+    // parameter map is index-signature typed.
+    const clientHost = params['clientHost'];
     if (
         baseClientHost &&
-        new URL(baseClientHost).toString() === new URL(params.clientHost).toString()
+        clientHost &&
+        new URL(baseClientHost).toString() === new URL(clientHost).toString()
     ) {
-        delete queryParams.clientHost;
+        delete queryParams['clientHost'];
     }
 
     return queryParams;
@@ -606,8 +623,9 @@ export function createFavoritePagesURL(params: {
  * @return {*}  {string}
  */
 export function createFullURL(params: DotPageApiParams, siteId?: string): string {
-    // If we are going to delete properties from the params, we need to make a copy of it
-    const paramsCopy = { ...params };
+    // `Partial`, because the two `delete`s below remove keys that `DotPageApiParams` declares as
+    // required. They are required *of the page request*; they are not part of the query string.
+    const paramsCopy: Partial<DotPageApiParams> & { host_id?: string } = { ...params };
 
     if (siteId) {
         paramsCopy['host_id'] = siteId;
@@ -640,7 +658,10 @@ export function createFullURL(params: DotPageApiParams, siteId?: string): string
  * @param {CurrentUser} currentUser - The current user
  * @return {boolean} True if page is locked by another user
  */
-export function isPageLockedByOtherUser(page: DotCMSPage, currentUser: CurrentUser): boolean {
+export function isPageLockedByOtherUser(
+    page: DotCMSPage | null,
+    currentUser: CurrentUser | null
+): boolean {
     return !!page?.locked && page?.lockedBy !== currentUser?.userId;
 }
 
@@ -650,11 +671,18 @@ export function isPageLockedByOtherUser(page: DotCMSPage, currentUser: CurrentUs
  * With feature flag enabled: Returns true if page is locked by ANY user
  * With feature flag disabled: Returns true if page is locked by ANOTHER user
  *
- * @param {DotCMSPage} page - The page to check
+ * `page` is `| null` because the store's `pageAsset()` is: null until the first page loads. All
+ * three of these functions already read it through `?.`, so the non-null declarations contradicted
+ * their own bodies — and `withWorkflow` was already passing `?? null` into one of them.
+ *
+ * @param {DotCMSPage | null} page - The page to check
  * @param {CurrentUser} currentUser - The current user
  * @return {boolean} True if page is considered locked based on feature flag
  */
-export function computeIsPageLocked(page: DotCMSPage, currentUser: CurrentUser): boolean {
+export function computeIsPageLocked(
+    page: DotCMSPage | null,
+    currentUser: CurrentUser | null
+): boolean {
     // This is the legacy behavior, only show "locked" button if it is locked by another user
     const isLocked = isPageLockedByOtherUser(page, currentUser);
     return isLocked;
@@ -709,8 +737,12 @@ export function computeCanEditPage(
 export function mapContainerStructureToDotContainerMap(
     containers: DotCMSPageAssetContainers
 ): DotContainerMap {
-    return Object.keys(containers).reduce((acc, id) => {
-        acc[id] = containers[id].container;
+    return Object.keys(containers).reduce<DotContainerMap>((acc, id) => {
+        // The boundary between the two container models. They agree on everything except
+        // `source`, which `DotCMSContainer` types as `string` and `DotContainer` narrows to
+        // `CONTAINER_SOURCE`; the API only ever sends one of that enum's values. The template
+        // builder downstream is typed against the legacy model.
+        acc[id] = containers[id].container as DotContainer;
 
         return acc;
     }, {});
@@ -800,7 +832,9 @@ export const mapContainerStructureToArrayOfContainers = (containers: DotCMSPageA
  *                                        (e.g. "siteb.example.com" or "https://siteb.example.com")
  * @return {*}  {string}
  */
-export const getRequestHostName = (params: DotPageApiParams, pageHostname?: string) => {
+// `params` is `| null` because the store's `pageParams()` is, and the body already reads it through
+// `params?.clientHost`.
+export const getRequestHostName = (params: DotPageApiParams | null, pageHostname?: string) => {
     if (params?.clientHost) {
         return params.clientHost;
     }
@@ -832,7 +866,9 @@ export const getErrorPayload = (errorCode: number) =>
     errorCode
         ? {
               code: errorCode,
-              pageInfo: COMMON_ERRORS[errorCode?.toString()] ?? null
+              // `COMMON_ERRORS` is a `Record<CommonErrors, InfoPage>`; an arbitrary HTTP status
+              // need not be one of its keys, which is exactly what the `?? null` covers.
+              pageInfo: COMMON_ERRORS[errorCode.toString() as CommonErrors] ?? null
           }
         : null;
 
@@ -843,7 +879,14 @@ export const getErrorPayload = (errorCode: number) =>
  * @param {string} urlPath2
  * @return {*}  {boolean}
  */
-export const compareUrlPaths = (urlPath: string, urlPath2: string): boolean => {
+export const compareUrlPaths = (urlPath?: string, urlPath2?: string): boolean => {
+    // Either side absent means there is nothing to compare. `new URL(undefined, origin)` coerces to
+    // the literal path `/undefined`, so an unknown url compared unequal to every real one — the
+    // right answer, reached by accident.
+    if (!urlPath || !urlPath2) {
+        return false;
+    }
+
     // Host doesn't matter here, we just need the pathname
     const { pathname: pathname1 } = new URL(urlPath, window.origin);
     const { pathname: pathname2 } = new URL(urlPath2, window.origin);
@@ -859,10 +902,24 @@ export const compareUrlPaths = (urlPath: string, urlPath2: string): boolean => {
  */
 export const getDragItemData = ({ type, item }: DOMStringMap) => {
     try {
+        // `item` is `string | undefined`: `DOMStringMap` cannot promise a `data-item` attribute is
+        // present. `JSON.parse(undefined!)` threw into the catch below, which is where an absent or
+        // malformed dataset already ended up — this just reaches it without the throw.
+        if (!item) {
+            return null;
+        }
+
         const data = JSON.parse(item) as DragDatasetItem;
         const { contentType, contentlet, container, move } = data;
 
         if (type === 'content-type') {
+            // Both branches read a field the dataset declares as optional. A dataset whose `type`
+            // says 'content-type' but carries no `contentType` is malformed, which is the same
+            // conclusion the catch reaches.
+            if (!contentType) {
+                return null;
+            }
+
             return {
                 baseType: contentType.baseType,
                 contentType: contentType.variable,
@@ -877,8 +934,16 @@ export const getDragItemData = ({ type, item }: DOMStringMap) => {
             };
         }
 
+        if (!contentlet) {
+            return null;
+        }
+
         return {
-            baseType: contentlet.baseType,
+            // `?? ''`: `baseType` is optional on `ContentletPayload` but required on `EmaDragItem`.
+            // An empty base type is never `WIDGET`, so the drop falls through to the container's
+            // `acceptTypes` match — which is the right answer for a contentlet that did not declare
+            // one.
+            baseType: contentlet.baseType ?? '',
             contentType: contentlet.contentType,
             draggedPayload: {
                 item: {
@@ -974,7 +1039,8 @@ export const checkClientHostAccess = (
  */
 export function getTargetUrl(
     url: string | undefined,
-    urlContentMap: DotCMSURLContentMap
+    // Optional: a page with no URL-map content has none, which the `?.` below already reads.
+    urlContentMap?: DotCMSURLContentMap
 ): string | undefined {
     // Return URL from content map or fallback to the provided URL
     return urlContentMap?.URL_MAP_FOR_CONTENT || url;
@@ -986,7 +1052,10 @@ export function getTargetUrl(
  * @param {string | undefined} targetUrl - The target URL for navigation.
  * @returns {boolean} - True if the current URL differs from the target URL and navigation is required.
  */
-export function shouldNavigate(targetUrl: string | undefined, currentUrl: string): boolean {
+export function shouldNavigate(
+    targetUrl: string | undefined,
+    currentUrl: string | undefined
+): boolean {
     // Navigate if the target URL is defined and different from the current URL
     return targetUrl !== undefined && !compareUrlPaths(targetUrl, currentUrl);
 }
@@ -1119,8 +1188,10 @@ export const convertUTCToLocalTime = (date: Date) => {
     );
 };
 
-export const removeUndefinedValues = (params: DotPageAssetParams) => {
-    return Object.fromEntries(Object.entries(params).filter(([_, value]) => value !== undefined));
+export const removeUndefinedValues = <T extends Record<string, unknown>>(params: T): Partial<T> => {
+    return Object.fromEntries(
+        Object.entries(params).filter(([_, value]) => value !== undefined)
+    ) as Partial<T>;
 };
 
 /**
@@ -1129,7 +1200,9 @@ export const removeUndefinedValues = (params: DotPageAssetParams) => {
  * @param {*} params
  * @return {*}
  */
-export const convertClientParamsToPageParams = (params) => {
+export const convertClientParamsToPageParams = (
+    params: (Record<string, unknown> & { personaId?: string; languageId?: string }) | null
+) => {
     if (!params) {
         return null;
     }
@@ -1160,7 +1233,11 @@ export const convertClientParamsToPageParams = (params) => {
  * isSamePageNavigation('/home#section', '/home?tab=1') // true - same path, hash and/or query differ
  * isSamePageNavigation('/other-page', '/home') // false - different path
  */
-export const isSamePageNavigation = (incomingUrl: string, currentUrl: string): boolean => {
+export const isSamePageNavigation = (
+    // Both optional: the first line of the body is the "either is missing" case.
+    incomingUrl?: string,
+    currentUrl?: string
+): boolean => {
     if (!incomingUrl || !currentUrl) return false;
 
     const current = new URL(currentUrl, window.origin);

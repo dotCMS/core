@@ -32,17 +32,17 @@ import {
 @Injectable()
 class MockDotTempFileUploadService {
     public upload(): Observable<unknown> {
-        return null;
+        return of(null);
     }
 }
 
 @Injectable()
 class MockDotWorkflowActionsFireService {
     public publishContentletAndWaitForIndex(): Observable<unknown> {
-        return null;
+        return of(null);
     }
     public deleteContentlet(): Observable<unknown> {
-        return null;
+        return of(null);
     }
 }
 

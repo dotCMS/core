@@ -48,10 +48,10 @@ export class ActionService {
     }
 
     static fromJson(type: ServerSideTypeModel, json: ActionJson): ActionModel {
-        const ra = new ActionModel(json.key, type, json.priority);
-        Object.keys(json.parameters || {}).forEach((key) => {
-            const param = json.parameters[key];
-            ra.setParameter(key, param.value);
+        const ra = new ActionModel(json.key ?? null, type, json.priority);
+        const parameters = json.parameters ?? {};
+        Object.keys(parameters).forEach((key) => {
+            ra.setParameter(key, parameters[key].value);
         });
 
         return ra;
@@ -135,7 +135,13 @@ export class ActionService {
                 json.id = key;
                 json.key = key;
 
-                return ActionService.fromJson(ruleActionTypes[json.actionlet], json);
+                // Both `ruleActionTypes` and `json.actionlet` are optional, and an unrecognised
+                // actionlet is what `ServerSideTypeModel`'s 'NoSelection' default is for.
+                const type =
+                    (json.actionlet ? ruleActionTypes?.[json.actionlet] : undefined) ??
+                    new ServerSideTypeModel();
+
+                return ActionService.fromJson(type, json);
             })
         );
     }
@@ -170,26 +176,33 @@ and should provide the info needed to make the user aware of the fix.`);
         }
 
         if (!model.isPersisted()) {
-            this.createRuleAction(ruleId, model);
+            // Was a bare call, discarding the observable: nothing subscribed, so the POST never
+            // fired, and this method then fell off the end and handed its caller `undefined` to
+            // subscribe to. `ConditionGroupService.save` has always had the `return`.
+            return this.createRuleAction(ruleId, model);
         } else {
             const json = ActionService.toJson(model);
             json.owningRule = ruleId;
-            const save = this.http.put<unknown>(this._getPath(ruleId, model.key), json).pipe(
-                map(() => {
-                    return model;
-                })
-            );
+            const save = this.http
+                .put<unknown>(this._getPath(ruleId, model.key ?? undefined), json)
+                .pipe(
+                    map(() => {
+                        return model;
+                    })
+                );
 
             return save.pipe(catchError(this._catchRequestError('save')));
         }
     }
 
     remove(ruleId: string, model: ActionModel): Observable<ActionModel> {
-        const remove = this.http.delete<unknown>(this._getPath(ruleId, model.key)).pipe(
-            map(() => {
-                return model;
-            })
-        );
+        const remove = this.http
+            .delete<unknown>(this._getPath(ruleId, model.key ?? undefined))
+            .pipe(
+                map(() => {
+                    return model;
+                })
+            );
 
         return remove.pipe(catchError(this._catchRequestError('remove')));
     }
@@ -218,14 +231,14 @@ and should provide the info needed to make the user aware of the fix.`);
                     } else {
                         throw new CwError(
                             SERVER_RESPONSE_ERROR,
-                            response.headers.get('error-message')
+                            response.headers.get('error-message') ?? ''
                         );
                     }
                 } else if (response.status === HttpCode.NOT_FOUND) {
                     this.loggerService.error('Could not execute request: 404 path not valid.');
                     throw new CwError(
                         UNKNOWN_RESPONSE_ERROR,
-                        response.headers.get('error-message')
+                        response.headers.get('error-message') ?? ''
                     );
                 } else {
                     this.loggerService.debug(
@@ -241,7 +254,7 @@ and should provide the info needed to make the user aware of the fix.`);
 
                     throw new CwError(
                         UNKNOWN_RESPONSE_ERROR,
-                        response.headers.get('error-message')
+                        response.headers.get('error-message') ?? ''
                     );
                 }
             }

@@ -11,10 +11,10 @@ import { FieldProperty } from '../field-properties.model';
     standalone: false
 })
 export class ValuesPropertyComponent {
-    @ViewChild('value') value: DotTextareaContentComponent;
-    property: FieldProperty;
-    group: UntypedFormGroup;
-    helpText: string;
+    @ViewChild('value') value!: DotTextareaContentComponent;
+    property!: FieldProperty;
+    group!: UntypedFormGroup;
+    helpText!: string;
 
     private validTextHelperClazz = [
         'com.dotcms.contenttype.model.field.ImmutableRadioField',

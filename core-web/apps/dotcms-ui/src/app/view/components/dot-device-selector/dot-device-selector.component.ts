@@ -34,9 +34,9 @@ export class DotDeviceSelectorComponent implements OnInit, OnChanges {
     private dotMessageService = inject(DotMessageService);
     private readonly cd = inject(ChangeDetectorRef);
 
-    @Input() value: DotDevice;
+    @Input() value!: DotDevice;
     @Output() selected = new EventEmitter<DotDevice>();
-    @HostBinding('class.disabled') disabled: boolean;
+    @HostBinding('class.disabled') disabled = false;
 
     options: DotDevice[] = [];
     placeholder = '';
@@ -46,7 +46,7 @@ export class DotDeviceSelectorComponent implements OnInit, OnChanges {
     }
 
     ngOnChanges(changes: SimpleChanges) {
-        if (changes.value && !changes.value.firstChange) {
+        if (changes['value'] && !changes['value'].firstChange) {
             this.loadOptions();
         }
     }

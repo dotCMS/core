@@ -2,7 +2,7 @@ import { Observable } from 'rxjs';
 
 import { inject, Injectable } from '@angular/core';
 import { Title } from '@angular/platform-browser';
-import { Event, NavigationEnd, Router } from '@angular/router';
+import { NavigationEnd, Router } from '@angular/router';
 
 import { filter, map, switchMap, take, tap } from 'rxjs/operators';
 
@@ -108,8 +108,10 @@ export class DotNavigationService {
             });
     }
 
-    onNavigationEnd(): Observable<Event> {
-        return this.router.events.pipe(filter((event: Event) => event instanceof NavigationEnd));
+    onNavigationEnd(): Observable<NavigationEnd> {
+        return this.router.events.pipe(
+            filter((event): event is NavigationEnd => event instanceof NavigationEnd)
+        );
     }
 
     /**

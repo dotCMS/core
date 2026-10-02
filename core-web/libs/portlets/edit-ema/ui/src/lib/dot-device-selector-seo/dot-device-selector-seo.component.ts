@@ -9,7 +9,8 @@ import {
     OnInit,
     Output,
     ViewChild,
-    inject
+    inject,
+    input
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -63,29 +64,31 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
     private dotMessageService = inject(DotMessageService);
     private window = inject<Window>(WINDOW);
 
-    @Input() value: DotDevice;
-    @Input() hideSocialMedia = false;
+    readonly value = input<DotDevice>();
+    readonly hideSocialMedia = input(false);
 
     /**
      * Current user from store (e.g. UVEStore.uveCurrentUser()). When not provided, isCMSAdmin is false.
      */
-    @Input() currentUser?: { admin?: boolean } | null;
+    readonly currentUser = input<{
+        admin?: boolean;
+    } | null>();
     @Output() selected = new EventEmitter<DotDevice>();
     @Output() changeSeoMedia = new EventEmitter<string>();
     @Output() hideOverlayPanel = new EventEmitter<string>();
-    @ViewChild('deviceSelector') overlayPanel: Popover;
-    previewUrl: string;
+    @ViewChild('deviceSelector') overlayPanel!: Popover;
+    previewUrl = '';
 
     protected linkToAddDevice = '/c/content';
-    protected linkToEditDeviceQueryParams = {
+    protected linkToEditDeviceQueryParams: { devices: string | null } = {
         devices: null
     };
 
-    options$: Observable<DotDevice[]>;
-    SOCIAL_MEDIA_TILES: SocialMediaOption[];
+    options$!: Observable<DotDevice[]>;
+    SOCIAL_MEDIA_TILES: SocialMediaOption[] = [];
 
     protected get isCMSAdmin(): boolean {
-        return !!this.currentUser?.admin;
+        return !!this.currentUser()?.admin;
     }
 
     defaultOptions: DotDeviceListItem[] = [
@@ -178,7 +181,7 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
         return this.dotDevicesService.get().pipe(
             take(1),
             mergeMap((devices: DotDevice[]) => {
-                this.linkToEditDeviceQueryParams.devices = devices[0]?.stInode;
+                this.linkToEditDeviceQueryParams.devices = devices[0]?.stInode ?? null;
 
                 return devices;
             }),
@@ -195,6 +198,8 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
         this.hideOverlayPanel.emit();
     }
 
+    // TODO: Skipped for migration because:
+    //  Accessor inputs cannot be migrated as they are too complex.
     @Input()
     set apiLink(value: string) {
         if (value) {
@@ -218,9 +223,11 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
                         frontEndUrl.indexOf('?') != -1 ? '&' : '?'
                     }disabledNavigateMode=true&mode=LIVE`
                 );
-            } finally {
-                this.previewUrl = url.toString();
             }
+
+            // Assigned after the try/catch rather than in a `finally`: both branches set
+            // `url`, but only this ordering lets the compiler see that.
+            this.previewUrl = url.toString();
         }
     }
 }

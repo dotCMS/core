@@ -19,10 +19,11 @@ export interface DotLanguageVariables {
     variables: Record<string, DotLanguageVariableEntry>;
 }
 export interface DotLanguageVariableEntry {
+    /** Null for languages that have no variable defined; consumers narrow before reading. */
     [languageCode: string]: {
         identifier: string;
         value: string;
-    };
+    } | null;
 }
 /**
  * Provide util methods to get Languages available in the system.

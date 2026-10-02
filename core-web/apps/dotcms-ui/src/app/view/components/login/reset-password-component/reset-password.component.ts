@@ -21,7 +21,7 @@ import { RouterModule, ActivatedRoute } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { take, tap } from 'rxjs/operators';
+import { filter, take, tap } from 'rxjs/operators';
 
 import { DotRouterService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
@@ -60,8 +60,8 @@ export class ResetPasswordComponent implements OnInit, AfterViewChecked {
     private route = inject(ActivatedRoute);
     private readonly cd = inject(ChangeDetectorRef);
 
-    resetPasswordForm: UntypedFormGroup;
-    loginInfo$: Observable<DotLoginInformation>;
+    resetPasswordForm!: UntypedFormGroup;
+    loginInfo$!: Observable<DotLoginInformation>;
     message = '';
     private passwordDontMatchMessage = '';
 
@@ -72,6 +72,8 @@ export class ResetPasswordComponent implements OnInit, AfterViewChecked {
     ngOnInit(): void {
         this.loginInfo$ = this.dotLoginPageStateService.get().pipe(
             take(1),
+            // Null until `set()` has fetched the login page state.
+            filter((loginInfo): loginInfo is DotLoginInformation => !!loginInfo),
             tap((loginInfo: DotLoginInformation) => {
                 this.passwordDontMatchMessage =
                     loginInfo.i18nMessagesMap['reset-password-confirmation-do-not-match'];
@@ -91,7 +93,7 @@ export class ResetPasswordComponent implements OnInit, AfterViewChecked {
      */
     cleanConfirmPassword(): void {
         this.cleanMessage();
-        this.resetPasswordForm.get('confirmPassword').setValue('');
+        this.resetPasswordForm.controls['confirmPassword'].setValue('');
     }
 
     /**
@@ -111,14 +113,14 @@ export class ResetPasswordComponent implements OnInit, AfterViewChecked {
     submit(): void {
         if (
             this.resetPasswordForm.valid &&
-            this.resetPasswordForm.get('password').value ===
-                this.resetPasswordForm.get('confirmPassword').value
+            this.resetPasswordForm.controls['password'].value ===
+                this.resetPasswordForm.controls['confirmPassword'].value
         ) {
             this.cleanMessage();
             this.loginService
                 .changePassword(
-                    this.resetPasswordForm.get('password').value,
-                    this.route.snapshot.paramMap.get('token')
+                    this.resetPasswordForm.controls['password'].value,
+                    this.route.snapshot.paramMap.get('token') ?? ''
                 )
                 .pipe(take(1))
                 .subscribe(

@@ -13,8 +13,8 @@ const emptyChar = '_';
 const boxChar = '#';
 const currentBoxChar = '*';
 
-export const EMPTY_ROWS_VALUE = (container?: DotContainer) => {
-    const identifier = container?.path ?? container?.identifier;
+export const EMPTY_ROWS_VALUE = (container?: DotContainer): DotGridStackWidget[] => {
+    const identifier = container?.path ?? container?.identifier ?? '';
     const containers = container ? [{ identifier }] : [];
 
     return [
@@ -188,12 +188,12 @@ export const parseFromGridStackToDotObject = (gridData: DotGridStackWidget[]): D
 
     // Clone the data so we don't mutate the original
     const clone = structuredClone(gridData);
-    const ordered = clone.sort((a, b) => a.y - b.y);
+    const ordered = clone.sort((a, b) => (a.y ?? 0) - (b.y ?? 0));
 
     const rows = ordered.map((row) => {
         const { x: colWidth, subGridOpts, styleClass: styles, metadata: rowMetadata } = row;
         const { children = [] } = subGridOpts || {};
-        const styleClass = styles?.join(' ') || null;
+        const styleClass = styles?.join(' ') || undefined;
 
         if (!subGridOpts) {
             return {
@@ -205,13 +205,13 @@ export const parseFromGridStackToDotObject = (gridData: DotGridStackWidget[]): D
 
         const columns = children
             .map(({ x, w, containers = [], styleClass: styles, metadata: colMetadata }) => {
-                const leftOffset = x + colWidth + 1;
+                const leftOffset = (x ?? 0) + (colWidth ?? 0) + 1;
                 const styleClass = styles?.join(' ') || '';
 
                 return {
                     containers,
                     leftOffset,
-                    width: w,
+                    width: w ?? 0,
                     styleClass,
                     metadata: colMetadata
                 };
@@ -297,7 +297,7 @@ function simulateRowSpace(boxes: DotGridStackWidget[] = [], newBox?: DotGridStac
         boxes.push(newBox);
     }
 
-    boxes.forEach(({ x, w, id }) => {
+    boxes.forEach(({ x = 0, w = 0, id }) => {
         const currentChar = id === newBox?.id ? currentBoxChar : boxChar;
 
         rowSpace.splice(x, w, ...currentChar.repeat(w).split('')); // Fill needed empty spaces with # or *

@@ -32,11 +32,14 @@ export const formatDotImageNode = (pattern: string, asset: DotCMSContentlet) => 
  * @returns
  */
 export const replaceURLPattern = (pattern: string, asset: DotCMSContentlet) => {
-    const replacements = {
-        '{name}': asset.fileName || asset.name,
-        '{fileName}': asset.fileName || asset.name,
-        '{path}': asset.path,
-        '{extension}': asset.extension,
+    // `Partial` because the regex below matches *any* `{word}` placeholder, not just the ones
+    // listed here — an unrecognised one has to come back undefined so the `|| placeholder`
+    // fallback leaves it untouched in the output.
+    const replacements: Partial<Record<string, string>> = {
+        '{name}': asset['fileName'] || asset['name'],
+        '{fileName}': asset['fileName'] || asset['name'],
+        '{path}': asset['path'],
+        '{extension}': asset['extension'],
         '{languageId}': asset.languageId.toString(),
         '{hostname}': asset.hostName,
         '{inode}': asset.inode,

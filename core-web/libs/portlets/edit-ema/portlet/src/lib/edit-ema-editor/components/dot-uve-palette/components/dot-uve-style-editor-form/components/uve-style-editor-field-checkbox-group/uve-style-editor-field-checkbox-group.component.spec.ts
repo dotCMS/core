@@ -5,7 +5,7 @@ import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { Checkbox } from 'primeng/checkbox';
 
-import { StyleEditorFieldSchema, StyleEditorRadioOptionObject } from '@dotcms/uve';
+import { StyleEditorFieldSchema, StyleEditorRadioOptionObject } from '@dotcms/types/internal';
 
 import { UveStyleEditorFieldCheckboxGroupComponent } from './uve-style-editor-field-checkbox-group.component';
 
@@ -15,9 +15,10 @@ import { UveStyleEditorFieldCheckboxGroupComponent } from './uve-style-editor-fi
     template: ''
 })
 export class MockFormComponent {
-    // Host Props
-    formGroup: FormGroup;
-    field: StyleEditorFieldSchema;
+    // Host Props — `!` because Spectator sets them through `hostProps`, not the constructor, which
+    // is exactly what `strictPropertyInitialization` cannot see.
+    formGroup!: FormGroup;
+    field!: StyleEditorFieldSchema;
 }
 
 const createMockField = (
@@ -70,7 +71,7 @@ describe('UveStyleEditorFieldCheckboxGroupComponent', () => {
             );
             spectator.detectChanges();
 
-            const label = spectator.query('.field label');
+            const label = spectator.query('.field label')!;
             expect(label).toBeTruthy();
             expect(label.textContent.trim()).toBe('Text Decoration');
         });

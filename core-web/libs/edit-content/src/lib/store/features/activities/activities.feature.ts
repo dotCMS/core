@@ -1,7 +1,7 @@
 import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStoreFeature, type, withHooks, withMethods } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { pipe } from 'rxjs';
+import { EMPTY, pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { effect, inject, untracked } from '@angular/core';
@@ -89,7 +89,10 @@ export function withActivities() {
                  * Creates a new activity (comment) for a given content identifier
                  * @param params Object containing identifier and comment
                  */
-                addComment: rxMethod<{ identifier: ContentletIdentifier; comment: string }>(
+                // `identifier` is optional because the sidebar calls this without one — a spec pins
+                // that (`should still call addComment ... even if identifier is undefined`). The
+                // request itself is skipped in that case; see the guard below.
+                addComment: rxMethod<{ identifier?: ContentletIdentifier; comment: string }>(
                     pipe(
                         tap(() => {
                             patchState(store, {
@@ -99,8 +102,23 @@ export function withActivities() {
                                 }
                             });
                         }),
-                        switchMap(({ identifier, comment }) =>
-                            dotEditContentService.createActivity(identifier, comment).pipe(
+                        switchMap(({ identifier, comment }) => {
+                            // No identifier means the content has not been saved, so there is
+                            // nothing to attach the comment to — `createActivity` interpolates the
+                            // identifier into its URL. Settle the status rather than leaving it on
+                            // the SAVING patch above.
+                            if (!identifier) {
+                                patchState(store, {
+                                    activitiesStatus: {
+                                        status: ComponentStatus.IDLE,
+                                        error: null
+                                    }
+                                });
+
+                                return EMPTY;
+                            }
+
+                            return dotEditContentService.createActivity(identifier, comment).pipe(
                                 tapResponse({
                                     next: (activity) => {
                                         messageService.clear();
@@ -131,8 +149,8 @@ export function withActivities() {
                                         });
                                     }
                                 })
-                            )
-                        )
+                            );
+                        })
                     )
                 )
             })
