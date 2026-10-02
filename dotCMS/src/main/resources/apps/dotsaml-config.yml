@@ -37,7 +37,7 @@ params:
     hidden: false
     type: "SELECT"
     label: "Validation Type"
-    hint: "Which parts of the SAML Response your IDP signs. dotCMS rejects a response unless the selected parts carry a valid IDP signature."
+    hint: "Select exactly the parts of the SAML Response your IDP signs. dotCMS rejects a response unless the selected parts carry a valid IDP signature."
     required: true
     value:
       -

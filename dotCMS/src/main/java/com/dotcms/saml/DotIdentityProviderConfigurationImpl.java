@@ -12,6 +12,7 @@ import com.dotmarketing.util.Logger;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Default implementation to retrieve the configuration from apps
@@ -30,16 +31,27 @@ public class DotIdentityProviderConfigurationImpl implements IdentityProviderCon
             SamlName.DOT_SAML_VERIFY_SIGNATURE_CREDENTIALS.getPropertyName(),
             SamlName.DOT_SAML_VERIFY_SIGNATURE_PROFILE.getPropertyName());
 
+    /**
+     * Warnings already logged, keyed by site and setting. A configuration is built for every request
+     * that needs it, so each warning is logged once per site and value rather than on every request.
+     */
+    private static final Set<String> LOGGED_WARNINGS = ConcurrentHashMap.newKeySet();
+
     private final AppsAPI    appsAPI;
     private final Host       host;
     private final AppSecrets appSecrets;
 
     public DotIdentityProviderConfigurationImpl(final AppsAPI appsAPI, final Host host) throws DotSecurityException, DotDataException {
 
+        this(appsAPI, host, appsAPI.getSecrets(DotSamlProxyFactory.SAML_APP_CONFIG_KEY,
+                true, host, APILocator.systemUser()).get());
+    }
+
+    DotIdentityProviderConfigurationImpl(final AppsAPI appsAPI, final Host host, final AppSecrets appSecrets) {
+
         this.appsAPI    = appsAPI;
         this.host       = host;
-        this.appSecrets = this.appsAPI.getSecrets(DotSamlProxyFactory.SAML_APP_CONFIG_KEY,
-                true, host, APILocator.systemUser()).get();
+        this.appSecrets = appSecrets;
 
         this.warnAboutOverriddenSettings();
     }
@@ -63,7 +75,8 @@ public class DotIdentityProviderConfigurationImpl implements IdentityProviderCon
         final Optional<Secret> validationType =
                 this.findSecret(SamlName.DOT_SAML_SIGNATURE_VALIDATION_TYPE.getPropertyName());
         final String configured = validationType.map(Secret::getString).orElse(null);
-        if (null == configured || !SIGNATURE_VALIDATION_TYPES.contains(configured.trim().toLowerCase(Locale.ROOT))) {
+        if ((null == configured || !SIGNATURE_VALIDATION_TYPES.contains(configured.trim().toLowerCase(Locale.ROOT)))
+                && firstTime("validationType=" + configured)) {
 
             Logger.warn(this, "SAML configuration for site '" + this.host.getHostname() + "' has an unsupported "
                     + "signature validation type '" + configured + "'. A signed response and a signed assertion "
@@ -72,12 +85,17 @@ public class DotIdentityProviderConfigurationImpl implements IdentityProviderCon
 
         for (final String ignoredProperty : IGNORED_PROPERTIES) {
 
-            if (this.findSecret(ignoredProperty).isPresent()) {
+            if (this.findSecret(ignoredProperty).isPresent() && firstTime(ignoredProperty)) {
 
                 Logger.warn(this, "SAML configuration for site '" + this.host.getHostname() + "' sets '"
                         + ignoredProperty + "', which is ignored: SAML signatures are always verified.");
             }
         }
+    }
+
+    private boolean firstTime(final String warning) {
+
+        return LOGGED_WARNINGS.add(this.host.getIdentifier() + '|' + warning);
     }
 
     private Optional<Secret> findSecret (final String key) {

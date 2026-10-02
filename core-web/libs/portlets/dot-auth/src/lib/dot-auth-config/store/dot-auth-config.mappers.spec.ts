@@ -1,4 +1,9 @@
-import { DotAuthConfig, DotAuthConfigView, DotAuthDiscoveryView } from '@dotcms/dotcms-models';
+import {
+    DotAuthConfig,
+    DotAuthConfigView,
+    DotAuthDiscoveryView,
+    DotAuthSignatureValidation
+} from '@dotcms/dotcms-models';
 
 import {
     DEFAULT_CONFIG,
@@ -340,7 +345,13 @@ describe('dot-auth-config.mappers', () => {
         });
 
         it('shows a legacy "none" or unknown validation type as both signatures required', () => {
-            for (const signatureValidationType of ['none', '', 'signature']) {
+            // out-of-range values on purpose: what an old or hand-edited configuration may hold
+            const legacyValues = [
+                'none',
+                '',
+                'signature'
+            ] as unknown as DotAuthSignatureValidation[];
+            for (const signatureValidationType of legacyValues) {
                 const config = fromView({
                     ...SAML_VIEW,
                     values: { ...SAML_VIEW.values, signatureValidationType }
