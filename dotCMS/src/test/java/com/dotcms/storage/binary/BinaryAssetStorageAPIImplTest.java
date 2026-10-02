@@ -207,6 +207,90 @@ class BinaryAssetStorageAPIImplTest {
     }
 
     /**
+     * Field and file names that are dot segments or contain a separator would move the built path out
+     * of its {@code inode/field} directory, so they are rejected before storage is touched.
+     */
+    @Test
+    void test_dot_segments_and_separators_in_names_are_rejected() throws Exception {
+        final File source = File.createTempFile("source", ".pdf");
+        source.deleteOnExit();
+        for (final String bad : java.util.List.of(".", "..", "../x", "x/y", "x\\y")) {
+            assertThrows(IllegalArgumentException.class, () -> api.getBinaryFile(INODE, FIELD_VAR, bad), bad);
+            assertThrows(IllegalArgumentException.class, () -> api.getBinaryStream(INODE, FIELD_VAR, bad), bad);
+            assertThrows(IllegalArgumentException.class, () -> api.storeBinary(INODE, FIELD_VAR, bad, source), bad);
+            assertThrows(IllegalArgumentException.class, () -> api.copyBinary(INODE, "def456", FIELD_VAR, bad), bad);
+            assertThrows(IllegalArgumentException.class, () -> api.getBinaryFile(INODE, bad, FILE_NAME), bad);
+            assertThrows(IllegalArgumentException.class, () -> api.getBinaryFile(INODE, bad), bad);
+            assertThrows(IllegalArgumentException.class, () -> api.existsBinary(INODE, bad), bad);
+            assertThrows(IllegalArgumentException.class, () -> api.deleteBinary(INODE, bad), bad);
+        }
+        verifyNoInteractions(mockStorage);
+    }
+
+    /** An inode is at least two letters, digits, underscores or hyphens; anything else is rejected. */
+    @Test
+    void test_invalid_inodes_are_rejected() throws Exception {
+        for (final String bad : java.util.List.of("x", "..", "../..", "ab/cd", "ab\\cd", "ab.cd")) {
+            assertThrows(IllegalArgumentException.class, () -> api.getBinaryFile(bad, FIELD_VAR, FILE_NAME), bad);
+            assertThrows(IllegalArgumentException.class, () -> api.getBinaryFile(bad, FIELD_VAR), bad);
+            assertThrows(IllegalArgumentException.class, () -> api.copyBinary(INODE, bad, FIELD_VAR, FILE_NAME), bad);
+            assertThrows(IllegalArgumentException.class, () -> api.existsBinary(bad, FIELD_VAR), bad);
+            assertThrows(IllegalArgumentException.class, () -> api.deleteBinary(bad, FIELD_VAR), bad);
+            assertThrows(IllegalArgumentException.class, () -> api.deleteAllBinaries(bad), bad);
+        }
+        verifyNoInteractions(mockStorage);
+    }
+
+    /**
+     * With the flag off, {@code deleteAllBinaries("..")} used to resolve to the parent of the asset root
+     * and delete it. The parent and the asset root must both survive.
+     */
+    @Test
+    void test_deleteAllBinaries_dot_dot_inode_deletes_nothing_with_flag_off(@TempDir final Path parent)
+            throws Exception {
+        Config.setProperty(com.dotcms.storage.AssetStorageFeature.FLAG, false);
+        final Path assetRoot = Files.createDirectories(parent.resolve("assets"));
+        final Path outside = Files.writeString(parent.resolve("outside.txt"), "keep");
+        final Path inside = Files.createDirectories(assetRoot.resolve("a/b/abc123/fileAsset"))
+                .resolve("report.pdf");
+        Files.writeString(inside, "keep");
+        try (MockedStatic<com.dotmarketing.util.ConfigUtils> configUtils =
+                     mockStatic(com.dotmarketing.util.ConfigUtils.class)) {
+            configUtils.when(com.dotmarketing.util.ConfigUtils::getAssetPath).thenReturn(assetRoot.toString());
+            for (final String bad : java.util.List.of("..", "../..", ".x")) {
+                assertThrows(IllegalArgumentException.class, () -> api.deleteAllBinaries(bad), bad);
+            }
+        }
+        assertEquals("keep", Files.readString(outside));
+        assertEquals("keep", Files.readString(inside));
+    }
+
+    /**
+     * A row whose {@code contentlet_as_json} is null (JSON persistence off, or not yet populated) says
+     * nothing about its binaries, so lookups fall back to the {@code inode/field/fileName} layout.
+     */
+    @Test
+    void test_row_without_content_json_uses_layout_lookup(@TempDir final Path assetRoot) throws Exception {
+        final File expectedFile = File.createTempFile("result", ".pdf");
+        expectedFile.deleteOnExit();
+        when(mockStorage.pullFile(GROUP, EXPECTED_FILE_PATH)).thenReturn(expectedFile);
+        when(mockStorage.listObjectPaths(GROUP, EXPECTED_FIELD_PATH))
+                .thenReturn(java.util.List.of(EXPECTED_FILE_PATH));
+        final BinaryAssetStorageAPIImpl referencesApi = new BinaryAssetStorageAPIImpl(mockStorage, true);
+        try (MockedStatic<BinaryAssetReference> references = mockStatic(BinaryAssetReference.class,
+                call -> "contentJson".equals(call.getMethod().getName()) ? null : call.callRealMethod());
+             MockedStatic<com.dotmarketing.util.ConfigUtils> configUtils =
+                     mockStatic(com.dotmarketing.util.ConfigUtils.class)) {
+            configUtils.when(com.dotmarketing.util.ConfigUtils::getAssetPath).thenReturn(assetRoot.toString());
+
+            assertSame(expectedFile, referencesApi.getBinaryFile(INODE, FIELD_VAR, FILE_NAME));
+            assertSame(expectedFile, referencesApi.getBinaryFile(INODE, FIELD_VAR));
+            assertTrue(referencesApi.existsBinary(INODE, FIELD_VAR));
+            references.verify(() -> BinaryAssetReference.contentJson(INODE), atLeast(3));
+        }
+    }
+
+    /**
      * Tests for the filename-less {@code getBinaryFile(inode, fieldVarName)} overload.
      * These use real temp directories since we need actual filesystem listing.
      * The impl's {@code resolveFieldDirectory()} uses {@code ConfigUtils.getAssetPath()},

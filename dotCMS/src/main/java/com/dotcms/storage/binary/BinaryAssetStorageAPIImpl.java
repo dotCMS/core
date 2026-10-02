@@ -56,6 +56,18 @@ public class BinaryAssetStorageAPIImpl implements BinaryAssetStorageAPI {
         return evictionLock.readLock()::unlock;
     }
 
+    /**
+     * Opens a local file. With the flag on, a missing file whose path is an owned binary or revision
+     * under the asset root is restored from durable storage first. Paths outside that layout, or with
+     * an invalid inode, field or file name, are opened as they are and are never restored.
+     *
+     * @param file the file to open; the caller has already checked access to it
+     * @return an open stream on the file
+     * @throws java.nio.file.NoSuchFileException if the file is not local and could not be restored
+     *         because no durable copy exists
+     * @throws IOException if the file cannot be opened
+     * @throws DotDataException if the restore fails
+     */
     @Override
     public InputStream openLocalFile(final File file) throws IOException, DotDataException {
         if (!com.dotcms.storage.AssetStorageFeature.isEnabled()) {
@@ -71,8 +83,8 @@ public class BinaryAssetStorageAPIImpl implements BinaryAssetStorageAPI {
                         final String inode = relative.getName(2).toString();
                         final String field = relative.getName(3).toString();
                         final String name = relative.getFileName().toString();
-                        validateParams(inode, field, name);
-                        if (inode.length() >= 2 && relative.getName(0).toString().equals(inode.substring(0, 1))
+                        if (BinaryAssetReference.isValidOwner(inode, field) && BinaryAssetReference.isValidName(name)
+                                && relative.getName(0).toString().equals(inode.substring(0, 1))
                                 && relative.getName(1).toString().equals(inode.substring(1, 2))) {
                             final String key = relative.toString().replace(File.separatorChar, '/');
                             if (relative.getNameCount() == 7) {
@@ -210,16 +222,32 @@ public class BinaryAssetStorageAPIImpl implements BinaryAssetStorageAPI {
                 buildFilePath(inode, field, reference.fileName())), snapshot);
     }
 
+    /**
+     * Returns the local file for one binary, restoring it from durable storage when needed.
+     *
+     * <p>With the flag on and content references enabled, the binary named by the row's
+     * {@code contentlet_as_json} is returned. A row without that JSON falls back to the older
+     * {@code inode/field/fileName} layout, the same lookup used with the flag off.</p>
+     *
+     * @param inode        the contentlet inode
+     * @param fieldVarName the binary field's variable name
+     * @param fileName     the binary's file name
+     * @return the local file, or {@code null} when the binary does not exist
+     * @throws IllegalArgumentException if any argument is empty or would leave the asset layout
+     * @throws DotDataException if the lookup or restore fails
+     */
     @Override
     public File getBinaryFile(final String inode, final String fieldVarName,
                               final String fileName) throws DotDataException {
-        evictionLock.readLock().lock();
-        try {
+        try (var lease = acquireCacheLease()) {
             validateParams(inode, fieldVarName, fileName);
             if (resolveContentReferences && com.dotcms.storage.AssetStorageFeature.isEnabled()) {
-                final var reference = BinaryAssetReference.findStored(inode, fieldVarName);
-                return reference == null || !fileName.equals(reference.fileName()) ? null
-                        : getReferencedFile(inode, fieldVarName, reference);
+                final String json = BinaryAssetReference.contentJson(inode);
+                if (json != null) {
+                    final var reference = BinaryAssetReference.fromContentField(json, inode, fieldVarName);
+                    return reference == null || !fileName.equals(reference.fileName()) ? null
+                            : getReferencedFile(inode, fieldVarName, reference);
+                }
             }
             ensureGroupExists();
 
@@ -234,16 +262,22 @@ public class BinaryAssetStorageAPIImpl implements BinaryAssetStorageAPI {
                         inode, fieldVarName, fileName, e.getMessage()));
                 return null;
             }
-        } finally {
-            evictionLock.readLock().unlock();
         }
     }
 
+    /**
+     * Opens a stream on one binary. The cache lease is held only until the stream is open.
+     *
+     * @param inode        the contentlet inode
+     * @param fieldVarName the binary field's variable name
+     * @param fileName     the binary's file name
+     * @return an open stream, or {@code null} when the binary does not exist
+     * @throws DotDataException if the lookup or restore fails
+     */
     @Override
     public InputStream getBinaryStream(final String inode, final String fieldVarName,
                                        final String fileName) throws DotDataException {
-        evictionLock.readLock().lock();
-        try {
+        try (var lease = acquireCacheLease()) {
             final File file = getBinaryFile(inode, fieldVarName, fileName);
             if (file == null) {
                 return null;
@@ -257,26 +291,34 @@ public class BinaryAssetStorageAPIImpl implements BinaryAssetStorageAPI {
                         inode, fieldVarName, fileName));
                 return null;
             }
-        } finally {
-            evictionLock.readLock().unlock();
         }
     }
 
+    /**
+     * Returns the local file for a field's binary when the file name is not known.
+     *
+     * <p>With the flag on and content references enabled, the binary named by the row's
+     * {@code contentlet_as_json} is returned. A row without that JSON falls back to listing the
+     * field directory locally and then in durable storage, the same lookup used with the flag off.</p>
+     *
+     * @param inode        the contentlet inode
+     * @param fieldVarName the binary field's variable name
+     * @return the local file, or {@code null} when the field has no binary
+     * @throws IllegalArgumentException if an argument is empty or would leave the asset layout
+     * @throws DotDataException if the lookup or restore fails
+     */
     @Override
     public File getBinaryFile(final String inode,
                               final String fieldVarName) throws DotDataException {
-        evictionLock.readLock().lock();
-        try {
-            if (!UtilMethods.isSet(inode)) {
-                throw new IllegalArgumentException("inode must not be null or empty");
-            }
-            if (!UtilMethods.isSet(fieldVarName)) {
-                throw new IllegalArgumentException("fieldVarName must not be null or empty");
-            }
+        try (var lease = acquireCacheLease()) {
+            validateOwner(inode, fieldVarName);
 
             if (resolveContentReferences && com.dotcms.storage.AssetStorageFeature.isEnabled()) {
-                final var reference = BinaryAssetReference.findStored(inode, fieldVarName);
-                return reference == null ? null : getReferencedFile(inode, fieldVarName, reference);
+                final String json = BinaryAssetReference.contentJson(inode);
+                if (json != null) {
+                    final var reference = BinaryAssetReference.fromContentField(json, inode, fieldVarName);
+                    return reference == null ? null : getReferencedFile(inode, fieldVarName, reference);
+                }
             }
             // Strategy 1: Try local FS directory listing (fast path — works when cached).
             // Covers flag-off filesystem/NFS mode and a warm S3 cache.
@@ -317,16 +359,22 @@ public class BinaryAssetStorageAPIImpl implements BinaryAssetStorageAPI {
             }
 
             return null;
-        } finally {
-            evictionLock.readLock().unlock();
         }
     }
 
+    /**
+     * Opens a stream on a field's binary when the file name is not known. The cache lease is held
+     * only until the stream is open.
+     *
+     * @param inode        the contentlet inode
+     * @param fieldVarName the binary field's variable name
+     * @return an open stream, or {@code null} when the field has no binary
+     * @throws DotDataException if the lookup or restore fails
+     */
     @Override
     public InputStream getBinaryStream(final String inode,
                                        final String fieldVarName) throws DotDataException {
-        evictionLock.readLock().lock();
-        try {
+        try (var lease = acquireCacheLease()) {
             final File file = getBinaryFile(inode, fieldVarName);
             if (file == null) {
                 return null;
@@ -340,8 +388,6 @@ public class BinaryAssetStorageAPIImpl implements BinaryAssetStorageAPI {
                         inode, fieldVarName));
                 return null;
             }
-        } finally {
-            evictionLock.readLock().unlock();
         }
     }
 
@@ -377,12 +423,24 @@ public class BinaryAssetStorageAPIImpl implements BinaryAssetStorageAPI {
         return new File(ConfigUtils.getAssetPath(), filePath);
     }
 
+    /**
+     * Stores a binary at {@code inode/field/fileName}, optionally as a hard link when the provider is
+     * the plain filesystem.
+     *
+     * @param inode        the contentlet inode
+     * @param fieldVarName the binary field's variable name
+     * @param fileName     the binary's file name
+     * @param sourceFile   the file to store
+     * @param hardLink     whether a filesystem-only provider may hard-link instead of copying
+     * @throws IllegalArgumentException if an argument is empty, would leave the asset layout, or the
+     *         source file does not exist
+     * @throws DotDataException if the copy or upload fails
+     */
     @Override
     public void storeBinary(final String inode, final String fieldVarName,
                             final String fileName, final File sourceFile,
                             final boolean hardLink) throws DotDataException {
-        evictionLock.readLock().lock();
-        try {
+        try (var lease = acquireCacheLease()) {
             validateParams(inode, fieldVarName, fileName);
             ensureGroupExists();
 
@@ -409,16 +467,24 @@ public class BinaryAssetStorageAPIImpl implements BinaryAssetStorageAPI {
                 // Non-FILE_SYSTEM mode or hardLink=false: delegate to existing storeBinary
                 storeBinary(inode, fieldVarName, fileName, sourceFile);
             }
-        } finally {
-            evictionLock.readLock().unlock();
         }
     }
 
+    /**
+     * Stores a binary at {@code inode/field/fileName} through the storage chain.
+     *
+     * @param inode        the contentlet inode
+     * @param fieldVarName the binary field's variable name
+     * @param fileName     the binary's file name
+     * @param sourceFile   the file to store
+     * @throws IllegalArgumentException if an argument is empty, would leave the asset layout, or the
+     *         source file does not exist
+     * @throws DotDataException if the upload fails
+     */
     @Override
     public void storeBinary(final String inode, final String fieldVarName,
                             final String fileName, final File sourceFile) throws DotDataException {
-        evictionLock.readLock().lock();
-        try {
+        try (var lease = acquireCacheLease()) {
             validateParams(inode, fieldVarName, fileName);
             ensureGroupExists();
 
@@ -431,20 +497,28 @@ public class BinaryAssetStorageAPIImpl implements BinaryAssetStorageAPI {
             final String path = buildFilePath(inode, fieldVarName, fileName);
             storagePersistenceAPI.pushFile(BINARY_ASSETS_GROUP, path, sourceFile,
                     Map.<String, Serializable>of());
-        } finally {
-            evictionLock.readLock().unlock();
         }
     }
 
+    /**
+     * Copies one binary from a source inode to a destination inode under the same field and name.
+     *
+     * @param sourceInode  the inode that holds the binary
+     * @param destInode    the inode that receives the copy
+     * @param fieldVarName the binary field's variable name
+     * @param fileName     the binary's file name
+     * @throws IllegalArgumentException if an argument is empty or would leave the asset layout
+     * @throws DotDataException if the copy fails
+     */
     @Override
     public void copyBinary(final String sourceInode, final String destInode,
                            final String fieldVarName, final String fileName) throws DotDataException {
-        evictionLock.readLock().lock();
-        try {
+        try (var lease = acquireCacheLease()) {
             validateParams(sourceInode, fieldVarName, fileName);
             if (!UtilMethods.isSet(destInode)) {
                 throw new IllegalArgumentException("destInode must not be null or empty");
             }
+            validateOwner(destInode, fieldVarName);
             ensureGroupExists();
 
             if (storagePersistenceAPI instanceof FileSystemStoragePersistenceAPIImpl) {
@@ -474,22 +548,23 @@ public class BinaryAssetStorageAPIImpl implements BinaryAssetStorageAPI {
                 storagePersistenceAPI.pushFile(BINARY_ASSETS_GROUP, destPath, sourceFile,
                         Map.<String, Serializable>of());
             }
-        } finally {
-            evictionLock.readLock().unlock();
         }
     }
 
+    /**
+     * Deletes every binary stored under one field of an inode, and with the flag on, the inode's
+     * completed renditions.
+     *
+     * @param inode        the contentlet inode
+     * @param fieldVarName the binary field's variable name
+     * @throws IllegalArgumentException if an argument is empty or would leave the asset layout
+     * @throws DotDataException if a deletion fails
+     */
     @Override
     public void deleteBinary(final String inode,
                              final String fieldVarName) throws DotDataException {
-        evictionLock.readLock().lock();
-        try {
-            if (!UtilMethods.isSet(inode)) {
-                throw new IllegalArgumentException("inode must not be null or empty");
-            }
-            if (!UtilMethods.isSet(fieldVarName)) {
-                throw new IllegalArgumentException("fieldVarName must not be null or empty");
-            }
+        try (var lease = acquireCacheLease()) {
+            validateOwner(inode, fieldVarName);
             ensureGroupExists();
 
             final String fieldPath = buildFieldPath(inode, fieldVarName);
@@ -497,8 +572,6 @@ public class BinaryAssetStorageAPIImpl implements BinaryAssetStorageAPI {
                 storagePersistenceAPI.deleteObjectAndReferences(BINARY_ASSETS_GROUP, path);
             }
             storagePersistenceAPI.deleteObjectAndReferences(BINARY_ASSETS_GROUP, fieldPath);
-        } finally {
-            evictionLock.readLock().unlock();
         }
         if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
             deleteGeneratedFiles(inode);
@@ -530,19 +603,28 @@ public class BinaryAssetStorageAPIImpl implements BinaryAssetStorageAPI {
         }
     }
 
+    /**
+     * Reports whether a field of an inode has a stored binary.
+     *
+     * <p>With the flag on and content references enabled, an immutable revision recorded in the row's
+     * {@code contentlet_as_json} is checked directly. An older-layout binary, or a row without that
+     * JSON, is checked by listing the field directory, the same lookup used with the flag off.</p>
+     *
+     * @param inode        the contentlet inode
+     * @param fieldVarName the binary field's variable name
+     * @return true when the binary exists
+     * @throws IllegalArgumentException if an argument is empty or would leave the asset layout
+     * @throws DotDataException if the lookup fails
+     */
     @Override
     public boolean existsBinary(final String inode,
                                 final String fieldVarName) throws DotDataException {
 
-        if (!UtilMethods.isSet(inode)) {
-            throw new IllegalArgumentException("inode must not be null or empty");
-        }
-        if (!UtilMethods.isSet(fieldVarName)) {
-            throw new IllegalArgumentException("fieldVarName must not be null or empty");
-        }
+        validateOwner(inode, fieldVarName);
         ensureGroupExists();
 
         if (resolveContentReferences && com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+            // Null means an older-layout binary or a row without contentlet_as_json: list the field.
             final String key = BinaryAssetReference.find(inode, fieldVarName);
             if (key != null) {
                 return !key.isEmpty() && storagePersistenceAPI.existsObject(BINARY_ASSETS_GROUP, key);
@@ -553,12 +635,22 @@ public class BinaryAssetStorageAPIImpl implements BinaryAssetStorageAPI {
         return !storagePersistenceAPI.listObjectPaths(BINARY_ASSETS_GROUP, fieldPath).isEmpty();
     }
 
+    /**
+     * Deletes every binary of an inode, locally and in durable storage, and with the flag on, the
+     * inode's completed renditions.
+     *
+     * @param inode the contentlet inode
+     * @throws IllegalArgumentException if the inode is empty or is not a valid inode
+     * @throws DotDataException if a deletion fails
+     */
     @Override
     public void deleteAllBinaries(final String inode) throws DotDataException {
-        evictionLock.readLock().lock();
-        try {
+        try (var lease = acquireCacheLease()) {
             if (!UtilMethods.isSet(inode)) {
                 throw new IllegalArgumentException("inode must not be null or empty");
+            }
+            if (!inode.matches("[A-Za-z0-9_-]{2,}")) {
+                throw new IllegalArgumentException("Invalid binary inode");
             }
 
             final String inodePath = inode.charAt(0) + File.separator
@@ -598,8 +690,6 @@ public class BinaryAssetStorageAPIImpl implements BinaryAssetStorageAPI {
             }
 
             Logger.debug(this, () -> String.format("Deleted all binaries for inode '%s'", inode));
-        } finally {
-            evictionLock.readLock().unlock();
         }
         if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
             deleteGeneratedFiles(inode);
@@ -616,8 +706,22 @@ public class BinaryAssetStorageAPIImpl implements BinaryAssetStorageAPI {
                 inode.charAt(0) + "/" + inode.charAt(1) + "/" + inode + "/");
     }
 
+    /**
+     * Deletes the local {@code inode[0]/inode[1]/inode} directory under the asset root.
+     *
+     * @param inode     the contentlet inode, used in messages
+     * @param inodePath the directory path relative to the asset root
+     * @throws IllegalArgumentException if the path does not resolve to a directory exactly three
+     *         levels below the asset root
+     * @throws DotDataException if the directory cannot be removed
+     */
     private void deleteLocalInodeDirectory(final String inode, final String inodePath) throws DotDataException {
         final File inodeDir = new File(ConfigUtils.getAssetPath(), inodePath);
+        final Path root = Path.of(ConfigUtils.getAssetPath()).toAbsolutePath().normalize();
+        final Path directory = inodeDir.toPath().toAbsolutePath().normalize();
+        if (!directory.startsWith(root) || root.relativize(directory).getNameCount() != 3) {
+            throw new IllegalArgumentException("Inode directory is outside the asset root: " + inode);
+        }
         if (inodeDir.exists()) {
             try {
                 FileUtil.deltree(inodeDir);
@@ -657,19 +761,44 @@ public class BinaryAssetStorageAPIImpl implements BinaryAssetStorageAPI {
     }
 
     /**
-     * Validates that inode, fieldVarName, and fileName are non-null and non-empty.
+     * Validates that inode, fieldVarName, and fileName are set and are safe path segments, so the
+     * built path stays inside {@code inode/field}.
+     *
+     * @param inode        the contentlet inode
+     * @param fieldVarName the binary field's variable name
+     * @param fileName     the binary's file name
+     * @throws IllegalArgumentException if any value is empty, the inode has characters other than
+     *         letters, digits, underscores and hyphens, or a name contains a separator or is a dot segment
      */
     private void validateParams(final String inode, final String fieldVarName,
                                 final String fileName) {
 
+        validateOwner(inode, fieldVarName);
+        if (!UtilMethods.isSet(fileName)) {
+            throw new IllegalArgumentException("fileName must not be null or empty");
+        }
+        if (!BinaryAssetReference.isValidName(fileName)) {
+            throw new IllegalArgumentException("Invalid binary file name");
+        }
+    }
+
+    /**
+     * Validates that an inode and field are set and are safe path segments, using the same rules as
+     * {@link BinaryAssetReference}.
+     *
+     * @param inode        the contentlet inode
+     * @param fieldVarName the binary field's variable name
+     * @throws IllegalArgumentException if either value is empty or would leave the asset layout
+     */
+    private void validateOwner(final String inode, final String fieldVarName) {
         if (!UtilMethods.isSet(inode)) {
             throw new IllegalArgumentException("inode must not be null or empty");
         }
         if (!UtilMethods.isSet(fieldVarName)) {
             throw new IllegalArgumentException("fieldVarName must not be null or empty");
         }
-        if (!UtilMethods.isSet(fileName)) {
-            throw new IllegalArgumentException("fileName must not be null or empty");
+        if (!BinaryAssetReference.isValidOwner(inode, fieldVarName)) {
+            throw new IllegalArgumentException("Invalid binary owner");
         }
     }
 
@@ -701,15 +830,26 @@ public class BinaryAssetStorageAPIImpl implements BinaryAssetStorageAPI {
         }
     }
 
-    private synchronized void ensureGeneratedGroupExists() throws DotDataException {
-        if (!generatedGroupInitialized) {
-            final File directory = new File(ConfigUtils.getDotGeneratedPath());
-            if (!directory.isDirectory() && !directory.mkdirs()) {
-                throw new DotDataException("Unable to create generated asset directory " + directory);
+    /**
+     * Maps the generated-assets group to the dotGenerated directory the first time a rendition call
+     * needs it. Later calls only read the volatile flag, so they do not contend on this object's monitor.
+     *
+     * @throws DotDataException if the directory cannot be created or the group cannot be registered
+     */
+    private void ensureGeneratedGroupExists() throws DotDataException {
+        if (generatedGroupInitialized) {
+            return;
+        }
+        synchronized (this) {
+            if (!generatedGroupInitialized) {
+                final File directory = new File(ConfigUtils.getDotGeneratedPath());
+                if (!directory.isDirectory() && !directory.mkdirs()) {
+                    throw new DotDataException("Unable to create generated asset directory " + directory);
+                }
+                storagePersistenceAPI.createGroup(GENERATED_ASSETS_GROUP,
+                        Map.of(FileSystemStoragePersistenceAPIImpl.GROUP_DIRECTORY, directory));
+                generatedGroupInitialized = true;
             }
-            storagePersistenceAPI.createGroup(GENERATED_ASSETS_GROUP,
-                    Map.of(FileSystemStoragePersistenceAPIImpl.GROUP_DIRECTORY, directory));
-            generatedGroupInitialized = true;
         }
     }
 
@@ -840,63 +980,101 @@ public class BinaryAssetStorageAPIImpl implements BinaryAssetStorageAPI {
                 && relative.getName(5).toString().matches("[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}");
     }
 
+    /**
+     * Deletes a local cache file when durable storage holds a verified copy of the same bytes.
+     *
+     * <p>Verification can download the object from S3, so it runs with no lock held and never blocks
+     * readers. The file's attributes are recorded before verification. Afterwards the write lock is
+     * taken without waiting, only to repeat the path checks, confirm that the size, modification time
+     * and file key are unchanged, and delete. If a lease or storage operation is active at that
+     * moment, or the file changed, the file is kept.</p>
+     *
+     * @param file a file under the asset root or the dotGenerated root
+     * @return true if the file was deleted, false if it was kept for any reason
+     * @throws DotDataException if the file cannot be inspected or the durable copy cannot be verified
+     */
     @Override
     public boolean evictLocalFile(final File file) throws DotDataException {
         if (!com.dotcms.storage.AssetStorageFeature.isEnabled()) {
             return false;
         }
-        // Never queue an eviction writer behind a long response: that would also stall new readers.
-        if (!evictionLock.writeLock().tryLock()) {
-            return false;
-        }
         try {
-            if (Files.isSymbolicLink(file.toPath())) {
+            final EvictionCandidate candidate = evictionCandidate(file);
+            if (candidate == null) {
+                return false;
+            }
+            final BasicFileAttributes before = Files.readAttributes(candidate.path(), BasicFileAttributes.class,
+                    LinkOption.NOFOLLOW_LINKS);
+            if (!before.isRegularFile()
+                    || !storagePersistenceAPI.hasDurableCopy(candidate.group(), candidate.key(), file)) {
+                return false;
+            }
+            // Never queue an eviction writer behind a long response: that would also stall new readers.
+            if (!evictionLock.writeLock().tryLock()) {
                 return false;
             }
             try {
-                final Path path = file.toPath().toRealPath();
-                final String generatedRoot = ConfigUtils.getDotGeneratedPath();
-                final boolean generated = generatedRoot != null
-                        && path.startsWith(new File(generatedRoot).getCanonicalFile().toPath());
-                final Path root = Path.of(generated ? generatedRoot : ConfigUtils.getAssetPath()).toRealPath();
-                final String group = generated ? GENERATED_ASSETS_GROUP : BINARY_ASSETS_GROUP;
-                final Path configuredRoot = Path.of(generated ? generatedRoot : ConfigUtils.getAssetPath())
-                        .toAbsolutePath().normalize();
-                final Path suppliedPath = file.toPath().toAbsolutePath().normalize();
-                // Providers may return the canonical path when the configured root itself is an alias.
-                final Path suppliedRoot = suppliedPath.startsWith(configuredRoot) ? configuredRoot : root;
-                if (!suppliedPath.startsWith(suppliedRoot)) {
+                if (!candidate.equals(evictionCandidate(file))) {
                     return false;
                 }
-                Path descendant = suppliedRoot;
-                for (final Path component : suppliedRoot.relativize(suppliedPath)) {
-                    descendant = descendant.resolve(component);
-                    if (Files.isSymbolicLink(descendant)) {
-                        return false;
-                    }
-                }
-                if (!path.startsWith(root) || !isEvictableAssetPath(root.relativize(path), generated)) {
-                    return false;
-                }
-                final BasicFileAttributes before = Files.readAttributes(path, BasicFileAttributes.class,
-                        LinkOption.NOFOLLOW_LINKS);
-                if (!before.isRegularFile() || !storagePersistenceAPI.hasDurableCopy(
-                        group, root.relativize(path).toString(), file)) {
-                    return false;
-                }
-                final BasicFileAttributes after = Files.readAttributes(path, BasicFileAttributes.class,
+                final BasicFileAttributes after = Files.readAttributes(candidate.path(), BasicFileAttributes.class,
                         LinkOption.NOFOLLOW_LINKS);
                 if (before.size() != after.size() || !before.lastModifiedTime().equals(after.lastModifiedTime())
                         || !java.util.Objects.equals(before.fileKey(), after.fileKey())) {
                     return false;
                 }
-                return Files.deleteIfExists(path);
-            } catch (final IOException e) {
-                throw new DotDataException("Unable to evict binary cache file " + file, e);
+                return Files.deleteIfExists(candidate.path());
+            } catch (final java.nio.file.NoSuchFileException removed) {
+                return false; // Deleted by another operation while it was being verified.
+            } finally {
+                evictionLock.writeLock().unlock();
             }
-        } finally {
-            evictionLock.writeLock().unlock();
+        } catch (final IOException e) {
+            throw new DotDataException("Unable to evict binary cache file " + file, e);
         }
+    }
+
+    /** The real path of an evictable file, with the storage group and key that hold its durable copy. */
+    private record EvictionCandidate(Path path, String group, String key) { }
+
+    /**
+     * Applies the eviction path checks: the supplied file and every directory below the configured
+     * root must not be symbolic links, and the real path must be an owned binary or completed
+     * rendition under its root.
+     *
+     * @param file the file proposed for eviction
+     * @return the candidate, or {@code null} when the file must not be evicted
+     * @throws IOException if the path cannot be resolved
+     */
+    private EvictionCandidate evictionCandidate(final File file) throws IOException {
+        if (Files.isSymbolicLink(file.toPath())) {
+            return null;
+        }
+        final Path path = file.toPath().toRealPath();
+        final String generatedRoot = ConfigUtils.getDotGeneratedPath();
+        final boolean generated = generatedRoot != null
+                && path.startsWith(new File(generatedRoot).getCanonicalFile().toPath());
+        final Path root = Path.of(generated ? generatedRoot : ConfigUtils.getAssetPath()).toRealPath();
+        final String group = generated ? GENERATED_ASSETS_GROUP : BINARY_ASSETS_GROUP;
+        final Path configuredRoot = Path.of(generated ? generatedRoot : ConfigUtils.getAssetPath())
+                .toAbsolutePath().normalize();
+        final Path suppliedPath = file.toPath().toAbsolutePath().normalize();
+        // Providers may return the canonical path when the configured root itself is an alias.
+        final Path suppliedRoot = suppliedPath.startsWith(configuredRoot) ? configuredRoot : root;
+        if (!suppliedPath.startsWith(suppliedRoot)) {
+            return null;
+        }
+        Path descendant = suppliedRoot;
+        for (final Path component : suppliedRoot.relativize(suppliedPath)) {
+            descendant = descendant.resolve(component);
+            if (Files.isSymbolicLink(descendant)) {
+                return null;
+            }
+        }
+        if (!path.startsWith(root) || !isEvictableAssetPath(root.relativize(path), generated)) {
+            return null;
+        }
+        return new EvictionCandidate(path, group, root.relativize(path).toString());
     }
 
 }

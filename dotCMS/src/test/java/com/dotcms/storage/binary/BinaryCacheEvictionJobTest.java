@@ -115,6 +115,78 @@ class BinaryCacheEvictionJobTest {
         }
     }
 
+    /**
+     * Verification can be a long S3 download. A reader that asks for a cache lease while it runs must
+     * get the lease at once, and the file is still evicted once no lease is held.
+     */
+    @Test
+    void slowVerificationDoesNotBlockCacheLeases() throws Exception {
+        final Path file = createInodeFile("abc123", "HeroImage", "Report.PDF",
+                new byte[1024], System.currentTimeMillis() - 7_200_000);
+        final com.dotcms.storage.StoragePersistenceAPI storage =
+                mock(com.dotcms.storage.StoragePersistenceAPI.class);
+        final BinaryAssetStorageAPIImpl api = new BinaryAssetStorageAPIImpl(storage);
+        final java.util.concurrent.atomic.AtomicBoolean leaseGranted = new java.util.concurrent.atomic.AtomicBoolean();
+        when(storage.hasDurableCopy(anyString(), anyString(), any(File.class))).thenAnswer(call -> {
+            final java.util.concurrent.CountDownLatch leased = new java.util.concurrent.CountDownLatch(1);
+            final Thread reader = new Thread(() -> {
+                try (var lease = api.acquireCacheLease()) {
+                    leased.countDown();
+                }
+            });
+            reader.setDaemon(true);
+            reader.start();
+            leaseGranted.set(leased.await(5, java.util.concurrent.TimeUnit.SECONDS));
+            reader.join(5_000);
+            return true;
+        });
+        try (MockedStatic<com.dotmarketing.util.ConfigUtils> configUtils =
+                     mockStatic(com.dotmarketing.util.ConfigUtils.class)) {
+            configUtils.when(com.dotmarketing.util.ConfigUtils::getAssetPath).thenReturn(assetRoot.toString());
+            assertTrue(api.evictLocalFile(file.toFile()));
+        }
+        assertTrue(leaseGranted.get(), "A lease requested during verification must not wait for it");
+        assertFalse(Files.exists(file));
+    }
+
+    /**
+     * A lease taken while verification runs is still held when eviction is about to delete, so the
+     * file must be kept for the reader.
+     */
+    @Test
+    void leaseTakenDuringVerificationKeepsTheFile() throws Exception {
+        final Path file = createInodeFile("abc123", "HeroImage", "Report.PDF",
+                new byte[1024], System.currentTimeMillis() - 7_200_000);
+        final com.dotcms.storage.StoragePersistenceAPI storage =
+                mock(com.dotcms.storage.StoragePersistenceAPI.class);
+        final BinaryAssetStorageAPIImpl api = new BinaryAssetStorageAPIImpl(storage);
+        final java.util.concurrent.CountDownLatch leased = new java.util.concurrent.CountDownLatch(1);
+        final java.util.concurrent.CountDownLatch release = new java.util.concurrent.CountDownLatch(1);
+        final Thread reader = new Thread(() -> {
+            try (var lease = api.acquireCacheLease()) {
+                leased.countDown();
+                release.await(10, java.util.concurrent.TimeUnit.SECONDS);
+            } catch (InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+            }
+        });
+        reader.setDaemon(true);
+        when(storage.hasDurableCopy(anyString(), anyString(), any(File.class))).thenAnswer(call -> {
+            reader.start();
+            assertTrue(leased.await(5, java.util.concurrent.TimeUnit.SECONDS));
+            return true;
+        });
+        try (MockedStatic<com.dotmarketing.util.ConfigUtils> configUtils =
+                     mockStatic(com.dotmarketing.util.ConfigUtils.class)) {
+            configUtils.when(com.dotmarketing.util.ConfigUtils::getAssetPath).thenReturn(assetRoot.toString());
+            assertFalse(api.evictLocalFile(file.toFile()));
+            assertTrue(Files.exists(file));
+        } finally {
+            release.countDown();
+            reader.join(5_000);
+        }
+    }
+
     @Test
     void protectedFilesNeverEnterTheBudgetOrReachTheProvider() throws Exception {
         final String revision = java.util.UUID.randomUUID().toString();
