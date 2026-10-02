@@ -126,7 +126,9 @@ target/dist/dotserver/tomcat-${tomcat.version}/
 ├── felix/                       # OSGI bundles
 │   ├── core/
 │   └── system/
-└── glowroot/                    # Profiler (optional)
+├── glowroot/                    # Profiler (optional)
+├── otel/                        # OpenTelemetry Java agent (optional)
+└── pyroscope/                   # Pyroscope profiling agent (optional)
 ```
 
 #### 2. Component Integration
@@ -137,6 +139,36 @@ target/dist/dotserver/tomcat-${tomcat.version}/
 - **Redis Session Manager**: Session clustering
 - **Log4j2 Libraries**: Logging framework
 - **Custom Configurations**: Tomcat server.xml, context.xml
+- **Observability Agents**: OpenTelemetry and Pyroscope Java agents, off by default
+
+#### 3. Observability Agents (OpenTelemetry, Pyroscope)
+Both agents ship in the image and are attached by `setenv.sh` only when switched on. Each works
+independently of the other and of Glowroot, so any combination can run together. Versions are
+set in `bom/application/pom.xml` (`opentelemetry-javaagent.version`, `pyroscope-agent.version`).
+
+| Variable | Effect |
+|---|---|
+| `OTEL_JAVAAGENT_ENABLED=true` | Attaches `otel/opentelemetry-javaagent.jar` (distributed tracing over OTLP) |
+| `PYROSCOPE_AGENT_ENABLED=true` | Attaches `pyroscope/pyroscope.jar` (continuous CPU, allocation and lock profiling) |
+
+Everything else uses the agents' standard environment variables, for example
+`OTEL_EXPORTER_OTLP_ENDPOINT` and `PYROSCOPE_SERVER_ADDRESS`. When an agent is on, `setenv.sh`
+fills in these defaults unless you set them yourself:
+
+- OpenTelemetry: `OTEL_SERVICE_NAME=dotcms` (skipped when `OTEL_RESOURCE_ATTRIBUTES` already
+  sets `service.name`), `OTEL_METRICS_EXPORTER=none` and `OTEL_LOGS_EXPORTER=none` (metrics stay
+  on Micrometer at `/dotmgt/metrics`), and `OTEL_TRACES_SAMPLER=parentbased_traceidratio` with
+  `OTEL_TRACES_SAMPLER_ARG=0.1`, which keeps 10% of new traces.
+- Pyroscope: `PYROSCOPE_APPLICATION_NAME=dotcms`, `PYROSCOPE_FORMAT=jfr`,
+  `PYROSCOPE_PROFILER_EVENT=itimer` (CPU sampling that doesn't need `perf_events` access),
+  `PYROSCOPE_PROFILER_ALLOC=512k` and `PYROSCOPE_PROFILER_LOCK=10ms`.
+
+Glowroot stays opt-in through `GLOWROOT_ENABLED=true`, so leaving it unset detaches Glowroot while
+the other agents keep running. If an image is built without `glowroot/glowroot.jar`, a leftover
+`GLOWROOT_ENABLED=true` is ignored with a startup warning instead of stopping the JVM from booting.
+
+Leave roughly 400 MB of extra container memory when the OpenTelemetry agent is on. To check the
+wiring without building an image, run `scripts/test-setenv-agents.sh`.
 
 #### 3. Assembly Execution
 ```bash

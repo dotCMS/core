@@ -11,13 +11,14 @@ import {
     DotCMSContentlet,
     DotCMSContentType,
     DotCMSContentTypeField,
+    DotCMSFieldType,
+    DotCMSFieldTypes,
     DotSystemTimezone
 } from '@dotcms/dotcms-models';
 
 import { DotCalendarFieldComponent } from './calendar-field.component';
 import { convertServerTimeToUtc } from './calendar-field.util';
 
-import { FIELD_TYPES } from '../../../../models/dot-edit-content-field.enum';
 import { CONTENT_TYPE_MOCK, DATE_FIELD_MOCK } from '../../../../utils/mocks';
 
 /**
@@ -84,7 +85,7 @@ describe('DotCalendarFieldComponent', () => {
      * @param overrides field/timezone/contentType overrides for the case under test
      */
     const buildHost = (
-        fieldType: FIELD_TYPES,
+        fieldType: DotCMSFieldType,
         value: number | null = null,
         overrides: Partial<MockFormComponent> = {}
     ): SpectatorHost<DotCalendarFieldComponent, MockFormComponent> => {
@@ -106,7 +107,11 @@ describe('DotCalendarFieldComponent', () => {
     };
 
     /** All three types, for the assertions that must hold identically across them. */
-    const ALL_TYPES = [FIELD_TYPES.DATE, FIELD_TYPES.TIME, FIELD_TYPES.DATE_AND_TIME] as const;
+    const ALL_TYPES = [
+        DotCMSFieldTypes.DATE,
+        DotCMSFieldTypes.TIME,
+        DotCMSFieldTypes.DATE_AND_TIME
+    ] as const;
 
     /** A value the picker will render into the input, so the clear control becomes eligible. */
     const A_VALUE = new Date(2026, 3, 9, 9, 33).getTime();
@@ -177,7 +182,7 @@ describe('DotCalendarFieldComponent', () => {
         const SAVED = { inode: 'abc-123', identifier: 'def-456' } as DotCMSContentlet;
 
         it('should apply the default on NEW content, which is what a default is for', async () => {
-            spectator = buildHost(FIELD_TYPES.DATE_AND_TIME, null, {
+            spectator = buildHost(DotCMSFieldTypes.DATE_AND_TIME, null, {
                 field: NOW_DEFAULT,
                 contentlet: null
             });
@@ -192,7 +197,7 @@ describe('DotCalendarFieldComponent', () => {
         // the component as `null`, so without the contentlet the two are indistinguishable and
         // the default silently overwrites a value the author deliberately removed.
         it('should NOT re-apply the default to an existing contentlet stored empty', async () => {
-            spectator = buildHost(FIELD_TYPES.DATE_AND_TIME, null, {
+            spectator = buildHost(DotCMSFieldTypes.DATE_AND_TIME, null, {
                 field: NOW_DEFAULT,
                 contentlet: SAVED
             });
@@ -232,7 +237,7 @@ describe('DotCalendarFieldComponent', () => {
                 .trim();
         };
 
-        it.each([FIELD_TYPES.DATE_AND_TIME, FIELD_TYPES.TIME])(
+        it.each([DotCMSFieldTypes.DATE_AND_TIME, DotCMSFieldTypes.TIME])(
             'should describe the %s input with the timezone, without opening the picker',
             (fieldType) => {
                 spectator = buildHost(fieldType);
@@ -243,14 +248,14 @@ describe('DotCalendarFieldComponent', () => {
         );
 
         it('should not announce a timezone on a Date-only input', () => {
-            spectator = buildHost(FIELD_TYPES.DATE);
+            spectator = buildHost(DotCMSFieldTypes.DATE);
             spectator.detectChanges();
 
             expect(accessibleName()).not.toContain(MOCK_TIMEZONE.label);
         });
 
         it('should not announce a timezone when it has not resolved', () => {
-            spectator = buildHost(FIELD_TYPES.DATE_AND_TIME, null, { utcTimezone: null });
+            spectator = buildHost(DotCMSFieldTypes.DATE_AND_TIME, null, { utcTimezone: null });
             spectator.detectChanges();
 
             expect(accessibleName()).not.toContain(MOCK_TIMEZONE.label);
@@ -270,7 +275,7 @@ describe('DotCalendarFieldComponent', () => {
         );
 
         it('should keep the field name when no timezone has resolved', () => {
-            spectator = buildHost(FIELD_TYPES.DATE_AND_TIME, null, { utcTimezone: null });
+            spectator = buildHost(DotCMSFieldTypes.DATE_AND_TIME, null, { utcTimezone: null });
             spectator.detectChanges();
 
             expect(accessibleName()).toContain(DATE_FIELD_MOCK.name);
@@ -302,7 +307,7 @@ describe('DotCalendarFieldComponent', () => {
 
         // T007 — FR-006
         it('should NOT render a clear control when the control is disabled, despite holding a value', async () => {
-            spectator = buildHost(FIELD_TYPES.DATE_AND_TIME, A_VALUE);
+            spectator = buildHost(DotCMSFieldTypes.DATE_AND_TIME, A_VALUE);
             await settle();
 
             spectator.hostComponent.formGroup.get(DATE_FIELD_MOCK.variable)?.disable();
@@ -313,7 +318,7 @@ describe('DotCalendarFieldComponent', () => {
 
         // T008 — FR-007
         it('should empty the value and mark the control touched and dirty when cleared', async () => {
-            spectator = buildHost(FIELD_TYPES.DATE_AND_TIME, A_VALUE);
+            spectator = buildHost(DotCMSFieldTypes.DATE_AND_TIME, A_VALUE);
             await settle();
 
             const control = spectator.hostComponent.formGroup.get(DATE_FIELD_MOCK.variable);
@@ -331,7 +336,7 @@ describe('DotCalendarFieldComponent', () => {
         // T009 — FR-007a. The part PrimeNG does not provide: its default clear icon is a bare
         // <svg> with a click handler — unfocusable, unnamed, unreachable by keyboard.
         it('should expose the clear control as a focusable button with an accessible name', async () => {
-            spectator = buildHost(FIELD_TYPES.DATE_AND_TIME, A_VALUE);
+            spectator = buildHost(DotCMSFieldTypes.DATE_AND_TIME, A_VALUE);
             await settle();
 
             const clear = queryClearControl();
@@ -342,7 +347,7 @@ describe('DotCalendarFieldComponent', () => {
         });
 
         it('should clear the value when the clear button is activated from the keyboard', async () => {
-            spectator = buildHost(FIELD_TYPES.DATE_AND_TIME, A_VALUE);
+            spectator = buildHost(DotCMSFieldTypes.DATE_AND_TIME, A_VALUE);
             await settle();
 
             const control = spectator.hostComponent.formGroup.get(DATE_FIELD_MOCK.variable);
@@ -367,7 +372,7 @@ describe('DotCalendarFieldComponent', () => {
         it.each(['now', '2026-04-09 09:33:00'])(
             'should stay empty after clearing a field whose defaultValue is %s',
             async (defaultValue) => {
-                spectator = buildHost(FIELD_TYPES.DATE_AND_TIME, null, {
+                spectator = buildHost(DotCMSFieldTypes.DATE_AND_TIME, null, {
                     field: { ...DATE_FIELD_MOCK, defaultValue } as DotCMSContentTypeField
                 });
                 await settle();
@@ -389,7 +394,7 @@ describe('DotCalendarFieldComponent', () => {
 
         // T010 — FR-007
         it('should leave a required field empty and invalid when cleared', async () => {
-            spectator = buildHost(FIELD_TYPES.DATE_AND_TIME, A_VALUE, {
+            spectator = buildHost(DotCMSFieldTypes.DATE_AND_TIME, A_VALUE, {
                 field: { ...DATE_FIELD_MOCK, required: true } as DotCMSContentTypeField
             });
             await settle();
@@ -409,7 +414,7 @@ describe('DotCalendarFieldComponent', () => {
     describe('Picker footer — timezone (US2)', () => {
         // T018 — FR-008
         it('should show the timezone in the picker footer for a Date-and-Time field', () => {
-            spectator = buildHost(FIELD_TYPES.DATE_AND_TIME);
+            spectator = buildHost(DotCMSFieldTypes.DATE_AND_TIME);
             openPicker();
 
             const timezone = queryInOverlay('[data-testid="calendar-field-timezone"]');
@@ -420,7 +425,7 @@ describe('DotCalendarFieldComponent', () => {
 
         // T019 — FR-008
         it('should show the timezone in the picker footer for a Time field', () => {
-            spectator = buildHost(FIELD_TYPES.TIME);
+            spectator = buildHost(DotCMSFieldTypes.TIME);
             openPicker();
 
             const timezone = queryInOverlay('[data-testid="calendar-field-timezone"]');
@@ -432,14 +437,14 @@ describe('DotCalendarFieldComponent', () => {
         // T020 — FR-008a. A date carries no time, so the zone it would be read in is not a fact
         // the author needs. Decided explicitly in the issue's refinement table.
         it('should NOT show the timezone in the picker footer for a Date field', () => {
-            spectator = buildHost(FIELD_TYPES.DATE);
+            spectator = buildHost(DotCMSFieldTypes.DATE);
             openPicker();
 
             expect(queryInOverlay('[data-testid="calendar-field-timezone"]')).toBeNull();
         });
 
         it('should render the timezone as non-interactive text, not a control', () => {
-            spectator = buildHost(FIELD_TYPES.DATE_AND_TIME);
+            spectator = buildHost(DotCMSFieldTypes.DATE_AND_TIME);
             openPicker();
 
             const timezone = queryInOverlay('[data-testid="calendar-field-timezone"]');
@@ -480,11 +485,11 @@ describe('DotCalendarFieldComponent', () => {
 
         // T033 — FR-011
         it.each([
-            [FIELD_TYPES.DATE, 'edit.content.form.field.calendar.today'],
-            [FIELD_TYPES.DATE_AND_TIME, 'edit.content.form.field.calendar.today'],
-            [FIELD_TYPES.TIME, 'edit.content.form.field.calendar.now']
+            [DotCMSFieldTypes.DATE, 'edit.content.form.field.calendar.today'],
+            [DotCMSFieldTypes.DATE_AND_TIME, 'edit.content.form.field.calendar.today'],
+            [DotCMSFieldTypes.TIME, 'edit.content.form.field.calendar.now']
         ])('should label the footer action from the %s key', (fieldType, expectedKey) => {
-            spectator = buildHost(fieldType as FIELD_TYPES);
+            spectator = buildHost(fieldType);
             openPicker();
 
             expect(queryActionButton()?.textContent).toContain(expectedKey);
@@ -509,7 +514,7 @@ describe('DotCalendarFieldComponent', () => {
         // browser's clock: on a Date-only field the stored value is UTC midnight of the
         // SERVER's day, which here differs from the runner's.
         it('should set the server calendar day, not the browser one, on a Date field', async () => {
-            spectator = buildHost(FIELD_TYPES.DATE);
+            spectator = buildHost(DotCMSFieldTypes.DATE);
             openPicker();
 
             spectator.click(queryActionButton() as HTMLElement);
@@ -521,7 +526,7 @@ describe('DotCalendarFieldComponent', () => {
         // T035 — FR-012. Date and time takes both halves from the server clock, so round-tripping
         // it back to UTC lands on the instant we faked.
         it('should set the server date AND time on a Date-and-Time field', async () => {
-            spectator = buildHost(FIELD_TYPES.DATE_AND_TIME);
+            spectator = buildHost(DotCMSFieldTypes.DATE_AND_TIME);
             openPicker();
 
             spectator.click(queryActionButton() as HTMLElement);
@@ -534,7 +539,7 @@ describe('DotCalendarFieldComponent', () => {
 
         // T035 — FR-012
         it('should set the server time on a Time-only field', async () => {
-            spectator = buildHost(FIELD_TYPES.TIME);
+            spectator = buildHost(DotCMSFieldTypes.TIME);
             openPicker();
 
             spectator.click(queryActionButton() as HTMLElement);
@@ -567,7 +572,7 @@ describe('DotCalendarFieldComponent', () => {
         // button, but nothing pinned that, and an icon-only or div-based footer action would
         // satisfy every other criterion while being unreachable without a mouse.
         it('should expose the footer action as a focusable button with an accessible name', () => {
-            spectator = buildHost(FIELD_TYPES.DATE_AND_TIME);
+            spectator = buildHost(DotCMSFieldTypes.DATE_AND_TIME);
             openPicker();
 
             const btn = queryActionButton() as HTMLButtonElement;
@@ -584,7 +589,7 @@ describe('DotCalendarFieldComponent', () => {
         // so replacing the footer without forwarding the event silently removes Escape and the
         // focus trap from the overlay. This is the assertion that catches that.
         it('should close the picker and restore focus when Escape is pressed on the footer action', () => {
-            spectator = buildHost(FIELD_TYPES.DATE_AND_TIME);
+            spectator = buildHost(DotCMSFieldTypes.DATE_AND_TIME);
             openPicker();
 
             const picker = spectator.query(DatePicker);
@@ -607,7 +612,7 @@ describe('DotCalendarFieldComponent', () => {
         // offset, silently. No test covered the timezone-unavailable state at all.
         describe('when the system timezone has not resolved', () => {
             it('should render no timezone text in the footer', () => {
-                spectator = buildHost(FIELD_TYPES.DATE_AND_TIME, null, { utcTimezone: null });
+                spectator = buildHost(DotCMSFieldTypes.DATE_AND_TIME, null, { utcTimezone: null });
                 openPicker();
 
                 expect(queryInOverlay('[data-testid="calendar-field-timezone"]')).toBeNull();
@@ -625,7 +630,7 @@ describe('DotCalendarFieldComponent', () => {
 
             it('should keep the footer action enabled when the server is explicitly on UTC', () => {
                 // Not a fallback: on a UTC server that branch of getCurrentServerTime is correct.
-                spectator = buildHost(FIELD_TYPES.DATE_AND_TIME, null, {
+                spectator = buildHost(DotCMSFieldTypes.DATE_AND_TIME, null, {
                     utcTimezone: { id: 'UTC', label: 'Coordinated Universal Time (UTC)', offset: 0 }
                 });
                 openPicker();
@@ -636,7 +641,7 @@ describe('DotCalendarFieldComponent', () => {
 
         // T036 — FR-014
         it('should mark the control touched and dirty after using the footer action', async () => {
-            spectator = buildHost(FIELD_TYPES.DATE_AND_TIME);
+            spectator = buildHost(DotCMSFieldTypes.DATE_AND_TIME);
             openPicker();
 
             spectator.click(queryActionButton() as HTMLElement);

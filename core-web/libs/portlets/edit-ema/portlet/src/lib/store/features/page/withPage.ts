@@ -44,6 +44,15 @@ export interface PageLoadingConfigState {
         content?: Record<string, unknown>;
         source?: PageAssetSource;
     };
+    /**
+     * Whether a HEADLESS client has already been told (`UVE_RELOAD_PAGE`) to reload itself
+     * because the stored asset isn't GraphQL-sourced yet. Bounds the reload effect to one
+     * request per non-resolved streak — see dotCMS/core#37097's regression: without this,
+     * every CLIENT_READY re-announcement (which unconditionally re-patches `requestMetadata`
+     * in `setCustomClient`, changing `pageAsset()`'s reference) re-fires the reload effect,
+     * and each reload triggers a fresh CLIENT_READY, looping indefinitely.
+     */
+    pageReloadPending: boolean;
 }
 
 export type PageClientResponse = {
@@ -87,9 +96,16 @@ export interface WithPageMethods extends PageComputed {
         source?: PageAssetSource;
     } | null;
     isClientReady: () => boolean;
+    pageReloadPending: () => boolean;
 
     // Page loading configuration methods
     setIsClientReady: (isClientReady: boolean) => void;
+    /**
+     * Marks whether a HEADLESS client has already been asked to reload itself for the
+     * current non-GraphQL-sourced streak. Set `true` right before sending `UVE_RELOAD_PAGE`;
+     * cleared on a fresh navigation or once the asset resolves to `'graphql'`.
+     */
+    setPageReloadPending: (pending: boolean) => void;
     setCustomClient: (requestMetadata: {
         query: string;
         variables: Record<string, string>;
@@ -133,7 +149,8 @@ export interface WithPageMethods extends PageComputed {
 const pageLoadingConfigState: PageLoadingConfigState = {
     requestMetadata: null,
     pageAssetResponse: null,
-    isClientReady: false
+    isClientReady: false,
+    pageReloadPending: false
 };
 
 /**
@@ -167,6 +184,9 @@ export function withPage() {
                 setIsClientReady: (isClientReady: boolean) => {
                     patchState(store, { isClientReady });
                 },
+                setPageReloadPending: (pending: boolean) => {
+                    patchState(store, { pageReloadPending: pending });
+                },
                 setCustomClient: ({ query, variables }) => {
                     patchState(store, {
                         requestMetadata: {
@@ -189,7 +209,10 @@ export function withPage() {
                     };
                     patchState(store, {
                         pageAssetResponse: nextResponse,
-                        editorStyleSchemas: payload.pageAsset.page.styleEditorSchemas ?? []
+                        editorStyleSchemas: payload.pageAsset.page.styleEditorSchemas ?? [],
+                        // A GraphQL-sourced asset resolves the streak a pending reload was
+                        // requested for — clear it so a future non-GraphQL streak can ask again.
+                        ...(source === 'graphql' && { pageReloadPending: false })
                     });
                 },
                 setPageAssetResponseOptimistic: (
@@ -214,6 +237,7 @@ export function withPage() {
                     patchState(store, {
                         pageAssetResponse: null,
                         isClientReady: false,
+                        pageReloadPending: false,
                         history: [],
                         historyPointer: -1
                     });
@@ -223,9 +247,13 @@ export function withPage() {
                     // fresh state, but keep `pageAssetResponse` so chrome
                     // and overlays don't unmount mid-navigation. The new
                     // asset will replace the old via setPageAsset when the
-                    // fetch resolves.
+                    // fetch resolves. pageReloadPending resets too: a fresh
+                    // fetch attempt deserves its own single reload request if
+                    // it also lands REST-sourced, rather than inheriting a
+                    // stale "already asked" flag from the page being left.
                     patchState(store, {
                         isClientReady: false,
+                        pageReloadPending: false,
                         history: [],
                         historyPointer: -1
                     });

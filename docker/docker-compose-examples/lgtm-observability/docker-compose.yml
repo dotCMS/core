@@ -44,35 +44,6 @@ services:
       - observability-net
     restart: unless-stopped
 
-  # Agent Download (init container for OpenTelemetry and Pyroscope)
-  agent-init:
-    image: alpine:3.18
-    command: >
-      sh -c "
-        apk add --no-cache curl;
-        echo 'Downloading agents...';
-        
-        if [ ! -f /agents/opentelemetry-javaagent.jar ]; then
-          echo 'Downloading OpenTelemetry Java Agent...';
-          curl -L -o /agents/opentelemetry-javaagent.jar https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v2.18.1/opentelemetry-javaagent.jar;
-          echo 'OpenTelemetry Java Agent downloaded successfully';
-        else
-          echo 'OpenTelemetry Java Agent already exists';
-        fi
-        
-        if [ ! -f /agents/pyroscope.jar ]; then
-          echo 'Downloading Pyroscope Java Agent v0.18.1 (compatible with LGTM)...';
-          curl -L -o /agents/pyroscope.jar https://github.com/grafana/pyroscope-java/releases/download/v0.18.1/pyroscope.jar;
-          echo 'Pyroscope Java Agent v0.18.1 downloaded successfully';
-        else
-          echo 'Pyroscope Java Agent already exists';
-        fi
-        
-        ls -la /agents/;
-      "
-    volumes:
-      - agents:/agents
-
   # dotCMS with OpenTelemetry Instrumentation
   dotcms:
     image: dotcms/dotcms-test:1.0.0-SNAPSHOT
@@ -92,12 +63,8 @@ services:
         condition: service_started
       lgtm:
         condition: service_started
-      agent-init:
-        condition: service_completed_successfully
     environment:
-      # Hybrid approach: Use test image with InitServlet fix + init container for agents
-      # Configure agents via CMS_JAVA_OPTS instead of relying on setenv.sh changes
-      CMS_JAVA_OPTS: '-Xmx1g -javaagent:/srv/dotserver/tomcat/agents/opentelemetry-javaagent.jar -javaagent:/srv/dotserver/tomcat/agents/pyroscope.jar'
+      CMS_JAVA_OPTS: '-Xmx1g'
       LANG: 'C.UTF-8'
       TZ: 'UTC'
       # Database Configuration
@@ -141,7 +108,7 @@ services:
       DOT_METRICS_TAG_DEPLOYMENT: 'lgtm-demo'
       # OpenTelemetry Configuration - Switch to HTTP protocol for better compatibility
       OTELCOL_ENDPOINT: 'http://lgtm:4318'
-      OTEL_ENABLED: 'true'
+      # Attaches the OpenTelemetry agent bundled in the image (see setenv.sh add_otel_agent)
       OTEL_JAVAAGENT_ENABLED: 'true'
       OTEL_SERVICE_NAME: 'dotcms'
       OTEL_SERVICE_VERSION: 'latest'
@@ -168,6 +135,8 @@ services:
       # Reduced metrics cardinality
       OTEL_EXPERIMENTAL_METRICS_CARDINALITY_LIMIT: '2000'  # Much lower limit
       # Pyroscope profiling configuration - Complete setup with allocation and lock profiling
+      # Attaches the Pyroscope agent bundled in the image (see setenv.sh add_pyroscope_agent)
+      PYROSCOPE_AGENT_ENABLED: 'true'
       PYROSCOPE_SERVER_ADDRESS: 'http://lgtm:4040'
       PYROSCOPE_APPLICATION_NAME: 'dotcms'
       PYROSCOPE_FORMAT: 'jfr'
@@ -184,7 +153,6 @@ services:
       GLOWROOT_ENABLED: 'false'
     volumes:
       - cms-shared:/data/shared
-      - agents:/srv/dotserver/tomcat/agents
       #- {license_local_path}/license.zip:/data/shared/assets/license.zip
     networks:
       - app-net
@@ -250,5 +218,4 @@ volumes:
   cms-shared:
   dbdata:
   opensearch-data:
-  agents:
   lgtm-data:

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { booleanAttribute, ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 import { ToastModule } from 'primeng/toast';
 import type { ToastPositionType } from 'primeng/types/toast';
@@ -30,7 +30,8 @@ export const STATUS_TOAST_KEY = 'dot-status';
     imports: [ToastModule, DotSeverityIconComponent],
     templateUrl: './dot-status-toast.component.html',
     styleUrl: './dot-status-toast.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: { '[class.dot-status-toast--contained]': '$contained()' }
 })
 export class DotStatusToastComponent {
     /** Where the stack renders, mirroring `p-toast`'s own positions. */
@@ -45,4 +46,13 @@ export class DotStatusToastComponent {
      * outlet and no other.
      */
     $key = input<string>(STATUS_TOAST_KEY, { alias: 'key' });
+
+    /**
+     * Positions the stack within this element's box rather than the viewport.
+     *
+     * For a page whose content does not span the window, such as a listing beside a sidebar: the
+     * status then centres over the content it reports on, instead of over the window. The caller
+     * places and sizes this element, typically in the same grid cell as that content.
+     */
+    $contained = input(false, { alias: 'contained', transform: booleanAttribute });
 }

@@ -431,9 +431,24 @@ export class ContentDrivePage {
      * A run that never clears its toast leaves the portlet claiming work is in flight forever, and
      * the toast is sticky precisely so it cannot time itself out -- which makes it the store's job
      * to end it, and therefore worth asserting.
+     *
+     * @param timeout how long the run may take to end, for one known to outlast the usual wait
      */
-    async expectStatusToastGone() {
-        await expect(this.statusToastSummary).toHaveCount(0, { timeout: OUTCOME_TIMEOUT });
+    async expectStatusToastGone(timeout = OUTCOME_TIMEOUT) {
+        await expect(this.statusToastSummary).toHaveCount(0, { timeout });
+    }
+
+    /**
+     * The status toast has stopped reporting one run, told apart by its wording, while another
+     * run's status may still be on screen.
+     *
+     * @param text wording only this run's status carries, such as its count
+     * @param timeout how long the run may take to end
+     */
+    async expectStatusToastGoneContaining(text: string, timeout = OUTCOME_TIMEOUT) {
+        await expect(this.statusToastSummary.filter({ hasText: text })).toHaveCount(0, {
+            timeout
+        });
     }
 
     /**

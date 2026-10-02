@@ -1,0 +1,32 @@
+{
+  "entity": {
+    "id": "ct-page",
+    "variable": "Page",
+    "fields": [
+      {
+        "id": "field-page-corewidget",
+        "variable": "coreWidget",
+        "clazz": "com.dotcms.contenttype.model.field.ImmutableCustomField",
+        "values": "$velutil.mergeTemplate('/static/widgets/core_widget.vtl')"
+      },
+      {
+        "id": "field-page-otherpath",
+        "variable": "otherPath",
+        "clazz": "com.dotcms.contenttype.model.field.ImmutableCustomField",
+        "values": "#dotParse(\"/application/custom-fields/other.vtl\")"
+      },
+      {
+        "id": "field-page-cleaninline",
+        "variable": "cleanInline",
+        "clazz": "com.dotcms.contenttype.model.field.ImmutableCustomField",
+        "values": "<div class=\"note\">Just a static note, no scripting here.</div>"
+      },
+      {
+        "id": "field-page-alreadymigrated",
+        "variable": "alreadyMigrated",
+        "clazz": "com.dotcms.contenttype.model.field.ImmutableCustomField",
+        "values": "#if( $structures.isNewEditModeEnabled() )\n<p>new</p>\n#else\n<p>old</p>\n#end"
+      }
+    ]
+  }
+}

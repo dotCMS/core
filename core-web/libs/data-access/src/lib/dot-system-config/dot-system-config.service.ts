@@ -82,7 +82,9 @@ export class DotSystemConfigService {
             languages: config.languages,
             license: config.license,
             cluster: config.cluster,
-            bulkUpload: config.bulkUpload
+            bulkUpload: config.bulkUpload,
+            folderBulkDelete: config.folderBulkDelete,
+            folderBulkDuplicate: config.folderBulkDuplicate
         };
     }
 }

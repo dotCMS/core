@@ -96,29 +96,13 @@
             data-testid="input-description"></textarea>
     </div>
 
-    <p-confirmDialog
-        [draggable]="false"
-        [style]="{ width: '500px' }"
-        data-testid="delete-confirm-dialog" />
-
     <!--
         Save is never disabled by validation, so the footer carries the reason a
-        submit did nothing — sitting to the right of Delete, per design.
-        `ml-auto` on the button group keeps Cancel/Save right-aligned whether or
-        not the message is present.
+        submit did nothing, on the left. Deleting lives in the detail header's
+        actions menu, not here. `ml-auto` on the button group keeps Cancel/Save
+        right-aligned whether or not the message is present.
     -->
     <footer class="mt-2 flex items-center gap-2">
-        <button
-            pButton
-            type="button"
-            [outlined]="true"
-            (click)="onDelete()"
-            [disabled]="readOnly || $submitting()"
-            [pTooltip]="readOnly ? ('roles.edit.readonly' | dm) : ''"
-            data-testid="btn-delete">
-            {{ 'roles.action.delete' | dm }}
-        </button>
-
         @if ($error()) {
             <p class="m-0 text-sm text-red-700" data-testid="edit-error">{{ $error() | dm }}</p>
         }

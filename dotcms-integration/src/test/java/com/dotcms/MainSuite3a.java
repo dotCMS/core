@@ -12,12 +12,14 @@ import com.dotcms.rest.api.v1.drive.ContentDriveBrowseScopeTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveFieldFilterTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveHelperContentletAPIComparisonTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveKeywordSearchTest;
+import com.dotcms.rest.api.v1.drive.ContentDriveLargeCandidateSetTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveLiteralTextSearchTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveSearchScopeTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveLinksTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveWorkflowArchiveStepTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveWorkflowFilterTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveStatusFilterTest;
+import com.dotcms.rest.api.v1.layout.LayoutResourceIntegrationTest;
 import com.dotcms.rest.api.v1.system.cache.CacheResourceIntegrationTest;
 import com.dotcms.rest.api.v1.system.role.RoleResourceIntegrationTest;
 import com.dotcms.security.apps.AppsAPIImplTest;
@@ -92,6 +94,7 @@ import org.junit.runners.Suite;
         ContentDriveFieldFilterTest.class,
         ContentDriveHelperContentletAPIComparisonTest.class,
         ContentDriveKeywordSearchTest.class,
+        ContentDriveLargeCandidateSetTest.class,
         ContentDriveLiteralTextSearchTest.class,
         ContentDriveSearchScopeTest.class,
         ContentDriveLinksTest.class,
@@ -135,7 +138,8 @@ import org.junit.runners.Suite;
         SystemEventsClusterDeliveryIntegrationTest.class,
         SystemEventsReconciliationIntegrationTest.class,
         SystemEventsRetentionIntegrationTest.class,
-        com.dotcms.rest.api.v1.portlet.PortletResourceIntegrationTest.class
+        com.dotcms.rest.api.v1.portlet.PortletResourceIntegrationTest.class,
+        LayoutResourceIntegrationTest.class
 })
 
 public class MainSuite3a {

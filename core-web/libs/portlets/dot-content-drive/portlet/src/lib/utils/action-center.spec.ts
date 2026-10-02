@@ -9,6 +9,9 @@ import {
 
 import {
     ADD_TO_BUNDLE_ACTION_ID,
+    DELETE_FOLDER_ACTION_ID,
+    eligibleForDelete,
+    DUPLICATE_ACTION_ID,
     eligibleContentlets,
     excludeFolders,
     getQuickActions,
@@ -20,7 +23,9 @@ import {
     requiredInputKinds,
     toActionCenterSchemes,
     toContentletInodes,
+    toFolderAssetPaths,
     toHostFolderValue,
+    toParentFolderRefs,
     toPathToMove
 } from './action-center';
 import { WORKFLOW_ACTION_ID } from './workflow-actions';
@@ -46,6 +51,19 @@ const folder = (inode: string): DotContentDriveItem =>
  */
 const actionableFolder = (identifier: string): DotContentDriveItem =>
     ({ type: 'folder', identifier }) as unknown as DotContentDriveItem;
+
+/**
+ * A folder as the listing delivers it from drive search: identifier, path, and the viewer's rights on
+ * it as role names. `permissions` is omitted to model a row whose rights are unknown.
+ */
+const folderRow = (identifier: string, path: string, permissions?: string[]): DotContentDriveItem =>
+    ({
+        type: 'folder',
+        identifier,
+        inode: identifier,
+        path,
+        ...(permissions ? { permissions } : {})
+    }) as unknown as DotContentDriveItem;
 
 /** An action that fires straight from the selection. */
 const NO_INPUTS = {
@@ -175,10 +193,119 @@ describe('action-center utils', () => {
 
         it('should offer only the folder-capable actions for a folder-only selection', () => {
             // Add to Bundle and Push Publish both resolve a folder identifier server-side; the rest
-            // are contentlet-only, so a folder-only selection must not offer them.
+            // are contentlet-only, so a folder-only selection must not offer them. Delete (#37063)
+            // and Duplicate (#37062) join them, both acting on folders only.
             const ids = getQuickActions([actionableFolder('f1')]).map((action) => action.id);
 
-            expect(ids).toEqual([ADD_TO_BUNDLE_ACTION_ID, PUSH_PUBLISH_ACTION_ID]);
+            expect(ids).toEqual([
+                ADD_TO_BUNDLE_ACTION_ID,
+                PUSH_PUBLISH_ACTION_ID,
+                DELETE_FOLDER_ACTION_ID,
+                DUPLICATE_ACTION_ID
+            ]);
+        });
+
+        it('should list Duplicate beside Delete, and Refresh last', () => {
+            const ids = getQuickActions(
+                [contentlet({ inode: 'a', identifier: 'id-a' }), actionableFolder('f1')],
+                { isAdmin: true }
+            ).map((action) => action.id);
+
+            expect(ids.indexOf(DUPLICATE_ACTION_ID)).toBe(ids.indexOf(DELETE_FOLDER_ACTION_ID) + 1);
+            expect(ids.at(-1)).toBe(REFRESH_ACTION_ID);
+        });
+
+        describe('Duplicate', () => {
+            it('should name itself as a folder action, as Delete does', () => {
+                const duplicate = getQuickActions([actionableFolder('f1')]).find(
+                    (action) => action.id === DUPLICATE_ACTION_ID
+                );
+
+                expect(duplicate?.name).toBe('content-drive.action-center.duplicate-folder');
+            });
+
+            const duplicateOf = (items: DotContentDriveItem[]) =>
+                getQuickActions(items).find((action) => action.id === DUPLICATE_ACTION_ID);
+
+            it('should count only the selected folders, keyed by identifier', () => {
+                const duplicate = duplicateOf([
+                    contentlet({ inode: 'a', identifier: 'id-a' }),
+                    folderRow('f1', '/blogs/alpha/', ['READ']),
+                    folderRow('f2', '/blogs/beta/', ['READ'])
+                ]);
+
+                expect(duplicate?.eligibleInodes).toEqual(['f1', 'f2']);
+                expect(duplicate?.count).toBe(2);
+            });
+
+            it('should not be offered for a selection with no folders in it', () => {
+                // Dropped rather than shown at a count of 0: it does not apply to what is selected.
+                expect(duplicateOf([contentlet({ inode: 'a' })])).toBeUndefined();
+            });
+
+            it('should leave out a folder whose rights say it cannot be read', () => {
+                const duplicate = duplicateOf([
+                    folderRow('f1', '/blogs/alpha/', ['READ']),
+                    folderRow('f2', '/blogs/beta/', ['EDIT'])
+                ]);
+
+                expect(duplicate?.eligibleInodes).toEqual(['f1']);
+            });
+
+            it('should not be offered when the author cannot add folders where they are browsing', () => {
+                // Every duplicate lands there, so every one would be refused (FR-005). Withheld
+                // outright, the way Delete drops an action that can only fail.
+                const offered = getQuickActions([folderRow('f1', '/blogs/alpha/', ['READ'])], {
+                    isAdmin: false,
+                    canAddChildren: false
+                }).map((action) => action.id);
+
+                expect(offered).not.toContain(DUPLICATE_ACTION_ID);
+            });
+
+            it('should be offered while that answer is not known yet', () => {
+                // Unknown reads as allowed, as the store's own gate does, so the row does not
+                // flicker off and back on while the lookup is in flight.
+                const offered = getQuickActions([folderRow('f1', '/blogs/alpha/', ['READ'])], {
+                    isAdmin: false
+                }).map((action) => action.id);
+
+                expect(offered).toContain(DUPLICATE_ACTION_ID);
+            });
+
+            it('should count only the folders known to allow a duplicate', () => {
+                // A folder whose rights are unknown is not counted: the run carries only what the
+                // author is known to be able to duplicate.
+                const duplicate = duplicateOf([
+                    folderRow('f1', '/blogs/alpha/', ['READ']),
+                    folderRow('f2', '/blogs/beta/')
+                ]);
+
+                expect(duplicate?.eligibleInodes).toEqual(['f1']);
+            });
+
+            it('should still be listed, at zero, when no selected folder is known to allow it', () => {
+                // Shown with nothing to run on, which the dialog renders as not selectable.
+                const duplicate = duplicateOf([folderRow('f1', '/blogs/alpha/')]);
+
+                expect(duplicate?.count).toBe(0);
+            });
+
+            it('should count only as many folders as one duplicate may carry', () => {
+                // The row says how many the run will act on, and one run carries at most the
+                // ceiling. Every eligible folder is still kept, and the preview takes the first.
+                const duplicate = getQuickActions(
+                    [
+                        folderRow('f1', '/blogs/alpha/', ['READ']),
+                        folderRow('f2', '/blogs/beta/', ['READ']),
+                        folderRow('f3', '/blogs/gamma/', ['READ'])
+                    ],
+                    { isAdmin: false, folderCeilings: { duplicate: 2 } }
+                ).find((action) => action.id === DUPLICATE_ACTION_ID);
+
+                expect(duplicate?.count).toBe(2);
+                expect(duplicate?.eligibleInodes).toEqual(['f1', 'f2', 'f3']);
+            });
         });
 
         it('should key the folder-capable actions on identifiers, since a folder has no inode', () => {
@@ -593,6 +720,44 @@ describe('action-center utils', () => {
             // Push Publish takes folders, so it counts all three; Refresh is contentlet-only.
             expect(byId.get(PUSH_PUBLISH_ACTION_ID)).toBe(3);
             expect(byId.get(REFRESH_ACTION_ID)).toBe(2);
+        });
+    });
+
+    describe('toFolderAssetPaths', () => {
+        it('should build a site-qualified path for each folder', () => {
+            expect(
+                toFolderAssetPaths(
+                    [folderRow('f1', '/blogs/alpha/'), folderRow('f2', '/blogs/beta/')],
+                    'demo.dotcms.com'
+                )
+            ).toEqual(['//demo.dotcms.com/blogs/alpha/', '//demo.dotcms.com/blogs/beta/']);
+        });
+
+        it('should end every path with a slash, as the endpoint expects a folder', () => {
+            expect(
+                toFolderAssetPaths([folderRow('f1', '/blogs/alpha')], 'demo.dotcms.com')
+            ).toEqual(['//demo.dotcms.com/blogs/alpha/']);
+        });
+
+        it('should leave contentlets out', () => {
+            expect(
+                toFolderAssetPaths(
+                    [contentlet({ inode: 'a' }), folderRow('f1', '/blogs/alpha/')],
+                    'demo.dotcms.com'
+                )
+            ).toEqual(['//demo.dotcms.com/blogs/alpha/']);
+        });
+    });
+
+    describe('toParentFolderRefs', () => {
+        it('should name each distinct parent once, in folder-ref form', () => {
+            expect(
+                toParentFolderRefs([
+                    '//demo.dotcms.com/blogs/alpha/',
+                    '//demo.dotcms.com/blogs/beta/',
+                    '//demo.dotcms.com/news/'
+                ])
+            ).toEqual(['//demo.dotcms.com/blogs', '//demo.dotcms.com']);
         });
     });
 
@@ -1028,5 +1193,122 @@ describe('action-center utils', () => {
 
             expect(toPathToMove(toHostFolderValue(path))).toBe(path);
         });
+    });
+});
+
+/**
+ * Bulk folder delete's entry in the quick-action registry (#37063 US1, US7).
+ *
+ * Written before the registry entry exists (T008 before T017). The point of putting Delete in the
+ * registry at all is that badge and payload come out of one pass, so the row cannot promise a count
+ * the submission then contradicts.
+ */
+describe('Delete (bulk folder delete, #37063)', () => {
+    const deleteAction = (items: DotContentDriveItem[]) =>
+        getQuickActions(items).find((action) => action.id === DELETE_FOLDER_ACTION_ID);
+
+    it('should be offered for a folder-only selection', () => {
+        expect(deleteAction([actionableFolder('f1')])).toBeDefined();
+    });
+
+    it('should act on the folders in a mixed selection, and count only those', () => {
+        // A stray file in the selection must not withhold the action — that reads as broken. It
+        // acts on the folders and says how many (FR-003).
+        const items = [
+            contentlet({ inode: 'a', identifier: 'id-a' }),
+            actionableFolder('f1'),
+            actionableFolder('f2')
+        ];
+
+        const action = deleteAction(items);
+
+        expect(action?.eligibleInodes).toEqual(['f1', 'f2']);
+        expect(action?.count).toBe(2);
+    });
+
+    it('should not be offered when the selection holds no folders at all', () => {
+        // Nothing for it to act on. A disabled row over a contentlet-only selection is noise.
+        expect(deleteAction([contentlet({ inode: 'a' })])).toBeUndefined();
+    });
+
+    it('should key on identifiers, since a folder has no inode', () => {
+        expect(deleteAction([actionableFolder('id-f1')])?.eligibleInodes).toEqual(['id-f1']);
+    });
+
+    it('should not be marked as coming soon', () => {
+        // It is wired. A disabled row with a tooltip would be the honest state only if it were not.
+        expect(deleteAction([actionableFolder('f1')])?.comingSoon).toBe(false);
+    });
+
+    it('should count only as many folders as one delete may carry', () => {
+        const action = getQuickActions(
+            [actionableFolder('f1'), actionableFolder('f2'), actionableFolder('f3')],
+            { isAdmin: false, folderCeilings: { delete: 2 } }
+        ).find((quickAction) => quickAction.id === DELETE_FOLDER_ACTION_ID);
+
+        expect(action?.count).toBe(2);
+        expect(action?.eligibleInodes).toEqual(['f1', 'f2', 'f3']);
+    });
+
+    it('should count every folder while no ceiling is advertised', () => {
+        const action = getQuickActions([actionableFolder('f1'), actionableFolder('f2')], {
+            isAdmin: false,
+            folderCeilings: { delete: null }
+        }).find((quickAction) => quickAction.id === DELETE_FOLDER_ACTION_ID);
+
+        expect(action?.count).toBe(2);
+    });
+});
+
+/**
+ * Delete's permission gate (#37063 US7).
+ *
+ * Gated exactly as the shipped single-folder delete in the context menu is — EDIT **and**
+ * EDIT_PERMISSIONS — which is in turn what `FolderAPIImpl.delete` enforces server-side. Three
+ * places agreeing beats a fourth opinion.
+ */
+describe('eligibleForDelete (#37063)', () => {
+    const withPermissions = (...permissions: string[]) =>
+        ({ type: 'folder', identifier: 'f1', permissions }) as unknown as DotContentDriveItem;
+
+    it('should allow a folder the author may edit and re-permission', () => {
+        expect(eligibleForDelete(withPermissions('EDIT', 'EDIT_PERMISSIONS'))).toBe(true);
+    });
+
+    it('should refuse a folder the author may edit but not re-permission', () => {
+        expect(eligibleForDelete(withPermissions('EDIT'))).toBe(false);
+    });
+
+    it('should refuse a folder the author may only read', () => {
+        expect(eligibleForDelete(withPermissions('READ'))).toBe(false);
+    });
+
+    it('should stay permissive when rights are UNKNOWN', () => {
+        // `permissions` is `undefined` when the search did not request them, which is distinct from
+        // an empty array meaning "the author holds none". Withholding the action on absent data
+        // would hide Delete wherever a producer did not opt in; the server refuses per folder
+        // regardless (FR-005).
+        expect(eligibleForDelete({ type: 'folder', identifier: 'f1' } as DotContentDriveItem)).toBe(
+            true
+        );
+    });
+
+    it('should refuse when the author explicitly holds no rights', () => {
+        expect(eligibleForDelete(withPermissions())).toBe(false);
+    });
+
+    it('should offer Delete for a selection the author may only PARTLY delete', () => {
+        // The gate is whole-selection. A mixed selection is submitted whole and the refusals come
+        // back per folder — silently shrinking a destructive action the author explicitly selected
+        // is the worse failure (FR-004a).
+        const items = [withPermissions('EDIT', 'EDIT_PERMISSIONS'), withPermissions('READ')];
+
+        expect(getQuickActions(items).some((a) => a.id === DELETE_FOLDER_ACTION_ID)).toBe(true);
+    });
+
+    it('should withhold Delete only when the author may delete NONE of them', () => {
+        const items = [withPermissions('READ'), withPermissions('READ')];
+
+        expect(getQuickActions(items).some((a) => a.id === DELETE_FOLDER_ACTION_ID)).toBe(false);
     });
 });

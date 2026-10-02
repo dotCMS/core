@@ -6,10 +6,11 @@ import {
     withMethods,
     withState
 } from '@ngrx/signals';
-import { EMPTY, SubscriptionLike } from 'rxjs';
+import { EMPTY, forkJoin, of, SubscriptionLike } from 'rxjs';
 
 import { Location } from '@angular/common';
-import { computed, effect, EffectRef, inject, untracked } from '@angular/core';
+import { computed, DestroyRef, effect, EffectRef, inject, untracked } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 
 import { catchError, take } from 'rxjs/operators';
@@ -17,13 +18,20 @@ import { catchError, take } from 'rxjs/operators';
 import {
     DotContentDriveService,
     DotCurrentUserService,
-    DotLanguagesService
+    DotFolderBulkDeleteService,
+    DotFolderBulkDuplicateService,
+    DotLanguagesService,
+    DotUploadFileService
 } from '@dotcms/data-access';
 import {
+    DotBulkUploadActiveRun,
     DotCMSContentTypeField,
     DotContentDriveItem,
     DotContentDriveSearchRequest,
+    DotFolderDeleteActiveRun,
+    DotFolderDuplicateActiveRun,
     FeaturedFlags,
+    LOAD_MORE_NODE_TYPE,
     PERMISSIONS_TYPE
 } from '@dotcms/dotcms-models';
 import { GlobalStore, withFlags } from '@dotcms/store';
@@ -32,6 +40,7 @@ import { withActionExecution } from './features/action-execution/withActionExecu
 import { withContextMenu } from './features/context-menu/withContextMenu';
 import { withDialog } from './features/dialog/withDialog';
 import { withDragging } from './features/dragging/withDragging';
+import { withFolderDeleteRuns } from './features/folder-delete-runs/with-folder-delete-runs';
 import { withPushPublishEnvironments } from './features/push-publish-environments/withPushPublishEnvironments';
 import { withSidebar } from './features/sidebar/withSidebar';
 import { withSitePermissions } from './features/site-permissions/withSitePermissions';
@@ -148,16 +157,20 @@ export const DotContentDriveStore = signalStore(
                             filters: {
                                 text: filters()?.title || '',
                                 filterFolders: true,
-                                // Sent only when a term is present and the scope is not the
-                                // default. The server rejects a scope without text as the contract
-                                // error it is, and an omitted scope is processed exactly as it was
-                                // before this field existed — which is what leaves the AssetPicker,
-                                // the one other caller of this endpoint, untouched.
-                                ...(filters()?.title && filters()?.[SEARCH_SCOPE_FILTER_KEY]
+                                // Sent whenever a term is present, as the effective scope: the
+                                // stored one, or the default when none is stored. The default is
+                                // Title and the server's is All Fields, so omitting it would search
+                                // every field while the box says Title. Never sent without a term:
+                                // the server rejects a scope without text as the contract error it
+                                // is. The filters and the address still store the scope only when
+                                // it differs from the default.
+                                ...(filters()?.title
                                     ? {
-                                          searchScope: filters()?.[
-                                              SEARCH_SCOPE_FILTER_KEY
-                                          ] as DotContentDriveSearchScope
+                                          searchScope:
+                                              (filters()?.[
+                                                  SEARCH_SCOPE_FILTER_KEY
+                                              ] as DotContentDriveSearchScope) ??
+                                              DEFAULT_SEARCH_SCOPE
                                       }
                                     : {})
                             },
@@ -736,64 +749,20 @@ export const DotContentDriveStore = signalStore(
     withSidebar(),
     withDragging(),
     withActionExecution(),
+    withFolderDeleteRuns(),
     withPushPublishEnvironments(),
     withSitePermissions(),
-    // Sharing one `withComputed` with the sidebar selection below, rather than standing alone:
-    // `signalStore` takes at most sixteen features, and this store is at that ceiling.
-    withComputed(({ path }) => {
-        const globalStore = inject(GlobalStore);
-
-        return {
-            /**
-             * The bulk-upload ceilings the server advertises, or `null` when it advertises none.
-             *
-             * Read through the store rather than injected into the shell so the component keeps to
-             * rendering: the ceilings are data, and every other piece of server state this portlet
-             * shows arrives the same way. Null covers both a configuration that has not loaded and
-             * an instance older than the field, which callers must treat alike — no readable
-             * ceiling, so the refusing is left to the server.
-             */
-            uploadCeilings: computed(() => globalStore.systemBulkUpload()),
-
-            /**
-             * Whether the sidebar's first entry, all site content, is the selected one.
-             *
-             * Derived from the location rather than stored beside it: an absent location *is* what
-             * all site content means, so a second piece of state saying so could only ever
-             * disagree.
-             */
-            $allSiteContentSelected: computed(() => !path()),
-
-            /** Whether the sidebar's last entry, System Host, is the selected one. */
-            $systemHostSelected: computed(() => path() === SYSTEM_HOST_PATH)
-        };
-    }),
-    // Both destinations in one feature, for the sixteen-feature ceiling noted above. They read
-    // the same selection signals and neither depends on the other.
+    // One `withComputed` for all of it, rather than the two or three these concerns would
+    // naturally be: `signalStore`'s typings overload to fifteen features, and this store is at
+    // that ceiling. Split it again and every `store.x` in the file silently degrades to `object`.
     withComputed(
-        ({
-            currentSite,
-            selectedNode,
-            siteCanAddChildren,
-            systemHostCanAddChildren,
-            $allSiteContentSelected,
-            $systemHostSelected
-        }) => ({
-            /**
-             * The host that would receive new content here.
-             *
-             * Three paths ask this and used to answer it separately: the upload button, a drag and
-             * drop, and the New menu. Each fell back to the current site when no folder was
-             * selected, which is right everywhere except System Host, where the current site is
-             * context rather than the destination. The New menu was worse than wrong — it built
-             * its target by pasting the location onto the hostname, which with a reserved word
-             * yields `demo.dotcms.comSYSTEM_HOST` and resolves to nothing.
-             *
-             * A folder, when one is selected, is still more specific than this and wins.
-             */
-            $newContentHostId: computed(() =>
-                $systemHostSelected() ? SYSTEM_HOST.identifier : currentSite()?.identifier
-            ),
+        ({ path, currentSite, selectedNode, siteCanAddChildren, systemHostCanAddChildren }) => {
+            const globalStore = inject(GlobalStore);
+
+            // Named locally as well as returned, because the two below read them. A sibling computed
+            // is not on the object yet while that object is being built.
+            const $allSiteContentSelected = computed(() => !path());
+            const $systemHostSelected = computed(() => path() === SYSTEM_HOST_PATH);
 
             /**
              * Whether the browsed folder accepts new children.
@@ -813,7 +782,7 @@ export const DotContentDriveStore = signalStore(
              * in flight, and an instance too old to report the field. Starting disabled would flicker
              * the affordances off and on for the common case, and the server refuses the write anyway.
              */
-            $canAddChildren: computed(() => {
+            const $canAddChildren = computed(() => {
                 // System Host is a real destination, so this is a permission answer — but about
                 // System Host, not about whichever site the switcher happens to show.
                 if ($systemHostSelected()) {
@@ -829,19 +798,93 @@ export const DotContentDriveStore = signalStore(
                     return siteCanAddChildren() !== false;
                 }
 
-                const permissions = (selectedNode()?.data as { permissions?: string[] } | undefined)
-                    ?.permissions;
+                // A load-more row carries no rights; only a folder or site node does.
+                const data = selectedNode()?.data;
+                const permissions =
+                    data && data.type !== LOAD_MORE_NODE_TYPE ? data.permissions : undefined;
 
                 if (!permissions?.length) {
                     return siteCanAddChildren() !== false;
                 }
 
                 return permissions.includes(PERMISSIONS_TYPE.CAN_ADD_CHILDREN);
-            })
-        })
+            });
+
+            return {
+                /**
+                 * The bulk-upload ceilings the server advertises, or `null` when it advertises none.
+                 *
+                 * Read through the store rather than injected into the shell so the component keeps to
+                 * rendering: the ceilings are data, and every other piece of server state this portlet
+                 * shows arrives the same way. Null covers both a configuration that has not loaded and
+                 * an instance older than the field, which callers must treat alike — no readable
+                 * ceiling, so the refusing is left to the server.
+                 */
+                uploadCeilings: computed(() => globalStore.systemBulkUpload()),
+
+                /**
+                 * How many folders one duplicate may carry, or `null` when the server advertises no
+                 * ceiling (#37062). Read like {@link uploadCeilings}: null means the server does
+                 * the refusing.
+                 */
+                folderDuplicateMaxPaths: computed(
+                    () => globalStore.systemFolderBulkDuplicate()?.maxPaths ?? null
+                ),
+
+                /** How many folders one delete may carry, or `null`. Same reading as above. */
+                folderDeleteMaxPaths: computed(
+                    () => globalStore.systemFolderBulkDelete()?.maxPaths ?? null
+                ),
+
+                /**
+                 * Whether the sidebar's first entry, all site content, is the selected one.
+                 *
+                 * Derived from the location rather than stored beside it: an absent location *is* what
+                 * all site content means, so a second piece of state saying so could only ever
+                 * disagree.
+                 */
+                $allSiteContentSelected,
+
+                /** Whether the sidebar's last entry, System Host, is the selected one. */
+                $systemHostSelected,
+
+                /**
+                 * The host that would receive new content here.
+                 *
+                 * Three paths ask this and used to answer it separately: the upload button, a drag and
+                 * drop, and the New menu. Each fell back to the current site when no folder was
+                 * selected, which is right everywhere except System Host, where the current site is
+                 * context rather than the destination. The New menu was worse than wrong — it built
+                 * its target by pasting the location onto the hostname, which with a reserved word
+                 * yields `demo.dotcms.comSYSTEM_HOST` and resolves to nothing.
+                 *
+                 * A folder, when one is selected, is still more specific than this and wins.
+                 */
+                $newContentHostId: computed(() =>
+                    $systemHostSelected() ? SYSTEM_HOST.identifier : currentSite()?.identifier
+                ),
+
+                $canAddChildren,
+
+                /**
+                 * Whether Duplicate may be offered where the author is browsing (#37062).
+                 *
+                 * The browsed folder's own answer, except in all site content. The listing spans
+                 * every folder there, a search included, so each duplicate lands in its own parent
+                 * rather than the site root and there is no single folder to gate against
+                 * (FR-005b, US6 acceptance scenario 4). The server refuses per folder instead.
+                 */
+                $canDuplicateHere: computed(() => $allSiteContentSelected() || $canAddChildren())
+            };
+        }
     ),
     withHooks((store) => {
         let systemHostGate: EffectRef | undefined;
+        const destroyRef = inject(DestroyRef);
+        const folderBulkDeleteService = inject(DotFolderBulkDeleteService);
+        const folderBulkDuplicateService = inject(DotFolderBulkDuplicateService);
+        const uploadFileService = inject(DotUploadFileService);
+        const currentUserService = inject(DotCurrentUserService);
 
         return {
             onInit() {
@@ -851,6 +894,54 @@ export const DotContentDriveStore = signalStore(
                 store.loadSitePermissions(store.currentSite);
                 // Once, not per site: System Host belongs to none of them.
                 store.loadSystemHostPermissions();
+                // Runs still going from before this page loaded, read from each queue and routed to
+                // whichever part of the store owns them (#37062, FR-015 as amended).
+                //
+                // Fire-and-forget on purpose: the listing renders unmarked and marks and statuses
+                // appear when this answers. Nothing here is awaited, and a failure leaves the
+                // portlet exactly as it is today (FR-022, FR-023).
+                //
+                // Every read already answers `[]` on failure. Each is still caught here, because
+                // a join fails as a whole: one read that throws anyway must cost only its own runs.
+                //
+                // Only the author's own duplicates and uploads come back. The listings are not
+                // scoped to the reader, and only the submitter is sent the completion that ends a
+                // run, so anyone else's restored status would never go away. Delete marks every
+                // author's runs, as it always has: the folders are in use either way.
+                //
+                // Delete is applied from its own read, not the join. A folder the delete leaves
+                // while a slower read is still out is announced then, and marking it only after
+                // every read answered would mark it again, busy until reload.
+                folderBulkDeleteService
+                    .readActiveRuns()
+                    .pipe(
+                        catchError(() => of([] as DotFolderDeleteActiveRun[])),
+                        take(1),
+                        takeUntilDestroyed(destroyRef)
+                    )
+                    .subscribe((deletes) => store.applyInFlightFolders(deletes));
+
+                forkJoin({
+                    duplicates: folderBulkDuplicateService
+                        .readActiveRuns()
+                        .pipe(catchError(() => of([] as DotFolderDuplicateActiveRun[]))),
+                    uploads: uploadFileService
+                        .readActiveUploads()
+                        .pipe(catchError(() => of([] as DotBulkUploadActiveRun[]))),
+                    user: currentUserService.getCurrentUser().pipe(catchError(() => of(null)))
+                })
+                    .pipe(take(1), takeUntilDestroyed(destroyRef))
+                    .subscribe(({ duplicates, uploads, user }) => {
+                        // With no author, no run can be told apart as theirs, so none is restored.
+                        // The upload restore still runs, with nothing: it is what stops holding
+                        // completions for a claim that would otherwise never come.
+                        const userId = user?.userId;
+                        const isAuthors = (run: { userId?: string }) =>
+                            !!userId && run.userId === userId;
+
+                        store.restoreDuplicateRuns(duplicates.filter(isAuthors));
+                        store.restoreUploadRuns(uploads.filter(isAuthors));
+                    });
 
                 /**
                  * Sends a user who cannot read System Host back to all site content.

@@ -4,7 +4,7 @@ import {
     mockProvider,
     SpyObject
 } from '@openng/spectator/vitest';
-import { NEVER, of, Subject, throwError } from 'rxjs';
+import { NEVER, Observable, of, Subject, throwError } from 'rxjs';
 import { Mock, Mocked, describe, expect, vi } from 'vitest';
 
 import { Location } from '@angular/common';
@@ -16,6 +16,8 @@ import { ActivatedRoute } from '@angular/router';
 import {
     AddToBundleService,
     DotBulkRefreshService,
+    DotFolderBulkDeleteService,
+    DotFolderBulkDuplicateService,
     DotEventsSocket,
     DotMessageService,
     PushPublishService,
@@ -25,15 +27,18 @@ import {
     DotFolderService,
     DotHttpErrorManagerService,
     DotPropertiesService,
+    DotUploadFileService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import {
     DotAjaxActionResponseView,
     DotBulkRefreshCompletedEvent,
+    DotBulkUploadCompletedEvent,
     DotContentDriveItem,
     DotContentDriveSearchResponse,
     DotCurrentUser,
     DotFireDefaultActionResult,
+    DotFolderDeleteActiveRun,
     DotLanguage,
     DotSite,
     DotWorkflowPushPublishValue
@@ -89,7 +94,9 @@ describe('DotContentDriveStore', () => {
                 siteDetails: vi.fn().mockReturnValue(SYSTEM_HOST),
                 // Nothing advertised by default, which is what an instance older than the field
                 // reports and what a configuration still in flight reads as.
-                systemBulkUpload: vi.fn().mockReturnValue(null)
+                systemBulkUpload: vi.fn().mockReturnValue(null),
+                systemFolderBulkDelete: vi.fn().mockReturnValue(null),
+                systemFolderBulkDuplicate: vi.fn().mockReturnValue(null)
             }),
             mockProvider(DotContentDriveService),
             // Fetched once on init to resolve the CMS Administrator role. Answers through a subject
@@ -109,6 +116,11 @@ describe('DotContentDriveStore', () => {
             // init, and an unstubbed `mockProvider` returns undefined for the observable.
             mockProvider(PushPublishService, { getEnvironments: vi.fn(() => of([])) }),
             mockProvider(DotBulkRefreshService),
+            // Registered on the store, so it is read on init. Answering `[]` keeps every spec here
+            // about what it is actually testing rather than about folders nobody is deleting.
+            mockProvider(DotFolderBulkDeleteService, {
+                readActiveRuns: vi.fn(() => of([]))
+            }),
             mockProvider(DotHttpErrorManagerService),
             // The store subscribes to Location (popstate re-hydration); capture the handler here.
             mockProvider(Location, {
@@ -179,6 +191,39 @@ describe('DotContentDriveStore', () => {
             // instance too old to carry the field. Both mean the server does the refusing.
             expect(store.uploadCeilings()).toBeNull();
         });
+    });
+
+    /**
+     * How many folders one duplicate or delete may carry, as the server advertises it (#37062), so
+     * the Action Center can cap the run, and its row's count, at the ceiling.
+     */
+    describe('folder ceilings', () => {
+        it.each([
+            ['folderDuplicateMaxPaths', 'systemFolderBulkDuplicate'],
+            ['folderDeleteMaxPaths', 'systemFolderBulkDelete']
+        ] as const)('%s should read the maximum the server advertises', (signal, source) => {
+            const globalStore = spectator.inject(GlobalStore);
+
+            (globalStore[source] as unknown as Mock).mockReturnValue({ maxPaths: 25 });
+
+            expect(store[signal]()).toBe(25);
+        });
+
+        it.each([
+            ['folderDuplicateMaxPaths', 'systemFolderBulkDuplicate'],
+            ['folderDeleteMaxPaths', 'systemFolderBulkDelete']
+        ] as const)(
+            '%s should read as no ceiling when the server advertises none',
+            (signal, source) => {
+                // A configuration still loading, or an instance too old to carry the field: either
+                // way the server does the refusing.
+                const globalStore = spectator.inject(GlobalStore);
+
+                (globalStore[source] as unknown as Mock).mockReturnValue(null);
+
+                expect(store[signal]()).toBeNull();
+            }
+        );
     });
 
     describe('currentUserIsAdmin', () => {
@@ -1031,8 +1076,8 @@ describe('DotContentDriveStore', () => {
 
             it('should drop the search scope when the term is cleared', () => {
                 store.setGlobalSearch('pricing');
-                store.setSearchScope('TITLE');
-                expect(store.filters()['searchScope']).toBe('TITLE');
+                store.setSearchScope('ALL_FIELDS');
+                expect(store.filters()['searchScope']).toBe('ALL_FIELDS');
 
                 store.setGlobalSearch('');
 
@@ -1043,11 +1088,11 @@ describe('DotContentDriveStore', () => {
 
             it('should keep the scope when the term is replaced, not cleared', () => {
                 store.setGlobalSearch('pricing');
-                store.setSearchScope('TITLE');
+                store.setSearchScope('ALL_FIELDS');
 
                 store.setGlobalSearch('contracts');
 
-                expect(store.filters()['searchScope']).toBe('TITLE');
+                expect(store.filters()['searchScope']).toBe('ALL_FIELDS');
                 expect(store.filters()['title']).toBe('contracts');
             });
 
@@ -1070,25 +1115,25 @@ describe('DotContentDriveStore', () => {
 
         describe('setSearchScope', () => {
             it('should record a non-default scope as filter state', () => {
-                store.setSearchScope('TITLE');
+                store.setSearchScope('ALL_FIELDS');
 
                 expect(store.filters()).toEqual(
-                    withSeeded({ languageId: ['1'], searchScope: 'TITLE' })
+                    withSeeded({ languageId: ['1'], searchScope: 'ALL_FIELDS' })
                 );
             });
 
             it('should remove the key when the scope returns to the default', () => {
-                store.setSearchScope('TITLE');
-
                 store.setSearchScope('ALL_FIELDS');
 
-                // Removed, not set to 'ALL_FIELDS'. A present key counts as a non-default filter,
+                store.setSearchScope('TITLE');
+
+                // Removed, not set to 'TITLE'. A present key counts as a non-default filter,
                 // so storing the default would offer "Clear all" on an unfiltered drive.
                 expect(store.filters()).toEqual(withSeeded({ languageId: ['1'] }));
             });
 
             it('should never store the default, even when set first', () => {
-                store.setSearchScope('ALL_FIELDS');
+                store.setSearchScope('TITLE');
 
                 expect(Object.hasOwn(store.filters(), 'searchScope')).toBe(false);
             });
@@ -1097,39 +1142,39 @@ describe('DotContentDriveStore', () => {
                 store.setGlobalSearch('pricing');
                 store.patchFilters({ contentType: ['Blog'] });
 
-                store.setSearchScope('TITLE');
+                store.setSearchScope('ALL_FIELDS');
 
                 expect(store.filters()).toEqual(
                     withSeeded({
                         languageId: ['1'],
                         contentType: ['Blog'],
                         title: 'pricing',
-                        searchScope: 'TITLE'
+                        searchScope: 'ALL_FIELDS'
                     })
                 );
             });
 
             it('should keep the scope and the term under separate keys', () => {
                 store.setGlobalSearch('pricing');
-                store.setSearchScope('TITLE');
+                store.setSearchScope('ALL_FIELDS');
 
-                // `title` holds the TERM; `searchScope` holds the mode. A scope whose value is
-                // 'TITLE' beside a filter key named `title` is a collision waiting to happen.
+                // `title` holds the TERM; `searchScope` holds the mode. Title is the default and is
+                // never stored, so only All fields ever sits beside the term.
                 expect(store.filters()['title']).toBe('pricing');
-                expect(store.filters()['searchScope']).toBe('TITLE');
+                expect(store.filters()['searchScope']).toBe('ALL_FIELDS');
             });
 
-            it('should reset pagination so the narrowed results start at page 1', () => {
+            it('should reset pagination so the widened results start at page 1', () => {
                 store.setPagination({ offset: 40, limit: 20, page: 3 });
 
-                store.setSearchScope('TITLE');
+                store.setSearchScope('ALL_FIELDS');
 
                 expect(store.pagination().page).toBe(1);
                 expect(store.pagination().offset).toBe(0);
             });
 
             it('should drop the scope when all filters are cleared', () => {
-                store.setSearchScope('TITLE');
+                store.setSearchScope('ALL_FIELDS');
 
                 store.clearFilters();
 
@@ -1386,6 +1431,11 @@ describe('DotContentDriveStore - onInit', () => {
             // init, and an unstubbed `mockProvider` returns undefined for the observable.
             mockProvider(PushPublishService, { getEnvironments: vi.fn(() => of([])) }),
             mockProvider(DotBulkRefreshService),
+            // Registered on the store, so it is read on init. Answering `[]` keeps every spec here
+            // about what it is actually testing rather than about folders nobody is deleting.
+            mockProvider(DotFolderBulkDeleteService, {
+                readActiveRuns: vi.fn(() => of([]))
+            }),
             mockProvider(DotHttpErrorManagerService),
             // The store subscribes to Location (popstate re-hydration); capture the handler here.
             mockProvider(Location, {
@@ -1426,6 +1476,167 @@ describe('DotContentDriveStore - onInit', () => {
     });
 });
 
+/**
+ * Runs still going when Content Drive opens (developer decision, 2026-09-28: FR-015 amended). One
+ * read of every queue's active listing, routed to whichever part of the store owns each: delete
+ * marks the folders it covers, duplicate and upload put their status back.
+ */
+describe('DotContentDriveStore - runs in progress on load', () => {
+    let spectator: SpectatorService<InstanceType<typeof DotContentDriveStore>>;
+    let store: InstanceType<typeof DotContentDriveStore>;
+    let currentUser$: Observable<DotCurrentUser>;
+    let activeDeletes$: Observable<DotFolderDeleteActiveRun[]>;
+
+    const createService = createServiceFactory({
+        service: DotContentDriveStore,
+        providers: [
+            mockProvider(ActivatedRoute, {
+                snapshot: {
+                    queryParams: {
+                        path: '/initial/test/path',
+                        filters: 'contentType:InitialTestContentType',
+                        isTreeExpanded: 'true'
+                    }
+                }
+            }),
+            mockProvider(GlobalStore, {
+                siteDetails: vi.fn().mockReturnValue(MOCK_SITES[2])
+            }),
+            // The store resolves the CMS Administrator role on init; stub it so no real HTTP fires.
+            mockProvider(DotCurrentUserService, {
+                getCurrentUser: vi.fn(() => currentUser$)
+            }),
+            mockProvider(DotContentDriveService, {
+                search: vi.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
+            }),
+            mockProvider(DotFolderService, {
+                getFolders: vi.fn().mockReturnValue(of([]))
+            }),
+            // Required by `withActionExecution`, which fires workflow actions from the store.
+            mockProvider(DotWorkflowActionsFireService),
+            // Also required by `withActionExecution`, which fires Add to Bundle from the store.
+            mockProvider(AddToBundleService),
+            // Stubbed rather than bare: `withPushPublishEnvironments` looks the environments up on
+            // init, and an unstubbed `mockProvider` returns undefined for the observable.
+            mockProvider(PushPublishService, { getEnvironments: vi.fn(() => of([])) }),
+            mockProvider(DotBulkRefreshService),
+            // Registered on the store, so it is read on init. Answering `[]` keeps every spec here
+            // about what it is actually testing rather than about folders nobody is deleting.
+            mockProvider(DotFolderBulkDeleteService, {
+                readActiveRuns: vi.fn(() => activeDeletes$)
+            }),
+            mockProvider(DotFolderBulkDuplicateService, {
+                readActiveRuns: vi.fn(() =>
+                    of([
+                        { id: 'mine', userId: 'me', assetPaths: ['//demo.com/a/'] },
+                        { id: 'theirs', userId: 'someone-else', assetPaths: ['//demo.com/b/'] }
+                    ])
+                )
+            }),
+            mockProvider(DotUploadFileService, {
+                readActiveUploads: vi.fn(() =>
+                    of([
+                        { id: 'upload-mine', userId: 'me', fileCount: 2 },
+                        { id: 'upload-theirs', userId: 'someone-else', fileCount: 1 }
+                    ])
+                )
+            }),
+            mockProvider(DotHttpErrorManagerService),
+            // The store subscribes to Location (popstate re-hydration); capture the handler here.
+            mockProvider(Location, {
+                subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() })
+            }),
+            // withFlags fetches feature flags on init; stub so no real HTTP fires.
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: vi.fn().mockReturnValue(of({}))
+            }),
+            // The store resolves the environment's default language on init and seeds it into the
+            // `languageId` filter. Answering synchronously keeps every pre-existing test realistic:
+            // the seed is already in place by the time they assert. Blocks that need to control the
+            // timing override this provider with a Subject.
+            mockProvider(DotLanguagesService, {
+                get: vi.fn().mockReturnValue(of(mockLocales))
+            }),
+            provideHttpClient()
+        ]
+    });
+
+    const build = () => {
+        spectator = createService();
+        store = spectator.service;
+        spectator.flushEffects();
+    };
+
+    beforeEach(() => {
+        currentUser$ = of({ userId: 'me', admin: false } as DotCurrentUser);
+        activeDeletes$ = of([{ id: 'delete-1', state: 'RUNNING', paths: ['//demo.com/gone/'] }]);
+    });
+
+    it("should restore the author's own duplicates and uploads, and no one else's", () => {
+        // The listings are not scoped to the reader, and only the submitter is sent the completion
+        // that ends a run: another author's restored status would never go away.
+        build();
+
+        expect(Object.keys(store.duplicateJobs())).toEqual(['mine']);
+        expect(Object.keys(store.uploadJobs())).toEqual(['upload-mine']);
+        expect(store.toolbarRunCount()).toBe(2);
+    });
+
+    it('should mark the folders a delete is working on from the same read', () => {
+        // Unlike the others, delete marks every author's runs: the folders are in use either way.
+        build();
+
+        expect(Object.keys(store.folderDeleteRuns())).toEqual(['delete-1']);
+    });
+
+    it('should still restore the other runs when one read throws', () => {
+        // Each read answers `[]` on failure, but one that throws anyway, from a mapping bug say,
+        // must cost only its own runs: the reads are joined, and a join fails as a whole.
+        activeDeletes$ = throwError(() => new Error('boom'));
+        build();
+
+        expect(Object.keys(store.folderDeleteRuns())).toEqual([]);
+        expect(Object.keys(store.duplicateJobs())).toEqual(['mine']);
+        expect(Object.keys(store.uploadJobs())).toEqual(['upload-mine']);
+    });
+
+    it("should mark a delete's folders without waiting for the other reads", () => {
+        // A folder the delete leaves while a slower read is still out is announced then; marked
+        // only after every read answered, it would be marked again and stay busy until reload.
+        currentUser$ = NEVER;
+        build();
+
+        expect(Object.keys(store.folderDeleteRuns())).toEqual(['delete-1']);
+    });
+
+    it('should restore no status when it cannot tell who the author is', () => {
+        currentUser$ = throwError(() => new Error('boom'));
+        build();
+
+        expect(store.toolbarRunCount()).toBe(0);
+        expect(Object.keys(store.folderDeleteRuns())).toEqual(['delete-1']);
+    });
+
+    it('should hold no upload completion for a restore that cannot happen without an author', () => {
+        // With no author nothing is ever restored to claim a held completion, so holding one would
+        // keep it for the portlet's lifetime.
+        currentUser$ = throwError(() => new Error('boom'));
+        build();
+
+        store.reportUploadCompleted('Upload', {
+            jobId: 'other-tab',
+            state: 'SUCCESS',
+            total: 1,
+            processed: 1,
+            successCount: 1,
+            failedCount: 0,
+            skippedCount: 0
+        } as DotBulkUploadCompletedEvent);
+
+        expect(store.unclaimedUploadCompletions()).toEqual({});
+    });
+});
+
 describe('DotContentDriveStore - Browser Back/Forward (popstate) re-hydration', () => {
     let spectator: SpectatorService<InstanceType<typeof DotContentDriveStore>>;
     let store: InstanceType<typeof DotContentDriveStore>;
@@ -1458,6 +1669,11 @@ describe('DotContentDriveStore - Browser Back/Forward (popstate) re-hydration', 
             // init, and an unstubbed `mockProvider` returns undefined for the observable.
             mockProvider(PushPublishService, { getEnvironments: vi.fn(() => of([])) }),
             mockProvider(DotBulkRefreshService),
+            // Registered on the store, so it is read on init. Answering `[]` keeps every spec here
+            // about what it is actually testing rather than about folders nobody is deleting.
+            mockProvider(DotFolderBulkDeleteService, {
+                readActiveRuns: vi.fn(() => of([]))
+            }),
             mockProvider(DotHttpErrorManagerService),
             // withFlags fetches feature flags on init; stub so no real HTTP fires.
             mockProvider(DotPropertiesService, {
@@ -1707,6 +1923,11 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
             // init, and an unstubbed `mockProvider` returns undefined for the observable.
             mockProvider(PushPublishService, { getEnvironments: vi.fn(() => of([])) }),
             mockProvider(DotBulkRefreshService),
+            // Registered on the store, so it is read on init. Answering `[]` keeps every spec here
+            // about what it is actually testing rather than about folders nobody is deleting.
+            mockProvider(DotFolderBulkDeleteService, {
+                readActiveRuns: vi.fn(() => of([]))
+            }),
             mockProvider(DotHttpErrorManagerService),
             // The store subscribes to Location (popstate re-hydration); capture the handler here.
             mockProvider(Location, {
@@ -1905,6 +2126,48 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
                 })
             })
         );
+    });
+
+    /**
+     * The request always names the scope when there is a term (search box cleanup on #37062). The
+     * server's own default is All fields, so leaving Title out of the request would search every
+     * field while the box says Title.
+     */
+    describe('search scope in the request', () => {
+        it('should send Title when a term is present and no scope is stored', () => {
+            store.patchFilters({ title: 'test' });
+
+            spectator.service.loadItems();
+
+            expect(contentDriveService.search).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    filters: expect.objectContaining({ text: 'test', searchScope: 'TITLE' })
+                })
+            );
+        });
+
+        it('should send All fields when that is the stored scope', () => {
+            store.patchFilters({ title: 'test' });
+            store.setSearchScope('ALL_FIELDS');
+
+            spectator.service.loadItems();
+
+            expect(contentDriveService.search).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    filters: expect.objectContaining({ text: 'test', searchScope: 'ALL_FIELDS' })
+                })
+            );
+        });
+
+        it('should send no scope without a term, which the server would reject', () => {
+            spectator.service.loadItems();
+
+            expect(contentDriveService.search).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    filters: expect.not.objectContaining({ searchScope: expect.anything() })
+                })
+            );
+        });
     });
 
     it('should handle pagination', () => {
