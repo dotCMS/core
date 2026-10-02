@@ -242,7 +242,10 @@ describe('NativeFieldComponent', () => {
                     hostProps: {
                         formGroup: new FormGroup({ [field.variable]: new FormControl('') }),
                         field,
-                        contentlet: createFakeContentlet({ inode: MOCK_INODE, [field.variable]: '' })
+                        contentlet: createFakeContentlet({
+                            inode: MOCK_INODE,
+                            [field.variable]: ''
+                        })
                     }
                 }
             );
