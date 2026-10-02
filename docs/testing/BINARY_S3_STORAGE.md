@@ -296,12 +296,35 @@ manifest) are stored durably in the `publishing-bundles` group, with the local b
 a cache (`BundleArchiveStorage`). Bundle ids keep their case and are checked so an archive cannot
 resolve outside the bundle directory. Generated and received bundles are written to a private
 staging file and published to S3 before they replace the last complete local archive, so an
-incomplete upload never becomes visible. Reading a bundle's manifest or payload restores the
-archive from S3 only when its bytes are needed. Storage failures are reported as failures, not as a
-missing bundle.
+incomplete upload never becomes visible. A received file's bundle id is the part of its name
+before the first `.tar.gz`, which is the rule the receiving endpoints and `BundlePublisher` use to
+find the archive again. Reading a bundle's manifest or payload restores the archive from S3 only
+when its bytes are needed. Storage failures are reported as failures, not as a missing bundle, for
+every publishing and retry decision. The bundle pages are the exception: whether to show a
+download link or a retry button is checked once per bundle, and a storage failure there is logged
+as a warning and shown as "not generated", so an S3 outage does not stop the page from rendering.
+
+With the flag on, static publishing fails the bundle when a File Asset's binary is missing, so it
+can be retried. This matches the flag-off behavior, where the copy of the missing file fails.
 
 Deleting a bundle records a `bundleArchiveCleanup` job after the deletion commits. The job deletes
 the S3 object and keeps the local bytes if remote deletion fails, so the existing queue can retry.
+If a bundle row with the same id exists again when the job runs, for example because a receiver got
+the same bundle again, the job keeps the archive and finishes successfully. On one node, storing an
+archive and the job's row check and delete hold the same lock, so the job cannot delete an archive
+stored between its check and its delete. That lock does not cover other cluster nodes, or a
+receiver whose new bundle row is not yet committed when its archive is stored. In those cases the
+new archive can still be deleted, and the receive fails with an error and can be retried.
+
+Durable archives are kept for the same time as local ones. When `BinaryCleanupJob` deletes files
+older than `CLEANUP_BUNDLES_OLDER_THAN_DAYS` (default 4) from the bundle directory, with the flag on
+it also deletes S3 archives whose S3 last-modified time is older than that, together with their
+local copy and extraction directory. A bundle older than that can no longer be retried or
+downloaded, as with the flag off. A value below 1 turns off both cleanups. An archive that cannot be
+deleted is logged and tried again on the next run. If several nodes run the cleanup job, each one
+lists the group and deletes the same expired archives, which is harmless because deleting an archive
+that is already gone succeeds.
+
 With the flag off, bundles are written, read and deleted in the bundle directory as before.
 
 ## Local cache eviction
@@ -402,7 +425,7 @@ docker run -d --rm --name binary-cleanup-postgres-test \
   -e POSTGRES_DB=binary_storage_test postgres:16-alpine
 
 ./mvnw test -pl :dotcms-core -Dmaven.build.cache.enabled=false \
-  -Dtest=AssetStorageFeatureTest,AssetStorageFeatureLatchTest,S3StorageConfigurationTest,NoWebIdentityCredentialsProviderChainTest,BinaryS3StorageTest,BinaryAssetReferenceTest,BinaryCacheEvictionJobTest,BinaryFileSystemStorageTest,BinaryAssetStorageAPIImplTest,MetadataLocalCacheTest,BinaryAssetCleanupTransactionTest,BinaryAssetCleanupProcessorTest,ContentletBackupStorageGateTest,BinaryFieldCleanupProcessorTest,AssetJobEventSerializationTest,BinaryAssetBackfillCheckpointTest,ImportStarterWorkflowCleanupTest,BinaryAssetBackfillProcessorTest,BinaryAssetBackfillTest,ExportStarterFailureTest \
+  -Dtest=AssetStorageFeatureTest,AssetStorageFeatureLatchTest,S3StorageConfigurationTest,NoWebIdentityCredentialsProviderChainTest,BinaryS3StorageTest,BinaryAssetReferenceTest,BinaryCacheEvictionJobTest,BinaryFileSystemStorageTest,BinaryAssetStorageAPIImplTest,MetadataLocalCacheTest,BinaryAssetCleanupTransactionTest,BinaryAssetCleanupProcessorTest,ContentletBackupStorageGateTest,BinaryFieldCleanupProcessorTest,AssetJobEventSerializationTest,BinaryAssetBackfillCheckpointTest,ImportStarterWorkflowCleanupTest,BinaryAssetBackfillProcessorTest,BinaryAssetBackfillTest,ExportStarterFailureTest,BundleArchiveStorageTest,FileAssetBundlerTest \
   -Ds3.test.endpoint=http://127.0.0.1:19002 \
   -Ds3.test.jdbc=jdbc:postgresql://127.0.0.1:19003/binary_storage_test
 

@@ -1,5 +1,8 @@
 package com.dotmarketing.quartz.job;
 
+import com.dotcms.publishing.output.BundleArchiveStorage;
+import com.dotcms.storage.AssetStorageFeature;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
@@ -87,7 +90,8 @@ public class BinaryCleanupJob implements StatefulJob {
   }
 
   /**
-   * Deletes from /assets/bundles
+   * Deletes from /assets/bundles, and with S3 asset storage on also expires the durable copies of
+   * bundle archives older than the same number of days.
    */
   void cleanUpOldBundles() {
       final int days = Config.getIntProperty(CLEANUP_BUNDLES_OLDER_THAN_DAYS, 4);
@@ -98,6 +102,26 @@ public class BinaryCleanupJob implements StatefulJob {
       Logger.info(this.getClass(), String.format(FILE_DELETION_STATUS_MSG, days, DAYS, ConfigUtils.getBundlePath()));
       final File bundleFolder = new File(ConfigUtils.getBundlePath());
       FileUtil.cleanTree(bundleFolder, olderThan);
+      expireDurableBundles(olderThan);
+  }
+
+  /**
+   * With S3 asset storage on, deletes the S3 copies of bundle archives last written before the
+   * cutoff, so they are kept as long as the local ones. Does nothing with the flag off. A storage
+   * failure is logged and the next run tries again.
+   *
+   * @param olderThan archives stored before this time are deleted
+   */
+  void expireDurableBundles(final Date olderThan) {
+      if (!AssetStorageFeature.isEnabled()) {
+        return;
+      }
+      try {
+        final int expired = BundleArchiveStorage.getInstance().expireOlderThan(olderThan.toInstant());
+        Logger.info(this.getClass(), String.format("Expired %d stored bundle archives older than %s", expired, olderThan));
+      } catch (final DotDataException | RuntimeException e) {
+        Logger.warn(this.getClass(), "Unable to expire stored bundle archives: " + e.getMessage(), e);
+      }
   }
 
   /**
