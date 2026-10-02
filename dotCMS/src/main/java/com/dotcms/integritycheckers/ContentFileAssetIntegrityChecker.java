@@ -517,7 +517,16 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
         }
     }
 
-    /** Copy before publishing the new JSON; source cleanup is committed with the repair. */
+    /**
+     * Copies each stored binary and its metadata to new revision keys owned by the repaired content,
+     * before its corrected JSON is published; source cleanup is committed with the repair. The copies
+     * are uploaded immediately, so each one registers a rollback listener that removes it again if
+     * the repair transaction rolls back.
+     *
+     * @param source      the local content whose binaries are copied
+     * @param destination the repaired content that receives the copies
+     * @throws DotDataException if a source, its referenced metadata or a copy cannot be stored
+     */
     private void copyStoredBinaries(final Contentlet source, final Contentlet destination)
             throws DotDataException {
         final var metadata = APILocator.getFileMetadataAPI();
@@ -535,14 +544,19 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
                 }
                 File copied = APILocator.getBinaryAssetStorageAPI().storeRevision(destination.getInode(),
                         field.variable(), original.getName(), original);
+                final String revision = BinaryAssetReference.keyOf(copied, destination.getInode(), field.variable());
+                removeOnRollback(revision, () -> APILocator.getBinaryAssetStorageAPI()
+                        .deleteBinaryPaths(destination.getInode(), field.variable(), List.of(revision)));
                 final var attributes = files.retrieveRawMetaData(new StorageKey.Builder().group(group)
                         .path(metadata.getFileName(source, field.variable()))
                         .storage(StoragePersistenceProvider.getStorageType()).build());
                 if (attributes != null) {
                     final String key = BinaryAssetReference.newMetadataKey(copied, destination.getInode(), field.variable());
-                    if (!files.setMetadata(new FetchMetadataParams.Builder().cache(false)
+                    final var metadataKey = new FetchMetadataParams.Builder().cache(false)
                             .storageKey(new StorageKey.Builder().group(group).path(key)
-                                    .storage(StoragePersistenceProvider.getStorageType()).build()).build(), attributes)) {
+                                    .storage(StoragePersistenceProvider.getStorageType()).build()).build();
+                    removeOnRollback(key, () -> files.removeMetaData(metadataKey));
+                    if (!files.setMetadata(metadataKey, attributes)) {
                         throw new DotDataException("Unable to copy repair metadata");
                     }
                     copied = BinaryAssetReference.withMetadata(copied, destination.getInode(), field.variable(), key);
@@ -554,6 +568,19 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
                 throw new DotDataException("Unable to copy repair source " + source.getInode(), e);
             }
         }
+    }
+
+    /**
+     * Registers a rollback listener that deletes an object a repair uploaded before its transaction
+     * rolled back. A failed deletion is logged rather than thrown, so it cannot mask the rollback.
+     *
+     * @param key    the uploaded object's key, for the log message
+     * @param delete deletes the object
+     */
+    private static void removeOnRollback(final String key, final io.vavr.CheckedRunnable delete) {
+        HibernateUtil.addRollbackListener(() -> Try.run(delete).onFailure(failure -> Logger.warn(
+                ContentFileAssetIntegrityChecker.class, "Unable to remove " + key
+                        + " after the integrity repair rolled back: " + failure.getMessage())));
     }
 
     private void fixFileAssetContainer(final String oldContentletIdentifier, final String newContentletIdentifier,

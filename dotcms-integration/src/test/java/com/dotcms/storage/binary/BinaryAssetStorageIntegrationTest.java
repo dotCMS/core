@@ -637,11 +637,11 @@ public class BinaryAssetStorageIntegrationTest {
             new com.dotmarketing.common.db.DotConnect().setSQL("update contentlet set contentlet_as_json = ?::jsonb where inode = ?")
                     .addParam(mapper.writeValueAsString(json)).addParam(inode).loadResult();
 
-            var progress = BinaryAssetBackfill.runBatch("", 1);
+            var progress = BinaryAssetBackfill.runBatch("", 1, () -> { });
             int copied = progress.binaries();
             while (!progress.complete()) {
                 final String cursor = progress.afterInode();
-                progress = BinaryAssetBackfill.runBatch(cursor, 1);
+                progress = BinaryAssetBackfill.runBatch(cursor, 1, () -> { });
                 assertTrue(progress.complete() || !cursor.equals(progress.afterInode()));
                 copied += progress.binaries();
             }

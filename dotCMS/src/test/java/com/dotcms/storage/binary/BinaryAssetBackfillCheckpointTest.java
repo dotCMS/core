@@ -18,6 +18,7 @@ import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -58,11 +59,11 @@ class BinaryAssetBackfillCheckpointTest {
                         Map.of("userId", "administrator", "batchSize", 1));
                 final var staleJob = queue.getJob(id).markAsRunning();
                 queue.updateJobStatus(staleJob);
-                copies.when(() -> BinaryAssetBackfill.runBatch("", 1))
-                        .thenReturn(new BinaryAssetBackfill.Result("aa", 2, false));
-                copies.when(() -> BinaryAssetBackfill.runBatch("aa", 1))
+                copies.when(() -> BinaryAssetBackfill.runBatch(eq(""), eq(1), any()))
+                        .thenReturn(new BinaryAssetBackfill.Result("aa", 2, false, List.of()));
+                copies.when(() -> BinaryAssetBackfill.runBatch(eq("aa"), eq(1), any()))
                         .thenThrow(new DotDataException("S3 unavailable"))
-                        .thenReturn(new BinaryAssetBackfill.Result("bb", 3, true));
+                        .thenReturn(new BinaryAssetBackfill.Result("bb", 3, true, List.of()));
 
                 final var interrupted = assertThrows(JobProcessingException.class,
                         () -> new BinaryAssetBackfillProcessor().process(staleJob));
@@ -79,7 +80,7 @@ class BinaryAssetBackfillCheckpointTest {
                 resumed.process(staleJob);
                 assertEquals("bb", checkpoint(writer, id, "afterInode"));
                 assertEquals("5", checkpoint(writer, id, "verifiedBinaries"));
-                copies.verify(() -> BinaryAssetBackfill.runBatch("", 1), times(1));
+                copies.verify(() -> BinaryAssetBackfill.runBatch(eq(""), eq(1), any()), times(1));
                 queue.updateJobStatus(staleJob.markAsSuccessful(null));
                 assertEquals("bb", checkpoint(writer, id, "afterInode"),
                         "The manager's original Job must not overwrite the committed checkpoint");
@@ -87,13 +88,13 @@ class BinaryAssetBackfillCheckpointTest {
 
                 final String competing = queue.createJob(BinaryAssetBackfillProcessor.QUEUE,
                         Map.of("userId", "administrator", "batchSize", 1));
-                copies.when(() -> BinaryAssetBackfill.runBatch("", 1)).thenAnswer(call -> {
+                copies.when(() -> BinaryAssetBackfill.runBatch(eq(""), eq(1), any())).thenAnswer(call -> {
                     try (var update = writer.prepareStatement(
                             "update job set parameters = parameters || '{\"afterInode\":\"cc\",\"verifiedBinaries\":4}'::jsonb where id = ?")) {
                         update.setString(1, competing);
                         assertEquals(1, update.executeUpdate());
                     }
-                    return new BinaryAssetBackfill.Result("aa", 2, false);
+                    return new BinaryAssetBackfill.Result("aa", 2, false, List.of());
                 });
                 assertThrows(JobProcessingException.class,
                         () -> new BinaryAssetBackfillProcessor().process(queue.getJob(competing)));
