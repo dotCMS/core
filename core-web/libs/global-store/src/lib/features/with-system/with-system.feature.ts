@@ -166,6 +166,13 @@ export function withSystem() {
             systemTimezone: computed(() => systemConfig()?.systemTimezone ?? null),
 
             /**
+             * Computed signal that returns every time zone the server accepts.
+             *
+             * @returns The available time zones or an empty array if not loaded
+             */
+            systemTimezones: computed(() => systemConfig()?.timezones ?? []),
+
+            /**
              * Computed signal that returns the cluster information.
              *
              * @returns The cluster information or null if not loaded

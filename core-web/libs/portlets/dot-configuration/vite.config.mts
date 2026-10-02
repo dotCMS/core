@@ -139,7 +139,7 @@ export default defineConfig(() => ({
         // the CI annotations with it — while leaving it in emitted ::error commands on
         // every local run, where nothing parses them. junit stays unconditional; CI
         // consumes those XML files (generates_test_results in .github/test-matrix.yml).
-        reporters: process.env.GITHUB_ACTIONS
+        reporters: process.env['GITHUB_ACTIONS']
             ? [
                   'default',
                   'github-actions',

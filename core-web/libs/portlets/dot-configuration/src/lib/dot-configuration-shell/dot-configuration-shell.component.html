@@ -1,5 +1,39 @@
-<div class="min-h-0 flex-1 overflow-y-auto" data-testid="configuration-page">
+@if (store.status() === ComponentStatus.ERROR) {
+    <div
+        class="flex flex-1 flex-col items-center justify-center gap-4 p-6"
+        data-testid="configuration-error">
+        <p-message severity="error" [text]="'configuration.load.error' | dm" />
+        <p-button
+            [outlined]="true"
+            severity="secondary"
+            [label]="'configuration.load.retry' | dm"
+            (onClick)="onRetry()"
+            data-testid="configuration-retry-btn" />
+    </div>
+} @else if (store.draft()) {
+    <div class="min-h-0 flex-1 overflow-y-auto" data-testid="configuration-page">
+        <div
+            class="mx-auto flex w-full max-w-4xl flex-col gap-6 p-6"
+            data-testid="configuration-sections"></div>
+    </div>
+
+    <dot-configuration-action-bar
+        [saveState]="store.saveState()"
+        [failedSectionKey]="$failedSectionKey()"
+        [canSave]="store.canSave()"
+        [dirty]="store.dirty()"
+        (restoreDefaults)="onRestoreDefaults()"
+        (discard)="onCancel()"
+        (save)="onSave()"
+        data-testid="configuration-action-bar" />
+} @else {
     <div
         class="mx-auto flex w-full max-w-4xl flex-col gap-6 p-6"
-        data-testid="configuration-sections"></div>
-</div>
+        data-testid="configuration-loading">
+        @for (section of skeletonSections; track section) {
+            <p-skeleton height="10rem" borderRadius="0.375rem" />
+        }
+    </div>
+}
+
+<p-confirmDialog [key]="confirmKey" [draggable]="false" [style]="{ width: '500px' }" />
