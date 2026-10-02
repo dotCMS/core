@@ -53,6 +53,7 @@ export * from './lib/dot-localstorage/dot-persisted-query.utils';
 export * from './lib/dot-localstorage/with-persisted-query.feature';
 export * from './lib/dot-message-display/dot-message-display.service';
 export * from './lib/dot-messages/dot-messages.service';
+export * from './lib/dot-nav-logo/dot-nav-logo.service';
 export * from './lib/dot-osgi/bundle-map.model';
 export * from './lib/dot-osgi/dot-osgi.service';
 export * from './lib/dot-page-contenttype/dot-page-contenttype.service';

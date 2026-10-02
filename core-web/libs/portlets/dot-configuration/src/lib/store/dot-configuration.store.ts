@@ -8,15 +8,19 @@ import {
 } from '@ngrx/signals';
 import { EMPTY, Observable, forkJoin, from, throwError } from 'rxjs';
 
-import { computed, inject } from '@angular/core';
+import { DOCUMENT, computed, inject } from '@angular/core';
 
 import { catchError, concatMap, finalize, take, tap } from 'rxjs/operators';
 
 import {
+    DEFAULT_COLORS,
     DotCompanyConfigurationService,
     DotHttpErrorManagerService,
+    DotIframeService,
     DotMessageDisplayService,
-    DotMessageService
+    DotMessageService,
+    DotNavLogoService,
+    DotUiColorsService
 } from '@dotcms/data-access';
 import {
     ComponentStatus,
@@ -127,11 +131,31 @@ export const DotConfigurationStore = signalStore(
             systemTimezone: globalStore.systemTimezone
         };
     }),
-    withMethods((store) => {
+    withMethods((store, globalStore = inject(GlobalStore)) => {
         const service = inject(DotCompanyConfigurationService);
         const httpErrorManager = inject(DotHttpErrorManagerService);
         const messageDisplayService = inject(DotMessageDisplayService);
         const dotMessageService = inject(DotMessageService);
+        const navLogoService = inject(DotNavLogoService);
+        const uiColorsService = inject(DotUiColorsService);
+        const iframeService = inject(DotIframeService);
+        const document = inject(DOCUMENT);
+
+        /**
+         * Applies saved branding to the admin around the portlet without a page reload: the
+         * navbar logo, the theme colors (also re-applied inside legacy iframes) and the system
+         * configuration other screens read.
+         */
+        function refreshAdminChrome(view: DotCompanyConfiguration): void {
+            navLogoService.setLogo(view.navBarLogo ?? '');
+            uiColorsService.setColors(document.documentElement, {
+                primary: view.primaryColor ?? DEFAULT_COLORS.primary,
+                secondary: view.secondaryColor ?? DEFAULT_COLORS.secondary,
+                background: view.backgroundColor ?? DEFAULT_COLORS.background
+            });
+            iframeService.reloadColors();
+            globalStore.loadSystemConfig();
+        }
 
         function updateDraft(patch: (draft: DotConfigurationDraft) => DotConfigurationDraft): void {
             const draft = store.draft();
@@ -267,7 +291,13 @@ export const DotConfigurationStore = signalStore(
                     .pipe(
                         concatMap((section) =>
                             saveRequest(section, store.draft() ?? draft).pipe(
-                                tap((view) => applySaved(section, view)),
+                                tap((view) => {
+                                    applySaved(section, view);
+
+                                    if (section === DotConfigurationSection.BRANDING) {
+                                        refreshAdminChrome(view);
+                                    }
+                                }),
                                 catchError((error) => {
                                     httpErrorManager.handle(error);
                                     patchState(store, { failedSection: section });

@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs';
+import { EMPTY, Observable } from 'rxjs';
 
 import { Component, Type, computed, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
@@ -202,12 +202,17 @@ export class DotConfigurationShellComponent implements DotConfigurationUnsavedWo
         this.store.load();
     }
 
+    /**
+     * Opens one of the page dialogs with the settings every dialog here shares.
+     *
+     * @returns What the dialog closed with, once; nothing if PrimeNG could not open it.
+     */
     #openDialog<T>(
         component: Type<unknown>,
         headerKey: string,
         width: string,
         data?: DynamicDialogConfig['data']
-    ) {
+    ): Observable<T | undefined> {
         const ref = this.#dialogService.open(component, {
             header: this.#dotMessageService.get(headerKey),
             width,
@@ -217,6 +222,10 @@ export class DotConfigurationShellComponent implements DotConfigurationUnsavedWo
             draggable: false,
             position: 'center'
         });
+
+        if (!ref) {
+            return EMPTY;
+        }
 
         return ref.onClose.pipe(take(1)) as Observable<T | undefined>;
     }

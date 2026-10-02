@@ -7,8 +7,11 @@ import { signal } from '@angular/core';
 import {
     DotCompanyConfigurationService,
     DotHttpErrorManagerService,
+    DotIframeService,
     DotMessageDisplayService,
-    DotMessageService
+    DotMessageService,
+    DotNavLogoService,
+    DotUiColorsService
 } from '@dotcms/data-access';
 import { ComponentStatus, DotCompanyAuthType, DotMessageSeverity } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
@@ -43,6 +46,9 @@ describe('DotConfigurationStore', () => {
             }),
             mockProvider(DotHttpErrorManagerService, { handle: vi.fn() }),
             mockProvider(DotMessageDisplayService, { push: vi.fn() }),
+            mockProvider(DotNavLogoService, { setLogo: vi.fn() }),
+            mockProvider(DotUiColorsService, { setColors: vi.fn() }),
+            mockProvider(DotIframeService, { reloadColors: vi.fn() }),
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({
@@ -51,7 +57,8 @@ describe('DotConfigurationStore', () => {
             },
             mockProvider(GlobalStore, {
                 systemTimezones: signal([{ id: 'UTC', label: 'UTC', offset: 0 }]),
-                systemTimezone: signal({ id: 'UTC', label: 'UTC', offset: 0 })
+                systemTimezone: signal({ id: 'UTC', label: 'UTC', offset: 0 }),
+                loadSystemConfig: vi.fn()
             })
         ]
     });
@@ -195,6 +202,62 @@ describe('DotConfigurationStore', () => {
             });
             expect(store.draft()?.locale.timeZoneId).toBe('Mars/Olympus');
             expect(store.saveState()).toBe(DotConfigurationSaveState.FAILED);
+        });
+
+        it('applies saved branding to the admin chrome without a reload', () => {
+            service.saveBranding.mockReturnValue(
+                of(
+                    createFakeCompanyConfiguration({
+                        primaryColor: '#111111',
+                        navBarLogo: '/dA/nav-id/asset/nav.png'
+                    })
+                )
+            );
+            store.patchBranding({ primaryColor: '#111111' });
+
+            store.save();
+
+            expect(spectator.inject(DotNavLogoService).setLogo).toHaveBeenCalledWith(
+                '/dA/nav-id/asset/nav.png'
+            );
+            expect(spectator.inject(DotUiColorsService).setColors).toHaveBeenCalledWith(
+                document.documentElement,
+                { primary: '#111111', secondary: '#233f9b', background: '#1b3359' }
+            );
+            expect(spectator.inject(DotIframeService).reloadColors).toHaveBeenCalled();
+            expect(spectator.inject(GlobalStore).loadSystemConfig).toHaveBeenCalled();
+        });
+
+        it('resets the navbar to the dotCMS logo when the override was cleared', () => {
+            service.saveBranding.mockReturnValue(
+                of(createFakeCompanyConfiguration({ navBarLogo: null, portalURL: 'demo' }))
+            );
+            store.patchBranding({ portalURL: 'demo' });
+
+            store.save();
+
+            expect(spectator.inject(DotNavLogoService).setLogo).toHaveBeenCalledWith('');
+        });
+
+        it('leaves the admin chrome alone when only the locale is saved', () => {
+            service.saveLocale.mockReturnValue(
+                of(createFakeCompanyConfiguration({ timeZoneId: 'Europe/Madrid' }))
+            );
+            store.patchLocale({ timeZoneId: 'Europe/Madrid' });
+
+            store.save();
+
+            expect(spectator.inject(DotUiColorsService).setColors).not.toHaveBeenCalled();
+            expect(spectator.inject(DotNavLogoService).setLogo).not.toHaveBeenCalled();
+        });
+
+        it('leaves the admin chrome alone when the branding save fails', () => {
+            service.saveBranding.mockReturnValue(throwError(() => new Error('rejected')));
+            store.patchBranding({ primaryColor: '#111111' });
+
+            store.save();
+
+            expect(spectator.inject(DotUiColorsService).setColors).not.toHaveBeenCalled();
         });
 
         it('does nothing when there is nothing to save', () => {

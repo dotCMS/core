@@ -10,9 +10,9 @@ import { vi } from 'vitest';
 
 import { ButtonModule } from 'primeng/button';
 
-import { DotNavHeaderComponent } from './dot-nav-header.component';
+import { DotNavLogoService } from '@dotcms/data-access';
 
-import { DotNavLogoService } from '../../../../../api/services/dot-nav-logo/dot-nav-logo.service';
+import { DotNavHeaderComponent } from './dot-nav-header.component';
 
 describe('DotNavHeaderComponent', () => {
     let spectator: Spectator<DotNavHeaderComponent>;
