@@ -98,6 +98,8 @@ export const DotConfigurationStore = signalStore(
             dirty,
             errors,
             hasErrors,
+            /** True while Save Changes is running; the form is read-only meanwhile. */
+            saving: computed(() => store.status() === ComponentStatus.SAVING),
             canSave: computed(
                 () => dirty() && !hasErrors() && store.status() !== ComponentStatus.SAVING
             ),

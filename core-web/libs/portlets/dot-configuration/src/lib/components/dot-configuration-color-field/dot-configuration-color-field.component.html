@@ -1,0 +1,30 @@
+<div class="field">
+    <label [for]="inputId()">{{ labelKey() | dm }}</label>
+    <div class="flex items-center gap-2">
+        <p-colorpicker
+            format="hex"
+            appendTo="body"
+            [ngModel]="$pickerValue()"
+            [disabled]="disabled()"
+            (onChange)="onPickerChange($event)"
+            [attr.aria-label]="labelKey() | dm"
+            data-testid="configuration-color-picker" />
+        <input
+            pInputText
+            type="text"
+            class="w-full"
+            [id]="inputId()"
+            [ngModel]="value()"
+            (ngModelChange)="onInputChange($event)"
+            [invalid]="!!errorKey()"
+            [disabled]="disabled()"
+            [attr.aria-invalid]="!!errorKey()"
+            [attr.aria-describedby]="errorKey() ? $errorId() : null"
+            data-testid="configuration-color-input" />
+    </div>
+    @if (errorKey(); as key) {
+        <small class="p-field-error" [id]="$errorId()" data-testid="configuration-color-error">
+            {{ key | dm }}
+        </small>
+    }
+</div>

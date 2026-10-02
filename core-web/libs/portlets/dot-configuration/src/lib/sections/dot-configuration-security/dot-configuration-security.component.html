@@ -1,0 +1,67 @@
+<dot-configuration-card
+    icon="lock"
+    titleKey="configuration.security.title"
+    subtitleKey="configuration.security.subtitle"
+    data-testid="configuration-security">
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+        <div class="field">
+            <label id="configuration-auth-type-label" for="configuration-auth-type">
+                {{ 'configuration.security.auth-type' | dm }}
+            </label>
+            <p-select
+                inputId="configuration-auth-type"
+                styleClass="w-full"
+                ariaLabelledBy="configuration-auth-type-label"
+                optionLabel="label"
+                optionValue="value"
+                [options]="authTypeOptions"
+                [ngModel]="$authType()"
+                (ngModelChange)="onAuthTypeChange($event)"
+                [disabled]="store.saving()"
+                data-testid="configuration-auth-type" />
+        </div>
+
+        @if (store.keyDigest(); as keyDigest) {
+            <div class="field" data-testid="configuration-key-digest">
+                <label for="configuration-key-digest">
+                    {{ 'configuration.security.key-digest' | dm }}
+                </label>
+                <div class="flex items-center gap-2">
+                    <input
+                        pInputText
+                        id="configuration-key-digest"
+                        type="text"
+                        class="w-full font-mono text-sm"
+                        [value]="keyDigest"
+                        [readonly]="true"
+                        data-testid="configuration-key-digest-value" />
+                    <dot-copy-button
+                        [copy]="keyDigest"
+                        iconStyle="material-symbols-rounded"
+                        [tooltipText]="'configuration.security.key-digest.copy' | dm"
+                        tooltipPosition="top"
+                        data-testid="configuration-key-digest-copy" />
+                    <p-button
+                        [outlined]="true"
+                        severity="danger"
+                        [loading]="store.regeneratingKey()"
+                        [disabled]="store.saving()"
+                        [attr.aria-label]="'configuration.security.regenerate' | dm"
+                        [pTooltip]="'configuration.security.regenerate' | dm"
+                        tooltipPosition="top"
+                        (onClick)="regenerateKey.emit()"
+                        data-testid="configuration-regenerate-key-btn">
+                        <ng-template #icon>
+                            <span class="material-symbols-outlined" aria-hidden="true">
+                                autorenew
+                            </span>
+                        </ng-template>
+                    </p-button>
+                </div>
+                <small class="p-field-hint">
+                    {{ 'configuration.security.key-digest.hint' | dm }}
+                </small>
+            </div>
+        }
+    </div>
+</dot-configuration-card>

@@ -1,0 +1,62 @@
+<dot-configuration-card
+    icon="outgoing_mail"
+    titleKey="configuration.outbound.title"
+    subtitleKey="configuration.outbound.subtitle"
+    data-testid="configuration-outbound">
+    @let branding = $branding();
+    @let errors = store.errors();
+
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div class="field">
+            <label for="configuration-portal-url">
+                {{ 'configuration.outbound.portal-url' | dm }}
+            </label>
+            <input
+                pInputText
+                id="configuration-portal-url"
+                type="text"
+                class="w-full"
+                [ngModel]="branding?.portalURL"
+                (ngModelChange)="onPortalUrlChange($event)"
+                [invalid]="!!errors.portalURL"
+                [disabled]="store.saving()"
+                [attr.aria-invalid]="!!errors.portalURL"
+                data-testid="configuration-portal-url" />
+            <small class="p-field-hint">{{ 'configuration.outbound.portal-url.hint' | dm }}</small>
+            @if (errors.portalURL; as key) {
+                <small class="p-field-error" data-testid="configuration-portal-url-error">
+                    {{ key | dm }}
+                </small>
+            }
+        </div>
+
+        <div class="field">
+            <label for="configuration-email">{{ 'configuration.outbound.email' | dm }}</label>
+            <p-inputgroup>
+                <input
+                    pInputText
+                    id="configuration-email"
+                    type="text"
+                    [ngModel]="branding?.emailAddress"
+                    (ngModelChange)="onEmailChange($event)"
+                    [invalid]="!!errors.emailAddress"
+                    [disabled]="store.saving()"
+                    [attr.aria-invalid]="!!errors.emailAddress"
+                    [placeholder]="'configuration.outbound.email.placeholder' | dm"
+                    data-testid="configuration-email" />
+                <p-button
+                    severity="secondary"
+                    [label]="'configuration.outbound.send-test-mail' | dm"
+                    [disabled]="!$canSendTestMail()"
+                    (onClick)="onSendTestMail()"
+                    data-testid="configuration-send-test-mail-btn" />
+            </p-inputgroup>
+            <small class="p-field-hint">{{ 'configuration.outbound.email.hint' | dm }}</small>
+            @if (errors.emailAddress; as key) {
+                <small class="p-field-error" data-testid="configuration-email-error">
+                    {{ key | dm }}
+                </small>
+            }
+        </div>
+    </div>
+</dot-configuration-card>

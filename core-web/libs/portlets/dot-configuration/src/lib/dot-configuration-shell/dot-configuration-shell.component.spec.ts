@@ -4,8 +4,10 @@ import {
     mockProvider,
     Spectator
 } from '@openng/spectator/vitest';
+import { MockComponent, ngMocks } from 'ng-mocks';
 
-import { signal, WritableSignal } from '@angular/core';
+import { signal, Type, WritableSignal } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 
 import { Confirmation, ConfirmationService } from 'primeng/api';
 
@@ -17,6 +19,10 @@ import { DotConfigurationShellComponent } from './dot-configuration-shell.compon
 
 import { DotConfigurationActionBarComponent } from '../components/dot-configuration-action-bar/dot-configuration-action-bar.component';
 import { DOT_CONFIGURATION_CONFIRM_KEY } from '../guards/dot-configuration-unsaved-changes.guard';
+import { DotConfigurationBrandingComponent } from '../sections/dot-configuration-branding/dot-configuration-branding.component';
+import { DotConfigurationLocaleComponent } from '../sections/dot-configuration-locale/dot-configuration-locale.component';
+import { DotConfigurationOutboundComponent } from '../sections/dot-configuration-outbound/dot-configuration-outbound.component';
+import { DotConfigurationSecurityComponent } from '../sections/dot-configuration-security/dot-configuration-security.component';
 import {
     DotConfigurationDraft,
     DotConfigurationSection,
@@ -24,6 +30,13 @@ import {
 } from '../store/dot-configuration.mappers';
 import { DotConfigurationSaveState, DotConfigurationStore } from '../store/dot-configuration.store';
 import { createFakeCompanyConfiguration } from '../testing/fake-company-configuration';
+
+const SECTIONS: Type<unknown>[] = [
+    DotConfigurationBrandingComponent,
+    DotConfigurationLocaleComponent,
+    DotConfigurationOutboundComponent,
+    DotConfigurationSecurityComponent
+];
 
 interface StoreSignals {
     status: WritableSignal<ComponentStatus>;
@@ -44,7 +57,19 @@ describe('DotConfigurationShellComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotConfigurationShellComponent,
-        providers: [{ provide: DotMessageService, useValue: new MockDotMessageService({}) }],
+        providers: [
+            { provide: DotMessageService, useValue: new MockDotMessageService({}) },
+            { provide: ActivatedRoute, useValue: { snapshot: { data: { isEnterprise: true } } } }
+        ],
+        overrideComponents: [
+            [
+                DotConfigurationShellComponent,
+                {
+                    remove: { imports: SECTIONS },
+                    add: { imports: SECTIONS.map((section) => MockComponent(section)) }
+                }
+            ]
+        ],
         componentProviders: [
             ConfirmationService,
             mockProvider(DotConfigurationStore, {
@@ -102,6 +127,26 @@ describe('DotConfigurationShellComponent', () => {
         it('shows the page and the action bar once loaded', () => {
             expect(spectator.query(byTestId('configuration-page'))).toExist();
             expect(spectator.query(DotConfigurationActionBarComponent)).toBeTruthy();
+        });
+
+        it('renders the four section cards in order', () => {
+            const sections = spectator.query(byTestId('configuration-sections'))?.children ?? [];
+
+            expect(Array.from(sections).map((section) => section.tagName.toLowerCase())).toEqual([
+                'dot-configuration-branding',
+                'dot-configuration-locale',
+                'dot-configuration-outbound',
+                'dot-configuration-security'
+            ]);
+        });
+
+        it('tells the branding card whether the license is Enterprise', () => {
+            const branding = ngMocks.find(
+                spectator.debugElement,
+                DotConfigurationBrandingComponent
+            );
+
+            expect(ngMocks.input(branding, 'isEnterprise')).toBe(true);
         });
     });
 

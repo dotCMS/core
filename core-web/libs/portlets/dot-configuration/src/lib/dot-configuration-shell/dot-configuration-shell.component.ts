@@ -1,4 +1,5 @@
 import { Component, computed, inject } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -15,6 +16,10 @@ import {
     DOT_CONFIGURATION_CONFIRM_KEY,
     DotConfigurationUnsavedWork
 } from '../guards/dot-configuration-unsaved-changes.guard';
+import { DotConfigurationBrandingComponent } from '../sections/dot-configuration-branding/dot-configuration-branding.component';
+import { DotConfigurationLocaleComponent } from '../sections/dot-configuration-locale/dot-configuration-locale.component';
+import { DotConfigurationOutboundComponent } from '../sections/dot-configuration-outbound/dot-configuration-outbound.component';
+import { DotConfigurationSecurityComponent } from '../sections/dot-configuration-security/dot-configuration-security.component';
 import { DotConfigurationSection } from '../store/dot-configuration.mappers';
 import { DotConfigurationStore } from '../store/dot-configuration.store';
 
@@ -37,7 +42,11 @@ const SECTION_NAME_KEYS: Record<DotConfigurationSection, string> = {
         MessageModule,
         SkeletonModule,
         DotMessagePipe,
-        DotConfigurationActionBarComponent
+        DotConfigurationActionBarComponent,
+        DotConfigurationBrandingComponent,
+        DotConfigurationLocaleComponent,
+        DotConfigurationOutboundComponent,
+        DotConfigurationSecurityComponent
     ],
     providers: [DotConfigurationStore, ConfirmationService],
     templateUrl: './dot-configuration-shell.component.html',
@@ -49,6 +58,7 @@ const SECTION_NAME_KEYS: Record<DotConfigurationSection, string> = {
 })
 export class DotConfigurationShellComponent implements DotConfigurationUnsavedWork {
     readonly #dotMessageService = inject(DotMessageService);
+    readonly #route = inject(ActivatedRoute);
 
     protected readonly store = inject(DotConfigurationStore);
     readonly confirmationService = inject(ConfirmationService);
@@ -57,6 +67,8 @@ export class DotConfigurationShellComponent implements DotConfigurationUnsavedWo
 
     protected readonly confirmKey = DOT_CONFIGURATION_CONFIRM_KEY;
     protected readonly ComponentStatus = ComponentStatus;
+    /** Resolved by the route; the navbar logo override is Enterprise-only. */
+    protected readonly isEnterprise = !!this.#route.snapshot.data['isEnterprise'];
     /** One placeholder per section card while the configuration loads. */
     protected readonly skeletonSections = [1, 2, 3, 4];
 

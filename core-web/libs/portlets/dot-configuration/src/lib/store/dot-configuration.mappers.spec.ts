@@ -1,6 +1,7 @@
 import { DotCompanyAuthType } from '@dotcms/dotcms-models';
 
 import {
+    assetFileName,
     dirtySections,
     toBrandingForm,
     toDraft,
@@ -177,6 +178,16 @@ describe('dot-configuration mappers', () => {
                 languageId: 'configuration.validation.required',
                 timeZoneId: 'configuration.validation.required'
             });
+        });
+    });
+
+    describe('assetFileName', () => {
+        it.each([
+            ['/dA/abc-123/asset/logo.svg', 'logo.svg'],
+            ['/html/images/backgrounds/bg-11.jpg', 'bg-11.jpg'],
+            ['', '']
+        ])('reads "%s" as "%s"', (path, fileName) => {
+            expect(assetFileName(path)).toBe(fileName);
         });
     });
 });

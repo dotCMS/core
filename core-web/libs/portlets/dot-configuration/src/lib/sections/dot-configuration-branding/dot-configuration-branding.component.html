@@ -1,0 +1,171 @@
+<dot-configuration-card
+    icon="palette"
+    titleKey="configuration.branding.title"
+    subtitleKey="configuration.branding.subtitle"
+    data-testid="configuration-branding">
+    @let branding = $branding();
+    @let errors = store.errors();
+
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <dot-configuration-color-field
+            inputId="configuration-primary-color"
+            labelKey="configuration.branding.primary-color"
+            [value]="branding?.primaryColor ?? ''"
+            [errorKey]="errors.primaryColor"
+            [disabled]="store.saving()"
+            (valueChange)="onPrimaryColorChange($event)"
+            data-testid="configuration-primary-color" />
+        <dot-configuration-color-field
+            inputId="configuration-secondary-color"
+            labelKey="configuration.branding.secondary-color"
+            [value]="branding?.secondaryColor ?? ''"
+            [errorKey]="errors.secondaryColor"
+            [disabled]="store.saving()"
+            (valueChange)="onSecondaryColorChange($event)"
+            data-testid="configuration-secondary-color" />
+
+        <div class="field">
+            <span class="text-sm font-medium" id="configuration-background-label">
+                {{ 'configuration.branding.background' | dm }}
+            </span>
+            <div
+                class="flex flex-col overflow-hidden rounded-md border border-surface"
+                role="group"
+                aria-labelledby="configuration-background-label">
+                @if ($backgroundImage()) {
+                    <div
+                        class="h-24 bg-cover bg-center"
+                        [style.background-image]="'url(' + $backgroundImage() + ')'"
+                        data-testid="configuration-background-preview"></div>
+                } @else {
+                    <div
+                        class="flex h-24 items-center justify-center bg-surface-50 text-sm text-gray-500"
+                        data-testid="configuration-background-none">
+                        {{ 'configuration.branding.background.none' | dm }}
+                    </div>
+                }
+                <div
+                    class="flex items-center justify-between gap-2 border-t border-surface px-3 py-2">
+                    <span class="truncate text-sm" data-testid="configuration-background-file">
+                        {{
+                            $backgroundFileName() || ('configuration.branding.background.none' | dm)
+                        }}
+                    </span>
+                    <p-button
+                        [outlined]="true"
+                        severity="secondary"
+                        size="small"
+                        [label]="'configuration.branding.change' | dm"
+                        [disabled]="store.saving()"
+                        (onClick)="changeBackground.emit()"
+                        data-testid="configuration-background-change-btn" />
+                </div>
+            </div>
+            <small class="p-field-hint">{{ 'configuration.branding.background.hint' | dm }}</small>
+            @if (errors.backgroundImage; as key) {
+                <small class="p-field-error" data-testid="configuration-background-error">
+                    {{ key | dm }}
+                </small>
+            }
+        </div>
+
+        <div class="field">
+            <span class="text-sm font-medium" id="configuration-login-logo-label">
+                {{ 'configuration.branding.login-logo' | dm }}
+            </span>
+            <div
+                class="flex flex-col overflow-hidden rounded-md border border-surface"
+                role="group"
+                aria-labelledby="configuration-login-logo-label">
+                <div class="flex h-24 items-center justify-center bg-white p-3">
+                    @if ($loginLogo()) {
+                        <img
+                            class="max-h-full max-w-full object-contain"
+                            [src]="$loginLogo()"
+                            [alt]="'configuration.branding.login-logo' | dm"
+                            data-testid="configuration-login-logo-preview" />
+                    }
+                </div>
+                <div
+                    class="flex items-center justify-between gap-2 border-t border-surface px-3 py-2">
+                    <span class="truncate text-sm" data-testid="configuration-login-logo-file">
+                        {{ $loginLogoFileName() }}
+                    </span>
+                    <p-button
+                        [outlined]="true"
+                        severity="secondary"
+                        size="small"
+                        [label]="'configuration.branding.change' | dm"
+                        [disabled]="store.saving()"
+                        (onClick)="changeLoginLogo.emit()"
+                        data-testid="configuration-login-logo-change-btn" />
+                </div>
+            </div>
+            <small class="p-field-hint">{{ 'configuration.branding.login-logo.hint' | dm }}</small>
+            @if (errors.loginScreenLogo; as key) {
+                <small class="p-field-error" data-testid="configuration-login-logo-error">
+                    {{ key | dm }}
+                </small>
+            }
+        </div>
+    </div>
+
+    @if (isEnterprise()) {
+        <div
+            class="flex flex-col gap-3 rounded-md border border-surface bg-surface-50 p-3"
+            data-testid="configuration-navbar-logo">
+            <div class="flex items-start gap-2">
+                <p-checkbox
+                    inputId="configuration-navbar-logo-override"
+                    [binary]="true"
+                    [ngModel]="$overrideNavBarLogo()"
+                    (ngModelChange)="onOverrideChange($event)"
+                    [disabled]="store.saving()"
+                    data-testid="configuration-navbar-logo-override" />
+                <label class="flex flex-col" for="configuration-navbar-logo-override">
+                    <span class="font-medium">
+                        {{ 'configuration.branding.navbar-logo.override' | dm }}
+                    </span>
+                    <small class="text-sm text-gray-500">
+                        {{ 'configuration.branding.navbar-logo.hint' | dm }}
+                    </small>
+                </label>
+            </div>
+
+            @if ($overrideNavBarLogo()) {
+                <div
+                    class="flex items-center justify-between gap-2 rounded-md border border-surface bg-white px-3 py-2"
+                    data-testid="configuration-navbar-logo-tile">
+                    <div class="flex min-w-0 items-center gap-3">
+                        @if ($navBarLogo()) {
+                            <img
+                                class="h-8 max-w-40 object-contain"
+                                [src]="$navBarLogo()"
+                                [alt]="'configuration.branding.navbar-logo' | dm"
+                                data-testid="configuration-navbar-logo-preview" />
+                        }
+                        <span class="truncate text-sm" data-testid="configuration-navbar-logo-file">
+                            {{
+                                $navBarLogoFileName() ||
+                                    ('configuration.branding.navbar-logo.empty' | dm)
+                            }}
+                        </span>
+                    </div>
+                    <p-button
+                        [outlined]="true"
+                        severity="secondary"
+                        size="small"
+                        [label]="'configuration.branding.change' | dm"
+                        [disabled]="store.saving()"
+                        (onClick)="changeNavBarLogo.emit()"
+                        data-testid="configuration-navbar-logo-change-btn" />
+                </div>
+                @if (errors.navBarLogo; as key) {
+                    <small class="p-field-error" data-testid="configuration-navbar-logo-error">
+                        {{ key | dm }}
+                    </small>
+                }
+            }
+        </div>
+    }
+</dot-configuration-card>

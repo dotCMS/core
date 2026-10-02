@@ -216,6 +216,16 @@ export function validate(draft: DotConfigurationDraft): DotConfigurationErrors {
     return errors;
 }
 
+/**
+ * Name of the file an image setting points at, shown under its preview.
+ *
+ * @param path - `/dA/<identifier>/asset/<file>` or a bundled background path.
+ * @returns The last path segment, or an empty string when nothing is set.
+ */
+export function assetFileName(path: string): string {
+    return path.split('/').filter(Boolean).pop() ?? '';
+}
+
 function shallowEqual<T extends object>(a: T, b: T): boolean {
     const keys = Object.keys(a) as (keyof T)[];
 

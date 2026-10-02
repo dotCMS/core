@@ -1,0 +1,65 @@
+<dot-configuration-card
+    icon="language"
+    titleKey="configuration.locale.title"
+    subtitleKey="configuration.locale.subtitle"
+    data-testid="configuration-locale">
+    <p-tag
+        card-header-end
+        severity="info"
+        [value]="$utcTime() + ' UTC'"
+        [attr.aria-label]="'configuration.locale.server-time' | dm: [$utcTime()]"
+        data-testid="configuration-locale-server-time" />
+
+    @let locale = $locale();
+    @let errors = store.errors();
+
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div class="field">
+            <!-- `for` satisfies the lint rule; PrimeNG puts inputId on a non-labelable combobox, so
+                 ariaLabelledBy is what actually names the control. -->
+            <label id="configuration-language-label" for="configuration-language">
+                {{ 'configuration.locale.language' | dm }}
+            </label>
+            <p-select
+                inputId="configuration-language"
+                styleClass="w-full"
+                ariaLabelledBy="configuration-language-label"
+                optionLabel="label"
+                optionValue="value"
+                [options]="$languageOptions()"
+                [ngModel]="locale?.languageId"
+                (ngModelChange)="onLanguageChange($event)"
+                [invalid]="!!errors.languageId"
+                [disabled]="store.saving()"
+                data-testid="configuration-language" />
+            @if (errors.languageId; as key) {
+                <small class="p-field-error">{{ key | dm }}</small>
+            }
+        </div>
+
+        <div class="field">
+            <label id="configuration-timezone-label" for="configuration-timezone">
+                {{ 'configuration.locale.timezone' | dm }}
+            </label>
+            <p-select
+                inputId="configuration-timezone"
+                styleClass="w-full"
+                ariaLabelledBy="configuration-timezone-label"
+                optionLabel="label"
+                optionValue="value"
+                filterBy="label,value"
+                [filter]="true"
+                [virtualScroll]="true"
+                [virtualScrollItemSize]="38"
+                [options]="$timeZoneOptions()"
+                [ngModel]="locale?.timeZoneId"
+                (ngModelChange)="onTimeZoneChange($event)"
+                [invalid]="!!errors.timeZoneId"
+                [disabled]="store.saving()"
+                data-testid="configuration-timezone" />
+            @if (errors.timeZoneId; as key) {
+                <small class="p-field-error">{{ key | dm }}</small>
+            }
+        </div>
+    </div>
+</dot-configuration-card>

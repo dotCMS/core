@@ -1,0 +1,29 @@
+<p-panel styleClass="w-full">
+    <ng-template #header>
+        <div class="flex w-full items-start justify-between gap-4">
+            <div class="flex items-start gap-3">
+                <span
+                    class="material-symbols-outlined text-gray-600"
+                    aria-hidden="true"
+                    data-testid="configuration-card-icon">
+                    {{ icon() }}
+                </span>
+                <div class="flex flex-col gap-1">
+                    <h2
+                        class="m-0 text-lg font-bold text-gray-900"
+                        data-testid="configuration-card-title">
+                        {{ titleKey() | dm }}
+                    </h2>
+                    <p class="m-0 text-sm text-gray-600" data-testid="configuration-card-subtitle">
+                        {{ subtitleKey() | dm }}
+                    </p>
+                </div>
+            </div>
+            <ng-content select="[card-header-end]" />
+        </div>
+    </ng-template>
+
+    <div class="form">
+        <ng-content />
+    </div>
+</p-panel>
