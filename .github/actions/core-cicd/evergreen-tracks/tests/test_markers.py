@@ -19,3 +19,12 @@ def test_held_tracks_ignores_unknown_hold():
     # a _hold suffix on a non-track name is ignored
     tags = ["bogus_hold", "standard_hold"]
     assert held_tracks(tags) == {"standard"}
+
+
+def test_taint_title_idempotent_and_restorable():
+    from evergreen_tracks.markers import taint_title, untaint_title
+    t = "Release 26.08.31-01"
+    assert taint_title(t) == "⚠️ TAINTED Release 26.08.31-01"
+    assert taint_title(taint_title(t)) == taint_title(t)
+    assert untaint_title(taint_title(t)) == t
+    assert untaint_title(t) == t

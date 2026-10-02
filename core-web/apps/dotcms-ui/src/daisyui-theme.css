@@ -15,8 +15,18 @@
 @import './tailwind-palette.css';
 @import '../../../libs/dotcms-scss/tailwind/theme.css';
 
+/*
+ * `root` scopes daisyUI's components and theme, but not its page-level base rules, which still
+ * target the admin's real :root. Excluded here:
+ * - rootscrollgutter: while a modal is open it paints :root with a 40% black background, on top
+ *   of the modal's own overlay, so areas without their own background (top bar, banners) came out
+ *   darker than the editor panels.
+ * - rootcolor: sets the admin page's background and text color.
+ * - rootscrolllock: hides the admin page's overflow while a modal is open.
+ */
 @plugin 'daisyui' {
     root: 'dot-native-field';
+    exclude: rootcolor, rootscrollgutter, rootscrolllock;
 }
 @plugin 'daisyui/theme' {
     name: 'light';
@@ -39,10 +49,72 @@
  * - daisyUI's own component sources are scanned, which makes every component and modifier
  *   (btn-primary, card-border, modal-box...) available.
  * - daisyUI's semantic colors are generated for text/bg/border, with hover and a few opacities.
- * - The inline lists below cover the plain Tailwind utilities custom fields use; Tailwind's
- *   arbitrary values make it impossible to include all of them.
+ * - The scales below cover the plain Tailwind utilities a form control needs: spacing, gap,
+ *   sizing, borders, layout and type. Arbitrary values (`mt-[-10px]`) cannot be listed, so a
+ *   template that needs one has to use the nearest step of a scale instead.
+ * - The fixed lists after them are the exact classes existing custom fields already use,
+ *   including a few arbitrary values; keep them so those fields don't lose styles.
+ * A class outside all of these produces no CSS here, silently.
  */
 @source '../../../node_modules/daisyui/components';
+
+/* Spacing: margin (also negative), padding and gap, on the steps forms actually use. */
+@source inline('{,-}{m,mx,my,mt,mr,mb,ml}-{0,0.5,1,1.5,2,2.5,3,4,5,6,8,10,12,16}');
+@source inline('{m,mx,my,mt,mr,mb,ml}-auto');
+@source inline('{p,px,py,pt,pr,pb,pl}-{0,0.5,1,1.5,2,2.5,3,4,5,6,8,10,12,16}');
+@source inline('{gap,gap-x,gap-y,space-x,space-y}-{0,0.5,1,1.5,2,2.5,3,4,5,6,8,10,12}');
+
+/* Sizing. */
+@source inline(
+    '{w,h,size,min-w,min-h,max-h}-{0,1,2,3,4,5,6,8,10,12,16,20,24,32,40,48,64,auto,full,fit,min,max}'
+);
+@source inline('{w,h}-screen w-{1/2,1/3,2/3,1/4,3/4,11/12}');
+@source inline('max-w-{xs,sm,md,lg,xl,2xl,3xl,4xl,5xl,6xl,7xl,full,none,prose,fit}');
+@source inline('max-h-{72,80,96,none,full,screen} min-w-48 h-auto w-auto');
+
+/* Borders and corners. */
+@source inline(
+    'border{,-0,-2,-4,-8} border-{t,r,b,l,x,y}{,-0,-2,-4} border-{solid,dashed,dotted,none,transparent,current}'
+);
+@source inline(
+    'rounded{,-none,-sm,-md,-lg,-xl,-2xl,-full,-box,-field,-selector} {outline,ring}{,-0,-1,-2,-4} outline-none ring-offset-{1,2}'
+);
+
+/* Layout and position. */
+@source inline('{block,inline,inline-block,flex,inline-flex,grid,inline-grid,contents,hidden}');
+@source inline(
+    'flex-{row,col,row-reverse,col-reverse,wrap,nowrap,1,auto,initial,none} {grow,shrink}{,-0} basis-{0,full,1/2}'
+);
+@source inline(
+    '{items,content}-{start,center,end,stretch,baseline,between} justify-{start,center,end,between,around,evenly,stretch} self-{auto,start,center,end,stretch} place-items-center'
+);
+@source inline('grid-cols-{1,2,3,4,5,6,12} col-span-{1,2,3,4,5,6,full} grid-rows-{1,2,3}');
+@source inline(
+    '{static,relative,absolute,fixed,sticky} {inset,inset-x,inset-y,top,right,bottom,left}-{0,auto,full} z-{0,10,20,30,40,50,auto}'
+);
+@source inline(
+    'overflow{,-x,-y}-{auto,hidden,visible,scroll} object-{contain,cover,center} aspect-{square,video,auto} sr-only not-sr-only'
+);
+
+/* Type. */
+@source inline(
+    'text-{xs,sm,base,lg,xl,2xl,3xl} text-{left,center,right,justify} font-{normal,medium,semibold,bold} leading-{none,tight,snug,normal,relaxed,loose}'
+);
+@source inline(
+    '{uppercase,lowercase,capitalize,normal-case,italic,underline,no-underline,line-through} whitespace-{normal,nowrap,pre,pre-wrap} {truncate,break-words,break-all,text-ellipsis}'
+);
+
+/* Effects and interaction. */
+@source inline(
+    '{bg,text}-{transparent,current,inherit} shadow{,-none,-sm,-md,-lg} opacity-{0,25,50,60,70,75,80,90,100}'
+);
+@source inline(
+    'cursor-{pointer,default,not-allowed,move,text} select-{none,text,all} pointer-events-{none,auto} transition{,-all,-colors,-opacity,-transform} duration-{150,200,300,500}'
+);
+@source inline(
+    '{hover:,focus:,focus-within:,disabled:}{opacity-50,underline,shadow-md,outline-primary}'
+);
+
 @source inline(
     '{hover:,}{text,bg,border}-{base-100,base-200,base-300,base-content,primary,primary-content,secondary,secondary-content,accent,accent-content,neutral,neutral-content,info,info-content,success,success-content,warning,warning-content,error,error-content}{,/10,/20,/30,/50,/70}'
 );

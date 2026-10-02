@@ -229,6 +229,82 @@ describe('NativeFieldComponent', () => {
         });
     });
 
+    // A template that loads a library and then uses it (a map, a picker) needs its inline script to
+    // run after the library. Dynamically inserted external scripts are async, so without waiting the
+    // inline one runs first and finds nothing.
+    describe('External script ordering', () => {
+        const mount = async (rendered: string) => {
+            const field = createFakeCustomField({ rendered });
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-native-field [field]="field" [contentlet]="contentlet" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({ [field.variable]: new FormControl('') }),
+                        field,
+                        contentlet: createFakeContentlet({
+                            inode: MOCK_INODE,
+                            [field.variable]: ''
+                        })
+                    }
+                }
+            );
+            spectator.detectChanges();
+            await spectator.fixture.whenStable();
+            spectator.flushEffects();
+
+            return spectator.component.$container().nativeElement as HTMLElement;
+        };
+
+        it('should wait for an external script to load before running the scripts after it', async () => {
+            const container = await mount(
+                `<div id="target"></div><script src="/lib/picker.js"></script><script>window.__afterLib = true;</script>`
+            );
+            const external = container.querySelector('script[src="/lib/picker.js"]');
+
+            expect(external).not.toBeNull();
+            expect(container.querySelectorAll('script').length).toBe(1);
+
+            external?.dispatchEvent(new Event('load'));
+            await Promise.resolve();
+
+            expect(container.querySelectorAll('script').length).toBe(2);
+        });
+
+        it('should keep going when an external script fails to load', async () => {
+            const container = await mount(
+                `<script src="/lib/missing.js"></script><script>window.__after = 1;</script>`
+            );
+
+            container.querySelector('script')?.dispatchEvent(new Event('error'));
+            await Promise.resolve();
+
+            expect(container.querySelectorAll('script').length).toBe(2);
+        });
+
+        it('should not wait for an external script the template marked async', async () => {
+            const container = await mount(
+                `<script async src="/lib/analytics.js"></script><script>window.__x = 1;</script>`
+            );
+
+            expect(container.querySelectorAll('script').length).toBe(2);
+        });
+
+        it('should not insert the remaining scripts once the field is destroyed', async () => {
+            const container = await mount(
+                `<script src="/lib/picker.js"></script><script>window.__late = 1;</script>`
+            );
+            const external = container.querySelector('script');
+
+            spectator.fixture.destroy();
+            external?.dispatchEvent(new Event('load'));
+            await Promise.resolve();
+
+            expect(container.querySelectorAll('script').length).toBe(0);
+        });
+    });
+
     describe('Form Bridge Integration', () => {
         const fieldWithRendered = createFakeCustomField({
             rendered: '<div>Bridge Test</div>'

@@ -25,6 +25,7 @@ import {
     FieldValidationState,
     FormBridge,
     FormFieldAPI,
+    FormFieldSetOptions,
     FormFieldValue
 } from '../interfaces/form-bridge.interface';
 
@@ -49,6 +50,11 @@ export class AngularFormBridge implements FormBridge {
     #dialogService: DialogService;
     #dialogRef: DynamicDialogRef | null = null;
     #visibilityWarningEmitted: Record<'show' | 'hide', boolean> = { show: false, hide: false };
+    /**
+     * Set once the bridge is torn down, so {@link popInstance} can tell a dead bridge on the
+     * global from a live one.
+     */
+    #destroyed = false;
 
     /**
      * Optional callback invoked when a field's visibility changes via show()/hide().
@@ -193,8 +199,10 @@ export class AngularFormBridge implements FormBridge {
      * from the stack. Call this when a nested context (e.g. a dialog) is closed.
      */
     static popInstance(): void {
-        if (AngularFormBridge.instance) {
-            AngularFormBridge.instance.forceDestroy();
+        const popped = AngularFormBridge.instance;
+
+        if (popped) {
+            popped.forceDestroy();
             AngularFormBridge.instance = null;
             AngularFormBridge.refCount = 0;
         }
@@ -203,6 +211,18 @@ export class AngularFormBridge implements FormBridge {
         if (previous) {
             AngularFormBridge.instance = previous.instance;
             AngularFormBridge.refCount = previous.refCount;
+        }
+
+        // The nested context's custom fields pointed the global at its own bridge, which is now
+        // destroyed. Templates behind the dialog that look `DotCustomFieldApi` up lazily (in an
+        // event handler) would otherwise reach the dead instance. That bridge is usually already
+        // gone by now — the dialog's last custom field destroys it before the dialog closes — so
+        // `popped` can be null; a destroyed bridge on the global is ours to replace too. Anything
+        // that is not one of our bridges belongs to someone else and is left alone.
+        const host = globalThis as { DotCustomFieldApi?: unknown };
+        const current = host.DotCustomFieldApi;
+        if (current instanceof AngularFormBridge && (current === popped || current.#destroyed)) {
+            host.DotCustomFieldApi = AngularFormBridge.instance ?? undefined;
         }
     }
 
@@ -219,17 +239,27 @@ export class AngularFormBridge implements FormBridge {
     /**
      * Sets the value of a field in the Angular form.
      *
+     * A value the user typed and a value a template derives (a slug, a padded index, a default)
+     * both go through here, but only the first is an edit. So the field is marked touched and
+     * dirty unless the caller says otherwise with `markDirty: false`.
+     *
+     * `setValue` already re-runs validation and emits once, so `onChange` callbacks fire exactly
+     * once per change.
+     *
      * @param fieldId - The ID of the field to set the value for.
      * @param value - The value to set for the field.
+     * @param options - `markDirty: false` keeps the field's touched and dirty state as it was.
      */
-    set(fieldId: string, value: FormFieldValue): void {
+    set(fieldId: string, value: FormFieldValue, options?: FormFieldSetOptions): void {
         this.#zone.run(() => {
             const control = this.#form.get(fieldId);
             if (control && control.value !== value) {
                 control.setValue(value, { emitEvent: true });
-                control.markAsTouched();
-                control.markAsDirty();
-                control.updateValueAndValidity({ emitEvent: true });
+
+                if (options?.markDirty !== false) {
+                    control.markAsTouched();
+                    control.markAsDirty();
+                }
             }
         });
     }
@@ -358,6 +388,7 @@ export class AngularFormBridge implements FormBridge {
 
         this.#dialogRef?.close();
         this.#dialogRef = null;
+        this.#destroyed = true;
     }
 
     /**
@@ -373,8 +404,8 @@ export class AngularFormBridge implements FormBridge {
                 return this.get(fieldId);
             },
 
-            setValue: (value: FormFieldValue): void => {
-                this.set(fieldId, value);
+            setValue: (value: FormFieldValue, options?: FormFieldSetOptions): void => {
+                this.set(fieldId, value, options);
             },
 
             onChange: (callback: (value: FormFieldValue) => void): (() => void) => {

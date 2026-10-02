@@ -144,8 +144,10 @@
                         tooltipPosition="top"></i>
                 </label>
                 <div class="toggle-row flex items-center gap-2.5">
+                    <!-- at least one signature is always required: the last one on can not be switched off -->
                     <p-toggleswitch
                         [ngModel]="saml().wantAssertionsSigned"
+                        [disabled]="saml().wantAssertionsSigned && !saml().wantResponseSigned"
                         (ngModelChange)="onChange('wantAssertionsSigned', $event)" />
                 </div>
             </div>
@@ -158,8 +160,10 @@
                         tooltipPosition="top"></i>
                 </label>
                 <div class="toggle-row flex items-center gap-2.5">
+                    <!-- at least one signature is always required: the last one on can not be switched off -->
                     <p-toggleswitch
                         [ngModel]="saml().wantResponseSigned"
+                        [disabled]="saml().wantResponseSigned && !saml().wantAssertionsSigned"
                         (ngModelChange)="onChange('wantResponseSigned', $event)" />
                 </div>
             </div>
