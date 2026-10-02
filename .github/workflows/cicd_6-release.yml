@@ -541,6 +541,25 @@ jobs:
       SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
       CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
 
+  # Evergreen Site Sync - reconcile the corpsites EvergreenState record after latest moved (FR-013).
+  # Skipped whenever promote-latest is skipped (LTS, skip_latest). Deliberately NOT in the
+  # needs of finalize/report: it must never delay or fail the release (SC-005).
+  evergreen-site-sync:
+    name: Evergreen Site Sync
+    needs: [ promote-latest, changelog-site-publish ]
+    if: >-
+      always()
+      && (needs.promote-latest.result == 'success' || needs.promote-latest.result == 'failure')
+    uses: ./.github/workflows/cicd_comp_evergreen-site-sync.yml
+    with:
+      trigger: release ${{ github.event.inputs.release_version }}
+      apply: true
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+      DOTCMS_DEVSITE_RELEASENOTES_TOKEN: ${{ secrets.DOTCMS_DEVSITE_RELEASENOTES_TOKEN }}
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
   # Finalize - standard finalization phase (required for phase pattern)
   finalize:
     name: Finalize

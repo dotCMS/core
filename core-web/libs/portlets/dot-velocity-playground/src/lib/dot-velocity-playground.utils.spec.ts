@@ -143,6 +143,22 @@ describe('dot-velocity-playground.utils', () => {
                 expect(ex.code).toBeTruthy();
             }
         });
+
+        it('reads file size off the binary field, not the contentlet', () => {
+            // `$f.fileSize` is not a contentlet property: it resolved to null on every pulled
+            // file, so running this example greeted the user with five NULL_METHOD_RESULT
+            // warnings and printed the literal `$f.fileSize` in the output. Size is a
+            // metadata-backed getter on FileAsset, reachable through the `fileAsset` binary
+            // field. (`fileName` and `mimeType` DO resolve on the contentlet — only size does
+            // not, which is exactly what made the mistake easy to miss.)
+            const fileExample = VELOCITY_HELP_EXAMPLES.find((ex) =>
+                ex.code.includes('+contentType:FileAsset')
+            );
+
+            expect(fileExample).toBeDefined();
+            expect(fileExample?.code).toContain('$f.fileAsset.fileSize');
+            expect(fileExample?.code).not.toMatch(/\$f\.fileSize/);
+        });
     });
 
     describe('constants surface', () => {
