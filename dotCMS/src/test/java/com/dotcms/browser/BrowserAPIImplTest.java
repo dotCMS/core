@@ -629,4 +629,143 @@ public class BrowserAPIImplTest {
         assertTrue(BrowserAPIImpl.partitionInodesForES(List.of(), 120, DEFAULT_BUDGET, TYPICAL_CLAUSE_CAP)
                 .isEmpty());
     }
+
+    // ---- nextChunkSize: adaptive chunk sizing for the permission-only scan (issue #37665) ----
+
+    private static final int DEFAULT_FLOOR = 400;
+    private static final int DEFAULT_SCAN_LIMIT = BrowserAPIImpl.BROWSER_DB_MAX_SCAN_ROWS_DEFAULT;
+    private static final int DEFAULT_CEILING = BrowserAPIImpl.BROWSER_DB_CHUNK_ADAPTIVE_MAX_SIZE_DEFAULT;
+    private static final int DEFAULT_MAX_GROWTH = BrowserAPIImpl.BROWSER_DB_CHUNK_ADAPTIVE_MAX_GROWTH_DEFAULT;
+    private static final float DEFAULT_SAFETY_FACTOR = BrowserAPIImpl.BROWSER_DB_CHUNK_ADAPTIVE_SAFETY_FACTOR_DEFAULT;
+
+    /**
+     * Calls {@link BrowserAPIImpl#nextChunkSize} with the floor, scan budget and adaptive settings
+     * at their defaults and the next chunk starting at row 0, so each test states only what the
+     * case is about.
+     */
+    private static int nextChunkSize(final int previousRequested, final int rowsRead,
+            final int visibleSoFar, final int stillNeeded) {
+        return BrowserAPIImpl.nextChunkSize(previousRequested, DEFAULT_FLOOR, rowsRead, visibleSoFar,
+                stillNeeded, DEFAULT_SCAN_LIMIT, 0, DEFAULT_CEILING, DEFAULT_MAX_GROWTH,
+                DEFAULT_SAFETY_FACTOR);
+    }
+
+    /** Nothing visible in the first 400 rows: no ratio to extrapolate from, so the chunk doubles. */
+    @Test
+    public void nextChunkSize_nothingVisible_doublesPreviousRequested() {
+        assertEquals(800, nextChunkSize(400, 400, 0, 40));
+    }
+
+    /** Doubling keeps compounding from whatever was last requested, not from the floor. */
+    @Test
+    public void nextChunkSize_nothingVisible_fromLargerPrevious() {
+        assertEquals(1_600, nextChunkSize(800, 1_200, 0, 40));
+    }
+
+    /** Doubling 1,600 would give 3,200; the ceiling stops it at 2,000. */
+    @Test
+    public void nextChunkSize_nothingVisible_cappedByCeiling() {
+        assertEquals(2_000, nextChunkSize(1_600, 2_800, 0, 40));
+    }
+
+    /**
+     * 13 still needed at 27 visible out of 2,000 read projects 13 x 2,000 x 1.5 / 27 = 1,444.4
+     * rows; the result is rounded up so the chunk never falls a row short.
+     */
+    @Test
+    public void nextChunkSize_ratio_roundsUp() {
+        assertEquals(1_445, nextChunkSize(1_600, 2_000, 27, 13));
+    }
+
+    /** Half the rows visible and half the page missing: 20 x 400 x 1.5 / 20 = 600. */
+    @Test
+    public void nextChunkSize_ratio_halfVisible() {
+        assertEquals(600, nextChunkSize(400, 400, 20, 20));
+    }
+
+    /** A dense folder projects only 16 more rows, but a chunk never shrinks below the floor. */
+    @Test
+    public void nextChunkSize_ratio_belowFloor_returnsFloor() {
+        assertEquals(DEFAULT_FLOOR, nextChunkSize(400, 400, 39, 1));
+    }
+
+    /**
+     * Clustered visibility: 1 visible item in the first 400 rows projects 39 x 400 x 1.5 = 23,400
+     * rows, although the rest of the page may sit in the very next 400. The per-step cap limits
+     * the next chunk to 4 x 400.
+     */
+    @Test
+    public void nextChunkSize_clustered_cappedByMaxGrowth() {
+        assertEquals(1_600, nextChunkSize(400, 400, 1, 39));
+    }
+
+    /** A sparse ratio (5 of 400) projects 4,200 rows; the per-step cap keeps it at 1,600. */
+    @Test
+    public void nextChunkSize_sparse_cappedByMaxGrowth() {
+        assertEquals(1_600, nextChunkSize(400, 400, 5, 35));
+    }
+
+    /**
+     * Only 150 rows of scan budget are left, below the floor of 400. The floor wins, so the loop
+     * reads no further past the budget than the fixed chunk would.
+     */
+    @Test
+    public void nextChunkSize_remainingBudgetBelowFloor_returnsFloor() {
+        assertEquals(DEFAULT_FLOOR, BrowserAPIImpl.nextChunkSize(400, DEFAULT_FLOOR, 49_850, 0, 40,
+                DEFAULT_SCAN_LIMIT, 49_850, DEFAULT_CEILING, DEFAULT_MAX_GROWTH, DEFAULT_SAFETY_FACTOR));
+    }
+
+    /** With 500 rows of budget left, doubling to 800 is cut to 500. */
+    @Test
+    public void nextChunkSize_remainingBudgetCapsGrowth() {
+        assertEquals(500, BrowserAPIImpl.nextChunkSize(400, DEFAULT_FLOOR, 49_500, 0, 40,
+                DEFAULT_SCAN_LIMIT, 49_500, DEFAULT_CEILING, DEFAULT_MAX_GROWTH, DEFAULT_SAFETY_FACTOR));
+    }
+
+    /** A page large enough to push the floor past the ceiling keeps the floor: no growth, no shrink. */
+    @Test
+    public void nextChunkSize_floorAboveCeiling_returnsFloor() {
+        assertEquals(7_500, BrowserAPIImpl.nextChunkSize(7_500, 7_500, 7_500, 0, 750,
+                DEFAULT_SCAN_LIMIT, 0, DEFAULT_CEILING, DEFAULT_MAX_GROWTH, DEFAULT_SAFETY_FACTOR));
+    }
+
+    /** A per-step cap of 1 turns growth off entirely. */
+    @Test
+    public void nextChunkSize_maxGrowthOne_neverGrows() {
+        assertEquals(400, BrowserAPIImpl.nextChunkSize(400, DEFAULT_FLOOR, 400, 0, 40,
+                DEFAULT_SCAN_LIMIT, 0, DEFAULT_CEILING, 1, DEFAULT_SAFETY_FACTOR));
+    }
+
+    /** A ceiling of 0 is a misconfiguration and falls back to the 2,000 default. */
+    @Test
+    public void nextChunkSize_nonPositiveCeiling_usesDefault() {
+        assertEquals(2_000, BrowserAPIImpl.nextChunkSize(1_600, DEFAULT_FLOOR, 2_800, 0, 40,
+                DEFAULT_SCAN_LIMIT, 0, 0, DEFAULT_MAX_GROWTH, DEFAULT_SAFETY_FACTOR));
+    }
+
+    /** A per-step cap of 0 is a misconfiguration and falls back to the default of 4. */
+    @Test
+    public void nextChunkSize_maxGrowthBelowOne_usesDefault() {
+        assertEquals(1_600, BrowserAPIImpl.nextChunkSize(400, DEFAULT_FLOOR, 400, 1, 39,
+                DEFAULT_SCAN_LIMIT, 0, DEFAULT_CEILING, 0, DEFAULT_SAFETY_FACTOR));
+    }
+
+    /** A safety factor of 0 or NaN is a misconfiguration and falls back to the default of 1.5. */
+    @Test
+    public void nextChunkSize_nonPositiveOrNaNSafetyFactor_usesDefault() {
+        assertEquals(600, BrowserAPIImpl.nextChunkSize(400, DEFAULT_FLOOR, 400, 20, 20,
+                DEFAULT_SCAN_LIMIT, 0, DEFAULT_CEILING, DEFAULT_MAX_GROWTH, 0f));
+        assertEquals(600, BrowserAPIImpl.nextChunkSize(400, DEFAULT_FLOOR, 400, 20, 20,
+                DEFAULT_SCAN_LIMIT, 0, DEFAULT_CEILING, DEFAULT_MAX_GROWTH, Float.NaN));
+    }
+
+    /**
+     * An absurd safety factor must not overflow into a negative chunk size. The per-step cap
+     * allows 2,400 here, so the ceiling of 2,000 is what binds.
+     */
+    @Test
+    public void nextChunkSize_hugeInputs_doesNotOverflow() {
+        assertEquals(2_000, BrowserAPIImpl.nextChunkSize(600, DEFAULT_FLOOR, 50_000, 1, 50_000,
+                DEFAULT_SCAN_LIMIT, 0, DEFAULT_CEILING, DEFAULT_MAX_GROWTH, Float.MAX_VALUE));
+    }
 }
