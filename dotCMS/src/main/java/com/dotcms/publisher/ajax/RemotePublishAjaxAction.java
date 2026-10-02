@@ -639,7 +639,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
             if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
                 try {
                     com.dotcms.publishing.output.BundleArchiveStorage.getInstance().delete(bundleId);
-                } catch (DotDataException e) {
+                } catch (DotDataException | RuntimeException e) {
                     Logger.error(this, "Unable to remove generated download bundle " + bundleId, e);
                 }
             }

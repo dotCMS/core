@@ -136,6 +136,14 @@ public class BundlerUtil {
         }
     }
 
+    /**
+     * Tells {@link #isRetryable(String)} whether the bundle's files are present. With S3 asset
+     * storage on, the archive check is the display check, which reports a storage failure as
+     * false instead of throwing, because the audit detail page calls this while rendering.
+     *
+     * @param bundleId the bundle id
+     * @return true if the bundle's files are present
+     */
     private static boolean bundleExists(String bundleId) {
         final PublisherConfig basicConfig = new PublisherConfig();
         basicConfig.setId(bundleId);
@@ -143,7 +151,7 @@ public class BundlerUtil {
 
         final File bundleStaticFile = new File(bundleRoot.getAbsolutePath() + PublisherConfig.STATIC_SUFFIX);
         if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
-            return bundleStaticFile.exists() || com.dotcms.publishing.output.BundleArchiveStorage.getInstance().exists(bundleId);
+            return bundleStaticFile.exists() || com.dotcms.publishing.output.BundleArchiveStorage.getInstance().existsForDisplay(bundleId);
         }
         if ( !bundleStaticFile.exists() ) {
             return true;
