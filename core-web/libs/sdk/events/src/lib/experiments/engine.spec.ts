@@ -160,6 +160,43 @@ describe('createExperimentsEngine', () => {
         expect(document.getElementById(REVEAL_STYLE_ID)?.textContent).toContain('experiment-g');
     });
 
+    it('waits 3000 ms at most, the time the hiding rule keeps the content hidden, whatever the timeout', async () => {
+        vi.useFakeTimers();
+
+        try {
+            markRows('experiment-t');
+            let answer: (response: unknown) => void = () => undefined;
+            fetchSpy.mockReturnValue(
+                new Promise((resolve) => {
+                    answer = resolve;
+                })
+            );
+            const engine = createExperimentsEngine({
+                dotcmsUrl: 'https://dotcms.test',
+                timeoutMs: 5000,
+                log: () => undefined,
+                warn,
+                navigate
+            });
+            engines.push(engine);
+            let decided: unknown;
+
+            engine.start();
+            void engine.decide().then((decision) => (decided = decision));
+            await vi.advanceTimersByTimeAsync(3000);
+
+            // The rule shows the original at 3 s, so the page is shown then, and an answer that
+            // comes later does not replace it with the variant
+            expect(decided).toEqual({ redirected: false });
+            answer(answerWith('experiment-t', VARIANT));
+            await vi.advanceTimersByTimeAsync(2000);
+            expect(navigate).not.toHaveBeenCalled();
+            expect(warn).toHaveBeenCalledWith(expect.stringContaining('3000 ms'));
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
     it('decides on its own when no boot script ran, and redirects to the assigned variant', async () => {
         markRows('experiment-a');
         storeAssignment('experiment-a', VARIANT);

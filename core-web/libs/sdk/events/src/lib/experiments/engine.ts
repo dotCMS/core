@@ -1,5 +1,10 @@
 import { fetchIsUserIncluded } from './api';
-import { BOOT_STATE_KEY, DEFAULT_VARIANT, VARIANT_QUERY_PARAM } from './constants';
+import {
+    BOOT_STATE_KEY,
+    DECISION_TIMEOUT_MS,
+    DEFAULT_VARIANT,
+    VARIANT_QUERY_PARAM
+} from './constants';
 import { decideVariant } from './decision';
 import {
     hideContentlets,
@@ -190,6 +195,15 @@ export const createExperimentsEngine = ({
     let navigations = 0;
     // The visit whose page runs an experiment the visitor is in: only its events carry them
     let visitInExperiment: number | undefined;
+    // The hiding rule shows the content after DECISION_TIMEOUT_MS on its own: a longer wait
+    // would show the original, then replace it with the variant
+    const waitMs = Math.min(timeoutMs, DECISION_TIMEOUT_MS);
+
+    if (timeoutMs > DECISION_TIMEOUT_MS) {
+        warn(
+            `experiments.timeout is ${timeoutMs} ms; the page waits ${DECISION_TIMEOUT_MS} ms at most, as long as the experiment's content stays hidden`
+        );
+    }
     const stopCountingNavigations =
         pages === 'markup'
             ? onNavigation(() => {
@@ -304,7 +318,7 @@ export const createExperimentsEngine = ({
     const waitForAnswer = (): Promise<WaitOutcome> =>
         Promise.race([
             check(true).then((): WaitOutcome => 'answered'),
-            new Promise<WaitOutcome>((resolve) => setTimeout(() => resolve('timeout'), timeoutMs))
+            new Promise<WaitOutcome>((resolve) => setTimeout(() => resolve('timeout'), waitMs))
         ]);
 
     /**
@@ -473,7 +487,7 @@ export const createExperimentsEngine = ({
             const timer = setTimeout(() => {
                 stop();
                 resolve([]);
-            }, timeoutMs);
+            }, waitMs);
 
             stop = observeMarks(() => {
                 const marks = readPageExperiments();

@@ -48,7 +48,9 @@ export interface DotCMSEventsQueueConfig {
 export interface DotCMSEventsExperimentsConfig {
     /**
      * How long, in milliseconds, a pageview and the experiment's hidden rows wait for the
-     * assignment before the page is shown without it. Defaults to 3000.
+     * assignment before the page is shown without it. Defaults to 3000, which is also the most:
+     * the hiding rule shows the content after 3000 ms on its own, so a longer value is reduced to
+     * 3000 rather than show the original and then replace it with the variant.
      */
     timeout?: number;
 }

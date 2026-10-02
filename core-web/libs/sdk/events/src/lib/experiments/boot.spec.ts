@@ -243,6 +243,42 @@ describe('dotcmsExperimentBoot', () => {
 });
 
 describe('buildExperimentBootScript', () => {
+    // What the page runs: the printed script alone, with no module around it, so a reference
+    // to anything outside the two printed functions throws here
+    const runPrinted = (w: FakeWindow, rendered = 'DEFAULT') =>
+        new Function(
+            'window',
+            buildExperimentBootScript({ experimentId: EXPERIMENT, variant: rendered })
+        )(w);
+
+    beforeEach(() => {
+        document.getElementById(REVEAL_STYLE_ID)?.remove();
+    });
+
+    it('replaces the page with the assigned variant when run as printed', () => {
+        const w = createWindow();
+        assign(w, VARIANT);
+
+        runPrinted(w);
+
+        expect(w.stop).toHaveBeenCalled();
+        expect(w.location.replace).toHaveBeenCalledWith(
+            `https://site.test/page?variantName=${VARIANT}`
+        );
+    });
+
+    it('shows the content of the variant the server rendered when run as printed', () => {
+        const w = createWindow();
+        assign(w, VARIANT);
+
+        runPrinted(w, VARIANT);
+
+        expect(revealRule()).toContain(
+            `[data-dot-experiment="${EXPERIMENT}"][data-dot-variant="${VARIANT}"]{visibility:visible !important`
+        );
+        expect(w.location.replace).not.toHaveBeenCalled();
+    });
+
     it('builds a script no value can close', () => {
         const script = buildExperimentBootScript({
             experimentId: 'x</script><script>alert(1)</script>',
