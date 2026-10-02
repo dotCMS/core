@@ -1,6 +1,13 @@
 import { ZIndexUtils } from 'primeng/utils';
 
 /**
+ * The lowest z-index PrimeNG stacks an overlay at: its default `overlay` and `menu` bases, which
+ * dotCMS does not override. Below this an inline z-index is ordinary layout, such as the `2` PrimeNG
+ * puts on an input's icon, and must not be read as something open above the page.
+ */
+const LOWEST_OVERLAY_Z_INDEX = 1000;
+
+/**
  * Whether a PrimeNG overlay is stacked above the given element.
  *
  * The registry cannot arbitrate with an overlay's own key handling. A `<p-dialog closeOnEscape>`
@@ -24,7 +31,33 @@ import { ZIndexUtils } from 'primeng/utils';
  * does across tests in one file: the Content Drive shell suite reads **1102** with nothing visible
  * once an earlier test has opened a dialog. **Tests that depend on this must mock
  * `ZIndexUtils.getCurrent`** rather than trusting the ambient value.
+ *
+ * Toasts and tooltips are the exception. They join the same stack, under the same `modal` key a
+ * dialog uses, but they block nothing, so a shortcut must keep working while one is on screen
+ * (#37884). The stack records only values, not which element holds them, so when it says something
+ * is above, the stacked elements are looked up in the DOM: if every one of them is a passive layer,
+ * nothing that should block is open. If none can be found (a mocked stack, or an entry left behind),
+ * the stack's answer stands, so this can only ever relax the check, never fire behind a dialog.
  */
 export function hasOverlayAbove(container?: Element | null): boolean {
-    return ZIndexUtils.getCurrent() > ZIndexUtils.get(container);
+    const floor = ZIndexUtils.get(container);
+
+    if (ZIndexUtils.getCurrent() <= floor) {
+        return false;
+    }
+
+    const stacked = Array.from(document.querySelectorAll<HTMLElement>('[style*="z-index"]')).filter(
+        (element) => {
+            const zIndex = ZIndexUtils.get(element);
+
+            return zIndex > floor && zIndex >= LOWEST_OVERLAY_Z_INDEX;
+        }
+    );
+
+    return stacked.length === 0 || stacked.some((element) => !isPassiveLayer(element));
+}
+
+/** A layer that sits above the page without taking it over: it informs and blocks nothing. */
+function isPassiveLayer(element: Element): boolean {
+    return element.matches('.p-toast, .p-tooltip');
 }
