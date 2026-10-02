@@ -1,6 +1,16 @@
-import { HttpError, type DotCMSRuntime } from '@dotcms/ai/runtime';
+import { HttpError, ValidationError, type DotCMSRuntime } from '../../../runtime';
+import { type Endpoint } from '../../toolkit/endpoints';
+import { errorMessage } from '../../toolkit/tool-runtime';
 
-import { errorMessage } from './runtime';
+/**
+ * Every endpoint this module calls. Each operation that resolves a site or language includes
+ * these in its own list. `resolve.spec.ts` checks every request against them.
+ */
+export const RESOLVE_ENDPOINTS: readonly Endpoint[] = [
+    'GET /api/v1/site',
+    'GET /api/v1/site/{identifier}',
+    'GET /api/v2/languages'
+];
 
 /**
  * Resolution of the instance references a caller can name: sites and languages.
@@ -83,7 +93,7 @@ function toResolvedSite(raw: unknown): ResolvedSite | undefined {
 export async function resolveSite(dotcms: DotCMSRuntime, site: string): Promise<ResolvedSite> {
     const wanted = site.trim();
     if (!wanted) {
-        throw new Error('Site must be a non-empty hostname or identifier.');
+        throw new ValidationError('Site must be a non-empty hostname or identifier.');
     }
 
     const cached = await siteFromCache(dotcms, wanted);
@@ -96,7 +106,33 @@ export async function resolveSite(dotcms: DotCMSRuntime, site: string): Promise<
         return live;
     }
 
-    throw new Error(await siteNotFoundMessage(dotcms, wanted));
+    throw new ValidationError(await siteNotFoundMessage(dotcms, wanted));
+}
+
+/**
+ * The instance's default site — what a path with no `//host` prefix means.
+ *
+ * The session cache first; then `GET /api/v1/site/defaultSite`, so a failed context load does
+ * not leave the caller unscoped. A failure of that read propagates as the instance error it is:
+ * falling back to "no site" would silently widen whatever the caller was about to scope.
+ */
+export async function resolveDefaultSite(dotcms: DotCMSRuntime): Promise<ResolvedSite> {
+    const { sites } = await safeContext(dotcms);
+    const cached = sites.find((entry) => entry.isDefault);
+    if (cached) {
+        return { identifier: cached.identifier, hostname: cached.hostname };
+    }
+
+    const live = toResolvedSite(
+        entityOf(await dotcms.request({ path: '/api/v1/site/defaultSite' }))
+    );
+    if (!live) {
+        throw new Error(
+            'The instance did not return a default site (GET /api/v1/site/defaultSite).'
+        );
+    }
+
+    return live;
 }
 
 async function siteFromCache(
@@ -158,8 +194,14 @@ async function siteFromApi(
                 return resolved;
             }
         }
-    } catch {
-        // Fall through to the not-found message, which explains what was tried.
+    } catch (error) {
+        // Only a 404 is a miss, and falls through to the not-found message. Anything else — a
+        // 503, a rejected token, no response at all — says nothing about whether the site
+        // exists, and reported as "not found" it would be VALIDATION: the model told its input
+        // is wrong and not to retry, when retrying (or fixing credentials) is the answer.
+        if (!(error instanceof HttpError) || error.status !== 404) {
+            throw error;
+        }
     }
 
     return undefined;
@@ -175,8 +217,8 @@ async function siteNotFoundMessage(dotcms: DotCMSRuntime, wanted: string): Promi
             `which usually means the one-time context load failed (a transient error or a ` +
             `permissions problem), NOT that the instance has no sites. A direct lookup was ` +
             `also tried and did not find it. Verify the site exists and that the configured ` +
-            `token can read it; if the site is correct, reconnecting the MCP server reloads ` +
-            `the context.`
+            `token can read it; if the site is correct, retrying the call reloads the ` +
+            `context — every tool call starts from a fresh runtime.`
         );
     }
 
@@ -215,7 +257,7 @@ export async function resolveLanguageId(
     const available = languages
         .map((language) => `${language.id} (${language.isoCode})`)
         .join(', ');
-    throw new Error(
+    throw new ValidationError(
         `languageId ${languageId} does not exist on this instance. dotCMS would silently fall ` +
             `back to the default language and write to the WRONG language rather than reject ` +
             `it, so this is refused up front. Available languages: ${available}.`

@@ -3,6 +3,9 @@
     "compilerOptions": {
         "outDir": "../../../dist/out-tsc",
         "declaration": true,
+        // Zod requires it: without strictNullChecks every inferred object field degrades to
+        // optional, so a tool's validated arguments stop matching the operation they feed.
+        "strict": true,
         "types": ["node"],
         "resolveJsonModule": true
     },
