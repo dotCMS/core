@@ -213,18 +213,6 @@ export class ToolbarComponent implements OnDestroy {
             this.store.isAllowed('codeBlock')
     );
 
-    /**
-     * The "Add asset by URL" popover inserts an image, plain video, or YouTube embed —
-     * show the trigger only when at least one of those node types is permitted by
-     * the field's allowedBlocks configuration.
-     */
-    protected readonly showAssetByUrl = computed(
-        () =>
-            this.store.isAllowed('image') ||
-            this.store.isAllowed('video') ||
-            this.store.isAllowed('youtube')
-    );
-
     // When an image is selected, the alignment buttons reflect the image's textAlign
     // (defaulting to 'left' when unset, matching paragraph behavior). Otherwise they
     // reflect the standard text-align state from the TextAlign extension.
