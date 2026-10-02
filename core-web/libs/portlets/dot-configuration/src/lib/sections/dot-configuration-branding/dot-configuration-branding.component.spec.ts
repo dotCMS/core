@@ -1,7 +1,5 @@
 import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
 
-import { Checkbox } from 'primeng/checkbox';
-
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -9,14 +7,13 @@ import { DotConfigurationBrandingComponent } from './dot-configuration-branding.
 
 import { DotConfigurationColorFieldComponent } from '../../components/dot-configuration-color-field/dot-configuration-color-field.component';
 import { DotConfigurationStore } from '../../store/dot-configuration.store';
-import {
-    DotConfigurationStoreStub,
-    createConfigurationStoreStub
-} from '../../testing/configuration-store.stub';
+import { createConfigurationStoreSignals } from '../../testing/configuration-store.stub';
+
+const createStoreStub = () => ({ ...createConfigurationStoreSignals(), patchBranding: vi.fn() });
 
 describe('DotConfigurationBrandingComponent', () => {
     let spectator: Spectator<DotConfigurationBrandingComponent>;
-    let store: DotConfigurationStoreStub;
+    let store: ReturnType<typeof createStoreStub>;
 
     const createComponent = createComponentFactory({
         component: DotConfigurationBrandingComponent,
@@ -50,7 +47,7 @@ describe('DotConfigurationBrandingComponent', () => {
     };
 
     beforeEach(() => {
-        store = createConfigurationStoreStub();
+        store = createStoreStub();
         spectator = createComponent({
             providers: [{ provide: DotConfigurationStore, useValue: store }]
         });
@@ -168,7 +165,7 @@ describe('DotConfigurationBrandingComponent', () => {
         it('reveals the logo picker when ticked', () => {
             render();
 
-            spectator.triggerEventHandler(Checkbox, 'ngModelChange', true);
+            spectator.triggerEventHandler('p-checkbox', 'ngModelChange', true);
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('configuration-navbar-logo-file'))).toHaveText(
@@ -180,7 +177,7 @@ describe('DotConfigurationBrandingComponent', () => {
             patchDraftBranding({ navBarLogo: '/dA/nav-id/asset/nav.png' });
             render();
 
-            spectator.triggerEventHandler(Checkbox, 'ngModelChange', false);
+            spectator.triggerEventHandler('p-checkbox', 'ngModelChange', false);
 
             expect(store.patchBranding).toHaveBeenCalledWith({ navBarLogo: '' });
         });

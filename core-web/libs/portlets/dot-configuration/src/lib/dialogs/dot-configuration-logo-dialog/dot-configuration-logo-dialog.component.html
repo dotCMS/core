@@ -1,0 +1,86 @@
+<div class="form">
+    <p-fileupload
+        #fileUpload
+        mode="advanced"
+        [accept]="accept"
+        [multiple]="false"
+        [showUploadButton]="false"
+        [showCancelButton]="false"
+        [auto]="false"
+        [customUpload]="true"
+        [disabled]="$uploading()"
+        styleClass="w-full"
+        (onSelect)="onFileSelect($event)"
+        [pt]="{ header: { style: { padding: '0', border: '0' } } }"
+        data-testid="configuration-logo-upload">
+        <ng-template #header></ng-template>
+        <ng-template #content>
+            <button
+                type="button"
+                class="flex w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-md border border-dashed border-surface-300 bg-surface-50 p-6 text-center"
+                [disabled]="$uploading()"
+                (click)="fileUpload.choose()"
+                data-testid="configuration-logo-dropzone">
+                <span class="material-symbols-outlined text-3xl! text-gray-600" aria-hidden="true">
+                    {{ $uploading() ? 'progress_activity' : 'cloud_upload' }}
+                </span>
+                <span>
+                    {{ 'configuration.logo-dialog.drop' | dm }}
+                    <span class="text-primary underline">
+                        {{ 'configuration.logo-dialog.browse' | dm }}
+                    </span>
+                </span>
+                <small class="text-sm text-gray-500">
+                    {{ 'configuration.logo-dialog.formats' | dm }}
+                </small>
+            </button>
+        </ng-template>
+    </p-fileupload>
+
+    <div class="field">
+        <label for="configuration-logo-path">{{ 'configuration.logo-dialog.path' | dm }}</label>
+        <input
+            pInputText
+            id="configuration-logo-path"
+            type="text"
+            class="w-full"
+            placeholder="/dA/..."
+            [ngModel]="$path()"
+            (ngModelChange)="onPathChange($event)"
+            [invalid]="$pathInvalid()"
+            [attr.aria-invalid]="$pathInvalid()"
+            [attr.aria-describedby]="$pathInvalid() ? 'configuration-logo-path-error' : null"
+            data-testid="configuration-logo-path" />
+        @if ($pathInvalid()) {
+            <small
+                class="p-field-error"
+                id="configuration-logo-path-error"
+                data-testid="configuration-logo-path-error">
+                {{ 'configuration.validation.asset-path' | dm }}
+            </small>
+        }
+    </div>
+
+    @if (!$pathInvalid()) {
+        <div
+            class="flex items-center gap-3 rounded-md border border-surface p-3"
+            data-testid="configuration-logo-selected">
+            <img class="h-10 max-w-40 object-contain" [src]="$path()" [alt]="$fileName()" />
+            <span class="truncate text-sm">{{ $fileName() }}</span>
+        </div>
+    }
+</div>
+
+<div class="mt-6 flex justify-end gap-2">
+    <p-button
+        [outlined]="true"
+        severity="secondary"
+        [label]="'configuration.action-bar.cancel' | dm"
+        (onClick)="cancel()"
+        data-testid="configuration-logo-cancel-btn" />
+    <p-button
+        [label]="'configuration.dialog.apply' | dm"
+        [disabled]="$pathInvalid() || $uploading()"
+        (onClick)="apply()"
+        data-testid="configuration-logo-apply-btn" />
+</div>

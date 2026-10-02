@@ -15,10 +15,20 @@
         <div
             class="mx-auto flex w-full max-w-4xl flex-col gap-6 p-6"
             data-testid="configuration-sections">
-            <dot-configuration-branding [isEnterprise]="isEnterprise" />
+            <dot-configuration-branding
+                [isEnterprise]="isEnterprise"
+                (changeBackground)="onChangeBackground()"
+                (changeLoginLogo)="onChangeLoginLogo()"
+                (changeNavBarLogo)="onChangeNavBarLogo()" />
             <dot-configuration-locale />
-            <dot-configuration-outbound />
-            <dot-configuration-security />
+            <dot-configuration-outbound (sendTestMail)="onSendTestMail($event)" />
+            <dot-configuration-security (regenerateKey)="onRegenerateKey()" />
+            <p-button
+                [link]="true"
+                styleClass="self-start p-0"
+                [label]="'configuration.license.link' | dm"
+                (onClick)="onOpenLicense()"
+                data-testid="configuration-license-link" />
         </div>
     </div>
 

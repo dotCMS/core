@@ -1,0 +1,49 @@
+<form class="form" (ngSubmit)="send()">
+    <p class="m-0 text-sm text-gray-600" data-testid="configuration-test-mail-description">
+        {{ 'configuration.test-mail.description' | dm }}
+    </p>
+
+    <div class="field">
+        <label for="configuration-test-mail-sender">
+            {{ 'configuration.test-mail.from' | dm }}
+        </label>
+        <input
+            pInputText
+            id="configuration-test-mail-sender"
+            name="sender"
+            type="text"
+            class="w-full"
+            [ngModel]="$sender()"
+            (ngModelChange)="onSenderChange($event)"
+            [invalid]="$invalid()"
+            [disabled]="$sending()"
+            [attr.aria-invalid]="$invalid()"
+            [attr.aria-describedby]="$invalid() ? 'configuration-test-mail-error' : null"
+            data-testid="configuration-test-mail-sender" />
+        @if ($invalid()) {
+            <small
+                class="p-field-error"
+                id="configuration-test-mail-error"
+                data-testid="configuration-test-mail-error">
+                {{ 'configuration.validation.email' | dm }}
+            </small>
+        }
+    </div>
+
+    <div class="flex justify-end gap-2">
+        <p-button
+            type="button"
+            [outlined]="true"
+            severity="secondary"
+            [label]="'configuration.action-bar.cancel' | dm"
+            [disabled]="$sending()"
+            (onClick)="cancel()"
+            data-testid="configuration-test-mail-cancel-btn" />
+        <p-button
+            type="submit"
+            [label]="'configuration.test-mail.send' | dm"
+            [loading]="$sending()"
+            [disabled]="$invalid()"
+            data-testid="configuration-test-mail-send-btn" />
+    </div>
+</form>

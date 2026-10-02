@@ -9,14 +9,13 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotConfigurationSecurityComponent } from './dot-configuration-security.component';
 
 import { DotConfigurationStore } from '../../store/dot-configuration.store';
-import {
-    DotConfigurationStoreStub,
-    createConfigurationStoreStub
-} from '../../testing/configuration-store.stub';
+import { createConfigurationStoreSignals } from '../../testing/configuration-store.stub';
+
+const createStoreStub = () => ({ ...createConfigurationStoreSignals(), setAuthType: vi.fn() });
 
 describe('DotConfigurationSecurityComponent', () => {
     let spectator: Spectator<DotConfigurationSecurityComponent>;
-    let store: DotConfigurationStoreStub;
+    let store: ReturnType<typeof createStoreStub>;
 
     const createComponent = createComponentFactory({
         component: DotConfigurationSecurityComponent,
@@ -39,7 +38,7 @@ describe('DotConfigurationSecurityComponent', () => {
             ?.querySelector('button') as HTMLButtonElement;
 
     beforeEach(() => {
-        store = createConfigurationStoreStub();
+        store = createStoreStub();
         spectator = createComponent({
             providers: [{ provide: DotConfigurationStore, useValue: store }]
         });
@@ -56,7 +55,7 @@ describe('DotConfigurationSecurityComponent', () => {
 
         it('writes the chosen type to the store', () => {
             spectator.triggerEventHandler(
-                byTestId('configuration-auth-type'),
+                '[data-testid="configuration-auth-type"]',
                 'ngModelChange',
                 DotCompanyAuthType.USER_ID
             );

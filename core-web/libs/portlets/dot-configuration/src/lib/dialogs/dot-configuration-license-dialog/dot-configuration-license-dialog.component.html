@@ -1,0 +1,28 @@
+<div class="flex flex-col gap-4">
+    <p class="m-0" data-testid="configuration-license-text">
+        {{ 'configuration.license.placeholder' | dm }}
+        <a
+            class="text-primary underline"
+            target="_blank"
+            rel="noopener noreferrer"
+            [href]="licenseSourceUrl"
+            data-testid="configuration-license-source-link">
+            {{ licenseSourceUrl }}
+        </a>
+    </p>
+
+    <div class="flex items-center justify-between gap-2">
+        <a
+            class="text-sm text-primary underline"
+            target="_blank"
+            rel="noopener noreferrer"
+            [href]="alternativeLicensingUrl"
+            data-testid="configuration-license-alternatives-link">
+            {{ 'configuration.license.alternatives' | dm }}
+        </a>
+        <p-button
+            [label]="'configuration.license.close' | dm"
+            (onClick)="close()"
+            data-testid="configuration-license-close-btn" />
+    </div>
+</div>

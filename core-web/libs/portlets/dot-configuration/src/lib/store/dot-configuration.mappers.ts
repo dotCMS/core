@@ -71,6 +71,22 @@ export const DOT_CONFIGURATION_DEFAULTS: Pick<
     backgroundImage: '/html/images/backgrounds/bg-11.jpg'
 };
 
+/** The login backgrounds dotCMS ships, in the order the gallery shows them. */
+export const BUNDLED_BACKGROUNDS: readonly string[] = Array.from(
+    { length: 11 },
+    (_, index) => `/html/images/backgrounds/bg-${index + 1}.jpg`
+);
+
+/**
+ * Thumbnail shipped next to a bundled background (`bg-3.jpg` → `bg-3-sm.jpg`).
+ *
+ * @param path - Bundled background path.
+ * @returns Path of its small version.
+ */
+export function backgroundThumbnail(path: string): string {
+    return path.replace(/\.jpg$/, '-sm.jpg');
+}
+
 const HEX_COLOR = /^#([0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
 
 // Either `Name <address>` or a bare address. Written without nested quantifiers so it runs in
@@ -80,6 +96,16 @@ const SENDER_EMAIL = /^(?:[^<>]*<[^\s<>@]+@[^\s<>@]+>|[^\s<>@]+@[^\s<>@]+)$/;
 const ASSET_PATH = /^\/dA\//;
 
 const BUNDLED_BACKGROUND = /^\/html\/images\/backgrounds\/bg-(?:[1-9]|1[01])\.jpg$/;
+
+/**
+ * Checks a sender written as `Name <address>` or as a bare address.
+ *
+ * @param value - Sender as typed.
+ * @returns Whether it has that shape. The server parses it again before using it.
+ */
+export function isValidSender(value: string): boolean {
+    return SENDER_EMAIL.test(value.trim());
+}
 
 /**
  * Builds the editable draft from the configuration the server returned.
@@ -183,7 +209,7 @@ export function validate(draft: DotConfigurationDraft): DotConfigurationErrors {
         errors.portalURL = 'configuration.validation.portal-url';
     }
 
-    if (!SENDER_EMAIL.test(branding.emailAddress.trim())) {
+    if (!isValidSender(branding.emailAddress)) {
         errors.emailAddress = 'configuration.validation.email';
     }
 

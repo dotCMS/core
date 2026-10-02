@@ -8,14 +8,13 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotConfigurationLocaleComponent } from './dot-configuration-locale.component';
 
 import { DotConfigurationStore } from '../../store/dot-configuration.store';
-import {
-    DotConfigurationStoreStub,
-    createConfigurationStoreStub
-} from '../../testing/configuration-store.stub';
+import { createConfigurationStoreSignals } from '../../testing/configuration-store.stub';
+
+const createStoreStub = () => ({ ...createConfigurationStoreSignals(), patchLocale: vi.fn() });
 
 describe('DotConfigurationLocaleComponent', () => {
     let spectator: Spectator<DotConfigurationLocaleComponent>;
-    let store: DotConfigurationStoreStub;
+    let store: ReturnType<typeof createStoreStub>;
 
     const createComponent = createComponentFactory({
         component: DotConfigurationLocaleComponent,
@@ -35,7 +34,7 @@ describe('DotConfigurationLocaleComponent', () => {
     beforeEach(() => {
         vi.useFakeTimers();
         vi.setSystemTime(new Date('2026-10-02T14:20:00Z'));
-        store = createConfigurationStoreStub();
+        store = createStoreStub();
         spectator = createComponent({
             providers: [{ provide: DotConfigurationStore, useValue: store }]
         });
@@ -75,7 +74,7 @@ describe('DotConfigurationLocaleComponent', () => {
 
         it('writes the chosen language to the store', () => {
             spectator.triggerEventHandler(
-                byTestId('configuration-language'),
+                '[data-testid="configuration-language"]',
                 'ngModelChange',
                 'es_ES'
             );
@@ -97,7 +96,7 @@ describe('DotConfigurationLocaleComponent', () => {
 
         it('writes the chosen time zone to the store', () => {
             spectator.triggerEventHandler(
-                byTestId('configuration-timezone'),
+                '[data-testid="configuration-timezone"]',
                 'ngModelChange',
                 'Europe/Madrid'
             );

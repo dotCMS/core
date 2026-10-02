@@ -4,9 +4,15 @@ import { Mocked } from 'vitest';
 
 import { signal } from '@angular/core';
 
-import { DotCompanyConfigurationService, DotHttpErrorManagerService } from '@dotcms/data-access';
-import { ComponentStatus, DotCompanyAuthType } from '@dotcms/dotcms-models';
+import {
+    DotCompanyConfigurationService,
+    DotHttpErrorManagerService,
+    DotMessageDisplayService,
+    DotMessageService
+} from '@dotcms/data-access';
+import { ComponentStatus, DotCompanyAuthType, DotMessageSeverity } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DOT_CONFIGURATION_DEFAULTS } from './dot-configuration.mappers';
 import { DotConfigurationSaveState, DotConfigurationStore } from './dot-configuration.store';
@@ -36,6 +42,13 @@ describe('DotConfigurationStore', () => {
                 regenerateKey: vi.fn()
             }),
             mockProvider(DotHttpErrorManagerService, { handle: vi.fn() }),
+            mockProvider(DotMessageDisplayService, { push: vi.fn() }),
+            {
+                provide: DotMessageService,
+                useValue: new MockDotMessageService({
+                    'configuration.regenerate-key.success': 'The company key was regenerated.'
+                })
+            },
             mockProvider(GlobalStore, {
                 systemTimezones: signal([{ id: 'UTC', label: 'UTC', offset: 0 }]),
                 systemTimezone: signal({ id: 'UTC', label: 'UTC', offset: 0 })
@@ -209,6 +222,19 @@ describe('DotConfigurationStore', () => {
 
             expect(store.keyDigest()).toBe('new-digest');
             expect(store.regeneratingKey()).toBe(false);
+        });
+
+        it('confirms the regeneration with a success message', () => {
+            service.regenerateKey.mockReturnValue(of('new-digest'));
+
+            store.regenerateKey();
+
+            expect(spectator.inject(DotMessageDisplayService).push).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: DotMessageSeverity.SUCCESS,
+                    message: 'The company key was regenerated.'
+                })
+            );
         });
 
         it('keeps the current digest and reports the error when it fails', () => {

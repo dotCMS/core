@@ -11,10 +11,10 @@ import {
 } from '../store/dot-configuration.mappers';
 
 /**
- * Writable stand-in for `DotConfigurationStore`, for component specs. Signals can be set per
- * test; methods are spies.
+ * Writable signals standing in for `DotConfigurationStore` state, for component specs. Each spec
+ * adds the store methods it needs as spies, so this file stays free of test-runner globals.
  */
-export const createConfigurationStoreStub = () => ({
+export const createConfigurationStoreSignals = () => ({
     draft: signal<DotConfigurationDraft | null>(toDraft(createFakeCompanyConfiguration())),
     errors: signal<DotConfigurationErrors>({}),
     saving: signal(false),
@@ -24,10 +24,5 @@ export const createConfigurationStoreStub = () => ({
     timezones: signal<DotSystemTimezone[]>([
         { id: 'UTC', label: 'Coordinated Universal Time (UTC)', offset: 0 },
         { id: 'Europe/Madrid', label: 'Central European Time (Europe/Madrid)', offset: 3600000 }
-    ]),
-    patchBranding: vi.fn(),
-    patchLocale: vi.fn(),
-    setAuthType: vi.fn()
+    ])
 });
-
-export type DotConfigurationStoreStub = ReturnType<typeof createConfigurationStoreStub>;

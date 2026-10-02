@@ -1,17 +1,27 @@
-import { Component, computed, inject } from '@angular/core';
+import { Observable } from 'rxjs';
+
+import { Component, Type, computed, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { DialogService, DynamicDialogConfig } from 'primeng/dynamicdialog';
 import { MessageModule } from 'primeng/message';
 import { SkeletonModule } from 'primeng/skeleton';
 
-import { DotMessageService } from '@dotcms/data-access';
-import { ComponentStatus } from '@dotcms/dotcms-models';
+import { take } from 'rxjs/operators';
+
+import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
+import { ComponentStatus, DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotConfigurationActionBarComponent } from '../components/dot-configuration-action-bar/dot-configuration-action-bar.component';
+import { DotConfigurationBackgroundDialogComponent } from '../dialogs/dot-configuration-background-dialog/dot-configuration-background-dialog.component';
+import { DotConfigurationLicenseDialogComponent } from '../dialogs/dot-configuration-license-dialog/dot-configuration-license-dialog.component';
+import { DotConfigurationLogoDialogComponent } from '../dialogs/dot-configuration-logo-dialog/dot-configuration-logo-dialog.component';
+import { DotConfigurationRegenerateKeyDialogComponent } from '../dialogs/dot-configuration-regenerate-key-dialog/dot-configuration-regenerate-key-dialog.component';
+import { DotConfigurationTestMailDialogComponent } from '../dialogs/dot-configuration-test-mail-dialog/dot-configuration-test-mail-dialog.component';
 import {
     DOT_CONFIGURATION_CONFIRM_KEY,
     DotConfigurationUnsavedWork
@@ -48,7 +58,7 @@ const SECTION_NAME_KEYS: Record<DotConfigurationSection, string> = {
         DotConfigurationOutboundComponent,
         DotConfigurationSecurityComponent
     ],
-    providers: [DotConfigurationStore, ConfirmationService],
+    providers: [DotConfigurationStore, ConfirmationService, DialogService],
     templateUrl: './dot-configuration-shell.component.html',
     styleUrls: ['./dot-configuration-shell.component.scss'],
     host: {
@@ -59,6 +69,8 @@ const SECTION_NAME_KEYS: Record<DotConfigurationSection, string> = {
 export class DotConfigurationShellComponent implements DotConfigurationUnsavedWork {
     readonly #dotMessageService = inject(DotMessageService);
     readonly #route = inject(ActivatedRoute);
+    readonly #dialogService = inject(DialogService);
+    readonly #messageDisplayService = inject(DotMessageDisplayService);
 
     protected readonly store = inject(DotConfigurationStore);
     readonly confirmationService = inject(ConfirmationService);
@@ -95,6 +107,88 @@ export class DotConfigurationShellComponent implements DotConfigurationUnsavedWo
         });
     }
 
+    /** Picks the login background; the choice goes into the form, not straight to the server. */
+    onChangeBackground(): void {
+        this.#openDialog<string>(
+            DotConfigurationBackgroundDialogComponent,
+            'configuration.background-dialog.header',
+            '700px',
+            { current: this.store.draft()?.branding.backgroundImage ?? '' }
+        ).subscribe((backgroundImage) => {
+            if (backgroundImage !== undefined) {
+                this.store.patchBranding({ backgroundImage });
+            }
+        });
+    }
+
+    onChangeLoginLogo(): void {
+        this.#openDialog<string>(
+            DotConfigurationLogoDialogComponent,
+            'configuration.logo-dialog.login-header',
+            '700px',
+            { current: this.store.draft()?.branding.loginScreenLogo ?? '' }
+        ).subscribe((loginScreenLogo) => {
+            if (loginScreenLogo) {
+                this.store.patchBranding({ loginScreenLogo });
+            }
+        });
+    }
+
+    onChangeNavBarLogo(): void {
+        this.#openDialog<string>(
+            DotConfigurationLogoDialogComponent,
+            'configuration.logo-dialog.navbar-header',
+            '700px',
+            { current: this.store.draft()?.branding.navBarLogo ?? '' }
+        ).subscribe((navBarLogo) => {
+            if (navBarLogo) {
+                this.store.patchBranding({ navBarLogo });
+            }
+        });
+    }
+
+    /** The dialog sends the email itself; once queued, the result arrives as a notification. */
+    onSendTestMail(sender: string): void {
+        this.#openDialog<string>(
+            DotConfigurationTestMailDialogComponent,
+            'configuration.test-mail.header',
+            '500px',
+            { sender }
+        ).subscribe((sentFrom) => {
+            if (sentFrom) {
+                this.#messageDisplayService.push({
+                    life: 5000,
+                    severity: DotMessageSeverity.INFO,
+                    message: this.#dotMessageService.get(
+                        'configuration.test-mail.queued',
+                        sentFrom
+                    ),
+                    type: DotMessageType.SIMPLE_MESSAGE
+                });
+            }
+        });
+    }
+
+    onRegenerateKey(): void {
+        this.#openDialog<boolean>(
+            DotConfigurationRegenerateKeyDialogComponent,
+            'configuration.regenerate-key.header',
+            '500px'
+        ).subscribe((confirmed) => {
+            if (confirmed) {
+                this.store.regenerateKey();
+            }
+        });
+    }
+
+    onOpenLicense(): void {
+        this.#openDialog<void>(
+            DotConfigurationLicenseDialogComponent,
+            'configuration.license.header',
+            '700px'
+        ).subscribe();
+    }
+
     /** Reverts every edit to the values last saved. */
     onCancel(): void {
         this.store.discard();
@@ -106,6 +200,25 @@ export class DotConfigurationShellComponent implements DotConfigurationUnsavedWo
 
     onRetry(): void {
         this.store.load();
+    }
+
+    #openDialog<T>(
+        component: Type<unknown>,
+        headerKey: string,
+        width: string,
+        data?: DynamicDialogConfig['data']
+    ) {
+        const ref = this.#dialogService.open(component, {
+            header: this.#dotMessageService.get(headerKey),
+            width,
+            data,
+            closable: true,
+            closeOnEscape: true,
+            draggable: false,
+            position: 'center'
+        });
+
+        return ref.onClose.pipe(take(1)) as Observable<T | undefined>;
     }
 
     /**

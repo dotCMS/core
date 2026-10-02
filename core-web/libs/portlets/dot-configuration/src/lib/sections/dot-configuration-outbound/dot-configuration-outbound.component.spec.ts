@@ -6,14 +6,13 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotConfigurationOutboundComponent } from './dot-configuration-outbound.component';
 
 import { DotConfigurationStore } from '../../store/dot-configuration.store';
-import {
-    DotConfigurationStoreStub,
-    createConfigurationStoreStub
-} from '../../testing/configuration-store.stub';
+import { createConfigurationStoreSignals } from '../../testing/configuration-store.stub';
+
+const createStoreStub = () => ({ ...createConfigurationStoreSignals(), patchBranding: vi.fn() });
 
 describe('DotConfigurationOutboundComponent', () => {
     let spectator: Spectator<DotConfigurationOutboundComponent>;
-    let store: DotConfigurationStoreStub;
+    let store: ReturnType<typeof createStoreStub>;
 
     const createComponent = createComponentFactory({
         component: DotConfigurationOutboundComponent,
@@ -34,7 +33,7 @@ describe('DotConfigurationOutboundComponent', () => {
             ?.querySelector('button') as HTMLButtonElement;
 
     beforeEach(() => {
-        store = createConfigurationStoreStub();
+        store = createStoreStub();
         spectator = createComponent({
             providers: [{ provide: DotConfigurationStore, useValue: store }]
         });

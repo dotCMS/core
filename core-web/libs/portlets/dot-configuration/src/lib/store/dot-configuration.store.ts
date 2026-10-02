@@ -12,12 +12,19 @@ import { computed, inject } from '@angular/core';
 
 import { catchError, concatMap, finalize, take, tap } from 'rxjs/operators';
 
-import { DotCompanyConfigurationService, DotHttpErrorManagerService } from '@dotcms/data-access';
+import {
+    DotCompanyConfigurationService,
+    DotHttpErrorManagerService,
+    DotMessageDisplayService,
+    DotMessageService
+} from '@dotcms/data-access';
 import {
     ComponentStatus,
     DotCompanyAuthType,
     DotCompanyConfiguration,
-    DotLoginLanguage
+    DotLoginLanguage,
+    DotMessageSeverity,
+    DotMessageType
 } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
@@ -123,6 +130,8 @@ export const DotConfigurationStore = signalStore(
     withMethods((store) => {
         const service = inject(DotCompanyConfigurationService);
         const httpErrorManager = inject(DotHttpErrorManagerService);
+        const messageDisplayService = inject(DotMessageDisplayService);
+        const dotMessageService = inject(DotMessageService);
 
         function updateDraft(patch: (draft: DotConfigurationDraft) => DotConfigurationDraft): void {
             const draft = store.draft();
@@ -292,7 +301,15 @@ export const DotConfigurationStore = signalStore(
                         }),
                         finalize(() => patchState(store, { regeneratingKey: false }))
                     )
-                    .subscribe((keyDigest) => patchState(store, { keyDigest }));
+                    .subscribe((keyDigest) => {
+                        patchState(store, { keyDigest });
+                        messageDisplayService.push({
+                            life: 5000,
+                            severity: DotMessageSeverity.SUCCESS,
+                            message: dotMessageService.get('configuration.regenerate-key.success'),
+                            type: DotMessageType.SIMPLE_MESSAGE
+                        });
+                    });
             }
         };
     }),
