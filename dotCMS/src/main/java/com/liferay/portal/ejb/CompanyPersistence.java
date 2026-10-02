@@ -26,6 +26,7 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
 import com.dotcms.repackage.net.sf.hibernate.Session;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.liferay.portal.NoSuchCompanyException;
 import com.liferay.portal.SystemException;
@@ -86,7 +87,7 @@ public class CompanyPersistence extends BasePersistence {
 
 				if (company.isNew()) {
 					final CompanyHBM companyHBM = new CompanyHBM(company.getCompanyId(),
-							company.getKey(), company.getPortalURL(),
+							company.getKey(), company.getOldPortalURL(),
 							company.getHomeURL(), company.getMx(),
 							company.getName(), company.getShortName(),
 							company.getType(), company.getSize(),
@@ -106,7 +107,7 @@ public class CompanyPersistence extends BasePersistence {
 					try {
 						final CompanyHBM companyHBM = (CompanyHBM)session.load(CompanyHBM.class, company.getPrimaryKey());
 						companyHBM.setKey(company.getKey());
-						companyHBM.setPortalURL(company.getPortalURL());
+						companyHBM.setPortalURL(company.getOldPortalURL());
 						companyHBM.setHomeURL(company.getHomeURL());
 						companyHBM.setMx(company.getMx());
 						companyHBM.setName(company.getName());
@@ -132,7 +133,7 @@ public class CompanyPersistence extends BasePersistence {
 					}
 					catch (ObjectNotFoundException onfe) {
 						CompanyHBM companyHBM = new CompanyHBM(company.getCompanyId(),
-								company.getKey(), company.getPortalURL(),
+								company.getKey(), company.getOldPortalURL(),
 								company.getHomeURL(), company.getMx(),
 								company.getName(), company.getShortName(),
 								company.getType(), company.getSize(),
@@ -156,6 +157,11 @@ public class CompanyPersistence extends BasePersistence {
 				company.protect();
 				CompanyPool.remove(company.getPrimaryKey());
 				CompanyPool.put(company.getPrimaryKey(), company);
+
+				// the admin site url can be derived from the company's stored portal url -
+				// clear it (once this transaction commits) so the next read picks it up
+				com.dotmarketing.db.HibernateUtil.addCommitListenerNoThrow(() ->
+						APILocator.getAdminSiteAPI().invalidateCache());
 			}
 
 			return company;

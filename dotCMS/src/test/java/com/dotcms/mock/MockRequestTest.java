@@ -2,6 +2,8 @@ package com.dotcms.mock;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 
+import java.util.Collections;
+
 import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
 
@@ -9,6 +11,7 @@ import org.junit.Test;
 
 import com.dotcms.UnitTestBase;
 import com.dotcms.mock.request.BaseRequest;
+import com.dotcms.mock.request.DotCMSMockRequest;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestUnitTest;
@@ -51,6 +54,33 @@ public class MockRequestTest extends UnitTestBase {
 		assertThat("request is not null", request !=null);
 		assertThat("request headers is not null", request.getHeaderNames()!= null);
 		assertThat("request header is not null", request.getHeader(TEST).equals(TEST));
+	}
+
+	/**
+	 * Header names are case-insensitive per the servlet spec, so a lookup must find a header that was
+	 * stored under a different case. This is what makes isAdminSite(request) work on a
+	 * RequestUtil.createStatelessRequest copy, which stores the header as "Host" while the admin site
+	 * check reads it as "host".
+	 */
+	@Test
+	public void testMockHeaderRequestIsCaseInsensitive() {
+		HttpServletRequest request = 	new MockHeaderRequest(new BaseRequest().request(), "Host", HOST);
+
+		assertThat("lower case lookup finds the header", HOST.equals(request.getHeader("host")));
+		assertThat("exact case lookup finds the header", HOST.equals(request.getHeader("Host")));
+		assertThat("upper case lookup finds the header", HOST.equals(request.getHeader("HOST")));
+		assertThat("header name keeps the case it was set with",
+				Collections.list(request.getHeaderNames()).contains("Host"));
+	}
+
+	@Test
+	public void testDotCMSMockRequestIsCaseInsensitive() {
+		final DotCMSMockRequest request = new DotCMSMockRequest();
+		request.addHeader("Host", HOST);
+
+		assertThat("lower case lookup finds the header", HOST.equals(request.getHeader("host")));
+		assertThat("exact case lookup finds the header", HOST.equals(request.getHeader("Host")));
+		assertThat("upper case lookup finds the header", HOST.equals(request.getHeader("HOST")));
 	}
 	
 	@Test

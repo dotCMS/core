@@ -5,6 +5,7 @@ import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 
@@ -20,10 +21,10 @@ public class GlobalVariableWebAPI implements ViewTool {
     }
     
     private int getCurrentLanguageId () {
-        int language;
-        String languageSt = (String) request.getSession().getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE);
-        language = Integer.parseInt(languageSt);
-        return language;
+        // LanguageWebAPI only writes HTMLPAGE_LANGUAGE to the session when the language actually
+        // changes, so a default-language visitor has no value there. Resolving through the API
+        // falls back to the default language, which is what the session used to hold.
+        return (int) WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
     }
     
     public String get(String property) {
