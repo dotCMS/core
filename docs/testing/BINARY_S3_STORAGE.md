@@ -339,9 +339,22 @@ interrupted upload keeps any existing complete file and never exposes a partial 
 uploads without a receipt cannot fall back to legacy local access.
 
 Custom metadata for a temporary upload, such as a focal point set before check-in, is stored with
-the upload in S3 and read directly from S3, so an edit made on another node is visible. The
-scheduled `BinaryCleanupJob` also removes expired S3 temporary uploads, and a failure is logged and
-retried on the next run.
+the upload in S3 and read directly from S3, so an edit made on another node is visible. The image
+filter's focal point for existing content uses an id made of `temp_` and the content inode. That id
+never gets an upload receipt, so its metadata stays in the local temporary directory, as with the
+flag off, where `BinaryCleanupJob` removes it after `CLEANUP_TMP_FILES_OLDER_THAN_HOURS`. It is
+therefore visible only on the node that wrote it, which the sticky sessions a cluster already
+needs make sufficient. Metadata edits are a read, merge and unconditional write, so two nodes
+setting different attributes on the same upload at the same moment can lose one of the two
+writes. This is accepted because temporary metadata lives only until check-in.
+
+The scheduled `BinaryCleanupJob` removes the S3 objects of an expired upload (its receipt, payload,
+metadata and renditions) once `TEMP_RESOURCE_MAX_AGE_SECONDS` has passed. Local copies are left to
+the existing `CLEANUP_TMP_FILES_OLDER_THAN_HOURS` age rule, as with the flag off, so a check-in that
+resolved the file just before it expired keeps its source; the local upload marker stops an expired
+copy from being served. Each upload is cleaned on its own: a failure is logged, that upload keeps
+its receipt and payload, the remaining uploads are still cleaned, and the job reports one combined
+failure and retries on the next run.
 
 ## WebDAV temporary files
 
@@ -362,6 +375,17 @@ again, until safe reclamation is added. Normal WebDAV uploads still go through c
 and their reads, copies and overwrites open the file under the cache lease through
 `Contentlet.getBinaryStream`. With the flag off, WebDAV and temporary uploads use the local
 filesystem as before.
+
+A WebDAV COPY of a CMS file creates an unpublished working version on every mount, with either flag
+setting, so it needs only edit permission. A folder listing (PROPFIND) reads only the records that
+decide each direct temporary child: the child's own record, and only for a folder without a live
+record of its own, its descendants until one live descendant is found. Each file resource is built
+from the record the listing read, so a temporary file that a client deletes during the listing is
+skipped instead of failing it. If S3 cannot be read, the failure is logged and only the temporary
+children are left out, so the CMS files and folders still list. The remaining cost is one S3 read
+per direct child record on every listing, and that includes the tombstone of every deleted direct
+child, so it grows with the number of temporary names ever written directly in that folder until
+tombstones can be reclaimed.
 
 ## Local cache eviction
 
@@ -461,7 +485,7 @@ docker run -d --rm --name binary-cleanup-postgres-test \
   -e POSTGRES_DB=binary_storage_test postgres:16-alpine
 
 ./mvnw test -pl :dotcms-core -Dmaven.build.cache.enabled=false \
-  -Dtest=AssetStorageFeatureTest,AssetStorageFeatureLatchTest,S3StorageConfigurationTest,NoWebIdentityCredentialsProviderChainTest,BinaryS3StorageTest,BinaryAssetReferenceTest,BinaryCacheEvictionJobTest,BinaryFileSystemStorageTest,BinaryAssetStorageAPIImplTest,MetadataLocalCacheTest,BinaryAssetCleanupTransactionTest,BinaryAssetCleanupProcessorTest,ContentletBackupStorageGateTest,BinaryFieldCleanupProcessorTest,AssetJobEventSerializationTest,BinaryAssetBackfillCheckpointTest,ImportStarterWorkflowCleanupTest,BinaryAssetBackfillProcessorTest,BinaryAssetBackfillTest,ExportStarterFailureTest,BundleArchiveStorageTest,FileAssetBundlerTest,TemporaryAssetStorageTest,WebdavAssetStorageTest,TemporaryMetadataStorageTest \
+  -Dtest=AssetStorageFeatureTest,AssetStorageFeatureLatchTest,S3StorageConfigurationTest,NoWebIdentityCredentialsProviderChainTest,BinaryS3StorageTest,BinaryAssetReferenceTest,BinaryCacheEvictionJobTest,BinaryFileSystemStorageTest,BinaryAssetStorageAPIImplTest,MetadataLocalCacheTest,BinaryAssetCleanupTransactionTest,BinaryAssetCleanupProcessorTest,ContentletBackupStorageGateTest,BinaryFieldCleanupProcessorTest,AssetJobEventSerializationTest,BinaryAssetBackfillCheckpointTest,ImportStarterWorkflowCleanupTest,BinaryAssetBackfillProcessorTest,BinaryAssetBackfillTest,ExportStarterFailureTest,BundleArchiveStorageTest,FileAssetBundlerTest,TemporaryAssetStorageTest,WebdavAssetStorageTest,TemporaryMetadataStorageTest,WebdavTemporaryStorageTest \
   -Ds3.test.endpoint=http://127.0.0.1:19002 \
   -Ds3.test.jdbc=jdbc:postgresql://127.0.0.1:19003/binary_storage_test
 

@@ -124,7 +124,11 @@ public class LanguageFolderResourceImpl implements FolderResource, LockingCollec
 		return null;
 	}
 
-	/* (non-Javadoc)
+	/**
+	 * Lists the language files and temporary files in this language folder. With S3 asset storage
+	 * on, the temporary files come from S3 and are left out if S3 cannot be read.
+	 *
+	 * @return the children of this folder
 	 * @see com.bradmcevoy.http.CollectionResource#getChildren()
 	 */
 	public List<? extends Resource> getChildren() {
@@ -149,12 +153,8 @@ public class LanguageFolderResourceImpl implements FolderResource, LockingCollec
 		if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
 			final String prefix = Config.getBooleanProperty("WEBDAV_LEGACY_PATHING", false)
 					? "/webdav/autopub/" : "/webdav/live/" + dotDavHelper.getLanguage() + "/";
-			try {
-				result.addAll(dotDavHelper.temporaryChildren(prefix + "system/languages/" + path, true));
-				return result;
-			} catch (IOException failure) {
-				throw new com.dotmarketing.exception.DotRuntimeException("Unable to list WebDAV staging resources", failure);
-			}
+			result.addAll(dotDavHelper.temporaryChildren(prefix + "system/languages/" + path, true));
+			return result;
 		}
 		File f = new File(tempDir.getPath() + File.separator + "system" + File.separator + "languages" + path);
 		File[] c = f.listFiles();

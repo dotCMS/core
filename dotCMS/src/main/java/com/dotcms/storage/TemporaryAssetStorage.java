@@ -4,12 +4,14 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -207,29 +209,47 @@ public final class TemporaryAssetStorage {
         APILocator.getBinaryAssetStorageAPI().deleteGeneratedFiles(id);
     }
 
-    /** Timestamped payload prefixes also expose interrupted uploads after their receipt is gone. */
+    /**
+     * Removes the S3 objects of temporary uploads whose receipt has expired: the receipt, the
+     * payload, the shared metadata and any generated renditions. Timestamped payload prefixes also
+     * expose interrupted uploads after their receipt is gone, and those are removed too.
+     *
+     * <p>Local copies are left in place. The existing {@code CLEANUP_TMP_FILES_OLDER_THAN_HOURS} age
+     * rule in {@code BinaryCleanupJob} removes them, as it does with the flag off, so a check-in that
+     * resolved the file just before expiry keeps its source. The local upload marker stops an
+     * expired local copy from being served once its receipt is gone.
+     *
+     * <p>Each upload is cleaned independently. A failure is logged, that upload keeps its receipt and
+     * payload for the next run, and the remaining uploads are still processed. One combined failure
+     * is thrown at the end so the scheduled job still reports it.
+     *
+     * @throws DotDataException if S3 cannot be listed, or if any upload could not be cleaned
+     */
     public void cleanupExpired() throws DotDataException {
         if (!AssetStorageFeature.isEnabled()) return;
+        final List<Exception> failures = new ArrayList<>();
+        final var retained = new HashSet<String>();
         for (String path : remote().listObjectPaths(GROUP, RECEIPTS)) {
             if (!path.startsWith(RECEIPTS) || !path.endsWith(".json")) continue;
             final String id = path.substring(RECEIPTS.length(), path.length() - ".json".length());
-            final var record = receipt(id);
-            if (record.isEmpty() || !record.get().expired()) continue;
-            removeMetadataAndRenditions(id);
-            delete(record.get().prefix());
-            delete(path);
             try {
-                final Path directory = file(id, "placeholder").toPath().getParent();
-                com.liferay.util.FileUtil.deltree(directory.toFile());
-                if (Files.exists(directory)) throw new IOException("Temporary cache directory remains");
-            } catch (IOException failure) {
-                throw new DotDataException("Unable to remove expired temporary cache " + id, failure);
+                final var record = receipt(id);
+                if (record.isEmpty() || !record.get().expired()) continue;
+                removeMetadataAndRenditions(id);
+                delete(record.get().prefix());
+                delete(path);
+            } catch (DotDataException | RuntimeException failure) {
+                // Keep this upload's payload with its receipt, so the next run can finish it.
+                retained.add(id);
+                failures.add(failure);
+                Logger.warn(this, "Unable to clean expired temporary upload " + id + "; next cleanup will retry: "
+                        + failure.getMessage());
             }
         }
         final var expired = new HashSet<String>();
         for (String path : remote().listObjectPaths(GROUP, "data/")) {
             final String[] parts = path.split("/", 4);
-            if (parts.length != 4 || !parts[0].equals("data") || !validId(parts[2])) continue;
+            if (parts.length != 4 || !parts[0].equals("data") || !validId(parts[2]) || retained.contains(parts[2])) continue;
             try {
                 final var record = new Receipt(parts[2], parts[3], Long.parseLong(parts[1]), List.of());
                 if (record.expired()) expired.add(record.prefix());
@@ -237,7 +257,21 @@ public final class TemporaryAssetStorage {
                 // Only this uploader's timestamped namespace belongs to this cleanup.
             }
         }
-        for (String prefix : expired) delete(prefix);
+        for (String prefix : expired) {
+            try {
+                delete(prefix);
+            } catch (DotDataException | RuntimeException failure) {
+                failures.add(failure);
+                Logger.warn(this, "Unable to remove expired temporary payload " + prefix + "; next cleanup will retry: "
+                        + failure.getMessage());
+            }
+        }
+        if (!failures.isEmpty()) {
+            final var combined = new DotDataException("Unable to clean " + failures.size()
+                    + " expired temporary upload object(s)", failures.get(0));
+            failures.stream().skip(1).forEach(combined::addSuppressed);
+            throw combined;
+        }
     }
 
     private void delete(final String path) throws DotDataException {

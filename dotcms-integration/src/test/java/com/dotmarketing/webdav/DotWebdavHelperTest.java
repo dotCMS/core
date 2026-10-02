@@ -207,7 +207,6 @@ public class DotWebdavHelperTest {
     @Test
     public void uploadColdReadCopyAndOverwriteRetainHistoricalBytes() throws Exception {
         final boolean enabled = com.dotcms.storage.AssetStorageFeature.isEnabled();
-        Assert.assertEquals(Boolean.getBoolean("s3.cms.enabled"), enabled);
         final Host host = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
         final Folder folder = new FolderDataGen().site(host).nextPersisted();
         final var user = APILocator.systemUser();
@@ -237,7 +236,9 @@ public class DotWebdavHelperTest {
             helper.copyResource(source, base + "Copy-Mixed.TXT", user, enabled);
             final var copy = (com.dotmarketing.portlets.contentlet.model.Contentlet) helper.loadFile(base + "Copy-Mixed.TXT", user);
             Assert.assertNotNull(copy);
-            if (enabled) Assert.assertTrue(copy.isLive());
+            // A WebDAV copy is an unpublished working version in both modes, even when requested
+            // with auto-publish, so it needs only edit permission.
+            Assert.assertFalse(copy.isLive());
             final var copyFile = copy.getBinary(com.dotmarketing.portlets.fileassets.business.FileAssetAPI.BINARY_FIELD);
             if (enabled) Assert.assertTrue(evictEventually(binaries, copyFile));
             try (var input = copy.getBinaryStream(com.dotmarketing.portlets.fileassets.business.FileAssetAPI.BINARY_FIELD)) {

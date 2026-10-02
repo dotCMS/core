@@ -111,6 +111,14 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
 		return 0;
 	}
 
+	/**
+	 * Finds a folder, file or temporary file directly under the site root. With S3 asset storage
+	 * on, a temporary name is looked up among the site's S3 temporary children, which are left out
+	 * (so the lookup finds nothing) if S3 cannot be read.
+	 *
+	 * @param childName the name of the child
+	 * @return the child, or {@code null} if there is none
+	 */
 	public Resource child(String childName) {
 		if (dotDavHelper.isSameTargetAndDestinationResourceOnMove(childName)) {
 			//This a small hack that prevents Milton's MoveHandler from removing the destination folder when the source and destination are the same.
@@ -118,12 +126,8 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
 		}
 	    final User user = (User)HttpManager.request().getAuthorization().getTag();
 		if (com.dotcms.storage.AssetStorageFeature.isEnabled() && dotDavHelper.isTempResource(childName)) {
-			try {
-				return dotDavHelper.temporaryChildren(path, isAutoPub).stream()
-						.filter(resource -> resource.getName().equals(childName)).findFirst().orElse(null);
-			} catch (IOException failure) {
-				throw new DotRuntimeException("Unable to find WebDAV staging child", failure);
-			}
+			return dotDavHelper.temporaryChildren(path, isAutoPub).stream()
+					.filter(resource -> resource.getName().equals(childName)).findFirst().orElse(null);
 		}
 		final String uri="/"+childName;
 		
@@ -150,6 +154,12 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
 		return null;
 	} 
 
+	/**
+	 * Lists the folders, files and temporary files directly under the site root. With S3 asset
+	 * storage on, the temporary files come from S3 and are left out if S3 cannot be read.
+	 *
+	 * @return the children of the site root
+	 */
 	public List<? extends Resource> getChildren() {
 	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		List<Folder> folders = listFolders();
@@ -210,11 +220,7 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
         }
 		java.io.File tempDir = new java.io.File(dotDavHelper.getTempDir().getPath() + java.io.File.separator + host.getHostname());
 		if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
-			try {
-				frs.addAll(dotDavHelper.temporaryChildren(prePath + host.getHostname(), isAutoPub));
-			} catch (IOException failure) {
-				throw new DotRuntimeException("Unable to list WebDAV staging resources", failure);
-			}
+			frs.addAll(dotDavHelper.temporaryChildren(prePath + host.getHostname(), isAutoPub));
 		} else if(tempDir.exists() && tempDir.isDirectory()){
 			java.io.File[] files = tempDir.listFiles();
 			for (java.io.File file : files) {

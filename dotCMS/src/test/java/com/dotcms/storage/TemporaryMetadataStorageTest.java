@@ -69,6 +69,41 @@ class TemporaryMetadataStorageTest {
         }
     }
 
+    /**
+     * FocalPointImageFilter names existing content as {@code temp_<inode>}. Such an id never gets an
+     * upload receipt, so its metadata must stay in the local temporary directory that
+     * BinaryCleanupJob ages out, never in S3 where nothing would remove it.
+     */
+    @Test
+    void inodeBasedFocalPointIdsStayInTheLocallyCleanedDirectory() throws Exception {
+        final String oldFlag = Config.getStringProperty(AssetStorageFeature.FLAG, null);
+        final String id = "temp_" + java.util.UUID.randomUUID();
+        final String localPath = "/node-a/assets/tmp_upload/" + id + "/" + id + FileMetadataAPI.META_TMP;
+        final var files = mock(FileStorageAPI.class);
+        try (var locator = mockStatic(APILocator.class); var caches = mockStatic(CacheLocator.class);
+             var paths = mockStatic(ConfigUtils.class)) {
+            Config.setProperty(AssetStorageFeature.FLAG, true);
+            locator.when(APILocator::getFileStorageAPI).thenReturn(files);
+            caches.when(CacheLocator::getMetadataCache).thenReturn(mock(MetadataCache.class));
+            paths.when(ConfigUtils::getAssetTempPath).thenReturn("/node-a/assets/tmp_upload");
+            final var api = new FileMetadataAPIImpl();
+
+            api.putCustomMetadataAttributes(id, Map.of("HeroImage", Map.of("focalPoint", "0.5,0.5")));
+            verify(files).putCustomMetadataAttributes(argThat(request ->
+                    request.getStorageKey().getStorage() == StorageType.FILE_SYSTEM
+                    && request.getStorageKey().getPath().equals(localPath)), eq(Map.of("focalPoint", "0.5,0.5")));
+            verify(files, never()).setMetadata(any(), any());
+
+            when(files.retrieveRawMetaData(any())).thenReturn(Map.of("dot:focalPoint", "0.5,0.5"));
+            assertEquals("0.5,0.5", api.getMetadata(id).orElseThrow().getCustomMeta().get("focalPoint"));
+            verify(files).retrieveRawMetaData(argThat(key -> key.getStorage() == StorageType.FILE_SYSTEM
+                    && key.getPath().equals(localPath)));
+            verify(files, never()).retrieveRawMetaData(argThat(key -> key.getStorage() != StorageType.FILE_SYSTEM));
+        } finally {
+            Config.setProperty(AssetStorageFeature.FLAG, oldFlag);
+        }
+    }
+
     @Test
     void disabledWritesRetainFilesystemPathAndProvider() throws Exception {
         final String oldFlag = Config.getStringProperty(AssetStorageFeature.FLAG, null);

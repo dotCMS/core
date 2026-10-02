@@ -42,12 +42,33 @@ public class TempFileResourceImpl implements FileResource, LockableResource {
     private boolean isAutoPub = false;
     private PermissionAPI perAPI; 
     
+    /**
+     * Creates a resource for a WebDAV temporary file. With S3 asset storage on, the file's entry is
+     * looked up in S3 first.
+     *
+     * @param file the local path of the temporary file
+     * @param url the WebDAV URL of the file
+     * @param isAutoPub whether the file is served from an auto-publishing mount
+     * @throws IllegalArgumentException if the file is a directory, or with the flag on, if it does
+     *                                  not exist
+     */
     public TempFileResourceImpl(File file, String url, boolean isAutoPub) {
-        entry = com.dotcms.storage.AssetStorageFeature.isEnabled()
-                ? com.dotcms.storage.WebdavTemporaryStorage.getInstance().stat(file) : null;
-        if (com.dotcms.storage.AssetStorageFeature.isEnabled() && entry == null) {
-            throw new IllegalArgumentException("Missing WebDAV staging file: " + url);
-        }
+        this(file, url, isAutoPub, storedEntry(file, url));
+    }
+
+    /**
+     * Creates a resource from an entry that a listing has already read, so no second lookup is
+     * needed and a file deleted in the meantime cannot fail the listing.
+     *
+     * @param file the local path of the temporary file
+     * @param url the WebDAV URL of the file
+     * @param isAutoPub whether the file is served from an auto-publishing mount
+     * @param entry the S3 entry of the file, or {@code null} with the flag off
+     * @throws IllegalArgumentException if the file is a directory
+     */
+    TempFileResourceImpl(File file, String url, boolean isAutoPub,
+            com.dotcms.storage.WebdavTemporaryStorage.Entry entry) {
+        this.entry = entry;
         if( entry != null ? entry.directory() : file.isDirectory() ){
         	Logger.error(this, "Trying to get a temp file which is actually a directory!!!");
         	throw new IllegalArgumentException("Static resource must be a file, this is a directory: " + file.getAbsolutePath());
@@ -60,6 +81,21 @@ public class TempFileResourceImpl implements FileResource, LockableResource {
     }
 
     
+    /**
+     * Looks up the S3 entry of a temporary file when S3 asset storage is on.
+     *
+     * @param file the local path of the temporary file
+     * @param url the WebDAV URL of the file, used in the error message
+     * @return the entry, or {@code null} with the flag off
+     * @throws IllegalArgumentException with the flag on, if the file does not exist
+     */
+    private static com.dotcms.storage.WebdavTemporaryStorage.Entry storedEntry(File file, String url) {
+        if (!com.dotcms.storage.AssetStorageFeature.isEnabled()) return null;
+        final var entry = com.dotcms.storage.WebdavTemporaryStorage.getInstance().stat(file);
+        if (entry == null) throw new IllegalArgumentException("Missing WebDAV staging file: " + url);
+        return entry;
+    }
+
     public String getUniqueId() {
         return entry == null ? file.hashCode() + "" : "webdav-temporary:" + entry.path();
     }
