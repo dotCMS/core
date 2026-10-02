@@ -7,14 +7,28 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.Logger;
 
+import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Default implementation to retrieve the configuration from apps
  * @author jsanca
  */
 public class DotIdentityProviderConfigurationImpl implements IdentityProviderConfiguration {
+
+    private static final Set<String> SIGNATURE_VALIDATION_TYPES = Set.of(
+            DotSamlConstants.RESPONSE, DotSamlConstants.ASSERTION, DotSamlConstants.RESPONSE_AND_ASSERTION);
+
+    /**
+     * Extra parameters that used to switch off parts of the signature verification. Stored values are
+     * ignored, so the SAML bundle always uses its default (true).
+     */
+    private static final Set<String> IGNORED_PROPERTIES = Set.of(
+            SamlName.DOT_SAML_VERIFY_SIGNATURE_CREDENTIALS.getPropertyName(),
+            SamlName.DOT_SAML_VERIFY_SIGNATURE_PROFILE.getPropertyName());
 
     private final AppsAPI    appsAPI;
     private final Host       host;
@@ -27,6 +41,43 @@ public class DotIdentityProviderConfigurationImpl implements IdentityProviderCon
         this.appSecrets = this.appsAPI.getSecrets(DotSamlProxyFactory.SAML_APP_CONFIG_KEY,
                 true, host, APILocator.systemUser()).get();
 
+        this.warnAboutOverriddenSettings();
+    }
+
+    /**
+     * Returns the signature validation type when it is "response", "assertion" or "responseandassertion"
+     * (ignoring case and surrounding blanks). Anything else, including blank and "none", fails closed to
+     * "responseandassertion": signatures can not be switched off through this setting.
+     *
+     * @param configured the stored value, may be null
+     * @return one of the supported validation types
+     */
+    public static String resolveSignatureValidationType(final String configured) {
+
+        final String normalized = null == configured ? "" : configured.trim().toLowerCase(Locale.ROOT);
+        return SIGNATURE_VALIDATION_TYPES.contains(normalized) ? normalized : DotSamlConstants.RESPONSE_AND_ASSERTION;
+    }
+
+    private void warnAboutOverriddenSettings() {
+
+        final Optional<Secret> validationType =
+                this.findSecret(SamlName.DOT_SAML_SIGNATURE_VALIDATION_TYPE.getPropertyName());
+        final String configured = validationType.map(Secret::getString).orElse(null);
+        if (null == configured || !SIGNATURE_VALIDATION_TYPES.contains(configured.trim().toLowerCase(Locale.ROOT))) {
+
+            Logger.warn(this, "SAML configuration for site '" + this.host.getHostname() + "' has an unsupported "
+                    + "signature validation type '" + configured + "'. A signed response and a signed assertion "
+                    + "are required until a supported Validation Type is saved.");
+        }
+
+        for (final String ignoredProperty : IGNORED_PROPERTIES) {
+
+            if (this.findSecret(ignoredProperty).isPresent()) {
+
+                Logger.warn(this, "SAML configuration for site '" + this.host.getHostname() + "' sets '"
+                        + ignoredProperty + "', which is ignored: SAML signatures are always verified.");
+            }
+        }
     }
 
     private Optional<Secret> findSecret (final String key) {
@@ -78,7 +129,7 @@ public class DotIdentityProviderConfigurationImpl implements IdentityProviderCon
 
         final String signatureValidationTypeKey = SamlName.DOT_SAML_SIGNATURE_VALIDATION_TYPE.getPropertyName();
         final Optional<Secret> secretOpt        = this.findSecret(signatureValidationTypeKey);
-        return secretOpt.isPresent()? secretOpt.get().getString(): null;
+        return resolveSignatureValidationType(secretOpt.isPresent()? secretOpt.get().getString(): null);
     }
 
     @Override
@@ -111,6 +162,10 @@ public class DotIdentityProviderConfigurationImpl implements IdentityProviderCon
     @Override
     public Object getOptionalProperty(final String propertyKey) {
 
+        if (IGNORED_PROPERTIES.contains(propertyKey)) {
+            return null;
+        }
+
         final Optional<Secret> secretOpt = this.findSecret(propertyKey);
         return secretOpt.isPresent()? secretOpt.get().getString(): null;
     }
@@ -119,7 +174,7 @@ public class DotIdentityProviderConfigurationImpl implements IdentityProviderCon
     @Override
     public boolean containsOptionalProperty(final String propertyKey) {
 
-        return this.findSecret(propertyKey).isPresent();
+        return !IGNORED_PROPERTIES.contains(propertyKey) && this.findSecret(propertyKey).isPresent();
     }
 
     @Override

@@ -323,6 +323,33 @@ describe('dot-auth-config.mappers', () => {
             expect(config.saml.wantResponseSigned).toBe(true);
         });
 
+        it('maps single-signature validation types', () => {
+            const assertionOnly = fromView({
+                ...SAML_VIEW,
+                values: { ...SAML_VIEW.values, signatureValidationType: 'assertion' }
+            });
+            expect(assertionOnly.saml.wantAssertionsSigned).toBe(true);
+            expect(assertionOnly.saml.wantResponseSigned).toBe(false);
+
+            const responseOnly = fromView({
+                ...SAML_VIEW,
+                values: { ...SAML_VIEW.values, signatureValidationType: 'response' }
+            });
+            expect(responseOnly.saml.wantAssertionsSigned).toBe(false);
+            expect(responseOnly.saml.wantResponseSigned).toBe(true);
+        });
+
+        it('shows a legacy "none" or unknown validation type as both signatures required', () => {
+            for (const signatureValidationType of ['none', '', 'signature']) {
+                const config = fromView({
+                    ...SAML_VIEW,
+                    values: { ...SAML_VIEW.values, signatureValidationType }
+                });
+                expect(config.saml.wantAssertionsSigned).toBe(true);
+                expect(config.saml.wantResponseSigned).toBe(true);
+            }
+        });
+
         it('maps SAML claim fields', () => {
             const config = fromView(SAML_VIEW);
             expect(config.saml.claimEmail).toBe('mail');
@@ -527,13 +554,14 @@ describe('dot-auth-config.mappers', () => {
                 ]
             ).toBe('response');
 
+            // never 'none': with neither box checked both signatures are required
             config.saml.wantAssertionsSigned = false;
             config.saml.wantResponseSigned = false;
             expect(
                 (toPayload(config, 'test-site-id').values as Record<string, unknown>)[
                     'signatureValidationType'
                 ]
-            ).toBe('none');
+            ).toBe('responseandassertion');
         });
 
         it('round-trips idpName and sPEndpointHostname so a save never wipes a working SP hostname', () => {

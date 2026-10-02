@@ -37,13 +37,9 @@ params:
     hidden: false
     type: "SELECT"
     label: "Validation Type"
-    hint: "Depends on your IDP Configuration."
+    hint: "Which parts of the SAML Response your IDP signs. dotCMS rejects a response unless the selected parts carry a valid IDP signature."
     required: true
     value:
-      -
-        label: "None"
-        value: "none"
-        selected: true
       -
         label: "Only Response"
         value: "response"
@@ -53,6 +49,7 @@ params:
       -
         label: "Response & Assertion"
         value: "responseandassertion"
+        selected: true
   idPMetadataFile:
     value: ""
     hidden: false
