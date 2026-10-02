@@ -58,10 +58,24 @@ public class IncludeLoader implements DotLoader {
     }
 
 
+    /**
+     * Checks that an included file may be served: it must be under the Velocity root or the asset
+     * root and have an allowed extension.
+     *
+     * <p>With S3 asset storage on, a missing file under the asset root passes this check so that
+     * it can be restored from storage. A missing file anywhere else is reported as not found, as
+     * with the flag off, rather than logged as a possible attack.
+     *
+     * @param filePath the file path from the Velocity resource key
+     * @return the file to serve
+     * @throws IOException if a canonical path cannot be resolved
+     * @throws ResourceNotFoundException if the file is missing or not allowed
+     */
     private File allowedToServe(final String filePath) throws IOException {
         final File fileToServe = new File(filePath);
         final boolean s3 = com.dotcms.storage.AssetStorageFeature.isEnabled();
-        if (!fileToServe.exists() && !s3) {
+        if (!fileToServe.exists()
+                && (!s3 || !fileToServe.getCanonicalFile().toPath().startsWith(allowedPaths[1]))) {
             throw new ResourceNotFoundException(CANNOT_FIND_RESOURCE + filePath);
         }
         String canonicalPath = fileToServe.getCanonicalPath();

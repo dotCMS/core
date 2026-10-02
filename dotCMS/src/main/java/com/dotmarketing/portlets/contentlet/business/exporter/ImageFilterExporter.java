@@ -14,6 +14,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -146,16 +148,38 @@ public class ImageFilterExporter implements BinaryContentExporter {
     }
     
     
+    /**
+     * Runs one filter of the chain and returns the file to pass to the next filter.
+     *
+     * <p>With S3 asset storage on, the filter's predicted output is looked up first (local disk,
+     * then S3) so a completed rendition is reused without running the filter. A predicted output
+     * that this node has seen the filter never produce, because the filter returned its input
+     * unchanged, is not looked up again, so a no-op filter does not contact S3 on later requests.
+     * A newly produced output is uploaded after the image permit is released. If the upload
+     * fails, the local output is still served and a warning is logged; the file stays local only,
+     * and eviction keeps it because it has no durable copy.
+     *
+     * <p>With the flag off, this only runs the filter under the image permit, as before.
+     *
+     * @param imageFilter the filter to run
+     * @param fileIn the input image, either the original or the previous filter's output
+     * @param parameters the request's filter parameters
+     * @return the filter's output, or {@code fileIn} when the filter is a no-op or no image
+     *         permit is available
+     * @throws DotDataException if the S3 lookup of the predicted output fails
+     */
     private File runFilter(ImageFilter imageFilter, final File fileIn,final Map<String, String[]> parameters)
             throws DotDataException {
-        if (s3Renditions()) {
-            final File cached = cachedRendition(imageFilter.getResultsFile(fileIn, parameters));
+        final File predicted = s3Renditions() ? imageFilter.getResultsFile(fileIn, parameters) : null;
+        if (predicted != null && UNPRODUCED_RESULTS.getIfPresent(predicted.getPath()) == null) {
+            final File cached = cachedRendition(predicted);
             if (cached != null) {
                 return cached;
             }
         }
         
         boolean canRun=false;
+        final File result;
         try {
             
             canRun = semaphore.tryAcquire();
@@ -170,29 +194,85 @@ public class ImageFilterExporter implements BinaryContentExporter {
                 
             }
 
-            final File result = imageFilter.runFilter(fileIn, parameters);
-            if (s3Renditions() && !result.equals(fileIn)) {
-                APILocator.getBinaryAssetStorageAPI().storeGeneratedFile(result);
-            }
-            return result;
+            result = imageFilter.runFilter(fileIn, parameters);
         } 
         finally {
             if(canRun) {
                 semaphore.release();
             }
         }
+        if (predicted != null) {
+            if (result.equals(fileIn)) {
+                UNPRODUCED_RESULTS.put(predicted.getPath(), Boolean.TRUE);
+            } else {
+                UNPRODUCED_RESULTS.invalidate(predicted.getPath());
+                // Only the predicted path can be found by a later lookup, so only it is worth uploading.
+                if (result.equals(predicted)) {
+                    storeRendition(result);
+                }
+            }
+        }
+        return result;
     }
+
+    /**
+     * Uploads a newly produced rendition. Availability comes first: the rendition already exists
+     * locally, so a failed upload is logged as a warning and the local file is served anyway.
+     *
+     * @param rendition the completed rendition under the local {@code dotGenerated} root
+     */
+    private void storeRendition(final File rendition) {
+        try {
+            APILocator.getBinaryAssetStorageAPI().storeGeneratedFile(rendition);
+        } catch (final Exception e) {
+            Logger.warnAndDebug(ImageFilterExporter.class, "Unable to store rendition " + rendition
+                    + " in S3; serving the local copy, which stays local only: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Predicted filter outputs that a filter on this node returned its input for instead of
+     * writing. The predicted path covers the filter, its parameters, the input's name and, when
+     * the input has one, its revision key, so the same request is a no-op again and nothing is
+     * ever written at that path. An entry is dropped if the filter later produces the output. The
+     * cache is bounded because it only saves remote lookups; an evicted entry costs one lookup.
+     */
+    private static final Cache<String, Boolean> UNPRODUCED_RESULTS = Caffeine.newBuilder()
+            .maximumSize(10_000).build();
 
     /** Renditions smaller than this are treated as missing/corrupt (matches the legacy guard). */
     private static final long MIN_VALID_FILE_LENGTH = 50L;
 
+    /**
+     * Returns the chain's final rendition when it already exists, so the request can skip the
+     * filters.
+     *
+     * <p>With S3 asset storage on, the final rendition is looked up locally and then in S3. When a
+     * filter in the chain is known on this node to return its input unchanged, the predicted final
+     * path will never be written, so no lookup is made and the chain runs instead.
+     *
+     * @param clazzes the filter chain, in order
+     * @param fileIn the input image
+     * @param parameters the request's filter parameters
+     * @return the existing final rendition, or empty when the chain must run
+     * @throws DotDataException if the S3 lookup fails
+     */
     private Optional<File> alreadyGenerated(final Collection<Class<? extends ImageFilter>> clazzes, final File fileIn,
                     final Map<String, String[]> parameters) throws DotDataException {
 
-        final File fileToReturn = finalResultFile(clazzes, fileIn, parameters);
         if (s3Renditions()) {
-            return Optional.ofNullable(cachedRendition(fileToReturn));
+            File predicted = fileIn;
+            for (final Class<? extends ImageFilter> filter : clazzes) {
+                predicted = Try.of(() -> filter.getDeclaredConstructor().newInstance())
+                        .getOrElseThrow(DotRuntimeException::new).getResultsFile(predicted, parameters);
+                if (UNPRODUCED_RESULTS.getIfPresent(predicted.getPath()) != null) {
+                    return Optional.empty();
+                }
+            }
+            return Optional.ofNullable(cachedRendition(predicted));
         }
+
+        final File fileToReturn = finalResultFile(clazzes, fileIn, parameters);
 
         if (fileToReturn == null || ! fileToReturn.exists() ||  fileToReturn.length() < MIN_VALID_FILE_LENGTH) {
             return Optional.empty();
