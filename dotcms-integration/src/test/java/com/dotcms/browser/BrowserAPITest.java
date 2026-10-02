@@ -2,10 +2,10 @@ package com.dotcms.browser;
 
 import static org.awaitility.Awaitility.await;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import com.dotcms.IntegrationTestBase;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -40,6 +40,7 @@ import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.datagen.VariantDataGen;
+import com.dotcms.datagen.WorkflowDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
@@ -66,10 +67,11 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.FileUtil;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
@@ -99,6 +101,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 
@@ -4519,6 +4522,592 @@ public class BrowserAPITest extends IntegrationTestBase {
                 visibleIdentifiers.contains(readableContentlet.getIdentifier()));
         assertFalse("The permission-restricted contentlet must not be visible",
                 visibleIdentifiers.contains(restrictedContentlet.getIdentifier()));
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Adaptive DB chunk sizing for the permission-only listing -- issue #37665.
+    //
+    // These tests shrink the loop's floor to 5 rows (BROWSER_DB_CHUNK_FACTOR=1,
+    // BROWSER_DB_CHUNK_MIN_SIZE=5), so a few dozen contentlets span several chunks, and spy on
+    // BrowserAPIImpl#readChunkInodes to record how many rows each iteration asked for. Both keys are
+    // Lazy *instance* fields that are read on an instance's first paginated request, so they are
+    // overridden only while a fresh spy is in use and restored before the test ends. The shared
+    // APILocator instance is never used for a paginated request while they are overridden.
+    // ---------------------------------------------------------------------------------------------
+
+    /**
+     * Overrides the chunk-loop configuration for one test and restores the original values on
+     * {@link #close()}, so a failing assertion cannot leak a small floor or a toggled flag into
+     * the rest of the suite (failsafe also retries failing tests in the same JVM).
+     */
+    private static final class AdaptiveChunkOverrides implements AutoCloseable {
+
+        private static final String CHUNK_FACTOR_KEY = "BROWSER_DB_CHUNK_FACTOR";
+        private static final String CHUNK_MIN_SIZE_KEY = "BROWSER_DB_CHUNK_MIN_SIZE";
+
+        private final int originalFactor = Config.getIntProperty(CHUNK_FACTOR_KEY, 10);
+        private final int originalMinSize = Config.getIntProperty(CHUNK_MIN_SIZE_KEY, 200);
+        private final boolean originalAdaptive = Config.getBooleanProperty(
+                BrowserAPIImpl.BROWSER_DB_CHUNK_ADAPTIVE_KEY,
+                BrowserAPIImpl.BROWSER_DB_CHUNK_ADAPTIVE_DEFAULT);
+        private final int originalContentChunkSize = Config.getIntProperty(
+                BrowserAPIImpl.BROWSER_CONTENT_CHUNK_SIZE_KEY,
+                BrowserAPIImpl.BROWSER_CONTENT_CHUNK_SIZE_DEFAULT);
+
+        /** Makes the permission-only loop's floor 5 rows for any page of up to 5 items. */
+        AdaptiveChunkOverrides smallFloor() {
+            Config.setProperty(CHUNK_FACTOR_KEY, 1);
+            Config.setProperty(CHUNK_MIN_SIZE_KEY, 5);
+            return this;
+        }
+
+        /** Turns adaptive chunk sizing on or off; it is read on every request. */
+        AdaptiveChunkOverrides adaptive(final boolean enabled) {
+            Config.setProperty(BrowserAPIImpl.BROWSER_DB_CHUNK_ADAPTIVE_KEY, enabled);
+            return this;
+        }
+
+        /** Sets the fixed chunk size of the Elasticsearch-narrowed loop. */
+        AdaptiveChunkOverrides contentChunkSize(final int size) {
+            Config.setProperty(BrowserAPIImpl.BROWSER_CONTENT_CHUNK_SIZE_KEY, size);
+            return this;
+        }
+
+        @Override
+        public void close() {
+            Config.setProperty(CHUNK_FACTOR_KEY, originalFactor);
+            Config.setProperty(CHUNK_MIN_SIZE_KEY, originalMinSize);
+            Config.setProperty(BrowserAPIImpl.BROWSER_DB_CHUNK_ADAPTIVE_KEY, originalAdaptive);
+            Config.setProperty(BrowserAPIImpl.BROWSER_CONTENT_CHUNK_SIZE_KEY, originalContentChunkSize);
+        }
+    }
+
+    /** A folder of file assets plus the order the listing returns them in. */
+    private static final class ListingFixture {
+        Host site;
+        Folder folder;
+        /** Every child of the folder, in the listing's own DB order. */
+        List<Contentlet> ordered;
+    }
+
+    /**
+     * Creates a site and a folder holding {@code count} file assets, and records the order the
+     * listing returns them in. Positions used by the tests below are indexes into that order, not
+     * creation order, so they stay correct even if two items share a modification date.
+     */
+    private ListingFixture folderWithFiles(final int count) throws Exception {
+        final ListingFixture fixture = new ListingFixture();
+        fixture.site = new SiteDataGen().nextPersisted(true);
+        fixture.folder = new FolderDataGen().site(fixture.site).nextPersisted();
+        for (int i = 0; i < count; i++) {
+            final File file = FileUtil.createTemporaryFile("adaptive-chunk-" + i, ".txt", "content " + i);
+            new FileAssetDataGen(file).host(fixture.site).folder(fixture.folder).nextPersisted();
+        }
+        fixture.ordered = browserAPI.getContentUnderParentFromDB(
+                listingQuery(fixture.folder, APILocator.systemUser()));
+        assertEquals("Sanity check: the listing must return every file", count, fixture.ordered.size());
+        return fixture;
+    }
+
+    /**
+     * Returns the plain folder-listing query (no text search, no index-routed field filter), which
+     * takes the permission-only chunk loop. Mirrors the query in
+     * {@link #test_exhaustive_pagination_with_permission_filtering()}.
+     */
+    private static BrowserQuery listingQuery(final Folder folder, final User user) {
+        return BrowserQuery.builder()
+                .withHostOrFolderId(folder.getInode())
+                .ignoreSiteForFolders(true)
+                .respectFrontEndRoles(false)
+                .withUser(user)
+                .systemHostMode(SystemHostMode.EXCLUDE)
+                .showContent(true)
+                .contentCursor(0)
+                .showFiles(false)
+                .showFolders(false)
+                .showLinks(false)
+                .showDotAssets(false)
+                .showWorking(true)
+                .showArchived(false)
+                .build();
+    }
+
+    /** Copies {@code query} with its cursor set to {@code cursor}. */
+    private static BrowserQuery atCursor(final BrowserQuery query, final int cursor) {
+        return BrowserQuery.from(query).contentCursor(cursor).build();
+    }
+
+    /**
+     * Creates a backend user who can read the folder's site and the folder itself, and, among the
+     * given contentlets, exactly those at the {@code readable} positions. Every other contentlet
+     * gets an explicit permission for a role the user does not hold, which breaks the READ it would
+     * otherwise inherit from the folder. Waits until the permission-filtered listing reflects the
+     * setup, so a permission problem fails here instead of looking like a chunk-sizing failure.
+     */
+    private static User userReading(final Host site, final Folder folder,
+            final List<Contentlet> contentlets, final Set<Integer> readable) throws Exception {
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        final User systemUser = APILocator.systemUser();
+        final Role restrictedRole = new RoleDataGen().nextPersisted();
+        final User user = new UserDataGen()
+                .roles(restrictedRole, TestUserUtils.getBackendRole())
+                .nextPersisted();
+        final Role noAccessRole = new RoleDataGen().nextPersisted();
+        final String userRoleId = APILocator.getRoleAPI().getUserRole(user).getId();
+
+        permissionAPI.save(new Permission(site.getPermissionId(), userRoleId,
+                PermissionAPI.PERMISSION_READ), site, systemUser, false);
+        permissionAPI.save(new Permission(folder.getPermissionId(), userRoleId,
+                PermissionAPI.PERMISSION_READ), folder, systemUser, false);
+        for (int i = 0; i < contentlets.size(); i++) {
+            final Contentlet contentlet = contentlets.get(i);
+            final String roleId = readable.contains(i) ? userRoleId : noAccessRole.getId();
+            permissionAPI.save(new Permission(contentlet.getPermissionId(), roleId,
+                    PermissionAPI.PERMISSION_READ), contentlet, systemUser, false);
+        }
+
+        final Set<String> expected = readable.stream()
+                .map(i -> contentlets.get(i).getIdentifier())
+                .collect(Collectors.toSet());
+        await().atMost(Duration.ofSeconds(10)).until(() -> expected.equals(
+                identifiers(APILocator.getBrowserAPI().getContentUnderParentFromDB(
+                        listingQuery(folder, user))).stream().collect(Collectors.toSet())));
+        return user;
+    }
+
+    /** Shorthand for {@link #userReading} over a whole listing fixture. */
+    private static User userReading(final ListingFixture fixture, final Set<Integer> readable)
+            throws Exception {
+        return userReading(fixture.site, fixture.folder, fixture.ordered, readable);
+    }
+
+    /** A fresh {@link BrowserAPIImpl} spy, so its Lazy floor is read under the current overrides. */
+    private static BrowserAPIImpl chunkSpy() {
+        return Mockito.spy(new BrowserAPIImpl());
+    }
+
+    /**
+     * Returns the row count each chunk read asked for since the last call, in call order, and
+     * forgets those calls so the next request on the same spy starts from an empty record.
+     */
+    private static List<Integer> requestedChunkSizes(final BrowserAPIImpl spy) throws Exception {
+        final ArgumentCaptor<Integer> limits = ArgumentCaptor.forClass(Integer.class);
+        Mockito.verify(spy, Mockito.atLeastOnce()).readChunkInodes(
+                ArgumentMatchers.any(), limits.capture(), ArgumentMatchers.anyInt());
+        Mockito.clearInvocations(spy);
+        return new ArrayList<>(limits.getAllValues());
+    }
+
+    /** Identifiers of {@code contentlets}, in order. */
+    private static List<String> identifiers(final List<Contentlet> contentlets) {
+        return contentlets.stream().map(Contentlet::getIdentifier).collect(Collectors.toList());
+    }
+
+    /** Identifiers of the fixture's children at {@code positions}, in listing order. */
+    private static List<String> identifiersAt(final List<Contentlet> ordered, final int... positions) {
+        return Arrays.stream(positions).mapToObj(i -> ordered.get(i).getIdentifier())
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Follows the cursor from the first page to the last and returns every identifier returned, in
+     * page order. Fails instead of looping forever if the cursor stops advancing.
+     */
+    private static List<String> walkAllPages(final BrowserAPIImpl api, final BrowserQuery query,
+            final int pageSize) {
+        final List<String> walked = new ArrayList<>();
+        int cursor = 0;
+        int pages = 0;
+        boolean hasMore = true;
+        while (hasMore) {
+            assertTrue("The page walk did not end after 200 pages", ++pages <= 200);
+            final BrowserAPIImpl.ContentUnderParent page =
+                    api.getContentUnderParentFromDB(atCursor(query, cursor), pageSize);
+            walked.addAll(identifiers(page.contentlets));
+            cursor = page.nextDbCursor;
+            hasMore = page.hasMore;
+        }
+        return walked;
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link BrowserAPIImpl#getContentUnderParentFromDB(BrowserQuery, int)}</li>
+     *     <li><b>Given Scenario:</b> A 60-file folder browsed by a user who can read none of it,
+     *     with a 5-row floor and a 5-item page (issue #37665, SC-004).</li>
+     *     <li><b>Expected Result:</b> With adaptive sizing, nothing is visible after each chunk, so
+     *     each one doubles: 5, 10, 20, then 40 (which comes back with the last 25 rows). With the
+     *     flag off, the loop needs twelve full 5-row chunks and one empty read.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPaginatedContents_adaptiveChunk_nothingVisible_growsGeometrically() throws Exception {
+        final ListingFixture fixture = folderWithFiles(60);
+        final User user = userReading(fixture, Set.of());
+        final BrowserQuery query = listingQuery(fixture.folder, user);
+
+        try (AdaptiveChunkOverrides overrides = new AdaptiveChunkOverrides().smallFloor()) {
+            overrides.adaptive(true);
+            final BrowserAPIImpl adaptive = chunkSpy();
+            final BrowserAPIImpl.ContentUnderParent result = adaptive.getContentUnderParentFromDB(query, 5);
+            assertEquals(List.of(5, 10, 20, 40), requestedChunkSizes(adaptive));
+            assertTrue(result.contentlets.isEmpty());
+            assertFalse(result.hasMore);
+
+            overrides.adaptive(false);
+            final BrowserAPIImpl fixed = chunkSpy();
+            fixed.getContentUnderParentFromDB(query, 5);
+            assertEquals(Collections.nCopies(13, 5), requestedChunkSizes(fixed));
+        }
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link BrowserAPIImpl#getContentUnderParentFromDB(BrowserQuery, int)}</li>
+     *     <li><b>Given Scenario:</b> A 60-file folder where the user reads every tenth file
+     *     (issue #37665, US1 scenario 2).</li>
+     *     <li><b>Expected Result:</b> After 1 visible item in 15 rows the ratio projects 90 rows
+     *     for the 4 still missing, and the per-step cap brings it to 40, which fills the page. The
+     *     page holds the same items as with the flag off, which needs ten 5-row chunks.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPaginatedContents_adaptiveChunk_sparseVisible_fewerPassesSameItems() throws Exception {
+        final ListingFixture fixture = folderWithFiles(60);
+        final User user = userReading(fixture, Set.of(9, 19, 29, 39, 49, 59));
+        final BrowserQuery query = listingQuery(fixture.folder, user);
+        final List<String> expectedPage = identifiersAt(fixture.ordered, 9, 19, 29, 39, 49);
+
+        try (AdaptiveChunkOverrides overrides = new AdaptiveChunkOverrides().smallFloor()) {
+            overrides.adaptive(true);
+            final BrowserAPIImpl adaptive = chunkSpy();
+            final BrowserAPIImpl.ContentUnderParent adaptivePage = adaptive.getContentUnderParentFromDB(query, 5);
+            final List<Integer> adaptiveSizes = requestedChunkSizes(adaptive);
+
+            overrides.adaptive(false);
+            final BrowserAPIImpl fixed = chunkSpy();
+            final BrowserAPIImpl.ContentUnderParent fixedPage = fixed.getContentUnderParentFromDB(query, 5);
+            final List<Integer> fixedSizes = requestedChunkSizes(fixed);
+
+            assertEquals(List.of(5, 10, 40), adaptiveSizes);
+            assertEquals(Collections.nCopies(10, 5), fixedSizes);
+            assertEquals(expectedPage, identifiers(adaptivePage.contentlets));
+            assertEquals(expectedPage, identifiers(fixedPage.contentlets));
+        }
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link BrowserAPIImpl#getContentUnderParentFromDB(BrowserQuery, int)}</li>
+     *     <li><b>Given Scenario:</b> Clustered visibility: the user reads 1 file in the first
+     *     5-row chunk and the 4 files right after it (issue #37665, SC-007, US1 scenario 4).</li>
+     *     <li><b>Expected Result:</b> The ratio projects 4 x 5 x 1.5 = 30 rows, but no chunk may
+     *     exceed 4 times the one before it, so the second chunk asks for 20. The page matches the
+     *     flag-off page.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPaginatedContents_adaptiveChunk_clusteredVisibility_respectsMaxGrowth() throws Exception {
+        final ListingFixture fixture = folderWithFiles(40);
+        final User user = userReading(fixture, Set.of(2, 5, 6, 7, 8));
+        final BrowserQuery query = listingQuery(fixture.folder, user);
+        final List<String> expectedPage = identifiersAt(fixture.ordered, 2, 5, 6, 7, 8);
+
+        try (AdaptiveChunkOverrides overrides = new AdaptiveChunkOverrides().smallFloor()) {
+            overrides.adaptive(true);
+            final BrowserAPIImpl adaptive = chunkSpy();
+            final BrowserAPIImpl.ContentUnderParent adaptivePage = adaptive.getContentUnderParentFromDB(query, 5);
+            final List<Integer> sizes = requestedChunkSizes(adaptive);
+            assertEquals(List.of(5, 20), sizes);
+            for (int i = 1; i < sizes.size(); i++) {
+                assertTrue("Chunk " + (i + 1) + " grew more than 4x: " + sizes,
+                        sizes.get(i) <= 4 * sizes.get(i - 1));
+            }
+
+            overrides.adaptive(false);
+            final BrowserAPIImpl fixed = chunkSpy();
+            final BrowserAPIImpl.ContentUnderParent fixedPage = fixed.getContentUnderParentFromDB(query, 5);
+            assertEquals(expectedPage, identifiers(adaptivePage.contentlets));
+            assertEquals(expectedPage, identifiers(fixedPage.contentlets));
+        }
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link BrowserAPIImpl#getContentUnderParentFromDB(BrowserQuery, int)}</li>
+     *     <li><b>Given Scenario:</b> An administrator browses a 60-file folder with adaptive sizing
+     *     on (issue #37665, US1 scenario 3).</li>
+     *     <li><b>Expected Result:</b> The first chunk fills the page, so there is exactly one read,
+     *     of the floor size.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPaginatedContents_adaptiveChunk_admin_singlePass() throws Exception {
+        final ListingFixture fixture = folderWithFiles(60);
+        final BrowserQuery query = listingQuery(fixture.folder, APILocator.systemUser());
+
+        try (AdaptiveChunkOverrides overrides = new AdaptiveChunkOverrides().smallFloor()) {
+            overrides.adaptive(true);
+            final BrowserAPIImpl adaptive = chunkSpy();
+            final BrowserAPIImpl.ContentUnderParent page = adaptive.getContentUnderParentFromDB(query, 5);
+            assertEquals(List.of(5), requestedChunkSizes(adaptive));
+            assertEquals(identifiersAt(fixture.ordered, 0, 1, 2, 3, 4), identifiers(page.contentlets));
+            assertTrue(page.hasMore);
+        }
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link BrowserAPIImpl#getContentUnderParentFromDB(BrowserQuery, int)}</li>
+     *     <li><b>Given Scenario:</b> Every page of a 47-file folder is walked, 3 items at a time, by
+     *     a user who reads 11 scattered files and by an administrator, with adaptive sizing on and
+     *     then off (issue #37665, SC-005, FR-006).</li>
+     *     <li><b>Expected Result:</b> Both settings return the same identifiers in the same order,
+     *     with no duplicates, and the limited user sees exactly the 11 readable files.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPaginatedContents_adaptiveChunk_pageWalk_identicalFlagOnOff() throws Exception {
+        final ListingFixture fixture = folderWithFiles(47);
+        final int[] readable = {1, 4, 9, 15, 16, 22, 30, 31, 38, 44, 46};
+        final User user = userReading(fixture,
+                Arrays.stream(readable).boxed().collect(Collectors.toSet()));
+
+        try (AdaptiveChunkOverrides overrides = new AdaptiveChunkOverrides().smallFloor()) {
+            for (final User walker : List.of(user, APILocator.systemUser())) {
+                final BrowserQuery query = listingQuery(fixture.folder, walker);
+                overrides.adaptive(true);
+                final List<String> adaptiveWalk = walkAllPages(chunkSpy(), query, 3);
+                overrides.adaptive(false);
+                final List<String> fixedWalk = walkAllPages(chunkSpy(), query, 3);
+
+                assertEquals("Pages must be identical with the flag on and off", fixedWalk, adaptiveWalk);
+                assertEquals("No identifier may be returned twice",
+                        adaptiveWalk.size(), new HashSet<>(adaptiveWalk).size());
+                final List<String> expected = walker == user
+                        ? identifiersAt(fixture.ordered, readable)
+                        : identifiers(fixture.ordered);
+                assertEquals(expected, adaptiveWalk);
+            }
+        }
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link BrowserAPIImpl#getContentUnderParentFromDB(BrowserQuery, int)}</li>
+     *     <li><b>Given Scenario:</b> The user reads only files 19 to 29 of a 60-file folder, so the
+     *     page fills inside the third chunk, a grown chunk of 20 rows that came back full
+     *     (issue #37665, FR-004, US2 scenario 4).</li>
+     *     <li><b>Expected Result:</b> The page reports more content, and the next page resumes
+     *     right after the last item returned. Comparing the chunk against the fixed 5-row floor
+     *     instead of the 20 rows it asked for would report no more content and end paging early.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPaginatedContents_adaptiveChunk_pageFillsInFullGrownChunk_reportsHasMore() throws Exception {
+        final ListingFixture fixture = folderWithFiles(60);
+        final User user = userReading(fixture, Set.of(19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29));
+        final BrowserQuery query = listingQuery(fixture.folder, user);
+
+        try (AdaptiveChunkOverrides overrides = new AdaptiveChunkOverrides().smallFloor()) {
+            overrides.adaptive(true);
+            final BrowserAPIImpl adaptive = chunkSpy();
+            final BrowserAPIImpl.ContentUnderParent first = adaptive.getContentUnderParentFromDB(query, 5);
+            assertEquals(List.of(5, 10, 20), requestedChunkSizes(adaptive));
+            assertEquals(identifiersAt(fixture.ordered, 19, 20, 21, 22, 23), identifiers(first.contentlets));
+            assertTrue("A page that fills inside a full grown chunk must report more content", first.hasMore);
+            assertEquals("The next page must resume right after the last item returned", 24, first.nextDbCursor);
+
+            final BrowserAPIImpl.ContentUnderParent second =
+                    adaptive.getContentUnderParentFromDB(atCursor(query, first.nextDbCursor), 5);
+            assertEquals(identifiersAt(fixture.ordered, 24, 25, 26, 27, 28), identifiers(second.contentlets));
+        }
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link BrowserAPIImpl#getContentUnderParentFromDB(BrowserQuery, int)}</li>
+     *     <li><b>Given Scenario:</b> A 22-file folder the user cannot read. The chunks ask for 5,
+     *     10 and then 20 rows, and the last one comes back with only 7 (issue #37665, FR-004,
+     *     US2 scenario 3).</li>
+     *     <li><b>Expected Result:</b> The short chunk ends the scan: no fourth read, no more
+     *     content, and the cursor at the end of the folder. Comparing against the fixed 5-row floor
+     *     would take 7 rows as a full chunk and read once more.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPaginatedContents_adaptiveChunk_partialGrownChunk_endsWithoutExtraRead() throws Exception {
+        final ListingFixture fixture = folderWithFiles(22);
+        final User user = userReading(fixture, Set.of());
+        final BrowserQuery query = listingQuery(fixture.folder, user);
+
+        try (AdaptiveChunkOverrides overrides = new AdaptiveChunkOverrides().smallFloor()) {
+            overrides.adaptive(true);
+            final BrowserAPIImpl adaptive = chunkSpy();
+            final BrowserAPIImpl.ContentUnderParent result = adaptive.getContentUnderParentFromDB(query, 5);
+            assertEquals(List.of(5, 10, 20), requestedChunkSizes(adaptive));
+            assertFalse(result.hasMore);
+            assertEquals(22, result.nextDbCursor);
+        }
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link BrowserAPIImpl#getContentUnderParentFromDB(BrowserQuery, int)}</li>
+     *     <li><b>Given Scenario:</b> A listing narrowed by filters that stay in the database and so
+     *     still take the permission-only loop: a Tag field filter, and a workflow scheme filter
+     *     (issue #37665, FR-006). A limited user reads every other item.</li>
+     *     <li><b>Expected Result:</b> For each filter, walking every page gives the same identifiers
+     *     in the same order with the flag on and off.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPaginatedContents_adaptiveChunk_dbRoutedFilters_identicalFlagOnOff() throws Exception {
+        final String uniqueId = UUIDGenerator.shorty();
+        final Host site = new SiteDataGen().nextPersisted(true);
+        final Folder folder = new FolderDataGen().site(site).nextPersisted();
+        final FieldFilterFixture inScheme = createFieldFilterContentType(uniqueId);
+        final FieldFilterFixture outOfScheme = createFieldFilterContentType(uniqueId + "b");
+        // A scheme with no steps or actions breaks checkin: the unassigned-workflow listener
+        // looks up the scheme's default action and finds none.
+        final WorkflowScheme scheme = new WorkflowDataGen().name("adaptiveChunk_" + uniqueId)
+                .nextPersistedWithDefaultStepsAndActions();
+        APILocator.getWorkflowAPI().saveSchemeIdsForContentType(inScheme.contentType, Set.of(scheme.getId()));
+
+        final String tagValue = "adaptive-tag-" + uniqueId;
+        for (int i = 0; i < 30; i++) {
+            final ContentletDataGen item = new ContentletDataGen(
+                    (i % 2 == 0 ? inScheme : outOfScheme).contentType.id())
+                    .folder(folder)
+                    .setProperty(FF_TEXT_VAR, "adaptive_" + uniqueId + "_" + i)
+                    .languageId(1);
+            if (i % 5 < 2) {
+                item.setProperty(FF_TAG_VAR, tagValue);
+            }
+            item.nextPersisted();
+        }
+        final List<Contentlet> ordered = browserAPI.getContentUnderParentFromDB(
+                listingQuery(folder, APILocator.systemUser()));
+        final Set<Integer> everyOther = new HashSet<>();
+        for (int i = 0; i < ordered.size(); i += 2) {
+            everyOther.add(i);
+        }
+        final User user = userReading(site, folder, ordered, everyOther);
+
+        final List<BrowserQuery> filtered = List.of(
+                BrowserQuery.from(listingQuery(folder, user))
+                        .withFieldCriteria(List.of(tagCriterion(inScheme, tagValue)))
+                        .build(),
+                BrowserQuery.from(listingQuery(folder, user))
+                        .withWorkflowSchemeIds(Set.of(scheme.getId()))
+                        .build());
+
+        try (AdaptiveChunkOverrides overrides = new AdaptiveChunkOverrides().smallFloor()) {
+            for (final BrowserQuery query : filtered) {
+                overrides.adaptive(true);
+                final List<String> adaptiveWalk = walkAllPages(chunkSpy(), query, 3);
+                overrides.adaptive(false);
+                final List<String> fixedWalk = walkAllPages(chunkSpy(), query, 3);
+                assertFalse("Sanity check: the filter must match some readable items", fixedWalk.isEmpty());
+                assertEquals(fixedWalk, adaptiveWalk);
+            }
+        }
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link BrowserAPIImpl#getContentUnderParentFromDB(BrowserQuery, int)}</li>
+     *     <li><b>Given Scenario:</b> A free-text search, which takes the Elasticsearch-narrowed
+     *     loop, over a folder whose only match is its newest item, with that loop's chunk size
+     *     lowered to 5 and adaptive sizing on (issue #37665, FR-008).</li>
+     *     <li><b>Expected Result:</b> Every chunk of the Elasticsearch-narrowed loop asks for 5
+     *     rows: adaptive sizing never applies to it. The match is still found.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPaginatedContents_adaptiveChunk_esPath_chunkSizeConstant() throws Exception {
+        final String uniqueId = UUIDGenerator.shorty();
+        final Host site = new SiteDataGen().nextPersisted(true);
+        final Folder folder = new FolderDataGen().site(site).nextPersisted();
+        final FieldFilterFixture fixture = createFieldFilterContentType(uniqueId);
+        for (int i = 0; i < 20; i++) {
+            new ContentletDataGen(fixture.contentType.id()).folder(folder)
+                    .setProperty("title", "adaptiveFiller_" + uniqueId + "_" + i)
+                    .languageId(1).setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+        }
+        final String matchTitle = "adaptiveMatch_" + uniqueId;
+        final Contentlet match = new ContentletDataGen(fixture.contentType.id()).folder(folder)
+                .setProperty("title", matchTitle)
+                .languageId(1).setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+
+        final BrowserQuery query = BrowserQuery.from(listingQuery(folder, APILocator.systemUser()))
+                .useElasticsearchFiltering(true)
+                .withFilter(matchTitle)
+                .build();
+
+        try (AdaptiveChunkOverrides overrides = new AdaptiveChunkOverrides().smallFloor()) {
+            overrides.adaptive(true).contentChunkSize(5);
+            final BrowserAPIImpl adaptive = chunkSpy();
+            final BrowserAPIImpl.ContentUnderParent result = adaptive.getContentUnderParentFromDB(query, 5);
+            final List<Integer> sizes = requestedChunkSizes(adaptive);
+            assertTrue("The fixture must span several chunks: " + sizes, sizes.size() >= 3);
+            assertEquals(Collections.nCopies(sizes.size(), 5), sizes);
+            assertEquals(List.of(match.getIdentifier()), identifiers(result.contentlets));
+        }
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link BrowserAPIImpl#getContentUnderParentFromDB(BrowserQuery, int)}</li>
+     *     <li><b>Given Scenario:</b> The same nothing-visible 60-file folder as the growth test,
+     *     with {@code BROWSER_DB_CHUNK_ADAPTIVE=false} (issue #37665, SC-006).</li>
+     *     <li><b>Expected Result:</b> Today's behavior exactly: thirteen 5-row reads, nothing
+     *     returned, the cursor at the end of the folder, no more content.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPaginatedContents_adaptiveChunk_flagOff_requestsFloorEveryIteration() throws Exception {
+        final ListingFixture fixture = folderWithFiles(60);
+        final User user = userReading(fixture, Set.of());
+        final BrowserQuery query = listingQuery(fixture.folder, user);
+
+        try (AdaptiveChunkOverrides overrides = new AdaptiveChunkOverrides().smallFloor()) {
+            overrides.adaptive(false);
+            final BrowserAPIImpl fixed = chunkSpy();
+            final BrowserAPIImpl.ContentUnderParent result = fixed.getContentUnderParentFromDB(query, 5);
+            assertEquals(Collections.nCopies(13, 5), requestedChunkSizes(fixed));
+            assertTrue(result.contentlets.isEmpty());
+            assertEquals(60, result.nextDbCursor);
+            assertFalse(result.hasMore);
+        }
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link BrowserAPIImpl#getContentUnderParentFromDB(BrowserQuery, int)}</li>
+     *     <li><b>Given Scenario:</b> One instance serves the nothing-visible listing twice, with
+     *     {@code BROWSER_DB_CHUNK_ADAPTIVE} switched off between the two requests
+     *     (issue #37665, FR-007).</li>
+     *     <li><b>Expected Result:</b> The first request grows its chunks and the second does not,
+     *     with no new instance and no restart.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPaginatedContents_adaptiveChunk_runtimeToggle_noRestart() throws Exception {
+        final ListingFixture fixture = folderWithFiles(60);
+        final User user = userReading(fixture, Set.of());
+        final BrowserQuery query = listingQuery(fixture.folder, user);
+
+        try (AdaptiveChunkOverrides overrides = new AdaptiveChunkOverrides().smallFloor()) {
+            final BrowserAPIImpl api = chunkSpy();
+            overrides.adaptive(true);
+            api.getContentUnderParentFromDB(query, 5);
+            assertEquals(List.of(5, 10, 20, 40), requestedChunkSizes(api));
+
+            overrides.adaptive(false);
+            api.getContentUnderParentFromDB(query, 5);
+            assertEquals(Collections.nCopies(13, 5), requestedChunkSizes(api));
+        }
     }
 
     // issue #37488 -- a failed ES sub-query fails the request instead of silently dropping its

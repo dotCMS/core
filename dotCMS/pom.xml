@@ -1714,6 +1714,34 @@
                         </configuration>
                     </execution>
                     <execution>
+                        <!-- Opt-in JVM agents; attached by setenv.sh (see add_otel_agent / add_pyroscope_agent) -->
+                        <id>copy-observability-agents</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>io.opentelemetry.javaagent</groupId>
+                                    <artifactId>opentelemetry-javaagent</artifactId>
+                                    <type>jar</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${assembly-directory}/${tomcat-dist-folder}/otel</outputDirectory>
+                                    <destFileName>opentelemetry-javaagent.jar</destFileName>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>io.pyroscope</groupId>
+                                    <artifactId>agent</artifactId>
+                                    <type>jar</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${assembly-directory}/${tomcat-dist-folder}/pyroscope</outputDirectory>
+                                    <destFileName>pyroscope.jar</destFileName>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>copy-redis</id>
                         <phase>prepare-package</phase>
                         <goals>

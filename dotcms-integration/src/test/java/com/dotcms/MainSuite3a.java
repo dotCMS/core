@@ -19,6 +19,7 @@ import com.dotcms.rest.api.v1.drive.ContentDriveLinksTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveWorkflowArchiveStepTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveWorkflowFilterTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveStatusFilterTest;
+import com.dotcms.rest.api.v1.layout.LayoutResourceIntegrationTest;
 import com.dotcms.rest.api.v1.system.cache.CacheResourceIntegrationTest;
 import com.dotcms.rest.api.v1.system.role.RoleResourceIntegrationTest;
 import com.dotcms.security.apps.AppsAPIImplTest;
@@ -137,7 +138,8 @@ import org.junit.runners.Suite;
         SystemEventsClusterDeliveryIntegrationTest.class,
         SystemEventsReconciliationIntegrationTest.class,
         SystemEventsRetentionIntegrationTest.class,
-        com.dotcms.rest.api.v1.portlet.PortletResourceIntegrationTest.class
+        com.dotcms.rest.api.v1.portlet.PortletResourceIntegrationTest.class,
+        LayoutResourceIntegrationTest.class
 })
 
 public class MainSuite3a {

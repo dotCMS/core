@@ -50,6 +50,7 @@ import {
 import { DotContentDriveContextMenu } from '../../shared/models';
 import { DotContentDriveNavigationService } from '../../shared/services';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
+import { toFolderAssetPaths } from '../../utils/action-center';
 import { isFolder } from '../../utils/functions';
 
 /**
@@ -180,6 +181,21 @@ export class DotFolderListViewContextMenuComponent {
         this.$memoizedMenuItems.set({});
     });
 
+    /**
+     * Drops the memo when the add-children answer for the browsed folder changes.
+     *
+     * Duplicate is offered only where its copy may land, and that answer is decided when the menu is
+     * built. The site lookup is asynchronous and reads as allowed until it settles, so a menu cached
+     * before it would go on offering a duplicate the server then refuses.
+     *
+     * The signal is read before anything else so it stays a dependency of this effect.
+     */
+    readonly canAddChildrenEffect = effect(() => {
+        this.#store.$canDuplicateHere();
+
+        this.$memoizedMenuItems.set({});
+    });
+
     readonly closeOnContextMenuReset = effect(() => {
         const data = this.#store.contextMenu();
 
@@ -234,6 +250,20 @@ export class DotFolderListViewContextMenuComponent {
                             payload: contentlet
                         });
                     }
+                });
+            }
+
+            // Duplicating needs READ on the folder and add-children where its duplicate lands: the
+            // folder being browsed, or, in all site content, the folder's own parent, which the
+            // server checks (#37062). Right after Folder Settings: it makes something new from the
+            // folder rather than configuring or publishing it.
+            if (
+                contentlet.permissions?.includes(PERMISSIONS_TYPE.READ) &&
+                this.#store.$canDuplicateHere()
+            ) {
+                folderMenuItems.push({
+                    label: this.#dotMessageService.get('content-drive.action-center.duplicate'),
+                    command: () => this.#duplicateFolder(contentlet)
                 });
             }
 
@@ -696,6 +726,41 @@ export class DotFolderListViewContextMenuComponent {
             assetIdentifier: identifier,
             title: this.#dotMessageService.get('contenttypes.content.push_publish')
         });
+    }
+
+    /**
+     * Duplicates one folder in place, as a batch of one through the same run as the Action Center.
+     *
+     * No confirmation: nothing is overwritten or removed, and the duplicate lands beside the
+     * original. The outcome is reported by the shell when the pushed completion arrives, the same
+     * toast the bulk action gets.
+     *
+     * @param folder the right-clicked folder
+     */
+    #duplicateFolder(folder: DotContentDriveActionableFolder): void {
+        const hostname = this.#store.currentSite()?.hostname;
+
+        if (!hostname) {
+            // Without a site the path would come out as `///path/`, and the started toast would
+            // report a run that could not happen. Refused the way the single-folder delete is.
+            this.#messageService.add({
+                severity: 'error',
+                summary: this.#dotMessageService.get('content-drive.action-center.duplicate'),
+                detail: this.#dotMessageService.get(
+                    'content-drive.dialog.duplicate-folder.no-site'
+                ),
+                life: ERROR_MESSAGE_LIFE
+            });
+
+            return;
+        }
+
+        const assetPaths = toFolderAssetPaths([folder], hostname);
+
+        this.#store.executeDuplicate(
+            this.#dotMessageService.get('content-drive.action-center.duplicate'),
+            assetPaths
+        );
     }
 
     /**

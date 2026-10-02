@@ -2190,7 +2190,7 @@ describe('EditEmaEditorComponent', () => {
                             '<div>hello world</div>'
                         );
                         expect(iframe.nativeElement.contentDocument.body.innerHTML).toContain(
-                            '<script data-inline="true" src="/html/js/tinymce/js/tinymce/tinymce.min.js">'
+                            '<script data-inline="true" src="/ext/tinymce/tinymce.min.js">'
                         );
                     });
 
@@ -2224,7 +2224,7 @@ describe('EditEmaEditorComponent', () => {
                             '<div>New Content - Hello World</div>'
                         );
                         expect(iframe.nativeElement.contentDocument.body.innerHTML).toContain(
-                            '<script data-inline="true" src="/html/js/tinymce/js/tinymce/tinymce.min.js">'
+                            '<script data-inline="true" src="/ext/tinymce/tinymce.min.js">'
                         );
 
                         expect(scrollSpy).toHaveBeenCalledWith(0, 100);
@@ -4083,9 +4083,55 @@ describe('EditEmaEditorComponent', () => {
 
                             spectator.component.handleInternalNav(mockEvent);
 
-                            expect(pageLoadSpy).toHaveBeenCalledWith({
+                            // Strict: toHaveBeenCalledWith would treat an undefined key as absent.
+                            expect(pageLoadSpy.mock.lastCall?.[0]).toStrictEqual({
                                 url: '/current-page',
                                 anno_pubblicazione: undefined
+                            });
+                        });
+
+                        // `/folder/` and `/folder/index` are one page under two paths, so
+                        // the path comparison sees a different page. The filter must still
+                        // be cleared on the first click (QA follow-up on #36999).
+                        it('should clear it when the link reaches the same page by its index path', () => {
+                            vi.spyOn(store, 'pageParams').mockReturnValue({
+                                ...samePathPageParams(),
+                                url: '/folder/',
+                                anno_pubblicazione: '2026'
+                            });
+                            const mockEvent = createMockEvent('http://localhost:3000/folder/index');
+
+                            spectator.component.handleInternalNav(mockEvent);
+
+                            // Strict: toHaveBeenCalledWith would treat an undefined key as absent.
+                            expect(pageLoadSpy.mock.lastCall?.[0]).toStrictEqual({
+                                url: '/folder/index',
+                                anno_pubblicazione: undefined
+                            });
+                        });
+
+                        it('should not carry it to a different page', () => {
+                            const mockEvent = createMockEvent('http://localhost:3000/other-page');
+
+                            spectator.component.handleInternalNav(mockEvent);
+
+                            // Strict: toHaveBeenCalledWith would treat an undefined key as absent.
+                            expect(pageLoadSpy.mock.lastCall?.[0]).toStrictEqual({
+                                url: '/other-page',
+                                anno_pubblicazione: undefined
+                            });
+                        });
+
+                        it('should replace it with the value a different page link sets', () => {
+                            const mockEvent = createMockEvent(
+                                'http://localhost:3000/other-page?anno_pubblicazione=2024'
+                            );
+
+                            spectator.component.handleInternalNav(mockEvent);
+
+                            expect(pageLoadSpy).toHaveBeenCalledWith({
+                                url: '/other-page',
+                                anno_pubblicazione: '2024'
                             });
                         });
 

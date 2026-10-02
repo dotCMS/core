@@ -292,11 +292,21 @@ public class BrowserAPIImpl implements BrowserAPI {
      * completeness under normal conditions; it does not eliminate the possibility of a dropped
      * match under sustained load, only make it far less likely and no longer position-dependent.
      * </p>
+     * <p>
+     * Chunk size also depends on {@code applyESFilter}. The ES-narrowed scan reads every chunk at
+     * the same size. The permission-only scan reads its first chunk at {@code chunkSize}, then,
+     * while {@code BROWSER_DB_CHUNK_ADAPTIVE} is on, sizes each next chunk from how many of the
+     * rows read so far the user could see (see {@link #nextChunkSize}). Each chunk re-runs the
+     * query at a larger offset, so a user who can see little of a large folder would otherwise pay
+     * for dozens of re-reads of the same leading rows (issue #37665). Paging is unaffected: the
+     * cursor is still a row position, and a page holds the same items either way.
+     * </p>
      *
      * @param browserQuery  query containing search criteria, user context, and the current cursor
      * @param maxRows       maximum number of permission-visible items to return
      * @param sqlQuery      the pre-built SQL select query containing: string query and parameters
-     * @param chunkSize     number of DB rows to fetch per iteration
+     * @param chunkSize     number of DB rows to fetch per iteration; on the permission-only scan,
+     *                      the size of the first chunk and the floor for the rest
      * @param applyESFilter when {@code true}, each chunk is text-filtered through Elasticsearch
      *                      before permission filtering; when {@code false}, only permission
      *                      filtering is applied
@@ -340,24 +350,37 @@ public class BrowserAPIImpl implements BrowserAPI {
                 ? Config.getIntProperty(BROWSER_DB_MAX_SCAN_ROWS_ES_HARD_CAP_KEY, BROWSER_DB_MAX_SCAN_ROWS_ES_HARD_CAP_DEFAULT)
                 : -1;
         final long scanStartNanos = System.nanoTime();
+        // Only the permission-only scan grows its chunks (issue #37665). The ES-narrowed scan's
+        // cost is bounded by elapsed time and a row hard cap (#37211); growing its chunks would
+        // change how those bounds behave.
+        final boolean adaptiveChunks = !applyESFilter
+                && Config.getBooleanProperty(BROWSER_DB_CHUNK_ADAPTIVE_KEY, BROWSER_DB_CHUNK_ADAPTIVE_DEFAULT);
+        final int adaptiveCeiling = Config.getIntProperty(BROWSER_DB_CHUNK_ADAPTIVE_MAX_SIZE_KEY,
+                BROWSER_DB_CHUNK_ADAPTIVE_MAX_SIZE_DEFAULT);
+        final int adaptiveMaxGrowth = Config.getIntProperty(BROWSER_DB_CHUNK_ADAPTIVE_MAX_GROWTH_KEY,
+                BROWSER_DB_CHUNK_ADAPTIVE_MAX_GROWTH_DEFAULT);
+        final float adaptiveSafetyFactor = Config.getFloatProperty(BROWSER_DB_CHUNK_ADAPTIVE_SAFETY_FACTOR_KEY,
+                BROWSER_DB_CHUNK_ADAPTIVE_SAFETY_FACTOR_DEFAULT);
 
         final List<Contentlet> accumulatedContent = new ArrayList<>();
         List<String> candidateChunkInodes;
         int dbOffset = browserQuery.contentCursor;
+        int rowsRead = 0;
+        int requestedChunkSize = effectiveChunkSize;
         int chunkCount = 0;
         int nextContentCursor;
         boolean hasMore = false;
 
         Logger.debug(this, String.format(
-                "[Starting content search by chunks]: content required %d, chunk size: %d, user: %s",
-                maxRows, effectiveChunkSize, browserQuery.user.getFullName()));
+                "[Starting content search by chunks]: content required %d, chunk size: %d, adaptive: %s, user: %s",
+                maxRows, effectiveChunkSize, adaptiveChunks, browserQuery.user.getFullName()));
 
         while (true) {
             chunkCount++;
-            Logger.debug(this, String.format("#%d Chunk: starting row: %d", chunkCount, dbOffset));
+            Logger.debug(this, String.format("#%d Chunk: starting row: %d, requested size: %d",
+                    chunkCount, dbOffset, requestedChunkSize));
 
-            final DotConnect dcSelectChunk = buildPaginatedDotConnect(sqlQuery, effectiveChunkSize, dbOffset);
-            candidateChunkInodes = collectInodesFromDB(dcSelectChunk);
+            candidateChunkInodes = readChunkInodes(sqlQuery, requestedChunkSize, dbOffset);
 
             if (candidateChunkInodes.isEmpty()) {
                 Logger.debug(this, String.format("DB exhausted at offset %d after %d chunks.",
@@ -371,14 +394,18 @@ public class BrowserAPIImpl implements BrowserAPI {
             accumulatedContent.addAll(chunkFiltered);
 
             dbOffset += candidateChunkInodes.size();
+            rowsRead += candidateChunkInodes.size();
 
             // A satisfied page wins over the guard rail: when this chunk already produced enough
             // visible items we must exit through generateNextContentCursor so the next page resumes
             // right after the last item returned. Checking the scan budget first would exit via the
             // warn path with a chunk-aligned cursor and silently skip whatever is left over in this
             // chunk -- reachable whenever a chunk boundary lands exactly on the scan budget.
+            // "Full" and "partial" are judged against what this iteration asked for: once chunks
+            // grow, comparing against the first chunk's size would call a full grown chunk partial
+            // (ending paging early) or a partial one full (issue #37665).
             if (accumulatedContent.size() >= maxRows) {
-                hasMore = (candidateChunkInodes.size() == effectiveChunkSize);
+                hasMore = (candidateChunkInodes.size() == requestedChunkSize);
                 nextContentCursor = generateNextContentCursor(accumulatedContent, maxRows,
                         candidateChunkInodes, dbOffset);
                 break;
@@ -391,7 +418,7 @@ public class BrowserAPIImpl implements BrowserAPI {
             // checking the scan budget first would report hasMore=true for a folder that is
             // actually fully paged through whenever the last (partial) chunk's ending point happens
             // to land on or past the budget (found in review, issue #37184).
-            if (candidateChunkInodes.size() < effectiveChunkSize) {
+            if (candidateChunkInodes.size() < requestedChunkSize) {
                 Logger.debug(this, String.format(
                         "Reached end of results (partial chunk) - DB is exhausted. Total accumulated: %d",
                         accumulatedContent.size()));
@@ -426,6 +453,12 @@ public class BrowserAPIImpl implements BrowserAPI {
                 nextContentCursor = dbOffset;
                 hasMore = true;
                 break;
+            }
+
+            if (adaptiveChunks) {
+                requestedChunkSize = nextChunkSize(requestedChunkSize, effectiveChunkSize, rowsRead,
+                        accumulatedContent.size(), maxRows - accumulatedContent.size(), scanRowLimit,
+                        dbOffset, adaptiveCeiling, adaptiveMaxGrowth, adaptiveSafetyFactor);
             }
 
             Logger.debug(this, String.format(
@@ -526,6 +559,79 @@ public class BrowserAPIImpl implements BrowserAPI {
         return results.stream()
                 .map(m -> m.get("inode"))
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Reads one chunk of the listing: {@code limit} candidate inodes starting at row
+     * {@code offset}, in the query's own order. This is the only place the chunk loop in
+     * {@link #getContentByChunks} touches the database, so tests spy on it to see how many rows
+     * each iteration asked for.
+     *
+     * @param sqlQuery the pre-built SQL select query (must already contain an ORDER BY clause)
+     * @param limit    number of rows requested for this chunk
+     * @param offset   absolute row position the chunk starts at
+     * @return ordered inodes of the chunk; empty when the listing has no rows left
+     * @throws DotDataException if the underlying JDBC call fails
+     */
+    @VisibleForTesting
+    List<String> readChunkInodes(final SelectQuery sqlQuery, final int limit, final int offset)
+            throws DotDataException {
+        return collectInodesFromDB(buildPaginatedDotConnect(sqlQuery, limit, offset));
+    }
+
+    /**
+     * Works out how many rows the next chunk of a permission-only scan should request, from what
+     * the chunks read so far in this request returned (issue #37665).
+     * <p>
+     * When some items were visible, the rows still needed are projected from the visible/read
+     * ratio and padded by {@code safetyFactor}, rounded up to a whole row. When nothing was visible
+     * yet there is no ratio to go on, so the previous request is doubled instead. Either way the
+     * result is then capped by {@code maxGrowth} times the previous request, by {@code ceiling},
+     * and by what is left of the scan budget ({@code scanLimit - dbOffset}); finally it is raised
+     * to {@code floor} if it fell below it. The floor wins every conflict, so a chunk is never
+     * smaller than the fixed chunk this scan would have used without adaptive sizing.
+     * </p>
+     * <p>
+     * A {@code ceiling} of zero or less, a {@code maxGrowth} below one, or a {@code safetyFactor}
+     * that is not a positive finite number falls back to its default.
+     * </p>
+     *
+     * @param previousRequested rows requested for the chunk just read
+     * @param floor             the caller's chunk size; the result is never below it
+     * @param rowsRead          rows read so far in this request
+     * @param visibleSoFar      permission-visible items accumulated so far in this request
+     * @param stillNeeded       items still missing to fill the page
+     * @param scanLimit         the permission-only scan budget ({@code BROWSER_DB_MAX_SCAN_ROWS})
+     * @param dbOffset          absolute row position the next chunk starts at
+     * @param ceiling           largest chunk growth may reach
+     * @param maxGrowth         largest multiple of {@code previousRequested} growth may reach
+     * @param safetyFactor      margin applied to the rows projected from the ratio
+     * @return rows to request for the next chunk
+     */
+    @VisibleForTesting
+    static int nextChunkSize(final int previousRequested, final int floor, final int rowsRead,
+            final int visibleSoFar, final int stillNeeded, final int scanLimit, final int dbOffset,
+            final int ceiling, final int maxGrowth, final float safetyFactor) {
+        final int effectiveCeiling = ceiling > 0 ? ceiling : BROWSER_DB_CHUNK_ADAPTIVE_MAX_SIZE_DEFAULT;
+        final int effectiveMaxGrowth = maxGrowth >= 1 ? maxGrowth : BROWSER_DB_CHUNK_ADAPTIVE_MAX_GROWTH_DEFAULT;
+        final float effectiveSafetyFactor = safetyFactor > 0 && Float.isFinite(safetyFactor)
+                ? safetyFactor : BROWSER_DB_CHUNK_ADAPTIVE_SAFETY_FACTOR_DEFAULT;
+        if (effectiveCeiling != ceiling || effectiveMaxGrowth != maxGrowth
+                || effectiveSafetyFactor != safetyFactor) {
+            Logger.debug(BrowserAPIImpl.class, String.format(
+                    "Invalid adaptive chunk setting (ceiling %d, max growth %d, safety factor %s); "
+                            + "using ceiling %d, max growth %d, safety factor %s",
+                    ceiling, maxGrowth, safetyFactor,
+                    effectiveCeiling, effectiveMaxGrowth, effectiveSafetyFactor));
+        }
+
+        // Kept in double/long until the final clamp: a large safety factor must not overflow int.
+        final double projected = visibleSoFar > 0
+                ? Math.ceil((double) stillNeeded * rowsRead * effectiveSafetyFactor / visibleSoFar)
+                : (double) previousRequested * 2;
+        final double capped = Math.min(Math.min(projected, (double) previousRequested * effectiveMaxGrowth),
+                Math.min(effectiveCeiling, (double) scanLimit - dbOffset));
+        return (int) Math.max(floor, capped);
     }
 
     /**
@@ -931,8 +1037,10 @@ public class BrowserAPIImpl implements BrowserAPI {
                 }
             });
 
-    // Multiplier applied to (startRow + maxRows) to determine the DB chunk size for permission-aware pagination.
-    // A factor of 3 means: fetch 3x the needed rows per chunk, expecting ~1/3 may be filtered by permissions.
+    // Multiplier applied to maxRows to determine the DB chunk size for permission-aware pagination.
+    // The default of 10 fetches 10x the needed rows per chunk, expecting most may be filtered out by
+    // permissions. max(maxRows * factor, BROWSER_DB_CHUNK_MIN_SIZE) is the permission-only loop's
+    // first chunk, and the floor adaptive sizing never goes below (issue #37665).
     final Lazy<Integer> BROWSER_DB_CHUNK_FACTOR = Lazy.of(
             () -> Config.getIntProperty("BROWSER_DB_CHUNK_FACTOR", 10));
 
@@ -947,6 +1055,37 @@ public class BrowserAPIImpl implements BrowserAPI {
     // BROWSER_DB_MAX_SCAN_TIME_MILLIS_KEY for the ES-narrowed (text-filter) scan's cost bound.
     static final String BROWSER_DB_MAX_SCAN_ROWS_KEY = "BROWSER_DB_MAX_SCAN_ROWS";
     static final int BROWSER_DB_MAX_SCAN_ROWS_DEFAULT = 50_000;
+
+    // Adaptive chunk sizing for the permission-only scan (applyESFilter=false, issue #37665).
+    // Each chunk re-runs the listing query at a larger OFFSET, so a fixed chunk makes the cost
+    // grow with the square of the chunk count, and the chunk count is driven by how much the
+    // permission filter discards. When on, every chunk after the first is sized from the
+    // visible/read ratio seen so far (doubling when nothing was visible yet), never below the
+    // caller's chunk size. Setting it to false restores the fixed chunk exactly. The ES-narrowed
+    // scan never grows its chunks regardless of this flag.
+    static final String BROWSER_DB_CHUNK_ADAPTIVE_KEY = "BROWSER_DB_CHUNK_ADAPTIVE";
+    static final boolean BROWSER_DB_CHUNK_ADAPTIVE_DEFAULT = true;
+
+    // Largest chunk adaptive sizing may request. Every row of a chunk is loaded as a Contentlet
+    // before the permission filter, so this bounds each request's working set. The benchmark in
+    // the #37665 review showed 7,000 saturating a 2 GB heap with 10 concurrent permission-limited
+    // listings, while 2,000 kept most of the latency gain. Values <= 0 fall back to the default.
+    static final String BROWSER_DB_CHUNK_ADAPTIVE_MAX_SIZE_KEY = "BROWSER_DB_CHUNK_ADAPTIVE_MAX_SIZE";
+    static final int BROWSER_DB_CHUNK_ADAPTIVE_MAX_SIZE_DEFAULT = 2_000;
+
+    // Largest multiple of the previous chunk that the next one may grow to. It bounds the ratio
+    // estimate when visible items are clustered rather than spread evenly: 1 visible item early
+    // on can project a chunk far larger than the page needs, and every row read is loaded and
+    // permission-checked. Doubling (2x) never reaches the default. Values < 1 fall back to the
+    // default.
+    static final String BROWSER_DB_CHUNK_ADAPTIVE_MAX_GROWTH_KEY = "BROWSER_DB_CHUNK_ADAPTIVE_MAX_GROWTH";
+    static final int BROWSER_DB_CHUNK_ADAPTIVE_MAX_GROWTH_DEFAULT = 4;
+
+    // Margin applied to the rows projected from the visible/read ratio, which is only a sample:
+    // the next stretch of the folder may be sparser. Values <= 0 or non-finite fall back to the
+    // default.
+    static final String BROWSER_DB_CHUNK_ADAPTIVE_SAFETY_FACTOR_KEY = "BROWSER_DB_CHUNK_ADAPTIVE_SAFETY_FACTOR";
+    static final float BROWSER_DB_CHUNK_ADAPTIVE_SAFETY_FACTOR_DEFAULT = 1.5f;
 
     // Maximum wall-clock time to spend scanning DB chunks when text-filtering through ES
     // (applyESFilter=true). A row-count cutoff here silently drops matches that fall later in

@@ -73,13 +73,26 @@ public enum BatchFailureReason {
     IN_USE,
 
     /**
-     * An ancestor in the same submission removed this path first, so it was never attempted as its
-     * own unit — pairs with {@link BatchItemStatus#SKIPPED}, never {@link BatchItemStatus#FAILED}.
-     * Added by bulk folder delete (#37063, spec FR-013, FR-019). Named {@code COVERED_BY_PARENT}
-     * rather than {@code ANCESTOR_REMOVED} to match the frontend half's fixed vocabulary — same
-     * reconciliation as {@link #PATH_NOT_FOUND}.
+     * An ancestor in the same submission already covers this path, so it was never attempted as its
+     * own unit. Pairs with {@link BatchItemStatus#SKIPPED}, never {@link BatchItemStatus#FAILED}.
+     * <p>
+     * What "covers" means depends on the operation. For bulk folder delete (#37063, spec FR-013,
+     * FR-019) the ancestor removed the folder first. For bulk folder duplication (#37062) the
+     * ancestor's duplicate already carries a copy of it, and the folder itself is untouched.
+     * <p>
+     * Named {@code COVERED_BY_PARENT} rather than {@code ANCESTOR_REMOVED} to match the frontend
+     * half's fixed vocabulary, the same reconciliation as {@link #PATH_NOT_FOUND}.
      */
     COVERED_BY_PARENT,
+
+    /**
+     * No rights to add to the folder's parent, where its duplicate would land. Added by bulk folder
+     * duplication (#37062).
+     * <p>
+     * Distinct from {@link #PERMISSION_DENIED}, which is about the folder itself: the two send the
+     * author to fix permissions in different places, and the client writes different copy for each.
+     */
+    PARENT_PERMISSION_DENIED,
 
     /** Anything else. The message carries the detail, for logs only. */
     UNCLASSIFIED

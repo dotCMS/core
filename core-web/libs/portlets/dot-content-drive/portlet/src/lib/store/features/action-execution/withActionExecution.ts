@@ -18,6 +18,9 @@ import { catchError, take } from 'rxjs/operators';
 import {
     AddToBundleService,
     DotBulkRefreshService,
+    DotFolderBulkDuplicateRefusal,
+    DotFolderBulkDuplicateRefusalKind,
+    DotFolderBulkDuplicateService,
     DotEventsSocket,
     DotFolderBulkDeleteRefusal,
     DotFolderBulkDeleteRefusalKind,
@@ -34,10 +37,19 @@ import {
     DotBulkRefreshCompletedEvent,
     DotFolderBulkDeleteCompletedEvent,
     DotBulkUploadCompletedEvent,
+    DotBulkUploadActiveRun,
     DotBundle,
+    DotFolderBulkDuplicateCompletedEvent,
+    DotFolderBulkDuplicateSubmitResponse,
+    DotFolderDuplicateActiveRun,
     DotWorkflowPushPublishValue
 } from '@dotcms/dotcms-models';
 
+import {
+    DELETE_FOLDER_OPERATION,
+    DUPLICATE_FOLDER_OPERATION,
+    UPLOAD_BATCH_OPERATION
+} from '../../../shared/constants';
 import {
     OUTCOME_KIND,
     DotContentDriveActionExecution,
@@ -46,18 +58,12 @@ import {
     DotContentDriveUploadJob,
     DotContentDriveState
 } from '../../../shared/models';
-import { browsedFolderRef, normalizeFolderRef } from '../../../utils/functions';
+import { toParentFolderRefs } from '../../../utils/action-center';
+import { browsedFolderRef, normalizeFolderRef, uploadIndicatorKey } from '../../../utils/functions';
 
-/**
- * The operation key a bulk folder delete run is registered under.
- *
- * Paired with the run's targets it forms the repeat guard — *this operation over these folders* —
- * so a delete running for minutes never blocks an unrelated action, nor a delete of different
- * folders (FR-018). Kept here rather than imported from the quick-action registry: the store's
- * guard key is its own concern, and tying it to a UI constant would make a rename of one silently
- * change the other.
- */
-const DELETE_FOLDER_OPERATION = 'DELETE_FOLDER';
+/** The status indicator's wording for a duplicate of this many folders. */
+const duplicateIndicatorKey = (count: number): string =>
+    count === 1 ? 'content-drive.duplicate.indicator.one' : 'content-drive.duplicate.indicator';
 
 interface WithActionExecutionState {
     /**
@@ -125,11 +131,60 @@ interface WithActionExecutionState {
      * here because the store never touches the UI — the shell drains this exactly as it drains
      * {@link actionExecutionResults}.
      *
-     * `UNCLASSIFIED` never lands here. It covers a transport failure rather than a refusal the
-     * endpoint reasoned about, and those keep going through `DotHttpErrorManagerService`, which is
-     * what still redirects on a 401 and reports a license wall properly.
+     * `UNCLASSIFIED` lands here too, for a transport failure or a body with no code, so the author
+     * reads a sentence rather than the server's message (FR-024). A 401 still goes through
+     * `DotHttpErrorManagerService`, which signs the author back in.
      */
     folderDeleteRefusal: DotFolderBulkDeleteRefusalKind | undefined;
+    /**
+     * Folder duplications this store submitted, keyed by job id, with the parents the duplicates land
+     * in.
+     *
+     * Same reasoning as {@link refreshJobIds}: the completion event is scoped to the submitting user,
+     * so only ids in here are acted on. Never registered as a run, because a folder being duplicated
+     * stays fully usable and must not read as busy.
+     */
+    duplicateJobs: Record<string, { affectedFolders: string[]; runId?: string }>;
+    /**
+     * Folder duplications this page has already reported, by job id.
+     *
+     * Same reason as {@link settledFolderDeleteJobs}: a run from before a reload is reported from an
+     * empty {@link duplicateJobs}, so removal from that map cannot be what stops a redelivered
+     * completion being reported twice.
+     */
+    settledDuplicateJobs: string[];
+    /**
+     * Upload batches whose completion this page has seen, tracked or not, by job id.
+     *
+     * So a batch restored after a reload is not restored once its completion has already arrived:
+     * it can finish between the active listing being read and being applied, and a report
+     * restored then would have nothing left to end it.
+     */
+    settledUploadJobs: string[];
+    /**
+     * Upload completions this page could not place, by job id: batches it was not tracking when
+     * their completion arrived.
+     *
+     * Usually another tab's, and left alone. But a batch of this author's that finishes while the
+     * active listing is still being read arrives here too, and the restore reports it from here
+     * once the listing shows it is theirs, rather than losing its outcome and its refresh.
+     *
+     * Held only until that restore has run, which it does once, on load: nothing claims an entry
+     * after it, so the restore drops what it left and later completions are not held at all.
+     */
+    unclaimedUploadCompletions: Record<
+        string,
+        { actionName: string; event: DotBulkUploadCompletedEvent }
+    >;
+    /** Whether the restore on load has run, after which no completion is held for it. */
+    uploadRunsRestored: boolean;
+    /**
+     * A folder duplication the server refused, as the kind it refused it for.
+     *
+     * Same split as {@link folderDeleteRefusal}: the store holds the kind, the shell picks the words.
+     * `UNCLASSIFIED` lands here as well; only a 401 goes to `DotHttpErrorManagerService`.
+     */
+    folderDuplicateRefusal: DotFolderBulkDuplicateRefusalKind | undefined;
 }
 
 /**
@@ -158,7 +213,13 @@ export function withActionExecution() {
             uploadJobs: {},
             folderDeleteJobs: {},
             settledFolderDeleteJobs: [],
-            folderDeleteRefusal: undefined
+            folderDeleteRefusal: undefined,
+            duplicateJobs: {},
+            settledDuplicateJobs: [],
+            settledUploadJobs: [],
+            unclaimedUploadCompletions: {},
+            uploadRunsRestored: false,
+            folderDuplicateRefusal: undefined
         }),
         withComputed(({ runs, actionExecutionResults }) => ({
             /**
@@ -215,6 +276,21 @@ export function withActionExecution() {
                 () => Object.values(runs()).filter((run) => run.targets.length === 0).length
             ),
             /**
+             * How many runs lock the Action Center dialog while they last.
+             *
+             * A backgrounded run is left out: it is reported, but what it acts on stays usable.
+             */
+            blockingRunCount: computed(
+                () => Object.values(runs()).filter((run) => !run.backgrounded).length
+            ),
+            /** The indicator's runs that also refuse opening the Action Center from the toolbar. */
+            toolbarBlockingRunCount: computed(
+                () =>
+                    Object.values(runs()).filter(
+                        (run) => run.targets.length === 0 && !run.backgrounded
+                    ).length
+            ),
+            /**
              * Every inode any in-flight run is acting on.
              *
              * Keyed by inode, not identifier: the language filter is multi-select, so one identifier
@@ -232,6 +308,7 @@ export function withActionExecution() {
                 pushPublishService = inject(PushPublishService),
                 bulkRefreshService = inject(DotBulkRefreshService),
                 folderBulkDeleteService = inject(DotFolderBulkDeleteService),
+                folderBulkDuplicateService = inject(DotFolderBulkDuplicateService),
                 destroyRef = inject(DestroyRef)
             ) => {
                 /**
@@ -249,6 +326,9 @@ export function withActionExecution() {
                  */
                 const runKey = (operation: string, targets: string[]): string =>
                     `${operation}:${targets.join(',')}`;
+
+                /** Tells duplicates apart, which share an operation and mark no rows. */
+                let duplicateSequence = 0;
 
                 /**
                  * Registers a run and returns its key.
@@ -439,6 +519,415 @@ export function withActionExecution() {
                         });
                 };
 
+                /**
+                 * Remembers a batch this store submitted, so its completion can be told from
+                 * another tab's.
+                 *
+                 * @param affectedFolders where the batch landed, as `//hostname/path` refs
+                 */
+                const trackUploadJob = (
+                    jobId: string,
+                    affectedFolders: string[] = [],
+                    runId?: string,
+                    baseType?: string
+                ): void => {
+                    patchState(store, {
+                        uploadJobs: {
+                            ...store.uploadJobs(),
+                            [jobId]: { affectedFolders, runId, baseType }
+                        }
+                    });
+                };
+
+                /** Whether this page submitted, or restored, the upload batch with this job id. */
+                const isTrackedUpload = (jobId: string): boolean =>
+                    Object.hasOwn(store.uploadJobs(), jobId);
+
+                /**
+                 * Publishes a finished batch's outcome, or reports that it cannot be trusted.
+                 *
+                 * Mirrors {@link reportRefreshCompleted} deliberately: same correlation, same
+                 * refusal to invent numbers. What differs is that an upload's outcome carries
+                 * the folders it changed, so the shell can decide whether the listing it is
+                 * showing can display the result at all.
+                 */
+                const reportUploadCompleted = (
+                    actionName: string,
+                    event: DotBulkUploadCompletedEvent
+                ): void => {
+                    const tracked = store.uploadJobs();
+
+                    // Redelivery is the only reason to see one twice.
+                    if (!event.jobId || store.settledUploadJobs().includes(event.jobId)) {
+                        return;
+                    }
+
+                    if (!isTrackedUpload(event.jobId)) {
+                        // Not ours, as far as this page knows: another tab's batch, or one of
+                        // this author's finishing before the restore has placed it. Silent by
+                        // design — an error here would blame this author for someone else's —
+                        // and held, so the restore can still report it if it is theirs. Not once
+                        // it has run: nothing would claim it then.
+                        if (store.uploadRunsRestored()) {
+                            return;
+                        }
+
+                        patchState(store, {
+                            unclaimedUploadCompletions: {
+                                ...store.unclaimedUploadCompletions(),
+                                [event.jobId]: { actionName, event }
+                            }
+                        });
+
+                        return;
+                    }
+
+                    patchState(store, {
+                        settledUploadJobs: [...store.settledUploadJobs(), event.jobId]
+                    });
+
+                    const { affectedFolders, runId, baseType } = tracked[event.jobId];
+                    const remaining = { ...tracked };
+                    delete remaining[event.jobId];
+                    patchState(store, { uploadJobs: remaining });
+
+                    // The run reporting the server phase outlives the request that started it,
+                    // so this event is the only thing left that knows the batch is over. Ended
+                    // before the outcome is published, so the indicator is already quiet when
+                    // the message about it appears.
+                    if (runId) {
+                        endRun(runId);
+                    }
+
+                    // The state first, because the counters cannot answer this. A run that
+                    // gave up still records the counters it reached, and those can close over
+                    // `total` perfectly well — publishing them would tell the author their
+                    // batch finished when it was abandoned. Only SUCCESS and CANCELED are
+                    // outcomes worth reporting; a cancellation is something the author did, and
+                    // its counts say how far it got before they stopped it.
+                    if ('SUCCESS' !== event.state && 'CANCELED' !== event.state) {
+                        httpErrorManagerService.handle(
+                            new HttpErrorResponse({
+                                status: 500,
+                                statusText: `The upload did not report a usable outcome (state: ${event.state})`
+                            })
+                        );
+
+                        return;
+                    }
+
+                    const closes =
+                        undefined !== event.total &&
+                        (event.successCount ?? 0) +
+                            (event.failedCount ?? 0) +
+                            (event.skippedCount ?? 0) ===
+                            event.total;
+
+                    if (!closes) {
+                        // Either no counters at all, or counters that do not account for every
+                        // file. Both are unusable: trusting the zeros would report a run over
+                        // nothing, and the author would believe their files were never sent.
+                        httpErrorManagerService.handle(
+                            new HttpErrorResponse({
+                                status: 500,
+                                statusText: 'The upload did not report an outcome for every file'
+                            })
+                        );
+
+                        return;
+                    }
+
+                    patchState(store, {
+                        actionExecutionResults: [
+                            ...store.actionExecutionResults(),
+                            {
+                                actionName,
+                                successCount: event.successCount ?? 0,
+                                skippedCount: event.skippedCount ?? 0,
+                                failedCount: event.failedCount ?? 0,
+                                affectedFolders,
+                                // An upload's shortfall needs its own sentence. The default is the
+                                // workflow one, which explains failures as missing permissions or
+                                // content locked by another user, and skips as the action not being
+                                // on the item's workflow step — none of which an upload can mean.
+                                partialDetailKey: 'content-drive.upload.toast.partial',
+                                // Carried whole rather than summarised here: turning results into
+                                // copy is the shell's business, and the store has no message
+                                // service to do it with.
+                                failures: event.results,
+                                duplicateSubmission: event.duplicateSubmission,
+                                // Carried because the flag alone does not say what happened to the
+                                // folder: see FR-040b.
+                                baseType,
+                                // It arrives unprompted, long after the click, so it announces
+                                // itself and must not interrupt whatever is happening now.
+                                backgrounded: true
+                            }
+                        ]
+                    });
+                };
+
+                /** Whether this page is tracking the duplication with this job id. */
+                const isTrackedDuplicate = (jobId: string): boolean =>
+                    Object.hasOwn(store.duplicateJobs(), jobId);
+
+                /** Whether this page already knows the duplication: still tracked, or reported. */
+                const isKnownDuplicate = (jobId: string): boolean =>
+                    isTrackedDuplicate(jobId) || store.settledDuplicateJobs().includes(jobId);
+
+                /**
+                 * Registers the status run for a duplication. Backgrounded, because a folder being
+                 * duplicated stays fully usable.
+                 *
+                 * @param discriminator keeps the key unique: with no rows to mark, two duplicates
+                 * would otherwise share one, and the first to finish would end both reports
+                 */
+                const startDuplicateRun = (
+                    discriminator: string | number,
+                    folderCount: number
+                ): string =>
+                    startRun({
+                        operation: `${DUPLICATE_FOLDER_OPERATION}:${discriminator}`,
+                        total: folderCount,
+                        targets: [],
+                        labelKey: duplicateIndicatorKey(folderCount),
+                        backgrounded: true
+                    });
+
+                /** Remembers a duplication, so its completion can end its run and name its folders. */
+                const trackDuplicateJob = (
+                    jobId: string,
+                    affectedFolders: string[],
+                    runId: string
+                ): void => {
+                    patchState(store, {
+                        duplicateJobs: {
+                            ...store.duplicateJobs(),
+                            [jobId]: { affectedFolders, runId }
+                        }
+                    });
+                };
+
+                /**
+                 * Shows the server's folder count on the run instead of the one sent: the server
+                 * collapses repeated and nested paths, and the report has to agree with the outcome
+                 * that follows. Left as sent when the instance is older than the field.
+                 */
+                const applySubmittedCount = (
+                    runId: string,
+                    submitted: number | undefined
+                ): void => {
+                    const run = store.runs()[runId];
+
+                    if (!run || submitted === undefined) {
+                        return;
+                    }
+
+                    patchState(store, {
+                        runs: {
+                            ...store.runs(),
+                            [runId]: {
+                                ...run,
+                                total: submitted,
+                                labelKey: duplicateIndicatorKey(submitted)
+                            }
+                        }
+                    });
+                };
+
+                /**
+                 * Handles a duplication the server refused. No job was created, so no completion is
+                 * coming and the run ends here.
+                 */
+                const onDuplicateRefused = (
+                    runId: string,
+                    refusal: DotFolderBulkDuplicateRefusal
+                ): Observable<never> => {
+                    endRun(runId);
+
+                    const kind = refusal?.kind ?? 'UNCLASSIFIED';
+                    const response = refusal?.response;
+
+                    // A 401 signs the author back in, which only the HTTP error manager does. A 403
+                    // never reaches here: the service reads every one as not entitled.
+                    if ('UNCLASSIFIED' === kind && 401 === response?.status) {
+                        httpErrorManagerService.handle(response);
+
+                        return EMPTY;
+                    }
+
+                    // Everything else gets our own words, a transport failure included. The
+                    // server's sentence is logged, not shown: it is not localised (FR-024).
+                    console.warn(
+                        'UNCLASSIFIED' === kind
+                            ? 'Content drive folder duplicate refused'
+                            : `Content drive folder duplicate refused: ${kind}`,
+                        refusal?.message
+                    );
+                    patchState(store, { folderDuplicateRefusal: kind });
+
+                    return EMPTY;
+                };
+
+                /**
+                 * Tracks an accepted duplication, or ends its run when the page already knows it.
+                 *
+                 * A small job can finish, and its completion be pushed, before this answer arrives.
+                 * That completion found nothing tracked and could not end the run, so it ends here.
+                 * The restore on load may also have placed the job already; its report stands, and
+                 * replacing that entry would leave one report unending.
+                 */
+                const onDuplicateAccepted = (
+                    runId: string,
+                    affectedFolders: string[],
+                    response: DotFolderBulkDuplicateSubmitResponse | null
+                ): void => {
+                    if (!response?.jobId || isKnownDuplicate(response.jobId)) {
+                        endRun(runId);
+
+                        return;
+                    }
+
+                    trackDuplicateJob(response.jobId, affectedFolders, runId);
+                    applySubmittedCount(runId, response.submitted);
+                };
+
+                /**
+                 * Stops tracking a finished duplication and ends its run, whatever the outcome.
+                 *
+                 * @returns where the duplicates landed, or `undefined` for a run from before a reload
+                 */
+                const settleDuplicateJob = (jobId: string): string[] | undefined => {
+                    const trackedJob = isTrackedDuplicate(jobId)
+                        ? store.duplicateJobs()[jobId]
+                        : undefined;
+
+                    if (trackedJob?.runId) {
+                        endRun(trackedJob.runId);
+                    }
+
+                    const remaining = { ...store.duplicateJobs() };
+                    delete remaining[jobId];
+                    patchState(store, {
+                        duplicateJobs: remaining,
+                        settledDuplicateJobs: [...store.settledDuplicateJobs(), jobId]
+                    });
+
+                    return trackedJob?.affectedFolders;
+                };
+
+                /**
+                 * Why a duplication's completion cannot be reported, or `undefined` when it can.
+                 *
+                 * A run that died still carries the counters it reached, so the state is checked
+                 * first. Counters that do not close over `total` are unusable too: trusting the
+                 * zeros would report a run over nothing, and substituting the number submitted
+                 * would claim every folder was duplicated.
+                 */
+                const unusableDuplicateOutcome = (
+                    event: DotFolderBulkDuplicateCompletedEvent
+                ): string | undefined => {
+                    if ('SUCCESS' !== event.state && 'CANCELED' !== event.state) {
+                        return `The duplication did not report a usable outcome (state: ${event.state})`;
+                    }
+
+                    const closes =
+                        undefined !== event.total &&
+                        (event.successCount ?? 0) +
+                            (event.failedCount ?? 0) +
+                            (event.skippedCount ?? 0) ===
+                            event.total;
+
+                    return closes
+                        ? undefined
+                        : 'The duplication did not report an outcome for every folder';
+                };
+
+                /** The toast-ready outcome of a usable duplication completion. */
+                const buildDuplicateOutcome = (
+                    actionName: string,
+                    event: DotFolderBulkDuplicateCompletedEvent,
+                    affectedFolders: string[] | undefined
+                ): DotContentDriveActionExecutionResult => ({
+                    actionName,
+                    successCount: event.successCount ?? 0,
+                    failedCount: event.failedCount ?? 0,
+                    skippedCount: event.skippedCount ?? 0,
+                    // The names and reasons are the point of a partial outcome.
+                    failures: (event.results ?? []).filter((item) => 'SUCCESS' !== item.status),
+                    outcomeKind: OUTCOME_KIND.FOLDER_DUPLICATE,
+                    // Same reason as delete's: skipped means covered by a selected parent or not
+                    // reached after a cancel, never a workflow step.
+                    partialDetailKey: 'content-drive.duplicate.toast.partial',
+                    // Said as cancelled whatever the counts, as the bell says it.
+                    cancelled: 'CANCELED' === event.state,
+                    // Absent for a run from before a reload, which means "reload regardless"
+                    // rather than "nothing changed".
+                    ...(affectedFolders ? { affectedFolders } : {}),
+                    backgrounded: true
+                });
+
+                /** Whether a duplicate from the active listing still needs its status put back. */
+                const isRestorableDuplicate = (run: DotFolderDuplicateActiveRun): boolean =>
+                    run.assetPaths.length > 0 && !isKnownDuplicate(run.id);
+
+                /** Puts back one running duplicate's status, tracked as a fresh submission is. */
+                const restoreDuplicateRun = (run: DotFolderDuplicateActiveRun): void => {
+                    const runId = startDuplicateRun(run.id, run.assetPaths.length);
+
+                    trackDuplicateJob(run.id, toParentFolderRefs(run.assetPaths), runId);
+                };
+
+                /**
+                 * Reports a batch that finished while the active listing was being read, now that
+                 * the listing shows it is this author's, instead of restoring a status nothing
+                 * would end.
+                 */
+                const reportEarlyUploadCompletion = (run: DotBulkUploadActiveRun): void => {
+                    const unclaimed = store.unclaimedUploadCompletions();
+
+                    if (!Object.hasOwn(unclaimed, run.id)) {
+                        return;
+                    }
+
+                    const { actionName, event } = unclaimed[run.id];
+                    const remaining = { ...unclaimed };
+                    delete remaining[run.id];
+                    patchState(store, { unclaimedUploadCompletions: remaining });
+
+                    trackUploadJob(run.id, [], undefined, run.baseType);
+                    reportUploadCompleted(actionName, event);
+                };
+
+                /** Whether a batch from the active listing still needs its status put back. */
+                const isRestorableUpload = (run: DotBulkUploadActiveRun): boolean =>
+                    run.fileCount > 0 &&
+                    !isTrackedUpload(run.id) &&
+                    !store.settledUploadJobs().includes(run.id);
+
+                /** Puts back one running batch's status, tracked as an accepted batch is. */
+                const restoreUploadRun = (run: DotBulkUploadActiveRun): void => {
+                    const runId = startRun({
+                        operation: `${UPLOAD_BATCH_OPERATION}:${run.id}`,
+                        labelKey: uploadIndicatorKey(run.fileCount, { backgrounded: true }),
+                        total: run.fileCount,
+                        targets: []
+                    });
+
+                    trackUploadJob(run.id, [], runId, run.baseType);
+                };
+
+                /**
+                 * Drops the completions nobody claimed, which belong to other tabs or other
+                 * authors, and stops holding new ones: nothing would claim them after the restore.
+                 */
+                const dropUnclaimedUploadCompletions = (): void => {
+                    patchState(store, {
+                        unclaimedUploadCompletions: {},
+                        uploadRunsRestored: true
+                    });
+                };
+
                 return {
                     /**
                      * Fires a quick action (lock, unlock) over the given inodes.
@@ -489,6 +978,89 @@ export function withActionExecution() {
                                     failedCount: summary.failCount
                                 });
                             });
+                    },
+
+                    /**
+                     * Submits folders to be duplicated in place, and remembers the job so its pushed
+                     * outcome can be reported.
+                     *
+                     * Submit and stop, like {@link executeRefresh}: nothing waits and no deadline is
+                     * started. The run is reported on the status indicator until its completion or
+                     * a refusal ends it, but it is backgrounded: duplicating a folder leaves it fully
+                     * usable, so nothing is marked busy and nothing is locked. No repeat is refused
+                     * either; asking for the same folders twice is the author's choice, and the
+                     * server names each duplicate apart.
+                     *
+                     * @param actionName label for the outcome, kept for the completion report
+                     * @param assetPaths site-qualified folder paths, such as `//demo.dotcms.com/blogs/`
+                     */
+                    executeDuplicate: (_actionName: string, assetPaths: string[]): void => {
+                        // `_actionName` is kept for symmetry with the other submits; the completion
+                        // resolves its own label, since a run can outlive the page that named it.
+                        if (!assetPaths.length) {
+                            return;
+                        }
+
+                        const affectedFolders = toParentFolderRefs(assetPaths);
+                        const runId = startDuplicateRun(
+                            (duplicateSequence += 1),
+                            assetPaths.length
+                        );
+
+                        folderBulkDuplicateService
+                            .duplicate(assetPaths)
+                            .pipe(
+                                take(1),
+                                catchError((refusal: DotFolderBulkDuplicateRefusal) =>
+                                    onDuplicateRefused(runId, refusal)
+                                ),
+                                takeUntilDestroyed(destroyRef)
+                            )
+                            .subscribe((response) =>
+                                onDuplicateAccepted(runId, affectedFolders, response)
+                            );
+                    },
+
+                    /**
+                     * Reports a finished duplication, from the pushed completion event.
+                     *
+                     * Mirrors {@link reportFolderDeleteCompleted}, so the two folder operations
+                     * settle the same way. Ownership is the server's answer: the completion is
+                     * addressed to the submitter only, so every one that arrives belongs to this
+                     * author. What {@link duplicateJobs} adds is where the duplicates landed, which
+                     * a run from before a reload no longer knows, and then the listing reloads
+                     * whatever folder is on screen.
+                     *
+                     * Only SUCCESS and CANCELED are outcomes, and only when the counters close over
+                     * `total`. A run that died still carries the counters it reached, and reporting
+                     * those would read as a finished duplication.
+                     */
+                    reportDuplicateCompleted: (
+                        actionName: string,
+                        event: DotFolderBulkDuplicateCompletedEvent
+                    ): void => {
+                        // The only reason to see one twice is redelivery.
+                        if (!event.jobId || store.settledDuplicateJobs().includes(event.jobId)) {
+                            return;
+                        }
+
+                        const affectedFolders = settleDuplicateJob(event.jobId);
+                        const unusable = unusableDuplicateOutcome(event);
+
+                        if (unusable) {
+                            httpErrorManagerService.handle(
+                                new HttpErrorResponse({ status: 500, statusText: unusable })
+                            );
+
+                            return;
+                        }
+
+                        patchState(store, {
+                            actionExecutionResults: [
+                                ...store.actionExecutionResults(),
+                                buildDuplicateOutcome(actionName, event, affectedFolders)
+                            ]
+                        });
                     },
 
                     /**
@@ -863,14 +1435,26 @@ export function withActionExecution() {
                                         return EMPTY;
                                     }
 
-                                    // Not a refusal the endpoint reasoned about — a transport
-                                    // failure, or an instance whose body carried no code. This path
-                                    // still redirects on a 401 and reports a license wall properly,
-                                    // which is why it is not replaced wholesale.
-                                    httpErrorManagerService.handle(
-                                        refusal?.response ??
-                                            new HttpErrorResponse({ error: refusal })
+                                    // A 401 signs the author back in, which only the HTTP error
+                                    // manager does. A 403 never reaches here: the service reads
+                                    // every one as not entitled.
+                                    const response = refusal?.response;
+
+                                    if (401 === response?.status) {
+                                        httpErrorManagerService.handle(response);
+
+                                        return EMPTY;
+                                    }
+
+                                    // Not a refusal the endpoint reasoned about: a transport
+                                    // failure, or an instance whose body carried no code. It gets
+                                    // our own sentence, since that handler would show the server's
+                                    // message, which is written for a log (FR-024).
+                                    console.warn(
+                                        'Content drive folder delete refused',
+                                        refusal?.message
                                     );
+                                    patchState(store, { folderDeleteRefusal: kind });
 
                                     return EMPTY;
                                 })
@@ -935,13 +1519,7 @@ export function withActionExecution() {
                         // arrived about a run nothing here remembered. The author was left with a
                         // folder gone from the listing, still sitting in the sidebar tree, and no
                         // word that their delete had finished (FR-024, FR-036).
-                        //
-                        // `hasOwnProperty`, not `in`: the latter walks the prototype chain, so a
-                        // jobId of `constructor` would read as tracked.
-                        const isLocalRun = Object.prototype.hasOwnProperty.call(
-                            tracked,
-                            event.jobId
-                        );
+                        const isLocalRun = Object.hasOwn(tracked, event.jobId);
                         const runId = isLocalRun ? tracked[event.jobId] : undefined;
 
                         const remaining = { ...tracked };
@@ -1016,6 +1594,12 @@ export function withActionExecution() {
                                         (item) => 'SUCCESS' !== item.status
                                     ),
                                     outcomeKind: OUTCOME_KIND.FOLDER_DELETE,
+                                    // A skipped folder went with a selected parent or was not
+                                    // reached after a cancel; the default sentence blames
+                                    // workflow steps, which a folder does not have.
+                                    partialDetailKey: 'content-drive.delete.toast.partial',
+                                    // Said as cancelled whatever the counts, as the bell says it.
+                                    cancelled: 'CANCELED' === event.state,
                                     // Arrived unprompted, possibly minutes after the author moved
                                     // on, so nothing on screen reflects it — the notification is
                                     // the only way they learn (FR-024).
@@ -1025,140 +1609,52 @@ export function withActionExecution() {
                         });
                     },
 
-                    /**
-                     * Remembers a batch this store submitted, so its completion can be told from
-                     * another tab's.
-                     *
-                     * @param affectedFolders where the batch landed, as `//hostname/path` refs
-                     */
+                    /** Consumes a duplication refusal once the shell has said it. */
+                    clearFolderDuplicateRefusal: (): void => {
+                        patchState(store, { folderDuplicateRefusal: undefined });
+                    },
+
                     /** Consumes the refusal once the shell has said it. */
                     clearFolderDeleteRefusal: (): void => {
                         patchState(store, { folderDeleteRefusal: undefined });
                     },
 
-                    trackUploadJob: (
-                        jobId: string,
-                        affectedFolders: string[] = [],
-                        runId?: string,
-                        baseType?: string
-                    ): void => {
-                        patchState(store, {
-                            uploadJobs: {
-                                ...store.uploadJobs(),
-                                [jobId]: { affectedFolders, runId, baseType }
-                            }
-                        });
+                    /**
+                     * Puts back the status of this author's duplicates still running when the
+                     * page loaded (FR-015 as amended, #37062).
+                     *
+                     * Each is registered as the run a fresh submission registers, backgrounded,
+                     * and tracked by its job id, so the completion that follows ends it and is
+                     * reported. Skipped: a run this page already tracks, and one whose completion
+                     * has already arrived.
+                     *
+                     * @param runs the author's own runs from the queue's active listing
+                     */
+                    restoreDuplicateRuns: (runs: DotFolderDuplicateActiveRun[]): void => {
+                        runs.filter(isRestorableDuplicate).forEach(restoreDuplicateRun);
                     },
 
                     /**
-                     * Publishes a finished batch's outcome, or reports that it cannot be trusted.
+                     * Puts back the status of this author's upload batches still being processed
+                     * when the page loaded (#37062).
                      *
-                     * Mirrors {@link reportRefreshCompleted} deliberately: same correlation, same
-                     * refusal to invent numbers. What differs is that an upload's outcome carries
-                     * the folders it changed, so the shell can decide whether the listing it is
-                     * showing can display the result at all.
+                     * Each is registered as the background run an accepted batch registers, and
+                     * tracked by its job id, so the completion that follows ends it and is
+                     * reported. The folder it landed in is not known from the listing, so the
+                     * listing reloads regardless when it ends. Skipped: a batch this page already
+                     * tracks, and one whose completion has already arrived.
+                     *
+                     * @param runs the author's own batches from the queue's active listing
                      */
-                    reportUploadCompleted: (
-                        actionName: string,
-                        event: DotBulkUploadCompletedEvent
-                    ): void => {
-                        const tracked = store.uploadJobs();
-
-                        // `hasOwnProperty`, not `in`: the latter walks the prototype chain, so a
-                        // jobId of `constructor` or `toString` would read as tracked and destructure
-                        // an inherited member. Server ids are UUIDs so it is unreachable today, and
-                        // this is the shape the rest of the codebase already uses for a lookup keyed
-                        // by a value that did not come from here.
-                        if (
-                            !event.jobId ||
-                            !Object.prototype.hasOwnProperty.call(tracked, event.jobId)
-                        ) {
-                            // Not ours: another tab's batch, or one already settled. Silent by
-                            // design — an error here would blame this author for someone else's.
-                            return;
-                        }
-
-                        const { affectedFolders, runId, baseType } = tracked[event.jobId];
-                        const remaining = { ...tracked };
-                        delete remaining[event.jobId];
-                        patchState(store, { uploadJobs: remaining });
-
-                        // The run reporting the server phase outlives the request that started it,
-                        // so this event is the only thing left that knows the batch is over. Ended
-                        // before the outcome is published, so the indicator is already quiet when
-                        // the message about it appears.
-                        if (runId) {
-                            endRun(runId);
-                        }
-
-                        // The state first, because the counters cannot answer this. A run that
-                        // gave up still records the counters it reached, and those can close over
-                        // `total` perfectly well — publishing them would tell the author their
-                        // batch finished when it was abandoned. Only SUCCESS and CANCELED are
-                        // outcomes worth reporting; a cancellation is something the author did, and
-                        // its counts say how far it got before they stopped it.
-                        if ('SUCCESS' !== event.state && 'CANCELED' !== event.state) {
-                            httpErrorManagerService.handle(
-                                new HttpErrorResponse({
-                                    status: 500,
-                                    statusText: `The upload did not report a usable outcome (state: ${event.state})`
-                                })
-                            );
-
-                            return;
-                        }
-
-                        const closes =
-                            undefined !== event.total &&
-                            (event.successCount ?? 0) +
-                                (event.failedCount ?? 0) +
-                                (event.skippedCount ?? 0) ===
-                                event.total;
-
-                        if (!closes) {
-                            // Either no counters at all, or counters that do not account for every
-                            // file. Both are unusable: trusting the zeros would report a run over
-                            // nothing, and the author would believe their files were never sent.
-                            httpErrorManagerService.handle(
-                                new HttpErrorResponse({
-                                    status: 500,
-                                    statusText:
-                                        'The upload did not report an outcome for every file'
-                                })
-                            );
-
-                            return;
-                        }
-
-                        patchState(store, {
-                            actionExecutionResults: [
-                                ...store.actionExecutionResults(),
-                                {
-                                    actionName,
-                                    successCount: event.successCount ?? 0,
-                                    skippedCount: event.skippedCount ?? 0,
-                                    failedCount: event.failedCount ?? 0,
-                                    affectedFolders,
-                                    // An upload's shortfall needs its own sentence. The default is the
-                                    // workflow one, which explains failures as missing permissions or
-                                    // content locked by another user, and skips as the action not being
-                                    // on the item's workflow step — none of which an upload can mean.
-                                    partialDetailKey: 'content-drive.upload.toast.partial',
-                                    // Carried whole rather than summarised here: turning results into
-                                    // copy is the shell's business, and the store has no message
-                                    // service to do it with.
-                                    failures: event.results,
-                                    duplicateSubmission: event.duplicateSubmission,
-                                    // Carried because the flag alone does not say what happened to the
-                                    // folder: see FR-040b.
-                                    baseType,
-                                    // It arrives unprompted, long after the click, so it announces
-                                    // itself and must not interrupt whatever is happening now.
-                                    backgrounded: true
-                                }
-                            ]
-                        });
+                    restoreUploadRuns: (runs: DotBulkUploadActiveRun[]): void => {
+                        runs.forEach(reportEarlyUploadCompletion);
+                        runs.filter(isRestorableUpload).forEach(restoreUploadRun);
+                        dropUnclaimedUploadCompletions();
                     },
+
+                    trackUploadJob,
+
+                    reportUploadCompleted,
 
                     /**
                      * Publishes an outcome for a run this store did not fire itself.
@@ -1229,6 +1725,19 @@ export function withActionExecution() {
                     .subscribe((event) => {
                         store.reportFolderDeleteCompleted(
                             dotMessageService.get('content-drive.context-menu.delete-folder'),
+                            event
+                        );
+                    });
+
+                // Duplication reports the same way: the run settles itself, nothing here polls.
+                eventsSocket
+                    .on<DotFolderBulkDuplicateCompletedEvent>(
+                        DotSystemEventType.BULK_FOLDER_DUPLICATE_COMPLETED
+                    )
+                    .pipe(takeUntilDestroyed(destroyRef))
+                    .subscribe((event) => {
+                        store.reportDuplicateCompleted(
+                            dotMessageService.get('content-drive.action-center.duplicate'),
                             event
                         );
                     });

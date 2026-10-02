@@ -73,19 +73,27 @@
          document that was there all along (issue #37532). The message sits above the listing rather
          than replacing it, so it explains the empty grid instead of hiding it. -->
     @if ($searchFailed()) {
+        <!-- Spaced like the scope bar beside it (dot-content-drive-scope-bar): full width, with its
+             px-4 py-2 padding (1rem by 0.5rem) and square corners, so the two bars line up. The
+             message keeps its own font and colours; only the spacing is shared. Set as design
+             tokens, not classes: Lara's small message pads its content 0.5rem by 0.625rem, and a
+             utility class does not win over the theme. -->
         <p-message
+            [dt]="{ root: { borderRadius: '0' }, content: { sm: { padding: '0.5rem 1rem' } } }"
             [pt]="{ text: { class: 'w-full' } }"
             severity="error"
+            size="small"
             data-testid="search-error-state"
             role="alert"
-            class="block p-4">
-            <div class="flex w-full flex-wrap items-center justify-between gap-2">
+            class="block">
+            <div class="flex w-full items-center justify-between gap-4">
                 <span>{{ 'content-drive.search.error.message' | dm }}</span>
                 <p-button
                     [label]="'content-drive.search.error.retry' | dm"
-                    data-testid="search-error-retry"
-                    severity="secondary"
+                    [link]="true"
                     size="small"
+                    styleClass="shrink-0"
+                    data-testid="search-error-retry"
                     (onClick)="onRetrySearch()" />
             </div>
         </p-message>
@@ -120,8 +128,11 @@
 
 <!-- The run in flight, which the toolbar used to draw at the end of its filter row. Beside the
      outlet above rather than at the top of the template: this shell is a grid, and a component
-     placed first takes the first cell and shifts every panel along. -->
-<dot-status-toast position="bottom-center" />
+     placed first takes the first cell and shifts every panel along.
+
+     In the listing's own cell, over it, and contained there, so it centres on the listing and its
+     paginator rather than on the window, which the tree column and the menu push off centre. -->
+<dot-status-toast position="bottom-center" contained class="col-start-2 row-start-4" />
 
 @if ($contextMenuData()?.showAddToBundle) {
     <dot-add-to-bundle

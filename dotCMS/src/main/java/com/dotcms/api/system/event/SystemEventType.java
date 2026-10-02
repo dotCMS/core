@@ -352,6 +352,21 @@ public enum SystemEventType {
 	 * <b>This exact name is fixed by the frontend half of #37063</b>
 	 * ({@code DotSystemEventType.FOLDER_DELETE_FINISHED}, PR dotCMS/core#37612).
 	 */
-	FOLDER_DELETE_FINISHED
+	FOLDER_DELETE_FINISHED,
+
+	/**
+	 * A bulk folder duplication run finished, in any terminal state (#37062).
+	 * <p>
+	 * The duplication counterpart of {@link #BULK_FOLDER_DELETE_COMPLETED}: it carries the counts
+	 * and the per-path results, and is pushed with {@link Visibility#USER} scoped to whoever
+	 * submitted the run. Duplication marks nothing as busy, so it has no started or finished
+	 * announcement of its own; the single-folder {@link #COPY_FOLDER} event still fires for each
+	 * duplicate.
+	 * <p>
+	 * <b>This exact name is fixed by the frontend half of #37062</b>
+	 * ({@code DotSystemEventType.BULK_FOLDER_DUPLICATE_COMPLETED}), so do not rename it on this side
+	 * alone.
+	 */
+	BULK_FOLDER_DUPLICATE_COMPLETED
 
 }
