@@ -126,6 +126,32 @@ class AssetStorageFeatureTest {
     }
 
     @Test
+    void metadataWriteFailurePropagatesOnlyWhenEnabled() throws Exception {
+        var storage = mock(FileStorageAPI.class);
+        doThrow(new DotDataException("S3 metadata upload failed"))
+                .when(storage).putCustomMetadataAttributes(any(), any());
+        when(storage.setMetadata(any(), any())).thenThrow(new DotDataException("S3 metadata upload failed"));
+        var content = new com.dotmarketing.portlets.contentlet.model.Contentlet();
+        content.setInode("abc123");
+        content.getMap().put("HeroImage", root.resolve("File.PNG").toFile());
+        try (var locator = mockStatic(com.dotmarketing.business.APILocator.class);
+             var caches = mockStatic(com.dotmarketing.business.CacheLocator.class)) {
+            locator.when(com.dotmarketing.business.APILocator::getFileStorageAPI).thenReturn(storage);
+            caches.when(com.dotmarketing.business.CacheLocator::getMetadataCache)
+                    .thenReturn(mock(com.dotmarketing.portlets.contentlet.business.MetadataCache.class));
+            var api = new FileMetadataAPIImpl();
+            Map<String, Map<String, java.io.Serializable>> attributes = Map.of("HeroImage", Map.of("credit", "Author"));
+            assertThrows(DotDataException.class, () -> api.putCustomMetadataAttributesForCheckin(content, attributes));
+            assertThrows(DotDataException.class, () -> api.putCustomMetadataAttributes("temp_upload", attributes));
+            Config.setProperty(AssetStorageFeature.FLAG, false);
+            assertDoesNotThrow(() -> api.putCustomMetadataAttributesForCheckin(content, attributes));
+            assertDoesNotThrow(() -> api.putCustomMetadataAttributes("temp_upload", attributes));
+            verify(storage, times(3)).putCustomMetadataAttributes(any(), any());
+            verify(storage).setMetadata(any(), any());
+        }
+    }
+
+    @Test
     void filesystemMetadataReplacementKeepsPriorValueDuringAndAfterFailedSerialization() throws Exception {
         final var fs = filesystem();
         final var reader = new JsonReaderDelegate<>(String.class);
