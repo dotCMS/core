@@ -791,6 +791,77 @@ describe('DotCMSImpressionTracker', () => {
         });
     });
 
+    describe('Back/forward cache restore', () => {
+        const pageshow = (persisted: boolean) =>
+            window.dispatchEvent(Object.assign(new Event('pageshow'), { persisted }));
+
+        const setUp = () => {
+            const element = createMockContentletElement('content-123');
+            document.body.appendChild(element);
+            const callback = vi.fn();
+            tracker = new DotCMSImpressionTracker(mockConfig);
+            tracker.onImpression(callback);
+            tracker.initialize();
+            vi.advanceTimersByTime(INITIAL_SCAN_DELAY_MS);
+
+            const seen = () => {
+                intersectionCallback(
+                    [
+                        {
+                            target: element,
+                            isIntersecting: true
+                        } as unknown as IntersectionObserverEntry
+                    ],
+                    mockIntersectionObserver
+                );
+                vi.advanceTimersByTime(DEFAULT_IMPRESSION_CONFIG.dwellMs);
+            };
+
+            return { element, callback, seen };
+        };
+
+        afterEach(() => {
+            tracker.cleanup();
+        });
+
+        it('should count the contentlets in view again when the browser restores the page', () => {
+            const { element, callback, seen } = setUp();
+            seen();
+            expect(callback).toHaveBeenCalledTimes(1);
+            mockIntersectionObserver.observe.mockClear();
+
+            pageshow(true);
+
+            // The restored DOM is the one left: observed again from scratch, the observer
+            // reports what is in view, as after a load
+            expect(mockIntersectionObserver.disconnect).toHaveBeenCalled();
+            expect(mockIntersectionObserver.observe).toHaveBeenCalledWith(element);
+            seen();
+            expect(callback).toHaveBeenCalledTimes(2);
+        });
+
+        it('should count nothing again when a page that loads is shown', () => {
+            const { callback, seen } = setUp();
+            seen();
+
+            pageshow(false);
+            seen();
+
+            expect(callback).toHaveBeenCalledTimes(1);
+        });
+
+        it('should stop watching restores on cleanup', () => {
+            const removeEventListener = vi.spyOn(window, 'removeEventListener');
+            tracker = new DotCMSImpressionTracker(mockConfig);
+            tracker.initialize();
+
+            tracker.cleanup();
+
+            expect(removeEventListener).toHaveBeenCalledWith('pageshow', expect.any(Function));
+            removeEventListener.mockRestore();
+        });
+    });
+
     describe('Subscription Pattern', () => {
         it('should notify all subscribers when impression fires', () => {
             const element = createMockContentletElement('content-123');

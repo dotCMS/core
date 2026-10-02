@@ -15,7 +15,7 @@ import {
 } from './pipeline/constants';
 import { enricherPlugin } from './pipeline/enricher/plugin';
 import { identityPlugin } from './pipeline/identity/plugin';
-import { onNavigation } from './pipeline/navigation';
+import { onNavigation, onPageRestore } from './pipeline/navigation';
 import { senderPlugin } from './pipeline/sender/plugin';
 
 import type { ExperimentPages, ExperimentsEngine } from './experiments/engine';
@@ -176,6 +176,10 @@ const startAutomaticPageViews = (): void => {
             .then(nextFrame)
             .then(() => trackAutomaticPageView());
     });
+
+    // A page restored from the back/forward cache keeps the URL already counted, but the
+    // visitor sees it again: it counts, as it does when the browser loads it again instead
+    onPageRestore(() => void sendPageView({}));
 };
 
 /**

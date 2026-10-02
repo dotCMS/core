@@ -4,7 +4,7 @@ const onRouteChange = vi.hoisted(() => vi.fn());
 
 vi.mock('@analytics/router-utils', () => ({ default: onRouteChange }));
 
-import { onNavigation } from './navigation';
+import { onNavigation, onPageRestore } from './navigation';
 
 describe('onNavigation', () => {
     const globalScope = window as unknown as Record<string, unknown>;
@@ -67,5 +67,41 @@ describe('onNavigation', () => {
         onRouteChange.mock.calls[0]?.[0]('/blog');
 
         expect(navigated).not.toHaveBeenCalled();
+    });
+});
+
+describe('onPageRestore', () => {
+    const pageshow = (persisted: boolean) =>
+        window.dispatchEvent(Object.assign(new Event('pageshow'), { persisted }));
+
+    it('calls back each time the browser restores the page from its back/forward cache', () => {
+        const restored = vi.fn();
+        const stop = onPageRestore(restored);
+
+        pageshow(true);
+        pageshow(true);
+
+        expect(restored).toHaveBeenCalledTimes(2);
+        stop();
+    });
+
+    it('does not call back on the show of a page that loads', () => {
+        const restored = vi.fn();
+        const stop = onPageRestore(restored);
+
+        pageshow(false);
+
+        expect(restored).not.toHaveBeenCalled();
+        stop();
+    });
+
+    it('stops calling back once unsubscribed', () => {
+        const restored = vi.fn();
+        const stop = onPageRestore(restored);
+
+        stop();
+        pageshow(true);
+
+        expect(restored).not.toHaveBeenCalled();
     });
 });

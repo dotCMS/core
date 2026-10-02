@@ -342,6 +342,24 @@ describe('createExperimentsEngine', () => {
         expect(engine.contextExperiments(getSessionId())).toEqual([]);
     });
 
+    it('keeps the experiment in the context of a page the browser restores from its back/forward cache', async () => {
+        markRows('experiment-h');
+        storeAssignment('experiment-h', 'DEFAULT');
+        sessionStorage.setItem(STORAGE_KEYS.checkedThisTab, 'true');
+        const engine = createEngine();
+
+        await engine.decide();
+        // Back to this page from another one: the restore is not a navigation inside the page
+        window.dispatchEvent(Object.assign(new Event('pageshow'), { persisted: true }));
+
+        // The restore's pageview asks again, and gets the decision the page already has
+        await expect(engine.decide()).resolves.toEqual({ redirected: false });
+        expect(navigate).not.toHaveBeenCalled();
+        expect(engine.contextExperiments(getSessionId())).toEqual([
+            expect.objectContaining({ id: 'experiment-h' })
+        ]);
+    });
+
     it("sends every experiment of the session from a page that runs one, the earlier pages' too", async () => {
         localStorage.setItem(
             STORAGE_KEYS.assignments,

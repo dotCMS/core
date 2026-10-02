@@ -50,3 +50,24 @@ export const onNavigation = (navigated: () => void): (() => void) => {
 
     return () => navigation.removeEventListener('currententrychange', listener);
 };
+
+/**
+ * Calls back each time the browser restores the page from its back/forward cache (`pageshow`
+ * with `persisted`). The page comes back as the visitor left it, its scripts still running, so
+ * nothing that runs on a load runs again, and onNavigation reports nothing: the visitor is
+ * back on the same page, not on another route.
+ *
+ * @param restored - Called on each restore
+ * @returns Stops the calls
+ */
+export const onPageRestore = (restored: () => void): (() => void) => {
+    const listener = (event: PageTransitionEvent): void => {
+        if (event.persisted) {
+            restored();
+        }
+    };
+
+    window.addEventListener('pageshow', listener);
+
+    return () => window.removeEventListener('pageshow', listener);
+};

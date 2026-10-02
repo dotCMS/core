@@ -38,6 +38,14 @@ describe('dotEvents', () => {
 
     beforeEach(() => {
         fakeInstance.track.mockClear();
+        fakeInstance.page.mockClear();
+    });
+
+    it('sends no pageview of its own on a back/forward-cache restore while automatic pageviews are off', async () => {
+        window.dispatchEvent(Object.assign(new Event('pageshow'), { persisted: true }));
+        await new Promise((resolve) => setTimeout(resolve, 0));
+
+        expect(fakeInstance.page).not.toHaveBeenCalled();
     });
 
     it('is reachable as window.dotEvents, for traditional pages and plain scripts', () => {

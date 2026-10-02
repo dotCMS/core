@@ -45,7 +45,7 @@ const onSubmit = () => dotEvents.conversion('contact-form');
 
 - `conversion` takes a name only: dotCMS records a conversion's name and the page it happened on.
 - The SDK sends only the event types dotCMS accepts: pageviews, conversions, content impressions and content clicks. There is no custom-event API, because dotCMS rejects any other type.
-- `pageView(data)` sends a pageview with custom data, for apps that set `autoPageView: false`.
+- `pageView(data)` sends a pageview with custom data, for apps that set `autoPageView: false`. Such an app also calls it when the browser restores the page from its back/forward cache (`pageshow` with `event.persisted`): the page comes back without loading again, and the visitor sees it anew.
 - Types come from the same entry: `import type { DotCMSEventsConfig, DotCMSEventsJsonObject } from '@dotcms/events'`.
 
 After `init`, plain scripts reach the same object as `window.dotEvents`.
@@ -117,7 +117,7 @@ With `debug: true` the SDK warns when an experiment runs on a page that prints n
 | -------------- | ----------- | -------------------------------------------------------------------------------------------------------------- |
 | `dotcmsUrl`    | required    | The dotCMS origin, the same value `createDotCMSClient` takes                                                   |
 | `siteAuth`     | required    | The Site Auth from the Content Analytics app                                                                   |
-| `autoPageView` | `true`      | A pageview on load and on every History change                                                                 |
+| `autoPageView` | `true`      | A pageview on load, on every History change, and when the browser restores the page from its back/forward cache |
 | `experiments`  | `true`      | `isUserIncluded`, the pageview hold, the redirect and `context.experiments`; `{ timeout }` sets how long a new visitor's pageview waits for the assignment (3000 ms) |
 | `impressions`  | `false`     | Content impressions; an object sets the threshold, dwell time and limits                                       |
 | `clicks`       | `false`     | Content clicks                                                                                                 |

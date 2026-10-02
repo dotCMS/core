@@ -10,7 +10,7 @@ import {
     INITIAL_SCAN_DELAY_MS
 } from '../contentlets/utils';
 import { getViewportMetrics } from '../contentlets/viewport';
-import { onNavigation } from '../pipeline/navigation';
+import { onNavigation, onPageRestore } from '../pipeline/navigation';
 import { createPluginLogger, isBrowser } from '../pipeline/utils';
 
 import type {
@@ -49,6 +49,7 @@ export class DotCMSImpressionTracker {
     #sessionTrackedImpressions = new Set<string>();
     #impressionConfig: Required<ImpressionConfig>;
     #stopWatchingNavigations: (() => void) | null = null;
+    #stopWatchingRestores: (() => void) | null = null;
     #subscribers = new Set<ImpressionCallback>();
     #logger: ReturnType<typeof createPluginLogger>;
 
@@ -264,8 +265,9 @@ export class DotCMSImpressionTracker {
     }
 
     /**
-     * Resets tracking when the visitor goes to another page. It listens through onNavigation:
-     * the browser's Navigation API where there is one, which needs no patch of `history`
+     * Resets tracking when the visitor goes to another page, or comes back to this one from the
+     * back/forward cache. It listens through onNavigation: the browser's Navigation API where
+     * there is one, which needs no patch of `history`
      */
     private initializePageNavigationHandler(): void {
         this.#stopWatchingNavigations = onNavigation(() => {
@@ -273,21 +275,36 @@ export class DotCMSImpressionTracker {
                 `Navigation detected (${window.location.pathname}), resetting impression tracking`
             );
 
-            // Reset tracked impressions for the new page
-            this.#sessionTrackedImpressions.clear();
-
-            // Cancel all active timers
-            this.#elementImpressionStates.forEach((state) => {
-                if (state.timer !== null) {
-                    window.clearTimeout(state.timer);
-                    state.timer = null;
-                    state.visibleSince = null;
-                }
-            });
-
-            // Clear element states
-            this.#elementImpressionStates.clear();
+            this.forgetPageImpressions();
         });
+
+        // A restored page is seen again, and counts again, as after a load. Its DOM is the one
+        // the visitor left, so nothing else scans it: observed again from scratch, the observer
+        // reports what is in view
+        this.#stopWatchingRestores = onPageRestore(() => {
+            this.#logger.info(
+                'Page restored from the back/forward cache, counting impressions again'
+            );
+
+            this.forgetPageImpressions();
+            this.#observer?.disconnect();
+            this.findAndObserveContentletElements();
+        });
+    }
+
+    /** Forgets the page's impressions, timers and elements, so the next view counts its own */
+    private forgetPageImpressions(): void {
+        this.#sessionTrackedImpressions.clear();
+
+        this.#elementImpressionStates.forEach((state) => {
+            if (state.timer !== null) {
+                window.clearTimeout(state.timer);
+                state.timer = null;
+                state.visibleSince = null;
+            }
+        });
+
+        this.#elementImpressionStates.clear();
     }
 
     /** Handles visibility changes: starts timer on enter, cancels on exit */
@@ -501,6 +518,8 @@ export class DotCMSImpressionTracker {
 
         this.#stopWatchingNavigations?.();
         this.#stopWatchingNavigations = null;
+        this.#stopWatchingRestores?.();
+        this.#stopWatchingRestores = null;
 
         // Clear all active dwell timers
         this.#elementImpressionStates.forEach((state) => {
