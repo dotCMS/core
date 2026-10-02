@@ -10,6 +10,7 @@ import com.dotcms.enterprise.publishing.staticpublishing.AWSS3EndPointPublisher;
 import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher;
 import com.dotcms.enterprise.publishing.staticpublishing.EndPointPublisherConnectionException;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
+import com.dotcms.storage.NoWebIdentityCredentialsProviderChain;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -54,6 +55,14 @@ public class AWSS3PublishingEndPoint extends PublishingEndPoint {
         return AWSS3Publisher.class;
     }// getPublisher.
 
+    /**
+     * Checks that the endpoint's AWS S3 properties are present and that dotCMS can reach the
+     * bucket with them. Without a token and secret, the connection test uses the AWS default
+     * credential chain, which leaves out web identity while S3 asset storage is off (see
+     * {@link NoWebIdentityCredentialsProviderChain#defaultChain()}).
+     *
+     * @throws PublishingEndPointValidationException if a required property is missing or invalid
+     */
     @Override
     public void validatePublishingEndPoint() throws PublishingEndPointValidationException {
 
@@ -94,7 +103,7 @@ public class AWSS3PublishingEndPoint extends PublishingEndPoint {
             if (!UtilMethods.isSet(token) || !UtilMethods.isSet(secret)) {
     
                     // Validate DefaultAWSCredentialsProviderChain configuration
-                    DefaultAWSCredentialsProviderChain creds = new DefaultAWSCredentialsProviderChain();
+                    DefaultAWSCredentialsProviderChain creds = NoWebIdentityCredentialsProviderChain.defaultChain();
                     new AWSS3EndPointPublisher(creds).checkConnectSuccessfully(bucketValidationName);
     
             } else {
