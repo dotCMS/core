@@ -181,10 +181,28 @@ export async function fetchCommitRange(
 }
 
 /**
- * Resolve merged PRs per commit via GET /repos/{owner}/{repo}/commits/{sha}/pulls.
- * Commit subjects ending in "(#N)" are often an ISSUE number under merge commits,
- * and pulls.get 404s on those; the API also maps a PR's branch commits and its
- * merge commit to the same PR (Set dedupes) and returns [] for direct pushes.
+ * GraphQL aliases must be static field names, so batch size is bounded by
+ * query size rather than a page limit. 50 commits/query keeps each request
+ * well inside GitHub's node budget while cutting a 485-commit release from
+ * 485 round-trips to 10 — twice over, since both scripts resolve the same
+ * range in the same pipeline run.
+ */
+const COMMIT_BATCH = 50;
+
+interface CommitPRsResponse {
+  repository: Record<
+    string,
+    { associatedPullRequests: { nodes: { number: number; mergedAt: string | null }[] } } | null
+  >;
+}
+
+/**
+ * Resolve merged PRs for a set of commits via GraphQL `associatedPullRequests`.
+ *
+ * Same source of truth as GET /commits/{sha}/pulls, batched. A PR's branch
+ * commits and its merge commit both map to that PR (the Set dedupes), and a
+ * direct push maps to nothing. Unmerged PRs are filtered out: for commits not
+ * reachable from the default branch the association also includes open PRs.
  */
 export async function resolvePRNumbers(
   octokit: Octokit,
@@ -193,44 +211,45 @@ export async function resolvePRNumbers(
   commits: CommitInfo[]
 ): Promise<number[]> {
   const prNumbers = new Set<number>();
-  const BATCH_SIZE = 15;
 
-  for (let i = 0; i < commits.length; i += BATCH_SIZE) {
-    const batch = commits.slice(i, i + BATCH_SIZE);
+  for (let i = 0; i < commits.length; i += COMMIT_BATCH) {
+    const batch = commits
+      .slice(i, i + COMMIT_BATCH)
+      // Aliases are interpolated, not parameterised, so only accept real oids.
+      .filter((c) => /^[0-9a-f]{40}$/i.test(c.sha));
+    if (batch.length === 0) continue;
 
-    const promises = batch.map(async (commit) => {
-      try {
-        const { data } = await octokit.repos.listPullRequestsAssociatedWithCommit({
-          owner,
-          repo,
-          commit_sha: commit.sha,
-          // A default-branch commit resolves to the one merged PR that introduced
-          // it, so page 1 always suffices; this just clears the default 30.
-          per_page: 100,
-        });
-        // Only merged PRs: for commits not reachable from the default branch the
-        // endpoint also returns open PRs.
-        return data.filter((pr) => pr.merged_at).map((pr) => pr.number);
-      } catch (error: unknown) {
-        const errMsg = error instanceof Error ? error.message : String(error);
-        process.stderr.write(
-          `Warning: could not resolve PR for commit ${commit.sha}: ${errMsg}\n`
-        );
-        return [];
+    const aliases = batch
+      .map(
+        (c) =>
+          `  c${c.sha}: object(oid: "${c.sha}") {\n` +
+          `    ... on Commit {\n` +
+          `      associatedPullRequests(first: 5) { nodes { number mergedAt } }\n` +
+          `    }\n` +
+          `  }`
+      )
+      .join('\n');
+
+    // Re-thrown, not warned-and-skipped: an errored batch is indistinguishable
+    // from a batch of commits with no PRs, and swallowing it would silently
+    // drop up to 50 commits' worth of PRs — the exact failure mode #37201
+    // existed to eliminate.
+    const data = await octokit.graphql<CommitPRsResponse>(
+      `query($owner: String!, $repo: String!) {\n` +
+        `  repository(owner: $owner, name: $repo) {\n` +
+        aliases +
+        `\n  }\n}`,
+      { owner, repo }
+    );
+
+    for (const c of batch) {
+      const node = data.repository[`c${c.sha}`];
+      if (!node) continue; // commit not found in this repo (e.g. a fork's oid)
+      for (const pr of node.associatedPullRequests.nodes) {
+        if (pr.mergedAt) prNumbers.add(pr.number);
       }
-    });
-
-    const batchResults = await Promise.all(promises);
-    for (const numbers of batchResults) {
-      for (const n of numbers) prNumbers.add(n);
     }
-
-    if (i + BATCH_SIZE < commits.length) await sleep(500);
   }
 
   return Array.from(prNumbers);
-}
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }
