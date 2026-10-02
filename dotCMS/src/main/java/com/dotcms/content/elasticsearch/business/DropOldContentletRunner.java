@@ -1,15 +1,15 @@
 package com.dotcms.content.elasticsearch.business;
 
-import java.io.File;
-import com.liferay.util.FileUtil;
-import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.liferay.util.FileUtil;
 import io.vavr.control.Try;
+import java.io.File;
 import java.sql.Connection;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
@@ -214,8 +214,6 @@ public class DropOldContentletRunner implements Runnable {
     }
 
     boolean deleteFromAssetsDir(List<String> inodes) {
-        // Preserve main's filesystem/NFS behavior while S3 assets are disabled.
-        if (!com.dotcms.storage.AssetStorageFeature.isEnabled()) {
         if (!CLEAN_DEAD_INODE_FROM_FS) {
             return true;
         }
@@ -228,24 +226,6 @@ public class DropOldContentletRunner implements Runnable {
                 FileUtil.deltree(path);
             } catch (Exception e) {
                 Logger.error(this, "Error deleting file asset " + path, e);
-                return false;
-            }
-
-
-        }
-        return true;
-
-        }
-
-        if (!CLEAN_DEAD_INODE_FROM_FS) {
-            return true;
-        }
-        for (String inode : inodes) {
-            Logger.info(this, "Deleting all binaries for inode " + inode);
-            try {
-                APILocator.getBinaryAssetStorageAPI().deleteAllBinaries(inode);
-            } catch (Exception e) {
-                Logger.error(this, "Error deleting binaries for inode " + inode, e);
                 return false;
             }
 

@@ -4,8 +4,10 @@ import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.storage.AmazonS3StoragePersistenceAPIImpl;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
@@ -32,7 +34,7 @@ public class ContentletBackupStorageTest {
     @TempDir Path uploads;
 
     @ParameterizedTest
-    @ValueSource(strings = {"destroy", "allVersions", "version"})
+    @ValueSource(strings = {"destroy", "allVersions", "version", "language"})
     void coldBackupsSurviveCommittedBinaryAndMetadataCleanup(String deletion) throws Exception {
         final String previous = Config.getStringProperty("BACKUP_DELETED_CONTENTLETS_TO_DISK", null);
         final var type = new ContentTypeDataGen().nextPersisted();
@@ -57,6 +59,9 @@ public class ContentletBackupStorageTest {
             edit.setBinary("heroImage", source("second", "new image version"));
             final Contentlet second = api.checkin(edit, user, false);
             assertNotEquals(first.getInode(), second.getInode());
+            // Deleting one language of multilingual content takes the per-language path (#9146).
+            final Contentlet otherLanguage = deletion.equals("language") ? ContentletDataGen.createNewVersion(
+                    second, VariantAPI.DEFAULT_VARIANT, new LanguageDataGen().nextPersisted(), null) : null;
             final List<Contentlet> deleted = deletion.equals("version") ? List.of(first) : List.of(first, second);
             final var expected = new HashMap<String, Map<String, byte[]>>();
             for (Contentlet content : deleted) {
@@ -99,6 +104,10 @@ public class ContentletBackupStorageTest {
                 case "destroy" -> api.destroy(second, user, false);
                 case "allVersions" -> api.deleteAllVersionsandBackup(List.of(second), user, false);
                 case "version" -> api.deleteVersion(first, user, false);
+                case "language" -> {
+                    api.archive(api.find(second.getInode(), user, false), user, false);
+                    api.delete(api.find(second.getInode(), user, false), user, false);
+                }
                 default -> throw new AssertionError(deletion);
             }
             for (Contentlet content : deleted) {
@@ -106,7 +115,7 @@ public class ContentletBackupStorageTest {
                         .addParam(content.getInode()).loadObjectResults().isEmpty());
                 final var jobs = new DotConnect().setSQL("select id from job where queue_name = ? and parameters ->> 'inode' = ?")
                         .addParam(BinaryAssetCleanupProcessor.QUEUE).addParam(content.getInode()).loadObjectResults();
-                assertFalse(jobs.isEmpty());
+                assertEquals(1, jobs.size(), "Each deleted inode needs exactly one cleanup job, even when listed twice");
                 for (var job : jobs) new BinaryAssetCleanupProcessor().process(
                         APILocator.getJobQueueManagerAPI().getJob(job.get("id").toString()));
                 assertTrue(APILocator.getBinaryAssetStorageAPI().listBinaryPaths(content.getInode()).isEmpty());
@@ -130,6 +139,10 @@ public class ContentletBackupStorageTest {
                         assertEquals(mapper.readTree(entry.getValue()), mapper.readTree(entries.get(entry.getKey())));
                     } else assertArrayEquals(entry.getValue(), entries.get(entry.getKey()));
                 }
+            }
+            if (otherLanguage != null) {
+                assertEquals("new image version", Files.readString(api.find(otherLanguage.getInode(), user, false)
+                        .getBinary("heroImage").toPath()), "Deleting one language must keep the other's binaries");
             }
             if (deletion.equals("version")) {
                 assertEquals("new image version", Files.readString(api.find(second.getInode(), user, false).getBinary("heroImage").toPath()));

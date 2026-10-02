@@ -2717,6 +2717,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return Optional.empty();
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>With S3 asset storage on, the deletion runs in a transaction (joining the caller's, if
+     * any), so the binary cleanup jobs it records commit or roll back with the deleted rows. With
+     * the flag off the transaction handling is unchanged.</p>
+     */
     @RequestCost(Price.CONTENT_DELETE)
     @Override
     public boolean delete(final Contentlet contentlet, final User user,
@@ -2736,7 +2742,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         try {
             boolean isSite = contentlet.isHost();
-            deleted = this.deleteContentlets(contentlets, user, respectFrontendRoles, isSite);
+            if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+                // S3 cleanup jobs must commit with the deleted rows, and callers such as the Site
+                // Browser and WebDAV reach this method without a transaction.
+                final boolean[] result = new boolean[1];
+                LocalTransaction.wrap(() -> result[0] = this.deleteContentlets(contentlets, user,
+                        respectFrontendRoles, isSite));
+                deleted = result[0];
+            } else {
+                deleted = this.deleteContentlets(contentlets, user, respectFrontendRoles, isSite);
+            }
             HibernateUtil.addCommitListener
                     (() -> this.localSystemEventsAPI.notify(
                             new ContentletDeletedEvent<>(contentlet, user)));
@@ -3505,6 +3520,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 contentletsLanguageList.forEach(
                         contentletLanguage -> contentletLanguage.setIndexPolicy(
                                 contentletToDelete.getIndexPolicy()));
+                if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+                    // Main keeps these files on disk (#9146); in S3 they would never be reclaimed.
+                    // Cleanup is recorded before the delete, so a caller without a transaction
+                    // fails before any row is removed.
+                    this.backupDestroyedContentlets(contentletsLanguageList, user);
+                    this.deleteBinaryFiles(contentletsLanguageList, null);
+                }
                 this.contentFactory.delete(contentletsLanguageList, false);
 
                 for (final Contentlet contentlet : contentlets) {
@@ -6822,6 +6844,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     /**
+     * Stores the binary fields of a just-saved contentlet. With S3 asset storage off, files are
+     * copied into the new inode's folders as before. With it on, each new or replaced file is uploaded
+     * as an immutable revision, and a rollback of the check-in deletes the revisions it uploaded.
+     *
      * @param contentlet        Just Saved contentlet it is supposed to have at least an inode
      * @param createNewVersion
      * @param contentType       ContentType
@@ -7074,6 +7100,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         } else {
                             newFile = binaryStorageAPI.storeRevision(newInode, velocityVarNm,
                                     oldFileName, incomingFile);
+                            // A rolled-back check-in never commits a reference to this new key.
+                            com.dotcms.storage.binary.BinaryAssetCleanupProcessor.deleteRevisionOnRollback(newInode,
+                                    velocityVarNm, com.dotcms.storage.binary.BinaryAssetReference.keyOf(
+                                            newFile, newInode, velocityVarNm));
                         }
 
                         contentlet.setBinary(velocityVarNm, newFile);
@@ -9557,13 +9587,22 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     /**
-     * @param contentlets
-     * @param field
+     * Deletes the binary files of the given content versions. With S3 asset storage on and no field
+     * given, it records one durable cleanup job per distinct inode in the current transaction instead,
+     * because callers can pass the same version more than once. Otherwise it removes the metadata and
+     * the local binary and resized-image folders, as before.
+     *
+     * @param contentlets the deleted content versions
+     * @param field       the field whose files to delete, or {@code null} for every field
+     * @throws DotDataException if a cleanup job cannot be recorded
      */
     private void deleteBinaryFiles(List<Contentlet> contentlets, Field field) throws DotDataException {
         if (com.dotcms.storage.AssetStorageFeature.isEnabled() && field == null) {
+            final Set<String> enqueued = new HashSet<>();
             for (final Contentlet contentlet : contentlets) {
-                com.dotcms.storage.binary.BinaryAssetCleanupProcessor.enqueue(contentlet.getInode());
+                if (enqueued.add(contentlet.getInode())) {
+                    com.dotcms.storage.binary.BinaryAssetCleanupProcessor.enqueue(contentlet.getInode());
+                }
             }
             return;
         }

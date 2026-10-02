@@ -125,7 +125,9 @@ public class BinaryAssetStorageIntegrationTest {
             assertEquals(originalKey, BinaryAssetReference.find(original.getInode(), "heroImage"));
             assertMetadataRestoredFromS3(contentletAPI.find(original.getInode(), user, false), Files.size(before));
             assertTrue(binaryAssetStorageAPI.evictLocalFile(originalFile));
-            assertTrue(binaryAssetStorageAPI.evictLocalFile(rolledBackFile), "Unable to evict replacement cache file " + rolledBackFile);
+            assertFalse(rolledBackFile.exists(), "Rollback must delete the local copy of the revision it uploaded");
+            assertFalse(binaryAssetStorageAPI.listBinaryPaths(original.getInode())
+                    .contains(BinaryAssetReference.keyOf(rolledBackFile)), "Rollback must delete the uploaded revision from S3");
             assertEquals("last committed bytes", Files.readString(contentletAPI.find(original.getInode(), user, false)
                     .getBinary("heroImage").toPath()));
 
@@ -230,6 +232,8 @@ public class BinaryAssetStorageIntegrationTest {
                 request.setAttribute(com.liferay.portal.util.WebKeys.USER, user);
                 final var output = new java.io.ByteArrayOutputStream();
                 final var opened = new java.util.concurrent.atomic.AtomicBoolean();
+                // The full response opens the file before it asks for the output stream; the range branch asks first.
+                final boolean sourceOpen = range.isEmpty();
                 final var capture = new com.dotcms.mock.response.MockHttpStatusResponse(new com.dotcms.mock.response.MockHttpCaptureResponse(
                         org.mockito.Mockito.mock(javax.servlet.http.HttpServletResponse.class), output));
                 final var response = new javax.servlet.http.HttpServletResponseWrapper(capture) {
@@ -237,8 +241,14 @@ public class BinaryAssetStorageIntegrationTest {
                     public javax.servlet.ServletOutputStream getOutputStream() throws java.io.IOException {
                         opened.set(true);
                         try {
-                            assertFalse(binaryAssetStorageAPI.evictLocalFile(cached), "Eviction must defer through response streaming, including the range branch before source open");
-                            assertTrue(cached.isFile());
+                            final boolean evicted = binaryAssetStorageAPI.evictLocalFile(cached);
+                            if (sourceOpen) {
+                                // The open handle still streams every byte, asserted below.
+                                assertTrue(evicted, "Once the file is open, a slow client must not defer eviction");
+                            } else {
+                                assertFalse(evicted, "Eviction must defer until the range branch has opened the file");
+                                assertTrue(cached.isFile());
+                            }
                         } catch (com.dotmarketing.exception.DotDataException e) {
                             throw new java.io.IOException(e);
                         }
@@ -252,7 +262,9 @@ public class BinaryAssetStorageIntegrationTest {
                 assertTrue(opened.get(), "The test must reach actual response streaming");
                 final byte[] expected = Files.readAllBytes(source.toPath());
                 assertArrayEquals(range.isEmpty() ? expected : java.util.Arrays.copyOfRange(expected, 1, 5), output.toByteArray());
-                assertTrue(binaryAssetStorageAPI.evictLocalFile(cached), "Response completion must release the lease");
+                if (!sourceOpen) {
+                    assertTrue(binaryAssetStorageAPI.evictLocalFile(cached), "Response completion must release the lease");
+                }
             }
         } finally {
             FolderDataGen.remove(folder);

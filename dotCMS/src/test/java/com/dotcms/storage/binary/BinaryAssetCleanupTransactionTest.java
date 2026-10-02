@@ -49,6 +49,11 @@ class BinaryAssetCleanupTransactionTest {
                             }
                         });
                 locator.when(APILocator::getJobQueueManagerAPI).thenReturn(manager);
+                // Enqueue records the inode's stored inventory; listing is its only storage call.
+                var binaries = mock(BinaryAssetStorageAPI.class);
+                when(binaries.listBinaryPaths("abc123")).thenReturn(java.util.List.of());
+                locator.when(APILocator::getBinaryAssetStorageAPI).thenReturn(binaries);
+                locator.when(APILocator::getFileMetadataAPI).thenReturn(mock(com.dotcms.storage.FileMetadataAPI.class));
 
                 writer.setAutoCommit(false);
                 writer.createStatement().execute("delete from contentlet where inode = 'abc123'");
@@ -79,7 +84,8 @@ class BinaryAssetCleanupTransactionTest {
                 assertEquals(1, count(observer, "job_queue"));
                 assertEquals(1, count(observer, "job"));
                 assertEquals(1, count(observer, "job_history"));
-                locator.verify(APILocator::getBinaryAssetStorageAPI, never());
+                verify(binaries, never()).deleteBinaryPaths(anyString(), anyString(), anyList());
+                verify(binaries, never()).deleteAllBinaries(anyString());
             } finally {
                 writer.rollback();
                 writer.setAutoCommit(true);
