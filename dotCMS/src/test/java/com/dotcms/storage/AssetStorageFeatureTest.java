@@ -1,6 +1,7 @@
 package com.dotcms.storage;
 
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -212,6 +213,102 @@ class AssetStorageFeatureTest {
             delete.get(5, TimeUnit.SECONDS);
             assertFalse(Files.exists(root.resolve(KEY)));
         }
+    }
+
+    @Test
+    void deleteCannotBeUndoneBySameChainInflightObjectRestore() throws Exception {
+        var fs = filesystem();
+        var remote = mock(StoragePersistenceAPI.class);
+        var reader = new JsonReaderDelegate<>(String.class);
+        var fetching = new CountDownLatch(1);
+        var finishFetch = new CountDownLatch(1);
+        when(remote.pullObject(GROUP, KEY, reader)).thenAnswer(call -> {
+            fetching.countDown();
+            assertTrue(finishFetch.await(10, TimeUnit.SECONDS));
+            return "remote";
+        });
+        var chain = chain(fs, remote);
+        try (var executor = Executors.newFixedThreadPool(2)) {
+            var read = executor.submit(() -> chain.pullObject(GROUP, KEY, reader));
+            assertTrue(fetching.await(5, TimeUnit.SECONDS));
+            var deleting = new CountDownLatch(1);
+            var delete = executor.submit(() -> {
+                deleting.countDown();
+                return chain.deleteObjectAndReferences(GROUP, KEY);
+            });
+            assertTrue(deleting.await(5, TimeUnit.SECONDS));
+            try {
+                assertThrows(TimeoutException.class, () -> delete.get(100, TimeUnit.MILLISECONDS),
+                        "A delete must wait for the restore of the same key");
+            } finally {
+                finishFetch.countDown();
+            }
+            assertEquals("remote", read.get(5, TimeUnit.SECONDS));
+            delete.get(5, TimeUnit.SECONDS);
+            assertFalse(Files.exists(root.resolve(KEY.toLowerCase())), "The deleted object must not come back locally");
+        }
+    }
+
+    @Test
+    void unreadableLocalMetadataIsReplacedFromADurableCopyAndOtherwiseFails() throws Exception {
+        // Metadata keeps lowercased keys in every slice; the binary groups later become case-preserving.
+        final String group = "dotmetadata";
+        var fs = new FileSystemStoragePersistenceAPIImpl();
+        fs.addGroupMapping(group, root.toFile());
+        var reader = new JsonReaderDelegate<>(String.class);
+        Path local = root.resolve(KEY.toLowerCase());
+        Files.createDirectories(local.getParent());
+        Files.write(local, new byte[0]);
+        var remote = mock(StoragePersistenceAPI.class);
+        when(remote.pullObject(group, KEY, reader)).thenReturn("durable");
+
+        assertEquals("durable", chain(fs, remote).pullObject(group, KEY, reader));
+        assertEquals("durable", fs.pullObject(group, KEY, reader), "The local copy is replaced from S3");
+
+        Files.writeString(local, "\"dura");
+        assertThrows(UnreadableStoredObjectException.class, () -> fs.pullObject(group, KEY, reader),
+                "A truncated local copy is a read failure, not absence");
+        var empty = mock(StoragePersistenceAPI.class);
+        assertThrows(DotRuntimeException.class, () -> chain(fs, empty).pullObject(group, KEY, reader),
+                "Without a readable durable copy the read fails instead of reporting the object as absent");
+        assertEquals("\"dura", Files.readString(local), "An unreadable copy without a replacement is kept");
+    }
+
+    @Test
+    void filesystemListingFindsKeysWhateverTheCaseOfThePrefix() throws Exception {
+        // Metadata keeps lowercased keys in every slice; the binary groups later become case-preserving.
+        final String group = "dotmetadata";
+        var fs = new FileSystemStoragePersistenceAPIImpl();
+        fs.addGroupMapping(group, root.toFile());
+        File source = Files.writeString(root.resolve("upload.tmp"), "contents").toFile();
+        fs.pushFile(group, KEY, source, Map.of());
+        assertEquals(List.of(KEY.toLowerCase()), fs.listObjectPaths(group, "a/b/ABC123"));
+    }
+
+    @Test
+    void s3ExistenceChecksListOneKeyInsteadOfTheWholePrefix() throws Exception {
+        var storage = mock(com.dotcms.enterprise.publishing.storage.Storage.class);
+        var adapter = new AmazonS3StoragePersistenceAPIImpl(storage, "bucket",
+                AmazonS3StoragePersistenceAPIImpl.PathEncryptionMode.NONE);
+        when(storage.existsBucket("bucket")).thenReturn(true);
+        when(storage.listFirstObject("bucket", GROUP + "/")).thenReturn(summary(GROUP + "/x"));
+        assertTrue(adapter.existsGroup(GROUP));
+
+        String key = GROUP + "/a/b/file";
+        when(storage.listFirstObject("bucket", key)).thenReturn(summary(key + ".bak"));
+        assertFalse(adapter.existsObject(GROUP, "/a/b/file"), "A sibling key that shares the prefix does not count");
+        when(storage.listFirstObject("bucket", key + "/")).thenReturn(summary(key + "/child"));
+        assertTrue(adapter.existsObject(GROUP, "/a/b/file"), "An object beneath the path counts");
+        when(storage.listFirstObject("bucket", key)).thenReturn(summary(key));
+        assertTrue(adapter.existsObject(GROUP, "/a/b/file"));
+
+        verify(storage, never()).listObjects(anyString(), anyString());
+    }
+
+    private static com.amazonaws.services.s3.model.S3ObjectSummary summary(final String key) {
+        var summary = new com.amazonaws.services.s3.model.S3ObjectSummary();
+        summary.setKey(key);
+        return summary;
     }
 
     @Test

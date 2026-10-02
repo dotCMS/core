@@ -47,10 +47,28 @@ public class AWSS3Storage implements Storage {
     private final AmazonS3 s3client;
     private final TransferManager transferManager;
 
+    /**
+     * Creates a storage client that authenticates through the given AWS default credential chain
+     * and uses the global S3 endpoint. With S3 asset storage off, requests are signed for
+     * {@code us-west-2} as before. With it on, no region is pinned, so the SDK looks up each
+     * bucket's region on first use and signs for that region.
+     *
+     * @param credentialsProviderChain the credential chain to authenticate with
+     */
     public AWSS3Storage(DefaultAWSCredentialsProviderChain credentialsProviderChain) {
-        this (getAmazonS3Client(credentialsProviderChain , null, DEFAULT_S3_REGION));
+        this (getAmazonS3Client(credentialsProviderChain , null,
+                com.dotcms.storage.AssetStorageFeature.isEnabled() ? null : DEFAULT_S3_REGION));
     }
 
+    /**
+     * Creates a storage client from any credential provider, with an optional custom endpoint and
+     * region. See {@link #getAmazonS3Client(AWSCredentialsProvider, String, String)} for how the two
+     * are applied.
+     *
+     * @param credentialsProvider the credentials to authenticate with
+     * @param endpoint            a custom S3-compatible endpoint, or {@code null} for AWS
+     * @param region              the bucket region, or {@code null}
+     */
     public AWSS3Storage(final AWSCredentialsProvider credentialsProvider, final String endpoint,
             final String region) {
         this(getAmazonS3Client(credentialsProvider, endpoint, region));
@@ -67,6 +85,18 @@ public class AWSS3Storage implements Storage {
                 , endPoint, region);
     }
 
+    /**
+     * Builds the S3 client. With S3 asset storage off, the client always uses the configured
+     * endpoint, or the global endpoint {@code s3.amazonaws.com}, with the given signing region, as
+     * before. With it on, a custom endpoint is used with the given signing region, a region alone
+     * selects that region's AWS endpoint, and with neither the client uses the global endpoint and
+     * the SDK looks up each bucket's region on first use instead of requiring one.
+     *
+     * @param credentialsProvider the credentials to authenticate with
+     * @param endPoint            a custom endpoint, or {@code null}
+     * @param region              the signing region, or {@code null}
+     * @return the configured client
+     */
     private static AmazonS3 getAmazonS3Client(final AWSCredentialsProvider credentialsProvider,
             final String endPoint, final String region) {
 
@@ -74,7 +104,8 @@ public class AWSS3Storage implements Storage {
         final AmazonS3ClientBuilder builder = AmazonS3ClientBuilder.standard()
                 .withCredentials(credentialsProvider)
                 .withClientConfiguration(getClientConfiguration());
-        if (!com.dotcms.storage.AssetStorageFeature.isEnabled() || UtilMethods.isSet(endPoint)) {
+        if (!com.dotcms.storage.AssetStorageFeature.isEnabled() || UtilMethods.isSet(endPoint)
+                || !UtilMethods.isSet(region)) {
             builder.withEndpointConfiguration(
                         new AwsClientBuilder.EndpointConfiguration(
                                 UtilMethods.isSet(endPoint) ? endPoint : "s3.amazonaws.com",
@@ -96,9 +127,19 @@ public class AWSS3Storage implements Storage {
 
     }
 
+    /**
+     * Returns the client configuration. With S3 asset storage off, requests keep the legacy
+     * {@code S3SignerType} override. With it on, no signer is forced: the SDK's default S3 signer is
+     * already SigV4, and an explicit override would stop the SDK from looking up a bucket's region
+     * when the client has none configured.
+     *
+     * @return a new client configuration
+     */
     private static ClientConfiguration getClientConfiguration(){
         ClientConfiguration conf = new ClientConfiguration();
-        conf.setSignerOverride(com.dotcms.storage.AssetStorageFeature.isEnabled() ? "AWSS3V4SignerType" : "S3SignerType");
+        if (!com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+            conf.setSignerOverride("S3SignerType");
+        }
 
         return conf;
     }
@@ -207,6 +248,27 @@ public class AWSS3Storage implements Storage {
             }
             result.setTruncated(false);
             return result;
+        } catch (AmazonServiceException ase) {
+            throw new DotRuntimeException("Caught an error from Amazon S3: request made but was rejected", ase);
+        } catch (AmazonClientException ace) {
+            throw new DotRuntimeException("Caught an error from Amazon S3: client encountered an internal error", ace);
+        }
+    }
+
+    /**
+     * Lists at most one key under the prefix, without following further pages.
+     *
+     * @param bucketName the bucket to look in
+     * @param prefix     the key prefix
+     * @return the first matching object summary in key order, or {@code null}
+     * @throws DotRuntimeException if S3 rejects the request or the client fails
+     */
+    @Override
+    public S3ObjectSummary listFirstObject(final String bucketName, final String prefix) throws DotRuntimeException {
+        try {
+            final List<S3ObjectSummary> objects = s3client.listObjects(new ListObjectsRequest()
+                    .withBucketName(bucketName).withPrefix(prefix).withMaxKeys(1)).getObjectSummaries();
+            return objects.isEmpty() ? null : objects.get(0);
         } catch (AmazonServiceException ase) {
             throw new DotRuntimeException("Caught an error from Amazon S3: request made but was rejected", ase);
         } catch (AmazonClientException ace) {

@@ -19,7 +19,9 @@ public final class AssetStorageFeature {
 
     /**
      * Returns whether the S3 asset lifecycle is enabled for this process. The first call reads the
-     * configuration; later calls return that value.
+     * configuration; later calls return that value. The first read logs at INFO only when the flag
+     * is on, so a node with the flag off writes no new INFO line compared with releases without
+     * this feature.
      *
      * @return {@code true} when the feature flag was on at first read
      */
@@ -29,7 +31,11 @@ public final class AssetStorageFeature {
             synchronized (AssetStorageFeature.class) {
                 if (enabled == null) {
                     enabled = Config.getBooleanProperty(FLAG, false);
-                    Logger.info(AssetStorageFeature.class, "S3 asset storage " + (enabled ? "enabled" : "disabled"));
+                    if (enabled) {
+                        Logger.info(AssetStorageFeature.class, "S3 asset storage enabled");
+                    } else {
+                        Logger.debug(AssetStorageFeature.class, "S3 asset storage disabled");
+                    }
                 }
                 value = enabled;
             }

@@ -1,6 +1,5 @@
 package com.dotcms.storage;
 
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -126,6 +125,15 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
         }
     }
 
+    /**
+     * Creates the provider from the {@code storage.file-metadata.s3.*} configuration. Without both
+     * keys it authenticates through the AWS default credential chain, which leaves out web identity
+     * while S3 asset storage is off (see {@link NoWebIdentityCredentialsProviderChain#defaultChain()}).
+     * With the flag on, an invalid namespace, a partial key pair, an invalid custom endpoint, or a
+     * custom endpoint without a region fails here.
+     *
+     * @throws DotRuntimeException if the flag is on and the configuration is invalid
+     */
     public AmazonS3StoragePersistenceAPIImpl() {
         this.lockManager = DotConcurrentFactory.getInstance().getIdentifierStripedLock();
         // todo: this should be from an app, just need to pass the host name fallback to system
@@ -157,8 +165,8 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
         }
         this.storage = !UtilMethods.isSet(accessKey) || !UtilMethods.isSet(secretAccessKey) ?
                 (AssetStorageFeature.isEnabled()
-                        ? new AWSS3Storage(new DefaultAWSCredentialsProviderChain(), endpoint, region)
-                        : new AWSS3Storage(new DefaultAWSCredentialsProviderChain())) :
+                        ? new AWSS3Storage(NoWebIdentityCredentialsProviderChain.defaultChain(), endpoint, region)
+                        : new AWSS3Storage(NoWebIdentityCredentialsProviderChain.defaultChain())) :
                 new AWSS3Storage(new AWSS3Configuration.Builder().accessKey(accessKey).secretKey(secretAccessKey).endPoint(endpoint).region(region).build());
     }
 
@@ -190,6 +198,14 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
         return impl;
     }
 
+    /**
+     * Reports whether the group holds at least one object in the bucket. With S3 asset storage on,
+     * this lists at most one key under the group, and only a positive answer is remembered.
+     *
+     * @param groupName the group to check
+     * @return {@code true} if the bucket exists and the group has an object
+     * @throws DotDataException if the check fails
+     */
     @Override
     @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public boolean existsGroup(final String groupName) throws DotDataException {
@@ -217,8 +233,8 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
         }
         boolean objectExists = this.storage.existsBucket(this.bucketName);
         if (objectExists) {
-            objectExists = !this.storage.listObjects(this.bucketName,
-                    groupKey(groupName) + FORWARD_SLASH).getObjectSummaries().isEmpty();
+            objectExists = this.storage.listFirstObject(this.bucketName,
+                    groupKey(groupName) + FORWARD_SLASH) != null;
             if (!objectExists) {
                 Logger.debug(this, () -> String.format("Group '%s' does not exist", groupName));
             }
@@ -231,16 +247,31 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
         return objectExists;
     }
 
+    /**
+     * Reports whether an object exists at the path. With S3 asset storage off, any key that starts
+     * with the path counts. With it on, the exact key or a key beneath the path as a folder counts,
+     * and each lookup lists at most one key instead of every key under the path.
+     *
+     * @param groupName  the group to look in
+     * @param objectPath the object's path
+     * @return {@code true} if the object, or something beneath it, exists
+     * @throws DotDataException if the flag is on and the check fails
+     */
     @Override
     @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public boolean existsObject(final String groupName, final String objectPath) throws DotDataException {
         final String correctedPath = transformReadPath(groupName, objectPath);
         if (AssetStorageFeature.isEnabled()) {
             try {
-                final var objects = this.storage.listObjects(this.bucketName, correctedPath);
+                // An exact key sorts before every longer key under the same prefix, so one key is enough
+                // to see it. Otherwise a second one-key lookup checks for objects stored beneath the path.
+                final var first = this.storage.listFirstObject(this.bucketName, correctedPath);
+                if (first == null) {
+                    return false;
+                }
                 final String directory = correctedPath.endsWith(FORWARD_SLASH) ? correctedPath : correctedPath + FORWARD_SLASH;
-                return objects != null && objects.getObjectSummaries().stream().anyMatch(object ->
-                        object.getKey().equals(correctedPath) || object.getKey().startsWith(directory));
+                return first.getKey().equals(correctedPath) || first.getKey().startsWith(directory)
+                        || this.storage.listFirstObject(this.bucketName, directory) != null;
             } catch (RuntimeException e) {
                 throw new DotDataException("Unable to check S3 object " + correctedPath, e);
             }
@@ -342,6 +373,18 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Uploads a file to the group and waits for the upload to finish. With S3 asset storage on, the
+     * upload starts only after this node's per-key lock is held.
+     *
+     * @param groupName the group to write to
+     * @param path      the object's path
+     * @param file      the file to upload
+     * @param extraMeta not used by this provider
+     * @return the uploaded object's ETag
+     * @throws DotDataException declared by the interface; a failed upload or lock wait is thrown as
+     *                          a {@link DotRuntimeException}
+     */
     @Override
     @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public Object pushFile(final String groupName, final String path, final File file,
@@ -372,10 +415,12 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
         }
 
         final String pathForS3 = transformReadPath(groupName, path);
-        final Upload upload = this.storage.uploadFile(new PutObjectRequest(this.bucketName, pathForS3, file));
         try {
             return lockManager.tryLock("s3_" + groupName + path, () -> {
 
+                    // Start the upload under the lock so concurrent pushes of one key on this node are
+                    // ordered, and a lock timeout leaves nothing uploading in the background.
+                    final Upload upload = this.storage.uploadFile(new PutObjectRequest(this.bucketName, pathForS3, file));
                     Logger.debug(this, () -> String.format("Pushing file '%s' to group '%s' with " +
                             "path '%s' [ %s ]", file.getName(), groupName, pathForS3, path));
                     final UploadResult result =
@@ -437,6 +482,16 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
         writeToFile(writerDelegate, object, file);
     }
 
+    /**
+     * Uploads a file in the background. With S3 asset storage on, this runs {@link #pushFile} on the
+     * storage pool; with it off, it starts the legacy transfer directly.
+     *
+     * @param groupName the group to write to
+     * @param path      the object's path
+     * @param file      the file to upload
+     * @param extraMeta not used by this provider
+     * @return a future for the uploaded object's ETag
+     */
     @Override
     @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public Future<Object> pushFileAsync(final String groupName, final String path, final File file, final Map<String, Serializable> extraMeta) {
@@ -444,19 +499,10 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
             return DotConcurrentFactory.getInstance().getSubmitter(STORAGE_POOL).submit(() -> this.pushFile(groupName, path, file, extraMeta));
         }
 
-        if (!AssetStorageFeature.isEnabled()) {
         final String pathForS3 = transformWritePath(groupName, path, file.getName());
         Logger.debug(this, () -> String.format("Async pushing file '%s' to group '%s' with path " +
                 "'%s' [ %s ]", file.getName(), groupName, pathForS3, path));
         final Upload upload = this.storage.uploadFile(this.bucketName, pathForS3, file);
-        return new UploadFuture<>(upload, file);
-
-        }
-
-        final String pathForS3 = transformReadPath(groupName, path);
-        Logger.debug(this, () -> String.format("Async pushing file '%s' to group '%s' with path " +
-                "'%s' [ %s ]", file.getName(), groupName, pathForS3, path));
-        final Upload upload = this.storage.uploadFile(new PutObjectRequest(this.bucketName, pathForS3, file));
         return new UploadFuture<>(upload, file);
     }
 
@@ -681,8 +727,7 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
         final String directory = normalized.substring(0, slash + 1);
         final String fileName = normalized.substring(slash + 1);
         final String hash = EncryptorFactory.getInstance().getEncryptor()
-                .encryptString(directory, AssetStorageFeature.isEnabled()
-                        ? newSha256() : this.sha256);
+                .encryptString(directory, newSha256());
         return groupKey(groupName) + FORWARD_SLASH + hash + FORWARD_SLASH + fileName;
     }
 
@@ -726,6 +771,17 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
                 .getOrElseThrow(DotRuntimeException::new);
     }
 
+    /**
+     * Reports whether S3 holds an object at the path with the same bytes as the file. The size must
+     * match, and then either the ETag equals the file's MD5 or the stored bytes are compared. Only
+     * one key is listed, because an exact key sorts first under its own prefix.
+     *
+     * @param groupName the group to look in
+     * @param path      the object's path
+     * @param file      the local file to compare with
+     * @return {@code true} if the flag is on and S3 holds the same contents
+     * @throws DotDataException if the file cannot be read or the comparison fails
+     */
     @Override
     @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public boolean hasDurableCopy(final String groupName, final String path,
@@ -736,10 +792,9 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
         final String key = transformReadPath(groupName, path);
         try (final InputStream input = Files.newInputStream(file.toPath())) {
             final String md5 = DigestUtils.md5Hex(input);
-            for (final var object : storage.listObjects(bucketName, key).getObjectSummaries()) {
-                if (key.equals(object.getKey()) && object.getSize() == file.length()) {
-                    return md5.equalsIgnoreCase(object.getETag()) || storage.fileContentsMatch(bucketName, key, file);
-                }
+            final var object = storage.listFirstObject(bucketName, key);
+            if (object != null && key.equals(object.getKey()) && object.getSize() == file.length()) {
+                return md5.equalsIgnoreCase(object.getETag()) || storage.fileContentsMatch(bucketName, key, file);
             }
             return false;
         } catch (final IOException e) {

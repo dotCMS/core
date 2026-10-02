@@ -4,6 +4,7 @@ import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.Config;
 import com.google.common.annotations.VisibleForTesting;
 import io.vavr.control.Try;
@@ -446,6 +447,19 @@ public class ChainableStoragePersistenceAPI implements StoragePersistenceAPI {
         }
     }
 
+    /**
+     * Reads an object from the first provider that has it. With S3 asset storage on, providers
+     * earlier in the chain that missed it are refilled with the value, under the same per-key lock
+     * that writes and deletes take, so a restore cannot overwrite a newer write or bring back a
+     * deleted object. A provider whose copy cannot be deserialized is refilled the same way when a
+     * later provider holds a readable copy; if none does, the read fails rather than reporting the
+     * object as absent. Read failures propagate instead of being reported as absence.
+     *
+     * @param groupName      the group to read from
+     * @param path           the object's path
+     * @param readerDelegate deserializes the stored value
+     * @return the object, or {@code null} if no provider has it
+     */
     @Override
     public Object pullObject(final String groupName,
                              final String path,
@@ -453,12 +467,25 @@ public class ChainableStoragePersistenceAPI implements StoragePersistenceAPI {
 
         if (AssetStorageFeature.isEnabled()) {
             final List<StoragePersistenceAPI> missing = new ArrayList<>();
+            UnreadableStoredObjectException unreadable = null;
+            final var lock = assetLocks.get(groupName + "/" + path);
+            lock.lock();
             try {
                 for (StoragePersistenceAPI storage : storagePersistenceAPIList) {
-                    final Object object = storage.pullObject(groupName, path, readerDelegate);
+                    Object object;
+                    try {
+                        object = storage.pullObject(groupName, path, readerDelegate);
+                    } catch (final UnreadableStoredObjectException e) {
+                        unreadable = e;
+                        object = null;
+                    }
                     if (object == null) {
                         missing.add(storage);
                     } else {
+                        if (unreadable != null) {
+                            Logger.warn(this, "Replacing an unreadable copy of (" + groupName + '|' + path
+                                    + ") from a later storage provider: " + unreadable.getMessage());
+                        }
                         if (object instanceof Serializable) {
                             for (StoragePersistenceAPI cacheStorage : missing) {
                                 if (!cacheStorage.existsGroup(groupName)) {
@@ -471,9 +498,14 @@ public class ChainableStoragePersistenceAPI implements StoragePersistenceAPI {
                         return object;
                     }
                 }
+                if (unreadable != null) {
+                    throw unreadable;
+                }
                 return null;
             } catch (DotDataException e) {
                 throw new DotRuntimeException("Unable to retrieve stored object " + path, e);
+            } finally {
+                lock.unlock();
             }
         }
 
