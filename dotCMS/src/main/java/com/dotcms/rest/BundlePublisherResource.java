@@ -161,7 +161,11 @@ public class BundlePublisherResource {
 			}
 
 			//Write file on FS
-			FileUtil.writeToFile(bundleStream, bundlePath + fileName);
+			if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+				com.dotcms.publishing.output.BundleArchiveStorage.getInstance().receive(fileName, bundleStream);
+			} else {
+				FileUtil.writeToFile(bundleStream, bundlePath + fileName);
+			}
 
 			//Start thread
 
