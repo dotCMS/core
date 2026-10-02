@@ -225,3 +225,4 @@ public enum IndexTag {
         return name;
     }
 }
+// CI baseline probe: comment-only change to trigger the full PR pipeline.
