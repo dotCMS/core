@@ -120,9 +120,15 @@ public class FocalPointAPIImpl implements FocalPointAPI {
 
        try {
            final Metadata metadata = fileMetadataAPI.getMetadata(contentlet, fieldVar);
+           if (metadata == null && com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+               return Optional.empty();
+           }
            return parseFocalPoint(
                    (String) metadata.getCustomMeta().get(FOCAL_POINT));
        }catch (Exception e){
+          if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+              throw new DotRuntimeException("Unable to read focal-point metadata", e);
+          }
           Logger.debug (FocalPointAPIImpl.class, "Metadata Error retrieving focal point from custom metadata", e);
        }
         return Optional.empty();
@@ -183,12 +189,22 @@ public class FocalPointAPIImpl implements FocalPointAPI {
     }
 
     /**
-     * contentlet inode finder method
-     * @param inode
-     * @return
+     * Finds the contentlet for an inode as the current user. A missing contentlet, a permission
+     * denial or any other lookup failure yields an empty result, so the caller treats it as having
+     * no focal point. With S3 asset storage on, a {@link DotDataException} is the exception: it
+     * means the lookup itself failed, so it is rethrown rather than reported as no focal point.
+     *
+     * @param inode the contentlet inode
+     * @return the contentlet, or empty when it is missing or the user cannot read it
+     * @throws DotRuntimeException wrapping a {@link DotDataException} when the flag is on
      */
     private Optional<Contentlet> findContentletByInode(final String inode){
-      return Optional.ofNullable(Try.of(()->contentletAPI.find(inode, currentUserSupplier.get(), false)).getOrNull());
+      final var lookup = Try.of(() -> contentletAPI.find(inode, currentUserSupplier.get(), false));
+      if (com.dotcms.storage.AssetStorageFeature.isEnabled() && lookup.isFailure()
+              && lookup.getCause() instanceof DotDataException) {
+          throw new DotRuntimeException(lookup.getCause());
+      }
+      return Optional.ofNullable(lookup.getOrNull());
     }
 
     /**
