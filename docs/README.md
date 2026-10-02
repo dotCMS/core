@@ -77,6 +77,7 @@ Descriptions say **when to load** the doc, not what it contains.
 | [E2E_TESTS.md](testing/E2E_TESTS.md) | Working on the Playwright suite in `core-web/apps/dotcms-ui-e2e` |
 | [API_TESTING.md](testing/API_TESTING.md) | Writing API tests — Postman (`dotcms-postman/`) and Karate (`test-karate/`) |
 | [PERFORMANCE_TESTS.md](testing/PERFORMANCE_TESTS.md) | Load testing with JMeter (`test-jmeter/`) or the Kubernetes analytics suite |
+| [BINARY_S3_STORAGE.md](testing/BINARY_S3_STORAGE.md) | Working on S3 asset storage (`FEATURE_FLAG_S3_ASSET_STORAGE`): what changes with the flag on and off, and how to run its MinIO and integration checks |
 | [test-cases/README.md](test-cases/README.md) | Looking for the manual/feature test-suite index |
 
 ## CLI (`tools/dotcms-cli`)
