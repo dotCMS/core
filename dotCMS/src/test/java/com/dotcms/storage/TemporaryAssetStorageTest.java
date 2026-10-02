@@ -60,7 +60,10 @@ class TemporaryAssetStorageTest {
             nodeB.cleanupExpired();
             assertFalse(remote.existsObject(TemporaryAssetStorage.GROUP, receipt.key()));
             assertTrue(nodeB.receipt(id).isEmpty());
-            assertFalse(restored.exists());
+            // The local copy is left to the CLEANUP_TMP_FILES_OLDER_THAN_HOURS age rule, so a
+            // check-in that resolved it just before expiry keeps its source.
+            assertTrue(restored.exists(), "Expiry must not delete local bytes before the local age rule does");
+            assertTrue(nodeB.isManagedLocally(id), "The marker keeps the expired local copy from legacy access");
             verify(binaries).deleteGeneratedFiles(id);
         } finally {
             Config.setProperty(AssetStorageFeature.FLAG, flag);
@@ -111,6 +114,49 @@ class TemporaryAssetStorageTest {
         }
     }
 
+    /** One unreadable receipt must not stop the cleanup of the other expired uploads. */
+    @Test
+    void cleanupContinuesPastAnUnreadableReceiptAndStillReportsIt() throws Exception {
+        final String flag = Config.getStringProperty(AssetStorageFeature.FLAG, null);
+        final String ttl = Config.getStringProperty("TEMP_RESOURCE_MAX_AGE_SECONDS", null);
+        try (var locator = mockStatic(APILocator.class)) {
+            Config.setProperty(AssetStorageFeature.FLAG, true);
+            Config.setProperty("TEMP_RESOURCE_MAX_AGE_SECONDS", 1800);
+            final var metadata = mock(FileStorageAPI.class);
+            final var binaries = mock(BinaryAssetStorageAPI.class);
+            locator.when(APILocator::getFileStorageAPI).thenReturn(metadata);
+            locator.when(APILocator::getBinaryAssetStorageAPI).thenReturn(binaries);
+            final var remote = memoryRemote();
+            final var store = new TemporaryAssetStorage(remote, root);
+            // Listed first, and its receipt cannot be parsed.
+            remote.backfillObject(TemporaryAssetStorage.GROUP, ".receipts/temp_Aaa-Broken.json", null, null,
+                    new HashMap<>(Map.of("name", 42)));
+            final String brokenPayload = "data/1/temp_Aaa-Broken/Broken.GIF";
+            remote.backfillFile(TemporaryAssetStorage.GROUP, brokenPayload,
+                    Files.writeString(root.resolve("broken.tmp"), "broken").toFile());
+            final String id = "temp_Zzz-Valid";
+            final File source = store.file(id, "Valid.GIF");
+            Files.createDirectories(source.toPath().getParent());
+            Files.writeString(source.toPath(), "valid upload");
+            Files.writeString(source.toPath().resolveSibling(TemporaryAssetStorage.PERMISSIONS_FILE), "[\"owner\"]");
+            store.store(id, source);
+            final var receipt = store.receipt(id).orElseThrow();
+            Config.setProperty("TEMP_RESOURCE_MAX_AGE_SECONDS", 0);
+
+            assertThrows(DotDataException.class, store::cleanupExpired, "The job must still report the failure");
+
+            assertTrue(store.receipt(id).isEmpty(), "The valid expired upload is cleaned despite the broken one");
+            assertFalse(remote.existsObject(TemporaryAssetStorage.GROUP, receipt.key()));
+            verify(binaries).deleteGeneratedFiles(id);
+            assertTrue(remote.existsObject(TemporaryAssetStorage.GROUP, ".receipts/temp_Aaa-Broken.json"));
+            assertTrue(remote.existsObject(TemporaryAssetStorage.GROUP, brokenPayload),
+                    "A failed upload keeps its payload with its receipt for the next run");
+        } finally {
+            Config.setProperty(AssetStorageFeature.FLAG, flag);
+            Config.setProperty("TEMP_RESOURCE_MAX_AGE_SECONDS", ttl);
+        }
+    }
+
     private StoragePersistenceAPI memoryRemote() throws Exception {
         final var remote = mock(StoragePersistenceAPI.class);
         final Map<String, Object> objects = new HashMap<>();
@@ -132,7 +178,7 @@ class TemporaryAssetStorageTest {
         });
         doAnswer(call -> { Files.delete(call.<File>getArgument(0).toPath()); return null; }).when(remote).releaseRetrievedFile(any());
         when(remote.listObjectPaths(anyString(), anyString())).thenAnswer(call ->
-                objects.keySet().stream().filter(key -> key.startsWith(call.<String>getArgument(1))).toList());
+                objects.keySet().stream().filter(key -> key.startsWith(call.<String>getArgument(1))).sorted().toList());
         when(remote.deleteObjectAndReferences(anyString(), anyString())).thenAnswer(call -> {
             final String prefix = call.getArgument(1);
             objects.remove(prefix);

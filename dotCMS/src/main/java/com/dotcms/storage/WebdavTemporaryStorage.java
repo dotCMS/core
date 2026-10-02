@@ -151,24 +151,53 @@ public final class WebdavTemporaryStorage {
         }
     }
 
+    /**
+     * Lists the live direct children of a staging directory, sorted by path.
+     *
+     * <p>The S3 listing returns every record in the subtree, so records are grouped by key first and
+     * only what decides each direct child is read: the child's own record, and only when that record
+     * is missing, deleted or expired, its descendants until one live descendant shows that the child
+     * still exists as an implicit directory. Deeper records under a live child are never fetched.
+     * Records that disappear between the listing and the read are skipped.
+     *
+     * @param directory the local path of the staging directory
+     * @return the live files and directories directly inside it
+     * @throws IOException if the directory or a listed key is not a valid staging path
+     * @throws DotDataException if S3 cannot be read
+     */
     public List<Entry> children(File directory) throws IOException, DotDataException {
-        final String prefix = key(directory) + "/";
-        final Map<String, Entry> children = new java.util.TreeMap<>();
-        for (String object : remote().listObjectPaths(GROUP, recordPrefix(key(directory)))) {
+        final String parent = key(directory);
+        final String prefix = parent + "/";
+        // Direct child path to the descendant record paths below it, in listing order.
+        final Map<String, List<String>> descendants = new java.util.TreeMap<>();
+        final var recorded = new java.util.HashSet<String>();
+        for (String object : remote().listObjectPaths(GROUP, recordPrefix(parent))) {
             final String path = recordPath(object);
-            if (path.equals(key(directory))) continue;
+            if (path.equals(parent)) continue;
             if (!path.startsWith(prefix)) throw new IOException("Invalid staging listing");
-            final Entry entry = read(path);
-            if (entry == null || entry.expired()) continue;
             final String suffix = path.substring(prefix.length());
             final int slash = suffix.indexOf('/');
-            if (slash < 0) children.put(path, entry);
-            else {
-                final String parent = prefix + suffix.substring(0, slash);
-                children.putIfAbsent(parent, new Entry(parent, true, 0, entry.modified(), ""));
+            final String child = slash < 0 ? path : prefix + suffix.substring(0, slash);
+            final List<String> nested = descendants.computeIfAbsent(child, ignored -> new ArrayList<>());
+            if (slash < 0) recorded.add(path);
+            else nested.add(path);
+        }
+        final List<Entry> children = new ArrayList<>();
+        for (var child : descendants.entrySet()) {
+            final Entry own = recorded.contains(child.getKey()) ? read(child.getKey()) : null;
+            if (own != null && !own.expired()) {
+                children.add(own);
+                continue;
+            }
+            for (String path : child.getValue()) {
+                final Entry entry = read(path);
+                if (entry != null && !entry.expired()) {
+                    children.add(new Entry(child.getKey(), true, 0, entry.modified(), ""));
+                    break;
+                }
             }
         }
-        return new ArrayList<>(children.values());
+        return children;
     }
 
     private String publish(String path, Entry entry, String pending, String expected) throws DotDataException {

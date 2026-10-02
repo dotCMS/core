@@ -412,7 +412,20 @@ public class DotWebdavHelper {
 		return String.join("/", parts);
 	}
 
-	List<Resource> temporaryChildren(String url, boolean autoPublish) throws IOException {
+	/**
+	 * Lists the WebDAV temporary files and folders stored in S3 directly under a CMS folder, site
+	 * root or language folder, for use with S3 asset storage on.
+	 *
+	 * <p>Each file resource is built from the entry the listing already read, so a file that a
+	 * client deletes while the folder is being listed cannot fail the listing. If S3 cannot be
+	 * read, the failure is logged and only the temporary children are left out, so the CMS files
+	 * and folders around them still list.
+	 *
+	 * @param url the WebDAV URL of the containing folder
+	 * @param autoPublish whether the resources are served from an auto-publishing mount
+	 * @return the temporary children, or an empty list if they could not be read
+	 */
+	List<Resource> temporaryChildren(String url, boolean autoPublish) {
 		final var staging = com.dotcms.storage.WebdavTemporaryStorage.getInstance();
 		final List<Resource> result = new ArrayList<>();
 		final String prefix = url.endsWith("/") ? url : url + "/";
@@ -422,10 +435,12 @@ public class DotWebdavHelper {
 				final String child = prefix + file.getName();
 				if (!isTempResource(child)) continue;
 				result.add(entry.directory() ? new TempFolderResourceImpl(child, file, autoPublish)
-						: new TempFileResourceImpl(file, child, autoPublish));
+						: new TempFileResourceImpl(file, child, autoPublish, entry));
 			}
-		} catch (DotDataException failure) {
-			throw new IOException("Unable to list WebDAV staging resources", failure);
+		} catch (IOException | DotDataException | RuntimeException failure) {
+			Logger.warn(this, "Unable to list WebDAV temporary files under " + stripLogControls(url)
+					+ "; leaving them out of the listing: " + failure.getMessage());
+			return new ArrayList<>();
 		}
 		return result;
 	}
@@ -695,11 +710,24 @@ public class DotWebdavHelper {
 		setResourceContent(destPath, in, null, null, new Date(fromFile.lastModified()),user, autoPublish);
 	}
 
+	/**
+	 * Copies a CMS file to another WebDAV path. The copy is always saved as an unpublished working
+	 * version, whatever mount the request came through, so it needs only edit permission. The
+	 * {@code autoPublish} argument is not used for that reason.
+	 *
+	 * <p>With S3 asset storage on, the source stream is closed once the copy is saved.
+	 *
+	 * @param fromPath the WebDAV path of the source file
+	 * @param toPath the WebDAV path of the copy
+	 * @param user the user making the copy
+	 * @param autoPublish whether the request came through an auto-publishing mount (ignored)
+	 * @throws Exception if the source cannot be read or the copy cannot be saved
+	 */
 	public void copyResource(String fromPath, String toPath, User user, boolean autoPublish) throws Exception {
 		if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
 			try (InputStream input = getResourceContent(fromPath, user)) {
 				if (input == null) throw new IOException("Missing WebDAV copy source");
-				setResourceContent(toPath, input, null, null, new Date(), user, autoPublish);
+				setResourceContent(toPath, input, null, null, new Date(), user, false);
 			}
 			return;
 		}

@@ -85,7 +85,11 @@ public class TempFolderResourceImpl implements FolderResource, LockableResource,
 		return null;
 	}
 
-	/* (non-Javadoc)
+	/**
+	 * Lists the files and folders in this temporary folder. With S3 asset storage on, they come
+	 * from S3, and each file resource is built from the entry the listing already read.
+	 *
+	 * @return the children of this folder
 	 * @see com.bradmcevoy.http.CollectionResource#getChildren()
 	 */
 	public List<? extends Resource> getChildren() {
@@ -96,7 +100,7 @@ public class TempFolderResourceImpl implements FolderResource, LockableResource,
 				for (var entry : storage.children(folder)) {
 					final File file = storage.file(entry.path());
 					result.add(entry.directory() ? new TempFolderResourceImpl(file.getPath(), file, isAutoPub)
-							: new TempFileResourceImpl(file, file.getPath(), isAutoPub));
+							: new TempFileResourceImpl(file, file.getPath(), isAutoPub, entry));
 				}
 				return result;
 			} catch (Exception failure) {
