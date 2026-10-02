@@ -7,8 +7,8 @@
 #
 # Two sub-commands:
 #
-#   maven   Publish one version of every com/dotcms module found in a local
-#           Maven repository (~/.m2/repository), preserving the
+#   maven   Publish one version of every module under com/dotcms (including
+#           nested groups) in a local Maven repository, preserving the
 #           groupId/artifactId/version layout, and (re)generate the
 #           maven-metadata.xml files Artifactory used to create.
 #
@@ -101,8 +101,8 @@ Common options:
 maven options:
   --version <version>   Version subtree to publish (required)
   --repo-dir <path>     Local Maven repository      (default: $HOME/.m2/repository)
-  --modules <a,b>       Restrict to these artifactIds (default: every com/dotcms module
-                        that has a directory for <version>)
+  --modules <a,b>       Restrict to these artifactIds across all groups under com/dotcms
+                        (default: every module with a directory for <version>)
   --exclude-ext <a,b>   Extra file extensions to skip (default: repositories,excludeext)
 
 file options:
@@ -180,14 +180,16 @@ upload_checksums() {
   aws_s3 cp "$tmp" "$dest" "${args[@]}"
 }
 
-# Rebuilds com/dotcms/<artifactId>/maven-metadata.xml from the versions that
-# already exist in the bucket plus the version just uploaded. Best-effort: a
-# failure here must not fail the publish, because the artifacts themselves are
-# already in place.
+# Rebuilds <groupPath>/<artifactId>/maven-metadata.xml from the versions that
+# already exist in the bucket plus the version just uploaded. artifact_path is
+# relative to the Maven repository (e.g. com/dotcms/core/plugins/com.dotcms.tika-api).
+# Best-effort: a failure here must not fail a publish already in place.
 update_artifact_metadata() {
-  local artifact="$1" version="$2" ts
+  local artifact_path="$1" version="$2" ts
+  local artifact="${artifact_path##*/}" group="${artifact_path%/*}"
+  group="${group//\//.}"
   ts="$(date -u +%Y%m%d%H%M%S)"
-  local base="$S3_PREFIX/com/dotcms/$artifact"
+  local base="$S3_PREFIX/$artifact_path"
   local tmp versions latest release v plain listing
 
   tmp="$(mktemp -d)"
@@ -202,9 +204,8 @@ update_artifact_metadata() {
   # rebuild metadata from an empty list: that would overwrite the existing file
   # with a single-version one and silently drop every prior version. Leave the
   # last-good metadata in place instead.
-  local listing
   if ! listing="$(aws_s3 ls "s3://$S3_BUCKET/$base/" 2>/dev/null)"; then
-    warn "Could not list versions for $artifact (aws s3 ls failed); leaving maven-metadata.xml unchanged."
+    warn "Could not list versions for $artifact_path (aws s3 ls failed); leaving maven-metadata.xml unchanged."
     return 0
   fi
   versions="$(printf '%s\n' "$listing" | awk '$1 == "PRE" {print $2}' | sed 's:/$::')"
@@ -224,7 +225,7 @@ update_artifact_metadata() {
 
   {
     printf '<metadata modelVersion="1.1.0">\n'
-    printf '  <groupId>com.dotcms</groupId>\n'
+    printf '  <groupId>%s</groupId>\n' "$group"
     printf '  <artifactId>%s</artifactId>\n' "$artifact"
     printf '  <versioning>\n'
     printf '    <latest>%s</latest>\n' "$latest"
@@ -297,26 +298,34 @@ cmd_maven() {
   local group_dir="$MAVEN_REPO_DIR/com/dotcms"
   [[ -d "$group_dir" ]] || die "No com/dotcms directory under $MAVEN_REPO_DIR"
 
-  local artifacts=() artifact
+  # Group IDs may have any depth (e.g. com.dotcms.core.plugins). Preserve
+  # the complete repository-relative path instead of flattening to artifactId.
+  local candidates=() artifacts=() artifact_path artifact dir
+  while IFS= read -r -d '' dir; do
+    [[ "${dir##*/}" == "$version" ]] || continue
+    artifact_path="${dir%/*}"
+    candidates+=("${artifact_path#"$MAVEN_REPO_DIR"/}")
+  done < <(find "$group_dir" -mindepth 2 -type d -name "$version" -prune -print0)
+
   if [[ -n "$modules" ]]; then
-    local wanted
+    local wanted matched
     IFS=',' read -ra wanted <<< "$modules"
     for artifact in "${wanted[@]}"; do
       artifact="${artifact//[[:space:]]/}"
       [[ -n "$artifact" ]] || continue
-      if [[ -d "$group_dir/$artifact/$version" ]]; then
-        artifacts+=("$artifact")
-      else
+      matched=false
+      for artifact_path in "${candidates[@]}"; do
+        if [[ "${artifact_path##*/}" == "$artifact" ]]; then
+          artifacts+=("$artifact_path")
+          matched=true
+        fi
+      done
+      if [[ "$matched" == "false" ]]; then
         warn "Module $artifact has no $version directory; skipping."
       fi
     done
   else
-    shopt -s nullglob
-    local dirs=("$group_dir"/*/"$version")
-    shopt -u nullglob
-    for dir in "${dirs[@]}"; do
-      [[ -d "$dir" ]] && artifacts+=("$(basename "$(dirname "$dir")")")
-    done
+    artifacts=("${candidates[@]}")
   fi
 
   if [[ ${#artifacts[@]} -eq 0 ]]; then
@@ -336,22 +345,22 @@ cmd_maven() {
   build_exclude_args
 
   local dest upload_args
-  for artifact in "${artifacts[@]}"; do
-    local src="$group_dir/$artifact/$version"
-    dest="s3://$S3_BUCKET/$S3_PREFIX/com/dotcms/$artifact/$version/"
+  for artifact_path in "${artifacts[@]}"; do
+    local src="$MAVEN_REPO_DIR/$artifact_path/$version"
+    dest="s3://$S3_BUCKET/$S3_PREFIX/$artifact_path/$version/"
     upload_args=(--recursive --no-progress "${EXCLUDE_ARGS[@]}")
     [[ "$DRY_RUN" == "true" ]] && upload_args+=(--dryrun)
 
-    log "  $artifact:$version -> $dest"
+    log "  $artifact_path:$version -> $dest"
     aws_s3 cp "$src" "$dest" "${upload_args[@]}"
 
     if [[ "$CHECKSUMS" == "true" ]]; then
-      upload_checksums "$src" "$dest" || warn "Checksum upload failed for $artifact:$version."
+      upload_checksums "$src" "$dest" || warn "Checksum upload failed for $artifact_path:$version."
     fi
 
     if [[ "$UPDATE_METADATA" == "true" ]]; then
-      update_artifact_metadata "$artifact" "$version" \
-        || warn "maven-metadata.xml update failed for $artifact."
+      update_artifact_metadata "$artifact_path" "$version" \
+        || warn "maven-metadata.xml update failed for $artifact_path."
     fi
   done
 
