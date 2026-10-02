@@ -56,4 +56,66 @@ describe('hasOverlayAbove', () => {
             expect(hasOverlayAbove(null)).toBe(false);
         });
     });
+
+    // Toasts and tooltips join the same stack as dialogs, under the same key, so the stack alone
+    // cannot tell a notification from a modal (#37884).
+    describe('with a passive layer stacked', () => {
+        const rendered: HTMLElement[] = [];
+
+        const render = (className: string, zIndex: number) => {
+            const element = elementAt(zIndex);
+            element.className = className;
+            document.body.appendChild(element);
+            rendered.push(element);
+
+            return element;
+        };
+
+        afterEach(() => rendered.splice(0).forEach((element) => element.remove()));
+
+        it('should report nothing above when only a toast is stacked', () => {
+            stackTop(1101);
+            render('p-toast p-component', 1101);
+
+            expect(hasOverlayAbove()).toBe(false);
+        });
+
+        it('should report nothing above when only a tooltip is stacked', () => {
+            stackTop(1101);
+            render('p-tooltip p-component', 1101);
+
+            expect(hasOverlayAbove()).toBe(false);
+        });
+
+        // PrimeNG puts `z-index: 2` on an input's icon. That is layout, not something open above.
+        it('should not read a layout z-index as an overlay beside a toast', () => {
+            stackTop(1101);
+            render('p-inputicon', 2);
+            render('p-toast p-component', 1101);
+
+            expect(hasOverlayAbove()).toBe(false);
+        });
+
+        it('should still report a dialog underneath a toast', () => {
+            stackTop(1103);
+            render('p-dialog-mask', 1101);
+            render('p-toast p-component', 1103);
+
+            expect(hasOverlayAbove()).toBe(true);
+        });
+
+        it('should ignore a toast for an overlay that is itself above the toast', () => {
+            stackTop(1103);
+            render('p-toast p-component', 1101);
+
+            expect(hasOverlayAbove(elementAt(1103))).toBe(false);
+        });
+
+        it('should report nothing above an overlay when only a toast is stacked on it', () => {
+            stackTop(1103);
+            render('p-toast p-component', 1103);
+
+            expect(hasOverlayAbove(elementAt(1101))).toBe(false);
+        });
+    });
 });
