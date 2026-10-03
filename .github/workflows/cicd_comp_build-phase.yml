@@ -194,6 +194,40 @@ jobs:
           artifact-suffix: ${{ inputs.artifact-suffix }}
           release-build: ${{ inputs.release-build }}
 
+      # Tripwire, deliberately in the BUILD job. The release phase validates
+      # before publishing Maven, but it runs after the deployment job has already
+      # pushed Docker images — so a build that produced the wrong coordinates
+      # would ship images and only then block the publish. Nothing is pushed from
+      # here, so this is where the check is cheap and total.
+      - name: Verify release coordinates were installed
+        if: inputs.release-build == true
+        shell: bash
+        env:
+          SUFFIX: ${{ steps.maven-build.outputs.artifact-suffix }}
+        run: |
+          set -uo pipefail
+
+          revision="$(awk -F= '/^-Drevision=/{print $2; exit}' .mvn/maven.config)"
+          if [[ -z "$revision" ]]; then
+            echo "::error::no -Drevision= in .mvn/maven.config; release coordinates cannot be trusted"
+            exit 1
+          fi
+
+          # The published version is <revision>-<suffix>; the suffix is the
+          # resolved one, so a Java variant is checked as <revision>-java-25.
+          version="$revision"
+          if [[ -n "$SUFFIX" ]]; then
+            version="${revision}-${SUFFIX}"
+          fi
+
+          dir="$HOME/.m2/repository/com/dotcms/dotcms-core/$version"
+          if [[ ! -f "$dir/dotcms-core-$version.pom" || ! -f "$dir/dotcms-core-$version.jar" ]]; then
+            echo "::error::$version was not installed into the Maven repository; refusing to deploy images for a release that cannot publish its artifacts"
+            ls -1 "$HOME/.m2/repository/com/dotcms/dotcms-core/" 2>/dev/null || true
+            exit 1
+          fi
+          echo "Release coordinates present: $version"
+
       # Record who produced each cache entry. Nothing in an S3 bucket says which
       # ref wrote a given hash, which is half of what makes a shared build cache
       # a supply-chain risk (CVE-2025-36852). Written first-writer-wins, so an
