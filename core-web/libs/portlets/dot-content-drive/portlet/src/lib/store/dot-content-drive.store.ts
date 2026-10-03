@@ -669,12 +669,18 @@ export const DotContentDriveStore = signalStore(
                     const queryTreeExpanded =
                         queryParams['isTreeExpanded'] ?? DEFAULT_TREE_EXPANDED.toString();
 
-                    store.initContentDrive({
-                        currentSite,
-                        path,
-                        filters,
-                        isTreeExpanded: queryTreeExpanded == 'true'
-                    });
+                    // Untracked: `initContentDrive` reads `defaultLanguageId`, and tracking it would
+                    // re-run the init when the default language lands, re-reading the page's
+                    // original URL over any filter changed in between. `loadDefaultLanguage` seeds
+                    // the language into the current filters itself, so only the site re-runs this.
+                    untracked(() =>
+                        store.initContentDrive({
+                            currentSite: currentSite ?? SYSTEM_HOST,
+                            path,
+                            filters,
+                            isTreeExpanded: queryTreeExpanded == 'true'
+                        })
+                    );
                 });
 
                 /**
