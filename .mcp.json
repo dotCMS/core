@@ -3,17 +3,17 @@
     "chrome-devtools": {
       "type": "stdio",
       "command": "npx",
-      "args": ["chrome-devtools-mcp@latest"],
+      "args": ["chrome-devtools-mcp@0.18.1"],
       "env": {}
     },
     "primeng": {
       "command": "npx",
-      "args": ["-y", "@primeng/mcp"]
+      "args": ["-y", "@primeng/mcp@21.1.1"]
     },
     "angular-cli": {
       "type": "stdio",
       "command": "npx",
-      "args": ["@angular/cli", "mcp"],
+      "args": ["@angular/cli@21.1.2", "mcp"],
       "env": {}
     }
   }
