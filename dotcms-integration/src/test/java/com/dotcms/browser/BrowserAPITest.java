@@ -2,6 +2,7 @@ package com.dotcms.browser;
 
 import static org.awaitility.Awaitility.await;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -66,6 +67,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.Config;
@@ -5105,6 +5107,130 @@ public class BrowserAPITest extends IntegrationTestBase {
             overrides.adaptive(false);
             api.getContentUnderParentFromDB(query, 5);
             assertEquals(Collections.nCopies(13, 5), requestedChunkSizes(api));
+        }
+    }
+
+    // issue #37488 -- a failed ES sub-query fails the request instead of silently dropping its
+    // share of matches and returning an incomplete page as HTTP 200.
+    //
+    // The failure is forced with a date range bound that is not a date. Content Drive's resolver
+    // now rejects that with HTTP 400 before a query is built, so these tests build the
+    // FieldSearchCriteria directly to get it past the resolver: the index rejects the resulting
+    // range query on every engine, which stands in for any sub-query failure.
+
+    private static final String NOT_A_DATE = "not-a-date\"] OR title:*";
+
+    /** Seeds {@code count} contentlets of the fixture type into the folder (not waiting on the index). */
+    private static void seedFieldFilterContent(final FieldFilterFixture fixture, final Folder folder,
+            final String uniqueId, final int count) {
+        for (int i = 0; i < count; i++) {
+            new ContentletDataGen(fixture.contentType.id())
+                    .folder(folder)
+                    .setProperty("title", "ffFail_" + uniqueId + "_" + i)
+                    .languageId(1)
+                    .setPolicy(IndexPolicy.DEFER)
+                    .nextPersisted();
+        }
+    }
+
+    private static BrowserQuery dateFilterQuery(final Folder folder, final FieldSearchCriteria criterion) {
+        return BrowserQuery.builder()
+                .withUser(APILocator.systemUser())
+                .withHostOrFolderId(folder.getIdentifier())
+                .useElasticsearchFiltering(true)
+                .showFolders(false)
+                .showLinks(false)
+                .withFieldCriteria(List.of(criterion))
+                .maxResults(100)
+                .contentCursor(0)
+                .build();
+    }
+
+    private void assertRequestFails(final BrowserQuery query, final String scenario)
+            throws DotSecurityException {
+        try {
+            final PaginatedContents result = browserAPI.getPaginatedContents(query);
+            fail(scenario + ": expected the request to fail, but it returned "
+                    + result.list.size() + " items");
+        } catch (final DotDataException | DotRuntimeException expected) {
+            // getContentUnderParentFromDB's callers wrap the DotDataException raised by
+            // processESDirectly, so either type means the failure reached the caller.
+            Logger.info(this, scenario + " failed as expected: " + expected.getMessage());
+        }
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link BrowserAPIImpl#getPaginatedContents(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> A folder whose candidates fit in one ES sub-query, filtered
+     *     by a criterion the index rejects.</li>
+     *     <li><b>Expected Result:</b> The request fails instead of returning an empty page.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPaginatedContents_failedSingleESSubQuery_failsTheRequest() throws Exception {
+        final String uniqueId = UUIDGenerator.shorty();
+        final Folder folder = new FolderDataGen().site(new SiteDataGen().nextPersisted()).nextPersisted();
+        final FieldFilterFixture fixture = createFieldFilterContentType(uniqueId);
+        seedFieldFilterContent(fixture, folder, uniqueId, 5);
+
+        assertRequestFails(dateFilterQuery(folder, dateRangeCriterion(fixture, NOT_A_DATE, "*")),
+                "single sub-query");
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link BrowserAPIImpl#getPaginatedContents(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> {@code BROWSER_ES_MAX_QUERY_STRING_LENGTH} is lowered so 100
+     *     candidates are split over several parallel ES sub-queries, all rejected by the index.</li>
+     *     <li><b>Expected Result:</b> The request fails; the parallel path no longer turns each
+     *     failed sub-query into an empty contribution.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPaginatedContents_failedParallelESSubQueries_failTheRequest() throws Exception {
+        final int previousMaxLength = Config.getIntProperty(
+                BrowserAPIImpl.BROWSER_ES_MAX_QUERY_STRING_LENGTH_KEY,
+                BrowserAPIImpl.BROWSER_ES_MAX_QUERY_STRING_LENGTH_DEFAULT);
+        Config.setProperty(BrowserAPIImpl.BROWSER_ES_MAX_QUERY_STRING_LENGTH_KEY, 2_000);
+        try {
+            final String uniqueId = UUIDGenerator.shorty();
+            final Folder folder = new FolderDataGen().site(new SiteDataGen().nextPersisted()).nextPersisted();
+            final FieldFilterFixture fixture = createFieldFilterContentType(uniqueId);
+            seedFieldFilterContent(fixture, folder, uniqueId, 100);
+
+            assertRequestFails(dateFilterQuery(folder, dateRangeCriterion(fixture, NOT_A_DATE, "*")),
+                    "parallel sub-queries");
+        } finally {
+            Config.setProperty(BrowserAPIImpl.BROWSER_ES_MAX_QUERY_STRING_LENGTH_KEY, previousMaxLength);
+        }
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link BrowserAPIImpl#getPaginatedContents(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> {@code BROWSER_ES_MAX_QUERY_STRING_LENGTH} is so low that the
+     *     base query leaves no room for even one inode, with an otherwise valid filter.</li>
+     *     <li><b>Expected Result:</b> The request fails instead of returning an empty page, the same
+     *     as any other sub-query that cannot run (issue #37695's edge case).</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPaginatedContents_noRoomForInodeRestriction_failsTheRequest() throws Exception {
+        final int previousMaxLength = Config.getIntProperty(
+                BrowserAPIImpl.BROWSER_ES_MAX_QUERY_STRING_LENGTH_KEY,
+                BrowserAPIImpl.BROWSER_ES_MAX_QUERY_STRING_LENGTH_DEFAULT);
+        Config.setProperty(BrowserAPIImpl.BROWSER_ES_MAX_QUERY_STRING_LENGTH_KEY, 50);
+        try {
+            final String uniqueId = UUIDGenerator.shorty();
+            final Folder folder = new FolderDataGen().site(new SiteDataGen().nextPersisted()).nextPersisted();
+            final FieldFilterFixture fixture = createFieldFilterContentType(uniqueId);
+            seedFieldFilterContent(fixture, folder, uniqueId, 3);
+
+            assertRequestFails(dateFilterQuery(folder, dateRangeCriterion(fixture, "2020-01-01", "*")),
+                    "no room for the inode restriction");
+        } finally {
+            Config.setProperty(BrowserAPIImpl.BROWSER_ES_MAX_QUERY_STRING_LENGTH_KEY, previousMaxLength);
         }
     }
 }
