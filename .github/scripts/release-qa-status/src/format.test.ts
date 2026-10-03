@@ -1,4 +1,4 @@
-import { renderMarkdown, renderSlack } from './format';
+import { renderMarkdown, renderSlack, renderText } from './format';
 import { PRQAResult, ReleaseQAReport, SlackMapping } from './types';
 
 function pr(
@@ -218,5 +218,46 @@ describe('renderMarkdown', () => {
   it('shows the all-clean message when nothing is flagged', () => {
     const out = renderMarkdown(report());
     expect(out).toContain('All non-excluded PRs have a recognized QA verdict');
+  });
+});
+
+describe('spec/docs-only exclusions', () => {
+  // The whole point of the path heuristics: a release whose only "gaps" were
+  // Spec-Kit PR 1s must not page anyone. renderSlack keys off
+  // failed+missing+unlinked+external, so excluded PRs drop out for free —
+  // this locks that in against a future refactor folding excluded into flagged.
+  const specOnlyRelease = () =>
+    report({
+      summary: { failed: 0, missing: 0, unlinked: 0, external: 0, passed: 1, excluded: 2 },
+      passed: [pr(37423, 'Dojo to Angular: dotAI Portlet', 'passed')],
+      excluded: [
+        pr(37404, 'Spec: UVE contentlet permission gating', 'excluded', {
+          exclusionReason: 'spec-only',
+        }),
+        pr(37115, 'docs(speckit): link the quick start walkthrough video', 'excluded', {
+          exclusionReason: 'docs-only',
+        }),
+      ],
+    });
+
+  it('stays silent on Slack', () => {
+    expect(renderSlack(specOnlyRelease(), { mappings: [] })).toBe('');
+  });
+
+  it('lists the reasons in the markdown excluded table', () => {
+    const out = renderMarkdown(specOnlyRelease());
+    expect(out).toContain('## Excluded (2)');
+    expect(out).toContain('`spec-only`');
+    expect(out).toContain('`docs-only`');
+    // The blurb above the table must name them, or a reader sees an
+    // unexplained reason in a section that only ever meant "bot / bump".
+    expect(out).toMatch(/spec-only.*docs-only/s);
+  });
+
+  it('lists the reasons in the text excluded section', () => {
+    const out = renderText(specOnlyRelease());
+    expect(out).toContain('Excluded (2)');
+    expect(out).toContain('#37404 Spec: UVE contentlet permission gating — @alice [spec-only]');
+    expect(out).toContain('[docs-only]');
   });
 });
