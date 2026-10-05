@@ -52,6 +52,7 @@ import {
     DotContentDriveBrowseItem,
     DotContentDriveItem,
     DotContentDrivePaginateEvent,
+    DotFolderBean,
     isActionableBrowseItem,
     DotCMSContentlet
 } from '@dotcms/dotcms-models';
@@ -1658,13 +1659,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
             .pipe(take(1))
             .subscribe({
                 next: ({ folder, access }) => {
-                    // A folder in another site is out of reach from this one: the dialog would
-                    // edit it under the wrong site (#37759, edge case "folder … moved to another
-                    // site"). Reported as not found, as for a folder that is gone.
-                    const siteId = this.#store.currentSite()?.identifier;
-                    if (siteId && folder.hostId !== siteId) {
-                        this.#httpErrorManager.handle(new HttpErrorResponse({ status: 404 }));
-
+                    if (this.#refuseIfInAnotherSite(folder)) {
                         return;
                     }
 
@@ -1688,16 +1683,23 @@ export class DotContentDriveShellComponent implements OnDestroy {
 
     /**
      * Opens Edit Permissions for a folder a `folderPermissions` link names (#37759, FR-031), when
-     * the user may edit that folder's permissions, the same rule as the context menu (FR-033).
+     * the user may edit that folder's permissions, the same rule as the context menu (FR-033). The
+     * folder is resolved too, only to refuse one in another site, as Folder Settings does.
      *
      * @param identifier The folder's identifier.
      */
     #openFolderPermissionsFromUrl(identifier: string): void {
-        this.#permissionsService
-            .getUserAccess(identifier)
+        forkJoin({
+            folder: this.#folderService.getFolderById(identifier),
+            access: this.#permissionsService.getUserAccess(identifier)
+        })
             .pipe(take(1))
             .subscribe({
-                next: ({ canEditPermissions }) => {
+                next: ({ folder, access: { canEditPermissions } }) => {
+                    if (this.#refuseIfInAnotherSite(folder)) {
+                        return;
+                    }
+
                     if (!canEditPermissions) {
                         this.#reportForbidden();
 
@@ -1712,6 +1714,26 @@ export class DotContentDriveShellComponent implements OnDestroy {
                 },
                 error: (error: HttpErrorResponse) => this.#httpErrorManager.handle(error)
             });
+    }
+
+    /**
+     * A folder link names a folder in another site, which is out of reach from this one: its dialog
+     * would act on it under the wrong site (#37759, edge case "folder … moved to another site").
+     * Reported as not found, as for a folder that is gone.
+     *
+     * @param folder The folder the link resolved to.
+     * @returns Whether the folder was refused, and the error shown.
+     */
+    #refuseIfInAnotherSite(folder: DotFolderBean): boolean {
+        const siteId = this.#store.currentSite()?.identifier;
+
+        if (!siteId || folder.hostId === siteId) {
+            return false;
+        }
+
+        this.#httpErrorManager.handle(new HttpErrorResponse({ status: 404 }));
+
+        return true;
     }
 
     /**

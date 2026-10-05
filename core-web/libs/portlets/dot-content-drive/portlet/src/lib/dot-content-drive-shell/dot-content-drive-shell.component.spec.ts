@@ -6432,6 +6432,22 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
         describe('Edit Permissions', () => {
             beforeEach(() => {
                 deepLinkQueryParams.folderPermissions = FOLDER_ID;
+                getFolderById.mockReturnValue(of(FOLDER_BEAN));
+            });
+
+            // Same rule as Folder Settings: a folder in another site is out of reach from this one
+            // (Edge case "folder … moved to another site", T120).
+            it('shows the standard error and opens nothing for a folder in another site', () => {
+                getFolderById.mockReturnValue(of({ ...FOLDER_BEAN, hostId: 'another-site' }));
+                getUserAccess.mockReturnValue(of({ canEdit: true, canEditPermissions: true }));
+
+                const spectator = mountShell();
+
+                expect(getFolderById).toHaveBeenCalledWith(FOLDER_ID);
+                expect(spectator.inject(DotHttpErrorManagerService).handle).toHaveBeenCalledWith(
+                    expect.objectContaining({ status: 404 })
+                );
+                expect(setDialogOf(spectator)).not.toHaveBeenCalled();
             });
 
             // A bad id or a folder that is gone (T117).
