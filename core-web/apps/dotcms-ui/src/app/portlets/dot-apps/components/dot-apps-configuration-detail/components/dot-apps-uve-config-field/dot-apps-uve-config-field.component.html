@@ -42,7 +42,9 @@
             </span>
         }
     } @else {
-        <fieldset class="m-0 flex flex-col gap-3 border-0 p-0" [disabled]="disabled">
+        <!-- min-w-0: a fieldset defaults to min-inline-size: min-content, which would widen it
+             to the full length of a long route title and defeat the title's truncation. -->
+        <fieldset class="m-0 flex min-w-0 flex-col gap-3 border-0 p-0" [disabled]="disabled">
             @for (
                 route of routes;
                 track route.id;
@@ -55,33 +57,37 @@
                     class="flex flex-col overflow-hidden rounded-md border border-surface"
                     [attr.data-testid]="'uve-route-' + i">
                     <div class="flex items-center gap-3 bg-surface-50 px-4 py-3">
-                        <span class="material-symbols-outlined text-xl text-gray-600">route</span>
-                        <div class="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+                        <span class="material-symbols-outlined shrink-0 text-xl text-gray-600">
+                            route
+                        </span>
+                        <div class="flex min-w-0 flex-1 items-center gap-2">
                             <span
-                                class="rounded-sm bg-surface-200 px-1.5 text-xs font-semibold text-gray-700"
+                                class="shrink-0 rounded-sm bg-surface-200 px-1.5 text-xs font-semibold text-gray-700"
                                 data-testid="uve-route-number">
                                 #{{ i + 1 }}
                             </span>
                             <span
-                                class="truncate font-mono font-semibold"
+                                class="min-w-0 truncate font-mono font-semibold"
                                 [title]="titles[i]"
                                 data-testid="uve-route-title">
                                 {{ titles[i] }}
                             </span>
                             @if (route.pattern.trim() === catchAllPattern) {
                                 <p-tag
+                                    class="shrink-0"
                                     [value]="'apps.uve.route.default' | dm"
                                     severity="secondary"
                                     data-testid="uve-route-default-tag" />
                             }
                             @if (shadowedBy[i]) {
                                 <p-tag
+                                    class="shrink-0"
                                     [value]="'apps.uve.route.unreachable' | dm"
                                     severity="warn"
                                     data-testid="uve-route-unreachable-tag" />
                             }
                         </div>
-                        <div class="flex items-center gap-1">
+                        <div class="flex shrink-0 items-center gap-1">
                             <button
                                 type="button"
                                 pButton
