@@ -29,8 +29,12 @@
   automation, but no retrieval caller is internal automation. The only no-user callers are the
   viewtools on anonymous pages, which is exactly the case the fix must cover. Internal callers
   that need everything pass the system user.
-- Q: When filtering drops chunks, should the page be topped up to `limit`? → A: No. One
-  query, a possibly shorter page, `limit`/`offset` unchanged (FR-008).
+- Q: When filtering drops chunks, should the page still be filled to `limit`? → A: Yes. The
+  first answer was "no, accept shorter pages". It was reversed after spec review: a few long
+  restricted documents can fill the whole page, and the caller then gets "no matching
+  content" even though readable matches rank lower. Retrieval now filters first and applies
+  `offset`/`limit` to the readable results, over a capped set of candidates, in one query
+  (FR-008, FR-012).
 - Q: What does `count` report? → A: The distinct readable content items in the response
   (FR-009). An unfiltered count would reveal that restricted matches exist, and a filtered
   count over every match would need a permission check over the whole index on every request.
@@ -123,16 +127,19 @@ Retrieval is a similarity query against the `dot_embeddings` table, which sits o
 pgvector connection. The query's filters cover inode, identifier, exclusions, language, content
 type, site and index name. There is no user or permission condition, and nothing after the
 query applies one. The caller's user is carried on the request object but only reaches the
-display step: there, each matched content item is loaded with the caller's permissions, and if
-that fails the response falls back to a minimal entry that still includes the chunk's stored
-title, with the snippet text added regardless. The prompt built for completions uses the raw
-chunk list and never reaches that step.
+display step: there, each matched content item is loaded with the caller's permissions. If
+that load fails (for example because the caller lacks READ), the item's entry is left empty.
+The chunk's stored title is then added to it, and its snippet text is added regardless. The
+prompt built for completions uses the raw chunk list and never reaches that step.
 
 The permission data lives in the main database and resolves through inheritance, so a SQL join
 from the embeddings table is not practical. The fix filters the chunk list after the query,
-keyed on the inode each chunk carries, before any consumer sees the list. Because the database
-applies `limit` and `offset` before that filter, a request can return fewer chunks than
-`limit` when some are filtered out.
+keyed on the inode each chunk carries, before any consumer sees the list. Today the database
+applies `limit` and `offset`, so a filter added after the query would page over unreadable
+chunks too. Paging therefore moves after the filter. That is affordable because the table
+has no vector index (the HNSW index is commented out and the IVFFlat definition is never
+used), so every query already computes the distance for every row. Fetching more rows only
+adds transfer, not database work.
 
 **User resolution today**: The REST resources always resolve a user, and an unauthenticated
 call is rejected with 401 before retrieval, because none of them opt into anonymous access.
@@ -173,14 +180,12 @@ checks a missing user as the Anonymous user.
 - **FR-007**: The REST search and completions resources always pass a non-null user into
   retrieval. They already reject unauthenticated callers with 401, and FR-006 makes a null
   user safe regardless.
-- **FR-008**: `limit` and `offset` keep their current meaning: they select a page of matching
-  chunks, before permission filtering. Filtering then removes unreadable chunks from that
-  page, so a response can hold fewer than `limit` chunks. Retrieval runs one query per
-  request and does not fetch further pages to fill the gap. `limit` already counts chunks,
-  not content items, so callers never received a fixed number of results. AI search returns
-  the top matches by relevance, cut off by `threshold`. It is not an exhaustive listing, so a
-  short page does not mean there are no further matches. The retrieval API's Javadoc and the
-  release note state this.
+- **FR-008**: `offset` and `limit` apply to the chunks the caller can read, after filtering.
+  A page holds `limit` readable chunks whenever enough readable matches exist within the
+  candidate cap (FR-012). Readable matches ranked below restricted ones are still returned.
+  Each caller's ranking is the same on every request, so consecutive pages have no gaps or
+  duplicates. Chunks at equal distance are ordered by row id so that order is stable.
+  `limit` still counts chunks, not content items.
 - **FR-009**: The response `count` field reports the number of distinct content items in
   that response, which the caller can READ, matching `dotCMSResults`. It no longer reports an
   index-wide count of every match, because a count that includes unreadable content would
@@ -192,6 +197,15 @@ checks a missing user as the Anonymous user.
 - **FR-011**: If loading the content or checking permissions throws, the error propagates and
   retrieval returns nothing. The REST resources then return an error response, and the
   viewtools return the generic error payload.
+- **FR-012**: For a caller other than a CMS admin or the system user, retrieval runs **one**
+  embeddings query with `offset 0` and `limit = max(offset + limit, cap)`. The cap is a
+  configurable property, default 1000, which is today's default page size for GET `/search`.
+  Candidates are filtered in rank order, in batches of distinct content items. Each batch is
+  one content load plus one per-item permission check (FR-001). Filtering stops as soon as
+  `offset + limit` readable chunks are collected, and retrieval returns that slice. It never
+  runs a second embeddings query.
+- **FR-013**: CMS admins and the system user keep today's query, with `offset` and `limit`
+  applied in the database, because the permission check returns everything for them.
 
 **Explicitly out of scope / non-goals**:
 
@@ -199,7 +213,8 @@ checks a missing user as the Anonymous user.
 - Prompt-injection mitigation in completions (#37152).
 - Escaping viewtool output (#37153).
 - Changing the embeddings table, its indexes, or what gets embedded and when.
-- A cursor-based paging API, a `hasMore`/`nextOffset` field, and topping up short pages.
+- A cursor-based paging API, a `hasMore`/`nextOffset` field, and running further embeddings
+  queries to fill a page beyond the candidate cap.
 - Capping `searchLimit`. Request cost and rate limits belong to the epic's rate-limiting
   work.
 - Permission checks on indexing, `deleteByQuery`, `countEmbeddingsByIndex`, the embeddings
@@ -220,19 +235,29 @@ checks a missing user as the Anonymous user.
   embedded content types. Indexing, deletion, index counts and the embeddings admin endpoints
   do not go through retrieval and must not change. No caller outside dotAI retrieval uses
   the changed method.
-- **Performance**: Each retrieval adds one batched content load for the distinct inodes on the
-  returned page, plus a per-item permission check backed by the permission cache. The worst
-  case grows with `searchLimit` (up to 1000 chunks by default on GET `/search`). That is
-  comparable to content search filtering the same number of hits. Admins skip the per-item
-  check entirely. There is still one embeddings query per request, and the separate count
-  query over all matches is no longer needed (FR-009). The per-item check logs a warning each
-  time a front-end user is denied a draft, which happens only where the workflow actionlet
-  embeds drafts.
+- **Restricted matches beyond the cap**: a page comes back short only when the readable
+  matches lie beyond the first `max(offset + limit, cap)` candidates. That needs more than
+  1000 restricted chunks ranked above them by default. It is an accepted, known limitation,
+  and raising the cap property reaches further.
+- **Performance**: There is still one embeddings query per request. For a non-admin caller,
+  it returns up to the cap (1000 by default) instead of `limit` rows: completions and the
+  viewtools go from 50 to at most 1000 rows, while GET `/search` stays at 1000. The database
+  work is unchanged, because it already computes the distance for every row. The extra cost
+  is transferring rows (about 512 tokens of text each) plus loading content and checking
+  permission per batch of candidates, both cache-backed. Because filtering stops once the
+  page is full, a caller who can read most matches pays for about one batch. The worst case
+  is a caller who can read almost nothing, who pays for checking every candidate up to the
+  cap. Admins and the system user add no cost (FR-013). The separate count query over all
+  matches is no longer needed (FR-009). Building the response still runs only over the
+  returned page. The per-item check logs a warning each time a front-end user is denied a
+  draft, which happens only where the workflow actionlet embeds drafts.
 - **Backward compatibility**: Response shapes are unchanged. `total` reflects the chunks
   actually returned after filtering. These semantic changes need a release note:
-  - a page can hold fewer than `limit` chunks, and a short page does not mean the end of
-    results (FR-008);
-  - `count` is now per response, not index-wide (FR-009);
+  - `offset` and `limit` now count readable chunks, not all matching chunks (FR-008). At
+    most the cap's worth of matching chunks is considered per request (FR-012);
+  - `count` is now per response, not index-wide (FR-009). In this repo, only the dot-ai
+    portlet's search tab reads it, and only to display "N results". Nothing pages with it.
+    The JS SDK declares the field in its response type but does not read it;
   - code (plugins included) that calls retrieval with no user now gets only what Anonymous
     can READ, and must pass the system user to keep unrestricted results (FR-006).
 
@@ -246,8 +271,8 @@ checks a missing user as the Anonymous user.
 
 - **AC-001**: Search, with readable and restricted content both matching:
   - for the user without the role, `dotCMSResults` holds only the readable content, no
-    restricted title or snippet appears anywhere in the response, and `count` equals the
-    number of items in `dotCMSResults`;
+    restricted title or snippet appears anywhere in the response, `count` equals the number
+    of items in `dotCMSResults`, and `total` equals the number of chunks returned;
   - for a user with the role, the restricted content is returned too.
 - **AC-002**: Completions, with readable and restricted content both matching: for the user
   without the role, the request the mock provider receives contains the readable text and
@@ -259,22 +284,33 @@ checks a missing user as the Anonymous user.
   only published content the Anonymous role can READ.
 - **AC-005**: Given chunks from readable, unreadable and missing content (including a cache
   row), the retrieval filter keeps only the readable ones, in their original distance order.
+  With no user, the filter still runs: the request is passed to the permission check as is,
+  never skipped. Given more readable chunks than `offset + limit`, the filter stops checking
+  once it has collected that many, and returns the slice `[offset, offset + limit)`.
 - **AC-006**: Indexing, `deleteByQuery` and `countEmbeddingsByIndex` behave as before.
-- **Verification method** (each AC once; related, short pages and the owner and live-only
-  rules are not tested separately, because they come from the shared retrieval path and the
-  unchanged permission API):
+- **AC-007**: Completions, where restricted chunks outrank readable ones and number more than
+  `searchLimit`: for the user without the role, the answer is built from the readable
+  content, and the response is not `no matching content`. A search with the same setup
+  returns a full page of `searchLimit` readable chunks.
+- **Verification method** (each AC once; related, the owner and live-only rules and the
+  admin shortcut are not tested separately, because they come from the shared retrieval path
+  and the unchanged permission API):
   - **Unit**: the retrieval filter, extracted into a small class with injected content and
     permission APIs (AC-005).
   - **Integration, REST**: one new AI REST integration test class using the existing WireMock
     provider setup in `AiTest`, real permissions on a restricted content type, and fixed
-    embedding vectors so ordering is deterministic (AC-001 to AC-003). Register it at the end
-    of `MainSuite2b`'s `@SuiteClasses`, where the AI integration tests share the WireMock port
-    and run sequentially.
+    embedding vectors so ordering is deterministic (AC-001 to AC-003, AC-007). Register it at
+    the end of `MainSuite2b`'s `@SuiteClasses`, where the AI integration tests share the
+    WireMock port and run sequentially.
   - **Integration, viewtool**: `SearchToolTest` and `CompletionsToolTest` currently seed rows
     with fake inodes, which the filter now drops. They move to real, published,
     anonymous-readable content, with one anonymous assertion added (AC-004). #37153's open
     implementation PR (#37756) seeds fake rows the same way, including a cache-index test.
     Whichever of the two merges second updates those fixtures.
+  - **Manual performance check**: on an index with more than 1000 matching chunks, as a
+    non-admin user, before and after the change, time one search and one completion. Run it
+    once with a user who can read almost nothing, which is the worst case. Record the
+    response times in PR 2. This is not an automated test.
   - **Regression**: existing `EmbeddingContentListenerTest`, `BulkEmbeddingsRunnerTest` and
     `EmbeddingsToolTest` (AC-006). Run with
     `-Dmaven.build.cache.enabled=false -Dit.test.forkcount=1`, and confirm `Tests run:` in the
