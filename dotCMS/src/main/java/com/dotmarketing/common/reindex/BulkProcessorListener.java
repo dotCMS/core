@@ -90,13 +90,16 @@ public class BulkProcessorListener implements IndexBulkListener {
     }
 
     /**
-     * Creates a listener for a shadow-index provider (OS in Phases 1 and 2).
+     * Creates a listener for a shadow-index provider (OS in Phase 1 only).
      *
      * <p>The shadow index replicates ES writes but is not yet the source of truth.
      * Its failure semantics are fire-and-forget: failures are logged at warn level
      * but the reindex queue entry is never marked as failed and no rebuild is triggered.
-     * In Phase 3, OS becomes the primary and this factory is no longer used — the caller
-     * passes the standard {@link BulkProcessorListener} directly.</p>
+     * From Phase 2 on OS serves reads, so {@code createBulkProcessor} no longer uses this
+     * factory for it and passes the standard {@link BulkProcessorListener} instead.</p>
+     *
+     * @param provider the shadow provider, used for log labels and the per-provider log switch
+     * @return a fire-and-forget listener that never touches the reindex journal
      */
     public static BulkProcessorListener forShadowProvider(final IndexTag provider) {
         return new BulkProcessorListener(provider, true);

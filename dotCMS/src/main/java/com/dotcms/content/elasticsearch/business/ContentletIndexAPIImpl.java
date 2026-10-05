@@ -399,11 +399,13 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             final ContentletIndexOperations ops;
             final IndexBulkProcessor proc;
             /**
-             * {@code true} when OS is acting as the <em>shadow index</em> (Phases 1 and 2).
+             * {@code true} when OS is acting as the <em>shadow index</em>: Phase 1 only, the one
+             * dual-write phase in which ES still serves reads ({@code !isReadEnabled()} in
+             * {@link ContentletIndexAPIImpl#createBulkProcessor}).
              *
              * <p>The shadow index replicates every ES write but is not yet the source of truth.
-             * It transitions to the primary index in Phase 3, at which point this flag is
-             * {@code false} and failures propagate normally.</p>
+             * From Phase 2 on OS serves reads, so this flag is {@code false} and its failures
+             * propagate normally.</p>
              *
              * <p>While {@code true}: failures are fire-and-forget — logged at warn level but
              * never re-thrown, so an OS flush error cannot mask a successful ES flush.</p>
@@ -2825,9 +2827,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 }
                 contentlet.markAsReindexed();
             } catch (Exception ex) {
+                // Identity only: the content map can be many MB and may hold sensitive values.
                 Logger.error(this,
                         "Can't get a mapping for contentlet with id_lang:" + id
-                                + " Content data: " + contentlet.getMap(), ex);
+                                + " (inode " + contentlet.getInode() + ")", ex);
                 throw ex;
             }
         }
@@ -2960,9 +2963,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                     .getOrElseThrow(DotRuntimeException::new);
             return Optional.of(new MappedDocument(contentlet, id, mapping, isWorking, isLive));
         } catch (final Exception ex) {
+            // Identity only: the content map can be many MB and may hold sensitive values.
             Logger.error(this,
                     "Can't get a mapping for contentlet with id_lang:" + id
-                            + " Content data: " + contentlet.getMap(), ex);
+                            + " (inode " + contentlet.getInode() + ")", ex);
             throw ex;
         }
     }
