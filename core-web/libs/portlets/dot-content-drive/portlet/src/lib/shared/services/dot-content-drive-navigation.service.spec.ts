@@ -643,6 +643,22 @@ describe('DotContentDriveNavigationService', () => {
                 });
             });
 
+            // A new translation saved in the new editor: the saved content names the language
+            // (#37759, FR-020, T124).
+            it('follows the language a save names in an open edit', () => {
+                openEdit();
+                const request = service.$editPanelRequest();
+
+                service.panelSaved({ identifier: 'id-1', languageId: 4 });
+
+                expect(service.$panelLocation()).toEqual({
+                    kind: 'edit',
+                    editContent: 'id-1',
+                    editContentLang: 4
+                });
+                expect(service.$editPanelRequest()).toBe(request);
+            });
+
             it('follows a language switch in the open edit', () => {
                 openEdit();
                 const request = service.$editPanelRequest();

@@ -171,7 +171,7 @@ describe('LocalesFeature', () => {
 
     describe('when there is switch of locale', () => {
         beforeEach(() => {
-            const mockContentlet = { inode: '456' } as DotCMSContentlet;
+            const mockContentlet = { inode: '456', languageId: 2 } as DotCMSContentlet;
             dotEditContentService.getContentById.mockReturnValue(of(mockContentlet));
             dotContentletService.getLanguages.mockReturnValue(of(MOCK_LANGUAGES));
             dotLanguagesService.getDefault.mockReturnValue(of(MOCK_LANGUAGES[0]));
@@ -189,8 +189,8 @@ describe('LocalesFeature', () => {
             });
 
             // The host decides router vs in-place reload; the feature just states
-            // the intent with the resolved inode.
-            expect(mockHost.reloadContent).toHaveBeenCalledWith('456');
+            // the intent with the resolved inode and its language (#37759, T124).
+            expect(mockHost.reloadContent).toHaveBeenCalledWith('456', 2);
         }));
 
         it('should open dialog and update state for untranslated locale doing populate copy', fakeAsync(() => {

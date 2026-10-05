@@ -265,7 +265,8 @@
             data-testId="edit-content-side-panel"
             [data]="data"
             (saved)="onEditPanelSaved($event)"
-            (closed)="onEditPanelClosed()" />
+            (closed)="onEditPanelClosed()"
+            (languageChanged)="onEditPanelLanguage($event)" />
     }
 } @loading {
     <div

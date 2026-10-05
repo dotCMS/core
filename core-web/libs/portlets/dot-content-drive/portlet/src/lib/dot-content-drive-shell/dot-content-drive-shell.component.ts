@@ -1998,6 +1998,17 @@ export class DotContentDriveShellComponent implements OnDestroy {
     }
 
     /**
+     * The author switched language inside the new-editor panel, which reloads in place. The URL
+     * follows, as for the legacy panel, so a refresh or a switch to the old editor (a page reload)
+     * reopens that language (#37759, FR-020, FR-028).
+     *
+     * @param languageId The language the editor now shows.
+     */
+    protected onEditPanelLanguage(languageId: number) {
+        this.#navigationService.panelLanguageChanged(languageId);
+    }
+
+    /**
      * The legacy panel closed, for any reason. Refresh the list quietly every time: a close after a
      * delete looks exactly like a cancel, and a move or a language switch sends no event at all, so
      * one extra list request is cheaper than missing a change (#37759, FR-014, FR-015).

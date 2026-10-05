@@ -96,9 +96,13 @@ export class OverlayEditContentHost implements EditContentHost, OnDestroy {
         this.#saved$.next(contentlet);
     }
 
-    reloadContent(inode: string): void {
+    reloadContent(inode: string, languageId?: number): void {
         // Locale switch: reload the content, keep the current trail (no `trail`).
         this.#navigation$.next({ inode });
+
+        if (languageId) {
+            this.#languageChanged$.next(languageId);
+        }
     }
 
     setTrail(inodes: string[]): void {
@@ -142,6 +146,13 @@ export class OverlayEditContentHost implements EditContentHost, OnDestroy {
     }
 
     readonly #loadFailed$ = new Subject<void>();
+    readonly #languageChanged$ = new Subject<number>();
+
+    /**
+     * A locale switch loaded another language of the content. The opener can name it in its URL,
+     * so a refresh or a switch to the old editor reopens that language (#37759, FR-020, FR-028).
+     */
+    readonly languageChanged$ = this.#languageChanged$.asObservable();
 
     /** The content failed to load; the opener decides how to close (#37759, FR-029). */
     readonly loadFailed$ = this.#loadFailed$.asObservable();

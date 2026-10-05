@@ -195,7 +195,10 @@ export function withLocales() {
                                                 // The host reloads the editor: a route change in
                                                 // full-screen (guard handles the dirty check) or an
                                                 // in-place reload in the dialog (layout handles it).
-                                                host.reloadContent(contentlet.inode);
+                                                host.reloadContent(
+                                                    contentlet.inode,
+                                                    contentlet.languageId
+                                                );
                                             },
                                             error: (error: HttpErrorResponse) => {
                                                 dotHttpErrorManagerService.handle(error);

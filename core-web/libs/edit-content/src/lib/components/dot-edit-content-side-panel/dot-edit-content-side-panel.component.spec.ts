@@ -27,7 +27,11 @@ describe('DotEditContentSidePanelComponent', () => {
     let saved$: Subject<DotCMSContentlet>;
     let left$: Subject<void>;
     let loadFailed$: Subject<void>;
-    let mockHost: Pick<OverlayEditContentHost, 'saved$' | 'left$' | 'loadFailed$'>;
+    let languageChanged$: Subject<number>;
+    let mockHost: Pick<
+        OverlayEditContentHost,
+        'saved$' | 'left$' | 'loadFailed$' | 'languageChanged$'
+    >;
 
     const EDIT_DATA: EditContentDialogData = {
         mode: 'edit',
@@ -63,10 +67,12 @@ describe('DotEditContentSidePanelComponent', () => {
         saved$ = new Subject<DotCMSContentlet>();
         left$ = new Subject<void>();
         loadFailed$ = new Subject<void>();
+        languageChanged$ = new Subject<number>();
         mockHost = {
             saved$: saved$.asObservable(),
             left$: left$.asObservable(),
-            loadFailed$: loadFailed$.asObservable()
+            loadFailed$: loadFailed$.asObservable(),
+            languageChanged$: languageChanged$.asObservable()
         };
 
         spectator = createComponent({
@@ -466,6 +472,20 @@ describe('DotEditContentSidePanelComponent', () => {
      * to the opener (#37759, FR-029). "Switch to the old editor" reloads the page from the overlay
      * host, so the panel has nothing to report for it.
      */
+    // A language switch reloads the editor in place; the opener hears of it so its URL names the
+    // language now open (#37759, FR-020, T124).
+    it('reports a language switch to the opener', async () => {
+        spectator.setInput('data', EDIT_DATA);
+        spectator.detectChanges();
+        await spectator.fixture.whenStable();
+        const languageChanged = vi.fn();
+        spectator.output('languageChanged').subscribe(languageChanged);
+
+        languageChanged$.next(2);
+
+        expect(languageChanged).toHaveBeenCalledWith(2);
+    });
+
     describe('leaving the new editor', () => {
         it('closes without the unsaved-changes guard when the content fails to load', async () => {
             spectator.setInput('data', EDIT_DATA);

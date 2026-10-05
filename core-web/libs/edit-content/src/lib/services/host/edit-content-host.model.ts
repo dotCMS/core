@@ -71,8 +71,12 @@ export interface EditContentHost {
      * Reloads the editor with a different content (locale switch, etc.). Full-screen
      * navigates via the router (guard handles dirty state); the dialog reloads in
      * place (the layout handles the dirty check).
+     *
+     * @param inode The version to load.
+     * @param languageId The language of that version, when the reload is a locale switch. An
+     * overlay reports it so its opener can name the language now open (#37759, FR-020).
      */
-    reloadContent(inode: string): void;
+    reloadContent(inode: string, languageId?: number): void;
 
     /**
      * Sets the browser document title to reflect the content being edited.

@@ -228,18 +228,28 @@ export class DotContentDriveNavigationService {
 
     /**
      * A panel saved. The first save of a create switches the URL to the saved content, so a refresh
-     * reopens it instead of a second empty form (#37759, FR-025). A later save changes nothing. The
-     * request is left alone, so the panel is not remounted.
+     * reopens it instead of a second empty form (#37759, FR-025). A later save only follows a
+     * language the saved version names, such as a new translation (FR-020). The request is left
+     * alone, so the panel is not remounted.
      *
      * @param saved The saved content's identifier and language.
      */
     panelSaved({ identifier, languageId }: { identifier: string; languageId: number }): void {
-        if (this.#panelLocation()?.kind === 'create') {
+        const location = this.#panelLocation();
+
+        if (location?.kind === 'create') {
             this.#panelLocation.set({
                 kind: 'edit',
                 editContent: identifier,
                 editContentLang: languageId
             });
+
+            return;
+        }
+
+        // A new translation saved in the new editor: the saved version names the language.
+        if (location?.kind === 'edit' && location.editContentLang !== languageId) {
+            this.#panelLocation.set({ ...location, editContentLang: languageId });
         }
     }
 

@@ -5403,8 +5403,19 @@ describe('DotContentDriveShellComponent', () => {
             });
         });
 
-        // "Switch to the old editor" stays in Content Drive (#37759, FR-028). The URL already names
-        // the same content and language, so nothing is written and no history entry is added.
+        // A language switch in the new-editor panel moves `editContentLang`, so a refresh or a switch
+        // to the old editor reopens that language (#37759, FR-020, FR-028, T124).
+        it("hands the new editor's language switch to the navigation service", async () => {
+            setPanelRequest(EDIT_REQUEST);
+            spectator.detectChanges();
+            await spectator.fixture.whenStable();
+            spectator.detectChanges();
+
+            spectator.triggerEventHandler('dot-edit-content-side-panel', 'languageChanged', 2);
+
+            expect(navigationService.panelLanguageChanged).toHaveBeenCalledWith(2);
+        });
+
         it("hands the new editor's saved content to the navigation service, so a first save can name it", async () => {
             setPanelRequest({ mode: 'new', contentTypeId: 'ct-1', title: 'New content' });
             spectator.detectChanges();
