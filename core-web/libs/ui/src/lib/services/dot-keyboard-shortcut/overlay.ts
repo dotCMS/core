@@ -40,14 +40,17 @@ const LOWEST_OVERLAY_Z_INDEX = 1000;
  * Toasts and tooltips are the exception. They join the same stack, under the same `modal` key a
  * dialog uses, but they block nothing, so a shortcut must keep working while one is on screen
  * (#37884). The stack records only values, not which element holds them, so when it says something
- * is above, the stacked elements are looked up in the DOM: if every one of them is a passive layer,
- * nothing that should block is open. If none can be found (a mocked stack, or an entry left behind),
- * the stack's answer stands, so this can only ever relax the check, never fire behind a dialog.
+ * is above, the stacked elements are looked up in the DOM. Only when a passive layer holds the top
+ * of the stack, and every other stacked element is passive too, is nothing that should block open.
+ * If the top cannot be matched to a passive layer (a mocked stack, an entry left behind, or a toast
+ * that is not the topmost thing), the stack's answer stands, so this can only ever relax the check,
+ * never fire behind a dialog.
  */
 export function hasOverlayAbove(container?: Element | null): boolean {
     const floor = ZIndexUtils.get(container);
+    const top = ZIndexUtils.getCurrent();
 
-    if (ZIndexUtils.getCurrent() <= floor) {
+    if (top <= floor) {
         return false;
     }
 
@@ -59,7 +62,11 @@ export function hasOverlayAbove(container?: Element | null): boolean {
         }
     );
 
-    return stacked.length === 0 || stacked.some((element) => !isPassiveLayer(element));
+    const passiveLayerOnTop = stacked.some(
+        (element) => ZIndexUtils.get(element) === top && isPassiveLayer(element)
+    );
+
+    return !passiveLayerOnTop || stacked.some((element) => !isPassiveLayer(element));
 }
 
 /** A layer that sits above the page without taking it over: it informs and blocks nothing. */

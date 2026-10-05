@@ -232,9 +232,10 @@ somebody has to remember to extend.
 but they block nothing, so a shortcut keeps working while one is showing. A status toast can stay up
 for a whole upload, and it is restored on every page the same user opens, so treating it as a modal
 left the shortcuts dead for minutes at a time (#37884). When the stack says something is above, the
-helper finds the stacked elements (inline z-index of at least 1000, PrimeNG's lowest overlay base)
-and stands down only if one of them is not a `.p-toast` or `.p-tooltip`. If it finds none, it keeps
-the stack's answer, so a mocked or leaked stack entry behaves exactly as before.
+helper finds the stacked elements (inline z-index of at least 1000, PrimeNG's lowest overlay base).
+It lets the shortcut through only when a `.p-toast` or `.p-tooltip` holds the top of the stack and
+everything else stacked is one too. If no passive layer holds the top, it keeps the stack's answer,
+so a mocked or leaked stack entry behaves exactly as before, even with a stray toast in the DOM.
 
 Pass **your own overlay element** if you are one (the content side panel does). Omit the argument
 from a base-layer surface such as a portlet shell: it has no element in the stack, `ZIndexUtils.get(undefined)`

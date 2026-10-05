@@ -96,6 +96,16 @@ describe('hasOverlayAbove', () => {
             expect(hasOverlayAbove()).toBe(false);
         });
 
+        // The top of the stack is held by something not on screen, a dialog the toast does not
+        // account for. Seen in the Content Drive shell suite: a toast left at 1102 by an earlier
+        // test while the test under way stands in a dialog at 1101.
+        it('should trust the stack when no passive layer holds its top', () => {
+            stackTop(1101);
+            render('p-toast p-component', 1102);
+
+            expect(hasOverlayAbove()).toBe(true);
+        });
+
         it('should still report a dialog underneath a toast', () => {
             stackTop(1103);
             render('p-dialog-mask', 1101);
