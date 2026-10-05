@@ -8,7 +8,10 @@
  * fallback id that lives outside this array still paints correctly — this
  * array is the human-facing picker surface, not the renderer's capability.
  */
-export const DOT_MATERIAL_ICONS: readonly string[] = [
+// Mutable `string[]`, not `readonly`, because the Stencil
+// `dot-material-icon-picker` declares its `suggestionlist` prop as mutable
+// `string[]` and defaults it to this constant.
+export const DOT_MATERIAL_ICONS: string[] = [
     '360',
     '10k',
     '10mp',
@@ -1773,4 +1776,4 @@ export const DOT_MATERIAL_ICONS: readonly string[] = [
     'zoom_in',
     'zoom_out',
     'zoom_out_map'
-] as const;
+];
