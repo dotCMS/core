@@ -2,17 +2,19 @@ import { patchState } from '@ngrx/signals';
 import {
     byTestId,
     createComponentFactory,
+    createHostFactory,
     mockProvider,
     Spectator,
+    SpectatorHost,
     SpyObject
 } from '@openng/spectator/vitest';
 import { MockComponent } from 'ng-mocks';
-import { of, Subject } from 'rxjs';
+import { Observable, of, Subject } from 'rxjs';
 import { Mock, vi } from 'vitest';
 
-import { provideHttpClient } from '@angular/common/http';
+import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { signal } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -47,6 +49,7 @@ import {
 import { DotEditContentLayoutComponent } from './dot-edit-content.layout.component';
 
 import { FormValues } from '../../models/dot-edit-content-form.interface';
+import { EDIT_CONTENT_NAVIGATION_OVERRIDE } from '../../models/edit-content-navigation-override';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 import {
     EDIT_CONTENT_HOST,
@@ -90,8 +93,6 @@ const mockEditContentHost = {
     addBreadcrumb: vi.fn(),
     goToSavedContent: vi.fn(),
     leaveDeletedContent: vi.fn(),
-    switchToLegacyEditor: vi.fn(),
-    leaveOnLoadError: vi.fn(),
     goToRestoredVersion: vi.fn(),
     goToRelatedContent: vi.fn(),
     goToCrumb: vi.fn()
@@ -719,8 +720,6 @@ describe('EditContentLayoutComponent - In-place (dialog) host', () => {
         addBreadcrumb: vi.fn(),
         goToSavedContent: vi.fn(),
         leaveDeletedContent: vi.fn(),
-        switchToLegacyEditor: vi.fn(),
-        leaveOnLoadError: vi.fn(),
         goToRestoredVersion: vi.fn(),
         goToRelatedContent: vi.fn(),
         goToCrumb: vi.fn(),
@@ -906,6 +905,116 @@ describe('EditContentLayoutComponent - In-place (dialog) host', () => {
 
             expect(inPlaceHost.reportLanguage).toHaveBeenCalledWith(2);
         });
+    });
+});
+
+/**
+ * The navigation override reaches the editor's store through the element tree: the store is
+ * provided by this layout, so it sees an override any ancestor component provides. Content Drive
+ * provides it on its shell, which renders the side panel that renders this layout (#37759,
+ * FR-028, FR-029).
+ */
+describe('EditContentLayoutComponent - navigation override from an ancestor', () => {
+    const openerOverride = { switchToLegacyEditor: vi.fn(), leaveOnLoadError: vi.fn() };
+
+    @Component({
+        standalone: false,
+        selector: 'dot-test-opener',
+        template: '',
+        providers: [{ provide: EDIT_CONTENT_NAVIGATION_OVERRIDE, useValue: openerOverride }]
+    })
+    class OpenerComponent {}
+
+    const inPlaceHost = {
+        inPlaceNavigation: true,
+        inPlaceNavigation$: new Subject<InPlaceNavigationRequest>(),
+        trail: signal<DotRelatedContentCrumb[]>([]),
+        setTrail: vi.fn(),
+        resolveIdentity: vi.fn().mockReturnValue({ inode: 'opened-inode' }),
+        reportSaved: vi.fn(),
+        reloadContent: vi.fn(),
+        setContentTitle: vi.fn(),
+        addBreadcrumb: vi.fn(),
+        goToSavedContent: vi.fn(),
+        leaveDeletedContent: vi.fn(),
+        goToRestoredVersion: vi.fn(),
+        goToRelatedContent: vi.fn(),
+        goToCrumb: vi.fn()
+    };
+
+    const createHost = createHostFactory({
+        component: DotEditContentLayoutComponent,
+        host: OpenerComponent,
+        imports: [
+            MessageModule,
+            ButtonModule,
+            MockComponent(DotEditContentFormComponent),
+            MockComponent(DotEditContentSidebarComponent),
+            DotMessagePipe
+        ],
+        componentProviders: [
+            DotEditContentStore,
+            mockProvider(DotWorkflowsActionsService),
+            mockProvider(DotWorkflowActionsFireService),
+            // The content this editor was opened for fails to load.
+            mockProvider(DotEditContentService, {
+                getContentById: vi
+                    .fn()
+                    .mockReturnValue(
+                        new Observable((subscriber) =>
+                            subscriber.error(new HttpErrorResponse({ status: 404 }))
+                        )
+                    )
+            }),
+            mockProvider(DotContentTypeService),
+            mockProvider(DotWorkflowService),
+            mockProvider(DotContentletService),
+            mockProvider(DotVersionableService),
+            ConfirmationService,
+            { provide: EDIT_CONTENT_HOST, useValue: inPlaceHost }
+        ],
+        providers: [
+            mockProvider(DotHttpErrorManagerService),
+            mockProvider(MessageService),
+            mockProvider(DialogService),
+            mockProvider(DotLanguagesService),
+            mockProvider(DotSiteService, {
+                getCurrentSite: vi
+                    .fn()
+                    .mockReturnValue(of({ identifier: 'default', hostname: 'demo.dotcms.com' }))
+            }),
+            mockProvider(DotSystemConfigService, {
+                getSystemConfig: vi.fn().mockReturnValue(of({}))
+            }),
+            GlobalStore,
+            {
+                provide: DotCurrentUserService,
+                useValue: { getCurrentUser: () => of({ userId: '123', userName: 'John Doe' }) }
+            },
+            { provide: ActivatedRoute, useValue: { snapshot: { params: {} } } },
+            mockProvider(Router, { navigate: vi.fn(), url: '/test-url', events: of() }),
+            provideHttpClient(),
+            provideHttpClientTesting(),
+            mockProvider(DotMessageService, { get: vi.fn((key: string) => key) }),
+            mockProvider(DotRelatedContentNavigationStore, {
+                trail: signal<DotRelatedContentCrumb[]>([]),
+                registerTitle: vi.fn()
+            })
+        ]
+    });
+
+    beforeEach(() => openerOverride.leaveOnLoadError.mockReset());
+
+    it("hands a load error to the opener's override instead of navigating", () => {
+        openerOverride.leaveOnLoadError.mockReturnValue(true);
+
+        // Opening the layout loads the content the host names, as inside Content Drive's panel.
+        const spectator: SpectatorHost<DotEditContentLayoutComponent> = createHost(
+            '<dot-edit-content-form-layout />'
+        );
+
+        expect(openerOverride.leaveOnLoadError).toHaveBeenCalledWith({ inode: 'opened-inode' });
+        expect(spectator.inject(Router).navigate).not.toHaveBeenCalled();
     });
 });
 
@@ -1171,8 +1280,6 @@ describe.each([
             addBreadcrumb: vi.fn(),
             goToSavedContent: vi.fn(),
             leaveDeletedContent: vi.fn(),
-            switchToLegacyEditor: vi.fn(),
-            leaveOnLoadError: vi.fn(),
             goToRestoredVersion: vi.fn(),
             goToRelatedContent: vi.fn(),
             goToCrumb: vi.fn()

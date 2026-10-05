@@ -5,7 +5,7 @@ import { Mock, vi } from 'vitest';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { DynamicDialogRef, DynamicDialogConfig, DialogService } from 'primeng/dynamicdialog';
@@ -202,20 +202,6 @@ describe('DotEditContentDialogComponent', () => {
 
         expect(onContentSaved).not.toHaveBeenCalled();
         expect(onCancel).toHaveBeenCalledTimes(1);
-    });
-
-    // The dialog keeps today's behavior for a load failure, which the overlay host only reports
-    // (#37759, FR-029). "Switch to the old editor" reloads the page from the host itself.
-    describe('leaving the new editor', () => {
-        it('goes to the content listing when the content fails to load', () => {
-            const router = spectator.inject(Router);
-            const navigate = vi.spyOn(router, 'navigate').mockResolvedValue(true);
-            spectator.detectChanges();
-
-            spectator.inject(OverlayEditContentHost, true).leaveOnLoadError();
-
-            expect(navigate).toHaveBeenCalledWith(['/c/content']);
-        });
     });
 
     it('should call onCancel callback only after onClose emits', () => {

@@ -5,6 +5,7 @@ import { forkJoin, of, pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
+import { Router } from '@angular/router';
 
 import { switchMap } from 'rxjs/operators';
 
@@ -23,6 +24,7 @@ import {
     FeaturedFlags
 } from '@dotcms/dotcms-models';
 
+import { EDIT_CONTENT_NAVIGATION_OVERRIDE } from '../../../models/edit-content-navigation-override';
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
 import { EDIT_CONTENT_HOST } from '../../../services/host/edit-content-host.model';
 import { transformFormDataFn } from '../../../utils/functions.util';
@@ -167,9 +169,13 @@ export function withContent() {
                 dotEditContentService = inject(DotEditContentService),
                 workflowActionService = inject(DotWorkflowsActionsService),
                 dotHttpErrorManagerService = inject(DotHttpErrorManagerService),
+                router = inject(Router),
                 dotWorkflowService = inject(DotWorkflowService),
                 dotMessageService = inject(DotMessageService),
-                host = inject(EDIT_CONTENT_HOST)
+                host = inject(EDIT_CONTENT_HOST),
+                // Only Content Drive provides it (#37759, FR-028, FR-029). Remove with the legacy
+                // editor.
+                navigationOverride = inject(EDIT_CONTENT_NAVIGATION_OVERRIDE, { optional: true })
             ) => ({
                 /**
                  * Initializes the state for creating new content of a specified type.
@@ -396,9 +402,16 @@ export function withContent() {
                                             error: 'edit.content.sidebar.information.error.initializing.content'
                                         });
                                         dotHttpErrorManagerService.handle(error);
-                                        // The host decides where to go: the full-page editor returns to the
-                                        // listing, the side panel closes (#37759, FR-029).
-                                        host.leaveOnLoadError();
+
+                                        if (
+                                            navigationOverride?.leaveOnLoadError(
+                                                host.resolveIdentity()
+                                            )
+                                        ) {
+                                            return;
+                                        }
+
+                                        router.navigate(['/c/content']);
                                     }
                                 })
                             );
@@ -434,15 +447,18 @@ export function withContent() {
                                 .pipe(
                                     tapResponse({
                                         next: () => {
-                                            // The host decides where the content opens in
-                                            // the legacy editor: the full-page editor goes to
-                                            // its edit page, the side panel reopens it in the
-                                            // legacy panel. A create has no content yet, so
-                                            // it reopens as a legacy create (#37759, FR-028).
-                                            host.switchToLegacyEditor(
-                                                contentlet ?? null,
-                                                contentType.variable
-                                            );
+                                            if (
+                                                navigationOverride?.switchToLegacyEditor(
+                                                    host.resolveIdentity(),
+                                                    contentlet ?? null,
+                                                    contentType.variable
+                                                )
+                                            ) {
+                                                return;
+                                            }
+
+                                            // Redirect to legacy edit content page
+                                            router.navigate([`/c/content/`, contentlet.inode]);
                                         },
                                         error: (error: HttpErrorResponse) => {
                                             dotHttpErrorManagerService.handle(error);

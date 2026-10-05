@@ -7,7 +7,6 @@ import { Title } from '@angular/platform-browser';
 import { ActivatedRouteSnapshot, Router } from '@angular/router';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
 import { RouterEditContentHost } from './router-edit-content-host';
@@ -206,30 +205,6 @@ describe('RouterEditContentHost', () => {
                 replaceUrl: true,
                 queryParams: { filter: 'SimpleWidget' }
             });
-        });
-    });
-
-    // The full-page editor keeps today's navigation for both (#37759, FR-028, FR-029).
-    describe('switchToLegacyEditor', () => {
-        it('should navigate to the legacy edit page for the content', () => {
-            host.switchToLegacyEditor({ inode: 'inode-7' } as DotCMSContentlet, 'Blog');
-
-            expect(router.navigate).toHaveBeenCalledWith(['/c/content/', 'inode-7']);
-        });
-
-        // From a create there is no content yet: the legacy create for the same type (T116).
-        it('should navigate to the legacy create page when there is no content yet', () => {
-            host.switchToLegacyEditor(null, 'Blog');
-
-            expect(router.navigate).toHaveBeenCalledWith(['/c/content/new/', 'Blog']);
-        });
-    });
-
-    describe('leaveOnLoadError', () => {
-        it('should navigate to the content listing', () => {
-            host.leaveOnLoadError();
-
-            expect(router.navigate).toHaveBeenCalledWith(['/c/content']);
         });
     });
 

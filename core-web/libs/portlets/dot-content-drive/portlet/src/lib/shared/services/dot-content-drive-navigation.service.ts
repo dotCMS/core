@@ -1,7 +1,7 @@
 import { EMPTY, Observable, of } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, Provider, computed, inject, signal } from '@angular/core';
 
 import { catchError, map, switchMap, take } from 'rxjs/operators';
 
@@ -18,7 +18,12 @@ import {
     DotCMSContentType,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
-import { EditContentDialogData } from '@dotcms/edit-content';
+import {
+    EDIT_CONTENT_NAVIGATION_OVERRIDE,
+    EditContentDialogData,
+    EditContentIdentity,
+    EditContentNavigationOverride
+} from '@dotcms/edit-content';
 import { DotFolderTreeNodeContentData } from '@dotcms/portlets/content-drive/ui';
 
 import { DotLegacyEditorRequest } from '../../components/dot-legacy-editor-side-panel/dot-legacy-editor-side-panel.model';
@@ -37,7 +42,7 @@ const CONTENT_DRIVE_PORTLET_ID = 'content-drive';
 // Provided at the Content Drive shell level (not `root`) so it can inject the shell-scoped
 // DotContentDriveStore and read the list's language filter and default language from it.
 @Injectable()
-export class DotContentDriveNavigationService {
+export class DotContentDriveNavigationService implements EditContentNavigationOverride {
     readonly #dotContentTypeService = inject(DotContentTypeService);
     readonly #dotRouterService = inject(DotRouterService);
     readonly #httpErrorManager = inject(DotHttpErrorManagerService);
@@ -224,6 +229,100 @@ export class DotContentDriveNavigationService {
             folderPath: hostname ? `${hostname}${path ?? ''}` : undefined,
             folderInode: inode || undefined
         };
+    }
+
+    /**
+     * "Switch to the old editor" in Content Drive's new-editor panel: the type was just set back to
+     * the legacy editor, so the same content reopens, in the same language, in the legacy panel
+     * (#37759, FR-028). The type is not looked up again, and the URL already names this content,
+     * so only the request changes. From a create there is no content yet: a legacy create for the
+     * same type opens instead, in the folder being browsed and the language the create started in.
+     *
+     * Content Drive answers only for the panel it opened. Any other editor that inherits the
+     * override (a related content opened from a relationship field) is declined, and navigates as
+     * it does outside Content Drive.
+     *
+     * @param opened What the editor was opened with.
+     * @param contentlet The content being edited, or `null` for a create that was never saved.
+     * @param contentTypeVariable The type that was just set back to the legacy editor.
+     * @returns Whether Content Drive reopened it.
+     */
+    switchToLegacyEditor(
+        opened: EditContentIdentity,
+        contentlet: DotCMSContentlet | null,
+        contentTypeVariable: string
+    ): boolean {
+        const open = this.#ownEditor(opened);
+
+        if (!open) {
+            return false;
+        }
+
+        if (!contentlet) {
+            this.#openLegacyCreate(contentTypeVariable, open.title ?? contentTypeVariable, {
+                folderInode: this.currentFolder().folderInode,
+                languageId: open.languageId ?? this.#createLanguageId() ?? 1
+            });
+
+            return true;
+        }
+
+        this.#panelRequest.set({
+            editor: 'legacy',
+            data: {
+                mode: 'edit',
+                inode: contentlet.inode,
+                identifier: contentlet.identifier,
+                languageId: contentlet.languageId,
+                title: contentlet.title,
+                portletId: CONTENT_DRIVE_PORTLET_ID
+            }
+        });
+
+        return true;
+    }
+
+    /**
+     * The content of Content Drive's new-editor panel failed to load, after the standard error
+     * was shown: close the panel, keeping the folder, filters and page (#37759, FR-029). Any other
+     * editor is declined, as for {@link switchToLegacyEditor}.
+     *
+     * @param opened What the editor was opened with.
+     * @returns Whether Content Drive closed its panel.
+     */
+    leaveOnLoadError(opened: EditContentIdentity): boolean {
+        if (!this.#ownEditor(opened)) {
+            return false;
+        }
+
+        this.closeEditPanel();
+
+        return true;
+    }
+
+    /**
+     * The new-editor panel Content Drive has open, when it is the editor that was opened with
+     * `opened`: the same content for an edit, the same type for a create. What the editor was
+     * opened with comes from the request Content Drive sent, and stays the same across the
+     * editor's in-place reloads (a language switch).
+     *
+     * @param opened What the editor was opened with.
+     * @returns The open request's data, or `null` for any other editor.
+     */
+    #ownEditor(opened: EditContentIdentity): EditContentDialogData | null {
+        const request = this.#panelRequest();
+
+        if (request?.editor !== 'new') {
+            return null;
+        }
+
+        const { data } = request;
+        const isOwn =
+            data.mode === 'edit'
+                ? !!opened.inode && opened.inode === data.contentletInode
+                : !opened.inode && opened.contentTypeId === data.contentTypeId;
+
+        return isOwn ? data : null;
     }
 
     /**
@@ -474,4 +573,18 @@ export class DotContentDriveNavigationService {
  */
 function usesLegacyEditor(contentType: DotCMSContentType | undefined): boolean {
     return !contentType?.metadata?.[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED];
+}
+
+/**
+ * Hands the new editor's "switch to the old editor" and load error to Content Drive's navigation
+ * service, for the panel Content Drive opened (#37759, FR-028, FR-029). The shell provides it next
+ * to the service. Remove with the legacy editor.
+ *
+ * @returns The provider for `EDIT_CONTENT_NAVIGATION_OVERRIDE`.
+ */
+export function provideContentDriveNavigationOverride(): Provider {
+    return {
+        provide: EDIT_CONTENT_NAVIGATION_OVERRIDE,
+        useExisting: DotContentDriveNavigationService
+    };
 }

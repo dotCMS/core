@@ -124,7 +124,10 @@ import {
     OUTCOME_KIND,
     DotContentDriveFolderPermissionsPayload
 } from '../shared/models';
-import { DotContentDriveNavigationService } from '../shared/services';
+import {
+    DotContentDriveNavigationService,
+    provideContentDriveNavigationOverride
+} from '../shared/services';
 import { provideContentDriveFieldFilterHost } from '../store/content-drive-field-filter-host';
 import { provideContentDriveFilterFacade } from '../store/content-drive-filter-facade';
 import { provideContentDriveRelationshipPicker } from '../store/content-drive-relationship-picker';
@@ -203,6 +206,9 @@ function isLoadedSite(site: DotSite | undefined): site is DotSite {
         // the list's language filter and default language; shared with the child components in
         // this shell's subtree.
         DotContentDriveNavigationService,
+        // Lets the new-editor side panel's "switch to the old editor" and load error stay in
+        // Content Drive. Only this shell provides it (#37759, FR-028, FR-029).
+        provideContentDriveNavigationOverride(),
         DotWorkflowsActionsService,
         MessageService,
         DotFolderService,

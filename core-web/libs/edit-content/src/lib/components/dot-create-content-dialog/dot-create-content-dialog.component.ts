@@ -9,7 +9,6 @@ import {
     signal
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Router } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogService, DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
@@ -82,7 +81,6 @@ export class DotEditContentDialogComponent implements OnInit, OnDestroy {
     readonly #dialogRef = inject(DynamicDialogRef);
     readonly #dialogConfig = inject(DynamicDialogConfig);
     readonly #host = inject(OverlayEditContentHost);
-    readonly #router = inject(Router);
 
     readonly editContentLayout = viewChild<DotEditContentLayoutComponent>('editContentLayout');
 
@@ -126,12 +124,6 @@ export class DotEditContentDialogComponent implements OnInit, OnDestroy {
             this.#savedContentlet.set(null);
             this.#hasContentBeenSaved.set(false);
         });
-
-        // A load failure used to navigate from the editor itself. The side panel leaves it to its
-        // opener now (#37759); this dialog keeps today's navigation.
-        this.#host.loadFailed$
-            .pipe(takeUntilDestroyed())
-            .subscribe(() => this.#router.navigate(['/c/content']));
 
         // Single source of truth for callbacks — only fires when the close actually completes.
         // This prevents callbacks from firing if the dirty-close guard cancels the close.

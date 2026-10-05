@@ -212,13 +212,6 @@ export class DotEditContentSidePanelComponent implements OnDestroy {
                 this.closed.emit();
             });
 
-            // The content never loaded, so there is nothing to keep: close without the guard. The
-            // error was already reported (#37759, FR-029).
-            host.loadFailed$.pipe(takeUntilDestroyed(this.#destroyRef)).subscribe(() => {
-                this.#fireCloseCallbacks();
-                this.closed.emit();
-            });
-
             host.languageChanged$
                 .pipe(takeUntilDestroyed(this.#destroyRef))
                 .subscribe((languageId) => this.languageChanged.emit(languageId));

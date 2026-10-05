@@ -128,23 +128,6 @@ export interface EditContentHost {
     leaveDeletedContent(contentType: string): void;
 
     /**
-     * "Switch to the old editor": the content type was just set back to the legacy editor, so the
-     * content leaves the new editor. Full-screen goes to the legacy edit page, or the legacy create
-     * page for a create; an overlay reloads the page, so its opener reopens from its own URL in the
-     * legacy editor (#37759, FR-028).
-     *
-     * @param contentlet The content being edited, or `null` for a create that was never saved.
-     * @param contentTypeVariable The type that was just set back to the legacy editor.
-     */
-    switchToLegacyEditor(contentlet: DotCMSContentlet | null, contentTypeVariable: string): void;
-
-    /**
-     * The content failed to load, after the error was reported. Full-screen goes back to the
-     * content listing; an overlay reports it so its opener can close it (#37759, FR-029).
-     */
-    leaveOnLoadError(): void;
-
-    /**
      * Whether this host navigates the editor in place (dialog/overlay) rather than
      * through the router. Consumers use it to decide, e.g., whether a breadcrumb
      * crumb is a `routerLink` (full-screen) or a `command` (in-place).
@@ -187,7 +170,7 @@ export interface EditContentHost {
      * An in-place reload for a locale switch ran: the editor now shows that language. Called by
      * the layout after the unsaved-changes prompt, never before, so a "keep editing" reports
      * nothing. The overlay reports it to its opener, whose URL names the language (#37759,
-     * FR-020, FR-028). Full-screen hosts do not implement it: their route already names it.
+     * FR-020). Full-screen hosts do not implement it: their route already names it.
      *
      * @param languageId The language the editor now shows.
      */

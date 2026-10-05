@@ -24,9 +24,13 @@ import {
     DotCMSContentlet,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
+import { EDIT_CONTENT_NAVIGATION_OVERRIDE } from '@dotcms/edit-content';
 import { createFakeContentlet, createFakeContentType } from '@dotcms/utils-testing';
 
-import { DotContentDriveNavigationService } from './dot-content-drive-navigation.service';
+import {
+    DotContentDriveNavigationService,
+    provideContentDriveNavigationOverride
+} from './dot-content-drive-navigation.service';
 
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 import { SYSTEM_HOST } from '../constants';
@@ -79,6 +83,7 @@ describe('DotContentDriveNavigationService', () => {
             mockProvider(DotHttpErrorManagerService, {
                 handle: vi.fn().mockReturnValue(of({}))
             }),
+            provideContentDriveNavigationOverride(),
             mockProvider(DotActionUrlService, {
                 getCreateContentletUrl: vi.fn().mockReturnValue(of(CREATE_URL))
             }),
@@ -686,6 +691,121 @@ describe('DotContentDriveNavigationService', () => {
                 service.panelLanguageChanged(3);
 
                 expect(service.$panelLocation()).toBeNull();
+            });
+        });
+
+        /**
+         * Content Drive takes over how its new-editor panel leaves for the legacy editor or after
+         * a load error (#37759, FR-028, FR-029). It answers only for the panel it opened, named by
+         * what that editor was opened with, so a nested editor (a related content opened from a
+         * relationship field) declines and navigates as on main.
+         */
+        describe('as the editor navigation override', () => {
+            const BLOG_POST = createFakeContentlet({
+                contentType: 'blog',
+                inode: 'inode-1',
+                identifier: 'id-1',
+                languageId: 2,
+                title: 'My Blog Post'
+            });
+
+            const openEdit = () => {
+                contentTypeService.getContentType.mockReturnValue(of(NEW_EDITOR_TYPE));
+                service.editContent(BLOG_POST);
+                contentTypeService.getContentType.mockClear();
+            };
+
+            it('is what the shell provides for the editor', () => {
+                expect(spectator.inject(EDIT_CONTENT_NAVIGATION_OVERRIDE)).toBe(service);
+            });
+
+            it('reopens its edit, in the same language, in the legacy panel', () => {
+                openEdit();
+                const locationBefore = service.$panelLocation();
+
+                const handled = service.switchToLegacyEditor(
+                    { inode: 'inode-1' },
+                    BLOG_POST,
+                    'blog'
+                );
+
+                expect(handled).toBe(true);
+                expect(service.$legacyPanelRequest()).toEqual({
+                    mode: 'edit',
+                    inode: 'inode-1',
+                    identifier: 'id-1',
+                    languageId: 2,
+                    title: 'My Blog Post',
+                    portletId: 'content-drive'
+                });
+                expect(service.$editPanelRequest()).toBeNull();
+                // The type was just switched, so it is not looked up again.
+                expect(contentTypeService.getContentType).not.toHaveBeenCalled();
+                // Same content, same language: the URL already says so.
+                expect(service.$panelLocation()).toEqual(locationBefore);
+            });
+
+            it('reopens its create as a legacy create, in the same folder and language', () => {
+                contentTypeService.getContentType.mockReturnValue(of(NEW_EDITOR_TYPE));
+                store.defaultLanguageId.mockReturnValue(2);
+                service.createContent('blog', { folderInode: 'inode-1' });
+
+                const handled = service.switchToLegacyEditor(
+                    { contentTypeId: 'blog' },
+                    null,
+                    'blog'
+                );
+
+                expect(handled).toBe(true);
+                expect(service.$legacyPanelRequest()).toEqual(
+                    expect.objectContaining({
+                        mode: 'new',
+                        contentTypeVariable: 'blog',
+                        languageId: 2,
+                        createUrl: CREATE_URL
+                    })
+                );
+                expect(service.$editPanelRequest()).toBeNull();
+                expect(service.$panelLocation()).toEqual({ kind: 'create', createContent: 'blog' });
+            });
+
+            it('declines a switch from another editor and leaves its panel alone', () => {
+                openEdit();
+                const request = service.$editPanelRequest();
+
+                const handled = service.switchToLegacyEditor(
+                    { inode: 'related-inode' },
+                    createFakeContentlet({ inode: 'related-inode' }),
+                    'news'
+                );
+
+                expect(handled).toBe(false);
+                expect(service.$editPanelRequest()).toBe(request);
+                expect(service.$legacyPanelRequest()).toBeNull();
+            });
+
+            it('declines a switch when no new-editor panel is open', () => {
+                expect(service.switchToLegacyEditor({ inode: 'inode-1' }, BLOG_POST, 'blog')).toBe(
+                    false
+                );
+            });
+
+            it('closes its panel when its content fails to load', () => {
+                openEdit();
+
+                const handled = service.leaveOnLoadError({ inode: 'inode-1' });
+
+                expect(handled).toBe(true);
+                expect(service.$editPanelRequest()).toBeNull();
+                expect(service.$panelLocation()).toBeNull();
+            });
+
+            it("declines another editor's load error and keeps its panel open", () => {
+                openEdit();
+                const request = service.$editPanelRequest();
+
+                expect(service.leaveOnLoadError({ inode: 'related-inode' })).toBe(false);
+                expect(service.$editPanelRequest()).toBe(request);
             });
         });
 

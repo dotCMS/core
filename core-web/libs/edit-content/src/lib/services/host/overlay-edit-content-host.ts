@@ -1,6 +1,5 @@
 import { Subject } from 'rxjs';
 
-import { DOCUMENT } from '@angular/common';
 import { Injectable, OnDestroy, computed, inject, signal } from '@angular/core';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
@@ -43,7 +42,6 @@ export class OverlayEditContentHost implements EditContentHost, OnDestroy {
     readonly #relatedNav = inject(DotRelatedContentNavigationStore);
     readonly #config = inject(DynamicDialogConfig, { optional: true });
     readonly #dialogRef = inject(DynamicDialogRef, { optional: true });
-    readonly #document = inject(DOCUMENT);
     readonly #navigation$ = new Subject<InPlaceNavigationRequest>();
     readonly #saved$ = new Subject<DotCMSContentlet>();
     readonly #left$ = new Subject<void>();
@@ -147,32 +145,13 @@ export class OverlayEditContentHost implements EditContentHost, OnDestroy {
         this.#navigation$.next({ inode });
     }
 
-    readonly #loadFailed$ = new Subject<void>();
     readonly #languageChanged$ = new Subject<number>();
 
     /**
      * A locale switch loaded another language of the content. The opener can name it in its URL,
-     * so a refresh or a switch to the old editor reopens that language (#37759, FR-020, FR-028).
+     * so a refresh reopens that language (#37759, FR-020).
      */
     readonly languageChanged$ = this.#languageChanged$.asObservable();
-
-    /** The content failed to load; the opener decides how to close (#37759, FR-029). */
-    readonly loadFailed$ = this.#loadFailed$.asObservable();
-
-    /**
-     * "Switch to the old editor": reloads the page, so whatever opened this overlay reopens from
-     * its own URL, now in the old editor. Content Drive's URL names the open content or create,
-     * so it reopens in its legacy panel (#37759, FR-028). The URL already says what to reopen, so
-     * the arguments the full-page editor navigates with are not needed here.
-     */
-    switchToLegacyEditor(_contentlet: DotCMSContentlet | null, _contentTypeVariable: string): void {
-        this.#document.defaultView?.location.reload();
-    }
-
-    /** Reports the load failure on {@link loadFailed$}. */
-    leaveOnLoadError(): void {
-        this.#loadFailed$.next();
-    }
 
     leaveDeletedContent(_contentType: string): void {
         // The overlay has no listing to return to; just close it. The DialogService dialog closes

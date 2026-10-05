@@ -1,24 +1,58 @@
-# Contract: `EditContentHost` port additions (`@dotcms/edit-content`)
+# Contract: Edit Content changes for Content Drive's side panel (`@dotcms/edit-content`)
 
-File: `core-web/libs/edit-content/src/lib/services/host/edit-content-host.model.ts`. These keep the
-two new-editor paths that leave for Content Search (FR-028, FR-029) inside the side panel, without
-changing the full-page new editor. They follow the existing `leaveDeletedContent` pattern.
+Only Content Drive changes how the new editor leaves for the legacy editor or after a load error
+(FR-028, FR-029). Every other opener of the new editor (the Edit Content portlet, Query Tool, UVE,
+the relationship field, the asset picker) keeps the navigation it has on `main`. The language work
+below applies to every overlay, but only Content Drive listens to it.
 
-## New methods
+## Navigation override
 
-| Method | Called from | `RouterEditContentHost` (full page) | `OverlayEditContentHost` (panel, dialog) |
-|---|---|---|---|
-| `switchToLegacyEditor(contentlet: DotCMSContentlet \| null, contentTypeVariable: string): void` | `content.feature.ts`, `disableNewContentEditor`, after `CONTENT_EDITOR2_ENABLED: false` is saved (replaces `router.navigate(['/c/content/', inode])`, `:438`). `contentlet` is `null` for a create that was never saved | `router.navigate(['/c/content/', contentlet.inode])`, as today, or `['/c/content/new/', contentTypeVariable]` for a create | reloads the page (`DOCUMENT.defaultView.location.reload()`); no event |
-| `leaveOnLoadError(): void` | `content.feature.ts`, `initializeExistingContent` error branch, after `dotHttpErrorManagerService.handle(error)` (replaces `router.navigate(['/c/content'])`, `:401`) | `router.navigate(['/c/content'])`, as today | emits on `loadFailed$` |
+File: `core-web/libs/edit-content/src/lib/models/edit-content-navigation-override.ts`, exported from
+the lib index. Remove with the legacy editor.
 
-## Overlay consumers
+```ts
+export interface EditContentNavigationOverride {
+    switchToLegacyEditor(
+        opened: EditContentIdentity,
+        contentlet: DotCMSContentlet | null,
+        contentTypeVariable: string
+    ): boolean;
+    leaveOnLoadError(opened: EditContentIdentity): boolean;
+}
+export const EDIT_CONTENT_NAVIGATION_OVERRIDE: InjectionToken<EditContentNavigationOverride>;
+```
 
-| Consumer | `loadFailed$` | `languageChanged$` |
+`content.feature.ts` injects it with `{ optional: true }` and keeps `main`'s navigation:
+
+| Path | Override asked first | When there is no override, or it returns `false` (as on `main`) |
 |---|---|---|
-| `DotEditContentSidePanelComponent` | emits `closed` (no unsaved prompt: nothing loaded) | new output `languageChanged: number`; Content Drive routes it to `panelLanguageChanged` |
-| `DotCreateContentDialogComponent` | keeps today's navigation to `/c/content` | not used |
+| `disableNewContentEditor`, after `CONTENT_EDITOR2_ENABLED: false` is saved | `switchToLegacyEditor(host.resolveIdentity(), contentlet ?? null, contentType.variable)` | `router.navigate(['/c/content/', contentlet.inode])` |
+| `initializeExistingContent` error, after `dotHttpErrorManagerService.handle(error)` | `leaveOnLoadError(host.resolveIdentity())` | `router.navigate(['/c/content'])` |
 
-## Changed method
+`opened` is what the editor was opened with (`EditContentHost.resolveIdentity()`). It stays the
+same across the editor's in-place reloads (a language switch), so an opener can tell its own editor
+from any other one. The override is provided on an ancestor component, so every editor below it
+inherits it, nested ones included: a related content opened from a relationship field (in a side
+panel through `ViewContainerRef`, or in a dialog through the side panel's `DialogService`). The
+override returns `false` for those, and they navigate as on `main`.
+
+`main`'s crash on a create that was never saved (`contentlet.inode` with no content) is unchanged
+outside Content Drive: out of scope.
+
+### Content Drive's implementation
+
+`DotContentDriveNavigationService` implements the interface, and the shell provides the token with
+`provideContentDriveNavigationOverride()` (`useExisting` the service). It answers only for the
+new-editor panel it has open: the same `contentletInode` for an edit, the same `contentTypeId` with
+no inode for a create.
+
+- Switch, edit: the same content reopens, in the language the editor shows (`contentlet.languageId`),
+  in the legacy panel. The URL already names it, so only the request changes.
+- Switch, create: a legacy create for the same type, in the folder being browsed and the language
+  the create started in (`#openLegacyCreate`).
+- Load error: `closeEditPanel()`; the folder, filters and page stay.
+
+## Language of an in-place reload
 
 `reloadContent(inode: string, languageId?: number): void`. The locale switch in `locales.feature.ts`
 (`switchLocale`) passes the language of the version it loads. `RouterEditContentHost` ignores it:
@@ -26,17 +60,9 @@ its route change already names the version. `OverlayEditContentHost` reloads in 
 and carries the language on the `InPlaceNavigationRequest` (`languageId`). The layout reports it
 through the optional `reportLanguage?(languageId)` once the reload actually runs, after the
 unsaved-changes prompt, so a "keep editing" reports nothing. The overlay emits it on
-`languageChanged$`, and the opener's URL names the language now open. That keeps a refresh, and
-the page reload of "switch to the old editor", in that language (FR-020, FR-028). Full-screen hosts
+`languageChanged$`, the side panel emits it as its `languageChanged` output, and Content Drive
+routes it to `panelLanguageChanged`, so a refresh reopens that language (FR-020). Full-screen hosts
 don't implement `reportLanguage`.
-
-"Switch to the old editor" reports nothing to the overlay's consumers (decided with the developer,
-2026-10-05). The page reloads and whatever opened the overlay reopens from its own URL. Content
-Drive's URL names the open content (`editContent` + `editContentLang`) or create (`createContent`
-with `path`), so the reload reopens it in the legacy panel, now that the type uses the legacy
-editor (FR-028). The other side-panel hosts (Query Tool, UVE, Experiments, relationship field)
-reload their own page. Unsaved edits are protected by the `beforeunload` guards of the edit-content
-layout and the Content Drive shell.
 
 ## Identity
 
