@@ -33,6 +33,7 @@ dotCMS/src/main/webapp/html/ng
 dotCMS/src/main/webapp/WEB-INF/felix/felix-cache
 dotCMS/src/main/webapp/WEB-INF/felix/osgi-extra-generated.conf
 dotCMS/src/main/webapp/WEB-INF/felix/osgi-extra.conf
+dotCMS/src/main/webapp/html/js/tinymce/jscripts/tiny_mce/*.gz
 
 _original
 # OS generated files #
@@ -197,7 +198,6 @@ dotCMS/dependencies.gradle
 
 # Examples package-lock.json
 examples/nextjs/package-lock.json
-examples/angular/package-lock.json
 examples/astro/package-lock.json
 
 # core-web uses yarn, ignore npm lock file
