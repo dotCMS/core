@@ -204,31 +204,9 @@ describe('DotEditContentDialogComponent', () => {
         expect(onCancel).toHaveBeenCalledTimes(1);
     });
 
-    // The dialog keeps today's behavior for both paths the side panel now keeps in Content Drive
-    // (#37759, FR-028, FR-029): the overlay host only reports them, so the dialog navigates.
+    // The dialog keeps today's behavior for a load failure, which the overlay host only reports
+    // (#37759, FR-029). "Switch to the old editor" reloads the page from the host itself.
     describe('leaving the new editor', () => {
-        it('goes to the legacy edit page on "switch to the old editor"', () => {
-            const router = spectator.inject(Router);
-            const navigate = vi.spyOn(router, 'navigate').mockResolvedValue(true);
-            spectator.detectChanges();
-
-            spectator
-                .inject(OverlayEditContentHost, true)
-                .switchToLegacyEditor({ inode: 'inode-7' } as DotCMSContentlet, 'Blog');
-
-            expect(navigate).toHaveBeenCalledWith(['/c/content/', 'inode-7']);
-        });
-
-        it('goes to the legacy create page on a switch from a create (T116)', () => {
-            const router = spectator.inject(Router);
-            const navigate = vi.spyOn(router, 'navigate').mockResolvedValue(true);
-            spectator.detectChanges();
-
-            spectator.inject(OverlayEditContentHost, true).switchToLegacyEditor(null, 'Blog');
-
-            expect(navigate).toHaveBeenCalledWith(['/c/content/new/', 'Blog']);
-        });
-
         it('goes to the content listing when the content fails to load', () => {
             const router = spectator.inject(Router);
             const navigate = vi.spyOn(router, 'navigate').mockResolvedValue(true);

@@ -62,7 +62,8 @@ null ──open edit──────────────▶ edit(id, lang)
 null ──open create────────────▶ create(type)                                 [location.go]
 create(type) ──first save─────▶ edit(savedId, savedLang)                     [replaceState]
 edit(id, lang) ──legacy language switch──▶ edit(id, newLang)                 [replaceState]
-edit(id, lang) ──switch to old editor (new panel)──▶ edit(id, lang)          [no URL change; request becomes legacy]
+edit(id, lang) ──switch to old editor (new panel)──▶ edit(id, lang)          [no URL change; the page reloads and reopens it in the legacy panel]
+create(type) ──switch to old editor (new panel)──▶ create(type)               [no URL change; the page reloads and reopens a legacy create]
 any ──close (any reason)──────▶ null                                         [replaceState]
 ```
 

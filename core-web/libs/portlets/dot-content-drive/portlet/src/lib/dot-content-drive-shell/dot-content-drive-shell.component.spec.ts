@@ -229,7 +229,6 @@ describe('DotContentDriveShellComponent', () => {
                 createContent: vi.fn(),
                 closeEditPanel: vi.fn(),
                 openEditByIdentifier: vi.fn(),
-                switchToLegacyEditor: vi.fn(),
                 panelSaved: vi.fn(),
                 panelLanguageChanged: vi.fn(),
                 $editPanelRequest: editPanelRequestSignal,
@@ -5424,28 +5423,6 @@ describe('DotContentDriveShellComponent', () => {
             });
             // Its own refresh after a save stays as it was.
             expect(store.reloadContentDrive).toHaveBeenCalledWith();
-        });
-
-        it('hands a switch to the old editor to the navigation service, without touching the URL', async () => {
-            setPanelRequest(EDIT_REQUEST);
-            spectator.detectChanges();
-            await spectator.fixture.whenStable();
-            spectator.detectChanges();
-            (location.go as Mock).mockClear();
-            // The content, or `null` when the switch came from a create, with its type (T116).
-            const switched = {
-                contentlet: { inode: 'inode-1', identifier: 'id-1' } as DotCMSContentlet,
-                contentTypeVariable: 'blog'
-            };
-
-            spectator.triggerEventHandler(
-                'dot-edit-content-side-panel',
-                'switchedToLegacyEditor',
-                switched
-            );
-
-            expect(navigationService.switchToLegacyEditor).toHaveBeenCalledWith(switched);
-            expect(location.go).not.toHaveBeenCalled();
         });
 
         describe('legacy-editor panel', () => {

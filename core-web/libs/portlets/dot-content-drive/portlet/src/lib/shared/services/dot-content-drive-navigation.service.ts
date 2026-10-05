@@ -18,7 +18,7 @@ import {
     DotCMSContentType,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
-import { DotLegacyEditorSwitch, EditContentDialogData } from '@dotcms/edit-content';
+import { EditContentDialogData } from '@dotcms/edit-content';
 import { DotFolderTreeNodeContentData } from '@dotcms/portlets/content-drive/ui';
 
 import { DotLegacyEditorRequest } from '../../components/dot-legacy-editor-side-panel/dot-legacy-editor-side-panel.model';
@@ -224,42 +224,6 @@ export class DotContentDriveNavigationService {
             folderPath: hostname ? `${hostname}${path ?? ''}` : undefined,
             folderInode: inode || undefined
         };
-    }
-
-    /**
-     * "Switch to the old editor" in the new-editor panel: the type was just set back to the legacy
-     * editor, so the same content reopens, in the same language, in the legacy panel (#37759,
-     * FR-028). The type is not looked up again, and the URL already names this content, so only the
-     * request changes.
-     *
-     * From a create there is no content yet: a legacy create for the same type opens instead, in
-     * the folder being browsed and the language the create started in.
-     *
-     * @param switched The content that was open, or `null` for a create, and its type.
-     */
-    switchToLegacyEditor({ contentlet, contentTypeVariable }: DotLegacyEditorSwitch): void {
-        if (!contentlet) {
-            const open = this.#panelRequest()?.data;
-
-            this.#openLegacyCreate(contentTypeVariable, open?.title ?? contentTypeVariable, {
-                folderInode: this.currentFolder().folderInode,
-                languageId: open?.languageId ?? this.#createLanguageId() ?? 1
-            });
-
-            return;
-        }
-
-        this.#panelRequest.set({
-            editor: 'legacy',
-            data: {
-                mode: 'edit',
-                inode: contentlet.inode,
-                identifier: contentlet.identifier,
-                languageId: contentlet.languageId,
-                title: contentlet.title,
-                portletId: CONTENT_DRIVE_PORTLET_ID
-            }
-        });
     }
 
     /**

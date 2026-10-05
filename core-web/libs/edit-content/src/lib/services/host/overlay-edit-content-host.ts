@@ -1,5 +1,6 @@
 import { Subject } from 'rxjs';
 
+import { DOCUMENT } from '@angular/common';
 import { Injectable, OnDestroy, computed, inject, signal } from '@angular/core';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
@@ -12,10 +13,7 @@ import {
     InPlaceNavigationRequest
 } from './edit-content-host.model';
 
-import {
-    DotLegacyEditorSwitch,
-    EditContentDialogData
-} from '../../models/dot-edit-content-dialog.interface';
+import { EditContentDialogData } from '../../models/dot-edit-content-dialog.interface';
 import {
     DotRelatedContentCrumb,
     DotRelatedContentNavigationStore,
@@ -45,6 +43,7 @@ export class OverlayEditContentHost implements EditContentHost, OnDestroy {
     readonly #relatedNav = inject(DotRelatedContentNavigationStore);
     readonly #config = inject(DynamicDialogConfig, { optional: true });
     readonly #dialogRef = inject(DynamicDialogRef, { optional: true });
+    readonly #document = inject(DOCUMENT);
     readonly #navigation$ = new Subject<InPlaceNavigationRequest>();
     readonly #saved$ = new Subject<DotCMSContentlet>();
     readonly #left$ = new Subject<void>();
@@ -142,21 +141,19 @@ export class OverlayEditContentHost implements EditContentHost, OnDestroy {
         this.#navigation$.next({ inode });
     }
 
-    readonly #switchedToLegacy$ = new Subject<DotLegacyEditorSwitch>();
     readonly #loadFailed$ = new Subject<void>();
-
-    /**
-     * "Switch to the old editor" was confirmed for this content, or for a create that was never
-     * saved. An overlay does not navigate: its opener decides where it opens next (#37759, FR-028).
-     */
-    readonly switchedToLegacy$ = this.#switchedToLegacy$.asObservable();
 
     /** The content failed to load; the opener decides how to close (#37759, FR-029). */
     readonly loadFailed$ = this.#loadFailed$.asObservable();
 
-    /** Reports the switch on {@link switchedToLegacy$}. */
-    switchToLegacyEditor(contentlet: DotCMSContentlet | null, contentTypeVariable: string): void {
-        this.#switchedToLegacy$.next({ contentlet, contentTypeVariable });
+    /**
+     * "Switch to the old editor": reloads the page, so whatever opened this overlay reopens from
+     * its own URL, now in the old editor. Content Drive's URL names the open content or create,
+     * so it reopens in its legacy panel (#37759, FR-028). The URL already says what to reopen, so
+     * the arguments the full-page editor navigates with are not needed here.
+     */
+    switchToLegacyEditor(_contentlet: DotCMSContentlet | null, _contentTypeVariable: string): void {
+        this.#document.defaultView?.location.reload();
     }
 
     /** Reports the load failure on {@link loadFailed$}. */

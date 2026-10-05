@@ -26,15 +26,8 @@ describe('DotEditContentSidePanelComponent', () => {
     let spectator: Spectator<DotEditContentSidePanelComponent>;
     let saved$: Subject<DotCMSContentlet>;
     let left$: Subject<void>;
-    let switchedToLegacy$: Subject<{
-        contentlet: DotCMSContentlet | null;
-        contentTypeVariable: string;
-    }>;
     let loadFailed$: Subject<void>;
-    let mockHost: Pick<
-        OverlayEditContentHost,
-        'saved$' | 'left$' | 'switchedToLegacy$' | 'loadFailed$'
-    >;
+    let mockHost: Pick<OverlayEditContentHost, 'saved$' | 'left$' | 'loadFailed$'>;
 
     const EDIT_DATA: EditContentDialogData = {
         mode: 'edit',
@@ -69,15 +62,10 @@ describe('DotEditContentSidePanelComponent', () => {
         localStorage.clear();
         saved$ = new Subject<DotCMSContentlet>();
         left$ = new Subject<void>();
-        switchedToLegacy$ = new Subject<{
-            contentlet: DotCMSContentlet | null;
-            contentTypeVariable: string;
-        }>();
         loadFailed$ = new Subject<void>();
         mockHost = {
             saved$: saved$.asObservable(),
             left$: left$.asObservable(),
-            switchedToLegacy$: switchedToLegacy$.asObservable(),
             loadFailed$: loadFailed$.asObservable()
         };
 
@@ -474,30 +462,11 @@ describe('DotEditContentSidePanelComponent', () => {
     });
 
     /**
-     * The two paths that used to leave for Content Search now report to the opener instead
-     * (#37759). "Switch to the old editor" names the content to reopen in the legacy editor
-     * (FR-028); a load failure closes the panel (FR-029).
+     * A load failure used to leave for Content Search; it now closes the panel and leaves the rest
+     * to the opener (#37759, FR-029). "Switch to the old editor" reloads the page from the overlay
+     * host, so the panel has nothing to report for it.
      */
     describe('leaving the new editor', () => {
-        it('reports a switch to the old editor with the content, and stays open for the opener', async () => {
-            spectator.setInput('data', EDIT_DATA);
-            spectator.detectChanges();
-            await spectator.fixture.whenStable();
-            const switched = vi.fn();
-            const closed = vi.fn();
-            spectator.output('switchedToLegacyEditor').subscribe(switched);
-            spectator.output('closed').subscribe(closed);
-            const switch$ = {
-                contentlet: { inode: 'inode-1', identifier: 'id-1' } as DotCMSContentlet,
-                contentTypeVariable: 'Blog'
-            };
-
-            switchedToLegacy$.next(switch$);
-
-            expect(switched).toHaveBeenCalledWith(switch$);
-            expect(closed).not.toHaveBeenCalled();
-        });
-
         it('closes without the unsaved-changes guard when the content fails to load', async () => {
             spectator.setInput('data', EDIT_DATA);
             spectator.detectChanges();

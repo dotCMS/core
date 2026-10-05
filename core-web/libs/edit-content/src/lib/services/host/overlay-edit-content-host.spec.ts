@@ -1,6 +1,8 @@
 import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { Mock, vi } from 'vitest';
 
+import { DOCUMENT } from '@angular/common';
+
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
@@ -14,6 +16,7 @@ describe('OverlayEditContentHost', () => {
     let host: OverlayEditContentHost;
     let relatedNav: { appendToTrail: Mock; titleCache: Mock; registerTitle: Mock };
     let config: DynamicDialogConfig;
+    const reload = vi.fn();
 
     const createHost = createServiceFactory({
         service: OverlayEditContentHost,
@@ -24,11 +27,14 @@ describe('OverlayEditContentHost', () => {
                 registerTitle: vi.fn()
             }),
             mockProvider(DynamicDialogConfig, { data: undefined }),
-            mockProvider(DynamicDialogRef, { close: vi.fn() })
+            mockProvider(DynamicDialogRef, { close: vi.fn() }),
+            // Only `switchToLegacyEditor` reads the document, to reload the page.
+            { provide: DOCUMENT, useValue: { defaultView: { location: { reload } } } }
         ]
     });
 
     beforeEach(() => {
+        reload.mockClear();
         spectator = createHost();
         host = spectator.service;
         relatedNav = spectator.inject(
@@ -73,26 +79,22 @@ describe('OverlayEditContentHost', () => {
         });
     });
 
-    // An overlay does not navigate: it reports both intents, and whoever opened it decides
-    // (#37759, FR-028, FR-029).
+    /**
+     * "Switch to the old editor" reloads the page: whatever opened the overlay reopens from its own
+     * URL, now in the old editor. Content Drive's URL names the open content or create (#37759,
+     * FR-028, T121).
+     */
     describe('switchToLegacyEditor', () => {
-        it('emits the content and its type on switchedToLegacy$', () => {
-            const contentlet = { inode: 'inode-7' } as DotCMSContentlet;
-            const spy = vi.fn();
-            host.switchedToLegacy$.subscribe(spy);
+        it('reloads the page for an edit', () => {
+            host.switchToLegacyEditor({ inode: 'inode-7' } as DotCMSContentlet, 'Blog');
 
-            host.switchToLegacyEditor(contentlet, 'Blog');
-
-            expect(spy).toHaveBeenCalledWith({ contentlet, contentTypeVariable: 'Blog' });
+            expect(reload).toHaveBeenCalledTimes(1);
         });
 
-        it('emits a switch from a create with no content (T116)', () => {
-            const spy = vi.fn();
-            host.switchedToLegacy$.subscribe(spy);
-
+        it('reloads the page for a create, which has no content yet', () => {
             host.switchToLegacyEditor(null, 'Blog');
 
-            expect(spy).toHaveBeenCalledWith({ contentlet: null, contentTypeVariable: 'Blog' });
+            expect(reload).toHaveBeenCalledTimes(1);
         });
     });
 

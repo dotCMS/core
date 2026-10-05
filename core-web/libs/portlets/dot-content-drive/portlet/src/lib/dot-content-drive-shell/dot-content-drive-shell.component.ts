@@ -56,11 +56,7 @@ import {
     isActionableBrowseItem,
     DotCMSContentlet
 } from '@dotcms/dotcms-models';
-import {
-    DotEditContentSidePanelComponent,
-    DotLegacyEditorSwitch,
-    DotSidePanelNavController
-} from '@dotcms/edit-content';
+import { DotEditContentSidePanelComponent, DotSidePanelNavController } from '@dotcms/edit-content';
 import {
     DotContentDriveUploadFiles,
     DotFolderTreeNodeData,
@@ -2009,16 +2005,6 @@ export class DotContentDriveShellComponent implements OnDestroy {
     protected onLegacyPanelClosed() {
         this.#navigationService.closeEditPanel();
         this.#store.reloadContentDrive({ quiet: true });
-    }
-
-    /**
-     * "Switch to the old editor" in the new-editor panel: reopen the same content in the legacy
-     * panel, without leaving Content Drive (#37759, FR-028).
-     *
-     * @param switched The content that was open, or `null` for a create, and its type.
-     */
-    protected onSwitchedToLegacyEditor(switched: DotLegacyEditorSwitch) {
-        this.#navigationService.switchToLegacyEditor(switched);
     }
 
     /**

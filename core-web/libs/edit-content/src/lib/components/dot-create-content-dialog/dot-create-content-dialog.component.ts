@@ -127,17 +127,8 @@ export class DotEditContentDialogComponent implements OnInit, OnDestroy {
             this.#hasContentBeenSaved.set(false);
         });
 
-        // The two paths the editor used to navigate itself. The side panel keeps them in its
-        // opener now (#37759); this dialog keeps today's navigation for both.
-        this.#host.switchedToLegacy$
-            .pipe(takeUntilDestroyed())
-            .subscribe(({ contentlet, contentTypeVariable }) =>
-                this.#router.navigate(
-                    contentlet
-                        ? ['/c/content/', contentlet.inode]
-                        : ['/c/content/new/', contentTypeVariable]
-                )
-            );
+        // A load failure used to navigate from the editor itself. The side panel leaves it to its
+        // opener now (#37759); this dialog keeps today's navigation.
         this.#host.loadFailed$
             .pipe(takeUntilDestroyed())
             .subscribe(() => this.#router.navigate(['/c/content']));

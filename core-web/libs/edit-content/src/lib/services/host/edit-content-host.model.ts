@@ -120,8 +120,8 @@ export interface EditContentHost {
     /**
      * "Switch to the old editor": the content type was just set back to the legacy editor, so the
      * content leaves the new editor. Full-screen goes to the legacy edit page, or the legacy create
-     * page for a create; an overlay reports it so its opener can reopen it in the legacy editor
-     * (#37759, FR-028).
+     * page for a create; an overlay reloads the page, so its opener reopens from its own URL in the
+     * legacy editor (#37759, FR-028).
      *
      * @param contentlet The content being edited, or `null` for a create that was never saved.
      * @param contentTypeVariable The type that was just set back to the legacy editor.
