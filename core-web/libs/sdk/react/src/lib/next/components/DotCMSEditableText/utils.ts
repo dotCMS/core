@@ -39,11 +39,9 @@ export interface DotCMSEditableTextProps<T extends DotCMSBasicContentlet> {
     contentlet: T;
 }
 
-// license_key is set via the top-level `licenseKey` prop on `<Editor>` (`TinyMCEEditor.tsx`),
-// not here: `@tinymce/tinymce-react`'s wrapper only reads `props.licenseKey`, never
-// `props.init.licenseKey` — a value here would be silently inert.
 const DEFAULT_TINYMCE_CONFIG: IAllProps['init'] = {
-    ...__DEFAULT_TINYMCE_CONFIG__
+    ...__DEFAULT_TINYMCE_CONFIG__,
+    licenseKey: 'gpl' // Using self-hosted license key
 };
 
 export const TINYMCE_CONFIG: {

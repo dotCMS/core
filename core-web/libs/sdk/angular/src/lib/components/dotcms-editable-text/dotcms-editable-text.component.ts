@@ -18,7 +18,7 @@ import { DomSanitizer } from '@angular/platform-browser';
 import { DotCMSBasicContentlet, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 import { getUVEState, sendMessageToUVE } from '@dotcms/uve';
-import { __TINYMCE_BASE_PATH_ON_DOTCMS__, __TINYMCE_PATH_ON_DOTCMS__ } from '@dotcms/uve/internal';
+import { __TINYMCE_PATH_ON_DOTCMS__ } from '@dotcms/uve/internal';
 
 import { TINYMCE_CONFIG, DOT_EDITABLE_TEXT_FORMAT, DOT_EDITABLE_TEXT_MODE } from './utils';
 
@@ -189,7 +189,7 @@ export class DotCMSEditableTextComponent<T extends DotCMSBasicContentlet>
 
         this.init = {
             ...TINYMCE_CONFIG[this.mode()],
-            base_url: `${dotCMSHost}${__TINYMCE_BASE_PATH_ON_DOTCMS__}`
+            base_url: `${dotCMSHost}/ext/tinymcev7`
         };
     }
 

@@ -2194,7 +2194,7 @@ describe('EditEmaEditorComponent', () => {
                             '<div>hello world</div>'
                         );
                         expect(iframe.nativeElement.contentDocument.body.innerHTML).toContain(
-                            '<script data-inline="true" src="/ext/tinymce/tinymce.min.js">'
+                            '<script data-inline="true" src="/html/js/tinymce/js/tinymce/tinymce.min.js">'
                         );
                     });
 
@@ -2228,7 +2228,7 @@ describe('EditEmaEditorComponent', () => {
                             '<div>New Content - Hello World</div>'
                         );
                         expect(iframe.nativeElement.contentDocument.body.innerHTML).toContain(
-                            '<script data-inline="true" src="/ext/tinymce/tinymce.min.js">'
+                            '<script data-inline="true" src="/html/js/tinymce/js/tinymce/tinymce.min.js">'
                         );
 
                         expect(scrollSpy).toHaveBeenCalledWith(0, 100);

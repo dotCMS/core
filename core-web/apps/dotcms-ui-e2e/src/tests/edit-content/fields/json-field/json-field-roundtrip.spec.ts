@@ -43,12 +43,23 @@ test('a JSON value survives save and reopen, still indented @critical', async ({
     const formPage = new NewEditContentFormPage(page);
     await formPage.goToNew(contentTypeVariable);
 
-    await page.getByTestId('title').fill('JSON round trip');
+    const title = page.getByTestId('title');
+    await title.fill('JSON round trip');
 
-    const editor = page.locator('dot-edit-content-json-field .monaco-editor').first();
-    await expect(editor).toBeVisible({ timeout: 30000 });
-    await editor.click();
+    // `.monaco-editor` alone is not enough: the ngx-monaco-editor wrapper renders an empty
+    // `div.monaco-editor` placeholder before Monaco's lazily loaded bundle creates the real editor,
+    // so it is visible while keystrokes still go nowhere. `.view-lines` only exists once
+    // `monaco.editor.create` has run.
+    const editorLines = page.locator('dot-edit-content-json-field .monaco-editor .view-lines');
+    await expect(editorLines).toBeVisible({ timeout: 30000 });
+    await editorLines.click();
     await page.keyboard.type('{"alpha": 1, "beta": "two"}');
+
+    await expect(title).toHaveValue('JSON round trip');
+    await expect(editorLines).toContainText('beta');
+    // The editor's validator reads the JSON worker's markers, which update asynchronously. Saving
+    // while a marker from a half-typed state is still there blocks the save as an invalid form.
+    await expect(page.locator('dot-edit-content-json-field .squiggly-error')).toHaveCount(0);
 
     await formPage.save();
 
@@ -64,13 +75,11 @@ test('a JSON value survives save and reopen, still indented @critical', async ({
 
     await formPage.goToContent(savedContentIdentifier);
 
-    await expect(editor).toBeVisible({ timeout: 30000 });
-
-    const rendered = await editor.innerText();
-
+    // Retrying assertions: the editor paints its lines after it becomes visible, so a one-shot
+    // read right after `toBeVisible` can return an empty string.
     // Both keys survived the round trip...
-    expect(rendered).toContain('alpha');
-    expect(rendered).toContain('beta');
+    await expect(editorLines).toContainText('alpha', { timeout: 30000 });
+    await expect(editorLines).toContainText('beta');
     // ...and the document is still formatted across lines rather than flattened.
-    expect(rendered.split('\n').length).toBeGreaterThan(1);
+    await expect.poll(() => editorLines.locator('.view-line').count()).toBeGreaterThan(1);
 });
