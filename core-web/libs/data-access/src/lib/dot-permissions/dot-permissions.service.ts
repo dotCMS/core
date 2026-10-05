@@ -31,18 +31,6 @@ export class DotPermissionsService {
     readonly #http = inject(HttpClient);
 
     /**
-     * Resolves whether the calling user may add children to an asset.
-     *
-     * Needed for the site root specifically: a folder's own CAN_ADD_CHILDREN arrives with the
-     * folder tree, but the root's parent is the host, and no folder endpoint reports on it.
-     * `/api/v1/folder/byPath` looks like it does — its `/` entry carries `addChildrenAllowed` — but
-     * that value is resolved against the global `SYSTEM_FOLDER` singleton, which inherits from
-     * SYSTEM_HOST and so answers identically for every site.
-     *
-     * @param {string} assetId - Identifier of the asset (a site identifier, for the drive root)
-     * @returns {Observable<boolean>} Whether the calling user holds CAN_ADD_CHILDREN on it
-     */
-    /**
      * Resolves what the calling user may do to an asset: edit it, and edit its permissions. The
      * server's own answer for this user across every role they hold, like {@link canAddChildren}.
      *
@@ -67,9 +55,23 @@ export class DotPermissionsService {
             );
     }
 
+    /**
+     * Resolves whether the calling user may add children to an asset.
+     *
+     * Needed for the site root specifically: a folder's own CAN_ADD_CHILDREN arrives with the
+     * folder tree, but the root's parent is the host, and no folder endpoint reports on it.
+     * `/api/v1/folder/byPath` looks like it does — its `/` entry carries `addChildrenAllowed` — but
+     * that value is resolved against the global `SYSTEM_FOLDER` singleton, which inherits from
+     * SYSTEM_HOST and so answers identically for every site.
+     *
+     * @param {string} assetId - Identifier of the asset (a site identifier, for the drive root)
+     * @returns {Observable<boolean>} Whether the calling user holds CAN_ADD_CHILDREN on it
+     */
     canAddChildren(assetId: string): Observable<boolean> {
         return this.#http
-            .get<DotCMSAPIResponse<AssetPermissionsView>>(`${ASSET_PERMISSIONS_URL}/${assetId}`)
+            .get<
+                DotCMSAPIResponse<AssetPermissionsView>
+            >(`${ASSET_PERMISSIONS_URL}/${encodeURIComponent(assetId)}`)
             .pipe(
                 // An instance predating the field answers without it. Denying on `undefined` would
                 // strip the creation buttons from every user there, so absence reads as allowed and

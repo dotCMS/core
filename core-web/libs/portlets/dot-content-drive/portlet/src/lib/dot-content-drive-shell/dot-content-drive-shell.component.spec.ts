@@ -51,6 +51,7 @@ import {
     DotContentDriveFolder,
     DotContentDriveItem,
     DotContentDriveActionableFolder,
+    DotSite,
     PERMISSIONS_TYPE
 } from '@dotcms/dotcms-models';
 import {
@@ -5869,6 +5870,9 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
     // A folder named only by its identifier, resolved when a folder-dialog link loads (FR-031).
     const getFolderById = vi.fn();
     const getUserAccess = vi.fn();
+    // The store's current site. A folder link checks the folder against it, so a test can hold it
+    // at the SYSTEM_HOST placeholder to play a cold load.
+    const currentSiteSignal = signal<DotSite>(MOCK_SITES[0]);
 
     const createComponent = createComponentFactory({
         component: DotContentDriveShellComponent,
@@ -5978,6 +5982,7 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
         delete deepLinkQueryParams['createContent'];
         getFolderById.mockReset();
         getUserAccess.mockReset();
+        currentSiteSignal.set(MOCK_SITES[0]);
         // The params object is shared by the factory, so a language set by one test would otherwise
         // leak into the next.
         delete deepLinkQueryParams['editContentLang'];
@@ -6025,7 +6030,7 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
                     setDialogDrillDown: vi.fn(),
                     toolbarBlockingRunCount: signal(0),
                     trackUploadJob: vi.fn(),
-                    currentSite: vi.fn().mockReturnValue(MOCK_SITES[0]),
+                    currentSite: currentSiteSignal,
                     isTreeExpanded: vi.fn().mockReturnValue(false),
                     items: vi.fn().mockReturnValue(MOCK_ITEMS),
                     pagination: vi.fn().mockReturnValue(DEFAULT_PAGINATION),
@@ -6401,6 +6406,29 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
                     expect.objectContaining({ status: 404 })
                 );
                 expect(setDialogOf(spectator)).not.toHaveBeenCalled();
+            });
+
+            // On a cold load the folder lookups can answer before the admin's site does. The store
+            // holds SYSTEM_HOST until then, so checking against it would refuse a folder in the
+            // author's own site.
+            it('waits for the admin site before checking the folder on a cold load', () => {
+                currentSiteSignal.set(SYSTEM_HOST);
+                getFolderById.mockReturnValue(of(FOLDER_BEAN));
+                getUserAccess.mockReturnValue(of({ canEdit: true, canEditPermissions: false }));
+
+                const spectator = mountShell();
+                spectator.detectChanges();
+
+                expect(setDialogOf(spectator)).not.toHaveBeenCalled();
+                expect(spectator.inject(DotHttpErrorManagerService).handle).not.toHaveBeenCalled();
+
+                currentSiteSignal.set(MOCK_SITES[0]);
+                spectator.detectChanges();
+
+                expect(spectator.inject(DotHttpErrorManagerService).handle).not.toHaveBeenCalled();
+                expect(setDialogOf(spectator)).toHaveBeenCalledWith(
+                    expect.objectContaining({ type: DIALOG_TYPE.FOLDER })
+                );
             });
 
             it('shows the standard error and opens nothing when the folder is gone', () => {

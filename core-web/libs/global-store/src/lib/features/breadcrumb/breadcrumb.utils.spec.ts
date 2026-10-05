@@ -281,7 +281,11 @@ describe('ROUTE_HANDLERS.contentDrive', () => {
             type: 'set',
             breadcrumbs: [
                 { label: 'Content', disabled: true },
-                { label: 'Content Drive', target: '_self', url: `/dotAdmin/#${URL}` }
+                {
+                    label: 'Content Drive',
+                    target: '_self',
+                    url: '/dotAdmin/#/content-drive?path=/blog/'
+                }
             ]
         });
     });
@@ -297,7 +301,49 @@ describe('ROUTE_HANDLERS.contentDrive', () => {
             handler()?.handler({ url: URL, menu: [CONTENT_DRIVE], breadcrumbs: fromQueryTool })
         ).toEqual({
             type: 'append',
-            breadcrumbs: [{ label: 'Content Drive', target: '_self', url: `/dotAdmin/#${URL}` }]
+            breadcrumbs: [
+                {
+                    label: 'Content Drive',
+                    target: '_self',
+                    url: '/dotAdmin/#/content-drive?path=/blog/'
+                }
+            ]
+        });
+    });
+
+    describe('crumb URL', () => {
+        const crumbUrlOf = (url: string) => {
+            const result = handler()?.handler({ url, menu: [CONTENT_DRIVE], breadcrumbs: [] });
+
+            return result?.type === 'set' ? result.breadcrumbs.at(-1)?.url : undefined;
+        };
+
+        // The crumb outlives the panel or dialog the URL opened. Once another crumb follows it, a
+        // click on it must go back to the folder, not reopen the content or start another create.
+        it('drops the params that open a panel or a folder dialog', () => {
+            expect(
+                crumbUrlOf(
+                    '/content-drive?path=/blog/&createContent=webPageContent&editFolder=f-1&folderPermissions=f-1&createFolder=true'
+                )
+            ).toBe('/dotAdmin/#/content-drive?path=/blog/');
+        });
+
+        // Kept as the router wrote them, so a click on the crumb reports the same URL and the
+        // trail truncates to it instead of growing.
+        it('keeps the browsing params untouched and in order', () => {
+            expect(
+                crumbUrlOf(
+                    '/content-drive?filters=contentType:Blog%3BlanguageId:1&editContent=id-1&path=/blog/&isTreeExpanded=true'
+                )
+            ).toBe(
+                '/dotAdmin/#/content-drive?filters=contentType:Blog%3BlanguageId:1&path=/blog/&isTreeExpanded=true'
+            );
+        });
+
+        it('links to the bare Content Drive when the URL only opened a panel', () => {
+            expect(crumbUrlOf('/content-drive?editContent=id-1&editContentLang=1')).toBe(
+                '/dotAdmin/#/content-drive'
+            );
         });
     });
 

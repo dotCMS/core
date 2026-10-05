@@ -65,6 +65,33 @@ interface RouteHandlerConfig {
 }
 
 /**
+ * The Content Drive params that say where the author is browsing. Every other param (the open
+ * panel, a folder dialog, …) names something that is only open for a moment.
+ */
+const CONTENT_DRIVE_BROWSING_PARAMS = ['path', 'filters', 'isTreeExpanded'];
+
+/**
+ * The URL a Content Drive crumb links back to: the same folder, filters and tree, without the
+ * params that open a panel or a dialog. The crumb outlives them, and once another crumb follows it
+ * a click on it would otherwise reopen the content, or start another create, the URL named when
+ * the author arrived.
+ *
+ * The kept params stay exactly as the router wrote them, in the same order, so a click on the
+ * crumb comes back as the same URL and truncates the trail to it.
+ *
+ * @param url A Content Drive URL, as the router reports it.
+ * @returns The URL without the panel and dialog params.
+ */
+function contentDriveCrumbUrl(url: string): string {
+    const [urlPath, queryString = ''] = url.split('?');
+    const browsing = queryString
+        .split('&')
+        .filter((param) => CONTENT_DRIVE_BROWSING_PARAMS.includes(param.split('=')[0]));
+
+    return browsing.length > 0 ? `${urlPath}?${browsing.join('&')}` : urlPath;
+}
+
+/**
  * Hashmap of special route handlers.
  * Each entry defines a test and handler for a specific route pattern.
  *
@@ -127,6 +154,8 @@ export const ROUTE_HANDLERS: Record<string, RouteHandlerConfig> = {
      * - A trail ending on another portlet (a redirect) keeps it, with Content Drive appended.
      * - A trail already ending on Content Drive (a reload whose URL moved on) is left alone.
      *
+     * The crumb keeps only the browsing params (see {@link contentDriveCrumbUrl}).
+     *
      * The bare `/content-drive`, and a menu click (`?mId=`), match the menu item before this runs.
      */
     contentDrive: {
@@ -142,7 +171,7 @@ export const ROUTE_HANDLERS: Record<string, RouteHandlerConfig> = {
             const crumb: MenuItem = {
                 label: contentDrive.label,
                 target: '_self',
-                url: `/dotAdmin/#${url}`
+                url: `/dotAdmin/#${contentDriveCrumbUrl(url)}`
             };
 
             if (breadcrumbs.length === 0) {

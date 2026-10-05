@@ -1,5 +1,5 @@
 import { signalMethod } from '@ngrx/signals';
-import { forkJoin, of, SubscriptionLike } from 'rxjs';
+import { forkJoin, Observable, of, SubscriptionLike } from 'rxjs';
 
 import { Location, NgTemplateOutlet } from '@angular/common';
 import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
@@ -15,6 +15,7 @@ import {
     untracked,
     viewChild
 } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { MessageService, SortEvent, ToastMessageOptions } from 'primeng/api';
@@ -25,7 +26,7 @@ import { MessageModule } from 'primeng/message';
 import { Popover, PopoverModule } from 'primeng/popover';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
-import { catchError, take } from 'rxjs/operators';
+import { catchError, filter, take } from 'rxjs/operators';
 
 import {
     AddToBundleService,
@@ -53,6 +54,7 @@ import {
     DotContentDriveItem,
     DotContentDrivePaginateEvent,
     DotFolderBean,
+    DotSite,
     isActionableBrowseItem,
     DotCMSContentlet
 } from '@dotcms/dotcms-models';
@@ -105,7 +107,8 @@ import {
     ERROR_MESSAGE_LIFE,
     MOVE_TO_FOLDER_WORKFLOW_ACTION_ID,
     UPLOAD_BATCH_OPERATION,
-    ROOT_PATH
+    ROOT_PATH,
+    SYSTEM_HOST
 } from '../shared/constants';
 import {
     DotContentDriveActionExecutionResult,
@@ -144,6 +147,17 @@ import {
 } from '../utils/functions';
 import { refuseOverCeiling } from '../utils/upload-ceilings';
 import { describeUploadFailures, DotUploadFailureGroup } from '../utils/upload-failures';
+
+/**
+ * Whether the store holds the admin's real site. Until the site loads, `initContentDrive` stores
+ * `SYSTEM_HOST` in its place, the same placeholder `loadItems` skips the search for.
+ *
+ * @param site The store's current site.
+ * @returns Whether it is a loaded site.
+ */
+function isLoadedSite(site: DotSite | undefined): site is DotSite {
+    return !!site && site.identifier !== SYSTEM_HOST.identifier;
+}
 
 @Component({
     selector: 'dot-content-drive-shell',
@@ -236,6 +250,15 @@ export class DotContentDriveShellComponent implements OnDestroy {
     readonly #folderService = inject(DotFolderService);
     readonly #permissionsService = inject(DotPermissionsService);
     readonly #httpErrorManager = inject(DotHttpErrorManagerService);
+
+    /**
+     * The admin's current site, once it has loaded. Built here because `toObservable` needs the
+     * injection context; read through {@link #currentSite$}.
+     */
+    readonly #siteLoaded$ = toObservable(this.#store.currentSite).pipe(
+        filter(isLoadedSite),
+        take(1)
+    );
 
     /** The open Edit Permissions dialog, which the shell opens itself (see {@link #syncDialog}). */
     #permissionsDialogRef: DynamicDialogRef | null = null;
@@ -1650,12 +1673,13 @@ export class DotContentDriveShellComponent implements OnDestroy {
     #openFolderSettingsFromUrl(identifier: string): void {
         forkJoin({
             folder: this.#folderService.getFolderById(identifier),
-            access: this.#permissionsService.getUserAccess(identifier)
+            access: this.#permissionsService.getUserAccess(identifier),
+            site: this.#currentSite$()
         })
             .pipe(take(1))
             .subscribe({
-                next: ({ folder, access }) => {
-                    if (this.#refuseIfInAnotherSite(folder)) {
+                next: ({ folder, access, site }) => {
+                    if (this.#refuseIfInAnotherSite(folder, site)) {
                         return;
                     }
 
@@ -1687,12 +1711,13 @@ export class DotContentDriveShellComponent implements OnDestroy {
     #openFolderPermissionsFromUrl(identifier: string): void {
         forkJoin({
             folder: this.#folderService.getFolderById(identifier),
-            access: this.#permissionsService.getUserAccess(identifier)
+            access: this.#permissionsService.getUserAccess(identifier),
+            site: this.#currentSite$()
         })
             .pipe(take(1))
             .subscribe({
-                next: ({ folder, access: { canEditPermissions } }) => {
-                    if (this.#refuseIfInAnotherSite(folder)) {
+                next: ({ folder, access: { canEditPermissions }, site }) => {
+                    if (this.#refuseIfInAnotherSite(folder, site)) {
                         return;
                     }
 
@@ -1718,18 +1743,31 @@ export class DotContentDriveShellComponent implements OnDestroy {
      * Reported as not found, as for a folder that is gone.
      *
      * @param folder The folder the link resolved to.
+     * @param site The admin's current site, from {@link #currentSite$}.
      * @returns Whether the folder was refused, and the error shown.
      */
-    #refuseIfInAnotherSite(folder: DotFolderBean): boolean {
-        const siteId = this.#store.currentSite()?.identifier;
-
-        if (!siteId || folder.hostId === siteId) {
+    #refuseIfInAnotherSite(folder: DotFolderBean, site: DotSite): boolean {
+        if (folder.hostId === site.identifier) {
             return false;
         }
 
         this.#httpErrorManager.handle(new HttpErrorResponse({ status: 404 }));
 
         return true;
+    }
+
+    /**
+     * The admin's current site, waiting for it if it hasn't loaded yet. A folder link is read in
+     * the constructor, and on a cold load the folder lookups can answer before the site does.
+     * Until then the store holds `SYSTEM_HOST`, which no real folder matches, so comparing against
+     * it would refuse a folder in the author's own site.
+     *
+     * @returns The current site, emitted once.
+     */
+    #currentSite$(): Observable<DotSite> {
+        const site = this.#store.currentSite();
+
+        return isLoadedSite(site) ? of(site) : this.#siteLoaded$;
     }
 
     /**

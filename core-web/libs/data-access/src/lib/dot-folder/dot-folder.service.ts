@@ -41,12 +41,6 @@ export class DotFolderService {
     }
 
     /**
-     * Creates a new folder in the assets system
-     *
-     * @param {DotFolderEntity} body - The folder data to create
-     * @returns {Observable<DotFolder>} Observable that emits the created folder
-     */
-    /**
      * Reads one folder by its identifier, as a Content Drive folder-dialog link names it (#37759).
      * A lookup by id, never through the deprecated `byPath` endpoint (ADR-0020).
      *
@@ -59,6 +53,12 @@ export class DotFolderService {
             .pipe(map((response) => response.entity));
     }
 
+    /**
+     * Creates a new folder in the assets system
+     *
+     * @param {DotFolderEntity} body - The folder data to create
+     * @returns {Observable<DotFolder>} Observable that emits the created folder
+     */
     createFolder(body: DotFolderEntity): Observable<DotFolder> {
         return this.#http
             .post<DotCMSAPIResponse<DotFolder>>(`/api/v1/assets/folders`, body)

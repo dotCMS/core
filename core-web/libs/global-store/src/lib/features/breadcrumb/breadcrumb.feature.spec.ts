@@ -1020,6 +1020,29 @@ describe('withBreadcrumbs Feature', () => {
                 ]);
             });
 
+            // The crumb keeps the folder but not the panel the link opened. Once another crumb
+            // follows it, a click on it goes back to that folder and truncates the trail there.
+            it('goes back to the folder, not the panel, from a Content Drive crumb', () => {
+                routerMock.triggerNavigationEnd('/c/query-tool?mId=devtools');
+                TestBed.flushEffects();
+                routerMock.triggerNavigationEnd(
+                    '/content-drive?path=/blog/&editContent=id-1&editContentLang=1'
+                );
+                TestBed.flushEffects();
+                storeWithRouter.addNewBreadcrumb({
+                    label: 'Blog Page',
+                    url: '/dotAdmin/#/edit-page/content?url=/blog/page'
+                });
+
+                const contentDriveCrumb = storeWithRouter.breadcrumbs().at(-2);
+                expect(contentDriveCrumb?.url).toBe('/dotAdmin/#/content-drive?path=/blog/');
+
+                routerMock.triggerNavigationEnd('/content-drive?path=/blog/');
+                TestBed.flushEffects();
+
+                expect(labels()).toEqual(['Home', 'Dev Tools', 'Query Tool', 'Content Drive']);
+            });
+
             it('does not add a second Content Drive crumb for another Content Drive URL', () => {
                 routerMock.triggerNavigationEnd('/content-drive?path=/blog/');
                 TestBed.flushEffects();

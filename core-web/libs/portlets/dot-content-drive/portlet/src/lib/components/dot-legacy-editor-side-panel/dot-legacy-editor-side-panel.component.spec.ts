@@ -734,6 +734,25 @@ describe('DotLegacyEditorSidePanelComponent', () => {
             expect(closed).toHaveBeenCalledTimes(1);
         });
 
+        // The admin page can't see the editor's own dialogs (Dojo, TinyMCE), so an Escape one of
+        // them already handled is told apart by having been consumed.
+        it('does not close on an Escape the legacy editor already handled', () => {
+            open();
+            const { doc } = loadFrame();
+            const closed = vi.fn();
+            spectator.output('closed').subscribe(closed);
+            const handledByEditor = new KeyboardEvent('keydown', {
+                key: 'Escape',
+                bubbles: true,
+                cancelable: true
+            });
+            handledByEditor.preventDefault();
+
+            doc.dispatchEvent(handledByEditor);
+
+            expect(closed).not.toHaveBeenCalled();
+        });
+
         it('does not close on Escape when another side panel is on top', () => {
             open();
             const { doc } = loadFrame();

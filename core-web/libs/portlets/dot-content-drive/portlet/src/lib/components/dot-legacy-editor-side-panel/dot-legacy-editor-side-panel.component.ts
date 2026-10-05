@@ -280,9 +280,11 @@ export class DotLegacyEditorSidePanelComponent implements OnDestroy {
                 this.#handleLegacyEvent((event as CustomEvent<LegacyEditorEventDetail>).detail)
             );
         // A keydown inside the iframe never reaches the admin page, so the shortcut registry cannot
-        // see it: forward Escape ourselves.
+        // see it: forward Escape ourselves. Not one the editor already handled: `hasOverlayAbove`
+        // only sees the admin page, so a dialog inside the editor that closes on Escape is only
+        // told apart by having consumed the key.
         const onKeydown = (event: KeyboardEvent) => {
-            if (event.key === 'Escape') {
+            if (event.key === 'Escape' && !event.defaultPrevented) {
                 this.#zone.run(() => this.#onEscape());
             }
         };
