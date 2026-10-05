@@ -2990,32 +2990,59 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         final List<CompositeBulkProcessor.Entry> targets = resolveProcessorTargets(proc);
 
         for (final MappedDocument document : documents) {
-            final String id = document.id();
-            final String mapping = document.mapping();
             for (final CompositeBulkProcessor.Entry target : targets) {
-                final ProviderIndices indices = loadProviderIndicesQuietly(target.ops);
-                if (indices == null) {
-                    Logger.warn(this, "No index info for provider — skipping processor indexing");
+                if (!target.shadow) {
+                    addDocumentToTarget(target, document, forReindex);
                     continue;
                 }
-                if (document.isWorking()) {
-                    if (indices.working != null && (!forReindex || indices.reindexWorking == null)) {
-                        target.ops.addIndexOpToProcessor(target.proc, indices.working, id, mapping);
-                    }
-                    if (indices.reindexWorking != null) {
-                        target.ops.addIndexOpToProcessor(target.proc, indices.reindexWorking, id, mapping);
-                    }
-                }
-                if (document.isLive()) {
-                    if (indices.live != null && (!forReindex || indices.reindexLive == null)) {
-                        target.ops.addIndexOpToProcessor(target.proc, indices.live, id, mapping);
-                    }
-                    if (indices.reindexLive != null) {
-                        target.ops.addIndexOpToProcessor(target.proc, indices.reindexLive, id, mapping);
-                    }
+                try {
+                    addDocumentToTarget(target, document, forReindex);
+                } catch (final Exception e) {
+                    // Phase 1 shadow: fire-and-forget. A document the shadow cannot accept must
+                    // neither fail the entry nor stop the rest of it from reaching the primary
+                    // (#37269).
+                    logShadowWriteFailure(this.getClass(), "[OS] Could not queue document '"
+                            + document.id() + "' to the shadow index (fire-and-forget); the"
+                            + " primary is unaffected. Cause: " + e.getMessage(), e);
                 }
             }
             document.contentlet().markAsReindexed();
+        }
+    }
+
+    /**
+     * Adds one mapped document to one provider's processor, once per index it belongs to:
+     * working and/or live, plus the reindex counterparts while a full reindex is running.
+     *
+     * @param target     the provider and its processor
+     * @param document   the mapped document to queue
+     * @param forReindex {@code true} when the entry comes from a full reindex, in which case the
+     *                   document goes only to the reindex indices when they exist
+     */
+    private void addDocumentToTarget(final CompositeBulkProcessor.Entry target,
+            final MappedDocument document, final boolean forReindex) {
+        final ProviderIndices indices = loadProviderIndicesQuietly(target.ops);
+        if (indices == null) {
+            Logger.warn(this, "No index info for provider — skipping processor indexing");
+            return;
+        }
+        final String id = document.id();
+        final String mapping = document.mapping();
+        if (document.isWorking()) {
+            if (indices.working != null && (!forReindex || indices.reindexWorking == null)) {
+                target.ops.addIndexOpToProcessor(target.proc, indices.working, id, mapping);
+            }
+            if (indices.reindexWorking != null) {
+                target.ops.addIndexOpToProcessor(target.proc, indices.reindexWorking, id, mapping);
+            }
+        }
+        if (document.isLive()) {
+            if (indices.live != null && (!forReindex || indices.reindexLive == null)) {
+                target.ops.addIndexOpToProcessor(target.proc, indices.live, id, mapping);
+            }
+            if (indices.reindexLive != null) {
+                target.ops.addIndexOpToProcessor(target.proc, indices.reindexLive, id, mapping);
+            }
         }
     }
 
