@@ -5,7 +5,7 @@ import { Injectable, inject } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class DotActionUrlService {
     private http = inject(HttpClient);
 
