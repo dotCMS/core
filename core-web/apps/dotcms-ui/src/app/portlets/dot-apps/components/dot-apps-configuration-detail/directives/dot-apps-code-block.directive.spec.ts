@@ -39,7 +39,10 @@ describe('DotAppsCodeBlocksDirective', () => {
 
     const render = (html: string) => {
         spectator = createHost('<markdown dotAppsCodeBlocks></markdown>');
-        spectator.hostElement.querySelector('markdown').innerHTML = html;
+        const markdown = spectator.hostElement.querySelector('markdown');
+        if (markdown) {
+            markdown.innerHTML = html;
+        }
         markdownStub().ready.emit();
     };
 
@@ -53,32 +56,33 @@ describe('DotAppsCodeBlocksDirective', () => {
         render(JSON_BLOCK);
 
         expect(spectator.element.querySelector('.dot-code-block pre')).toBeTruthy();
-        expect(spectator.element.querySelector('.dot-code-block__language').textContent).toBe(
+        expect(spectator.element.querySelector('.dot-code-block__language')?.textContent).toBe(
             'json'
         );
         expect(
-            spectator.element.querySelector('[data-testid="code-block-copy"]').textContent
+            spectator.element.querySelector('[data-testid="code-block-copy"]')?.textContent
         ).toContain('apps.code.block.copy');
     });
 
     it('should color JSON keys and values', () => {
         render(JSON_BLOCK);
 
-        expect(spectator.element.querySelector('.dot-code-block__key').textContent).toBe('"url"');
-        expect(spectator.element.querySelector('.dot-code-block__string').textContent).toBe(
+        expect(spectator.element.querySelector('.dot-code-block__key')?.textContent).toBe('"url"');
+        expect(spectator.element.querySelector('.dot-code-block__string')?.textContent).toBe(
             '"https://a.com"'
         );
-        expect(spectator.element.querySelector('.dot-code-block__literal').textContent).toBe(
+        expect(spectator.element.querySelector('.dot-code-block__literal')?.textContent).toBe(
             'true'
         );
-        expect(spectator.element.querySelector('.dot-code-block__number').textContent).toBe('3');
+        expect(spectator.element.querySelector('.dot-code-block__number')?.textContent).toBe('3');
     });
 
     it('should copy the raw code and show the copied state', async () => {
         render(JSON_BLOCK);
 
         spectator.click(
-            spectator.element.querySelector<HTMLElement>('[data-testid="code-block-copy"]')
+            spectator.element.querySelector<HTMLElement>('[data-testid="code-block-copy"]') ??
+                undefined
         );
         await new Promise((resolve) => setTimeout(resolve));
 

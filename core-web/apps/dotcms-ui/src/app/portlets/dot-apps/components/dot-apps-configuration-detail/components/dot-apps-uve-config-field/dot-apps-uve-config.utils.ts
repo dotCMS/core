@@ -64,12 +64,12 @@ export function parseUveConfig(value: string): UveRoute[] | null {
         return null;
     }
 
-    if (!isPlainObject(parsed) || !Array.isArray(parsed.config)) {
+    if (!isPlainObject(parsed) || !Array.isArray(parsed['config'])) {
         return null;
     }
 
     const routes: UveRoute[] = [];
-    for (const entry of parsed.config) {
+    for (const entry of parsed['config']) {
         if (!isPlainObject(entry)) {
             return null;
         }

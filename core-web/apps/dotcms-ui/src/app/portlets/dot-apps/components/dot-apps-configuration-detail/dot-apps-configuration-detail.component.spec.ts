@@ -131,7 +131,7 @@ class MockDotKeyValueComponent {
 })
 class MockDotAppsConfigurationDetailFormComponent {
     @Input() appConfigured: boolean;
-    @Input() appKey: string;
+    @Input() appKey = '';
     @Input() formFields: DotAppsSecret[];
     @Output() data = new EventEmitter<{ [key: string]: string }>();
     @Output() valid = new EventEmitter<boolean>();

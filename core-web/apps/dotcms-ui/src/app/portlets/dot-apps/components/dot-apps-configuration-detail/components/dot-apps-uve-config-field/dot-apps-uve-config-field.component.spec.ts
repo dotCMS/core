@@ -13,6 +13,8 @@ import { DotAppsUveConfigFieldComponent } from './dot-apps-uve-config-field.comp
 
 import { DotAppsConfigurationDetailJsonFieldComponent } from '../dot-apps-configuration-detail-json-field/dot-apps-configuration-detail-json-field.component';
 
+import type { Mock } from 'vitest';
+
 const SAMPLE = JSON.stringify({
     config: [
         { pattern: '/blogs/(.*)', url: 'https://myspa.blogs.com:3000' },
@@ -22,7 +24,7 @@ const SAMPLE = JSON.stringify({
 
 describe('DotAppsUveConfigFieldComponent', () => {
     let spectator: Spectator<DotAppsUveConfigFieldComponent>;
-    let onChange: ReturnType<typeof vi.fn>;
+    let onChange: Mock<(value: string) => void>;
 
     const createComponent = createComponentFactory({
         component: DotAppsUveConfigFieldComponent,
@@ -46,13 +48,15 @@ describe('DotAppsUveConfigFieldComponent', () => {
         detectChanges: false
     });
 
-    const lastEmitted = () => JSON.parse(onChange.mock.calls.at(-1)[0]);
+    /** The last JSON the field sent to the form, parsed. */
+    const lastEmitted = (): { config: { pattern: string; url: string; options?: unknown }[] } =>
+        JSON.parse(onChange.mock.calls.at(-1)?.[0] ?? '{}');
 
     beforeEach(() => {
         spectator = createComponent({
-            props: { fieldId: 'configuration', hint: 'UVE help' } as unknown
+            props: { fieldId: 'configuration', hint: 'UVE help' } as never
         });
-        onChange = vi.fn();
+        onChange = vi.fn<(value: string) => void>();
         spectator.component.registerOnChange(onChange);
     });
 
@@ -96,7 +100,7 @@ describe('DotAppsUveConfigFieldComponent', () => {
         spectator.detectChanges();
 
         const pattern = spectator.query<HTMLInputElement>(byTestId('uve-route-pattern'));
-        expect(pattern.value).toBe('.*');
+        expect(pattern?.value).toBe('.*');
     });
 
     it('should add a new route at the end', () => {
@@ -120,7 +124,7 @@ describe('DotAppsUveConfigFieldComponent', () => {
         spectator.click(byTestId('uve-route-add'));
 
         expect(spectator.queryAll(byTestId('uve-route-unreachable-tag')).length).toBe(1);
-        expect(spectator.query(byTestId('uve-route-2')).textContent).toContain(
+        expect(spectator.query(byTestId('uve-route-2'))?.textContent).toContain(
             'apps.uve.route.unreachable.hint'
         );
     });

@@ -24,7 +24,11 @@ describe('dot-apps-uve-config utils', () => {
             const routes = parseUveConfig(JSON.stringify(SAMPLE));
 
             expect(
-                routes.map(({ pattern, url, allowedDevURLs }) => ({ pattern, url, allowedDevURLs }))
+                routes?.map(({ pattern, url, allowedDevURLs }) => ({
+                    pattern,
+                    url,
+                    allowedDevURLs
+                }))
             ).toEqual([
                 { pattern: '/blogs/(.*)', url: 'https://myspa.blogs.com:3000', allowedDevURLs: [] },
                 {
@@ -57,7 +61,7 @@ describe('dot-apps-uve-config utils', () => {
         it('should round-trip the sample', () => {
             const routes = parseUveConfig(JSON.stringify(SAMPLE));
 
-            expect(JSON.parse(serializeUveConfig(routes))).toEqual(SAMPLE);
+            expect(JSON.parse(serializeUveConfig(routes ?? []))).toEqual(SAMPLE);
         });
 
         it('should keep keys the form does not edit', () => {
@@ -72,7 +76,7 @@ describe('dot-apps-uve-config utils', () => {
                 ]
             });
 
-            expect(JSON.parse(serializeUveConfig(parseUveConfig(value)))).toEqual(
+            expect(JSON.parse(serializeUveConfig(parseUveConfig(value) ?? []))).toEqual(
                 JSON.parse(value)
             );
         });

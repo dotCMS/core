@@ -79,7 +79,7 @@ describe('DotAppsConfigurationDetailJsonFieldComponent', () => {
     });
 
     beforeEach(() => {
-        spectator = createComponent({ props: { fieldId: 'configuration' } as unknown });
+        spectator = createComponent({ props: { fieldId: 'configuration' } as never });
     });
 
     describe('getJsonParseError', () => {
@@ -113,7 +113,7 @@ describe('DotAppsConfigurationDetailJsonFieldComponent', () => {
     it('should give the wrapper the field id so the label points at it', () => {
         spectator.detectChanges();
 
-        expect(spectator.query(byTestId('json-field-editor-wrapper')).id).toBe('configuration');
+        expect(spectator.query(byTestId('json-field-editor-wrapper'))?.id).toBe('configuration');
     });
 
     it('should show the valid message for valid JSON', () => {
@@ -129,7 +129,7 @@ describe('DotAppsConfigurationDetailJsonFieldComponent', () => {
         spectator.detectChanges();
 
         const error = spectator.query(byTestId('json-field-error'));
-        expect(error.textContent).toContain('apps.json.field.invalid');
+        expect(error?.textContent).toContain('apps.json.field.invalid');
     });
 
     it('should format valid JSON and notify the form', () => {
@@ -149,7 +149,7 @@ describe('DotAppsConfigurationDetailJsonFieldComponent', () => {
         spectator.component.writeValue(INVALID_JSON);
         spectator.detectChanges();
 
-        expect(spectator.query<HTMLButtonElement>(byTestId('json-field-format')).disabled).toBe(
+        expect(spectator.query<HTMLButtonElement>(byTestId('json-field-format'))?.disabled).toBe(
             true
         );
     });
@@ -161,7 +161,7 @@ describe('DotAppsConfigurationDetailJsonFieldComponent', () => {
     });
     describe('editor sync', () => {
         const initEditor = (editor: FakeEditor) =>
-            spectator.query(MonacoEditorStubComponent).init.emit(editor);
+            spectator.query(MonacoEditorStubComponent)?.init.emit(editor);
 
         it('should load the current value into a newly created editor without echoing it', () => {
             const onChange = vi.fn();
