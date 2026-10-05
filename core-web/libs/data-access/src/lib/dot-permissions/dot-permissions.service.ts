@@ -20,6 +20,8 @@ export const ASSET_PERMISSIONS_URL = '/api/v1/permissions';
  */
 interface AssetPermissionsView {
     canAddChildren?: boolean;
+    canEdit?: boolean;
+    canEditPermissions?: boolean;
 }
 
 @Injectable({
@@ -40,6 +42,28 @@ export class DotPermissionsService {
      * @param {string} assetId - Identifier of the asset (a site identifier, for the drive root)
      * @returns {Observable<boolean>} Whether the calling user holds CAN_ADD_CHILDREN on it
      */
+    /**
+     * Resolves what the calling user may do to an asset: edit it, and edit its permissions. The
+     * server's own answer for this user across every role they hold, like {@link canAddChildren}.
+     *
+     * Used to open a folder dialog from a Content Drive link under the same rules as the context
+     * menu that would have opened it (#37759, FR-033). An absent flag reads as **not** allowed: the
+     * dialogs it gates change the folder or who can reach it, so the cautious answer is the safe one.
+     *
+     * @param {string} assetId - Identifier of the asset
+     * @returns {Observable<{ canEdit: boolean; canEditPermissions: boolean }>} The user's access
+     */
+    getUserAccess(assetId: string): Observable<{ canEdit: boolean; canEditPermissions: boolean }> {
+        return this.#http
+            .get<DotCMSAPIResponse<AssetPermissionsView>>(`${ASSET_PERMISSIONS_URL}/${assetId}`)
+            .pipe(
+                map((response) => ({
+                    canEdit: response.entity?.canEdit === true,
+                    canEditPermissions: response.entity?.canEditPermissions === true
+                }))
+            );
+    }
+
     canAddChildren(assetId: string): Observable<boolean> {
         return this.#http
             .get<DotCMSAPIResponse<AssetPermissionsView>>(`${ASSET_PERMISSIONS_URL}/${assetId}`)

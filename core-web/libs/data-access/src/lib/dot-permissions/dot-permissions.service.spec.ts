@@ -11,6 +11,34 @@ describe('DotPermissionsService', () => {
         spectator = createHttp();
     });
 
+    // What the calling user may do to a folder opened from a Content Drive link, so its dialog
+    // follows the same rules as the context menu that would have opened it (#37759, FR-033).
+    describe('getUserAccess', () => {
+        it('should read the edit flags from the asset permissions endpoint', () =>
+            new Promise<void>((done) => {
+                spectator.service.getUserAccess('folder-1').subscribe((access) => {
+                    expect(access).toEqual({ canEdit: true, canEditPermissions: false });
+                    done();
+                });
+
+                spectator
+                    .expectOne(`${ASSET_PERMISSIONS_URL}/folder-1`, HttpMethod.GET)
+                    .flush({ entity: { canEdit: true, canEditPermissions: false } });
+            }));
+
+        it('should read an absent flag as not allowed', () =>
+            new Promise<void>((done) => {
+                spectator.service.getUserAccess('folder-1').subscribe((access) => {
+                    expect(access).toEqual({ canEdit: false, canEditPermissions: false });
+                    done();
+                });
+
+                spectator
+                    .expectOne(`${ASSET_PERMISSIONS_URL}/folder-1`, HttpMethod.GET)
+                    .flush({ entity: {} });
+            }));
+    });
+
     describe('canAddChildren', () => {
         it('should request the asset permissions endpoint for the given asset', () => {
             spectator.service.canAddChildren('site-123').subscribe();
