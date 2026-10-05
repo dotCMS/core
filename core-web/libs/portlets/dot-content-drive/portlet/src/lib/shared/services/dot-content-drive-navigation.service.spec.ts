@@ -13,6 +13,7 @@ import { signal } from '@angular/core';
 import { Router } from '@angular/router';
 
 import {
+    DotActionUrlService,
     DotContentSearchService,
     DotContentTypeService,
     DotHttpErrorManagerService,
@@ -38,8 +39,16 @@ import { SYSTEM_HOST } from '../constants';
 const mockStore = () =>
     mockProvider(DotContentDriveStore, {
         getFilterValue: vi.fn().mockReturnValue(undefined),
-        defaultLanguageId: vi.fn().mockReturnValue(undefined)
+        defaultLanguageId: vi.fn().mockReturnValue(undefined),
+        // What `currentFolder()` reads: a site root, outside System Host.
+        $systemHostSelected: signal(false),
+        currentSite: vi.fn().mockReturnValue({ hostname: 'demo.dotcms.com' }),
+        path: vi.fn().mockReturnValue(''),
+        selectedNode: vi.fn().mockReturnValue(undefined)
     });
+
+/** What `/api/v1/portlet/_actionurl/<type>` answers: the legacy create screen for a type. */
+const CREATE_URL = '/c/portal/layout?p_p_id=content&_content_cmd=new&selectedStructure=news';
 
 describe('DotContentDriveNavigationService', () => {
     let spectator: SpectatorService<DotContentDriveNavigationService>;
@@ -70,6 +79,9 @@ describe('DotContentDriveNavigationService', () => {
             mockProvider(DotHttpErrorManagerService, {
                 handle: vi.fn().mockReturnValue(of({}))
             }),
+            mockProvider(DotActionUrlService, {
+                getCreateContentletUrl: vi.fn().mockReturnValue(of(CREATE_URL))
+            }),
             mockProvider(DotContentSearchService, {
                 get: vi.fn()
             }),
@@ -91,6 +103,9 @@ describe('DotContentDriveNavigationService', () => {
         // return values, so start every test with no language known.
         store.getFilterValue.mockReturnValue(undefined);
         store.defaultLanguageId.mockReturnValue(undefined);
+        (spectator.inject(DotActionUrlService).getCreateContentletUrl as Mock).mockReturnValue(
+            of(CREATE_URL)
+        );
     });
 
     afterEach(() => {
@@ -290,19 +305,53 @@ describe('DotContentDriveNavigationService', () => {
                     folderInode: 'inode-1'
                 });
 
+                // The create screen is resolved before the panel opens (#37759, T112).
+                expect(
+                    spectator.inject(DotActionUrlService).getCreateContentletUrl
+                ).toHaveBeenCalledWith('news', 1);
                 expect(service.$legacyPanelRequest()).toEqual({
                     mode: 'new',
                     contentTypeVariable: 'news',
                     folderInode: 'inode-1',
                     languageId: 1,
                     title: 'News',
-                    portletId: 'content-drive'
+                    portletId: 'content-drive',
+                    createUrl: CREATE_URL
                 });
                 expect(service.$editPanelRequest()).toBeNull();
                 expect(service.$panelLocation()).toEqual({ kind: 'create', createContent: 'news' });
                 expect(router.navigate).not.toHaveBeenCalled();
             }
         );
+
+        /**
+         * A create screen the server won't name shows the standard error and opens nothing: no
+         * panel, no `createContent` in the URL, no history entry (#37759, T112; spec edge case
+         * "Legacy create form cannot be resolved").
+         */
+        it('opens nothing when the legacy create screen cannot be resolved', () => {
+            const error = new HttpErrorResponse({ status: 403 });
+            store.defaultLanguageId.mockReturnValue(1);
+            contentTypeService.getContentType.mockReturnValue(
+                of(
+                    createFakeContentType({
+                        id: 'news',
+                        variable: 'news',
+                        name: 'News',
+                        metadata: {}
+                    })
+                )
+            );
+            (spectator.inject(DotActionUrlService).getCreateContentletUrl as Mock).mockReturnValue(
+                throwError(() => error)
+            );
+
+            service.createContent('news', { folderInode: 'inode-1' });
+
+            expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
+            expect(service.$legacyPanelRequest()).toBeNull();
+            expect(service.$panelLocation()).toBeNull();
+        });
 
         /**
          * Every create starts in the language the list is filtered by, so the new content shows in
@@ -564,15 +613,16 @@ describe('DotContentDriveNavigationService', () => {
             const locationBefore = service.$panelLocation();
             contentTypeService.getContentType.mockClear();
 
-            service.switchToLegacyEditor(
-                createFakeContentlet({
+            service.switchToLegacyEditor({
+                contentlet: createFakeContentlet({
                     contentType: 'blog',
                     inode: 'inode-1',
                     identifier: 'id-1',
                     languageId: 2,
                     title: 'My Blog Post'
-                })
-            );
+                }),
+                contentTypeVariable: 'blog'
+            });
 
             expect(service.$legacyPanelRequest()).toEqual({
                 mode: 'edit',
@@ -586,6 +636,33 @@ describe('DotContentDriveNavigationService', () => {
             expect(contentTypeService.getContentType).not.toHaveBeenCalled();
             // Same content, same language: the URL already says so.
             expect(service.$panelLocation()).toEqual(locationBefore);
+        });
+
+        /**
+         * The same switch from a create, where there is no content yet: reopen a legacy create
+         * for the same type, in the same folder and language (#37759, T116).
+         */
+        it('reopens a legacy create for the same type on a switch from a create', () => {
+            contentTypeService.getContentType.mockReturnValue(of(NEW_EDITOR_TYPE));
+            store.defaultLanguageId.mockReturnValue(2);
+            service.createContent('blog', { folderInode: 'inode-1' });
+            // The switch has just turned the new editor off for the type.
+            contentTypeService.getContentType.mockReturnValue(
+                of({ ...NEW_EDITOR_TYPE, metadata: {} })
+            );
+
+            service.switchToLegacyEditor({ contentlet: null, contentTypeVariable: 'blog' });
+
+            expect(service.$legacyPanelRequest()).toEqual(
+                expect.objectContaining({
+                    mode: 'new',
+                    contentTypeVariable: 'blog',
+                    languageId: 2,
+                    createUrl: CREATE_URL
+                })
+            );
+            expect(service.$editPanelRequest()).toBeNull();
+            expect(service.$panelLocation()).toEqual({ kind: 'create', createContent: 'blog' });
         });
 
         /**
@@ -955,6 +1032,9 @@ describe.each([
             mockProvider(DotHttpErrorManagerService, {
                 handle: vi.fn().mockReturnValue(of({}))
             }),
+            mockProvider(DotActionUrlService, {
+                getCreateContentletUrl: vi.fn().mockReturnValue(of(CREATE_URL))
+            }),
             mockProvider(DotContentSearchService, { get: vi.fn() }),
             mockProvider(DotContentDriveStore, {
                 getFilterValue: vi.fn().mockReturnValue(undefined),
@@ -1025,6 +1105,9 @@ describe('DotContentDriveNavigationService.currentFolder', () => {
             mockProvider(DotRouterService, { goToEditPage: vi.fn() }),
             mockProvider(Location, { path: vi.fn() }),
             mockProvider(DotHttpErrorManagerService, { handle: vi.fn() }),
+            mockProvider(DotActionUrlService, {
+                getCreateContentletUrl: vi.fn().mockReturnValue(of(CREATE_URL))
+            }),
             mockProvider(DotContentSearchService, { get: vi.fn() }),
             mockProvider(DotContentDriveStore, {
                 getFilterValue: vi.fn().mockReturnValue(undefined),

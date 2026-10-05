@@ -6,13 +6,11 @@ import {
     OnDestroy,
     afterNextRender,
     computed,
-    effect,
     inject,
     input,
     linkedSignal,
     output,
     signal,
-    untracked,
     viewChild
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -23,12 +21,8 @@ import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { Drawer, DrawerModule } from 'primeng/drawer';
 
-import { take } from 'rxjs/operators';
-
 import {
-    DotActionUrlService,
     DotEventsService,
-    DotHttpErrorManagerService,
     DotIframeService,
     DotMessageService,
     DotUiColorsService,
@@ -116,8 +110,6 @@ export class DotLegacyEditorSidePanelComponent implements OnDestroy {
     readonly #uiColors = inject(DotUiColorsService);
     readonly #sanitizer = inject(DomSanitizer);
     readonly #zone = inject(NgZone);
-    readonly #actionUrl = inject(DotActionUrlService);
-    readonly #httpErrorManager = inject(DotHttpErrorManagerService);
     // Root (admin app) instances, on purpose: the workflow wizard and push publish dialogs are
     // mounted once for every admin route and listen to these. Never provide them on this component.
     readonly #workflowEventHandler = inject(DotWorkflowEventHandlerService);
@@ -175,16 +167,11 @@ export class DotLegacyEditorSidePanelComponent implements OnDestroy {
     /** Whether the panel is expanded to the full width (vs 80%), seeded from the stored choice. */
     protected readonly $expanded = signal(readExpandedPreference());
 
-    /**
-     * The create screen for a `new` request, once the server has named it. The server builds it
-     * (`/api/v1/portlet/_actionurl/<type>`), so it arrives asynchronously.
-     */
-    readonly #createUrl = signal<string | null>(null);
-
     /** The legacy editor URL for the request, or `null` when there is nothing valid to load. */
     protected readonly $url = computed<SafeResourceUrl | null>(() => {
         const request = this.request();
-        const url = request?.mode === 'new' ? this.#createUrl() : this.#buildEditUrl(request);
+        const url =
+            request?.mode === 'new' ? this.#buildCreateUrl(request) : this.#buildEditUrl(request);
 
         return isSameOriginRelativeUrl(url)
             ? this.#sanitizer.bypassSecurityTrustResourceUrl(url)
@@ -223,34 +210,6 @@ export class DotLegacyEditorSidePanelComponent implements OnDestroy {
             .ran()
             .pipe(takeUntilDestroyed())
             .subscribe((call) => this.#runInEditor(call));
-
-        // A create asks the server for the type's create screen, in the language the request
-        // starts in, then pre-selects the folder on it.
-        effect((onCleanup) => {
-            const request = this.request();
-
-            untracked(() => {
-                this.#createUrl.set(null);
-
-                if (request?.mode !== 'new' || !request.contentTypeVariable) {
-                    return;
-                }
-
-                const subscription = this.#actionUrl
-                    .getCreateContentletUrl(request.contentTypeVariable, request.languageId)
-                    .pipe(take(1))
-                    .subscribe({
-                        next: (url) => this.#createUrl.set(withFolder(url, request.folderInode)),
-                        error: (error) => {
-                            // Nothing to show: report it the standard way and let the opener close.
-                            this.#httpErrorManager.handle(error);
-                            this.closed.emit();
-                        }
-                    });
-
-                onCleanup(() => subscription.unsubscribe());
-            });
-        });
     }
 
     /**
@@ -498,6 +457,22 @@ export class DotLegacyEditorSidePanelComponent implements OnDestroy {
         }
 
         return true;
+    }
+
+    /**
+     * The create screen for a `new` request: the URL the opener resolved from the server, with the
+     * folder pre-selected. The panel never asks the server itself, so a type the server refuses
+     * never opens a panel (#37759).
+     *
+     * @param request What to open.
+     * @returns The URL, or `null` when the request names no type or no resolved screen.
+     */
+    #buildCreateUrl(request: DotLegacyEditorRequest): string | null {
+        if (!request.contentTypeVariable || !request.createUrl) {
+            return null;
+        }
+
+        return withFolder(request.createUrl, request.folderInode);
     }
 
     /**

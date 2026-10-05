@@ -23,6 +23,11 @@ export interface DotLegacyEditorRequest {
     title: string;
     /** Sent to the legacy editor as `angularCurrentPortlet`. Content Drive passes `content-drive`. */
     portletId: string;
+    /**
+     * The create screen the server named (`/api/v1/portlet/_actionurl/<type>`). Required for
+     * `new`: the opener resolves it before opening, so a failure opens nothing.
+     */
+    createUrl?: string;
 }
 
 /** What the panel reports when the legacy editor saved (`save-page`). */

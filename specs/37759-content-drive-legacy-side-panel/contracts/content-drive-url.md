@@ -34,10 +34,14 @@ them. Existing params (`path`, `filters`, `isTreeExpanded`) are unchanged.
 
 | Case | Result |
 |---|---|
-| `editContent` names nothing the user can read | Today's handling in `openEditByIdentifier`: standard error, nothing opens |
+| `editContent`, `editFolder` or `folderPermissions` is not an identifier; `createContent` is not a type variable (letters, digits, `_`, `-`) | ignored, as if absent |
+| `editContent` names nothing the user can read | Today's handling in `openEditByIdentifier`: the search returns nothing, so nothing opens, with no message. A failed search shows the standard error |
 | content type lookup fails | standard error, nothing opens |
-| `createContent` names a type that doesn't exist or the user can't create | standard error, nothing opens, the user stays on Content Drive |
-| `editFolder` / `folderPermissions` names a folder that is gone, out of reach, or a bad id; or the user lacks the permission | standard error, no dialog, the param is removed |
+| `createContent` names a type that doesn't exist | standard error, nothing opens, the user stays on Content Drive |
+| `createContent` names a type the user can read but not create | the form opens; the editor refuses the save with its own message |
+| the legacy create screen can't be resolved | standard error, nothing opens, no `createContent` written |
+| `createFolder=true` where New Folder isn't offered | standard permission error (403), no dialog, the param is removed |
+| `editFolder` / `folderPermissions` names a folder that is gone, in another site, or a bad id; or the user lacks the permission | standard error (404 for gone or another site, 403 for a missing permission), no dialog, the param is removed |
 
 ## Examples
 

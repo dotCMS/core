@@ -55,7 +55,11 @@ import {
     isActionableBrowseItem,
     DotCMSContentlet
 } from '@dotcms/dotcms-models';
-import { DotEditContentSidePanelComponent, DotSidePanelNavController } from '@dotcms/edit-content';
+import {
+    DotEditContentSidePanelComponent,
+    DotLegacyEditorSwitch,
+    DotSidePanelNavController
+} from '@dotcms/edit-content';
 import {
     DotContentDriveUploadFiles,
     DotFolderTreeNodeData,
@@ -185,7 +189,8 @@ import { describeUploadFailures, DotUploadFailureGroup } from '../utils/upload-f
         DialogService,
         provideContentDriveRelationshipPicker(),
         // Component-scoped (not `root`) so it can inject the shell's DotContentDriveStore to read
-        // the side-panel feature flag; shared with the child components in this shell's subtree.
+        // the list's language filter and default language; shared with the child components in
+        // this shell's subtree.
         DotContentDriveNavigationService,
         DotWorkflowsActionsService,
         MessageService,
@@ -260,13 +265,18 @@ export class DotContentDriveShellComponent implements OnDestroy {
         untracked(() => {
             this.#pendingNewFolder.set(false);
 
-            // Same gate as the toolbar's New Folder entry: where it is not offered, nothing opens.
-            if (this.#store.$canAddChildren()) {
-                this.#store.setDialog({
-                    type: DIALOG_TYPE.FOLDER,
-                    header: this.#dotMessageService.get('content-drive.dialog.folder.header')
-                });
+            // Same gate as the toolbar's New Folder entry: where it is not offered, nothing opens
+            // and the link says why (US8/AC5).
+            if (!this.#store.$canAddChildren()) {
+                this.#reportForbidden();
+
+                return;
             }
+
+            this.#store.setDialog({
+                type: DIALOG_TYPE.FOLDER,
+                header: this.#dotMessageService.get('content-drive.dialog.folder.header')
+            });
         });
     });
 
@@ -1648,6 +1658,16 @@ export class DotContentDriveShellComponent implements OnDestroy {
             .pipe(take(1))
             .subscribe({
                 next: ({ folder, access }) => {
+                    // A folder in another site is out of reach from this one: the dialog would
+                    // edit it under the wrong site (#37759, edge case "folder … moved to another
+                    // site"). Reported as not found, as for a folder that is gone.
+                    const siteId = this.#store.currentSite()?.identifier;
+                    if (siteId && folder.hostId !== siteId) {
+                        this.#httpErrorManager.handle(new HttpErrorResponse({ status: 404 }));
+
+                        return;
+                    }
+
                     if (!access.canEdit) {
                         this.#reportForbidden();
 
@@ -1973,10 +1993,10 @@ export class DotContentDriveShellComponent implements OnDestroy {
      * "Switch to the old editor" in the new-editor panel: reopen the same content in the legacy
      * panel, without leaving Content Drive (#37759, FR-028).
      *
-     * @param contentlet The content that was open.
+     * @param switched The content that was open, or `null` for a create, and its type.
      */
-    protected onSwitchedToLegacyEditor(contentlet: DotCMSContentlet) {
-        this.#navigationService.switchToLegacyEditor(contentlet);
+    protected onSwitchedToLegacyEditor(switched: DotLegacyEditorSwitch) {
+        this.#navigationService.switchToLegacyEditor(switched);
     }
 
     /**

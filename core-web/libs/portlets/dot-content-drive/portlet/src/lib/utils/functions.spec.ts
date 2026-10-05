@@ -2094,6 +2094,10 @@ describe('listsFolders', () => {
  * refresh, a bookmark and Part 1's redirects all read the same rules (#37759, FR-023).
  */
 describe('resolveContentDriveUrlIntent', () => {
+    // Identifiers as dotCMS shapes them; anything else is refused (Constitution III, #37759 T109).
+    const CONTENT_ID = '4b1d7c1e-8a2f-4c3b-9d5e-6f7a8b9c0d1e';
+    const FOLDER_ID = '9f8e7d6c5b4a39281706f5e4d3c2b1a0';
+
     it('returns none when no panel or folder-dialog param is set', () => {
         expect(resolveContentDriveUrlIntent({})).toEqual({ kind: 'none' });
     });
@@ -2111,14 +2115,14 @@ describe('resolveContentDriveUrlIntent', () => {
     describe('edit', () => {
         it('reads the identifier and the language', () => {
             expect(
-                resolveContentDriveUrlIntent({ editContent: 'id-1', editContentLang: '2' })
-            ).toEqual({ kind: 'edit', identifier: 'id-1', languageId: 2 });
+                resolveContentDriveUrlIntent({ editContent: CONTENT_ID, editContentLang: '2' })
+            ).toEqual({ kind: 'edit', identifier: CONTENT_ID, languageId: 2 });
         });
 
         it('leaves the language out when the link carries none', () => {
-            expect(resolveContentDriveUrlIntent({ editContent: 'id-1' })).toEqual({
+            expect(resolveContentDriveUrlIntent({ editContent: CONTENT_ID })).toEqual({
                 kind: 'edit',
-                identifier: 'id-1',
+                identifier: CONTENT_ID,
                 languageId: undefined
             });
         });
@@ -2127,8 +2131,8 @@ describe('resolveContentDriveUrlIntent', () => {
             'drops a language that is not a positive integer (%s)',
             (editContentLang) => {
                 expect(
-                    resolveContentDriveUrlIntent({ editContent: 'id-1', editContentLang })
-                ).toEqual({ kind: 'edit', identifier: 'id-1', languageId: undefined });
+                    resolveContentDriveUrlIntent({ editContent: CONTENT_ID, editContentLang })
+                ).toEqual({ kind: 'edit', identifier: CONTENT_ID, languageId: undefined });
             }
         );
 
@@ -2142,6 +2146,51 @@ describe('resolveContentDriveUrlIntent', () => {
             expect(resolveContentDriveUrlIntent({ editContentLang: '1' })).toEqual({
                 kind: 'none'
             });
+        });
+    });
+
+    /**
+     * Values from the URL reach a Lucene query and REST paths, so only the shapes those can take
+     * are accepted; anything else reads as absent (Constitution III, #37759 T109, T111).
+     */
+    describe('refusing values that are not what they claim to be', () => {
+        it.each([
+            ['an injected Lucene clause', `${CONTENT_ID} OR +working:true`],
+            ['a path', '../folder/x'],
+            ['a short placeholder', 'id-1']
+        ])('ignores an editContent that is %s', (_label, editContent) => {
+            expect(resolveContentDriveUrlIntent({ editContent })).toEqual({ kind: 'none' });
+        });
+
+        it.each([
+            ['editFolder', 'a/b'],
+            ['folderPermissions', 'folder-1 OR x']
+        ])('ignores a %s that is not an identifier', (param, value) => {
+            expect(resolveContentDriveUrlIntent({ [param]: value })).toEqual({ kind: 'none' });
+        });
+
+        it.each(['../contenttype', 'Blog Post', 'Blog?x=1', 'Blog%2F..'])(
+            'ignores a createContent that is not a content type variable or id (%s)',
+            (createContent) => {
+                expect(resolveContentDriveUrlIntent({ createContent })).toEqual({ kind: 'none' });
+            }
+        );
+
+        it('accepts a content type variable or id for createContent', () => {
+            expect(resolveContentDriveUrlIntent({ createContent: 'webPageContent' })).toEqual({
+                kind: 'create',
+                contentType: 'webPageContent'
+            });
+            expect(resolveContentDriveUrlIntent({ createContent: CONTENT_ID })).toEqual({
+                kind: 'create',
+                contentType: CONTENT_ID
+            });
+        });
+
+        it('does not let a refused value make a conflict', () => {
+            expect(
+                resolveContentDriveUrlIntent({ editContent: 'id-1', createContent: 'Banner' })
+            ).toEqual({ kind: 'create', contentType: 'Banner' });
         });
     });
 
@@ -2164,34 +2213,34 @@ describe('resolveContentDriveUrlIntent', () => {
         });
 
         it('reads Folder Settings by folder identifier', () => {
-            expect(resolveContentDriveUrlIntent({ editFolder: 'folder-1' })).toEqual({
+            expect(resolveContentDriveUrlIntent({ editFolder: FOLDER_ID })).toEqual({
                 kind: 'editFolder',
-                identifier: 'folder-1'
+                identifier: FOLDER_ID
             });
         });
 
         it('reads Edit Permissions by folder identifier', () => {
-            expect(resolveContentDriveUrlIntent({ folderPermissions: 'folder-1' })).toEqual({
+            expect(resolveContentDriveUrlIntent({ folderPermissions: FOLDER_ID })).toEqual({
                 kind: 'folderPermissions',
-                identifier: 'folder-1'
+                identifier: FOLDER_ID
             });
         });
     });
 
     describe('params that cannot hold together', () => {
         const PANEL_PARAMS = {
-            editContent: { editContent: 'id-1' },
+            editContent: { editContent: CONTENT_ID },
             createContent: { createContent: 'Banner' }
         };
         const FOLDER_PARAMS = {
             createFolder: { createFolder: 'true' },
-            editFolder: { editFolder: 'folder-1' },
-            folderPermissions: { folderPermissions: 'folder-1' }
+            editFolder: { editFolder: FOLDER_ID },
+            folderPermissions: { folderPermissions: FOLDER_ID }
         };
 
         it('is a conflict when an edit and a create are both asked for', () => {
             expect(
-                resolveContentDriveUrlIntent({ editContent: 'id-1', createContent: 'Banner' })
+                resolveContentDriveUrlIntent({ editContent: CONTENT_ID, createContent: 'Banner' })
             ).toEqual({ kind: 'conflict' });
         });
 

@@ -5432,15 +5432,19 @@ describe('DotContentDriveShellComponent', () => {
             await spectator.fixture.whenStable();
             spectator.detectChanges();
             (location.go as Mock).mockClear();
-            const contentlet = { inode: 'inode-1', identifier: 'id-1' } as DotCMSContentlet;
+            // The content, or `null` when the switch came from a create, with its type (T116).
+            const switched = {
+                contentlet: { inode: 'inode-1', identifier: 'id-1' } as DotCMSContentlet,
+                contentTypeVariable: 'blog'
+            };
 
             spectator.triggerEventHandler(
                 'dot-edit-content-side-panel',
                 'switchedToLegacyEditor',
-                contentlet
+                switched
             );
 
-            expect(navigationService.switchToLegacyEditor).toHaveBeenCalledWith(contentlet);
+            expect(navigationService.switchToLegacyEditor).toHaveBeenCalledWith(switched);
             expect(location.go).not.toHaveBeenCalled();
         });
 
@@ -5853,11 +5857,15 @@ describe('DotContentDriveShellComponent', () => {
  * {@link MOCK_ROUTE} (no `editContent`), so it cannot express this path.
  */
 describe('DotContentDriveShellComponent — editContent deep link', () => {
+    // Shaped like dotCMS identifiers: the URL parser refuses anything else (#37759, T109).
+    const DEEP_LINK_ID = '4b1d7c1e-8a2f-4c3b-9d5e-6f7a8b9c0d1e';
+    const FOLDER_ID = '9f8e7d6c5b4a39281706f5e4d3c2b1a0';
+
     // Mutable so both the identifier and the `new` marker cases share one factory.
     const deepLinkQueryParams: Record<string, string> = {
         path: '/test/path',
         filters: 'contentType:Blog;status:published',
-        editContent: 'id-1'
+        editContent: DEEP_LINK_ID
     };
     // Held at describe scope so we can clear it before each mount (mockProvider reuses the same fn).
     const openEditByIdentifier = vi.fn();
@@ -6136,28 +6144,28 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
         });
 
     it('opens the panel by identifier from a shared ?editContent= link on construction', () => {
-        deepLinkQueryParams.editContent = 'id-1';
+        deepLinkQueryParams.editContent = DEEP_LINK_ID;
         mountShell();
 
-        expect(openEditByIdentifier).toHaveBeenCalledWith('id-1', undefined);
+        expect(openEditByIdentifier).toHaveBeenCalledWith(DEEP_LINK_ID, undefined);
     });
 
     it('forwards the language from the link so the exact version reopens', () => {
         // An identifier has one version per language, so without this the resolver can only guess —
         // and it runs before the store's languages request has resolved.
-        deepLinkQueryParams.editContent = 'id-1';
+        deepLinkQueryParams.editContent = DEEP_LINK_ID;
         deepLinkQueryParams.editContentLang = '2';
         mountShell();
 
-        expect(openEditByIdentifier).toHaveBeenCalledWith('id-1', 2);
+        expect(openEditByIdentifier).toHaveBeenCalledWith(DEEP_LINK_ID, 2);
     });
 
     it('ignores a non-numeric language on the link', () => {
-        deepLinkQueryParams.editContent = 'id-1';
+        deepLinkQueryParams.editContent = DEEP_LINK_ID;
         deepLinkQueryParams.editContentLang = 'nope';
         mountShell();
 
-        expect(openEditByIdentifier).toHaveBeenCalledWith('id-1', undefined);
+        expect(openEditByIdentifier).toHaveBeenCalledWith(DEEP_LINK_ID, undefined);
     });
 
     it('ignores the non-shareable `new` marker on construction', () => {
@@ -6180,7 +6188,7 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
 
         afterAll(() => {
             delete deepLinkQueryParams['createContent'];
-            deepLinkQueryParams.editContent = 'id-1';
+            deepLinkQueryParams.editContent = DEEP_LINK_ID;
         });
 
         it('opens the create form in the folder Content Drive shows, once the tree has loaded', () => {
@@ -6241,7 +6249,7 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
         afterEach(() => {
             delete deepLinkQueryParams['createContent'];
             delete deepLinkQueryParams['editFolder'];
-            deepLinkQueryParams.editContent = 'id-1';
+            deepLinkQueryParams.editContent = DEEP_LINK_ID;
         });
 
         /** What the shell writes to clear every panel and folder-dialog param, keeping the rest. */
@@ -6256,7 +6264,7 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
 
         it.each([
             ['an edit and a create', { createContent: 'Blog' }],
-            ['an edit and a folder dialog', { editFolder: 'folder-1' }]
+            ['an edit and a folder dialog', { editFolder: FOLDER_ID }]
         ])('opens nothing for %s, and removes all of those params', (_label, extra) => {
             Object.assign(deepLinkQueryParams, extra);
 
@@ -6281,7 +6289,7 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
      */
     describe('folder dialog links', () => {
         const FOLDER_BEAN = {
-            identifier: 'folder-1',
+            identifier: FOLDER_ID,
             inode: 'folder-inode-1',
             name: 'blog',
             title: 'Blog',
@@ -6302,7 +6310,7 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
             delete deepLinkQueryParams['createFolder'];
             delete deepLinkQueryParams['editFolder'];
             delete deepLinkQueryParams['folderPermissions'];
-            deepLinkQueryParams.editContent = 'id-1';
+            deepLinkQueryParams.editContent = DEEP_LINK_ID;
             canAddChildrenSignal.set(true);
         });
 
@@ -6334,19 +6342,23 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
                 });
             });
 
-            it('opens nothing where the toolbar would not offer New Folder', () => {
+            // Where the toolbar would not offer New Folder, the link says why (US8/AC5, T114).
+            it('shows the standard permission error and opens nothing where New Folder is not allowed', () => {
                 canAddChildrenSignal.set(false);
                 const spectator = mountShell();
                 folders.set([SITE_NODE]);
                 spectator.detectChanges();
 
                 expect(setDialogOf(spectator)).not.toHaveBeenCalled();
+                expect(spectator.inject(DotHttpErrorManagerService).handle).toHaveBeenCalledWith(
+                    expect.objectContaining({ status: 403 })
+                );
             });
         });
 
         describe('Folder Settings', () => {
             beforeEach(() => {
-                deepLinkQueryParams.editFolder = 'folder-1';
+                deepLinkQueryParams.editFolder = FOLDER_ID;
             });
 
             it('resolves the folder by id and opens its settings when the author can edit it', () => {
@@ -6355,14 +6367,14 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
 
                 const spectator = mountShell();
 
-                expect(getFolderById).toHaveBeenCalledWith('folder-1');
-                expect(getUserAccess).toHaveBeenCalledWith('folder-1');
+                expect(getFolderById).toHaveBeenCalledWith(FOLDER_ID);
+                expect(getUserAccess).toHaveBeenCalledWith(FOLDER_ID);
                 expect(setDialogOf(spectator)).toHaveBeenCalledWith({
                     type: DIALOG_TYPE.FOLDER,
                     header: 'content-drive.dialog.folder.header.edit',
                     payload: {
                         type: 'folder',
-                        identifier: 'folder-1',
+                        identifier: FOLDER_ID,
                         inode: 'folder-inode-1',
                         name: 'blog',
                         title: 'Blog',
@@ -6389,6 +6401,20 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
                 expect(setDialogOf(spectator)).not.toHaveBeenCalled();
             });
 
+            // A folder that resolves in another site is out of reach from this one (Edge case
+            // "folder … moved to another site", T115).
+            it('shows the standard error and opens nothing for a folder in another site', () => {
+                getFolderById.mockReturnValue(of({ ...FOLDER_BEAN, hostId: 'another-site' }));
+                getUserAccess.mockReturnValue(of({ canEdit: true, canEditPermissions: true }));
+
+                const spectator = mountShell();
+
+                expect(spectator.inject(DotHttpErrorManagerService).handle).toHaveBeenCalledWith(
+                    expect.objectContaining({ status: 404 })
+                );
+                expect(setDialogOf(spectator)).not.toHaveBeenCalled();
+            });
+
             it('shows the standard error and opens nothing when the folder is gone', () => {
                 const error = new HttpErrorResponse({ status: 404 });
                 getFolderById.mockReturnValue(throwError(() => error));
@@ -6405,7 +6431,33 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
 
         describe('Edit Permissions', () => {
             beforeEach(() => {
-                deepLinkQueryParams.folderPermissions = 'folder-1';
+                deepLinkQueryParams.folderPermissions = FOLDER_ID;
+            });
+
+            // A bad id or a folder that is gone (T117).
+            it('shows the standard error and opens nothing when the lookup fails', () => {
+                const error = new HttpErrorResponse({ status: 404 });
+                getUserAccess.mockReturnValue(throwError(() => error));
+
+                const spectator = mountShell();
+
+                expect(spectator.inject(DotHttpErrorManagerService).handle).toHaveBeenCalledWith(
+                    error
+                );
+                expect(setDialogOf(spectator)).not.toHaveBeenCalled();
+            });
+
+            // Nothing opened, so the URL no longer names it (FR-033, T117).
+            it('removes the param from the URL when nothing opens', () => {
+                getUserAccess.mockReturnValue(of({ canEdit: true, canEditPermissions: false }));
+
+                const spectator = mountShell();
+                spectator.detectChanges();
+
+                expect(
+                    (spectator.inject(Router).createUrlTree as Mock).mock.calls.at(-1)?.[1]
+                        ?.queryParams
+                ).toEqual(expect.objectContaining({ folderPermissions: null }));
             });
 
             it('opens Edit Permissions when the author may edit the folder permissions', () => {
@@ -6413,11 +6465,11 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
 
                 const spectator = mountShell();
 
-                expect(getUserAccess).toHaveBeenCalledWith('folder-1');
+                expect(getUserAccess).toHaveBeenCalledWith(FOLDER_ID);
                 expect(setDialogOf(spectator)).toHaveBeenCalledWith({
                     type: 'FOLDER_PERMISSIONS',
                     header: 'Edit-Permissions',
-                    payload: { identifier: 'folder-1' }
+                    payload: { identifier: FOLDER_ID }
                 });
             });
 

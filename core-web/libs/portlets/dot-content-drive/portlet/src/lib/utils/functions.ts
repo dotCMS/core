@@ -16,6 +16,7 @@ import {
     DotFolderBean
 } from '@dotcms/dotcms-models';
 import { DotFolderTreeNodeData, DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
+import { isDotIdentifier } from '@dotcms/utils';
 
 import { createTreeNode, generateAllParentPaths } from './tree-folder.utils';
 
@@ -25,7 +26,6 @@ import {
     FOLDER_NAME_FILTER_MIN_LENGTH,
     FOLDER_TREE_HIERARCHY_PAGE_SIZE,
     FOLDER_TREE_PAGE_SIZE,
-    NEW_CONTENT_MARKER,
     ROOT_PATH,
     SHARED_ASSETS_ENABLED_VALUE,
     SHARED_ASSETS_FILTER_KEY,
@@ -1022,6 +1022,12 @@ export const uploadIndicatorKey = (count: number, options?: { backgrounded?: boo
 };
 
 /**
+ * What a `createContent` link may name: a content type variable or id. Letters, digits, `_` and
+ * `-` only, so the value cannot reshape the REST paths it reaches (Constitution III).
+ */
+const CONTENT_TYPE_REF_PATTERN = /^[A-Za-z0-9_-]+$/;
+
+/**
  * Reads what a Content Drive URL asks to open when the portlet loads (#37759, FR-023).
  *
  * One URL may name at most one side panel or folder dialog. When it names more, Content Drive can't
@@ -1041,12 +1047,22 @@ export function resolveContentDriveUrlIntent(
         return typeof value === 'string' && value.length > 0 ? value : undefined;
     };
 
-    const editContent = read(CONTENT_DRIVE_URL_PARAM.EDIT_CONTENT);
-    const identifier = editContent === NEW_CONTENT_MARKER ? undefined : editContent;
-    const contentType = read(CONTENT_DRIVE_URL_PARAM.CREATE_CONTENT);
+    // Values from the URL reach a Lucene query and REST paths, so only the shapes they can take
+    // are accepted; anything else reads as absent (Constitution III). The retired `new` create
+    // marker is not an identifier, so it is refused the same way.
+    const readIdentifier = (key: string): string | undefined => {
+        const value = read(key);
+
+        return isDotIdentifier(value) ? value : undefined;
+    };
+
+    const identifier = readIdentifier(CONTENT_DRIVE_URL_PARAM.EDIT_CONTENT);
+    const createContent = read(CONTENT_DRIVE_URL_PARAM.CREATE_CONTENT);
+    const contentType =
+        createContent && CONTENT_TYPE_REF_PATTERN.test(createContent) ? createContent : undefined;
     const createFolder = read(CONTENT_DRIVE_URL_PARAM.CREATE_FOLDER) === 'true';
-    const editFolder = read(CONTENT_DRIVE_URL_PARAM.EDIT_FOLDER);
-    const folderPermissions = read(CONTENT_DRIVE_URL_PARAM.FOLDER_PERMISSIONS);
+    const editFolder = readIdentifier(CONTENT_DRIVE_URL_PARAM.EDIT_FOLDER);
+    const folderPermissions = readIdentifier(CONTENT_DRIVE_URL_PARAM.FOLDER_PERMISSIONS);
 
     const asked = [
         identifier,

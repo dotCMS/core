@@ -6,6 +6,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { catchError, map, switchMap, take } from 'rxjs/operators';
 
 import {
+    DotActionUrlService,
     DotContentSearchService,
     DotContentTypeService,
     DotHttpErrorManagerService,
@@ -17,7 +18,7 @@ import {
     DotCMSContentType,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
-import { EditContentDialogData } from '@dotcms/edit-content';
+import { DotLegacyEditorSwitch, EditContentDialogData } from '@dotcms/edit-content';
 import { DotFolderTreeNodeContentData } from '@dotcms/portlets/content-drive/ui';
 
 import { DotLegacyEditorRequest } from '../../components/dot-legacy-editor-side-panel/dot-legacy-editor-side-panel.model';
@@ -41,6 +42,7 @@ export class DotContentDriveNavigationService {
     readonly #dotRouterService = inject(DotRouterService);
     readonly #httpErrorManager = inject(DotHttpErrorManagerService);
     readonly #contentSearch = inject(DotContentSearchService);
+    readonly #actionUrl = inject(DotActionUrlService);
     readonly #store = inject(DotContentDriveStore);
 
     /**
@@ -134,18 +136,12 @@ export class DotContentDriveNavigationService {
                 const languageId = this.#createLanguageId();
 
                 if (usesLegacyEditor(contentType)) {
-                    this.#openPanel({
-                        editor: 'legacy',
-                        data: {
-                            mode: 'new',
-                            contentTypeVariable,
-                            folderInode: folder.folderInode,
-                            // Unknown only if the default language failed to load. 1 is what the
-                            // legacy create screen itself assumes when given no language.
-                            languageId: languageId ?? 1,
-                            title: contentType.name,
-                            portletId: CONTENT_DRIVE_PORTLET_ID
-                        }
+                    // The variable the server answered with, not the one the caller (or a link)
+                    // passed in. Unknown language only if the default failed to load: 1 is what
+                    // the legacy create screen itself assumes when given no language.
+                    this.#openLegacyCreate(contentType.variable, contentType.name, {
+                        folderInode: folder.folderInode,
+                        languageId: languageId ?? 1
                     });
 
                     return;
@@ -161,6 +157,42 @@ export class DotContentDriveNavigationService {
                         title: contentType.name
                     }
                 });
+            });
+    }
+
+    /**
+     * Opens the legacy create form, once the server has named its screen. Resolving it first means
+     * a type the server won't serve shows the standard error and opens nothing: no panel, no
+     * `createContent` in the URL, no history entry (#37759, edge case "Legacy create form cannot
+     * be resolved").
+     *
+     * @param contentTypeVariable The type to create.
+     * @param title The type's name, for the panel header.
+     * @param options Where the content goes and the language it starts in.
+     */
+    #openLegacyCreate(
+        contentTypeVariable: string,
+        title: string,
+        { folderInode, languageId }: { folderInode?: string; languageId: number }
+    ): void {
+        this.#actionUrl
+            .getCreateContentletUrl(contentTypeVariable, languageId)
+            .pipe(take(1))
+            .subscribe({
+                next: (createUrl) =>
+                    this.#openPanel({
+                        editor: 'legacy',
+                        data: {
+                            mode: 'new',
+                            contentTypeVariable,
+                            folderInode,
+                            languageId,
+                            title,
+                            portletId: CONTENT_DRIVE_PORTLET_ID,
+                            createUrl
+                        }
+                    }),
+                error: (error: HttpErrorResponse) => this.#httpErrorManager.handle(error)
             });
     }
 
@@ -200,9 +232,23 @@ export class DotContentDriveNavigationService {
      * FR-028). The type is not looked up again, and the URL already names this content, so only the
      * request changes.
      *
-     * @param contentlet The content that was open in the new-editor panel.
+     * From a create there is no content yet: a legacy create for the same type opens instead, in
+     * the folder being browsed and the language the create started in.
+     *
+     * @param switched The content that was open, or `null` for a create, and its type.
      */
-    switchToLegacyEditor(contentlet: DotCMSContentlet): void {
+    switchToLegacyEditor({ contentlet, contentTypeVariable }: DotLegacyEditorSwitch): void {
+        if (!contentlet) {
+            const open = this.#panelRequest()?.data;
+
+            this.#openLegacyCreate(contentTypeVariable, open?.title ?? contentTypeVariable, {
+                folderInode: this.currentFolder().folderInode,
+                languageId: open?.languageId ?? this.#createLanguageId() ?? 1
+            });
+
+            return;
+        }
+
         this.#panelRequest.set({
             editor: 'legacy',
             data: {

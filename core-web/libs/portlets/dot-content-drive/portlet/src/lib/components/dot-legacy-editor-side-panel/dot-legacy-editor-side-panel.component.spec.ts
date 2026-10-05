@@ -5,10 +5,9 @@ import {
     Spectator
 } from '@openng/spectator/vitest';
 import { MockPipe } from 'ng-mocks';
-import { of, Subject, throwError } from 'rxjs';
+import { of, Subject } from 'rxjs';
 import { Mock, vi } from 'vitest';
 
-import { HttpErrorResponse } from '@angular/common/http';
 import { NgZone } from '@angular/core';
 
 import { ConfirmationService, ConfirmEventType, Confirmation } from 'primeng/api';
@@ -51,7 +50,8 @@ const CREATE_REQUEST: DotLegacyEditorRequest = {
     folderInode: 'f-1',
     languageId: 2,
     title: 'Banner',
-    portletId: 'content-drive'
+    portletId: 'content-drive',
+    createUrl: CREATE_URL
 };
 
 const EDIT_REQUEST: DotLegacyEditorRequest = {
@@ -211,14 +211,18 @@ describe('DotLegacyEditorSidePanelComponent', () => {
         });
     });
 
+    /**
+     * The navigation service resolves the create screen before the panel opens, so a failure opens
+     * nothing (#37759, T112). The panel only pre-selects the folder on the URL it is handed.
+     */
     describe('create URL', () => {
-        const getCreateContentletUrl = () =>
-            spectator.inject(DotActionUrlService).getCreateContentletUrl as Mock;
-
-        it('asks for the create screen of the type, in the language the request starts in', () => {
+        it('loads the create screen the request carries, without asking the server again', () => {
             open(CREATE_REQUEST);
 
-            expect(getCreateContentletUrl()).toHaveBeenCalledWith('Banner', 2);
+            expect(
+                spectator.inject(DotActionUrlService).getCreateContentletUrl
+            ).not.toHaveBeenCalled();
+            expect(getIframe()).not.toBeNull();
         });
 
         it('pre-selects the folder by appending its inode to the create screen', () => {
@@ -228,9 +232,7 @@ describe('DotLegacyEditorSidePanelComponent', () => {
         });
 
         it('starts the query string when the create screen has none', () => {
-            getCreateContentletUrl().mockReturnValue(of('/c/portal/layout'));
-
-            open(CREATE_REQUEST);
+            open({ ...CREATE_REQUEST, createUrl: '/c/portal/layout' });
 
             expect(getIframe()?.getAttribute('src')).toBe('/c/portal/layout?folder=f-1');
         });
@@ -247,32 +249,14 @@ describe('DotLegacyEditorSidePanelComponent', () => {
             expect(getIframe()?.getAttribute('src')).toBe(CREATE_URL);
         });
 
-        it('opens nothing for a create without a content type', () => {
-            open({ ...CREATE_REQUEST, contentTypeVariable: undefined });
+        it('opens nothing for a create without a create screen', () => {
+            open({ ...CREATE_REQUEST, createUrl: undefined });
 
-            expect(getCreateContentletUrl()).not.toHaveBeenCalled();
-            expect(getIframe()).toBeNull();
-        });
-
-        it('shows the standard error and closes when the create screen cannot be resolved', () => {
-            const error = new HttpErrorResponse({ status: 403 });
-            getCreateContentletUrl().mockReturnValue(throwError(() => error));
-            const closed = vi.fn();
-            spectator.output('closed').subscribe(closed);
-
-            open(CREATE_REQUEST);
-
-            expect(spectator.inject(DotHttpErrorManagerService).handle).toHaveBeenCalledWith(error);
-            expect(closed).toHaveBeenCalledTimes(1);
             expect(getIframe()).toBeNull();
         });
 
         it('refuses a create screen that is not on this server', () => {
-            getCreateContentletUrl().mockReturnValue(
-                of('https://elsewhere.example/c/portal/layout')
-            );
-
-            open(CREATE_REQUEST);
+            open({ ...CREATE_REQUEST, createUrl: 'https://elsewhere.example/c/portal/layout' });
 
             expect(getIframe()).toBeNull();
         });

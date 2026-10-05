@@ -307,13 +307,6 @@ export const ERROR_MESSAGE_LIFE = 4500;
 export const MOVE_TO_FOLDER_WORKFLOW_ACTION_ID = 'dd4c4b7c-e9d3-4dc0-8fbf-36102f9c6324';
 
 /**
- * The `editContent` value older builds wrote for a create panel. No longer written: a create panel
- * now writes `createContent=<type>` (#37759, FR-020). Still recognised on read, so an old link or
- * bookmark that carries it opens nothing instead of looking up an identifier called `new`.
- */
-export const NEW_CONTENT_MARKER = 'new';
-
-/**
  * The Content Drive URL params that say which side panel or folder dialog is open (#37759). They are
  * a supported entry point: Part 1's redirects build the panel ones, other screens may link to them,
  * and at most one of them is in the URL at a time (FR-023).
