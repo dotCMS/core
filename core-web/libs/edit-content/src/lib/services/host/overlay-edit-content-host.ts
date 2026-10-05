@@ -70,13 +70,18 @@ export class OverlayEditContentHost implements EditContentHost, OnDestroy {
         toRelatedContentCrumbs(this.#trailInodes(), this.#relatedNav.titleCache())
     );
 
+    /**
+     * The content to open, read from the dialog config: an inode to edit, or a content type to
+     * create, with the folder and the language a new content starts in when the opener gave them.
+     */
     resolveIdentity(): EditContentIdentity {
         const data = this.#config?.data as EditContentDialogData | undefined;
 
         return {
             inode: data?.contentletInode,
             contentTypeId: data?.contentTypeId,
-            folderPath: data?.folderPath
+            folderPath: data?.folderPath,
+            languageId: data?.languageId
         };
     }
 
@@ -132,6 +137,28 @@ export class OverlayEditContentHost implements EditContentHost, OnDestroy {
         // host re-navigates; the overlay has no route, so it reloads via the in-place
         // navigation stream (mirrors reloadContent). The trail is left untouched.
         this.#navigation$.next({ inode });
+    }
+
+    readonly #switchedToLegacy$ = new Subject<DotCMSContentlet>();
+    readonly #loadFailed$ = new Subject<void>();
+
+    /**
+     * "Switch to the old editor" was confirmed for this content. An overlay does not navigate:
+     * its opener decides where the content opens next (#37759, FR-028).
+     */
+    readonly switchedToLegacy$ = this.#switchedToLegacy$.asObservable();
+
+    /** The content failed to load; the opener decides how to close (#37759, FR-029). */
+    readonly loadFailed$ = this.#loadFailed$.asObservable();
+
+    /** Reports the switch on {@link switchedToLegacy$}. */
+    switchToLegacyEditor(contentlet: DotCMSContentlet): void {
+        this.#switchedToLegacy$.next(contentlet);
+    }
+
+    /** Reports the load failure on {@link loadFailed$}. */
+    leaveOnLoadError(): void {
+        this.#loadFailed$.next();
     }
 
     leaveDeletedContent(_contentType: string): void {

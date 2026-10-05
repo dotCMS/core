@@ -136,11 +136,18 @@ export function withLocales() {
                                         const defaultLocale = locales.find(
                                             (locale) => locale.defaultLanguage
                                         );
+                                        // An opener may ask the new content to start in another
+                                        // language (#37759); a language the system does not know
+                                        // falls back to the default.
+                                        const { languageId } = host.resolveIdentity();
+                                        const startingLocale =
+                                            locales.find((locale) => locale.id === languageId) ??
+                                            defaultLocale;
 
                                         patchState(store, {
                                             locales,
                                             systemDefaultLocale: defaultLocale,
-                                            currentLocale: defaultLocale,
+                                            currentLocale: startingLocale,
                                             localesStatus: {
                                                 status: ComponentStatus.LOADED,
                                                 error: ''

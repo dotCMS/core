@@ -26,7 +26,12 @@ describe('DotEditContentSidePanelComponent', () => {
     let spectator: Spectator<DotEditContentSidePanelComponent>;
     let saved$: Subject<DotCMSContentlet>;
     let left$: Subject<void>;
-    let mockHost: Pick<OverlayEditContentHost, 'saved$' | 'left$'>;
+    let switchedToLegacy$: Subject<DotCMSContentlet>;
+    let loadFailed$: Subject<void>;
+    let mockHost: Pick<
+        OverlayEditContentHost,
+        'saved$' | 'left$' | 'switchedToLegacy$' | 'loadFailed$'
+    >;
 
     const EDIT_DATA: EditContentDialogData = {
         mode: 'edit',
@@ -61,7 +66,14 @@ describe('DotEditContentSidePanelComponent', () => {
         localStorage.clear();
         saved$ = new Subject<DotCMSContentlet>();
         left$ = new Subject<void>();
-        mockHost = { saved$: saved$.asObservable(), left$: left$.asObservable() };
+        switchedToLegacy$ = new Subject<DotCMSContentlet>();
+        loadFailed$ = new Subject<void>();
+        mockHost = {
+            saved$: saved$.asObservable(),
+            left$: left$.asObservable(),
+            switchedToLegacy$: switchedToLegacy$.asObservable(),
+            loadFailed$: loadFailed$.asObservable()
+        };
 
         spectator = createComponent({
             providers: [
@@ -453,6 +465,47 @@ describe('DotEditContentSidePanelComponent', () => {
 
         expect(onContentSaved).not.toHaveBeenCalled();
         expect(onCancel).toHaveBeenCalledTimes(1);
+    });
+
+    /**
+     * The two paths that used to leave for Content Search now report to the opener instead
+     * (#37759). "Switch to the old editor" names the content to reopen in the legacy editor
+     * (FR-028); a load failure closes the panel (FR-029).
+     */
+    describe('leaving the new editor', () => {
+        it('reports a switch to the old editor with the content, and stays open for the opener', async () => {
+            spectator.setInput('data', EDIT_DATA);
+            spectator.detectChanges();
+            await spectator.fixture.whenStable();
+            const switched = vi.fn();
+            const closed = vi.fn();
+            spectator.output('switchedToLegacyEditor').subscribe(switched);
+            spectator.output('closed').subscribe(closed);
+            const contentlet = { inode: 'inode-1', identifier: 'id-1' } as DotCMSContentlet;
+
+            switchedToLegacy$.next(contentlet);
+
+            expect(switched).toHaveBeenCalledWith(contentlet);
+            expect(closed).not.toHaveBeenCalled();
+        });
+
+        it('closes without the unsaved-changes guard when the content fails to load', async () => {
+            spectator.setInput('data', EDIT_DATA);
+            spectator.detectChanges();
+            await spectator.fixture.whenStable();
+            const confirmClose = vi.spyOn(
+                spectator.query(DotEditContentLayoutComponent),
+                'confirmClose'
+            );
+            const closed = vi.fn();
+            spectator.output('closed').subscribe(closed);
+
+            loadFailed$.next();
+
+            // Nothing loaded, so there is nothing to keep: no prompt.
+            expect(confirmClose).not.toHaveBeenCalled();
+            expect(closed).toHaveBeenCalledTimes(1);
+        });
     });
 
     // Migrated from a document-level host binding to the shared shortcut registry (issue #32591), so

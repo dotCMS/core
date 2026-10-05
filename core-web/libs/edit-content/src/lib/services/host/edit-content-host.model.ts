@@ -30,6 +30,12 @@ export interface EditContentIdentity {
     contentTypeId?: string;
     /** Optional pre-fill path for a Host-or-Folder field. */
     folderPath?: string;
+    /**
+     * Language new content starts in. Set by an opener that knows which language the author is
+     * working in (Content Drive's language filter, #37759); new content starts in the system
+     * default language when it is unset.
+     */
+    languageId?: number;
 }
 
 /**
@@ -110,6 +116,21 @@ export interface EditContentHost {
      * @param contentType Variable of the deleted content's type, used to filter the listing.
      */
     leaveDeletedContent(contentType: string): void;
+
+    /**
+     * "Switch to the old editor": the content type was just set back to the legacy editor, so the
+     * content leaves the new editor. Full-screen goes to the legacy edit page; an overlay reports
+     * it so its opener can reopen the content in the legacy editor (#37759, FR-028).
+     *
+     * @param contentlet The content being edited.
+     */
+    switchToLegacyEditor(contentlet: DotCMSContentlet): void;
+
+    /**
+     * The content failed to load, after the error was reported. Full-screen goes back to the
+     * content listing; an overlay reports it so its opener can close it (#37759, FR-029).
+     */
+    leaveOnLoadError(): void;
 
     /**
      * Whether this host navigates the editor in place (dialog/overlay) rather than

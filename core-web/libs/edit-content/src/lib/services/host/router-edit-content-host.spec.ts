@@ -7,6 +7,7 @@ import { Title } from '@angular/platform-browser';
 import { ActivatedRouteSnapshot, Router } from '@angular/router';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
 import { RouterEditContentHost } from './router-edit-content-host';
@@ -126,6 +127,18 @@ describe('RouterEditContentHost', () => {
             });
         });
 
+        // The full-page editor keeps today's behavior: a new content starts in the default
+        // language, whatever the URL carries (#37759, FR-003 applies to Content Drive's panel only).
+        it('never carries a starting language', () => {
+            (
+                router as unknown as { routerState: { snapshot: { root: ActivatedRouteSnapshot } } }
+            ).routerState.snapshot.root = routeTree([
+                { params: { contentType: 'Blog' }, queryParams: { languageId: '2' } }
+            ]);
+
+            expect(host.resolveIdentity().languageId).toBeUndefined();
+        });
+
         it('walks firstChild down to the leaf route (nested routes)', () => {
             (
                 router as unknown as { routerState: { snapshot: { root: ActivatedRouteSnapshot } } }
@@ -193,6 +206,23 @@ describe('RouterEditContentHost', () => {
                 replaceUrl: true,
                 queryParams: { filter: 'SimpleWidget' }
             });
+        });
+    });
+
+    // The full-page editor keeps today's navigation for both (#37759, FR-028, FR-029).
+    describe('switchToLegacyEditor', () => {
+        it('should navigate to the legacy edit page for the content', () => {
+            host.switchToLegacyEditor({ inode: 'inode-7' } as DotCMSContentlet);
+
+            expect(router.navigate).toHaveBeenCalledWith(['/c/content/', 'inode-7']);
+        });
+    });
+
+    describe('leaveOnLoadError', () => {
+        it('should navigate to the content listing', () => {
+            host.leaveOnLoadError();
+
+            expect(router.navigate).toHaveBeenCalledWith(['/c/content']);
         });
     });
 

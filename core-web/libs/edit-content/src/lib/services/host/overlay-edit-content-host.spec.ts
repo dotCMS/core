@@ -62,6 +62,40 @@ describe('OverlayEditContentHost', () => {
                 contentTypeId: 'Blog'
             });
         });
+
+        // Content Drive starts a create in the language the list is filtered by (#37759, FR-003).
+        it('carries the language the opener asked the content to start in', () => {
+            config.data = { mode: 'new', contentTypeId: 'Blog', languageId: 2 };
+
+            expect(host.resolveIdentity()).toEqual(
+                expect.objectContaining({ contentTypeId: 'Blog', languageId: 2 })
+            );
+        });
+    });
+
+    // An overlay does not navigate: it reports both intents, and whoever opened it decides
+    // (#37759, FR-028, FR-029).
+    describe('switchToLegacyEditor', () => {
+        it('emits the content on switchedToLegacy$', () => {
+            const contentlet = { inode: 'inode-7' } as DotCMSContentlet;
+            const spy = vi.fn();
+            host.switchedToLegacy$.subscribe(spy);
+
+            host.switchToLegacyEditor(contentlet);
+
+            expect(spy).toHaveBeenCalledWith(contentlet);
+        });
+    });
+
+    describe('leaveOnLoadError', () => {
+        it('emits on loadFailed$', () => {
+            const spy = vi.fn();
+            host.loadFailed$.subscribe(spy);
+
+            host.leaveOnLoadError();
+
+            expect(spy).toHaveBeenCalledTimes(1);
+        });
     });
 
     describe('leaveDeletedContent', () => {

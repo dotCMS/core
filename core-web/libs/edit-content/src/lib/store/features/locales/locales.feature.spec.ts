@@ -69,6 +69,8 @@ describe('LocalesFeature', () => {
         addBreadcrumb: vi.fn(),
         goToSavedContent: vi.fn(),
         leaveDeletedContent: vi.fn(),
+        switchToLegacyEditor: vi.fn(),
+        leaveOnLoadError: vi.fn(),
         goToRestoredVersion: vi.fn()
     };
 
@@ -90,6 +92,7 @@ describe('LocalesFeature', () => {
 
     beforeEach(() => {
         Object.values(mockHost).forEach((fn) => fn.mockClear());
+        mockHost.resolveIdentity.mockReturnValue({});
         spectator = createStore();
         store = spectator.service;
         dotLanguagesService = spectator.inject(DotLanguagesService);
@@ -129,6 +132,42 @@ describe('LocalesFeature', () => {
         expect(store.systemDefaultLocale()).toEqual(SYSTEM_LANGUAGES[1]);
         expect(store.currentLocale()).toEqual(SYSTEM_LANGUAGES[1]);
     }));
+
+    // A create opened from Content Drive starts in the language its list is filtered by, so the new
+    // content shows in that list once saved (#37759, FR-003).
+    describe('starting language of new content', () => {
+        it('starts in the language the host asks for', fakeAsync(() => {
+            mockHost.resolveIdentity.mockReturnValue({ contentTypeId: 'Blog', languageId: 1 });
+            dotLanguagesService.get.mockReturnValue(of(SYSTEM_LANGUAGES));
+
+            store.loadSystemLocales();
+            tick();
+
+            expect(store.currentLocale()).toEqual(SYSTEM_LANGUAGES[0]);
+            // The system default is still known, for whatever compares against it.
+            expect(store.systemDefaultLocale()).toEqual(SYSTEM_LANGUAGES[1]);
+        }));
+
+        it('falls back to the default when the asked-for language is not a system language', fakeAsync(() => {
+            mockHost.resolveIdentity.mockReturnValue({ contentTypeId: 'Blog', languageId: 99 });
+            dotLanguagesService.get.mockReturnValue(of(SYSTEM_LANGUAGES));
+
+            store.loadSystemLocales();
+            tick();
+
+            expect(store.currentLocale()).toEqual(SYSTEM_LANGUAGES[1]);
+        }));
+
+        it('starts in the default when the host asks for no language', fakeAsync(() => {
+            mockHost.resolveIdentity.mockReturnValue({ contentTypeId: 'Blog' });
+            dotLanguagesService.get.mockReturnValue(of(SYSTEM_LANGUAGES));
+
+            store.loadSystemLocales();
+            tick();
+
+            expect(store.currentLocale()).toEqual(SYSTEM_LANGUAGES[1]);
+        }));
+    });
 
     describe('when there is switch of locale', () => {
         beforeEach(() => {

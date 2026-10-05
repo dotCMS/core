@@ -5,7 +5,7 @@ import { Mock, vi } from 'vitest';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { DynamicDialogRef, DynamicDialogConfig, DialogService } from 'primeng/dynamicdialog';
@@ -202,6 +202,32 @@ describe('DotEditContentDialogComponent', () => {
 
         expect(onContentSaved).not.toHaveBeenCalled();
         expect(onCancel).toHaveBeenCalledTimes(1);
+    });
+
+    // The dialog keeps today's behavior for both paths the side panel now keeps in Content Drive
+    // (#37759, FR-028, FR-029): the overlay host only reports them, so the dialog navigates.
+    describe('leaving the new editor', () => {
+        it('goes to the legacy edit page on "switch to the old editor"', () => {
+            const router = spectator.inject(Router);
+            const navigate = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+            spectator.detectChanges();
+
+            spectator
+                .inject(OverlayEditContentHost, true)
+                .switchToLegacyEditor({ inode: 'inode-7' } as DotCMSContentlet);
+
+            expect(navigate).toHaveBeenCalledWith(['/c/content/', 'inode-7']);
+        });
+
+        it('goes to the content listing when the content fails to load', () => {
+            const router = spectator.inject(Router);
+            const navigate = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+            spectator.detectChanges();
+
+            spectator.inject(OverlayEditContentHost, true).leaveOnLoadError();
+
+            expect(navigate).toHaveBeenCalledWith(['/c/content']);
+        });
     });
 
     it('should call onCancel callback only after onClose emits', () => {

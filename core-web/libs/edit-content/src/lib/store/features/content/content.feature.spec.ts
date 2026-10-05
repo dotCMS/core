@@ -63,7 +63,9 @@ describe('ContentFeature', () => {
         addBreadcrumb: vi.fn(),
         goToSavedContent: vi.fn(),
         leaveDeletedContent: vi.fn(),
-        goToRestoredVersion: vi.fn()
+        goToRestoredVersion: vi.fn(),
+        switchToLegacyEditor: vi.fn(),
+        leaveOnLoadError: vi.fn()
     };
 
     const createStore = createServiceFactory({
@@ -452,7 +454,13 @@ describe('ContentFeature', () => {
                 'edit.content.sidebar.information.error.initializing.content'
             );
 
-            expect(router.navigate).toHaveBeenCalledWith(['/c/content']);
+            // Where the author goes after a load error is the host's call: the full-page editor
+            // leaves for the listing, the side panel just closes (#37759, FR-029).
+            expect(spectator.inject(DotHttpErrorManagerService).handle).toHaveBeenCalledWith(
+                mockError
+            );
+            expect(mockHost.leaveOnLoadError).toHaveBeenCalledTimes(1);
+            expect(router.navigate).not.toHaveBeenCalled();
         }));
 
         it('should pass inode to getContentTypeWithRender for Velocity variable resolution', fakeAsync(() => {
@@ -505,7 +513,7 @@ describe('ContentFeature', () => {
             patchState(store, { contentlet: mockContentlet });
         });
 
-        it('should call updateContentType and navigate to legacy edit page on success', fakeAsync(() => {
+        it('should call updateContentType and hand the content to the host for the legacy editor on success', fakeAsync(() => {
             // Arrange
             const workflow1 = {
                 archived: false,
@@ -553,7 +561,24 @@ describe('ContentFeature', () => {
                 },
                 workflow: contentType.workflows.map((w: any) => w.id)
             });
-            expect(router.navigate).toHaveBeenCalledWith([`/c/content/`, '123']);
+            // The full-page editor goes to the legacy edit page; the side panel reopens the same
+            // content in its legacy panel. Either way it is the host's call (#37759, FR-028).
+            expect(mockHost.switchToLegacyEditor).toHaveBeenCalledWith(mockContentlet);
+            expect(router.navigate).not.toHaveBeenCalled();
+        }));
+
+        it('should not switch editors when the content type update fails', fakeAsync(() => {
+            patchState(store, {
+                contentType: { ...CONTENT_TYPE_MOCK, id: 'st-123', workflows: [] }
+            });
+            contentTypeService.updateContentType.mockReturnValue(
+                throwError(() => new HttpErrorResponse({ status: 500 }))
+            );
+
+            store.disableNewContentEditor();
+            tick();
+
+            expect(mockHost.switchToLegacyEditor).not.toHaveBeenCalled();
         }));
     });
 });

@@ -5,7 +5,6 @@ import { forkJoin, of, pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
-import { Router } from '@angular/router';
 
 import { switchMap } from 'rxjs/operators';
 
@@ -168,7 +167,6 @@ export function withContent() {
                 dotEditContentService = inject(DotEditContentService),
                 workflowActionService = inject(DotWorkflowsActionsService),
                 dotHttpErrorManagerService = inject(DotHttpErrorManagerService),
-                router = inject(Router),
                 dotWorkflowService = inject(DotWorkflowService),
                 dotMessageService = inject(DotMessageService),
                 host = inject(EDIT_CONTENT_HOST)
@@ -398,7 +396,9 @@ export function withContent() {
                                             error: 'edit.content.sidebar.information.error.initializing.content'
                                         });
                                         dotHttpErrorManagerService.handle(error);
-                                        router.navigate(['/c/content']);
+                                        // The host decides where to go: the full-page editor returns to the
+                                        // listing, the side panel closes (#37759, FR-029).
+                                        host.leaveOnLoadError();
                                     }
                                 })
                             );
@@ -434,8 +434,11 @@ export function withContent() {
                                 .pipe(
                                     tapResponse({
                                         next: () => {
-                                            // Redirect to legacy edit content page
-                                            router.navigate([`/c/content/`, contentlet.inode]);
+                                            // The host decides where the content opens in
+                                            // the legacy editor: the full-page editor goes to
+                                            // its edit page, the side panel reopens it in the
+                                            // legacy panel (#37759, FR-028).
+                                            host.switchToLegacyEditor(contentlet);
                                         },
                                         error: (error: HttpErrorResponse) => {
                                             dotHttpErrorManagerService.handle(error);

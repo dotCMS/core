@@ -57,6 +57,8 @@ describe('WorkflowFeature', () => {
         addBreadcrumb: vi.fn(),
         goToSavedContent: vi.fn(),
         leaveDeletedContent: vi.fn(),
+        switchToLegacyEditor: vi.fn(),
+        leaveOnLoadError: vi.fn(),
         goToRestoredVersion: vi.fn()
     };
 
