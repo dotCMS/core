@@ -143,10 +143,8 @@
                             </small>
                         }
                         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                            <div class="flex flex-col gap-1">
-                                <label
-                                    class="text-sm font-semibold"
-                                    [for]="$fieldId() + '-pattern-' + i">
+                            <div class="field">
+                                <label [for]="$fieldId() + '-pattern-' + i">
                                     {{ 'apps.uve.route.pattern' | dm }}
                                 </label>
                                 <input
@@ -161,18 +159,20 @@
                                     placeholder="/blogs/(.*)"
                                     data-testid="uve-route-pattern" />
                                 @if (showErrors && errors.pattern) {
-                                    <small class="p-error">{{ errors.pattern | dm }}</small>
+                                    <small
+                                        class="p-field-error"
+                                        data-testid="uve-route-pattern-error">
+                                        {{ errors.pattern | dm }}
+                                    </small>
                                 } @else {
-                                    <small class="text-gray-600">
+                                    <small class="p-field-hint">
                                         {{ 'apps.uve.route.pattern.hint' | dm }}
                                     </small>
                                 }
                             </div>
 
-                            <div class="flex flex-col gap-1">
-                                <label
-                                    class="text-sm font-semibold"
-                                    [for]="$fieldId() + '-url-' + i">
+                            <div class="field">
+                                <label [for]="$fieldId() + '-url-' + i">
                                     {{ 'apps.uve.route.url' | dm }}
                                 </label>
                                 <input
@@ -187,9 +187,11 @@
                                     placeholder="https://myspa.com:3000"
                                     data-testid="uve-route-url" />
                                 @if (showErrors && errors.url) {
-                                    <small class="p-error">{{ errors.url | dm }}</small>
+                                    <small class="p-field-error" data-testid="uve-route-url-error">
+                                        {{ errors.url | dm }}
+                                    </small>
                                 } @else {
-                                    <small class="text-gray-600">
+                                    <small class="p-field-hint">
                                         {{ 'apps.uve.route.url.hint' | dm }}
                                     </small>
                                 }
@@ -200,7 +202,7 @@
                             <span class="text-sm font-semibold">
                                 {{ 'apps.uve.route.dev.urls' | dm }}
                             </span>
-                            <small class="text-gray-600">
+                            <small class="p-field-hint">
                                 {{ 'apps.uve.route.dev.urls.hint' | dm }}
                             </small>
                             @for (devUrl of route.allowedDevURLs; track $index; let j = $index) {
@@ -232,7 +234,9 @@
                                             data-testid="uve-route-dev-url-remove"></button>
                                     </div>
                                     @if (showErrors && errors.allowedDevURLs[j]) {
-                                        <small class="p-error">
+                                        <small
+                                            class="p-field-error"
+                                            data-testid="uve-route-dev-url-error">
                                             {{ errors.allowedDevURLs[j] | dm }}
                                         </small>
                                     }

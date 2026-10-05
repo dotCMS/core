@@ -185,7 +185,7 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
             spectator = createComponent({ props: { formFields: secrets } as never });
             spectator.detectChanges();
 
-            expect(spectator.query('form')).not.toHaveClass('form--centered');
+            expect(spectator.query('form')).not.toHaveClass('mx-auto');
         });
 
         it('should center the form for apps in the centered list', () => {
@@ -194,7 +194,7 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
             });
             spectator.detectChanges();
 
-            expect(spectator.query('form')).toHaveClass('form--centered');
+            expect(spectator.query('form')).toHaveClass('mx-auto');
         });
     });
 

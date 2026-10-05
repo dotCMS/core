@@ -7,10 +7,6 @@
 :host {
     form {
         max-width: 64.25rem;
-
-        &.form--centered {
-            margin-inline: auto;
-        }
     }
 
     textarea {
@@ -18,137 +14,105 @@
         max-height: 21.5rem;
         overflow: auto !important;
     }
+}
 
-    ::ng-deep {
-        .p-field-hint {
-            markdown {
-                display: block;
-                line-height: 1.5;
+// Rendered markdown hints. Selectors stay fully qualified (not nested) to keep at most three
+// levels while preserving specificity, so the code-block rules still override the plain ones.
+:host ::ng-deep {
+    .p-field-hint markdown {
+        display: block;
+        line-height: 1.5;
+    }
 
-                p,
-                ul {
-                    margin: 0 0 spacing.$spacing-2;
-                }
+    .p-field-hint markdown p,
+    .p-field-hint markdown ul {
+        margin: 0 0 spacing.$spacing-2;
+    }
 
-                ul {
-                    padding-left: spacing.$spacing-4;
-                    list-style: disc;
-                }
+    .p-field-hint markdown ul {
+        padding-left: spacing.$spacing-4;
+        list-style: disc;
+    }
 
-                code {
-                    font-family: fonts.$font-code;
-                    font-size: 0.9em;
-                    background-color: colors.$color-palette-gray-100;
-                    border-radius: $border-radius-sm;
-                    padding: 0.1em 0.35em;
-                }
+    .p-field-hint markdown code {
+        font-family: fonts.$font-code;
+        font-size: 0.9em;
+        background-color: colors.$color-palette-gray-100;
+        border-radius: $border-radius-sm;
+        padding: 0.1em 0.35em;
+    }
 
-                // Code blocks upgraded by DotAppsCodeBlocksDirective: white panel with a
-                // purple header and copy button, using the primary palette so it follows the
-                // instance theme color.
-                .dot-code-block {
-                    background-color: colors.$white;
-                    border: 1px solid colors.$color-palette-primary-200;
-                    border-radius: $border-radius-md;
-                    margin-top: spacing.$spacing-2;
-                    overflow: hidden;
+    .p-field-hint markdown pre {
+        background-color: colors.$color-palette-gray-100;
+        border: 1px solid colors.$color-palette-gray-300;
+        border-radius: $border-radius-md;
+        margin: spacing.$spacing-2 0 0;
+        max-height: 22rem;
+        overflow: auto;
+        padding: spacing.$spacing-3;
+    }
 
-                    pre {
-                        background: none;
-                        border: 0;
-                        border-radius: 0;
-                        margin: 0;
-                    }
+    .p-field-hint markdown pre code {
+        background: none;
+        color: colors.$color-palette-gray-800;
+        font-size: fonts.$font-size-sm;
+        line-height: 1.6;
+        padding: 0;
+        white-space: pre;
+    }
 
-                    pre code {
-                        color: colors.$color-palette-gray-700;
-                        text-shadow: none;
-                    }
-                }
+    // Code blocks upgraded by DotAppsCodeBlocksDirective: white panel with a purple header,
+    // using the primary palette so it follows the instance theme color.
+    .p-field-hint markdown .dot-code-block {
+        background-color: colors.$white;
+        border: 1px solid colors.$color-palette-primary-200;
+        border-radius: $border-radius-md;
+        margin-top: spacing.$spacing-2;
+        overflow: hidden;
+    }
 
-                .dot-code-block__header {
-                    align-items: center;
-                    background-color: colors.$color-palette-primary-100;
-                    border-bottom: 1px solid colors.$color-palette-primary-200;
-                    display: flex;
-                    justify-content: space-between;
-                    padding: spacing.$spacing-1 spacing.$spacing-1 spacing.$spacing-1
-                        spacing.$spacing-3;
-                }
+    .p-field-hint markdown .dot-code-block pre {
+        background: none;
+        border: 0;
+        border-radius: 0;
+        margin: 0;
+    }
 
-                .dot-code-block__language {
-                    color: colors.$color-palette-primary-700;
-                    font-family: fonts.$font-code;
-                    font-size: fonts.$font-size-sm;
-                    font-weight: fonts.$font-weight-semi-bold;
-                    letter-spacing: 0.04em;
-                    text-transform: uppercase;
-                }
+    .p-field-hint markdown .dot-code-block pre code {
+        color: colors.$color-palette-gray-700;
+        text-shadow: none;
+    }
 
-                .dot-code-block__copy {
-                    align-items: center;
-                    background-color: colors.$white;
-                    border: 1px solid colors.$color-palette-primary-300;
-                    border-radius: $border-radius-sm;
-                    color: colors.$color-palette-primary;
-                    cursor: pointer;
-                    display: inline-flex;
-                    font-size: fonts.$font-size-sm;
-                    font-weight: fonts.$font-weight-semi-bold;
-                    gap: spacing.$spacing-1;
-                    padding: 0.2rem 0.6rem;
-                    transition:
-                        background-color 0.15s,
-                        color 0.15s;
+    .dot-code-block__header {
+        align-items: center;
+        background-color: colors.$color-palette-primary-100;
+        border-bottom: 1px solid colors.$color-palette-primary-200;
+        display: flex;
+        justify-content: space-between;
+        padding: spacing.$spacing-1 spacing.$spacing-1 spacing.$spacing-1 spacing.$spacing-3;
+    }
 
-                    &:hover {
-                        background-color: colors.$color-palette-primary;
-                        border-color: colors.$color-palette-primary;
-                        color: colors.$white;
-                    }
+    .dot-code-block__language {
+        color: colors.$color-palette-primary-700;
+        font-family: fonts.$font-code;
+        font-size: fonts.$font-size-sm;
+        font-weight: fonts.$font-weight-semi-bold;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
 
-                    &--copied,
-                    &--copied:hover {
-                        background-color: colors.$color-palette-primary;
-                        border-color: colors.$color-palette-primary;
-                        color: colors.$white;
-                    }
-                }
+    .dot-code-block__key {
+        color: colors.$color-palette-primary-700;
+        font-weight: fonts.$font-weight-semi-bold;
+    }
 
-                .dot-code-block__key {
-                    color: colors.$color-palette-primary-700;
-                    font-weight: fonts.$font-weight-semi-bold;
-                }
+    .dot-code-block__string {
+        color: colors.$color-palette-primary-500;
+    }
 
-                .dot-code-block__string {
-                    color: colors.$color-palette-primary-500;
-                }
-
-                .dot-code-block__number,
-                .dot-code-block__literal {
-                    color: colors.$color-palette-secondary-600;
-                }
-
-                pre {
-                    background-color: colors.$color-palette-gray-100;
-                    border: 1px solid colors.$color-palette-gray-300;
-                    border-radius: $border-radius-md;
-                    margin: spacing.$spacing-2 0 0;
-                    max-height: 22rem;
-                    overflow: auto;
-                    padding: spacing.$spacing-3;
-
-                    code {
-                        background: none;
-                        color: colors.$color-palette-gray-800;
-                        font-size: fonts.$font-size-sm;
-                        line-height: 1.6;
-                        padding: 0;
-                        white-space: pre;
-                    }
-                }
-            }
-        }
+    .dot-code-block__number,
+    .dot-code-block__literal {
+        color: colors.$color-palette-secondary-600;
     }
 }
 

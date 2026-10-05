@@ -1,11 +1,15 @@
 import {
     byTestId,
     createComponentFactory,
+    createHostFactory,
     mockProvider,
-    Spectator
+    Spectator,
+    SpectatorHost
 } from '@openng/spectator/vitest';
 import { MockComponent } from 'ng-mocks';
 import { MarkdownComponent } from 'ngx-markdown';
+
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
 import { DotMessageService } from '@dotcms/data-access';
 
@@ -144,6 +148,105 @@ describe('DotAppsUveConfigFieldComponent', () => {
         expect(lastEmitted().config.map((route) => route.pattern)).toEqual(['.*', '/blogs/(.*)']);
     });
 
+    it('should move a route up', () => {
+        spectator.component.writeValue(SAMPLE);
+        spectator.detectChanges();
+
+        spectator.click(spectator.queryAll(byTestId('uve-route-move-up'))[1]);
+
+        expect(lastEmitted().config.map((route) => route.pattern)).toEqual(['.*', '/blogs/(.*)']);
+    });
+
+    it('should disable move up on the first route and move down on the last', () => {
+        spectator.component.writeValue(SAMPLE);
+        spectator.detectChanges();
+
+        const up = spectator.queryAll<HTMLButtonElement>(byTestId('uve-route-move-up'));
+        const down = spectator.queryAll<HTMLButtonElement>(byTestId('uve-route-move-down'));
+        expect(up[0].disabled).toBe(true);
+        expect(down[1].disabled).toBe(true);
+    });
+
+    it('should remove a route', () => {
+        spectator.component.writeValue(SAMPLE);
+        spectator.detectChanges();
+
+        spectator.click(spectator.queryAll(byTestId('uve-route-remove'))[0]);
+
+        expect(lastEmitted().config.map((route) => route.pattern)).toEqual(['.*']);
+        expect(spectator.queryAll(byTestId('uve-route-pattern')).length).toBe(1);
+    });
+
+    it('should not allow removing the only route', () => {
+        spectator.component.writeValue('');
+        spectator.detectChanges();
+
+        expect(spectator.query<HTMLButtonElement>(byTestId('uve-route-remove'))?.disabled).toBe(
+            true
+        );
+    });
+
+    it('should remove a dev URL and drop the empty options', () => {
+        spectator.component.writeValue(
+            JSON.stringify({
+                config: [
+                    {
+                        pattern: '.*',
+                        url: 'https://a.com',
+                        options: { allowedDevURLs: ['http://localhost:3000'] }
+                    }
+                ]
+            })
+        );
+        spectator.detectChanges();
+
+        spectator.click(byTestId('uve-route-dev-url-remove'));
+
+        expect(spectator.query(byTestId('uve-route-dev-url'))).toBeFalsy();
+        expect(lastEmitted().config[0]).toEqual({ pattern: '.*', url: 'https://a.com' });
+    });
+
+    it('should keep the routes when switching to JSON and back', async () => {
+        spectator.component.writeValue(SAMPLE);
+        spectator.detectChanges();
+        await spectator.fixture.whenStable();
+        const modeButton = (label: string) =>
+            spectator
+                .queryAll<HTMLElement>('[data-testid="uve-mode-toggle"] p-togglebutton')
+                .find((button) => button.textContent?.includes(label));
+
+        spectator.click(modeButton('apps.uve.mode.json'));
+        // ngModel writes to the toggle asynchronously; let it settle before the next click.
+        await spectator.fixture.whenStable();
+        spectator.detectChanges();
+        expect(spectator.query(byTestId('uve-json-editor'))).toBeTruthy();
+
+        spectator.click(modeButton('apps.uve.mode.form'));
+        await spectator.fixture.whenStable();
+        spectator.detectChanges();
+
+        expect(spectator.query(byTestId('uve-json-editor'))).toBeFalsy();
+        expect(
+            spectator
+                .queryAll<HTMLInputElement>(byTestId('uve-route-pattern'))
+                .map((input) => input.value)
+        ).toEqual(['/blogs/(.*)', '.*']);
+        expect(lastEmitted()).toEqual(JSON.parse(SAMPLE));
+    });
+
+    it('should make every control read-only when disabled', () => {
+        spectator.component.writeValue(SAMPLE);
+        spectator.component.setDisabledState(true);
+        spectator.detectChanges();
+
+        expect(spectator.query<HTMLFieldSetElement>('fieldset')?.disabled).toBe(true);
+        expect(
+            spectator
+                .queryAll<HTMLButtonElement>(byTestId('uve-route-remove'))
+                .every((button) => button.disabled)
+        ).toBe(true);
+    });
+
     it('should emit the edited server URL as JSON', () => {
         spectator.component.writeValue(SAMPLE);
         spectator.detectChanges();
@@ -181,12 +284,32 @@ describe('DotAppsUveConfigFieldComponent', () => {
     it('should only show errors after the user leaves a field', () => {
         spectator.component.writeValue('');
         spectator.detectChanges();
-        expect(spectator.query('.p-error')).toBeFalsy();
+        expect(spectator.query(byTestId('uve-route-url-error'))).toBeFalsy();
 
         spectator.dispatchFakeEvent(byTestId('uve-route-url'), 'blur');
         spectator.detectChanges();
 
-        expect(spectator.query('.p-error')).toBeTruthy();
+        expect(spectator.query(byTestId('uve-route-url-error'))?.textContent?.trim()).toBe(
+            'apps.uve.route.error.required'
+        );
+    });
+
+    it('should show the RegEx and dev URL errors with their messages', () => {
+        spectator.component.writeValue(SAMPLE);
+        spectator.detectChanges();
+
+        spectator.typeInElement('([', spectator.queryAll(byTestId('uve-route-pattern'))[0]);
+        spectator.click(spectator.queryAll(byTestId('uve-route-dev-url-add'))[0]);
+        spectator.typeInElement('localhost', byTestId('uve-route-dev-url'));
+        spectator.dispatchFakeEvent(byTestId('uve-route-dev-url'), 'blur');
+        spectator.detectChanges();
+
+        expect(spectator.query(byTestId('uve-route-pattern-error'))?.textContent?.trim()).toBe(
+            'apps.uve.route.error.pattern'
+        );
+        expect(spectator.query(byTestId('uve-route-dev-url-error'))?.textContent?.trim()).toBe(
+            'apps.uve.route.error.url'
+        );
     });
 
     it('should show the hint only on the JSON tab', () => {
@@ -206,5 +329,73 @@ describe('DotAppsUveConfigFieldComponent', () => {
 
         expect(spectator.query(byTestId('uve-json-editor'))).toBeTruthy();
         expect(spectator.query(byTestId('uve-form-blocked'))).toBeTruthy();
+    });
+});
+
+describe('DotAppsUveConfigFieldComponent in a reactive form', () => {
+    let spectator: SpectatorHost<DotAppsUveConfigFieldComponent, { control: FormControl<string> }>;
+
+    const createHost = createHostFactory({
+        component: DotAppsUveConfigFieldComponent,
+        imports: [ReactiveFormsModule],
+        overrideComponents: [
+            [
+                DotAppsUveConfigFieldComponent,
+                {
+                    remove: {
+                        imports: [DotAppsConfigurationDetailJsonFieldComponent, MarkdownComponent]
+                    },
+                    add: {
+                        imports: [
+                            MockComponent(DotAppsConfigurationDetailJsonFieldComponent),
+                            MockComponent(MarkdownComponent)
+                        ]
+                    }
+                }
+            ]
+        ],
+        providers: [mockProvider(DotMessageService, { get: (key: string) => key })]
+    });
+
+    beforeEach(() => {
+        spectator = createHost(
+            '<dot-apps-uve-config-field fieldId="configuration" [formControl]="control" />',
+            { hostProps: { control: new FormControl(SAMPLE, { nonNullable: true }) } }
+        );
+    });
+
+    it('should push UI edits to the form control value', () => {
+        spectator.typeInElement(
+            'https://new.com',
+            spectator.queryAll(byTestId('uve-route-url'))[1]
+        );
+
+        expect(JSON.parse(spectator.hostComponent.control.value).config[1].url).toBe(
+            'https://new.com'
+        );
+    });
+
+    it('should mark the form control invalid while a route is broken, and valid again once fixed', () => {
+        expect(spectator.hostComponent.control.valid).toBe(true);
+
+        const url = spectator.queryAll(byTestId('uve-route-url'))[1];
+        spectator.typeInElement('not-a-url', url);
+        expect(spectator.hostComponent.control.errors).toEqual({ uveInvalidRoutes: true });
+
+        spectator.typeInElement('https://fixed.com', url);
+        expect(spectator.hostComponent.control.errors).toBeNull();
+    });
+
+    it('should render the value set on the form control', () => {
+        spectator.hostComponent.control.setValue(
+            JSON.stringify({ config: [{ pattern: '/docs/(.*)', url: 'https://docs.com' }] })
+        );
+        spectator.detectChanges();
+
+        expect(
+            spectator
+                .queryAll<HTMLInputElement>(byTestId('uve-route-pattern'))
+                .map((input) => input.value)
+        ).toEqual(['/docs/(.*)']);
     });
 });

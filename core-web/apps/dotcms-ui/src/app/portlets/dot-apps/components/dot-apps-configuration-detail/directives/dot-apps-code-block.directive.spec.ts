@@ -59,9 +59,10 @@ describe('DotAppsCodeBlocksDirective', () => {
         expect(spectator.element.querySelector('.dot-code-block__language')?.textContent).toBe(
             'json'
         );
-        expect(
-            spectator.element.querySelector('[data-testid="code-block-copy"]')?.textContent
-        ).toContain('apps.code.block.copy');
+        const copyButton = spectator.element.querySelector(
+            '.dot-code-block__header dot-copy-button [data-testid="copy-to-clipboard"]'
+        );
+        expect(copyButton?.textContent).toContain('apps.code.block.copy');
     });
 
     it('should color JSON keys and values', () => {
@@ -77,17 +78,28 @@ describe('DotAppsCodeBlocksDirective', () => {
         expect(spectator.element.querySelector('.dot-code-block__number')?.textContent).toBe('3');
     });
 
-    it('should copy the raw code and show the copied state', async () => {
+    it('should copy the raw code with the shared copy button', async () => {
         render(JSON_BLOCK);
 
         spectator.click(
-            spectator.element.querySelector<HTMLElement>('[data-testid="code-block-copy"]') ??
-                undefined
+            spectator.element.querySelector<HTMLElement>(
+                '[data-testid="copy-to-clipboard"] button'
+            ) ?? undefined
         );
         await new Promise((resolve) => setTimeout(resolve));
 
         expect(copy).toHaveBeenCalledWith('{"url": "https://a.com", "on": true, "n": 3}');
-        expect(spectator.element.querySelector('.dot-code-block__copy--copied')).toBeTruthy();
+    });
+
+    it('should create one copy button per code block', () => {
+        render(JSON_BLOCK + '<pre><code>plain text</code></pre>');
+
+        expect(spectator.element.querySelectorAll('dot-copy-button').length).toBe(2);
+        expect(
+            Array.from(spectator.element.querySelectorAll('.dot-code-block__language')).map(
+                (label) => label.textContent
+            )
+        ).toEqual(['json', 'code']);
     });
 
     it('should not wrap the same block twice', () => {

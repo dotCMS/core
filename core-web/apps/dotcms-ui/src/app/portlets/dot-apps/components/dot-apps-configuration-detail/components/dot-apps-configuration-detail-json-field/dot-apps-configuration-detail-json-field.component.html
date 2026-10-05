@@ -16,11 +16,11 @@
 
     <div class="flex items-center justify-between gap-2">
         @if (parseError) {
-            <small class="p-error" data-testid="json-field-error">
+            <small class="p-field-error" data-testid="json-field-error">
                 {{ 'apps.json.field.invalid' | dm: [parseError] }}
             </small>
         } @else {
-            <small class="text-color-secondary" data-testid="json-field-valid">
+            <small class="p-field-hint" data-testid="json-field-valid">
                 {{ 'apps.json.field.valid' | dm }}
             </small>
         }

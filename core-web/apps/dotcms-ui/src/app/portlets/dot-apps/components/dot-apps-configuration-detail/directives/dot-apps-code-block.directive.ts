@@ -1,12 +1,18 @@
 import { MarkdownComponent } from 'ngx-markdown';
 
-import { DestroyRef, Directive, ElementRef, inject } from '@angular/core';
+import {
+    ApplicationRef,
+    ComponentRef,
+    createComponent,
+    DestroyRef,
+    Directive,
+    ElementRef,
+    EnvironmentInjector,
+    inject
+} from '@angular/core';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotClipboardUtil } from '@dotcms/ui';
-
-/** How long the "Copied" state stays on the button. */
-const COPIED_RESET_MS = 2000;
+import { DotCopyButtonComponent } from '@dotcms/ui';
 
 const JSON_TOKEN =
     /("(?:\\.|[^"\\])*")(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?/g;
@@ -45,24 +51,28 @@ export function highlightJson(code: string): string {
 
 /**
  * Upgrades the code blocks of a rendered `<markdown>` hint: adds a header with the language and a
- * Copy button, and colors JSON. ngx-markdown's own copy button needs clipboard.js, which the app
- * doesn't load, so this does it with {@link DotClipboardUtil} instead.
+ * {@link DotCopyButtonComponent}, and colors JSON. ngx-markdown's own copy button needs
+ * clipboard.js, which the app doesn't load. The markdown is rendered outside Angular's templates,
+ * so the copy buttons are created and attached to the application by hand.
  */
 @Directive({
-    selector: 'markdown[dotAppsCodeBlocks]',
-    providers: [DotClipboardUtil]
+    selector: 'markdown[dotAppsCodeBlocks]'
 })
 export class DotAppsCodeBlocksDirective {
     readonly #host = inject<ElementRef<HTMLElement>>(ElementRef);
-    readonly #clipboard = inject(DotClipboardUtil);
+    readonly #appRef = inject(ApplicationRef);
+    readonly #environmentInjector = inject(EnvironmentInjector);
     readonly #dotMessageService = inject(DotMessageService);
-    readonly #timers = new Set<ReturnType<typeof setTimeout>>();
+    readonly #copyButtons: ComponentRef<DotCopyButtonComponent>[] = [];
 
     constructor() {
         const subscription = inject(MarkdownComponent).ready.subscribe(() => this.enhance());
         inject(DestroyRef).onDestroy(() => {
             subscription.unsubscribe();
-            this.#timers.forEach((timer) => clearTimeout(timer));
+            this.#copyButtons.forEach((ref) => {
+                this.#appRef.detachView(ref.hostView);
+                ref.destroy();
+            });
         });
     }
 
@@ -94,41 +104,21 @@ export class DotAppsCodeBlocksDirective {
         label.className = 'dot-code-block__language';
         label.textContent = language || 'code';
 
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'dot-code-block__copy';
-        button.setAttribute('data-testid', 'code-block-copy');
-        this.setButtonState(button, false);
-        button.addEventListener('click', () => this.copy(button, text));
-
-        header.append(label, button);
+        header.append(label, this.createCopyButton(text.trim()));
         pre.replaceWith(wrapper);
         wrapper.append(header, pre);
     }
 
-    private async copy(button: HTMLButtonElement, text: string): Promise<void> {
-        const copied = await this.#clipboard.copy(text.trim());
-        if (!copied) {
-            return;
-        }
+    private createCopyButton(text: string): HTMLElement {
+        const ref = createComponent(DotCopyButtonComponent, {
+            environmentInjector: this.#environmentInjector
+        });
+        ref.setInput('copy', text);
+        ref.setInput('label', this.#dotMessageService.get('apps.code.block.copy'));
+        this.#appRef.attachView(ref.hostView);
+        ref.changeDetectorRef.detectChanges();
+        this.#copyButtons.push(ref);
 
-        this.setButtonState(button, true);
-        const timer = setTimeout(() => {
-            this.#timers.delete(timer);
-            this.setButtonState(button, false);
-        }, COPIED_RESET_MS);
-        this.#timers.add(timer);
-    }
-
-    private setButtonState(button: HTMLButtonElement, copied: boolean): void {
-        const icon = document.createElement('i');
-        icon.className = copied ? 'pi pi-check' : 'pi pi-copy';
-        const label = document.createElement('span');
-        label.textContent = this.#dotMessageService.get(
-            copied ? 'apps.code.block.copied' : 'apps.code.block.copy'
-        );
-
-        button.classList.toggle('dot-code-block__copy--copied', copied);
-        button.replaceChildren(icon, label);
+        return ref.location.nativeElement;
     }
 }

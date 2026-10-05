@@ -2,12 +2,14 @@ import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 import {
     byTestId,
     createComponentFactory,
+    createHostFactory,
     mockProvider,
-    Spectator
+    Spectator,
+    SpectatorHost
 } from '@openng/spectator/vitest';
 
 import { Component, input, output } from '@angular/core';
-import { FormControl } from '@angular/forms';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
 import { DotMessageService } from '@dotcms/data-access';
 
@@ -199,5 +201,53 @@ describe('DotAppsConfigurationDetailJsonFieldComponent', () => {
 
             expect(editor.value).toBe(VALID_JSON);
         });
+    });
+});
+
+describe('DotAppsConfigurationDetailJsonFieldComponent in a reactive form', () => {
+    let spectator: SpectatorHost<
+        DotAppsConfigurationDetailJsonFieldComponent,
+        { control: FormControl<string> }
+    >;
+    let editor: FakeEditor;
+
+    const createHost = createHostFactory({
+        component: DotAppsConfigurationDetailJsonFieldComponent,
+        imports: [ReactiveFormsModule],
+        overrideComponents: [
+            [
+                DotAppsConfigurationDetailJsonFieldComponent,
+                {
+                    remove: { imports: [MonacoEditorModule] },
+                    add: { imports: [MonacoEditorStubComponent] }
+                }
+            ]
+        ],
+        providers: [mockProvider(DotMessageService, { get: (key: string) => key })]
+    });
+
+    beforeEach(() => {
+        spectator = createHost(
+            '<dot-apps-configuration-detail-json-field fieldId="configuration" [formControl]="control" />',
+            { hostProps: { control: new FormControl(VALID_JSON, { nonNullable: true }) } }
+        );
+        editor = new FakeEditor();
+        spectator.query(MonacoEditorStubComponent)?.init.emit(editor);
+    });
+
+    it('should load the form control value into the editor', () => {
+        expect(editor.value).toBe(VALID_JSON);
+        expect(spectator.hostComponent.control.valid).toBe(true);
+    });
+
+    it('should mark the form control invalid while the JSON is broken, and valid again once fixed', () => {
+        editor.type(INVALID_JSON);
+        expect(spectator.hostComponent.control.value).toBe(INVALID_JSON);
+        expect(spectator.hostComponent.control.errors).toEqual({
+            invalidJson: { message: expect.any(String) }
+        });
+
+        editor.type(VALID_JSON);
+        expect(spectator.hostComponent.control.errors).toBeNull();
     });
 });
