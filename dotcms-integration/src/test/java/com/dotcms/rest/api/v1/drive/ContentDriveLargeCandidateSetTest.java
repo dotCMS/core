@@ -66,15 +66,19 @@ public class ContentDriveLargeCandidateSetTest extends IntegrationTestBase {
     private static final String BODY_VAR = "body";
     private static final String TAGLINE_VAR = "tagline";
 
-    /** Low enough that each sub-query holds a few dozen inodes, high enough for any base query. */
-    private static final int LOWERED_QUERY_LENGTH = 2_000;
+    /**
+     * Low enough that each sub-query holds only ~130 inodes, so the small site's ~300 candidates
+     * span several sub-queries; high enough to leave the room for 100 inodes that Content Drive
+     * requires before it runs a search at all (issue #37488).
+     */
+    private static final int LOWERED_QUERY_LENGTH = 6_000;
     private static final int PAGE_SIZE = 10;
     /** Upper bound on pages fetched, so a broken cursor fails the test instead of hanging it. */
     private static final int MAX_PAGES = 500;
 
     private static final int TITLE_MATCHES = 30;
     private static final int BODY_ONLY_MATCHES = 30;
-    private static final int NON_MATCHES = 60;
+    private static final int NON_MATCHES = 240;
 
     /** More than one DB chunk's clause-sized ES batch (~876) inside the 900-row default chunk. */
     private static final int REAL_LIMIT_CANDIDATES = 950;
@@ -139,9 +143,11 @@ public class ContentDriveLargeCandidateSetTest extends IntegrationTestBase {
                 taglineMatchInodes.add(inode);
             }
         }
+        // Only their DB candidacy matters (they fill the sub-queries), so they skip waiting for
+        // the index.
         for (int i = 0; i < NON_MATCHES; i++) {
             seed(smallSite, "unrelated heading " + i, "unrelated body " + i, "no tagline",
-                    IndexPolicy.WAIT_FOR);
+                    IndexPolicy.DEFER);
         }
 
         // Large site: only the DB candidate count matters for the query length, so the

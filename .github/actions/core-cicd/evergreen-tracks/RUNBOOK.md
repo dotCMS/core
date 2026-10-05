@@ -51,6 +51,30 @@ uv run evergreen-tracks promote --repo dotcms/dotcms --tracks standard,trailing
 ```
 The tainted version must not appear as any track's target.
 
+### GitHub Release title and site record
+
+On `apply`, taint/untaint on `dotcms/dotcms` also retitles the GitHub Release `v<version>` to
+`⚠️ TAINTED Release <v>` (untaint removes the marker), and the corpsites `EvergreenState` record
+is re-synced. In `dry-run` the log shows `DRY-RUN would retitle v<version>: '<old>' -> '<new>'`.
+
+If the title step fails, #dot-releases gets "GitHub Release title NOT updated": the registry
+action DID apply. Fix the title by hand (`gh release edit v<version> --title ...`) or re-run.
+
+**One-time title backfill:** versions tainted before this feature keep their old titles. Re-run
+`evergreen-tracks-admin` with `action` = `taint`, `mode` = `apply` for `26.08.28-01` and
+`26.08.31-01`. The registry taint is idempotent; the title is set.
+
+### Site sync failure and drift notices
+
+- **"Evergreen site sync FAILED"**: Docker Hub is unaffected. The reason is in the message.
+  "Docker Hub state read failed" means nothing was written; "no release row for ..." means a track
+  version has no release entry on the site yet (publish it, or wait for the release publish). Any
+  other reason: check the run log, then re-run the failed job. The next promote run (daily) also
+  heals it.
+- **"Evergreen site record drifted"**: after the daily sync the record still differs from Hub in
+  the named fields. Re-run `evergreen-tracks-promote`; if it persists, check the record on
+  corpsites for a human edit or a stuck publish.
+
 ### ⚠️ Taint does not roll anything back
 
 Taint only blocks **future** promotion. If a track *already* points at the version you just
