@@ -211,4 +211,35 @@ public class SamlProtocolHandlerTest {
 
         assertFalse(result.getSecrets().containsKey("emailAttribute"));
     }
+
+    @Test
+    public void buildSecrets_rejects_signature_validation_type_none() {
+        assertThrows(javax.ws.rs.BadRequestException.class, () -> handler.buildSecrets(
+                Map.of("privateKey", "****", "publicCert", "stored-CERT", "signatureValidationType", "none"),
+                Optional.of(existingKeypair())));
+    }
+
+    @Test
+    public void buildSecrets_rejects_unknown_signature_validation_type() {
+        assertThrows(javax.ws.rs.BadRequestException.class, () -> handler.buildSecrets(
+                Map.of("privateKey", "****", "publicCert", "stored-CERT", "signatureValidationType", "signature"),
+                Optional.of(existingKeypair())));
+    }
+
+    @Test
+    public void buildSecrets_stores_supported_signature_validation_type_normalized() {
+        final AppSecrets result = handler.buildSecrets(
+                Map.of("privateKey", "****", "publicCert", "stored-CERT", "signatureValidationType", " Assertion "),
+                Optional.of(existingKeypair()));
+
+        assertEquals("assertion", result.getSecrets().get("signatureValidationType").getString());
+    }
+
+    private static AppSecrets existingKeypair() {
+        return AppSecrets.builder()
+                .withKey(DotSamlProxyFactory.SAML_APP_CONFIG_KEY)
+                .withHiddenSecret("privateKey", "stored-PEM")
+                .withSecret("publicCert", "stored-CERT")
+                .build();
+    }
 }

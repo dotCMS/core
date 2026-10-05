@@ -269,12 +269,23 @@ export class DotQueryToolPageComponent implements OnInit {
         const sort = params.get('sort') ?? '';
         const userId = params.get('userId') ?? '';
 
-        this.store.setQuery(query);
+        // Only write `query` when the URL actually carries `q`. The store's `withPersistedQuery`
+        // restored the user's last query in its own onInit, which runs before this — writing the
+        // absent param's '' over it is what made Query Tool lose the query on every return to the
+        // portlet while ES Search and Velocity Playground kept theirs (neither reads URL params).
+        // `has` rather than a truthiness check, so an explicit `?q=` in a shared link still clears
+        // the editor instead of silently resurrecting the previous query.
+        if (params.has('q')) {
+            this.store.setQuery(query);
+        }
+
         this.store.setOffset(offset);
         this.store.setLimit(limit);
         this.store.setSort(sort);
         this.store.setUserId(userId);
 
+        // Auto-run only for a deep link. A restored query is left in the editor unexecuted, as in
+        // the sibling dev tools — returning to the portlet should not fire a search by itself.
         if (query.trim()) {
             this.store.runSearch();
         }
