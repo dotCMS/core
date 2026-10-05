@@ -81,12 +81,14 @@
                                 <dot-apps-uve-config-field
                                     data-testid="uve-config-field"
                                     [fieldId]="field.name"
+                                    [label]="field.label"
                                     [hint]="field.hint"
                                     [formControlName]="field.name" />
                             } @else {
                                 <dot-apps-configuration-detail-json-field
                                     data-testid="json-field"
                                     [fieldId]="field.name"
+                                    [label]="field.label"
                                     [formControlName]="field.name" />
                                 <span class="p-field-hint">
                                     <markdown dotAppsCodeBlocks>{{ field.hint }}</markdown>

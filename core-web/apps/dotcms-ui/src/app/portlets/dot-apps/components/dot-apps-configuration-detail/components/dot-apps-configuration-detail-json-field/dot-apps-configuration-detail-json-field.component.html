@@ -6,6 +6,8 @@
         [class.border-red-500]="parseError"
         [class.border-surface-300]="!parseError"
         [id]="$fieldId()"
+        role="group"
+        [attr.aria-label]="$label() || null"
         data-testid="json-field-editor-wrapper">
         <ngx-monaco-editor
             class="h-full"

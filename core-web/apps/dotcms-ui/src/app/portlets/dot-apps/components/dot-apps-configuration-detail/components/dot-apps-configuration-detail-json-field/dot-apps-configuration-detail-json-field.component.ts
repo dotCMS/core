@@ -83,6 +83,9 @@ export class DotAppsConfigurationDetailJsonFieldComponent
     /** Id given to the editor wrapper, so the field label can point at it. */
     $fieldId = input.required<string>({ alias: 'fieldId' });
 
+    /** Accessible name of the editor; a `<label for>` can't name the Monaco editor's `<div>`. */
+    $label = input<string>('', { alias: 'label' });
+
     readonly $value = signal<string>('');
     readonly $isDisabled = signal<boolean>(false);
     readonly $parseError = computed(() => getJsonParseError(this.$value()));
@@ -93,7 +96,8 @@ export class DotAppsConfigurationDetailJsonFieldComponent
         tabSize: JSON_INDENT,
         formatOnPaste: true,
         wordWrap: 'on',
-        readOnly: this.$isDisabled()
+        readOnly: this.$isDisabled(),
+        ariaLabel: this.$label()
     }));
 
     /** Set once Monaco has created the editor. */
@@ -115,11 +119,11 @@ export class DotAppsConfigurationDetailJsonFieldComponent
         inject(DestroyRef).onDestroy(() => this.#contentListener?.dispose());
     }
 
-    private onChange = (_value: string) => {
+    #onChange = (_value: string) => {
         // Replaced by registerOnChange
     };
 
-    private onTouched = () => {
+    #onTouched = () => {
         // Replaced by registerOnTouched
     };
 
@@ -128,11 +132,11 @@ export class DotAppsConfigurationDetailJsonFieldComponent
     }
 
     registerOnChange(fn: (value: string) => void): void {
-        this.onChange = fn;
+        this.#onChange = fn;
     }
 
     registerOnTouched(fn: () => void): void {
-        this.onTouched = fn;
+        this.#onTouched = fn;
     }
 
     setDisabledState(isDisabled: boolean): void {
@@ -176,8 +180,8 @@ export class DotAppsConfigurationDetailJsonFieldComponent
         }
 
         this.$value.set(value);
-        this.onChange(value);
-        this.onTouched();
+        this.#onChange(value);
+        this.#onTouched();
     }
 
     /** Re-indents the current JSON. Does nothing while the JSON is invalid. */

@@ -36,10 +36,10 @@
 
     .p-field-hint markdown code {
         font-family: fonts.$font-code;
-        font-size: 0.9em;
+        font-size: fonts.$font-size-sm;
         background-color: colors.$color-palette-gray-100;
         border-radius: $border-radius-sm;
-        padding: 0.1em 0.35em;
+        padding: 0 spacing.$spacing-0;
     }
 
     .p-field-hint markdown pre {
@@ -47,7 +47,7 @@
         border: 1px solid colors.$color-palette-gray-300;
         border-radius: $border-radius-md;
         margin: spacing.$spacing-2 0 0;
-        max-height: 22rem;
+        max-height: 21.5rem; // same cap as the textarea above
         overflow: auto;
         padding: spacing.$spacing-3;
     }
@@ -97,7 +97,6 @@
         font-family: fonts.$font-code;
         font-size: fonts.$font-size-sm;
         font-weight: fonts.$font-weight-semi-bold;
-        letter-spacing: 0.04em;
         text-transform: uppercase;
     }
 

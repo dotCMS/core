@@ -81,10 +81,10 @@ export class DotAppsCodeBlocksDirective {
         const blocks = this.#host.nativeElement.querySelectorAll<HTMLPreElement>(
             'pre:not([data-dot-code-block])'
         );
-        blocks.forEach((pre) => this.wrap(pre));
+        blocks.forEach((pre) => this.#wrap(pre));
     }
 
-    private wrap(pre: HTMLPreElement): void {
+    #wrap(pre: HTMLPreElement): void {
         const code = pre.querySelector('code');
         const text = (code ?? pre).textContent ?? '';
         const language = /language-(\w+)/.exec(code?.className ?? '')?.[1] ?? '';
@@ -104,12 +104,12 @@ export class DotAppsCodeBlocksDirective {
         label.className = 'dot-code-block__language';
         label.textContent = language || 'code';
 
-        header.append(label, this.createCopyButton(text.trim()));
+        header.append(label, this.#createCopyButton(text.trim()));
         pre.replaceWith(wrapper);
         wrapper.append(header, pre);
     }
 
-    private createCopyButton(text: string): HTMLElement {
+    #createCopyButton(text: string): HTMLElement {
         const ref = createComponent(DotCopyButtonComponent, {
             environmentInjector: this.#environmentInjector
         });

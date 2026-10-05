@@ -97,6 +97,9 @@ export class DotAppsUveConfigFieldComponent implements ControlValueAccessor, Val
     /** Id given to the field wrapper, so the field label can point at it. */
     $fieldId = input.required<string>({ alias: 'fieldId' });
 
+    /** Accessible name of the whole route editor, which a `<label for>` can't provide. */
+    $label = input<string>('', { alias: 'label' });
+
     /** Markdown help for the raw JSON, shown only on the JSON tab; the route form explains itself. */
     $hint = input<string>('', { alias: 'hint' });
 
@@ -126,7 +129,7 @@ export class DotAppsUveConfigFieldComponent implements ControlValueAccessor, Val
     });
 
     /** Card titles that say what each route does, e.g. "/blogs/(.*) → myspa.blogs.com". */
-    readonly $titles = computed(() => this.$routes().map((route) => this.getRouteTitle(route)));
+    readonly $titles = computed(() => this.$routes().map((route) => this.#getRouteTitle(route)));
 
     readonly $modeOptions = computed(() => [
         {
@@ -137,15 +140,15 @@ export class DotAppsUveConfigFieldComponent implements ControlValueAccessor, Val
         { label: this.#dotMessageService.get('apps.uve.mode.json'), value: 'json' }
     ]);
 
-    private onChange = (_value: string) => {
+    #onChange = (_value: string) => {
         // Replaced by registerOnChange
     };
 
-    private onTouched = () => {
+    #onTouched = () => {
         // Replaced by registerOnTouched
     };
 
-    private onValidatorChange = () => {
+    #onValidatorChange = () => {
         // Replaced by registerOnValidatorChange
     };
 
@@ -168,15 +171,15 @@ export class DotAppsUveConfigFieldComponent implements ControlValueAccessor, Val
     }
 
     registerOnChange(fn: (value: string) => void): void {
-        this.onChange = fn;
+        this.#onChange = fn;
     }
 
     registerOnTouched(fn: () => void): void {
-        this.onTouched = fn;
+        this.#onTouched = fn;
     }
 
     registerOnValidatorChange(fn: () => void): void {
-        this.onValidatorChange = fn;
+        this.#onValidatorChange = fn;
     }
 
     setDisabledState(isDisabled: boolean): void {
@@ -211,7 +214,7 @@ export class DotAppsUveConfigFieldComponent implements ControlValueAccessor, Val
         if (mode === 'json') {
             this.$jsonText.set(serializeUveConfig(this.$routes()));
             this.$mode.set('json');
-            this.onValidatorChange();
+            this.#onValidatorChange();
 
             return;
         }
@@ -225,7 +228,7 @@ export class DotAppsUveConfigFieldComponent implements ControlValueAccessor, Val
 
         this.$routes.set(routes.length ? routes : [createUveRoute(UVE_CATCH_ALL_PATTERN)]);
         this.$mode.set('form');
-        this.emitRoutes();
+        this.#emitRoutes();
     }
 
     /**
@@ -236,14 +239,14 @@ export class DotAppsUveConfigFieldComponent implements ControlValueAccessor, Val
     protected onJsonChange(value: string): void {
         this.$jsonText.set(value);
         this.$formBlocked.set(parseUveConfig(value) === null);
-        this.onChange(value);
-        this.onTouched();
+        this.#onChange(value);
+        this.#onTouched();
     }
 
     /** Adds an empty route at the end of the list. */
     protected addRoute(): void {
         this.$routes.set([...this.$routes(), createUveRoute()]);
-        this.emitRoutes();
+        this.#emitRoutes();
     }
 
     /**
@@ -253,7 +256,7 @@ export class DotAppsUveConfigFieldComponent implements ControlValueAccessor, Val
      */
     protected removeRoute(index: number): void {
         this.$routes.set(this.$routes().filter((_, i) => i !== index));
-        this.emitRoutes();
+        this.#emitRoutes();
     }
 
     /**
@@ -271,7 +274,7 @@ export class DotAppsUveConfigFieldComponent implements ControlValueAccessor, Val
 
         [routes[index], routes[target]] = [routes[target], routes[index]];
         this.$routes.set(routes);
-        this.emitRoutes();
+        this.#emitRoutes();
     }
 
     /**
@@ -282,7 +285,7 @@ export class DotAppsUveConfigFieldComponent implements ControlValueAccessor, Val
      * @param value the new text
      */
     protected updateRoute(index: number, key: 'pattern' | 'url', value: string): void {
-        this.patchRoute(index, (route) => ({ ...route, [key]: value }));
+        this.#patchRoute(index, (route) => ({ ...route, [key]: value }));
     }
 
     /**
@@ -291,7 +294,7 @@ export class DotAppsUveConfigFieldComponent implements ControlValueAccessor, Val
      * @param index position of the route
      */
     protected addDevUrl(index: number): void {
-        this.patchRoute(index, (route) => ({
+        this.#patchRoute(index, (route) => ({
             ...route,
             allowedDevURLs: [...route.allowedDevURLs, '']
         }));
@@ -305,7 +308,7 @@ export class DotAppsUveConfigFieldComponent implements ControlValueAccessor, Val
      * @param value the new text
      */
     protected updateDevUrl(index: number, urlIndex: number, value: string): void {
-        this.patchRoute(index, (route) => ({
+        this.#patchRoute(index, (route) => ({
             ...route,
             allowedDevURLs: route.allowedDevURLs.map((devUrl, i) =>
                 i === urlIndex ? value : devUrl
@@ -320,7 +323,7 @@ export class DotAppsUveConfigFieldComponent implements ControlValueAccessor, Val
      * @param urlIndex position of the dev URL
      */
     protected removeDevUrl(index: number, urlIndex: number): void {
-        this.patchRoute(index, (route) => ({
+        this.#patchRoute(index, (route) => ({
             ...route,
             allowedDevURLs: route.allowedDevURLs.filter((_, i) => i !== urlIndex)
         }));
@@ -329,10 +332,10 @@ export class DotAppsUveConfigFieldComponent implements ControlValueAccessor, Val
     /** Called when the user leaves any input: from now on, errors are shown. */
     protected onBlur(): void {
         this.$showErrors.set(true);
-        this.onTouched();
+        this.#onTouched();
     }
 
-    private getRouteTitle(route: UveRoute): UveRouteTitle {
+    #getRouteTitle(route: UveRoute): UveRouteTitle {
         const pattern = route.pattern.trim();
         const url = route.url.trim();
 
@@ -351,15 +354,15 @@ export class DotAppsUveConfigFieldComponent implements ControlValueAccessor, Val
         return { from, to, full: `${from} → ${to}` };
     }
 
-    private patchRoute(index: number, update: (route: UveRoute) => UveRoute): void {
+    #patchRoute(index: number, update: (route: UveRoute) => UveRoute): void {
         this.$routes.set(this.$routes().map((route, i) => (i === index ? update(route) : route)));
-        this.emitRoutes();
+        this.#emitRoutes();
     }
 
-    private emitRoutes(): void {
+    #emitRoutes(): void {
         const json = serializeUveConfig(this.$routes());
         this.$jsonText.set(json);
-        this.onChange(json);
-        this.onValidatorChange();
+        this.#onChange(json);
+        this.#onValidatorChange();
     }
 }

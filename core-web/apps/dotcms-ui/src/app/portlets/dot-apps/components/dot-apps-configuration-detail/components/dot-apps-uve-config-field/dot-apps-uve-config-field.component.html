@@ -5,7 +5,12 @@
 @let showErrors = $showErrors();
 @let disabled = $isDisabled();
 
-<div class="flex flex-col gap-3" [id]="$fieldId()" data-testid="uve-config-field">
+<div
+    class="flex flex-col gap-3"
+    [id]="$fieldId()"
+    role="group"
+    [attr.aria-label]="$label() || null"
+    data-testid="uve-config-field">
     <div class="flex flex-wrap items-center justify-between gap-2">
         <span class="text-sm text-gray-600">
             {{ ($mode() === 'form' ? 'apps.uve.routes.order.hint' : 'apps.uve.json.hint') | dm }}
@@ -32,6 +37,7 @@
     @if ($mode() === 'json') {
         <dot-apps-configuration-detail-json-field
             [fieldId]="$fieldId() + '-json'"
+            [label]="$label()"
             [ngModel]="$jsonText()"
             (ngModelChange)="onJsonChange($event)"
             [disabled]="disabled"
@@ -148,13 +154,14 @@
                                     {{ 'apps.uve.route.pattern' | dm }}
                                 </label>
                                 <input
+                                    #patternInput
                                     pInputText
                                     class="font-mono"
                                     [id]="$fieldId() + '-pattern-' + i"
                                     [value]="route.pattern"
                                     [class.ng-invalid]="showErrors && errors.pattern"
                                     [class.ng-dirty]="showErrors && errors.pattern"
-                                    (input)="updateRoute(i, 'pattern', $any($event.target).value)"
+                                    (input)="updateRoute(i, 'pattern', patternInput.value)"
                                     (blur)="onBlur()"
                                     placeholder="/blogs/(.*)"
                                     data-testid="uve-route-pattern" />
@@ -176,13 +183,14 @@
                                     {{ 'apps.uve.route.url' | dm }}
                                 </label>
                                 <input
+                                    #urlInput
                                     pInputText
                                     type="url"
                                     [id]="$fieldId() + '-url-' + i"
                                     [value]="route.url"
                                     [class.ng-invalid]="showErrors && errors.url"
                                     [class.ng-dirty]="showErrors && errors.url"
-                                    (input)="updateRoute(i, 'url', $any($event.target).value)"
+                                    (input)="updateRoute(i, 'url', urlInput.value)"
                                     (blur)="onBlur()"
                                     placeholder="https://myspa.com:3000"
                                     data-testid="uve-route-url" />
@@ -209,6 +217,7 @@
                                 <div class="flex flex-col gap-1">
                                     <div class="flex items-center gap-2">
                                         <input
+                                            #devUrlInput
                                             pInputText
                                             type="url"
                                             class="flex-1"
@@ -220,7 +229,7 @@
                                             [class.ng-dirty]="
                                                 showErrors && errors.allowedDevURLs[j]
                                             "
-                                            (input)="updateDevUrl(i, j, $any($event.target).value)"
+                                            (input)="updateDevUrl(i, j, devUrlInput.value)"
                                             (blur)="onBlur()"
                                             placeholder="http://localhost:3000"
                                             data-testid="uve-route-dev-url" />
