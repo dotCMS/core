@@ -5,17 +5,31 @@
         <label dotFieldRequired for="tools-section-name">
             {{ 'tools.form.name' | dm }}
         </label>
+        <!--
+            Error visibility reads the control's own invalid/touched flags
+            directly instead of a `computed()` that wrapped them: those are
+            not Angular signals, so an `untracked` boundary around them left
+            the computed stuck on its initial value and the stale "name
+            required" branch kept winning once the server's duplicate-name
+            message arrived.
+        -->
         <input
             pInputText
             id="tools-section-name"
             formControlName="name"
             [placeholder]="'tools.section-dialog.name.placeholder' | dm"
-            [class.ng-invalid]="$nameShowsError() || !!$submitError()"
-            [class.ng-dirty]="$nameShowsError() || !!$submitError()"
+            [class.ng-invalid]="
+                (form.controls.name.invalid && (form.controls.name.touched || $submitted())) ||
+                !!$submitError()
+            "
+            [class.ng-dirty]="
+                (form.controls.name.invalid && (form.controls.name.touched || $submitted())) ||
+                !!$submitError()
+            "
             (input)="onNameInput()"
             data-testid="tools-section-name-input"
             class="w-full" />
-        @if ($nameShowsError()) {
+        @if (form.controls.name.invalid && (form.controls.name.touched || $submitted())) {
             <small class="text-red-600" data-testid="tools-section-name-error">
                 {{ 'tools.form.error.name-required' | dm }}
             </small>

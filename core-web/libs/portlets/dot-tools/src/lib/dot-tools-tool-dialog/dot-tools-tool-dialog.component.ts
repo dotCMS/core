@@ -1,14 +1,7 @@
 import { EMPTY } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import {
-    ChangeDetectionStrategy,
-    Component,
-    OnInit,
-    computed,
-    inject,
-    signal
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -86,22 +79,11 @@ export class DotToolsToolDialogComponent implements OnInit {
 
     /**
      * Message the server sent back on a rejected write — typically a
-     * duplicate `portletId` from `PortletResource`. Non-null keeps the
-     * dialog open and renders inline above the footer buttons.
+     * duplicate `portletId` from `PortletResource` (which the backend
+     * reports as a 404, not a 400, see `#isValidationError`). Non-null
+     * keeps the dialog open and renders inline above the footer buttons.
      */
     protected readonly $submitError = signal<string | null>(null);
-
-    protected readonly $nameShowsError = computed(() => {
-        const control = this.form.controls.portletName;
-
-        return control.invalid && (control.touched || this.$submitted());
-    });
-
-    protected readonly $idShowsError = computed(() => {
-        const control = this.form.controls.portletId;
-
-        return control.invalid && (control.touched || this.$submitted());
-    });
 
     protected isEdit = false;
 
@@ -189,8 +171,21 @@ export class DotToolsToolDialogComponent implements OnInit {
         this.ref.close();
     }
 
+    /**
+     * On CREATE the duplicate-id rejection comes back as 404, not 400:
+     * `PortletResource.saveNew` throws `DoesNotExistException("Portlet with
+     * ID ... already exist")`, which the JAX-RS mapper translates to 404.
+     * Treating 404-on-create as the inline-validation case is what keeps
+     * the dialog open on that exact scenario; a 404 on EDIT means the
+     * tool was deleted between opening and saving, which is a genuine
+     * stale-state error that belongs on the global handler.
+     */
     #isValidationError(error: unknown): boolean {
-        return error instanceof HttpErrorResponse && error.status === 400;
+        if (!(error instanceof HttpErrorResponse)) {
+            return false;
+        }
+
+        return error.status === 400 || (error.status === 404 && !this.isEdit);
     }
 
     /** Same best-effort shape handling as the section dialog. */
@@ -252,7 +247,14 @@ export class DotToolsToolDialogComponent implements OnInit {
             .pipe(
                 take(1),
                 catchError((error) => {
+                    // Prefill failed, so the form only holds the catalog seed
+                    // (default [CONTENT], empty contentTypes, 'list'). A PUT
+                    // from here replaces every field and silently wipes the
+                    // real contentTypes, so close instead of letting the user
+                    // save that stale state. The global handler shows the
+                    // underlying fetch error so they know why.
                     this.#httpErrorManager.handle(error);
+                    this.ref.close();
 
                     return EMPTY;
                 }),

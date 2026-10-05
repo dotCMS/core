@@ -88,19 +88,23 @@
                         (cdkDragMoved)="onSectionDragMoved($event, sectionListEl)"
                         (cdkDragEnded)="onSectionDragEnded(i)"
                         class="group">
+                        <!--
+                            Three siblings instead of a wrapper button: the
+                            drag handle, the selection button (icon + name),
+                            and the overflow menu. The outer div is just a
+                            layout container with the context-menu listener;
+                            making it `role="button"` would nest the inner
+                            p-buttons inside an interactive and read as one
+                            control to screen readers (AXE nested-interactive).
+                        -->
                         <div
-                            role="button"
-                            tabindex="0"
-                            (click)="onSelectSection(section.id)"
                             (contextmenu)="
                                 setSectionMenuTarget(section); showContextMenu($event, sectionMenu)
                             "
-                            (keydown.enter)="onSelectSection(section.id)"
-                            (keydown.space)="$event.preventDefault(); onSelectSection(section.id)"
                             [class.bg-indigo-50]="store.selectedSectionId() === section.id"
                             [class.text-indigo-900]="store.selectedSectionId() === section.id"
                             [class.font-semibold]="store.selectedSectionId() === section.id"
-                            class="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-gray-800 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+                            class="flex items-center gap-2 rounded-md px-3 py-2 text-gray-800 hover:bg-gray-100"
                             [attr.data-testid]="'tools-section-row-' + section.id">
                             <span
                                 cdkDragHandle
@@ -108,10 +112,17 @@
                                 class="material-symbols-outlined cursor-grab text-base! leading-none! text-gray-400 opacity-0 group-hover:opacity-100 active:cursor-grabbing">
                                 drag_indicator
                             </span>
-                            <span class="material-symbols-outlined text-lg! leading-none!">
-                                {{ section.icon }}
-                            </span>
-                            <span class="flex-1 truncate">{{ section.name }}</span>
+                            <button
+                                type="button"
+                                (click)="onSelectSection(section.id)"
+                                [attr.aria-pressed]="store.selectedSectionId() === section.id"
+                                class="flex min-w-0 flex-1 cursor-pointer items-center gap-2 bg-transparent p-0 text-left text-inherit focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+                                [attr.data-testid]="'tools-section-select-' + section.id">
+                                <span class="material-symbols-outlined text-lg! leading-none!">
+                                    {{ iconFor(section) }}
+                                </span>
+                                <span class="min-w-0 flex-1 truncate">{{ section.name }}</span>
+                            </button>
                             <p-button
                                 icon="pi pi-ellipsis-v"
                                 size="small"
@@ -137,7 +148,7 @@
                                 drag_indicator
                             </span>
                             <span class="material-symbols-outlined text-lg! leading-none!">
-                                {{ section.icon }}
+                                {{ iconFor(section) }}
                             </span>
                             <span class="flex-1 truncate">{{ section.name }}</span>
                         </div>
@@ -151,7 +162,7 @@
                                 drag_indicator
                             </span>
                             <span class="material-symbols-outlined text-lg! leading-none!">
-                                {{ section.icon }}
+                                {{ iconFor(section) }}
                             </span>
                             <span class="flex-1 truncate">{{ section.name }}</span>
                         </div>
@@ -313,21 +324,30 @@
                     class="flex-1 divide-y divide-gray-200 overflow-auto"
                     data-testid="tools-catalog-list">
                     @for (entry of store.paginatedCatalog(); track entry.id) {
+                        <!--
+                            The checkbox is the primary control: focusing it
+                            and pressing space toggles it natively, and the
+                            `<label for="…">` tying the title to the checkbox
+                            forwards a title click to the same control. The
+                            `<li>` is NOT `role="button"`, so the AXE
+                            nested-interactive rule stays satisfied even when
+                            the row carries the custom-tool `⋮` button.
+                        -->
                         <li
-                            role="button"
-                            tabindex="0"
-                            class="group/row flex cursor-pointer items-center gap-3 px-4 py-2 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
-                            (click)="onToggleTool(entry.id)"
+                            class="group/row flex items-center gap-3 px-4 py-2 focus-within:bg-gray-100 hover:bg-gray-100"
                             (contextmenu)="onToolRowContextMenu($event, entry, toolMenu)"
-                            (keydown.enter)="onToggleTool(entry.id)"
-                            (keydown.space)="$event.preventDefault(); onToggleTool(entry.id)"
                             [attr.data-testid]="'tools-catalog-row-' + entry.id">
                             <p-checkbox
+                                [inputId]="'tools-catalog-check-' + entry.id"
                                 [binary]="true"
                                 [ngModel]="store.selectedSectionToolIds().has(entry.id)"
-                                (click)="$event.stopPropagation(); onToggleTool(entry.id)"
+                                (onChange)="onToggleTool(entry.id)"
                                 [attr.data-testid]="'tools-catalog-check-' + entry.id" />
-                            <span class="flex-1 text-gray-800">{{ entry.title }}</span>
+                            <label
+                                [attr.for]="'tools-catalog-check-' + entry.id"
+                                class="flex-1 cursor-pointer text-gray-800">
+                                {{ entry.title }}
+                            </label>
                             @if (isToolCustom(entry)) {
                                 <p-button
                                     icon="pi pi-ellipsis-v"

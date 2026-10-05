@@ -6,12 +6,13 @@ import {
     withMethods,
     withState
 } from '@ngrx/signals';
-import { EMPTY, Observable, forkJoin, throwError } from 'rxjs';
+import { rxMethod } from '@ngrx/signals/rxjs-interop';
+import { EMPTY, Observable, forkJoin, pipe, throwError } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
 
-import { catchError, take, tap } from 'rxjs/operators';
+import { catchError, concatMap, take, tap } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
 
@@ -235,6 +236,42 @@ export const DotToolsStore = signalStore(
             });
         }
 
+        // Writes to section tools are serialized through a `concatMap`
+        // queue. The PUT endpoint is a full replace and the server has no
+        // ordering guarantee between concurrent writes, so firing them in
+        // parallel (what runMutation did) can let a stale response commit
+        // after a newer one and silently drop a tool: check A, check B
+        // before A's response lands, A returns [A] and clobbers the
+        // optimistic [A, B] — "Section saved" shows but B is gone. With
+        // concatMap each request waits for the one before it, so the
+        // server sees them in order and the responses land in order.
+        const writeSectionTools = rxMethod<{
+            sectionId: string;
+            portletIds: string[];
+            snapshot: DotToolsSection[];
+        }>(
+            pipe(
+                concatMap(({ sectionId, portletIds, snapshot }) =>
+                    toolsService.setSectionTools(sectionId, portletIds).pipe(
+                        take(1),
+                        tap((sections) => {
+                            commitSectionList(sections);
+                            patchState(store, {
+                                toolsSavedAt: store.toolsSavedAt() + 1
+                            });
+                        }),
+                        catchError((error) => {
+                            patchState(store, { sections: snapshot });
+                            httpErrorManager.handle(error);
+                            patchState(store, { status: 'loaded' });
+
+                            return EMPTY;
+                        })
+                    )
+                )
+            )
+        );
+
         // Optimistic single-section patch for the three tool-mutation
         // paths (toggle, remove, drag-reorder). Patching before the
         // request means a second quick click reads the pending list
@@ -243,7 +280,9 @@ export const DotToolsStore = signalStore(
         // portletIds without the first tool and the full-replace drops
         // it. Snapshot the whole sections array so a failure restores
         // every section (ordering is immaterial, the previous array
-        // itself is the rollback value).
+        // itself is the rollback value). The PUT itself is handed to
+        // `writeSectionTools` so the queue serializes the server round-
+        // trips.
         function replaceSectionTools(sectionId: string, portletIds: string[]) {
             const snapshot = store.sections();
             patchState(store, {
@@ -268,14 +307,7 @@ export const DotToolsStore = signalStore(
                 })
             });
 
-            runMutation(
-                toolsService.setSectionTools(sectionId, portletIds),
-                (sections) => {
-                    commitSectionList(sections);
-                    patchState(store, { toolsSavedAt: store.toolsSavedAt() + 1 });
-                },
-                () => patchState(store, { sections: snapshot })
-            );
+            writeSectionTools({ sectionId, portletIds, snapshot });
         }
 
         function catalogTitleFor(id: string): string {

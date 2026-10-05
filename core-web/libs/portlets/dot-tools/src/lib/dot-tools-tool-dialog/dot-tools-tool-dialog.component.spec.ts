@@ -171,6 +171,37 @@ describe('DotToolsToolDialogComponent', () => {
             expect(handler.handle).toHaveBeenCalled();
             expect(mockRef.close).toHaveBeenCalledWith();
         });
+
+        it('treats 404 as the duplicate-id error on create and renders inline', () => {
+            // PortletResource.saveNew throws DoesNotExistException on duplicate
+            // id, which the JAX-RS mapper translates to 404. The dialog must
+            // keep itself open so the user can correct the id, not hand the
+            // response to the global "URL does not exist" modal.
+            createCustomToolSpy.mockReturnValueOnce(
+                throwError(
+                    () =>
+                        new HttpErrorResponse({
+                            status: 404,
+                            statusText: 'Not Found',
+                            error: { message: 'Portlet with ID press-releases already exist' }
+                        })
+                )
+            );
+            spectator.component['form'].patchValue({
+                portletName: 'Press Releases',
+                portletId: 'press-releases',
+                baseTypes: [DotCMSBaseTypesContentTypes.CONTENT],
+                contentTypes: ['Blog'],
+                dataViewMode: 'card'
+            });
+            spectator.component['onSubmit']();
+            spectator.detectChanges();
+
+            expect(mockRef.close).not.toHaveBeenCalled();
+            expect(spectator.query(byTestId('tools-tool-submit-error'))?.textContent).toContain(
+                'already exist'
+            );
+        });
     });
 
     describe('edit mode with prefill', () => {
@@ -230,6 +261,28 @@ describe('DotToolsToolDialogComponent', () => {
             });
             expect(mockRef.close).toHaveBeenCalledWith(true);
         });
+
+        it('renders the id input as readonly so it cannot be retargeted to another tool', () => {
+            // The PUT finds the tool by the id in the body; letting the user
+            // retype it would overwrite a different custom tool's config, or
+            // 404 and close with the user's input lost.
+            const input = spectator.query(
+                byTestId('tools-tool-id-input')
+            ) as HTMLInputElement | null;
+            expect(input?.readOnly).toBe(true);
+        });
+
+        it('routes 404 on edit through the global handler (NOT inline) — the tool was deleted', () => {
+            const handler = spectator.inject(DotHttpErrorManagerService);
+            updateCustomToolSpy.mockReturnValueOnce(
+                throwError(() => new HttpErrorResponse({ status: 404, statusText: 'Not Found' }))
+            );
+            spectator.component['onSubmit']();
+
+            expect(handler.handle).toHaveBeenCalled();
+            expect(mockRef.close).toHaveBeenCalledWith();
+            expect(spectator.query(byTestId('tools-tool-submit-error'))).toBeNull();
+        });
     });
 
     describe('edit mode without prefill (catalog fallback)', () => {
@@ -282,7 +335,7 @@ describe('DotToolsToolDialogComponent', () => {
             expect(spectator.component['$prefillLoading']()).toBe(false);
         });
 
-        it('routes prefill-fetch errors through the global handler', () => {
+        it('routes prefill-fetch errors through the global handler and closes the dialog', () => {
             getCustomToolSpy.mockReturnValueOnce(
                 throwError(() => new HttpErrorResponse({ status: 500, statusText: 'Server Error' }))
             );
@@ -293,6 +346,10 @@ describe('DotToolsToolDialogComponent', () => {
             };
             expect(handler.handle).toHaveBeenCalled();
             expect(spectator.component['$prefillLoading']()).toBe(false);
+            // Dialog closes so the user does not save the catalog-seed values
+            // (default [CONTENT], empty contentTypes, 'list'), which would
+            // silently wipe the real contentTypes on PUT.
+            expect(mockRef.close).toHaveBeenCalled();
         });
     });
 });

@@ -3,17 +3,32 @@
 
     <div class="field">
         <label dotFieldRequired for="tools-tool-name">{{ 'tools.form.name' | dm }}</label>
+        <!--
+            Error visibility reads the control's own invalid/touched flags
+            directly so a blur or late validation update flips the message:
+            wrapping them in a `computed()` tracked only `$submitted` (the
+            control getters are not Angular signals, so an `untracked`
+            boundary around them left the computed stuck on its first value).
+        -->
         <input
             pInputText
             id="tools-tool-name"
             formControlName="portletName"
             [placeholder]="'tools.tool-dialog.name.placeholder' | dm"
             (input)="onNameChange(form.controls.portletName.value)"
-            [class.ng-invalid]="$nameShowsError()"
-            [class.ng-dirty]="$nameShowsError()"
+            [class.ng-invalid]="
+                form.controls.portletName.invalid &&
+                (form.controls.portletName.touched || $submitted())
+            "
+            [class.ng-dirty]="
+                form.controls.portletName.invalid &&
+                (form.controls.portletName.touched || $submitted())
+            "
             data-testid="tools-tool-name-input"
             class="w-full" />
-        @if ($nameShowsError()) {
+        @if (
+            form.controls.portletName.invalid && (form.controls.portletName.touched || $submitted())
+        ) {
             <small class="text-red-600" data-testid="tools-tool-name-error">
                 {{ 'tools.form.error.name-required' | dm }}
             </small>
@@ -28,11 +43,16 @@
             formControlName="portletId"
             [placeholder]="'tools.tool-dialog.id.placeholder' | dm"
             (input)="onIdTouched()"
-            [class.ng-invalid]="$idShowsError()"
-            [class.ng-dirty]="$idShowsError()"
+            [readonly]="isEdit"
+            [class.ng-invalid]="
+                form.controls.portletId.invalid && (form.controls.portletId.touched || $submitted())
+            "
+            [class.ng-dirty]="
+                form.controls.portletId.invalid && (form.controls.portletId.touched || $submitted())
+            "
             data-testid="tools-tool-id-input"
             class="w-full font-mono text-sm" />
-        @if ($idShowsError()) {
+        @if (form.controls.portletId.invalid && (form.controls.portletId.touched || $submitted())) {
             <small class="text-red-600" data-testid="tools-tool-id-error">
                 {{ 'tools.form.error.id-required' | dm }}
             </small>

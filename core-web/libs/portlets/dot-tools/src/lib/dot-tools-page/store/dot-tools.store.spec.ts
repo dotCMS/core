@@ -1,5 +1,5 @@
 import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { Mock, Mocked, vi } from 'vitest';
 
 import { HttpErrorResponse } from '@angular/common/http';
@@ -104,6 +104,10 @@ describe('DotToolsStore', () => {
         httpErrorManager = spectator.inject(
             DotHttpErrorManagerService
         ) as Mocked<DotHttpErrorManagerService>;
+        // mockProvider creates each spy once at factory time, so call
+        // history carries between specs — reset the ones with per-test
+        // assertions.
+        (service.setSectionTools as Mock).mockClear();
     });
 
     describe('initial load', () => {
@@ -325,6 +329,44 @@ describe('DotToolsStore', () => {
         it('reorderSelectedSectionTools writes the new order', () => {
             store.reorderSelectedSectionTools(['browser', 'pages']);
             expect(service.setSectionTools).toHaveBeenCalledWith('site', ['browser', 'pages']);
+        });
+
+        it('serializes concurrent tool writes so an in-flight PUT blocks the next one', () => {
+            // Hold the first response in a Subject so the second toggle fires
+            // while the first PUT is still in flight. With rxMethod +
+            // concatMap, the second service call must not reach the wire
+            // until the first subject completes.
+            const first = new Subject<DotToolsSection[]>();
+            const second = new Subject<DotToolsSection[]>();
+            (service.setSectionTools as Mock)
+                .mockReturnValueOnce(first.asObservable())
+                .mockReturnValueOnce(second.asObservable());
+
+            // Click: add 'blogs' to site → PUT #1 fires.
+            store.toggleToolInSelectedSection('blogs');
+            // Click: add 'c_press-releases' → should enqueue, not fire yet.
+            store.toggleToolInSelectedSection('c_press-releases');
+
+            expect(service.setSectionTools).toHaveBeenCalledTimes(1);
+            expect(service.setSectionTools).toHaveBeenNthCalledWith(1, 'site', [
+                'pages',
+                'browser',
+                'blogs'
+            ]);
+
+            // Resolve PUT #1 — queue drains the next call.
+            first.next(MOCK_SECTIONS);
+            first.complete();
+
+            expect(service.setSectionTools).toHaveBeenCalledTimes(2);
+            // The queued call read from the optimistic state (which already
+            // held 'blogs'), so the full-replace list carries both tools.
+            expect(service.setSectionTools).toHaveBeenNthCalledWith(2, 'site', [
+                'pages',
+                'browser',
+                'blogs',
+                'c_press-releases'
+            ]);
         });
     });
 

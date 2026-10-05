@@ -1,14 +1,7 @@
 import { EMPTY } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import {
-    ChangeDetectionStrategy,
-    Component,
-    OnInit,
-    computed,
-    inject,
-    signal
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -84,12 +77,6 @@ export class DotToolsSectionDialogComponent implements OnInit {
      * the dialog open and renders inline under the name field.
      */
     protected readonly $submitError = signal<string | null>(null);
-
-    protected readonly $nameShowsError = computed(() => {
-        const control = this.form.controls.name;
-
-        return control.invalid && (control.touched || this.$submitted());
-    });
 
     protected isEdit = false;
 

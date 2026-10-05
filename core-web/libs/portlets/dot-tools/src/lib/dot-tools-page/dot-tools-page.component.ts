@@ -36,7 +36,7 @@ import { DotMessagePipe, DotStatusToastComponent, STATUS_TOAST_KEY } from '@dotc
 
 import { DotToolsStore } from './store/dot-tools.store';
 
-import { CATALOG_LOAD_MORE_STEP } from '../constants/dot-tools.constants';
+import { CATALOG_LOAD_MORE_STEP, resolveSectionIcon } from '../constants/dot-tools.constants';
 import { DotToolsSectionDialogComponent } from '../dot-tools-section-dialog/dot-tools-section-dialog.component';
 import { DotToolsToolDialogComponent } from '../dot-tools-tool-dialog/dot-tools-tool-dialog.component';
 import { DotToolsCatalogEntry, DotToolsSection } from '../models/dot-tools.models';
@@ -367,6 +367,18 @@ export class DotToolsPageComponent {
 
     protected isToolCustom(tool: DotToolsCatalogEntry): boolean {
         return tool.isCustom;
+    }
+
+    /**
+     * A section row renders its icon as `<span class="material-symbols-outlined">`
+     * which paints nothing when the ligature isn't in the font. Legacy
+     * sections — `fa-*` strings the migration task never caught, deprecated
+     * glyphs, blank values from before our picker shipped — all fall into
+     * that invisible case. Routing every read through the resolver swaps the
+     * fallback in so the user always sees SOMETHING.
+     */
+    protected iconFor(section: DotToolsSection): string {
+        return resolveSectionIcon(section.icon);
     }
 
     /**
