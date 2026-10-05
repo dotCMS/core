@@ -274,7 +274,14 @@ export class DotFolderListViewContextMenuComponent {
             if (canEditPermissions) {
                 folderMenuItems.push({
                     label: this.#dotMessageService.get('Edit-Permissions'),
-                    command: () => this.#openPermissionsDialog(contentlet.identifier)
+                    // Through the store, like the other folder dialogs, so the URL can name it
+                    // while it is open; the shell opens the permissions JSP (#37759, FR-030).
+                    command: () =>
+                        this.#store.setDialog({
+                            type: DIALOG_TYPE.FOLDER_PERMISSIONS,
+                            header: this.#dotMessageService.get('Edit-Permissions'),
+                            payload: { identifier: contentlet.identifier }
+                        })
                 });
             }
 
@@ -607,35 +614,6 @@ export class DotFolderListViewContextMenuComponent {
                     }
                 });
         }
-    }
-
-    #openPermissionsDialog(identifier: string): void {
-        this.#dialogService.open(DotJspIframeDialogComponent, {
-            header: this.#dotMessageService.get('Edit-Permissions'),
-            width: 'min(92vw, 75rem)',
-            contentStyle: { overflow: 'hidden' },
-            data: {
-                url: this.#buildPermissionsUrl(identifier),
-                titleKey: 'Permissions',
-                emptyKey: 'dot.permissions.iframe.dialog.no-asset',
-                testIdPrefix: 'permissions'
-            } satisfies DotJspIframeDialogData,
-            modal: true,
-            appendTo: 'body',
-            closable: true,
-            closeOnEscape: true,
-            draggable: false,
-            resizable: false,
-            position: 'center'
-        });
-    }
-
-    #buildPermissionsUrl(identifier: string): string {
-        const params = new URLSearchParams({
-            folderIdentifier: identifier,
-            popup: 'true'
-        });
-        return `/html/portlet/ext/folders/permissions.jsp?${params.toString()}`;
     }
 
     #openPushHistoryDialog(identifier: string): void {

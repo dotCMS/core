@@ -11,11 +11,14 @@ import {
     DotLanguage,
     DotSite
 } from '@dotcms/dotcms-models';
+import { EditContentDialogData } from '@dotcms/edit-content';
 import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
 import { DotUploadBaseType, DotUploadSelection, DotUploadSelectorPayload } from '@dotcms/ui';
 
 import { DIALOG_TYPE } from './constants';
+
+import { DotLegacyEditorRequest } from '../components/dot-legacy-editor-side-panel/dot-legacy-editor-side-panel.model';
 
 /**
  * The parameters for the buildTreeFolderNodes function.
@@ -161,8 +164,56 @@ export interface DotContentDriveDialog {
     payload?:
         | DotContentDriveActionableFolder
         | DotContentDriveContentTypeSelectorPayload
-        | DotContentDriveUploadSelectorPayload;
+        | DotContentDriveUploadSelectorPayload
+        | DotContentDriveFolderPermissionsPayload;
 }
+
+/** What Edit Permissions needs: the folder, by identifier only (#37759). */
+export interface DotContentDriveFolderPermissionsPayload {
+    identifier: string;
+}
+
+/**
+ * What Content Drive has asked a side panel to open, and in which editor (#37759). The content
+ * type's editor setting alone picks the editor; each kind has its own panel.
+ */
+export type DotContentDrivePanelRequest =
+    | { editor: 'new'; data: EditContentDialogData }
+    | { editor: 'legacy'; data: DotLegacyEditorRequest };
+
+/**
+ * What the Content Drive URL must say about the open side panel, for either editor (#37759, FR-020).
+ *
+ * Kept apart from the panel request on purpose: the URL has to follow the panel after it opened (a
+ * create's first save, a language switch in the legacy editor) and changing the request instead would
+ * remount the panel and reload the editor under the author.
+ */
+export type DotContentDrivePanelLocation =
+    | {
+          kind: 'edit';
+          /** Identifier of the open content (`editContent`). */
+          editContent: string;
+          /** Language of the open version (`editContentLang`); absent only when it is unknown. */
+          editContentLang?: number;
+      }
+    | {
+          kind: 'create';
+          /** Variable of the content type being created (`createContent`). */
+          createContent: string;
+      };
+
+/**
+ * What a Content Drive URL asks to open when the portlet loads (#37759, FR-023). `conflict` means
+ * the URL combines params that can't hold together, so nothing opens and all of them are removed.
+ */
+export type DotContentDriveUrlIntent =
+    | { kind: 'none' }
+    | { kind: 'edit'; identifier: string; languageId?: number }
+    | { kind: 'create'; contentType: string }
+    | { kind: 'createFolder' }
+    | { kind: 'editFolder'; identifier: string }
+    | { kind: 'folderPermissions'; identifier: string }
+    | { kind: 'conflict' };
 
 /**
  * A workflow action currently being applied to the selection.

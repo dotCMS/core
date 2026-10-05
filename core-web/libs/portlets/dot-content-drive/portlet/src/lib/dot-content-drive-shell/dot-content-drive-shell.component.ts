@@ -1,5 +1,5 @@
 import { signalMethod } from '@ngrx/signals';
-import { of, SubscriptionLike } from 'rxjs';
+import { forkJoin, of, SubscriptionLike } from 'rxjs';
 
 import { Location, NgTemplateOutlet } from '@angular/common';
 import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
@@ -20,12 +20,12 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { MessageService, SortEvent, ToastMessageOptions } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
-import { DialogService } from 'primeng/dynamicdialog';
+import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { MessageModule } from 'primeng/message';
 import { Popover, PopoverModule } from 'primeng/popover';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
-import { catchError } from 'rxjs/operators';
+import { catchError, take } from 'rxjs/operators';
 
 import {
     AddToBundleService,
@@ -36,7 +36,10 @@ import {
     DotUploadFileService,
     DotWorkflowsActionsService,
     DotMessageService,
-    DotWorkflowActionsFireService
+    DotRouterService,
+    DotWorkflowActionsFireService,
+    DotHttpErrorManagerService,
+    DotPermissionsService
 } from '@dotcms/data-access';
 import {
     ContextMenuData,
@@ -49,7 +52,8 @@ import {
     DotContentDriveBrowseItem,
     DotContentDriveItem,
     DotContentDrivePaginateEvent,
-    isActionableBrowseItem
+    isActionableBrowseItem,
+    DotCMSContentlet
 } from '@dotcms/dotcms-models';
 import { DotEditContentSidePanelComponent, DotSidePanelNavController } from '@dotcms/edit-content';
 import {
@@ -73,7 +77,8 @@ import {
     DotToastComponent,
     DotUploadDropzoneComponent,
     DotUploadTypeSelectorComponent,
-    STATUS_TOAST_KEY
+    STATUS_TOAST_KEY,
+    DotJspIframeDialogComponent
 } from '@dotcms/ui';
 
 import { DotContentDriveActionCenterComponent } from '../components/dialogs/dot-content-drive-action-center/dot-content-drive-action-center.component';
@@ -83,9 +88,15 @@ import { DotContentDriveScopeBarComponent } from '../components/dot-content-driv
 import { DotContentDriveSidebarComponent } from '../components/dot-content-drive-sidebar/dot-content-drive-sidebar.component';
 import { DotContentDriveToolbarComponent } from '../components/dot-content-drive-toolbar/dot-content-drive-toolbar.component';
 import { DotFolderListViewContextMenuComponent } from '../components/dot-folder-list-context-menu/dot-folder-list-context-menu.component';
+import { DotLegacyEditorSidePanelComponent } from '../components/dot-legacy-editor-side-panel/dot-legacy-editor-side-panel.component';
+import {
+    DotLegacyEditorPageRequest,
+    DotLegacyEditorSaved
+} from '../components/dot-legacy-editor-side-panel/dot-legacy-editor-side-panel.model';
 import {
     ACTION_CENTER_DIALOG_CONTENT_STYLE,
     ACTION_CENTER_DIALOG_CLASS,
+    CONTENT_DRIVE_URL_PARAM,
     DIALOG_TYPE,
     SORT_ORDER,
     SUCCESS_MESSAGE_LIFE,
@@ -93,7 +104,6 @@ import {
     ERROR_MESSAGE_LIFE,
     MOVE_TO_FOLDER_WORKFLOW_ACTION_ID,
     UPLOAD_BATCH_OPERATION,
-    NEW_CONTENT_MARKER,
     ROOT_PATH
 } from '../shared/constants';
 import {
@@ -107,7 +117,8 @@ import {
     DotContentDriveUploadBaseType,
     DotContentDriveUploadSelection,
     DotContentDriveUploadSelectorPayload,
-    OUTCOME_KIND
+    OUTCOME_KIND,
+    DotContentDriveFolderPermissionsPayload
 } from '../shared/models';
 import { DotContentDriveNavigationService } from '../shared/services';
 import { provideContentDriveFieldFilterHost } from '../store/content-drive-field-filter-host';
@@ -116,14 +127,19 @@ import { provideContentDriveRelationshipPicker } from '../store/content-drive-re
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
 import { describeFolderDeleteOutcome } from '../utils/folder-delete-outcome';
 import { describeFolderDuplicateOutcome } from '../utils/folder-duplicate-outcome';
+import { folderPermissionsDialogConfig } from '../utils/folder-permissions-dialog';
 import {
     canAddChildrenTo,
     encodeFilters,
     isFolder,
     browsedFolderRef,
     normalizeFolderRef,
+    panelParamOf,
+    resolveContentDriveUrlIntent,
     toFolderRef,
-    uploadIndicatorKey
+    uploadIndicatorKey,
+    folderDialogParamOf,
+    toActionableFolder
 } from '../utils/functions';
 import { refuseOverCeiling } from '../utils/upload-ceilings';
 import { describeUploadFailures, DotUploadFailureGroup } from '../utils/upload-failures';
@@ -148,6 +164,7 @@ import { describeUploadFailures, DotUploadFailureGroup } from '../utils/upload-f
         DotStatusToastComponent,
         DotToastComponent,
         DotEditContentSidePanelComponent,
+        DotLegacyEditorSidePanelComponent,
         ProgressSpinnerModule,
         DotContentDriveActionCenterComponent,
         DotContentDriveScopeBarComponent,
@@ -212,9 +229,97 @@ export class DotContentDriveShellComponent implements OnDestroy {
     readonly #fileService = inject(DotUploadFileService);
     readonly #dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
     readonly #sidePanelNav = inject(DotSidePanelNavController);
+    readonly #dotRouterService = inject(DotRouterService);
+    readonly #dialogService = inject(DialogService);
+    readonly #folderService = inject(DotFolderService);
+    readonly #permissionsService = inject(DotPermissionsService);
+    readonly #httpErrorManager = inject(DotHttpErrorManagerService);
+
+    /** The open Edit Permissions dialog, which the shell opens itself (see {@link #syncDialog}). */
+    #permissionsDialogRef: DynamicDialogRef | null = null;
+
+    /** Whether the last URL write named an open folder dialog; drives push vs replace. */
+    #folderDialogUrlWasSet = false;
+
+    /**
+     * A `createFolder` link asked for New Folder, until it has opened (#37759, FR-031). Waits for
+     * the tree, like a `createContent` link, so the folder `path` names is the one it opens on.
+     */
+    readonly #pendingNewFolder = signal(false);
+
+    // eslint-disable-next-line no-unused-private-class-members -- effect() runs for its side effects; the field only holds the EffectRef
+    #openPendingNewFolderEffect = effect(() => {
+        if (!this.#pendingNewFolder()) {
+            return;
+        }
+
+        if (this.#store.folders().length === 0 || this.#store.sidebarLoading()) {
+            return;
+        }
+
+        untracked(() => {
+            this.#pendingNewFolder.set(false);
+
+            // Same gate as the toolbar's New Folder entry: where it is not offered, nothing opens.
+            if (this.#store.$canAddChildren()) {
+                this.#store.setDialog({
+                    type: DIALOG_TYPE.FOLDER,
+                    header: this.#dotMessageService.get('content-drive.dialog.folder.header')
+                });
+            }
+        });
+    });
+
+    /**
+     * The content type a `createContent` link asked to create, until its form has opened. Read from
+     * the URL once, on load (#37759, FR-024).
+     */
+    readonly #pendingCreate = signal<string | null>(null);
+
+    /**
+     * Opens the create form a `createContent` link asked for, once Content Drive knows where and in
+     * which language: after the folder tree's first load (so the folder `path` names is resolved)
+     * and after the default language (which a create starts in without a language filter). Waiting
+     * on the tree rather than on a selected folder matters: whole-site content has no tree row, so
+     * a link with no `path` never gets one.
+     */
+    // eslint-disable-next-line no-unused-private-class-members -- effect() runs for its side effects; the field only holds the EffectRef
+    #openPendingCreateEffect = effect(() => {
+        const contentType = this.#pendingCreate();
+
+        // Checked first, so nothing else is tracked once the link has been handled (or never was).
+        if (!contentType) {
+            return;
+        }
+
+        const ready =
+            this.#store.folders().length > 0 &&
+            !this.#store.sidebarLoading() &&
+            this.#store.defaultLanguageLoaded();
+
+        if (!ready) {
+            return;
+        }
+
+        untracked(() => {
+            this.#pendingCreate.set(null);
+            this.#navigationService.createContent(
+                contentType,
+                this.#navigationService.currentFolder()
+            );
+        });
+    });
 
     /** Edit Content side panel request, driven by the navigation service; read by the template. */
     protected readonly $editPanelRequest = this.#navigationService.$editPanelRequest;
+
+    /** Legacy-editor side panel request, driven by the navigation service; read by the template. */
+    protected readonly $legacyPanelRequest = this.#navigationService.$legacyPanelRequest;
+
+    /** Whether either side panel is open. */
+    readonly #anyPanelOpen = computed(
+        () => !!this.$editPanelRequest() || !!this.$legacyPanelRequest()
+    );
 
     /**
      * Whether the last `editContent` URL write reflected an open panel. Lets the effect push when
@@ -237,6 +342,20 @@ export class DotContentDriveShellComponent implements OnDestroy {
      * erased at compile time — it leaves no runtime reference).
      */
     protected readonly $sidePanel = viewChild<DotEditContentSidePanelComponent>('sidePanelRef');
+
+    /**
+     * The open side panel, whichever editor it hosts, so browser Back can route its close through
+     * that panel's unsaved-changes guard.
+     *
+     * @returns The rendered panel, or `undefined` when none is rendered yet.
+     */
+    #activePanel(): Pick<DotEditContentSidePanelComponent, 'requestClose'> | undefined {
+        return this.$legacyPanel() ?? this.$sidePanel();
+    }
+
+    /** The rendered legacy-editor panel, so browser Back can route its close through it. */
+    protected readonly $legacyPanel =
+        viewChild<DotLegacyEditorSidePanelComponent>('legacyPanelRef');
 
     readonly $items = this.#store.items;
 
@@ -306,7 +425,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
      */
     // eslint-disable-next-line no-unused-private-class-members -- effect() runs for its side effects; the field only holds the EffectRef
     #forceCollapseTreeWithPanelEffect = effect(() => {
-        const panelOpen = !!this.$editPanelRequest();
+        const panelOpen = this.#anyPanelOpen();
 
         untracked(() => {
             this.#store.setTreeForceCollapsed(panelOpen && this.#sidePanelNav.shouldCollapse());
@@ -447,6 +566,20 @@ export class DotContentDriveShellComponent implements OnDestroy {
      * `signalMethod` only tracks its input, so the writes here need no manual `untracked`.
      */
     readonly #syncDialog = signalMethod<DotContentDriveDialog | undefined>((dialog) => {
+        // Edit Permissions is the legacy permissions JSP in a dialog of its own, not this shell's
+        // `p-dialog` (#37759, FR-030).
+        if (dialog?.type === DIALOG_TYPE.FOLDER_PERMISSIONS) {
+            this.#openPermissionsDialog(dialog);
+
+            return;
+        }
+
+        if (this.#permissionsDialogRef) {
+            const ref = this.#permissionsDialogRef;
+            this.#permissionsDialogRef = null;
+            ref.close();
+        }
+
         if (dialog) {
             this.$activeDialog.set(dialog);
             this.$dialogVisible.set(true);
@@ -466,53 +599,73 @@ export class DotContentDriveShellComponent implements OnDestroy {
         this.#reportFolderDeleteRefusal(this.#store.folderDeleteRefusal);
         this.#reportFolderDuplicateRefusal(this.#store.folderDuplicateRefusal);
 
-        // Shareable deep-link: `?editContent=<identifier>` reopens the edit panel on load. Read
+        // Shareable deep-link: a panel or folder-dialog param reopens what it names on load. Read
         // once from the snapshot (the portlet is not re-created on in-session query-param changes).
-        // The `new`-mode marker is ignored — creating is not shareable, so only real identifiers
-        // are resolved.
-        const editContent = this.#route.snapshot.queryParams['editContent'];
-        if (editContent && editContent !== NEW_CONTENT_MARKER) {
-            // `editContentLang` names the exact version to reopen: an identifier has one version per
-            // language, so without it the resolver can only guess. Absent on a link written before it
-            // was recorded, which the resolver still handles.
-            const languageId = Number(this.#route.snapshot.queryParams['editContentLang']);
-            this.#navigationService.openEditByIdentifier(
-                editContent,
-                Number.isFinite(languageId) && languageId > 0 ? languageId : undefined
+        // `editContentLang` names the exact version to reopen: an identifier has one version per
+        // language, so without it the resolver can only guess.
+        const intent = resolveContentDriveUrlIntent(this.#route.snapshot.queryParams);
+        if (intent.kind === 'edit') {
+            this.#navigationService.openEditByIdentifier(intent.identifier, intent.languageId);
+        } else if (intent.kind === 'create') {
+            this.#pendingCreate.set(intent.contentType);
+        } else if (intent.kind === 'createFolder') {
+            this.#pendingNewFolder.set(true);
+        } else if (intent.kind === 'editFolder') {
+            this.#openFolderSettingsFromUrl(intent.identifier);
+        } else if (intent.kind === 'folderPermissions') {
+            this.#openFolderPermissionsFromUrl(intent.identifier);
+        } else if (intent.kind === 'conflict') {
+            // Params that can't hold together: Content Drive can't tell which one the author meant,
+            // so it opens nothing and removes all of them, keeping the rest of the URL (FR-023).
+            const cleared = Object.fromEntries(
+                Object.values(CONTENT_DRIVE_URL_PARAM).map((param) => [param, null])
+            );
+            this.#location.replaceState(
+                this.#router
+                    .createUrlTree([], { queryParams: cleared, queryParamsHandling: 'merge' })
+                    .toString()
             );
         }
 
-        // Browser Back/Forward: the open panel's `editContent` param is written via `Location.go`
-        // (no router navigation), so nothing else reacts to popstate. When Back removes or changes
-        // that param while a panel is open (edit OR new), route the close through the panel's
+        // Browser Back/Forward: the open panel's params are written via `Location.go` (no router
+        // navigation), so nothing else reacts to popstate. When Back removes or changes the param
+        // that names the open panel (edit OR create), route the close through the panel's
         // unsaved-changes guard — a direct `closeEditPanel()` would tear the editor down and discard
         // unsaved edits silently.
         const locationSubscription = this.#location.subscribe((event) => {
             const params = new URLSearchParams(event.url?.split('?')[1] ?? '');
-            const editContentParam = params.get('editContent');
-            const request = this.#navigationService.$editPanelRequest();
-            if (!request) {
+
+            // An open folder dialog closes when Back drops its param, the same way its own close
+            // does (#37759, FR-032). It has no unsaved-changes guard to go through.
+            const folderParam = folderDialogParamOf(this.#store.dialog());
+            if (folderParam) {
+                if (params.get(folderParam.key) !== folderParam.value) {
+                    this.#closeFolderDialog();
+                }
+
                 return;
             }
 
-            // The param the URL should carry for the currently-open panel: the identifier for edit,
-            // the marker for new. If Back changed it away from that, the panel should close.
-            const expected =
-                request.mode === 'edit' ? (request.identifier ?? null) : NEW_CONTENT_MARKER;
+            const location = this.#navigationService.$panelLocation();
+            if (!location) {
+                return;
+            }
 
-            if (expected !== editContentParam) {
+            const { key, value } = panelParamOf(location);
+
+            if (params.get(key) !== value) {
                 // Restore the param so the URL matches the still-open panel while the guard decides.
                 // `replaceState` (not `go`) avoids piling up history entries. Discard → the panel
                 // emits `closed` → onEditPanelClosed → closeEditPanel clears the param; Keep editing
                 // → the panel stays open and the URL is already back in sync.
                 const restoredUrl = this.#router
                     .createUrlTree([], {
-                        queryParams: { editContent: expected },
+                        queryParams: { [key]: value },
                         queryParamsHandling: 'merge'
                     })
                     .toString();
                 this.#location.replaceState(restoredUrl);
-                this.$sidePanel()?.requestClose();
+                this.#activePanel()?.requestClose();
             }
         });
         this.#locationSubscription = locationSubscription;
@@ -676,8 +829,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
      * PrimeNG's close animation and so still reports a dialog that is already gone.
      */
     protected readonly $authorIsMidTask = computed(
-        () =>
-            this.$dialogVisible() || this.$selectedItems().length > 0 || !!this.$editPanelRequest()
+        () => this.$dialogVisible() || this.$selectedItems().length > 0 || this.#anyPanelOpen()
     );
 
     /**
@@ -1379,22 +1531,32 @@ export class DotContentDriveShellComponent implements OnDestroy {
             queryParams['filters'] = null;
         }
 
-        // Reflect the open panel in the `editContent` param: the shareable identifier for edit, or
-        // a non-shareable marker for new (so browser Back has an entry to pop). Cleared when the
-        // panel is closed. Written via Location.go/replaceState so it triggers no navigation/reload.
-        const editRequest = this.$editPanelRequest();
-        const editContent = editRequest
-            ? editRequest.mode === 'edit'
-                ? (editRequest.identifier ?? null)
-                : NEW_CONTENT_MARKER
+        // Reflect the open panel, in either editor: `editContent` + `editContentLang` for an edit
+        // (the language, so the link reopens the very version that is open), `createContent` for a
+        // create (#37759, FR-020). Every one is `null` (removed) unless it describes the open panel,
+        // so none lingers after a close or a switch. Written via Location.go/replaceState so it
+        // triggers no navigation/reload.
+        const panelLocation = this.#navigationService.$panelLocation();
+        const isEdit = panelLocation?.kind === 'edit';
+        queryParams[CONTENT_DRIVE_URL_PARAM.EDIT_CONTENT] = isEdit
+            ? panelLocation.editContent
             : null;
-        queryParams['editContent'] = editContent;
-        // Written alongside so the link reopens the very version that is open, not just the content.
-        // `null` removes it, so it never lingers once the panel is closed or a `new` panel is open.
-        queryParams['editContentLang'] =
-            editRequest?.mode === 'edit' && editRequest.languageId
-                ? String(editRequest.languageId)
-                : null;
+        queryParams[CONTENT_DRIVE_URL_PARAM.EDIT_CONTENT_LANG] =
+            isEdit && panelLocation.editContentLang ? String(panelLocation.editContentLang) : null;
+        queryParams[CONTENT_DRIVE_URL_PARAM.CREATE_CONTENT] =
+            panelLocation?.kind === 'create' ? panelLocation.createContent : null;
+        const panelOpen = panelLocation !== null;
+
+        // The open folder dialog, the same way (#37759, FR-030).
+        const folderParam = folderDialogParamOf(this.#store.dialog());
+        for (const key of [
+            CONTENT_DRIVE_URL_PARAM.CREATE_FOLDER,
+            CONTENT_DRIVE_URL_PARAM.EDIT_FOLDER,
+            CONTENT_DRIVE_URL_PARAM.FOLDER_PERMISSIONS
+        ]) {
+            queryParams[key] = folderParam?.key === key ? folderParam.value : null;
+        }
+        const folderDialogOpen = folderParam !== null;
 
         const urlTree = this.#router.createUrlTree([], {
             queryParams,
@@ -1416,7 +1578,9 @@ export class DotContentDriveShellComponent implements OnDestroy {
             //
             // The first write never pushes: `#lastWrittenPath` is undefined until then, so the URL the
             // portlet opens with replaces rather than stacking on top of the referring page.
-            const isOpeningPanel = editContent !== null && !this.#editPanelUrlWasSet;
+            const isOpeningPanel =
+                (panelOpen && !this.#editPanelUrlWasSet) ||
+                (folderDialogOpen && !this.#folderDialogUrlWasSet);
             const isFolderNavigation =
                 this.#lastWrittenPath !== undefined && path !== this.#lastWrittenPath;
 
@@ -1427,8 +1591,116 @@ export class DotContentDriveShellComponent implements OnDestroy {
             }
             this.#lastWrittenPath = path;
         }
-        this.#editPanelUrlWasSet = editContent !== null;
+        this.#editPanelUrlWasSet = panelOpen;
+        this.#folderDialogUrlWasSet = folderDialogOpen;
     });
+
+    /**
+     * Opens Edit Permissions for the folder the store dialog names, and clears the store dialog
+     * when it closes, so the URL follows (#37759, FR-030).
+     *
+     * @param dialog The `FOLDER_PERMISSIONS` dialog the store holds.
+     */
+    #openPermissionsDialog(dialog: DotContentDriveDialog): void {
+        if (this.#permissionsDialogRef) {
+            return;
+        }
+
+        const { identifier } = dialog.payload as DotContentDriveFolderPermissionsPayload;
+        const ref = this.#dialogService.open(
+            DotJspIframeDialogComponent,
+            folderPermissionsDialogConfig(identifier, dialog.header)
+        );
+
+        this.#permissionsDialogRef = ref;
+        ref?.onClose.pipe(take(1)).subscribe(() => {
+            if (this.#permissionsDialogRef === ref) {
+                this.#permissionsDialogRef = null;
+                this.#store.closeDialog();
+            }
+        });
+    }
+
+    /** Closes the open folder dialog the way its own close does. */
+    #closeFolderDialog(): void {
+        if (this.#permissionsDialogRef) {
+            // Its `onClose` clears the store dialog.
+            this.#permissionsDialogRef.close();
+
+            return;
+        }
+
+        this.#store.closeDialog();
+    }
+
+    /**
+     * Opens Folder Settings for a folder an `editFolder` link names (#37759, FR-031). The link only
+     * carries the identifier, so the folder and the user's access to it are resolved first, and the
+     * same rule as the context menu applies: the user must be able to edit the folder (FR-033).
+     *
+     * @param identifier The folder's identifier.
+     */
+    #openFolderSettingsFromUrl(identifier: string): void {
+        forkJoin({
+            folder: this.#folderService.getFolderById(identifier),
+            access: this.#permissionsService.getUserAccess(identifier)
+        })
+            .pipe(take(1))
+            .subscribe({
+                next: ({ folder, access }) => {
+                    if (!access.canEdit) {
+                        this.#reportForbidden();
+
+                        return;
+                    }
+
+                    this.#store.setDialog({
+                        type: DIALOG_TYPE.FOLDER,
+                        header: this.#dotMessageService.get(
+                            'content-drive.dialog.folder.header.edit'
+                        ),
+                        payload: toActionableFolder(folder, access)
+                    });
+                },
+                error: (error: HttpErrorResponse) => this.#httpErrorManager.handle(error)
+            });
+    }
+
+    /**
+     * Opens Edit Permissions for a folder a `folderPermissions` link names (#37759, FR-031), when
+     * the user may edit that folder's permissions, the same rule as the context menu (FR-033).
+     *
+     * @param identifier The folder's identifier.
+     */
+    #openFolderPermissionsFromUrl(identifier: string): void {
+        this.#permissionsService
+            .getUserAccess(identifier)
+            .pipe(take(1))
+            .subscribe({
+                next: ({ canEditPermissions }) => {
+                    if (!canEditPermissions) {
+                        this.#reportForbidden();
+
+                        return;
+                    }
+
+                    this.#store.setDialog({
+                        type: DIALOG_TYPE.FOLDER_PERMISSIONS,
+                        header: this.#dotMessageService.get('Edit-Permissions'),
+                        payload: { identifier }
+                    });
+                },
+                error: (error: HttpErrorResponse) => this.#httpErrorManager.handle(error)
+            });
+    }
+
+    /**
+     * The user may not open what the link names. The standard permission message, the same one a
+     * refused request shows, rather than a message of this portlet's own.
+     */
+    #reportForbidden(): void {
+        this.#httpErrorManager.handle(new HttpErrorResponse({ status: 403 }));
+    }
 
     /**
      * Effect that sets the path when a node is selected
@@ -1654,9 +1926,78 @@ export class DotContentDriveShellComponent implements OnDestroy {
         this.#navigationService.closeEditPanel();
     }
 
-    /** A save in the side panel can create or change an item, so refresh the list. */
-    protected onEditPanelSaved() {
+    /**
+     * A save in the new-editor side panel can create or change an item, so refresh the list. The
+     * first save of a create also switches the URL to the saved content (#37759, FR-025).
+     *
+     * @param contentlet The saved content.
+     */
+    protected onEditPanelSaved(contentlet: DotCMSContentlet) {
         this.#store.reloadContentDrive();
+        this.#navigationService.panelSaved({
+            identifier: contentlet.identifier,
+            languageId: contentlet.languageId
+        });
+    }
+
+    /**
+     * A save in the legacy panel, including a workflow action: refresh the list quietly and keep
+     * the panel open (#37759, FR-013).
+     */
+    protected onLegacyPanelSaved({ identifier, languageId }: DotLegacyEditorSaved) {
+        this.#store.reloadContentDrive({ quiet: true });
+        // The first save of a create switches the URL to the saved content (FR-025).
+        this.#navigationService.panelSaved({ identifier, languageId });
+    }
+
+    /**
+     * The author switched language inside the legacy editor: the URL follows (#37759, FR-020).
+     *
+     * @param languageId The language the editor now shows.
+     */
+    protected onLegacyPanelLanguage(languageId: number) {
+        this.#navigationService.panelLanguageChanged(languageId);
+    }
+
+    /**
+     * The legacy panel closed, for any reason. Refresh the list quietly every time: a close after a
+     * delete looks exactly like a cancel, and a move or a language switch sends no event at all, so
+     * one extra list request is cheaper than missing a change (#37759, FR-014, FR-015).
+     */
+    protected onLegacyPanelClosed() {
+        this.#navigationService.closeEditPanel();
+        this.#store.reloadContentDrive({ quiet: true });
+    }
+
+    /**
+     * "Switch to the old editor" in the new-editor panel: reopen the same content in the legacy
+     * panel, without leaving Content Drive (#37759, FR-028).
+     *
+     * @param contentlet The content that was open.
+     */
+    protected onSwitchedToLegacyEditor(contentlet: DotCMSContentlet) {
+        this.#navigationService.switchToLegacyEditor(contentlet);
+    }
+
+    /**
+     * Bring Back restored an older version in the legacy panel. The editor reloads with it and
+     * sends no save, so refresh the list quietly here (#37759, US6).
+     */
+    protected onLegacyPanelRestored() {
+        this.#store.reloadContentDrive({ quiet: true });
+    }
+
+    /**
+     * The first save of a new page in the legacy panel: close it, refresh the list, and open the
+     * page in the page editor in the language the editor named, as Content Search does (#37759,
+     * FR-008).
+     *
+     * @param request The page to open and its language.
+     */
+    protected onLegacyPanelPageEditor({ url, languageId }: DotLegacyEditorPageRequest) {
+        this.#navigationService.closeEditPanel();
+        this.#store.reloadContentDrive({ quiet: true });
+        this.#dotRouterService.goToEditPage({ url, language_id: languageId });
     }
 
     /**

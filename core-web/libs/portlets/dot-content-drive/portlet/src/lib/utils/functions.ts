@@ -12,32 +12,40 @@ import {
     DotFolder,
     DotSite,
     FolderSearchView,
-    LOAD_MORE_NODE_TYPE
+    LOAD_MORE_NODE_TYPE,
+    DotFolderBean
 } from '@dotcms/dotcms-models';
 import { DotFolderTreeNodeData, DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 
 import { createTreeNode, generateAllParentPaths } from './tree-folder.utils';
 
 import {
+    CONTENT_DRIVE_URL_PARAM,
     CONTENT_STATUS,
     FOLDER_NAME_FILTER_MIN_LENGTH,
     FOLDER_TREE_HIERARCHY_PAGE_SIZE,
     FOLDER_TREE_PAGE_SIZE,
+    NEW_CONTENT_MARKER,
     ROOT_PATH,
     SHARED_ASSETS_ENABLED_VALUE,
     SHARED_ASSETS_FILTER_KEY,
     SYSTEM_HOST,
     SYSTEM_HOST_PATH,
-    USER_SEARCHABLE_PREFIX
+    USER_SEARCHABLE_PREFIX,
+    DIALOG_TYPE
 } from '../shared/constants';
 import {
     DOT_CONTENT_DRIVE_SEARCH_SCOPE,
     DotContentDriveDecodeFunction,
     DotContentDriveFilters,
+    DotContentDrivePanelLocation,
     DotContentDriveSearchScope,
+    DotContentDriveUrlIntent,
     DotKnownContentDriveFilters,
     FolderTreeHierarchyLevel,
-    WorkflowFilterEntry
+    WorkflowFilterEntry,
+    DotContentDriveDialog,
+    DotContentDriveFolderPermissionsPayload
 } from '../shared/models';
 
 /**
@@ -1012,3 +1020,148 @@ export const uploadIndicatorKey = (count: number, options?: { backgrounded?: boo
 
     return count === 1 ? `${base}.one` : base;
 };
+
+/**
+ * Reads what a Content Drive URL asks to open when the portlet loads (#37759, FR-023).
+ *
+ * One URL may name at most one side panel or folder dialog. When it names more, Content Drive can't
+ * tell which one the author meant, so the answer is `conflict` and the caller opens nothing. The
+ * retired `editContent=new` create marker counts as absent, so old links open nothing rather than
+ * an empty form.
+ *
+ * @param queryParams The route's query params.
+ * @returns The single thing the URL asks to open, `none`, or `conflict`.
+ */
+export function resolveContentDriveUrlIntent(
+    queryParams: Record<string, unknown>
+): DotContentDriveUrlIntent {
+    const read = (key: string): string | undefined => {
+        const value = queryParams[key];
+
+        return typeof value === 'string' && value.length > 0 ? value : undefined;
+    };
+
+    const editContent = read(CONTENT_DRIVE_URL_PARAM.EDIT_CONTENT);
+    const identifier = editContent === NEW_CONTENT_MARKER ? undefined : editContent;
+    const contentType = read(CONTENT_DRIVE_URL_PARAM.CREATE_CONTENT);
+    const createFolder = read(CONTENT_DRIVE_URL_PARAM.CREATE_FOLDER) === 'true';
+    const editFolder = read(CONTENT_DRIVE_URL_PARAM.EDIT_FOLDER);
+    const folderPermissions = read(CONTENT_DRIVE_URL_PARAM.FOLDER_PERMISSIONS);
+
+    const asked = [
+        identifier,
+        contentType,
+        createFolder || undefined,
+        editFolder,
+        folderPermissions
+    ];
+
+    if (asked.filter(Boolean).length > 1) {
+        return { kind: 'conflict' };
+    }
+
+    if (identifier) {
+        const languageId = Number(read(CONTENT_DRIVE_URL_PARAM.EDIT_CONTENT_LANG));
+
+        return {
+            kind: 'edit',
+            identifier,
+            languageId: Number.isInteger(languageId) && languageId > 0 ? languageId : undefined
+        };
+    }
+
+    if (contentType) {
+        return { kind: 'create', contentType };
+    }
+
+    if (createFolder) {
+        return { kind: 'createFolder' };
+    }
+
+    if (editFolder) {
+        return { kind: 'editFolder', identifier: editFolder };
+    }
+
+    if (folderPermissions) {
+        return { kind: 'folderPermissions', identifier: folderPermissions };
+    }
+
+    return { kind: 'none' };
+}
+
+/**
+ * The one URL param that names an open panel, and the value it must hold: the identifier for an
+ * edit, the content type variable for a create. Browser Back compares the URL against it to tell
+ * whether the open panel was popped.
+ *
+ * @param location What the URL says about the open panel.
+ * @returns The param key and the value it must carry.
+ */
+export function panelParamOf(location: DotContentDrivePanelLocation): {
+    key: string;
+    value: string;
+} {
+    return location.kind === 'edit'
+        ? { key: CONTENT_DRIVE_URL_PARAM.EDIT_CONTENT, value: location.editContent }
+        : { key: CONTENT_DRIVE_URL_PARAM.CREATE_CONTENT, value: location.createContent };
+}
+
+/**
+ * The one URL param that names an open folder dialog, and the value it must hold (#37759, FR-030):
+ * `createFolder=true` for New Folder, `editFolder=<id>` for Folder Settings, `folderPermissions=<id>`
+ * for Edit Permissions. `null` for any other dialog, or none.
+ *
+ * @param dialog The dialog the store holds.
+ * @returns The param key and the value it must carry, or `null`.
+ */
+export function folderDialogParamOf(
+    dialog: DotContentDriveDialog | undefined
+): { key: string; value: string } | null {
+    if (dialog?.type === DIALOG_TYPE.FOLDER) {
+        const folder = dialog.payload as DotContentDriveActionableFolder | undefined;
+
+        return folder
+            ? { key: CONTENT_DRIVE_URL_PARAM.EDIT_FOLDER, value: folder.identifier }
+            : { key: CONTENT_DRIVE_URL_PARAM.CREATE_FOLDER, value: 'true' };
+    }
+
+    if (dialog?.type === DIALOG_TYPE.FOLDER_PERMISSIONS) {
+        const { identifier } = dialog.payload as DotContentDriveFolderPermissionsPayload;
+
+        return { key: CONTENT_DRIVE_URL_PARAM.FOLDER_PERMISSIONS, value: identifier };
+    }
+
+    return null;
+}
+
+/**
+ * Turns a folder read by id (`GET /api/v1/folder/{id}`) into the folder the Folder Settings dialog
+ * edits, with the user's permissions on it, so a dialog opened from a link sees exactly what one
+ * opened from the listing would (#37759, FR-031).
+ *
+ * @param folder The folder bean.
+ * @param access What the user may do to it.
+ * @returns The folder, as the folder dialog takes it.
+ */
+export function toActionableFolder(
+    folder: DotFolderBean,
+    access: { canEdit: boolean; canEditPermissions: boolean }
+): DotContentDriveActionableFolder {
+    return {
+        type: 'folder',
+        identifier: folder.identifier,
+        inode: folder.inode,
+        name: folder.name,
+        title: folder.title,
+        path: folder.path,
+        sortOrder: folder.sortOrder,
+        showOnMenu: folder.showOnMenu,
+        filesMasks: folder.filesMasks,
+        defaultFileType: folder.defaultFileType,
+        defaultBaseType: folder.defaultBaseType,
+        permissions: [
+            ...(access.canEdit ? [PERMISSIONS_TYPE.EDIT] : []),
+            ...(access.canEditPermissions ? [PERMISSIONS_TYPE.EDIT_PERMISSIONS] : [])
+        ]
+    };
+}

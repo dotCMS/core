@@ -5,6 +5,7 @@ import {
     Spectator,
     SpyObject
 } from '@openng/spectator/vitest';
+import { MockComponent, ngMocks } from 'ng-mocks';
 import { NEVER, of, Subject, throwError } from 'rxjs';
 import { Mock, Mocked, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -17,6 +18,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
 import { Dialog } from 'primeng/dialog';
+import { DialogService } from 'primeng/dynamicdialog';
 import { Popover } from 'primeng/popover';
 import { ZIndexUtils } from 'primeng/utils';
 
@@ -39,14 +41,17 @@ import {
     DotWorkflowActionsFireService,
     DotWorkflowEventHandlerService,
     DotWorkflowsActionsService,
-    PushPublishService
+    PushPublishService,
+    DotPermissionsService
 } from '@dotcms/data-access';
 import { LoggerService, StringUtils } from '@dotcms/dotcms-js';
 import {
     DotCMSContentlet,
     DotCMSContentTypeField,
     DotContentDriveFolder,
-    DotContentDriveItem
+    DotContentDriveItem,
+    DotContentDriveActionableFolder,
+    PERMISSIONS_TYPE
 } from '@dotcms/dotcms-models';
 import {
     DotEditContentSidePanelComponent,
@@ -62,12 +67,15 @@ import { GlobalStore } from '@dotcms/store';
 import {
     DotFolderListViewComponent,
     DotUploadTypeSelectorComponent,
-    STATUS_TOAST_KEY
+    STATUS_TOAST_KEY,
+    DotJspIframeDialogComponent
 } from '@dotcms/ui';
 import { DOT_SYSTEM_CONFIG_SERVICE_MOCK, mockLocales } from '@dotcms/utils-testing';
 
 import { DotContentDriveShellComponent } from './dot-content-drive-shell.component';
 
+import { DotLegacyEditorSidePanelComponent } from '../components/dot-legacy-editor-side-panel/dot-legacy-editor-side-panel.component';
+import { DotLegacyEditorRequest } from '../components/dot-legacy-editor-side-panel/dot-legacy-editor-side-panel.model';
 import {
     ACTION_CENTER_DIALOG_CONTENT_STYLE,
     ACTION_CENTER_DIALOG_CLASS,
@@ -93,6 +101,7 @@ import {
     DotContentDriveActionExecution,
     DotContentDriveActionExecutionResult,
     DotContentDriveDialogDrillDown,
+    DotContentDrivePanelLocation,
     DotContentDriveSortOrder,
     DotContentDriveStatus
 } from '../shared/models';
@@ -104,6 +113,24 @@ import { DotContentDriveStore } from '../store/dot-content-drive.store';
 // Backs the navigation service mock's readonly `$editPanelRequest`. Typed (not cast) so tests get
 // a compile-checked payload; reset in the shared beforeEach for isolation.
 const editPanelRequestSignal: WritableSignal<EditContentDialogData | null> = signal(null);
+// Backs the mock's `$panelLocation`: what the URL must say about the open panel. The shell's URL
+// sync and its Back guard read this, not the request (#37759).
+const panelLocationSignal: WritableSignal<DotContentDrivePanelLocation | null> = signal(null);
+/**
+ * The Edit Permissions dialog the shell opens through `DialogService` (#37759, FR-030). `onClose`
+ * is a subject so a test can close it the way PrimeNG does.
+ */
+let permissionsDialogClose$ = new Subject<unknown>();
+const permissionsDialogRef = {
+    get onClose() {
+        return permissionsDialogClose$.asObservable();
+    },
+    close: vi.fn(() => permissionsDialogClose$.next(undefined))
+};
+const dialogServiceOpen = vi.fn(() => permissionsDialogRef);
+
+// Backs the mock's `$legacyPanelRequest`: the legacy-editor panel the shell must render (#37759).
+const legacyPanelRequestSignal: WritableSignal<DotLegacyEditorRequest | null> = signal(null);
 // Module scope: both store mocks in this file read it, and they live in describes that do not
 // share a `beforeEach`. Reset per test rather than re-created, so neither mock captures a stale one.
 /** Nothing refused by default; the refusal tests set it. Module-scoped like its siblings,
@@ -202,7 +229,12 @@ describe('DotContentDriveShellComponent', () => {
                 createContent: vi.fn(),
                 closeEditPanel: vi.fn(),
                 openEditByIdentifier: vi.fn(),
-                $editPanelRequest: editPanelRequestSignal
+                switchToLegacyEditor: vi.fn(),
+                panelSaved: vi.fn(),
+                panelLanguageChanged: vi.fn(),
+                $editPanelRequest: editPanelRequestSignal,
+                $legacyPanelRequest: legacyPanelRequestSignal,
+                $panelLocation: panelLocationSignal
             }),
             LoggerService,
             StringUtils,
@@ -228,10 +260,22 @@ describe('DotContentDriveShellComponent', () => {
         ],
         componentProviders: [
             DotContentDriveStore,
+            mockProvider(DialogService, { open: dialogServiceOpen }),
             provideContentDriveFilterFacade(),
             // The toolbar renders for real here, "More" overflow included, so its own seam has to
             // be provided the same way the shell provides it in production.
             provideContentDriveFieldFilterHost()
+        ],
+        // The legacy panel hosts a JSP iframe and has its own spec; the shell only needs its
+        // inputs, outputs and `requestClose()`.
+        overrideComponents: [
+            [
+                DotContentDriveShellComponent,
+                {
+                    remove: { imports: [DotLegacyEditorSidePanelComponent] },
+                    add: { imports: [MockComponent(DotLegacyEditorSidePanelComponent)] }
+                }
+            ]
         ],
         detectChanges: false
     });
@@ -256,6 +300,11 @@ describe('DotContentDriveShellComponent', () => {
         );
         showInListFieldsSignal = signal<DotCMSContentTypeField[]>([]);
         editPanelRequestSignal.set(null);
+        panelLocationSignal.set(null);
+        legacyPanelRequestSignal.set(null);
+        permissionsDialogClose$ = new Subject<unknown>();
+        dialogServiceOpen.mockClear();
+        permissionsDialogRef.close.mockClear();
 
         const currentSiteMock = vi.fn().mockReturnValue(MOCK_SITES[0]);
         const systemHostSelectedMock = vi.fn().mockReturnValue(false);
@@ -924,6 +973,20 @@ describe('DotContentDriveShellComponent', () => {
                 expect(store.loadItems).toHaveBeenCalledWith({ quiet: true });
             });
 
+            it('should hold the reload while the legacy-editor panel is open, and run it when it closes', () => {
+                legacyPanelRequestSignal.set({} as DotLegacyEditorRequest);
+                spectator.detectChanges();
+
+                settle(backgrounded);
+
+                expect(store.loadItems).not.toHaveBeenCalled();
+
+                legacyPanelRequestSignal.set(null);
+                spectator.detectChanges();
+
+                expect(store.loadItems).toHaveBeenCalledWith({ quiet: true });
+            });
+
             it('should keep a held reload when a later outcome for another folder arrives', () => {
                 // Both are held while the author is mid-task. The later one replacing the earlier
                 // would leave this folder's reload behind, and its changes would never show.
@@ -1517,7 +1580,11 @@ describe('DotContentDriveShellComponent', () => {
                     path: '/another/path',
                     filters: 'contentType:Blog;baseType:1,2,3',
                     editContent: null,
-                    editContentLang: null
+                    editContentLang: null,
+                    createContent: null,
+                    createFolder: null,
+                    editFolder: null,
+                    folderPermissions: null
                 },
                 queryParamsHandling: 'merge'
             });
@@ -1615,7 +1682,11 @@ describe('DotContentDriveShellComponent', () => {
                     path: '/another/path',
                     filters: 'contentType:Blog;baseType:1,2,3',
                     editContent: null,
-                    editContentLang: null
+                    editContentLang: null,
+                    createContent: null,
+                    createFolder: null,
+                    editFolder: null,
+                    folderPermissions: null
                 },
                 queryParamsHandling: 'merge'
             });
@@ -1632,7 +1703,11 @@ describe('DotContentDriveShellComponent', () => {
                     path: '/another/path',
                     filters: null, // With merge, null removes the param
                     editContent: null,
-                    editContentLang: null
+                    editContentLang: null,
+                    createContent: null,
+                    createFolder: null,
+                    editFolder: null,
+                    folderPermissions: null
                 },
                 queryParamsHandling: 'merge'
             });
@@ -4924,18 +4999,205 @@ describe('DotContentDriveShellComponent', () => {
         });
     });
 
+    /**
+     * The folder dialogs follow the URL like the panels (#37759, US8): New Folder, Folder Settings
+     * and Edit Permissions each write a param while open (FR-030), Back closes them (FR-032).
+     */
+    describe('folder dialogs in the URL', () => {
+        const PERMISSIONS_DIALOG: DotContentDriveDialog = {
+            type: 'FOLDER_PERMISSIONS' as DotContentDriveDialog['type'],
+            header: 'Edit-Permissions',
+            payload: { identifier: 'folder-1' } as unknown as DotContentDriveDialog['payload']
+        };
+        const SETTINGS_DIALOG: DotContentDriveDialog = {
+            type: DIALOG_TYPE.FOLDER,
+            header: 'content-drive.dialog.folder.header.edit',
+            // A complete folder: the real folder dialog renders here and reads its fields.
+            payload: {
+                type: 'folder',
+                identifier: 'folder-1',
+                inode: 'folder-inode-1',
+                name: 'blog',
+                path: '/blog/',
+                title: 'Blog',
+                sortOrder: 0,
+                showOnMenu: false,
+                filesMasks: '',
+                defaultFileType: 'FileAsset',
+                permissions: [PERMISSIONS_TYPE.EDIT]
+            } satisfies DotContentDriveActionableFolder
+        };
+        const NEW_FOLDER_DIALOG: DotContentDriveDialog = {
+            type: DIALOG_TYPE.FOLDER,
+            header: 'content-drive.dialog.folder.header'
+        };
+
+        const urlParams = () =>
+            (router.createUrlTree as Mock).mock.calls.at(-1)?.[1]?.queryParams ?? {};
+
+        describe('Edit Permissions', () => {
+            it('opens the permissions JSP dialog, with the config the context menu used', () => {
+                dialogSignal.set(PERMISSIONS_DIALOG);
+                spectator.detectChanges();
+
+                expect(dialogServiceOpen).toHaveBeenCalledWith(
+                    DotJspIframeDialogComponent,
+                    expect.objectContaining({
+                        header: 'Edit-Permissions',
+                        width: 'min(92vw, 75rem)',
+                        closable: true,
+                        closeOnEscape: true,
+                        data: {
+                            url: '/html/portlet/ext/folders/permissions.jsp?folderIdentifier=folder-1&popup=true',
+                            titleKey: 'Permissions',
+                            emptyKey: 'dot.permissions.iframe.dialog.no-asset',
+                            testIdPrefix: 'permissions'
+                        }
+                    })
+                );
+            });
+
+            it("does not show the shell's own dialog for it", () => {
+                dialogSignal.set(PERMISSIONS_DIALOG);
+                spectator.detectChanges();
+
+                expect(
+                    (
+                        spectator.component as unknown as { $dialogVisible: () => boolean }
+                    ).$dialogVisible()
+                ).toBe(false);
+            });
+
+            it('clears the store dialog when the permissions dialog closes', () => {
+                dialogSignal.set(PERMISSIONS_DIALOG);
+                spectator.detectChanges();
+
+                permissionsDialogClose$.next(undefined);
+
+                expect(store.closeDialog).toHaveBeenCalled();
+            });
+        });
+
+        it.each([
+            ['New Folder', NEW_FOLDER_DIALOG, { createFolder: 'true' }],
+            ['Folder Settings', SETTINGS_DIALOG, { editFolder: 'folder-1' }],
+            ['Edit Permissions', PERMISSIONS_DIALOG, { folderPermissions: 'folder-1' }]
+        ])(
+            'names %s in the URL while it is open, with one history entry',
+            (_label, dialog, param) => {
+                spectator.detectChanges();
+                (location.go as Mock).mockClear();
+
+                dialogSignal.set(dialog);
+                spectator.detectChanges();
+
+                expect(urlParams()).toEqual(
+                    expect.objectContaining({
+                        createFolder: null,
+                        editFolder: null,
+                        folderPermissions: null,
+                        ...param
+                    })
+                );
+                expect(location.go).toHaveBeenCalledTimes(1);
+            }
+        );
+
+        it('removes the param with replaceState when the dialog closes', () => {
+            dialogSignal.set(SETTINGS_DIALOG);
+            spectator.detectChanges();
+            (location.go as Mock).mockClear();
+            (location.replaceState as Mock).mockClear();
+
+            dialogSignal.set(undefined);
+            spectator.detectChanges();
+
+            expect(urlParams()).toEqual(expect.objectContaining({ editFolder: null }));
+            expect(location.replaceState).toHaveBeenCalledTimes(1);
+            expect(location.go).not.toHaveBeenCalled();
+        });
+
+        it('writes no folder param for the other dialogs', () => {
+            dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
+            spectator.detectChanges();
+
+            expect(urlParams()).toEqual(
+                expect.objectContaining({
+                    createFolder: null,
+                    editFolder: null,
+                    folderPermissions: null
+                })
+            );
+        });
+
+        describe('browser Back', () => {
+            const popstate = (url: string) =>
+                (location.subscribe as Mock).mock.calls[0][0]({ url });
+
+            it('closes Folder Settings when Back drops its param', () => {
+                dialogSignal.set(SETTINGS_DIALOG);
+                spectator.detectChanges();
+
+                popstate('/c/content-drive?path=/foo');
+
+                expect(store.closeDialog).toHaveBeenCalled();
+            });
+
+            it('closes the permissions dialog when Back drops its param', () => {
+                dialogSignal.set(PERMISSIONS_DIALOG);
+                spectator.detectChanges();
+
+                popstate('/c/content-drive?path=/foo');
+
+                expect(permissionsDialogRef.close).toHaveBeenCalled();
+            });
+
+            it('leaves a folder dialog open when Back keeps its param', () => {
+                dialogSignal.set(SETTINGS_DIALOG);
+                spectator.detectChanges();
+
+                popstate('/c/content-drive?editFolder=folder-1');
+
+                expect(store.closeDialog).not.toHaveBeenCalled();
+            });
+        });
+    });
+
     describe('Edit Content side panel', () => {
         let sidePanelNav: SpyObject<DotSidePanelNavController>;
 
-        // Drives the module-scope signal backing the nav service mock's readonly `$editPanelRequest`.
-        // Typed at declaration, so no cast is needed and payloads are compile-checked.
-        const setPanelRequest = (value: EditContentDialogData | null) =>
+        /**
+         * The location the real navigation service derives from a request: the identifier and
+         * language for an edit, the content type variable for a create.
+         */
+        const locationFor = (
+            value: EditContentDialogData | null
+        ): DotContentDrivePanelLocation | null => {
+            if (!value) {
+                return null;
+            }
+
+            return value.mode === 'edit'
+                ? {
+                      kind: 'edit',
+                      editContent: value.identifier ?? '',
+                      editContentLang: value.languageId
+                  }
+                : { kind: 'create', createContent: value.contentTypeId ?? '' };
+        };
+
+        // Drives the module-scope signals backing the nav service mock's readonly `$editPanelRequest`
+        // and `$panelLocation`, set together as the real service sets them on open and close.
+        const setPanelRequest = (value: EditContentDialogData | null) => {
             editPanelRequestSignal.set(value);
+            panelLocationSignal.set(locationFor(value));
+        };
 
         const EDIT_REQUEST: EditContentDialogData = {
             mode: 'edit',
             contentletInode: 'inode-1',
             identifier: 'id-1',
+            languageId: 1,
             title: 'My content'
         };
 
@@ -4964,47 +5226,97 @@ describe('DotContentDriveShellComponent', () => {
             await spectator.fixture.whenStable();
             spectator.detectChanges();
 
-            spectator.triggerEventHandler('dot-edit-content-side-panel', 'saved', undefined);
+            // The panel's `saved` output always carries the saved contentlet.
+            spectator.triggerEventHandler('dot-edit-content-side-panel', 'saved', {
+                identifier: 'id-1',
+                languageId: 1
+            } as DotCMSContentlet);
 
             expect(store.reloadContentDrive).toHaveBeenCalledTimes(1);
         });
 
-        it('reflects an open edit panel as an editContent identifier in the URL', () => {
+        it('reflects an open edit panel as its identifier and language in the URL', () => {
             setPanelRequest(EDIT_REQUEST);
             spectator.detectChanges();
 
             expect(router.createUrlTree).toHaveBeenCalledWith(
                 [],
                 expect.objectContaining({
-                    queryParams: expect.objectContaining({ editContent: 'id-1' })
+                    queryParams: expect.objectContaining({
+                        editContent: 'id-1',
+                        editContentLang: '1',
+                        createContent: null
+                    })
                 })
             );
         });
 
-        it('reflects an open new-mode panel as editContent=new (push), so Back has an entry to pop (AC8)', () => {
+        it('reflects an open create panel as createContent=<type> (push), so a refresh can reopen it (FR-020)', () => {
             setPanelRequest({ mode: 'new', contentTypeId: 'ct-1', title: 'New content' });
             spectator.detectChanges();
 
             expect(router.createUrlTree).toHaveBeenCalledWith(
                 [],
                 expect.objectContaining({
-                    queryParams: expect.objectContaining({ editContent: 'new' })
+                    queryParams: expect.objectContaining({
+                        createContent: 'ct-1',
+                        editContent: null,
+                        editContentLang: null
+                    })
                 })
             );
-            expect(location.go).toHaveBeenCalled();
+            expect(location.go).toHaveBeenCalledTimes(1);
         });
 
-        it('uses replaceState (not go) when the panel closes, so Back cannot resurrect the removed param', () => {
+        it('follows the location, not the request, so the URL can change without remounting the panel', () => {
+            setPanelRequest({ mode: 'new', contentTypeId: 'ct-1', title: 'New content' });
+            spectator.detectChanges();
+            (router.createUrlTree as Mock).mockClear();
+            (location.go as Mock).mockClear();
+            (location.replaceState as Mock).mockClear();
+
+            // The request stays a create; only the location moves on (as after a first save).
+            panelLocationSignal.set({ kind: 'edit', editContent: 'id-9', editContentLang: 2 });
+            spectator.detectChanges();
+
+            // Same panel, new address: replaced, so Back still leaves the panel in one step (FR-025).
+            expect(location.go).not.toHaveBeenCalled();
+            expect(location.replaceState).toHaveBeenCalledTimes(1);
+
+            expect(router.createUrlTree).toHaveBeenCalledWith(
+                [],
+                expect.objectContaining({
+                    queryParams: expect.objectContaining({
+                        editContent: 'id-9',
+                        editContentLang: '2',
+                        createContent: null
+                    })
+                })
+            );
+        });
+
+        it('uses replaceState (not go) when the panel closes, and removes every panel param', () => {
             setPanelRequest(EDIT_REQUEST);
             spectator.detectChanges();
             (location.go as Mock).mockClear();
             (location.replaceState as Mock).mockClear();
+            (router.createUrlTree as Mock).mockClear();
 
             setPanelRequest(null);
             spectator.detectChanges();
 
             expect(location.replaceState).toHaveBeenCalledTimes(1);
             expect(location.go).not.toHaveBeenCalled();
+            expect(router.createUrlTree).toHaveBeenCalledWith(
+                [],
+                expect.objectContaining({
+                    queryParams: expect.objectContaining({
+                        editContent: null,
+                        editContentLang: null,
+                        createContent: null
+                    })
+                })
+            );
         });
 
         describe('browser Back (popstate)', () => {
@@ -5052,27 +5364,242 @@ describe('DotContentDriveShellComponent', () => {
                 expect(navigationService.closeEditPanel).not.toHaveBeenCalled();
             });
 
-            it('routes Back through the guard for an open new-mode panel too (AC8)', () => {
+            it('routes Back through the guard for an open create panel too (AC8)', () => {
                 const requestClose = stubSidePanel();
                 setPanelRequest({ mode: 'new', contentTypeId: 'ct-1', title: 'New content' });
 
-                // Back removed the `new` marker entirely — the popstate handler must still close
-                // the create panel through the guard, not leave it open with a stale URL.
+                // Back removed `createContent` — the popstate handler must still close the create
+                // panel through the guard, not leave it open with a stale URL.
                 getPopstateHandler()({ url: '/c/content-drive?path=/foo' });
 
                 expect(requestClose).toHaveBeenCalledTimes(1);
                 expect(navigationService.closeEditPanel).not.toHaveBeenCalled();
                 expect(location.replaceState).toHaveBeenCalledTimes(1);
+                // The restored URL names the create again, not the retired `new` marker.
+                expect(router.createUrlTree).toHaveBeenLastCalledWith(
+                    [],
+                    expect.objectContaining({
+                        queryParams: expect.objectContaining({ createContent: 'ct-1' })
+                    })
+                );
             });
 
-            it('keeps a new-mode panel open when Back preserves the editContent=new marker', () => {
+            it('keeps a create panel open when Back preserves its createContent param', () => {
+                const requestClose = stubSidePanel();
+                setPanelRequest({ mode: 'new', contentTypeId: 'ct-1', title: 'New content' });
+
+                getPopstateHandler()({ url: '/c/content-drive?createContent=ct-1' });
+
+                expect(requestClose).not.toHaveBeenCalled();
+                expect(navigationService.closeEditPanel).not.toHaveBeenCalled();
+            });
+
+            it('closes a create panel when Back only leaves the retired editContent=new marker', () => {
                 const requestClose = stubSidePanel();
                 setPanelRequest({ mode: 'new', contentTypeId: 'ct-1', title: 'New content' });
 
                 getPopstateHandler()({ url: '/c/content-drive?editContent=new' });
 
-                expect(requestClose).not.toHaveBeenCalled();
+                expect(requestClose).toHaveBeenCalledTimes(1);
+            });
+        });
+
+        // "Switch to the old editor" stays in Content Drive (#37759, FR-028). The URL already names
+        // the same content and language, so nothing is written and no history entry is added.
+        it("hands the new editor's saved content to the navigation service, so a first save can name it", async () => {
+            setPanelRequest({ mode: 'new', contentTypeId: 'ct-1', title: 'New content' });
+            spectator.detectChanges();
+            await spectator.fixture.whenStable();
+            spectator.detectChanges();
+
+            spectator.triggerEventHandler('dot-edit-content-side-panel', 'saved', {
+                identifier: 'id-9',
+                languageId: 2,
+                inode: 'inode-9'
+            } as DotCMSContentlet);
+
+            expect(navigationService.panelSaved).toHaveBeenCalledWith({
+                identifier: 'id-9',
+                languageId: 2
+            });
+            // Its own refresh after a save stays as it was.
+            expect(store.reloadContentDrive).toHaveBeenCalledWith();
+        });
+
+        it('hands a switch to the old editor to the navigation service, without touching the URL', async () => {
+            setPanelRequest(EDIT_REQUEST);
+            spectator.detectChanges();
+            await spectator.fixture.whenStable();
+            spectator.detectChanges();
+            (location.go as Mock).mockClear();
+            const contentlet = { inode: 'inode-1', identifier: 'id-1' } as DotCMSContentlet;
+
+            spectator.triggerEventHandler(
+                'dot-edit-content-side-panel',
+                'switchedToLegacyEditor',
+                contentlet
+            );
+
+            expect(navigationService.switchToLegacyEditor).toHaveBeenCalledWith(contentlet);
+            expect(location.go).not.toHaveBeenCalled();
+        });
+
+        describe('legacy-editor panel', () => {
+            const LEGACY_REQUEST: DotLegacyEditorRequest = {
+                mode: 'edit',
+                inode: 'legacy-inode',
+                identifier: 'legacy-id',
+                languageId: 1,
+                title: 'Legacy content',
+                portletId: 'content-drive'
+            };
+
+            /** Opens the legacy panel the way the navigation service does: request + location. */
+            const setLegacyRequest = (value: DotLegacyEditorRequest | null) => {
+                legacyPanelRequestSignal.set(value);
+                panelLocationSignal.set(
+                    value
+                        ? {
+                              kind: 'edit',
+                              editContent: value.identifier ?? '',
+                              editContentLang: value.languageId
+                          }
+                        : null
+                );
+            };
+
+            const LEGACY_PANEL = 'dot-legacy-editor-side-panel';
+
+            it('renders the legacy panel with the request, and not the new-editor panel', async () => {
+                setLegacyRequest(LEGACY_REQUEST);
+                spectator.detectChanges();
+                await spectator.fixture.whenStable();
+
+                const panel = spectator.debugElement.query(By.css(LEGACY_PANEL));
+
+                expect(panel).not.toBeNull();
+                // Read through ng-mocks: a mocked component holds a signal input as a plain value.
+                expect(ngMocks.input(panel, 'request')).toEqual(LEGACY_REQUEST);
+                expect(spectator.query('dot-edit-content-side-panel')).toBeNull();
+            });
+
+            it('renders no legacy panel while only the new-editor panel is open', async () => {
+                setPanelRequest(EDIT_REQUEST);
+                spectator.detectChanges();
+                await spectator.fixture.whenStable();
+
+                expect(spectator.query(LEGACY_PANEL)).toBeNull();
+            });
+
+            it('refreshes the list quietly on save and keeps the panel open', () => {
+                setLegacyRequest(LEGACY_REQUEST);
+                spectator.detectChanges();
+
+                spectator.triggerEventHandler(LEGACY_PANEL, 'saved', {
+                    identifier: 'legacy-id',
+                    inode: 'legacy-inode-2',
+                    languageId: 1
+                });
+
+                expect(store.reloadContentDrive).toHaveBeenCalledWith({ quiet: true });
                 expect(navigationService.closeEditPanel).not.toHaveBeenCalled();
+                // So a first save of a create can switch the URL to the saved content (FR-025).
+                expect(navigationService.panelSaved).toHaveBeenCalledWith({
+                    identifier: 'legacy-id',
+                    languageId: 1
+                });
+            });
+
+            it('hands a language switch inside the legacy editor to the navigation service', () => {
+                setLegacyRequest(LEGACY_REQUEST);
+                spectator.detectChanges();
+
+                spectator.triggerEventHandler(LEGACY_PANEL, 'languageChanged', 3);
+
+                expect(navigationService.panelLanguageChanged).toHaveBeenCalledWith(3);
+            });
+
+            it('closes the panel and refreshes the list quietly on every close', () => {
+                setLegacyRequest(LEGACY_REQUEST);
+                spectator.detectChanges();
+
+                spectator.triggerEventHandler(LEGACY_PANEL, 'closed', undefined);
+
+                expect(navigationService.closeEditPanel).toHaveBeenCalledTimes(1);
+                expect(store.reloadContentDrive).toHaveBeenCalledWith({ quiet: true });
+            });
+
+            // The first save of a new legacy page closes the editor and names the page to open,
+            // as it does from Content Search (#37759, FR-008).
+            it('closes, refreshes and opens the page editor when the legacy editor names a page', () => {
+                setLegacyRequest(LEGACY_REQUEST);
+                spectator.detectChanges();
+
+                spectator.triggerEventHandler(LEGACY_PANEL, 'pageEditorRequested', {
+                    url: '/blog/new-page',
+                    languageId: 2
+                });
+
+                expect(navigationService.closeEditPanel).toHaveBeenCalledTimes(1);
+                expect(store.reloadContentDrive).toHaveBeenCalledWith({ quiet: true });
+                expect(routerService.goToEditPage).toHaveBeenCalledWith({
+                    url: '/blog/new-page',
+                    language_id: 2
+                });
+            });
+
+            it('routes browser Back through the legacy panel close guard', () => {
+                const requestClose = vi.fn();
+                vi.spyOn(
+                    spectator.component as unknown as {
+                        $legacyPanel: Signal<DotLegacyEditorSidePanelComponent | undefined>;
+                    },
+                    '$legacyPanel'
+                ).mockReturnValue({
+                    requestClose
+                } as unknown as DotLegacyEditorSidePanelComponent);
+                setLegacyRequest(LEGACY_REQUEST);
+
+                (location.subscribe as Mock).mock.calls[0][0]({
+                    url: '/c/content-drive?path=/foo'
+                });
+
+                expect(requestClose).toHaveBeenCalledTimes(1);
+                expect(navigationService.closeEditPanel).not.toHaveBeenCalled();
+                // The panel's param is put back while its unsaved-changes prompt decides, so
+                // "Keep editing" leaves the URL as it was (#37759, FR-019).
+                expect(location.replaceState).toHaveBeenCalledTimes(1);
+                expect(router.createUrlTree).toHaveBeenLastCalledWith(
+                    [],
+                    expect.objectContaining({
+                        queryParams: expect.objectContaining({ editContent: 'legacy-id' })
+                    })
+                );
+            });
+
+            // Bring Back reloads the editor with the restored version and sends no save, so the
+            // list is refreshed when the panel reports it (#37759, US6).
+            it('refreshes the list quietly when a version was brought back', () => {
+                setLegacyRequest(LEGACY_REQUEST);
+                spectator.detectChanges();
+
+                spectator.triggerEventHandler(LEGACY_PANEL, 'versionRestored', undefined);
+
+                expect(store.reloadContentDrive).toHaveBeenCalledWith({ quiet: true });
+                expect(navigationService.closeEditPanel).not.toHaveBeenCalled();
+            });
+
+            it('forces the tree collapsed on narrow viewports while it is open', () => {
+                sidePanelNav.shouldCollapse.mockReturnValue(true);
+                spectator.detectChanges();
+
+                setLegacyRequest(LEGACY_REQUEST);
+                spectator.detectChanges();
+                expect(store.setTreeForceCollapsed).toHaveBeenCalledWith(true);
+
+                setLegacyRequest(null);
+                spectator.detectChanges();
+                expect(store.setTreeForceCollapsed).toHaveBeenLastCalledWith(false);
             });
         });
 
@@ -5334,6 +5861,18 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
     };
     // Held at describe scope so we can clear it before each mount (mockProvider reuses the same fn).
     const openEditByIdentifier = vi.fn();
+    const createContent = vi.fn();
+    /** Where the navigation service says a create from here goes. */
+    const CURRENT_FOLDER = { folderPath: 'demo.dotcms.com/test/path', folderInode: 'folder-inode' };
+    const currentFolder = vi.fn().mockReturnValue(CURRENT_FOLDER);
+    // What a `createContent` link waits for before it opens: the tree's first load, and the
+    // default language a create may start in (#37759, FR-024).
+    const folders = signal<DotFolderTreeNodeItem[]>([]);
+    const sidebarLoading = signal(false);
+    const defaultLanguageLoaded = signal(true);
+    // A folder named only by its identifier, resolved when a folder-dialog link loads (FR-031).
+    const getFolderById = vi.fn();
+    const getUserAccess = vi.fn();
 
     const createComponent = createComponentFactory({
         component: DotContentDriveShellComponent,
@@ -5356,7 +5895,11 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
                 getContentTypes: vi.fn().mockImplementation(() => of([]))
             }),
             mockProvider(DotLanguagesService, { get: vi.fn().mockReturnValue(of()) }),
-            mockProvider(DotFolderService, { getFolders: vi.fn().mockReturnValue(of([])) }),
+            mockProvider(DotFolderService, {
+                getFolders: vi.fn().mockReturnValue(of([])),
+                getFolderById
+            }),
+            mockProvider(DotPermissionsService, { getUserAccess }),
             mockProvider(DotUploadFileService, {
                 uploadFileByBaseType: vi.fn().mockReturnValue(of({}))
             }),
@@ -5374,10 +5917,13 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
             }),
             mockProvider(DotContentDriveNavigationService, {
                 editContent: vi.fn(),
-                createContent: vi.fn(),
+                createContent,
                 closeEditPanel: vi.fn(),
                 openEditByIdentifier,
-                $editPanelRequest: signal(null)
+                currentFolder,
+                $editPanelRequest: signal(null),
+                $legacyPanelRequest: signal(null),
+                $panelLocation: signal(null)
             }),
             LoggerService,
             StringUtils,
@@ -5403,16 +5949,39 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
         ],
         componentProviders: [
             DotContentDriveStore,
+            mockProvider(DialogService, { open: dialogServiceOpen }),
+            mockProvider(DotFolderService, {
+                getFolders: vi.fn().mockReturnValue(of([])),
+                getFolderById
+            }),
             provideContentDriveFilterFacade(),
             // The toolbar renders for real here, "More" overflow included, so its own seam has to
             // be provided the same way the shell provides it in production.
             provideContentDriveFieldFilterHost()
+        ],
+        // The legacy panel hosts a JSP iframe and has its own spec; the shell only needs its
+        // inputs, outputs and `requestClose()`.
+        overrideComponents: [
+            [
+                DotContentDriveShellComponent,
+                {
+                    remove: { imports: [DotLegacyEditorSidePanelComponent] },
+                    add: { imports: [MockComponent(DotLegacyEditorSidePanelComponent)] }
+                }
+            ]
         ],
         detectChanges: false
     });
 
     beforeEach(() => {
         openEditByIdentifier.mockClear();
+        createContent.mockClear();
+        folders.set([]);
+        sidebarLoading.set(false);
+        defaultLanguageLoaded.set(true);
+        delete deepLinkQueryParams['createContent'];
+        getFolderById.mockReset();
+        getUserAccess.mockReset();
         // The params object is shared by the factory, so a language set by one test would otherwise
         // leak into the next.
         delete deepLinkQueryParams['editContentLang'];
@@ -5440,6 +6009,26 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
                     // The sidebar this shell renders reads it to decide whether to offer the
                     // System Host entry at all.
                     systemHostCanRead: systemHostCanReadSignal,
+                    // Read by the template once a test runs change detection here, which only the
+                    // `createContent` link tests do (#37759).
+                    $allSiteContentSelected: allSiteContentSelectedSignal,
+                    $canDuplicateHere: canAddChildrenSignal,
+                    $newContentHostId: vi.fn().mockReturnValue(MOCK_SITES[0].identifier),
+                    $systemHostSelected: vi.fn().mockReturnValue(false),
+                    actionExecution: signal(undefined),
+                    actionExecutionResult: signal(undefined),
+                    blockingRunCount: signal(0),
+                    clearActionExecutionResult: vi.fn(),
+                    clearDialogDrillDown: vi.fn(),
+                    clearFilters: vi.fn(),
+                    currentUserIsAdmin: vi.fn().mockReturnValue(false),
+                    dialogDrillDown: signal(undefined),
+                    hasPushPublishEnvironments: vi.fn().mockReturnValue(false),
+                    selectAllSiteContent: vi.fn(),
+                    selectSystemHost: vi.fn(),
+                    setDialogDrillDown: vi.fn(),
+                    toolbarBlockingRunCount: signal(0),
+                    trackUploadJob: vi.fn(),
                     currentSite: vi.fn().mockReturnValue(MOCK_SITES[0]),
                     isTreeExpanded: vi.fn().mockReturnValue(false),
                     items: vi.fn().mockReturnValue(MOCK_ITEMS),
@@ -5484,10 +6073,11 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
                     loadFolders: vi.fn(),
                     loadChildFolders: vi.fn(),
                     updateFolders: vi.fn(),
-                    folders: vi.fn(),
+                    folders,
                     selectedNode: vi.fn(),
                     setSelectedNode: vi.fn(),
-                    sidebarLoading: vi.fn(),
+                    sidebarLoading,
+                    defaultLanguageLoaded,
                     closeDialog: vi.fn(),
                     patchContextMenu: vi.fn(),
                     resetContextMenu: vi.fn(),
@@ -5575,5 +6165,272 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
         mountShell();
 
         expect(openEditByIdentifier).not.toHaveBeenCalled();
+    });
+
+    describe('createContent link', () => {
+        const SITE_NODE = {
+            key: 'site',
+            data: { type: 'site', path: '' }
+        } as DotFolderTreeNodeItem;
+
+        beforeEach(() => {
+            delete deepLinkQueryParams['editContent'];
+            deepLinkQueryParams.createContent = 'Banner';
+        });
+
+        afterAll(() => {
+            delete deepLinkQueryParams['createContent'];
+            deepLinkQueryParams.editContent = 'id-1';
+        });
+
+        it('opens the create form in the folder Content Drive shows, once the tree has loaded', () => {
+            const spectator = mountShell();
+            spectator.detectChanges();
+
+            expect(createContent).not.toHaveBeenCalled();
+
+            folders.set([SITE_NODE]);
+            spectator.detectChanges();
+
+            expect(createContent).toHaveBeenCalledTimes(1);
+            expect(createContent).toHaveBeenCalledWith('Banner', CURRENT_FOLDER);
+            expect(openEditByIdentifier).not.toHaveBeenCalled();
+        });
+
+        it('waits for a tree load that is still in flight', () => {
+            const spectator = mountShell();
+            sidebarLoading.set(true);
+            folders.set([SITE_NODE]);
+            spectator.detectChanges();
+
+            expect(createContent).not.toHaveBeenCalled();
+
+            sidebarLoading.set(false);
+            spectator.detectChanges();
+
+            expect(createContent).toHaveBeenCalledTimes(1);
+        });
+
+        it('waits for the default language, the one a create starts in without a language filter', () => {
+            const spectator = mountShell();
+            defaultLanguageLoaded.set(false);
+            folders.set([SITE_NODE]);
+            spectator.detectChanges();
+
+            expect(createContent).not.toHaveBeenCalled();
+
+            defaultLanguageLoaded.set(true);
+            spectator.detectChanges();
+
+            expect(createContent).toHaveBeenCalledTimes(1);
+        });
+
+        it('opens it once, however often the tree reloads afterwards', () => {
+            const spectator = mountShell();
+            folders.set([SITE_NODE]);
+            spectator.detectChanges();
+
+            folders.set([{ ...SITE_NODE }]);
+            spectator.detectChanges();
+
+            expect(createContent).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('params that cannot hold together', () => {
+        afterEach(() => {
+            delete deepLinkQueryParams['createContent'];
+            delete deepLinkQueryParams['editFolder'];
+            deepLinkQueryParams.editContent = 'id-1';
+        });
+
+        /** What the shell writes to clear every panel and folder-dialog param, keeping the rest. */
+        const ALL_CLEARED = {
+            editContent: null,
+            editContentLang: null,
+            createContent: null,
+            createFolder: null,
+            editFolder: null,
+            folderPermissions: null
+        };
+
+        it.each([
+            ['an edit and a create', { createContent: 'Blog' }],
+            ['an edit and a folder dialog', { editFolder: 'folder-1' }]
+        ])('opens nothing for %s, and removes all of those params', (_label, extra) => {
+            Object.assign(deepLinkQueryParams, extra);
+
+            const spectator = mountShell();
+            const router = spectator.inject(Router);
+            const location = spectator.inject(Location);
+
+            expect(openEditByIdentifier).not.toHaveBeenCalled();
+            expect(createContent).not.toHaveBeenCalled();
+            expect(router.createUrlTree).toHaveBeenCalledWith([], {
+                queryParams: ALL_CLEARED,
+                queryParamsHandling: 'merge'
+            });
+            expect(location.replaceState).toHaveBeenCalledTimes(1);
+            expect(location.go).not.toHaveBeenCalled();
+        });
+    });
+
+    /**
+     * A folder-dialog link reopens its dialog for the folder it names, following the same
+     * permission rules as the context menu that opens it (#37759, FR-031, FR-033).
+     */
+    describe('folder dialog links', () => {
+        const FOLDER_BEAN = {
+            identifier: 'folder-1',
+            inode: 'folder-inode-1',
+            name: 'blog',
+            title: 'Blog',
+            path: '/blog/',
+            hostId: MOCK_SITES[0].identifier,
+            sortOrder: 2,
+            showOnMenu: true,
+            filesMasks: '*.jpg',
+            defaultFileType: 'FileAsset',
+            defaultBaseType: null
+        };
+
+        beforeEach(() => {
+            delete deepLinkQueryParams['editContent'];
+        });
+
+        afterEach(() => {
+            delete deepLinkQueryParams['createFolder'];
+            delete deepLinkQueryParams['editFolder'];
+            delete deepLinkQueryParams['folderPermissions'];
+            deepLinkQueryParams.editContent = 'id-1';
+            canAddChildrenSignal.set(true);
+        });
+
+        const setDialogOf = (spectator: Spectator<DotContentDriveShellComponent>) =>
+            spectator.inject(DotContentDriveStore, true).setDialog as Mock;
+
+        describe('New Folder', () => {
+            const SITE_NODE = {
+                key: 'site',
+                data: { type: 'site', path: '' }
+            } as DotFolderTreeNodeItem;
+
+            beforeEach(() => {
+                deepLinkQueryParams.createFolder = 'true';
+            });
+
+            it('opens New Folder once the tree has loaded and the folder accepts children', () => {
+                const spectator = mountShell();
+                spectator.detectChanges();
+
+                expect(setDialogOf(spectator)).not.toHaveBeenCalled();
+
+                folders.set([SITE_NODE]);
+                spectator.detectChanges();
+
+                expect(setDialogOf(spectator)).toHaveBeenCalledWith({
+                    type: DIALOG_TYPE.FOLDER,
+                    header: 'content-drive.dialog.folder.header'
+                });
+            });
+
+            it('opens nothing where the toolbar would not offer New Folder', () => {
+                canAddChildrenSignal.set(false);
+                const spectator = mountShell();
+                folders.set([SITE_NODE]);
+                spectator.detectChanges();
+
+                expect(setDialogOf(spectator)).not.toHaveBeenCalled();
+            });
+        });
+
+        describe('Folder Settings', () => {
+            beforeEach(() => {
+                deepLinkQueryParams.editFolder = 'folder-1';
+            });
+
+            it('resolves the folder by id and opens its settings when the author can edit it', () => {
+                getFolderById.mockReturnValue(of(FOLDER_BEAN));
+                getUserAccess.mockReturnValue(of({ canEdit: true, canEditPermissions: false }));
+
+                const spectator = mountShell();
+
+                expect(getFolderById).toHaveBeenCalledWith('folder-1');
+                expect(getUserAccess).toHaveBeenCalledWith('folder-1');
+                expect(setDialogOf(spectator)).toHaveBeenCalledWith({
+                    type: DIALOG_TYPE.FOLDER,
+                    header: 'content-drive.dialog.folder.header.edit',
+                    payload: {
+                        type: 'folder',
+                        identifier: 'folder-1',
+                        inode: 'folder-inode-1',
+                        name: 'blog',
+                        title: 'Blog',
+                        path: '/blog/',
+                        sortOrder: 2,
+                        showOnMenu: true,
+                        filesMasks: '*.jpg',
+                        defaultFileType: 'FileAsset',
+                        defaultBaseType: null,
+                        permissions: [PERMISSIONS_TYPE.EDIT]
+                    }
+                });
+            });
+
+            it('shows the standard permission error and opens nothing when the author cannot edit it', () => {
+                getFolderById.mockReturnValue(of(FOLDER_BEAN));
+                getUserAccess.mockReturnValue(of({ canEdit: false, canEditPermissions: true }));
+
+                const spectator = mountShell();
+
+                expect(spectator.inject(DotHttpErrorManagerService).handle).toHaveBeenCalledWith(
+                    expect.objectContaining({ status: 403 })
+                );
+                expect(setDialogOf(spectator)).not.toHaveBeenCalled();
+            });
+
+            it('shows the standard error and opens nothing when the folder is gone', () => {
+                const error = new HttpErrorResponse({ status: 404 });
+                getFolderById.mockReturnValue(throwError(() => error));
+                getUserAccess.mockReturnValue(of({ canEdit: true, canEditPermissions: true }));
+
+                const spectator = mountShell();
+
+                expect(spectator.inject(DotHttpErrorManagerService).handle).toHaveBeenCalledWith(
+                    error
+                );
+                expect(setDialogOf(spectator)).not.toHaveBeenCalled();
+            });
+        });
+
+        describe('Edit Permissions', () => {
+            beforeEach(() => {
+                deepLinkQueryParams.folderPermissions = 'folder-1';
+            });
+
+            it('opens Edit Permissions when the author may edit the folder permissions', () => {
+                getUserAccess.mockReturnValue(of({ canEdit: false, canEditPermissions: true }));
+
+                const spectator = mountShell();
+
+                expect(getUserAccess).toHaveBeenCalledWith('folder-1');
+                expect(setDialogOf(spectator)).toHaveBeenCalledWith({
+                    type: 'FOLDER_PERMISSIONS',
+                    header: 'Edit-Permissions',
+                    payload: { identifier: 'folder-1' }
+                });
+            });
+
+            it('shows the standard permission error and opens nothing otherwise', () => {
+                getUserAccess.mockReturnValue(of({ canEdit: true, canEditPermissions: false }));
+
+                const spectator = mountShell();
+
+                expect(spectator.inject(DotHttpErrorManagerService).handle).toHaveBeenCalledWith(
+                    expect.objectContaining({ status: 403 })
+                );
+                expect(setDialogOf(spectator)).not.toHaveBeenCalled();
+            });
+        });
     });
 });

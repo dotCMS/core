@@ -1,0 +1,71 @@
+<!--
+    Same drawer as the new-editor side panel (dot-edit-content-side-panel): a transparent mask so the
+    list stays visible, the shadow on `pt.root.class` because `appendTo="body"` puts the drawer out
+    of reach of component styles, and `dismissible` off so a mask click goes through `requestClose()`
+    instead of tearing the panel down.
+-->
+<p-drawer
+    [visible]="!!request()"
+    [modal]="true"
+    [dismissible]="false"
+    [closeOnEscape]="false"
+    [closable]="false"
+    appendTo="body"
+    [maskStyle]="{ background: 'transparent !important' }"
+    [pt]="{
+        root: {
+            'data-testid': 'legacy-editor-side-panel',
+            class: '!shadow-2xl',
+            style: { width: $expanded() ? '100%' : '80%', transition: 'width 250ms ease' }
+        },
+        content: { class: 'p-0! flex' }
+    }"
+    position="right">
+    <ng-template #header>
+        <div class="flex w-full items-center justify-between gap-4">
+            <span class="truncate text-2xl font-semibold" data-testid="legacy-side-panel-title">
+                {{ request()?.title }}
+            </span>
+            <div class="flex items-center gap-1">
+                <p-button
+                    [text]="true"
+                    severity="secondary"
+                    [ariaLabel]="
+                        $expanded()
+                            ? ('edit.content.side-panel.collapse' | dm)
+                            : ('edit.content.side-panel.expand' | dm)
+                    "
+                    (onClick)="toggleExpanded()"
+                    data-testid="legacy-side-panel-expand">
+                    <ng-template #icon>
+                        <i class="material-symbols-outlined text-xl!">
+                            {{ $expanded() ? 'close_fullscreen' : 'open_in_full' }}
+                        </i>
+                    </ng-template>
+                </p-button>
+                <p-button
+                    [text]="true"
+                    severity="secondary"
+                    [ariaLabel]="'edit.content.side-panel.close' | dm"
+                    (onClick)="requestClose()"
+                    data-testid="legacy-side-panel-close">
+                    <ng-template #icon>
+                        <i class="material-symbols-outlined text-xl!">close</i>
+                    </ng-template>
+                </p-button>
+            </div>
+        </div>
+    </ng-template>
+    @if ($url(); as url) {
+        <iframe
+            #iframe
+            class="size-full flex-1 border-0"
+            [src]="url"
+            [title]="request()?.title ?? ''"
+            (load)="onIframeLoad()"
+            data-testid="legacy-editor-iframe"></iframe>
+    }
+</p-drawer>
+
+<!-- The unsaved-changes prompt, on this panel's own ConfirmationService (see requestClose). -->
+<p-confirmDialog />
