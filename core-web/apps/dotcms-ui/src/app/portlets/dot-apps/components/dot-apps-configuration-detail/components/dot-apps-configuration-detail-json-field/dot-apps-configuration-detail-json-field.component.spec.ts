@@ -17,7 +17,11 @@ import {
 } from './dot-apps-configuration-detail-json-field.component';
 
 /** Stands in for `ngx-monaco-editor`, which needs a global `monaco` that tests don't load. */
-@Component({ selector: 'ngx-monaco-editor', template: '' })
+@Component({
+    // eslint-disable-next-line @angular-eslint/component-selector
+    selector: 'ngx-monaco-editor',
+    template: ''
+})
 class MonacoEditorStubComponent {
     options = input<Record<string, unknown>>();
     init = output<FakeEditor>();

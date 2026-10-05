@@ -10,6 +10,7 @@ import { DotAppsCodeBlocksDirective, highlightJson } from './dot-apps-code-block
 
 /** Stands in for ngx-markdown's component: only its `ready` output is used. */
 @Component({
+    // eslint-disable-next-line @angular-eslint/component-selector
     selector: 'markdown',
     template: '<ng-content />',
     providers: [
