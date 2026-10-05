@@ -9,7 +9,7 @@
     "@dotcms/types": "0.0.0"
   },
   "dependencies": {
-    "@tinymce/tinymce-react": "6.3.0"
+    "@tinymce/tinymce-react": "6.2.1"
   },
   "devDependencies": {
     "@dotcms/types": "latest"
