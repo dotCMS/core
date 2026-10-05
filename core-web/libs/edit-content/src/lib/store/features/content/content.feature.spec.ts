@@ -563,8 +563,26 @@ describe('ContentFeature', () => {
             });
             // The full-page editor goes to the legacy edit page; the side panel reopens the same
             // content in its legacy panel. Either way it is the host's call (#37759, FR-028).
-            expect(mockHost.switchToLegacyEditor).toHaveBeenCalledWith(mockContentlet);
+            expect(mockHost.switchToLegacyEditor).toHaveBeenCalledWith(
+                mockContentlet,
+                contentType.variable
+            );
             expect(router.navigate).not.toHaveBeenCalled();
+        }));
+
+        // From a create there is no content yet, so the host reopens a legacy create for the same
+        // type instead of crashing on a `null` contentlet (#37759, T116).
+        it('should hand the host the content type when switching from a create', fakeAsync(() => {
+            patchState(store, {
+                contentlet: null,
+                contentType: { ...CONTENT_TYPE_MOCK, id: 'st-123', variable: 'Blog', workflows: [] }
+            });
+            contentTypeService.updateContentType.mockReturnValue(of(CONTENT_TYPE_MOCK));
+
+            store.disableNewContentEditor();
+            tick();
+
+            expect(mockHost.switchToLegacyEditor).toHaveBeenCalledWith(null, 'Blog');
         }));
 
         it('should not switch editors when the content type update fails', fakeAsync(() => {

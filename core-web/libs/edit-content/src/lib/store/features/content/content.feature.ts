@@ -437,8 +437,12 @@ export function withContent() {
                                             // The host decides where the content opens in
                                             // the legacy editor: the full-page editor goes to
                                             // its edit page, the side panel reopens it in the
-                                            // legacy panel (#37759, FR-028).
-                                            host.switchToLegacyEditor(contentlet);
+                                            // legacy panel. A create has no content yet, so
+                                            // it reopens as a legacy create (#37759, FR-028).
+                                            host.switchToLegacyEditor(
+                                                contentlet ?? null,
+                                                contentType.variable
+                                            );
                                         },
                                         error: (error: HttpErrorResponse) => {
                                             dotHttpErrorManagerService.handle(error);

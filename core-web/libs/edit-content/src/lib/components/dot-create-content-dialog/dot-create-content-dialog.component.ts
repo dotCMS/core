@@ -131,7 +131,13 @@ export class DotEditContentDialogComponent implements OnInit, OnDestroy {
         // opener now (#37759); this dialog keeps today's navigation for both.
         this.#host.switchedToLegacy$
             .pipe(takeUntilDestroyed())
-            .subscribe((contentlet) => this.#router.navigate(['/c/content/', contentlet.inode]));
+            .subscribe(({ contentlet, contentTypeVariable }) =>
+                this.#router.navigate(
+                    contentlet
+                        ? ['/c/content/', contentlet.inode]
+                        : ['/c/content/new/', contentTypeVariable]
+                )
+            );
         this.#host.loadFailed$
             .pipe(takeUntilDestroyed())
             .subscribe(() => this.#router.navigate(['/c/content']));

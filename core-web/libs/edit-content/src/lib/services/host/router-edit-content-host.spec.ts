@@ -212,9 +212,16 @@ describe('RouterEditContentHost', () => {
     // The full-page editor keeps today's navigation for both (#37759, FR-028, FR-029).
     describe('switchToLegacyEditor', () => {
         it('should navigate to the legacy edit page for the content', () => {
-            host.switchToLegacyEditor({ inode: 'inode-7' } as DotCMSContentlet);
+            host.switchToLegacyEditor({ inode: 'inode-7' } as DotCMSContentlet, 'Blog');
 
             expect(router.navigate).toHaveBeenCalledWith(['/c/content/', 'inode-7']);
+        });
+
+        // From a create there is no content yet: the legacy create for the same type (T116).
+        it('should navigate to the legacy create page when there is no content yet', () => {
+            host.switchToLegacyEditor(null, 'Blog');
+
+            expect(router.navigate).toHaveBeenCalledWith(['/c/content/new/', 'Blog']);
         });
     });
 

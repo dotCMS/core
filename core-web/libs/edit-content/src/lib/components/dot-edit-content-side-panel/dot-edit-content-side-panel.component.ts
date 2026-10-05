@@ -33,7 +33,10 @@ import {
     AngularImageEditorLauncher,
     IMAGE_EDITOR_LAUNCHER
 } from '../../fields/shared/image-editor-launcher';
-import { EditContentDialogData } from '../../models/dot-edit-content-dialog.interface';
+import {
+    DotLegacyEditorSwitch,
+    EditContentDialogData
+} from '../../models/dot-edit-content-dialog.interface';
 import { DotSidePanelNavController } from '../../services/dot-side-panel-nav.service';
 import { EDIT_CONTENT_HOST } from '../../services/host/edit-content-host.model';
 import { OverlayEditContentHost } from '../../services/host/overlay-edit-content-host';
@@ -147,10 +150,11 @@ export class DotEditContentSidePanelComponent implements OnDestroy {
     readonly saved = output<DotCMSContentlet>();
 
     /**
-     * "Switch to the old editor" was confirmed for the content in this panel. The opener reopens
-     * it in the legacy editor; this panel does not navigate (#37759, FR-028).
+     * "Switch to the old editor" was confirmed for the content in this panel, or for a create not
+     * saved yet. The opener reopens it in the legacy editor; this panel does not navigate (#37759,
+     * FR-028).
      */
-    readonly switchedToLegacyEditor = output<DotCMSContentlet>();
+    readonly switchedToLegacyEditor = output<DotLegacyEditorSwitch>();
 
     /**
      * Whether the panel is expanded to the full viewport width (vs the default ~80%). Seeded from
@@ -214,7 +218,7 @@ export class DotEditContentSidePanelComponent implements OnDestroy {
 
             host.switchedToLegacy$
                 .pipe(takeUntilDestroyed(this.#destroyRef))
-                .subscribe((contentlet) => this.switchedToLegacyEditor.emit(contentlet));
+                .subscribe((switched) => this.switchedToLegacyEditor.emit(switched));
 
             // The content never loaded, so there is nothing to keep: close without the guard. The
             // error was already reported (#37759, FR-029).

@@ -12,7 +12,10 @@ import {
     InPlaceNavigationRequest
 } from './edit-content-host.model';
 
-import { EditContentDialogData } from '../../models/dot-edit-content-dialog.interface';
+import {
+    DotLegacyEditorSwitch,
+    EditContentDialogData
+} from '../../models/dot-edit-content-dialog.interface';
 import {
     DotRelatedContentCrumb,
     DotRelatedContentNavigationStore,
@@ -139,12 +142,12 @@ export class OverlayEditContentHost implements EditContentHost, OnDestroy {
         this.#navigation$.next({ inode });
     }
 
-    readonly #switchedToLegacy$ = new Subject<DotCMSContentlet>();
+    readonly #switchedToLegacy$ = new Subject<DotLegacyEditorSwitch>();
     readonly #loadFailed$ = new Subject<void>();
 
     /**
-     * "Switch to the old editor" was confirmed for this content. An overlay does not navigate:
-     * its opener decides where the content opens next (#37759, FR-028).
+     * "Switch to the old editor" was confirmed for this content, or for a create that was never
+     * saved. An overlay does not navigate: its opener decides where it opens next (#37759, FR-028).
      */
     readonly switchedToLegacy$ = this.#switchedToLegacy$.asObservable();
 
@@ -152,8 +155,8 @@ export class OverlayEditContentHost implements EditContentHost, OnDestroy {
     readonly loadFailed$ = this.#loadFailed$.asObservable();
 
     /** Reports the switch on {@link switchedToLegacy$}. */
-    switchToLegacyEditor(contentlet: DotCMSContentlet): void {
-        this.#switchedToLegacy$.next(contentlet);
+    switchToLegacyEditor(contentlet: DotCMSContentlet | null, contentTypeVariable: string): void {
+        this.#switchedToLegacy$.next({ contentlet, contentTypeVariable });
     }
 
     /** Reports the load failure on {@link loadFailed$}. */

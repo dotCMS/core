@@ -26,7 +26,10 @@ describe('DotEditContentSidePanelComponent', () => {
     let spectator: Spectator<DotEditContentSidePanelComponent>;
     let saved$: Subject<DotCMSContentlet>;
     let left$: Subject<void>;
-    let switchedToLegacy$: Subject<DotCMSContentlet>;
+    let switchedToLegacy$: Subject<{
+        contentlet: DotCMSContentlet | null;
+        contentTypeVariable: string;
+    }>;
     let loadFailed$: Subject<void>;
     let mockHost: Pick<
         OverlayEditContentHost,
@@ -66,7 +69,10 @@ describe('DotEditContentSidePanelComponent', () => {
         localStorage.clear();
         saved$ = new Subject<DotCMSContentlet>();
         left$ = new Subject<void>();
-        switchedToLegacy$ = new Subject<DotCMSContentlet>();
+        switchedToLegacy$ = new Subject<{
+            contentlet: DotCMSContentlet | null;
+            contentTypeVariable: string;
+        }>();
         loadFailed$ = new Subject<void>();
         mockHost = {
             saved$: saved$.asObservable(),
@@ -481,11 +487,14 @@ describe('DotEditContentSidePanelComponent', () => {
             const closed = vi.fn();
             spectator.output('switchedToLegacyEditor').subscribe(switched);
             spectator.output('closed').subscribe(closed);
-            const contentlet = { inode: 'inode-1', identifier: 'id-1' } as DotCMSContentlet;
+            const switch$ = {
+                contentlet: { inode: 'inode-1', identifier: 'id-1' } as DotCMSContentlet,
+                contentTypeVariable: 'Blog'
+            };
 
-            switchedToLegacy$.next(contentlet);
+            switchedToLegacy$.next(switch$);
 
-            expect(switched).toHaveBeenCalledWith(contentlet);
+            expect(switched).toHaveBeenCalledWith(switch$);
             expect(closed).not.toHaveBeenCalled();
         });
 

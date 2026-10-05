@@ -141,9 +141,16 @@ export class RouterEditContentHost implements EditContentHost {
         this.#navigationGuard(() => this.#navigateRepointingCurrentCrumb(inode));
     }
 
-    /** Full-screen: opens the content in the legacy edit page, as before (#37759, FR-028). */
-    switchToLegacyEditor(contentlet: DotCMSContentlet): void {
-        this.#router.navigate(['/c/content/', contentlet.inode]);
+    /**
+     * Full-screen: opens the content in the legacy edit page, as before, or the legacy create page
+     * for the same type when nothing was saved yet (#37759, FR-028).
+     */
+    switchToLegacyEditor(contentlet: DotCMSContentlet | null, contentTypeVariable: string): void {
+        this.#router.navigate(
+            contentlet
+                ? ['/c/content/', contentlet.inode]
+                : ['/c/content/new/', contentTypeVariable]
+        );
     }
 
     /** Full-screen: returns to the content listing, as before (#37759, FR-029). */

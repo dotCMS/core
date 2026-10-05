@@ -76,14 +76,23 @@ describe('OverlayEditContentHost', () => {
     // An overlay does not navigate: it reports both intents, and whoever opened it decides
     // (#37759, FR-028, FR-029).
     describe('switchToLegacyEditor', () => {
-        it('emits the content on switchedToLegacy$', () => {
+        it('emits the content and its type on switchedToLegacy$', () => {
             const contentlet = { inode: 'inode-7' } as DotCMSContentlet;
             const spy = vi.fn();
             host.switchedToLegacy$.subscribe(spy);
 
-            host.switchToLegacyEditor(contentlet);
+            host.switchToLegacyEditor(contentlet, 'Blog');
 
-            expect(spy).toHaveBeenCalledWith(contentlet);
+            expect(spy).toHaveBeenCalledWith({ contentlet, contentTypeVariable: 'Blog' });
+        });
+
+        it('emits a switch from a create with no content (T116)', () => {
+            const spy = vi.fn();
+            host.switchedToLegacy$.subscribe(spy);
+
+            host.switchToLegacyEditor(null, 'Blog');
+
+            expect(spy).toHaveBeenCalledWith({ contentlet: null, contentTypeVariable: 'Blog' });
         });
     });
 

@@ -71,3 +71,14 @@ export interface EditContentDialogData {
      */
     onCancel?: () => void;
 }
+
+/**
+ * "Switch to the old editor" was confirmed in an overlay (#37759, FR-028): what its opener needs to
+ * reopen the same thing in the legacy editor.
+ */
+export interface DotLegacyEditorSwitch {
+    /** The content being edited, or `null` for a create that was never saved. */
+    contentlet: DotCMSContentlet | null;
+    /** The variable of the type that was just set back to the legacy editor. */
+    contentTypeVariable: string;
+}
