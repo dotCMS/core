@@ -22,7 +22,6 @@ import {
     DotSiteService
 } from '@dotcms/data-access';
 import { GlobalStore } from '@dotcms/store';
-import { mapParamsFromEditContentlet } from '@dotcms/utils';
 
 import { DotNavigationService } from '../../../view/components/dot-navigation/services/dot-navigation.service';
 import { DotMenuService } from '../dot-menu.service';
@@ -119,12 +118,9 @@ export class MenuGuardService implements CanActivate {
      * Builds the Content Drive equivalent of a Content Search or Site Browser URL, when the user
      * has Content Drive in their menu.
      *
-     * Edit links coming from Content Drive itself are left alone: Content Drive sends content with
-     * the legacy editor to `/c/content/<inode>`, and opening `editContent` would send it there
-     * again, so the redirect would loop. Create links are still redirected: Content Drive also
-     * sends legacy creates to `/c/content/new/<type>`, but nothing reads `createContent` yet, so
-     * there is nothing to loop on. Whatever reads it must open the create in Content Drive rather
-     * than navigate there.
+     * Every link is redirected the same way, wherever it comes from. Content Drive opens legacy
+     * editor content in its own side panel and never links to the Content Search route, so a link
+     * from inside Content Drive cannot loop back into it (#37759, FR-027).
      *
      * @param url the rejected route
      * @returns the Content Drive UrlTree, false when an error handler already navigated away, or
@@ -133,9 +129,8 @@ export class MenuGuardService implements CanActivate {
     private getContentDriveRedirect(url: string): Observable<UrlTree | false | null> {
         const urlTree = this.router.parseUrl(url);
         const replaced = this.parseReplacedUrl(urlTree);
-        const isLeavingContentDrive = this.router.url.startsWith(CONTENT_DRIVE_URL);
 
-        if (!replaced || (replaced.kind === 'edit' && isLeavingContentDrive)) {
+        if (!replaced) {
             return of(null);
         }
 
@@ -191,9 +186,9 @@ export class MenuGuardService implements CanActivate {
      *   so the content is looked up first. If the lookup fails, the error is reported and the user
      *   lands on Content Drive.
      * - Create links pass the content type as `createContent`.
-     * - Edit and create links restore the `CD_`-prefixed params Content Drive adds when it sends
-     *   the user to the legacy editor, so they land back on their folder and filters. Other params
-     *   have no Content Drive equivalent and are dropped.
+     * - Other params have no Content Drive equivalent and are dropped, including the `CD_` params
+     *   older builds of Content Drive added when they sent the user to the legacy editor (#37759,
+     *   FR-026).
      *
      * @param replaced the replaced URL
      * @param queryParams the rejected route's query params
@@ -220,24 +215,20 @@ export class MenuGuardService implements CanActivate {
             return of(toUrlTree(contentType ? { filters: `contentType:${contentType}` } : {}));
         }
 
-        const restored = mapParamsFromEditContentlet(new URLSearchParams(queryParams));
-
         if (replaced.kind === 'create') {
-            const createContent = replaced.contentType
-                ? { createContent: replaced.contentType }
-                : {};
-
-            return of(toUrlTree({ ...restored, ...createContent }));
+            return of(
+                toUrlTree(replaced.contentType ? { createContent: replaced.contentType } : {})
+            );
         }
 
         return this.dotContentletService.getContentletByInode(replaced.inode).pipe(
             map(({ identifier, languageId }) =>
-                toUrlTree({ ...restored, editContent: identifier, editContentLang: languageId })
+                toUrlTree({ editContent: identifier, editContentLang: languageId })
             ),
             catchError((error: HttpErrorResponse) =>
                 this.dotHttpErrorManagerService
                     .handle(error)
-                    .pipe(map(({ redirected }) => (redirected ? false : toUrlTree(restored))))
+                    .pipe(map(({ redirected }) => (redirected ? false : toUrlTree({}))))
             )
         );
     }

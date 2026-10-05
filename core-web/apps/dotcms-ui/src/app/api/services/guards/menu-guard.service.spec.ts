@@ -356,7 +356,9 @@ describe('ValidMenuGuardService', () => {
                 expect(dotNavigationService.goToFirstPortlet).not.toHaveBeenCalled();
             });
 
-            it('should restore the Content Drive params the link carries', () => {
+            // The `CD_` hand-off is gone (#37759, FR-026): an old link's `CD_` params are dropped
+            // like any other param Content Drive does not know.
+            it('should drop the old CD_ params the link carries', () => {
                 givenMenu(['content-drive']);
 
                 const result = runGuard(
@@ -365,8 +367,6 @@ describe('ValidMenuGuardService', () => {
                 ) as UrlTree;
 
                 expect(result.queryParams).toEqual({
-                    path: '/images',
-                    filters: 'baseType:1',
                     editContent: 'identifier-456',
                     editContentLang: '2'
                 });
@@ -425,7 +425,7 @@ describe('ValidMenuGuardService', () => {
                 expect(dotNavigationService.goToFirstPortlet).not.toHaveBeenCalled();
             });
 
-            it('should restore the Content Drive params and drop the legacy folder inode', () => {
+            it('should drop the old CD_ params and the legacy folder inode', () => {
                 givenMenu(['content-drive']);
 
                 const result = runGuard(
@@ -433,7 +433,7 @@ describe('ValidMenuGuardService', () => {
                     'content'
                 ) as UrlTree;
 
-                expect(result.queryParams).toEqual({ path: '/blog', createContent: 'Blog' });
+                expect(result.queryParams).toEqual({ createContent: 'Blog' });
             });
 
             it('should open Content Drive when no content type is given', () => {
@@ -443,30 +443,38 @@ describe('ValidMenuGuardService', () => {
             });
         });
 
+        // Content Drive opens legacy-editor content in its own panel now, so it never links to the
+        // Content Search route and there is no loop to prevent. Part 1's loop check is gone, and
+        // links fired from inside Content Drive are redirected like any other (#37759, FR-027).
         describe('when leaving Content Drive', () => {
             beforeEach(() => {
                 vi.spyOn(router, 'url', 'get').mockReturnValue('/content-drive?path=%2Fimages');
             });
 
-            it('should not send an edit link back to Content Drive, which would loop', () => {
+            it('should redirect an edit link back into Content Drive like any other', () => {
                 const dotContentletService = TestBed.inject(DotContentletService);
-                vi.spyOn(dotContentletService, 'getContentletByInode');
+                vi.spyOn(dotContentletService, 'getContentletByInode').mockReturnValue(
+                    observableOf({
+                        inode: 'inode-123',
+                        identifier: 'identifier-456',
+                        languageId: 2
+                    } as DotCMSContentlet)
+                );
                 givenMenu(['content-drive']);
 
-                expect(runGuard('/c/content/inode-123?CD_path=%2Fimages', 'content')).toBe(false);
-                expect(dotContentletService.getContentletByInode).not.toHaveBeenCalled();
-                expect(dotNavigationService.goToFirstPortlet).toHaveBeenCalled();
+                expect(serialize(runGuard('/c/content/inode-123', 'content'))).toBe(
+                    '/content-drive?editContent=identifier-456&editContentLang=2'
+                );
+                expect(dotContentletService.getContentletByInode).toHaveBeenCalledWith('inode-123');
+                expect(dotNavigationService.goToFirstPortlet).not.toHaveBeenCalled();
             });
 
-            it('should still redirect a create link, which Content Drive does not act on yet', () => {
+            it('should redirect a create link like any other', () => {
                 givenMenu(['content-drive']);
 
-                const result = runGuard(
-                    '/c/content/new/Blog?CD_path=%2Fimages',
-                    'content'
-                ) as UrlTree;
+                const result = runGuard('/c/content/new/Blog', 'content') as UrlTree;
 
-                expect(result.queryParams).toEqual({ path: '/images', createContent: 'Blog' });
+                expect(result.queryParams).toEqual({ createContent: 'Blog' });
                 expect(dotNavigationService.goToFirstPortlet).not.toHaveBeenCalled();
             });
 
