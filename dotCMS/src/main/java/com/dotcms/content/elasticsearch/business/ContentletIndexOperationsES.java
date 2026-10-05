@@ -110,11 +110,20 @@ public class ContentletIndexOperationsES implements ContentletIndexOperations {
     /** Wraps an ES {@link BulkProcessor} behind the neutral {@link IndexBulkProcessor} handle. */
     static final class ESIndexBulkProcessor implements IndexBulkProcessor {
         final BulkProcessor delegate;
+        private final IndexBulkListener listener;
         private final int awaitTimeoutSeconds;
 
-        ESIndexBulkProcessor(final BulkProcessor delegate, final int awaitTimeoutSeconds) {
+        ESIndexBulkProcessor(final BulkProcessor delegate, final IndexBulkListener listener,
+                final int awaitTimeoutSeconds) {
             this.delegate = delegate;
+            this.listener = listener;
             this.awaitTimeoutSeconds = awaitTimeoutSeconds;
+        }
+
+        /** Forwards the withhold to the listener that receives this processor's callbacks. */
+        @Override
+        public void withhold(final String identifier) {
+            listener.withhold(identifier);
         }
 
         @Override
@@ -301,7 +310,7 @@ public class ContentletIndexOperationsES implements ContentletIndexOperations {
                         ReindexThread.BACKOFF_POLICY_MAX_RETRYS))
                 .build();
 
-        return new ESIndexBulkProcessor(processor, BULK_PROCESSOR_AWAIT_TIMEOUT);
+        return new ESIndexBulkProcessor(processor, listener, BULK_PROCESSOR_AWAIT_TIMEOUT);
     }
 
     @Override

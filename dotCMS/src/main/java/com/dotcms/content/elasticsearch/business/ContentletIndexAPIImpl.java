@@ -428,6 +428,14 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             return entries;
         }
 
+        /** Forwards the withhold to every provider's processor, primary and shadow alike. */
+        @Override
+        public void withhold(final String identifier) {
+            for (final Entry entry : entries) {
+                entry.proc.withhold(identifier);
+            }
+        }
+
         @Override
         public void close() throws Exception {
             Exception primaryFailure = null;
@@ -2723,6 +2731,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             final String reason = String.join("; ", rejections);
             Logger.warn(this, "Withholding index document(s) for identifier '"
                     + idx.getIdentToIndex() + "': " + reason);
+            // Before any sibling is queued: the processor can flush mid-append, and a sibling's
+            // success must not delete the entry that now holds this failure.
+            proc.withhold(idx.getIdentToIndex());
             APILocator.getReindexQueueAPI().markAsFailed(idx, reason);
         }
         try {

@@ -180,6 +180,25 @@ public class BulkProcessorListener implements IndexBulkListener {
     }
 
     /**
+     * Stops tracking the identifier for this batch: one of its documents was withheld and its
+     * entry already holds the failure (#37269).
+     *
+     * <p>Removing it from {@link #workingRecords} means a successful sibling document no longer
+     * deletes the entry, and a whole-request failure no longer overwrites its reason. It must be
+     * called before any sibling document is queued, since the processor can flush mid-append. A
+     * shadow listener never tracks entries, so the call is a no-op there.</p>
+     *
+     * @param identifier the contentlet identifier whose entry already holds a failure
+     */
+    @Override
+    public void withhold(final String identifier) {
+        if (shadow) {
+            return;
+        }
+        workingRecords.remove(identifier);
+    }
+
+    /**
      * Runs {@link #logShadowBatchFailures(List)} without ever letting it fail the callback.
      *
      * <p>Reporting a shadow failure must never become a failure itself. {@code flush()} of the

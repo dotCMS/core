@@ -5,18 +5,21 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
+import com.dotcms.content.elasticsearch.business.OrderedMappingIndexAPI;
 import com.dotcms.content.index.domain.IndexBulkProcessor;
 import com.dotcms.contenttype.model.field.TextAreaField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
@@ -130,6 +133,104 @@ public class BulkBatchDiscardTest {
         }
     }
 
+    /**
+     * Given Scenario: An identifier whose live version is healthy and whose working version
+     * exceeds Jackson's string limit is reindexed, with the rejected document handed to the
+     * processor <b>before</b> the healthy one.
+     * Expected Result: The live version is in the live index, the oversized working version is in
+     * no index, and the journal row survives with the violation reason (AC-005).
+     */
+    @Test
+    public void test_healthyLive_oversizedWorking_liveIndexed_failureKept_rejectedFirst()
+            throws Exception {
+        healthyLiveOversizedWorking(true);
+    }
+
+    /**
+     * Same as {@link #test_healthyLive_oversizedWorking_liveIndexed_failureKept_rejectedFirst()}
+     * with the rejected document handed to the processor <b>after</b> the healthy one.
+     */
+    @Test
+    public void test_healthyLive_oversizedWorking_liveIndexed_failureKept_rejectedLast()
+            throws Exception {
+        healthyLiveOversizedWorking(false);
+    }
+
+    /**
+     * Given Scenario: An identifier with two languages, the second one exceeding Jackson's string
+     * limit, is reindexed with the rejected document handed to the processor <b>before</b> the
+     * healthy one.
+     * Expected Result: The default-language document is indexed, the oversized translation is in
+     * no index, and the journal row survives with the violation reason (AC-005).
+     */
+    @Test
+    public void test_twoLanguages_oneOversized_otherIndexed_failureKept_rejectedFirst()
+            throws Exception {
+        twoLanguagesOneOversized(true);
+    }
+
+    /**
+     * Same as {@link #test_twoLanguages_oneOversized_otherIndexed_failureKept_rejectedFirst()}
+     * with the rejected document handed to the processor <b>after</b> the healthy one.
+     */
+    @Test
+    public void test_twoLanguages_oneOversized_otherIndexed_failureKept_rejectedLast()
+            throws Exception {
+        twoLanguagesOneOversized(false);
+    }
+
+    /**
+     * Publishes a healthy version, saves an oversized working version on top of it, runs one
+     * iteration in the given order and checks the outcome.
+     */
+    private static void healthyLiveOversizedWorking(final boolean rejectedFirst) throws Exception {
+        final Contentlet live = ContentletDataGen.publish(newContentlet("healthy live body"));
+        final Contentlet working = ContentletDataGen.checkout(live);
+        working.setProperty("body", "x".repeat(OVERSIZED_LENGTH));
+        final Contentlet oversized = ContentletDataGen.checkin(working, IndexPolicy.DEFER);
+        final String identifier = live.getIdentifier();
+        final String liveQuery =
+                "+identifier_dotraw:" + identifier + " +live:true +inode:" + live.getInode();
+        // Publishing indexed the healthy version already; take it out so that finding it after
+        // the iteration proves the iteration put it back.
+        indexAPI.removeContentFromLiveIndex(live);
+        awaitAbsent(liveQuery, "the healthy live version must be out of the index before the run");
+
+        runOneReindexIteration(new OrderedMappingIndexAPI(rejectedFirst),
+                claimEntries(List.of(identifier)));
+
+        assertFailureKept(identifier, oversized);
+        assertFound(liveQuery,
+                "the healthy live version must be in the live index: " + identifier);
+        assertAbsent("+inode:" + oversized.getInode(),
+                "the oversized working version must not be indexed: " + oversized.getInode());
+    }
+
+    /**
+     * Saves a healthy default-language version and an oversized translation of the same
+     * identifier, runs one iteration in the given order and checks the outcome.
+     */
+    private static void twoLanguagesOneOversized(final boolean rejectedFirst) throws Exception {
+        final Language secondLanguage = new LanguageDataGen().nextPersisted();
+        final Contentlet healthy = newContentlet("healthy default-language body");
+        final Contentlet translation = ContentletDataGen.checkout(healthy);
+        translation.setLanguageId(secondLanguage.getId());
+        translation.setProperty("body", "x".repeat(OVERSIZED_LENGTH));
+        final Contentlet oversized = ContentletDataGen.checkin(translation, IndexPolicy.DEFER);
+        final String identifier = healthy.getIdentifier();
+        assertEquals("the translation must share the identifier", identifier,
+                oversized.getIdentifier());
+
+        runOneReindexIteration(new OrderedMappingIndexAPI(rejectedFirst),
+                claimEntries(List.of(identifier)));
+
+        assertFailureKept(identifier, oversized);
+        assertFound("+identifier_dotraw:" + identifier + " +languageId:" + healthy.getLanguageId(),
+                "the healthy default-language document must be indexed: " + identifier);
+        assertAbsent("+inode:" + oversized.getInode(),
+                "the oversized translation must not be indexed: " + oversized.getInode());
+    }
+
     // -------------------------------------------------------------------------------------------
     // helpers
     // -------------------------------------------------------------------------------------------
@@ -169,11 +270,33 @@ public class BulkBatchDiscardTest {
     /** Runs one iteration the way {@code ReindexThread.runReindexLoop} does. */
     private static void runOneReindexIteration(final Map<String, ReindexEntry> entries)
             throws Exception {
+        runOneReindexIteration(indexAPI, entries);
+    }
+
+    /** Runs one iteration through the given index API, e.g. one that pins the document order. */
+    private static void runOneReindexIteration(final ContentletIndexAPI api,
+            final Map<String, ReindexEntry> entries) throws Exception {
         final BulkProcessorListener listener = new BulkProcessorListener();
         listener.workingRecords.putAll(entries);
-        try (final IndexBulkProcessor processor = indexAPI.createBulkProcessor(listener)) {
-            indexAPI.appendToBulkProcessor(processor, entries.values());
+        try (final IndexBulkProcessor processor = api.createBulkProcessor(listener)) {
+            api.appendToBulkProcessor(processor, entries.values());
         } // close() flushes and waits for afterBulk
+    }
+
+    /**
+     * Asserts the identifier's journal row is still there and names the rejected version: its
+     * inode, the field and the real length.
+     */
+    private static void assertFailureKept(final String identifier, final Contentlet rejected)
+            throws Exception {
+        final Map<String, String> remaining = journalReasons(List.of(identifier));
+        assertEquals("the journal row must survive a sibling's success",
+                Set.of(identifier), remaining.keySet());
+        final String reason = remaining.get(identifier);
+        assertTrue("reason must name the rejected inode: " + reason,
+                reason.contains(rejected.getInode()));
+        assertTrue("reason must name the field and its real length: " + reason,
+                FIELD_AND_LENGTH.matcher(reason).find());
     }
 
     /** Journal rows left for the given identifiers, keyed by identifier, valued by reason. */
@@ -197,18 +320,46 @@ public class BulkBatchDiscardTest {
      * keyword field {@code identifier_dotraw} for an exact match.
      */
     private static void assertIndexed(final String identifier) throws Exception {
-        final String query = "+identifier_dotraw:" + identifier;
+        assertFound("+identifier_dotraw:" + identifier,
+                "healthy contentlet must be indexed: " + identifier);
+    }
+
+    /** Waits for the index to refresh and asserts the query matches at least one document. */
+    private static void assertFound(final String query, final String message) throws Exception {
         long count = 0;
         for (int i = 0; i < 20 && count == 0; i++) {
-            // indexCount results are cached per query: a 0 read before the index refreshed would
-            // otherwise be served for every later attempt.
-            CacheLocator.getESQueryCache().clearCache();
-            CacheLocator.getOSQueryCache().clearCache();
-            count = APILocator.getContentletAPI().indexCount(query, systemUser, false);
+            count = indexCount(query);
             if (count == 0) {
                 Thread.sleep(500);
             }
         }
-        assertTrue("healthy contentlet must be indexed: " + identifier, count > 0);
+        assertTrue(message, count > 0);
+    }
+
+    /** Waits for the index to refresh and asserts the query no longer matches anything. */
+    private static void awaitAbsent(final String query, final String message) throws Exception {
+        long count = indexCount(query);
+        for (int i = 0; i < 20 && count > 0; i++) {
+            Thread.sleep(500);
+            count = indexCount(query);
+        }
+        assertEquals(message, 0L, count);
+    }
+
+    /**
+     * Asserts the query matches nothing. Call it after {@link #assertFound} on the same
+     * iteration, so the index has already refreshed and a zero is not just a late refresh.
+     */
+    private static void assertAbsent(final String query, final String message) throws Exception {
+        assertEquals(message, 0L, indexCount(query));
+    }
+
+    /** Counts matches with the query caches cleared, so a stale zero is never served. */
+    private static long indexCount(final String query) throws Exception {
+        // indexCount results are cached per query: a 0 read before the index refreshed would
+        // otherwise be served for every later attempt.
+        CacheLocator.getESQueryCache().clearCache();
+        CacheLocator.getOSQueryCache().clearCache();
+        return APILocator.getContentletAPI().indexCount(query, systemUser, false);
     }
 }

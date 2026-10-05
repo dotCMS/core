@@ -193,6 +193,12 @@ public class ContentletIndexOperationsOS implements ContentletIndexOperations {
         public void close() throws Exception {
             flush();
         }
+
+        /** Forwards the withhold to the listener that receives this processor's callbacks. */
+        @Override
+        public void withhold(final String identifier) {
+            listener.withhold(identifier);
+        }
     }
 
     // =========================================================================
