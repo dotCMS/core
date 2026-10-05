@@ -1,0 +1,246 @@
+@let routes = $routes();
+@let routeErrors = $routeErrors();
+@let shadowedBy = $shadowedBy();
+@let titles = $titles();
+@let showErrors = $showErrors();
+@let disabled = $isDisabled();
+
+<div class="flex flex-col gap-3" [id]="$fieldId()" data-testid="uve-config-field">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+        <span class="text-sm text-gray-600">
+            {{ ($mode() === 'form' ? 'apps.uve.routes.order.hint' : 'apps.uve.json.hint') | dm }}
+        </span>
+        <p-selectbutton
+            [options]="$modeOptions()"
+            [ngModel]="$mode()"
+            (ngModelChange)="onModeChange($event)"
+            [allowEmpty]="false"
+            [disabled]="disabled"
+            optionLabel="label"
+            optionValue="value"
+            optionDisabled="disabled"
+            size="small"
+            data-testid="uve-mode-toggle" />
+    </div>
+
+    @if ($formBlocked()) {
+        <small class="text-sm text-gray-600" data-testid="uve-form-blocked">
+            {{ 'apps.uve.form.blocked' | dm }}
+        </small>
+    }
+
+    @if ($mode() === 'json') {
+        <dot-apps-configuration-detail-json-field
+            [fieldId]="$fieldId() + '-json'"
+            [ngModel]="$jsonText()"
+            (ngModelChange)="onJsonChange($event)"
+            [disabled]="disabled"
+            data-testid="uve-json-editor" />
+        @if ($hint()) {
+            <span class="p-field-hint" data-testid="uve-json-hint">
+                <markdown dotAppsCodeBlocks>{{ $hint() }}</markdown>
+            </span>
+        }
+    } @else {
+        <fieldset class="m-0 flex flex-col gap-3 border-0 p-0" [disabled]="disabled">
+            @for (
+                route of routes;
+                track route.id;
+                let i = $index;
+                let first = $first;
+                let last = $last
+            ) {
+                @let errors = routeErrors[i];
+                <div
+                    class="flex flex-col overflow-hidden rounded-md border border-surface"
+                    [attr.data-testid]="'uve-route-' + i">
+                    <div class="flex items-center gap-3 bg-surface-50 px-4 py-3">
+                        <span class="material-symbols-outlined text-xl text-gray-600">route</span>
+                        <div class="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+                            <span
+                                class="rounded-sm bg-surface-200 px-1.5 text-xs font-semibold text-gray-700"
+                                data-testid="uve-route-number">
+                                #{{ i + 1 }}
+                            </span>
+                            <span
+                                class="truncate font-mono font-semibold"
+                                [title]="titles[i]"
+                                data-testid="uve-route-title">
+                                {{ titles[i] }}
+                            </span>
+                            @if (route.pattern.trim() === catchAllPattern) {
+                                <p-tag
+                                    [value]="'apps.uve.route.default' | dm"
+                                    severity="secondary"
+                                    data-testid="uve-route-default-tag" />
+                            }
+                            @if (shadowedBy[i]) {
+                                <p-tag
+                                    [value]="'apps.uve.route.unreachable' | dm"
+                                    severity="warn"
+                                    data-testid="uve-route-unreachable-tag" />
+                            }
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <button
+                                type="button"
+                                pButton
+                                icon="pi pi-arrow-up"
+                                class="p-button-text p-button-sm p-button-rounded"
+                                [disabled]="first || disabled"
+                                [pTooltip]="'apps.uve.route.move.up' | dm"
+                                (click)="moveRoute(i, -1)"
+                                data-testid="uve-route-move-up"></button>
+                            <button
+                                type="button"
+                                pButton
+                                icon="pi pi-arrow-down"
+                                class="p-button-text p-button-sm p-button-rounded"
+                                [disabled]="last || disabled"
+                                [pTooltip]="'apps.uve.route.move.down' | dm"
+                                (click)="moveRoute(i, 1)"
+                                data-testid="uve-route-move-down"></button>
+                            <button
+                                type="button"
+                                pButton
+                                icon="pi pi-trash"
+                                class="p-button-text p-button-sm p-button-rounded p-button-danger"
+                                [disabled]="routes.length === 1 || disabled"
+                                [pTooltip]="'apps.uve.route.remove' | dm"
+                                (click)="removeRoute(i)"
+                                data-testid="uve-route-remove"></button>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col gap-4 border-t border-surface px-4 pt-4 pb-5">
+                        @if (shadowedBy[i]) {
+                            <small
+                                class="text-sm text-orange-700"
+                                data-testid="uve-route-unreachable-message">
+                                {{ 'apps.uve.route.unreachable.hint' | dm: ['' + shadowedBy[i]] }}
+                            </small>
+                        }
+                        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                            <div class="flex flex-col gap-1">
+                                <label
+                                    class="text-sm font-semibold"
+                                    [for]="$fieldId() + '-pattern-' + i">
+                                    {{ 'apps.uve.route.pattern' | dm }}
+                                </label>
+                                <input
+                                    pInputText
+                                    class="font-mono"
+                                    [id]="$fieldId() + '-pattern-' + i"
+                                    [value]="route.pattern"
+                                    [class.ng-invalid]="showErrors && errors.pattern"
+                                    [class.ng-dirty]="showErrors && errors.pattern"
+                                    (input)="updateRoute(i, 'pattern', $any($event.target).value)"
+                                    (blur)="onBlur()"
+                                    placeholder="/blogs/(.*)"
+                                    data-testid="uve-route-pattern" />
+                                @if (showErrors && errors.pattern) {
+                                    <small class="p-error">{{ errors.pattern | dm }}</small>
+                                } @else {
+                                    <small class="text-gray-600">
+                                        {{ 'apps.uve.route.pattern.hint' | dm }}
+                                    </small>
+                                }
+                            </div>
+
+                            <div class="flex flex-col gap-1">
+                                <label
+                                    class="text-sm font-semibold"
+                                    [for]="$fieldId() + '-url-' + i">
+                                    {{ 'apps.uve.route.url' | dm }}
+                                </label>
+                                <input
+                                    pInputText
+                                    type="url"
+                                    [id]="$fieldId() + '-url-' + i"
+                                    [value]="route.url"
+                                    [class.ng-invalid]="showErrors && errors.url"
+                                    [class.ng-dirty]="showErrors && errors.url"
+                                    (input)="updateRoute(i, 'url', $any($event.target).value)"
+                                    (blur)="onBlur()"
+                                    placeholder="https://myspa.com:3000"
+                                    data-testid="uve-route-url" />
+                                @if (showErrors && errors.url) {
+                                    <small class="p-error">{{ errors.url | dm }}</small>
+                                } @else {
+                                    <small class="text-gray-600">
+                                        {{ 'apps.uve.route.url.hint' | dm }}
+                                    </small>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col gap-2">
+                            <span class="text-sm font-semibold">
+                                {{ 'apps.uve.route.dev.urls' | dm }}
+                            </span>
+                            <small class="text-gray-600">
+                                {{ 'apps.uve.route.dev.urls.hint' | dm }}
+                            </small>
+                            @for (devUrl of route.allowedDevURLs; track $index; let j = $index) {
+                                <div class="flex flex-col gap-1">
+                                    <div class="flex items-center gap-2">
+                                        <input
+                                            pInputText
+                                            type="url"
+                                            class="flex-1"
+                                            [value]="devUrl"
+                                            [attr.aria-label]="'apps.uve.route.dev.urls' | dm"
+                                            [class.ng-invalid]="
+                                                showErrors && errors.allowedDevURLs[j]
+                                            "
+                                            [class.ng-dirty]="
+                                                showErrors && errors.allowedDevURLs[j]
+                                            "
+                                            (input)="updateDevUrl(i, j, $any($event.target).value)"
+                                            (blur)="onBlur()"
+                                            placeholder="http://localhost:3000"
+                                            data-testid="uve-route-dev-url" />
+                                        <button
+                                            type="button"
+                                            pButton
+                                            icon="pi pi-times"
+                                            class="p-button-text p-button-sm p-button-rounded"
+                                            [pTooltip]="'apps.uve.route.dev.urls.remove' | dm"
+                                            (click)="removeDevUrl(i, j)"
+                                            data-testid="uve-route-dev-url-remove"></button>
+                                    </div>
+                                    @if (showErrors && errors.allowedDevURLs[j]) {
+                                        <small class="p-error">
+                                            {{ errors.allowedDevURLs[j] | dm }}
+                                        </small>
+                                    }
+                                </div>
+                            }
+                            <div>
+                                <button
+                                    type="button"
+                                    pButton
+                                    icon="pi pi-plus"
+                                    class="p-button-text p-button-sm"
+                                    [label]="'apps.uve.route.dev.urls.add' | dm"
+                                    (click)="addDevUrl(i)"
+                                    data-testid="uve-route-dev-url-add"></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <div class="flex justify-center">
+                <button
+                    type="button"
+                    pButton
+                    icon="pi pi-plus"
+                    class="p-button-text"
+                    [label]="'apps.uve.route.add' | dm"
+                    (click)="addRoute()"
+                    data-testid="uve-route-add"></button>
+            </div>
+        </fieldset>
+    }
+</div>

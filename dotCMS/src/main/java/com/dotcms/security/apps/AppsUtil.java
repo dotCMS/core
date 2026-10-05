@@ -9,6 +9,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Sets.SetView;
@@ -474,6 +475,25 @@ public class AppsUtil {
     }
 
     /**
+     * Tells whether a value can be parsed as a JSON document. Used for params of type
+     * {@link Type#JSON}.
+     *
+     * @param value the raw value to check
+     * @return {@code true} when the value is a well-formed JSON document
+     */
+    public static boolean isValidJson(final String value) {
+        if (isNotSet(value)) {
+            return false;
+        }
+        return Try.of(() -> DotObjectMapperProvider.getInstance().getDefaultObjectMapper()
+                        .reader()
+                        .with(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
+                        .readTree(value))
+                .map(node -> node != null && !node.isMissingNode())
+                .getOrElse(false);
+    }
+
+    /**
      * Validate the incoming params and match them with the params described by the respective appDescriptor yml.
      * This method takes a Map of Optional<char[]> As this is a middle ground object representation
      * that can be mapped from a saved  AppSecrets or an incoming SecretForm
@@ -533,6 +553,16 @@ public class AppsUtil {
                             )
                     );
                 }
+            }
+
+            if (Type.JSON.equals(descriptorParam.getValue().getType()) && UtilMethods
+                    .isSet(input) && !isValidJson(new String(input))) {
+                throw new IllegalArgumentException(
+                        String.format(
+                                "Param `%s` is of type JSON but its value is not valid JSON.",
+                                describedParamName
+                        )
+                );
             }
 
             if (Type.SELECT.equals(descriptorParam.getValue().getType()) && UtilMethods

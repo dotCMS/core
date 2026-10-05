@@ -33,7 +33,11 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotAppsSecret } from '@dotcms/dotcms-models';
 import { DotFieldRequiredDirective, DotIconComponent } from '@dotcms/ui';
 
+import { DotAppsCodeBlocksDirective } from '../../directives/dot-apps-code-block.directive';
 import { DotAppsConfigurationDetailGeneratedStringFieldComponent } from '../dot-apps-configuration-detail-generated-string-field/dot-apps-configuration-detail-generated-string-field.component';
+import { DotAppsConfigurationDetailJsonFieldComponent } from '../dot-apps-configuration-detail-json-field/dot-apps-configuration-detail-json-field.component';
+import { DotAppsUveConfigFieldComponent } from '../dot-apps-uve-config-field/dot-apps-uve-config-field.component';
+import { UVE_APP_KEY } from '../dot-apps-uve-config-field/dot-apps-uve-config.utils';
 
 enum FieldStatus {
     EDITABLE,
@@ -56,7 +60,10 @@ enum FieldStatus {
         DotIconComponent,
         DotFieldRequiredDirective,
         MarkdownComponent,
+        DotAppsCodeBlocksDirective,
         DotAppsConfigurationDetailGeneratedStringFieldComponent,
+        DotAppsConfigurationDetailJsonFieldComponent,
+        DotAppsUveConfigFieldComponent,
         NgTemplateOutlet
     ],
     changeDetection: ChangeDetectionStrategy.Eager,
@@ -69,6 +76,10 @@ export class DotAppsConfigurationDetailFormComponent implements OnInit, OnDestro
 
     $formFields = input<DotAppsSecret[]>([], { alias: 'formFields' });
     $appConfigured = input<boolean>(false, { alias: 'appConfigured' });
+    /** Key of the app being configured; the UVE app gets a rule editor for its JSON param. */
+    $appKey = input<string>('', { alias: 'appKey' });
+
+    readonly uveAppKey = UVE_APP_KEY;
 
     readonly data = output<{ [key: string]: string }>();
     readonly valid = output<boolean>();
@@ -126,6 +137,9 @@ export class DotAppsConfigurationDetailFormComponent implements OnInit, OnDestro
     }
 
     private getFieldValueFn = {
+        JSON: (field: DotAppsSecret, status: FieldStatus) => {
+            return this.getFieldValueFn.STRING(field, status);
+        },
         BOOL: (field: DotAppsSecret) => {
             return field.value ? JSON.parse(field.value) : field.value;
         },

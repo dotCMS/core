@@ -1,0 +1,98 @@
+import { createHostFactory, mockProvider, SpectatorHost } from '@openng/spectator/vitest';
+import { MarkdownComponent } from 'ngx-markdown';
+
+import { Component, EventEmitter, forwardRef, Output } from '@angular/core';
+
+import { DotMessageService } from '@dotcms/data-access';
+import { DotClipboardUtil } from '@dotcms/ui';
+
+import { DotAppsCodeBlocksDirective, highlightJson } from './dot-apps-code-block.directive';
+
+/** Stands in for ngx-markdown's component: only its `ready` output is used. */
+@Component({
+    selector: 'markdown',
+    template: '<ng-content />',
+    providers: [
+        { provide: MarkdownComponent, useExisting: forwardRef(() => MarkdownStubComponent) }
+    ]
+})
+class MarkdownStubComponent {
+    @Output() ready = new EventEmitter<void>();
+}
+
+const JSON_BLOCK =
+    '<pre><code class="language-json">{"url": "https://a.com", "on": true, "n": 3}</code></pre>';
+
+describe('DotAppsCodeBlocksDirective', () => {
+    let spectator: SpectatorHost<DotAppsCodeBlocksDirective>;
+    let copy: ReturnType<typeof vi.spyOn>;
+
+    const createHost = createHostFactory({
+        component: DotAppsCodeBlocksDirective,
+        imports: [MarkdownStubComponent],
+        providers: [mockProvider(DotMessageService, { get: (key: string) => key })]
+    });
+
+    const markdownStub = () =>
+        spectator.debugElement.injector.get(MarkdownComponent) as unknown as MarkdownStubComponent;
+
+    const render = (html: string) => {
+        spectator = createHost('<markdown dotAppsCodeBlocks></markdown>');
+        spectator.hostElement.querySelector('markdown').innerHTML = html;
+        markdownStub().ready.emit();
+    };
+
+    beforeEach(() => {
+        copy = vi.spyOn(DotClipboardUtil.prototype, 'copy').mockResolvedValue(true);
+    });
+
+    afterEach(() => copy.mockRestore());
+
+    it('should wrap code blocks with a language label and a copy button', () => {
+        render(JSON_BLOCK);
+
+        expect(spectator.element.querySelector('.dot-code-block pre')).toBeTruthy();
+        expect(spectator.element.querySelector('.dot-code-block__language').textContent).toBe(
+            'json'
+        );
+        expect(
+            spectator.element.querySelector('[data-testid="code-block-copy"]').textContent
+        ).toContain('apps.code.block.copy');
+    });
+
+    it('should color JSON keys and values', () => {
+        render(JSON_BLOCK);
+
+        expect(spectator.element.querySelector('.dot-code-block__key').textContent).toBe('"url"');
+        expect(spectator.element.querySelector('.dot-code-block__string').textContent).toBe(
+            '"https://a.com"'
+        );
+        expect(spectator.element.querySelector('.dot-code-block__literal').textContent).toBe(
+            'true'
+        );
+        expect(spectator.element.querySelector('.dot-code-block__number').textContent).toBe('3');
+    });
+
+    it('should copy the raw code and show the copied state', async () => {
+        render(JSON_BLOCK);
+
+        spectator.click(
+            spectator.element.querySelector<HTMLElement>('[data-testid="code-block-copy"]')
+        );
+        await new Promise((resolve) => setTimeout(resolve));
+
+        expect(copy).toHaveBeenCalledWith('{"url": "https://a.com", "on": true, "n": 3}');
+        expect(spectator.element.querySelector('.dot-code-block__copy--copied')).toBeTruthy();
+    });
+
+    it('should not wrap the same block twice', () => {
+        render(JSON_BLOCK);
+        markdownStub().ready.emit();
+
+        expect(Array.from(spectator.element.querySelectorAll('.dot-code-block')).length).toBe(1);
+    });
+
+    it('highlightJson should escape HTML', () => {
+        expect(highlightJson('{"a": "<b>"}')).not.toContain('<b>');
+    });
+});

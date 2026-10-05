@@ -15,6 +15,12 @@ public enum Type {
     BUTTON,
     GENERATED_STRING,
     HEADING,
-    INFO
+    INFO,
+    /**
+     * A string value that must hold a valid JSON document. It is stored exactly like a
+     * {@link #STRING}, but the UI renders a code editor and both the UI and the backend reject
+     * values that can not be parsed as JSON.
+     */
+    JSON
 
 }

@@ -1,0 +1,37 @@
+@let parseError = $parseError();
+
+<div class="flex flex-col gap-2">
+    <div
+        class="h-96 overflow-hidden rounded-sm border"
+        [class.border-red-500]="parseError"
+        [class.border-surface-300]="!parseError"
+        [id]="$fieldId()"
+        data-testid="json-field-editor-wrapper">
+        <ngx-monaco-editor
+            class="h-full"
+            [options]="$editorOptions()"
+            (init)="onEditorInit($event)"
+            data-testid="json-field-editor" />
+    </div>
+
+    <div class="flex items-center justify-between gap-2">
+        @if (parseError) {
+            <small class="p-error" data-testid="json-field-error">
+                {{ 'apps.json.field.invalid' | dm: [parseError] }}
+            </small>
+        } @else {
+            <small class="text-color-secondary" data-testid="json-field-valid">
+                {{ 'apps.json.field.valid' | dm }}
+            </small>
+        }
+
+        <button
+            type="button"
+            data-testid="json-field-format"
+            [disabled]="$isDisabled() || !!parseError || !$value().trim()"
+            [label]="'apps.json.field.format' | dm"
+            (click)="format()"
+            pButton
+            class="p-button-sm p-button-outlined"></button>
+    </div>
+</div>
