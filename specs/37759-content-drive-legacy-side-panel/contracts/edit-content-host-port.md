@@ -46,8 +46,10 @@ outside Content Drive: out of scope.
 new-editor panel it has open: the same `contentletInode` for an edit, the same `contentTypeId` with
 no inode for a create.
 
-- Switch, edit: the same content reopens, in the language the editor shows (`contentlet.languageId`),
-  in the legacy panel. The URL already names it, so only the request changes.
+- Switch, edit: the content the editor shows reopens, in its language (`contentlet.languageId`),
+  in the legacy panel. The URL already names it, unless the panel moved in place to related
+  content: then the URL follows the switched content (`replaceState`). A save follows a new
+  language only when it names the content the URL names.
 - Switch, create: a legacy create for the same type, in the folder being browsed and the language
   the create started in (`#openLegacyCreate`).
 - Load error: `closeEditPanel()`; the folder, filters and page stay.

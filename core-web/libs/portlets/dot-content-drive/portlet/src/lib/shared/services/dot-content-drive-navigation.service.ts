@@ -234,8 +234,9 @@ export class DotContentDriveNavigationService implements EditContentNavigationOv
     /**
      * "Switch to the old editor" in Content Drive's new-editor panel: the type was just set back to
      * the legacy editor, so the same content reopens, in the same language, in the legacy panel
-     * (#37759, FR-028). The type is not looked up again, and the URL already names this content,
-     * so only the request changes. From a create there is no content yet: a legacy create for the
+     * (#37759, FR-028). The type is not looked up again. The URL already names this content,
+     * unless the panel moved in place to related content, in which case it follows the switched
+     * content. From a create there is no content yet: a legacy create for the
      * same type opens instead, in the folder being browsed and the language the create started in.
      *
      * Content Drive answers only for the panel it opened. Any other editor that inherits the
@@ -278,6 +279,21 @@ export class DotContentDriveNavigationService implements EditContentNavigationOv
                 portletId: CONTENT_DRIVE_PORTLET_ID
             }
         });
+
+        // Inside the panel, related content opens in place, so the content switched can differ
+        // from the one the URL names. The URL follows what the legacy panel reopens (FR-020).
+        const location = this.#panelLocation();
+        if (
+            location?.kind === 'edit' &&
+            (location.editContent !== contentlet.identifier ||
+                location.editContentLang !== contentlet.languageId)
+        ) {
+            this.#panelLocation.set({
+                kind: 'edit',
+                editContent: contentlet.identifier,
+                editContentLang: contentlet.languageId
+            });
+        }
 
         return true;
     }
@@ -346,8 +362,13 @@ export class DotContentDriveNavigationService implements EditContentNavigationOv
             return;
         }
 
-        // A new translation saved in the new editor: the saved version names the language.
-        if (location?.kind === 'edit' && location.editContentLang !== languageId) {
+        // A new translation saved in the new editor: the saved version names the language. A save
+        // of related content reached in place names another content, so it is left alone.
+        if (
+            location?.kind === 'edit' &&
+            location.editContent === identifier &&
+            location.editContentLang !== languageId
+        ) {
             this.#panelLocation.set({ ...location, editContentLang: languageId });
         }
     }

@@ -664,6 +664,20 @@ describe('DotContentDriveNavigationService', () => {
                 expect(service.$editPanelRequest()).toBe(request);
             });
 
+            // A save of related content reached in place names another content: its language is
+            // not the language of the content the URL names (#37759, FR-020, T131).
+            it('ignores the language of a save that names another content', () => {
+                openEdit();
+
+                service.panelSaved({ identifier: 'id-9', languageId: 4 });
+
+                expect(service.$panelLocation()).toEqual({
+                    kind: 'edit',
+                    editContent: 'id-1',
+                    editContentLang: 1
+                });
+            });
+
             it('follows a language switch in the open edit', () => {
                 openEdit();
                 const request = service.$editPanelRequest();
@@ -743,6 +757,33 @@ describe('DotContentDriveNavigationService', () => {
                 expect(contentTypeService.getContentType).not.toHaveBeenCalled();
                 // Same content, same language: the URL already says so.
                 expect(service.$panelLocation()).toEqual(locationBefore);
+            });
+
+            // Inside the panel, related content opens in place, so the panel opened for one content
+            // can show another. The URL names what the legacy panel reopens (#37759, FR-020, T131).
+            it('names the switched content when the panel moved to related content', () => {
+                openEdit();
+
+                const handled = service.switchToLegacyEditor(
+                    { inode: 'inode-1' },
+                    createFakeContentlet({
+                        inode: 'inode-9',
+                        identifier: 'id-9',
+                        languageId: 3,
+                        title: 'Related'
+                    }),
+                    'news'
+                );
+
+                expect(handled).toBe(true);
+                expect(service.$legacyPanelRequest()).toEqual(
+                    expect.objectContaining({ mode: 'edit', inode: 'inode-9', identifier: 'id-9' })
+                );
+                expect(service.$panelLocation()).toEqual({
+                    kind: 'edit',
+                    editContent: 'id-9',
+                    editContentLang: 3
+                });
             });
 
             it('reopens its create as a legacy create, in the same folder and language', () => {
