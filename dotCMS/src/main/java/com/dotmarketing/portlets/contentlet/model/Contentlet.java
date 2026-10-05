@@ -1265,9 +1265,15 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 			try {
                 final String revisionKey = rawValue instanceof File
                         ? com.dotcms.storage.binary.BinaryAssetReference.keyOf((File) rawValue) : null;
+                // Check-in assigns the new inode before it reads the binary, so a revision carried
+                // forward from the previous version is restored from the owner its key names.
+                final com.dotcms.storage.binary.BinaryAssetReference.Owner owner = revisionKey == null
+                        ? null : com.dotcms.storage.binary.BinaryAssetReference.ownerOf(revisionKey);
                 f = revisionKey == null
                         ? APILocator.getBinaryAssetStorageAPI().getBinaryFile(inode, velocityVarName)
-                        : APILocator.getBinaryAssetStorageAPI().getRevisionFile(inode, velocityVarName, revisionKey);
+                        : owner == null
+                        ? APILocator.getBinaryAssetStorageAPI().getRevisionFile(inode, velocityVarName, revisionKey)
+                        : APILocator.getBinaryAssetStorageAPI().getRevisionFile(owner.inode(), owner.field(), revisionKey);
                 if (rawValue instanceof File) {
                     f = com.dotcms.storage.binary.BinaryAssetReference.preserveMetadata(f, (File) rawValue);
                 }

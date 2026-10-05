@@ -703,6 +703,45 @@ public class BinaryAssetStorageIntegrationTest {
     }
 
     /**
+     * A contentlet with a new inode that still carries the previous version's binary, as check-in has
+     * after it assigns the new inode, must restore that evicted revision from the owner its key names.
+     * Check-in alone does not show this today, because saving the content JSON restores the file
+     * while it hydrates metadata, before check-in reads the binary.
+     */
+    @Test
+    void s3BinaryCarriedToANewInodeIsRestoredFromItsOwner() throws Exception {
+        org.junit.jupiter.api.Assumptions.assumeTrue(Boolean.getBoolean("s3.cms.enabled"));
+        assertTrue(com.dotcms.storage.AssetStorageFeature.isEnabled(), "CMS must actually opt in to S3");
+        final ContentType type = new ContentTypeDataGen().nextPersisted();
+        try {
+            final Field title = new FieldDataGen().velocityVarName("title").contentTypeId(type.id())
+                    .type(TextField.class).nextPersisted();
+            ContentTypeDataGen.addField(title);
+            final Field binary = new FieldDataGen().velocityVarName("testBinary").contentTypeId(type.id())
+                    .type(BinaryField.class).nextPersisted();
+            ContentTypeDataGen.addField(binary);
+            final File source = File.createTempFile("evicted-version-", ".txt");
+            source.deleteOnExit();
+            Files.writeString(source.toPath(), "evicted bytes");
+
+            final Contentlet v1 = new ContentletDataGen(type).setProperty("title", "v1")
+                    .setProperty("testBinary", source).nextPersisted();
+            final File v1File = v1.getBinary("testBinary");
+            assertNotNull(BinaryAssetReference.keyOf(v1File), "The binary must be stored as an immutable revision");
+            assertTrue(binaryAssetStorageAPI.evictLocalFile(v1File));
+            assertFalse(v1File.exists());
+
+            final Contentlet next = new Contentlet(v1);
+            next.setInode(com.dotmarketing.util.UUIDGenerator.generateUuid());
+            next.getMap().put("testBinary", v1File);
+
+            assertEquals("evicted bytes", Files.readString(next.getBinary("testBinary").toPath()));
+        } finally {
+            ContentTypeDataGen.remove(type);
+        }
+    }
+
+    /**
      * AC-3: FileAsset flow works end-to-end.
      * Creates a FileAsset via FileAssetDataGen and verifies binary retrieval
      * through both Contentlet.getBinary and BinaryAssetStorageAPI.

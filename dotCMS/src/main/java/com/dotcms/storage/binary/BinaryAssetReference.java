@@ -251,6 +251,21 @@ public final class BinaryAssetReference {
         return new File(ConfigUtils.getAssetPath(), key);
     }
 
+    /** The contentlet inode and field variable name that own a revision key. */
+    public record Owner(String inode, String field) { }
+
+    /**
+     * Reads the owner out of a revision key with the {@code i/n/<inode>/<field>/.revisions/<uuid>/<fileName>}
+     * layout. This only parses the key; {@link #localFile(String, String, String)} still validates it.
+     *
+     * @param key the revision key, relative to the asset root
+     * @return the owner named by the key, or null when the key does not have the revision layout
+     */
+    public static Owner ownerOf(final String key) {
+        final String[] parts = key.split("/", -1);
+        return parts.length == 7 && ".revisions".equals(parts[4]) ? new Owner(parts[2], parts[3]) : null;
+    }
+
     /** Pure path conversion: JSON serialization must not stat NFS or download an object. */
     public static String keyOf(final File file, final String inode, final String field) {
         final String key = keyOf(file);

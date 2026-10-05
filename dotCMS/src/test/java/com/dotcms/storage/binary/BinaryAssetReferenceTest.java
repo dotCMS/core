@@ -160,6 +160,13 @@ class BinaryAssetReferenceTest {
         assertThrows(IllegalArgumentException.class, () -> BinaryAssetReference.localFile("../outside", "HeroImage", key));
     }
 
+    @Test void ownerIsReadFromTheRevisionKeyLayout() {
+        String key = "a/b/abc123/HeroImage/.revisions/" + UUID.randomUUID() + "/Friday.PNG";
+        assertEquals(new BinaryAssetReference.Owner("abc123", "HeroImage"), BinaryAssetReference.ownerOf(key));
+        assertNull(BinaryAssetReference.ownerOf("a/b/abc123/HeroImage/Friday.PNG"));
+        assertNull(BinaryAssetReference.ownerOf(key + "/extra"));
+    }
+
     @Test void metadataIdentityFollowsTheSnapshotWithoutFilesystemAccess() {
         String previous = Config.getStringProperty(AssetStorageFeature.FLAG, null);
         try (var paths = mockStatic(ConfigUtils.class)) {
