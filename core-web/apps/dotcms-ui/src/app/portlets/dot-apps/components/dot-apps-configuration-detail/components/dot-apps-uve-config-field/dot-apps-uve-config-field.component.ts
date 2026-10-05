@@ -47,6 +47,16 @@ import {
 type EditorMode = 'form' | 'json';
 
 /**
+ * A route card title. `from` and `to` are shown as two halves that truncate on their own;
+ * `to` is null for a route with nothing filled in, which shows `from` alone.
+ */
+interface UveRouteTitle {
+    from: string;
+    to: string | null;
+    full: string;
+}
+
+/**
  * Form control for the UVE `configuration` param. Instead of raw JSON, it shows one card per
  * URL route (path pattern, server URL, allowed dev URLs) that can be added, removed and
  * reordered. A JSON tab keeps the raw editor for pasting or for keys the form doesn't know.
@@ -322,12 +332,14 @@ export class DotAppsUveConfigFieldComponent implements ControlValueAccessor, Val
         this.onTouched();
     }
 
-    private getRouteTitle(route: UveRoute): string {
+    private getRouteTitle(route: UveRoute): UveRouteTitle {
         const pattern = route.pattern.trim();
         const url = route.url.trim();
 
         if (!pattern && !url) {
-            return this.#dotMessageService.get('apps.uve.route.new');
+            const text = this.#dotMessageService.get('apps.uve.route.new');
+
+            return { from: text, to: null, full: text };
         }
 
         const from =
@@ -336,7 +348,7 @@ export class DotAppsUveConfigFieldComponent implements ControlValueAccessor, Val
                 : pattern || '…';
         const to = isHttpUrl(url) ? new URL(url).host : url || '…';
 
-        return `${from} → ${to}`;
+        return { from, to, full: `${from} → ${to}` };
     }
 
     private patchRoute(index: number, update: (route: UveRoute) => UveRoute): void {

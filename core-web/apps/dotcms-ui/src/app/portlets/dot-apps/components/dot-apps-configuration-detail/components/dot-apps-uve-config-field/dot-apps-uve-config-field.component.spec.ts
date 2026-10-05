@@ -74,11 +74,17 @@ describe('DotAppsUveConfigFieldComponent', () => {
 
         const titles = spectator
             .queryAll(byTestId('uve-route-title'))
-            .map((title) => title.textContent.trim());
+            .map((title) => title.getAttribute('title'));
         expect(titles).toEqual([
             '/blogs/(.*) → myspa.blogs.com:3000',
             'apps.uve.route.all.pages → myspa.com:3000'
         ]);
+        expect(
+            spectator.queryAll(byTestId('uve-route-title-from')).map((n) => n.textContent?.trim())
+        ).toEqual(['/blogs/(.*)', 'apps.uve.route.all.pages']);
+        expect(
+            spectator.queryAll(byTestId('uve-route-title-to')).map((n) => n.textContent?.trim())
+        ).toEqual(['myspa.blogs.com:3000', 'myspa.com:3000']);
         expect(
             spectator.queryAll(byTestId('uve-route-number')).map((n) => n.textContent.trim())
         ).toEqual(['#1', '#2']);
@@ -90,9 +96,9 @@ describe('DotAppsUveConfigFieldComponent', () => {
 
         spectator.click(byTestId('uve-route-add'));
 
-        expect(spectator.queryAll(byTestId('uve-route-title'))[2].textContent.trim()).toBe(
-            'apps.uve.route.new'
-        );
+        const newTitle = spectator.queryAll(byTestId('uve-route-title'))[2];
+        expect(newTitle.textContent?.trim()).toBe('apps.uve.route.new');
+        expect(newTitle.querySelector('[data-testid="uve-route-title-to"]')).toBeNull();
     });
 
     it('should start with a catch-all route when nothing is saved', () => {

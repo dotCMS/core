@@ -66,11 +66,27 @@
                                 data-testid="uve-route-number">
                                 #{{ i + 1 }}
                             </span>
+                            @let title = titles[i];
+                            <!-- Both halves start from an equal share (flex-1) but never grow past their
+                                 own text (max-w-max), so a short half gives its spare room to the other
+                                 and the tags sit right after the text. Each half truncates on its own. -->
                             <span
-                                class="min-w-0 truncate font-mono font-semibold"
-                                [title]="titles[i]"
+                                class="flex min-w-0 items-center gap-1.5 font-mono font-semibold"
+                                [title]="title.full"
                                 data-testid="uve-route-title">
-                                {{ titles[i] }}
+                                <span
+                                    class="max-w-max min-w-0 flex-1 truncate"
+                                    data-testid="uve-route-title-from">
+                                    {{ title.from }}
+                                </span>
+                                @if (title.to !== null) {
+                                    <span class="shrink-0 text-gray-500" aria-hidden="true">→</span>
+                                    <span
+                                        class="max-w-max min-w-0 flex-1 truncate"
+                                        data-testid="uve-route-title-to">
+                                        {{ title.to }}
+                                    </span>
+                                }
                             </span>
                             @if (route.pattern.trim() === catchAllPattern) {
                                 <p-tag
