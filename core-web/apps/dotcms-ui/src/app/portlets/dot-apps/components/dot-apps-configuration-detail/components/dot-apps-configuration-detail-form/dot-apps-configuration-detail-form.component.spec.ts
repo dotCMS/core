@@ -180,6 +180,24 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
         declarations: []
     });
 
+    describe('Form layout', () => {
+        it('should not center the form by default', () => {
+            spectator = createComponent({ props: { formFields: secrets } as unknown });
+            spectator.detectChanges();
+
+            expect(spectator.query('form')).not.toHaveClass('form--centered');
+        });
+
+        it('should center the form for apps in the centered list', () => {
+            spectator = createComponent({
+                props: { formFields: secrets, appKey: 'dotema-config-v2' } as unknown
+            });
+            spectator.detectChanges();
+
+            expect(spectator.query('form')).toHaveClass('form--centered');
+        });
+    });
+
     describe('With a JSON field', () => {
         const jsonSecret = {
             dynamic: false,

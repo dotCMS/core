@@ -4,6 +4,7 @@ import { Subscription } from 'rxjs';
 import { NgTemplateOutlet } from '@angular/common';
 import {
     Component,
+    computed,
     effect,
     ElementRef,
     inject,
@@ -38,6 +39,9 @@ import { DotAppsConfigurationDetailGeneratedStringFieldComponent } from '../dot-
 import { DotAppsConfigurationDetailJsonFieldComponent } from '../dot-apps-configuration-detail-json-field/dot-apps-configuration-detail-json-field.component';
 import { DotAppsUveConfigFieldComponent } from '../dot-apps-uve-config-field/dot-apps-uve-config-field.component';
 import { UVE_APP_KEY } from '../dot-apps-uve-config-field/dot-apps-uve-config.utils';
+
+/** Apps whose configuration form is centered on the page; add keys as more apps are redesigned. */
+const CENTERED_FORM_APP_KEYS: readonly string[] = [UVE_APP_KEY];
 
 enum FieldStatus {
     EDITABLE,
@@ -79,7 +83,11 @@ export class DotAppsConfigurationDetailFormComponent implements OnInit, OnDestro
     /** Key of the app being configured; the UVE app gets a rule editor for its JSON param. */
     $appKey = input<string>('', { alias: 'appKey' });
 
-    readonly uveAppKey = UVE_APP_KEY;
+    /** True on the UVE app, whose JSON param gets the route editor. */
+    readonly $isUveApp = computed(() => this.$appKey() === UVE_APP_KEY);
+
+    /** True for apps that use the centered form layout. */
+    readonly $shouldCenterForm = computed(() => CENTERED_FORM_APP_KEYS.includes(this.$appKey()));
 
     readonly data = output<{ [key: string]: string }>();
     readonly valid = output<boolean>();

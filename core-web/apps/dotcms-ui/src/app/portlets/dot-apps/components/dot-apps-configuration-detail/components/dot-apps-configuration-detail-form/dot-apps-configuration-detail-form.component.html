@@ -2,7 +2,7 @@
     <form
         [formGroup]="myFormGroup"
         class="form"
-        [class.form--centered]="$appKey() === uveAppKey"
+        [class.form--centered]="$shouldCenterForm()"
         #form="ngForm"
         #formContainer
         novalidate>
@@ -76,7 +76,7 @@
                                 *ngTemplateOutlet="labelField; context: { field: field }" />
                             <ng-container
                                 *ngTemplateOutlet="warningIcon; context: { field: field }" />
-                            @if ($appKey() === uveAppKey) {
+                            @if ($isUveApp()) {
                                 <!-- The UVE field shows the hint itself, only on its JSON tab. -->
                                 <dot-apps-uve-config-field
                                     data-testid="uve-config-field"
