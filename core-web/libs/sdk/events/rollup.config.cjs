@@ -12,11 +12,12 @@ const options = {
     compiler: 'tsc',
     generateExportsField: true,
     outputPath: '../../../dist/libs/sdk/events',
+    // Only the README ships: CLAUDE.md is for working on this repo, not for the package's users
     assets: [
         {
             input: 'libs/sdk/events',
             output: '.',
-            glob: '*.md'
+            glob: 'README.md'
         }
     ],
     main: './src/index.ts',

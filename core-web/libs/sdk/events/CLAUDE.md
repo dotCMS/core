@@ -139,11 +139,11 @@ One folder per capability, files named by their role (`plugin.ts`, `tracker.ts`,
 - `rollup.config.cjs` uses `withNx`, like `@dotcms/client`: ESM and CJS, `generateExportsField`, `types` first in the exports. The build type-checks.
 - The three entries share one chunk, `decision.esm.js`, so the engine never loads the markup builder.
 - The `build` target exists because `nx.json` lists `libs/sdk/events` in the `@nx/rollup/plugin` include. `project.json` declares `implicitDependencies: ["sdk-types"]`, without which the build fails with TS6059.
-- `*.md` files are copied into the package, this one included.
+- Only `README.md` is copied into the package. This file is for working on the repo and does not ship.
 
 ## Dependencies
 
-- Runtime: `analytics`, `@analytics/core`, `@analytics/queue-utils`, `@analytics/router-utils`, `@analytics/storage-utils`.
+- Runtime: `analytics`, `@analytics/queue-utils` and `@analytics/router-utils`, the packages the built code imports. `@analytics/core` and `@analytics/storage-utils` come with `analytics`.
 - Peers: `@dotcms/uve`, with the `"0.0.0"` sentinel the SDK release replaces with the release version, and `react` (`>=18`), optional, for `./react` only.
 - Next.js 16 or later is stated in the README but not declared as a peer: nothing imports `next`, and a peer would only make npm refuse to install on an older version.
 
