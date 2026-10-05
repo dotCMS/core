@@ -13,13 +13,17 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -38,6 +42,14 @@ public class BulkProcessorListener implements IndexBulkListener {
     final Map<String, ReindexEntry> workingRecords;
 
     static final List<String> RESERVED_IDS = List.of(Host.SYSTEM_HOST);
+
+    /**
+     * Opens the journal reason of an entry that failed only because another document of the same
+     * bulk request could not be serialized. Kept short: the journal truncates reasons to 300
+     * characters and the cause that follows must survive.
+     */
+    static final String COLLATERAL_FAILURE_PREFIX = "Collateral failure, this entry may be healthy:"
+            + " its bulk request failed because a document in it could not be serialized. Cause: ";
 
     /** Stand-in used when the vendor reports a failed item without any message. */
     static final String NO_FAILURE_MESSAGE = "(no failure message reported)";
@@ -167,6 +179,20 @@ public class BulkProcessorListener implements IndexBulkListener {
         }
     }
 
+    /**
+     * Handles a bulk request that failed as a whole, before the engine returned per-document
+     * results, so the document that caused it cannot be identified.
+     *
+     * <p>Every tracked entry is marked failed. When the cause is a content problem — a JSON
+     * processing error anywhere in the cause chain — each entry is told it failed collaterally
+     * and one ERROR line lists the identifiers of the request, so support does not inspect every
+     * contentlet as if it were the culprit (#37269). Any other cause (connection, timeout,
+     * authentication) keeps the exception's own message. Nothing is resent; each entry still
+     * consumes a retry attempt.</p>
+     *
+     * @param executionId unique ID assigned by the bulk processor
+     * @param failure     the exception that failed the whole request
+     */
     @Override
     public void afterBulk(final long executionId, final Throwable failure) {
         final String msg = failure != null ? failure.getMessage() : "(no message)";
@@ -175,8 +201,36 @@ public class BulkProcessorListener implements IndexBulkListener {
                     "[OS] Bulk process failed entirely (fire-and-forget): " + msg, failure);
             return;
         }
+        if (isContentFailure(failure)) {
+            Logger.error(ReindexThread.class, "Bulk process failed entirely because one of its"
+                    + " documents could not be serialized; the culprit cannot be identified, so "
+                    + workingRecords.size() + " entries are marked failed collaterally: "
+                    + workingRecords.keySet() + ". Cause: " + msg, failure);
+            final String collateral = COLLATERAL_FAILURE_PREFIX + msg;
+            workingRecords.values().forEach(idx -> handleFailure(idx, collateral));
+            return;
+        }
         Logger.error(ReindexThread.class, "Bulk process failed entirely: " + msg, failure);
         workingRecords.values().forEach(idx -> handleFailure(idx, msg));
+    }
+
+    /**
+     * Tells whether a whole-request failure was caused by a document's content rather than by
+     * transport. Only a {@link JsonProcessingException} in the cause chain counts: a plain
+     * {@link java.io.IOException} is a transport problem even though
+     * {@code JsonProcessingException} extends it.
+     *
+     * @param failure the exception that failed the whole request; may be {@code null}
+     * @return {@code true} when a JSON processing error is anywhere in the cause chain
+     */
+    static boolean isContentFailure(final Throwable failure) {
+        final Set<Throwable> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+        for (Throwable t = failure; t != null && seen.add(t); t = t.getCause()) {
+            if (t instanceof JsonProcessingException) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
