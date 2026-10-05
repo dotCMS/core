@@ -1,8 +1,10 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -12,6 +14,8 @@ import static org.mockito.Mockito.when;
 
 import com.dotcms.content.index.ContentletIndexOperations;
 import com.dotcms.content.index.IndexAPI;
+import com.dotcms.content.index.IndexDocumentConstraints;
+import com.dotcms.content.index.IndexDocumentViolation;
 import com.dotcms.content.index.VersionedIndices;
 import com.dotcms.content.index.VersionedIndicesAPI;
 import com.dotcms.content.index.domain.IndexBulkProcessor;
@@ -19,10 +23,12 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.reindex.ReindexEntry;
 import com.dotmarketing.common.reindex.ReindexQueueAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 
 /**
@@ -76,13 +82,20 @@ public class ContentletIndexAPIImplShadowAddFailureTest {
             return runner;
         }
 
+        /** When set, the mapping also yields this rejected document ahead of the healthy ones. */
+        private IndexDocumentViolation rejection;
+
         @Override
         List<MappedDocument> mapEntry(final ReindexEntry idx) {
             final Contentlet contentlet = mock(Contentlet.class);
             when(contentlet.getIdentifier()).thenReturn(idx.getIdentToIndex());
-            return List.of(
-                    new MappedDocument(contentlet, "doc-1", MAPPING, true, false),
-                    new MappedDocument(contentlet, "doc-2", MAPPING, true, false));
+            final List<MappedDocument> documents = new ArrayList<>();
+            if (rejection != null) {
+                documents.add(MappedDocument.rejected(contentlet, "doc-0", rejection));
+            }
+            documents.add(new MappedDocument(contentlet, "doc-1", MAPPING, true, false));
+            documents.add(new MappedDocument(contentlet, "doc-2", MAPPING, true, false));
+            return documents;
         }
     }
 
@@ -138,6 +151,32 @@ public class ContentletIndexAPIImplShadowAddFailureTest {
         append();
 
         verify(queueAPI).markAsFailed(eq(entry), eq("primary rejected document"));
+    }
+
+    /**
+     * Given Scenario: One document of the entry was withheld for exceeding the parser limit, and
+     * queueing a healthy sibling then fails on the <b>primary</b>.
+     * Expected Result: The entry's last recorded reason still names the withheld document's
+     * field and size; the primary's error does not replace it (AC-002).
+     */
+    @Test
+    public void test_primaryAddFailureAfterRejection_keepsViolationReason() throws Exception {
+        final IndexDocumentViolation violation = new IndexDocumentViolation("id-1", "inode-0", 1L,
+                new IndexDocumentConstraints.Violation(IndexDocumentConstraints.Kind.STRING_LENGTH,
+                        "body", 20_000_001L, 20_000_000L));
+        api.rejection = violation;
+        doThrow(new IllegalStateException("primary rejected document"))
+                .when(esOps).addIndexOpToProcessor(eq(esProc), anyString(), anyString(), anyString());
+
+        append();
+
+        final ArgumentCaptor<String> reasons = ArgumentCaptor.forClass(String.class);
+        verify(queueAPI, atLeastOnce()).markAsFailed(eq(entry), reasons.capture());
+        final String lastReason = reasons.getValue();
+        assertTrue("the last reason must keep the violation: " + lastReason,
+                lastReason.contains(violation.toFailureReason()));
+        assertTrue("the last reason must also carry the primary's error: " + lastReason,
+                lastReason.contains("primary rejected document"));
     }
 
     /** Appends the entry through a Phase 1 composite with the journal API mocked. */

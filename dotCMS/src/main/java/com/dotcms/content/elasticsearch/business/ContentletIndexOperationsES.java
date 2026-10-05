@@ -113,6 +113,14 @@ public class ContentletIndexOperationsES implements ContentletIndexOperations {
         private final IndexBulkListener listener;
         private final int awaitTimeoutSeconds;
 
+        /**
+         * Wraps the processor together with the listener that receives its callbacks.
+         *
+         * @param delegate            the Elasticsearch bulk processor
+         * @param listener            the listener wired into {@code delegate}, kept so that
+         *                            {@link #withhold(String)} can reach it
+         * @param awaitTimeoutSeconds how long {@link #close()} waits for pending requests
+         */
         ESIndexBulkProcessor(final BulkProcessor delegate, final IndexBulkListener listener,
                 final int awaitTimeoutSeconds) {
             this.delegate = delegate;

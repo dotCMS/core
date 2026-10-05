@@ -2697,6 +2697,20 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         }
     }
 
+    /**
+     * Maps one reindex entry to its index documents and queues them on the processor.
+     *
+     * <p>Mapping runs under the bounded {@link ReindexMappingRunner} guard; queueing does not. A
+     * document the engine clients' parser would refuse is withheld: the processor is told to
+     * {@link IndexBulkProcessor#withhold(String) withhold} the identifier and the entry is marked
+     * failed with the field and size, before any healthy sibling is queued (#37269). A mapping
+     * or primary queueing failure marks the entry failed; a pool-exhaustion failure is rethrown
+     * untouched so the reindex loop can back off.</p>
+     *
+     * @param proc the bulk processor of the current reindex iteration
+     * @param idx  the journal entry to index
+     * @throws DotDataException if the journal cannot be updated
+     */
     private void appendBulkRequestToProcessor(final IndexBulkProcessor proc,
             final ReindexEntry idx) throws DotDataException {
         final List<MappedDocument> documents;
@@ -2727,21 +2741,24 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 healthy.add(document);
             }
         }
+        final String rejectionReason = String.join("; ", rejections);
         if (!rejections.isEmpty()) {
             // A document the engine clients' parser would refuse is withheld on its own instead of
             // failing every document that would share its bulk request (#37269).
-            final String reason = String.join("; ", rejections);
             Logger.warn(this, "Withholding index document(s) for identifier '"
-                    + idx.getIdentToIndex() + "': " + reason);
+                    + idx.getIdentToIndex() + "': " + rejectionReason);
             // Before any sibling is queued: the processor can flush mid-append, and a sibling's
             // success must not delete the entry that now holds this failure.
             proc.withhold(idx.getIdentToIndex());
-            APILocator.getReindexQueueAPI().markAsFailed(idx, reason);
+            APILocator.getReindexQueueAPI().markAsFailed(idx, rejectionReason);
         }
         try {
             enqueueMappedDocuments(proc, healthy, idx.isReindex());
         } catch (final Exception e) {
-            APILocator.getReindexQueueAPI().markAsFailed(idx, e.getMessage());
+            // Keep the withheld document's attribution: the primary's error must not replace it.
+            APILocator.getReindexQueueAPI().markAsFailed(idx, rejections.isEmpty()
+                    ? e.getMessage()
+                    : rejectionReason + "; " + e.getMessage());
         }
     }
 
@@ -2935,7 +2952,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      * Renders one contentlet to its index document. This is the storage-touching step: building
      * the mapping reads binary field metadata from the filesystem.
      *
-     * @return empty when the contentlet is neither working nor live and so has nothing to index
+     * @return empty when the contentlet is neither working nor live and so has nothing to index;
+     *         a {@link MappedDocument#rejected rejected} placeholder, carrying the violation and no
+     *         mapping, when the engine clients' parser would refuse the document (#37269)
      */
     private Optional<MappedDocument> mapContentletForProcessor(final Contentlet contentlet) {
         final String id = contentlet.getIdentifier() + "_" + contentlet.getLanguageId()

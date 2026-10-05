@@ -4,9 +4,13 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.cdi.CDIUtils;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.OrderedMappingIndexAPI;
+import com.dotcms.content.index.IndexConfigHelper;
+import com.dotcms.content.index.VersionedIndices;
 import com.dotcms.content.index.domain.IndexBulkProcessor;
+import com.dotcms.content.index.opensearch.OSClientProvider;
 import com.dotcms.contenttype.model.field.TextAreaField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
@@ -30,6 +34,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import org.opensearch.client.opensearch.OpenSearchClient;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -107,10 +112,12 @@ public class BulkBatchDiscardTest {
     @Test
     public void test_oversizedDocument_failsAlone_restOfGroupIndexed() throws Exception {
         final Contentlet oversized = newContentlet("x".repeat(OVERSIZED_LENGTH));
-        final List<String> healthy = new ArrayList<>();
+        final List<Contentlet> healthyContent = new ArrayList<>();
         for (int i = 0; i < HEALTHY_COUNT; i++) {
-            healthy.add(newContentlet("healthy body " + i).getIdentifier());
+            healthyContent.add(newContentlet("healthy body " + i));
         }
+        final List<String> healthy = healthyContent.stream().map(Contentlet::getIdentifier)
+                .collect(Collectors.toList());
         final List<String> all = new ArrayList<>(healthy);
         all.add(oversized.getIdentifier());
 
@@ -131,6 +138,7 @@ public class BulkBatchDiscardTest {
         for (final String identifier : healthy) {
             assertIndexed(identifier);
         }
+        assertInShadowWhenDualWrite(healthyContent);
     }
 
     /**
@@ -322,6 +330,29 @@ public class BulkBatchDiscardTest {
     private static void assertIndexed(final String identifier) throws Exception {
         assertFound("+identifier_dotraw:" + identifier,
                 "healthy contentlet must be indexed: " + identifier);
+    }
+
+    /**
+     * In a dual-write phase, asserts each contentlet's working document also reached the
+     * OpenSearch working index (AC-004). Phase-aware searches read only one engine, so this asks
+     * OpenSearch directly by document id, which is real-time and needs no refresh. Outside
+     * dual-write phases it does nothing.
+     */
+    private static void assertInShadowWhenDualWrite(final List<Contentlet> contentlets)
+            throws Exception {
+        if (!IndexConfigHelper.isDualWrite()) {
+            return;
+        }
+        final String osWorking = APILocator.getVersionedIndicesAPI().loadDefaultVersionedIndices()
+                .flatMap(VersionedIndices::working)
+                .orElseThrow(() -> new AssertionError("no OpenSearch working index in a dual-write phase"));
+        final OpenSearchClient client = CDIUtils.getBeanThrows(OSClientProvider.class).getClient();
+        for (final Contentlet contentlet : contentlets) {
+            final String documentId = contentlet.getIdentifier() + "_" + contentlet.getLanguageId()
+                    + "_" + contentlet.getVariantId();
+            assertTrue("healthy contentlet must also be in OpenSearch: " + documentId,
+                    client.exists(e -> e.index(osWorking).id(documentId)).value());
+        }
     }
 
     /** Waits for the index to refresh and asserts the query matches at least one document. */
