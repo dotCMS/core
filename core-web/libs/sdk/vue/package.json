@@ -8,7 +8,7 @@
         "@dotcms/types": "0.0.0"
     },
     "dependencies": {
-        "@tinymce/tinymce-vue": "^6.3.0"
+        "@tinymce/tinymce-vue": "^6.1.0"
     },
     "devDependencies": {
         "@dotcms/types": "latest"

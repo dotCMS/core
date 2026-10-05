@@ -9,10 +9,9 @@ export const __DEFAULT_TINYMCE_CONFIG__ = {
     valid_styles: {
         '*': 'font-size,font-family,color,text-decoration,text-align'
     },
-    suffix: '.min', // Suffix to use when loading resources
-    // TinyMCE 6+ shows a premium-features promotion element by default; the pre-upgrade version
-    // (4.9.6) had no such thing, so this keeps the toolbar matching the original look.
-    promotion: false
+    powerpaste_word_import: 'clean',
+    powerpaste_html_import: 'clean',
+    suffix: '.min' // Suffix to use when loading resources
 };
 
 /**
@@ -50,18 +49,8 @@ export const __BASE_TINYMCE_CONFIG_WITH_NO_DEFAULT__ = {
 };
 
 /**
- * Directory dotCMS serves the version-neutral vendored TinyMCE copy from.
- *
- * Single source of truth for both the script path and TinyMCE's own `base_url` option — the two
- * were previously hardcoded separately in `dotcms-editable-text.component.ts` and could drift.
- *
- * @internal
- */
-export const __TINYMCE_BASE_PATH_ON_DOTCMS__ = '/ext/tinymce';
-
-/**
  * TinyMCE path
  *
  * @internal
  */
-export const __TINYMCE_PATH_ON_DOTCMS__ = `${__TINYMCE_BASE_PATH_ON_DOTCMS__}/tinymce.min.js`;
+export const __TINYMCE_PATH_ON_DOTCMS__ = '/ext/tinymcev7/tinymce.min.js';
