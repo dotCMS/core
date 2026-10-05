@@ -693,6 +693,20 @@ public class AppsUtil {
     }
 
     /**
+     * Returns the type a secret is persisted with. {@link Type#JSON} is stored as
+     * {@link Type#STRING}: the value is a plain string either way, the descriptor still reports
+     * JSON at read time (see {@code SecretView}), and a release that predates {@code Type.JSON}
+     * could not deserialize a stored {@code "type":"JSON"}, so a rollback would leave the secrets
+     * of that site unreadable.
+     *
+     * @param type the type declared by the param descriptor
+     * @return the type to persist
+     */
+    static Type storedType(final Type type) {
+        return Type.JSON.equals(type) ? Type.STRING : type;
+    }
+
+    /**
      * Creates a secret based on a given {@link ParamDescriptor}.
      *
      * @param key the key of the App
@@ -709,7 +723,7 @@ public class AppsUtil {
                 .map(pd -> Secret.builder()
                         .withValue(value)
                         .withHidden(pd.isHidden())
-                        .withType(pd.getType())
+                        .withType(storedType(pd.getType()))
                         .withEnvVar(pd.getEnvVar())
                         .withEnvShow(pd.getEnvShow())
                         .withEnvValue(discoverEnvVarValue(key, paramName, pd.getEnvVar()))
