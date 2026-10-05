@@ -116,6 +116,53 @@ export const ROUTE_HANDLERS: Record<string, RouteHandlerConfig> = {
     },
 
     /**
+     * Handles Content Drive URLs that carry query params (`path`, `filters`, `editContent`, …).
+     *
+     * They never match the menu item, because a URL with params and no `mId` reads as an old
+     * bookmark, and Content Drive is reached that way all the time: Content Search and Site Browser
+     * links redirect to it, and its own URLs are shared (#37759). Without this the trail stayed as it
+     * was: the previous page's title after a redirect, and a blank one in a new tab.
+     *
+     * - An empty trail (a new tab) starts from Content Drive's place in the menu.
+     * - A trail ending on another portlet (a redirect) keeps it, with Content Drive appended.
+     * - A trail already ending on Content Drive (a reload whose URL moved on) is left alone.
+     *
+     * The bare `/content-drive`, and a menu click (`?mId=`), match the menu item before this runs.
+     */
+    contentDrive: {
+        test: (url: string) => /^\/content-drive\?/.test(url),
+
+        handler: ({ url, menu, breadcrumbs }): RouteHandlerResult | void => {
+            const contentDrive = menu.find((item) => item.menuLink === '/content-drive');
+
+            if (!contentDrive) {
+                return;
+            }
+
+            const crumb: MenuItem = {
+                label: contentDrive.label,
+                target: '_self',
+                url: `/dotAdmin/#${url}`
+            };
+
+            if (breadcrumbs.length === 0) {
+                return {
+                    type: 'set',
+                    breadcrumbs: [{ label: contentDrive.parentMenuLabel, disabled: true }, crumb]
+                };
+            }
+
+            const lastUrl = (breadcrumbs.at(-1)?.url ?? '').replace(/^.*#/, '');
+
+            if (lastUrl.startsWith('/content-drive')) {
+                return;
+            }
+
+            return { type: 'append', breadcrumbs: [crumb] };
+        }
+    },
+
+    /**
      * Handles /content?filter= routes.
      */
     contentFilter: {
