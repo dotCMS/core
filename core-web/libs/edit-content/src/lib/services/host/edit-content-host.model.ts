@@ -16,6 +16,11 @@ import { DotRelatedContentCrumb } from '../../store/dot-related-content-navigati
 export interface InPlaceNavigationRequest {
     inode: string;
     trail?: string[];
+    /**
+     * The language of the version to load, for a locale switch. Reported back through
+     * {@link EditContentHost.reportLanguage} once the reload actually runs (#37759, FR-020).
+     */
+    languageId?: number;
 }
 
 /**
@@ -74,7 +79,8 @@ export interface EditContentHost {
      *
      * @param inode The version to load.
      * @param languageId The language of that version, when the reload is a locale switch. An
-     * overlay reports it so its opener can name the language now open (#37759, FR-020).
+     * overlay carries it on the reload request, and the layout reports it once the reload runs
+     * (#37759, FR-020).
      */
     reloadContent(inode: string, languageId?: number): void;
 
@@ -176,6 +182,16 @@ export interface EditContentHost {
      * @param guard Receives a `proceed` callback to run the actual navigation.
      */
     setNavigationGuard?(guard: (proceed: () => void) => void): void;
+
+    /**
+     * An in-place reload for a locale switch ran: the editor now shows that language. Called by
+     * the layout after the unsaved-changes prompt, never before, so a "keep editing" reports
+     * nothing. The overlay reports it to its opener, whose URL names the language (#37759,
+     * FR-020, FR-028). Full-screen hosts do not implement it: their route already names it.
+     *
+     * @param languageId The language the editor now shows.
+     */
+    reportLanguage?(languageId: number): void;
 
     /**
      * The related-content breadcrumb trail for this editor's presentation. URL-derived

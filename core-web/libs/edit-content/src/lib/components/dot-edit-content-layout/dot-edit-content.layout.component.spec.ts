@@ -723,7 +723,8 @@ describe('EditContentLayoutComponent - In-place (dialog) host', () => {
         leaveOnLoadError: vi.fn(),
         goToRestoredVersion: vi.fn(),
         goToRelatedContent: vi.fn(),
-        goToCrumb: vi.fn()
+        goToCrumb: vi.fn(),
+        reportLanguage: vi.fn()
     };
 
     const createComponent = createComponentFactory({
@@ -860,6 +861,51 @@ describe('EditContentLayoutComponent - In-place (dialog) host', () => {
         expect(store.initializeExistingContent).toHaveBeenCalledWith(
             expect.objectContaining({ inode: 'iLocale' })
         );
+        // No language on the request: nothing to report.
+        expect(inPlaceHost.reportLanguage).not.toHaveBeenCalled();
+    });
+
+    /**
+     * The language of a locale switch reaches the opener only once the reload runs, so its URL
+     * never names a language the editor isn't showing (#37759, FR-020, T125).
+     */
+    describe('reporting the language of a locale switch', () => {
+        it('reports it when the form is clean', () => {
+            vi.spyOn(spectator.component, 'hasUnsavedChanges').mockReturnValue(false);
+
+            navigation$.next({ inode: 'iLocale', languageId: 2 });
+
+            expect(inPlaceHost.reportLanguage).toHaveBeenCalledWith(2);
+        });
+
+        it('does not report it when the user keeps editing (dirty)', () => {
+            vi.spyOn(spectator.component, 'hasUnsavedChanges').mockReturnValue(true);
+            const confirm = spectator.inject(ConfirmationService, true);
+            vi.spyOn(confirm, 'confirm').mockImplementation((opts) => {
+                opts.accept?.();
+
+                return confirm;
+            });
+
+            navigation$.next({ inode: 'iLocale', languageId: 2 });
+
+            expect(store.initializeExistingContent).not.toHaveBeenCalled();
+            expect(inPlaceHost.reportLanguage).not.toHaveBeenCalled();
+        });
+
+        it('reports it when the user discards changes (dirty)', () => {
+            vi.spyOn(spectator.component, 'hasUnsavedChanges').mockReturnValue(true);
+            const confirm = spectator.inject(ConfirmationService, true);
+            vi.spyOn(confirm, 'confirm').mockImplementation((opts) => {
+                (opts.reject as (t: ConfirmEventType) => void)?.(ConfirmEventType.REJECT);
+
+                return confirm;
+            });
+
+            navigation$.next({ inode: 'iLocale', languageId: 2 });
+
+            expect(inPlaceHost.reportLanguage).toHaveBeenCalledWith(2);
+        });
     });
 });
 

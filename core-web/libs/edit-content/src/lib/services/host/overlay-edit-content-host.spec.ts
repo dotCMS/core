@@ -223,10 +223,10 @@ describe('OverlayEditContentHost', () => {
     });
 
     describe('reloadContent (locale switch)', () => {
-        it('emits a reload request WITHOUT a trail (keeps the current trail)', () =>
+        it('emits a reload request WITHOUT a trail, carrying the language', () =>
             new Promise<void>((done) => {
                 host.inPlaceNavigation$.subscribe((request) => {
-                    expect(request).toEqual({ inode: 'inode-5' });
+                    expect(request).toEqual({ inode: 'inode-5', languageId: 2 });
                     expect(request.trail).toBeUndefined();
                     done();
                 });
@@ -234,13 +234,26 @@ describe('OverlayEditContentHost', () => {
                 host.reloadContent('inode-5', 2);
             }));
 
-        // The opener's URL can name the language now open, so a refresh or a switch to the old
-        // editor reopens it (#37759, FR-020, FR-028, T124).
-        it('reports the language it switched to on languageChanged$', () => {
+        // The layout may still keep the old version (unsaved changes, "keep editing"), so asking
+        // for the reload reports nothing yet (#37759, FR-020, T125).
+        it('does not report the language when only asked to reload', () => {
             const spy = vi.fn();
             host.languageChanged$.subscribe(spy);
 
             host.reloadContent('inode-5', 2);
+
+            expect(spy).not.toHaveBeenCalled();
+        });
+    });
+
+    // The layout reports the language once the reload runs; the opener names it in its URL
+    // (#37759, FR-020, FR-028, T125).
+    describe('reportLanguage', () => {
+        it('emits the language on languageChanged$', () => {
+            const spy = vi.fn();
+            host.languageChanged$.subscribe(spy);
+
+            host.reportLanguage(2);
 
             expect(spy).toHaveBeenCalledWith(2);
         });

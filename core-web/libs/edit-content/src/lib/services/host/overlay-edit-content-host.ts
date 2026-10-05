@@ -97,12 +97,14 @@ export class OverlayEditContentHost implements EditContentHost, OnDestroy {
     }
 
     reloadContent(inode: string, languageId?: number): void {
-        // Locale switch: reload the content, keep the current trail (no `trail`).
-        this.#navigation$.next({ inode });
+        // Locale switch: reload the content, keep the current trail (no `trail`). The language
+        // is only reported once the layout runs the reload (`reportLanguage`).
+        this.#navigation$.next(languageId ? { inode, languageId } : { inode });
+    }
 
-        if (languageId) {
-            this.#languageChanged$.next(languageId);
-        }
+    /** Reports the language on {@link languageChanged$}. */
+    reportLanguage(languageId: number): void {
+        this.#languageChanged$.next(languageId);
     }
 
     setTrail(inodes: string[]): void {

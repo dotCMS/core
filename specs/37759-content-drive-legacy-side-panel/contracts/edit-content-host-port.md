@@ -23,9 +23,12 @@ changing the full-page new editor. They follow the existing `leaveDeletedContent
 `reloadContent(inode: string, languageId?: number): void`. The locale switch in `locales.feature.ts`
 (`switchLocale`) passes the language of the version it loads. `RouterEditContentHost` ignores it:
 its route change already names the version. `OverlayEditContentHost` reloads in place, as before,
-and also emits the language on `languageChanged$`, so the opener's URL names the language now
-open. That keeps a refresh, and the page reload of "switch to the old editor", in that language
-(FR-020, FR-028).
+and carries the language on the `InPlaceNavigationRequest` (`languageId`). The layout reports it
+through the optional `reportLanguage?(languageId)` once the reload actually runs, after the
+unsaved-changes prompt, so a "keep editing" reports nothing. The overlay emits it on
+`languageChanged$`, and the opener's URL names the language now open. That keeps a refresh, and
+the page reload of "switch to the old editor", in that language (FR-020, FR-028). Full-screen hosts
+don't implement `reportLanguage`.
 
 "Switch to the old editor" reports nothing to the overlay's consumers (decided with the developer,
 2026-10-05). The page reloads and whatever opened the overlay reopens from its own URL. Content
