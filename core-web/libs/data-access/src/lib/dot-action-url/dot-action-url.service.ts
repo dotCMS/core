@@ -23,7 +23,10 @@ export class DotActionUrlService {
         return this.http
             .get<{
                 entity: string;
-            }>(`/api/v1/portlet/_actionurl/${contentTypeVariable}?language_id=${language_id}`)
+            }>(
+                // Encoded: the variable can come from a URL (Content Drive's `createContent`).
+                `/api/v1/portlet/_actionurl/${encodeURIComponent(contentTypeVariable)}?language_id=${language_id}`
+            )
             .pipe(map((x) => x?.entity));
     }
 }

@@ -26,6 +26,20 @@ describe('DotPermissionsService', () => {
                     .flush({ entity: { canEdit: true, canEditPermissions: false } });
             }));
 
+        // The id comes from a Content Drive URL, so it is encoded into the path (Constitution III,
+        // #37759 T110).
+        it('should encode the asset id into the path', () => {
+            spectator.service.getUserAccess('a/b c').subscribe();
+
+            // Collected and flushed whatever their URL, so a wrong one fails only this test.
+            const requests = spectator.controller.match(() => true);
+            requests.forEach((request) => request.flush({ entity: {} }));
+
+            expect(requests.map(({ request }) => request.url)).toEqual([
+                `${ASSET_PERMISSIONS_URL}/a%2Fb%20c`
+            ]);
+        });
+
         it('should read an absent flag as not allowed', () =>
             new Promise<void>((done) => {
                 spectator.service.getUserAccess('folder-1').subscribe((access) => {

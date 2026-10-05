@@ -54,8 +54,11 @@ export class DotPermissionsService {
      * @returns {Observable<{ canEdit: boolean; canEditPermissions: boolean }>} The user's access
      */
     getUserAccess(assetId: string): Observable<{ canEdit: boolean; canEditPermissions: boolean }> {
+        // Encoded: the id can come from a Content Drive URL (Constitution III, #37759).
         return this.#http
-            .get<DotCMSAPIResponse<AssetPermissionsView>>(`${ASSET_PERMISSIONS_URL}/${assetId}`)
+            .get<
+                DotCMSAPIResponse<AssetPermissionsView>
+            >(`${ASSET_PERMISSIONS_URL}/${encodeURIComponent(assetId)}`)
             .pipe(
                 map((response) => ({
                     canEdit: response.entity?.canEdit === true,
