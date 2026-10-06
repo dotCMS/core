@@ -304,7 +304,7 @@ DotCustomFieldApi.ready(() => {
 </script>
 ```
 
-> Use a self-contained `is-invalid` class with inline `<style>` instead of DaisyUI's `input-error`. The legacy iframe page (`legacy-custom-field.jsp`) does NOT load DaisyUI or Tailwind, so an `input-error` toggle would silently produce no visual feedback there. In iframe mode the callback also never fires (the Dojo bridge's `onValidationChange` is a no-op) — the legacy editor has its own validation surface. See Rule 13 in `references/migration-guide.md` for the full gotchas list.
+> Use a self-contained `is-invalid` class with inline `<style>` instead of DaisyUI's `input-error`. The legacy iframe page (`legacy-custom-field.jsp`) does NOT load DaisyUI or Tailwind, so an `input-error` toggle would silently produce no visual feedback there. Inside the iframe the migrated branch does not run at all: `$structures.isNewEditModeEnabled()` is `false` there, because the iframe request carries no `contentTypeId`, so the `#else` (legacy) code renders. The callback only fires in component mode (`newRenderMode=component`); in the legacy editor the Dojo bridge's `onValidationChange` is a no-op, and that editor has its own validation surface. See Rule 13 in `references/migration-guide.md` for the full gotchas list.
 
 `state` shape: `{ valid, invalid, touched, dirty, errors }` (mirrors Angular's `AbstractControl`). `errors` is `null` when valid, otherwise a record like `{ required: true }`.
 
