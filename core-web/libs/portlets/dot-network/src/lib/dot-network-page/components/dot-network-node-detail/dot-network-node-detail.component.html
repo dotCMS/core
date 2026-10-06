@@ -1,0 +1,82 @@
+@let current = node();
+@let tag = $statusTag();
+
+<header class="flex items-start gap-3 border-b border-surface px-5 py-4">
+    <div class="flex min-w-0 flex-col gap-1">
+        <div class="flex flex-wrap items-center gap-2.5">
+            <h2 class="m-0 text-lg font-semibold" data-testid="network-detail-id">
+                {{ current.displayServerId }}
+            </h2>
+            <p-tag
+                [severity]="tag.severity"
+                [value]="tag.labelKey | dm"
+                data-testid="network-detail-status" />
+            @if (isCurrent()) {
+                <p-tag
+                    severity="info"
+                    [value]="'network.node.this-node' | dm"
+                    data-testid="network-detail-current" />
+            }
+        </div>
+        <span class="truncate text-gray-500" data-testid="network-detail-name">
+            {{ current.name }}
+        </span>
+    </div>
+
+    <p-button
+        class="ml-auto"
+        [label]="'network.refresh' | dm"
+        [loading]="refreshing()"
+        (onClick)="refresh.emit()"
+        data-testid="network-refresh">
+        <ng-template #icon>
+            <span class="material-symbols-outlined" aria-hidden="true">refresh</span>
+        </ng-template>
+    </p-button>
+</header>
+
+<div class="flex min-h-0 flex-1 flex-col gap-4 overflow-auto px-5 pt-4 pb-6">
+    @if (!current.responded) {
+        <p-message severity="warn" data-testid="network-detail-not-responding">
+            {{ 'network.node.not-responding' | dm }}
+        </p-message>
+    }
+
+    <div class="grid grid-cols-2 gap-3 xl:grid-cols-4" data-testid="network-tiles">
+        @for (tile of $tiles(); track tile.labelKey) {
+            <p-card class="min-w-0" data-testid="network-tile">
+                <div class="flex min-w-0 flex-col gap-1">
+                    <span class="text-sm text-gray-500">{{ tile.labelKey | dm }}</span>
+                    <span
+                        class="truncate font-semibold"
+                        [class.font-mono]="tile.mono"
+                        [attr.title]="tile.value"
+                        data-testid="network-tile-value">
+                        {{ tile.value || '—' }}
+                    </span>
+                </div>
+            </p-card>
+        }
+    </div>
+
+    <dot-network-section
+        titleKey="network.cache.title"
+        [subtitle]="$cacheSubtitle()"
+        [health]="current.cache.health"
+        [rows]="$cacheRows()"
+        data-testid="network-section-cache" />
+
+    <dot-network-section
+        titleKey="network.search.title"
+        [subtitle]="$searchSubtitle()"
+        [health]="current.search.health"
+        [rows]="$searchRows()"
+        data-testid="network-section-search" />
+
+    <dot-network-section
+        titleKey="network.assets.title"
+        [subtitle]="'network.assets.subtitle' | dm"
+        [health]="current.assets.health"
+        [rows]="$assetsRows()"
+        data-testid="network-section-assets" />
+</div>
