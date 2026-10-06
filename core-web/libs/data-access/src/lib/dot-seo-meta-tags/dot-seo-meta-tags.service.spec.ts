@@ -1,5 +1,5 @@
-import { expect, it } from '@jest/globals';
 import { of } from 'rxjs';
+import { MockInstance, expect, it, vi } from 'vitest';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
@@ -22,7 +22,7 @@ describe('DotSetMetaTagsService', () => {
     let serviceUtil: DotSeoMetaTagsUtilService;
     let testDoc: XMLDocument;
     let head: HTMLElement;
-    let getImageFileSizeSpy: jest.SpyInstance;
+    let getImageFileSizeSpy: MockInstance;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -41,7 +41,7 @@ describe('DotSetMetaTagsService', () => {
         });
         service = TestBed.inject(DotSeoMetaTagsService);
         serviceUtil = TestBed.inject(DotSeoMetaTagsUtilService);
-        getImageFileSizeSpy = jest.spyOn(serviceUtil, 'getImageFileSize').mockReturnValue(
+        getImageFileSizeSpy = vi.spyOn(serviceUtil, 'getImageFileSize').mockReturnValue(
             of({
                 length: 8000000,
                 url: 'https://www.dotcms.com/dA/4e870b9fe0/1200w/jpeg/70/dotcms-defualt-og.jpg'
@@ -116,568 +116,613 @@ describe('DotSetMetaTagsService', () => {
         });
     });
 
-    it('should get the result found for ogTags with the async call', (done) => {
-        service.getMetaTagsResults(testDoc).subscribe((value) => {
-            expect(value.length).toEqual(10);
-            expect(value).toEqual(seoOGTagsResultOgMock);
-            done();
-        });
-    });
+    it('should get the result found for ogTags with the async call', () =>
+        new Promise<void>((done) => {
+            service.getMetaTagsResults(testDoc).subscribe((value) => {
+                expect(value.length).toEqual(10);
+                expect(value).toEqual(seoOGTagsResultOgMock);
+                done();
+            });
+        }));
 
-    it('should get more than one og-description error', (done) => {
-        const ogMetaDescription = document.createElement('meta');
-        ogMetaDescription.setAttribute('property', 'og:description');
-        ogMetaDescription.setAttribute('content', 'BE');
+    it('should get more than one og-description error', () =>
+        new Promise<void>((done) => {
+            const ogMetaDescription = document.createElement('meta');
+            ogMetaDescription.setAttribute('property', 'og:description');
+            ogMetaDescription.setAttribute('content', 'BE');
 
-        const ogMetaDescriptionSecond = document.createElement('meta');
-        ogMetaDescriptionSecond.setAttribute('property', 'og:description');
-        ogMetaDescriptionSecond.setAttribute('content', 'Costa Rica Special Offer');
+            const ogMetaDescriptionSecond = document.createElement('meta');
+            ogMetaDescriptionSecond.setAttribute('property', 'og:description');
+            ogMetaDescriptionSecond.setAttribute('content', 'Costa Rica Special Offer');
 
-        testDoc.head.appendChild(ogMetaDescription);
-        testDoc.head.appendChild(ogMetaDescriptionSecond);
+            testDoc.head.appendChild(ogMetaDescription);
+            testDoc.head.appendChild(ogMetaDescriptionSecond);
 
-        service.getMetaTagsResults(testDoc).subscribe((value) => {
-            expect(value[5].items[0].message).toEqual('seo.rules.og-description.more.one.found');
-            expect(value[5].items[1].message).toEqual('seo.rules.og-description.less');
-            done();
-        });
-    });
+            service.getMetaTagsResults(testDoc).subscribe((value) => {
+                expect(value[5].items[0].message).toEqual(
+                    'seo.rules.og-description.more.one.found'
+                );
+                expect(value[5].items[1].message).toEqual('seo.rules.og-description.less');
+                done();
+            });
+        }));
 
-    it('should get more than one og:title error', (done) => {
-        const ogMetaTitle = document.createElement('meta');
-        ogMetaTitle.setAttribute('property', 'og:title');
-        ogMetaTitle.setAttribute('content', 'Costa Rica Special Offer');
+    it('should get more than one og:title error', () =>
+        new Promise<void>((done) => {
+            const ogMetaTitle = document.createElement('meta');
+            ogMetaTitle.setAttribute('property', 'og:title');
+            ogMetaTitle.setAttribute('content', 'Costa Rica Special Offer');
 
-        const ogMetaTitleSecond = document.createElement('meta');
-        ogMetaTitleSecond.setAttribute('property', 'og:title');
-        ogMetaTitleSecond.setAttribute('content', 'Costa Rica Special Offer');
+            const ogMetaTitleSecond = document.createElement('meta');
+            ogMetaTitleSecond.setAttribute('property', 'og:title');
+            ogMetaTitleSecond.setAttribute('content', 'Costa Rica Special Offer');
 
-        testDoc.head.appendChild(ogMetaTitle);
-        testDoc.head.appendChild(ogMetaTitleSecond);
+            testDoc.head.appendChild(ogMetaTitle);
+            testDoc.head.appendChild(ogMetaTitleSecond);
 
-        service.getMetaTagsResults(testDoc).subscribe((value) => {
-            expect(value[2].items[0].message).toEqual('seo.rules.og-title.more.one.found');
-            expect(value[2].items[1].message).toEqual('seo.rules.og-title.less');
-            done();
-        });
-    });
+            service.getMetaTagsResults(testDoc).subscribe((value) => {
+                expect(value[2].items[0].message).toEqual('seo.rules.og-title.more.one.found');
+                expect(value[2].items[1].message).toEqual('seo.rules.og-title.less');
+                done();
+            });
+        }));
 
-    it('should get more than description error', (done) => {
-        const description = document.createElement('meta');
-        description.setAttribute('name', 'description');
-        description.setAttribute('content', 'Costa Rica Special Offer');
+    it('should get more than description error', () =>
+        new Promise<void>((done) => {
+            const description = document.createElement('meta');
+            description.setAttribute('name', 'description');
+            description.setAttribute('content', 'Costa Rica Special Offer');
 
-        testDoc.head.appendChild(description);
+            testDoc.head.appendChild(description);
 
-        service.getMetaTagsResults(testDoc).subscribe((value) => {
-            expect(value[0].items[0].message).toEqual('seo.rules.description.more.one.found');
-            done();
-        });
-    });
+            service.getMetaTagsResults(testDoc).subscribe((value) => {
+                expect(value[0].items[0].message).toEqual('seo.rules.description.more.one.found');
+                done();
+            });
+        }));
 
-    it('should get description found', (done) => {
-        service.getMetaTagsResults(testDoc).subscribe((value) => {
-            expect(value[0].items[0].message).toEqual('seo.rules.description.found');
-            done();
-        });
-    });
+    it('should get description found', () =>
+        new Promise<void>((done) => {
+            service.getMetaTagsResults(testDoc).subscribe((value) => {
+                expect(value[0].items[0].message).toEqual('seo.rules.description.found');
+                done();
+            });
+        }));
 
-    it('should og:description meta tag, and Meta Description not found!', (done) => {
-        const testDoc: XMLDocument = createTestDocument();
+    it('should og:description meta tag, and Meta Description not found!', () =>
+        new Promise<void>((done) => {
+            const testDoc: XMLDocument = createTestDocument();
 
-        service.getMetaTagsResults(testDoc).subscribe((value) => {
-            expect(value[5].items[0].message).toEqual(
-                'seo.rules.og-description.description.not.found'
+            service.getMetaTagsResults(testDoc).subscribe((value) => {
+                expect(value[5].items[0].message).toEqual(
+                    'seo.rules.og-description.description.not.found'
+                );
+                done();
+            });
+        }));
+
+    it('should og:image meta tag not found!', () =>
+        new Promise<void>((done) => {
+            const imageDocument: XMLDocument = createTestDocument();
+
+            const head = imageDocument.createElement('head');
+            imageDocument.documentElement.appendChild(head);
+
+            const ogImage = imageDocument.createElement('og:image');
+            imageDocument.documentElement.appendChild(ogImage);
+            head.appendChild(ogImage);
+
+            getImageFileSizeSpy.mockReturnValueOnce(
+                of({
+                    length: 0,
+                    url: IMG_NOT_FOUND_KEY
+                })
             );
-            done();
-        });
-    });
 
-    it('should og:image meta tag not found!', (done) => {
-        const imageDocument: XMLDocument = createTestDocument();
+            service.getMetaTagsResults(imageDocument).subscribe((value) => {
+                expect(value[1].items[0].message).toEqual('seo.rules.og-image.not.found');
+                done();
+            });
+        }));
 
-        const head = imageDocument.createElement('head');
-        imageDocument.documentElement.appendChild(head);
+    it('should og:image meta tag not found!', () =>
+        new Promise<void>((done) => {
+            const descriptionDocument: XMLDocument = createTestDocument();
 
-        const ogImage = imageDocument.createElement('og:image');
-        imageDocument.documentElement.appendChild(ogImage);
-        head.appendChild(ogImage);
+            const head = descriptionDocument.createElement('head');
+            descriptionDocument.documentElement.appendChild(head);
 
-        getImageFileSizeSpy.mockReturnValueOnce(
-            of({
-                length: 0,
-                url: IMG_NOT_FOUND_KEY
-            })
-        );
-
-        service.getMetaTagsResults(imageDocument).subscribe((value) => {
-            expect(value[1].items[0].message).toEqual('seo.rules.og-image.not.found');
-            done();
-        });
-    });
-
-    it('should og:image meta tag not found!', (done) => {
-        const descriptionDocument: XMLDocument = createTestDocument();
-
-        const head = descriptionDocument.createElement('head');
-        descriptionDocument.documentElement.appendChild(head);
-
-        const ogDescription = descriptionDocument.createElement('meta');
-        ogDescription.setAttribute('property', 'og:description');
-        ogDescription.setAttribute(
-            'content',
-            'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla pharetra maximus enim ac tincidunt. Vivamus vestibulum sed enim sed consectetur. Nulla malesuada libero a tristique bibendum. Suspendisse blandit ligula velit, eu volutpat arcu ornare sed.'
-        );
-        head.appendChild(ogDescription);
-
-        service.getMetaTagsResults(descriptionDocument).subscribe((value) => {
-            expect(value[5].items[0].message).toEqual('seo.rules.og-description.greater');
-            done();
-        });
-    });
-
-    it('should found title meta tag, with an appropriate amount of content!', (done) => {
-        const titleDoc: XMLDocument = createTestDocument();
-
-        const head = titleDoc.createElement('head');
-        titleDoc.documentElement.appendChild(head);
-
-        const title = titleDoc.createElement('title');
-        title.innerHTML = 'HTML TITLE -------------- TEST';
-        head.appendChild(title);
-
-        service.getMetaTagsResults(titleDoc).subscribe((value) => {
-            expect(value[4].items[0].message).toEqual('seo.rules.title.found.empty');
-            done();
-        });
-    });
-
-    it('should found title meta tag, with an appropriate amount of content!', (done) => {
-        const titleDoc: XMLDocument = createTestDocument();
-
-        const head = titleDoc.createElement('head');
-        titleDoc.documentElement.appendChild(head);
-
-        const title = titleDoc.createElement('title');
-        title.innerHTML = 'HTML TITLE -------------- TEST';
-        head.appendChild(title);
-
-        service.getMetaTagsResults(titleDoc).subscribe((value) => {
-            expect(value[4].items[0].message).toEqual('seo.rules.title.found.empty');
-            done();
-        });
-    });
-
-    it('should found title meta tag, with an appropriate amount of content when min limit', (done) => {
-        const titleDoc: XMLDocument = createTestDocument();
-
-        const head = titleDoc.createElement('head');
-        titleDoc.documentElement.appendChild(head);
-
-        const title = titleDoc.createElement('title');
-        title.innerHTML = 'HTML TITLE -------------- TEST';
-        head.appendChild(title);
-
-        service.getMetaTagsResults(titleDoc).subscribe((value) => {
-            expect(value[4].items[0].message).toEqual('seo.rules.title.found.empty');
-            done();
-        });
-    });
-
-    it('should found title meta tag, with an appropriate amount of content when max limit', (done) => {
-        const titleDoc: XMLDocument = createTestDocument();
-
-        const head = titleDoc.createElement('head');
-        titleDoc.documentElement.appendChild(head);
-
-        const title = titleDoc.createElement('title');
-        title.innerHTML = 'HTML TITLE -------------- TEST******************************';
-        head.appendChild(title);
-
-        service.getMetaTagsResults(titleDoc).subscribe((value) => {
-            expect(value[4].items[0].message).toEqual('seo.rules.title.found.empty');
-            done();
-        });
-    });
-
-    it('should found description meta tag, with an appropriate amount of content when min limit', (done) => {
-        const doc: XMLDocument = createTestDocument();
-
-        const head = doc.createElement('head');
-        doc.documentElement.appendChild(head);
-
-        const metaDesc = doc.createElement('meta');
-        metaDesc.name = 'description';
-        metaDesc.content = 'DESCRIPTION ****TEST.Lorem ipsum dolor sit amet.-------';
-        head.appendChild(metaDesc);
-
-        service.getMetaTagsResults(doc).subscribe((value) => {
-            expect(value[0].items[0].message).toEqual('seo.rules.description.found');
-            done();
-        });
-    });
-
-    it('should found description meta tag, with an appropriate amount of content when max limit', (done) => {
-        const doc: XMLDocument = createTestDocument();
-
-        const head = doc.createElement('head');
-        doc.documentElement.appendChild(head);
-
-        const metaDesc = doc.createElement('meta');
-        metaDesc.name = 'description';
-        metaDesc.content =
-            'DESCRIPTION ****TEST.Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis ante metus, posuere quis posuere eu, varius nec ante. Aenean nec';
-        head.appendChild(metaDesc);
-
-        service.getMetaTagsResults(doc).subscribe((value) => {
-            expect(value[0].items[0].message).toEqual('seo.rules.description.found');
-            done();
-        });
-    });
-
-    it('should found og:title meta tag, with an appropriate amount of content when max limit', (done) => {
-        const doc: XMLDocument = createTestDocument();
-
-        const head = doc.createElement('head');
-        doc.documentElement.appendChild(head);
-
-        const metaTitle = doc.createElement('meta');
-        metaTitle.name = 'og:title';
-        metaTitle.content = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.****';
-        head.appendChild(metaTitle);
-
-        service.getMetaTagsResults(doc).subscribe((value) => {
-            expect(value[2].items[0].message).toEqual('seo.rules.og-title.found');
-            done();
-        });
-    });
-
-    it('should found og:title meta tag, with an appropriate amount of content when min limit', (done) => {
-        const doc: XMLDocument = createTestDocument();
-
-        const head = doc.createElement('head');
-        doc.documentElement.appendChild(head);
-
-        const metaTitle = doc.createElement('meta');
-        metaTitle.name = 'og:title';
-        metaTitle.content = 'Lorem ipsum dolor sit amet****';
-        head.appendChild(metaTitle);
-
-        service.getMetaTagsResults(doc).subscribe((value) => {
-            expect(value[2].items[0].message).toEqual('seo.rules.og-title.found');
-            done();
-        });
-    });
-
-    it('should found og:description meta tag, with an appropriate amount of content when max limit', (done) => {
-        const doc: XMLDocument = createTestDocument();
-
-        const head = doc.createElement('head');
-        doc.documentElement.appendChild(head);
-
-        const metaDesc = doc.createElement('meta');
-        metaDesc.name = 'og:description';
-        metaDesc.content = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit';
-        head.appendChild(metaDesc);
-
-        service.getMetaTagsResults(doc).subscribe((value) => {
-            expect(value[5].items[0].message).toEqual('seo.rules.og-description.found');
-            done();
-        });
-    });
-
-    it('should found og:description meta tag, with an appropriate amount of content when max limit', (done) => {
-        const doc: XMLDocument = createTestDocument();
-
-        const head = doc.createElement('head');
-        doc.documentElement.appendChild(head);
-
-        const metaDesc = doc.createElement('meta');
-        metaDesc.name = 'og:description';
-        metaDesc.content =
-            'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis ante metus, posuere quis posuere eu, varius nec ante. Aenean nec dictum purus.**********';
-        head.appendChild(metaDesc);
-
-        service.getMetaTagsResults(doc).subscribe((value) => {
-            expect(value[5].items[0].message).toEqual('seo.rules.og-description.found');
-            done();
-        });
-    });
-
-    it('should found twitter:description meta tag, with an appropriate amount of content when min limit', (done) => {
-        const doc: XMLDocument = createTestDocument();
-
-        const head = doc.createElement('head');
-        doc.documentElement.appendChild(head);
-
-        const twitterDesc = doc.createElement('meta');
-        twitterDesc.name = 'twitter:description';
-        twitterDesc.content =
-            'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis ante metus, posuere quis posuere eu, varius nec ante. Aenean nec dictum purus. Nullam rhoncus velit mauris, vel fringilla purus mollis ege';
-        head.appendChild(twitterDesc);
-
-        service.getMetaTagsResults(doc).subscribe((value) => {
-            expect(value[8].items[0].message).toEqual('seo.rules.twitter-card-description.found');
-            done();
-        });
-    });
-
-    it('should found twitter:description meta tag, with an appropriate amount of content when max limit', (done) => {
-        const doc: XMLDocument = createTestDocument();
-
-        const head = doc.createElement('head');
-        doc.documentElement.appendChild(head);
-
-        const twitterDesc = doc.createElement('meta');
-        twitterDesc.name = 'twitter:description';
-        twitterDesc.content = 'Lorem ipsum dolor sit amettest';
-        head.appendChild(twitterDesc);
-
-        service.getMetaTagsResults(doc).subscribe((value) => {
-            expect(value[8].items[0].message).toEqual('seo.rules.twitter-card-description.found');
-            done();
-        });
-    });
-
-    it('should found twitter:description meta tag not found! Showing Description instead.', (done) => {
-        const doc: XMLDocument = createTestDocument();
-
-        const head = doc.createElement('head');
-        doc.documentElement.appendChild(head);
-
-        const metaDesc = document.createElement('meta');
-        metaDesc.name = 'description';
-        metaDesc.content =
-            'Get down to Costa Rica this winter for some of the best surfing int he world. Large winter swell is pushing across the Pacific.';
-        head.appendChild(metaDesc);
-
-        service.getMetaTagsResults(doc).subscribe((value) => {
-            expect(value[8].items[0].message).toEqual(
-                'seo.rules.twitter-card-description.not.found'
+            const ogDescription = descriptionDocument.createElement('meta');
+            ogDescription.setAttribute('property', 'og:description');
+            ogDescription.setAttribute(
+                'content',
+                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla pharetra maximus enim ac tincidunt. Vivamus vestibulum sed enim sed consectetur. Nulla malesuada libero a tristique bibendum. Suspendisse blandit ligula velit, eu volutpat arcu ornare sed.'
             );
-            done();
-        });
-    });
+            head.appendChild(ogDescription);
 
-    it('should found twitter:description meta tag', (done) => {
-        const doc: XMLDocument = createTestDocument();
+            service.getMetaTagsResults(descriptionDocument).subscribe((value) => {
+                expect(value[5].items[0].message).toEqual('seo.rules.og-description.greater');
+                done();
+            });
+        }));
 
-        const head = doc.createElement('head');
-        doc.documentElement.appendChild(head);
+    it('should found title meta tag, with an appropriate amount of content!', () =>
+        new Promise<void>((done) => {
+            const titleDoc: XMLDocument = createTestDocument();
 
-        service.getMetaTagsResults(doc).subscribe((value) => {
-            expect(value[8].items[0].message).toEqual(
-                'seo.rules.twitter-card-description.description.not.found'
-            );
-            done();
-        });
-    });
+            const head = titleDoc.createElement('head');
+            titleDoc.documentElement.appendChild(head);
 
-    it('should found twitter:title meta tag not found and HTML Title not found!', (done) => {
-        const doc: XMLDocument = createTestDocument();
+            const title = titleDoc.createElement('title');
+            title.innerHTML = 'HTML TITLE -------------- TEST';
+            head.appendChild(title);
 
-        const head = doc.createElement('head');
-        doc.documentElement.appendChild(head);
+            service.getMetaTagsResults(titleDoc).subscribe((value) => {
+                expect(value[4].items[0].message).toEqual('seo.rules.title.found.empty');
+                done();
+            });
+        }));
 
-        service.getMetaTagsResults(doc).subscribe((value) => {
-            expect(value[7].items[0].message).toEqual(
-                'seo.rules.twitter-card-title.title.not.found'
-            );
-            done();
-        });
-    });
+    it('should found title meta tag, with an appropriate amount of content!', () =>
+        new Promise<void>((done) => {
+            const titleDoc: XMLDocument = createTestDocument();
 
-    it('should found twitter:title meta tag, Showing HTML Title instead.', (done) => {
-        const doc: XMLDocument = createTestDocument();
+            const head = titleDoc.createElement('head');
+            titleDoc.documentElement.appendChild(head);
 
-        const head = doc.createElement('head');
-        doc.documentElement.appendChild(head);
+            const title = titleDoc.createElement('title');
+            title.innerHTML = 'HTML TITLE -------------- TEST';
+            head.appendChild(title);
 
-        const title = document.createElement('title');
-        title.innerText = 'Costa Rica Special Offer';
-        head.appendChild(title);
+            service.getMetaTagsResults(titleDoc).subscribe((value) => {
+                expect(value[4].items[0].message).toEqual('seo.rules.title.found.empty');
+                done();
+            });
+        }));
 
-        service.getMetaTagsResults(doc).subscribe((value) => {
-            expect(value[7].items[0].message).toEqual('seo.rules.twitter-card-title.not.found');
-            done();
-        });
-    });
+    it('should found title meta tag, with an appropriate amount of content when min limit', () =>
+        new Promise<void>((done) => {
+            const titleDoc: XMLDocument = createTestDocument();
 
-    it('should get description less warning when description is too short', (done) => {
-        const doc: XMLDocument = createTestDocument();
-        const head = doc.createElement('head');
-        doc.documentElement.appendChild(head);
+            const head = titleDoc.createElement('head');
+            titleDoc.documentElement.appendChild(head);
 
-        const metaDesc = doc.createElement('meta');
-        metaDesc.name = 'description';
-        metaDesc.content = 'Short desc';
-        head.appendChild(metaDesc);
+            const title = titleDoc.createElement('title');
+            title.innerHTML = 'HTML TITLE -------------- TEST';
+            head.appendChild(title);
 
-        service.getMetaTagsResults(doc).subscribe((value) => {
-            expect(value[0].items[0].message).toEqual('seo.rules.description.less');
-            done();
-        });
-    });
+            service.getMetaTagsResults(titleDoc).subscribe((value) => {
+                expect(value[4].items[0].message).toEqual('seo.rules.title.found.empty');
+                done();
+            });
+        }));
 
-    it('should get description greater warning when description is too long', (done) => {
-        const doc: XMLDocument = createTestDocument();
-        const head = doc.createElement('head');
-        doc.documentElement.appendChild(head);
+    it('should found title meta tag, with an appropriate amount of content when max limit', () =>
+        new Promise<void>((done) => {
+            const titleDoc: XMLDocument = createTestDocument();
 
-        const metaDesc = doc.createElement('meta');
-        metaDesc.name = 'description';
-        metaDesc.content =
-            'This description is way too long and exceeds the maximum allowed length of one hundred and fifty characters for a meta description tag in dotCMS SEO rules checker system.';
-        head.appendChild(metaDesc);
+            const head = titleDoc.createElement('head');
+            titleDoc.documentElement.appendChild(head);
 
-        service.getMetaTagsResults(doc).subscribe((value) => {
-            expect(value[0].items[0].message).toEqual('seo.rules.description.greater');
-            done();
-        });
-    });
+            const title = titleDoc.createElement('title');
+            title.innerHTML = 'HTML TITLE -------------- TEST******************************';
+            head.appendChild(title);
 
-    it('should get og:description less warning when og:description is too short', (done) => {
-        const doc: XMLDocument = createTestDocument();
-        const head = doc.createElement('head');
-        doc.documentElement.appendChild(head);
+            service.getMetaTagsResults(titleDoc).subscribe((value) => {
+                expect(value[4].items[0].message).toEqual('seo.rules.title.found.empty');
+                done();
+            });
+        }));
 
-        const metaDesc = doc.createElement('meta');
-        metaDesc.setAttribute('property', 'og:description');
-        metaDesc.setAttribute('content', 'Short og desc');
-        head.appendChild(metaDesc);
+    it('should found description meta tag, with an appropriate amount of content when min limit', () =>
+        new Promise<void>((done) => {
+            const doc: XMLDocument = createTestDocument();
 
-        service.getMetaTagsResults(doc).subscribe((value) => {
-            expect(value[5].items[0].message).toEqual('seo.rules.og-description.less');
-            done();
-        });
-    });
+            const head = doc.createElement('head');
+            doc.documentElement.appendChild(head);
 
-    it('should get og:title less warning when og:title is too short', (done) => {
-        const doc: XMLDocument = createTestDocument();
-        const head = doc.createElement('head');
-        doc.documentElement.appendChild(head);
+            const metaDesc = doc.createElement('meta');
+            metaDesc.name = 'description';
+            metaDesc.content = 'DESCRIPTION ****TEST.Lorem ipsum dolor sit amet.-------';
+            head.appendChild(metaDesc);
 
-        const metaTitle = doc.createElement('meta');
-        metaTitle.name = 'og:title';
-        metaTitle.content = 'Short';
-        head.appendChild(metaTitle);
+            service.getMetaTagsResults(doc).subscribe((value) => {
+                expect(value[0].items[0].message).toEqual('seo.rules.description.found');
+                done();
+            });
+        }));
 
-        service.getMetaTagsResults(doc).subscribe((value) => {
-            expect(value[2].items[0].message).toEqual('seo.rules.og-title.less');
-            done();
-        });
-    });
+    it('should found description meta tag, with an appropriate amount of content when max limit', () =>
+        new Promise<void>((done) => {
+            const doc: XMLDocument = createTestDocument();
 
-    it('should get og:title greater warning when og:title is too long', (done) => {
-        const doc: XMLDocument = createTestDocument();
-        const head = doc.createElement('head');
-        doc.documentElement.appendChild(head);
+            const head = doc.createElement('head');
+            doc.documentElement.appendChild(head);
 
-        const metaTitle = doc.createElement('meta');
-        metaTitle.name = 'og:title';
-        metaTitle.content = 'This og:title is way too long and exceeds sixty characters limit';
-        head.appendChild(metaTitle);
+            const metaDesc = doc.createElement('meta');
+            metaDesc.name = 'description';
+            metaDesc.content =
+                'DESCRIPTION ****TEST.Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis ante metus, posuere quis posuere eu, varius nec ante. Aenean nec';
+            head.appendChild(metaDesc);
 
-        service.getMetaTagsResults(doc).subscribe((value) => {
-            expect(value[2].items[0].message).toEqual('seo.rules.og-title.greater');
-            done();
-        });
-    });
+            service.getMetaTagsResults(doc).subscribe((value) => {
+                expect(value[0].items[0].message).toEqual('seo.rules.description.found');
+                done();
+            });
+        }));
 
-    it('should get title less warning when HTML title is too short', (done) => {
-        const doc: XMLDocument = createTestDocument();
-        const head = doc.createElement('head');
-        doc.documentElement.appendChild(head);
+    it('should found og:title meta tag, with an appropriate amount of content when max limit', () =>
+        new Promise<void>((done) => {
+            const doc: XMLDocument = createTestDocument();
 
-        const title = document.createElement('title');
-        title.innerText = 'Short';
-        head.appendChild(title);
+            const head = doc.createElement('head');
+            doc.documentElement.appendChild(head);
 
-        service.getMetaTagsResults(doc).subscribe((value) => {
-            expect(value[4].items[0].message).toEqual('seo.rules.title.less');
-            done();
-        });
-    });
+            const metaTitle = doc.createElement('meta');
+            metaTitle.name = 'og:title';
+            metaTitle.content = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.****';
+            head.appendChild(metaTitle);
 
-    it('should get title greater warning when HTML title is too long', (done) => {
-        const doc: XMLDocument = createTestDocument();
-        const head = doc.createElement('head');
-        doc.documentElement.appendChild(head);
+            service.getMetaTagsResults(doc).subscribe((value) => {
+                expect(value[2].items[0].message).toEqual('seo.rules.og-title.found');
+                done();
+            });
+        }));
 
-        const title = document.createElement('title');
-        title.innerText =
-            'This HTML title is way too long and definitely exceeds the sixty character limit';
-        head.appendChild(title);
+    it('should found og:title meta tag, with an appropriate amount of content when min limit', () =>
+        new Promise<void>((done) => {
+            const doc: XMLDocument = createTestDocument();
 
-        service.getMetaTagsResults(doc).subscribe((value) => {
-            expect(value[4].items[0].message).toEqual('seo.rules.title.greater');
-            done();
-        });
-    });
+            const head = doc.createElement('head');
+            doc.documentElement.appendChild(head);
 
-    it('should get twitter:title less warning when twitter:title is too short', (done) => {
-        const doc: XMLDocument = createTestDocument();
-        const head = doc.createElement('head');
-        doc.documentElement.appendChild(head);
+            const metaTitle = doc.createElement('meta');
+            metaTitle.name = 'og:title';
+            metaTitle.content = 'Lorem ipsum dolor sit amet****';
+            head.appendChild(metaTitle);
 
-        const twitterTitle = doc.createElement('meta');
-        twitterTitle.name = 'twitter:title';
-        twitterTitle.content = 'Short';
-        head.appendChild(twitterTitle);
+            service.getMetaTagsResults(doc).subscribe((value) => {
+                expect(value[2].items[0].message).toEqual('seo.rules.og-title.found');
+                done();
+            });
+        }));
 
-        service.getMetaTagsResults(doc).subscribe((value) => {
-            expect(value[7].items[0].message).toEqual('seo.rules.twitter-card.title.less');
-            done();
-        });
-    });
+    it('should found og:description meta tag, with an appropriate amount of content when max limit', () =>
+        new Promise<void>((done) => {
+            const doc: XMLDocument = createTestDocument();
 
-    it('should get twitter:title greater warning when twitter:title is too long', (done) => {
-        const doc: XMLDocument = createTestDocument();
-        const head = doc.createElement('head');
-        doc.documentElement.appendChild(head);
+            const head = doc.createElement('head');
+            doc.documentElement.appendChild(head);
 
-        const twitterTitle = doc.createElement('meta');
-        twitterTitle.name = 'twitter:title';
-        twitterTitle.content =
-            'This twitter title is way too long and exceeds the seventy character maximum limit';
-        head.appendChild(twitterTitle);
+            const metaDesc = doc.createElement('meta');
+            metaDesc.name = 'og:description';
+            metaDesc.content = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit';
+            head.appendChild(metaDesc);
 
-        service.getMetaTagsResults(doc).subscribe((value) => {
-            expect(value[7].items[0].message).toEqual('seo.rules.twitter-card.title.greater');
-            done();
-        });
-    });
+            service.getMetaTagsResults(doc).subscribe((value) => {
+                expect(value[5].items[0].message).toEqual('seo.rules.og-description.found');
+                done();
+            });
+        }));
 
-    it('should get twitter:description less warning when twitter:description is too short', (done) => {
-        const doc: XMLDocument = createTestDocument();
-        const head = doc.createElement('head');
-        doc.documentElement.appendChild(head);
+    it('should found og:description meta tag, with an appropriate amount of content when max limit', () =>
+        new Promise<void>((done) => {
+            const doc: XMLDocument = createTestDocument();
 
-        const twitterDesc = doc.createElement('meta');
-        twitterDesc.name = 'twitter:description';
-        twitterDesc.content = 'Too short';
-        head.appendChild(twitterDesc);
+            const head = doc.createElement('head');
+            doc.documentElement.appendChild(head);
 
-        service.getMetaTagsResults(doc).subscribe((value) => {
-            expect(value[8].items[0].message).toEqual('seo.rules.twitter-card-description.less');
-            done();
-        });
-    });
+            const metaDesc = doc.createElement('meta');
+            metaDesc.name = 'og:description';
+            metaDesc.content =
+                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis ante metus, posuere quis posuere eu, varius nec ante. Aenean nec dictum purus.**********';
+            head.appendChild(metaDesc);
 
-    it('should get twitter:description greater warning when twitter:description is too long', (done) => {
-        const doc: XMLDocument = createTestDocument();
-        const head = doc.createElement('head');
-        doc.documentElement.appendChild(head);
+            service.getMetaTagsResults(doc).subscribe((value) => {
+                expect(value[5].items[0].message).toEqual('seo.rules.og-description.found');
+                done();
+            });
+        }));
 
-        const twitterDesc = doc.createElement('meta');
-        twitterDesc.name = 'twitter:description';
-        twitterDesc.content =
-            'This twitter description is way too long and it exceeds the maximum allowed two hundred characters limit for twitter card description meta tags used in dotCMS SEO rules validation checker to ensure proper social media sharing optimization across all platforms.';
-        head.appendChild(twitterDesc);
+    it('should found twitter:description meta tag, with an appropriate amount of content when min limit', () =>
+        new Promise<void>((done) => {
+            const doc: XMLDocument = createTestDocument();
 
-        service.getMetaTagsResults(doc).subscribe((value) => {
-            expect(value[8].items[0].message).toEqual('seo.rules.twitter-card-description.greater');
-            done();
-        });
-    });
+            const head = doc.createElement('head');
+            doc.documentElement.appendChild(head);
+
+            const twitterDesc = doc.createElement('meta');
+            twitterDesc.name = 'twitter:description';
+            twitterDesc.content =
+                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis ante metus, posuere quis posuere eu, varius nec ante. Aenean nec dictum purus. Nullam rhoncus velit mauris, vel fringilla purus mollis ege';
+            head.appendChild(twitterDesc);
+
+            service.getMetaTagsResults(doc).subscribe((value) => {
+                expect(value[8].items[0].message).toEqual(
+                    'seo.rules.twitter-card-description.found'
+                );
+                done();
+            });
+        }));
+
+    it('should found twitter:description meta tag, with an appropriate amount of content when max limit', () =>
+        new Promise<void>((done) => {
+            const doc: XMLDocument = createTestDocument();
+
+            const head = doc.createElement('head');
+            doc.documentElement.appendChild(head);
+
+            const twitterDesc = doc.createElement('meta');
+            twitterDesc.name = 'twitter:description';
+            twitterDesc.content = 'Lorem ipsum dolor sit amettest';
+            head.appendChild(twitterDesc);
+
+            service.getMetaTagsResults(doc).subscribe((value) => {
+                expect(value[8].items[0].message).toEqual(
+                    'seo.rules.twitter-card-description.found'
+                );
+                done();
+            });
+        }));
+
+    it('should found twitter:description meta tag not found! Showing Description instead.', () =>
+        new Promise<void>((done) => {
+            const doc: XMLDocument = createTestDocument();
+
+            const head = doc.createElement('head');
+            doc.documentElement.appendChild(head);
+
+            const metaDesc = document.createElement('meta');
+            metaDesc.name = 'description';
+            metaDesc.content =
+                'Get down to Costa Rica this winter for some of the best surfing int he world. Large winter swell is pushing across the Pacific.';
+            head.appendChild(metaDesc);
+
+            service.getMetaTagsResults(doc).subscribe((value) => {
+                expect(value[8].items[0].message).toEqual(
+                    'seo.rules.twitter-card-description.not.found'
+                );
+                done();
+            });
+        }));
+
+    it('should found twitter:description meta tag', () =>
+        new Promise<void>((done) => {
+            const doc: XMLDocument = createTestDocument();
+
+            const head = doc.createElement('head');
+            doc.documentElement.appendChild(head);
+
+            service.getMetaTagsResults(doc).subscribe((value) => {
+                expect(value[8].items[0].message).toEqual(
+                    'seo.rules.twitter-card-description.description.not.found'
+                );
+                done();
+            });
+        }));
+
+    it('should found twitter:title meta tag not found and HTML Title not found!', () =>
+        new Promise<void>((done) => {
+            const doc: XMLDocument = createTestDocument();
+
+            const head = doc.createElement('head');
+            doc.documentElement.appendChild(head);
+
+            service.getMetaTagsResults(doc).subscribe((value) => {
+                expect(value[7].items[0].message).toEqual(
+                    'seo.rules.twitter-card-title.title.not.found'
+                );
+                done();
+            });
+        }));
+
+    it('should found twitter:title meta tag, Showing HTML Title instead.', () =>
+        new Promise<void>((done) => {
+            const doc: XMLDocument = createTestDocument();
+
+            const head = doc.createElement('head');
+            doc.documentElement.appendChild(head);
+
+            const title = document.createElement('title');
+            title.innerText = 'Costa Rica Special Offer';
+            head.appendChild(title);
+
+            service.getMetaTagsResults(doc).subscribe((value) => {
+                expect(value[7].items[0].message).toEqual('seo.rules.twitter-card-title.not.found');
+                done();
+            });
+        }));
+
+    it('should get description less warning when description is too short', () =>
+        new Promise<void>((done) => {
+            const doc: XMLDocument = createTestDocument();
+            const head = doc.createElement('head');
+            doc.documentElement.appendChild(head);
+
+            const metaDesc = doc.createElement('meta');
+            metaDesc.name = 'description';
+            metaDesc.content = 'Short desc';
+            head.appendChild(metaDesc);
+
+            service.getMetaTagsResults(doc).subscribe((value) => {
+                expect(value[0].items[0].message).toEqual('seo.rules.description.less');
+                done();
+            });
+        }));
+
+    it('should get description greater warning when description is too long', () =>
+        new Promise<void>((done) => {
+            const doc: XMLDocument = createTestDocument();
+            const head = doc.createElement('head');
+            doc.documentElement.appendChild(head);
+
+            const metaDesc = doc.createElement('meta');
+            metaDesc.name = 'description';
+            metaDesc.content =
+                'This description is way too long and exceeds the maximum allowed length of one hundred and fifty characters for a meta description tag in dotCMS SEO rules checker system.';
+            head.appendChild(metaDesc);
+
+            service.getMetaTagsResults(doc).subscribe((value) => {
+                expect(value[0].items[0].message).toEqual('seo.rules.description.greater');
+                done();
+            });
+        }));
+
+    it('should get og:description less warning when og:description is too short', () =>
+        new Promise<void>((done) => {
+            const doc: XMLDocument = createTestDocument();
+            const head = doc.createElement('head');
+            doc.documentElement.appendChild(head);
+
+            const metaDesc = doc.createElement('meta');
+            metaDesc.setAttribute('property', 'og:description');
+            metaDesc.setAttribute('content', 'Short og desc');
+            head.appendChild(metaDesc);
+
+            service.getMetaTagsResults(doc).subscribe((value) => {
+                expect(value[5].items[0].message).toEqual('seo.rules.og-description.less');
+                done();
+            });
+        }));
+
+    it('should get og:title less warning when og:title is too short', () =>
+        new Promise<void>((done) => {
+            const doc: XMLDocument = createTestDocument();
+            const head = doc.createElement('head');
+            doc.documentElement.appendChild(head);
+
+            const metaTitle = doc.createElement('meta');
+            metaTitle.name = 'og:title';
+            metaTitle.content = 'Short';
+            head.appendChild(metaTitle);
+
+            service.getMetaTagsResults(doc).subscribe((value) => {
+                expect(value[2].items[0].message).toEqual('seo.rules.og-title.less');
+                done();
+            });
+        }));
+
+    it('should get og:title greater warning when og:title is too long', () =>
+        new Promise<void>((done) => {
+            const doc: XMLDocument = createTestDocument();
+            const head = doc.createElement('head');
+            doc.documentElement.appendChild(head);
+
+            const metaTitle = doc.createElement('meta');
+            metaTitle.name = 'og:title';
+            metaTitle.content = 'This og:title is way too long and exceeds sixty characters limit';
+            head.appendChild(metaTitle);
+
+            service.getMetaTagsResults(doc).subscribe((value) => {
+                expect(value[2].items[0].message).toEqual('seo.rules.og-title.greater');
+                done();
+            });
+        }));
+
+    it('should get title less warning when HTML title is too short', () =>
+        new Promise<void>((done) => {
+            const doc: XMLDocument = createTestDocument();
+            const head = doc.createElement('head');
+            doc.documentElement.appendChild(head);
+
+            const title = document.createElement('title');
+            title.innerText = 'Short';
+            head.appendChild(title);
+
+            service.getMetaTagsResults(doc).subscribe((value) => {
+                expect(value[4].items[0].message).toEqual('seo.rules.title.less');
+                done();
+            });
+        }));
+
+    it('should get title greater warning when HTML title is too long', () =>
+        new Promise<void>((done) => {
+            const doc: XMLDocument = createTestDocument();
+            const head = doc.createElement('head');
+            doc.documentElement.appendChild(head);
+
+            const title = document.createElement('title');
+            title.innerText =
+                'This HTML title is way too long and definitely exceeds the sixty character limit';
+            head.appendChild(title);
+
+            service.getMetaTagsResults(doc).subscribe((value) => {
+                expect(value[4].items[0].message).toEqual('seo.rules.title.greater');
+                done();
+            });
+        }));
+
+    it('should get twitter:title less warning when twitter:title is too short', () =>
+        new Promise<void>((done) => {
+            const doc: XMLDocument = createTestDocument();
+            const head = doc.createElement('head');
+            doc.documentElement.appendChild(head);
+
+            const twitterTitle = doc.createElement('meta');
+            twitterTitle.name = 'twitter:title';
+            twitterTitle.content = 'Short';
+            head.appendChild(twitterTitle);
+
+            service.getMetaTagsResults(doc).subscribe((value) => {
+                expect(value[7].items[0].message).toEqual('seo.rules.twitter-card.title.less');
+                done();
+            });
+        }));
+
+    it('should get twitter:title greater warning when twitter:title is too long', () =>
+        new Promise<void>((done) => {
+            const doc: XMLDocument = createTestDocument();
+            const head = doc.createElement('head');
+            doc.documentElement.appendChild(head);
+
+            const twitterTitle = doc.createElement('meta');
+            twitterTitle.name = 'twitter:title';
+            twitterTitle.content =
+                'This twitter title is way too long and exceeds the seventy character maximum limit';
+            head.appendChild(twitterTitle);
+
+            service.getMetaTagsResults(doc).subscribe((value) => {
+                expect(value[7].items[0].message).toEqual('seo.rules.twitter-card.title.greater');
+                done();
+            });
+        }));
+
+    it('should get twitter:description less warning when twitter:description is too short', () =>
+        new Promise<void>((done) => {
+            const doc: XMLDocument = createTestDocument();
+            const head = doc.createElement('head');
+            doc.documentElement.appendChild(head);
+
+            const twitterDesc = doc.createElement('meta');
+            twitterDesc.name = 'twitter:description';
+            twitterDesc.content = 'Too short';
+            head.appendChild(twitterDesc);
+
+            service.getMetaTagsResults(doc).subscribe((value) => {
+                expect(value[8].items[0].message).toEqual(
+                    'seo.rules.twitter-card-description.less'
+                );
+                done();
+            });
+        }));
+
+    it('should get twitter:description greater warning when twitter:description is too long', () =>
+        new Promise<void>((done) => {
+            const doc: XMLDocument = createTestDocument();
+            const head = doc.createElement('head');
+            doc.documentElement.appendChild(head);
+
+            const twitterDesc = doc.createElement('meta');
+            twitterDesc.name = 'twitter:description';
+            twitterDesc.content =
+                'This twitter description is way too long and it exceeds the maximum allowed two hundred characters limit for twitter card description meta tags used in dotCMS SEO rules validation checker to ensure proper social media sharing optimization across all platforms.';
+            head.appendChild(twitterDesc);
+
+            service.getMetaTagsResults(doc).subscribe((value) => {
+                expect(value[8].items[0].message).toEqual(
+                    'seo.rules.twitter-card-description.greater'
+                );
+                done();
+            });
+        }));
 });

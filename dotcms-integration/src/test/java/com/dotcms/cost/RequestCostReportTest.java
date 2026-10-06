@@ -151,7 +151,11 @@ public class RequestCostReportTest {
         requestCostApi.incrementCost(Price.TWENTY, RequestCostReportTest.class, "method2", new Object[]{});
         requestCostApi.incrementCost(Price.THIRTY, RequestCostReportTest.class, "method3", new Object[]{});
 
-        int expectedTotal = requestCostApi.getRequestCost(request);
+        // The report renders the total divided by the denominator of the singleton API it
+        // uses internally. Our locally constructed requestCostApi never runs @PostConstruct,
+        // so its denominator would stay at the field default and not match the report's.
+        double expectedTotal = requestCostApi.getRequestCost(request)
+                / APILocator.getRequestCostAPI().getRequestCostDenominator();
 
         // When
         String html = report.writeAccounting(request);

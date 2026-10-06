@@ -70,7 +70,7 @@ Pin the track you want in your deployment manifest, e.g. `image: dotcms/dotcms:s
 you will roll forward automatically as releases age into that track. Pin an exact version
 (`dotcms/dotcms:26.06.11-01`) instead if you never want automatic movement.
 
-One engine (under [`cicd/evergreen-tracks/`](cicd/evergreen-tracks/)) re-points every track tag
+One engine (under [`.github/actions/core-cicd/evergreen-tracks/`](.github/actions/core-cicd/evergreen-tracks/)) re-points every track tag
 by image digest, on two triggers: the release pipeline moves `latest` on-demand the moment a GA
 ships, and a daily scheduled job ages `standard`/`trailing` forward. Two design choices are worth
 understanding:
@@ -92,4 +92,4 @@ understanding:
 > Updater or a periodic rollout refresh to pick up track movements.
 
 The promotion engine and its scheduled/admin workflows live under
-[`cicd/evergreen-tracks/`](cicd/evergreen-tracks/).
+[`.github/actions/core-cicd/evergreen-tracks/`](.github/actions/core-cicd/evergreen-tracks/).

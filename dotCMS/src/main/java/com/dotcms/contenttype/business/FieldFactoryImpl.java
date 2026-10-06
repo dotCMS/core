@@ -337,8 +337,11 @@ public class FieldFactoryImpl implements FieldFactory {
 
             // assign an inode and db column if needed
             if (throwAwayField.id() == null) {
+                // normalize before seeding so the id reflects the actual persisted dataType
+                // (e.g. SYSTEM for TagField, BinaryField, ConstantField, RowField, etc.)
+                final Field normalizedForSeed = normalizeData(builder.build());
                 builder.id(APILocator.getDeterministicIdentifierAPI()
-                        .generateDeterministicIdBestEffort(throwAwayField, () -> tryVar));
+                        .generateDeterministicIdBestEffort(normalizedForSeed, () -> tryVar));
             }
         }
 
@@ -417,25 +420,27 @@ public class FieldFactoryImpl implements FieldFactory {
    *
    * If the field variable comes null, a new one will be generated based on the name
    *
-   * If the field variable comes already set, via {@link Field#variable()}, it needs to be GraphQL-compatible
-   * otherwise a {@link DotDataException} is thrown.
+   * If the field variable comes already set, via {@link Field#variable()}, it is kept as given: it
+   * is not checked against the reserved names nor for GraphQL compatibility. The one exception is
+   * the name of a property every asset field offers directly, on an asset content type, with a
+   * type other than that property's: that is refused, see
+   * {@link ContentAPIGraphQLTypesProvider#checkAssetPropertyNameIsCompatible}.
    *
    * @param throwAwayField the field whose variable will be returned
    * @param takenFieldVars a list of taken field vars
    * @return the field variable for the field to be saved
    * @throws DotDataException in case that the field variable is not valid
    */
-  private String getFieldVariable(Field throwAwayField, List<String> takenFieldVars)
+  private String getFieldVariable(final Field throwAwayField, final List<String> takenFieldVars)
           throws DotDataException {
 
-    String variable;
-
-    if(throwAwayField.variable() == null) {
-      variable = suggestVelocityVar(throwAwayField.name(), throwAwayField, takenFieldVars);
-    } else {
-       variable = throwAwayField.variable();
+    if (throwAwayField.variable() == null) {
+      return suggestVelocityVar(throwAwayField.name(), throwAwayField, takenFieldVars);
     }
-    return variable;
+
+    ContentAPIGraphQLTypesProvider.INSTANCE
+            .checkAssetPropertyNameIsCompatible(throwAwayField.variable(), throwAwayField);
+    return throwAwayField.variable();
   }
 
   private void validateDbColumn(Field field) throws DotDataException {

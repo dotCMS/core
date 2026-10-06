@@ -1,5 +1,7 @@
 package com.dotcms.prerender;
 
+import com.dotcms.cost.RequestCost;
+import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.concurrent.ConditionalSubmitter;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.security.apps.AppSecrets;
@@ -256,6 +258,7 @@ public class PreRenderSEOWebAPIImpl implements PreRenderSEOWebAPI {
         return null;
     }
 
+    @RequestCost(Price.HTTP_FETCH)
     private boolean proxyPrerenderedPageResponse(final HttpServletRequest request, final HttpServletResponse response,
                                                  final PreRenderEventHandler preRenderEventHandler,
                                                  final PrerenderConfig prerenderConfig) {

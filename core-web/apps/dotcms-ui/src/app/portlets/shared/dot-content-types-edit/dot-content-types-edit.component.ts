@@ -1,5 +1,13 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, DestroyRef, OnInit, inject, signal, viewChild } from '@angular/core';
+import {
+    Component,
+    DestroyRef,
+    OnInit,
+    inject,
+    signal,
+    viewChild,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -38,6 +46,7 @@ import { ContentTypesFormComponent } from './components/form';
 @Component({
     selector: 'dot-content-types-edit',
     templateUrl: './dot-content-types-edit.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class DotContentTypesEditComponent implements OnInit {
@@ -57,6 +66,13 @@ export class DotContentTypesEditComponent implements OnInit {
 
     contentTypeActions: MenuItem[];
     dialogCloseable = false;
+    /**
+     * Turns off PrimeNG's `p-dialog` `focusOnShow`. PrimeNG focuses the first focusable element in
+     * DOM order once the open transition ends (~150ms), which lands on the new-content-editor
+     * banner checkbox and overrode the form's own focus on the Name input. With this off, the form
+     * decides what gets focused: the Name input when creating, nothing when editing.
+     */
+    readonly dialogFocusOnShow = false;
     data: DotCMSContentType;
     dialogActions: DotDialogActions;
     layout: DotCMSContentTypeLayoutRow[];

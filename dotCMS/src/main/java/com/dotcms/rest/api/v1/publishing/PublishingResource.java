@@ -12,6 +12,7 @@ import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
+import com.dotcms.publisher.business.PublisherAPI.QueuedTier;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherConfig.DeliveryStrategy;
@@ -211,7 +212,9 @@ public class PublishingResource {
                             "FAILED_TO_SEND_TO_ALL_GROUPS, FAILED_TO_SEND_TO_SOME_GROUPS, " +
                             "FAILED_TO_PUBLISH, FAILED_INTEGRITY_CHECK, INVALID_TOKEN, " +
                             "LICENSE_REQUIRED. SCHEDULED = bundles pushed with a future publishDate " +
-                            "not yet picked up by the publisher cron.",
+                            "not yet picked up by the publisher cron. BUNDLE_REQUESTED also includes " +
+                            "queued bundles whose publishDate is already due but that the publisher " +
+                            "has not picked up yet.",
                     example = "SUCCESS,FAILED_TO_PUBLISH"
             )
             @QueryParam("status") final String status) throws DotPublisherException {
@@ -257,27 +260,43 @@ public class PublishingResource {
         final List<Status> auditStatusList = statusList.stream()
                 .filter(s -> s != Status.SCHEDULED)
                 .collect(Collectors.toList());
-        final boolean wantsScheduled = !statusFilterProvided || statusList.contains(Status.SCHEDULED);
+        // Queue-only bundles (no audit row yet) come in two tiers: publish date still ahead ->
+        // SCHEDULED; publish date already due but not yet picked up by the job -> BUNDLE_REQUESTED,
+        // the status the job writes first when it does pick the bundle up (#37449).
+        final boolean wantsFuture = !statusFilterProvided || statusList.contains(Status.SCHEDULED);
+        final boolean wantsDue = !statusFilterProvided || statusList.contains(Status.BUNDLE_REQUESTED);
         // When a status filter is given that resolves to no audit statuses (e.g. ?status=SCHEDULED),
         // the audit tier must return nothing — NOT everything (empty list = "all statuses").
         final boolean wantsAudit = !statusFilterProvided || !auditStatusList.isEmpty();
 
-        final int scheduledTotal = wantsScheduled
-                ? com.dotcms.publisher.business.PublisherAPI.getInstance().countScheduledBundleIds(filter) : 0;
+        final com.dotcms.publisher.business.PublisherAPI queueAPI =
+                com.dotcms.publisher.business.PublisherAPI.getInstance();
+        final int futureTotal = wantsFuture ? queueAPI.countScheduledBundleIds(filter, QueuedTier.FUTURE) : 0;
+        final int dueTotal = wantsDue ? queueAPI.countScheduledBundleIds(filter, QueuedTier.DUE) : 0;
+        final int scheduledTotal = futureTotal + dueTotal;
         final int auditTotal = wantsAudit
                 ? publishAuditAPI.get().countPublishAuditStatus(filter, auditStatusList) : 0;
         final int totalCount = scheduledTotal + auditTotal;
 
-        // Contiguous-tier paging: the SCHEDULED block occupies [0, scheduledTotal), the audit block
-        // follows. This makes cross-source paging exact offset math without an interleaving query.
+        // Contiguous-tier paging: the future block occupies [0, futureTotal), the due block
+        // [futureTotal, scheduledTotal), the audit block follows. Exact offset math, no interleaving.
         final List<PublishingJobView> jobs = new ArrayList<>();
 
-        if (wantsScheduled && offset < scheduledTotal) {
-            final int scheduledLimit = Math.min(perPage, scheduledTotal - offset);
-            com.dotcms.publisher.business.PublisherAPI.getInstance()
-                    .getScheduledBundleIds(scheduledLimit, offset, filter).stream()
+        if (wantsFuture && offset < futureTotal) {
+            final int futureLimit = Math.min(perPage, futureTotal - offset);
+            queueAPI.getScheduledBundleIds(futureLimit, offset, filter, QueuedTier.FUTURE).stream()
                     .map(publishingJobsHelper::toScheduledJobView)
                     .forEach(jobs::add);
+        }
+
+        if (wantsDue && jobs.size() < perPage && offset < scheduledTotal) {
+            final int dueOffset = Math.max(0, offset - futureTotal);
+            final int dueLimit = Math.min(perPage - jobs.size(), dueTotal - dueOffset);
+            if (dueLimit > 0) {
+                queueAPI.getScheduledBundleIds(dueLimit, dueOffset, filter, QueuedTier.DUE).stream()
+                        .map(publishingJobsHelper::toScheduledJobView)
+                        .forEach(jobs::add);
+            }
         }
 
         final int remaining = perPage - jobs.size();
@@ -381,8 +400,9 @@ public class PublishingResource {
         final PublishAuditStatus auditStatus = publishAuditAPI.get()
                 .getPublishAuditStatus(bundleId);
 
-        // No audit row may mean the bundle is SCHEDULED (future publish date, cron hasn't picked it
-        // up yet). Build a synthetic detail from the queue/bundle tables before giving up with 404.
+        // No audit row may mean the bundle is queued but not yet picked up by the cron: SCHEDULED if
+        // its publish date is still ahead, BUNDLE_REQUESTED if it is already due (#37449). Build a
+        // synthetic detail from the queue/bundle tables before giving up with 404.
         if (auditStatus == null) {
             final PublishingJobDetailView scheduledDetail =
                     publishingJobsHelper.toScheduledJobDetailView(bundleId);

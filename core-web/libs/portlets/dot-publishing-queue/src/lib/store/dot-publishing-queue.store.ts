@@ -1,11 +1,12 @@
 import { patchState, signalStore, withHooks, withMethods, withState } from '@ngrx/signals';
-import { EMPTY } from 'rxjs';
+import { EMPTY, of } from 'rxjs';
 
 import { DestroyRef, effect, inject, untracked } from '@angular/core';
 
-import { catchError, take } from 'rxjs/operators';
+import { catchError, map, switchMap, take, tap } from 'rxjs/operators';
 
 import {
+    DotCurrentUserService,
     DotHttpErrorManagerService,
     DotMessageDisplayService,
     DotMessageService,
@@ -46,6 +47,11 @@ export const PURGE_FAILED_STATUSES: readonly PublishAuditStatus[] = [
 
 const POLL_INTERVAL_MS = 15000;
 
+/** `count` sent to `/api/bundle/getunsendbundles` when we only want a total.
+ * `BundleResource` forwards it as the factory's `limit`, and `DotConnect` treats
+ * any `maxRows <= 0` as "no limit" — see `loadDraftBundlesCount`. */
+const DRAFT_COUNT_UNBOUNDED = -1;
+
 interface DotPublishingQueueState {
     bundlesRows: PublishingJobView[];
     bundlesPage: number;
@@ -54,6 +60,15 @@ interface DotPublishingQueueState {
     bundlesSort: PublishingSortField | null;
     bundlesSortDirection: PublishingSortDirection;
     bundlesSelectedIds: string[];
+
+    /** Number of unsent ("draft") bundles — the ones the Select Bundle dialog
+     * lists. Shown on the toolbar's "Bundles (N)" button and next to its
+     * "Select Bundle" entry.
+     *
+     * `null` = unknown (not fetched yet, or the fetch failed). Consumers must
+     * render the label without a number in that case rather than showing `0`,
+     * which would read as "you have no drafts". */
+    draftBundlesTotal: number | null;
 
     rowsPerPage: number;
     search: string;
@@ -90,6 +105,7 @@ const initialState: DotPublishingQueueState = {
     bundlesSort: null,
     bundlesSortDirection: 'desc',
     bundlesSelectedIds: [],
+    draftBundlesTotal: null,
 
     rowsPerPage: 20,
     search: '',
@@ -110,12 +126,17 @@ export const DotPublishingQueueStore = signalStore(
     withState<DotPublishingQueueState>(initialState),
     withMethods((store) => {
         const service = inject(DotPublishingQueueService);
+        const currentUserService = inject(DotCurrentUserService);
         const httpErrorManager = inject(DotHttpErrorManagerService);
         const messageDisplay = inject(DotMessageDisplayService);
         const dotMessageService = inject(DotMessageService);
         const destroyRef = inject(DestroyRef);
 
         let pollHandle: ReturnType<typeof setInterval> | null = null;
+
+        /** Cached so the draft count doesn't re-fetch the current user on every
+         * refresh. The portlet can't outlive a session change. */
+        let currentUserId: string | null = null;
 
         /**
          * Fetches the bundles list.
@@ -169,6 +190,55 @@ export const DotPublishingQueueStore = signalStore(
                         bundlesRows: response.entity,
                         bundlesTotal: response.pagination?.totalEntries ?? 0,
                         bundlesStatus: 'loaded'
+                    });
+                });
+        }
+
+        /**
+         * Refreshes `draftBundlesTotal` — the count the toolbar shows on its
+         * "Bundles (N)" button and next to the "Select Bundle" entry.
+         *
+         * There is no count endpoint for drafts. `/api/v1/publishing` reports a
+         * real total but reads `publish_audit`, which does not contain drafts at
+         * all (they live only in `publishing_bundle`). The one endpoint that
+         * surfaces drafts — `GET /api/bundle/getunsendbundles/userid/{id}` —
+         * returns `numRows = bundles.size()` of the page it was asked for, not a
+         * total (`BundleResource#getUnsendBundles`). So we ask for the list
+         * unbounded and count it here.
+         *
+         * That is cheaper than it looks: `SELECT_UNSEND_BUNDLES{,_ADMIN}` carry
+         * no SQL `LIMIT` and `DotConnect` trims rows in Java afterwards, so the
+         * database does identical work whether we request one page or all of
+         * them. Only the JSON grows, and each row is just `{id, name}`.
+         *
+         * The count is user-scoped by the backend: a regular user sees only
+         * their own drafts, a CMS Administrator sees everyone's. Two users
+         * legitimately see different numbers on the same button.
+         *
+         * Errors are swallowed rather than surfaced: the count is decoration on
+         * a button, and `null` already renders as a plain "Bundles" label. A
+         * toast here would punish the user for something they didn't ask for and
+         * cannot act on.
+         */
+        function loadDraftBundlesCount() {
+            const userId$ = currentUserId
+                ? of(currentUserId)
+                : currentUserService.getCurrentUser().pipe(
+                      map((user) => user.userId),
+                      tap((userId) => (currentUserId = userId))
+                  );
+
+            userId$
+                .pipe(
+                    switchMap((userId) =>
+                        service.getUnsendBundles(userId, '*', 0, DRAFT_COUNT_UNBOUNDED)
+                    ),
+                    take(1),
+                    catchError(() => EMPTY)
+                )
+                .subscribe((response) => {
+                    patchState(store, {
+                        draftBundlesTotal: response.items?.length ?? response.numRows ?? 0
                     });
                 });
         }
@@ -259,8 +329,16 @@ export const DotPublishingQueueStore = signalStore(
                 });
         }
 
+        /** User-visible "give me the latest" entry point — the toolbar's Refresh
+         * button and the post-action reload every mutation triggers. Pulls the
+         * draft count too, since pushing / deleting / purging bundles all move
+         * rows in and out of the unsent set.
+         *
+         * Deliberately NOT what the 15 s poll calls (it calls `loadBundles(true)`
+         * directly) so background ticks don't add a second request. */
         function refresh() {
             loadBundles();
+            loadDraftBundlesCount();
         }
 
         // Fires a silent refresh as soon as the tab comes back into focus so
@@ -303,6 +381,7 @@ export const DotPublishingQueueStore = signalStore(
 
         return {
             loadBundles,
+            loadDraftBundlesCount,
             loadAssets,
             loadDetail,
             refresh,
@@ -544,6 +623,7 @@ export const DotPublishingQueueStore = signalStore(
                     untracked(() => store.loadBundles());
                 });
 
+                store.loadDraftBundlesCount();
                 store.startPolling();
             }
         };

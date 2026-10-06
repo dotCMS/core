@@ -1,8 +1,11 @@
 import { Spectator } from '@openng/spectator';
-import { createComponentFactory } from '@openng/spectator/jest';
+import { createComponentFactory } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { Component } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
+
+import { AnyExtension, JSONContent } from '@tiptap/core';
 
 import { DotBlockEditorComponent } from './dot-block-editor.component';
 
@@ -63,6 +66,174 @@ describe('DotBlockEditorComponent - ControlValueAccessor', () => {
         spectator = createComponent();
     });
 
+    describe('customBlocks parsing', () => {
+        it('accepts action.name without discarding the remote extension payload', () => {
+            const blockEditorComponent = spectator.query(DotBlockEditorComponent);
+            blockEditorComponent.customBlocks = JSON.stringify({
+                extensions: [
+                    {
+                        url: 'https://example.com/custom-gallery.js',
+                        actions: [
+                            {
+                                command: 'insertGallery',
+                                menuLabel: 'Custom Gallery',
+                                icon: 'photo_library',
+                                name: 'customGallery'
+                            }
+                        ]
+                    }
+                ]
+            });
+
+            expect(blockEditorComponent!['getParsedCustomBlocks']()).toEqual({
+                extensions: [
+                    {
+                        url: 'https://example.com/custom-gallery.js',
+                        actions: [
+                            {
+                                command: 'insertGallery',
+                                menuLabel: 'Custom Gallery',
+                                icon: 'photo_library',
+                                name: 'customGallery'
+                            }
+                        ]
+                    }
+                ]
+            });
+        });
+    });
+
+    describe('per-field remote block restriction', () => {
+        const CUSTOM_BLOCKS = JSON.stringify({
+            extensions: [
+                {
+                    url: 'https://example.com/custom-gallery.js',
+                    actions: [
+                        {
+                            command: 'insertGallery',
+                            menuLabel: 'Custom Gallery',
+                            icon: 'photo_library',
+                            name: 'customGallery'
+                        }
+                    ]
+                }
+            ]
+        });
+
+        /** The behaviour under test lives on private members, reached through this seam. */
+        interface EditorInternals {
+            setAllowedBlocks(blocks: string): void;
+            getCustomRemoteExtensions(): Promise<{ name?: string }[]>;
+            setEditorJSONContent(content: JSONContent): void;
+            editor: unknown;
+            content: JSONContent[];
+        }
+
+        let component: DotBlockEditorComponent;
+        let internals: EditorInternals;
+        let realEditor: unknown;
+
+        beforeEach(() => {
+            component = spectator.query(DotBlockEditorComponent);
+            component.customBlocks = CUSTOM_BLOCKS;
+            internals = component as unknown as EditorInternals;
+            realEditor = internals.editor;
+        });
+
+        afterEach(() => {
+            // Restore the real editor so the stub below cannot leak into later suites.
+            internals.editor = realEditor;
+        });
+
+        const setAllowedBlocks = (blocks: string[]) => internals.setAllowedBlocks(blocks.join(','));
+
+        const loadRemoteExtensions = (): Promise<{ name?: string }[]> => {
+            vi.spyOn(component, 'loadCustomBlocks').mockResolvedValue([
+                {
+                    status: 'fulfilled',
+                    value: { customGallery: { name: 'customGallery' } }
+                } as unknown as PromiseFulfilledResult<AnyExtension>
+            ]);
+
+            return internals.getCustomRemoteExtensions();
+        };
+
+        /** Renders `content` through the load-time path with a minimal stub schema. */
+        const loadContentWithoutRemoteSchema = (): JSONContent[] => {
+            internals.editor = { schema: { nodes: { doc: {}, paragraph: {} } } };
+            internals.setEditorJSONContent({
+                type: 'doc',
+                content: [{ type: 'customGallery', attrs: { id: 'abc' } }]
+            });
+
+            return internals.content;
+        };
+
+        /**
+         * A new contentlet with an empty Story Block arrives as `null`. The guard at the top of
+         * setEditorJSONContent covers an uninitialised editor and string content, but not null:
+         * `typeof null === 'object'`, so execution fell through to `content.content` and threw
+         * `Cannot read properties of null (reading 'content')` during ngOnInit.
+         *
+         * That uncaught error aborts the change-detection pass partway through the field's
+         * template, which is why a required, empty Block Editor rendered no "required" message
+         * even though its control was INVALID and the save was correctly blocked.
+         */
+        it('accepts null content without throwing, as a new empty field sends', () => {
+            internals.editor = { schema: { nodes: { doc: {}, paragraph: {} } } };
+
+            expect(() =>
+                internals.setEditorJSONContent(null as unknown as JSONContent)
+            ).not.toThrow();
+            expect(internals.content).toBeNull();
+        });
+
+        it('registers a remote block that the field allows', async () => {
+            setAllowedBlocks(['heading1', 'customGallery']);
+
+            const extensions = await loadRemoteExtensions();
+
+            expect(extensions.map((extension) => extension.name)).toEqual(['customGallery']);
+        });
+
+        it('does not register a remote block deselected on a restricted field', async () => {
+            setAllowedBlocks(['heading1', 'bulletList']);
+
+            const extensions = await loadRemoteExtensions();
+
+            // Never added to the schema, so it cannot be inserted via the slash menu.
+            expect(extensions).toEqual([]);
+        });
+
+        it('registers every remote block on an unrestricted field', async () => {
+            const extensions = await loadRemoteExtensions();
+
+            expect(extensions.map((extension) => extension.name)).toEqual(['customGallery']);
+        });
+
+        it('keeps an allowed remote block intact when its bundle fails to load', () => {
+            setAllowedBlocks(['heading1', 'customGallery']);
+
+            // Bundle never loaded, so the node is absent from the schema.
+            const [node] = loadContentWithoutRemoteSchema();
+
+            expect(node.type).toBe('dotUnsupportedBlock');
+        });
+
+        it('preserves content of a deselected remote block as a placeholder', () => {
+            setAllowedBlocks(['heading1', 'bulletList']);
+
+            const [node] = loadContentWithoutRemoteSchema();
+
+            // Restricted, but never destroyed: it round-trips through the placeholder.
+            expect(node.type).toBe('dotUnsupportedBlock');
+            expect(node.attrs?.['originalNode']).toEqual({
+                type: 'customGallery',
+                attrs: { id: 'abc' }
+            });
+        });
+    });
+
     it('should update form value when onBlockEditorChange is called', () => {
         const blockEditorComponent = spectator.query(DotBlockEditorComponent);
         const control = spectator.component.form.get('block');
@@ -93,7 +264,7 @@ describe('DotBlockEditorComponent - ControlValueAccessor', () => {
 
             // Check that when editor exists, setEditable is called properly
             const mockEditor = {
-                setEditable: jest.fn()
+                setEditable: vi.fn()
             } as Partial<typeof blockEditorComponent.editor>;
             blockEditorComponent.editor = mockEditor as typeof blockEditorComponent.editor;
 
@@ -108,7 +279,7 @@ describe('DotBlockEditorComponent - ControlValueAccessor', () => {
 
         it('should not emit changes when disabled', () => {
             const blockEditorComponent = spectator.query(DotBlockEditorComponent);
-            const emitSpy = jest.spyOn(blockEditorComponent.valueChange, 'emit');
+            const emitSpy = vi.spyOn(blockEditorComponent!.valueChange, 'emit');
 
             // Use the CVA method to set disabled state
             blockEditorComponent.setDisabledState(true);
@@ -121,7 +292,7 @@ describe('DotBlockEditorComponent - ControlValueAccessor', () => {
 
         it('should emit changes when not disabled', () => {
             const blockEditorComponent = spectator.query(DotBlockEditorComponent);
-            const emitSpy = jest.spyOn(blockEditorComponent.valueChange, 'emit');
+            const emitSpy = vi.spyOn(blockEditorComponent!.valueChange, 'emit');
 
             // Use the CVA method to set disabled state
             blockEditorComponent.setDisabledState(false);
@@ -259,7 +430,7 @@ describe('DotBlockEditorComponent - ControlValueAccessor', () => {
         describe('doc attrs (charCount / wordCount / readingTime)', () => {
             it('should include charCount, wordCount and readingTime in the emitted value when content is not empty', () => {
                 const blockEditorComponent = spectator.query(DotBlockEditorComponent);
-                const emitSpy = jest.spyOn(blockEditorComponent.valueChange, 'emit');
+                const emitSpy = vi.spyOn(blockEditorComponent!.valueChange, 'emit');
 
                 // 265 words at 265 words-per-minute (Medium formula) → readingTime = Math.ceil(265/265) = 1
                 blockEditorComponent.editor = createMockEditor(100, 265);
@@ -285,7 +456,7 @@ describe('DotBlockEditorComponent - ControlValueAccessor', () => {
 
             it('should not override existing attrs when patching doc attrs', () => {
                 const blockEditorComponent = spectator.query(DotBlockEditorComponent);
-                const emitSpy = jest.spyOn(blockEditorComponent.valueChange, 'emit');
+                const emitSpy = vi.spyOn(blockEditorComponent!.valueChange, 'emit');
 
                 blockEditorComponent.editor = createMockEditor(50, 10);
                 blockEditorComponent.setDisabledState(false);
@@ -308,7 +479,7 @@ describe('DotBlockEditorComponent - ControlValueAccessor', () => {
 
             it('should emit value unchanged when the editor has no content (charCount = 0)', () => {
                 const blockEditorComponent = spectator.query(DotBlockEditorComponent);
-                const emitSpy = jest.spyOn(blockEditorComponent.valueChange, 'emit');
+                const emitSpy = vi.spyOn(blockEditorComponent!.valueChange, 'emit');
 
                 blockEditorComponent.editor = createMockEditor(0, 0);
                 blockEditorComponent.setDisabledState(false);
@@ -320,7 +491,7 @@ describe('DotBlockEditorComponent - ControlValueAccessor', () => {
 
             it('should emit value unchanged when the editor is not yet initialized', () => {
                 const blockEditorComponent = spectator.query(DotBlockEditorComponent);
-                const emitSpy = jest.spyOn(blockEditorComponent.valueChange, 'emit');
+                const emitSpy = vi.spyOn(blockEditorComponent!.valueChange, 'emit');
 
                 // Force the editor to be null to simulate the case where the editor is not yet
                 // initialized (e.g., writeValue called before the async ngOnInit completes).

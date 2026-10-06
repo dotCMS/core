@@ -1,20 +1,21 @@
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
+import { Mock, vi } from 'vitest';
 
 import { UVE_MODE } from '@dotcms/types';
 import * as dotcmsUVE from '@dotcms/uve';
 
 import { DotCMSShow } from '../../components/DotCMSShow/DotCMSShow';
 
-jest.mock('@dotcms/uve', () => ({
-    getUVEState: jest.fn()
+vi.mock('@dotcms/uve', () => ({
+    getUVEState: vi.fn()
 }));
 
 describe('DotCMSShow', () => {
-    const getUVEStateMock = dotcmsUVE.getUVEState as jest.Mock;
+    const getUVEStateMock = dotcmsUVE.getUVEState as Mock;
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     test('should render children when UVE is in edit mode', () => {

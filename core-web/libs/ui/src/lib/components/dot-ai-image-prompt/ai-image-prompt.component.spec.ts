@@ -1,13 +1,19 @@
 import { patchState } from '@ngrx/signals';
-import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@openng/spectator/jest';
+import {
+    createComponentFactory,
+    mockProvider,
+    Spectator,
+    SpyObject
+} from '@openng/spectator/vitest';
 import { Observable, of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 
 import { ConfirmationService } from 'primeng/api';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { DotAiService } from '@dotcms/data-access';
+import { DotAiContentService } from '@dotcms/data-access';
 import {
     AIImagePrompt,
     DotAIImageContent,
@@ -29,7 +35,7 @@ describe('DotAIImagePromptComponent', () => {
     let spectator: Spectator<DotAIImagePromptComponent>;
     let store: InstanceType<typeof DotAiImagePromptStore>;
     let dynamicDialogRef: SpyObject<DynamicDialogRef>;
-    let dotAiService: SpyObject<DotAiService>;
+    let dotAiService: SpyObject<DotAiContentService>;
     let confirmationService: SpyObject<ConfirmationService>;
 
     const createComponent = createComponentFactory({
@@ -40,17 +46,20 @@ describe('DotAIImagePromptComponent', () => {
             mockProvider(DynamicDialogConfig),
             ConfirmationService
         ],
-        providers: [provideHttpClient(), { provide: DotAiService, useValue: mockDotAiService }]
+        providers: [
+            provideHttpClient(),
+            { provide: DotAiContentService, useValue: mockDotAiService }
+        ]
     });
 
     beforeEach(() => {
         spectator = createComponent();
         store = spectator.inject(DotAiImagePromptStore, true);
         dynamicDialogRef = spectator.inject(DynamicDialogRef, true);
-        dotAiService = spectator.inject(DotAiService, true);
+        dotAiService = spectator.inject(DotAiContentService, true);
         confirmationService = spectator.inject(ConfirmationService, true);
 
-        jest.spyOn(dotAiService, 'generateAndPublishImage');
+        vi.spyOn(dotAiService, 'generateAndPublishImage');
     });
 
     it('should create', () => {
@@ -58,7 +67,7 @@ describe('DotAIImagePromptComponent', () => {
     });
 
     it('should generate image', () => {
-        const generateImageSpy = jest.spyOn(store, 'generateImage');
+        const generateImageSpy = vi.spyOn(store, 'generateImage');
 
         const formMock: AIImagePrompt = {
             text: 'Test',
@@ -86,7 +95,7 @@ describe('DotAIImagePromptComponent', () => {
 
     it('should call confirm dialog when try to close dialog', () => {
         patchState(store, { images: [MOCK_GENERATED_AI_IMAGE] });
-        const confirmSpy = jest.spyOn(confirmationService, 'confirm');
+        const confirmSpy = vi.spyOn(confirmationService, 'confirm');
         spectator.detectChanges();
 
         spectator.component.closeDialog();

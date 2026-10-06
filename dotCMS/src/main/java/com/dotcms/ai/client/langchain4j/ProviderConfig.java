@@ -60,10 +60,12 @@ import java.util.List;
  *   <li>{@code endpoint} – optional base URL override (proxies/gateways)</li>
  * </ul>
  *
- * <p>OpenRouter (chat only — OpenRouter has no embeddings or image endpoints):
+ * <p>OpenRouter (chat and embeddings; image not supported):
  * <ul>
  *   <li>{@code apiKey} – OpenRouter API key</li>
- *   <li>{@code model} – namespaced model ID, e.g. {@code openai/gpt-4o}, {@code anthropic/claude-sonnet-4}</li>
+ *   <li>{@code model} – namespaced model ID, e.g. {@code openai/gpt-4o}, {@code anthropic/claude-sonnet-4},
+ *       {@code openai/text-embedding-3-small}</li>
+ *   <li>{@code dimensions} – embedding vector size (embeddings only)</li>
  *   <li>{@code endpoint} – optional override of the default base URL ({@code https://openrouter.ai/api/v1})</li>
  * </ul>
  *
@@ -126,6 +128,19 @@ public interface ProviderConfig {
     // OpenAI / Azure OpenAI
     @Value.Redacted @Nullable String apiKey();
     @Nullable String size();
+
+    /**
+     * How the provider should deliver a generated image — {@code url} or {@code b64_json} (image
+     * only). Never set from the app's saved {@code providerConfig}: it is a per-request decision
+     * made by the caller that builds the model, which is why it is left null by default and the
+     * strategies pass it on only when somebody asked for one.
+     *
+     * <p>{@code /api/inference/v1/images/generations} sets {@code b64_json} because it returns
+     * no hosted artifact minted upstream at all, not merely none returned to the caller. The
+     * legacy {@code /api/v1/ai/image} endpoint leaves it unset and keeps the provider's default,
+     * because its own response contract is a URL.</p>
+     */
+    @Nullable String responseFormat();
     @Nullable Integer dimensions();
     @Nullable String endpoint();
     @Nullable String deploymentName();

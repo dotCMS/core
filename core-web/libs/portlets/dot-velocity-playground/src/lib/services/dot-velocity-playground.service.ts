@@ -5,6 +5,7 @@ import { Injectable, inject } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
+import { parseWarningsHeader } from '../dot-velocity-playground.utils';
 import {
     DotVelocityPlaygroundForm,
     DotVelocityPlaygroundResponse,
@@ -27,7 +28,8 @@ export class DotVelocityPlaygroundService {
                 map((response) => ({
                     body: response.body ?? '',
                     contentType: this.#mapContentType(response.headers.get('content-type')),
-                    elapsedMs: Date.now() - started
+                    elapsedMs: Date.now() - started,
+                    warnings: parseWarningsHeader(response.headers.get('X-Dot-Velocity-Warnings'))
                 }))
             );
     }

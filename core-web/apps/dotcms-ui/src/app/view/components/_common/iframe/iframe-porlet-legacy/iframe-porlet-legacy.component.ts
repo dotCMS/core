@@ -1,7 +1,14 @@
 import { BehaviorSubject, Subject } from 'rxjs';
 
 import { AsyncPipe } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import {
+    Component,
+    OnDestroy,
+    OnInit,
+    inject,
+    signal,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterModule, UrlSegment } from '@angular/router';
 
@@ -35,6 +42,7 @@ import { IframeComponent } from '../iframe-component/iframe.component';
     selector: 'dot-iframe-porlet',
     styleUrls: ['./iframe-porlet-legacy.component.scss'],
     templateUrl: 'iframe-porlet-legacy.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [RouterModule, IframeComponent, DotNotLicenseComponent, AsyncPipe]
 })
 export class IframePortletLegacyComponent implements OnInit, OnDestroy {

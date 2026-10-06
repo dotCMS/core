@@ -1,9 +1,10 @@
-import { byTestId, createHostFactory, SpectatorHost } from '@openng/spectator/jest';
+import { byTestId, createHostFactory, SpectatorHost } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { Component } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { Component, signal } from '@angular/core';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { DotLanguagesService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
@@ -23,6 +24,7 @@ import {
 } from './dot-edit-content-text-area.constants';
 
 import { DotEditContentMonacoEditorControlComponent } from '../../shared/dot-edit-content-monaco-editor-control/dot-edit-content-monaco-editor-control.component';
+import { DotEditContentStore } from '../../store/edit-content.store';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (global as any).monaco = monacoMock;
@@ -138,7 +140,7 @@ describe('DotEditContentTextAreaComponent', () => {
 
         it('should update contentlet disabledWYSIWYG property when switching editors', () => {
             // Arrange: Spy on the output event
-            const disabledWYSIWYGChangeSpy = jest.fn();
+            const disabledWYSIWYGChangeSpy = vi.fn();
             spectator.output('disabledWYSIWYGChange').subscribe(disabledWYSIWYGChangeSpy);
 
             // Act: Switch to Monaco editor
@@ -152,7 +154,7 @@ describe('DotEditContentTextAreaComponent', () => {
 
         it('should call onSelectLanguageVariable when language variable is selected', () => {
             // Spy on component method
-            const spy = jest.spyOn(spectator.component, 'onSelectLanguageVariable');
+            const spy = vi.spyOn(spectator.component, 'onSelectLanguageVariable');
 
             // Get language variable selector component
             const languageVariableSelector = spectator.query(DotLanguageVariableSelectorComponent);
@@ -167,7 +169,7 @@ describe('DotEditContentTextAreaComponent', () => {
 
         it('should switch to Monaco editor when user selects Code Editor option', () => {
             // Arrange: Spy on the method
-            const spy = jest.spyOn(spectator.component, 'onEditorChange');
+            const spy = vi.spyOn(spectator.component, 'onEditorChange');
 
             // Act: Simulate user selecting Monaco editor from dropdown
             spectator.component.$selectedEditorDropdown.set(AvailableEditorTextArea.PlainText); // Initial state
@@ -182,7 +184,7 @@ describe('DotEditContentTextAreaComponent', () => {
 
         it('should handle inserting language variable when user selects it in plaintext mode', () => {
             // Mock the insertLanguageVariableInTextarea private method
-            const insertLanguageVariableInTextareaMock = jest.fn();
+            const insertLanguageVariableInTextareaMock = vi.fn();
             spectator.component['insertLanguageVariableInTextarea'] =
                 insertLanguageVariableInTextareaMock;
 
@@ -203,7 +205,7 @@ describe('DotEditContentTextAreaComponent', () => {
 
         it('should insert language variable into Monaco editor when in Monaco mode', () => {
             // Mock the insertLanguageVariableInMonaco private method
-            const insertLanguageVariableInMonacoMock = jest.fn();
+            const insertLanguageVariableInMonacoMock = vi.fn();
             spectator.component['insertLanguageVariableInMonaco'] =
                 insertLanguageVariableInMonacoMock;
 
@@ -243,7 +245,7 @@ describe('DotEditContentTextAreaComponent', () => {
         );
         spectator.detectChanges();
 
-        const disabledWYSIWYGChangeSpy = jest.fn();
+        const disabledWYSIWYGChangeSpy = vi.fn();
         spectator.output('disabledWYSIWYGChange').subscribe(disabledWYSIWYGChangeSpy);
 
         // Act: Switch to Monaco editor
@@ -282,7 +284,7 @@ describe('DotEditContentTextAreaComponent', () => {
         );
         spectator.detectChanges();
 
-        const disabledWYSIWYGChangeSpy = jest.fn();
+        const disabledWYSIWYGChangeSpy = vi.fn();
         spectator.output('disabledWYSIWYGChange').subscribe(disabledWYSIWYGChangeSpy);
 
         // Act: Switch back to PlainText editor
@@ -316,7 +318,7 @@ describe('DotEditContentTextAreaComponent', () => {
         );
         spectator.detectChanges();
 
-        const disabledWYSIWYGChangeSpy = jest.fn();
+        const disabledWYSIWYGChangeSpy = vi.fn();
         spectator.output('disabledWYSIWYGChange').subscribe(disabledWYSIWYGChangeSpy);
 
         // Act: Switch to Monaco editor
@@ -354,7 +356,7 @@ describe('DotEditContentTextAreaComponent', () => {
             switchSpectator.detectChanges();
 
             // Spy on the output event
-            const disabledWYSIWYGChangeSpy = jest.fn();
+            const disabledWYSIWYGChangeSpy = vi.fn();
             switchSpectator.output('disabledWYSIWYGChange').subscribe(disabledWYSIWYGChangeSpy);
 
             // Act: Switch to Monaco editor
@@ -396,7 +398,7 @@ describe('DotEditContentTextAreaComponent', () => {
             switchBackSpectator.detectChanges();
 
             // Spy on the output event
-            const disabledWYSIWYGChangeSpy = jest.fn();
+            const disabledWYSIWYGChangeSpy = vi.fn();
             switchBackSpectator.output('disabledWYSIWYGChange').subscribe(disabledWYSIWYGChangeSpy);
 
             // Act: Switch to PlainText editor
@@ -470,7 +472,7 @@ describe('DotEditContentTextAreaComponent', () => {
             preserveSpectator.detectChanges();
 
             // Spy on the output event
-            const disabledWYSIWYGChangeSpy = jest.fn();
+            const disabledWYSIWYGChangeSpy = vi.fn();
             preserveSpectator.output('disabledWYSIWYGChange').subscribe(disabledWYSIWYGChangeSpy);
 
             // Act: Switch to Monaco editor for current field
@@ -508,7 +510,7 @@ describe('DotEditContentTextAreaComponent', () => {
             );
             workflowSpectator.detectChanges();
 
-            const disabledWYSIWYGChangeSpy = jest.fn();
+            const disabledWYSIWYGChangeSpy = vi.fn();
             workflowSpectator.output('disabledWYSIWYGChange').subscribe(disabledWYSIWYGChangeSpy);
 
             // Act 1: Switch to Monaco
@@ -558,7 +560,7 @@ describe('DotEditContentTextAreaComponent', () => {
             noPropertySpectator.detectChanges();
 
             // Spy on the output event
-            const disabledWYSIWYGChangeSpy = jest.fn();
+            const disabledWYSIWYGChangeSpy = vi.fn();
             noPropertySpectator.output('disabledWYSIWYGChange').subscribe(disabledWYSIWYGChangeSpy);
 
             // Act: Switch to Monaco editor
@@ -572,5 +574,93 @@ describe('DotEditContentTextAreaComponent', () => {
                 AvailableEditorTextArea.Monaco
             );
         });
+    });
+});
+
+/**
+ * T-11 / AC-211 — Text Area gains the hint and required-error slot.
+ *
+ * This is the ONLY new behaviour in either PR. Contrary to #37464's gap list — which names Category
+ * and File, both of which already have a slot — Text Area's template carries no
+ * `dot-card-field-footer` at all. A Text Area hint has never been visible, and an empty required
+ * Text Area blocks the save without saying why.
+ *
+ * So these fail today for a reason no other field's tests do: the element does not exist.
+ */
+describe('DotEditContentTextAreaComponent — hint and required error', () => {
+    let spectator: SpectatorHost<DotEditContentTextAreaComponent, MockFormComponent>;
+
+    const submitted = signal(false);
+
+    const createHost = createHostFactory({
+        component: DotEditContentTextAreaComponent,
+        host: MockFormComponent,
+        imports: [ReactiveFormsModule],
+        detectChanges: false,
+        componentMocks: [
+            DotLanguageVariableSelectorComponent,
+            DotEditContentMonacoEditorControlComponent
+        ],
+        providers: [
+            { provide: DotEditContentStore, useValue: { hasAttemptedSubmit: submitted } },
+            { provide: DotLanguagesService, useValue: new DotLanguagesServiceMock() },
+            provideHttpClient(),
+            provideHttpClientTesting(),
+            { provide: DotMessageService, useValue: new MockDotMessageService({}) }
+        ]
+    });
+
+    const render = (field: DotCMSContentTypeField) => {
+        const control = new FormControl('', field.required ? [Validators.required] : []);
+        spectator = createHost(
+            `<form [formGroup]="formGroup">
+                <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" />
+            </form>`,
+            {
+                hostProps: {
+                    formGroup: new FormGroup({ [field.variable]: control }),
+                    field,
+                    contentlet: createFakeContentlet({ [field.variable]: '' })
+                }
+            }
+        );
+        spectator.detectChanges();
+
+        return control;
+    };
+
+    beforeEach(() => submitted.set(false));
+
+    it('should render its hint, which it never has today', () => {
+        render({ ...TEXT_AREA_FIELD_MOCK, hint: 'Keep it under 200 characters' });
+
+        expect(spectator.query('.p-field-hint')?.textContent.trim()).toBe(
+            'Keep it under 200 characters'
+        );
+    });
+
+    it('should show the required message after a save attempt', () => {
+        render({ ...TEXT_AREA_FIELD_MOCK, required: true });
+        submitted.set(true);
+        spectator.detectChanges();
+
+        expect(spectator.query('.p-field-error')).toBeTruthy();
+    });
+
+    it('should not show the required message on blur alone', () => {
+        const control = render({ ...TEXT_AREA_FIELD_MOCK, required: true });
+
+        control.markAsTouched();
+        spectator.detectChanges();
+
+        expect(spectator.query('.p-field-error')).toBeNull();
+    });
+
+    // createFakeBaseField() defaults hint to a faker sentence, so `hint: ''` has to be explicit.
+    it('should render neither when the field has no hint and no error', () => {
+        render({ ...TEXT_AREA_FIELD_MOCK, hint: '' });
+
+        expect(spectator.query('.p-field-hint')).toBeNull();
+        expect(spectator.query('.p-field-error')).toBeNull();
     });
 });

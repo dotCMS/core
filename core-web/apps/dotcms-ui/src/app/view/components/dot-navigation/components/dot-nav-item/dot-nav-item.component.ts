@@ -6,7 +6,8 @@ import {
     ViewChild,
     inject,
     input,
-    output
+    output,
+    ChangeDetectionStrategy
 } from '@angular/core';
 
 import { DotMenuItem, MenuGroup } from '@dotcms/dotcms-models';
@@ -23,6 +24,7 @@ import { DotSubNavComponent } from '../dot-sub-nav/dot-sub-nav.component';
     templateUrl: './dot-nav-item.component.html',
     styleUrls: ['./dot-nav-item.component.scss'],
     imports: [DotSubNavComponent, DotNavIconComponent, DotRandomIconPipe, NgClass, NgStyle],
+    changeDetection: ChangeDetectionStrategy.Eager,
     host: {
         '[class.dot-nav-item__collapsed]': '$collapsed()'
     }

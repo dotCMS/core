@@ -1,0 +1,267 @@
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
+
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
+
+import { DEFAULT_SEARCH_DEBOUNCE } from './constants';
+import { DotSearchInputComponent } from './dot-search-input.component';
+
+describe('DotSearchInputComponent', () => {
+    let spectator: Spectator<DotSearchInputComponent>;
+
+    const createComponent = createComponentFactory({
+        component: DotSearchInputComponent,
+        providers: [
+            {
+                provide: DotMessageService,
+                useValue: new MockDotMessageService({
+                    search: 'Search',
+                    'content-drive.search.placeholder': 'Search assets'
+                })
+            }
+        ]
+    });
+
+    const getInput = () => spectator.query(byTestId('search-input-field')) as HTMLInputElement;
+    const type = (value: string) => {
+        spectator.typeInElement(value, getInput());
+        spectator.detectChanges();
+    };
+
+    beforeEach(() => {
+        vi.useFakeTimers();
+        spectator = createComponent();
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
+    describe('placeholder', () => {
+        it('should translate the default placeholder key', () => {
+            expect(getInput().placeholder).toBe('Search');
+        });
+
+        it('should translate a custom placeholder key', () => {
+            spectator.setInput('placeholder', 'content-drive.search.placeholder');
+            spectator.detectChanges();
+
+            expect(getInput().placeholder).toBe('Search assets');
+        });
+    });
+
+    describe('debounced emission', () => {
+        it('should not emit before the debounce window closes', () => {
+            const handler = vi.fn();
+            spectator.output('search').subscribe(handler);
+
+            type('blog');
+            vi.advanceTimersByTime(DEFAULT_SEARCH_DEBOUNCE - 1);
+
+            expect(handler).not.toHaveBeenCalled();
+        });
+
+        it('should emit the term once the debounce window closes', () => {
+            const handler = vi.fn();
+            spectator.output('search').subscribe(handler);
+
+            type('blog');
+            vi.advanceTimersByTime(DEFAULT_SEARCH_DEBOUNCE);
+
+            expect(handler).toHaveBeenCalledWith('blog');
+        });
+
+        it('should emit only the last term typed within the window', () => {
+            const handler = vi.fn();
+            spectator.output('search').subscribe(handler);
+
+            type('b');
+            vi.advanceTimersByTime(100);
+            type('bl');
+            vi.advanceTimersByTime(100);
+            type('blog');
+            vi.advanceTimersByTime(DEFAULT_SEARCH_DEBOUNCE);
+
+            expect(handler).toHaveBeenCalledTimes(1);
+            expect(handler).toHaveBeenCalledWith('blog');
+        });
+
+        it('should honor a custom debounceTime', () => {
+            spectator.setInput('debounceTime', 50);
+            spectator.detectChanges();
+
+            const handler = vi.fn();
+            spectator.output('search').subscribe(handler);
+
+            type('blog');
+            vi.advanceTimersByTime(50);
+
+            expect(handler).toHaveBeenCalledWith('blog');
+        });
+
+        it('should trim the emitted term', () => {
+            const handler = vi.fn();
+            spectator.output('search').subscribe(handler);
+
+            type('  blog  ');
+            vi.advanceTimersByTime(DEFAULT_SEARCH_DEBOUNCE);
+
+            expect(handler).toHaveBeenCalledWith('blog');
+        });
+
+        it('should not re-emit a term the host already has', () => {
+            const handler = vi.fn();
+            spectator.output('search').subscribe(handler);
+
+            type('blog');
+            vi.advanceTimersByTime(DEFAULT_SEARCH_DEBOUNCE);
+            type('blog ');
+            vi.advanceTimersByTime(DEFAULT_SEARCH_DEBOUNCE);
+
+            expect(handler).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('value input', () => {
+        it('should seed the control from the host', () => {
+            spectator.setInput('value', 'blog');
+            spectator.detectChanges();
+
+            expect(getInput().value).toBe('blog');
+        });
+
+        it('should not echo an emission back when the host pushes a value', () => {
+            const handler = vi.fn();
+            spectator.output('search').subscribe(handler);
+
+            spectator.setInput('value', 'blog');
+            spectator.detectChanges();
+            vi.advanceTimersByTime(DEFAULT_SEARCH_DEBOUNCE);
+
+            expect(handler).not.toHaveBeenCalled();
+        });
+
+        it('should emit again after the host clears a term the user re-types', () => {
+            const handler = vi.fn();
+            spectator.output('search').subscribe(handler);
+
+            type('blog');
+            vi.advanceTimersByTime(DEFAULT_SEARCH_DEBOUNCE);
+
+            // Host echoes the term back, then clears the filter (e.g. "clear all")
+            spectator.setInput('value', 'blog');
+            spectator.detectChanges();
+            spectator.setInput('value', '');
+            spectator.detectChanges();
+
+            type('blog');
+            vi.advanceTimersByTime(DEFAULT_SEARCH_DEBOUNCE);
+
+            expect(handler).toHaveBeenNthCalledWith(1, 'blog');
+            expect(handler).toHaveBeenNthCalledWith(2, 'blog');
+        });
+    });
+
+    // `{}` is truthy, so a default of `{}` made PrimeNG's BaseComponent load a scoped stylesheet
+    // and register a theme-change listener for every consumer, including the ones (AssetPicker)
+    // that pass no override at all. `undefined` is the only default that actually skips that path.
+    describe('inputDt', () => {
+        it('should default to undefined rather than an empty object', () => {
+            expect(spectator.component.$inputDt()).toBeUndefined();
+        });
+
+        it('should pass through an explicit override', () => {
+            const dt = { border: { radius: '0' } };
+            spectator.setInput('inputDt', dt);
+            spectator.detectChanges();
+
+            expect(spectator.component.$inputDt()).toEqual(dt);
+        });
+    });
+
+    describe('clear icon', () => {
+        it('should be hidden while the input is empty', () => {
+            expect(spectator.query(byTestId('search-icon-clear'))).toBeNull();
+        });
+
+        it('should appear as soon as the user types, without waiting for the debounce', () => {
+            type('blog');
+
+            expect(spectator.query(byTestId('search-icon-clear'))).not.toBeNull();
+        });
+
+        it('should clear the input and emit an empty term', () => {
+            const handler = vi.fn();
+            spectator.output('search').subscribe(handler);
+
+            type('blog');
+            vi.advanceTimersByTime(DEFAULT_SEARCH_DEBOUNCE);
+
+            spectator.click(byTestId('search-icon-clear'));
+            spectator.detectChanges();
+            vi.advanceTimersByTime(DEFAULT_SEARCH_DEBOUNCE);
+
+            expect(getInput().value).toBe('');
+            expect(handler).toHaveBeenLastCalledWith('');
+        });
+    });
+
+    // Inside a `p-inputgroup` (Content Drive's search bar), PrimeNG raises the focused field to
+    // the icons' own z-index, and the rule lands because the group turns the icon field into a
+    // flex container — flex items honor z-index without positioning. The field comes later in
+    // the DOM, so once focused its opaque background painted the magnifier away the moment the
+    // user clicked in. The icons sit one step above through PT's inline style, which beats the
+    // injected stylesheet unconditionally; outside an input group the value changes nothing.
+    describe('icon stacking', () => {
+        it('should pin the magnifier above the field', () => {
+            const icon = spectator.query('.p-inputicon') as HTMLElement;
+
+            expect(icon.style.zIndex).toBe('2');
+        });
+
+        it('should pin the clear icon above the field too', () => {
+            type('blog');
+
+            const icon = spectator.query(byTestId('search-icon-clear')) as HTMLElement;
+
+            expect(icon.style.zIndex).toBe('2');
+        });
+    });
+
+    // The component stays free of any shortcut knowledge: the host registers the combination and
+    // calls this, so the box remains reusable by a surface that has no registry at all.
+    describe('focus()', () => {
+        it('should move focus to the input', () => {
+            spectator.component.focus();
+
+            expect(document.activeElement).toBe(getInput());
+        });
+
+        it('should preserve the current term', () => {
+            spectator.setInput('value', 'blog');
+            spectator.detectChanges();
+
+            spectator.component.focus();
+
+            expect(getInput().value).toBe('blog');
+        });
+
+        it('should not emit when focused', () => {
+            const handler = vi.fn();
+            spectator.output('search').subscribe(handler);
+
+            spectator.component.focus();
+            vi.advanceTimersByTime(DEFAULT_SEARCH_DEBOUNCE);
+
+            expect(handler).not.toHaveBeenCalled();
+        });
+
+        it('should be a no-op when the input already has focus', () => {
+            spectator.component.focus();
+            spectator.component.focus();
+
+            expect(document.activeElement).toBe(getInput());
+        });
+    });
+});

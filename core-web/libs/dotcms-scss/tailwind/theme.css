@@ -1,0 +1,17 @@
+/*
+ * Tailwind theme tokens shared by every Tailwind entry point in the workspace
+ * (apps/dotcms-ui/src/style.css and apps/dotcms-block-editor/src/styles.css).
+ *
+ * A token declared in only one entry point is a no-op in the other — the utility
+ * still compiles, but its `var()` resolves to nothing. Anything a shared lib may
+ * use belongs here rather than in an app's own stylesheet.
+ */
+
+@theme {
+    /*
+     * Reading width for a centred portlet column: `max-w-content` (plus `mx-auto w-full`).
+     * Every screen used to pick its own arbitrary value, so none of them lined up.
+     * 70rem == the 1120px a11y-page-list settled on. Use this instead of a new `max-w-[…]`.
+     */
+    --container-content: 70rem;
+}

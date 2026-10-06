@@ -1,6 +1,7 @@
 import { signalStore, signalStoreFeature, type, withComputed, withState } from '@ngrx/signals';
 import { Dispatcher, injectDispatch } from '@ngrx/signals/events';
 import { NEVER, of, throwError } from 'rxjs';
+import { Mock, MockInstance, vi } from 'vitest';
 
 import { computed, Injector, runInInjectionContext } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
@@ -52,11 +53,11 @@ const TEMP_FILE: DotCMSTempFile = {
 
 describe('withSave', () => {
     let store: InstanceType<typeof SaveStore>;
-    let service: { saveEditedImage: jest.Mock };
+    let service: { saveEditedImage: Mock };
     let lifecycle: ReturnType<typeof injectDispatch<typeof imageEditorLifecycleEvents>>;
 
-    function setup(): jest.SpyInstance {
-        const dispatchSpy = jest.spyOn(Dispatcher.prototype, 'dispatch');
+    function setup(): MockInstance {
+        const dispatchSpy = vi.spyOn(Dispatcher.prototype, 'dispatch');
 
         TestBed.configureTestingModule({
             providers: [
@@ -75,11 +76,11 @@ describe('withSave', () => {
     }
 
     beforeEach(() => {
-        service = { saveEditedImage: jest.fn().mockReturnValue(of(TEMP_FILE)) };
+        service = { saveEditedImage: vi.fn().mockReturnValue(of(TEMP_FILE)) };
     });
 
     afterEach(() => {
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
     });
 
     it('marks the editor saving on saveRequested while the save is in flight', () => {

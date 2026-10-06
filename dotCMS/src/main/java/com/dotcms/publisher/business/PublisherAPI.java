@@ -250,7 +250,32 @@ public abstract class PublisherAPI {
 	 * @return number of scheduled bundles matching the filter
 	 * @throws DotPublisherException if any error occurs
 	 */
-	public abstract Integer countScheduledBundleIds(String filter) throws DotPublisherException;
+	public Integer countScheduledBundleIds(final String filter) throws DotPublisherException {
+		return countScheduledBundleIds(filter, QueuedTier.ALL);
+	}
+
+	/**
+	 * Which queue-only bundles (rows in {@code publishing_queue} with a publish date and no audit
+	 * row) a scheduled-tier query returns, compared against the current time of the JVM, the same
+	 * clock {@code PublisherQueueJob} uses to decide what is due:
+	 * <ul>
+	 *   <li>{@link #DUE}: publish date already reached; the job will pick these up on its next run.
+	 *   The v1 API reports them as {@code BUNDLE_REQUESTED}.</li>
+	 *   <li>{@link #FUTURE}: publish date still ahead. The v1 API reports them as {@code SCHEDULED}.</li>
+	 *   <li>{@link #ALL}: both.</li>
+	 * </ul>
+	 */
+	public enum QueuedTier { DUE, FUTURE, ALL }
+
+	/**
+	 * Same as {@link #countScheduledBundleIds(String)} restricted to one {@link QueuedTier}.
+	 *
+	 * @param filter case-insensitive partial match on bundle id and bundle name, or null/empty for all
+	 * @param tier   which queue-only bundles to count
+	 * @return number of matching bundles
+	 * @throws DotPublisherException if any error occurs
+	 */
+	public abstract Integer countScheduledBundleIds(String filter, QueuedTier tier) throws DotPublisherException;
 
 	/**
 	 * Returns a paginated page of the "scheduled" tier (see {@link #countScheduledBundleIds(String)}),
@@ -264,7 +289,23 @@ public abstract class PublisherAPI {
 	 * @return list of scheduled bundle row maps
 	 * @throws DotPublisherException if any error occurs
 	 */
-	public abstract List<Map<String,Object>> getScheduledBundleIds(int limit, int offset, String filter) throws DotPublisherException;
+	public List<Map<String,Object>> getScheduledBundleIds(final int limit, final int offset, final String filter)
+			throws DotPublisherException {
+		return getScheduledBundleIds(limit, offset, filter, QueuedTier.ALL);
+	}
+
+	/**
+	 * Same as {@link #getScheduledBundleIds(int, int, String)} restricted to one {@link QueuedTier}.
+	 *
+	 * @param limit  max rows for the page
+	 * @param offset row offset of the page
+	 * @param filter case-insensitive partial match on bundle id and bundle name, or null/empty for all
+	 * @param tier   which queue-only bundles to return
+	 * @return list of bundle row maps
+	 * @throws DotPublisherException if any error occurs
+	 */
+	public abstract List<Map<String,Object>> getScheduledBundleIds(int limit, int offset, String filter,
+			QueuedTier tier) throws DotPublisherException;
 
 	/**
 	 * Get the queue bundles to process
@@ -332,10 +373,34 @@ public abstract class PublisherAPI {
 	/**
 	 * Delete element from publishing_queue table by identifier
 	 * If the element is the last in the bundle, it will also delete the {@link PublishAuditStatus}
-	 * @param id ID of the element in the table
-	 * @return boolean
+	 * <p>
+	 * This overload is <b>bundle-agnostic</b>: it removes the asset from <i>every</i> bundle that
+	 * has it queued. When the asset is queued in more than one bundle - normal for shared content
+	 * included in several scheduled campaigns - that is almost never what the caller wants.
+	 * Prefer {@link #deleteElementFromPublishQueueTableAndAuditStatus(String, String)}, which
+	 * scopes the delete to a single bundle.
+	 *
+	 * @param identifier ID of the element in the table
+	 * @deprecated Use {@link #deleteElementFromPublishQueueTableAndAuditStatus(String, String)}.
 	 */
+	@Deprecated(since = "Sep 10th, 26", forRemoval = true)
 	public abstract void deleteElementFromPublishQueueTableAndAuditStatus(String identifier) throws DotPublisherException;
+
+	/**
+	 * Deletes the queue entries for the given asset <b>within a single bundle</b>, leaving the same
+	 * asset queued in other bundles untouched. If this removal empties the bundle's queue, the
+	 * bundle's {@link PublishAuditStatus} is deleted as well - the same rule the bundle-agnostic
+	 * overload applies.
+	 *
+	 * @param identifier ID of the asset in the table
+	 * @param bundleId   the bundle to remove it from; must not be null or blank
+	 * @throws IllegalArgumentException if {@code bundleId} is null or blank. A missing bundle must
+	 *         fail loudly rather than silently widen the delete to every bundle holding the asset -
+	 *         {@code publishing_queue.bundle_id} is nullable with no foreign key, so this is
+	 *         reachable rather than theoretical.
+	 */
+	public abstract void deleteElementFromPublishQueueTableAndAuditStatus(String identifier,
+			String bundleId) throws DotPublisherException;
 
 	/**
 	 * Deletes a record from the {@code publishing_queue} table based on its

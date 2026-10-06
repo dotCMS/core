@@ -1,10 +1,10 @@
 package com.dotcms.content.index;
 
 import static com.dotcms.content.index.IndexConfigHelper.isMigrationNotStarted;
+import static com.dotcms.content.index.IndexConfigHelper.isReadEnabled;
 
 import com.dotcms.cdi.CDIUtils;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
-import com.dotcms.content.elasticsearch.business.IndexType;
 import com.dotcms.content.index.domain.ClusterIndexHealth;
 import com.dotcms.content.index.domain.ClusterStats;
 import com.dotcms.content.index.domain.CreateIndexStatus;
@@ -16,6 +16,7 @@ import com.dotcms.content.model.annotation.IndexRouter.IndexAccess;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -24,7 +25,9 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -154,9 +157,55 @@ public class IndexAPIImpl implements IndexAPI {
         }
         final List<String> osNames = byVendor.getOrDefault(IndexTag.OS, List.of());
         if (!osNames.isEmpty()) {
-            result &= router.osImpl().optimize(osNames);
+            // While OS is only the shadow store its force-merge failure is logged instead of failing
+            // a maintenance action whose ES half already succeeded; from Phase 2 on it propagates.
+            result &= isolateOsSubsetFailure("optimize", osNames,
+                    () -> router.osImpl().optimize(osNames)).orElse(true);
         }
         return result;
+    }
+
+    /**
+     * Runs the OS half of a tag-dispatched operation, keeping an OS-only failure from aborting an
+     * operation whose ES half already succeeded (issue #36222).
+     *
+     * <p>{@link #optimize} and {@link #flushCaches} dispatch <em>by index-name tag</em> instead of
+     * going through {@link PhaseRouter}, so they never got the router's shadow-failure handling: any
+     * exception from the OS provider propagated straight to the caller. The failure mode that
+     * motivated this is an OS role scoped to {@code cluster_&lt;customer&gt;*} rejecting names built
+     * from a different {@code DOT_DOTCMS_CLUSTER_ID} with {@code HTTP 403} — an OS-only
+     * misconfiguration that surfaced as a 500 on a maintenance action while ES was perfectly fine.</p>
+     *
+     * <p>Phase-aware, matching {@link PhaseRouter}'s rule that only the <em>shadow</em> provider's
+     * failures are absorbed: the OS failure is swallowed while OS is the shadow store (Phase 1 — and
+     * Phase 0 never dispatches OS names), and re-thrown once OS serves reads (phases 2 and 3), where
+     * silently reporting success would tell the operator that the store their searches hit was
+     * optimized / flushed when it was not.</p>
+     *
+     * @param operation operation name, for the log message
+     * @param osNames   the OS-tagged names the operation was dispatched with, for the log message
+     * @param action    the OS-side call
+     * @return the OS result, or empty when an OS failure was absorbed
+     */
+    private <R> Optional<R> isolateOsSubsetFailure(final String operation,
+            final List<String> osNames, final Supplier<R> action) {
+        try {
+            // ofNullable, not of: a provider returning null must not become an NPE inside the
+            // isolation wrapper — an absent value is handled by the caller's default.
+            return Optional.ofNullable(action.get());
+        } catch (final RuntimeException e) {
+            if (isReadEnabled()) {
+                // Phases 2 and 3: OS serves reads — the caller must see the failure.
+                throw e;
+            }
+            final OSIndexAPIImpl.ConnectionFailureKind kind =
+                    OSIndexAPIImpl.classifyConnectionError(e);
+            Logger.warn(this, "OpenSearch " + operation + " failed for " + osNames
+                    + " — likelyCause=" + kind.name() + " (" + kind.remediation() + ")."
+                    + " The Elasticsearch side of this operation is unaffected; only the OpenSearch"
+                    + " indices were skipped. Cause: " + e.getMessage(), e);
+            return java.util.Optional.empty();
+        }
     }
 
     @Override
@@ -377,7 +426,11 @@ public class IndexAPIImpl implements IndexAPI {
         }
         final List<String> osNames = byVendor.getOrDefault(IndexTag.OS, List.of());
         if (!osNames.isEmpty()) {
-            final Map<String, Integer> osResult = router.osImpl().flushCaches(osNames);
+            // While OS is only the shadow store, its failure must not fail the flush for the ES
+            // indices that already succeeded; the returned shard counts then cover only the
+            // providers actually contacted. From Phase 2 on (OS serves reads) it propagates.
+            final Map<String, Integer> osResult = isolateOsSubsetFailure("cache flush", osNames,
+                    () -> router.osImpl().flushCaches(osNames)).orElse(Map.of());
             failedShards += osResult.getOrDefault("failedShards", 0);
             successfulShards += osResult.getOrDefault("successfulShards", 0);
         }
@@ -438,14 +491,12 @@ public class IndexAPIImpl implements IndexAPI {
      * provider gets the bare name. This is what makes lifecycle ops (clear/open/close/replicas)
      * a faithful mirror across both engines instead of silently hitting only ES.
      *
-     * <p>Site-search indices are the exception — their OS copy is NOT {@code .os}-tagged (separate
-     * cluster, own {@code siteSearch} slot), so they stay bare on both engines.</p>
+     * <p>Applies uniformly, including site-search indices: their OpenSearch copy is now
+     * {@code .os}-tagged like every other migrated index (issue #36672), so no carve-out is needed.</p>
      */
     private String providerName(final IndexAPI provider, final String indexName) {
         final String logical = IndexTag.OS.untag(indexName);
-        return provider == router.osImpl() && !IndexType.SITE_SEARCH.is(logical)
-                ? IndexTag.OS.tag(logical)
-                : logical;
+        return provider == router.osImpl() ? IndexTag.OS.tag(logical) : logical;
     }
 
     @Override

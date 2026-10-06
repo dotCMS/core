@@ -1,4 +1,5 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
@@ -283,7 +284,7 @@ describe('DotHistoryTimelineItemComponent', () => {
             spectator.setInput('item', { ...mockVersionItem, live: false, working: false });
             spectator.detectChanges();
 
-            const actionSpy = jest.spyOn(spectator.component.actionTriggered, 'emit');
+            const actionSpy = vi.spyOn(spectator.component.actionTriggered, 'emit');
             const restoreMenuItem = spectator.component
                 .$menuItems()
                 .find((item) => item.id === 'restore');
@@ -301,7 +302,7 @@ describe('DotHistoryTimelineItemComponent', () => {
             spectator.setInput('item', { ...mockVersionItem, live: true, working: false });
             spectator.detectChanges();
 
-            const actionSpy = jest.spyOn(spectator.component.actionTriggered, 'emit');
+            const actionSpy = vi.spyOn(spectator.component.actionTriggered, 'emit');
             const compareMenuItem = spectator.component
                 .$menuItems()
                 .find((item) => item.id === 'compare');
@@ -319,7 +320,7 @@ describe('DotHistoryTimelineItemComponent', () => {
             spectator.setInput('item', { ...mockVersionItem, live: false, working: false });
             spectator.detectChanges();
 
-            const actionSpy = jest.spyOn(spectator.component.actionTriggered, 'emit');
+            const actionSpy = vi.spyOn(spectator.component.actionTriggered, 'emit');
             const deleteMenuItem = spectator.component
                 .$menuItems()
                 .find((item) => item.id === 'delete');

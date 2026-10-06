@@ -1,4 +1,4 @@
-import { describe, expect, it } from '@jest/globals';
+import { describe, expect, it, vi } from 'vitest';
 
 import { NgStyle } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -114,7 +114,7 @@ describe('TemplateBuilderRowComponent', () => {
     });
 
     it('should trigger editRowStyleClass when clicking on editStyleClass button', () => {
-        const editRowStyleClassMock = jest.spyOn(component, 'editClasses');
+        const editRowStyleClassMock = vi.spyOn(component, 'editClasses');
         const button = fixture.debugElement.query(
             By.css('p-button[data-testid="row-style-class-button"]')
         );
@@ -131,7 +131,7 @@ describe('TemplateBuilderRowComponent', () => {
     });
 
     it('should trigger removeRow from store when clicking on deleteRow button and click yes', async () => {
-        const deleteMock = jest.spyOn(store, 'removeRow');
+        const deleteMock = vi.spyOn(store, 'removeRow');
 
         const removeConfirmDialog = fixture.debugElement.query(
             By.css('dotcms-remove-confirm-dialog')
@@ -146,7 +146,7 @@ describe('TemplateBuilderRowComponent', () => {
     });
 
     it('should not trigger removeRow from store when clicking on deleteRow button and click no', () => {
-        const deleteMock = jest.spyOn(store, 'removeRow');
+        const deleteMock = vi.spyOn(store, 'removeRow');
 
         const removeConfirmDialog = fixture.debugElement.query(
             By.css('dotcms-remove-confirm-dialog')

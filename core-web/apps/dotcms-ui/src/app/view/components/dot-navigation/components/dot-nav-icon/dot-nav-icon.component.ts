@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 
 import { DotIconComponent } from '@dotcms/ui';
 
@@ -6,6 +6,7 @@ import { DotIconComponent } from '@dotcms/ui';
     selector: 'dot-nav-icon',
     templateUrl: './dot-nav-icon.component.html',
     styleUrls: ['./dot-nav-icon.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [DotIconComponent]
 })
 export class DotNavIconComponent {

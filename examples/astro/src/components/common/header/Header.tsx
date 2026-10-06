@@ -1,8 +1,13 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { useIsEditMode } from "@/hooks";
 import { ReorderMenuButton } from "@/components/ui";
 import type { DotCMSNavigationItem } from "@dotcms/types";
-import { SearchButton, AISearchDialog } from "./components";
+import { SearchButton } from "./components";
+
+// The AI search dialog — and the `useAISearch` hook and dotCMS AI client behind it — is only
+// needed once the user actually opens search, so it is loaded on demand rather than shipped
+// with the initial island bundle.
+const AISearchDialog = lazy(() => import("./components/AISearchDialog"));
 
 interface HeaderProps {
   /** Navigation data from dotCMS containing menu structure */
@@ -36,6 +41,14 @@ function Header({ navigation }: HeaderProps) {
   const isEditMode = useIsEditMode();
   const navItems = navigation?.children;
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  // Mount the dialog on first open and leave it mounted, so its chunk is fetched only when
+  // search is used while its behaviour after that is unchanged.
+  const [hasOpenedSearch, setHasOpenedSearch] = useState(false);
+
+  const openSearch = () => {
+    setHasOpenedSearch(true);
+    setIsSearchOpen(true);
+  };
 
   return (
     <div className="flex items-center justify-between p-4 bg-violet-800">
@@ -49,12 +62,16 @@ function Header({ navigation }: HeaderProps) {
 
       <div className="flex items-center space-x-4">
         {navItems && <Navigation navItems={navItems} />}
-        <SearchButton onClick={() => setIsSearchOpen(true)} />
+        <SearchButton onClick={openSearch} />
       </div>
-      <AISearchDialog
-        isOpen={isSearchOpen}
-        onClose={() => setIsSearchOpen(false)}
-      />
+      {hasOpenedSearch && (
+        <Suspense fallback={null}>
+          <AISearchDialog
+            isOpen={isSearchOpen}
+            onClose={() => setIsSearchOpen(false)}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

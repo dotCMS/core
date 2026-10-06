@@ -4,7 +4,13 @@
              against the dialog header when the input gets keyboard focus. -->
         <div class="mt-1 flex justify-end" data-testid="pq-asset-list-search-bar">
             <p-iconField iconPosition="left">
-                <p-inputIcon styleClass="pi pi-search" />
+                <p-inputIcon>
+                    <span
+                        class="material-symbols-rounded text-xl! leading-none!"
+                        aria-hidden="true">
+                        search
+                    </span>
+                </p-inputIcon>
                 <input
                     pInputText
                     type="text"
@@ -62,19 +68,26 @@
                         <p-tag severity="secondary" [rounded]="false" [value]="asset.type" />
                     </td>
                     @if (allowRemove) {
-                        <td class="text-right" (click)="$event.stopPropagation()">
+                        <td class="pr-5 text-right" (click)="$event.stopPropagation()">
                             <p-button
-                                icon="pi pi-trash"
-                                severity="danger"
                                 [text]="true"
                                 [rounded]="true"
                                 size="small"
-                                styleClass="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
-                                [pTooltip]="'publishing-queue.asset-list.remove' | dm"
+                                severity="secondary"
+                                styleClass="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity h-8! w-8! min-w-0! p-0!"
+                                [pTooltip]="'publishing-queue.select-bundle.delete-tooltip' | dm"
                                 tooltipPosition="left"
-                                [attr.aria-label]="'publishing-queue.asset-list.remove' | dm"
                                 (onClick)="onRemoveAsset(asset)"
-                                data-testid="pq-asset-remove-btn" />
+                                [attr.aria-label]="
+                                    'publishing-queue.select-bundle.delete-tooltip' | dm
+                                "
+                                data-testid="pq-asset-remove-btn">
+                                <span
+                                    class="material-symbols-rounded text-lg! leading-none!"
+                                    aria-hidden="true">
+                                    delete
+                                </span>
+                            </p-button>
                         </td>
                     }
                 </tr>

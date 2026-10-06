@@ -1,5 +1,5 @@
-import { describe, expect, it, jest, beforeEach } from '@jest/globals';
-import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
+import { Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { computed, signal } from '@angular/core';
 
@@ -9,6 +9,7 @@ import { UveOptimisticSaveService } from './uve-optimistic-save.service';
 
 import { ActionPayload } from '../../shared/models';
 import { UVEStore } from '../../store/dot-uve.store';
+import { PageType } from '../../store/models';
 import { UveIframeMessengerService } from '../iframe-messenger/uve-iframe-messenger.service';
 
 const MOCK_ACTIVE_CONTENTLET: ActionPayload = {
@@ -30,9 +31,13 @@ const MOCK_ACTIVE_CONTENTLET: ActionPayload = {
     pageId: 'page-id'
 } as unknown as ActionPayload;
 
-const createMockPageAsset = (testPropValue = 'initial-value'): DotCMSPageAsset =>
+const createMockPageAsset = (
+    testPropValue = 'initial-value',
+    source: 'rest' | 'graphql' = 'graphql'
+): DotCMSPageAsset =>
     ({
         page: { identifier: 'page-id', title: 'Test Page' },
+        source,
         containers: {
             'container-id': {
                 contentlets: {
@@ -55,11 +60,13 @@ describe('UveOptimisticSaveService', () => {
     let service: UveOptimisticSaveService;
     let pageAssetSignal: ReturnType<typeof signal<DotCMSPageAsset | null>>;
     let includeClientResponse: ReturnType<typeof signal<boolean>>;
+    let pageTypeSignal: ReturnType<typeof signal<PageType>>;
     let mockUveStore: {
         pageAsset: ReturnType<typeof computed>;
-        setPageAsset: jest.Mock;
+        setPageAsset: Mock;
+        pageType: ReturnType<typeof signal<PageType>>;
     };
-    let mockIframeMessenger: { sendPageData: jest.Mock };
+    let mockIframeMessenger: { sendPageData: Mock; reloadPage: Mock };
 
     const createService = createServiceFactory({
         service: UveOptimisticSaveService,
@@ -78,9 +85,11 @@ describe('UveOptimisticSaveService', () => {
     beforeEach(() => {
         pageAssetSignal = signal<DotCMSPageAsset | null>(null);
         includeClientResponse = signal(true);
+        pageTypeSignal = signal<PageType>(PageType.HEADLESS);
 
         mockIframeMessenger = {
-            sendPageData: jest.fn()
+            sendPageData: vi.fn(),
+            reloadPage: vi.fn()
         };
 
         mockUveStore = {
@@ -89,9 +98,10 @@ describe('UveOptimisticSaveService', () => {
                 if (!asset) return null;
                 return includeClientResponse() ? { ...asset, clientResponse: asset } : { ...asset };
             }),
-            setPageAsset: jest.fn((payload: { pageAsset: DotCMSPageAsset | null }) => {
+            setPageAsset: vi.fn((payload: { pageAsset: DotCMSPageAsset | null }) => {
                 pageAssetSignal.set(payload?.pageAsset ?? null);
-            })
+            }),
+            pageType: pageTypeSignal
         };
 
         spectator = createService();
@@ -177,6 +187,44 @@ describe('UveOptimisticSaveService', () => {
             expect(mockIframeMessenger.sendPageData).not.toHaveBeenCalled();
         });
 
+        describe('headless provenance gate (#37097)', () => {
+            it('should not push (send reloadPage instead) on a HEADLESS page when the asset is REST-sourced', () => {
+                pageTypeSignal.set(PageType.HEADLESS);
+                pageAssetSignal.set(createMockPageAsset('initial-value', 'rest'));
+
+                service.updateIframeOptimistically(MOCK_ACTIVE_CONTENTLET, {
+                    testProp: 'updated-value'
+                });
+
+                expect(mockIframeMessenger.sendPageData).not.toHaveBeenCalled();
+                expect(mockIframeMessenger.reloadPage).toHaveBeenCalled();
+            });
+
+            it('should push on a HEADLESS page when the asset is GraphQL-sourced', () => {
+                pageTypeSignal.set(PageType.HEADLESS);
+                pageAssetSignal.set(createMockPageAsset('initial-value', 'graphql'));
+
+                service.updateIframeOptimistically(MOCK_ACTIVE_CONTENTLET, {
+                    testProp: 'updated-value'
+                });
+
+                expect(mockIframeMessenger.sendPageData).toHaveBeenCalledTimes(1);
+                expect(mockIframeMessenger.reloadPage).not.toHaveBeenCalled();
+            });
+
+            it('should push on a TRADITIONAL page regardless of source (regression)', () => {
+                pageTypeSignal.set(PageType.TRADITIONAL);
+                pageAssetSignal.set(createMockPageAsset('initial-value', 'rest'));
+
+                service.updateIframeOptimistically(MOCK_ACTIVE_CONTENTLET, {
+                    testProp: 'updated-value'
+                });
+
+                expect(mockIframeMessenger.sendPageData).toHaveBeenCalledTimes(1);
+                expect(mockIframeMessenger.reloadPage).not.toHaveBeenCalled();
+            });
+        });
+
         it('should strip .content, .requestMetadata, .clientResponse before cloning', () => {
             const dirtyAsset = {
                 ...createMockPageAsset(),
@@ -189,7 +237,7 @@ describe('UveOptimisticSaveService', () => {
 
             service.updateIframeOptimistically(MOCK_ACTIVE_CONTENTLET, { testProp: 'v' });
 
-            const { pageAsset } = (mockUveStore.setPageAsset as jest.Mock).mock.calls[0][0] as {
+            const { pageAsset } = (mockUveStore.setPageAsset as Mock).mock.calls[0][0] as {
                 pageAsset: DotCMSPageAsset & {
                     content?: unknown;
                     requestMetadata?: unknown;

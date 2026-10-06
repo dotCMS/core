@@ -55,6 +55,7 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
     public static final String WORKFLOWS = "workflows";
     public static final String SYSTEM_ACTION_MAPPINGS = "systemActionMappings";
     public static final String ENSURE = "ensure";
+    public static final String SYSTEM_PARAMETER_NAME = "system";
 
 
     private final ContentTypeAPI contentTypeAPI;
@@ -73,15 +74,18 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
     /**
      * Returns the total amount of the specified Base Content Types living in a list of Site.
      *
-     * @param condition Condition that the base Content Type needs to meet.
-     * @param type      The Base Content Type to search for.
-     * @param siteIds   One or more IDs of the Sites where the total amount of Content Types will be
-     *                  determined.
+     * @param condition          Condition that the base Content Type needs to meet.
+     * @param type               The Base Content Type to search for.
+     * @param siteIds            One or more IDs of the Sites where the total amount of Content
+     *                           Types will be determined.
+     * @param includeSystemTypes When {@code false}, system Content Types are excluded from the
+     *                           count so it stays consistent with the filtered item list.
      *
      * @return The total amount of Base Types living in the specified list of Site.
      */
-    private long getTotalRecords(final String condition, final BaseContentType type, final List<String> siteIds) {
-        return Sneaky.sneak(() ->this.contentTypeAPI.countForSites(condition, type, siteIds));
+    private long getTotalRecords(final String condition, final BaseContentType type, final List<String> siteIds,
+            final boolean includeSystemTypes) {
+        return Sneaky.sneak(() ->this.contentTypeAPI.countForSites(condition, type, siteIds, includeSystemTypes));
     }
 
     /**
@@ -134,6 +138,10 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
         final String siteId = Try.of(() -> extraParams.get(HOST_PARAMETER_ID).toString()).getOrElse(BLANK);
         final List<String> baseTypeNames = getBaseTypeNames(extraParams);
         final Set<BaseContentType> types = BaseContentType.fromNames(baseTypeNames); //This will get me BaseType Any if none is passed
+        // "system" is an "include system types" flag, default true (current behavior). Only an
+        // explicit FALSE excludes system Content Types via a dedicated predicate.
+        final Object systemParam = Objects.nonNull(extraParams) ? extraParams.get(SYSTEM_PARAMETER_NAME) : null;
+        final boolean includeSystemTypes = !Boolean.FALSE.equals(systemParam);
         try {
             long totalRecords = 0L;
             final PaginatedArrayList<Map<String, Object>> result = new PaginatedArrayList<>();
@@ -144,11 +152,11 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
             if (types.size() > 1 && !UtilMethods.isSet(varNamesList) && !UtilMethods.isSet(siteList)) {
                 // MULTI-TYPE EFFICIENT PATH: Use database UNION query for optimal performance
                 contentTypes = this.contentTypeAPI.searchMultipleTypes(filter, types, orderByParam,
-                        limit, offset, siteId, requestedContentTypes);
+                        limit, offset, siteId, requestedContentTypes, includeSystemTypes);
 
                 // Calculate total records across all types
                 for (final BaseContentType type : types) {
-                    totalRecords += getTotalRecords(filter, type, List.of(siteId));
+                    totalRecords += getTotalRecords(filter, type, List.of(siteId), includeSystemTypes);
                 }
             } else {
                 // SINGLE-TYPE OR SPECIAL CASES PATH: Use existing logic
@@ -169,11 +177,11 @@ public class ContentTypesPaginator implements PaginatorOrdered<Map<String, Objec
                             totalRecords = varNamesList.size();
                         }
                     } else if (UtilMethods.isSet(siteList)) {
-                        collectedContentTypes.addAll(this.contentTypeAPI.search(siteList, filter, type, orderByParam, limit, offset));
-                        totalRecords += this.getTotalRecords(BLANK, type, siteList);
+                        collectedContentTypes.addAll(this.contentTypeAPI.search(siteList, filter, type, orderByParam, limit, offset, null, includeSystemTypes));
+                        totalRecords += this.getTotalRecords(BLANK, type, siteList, includeSystemTypes);
                     } else {
-                        collectedContentTypes.addAll(this.contentTypeAPI.search(filter, type, orderByParam, limit, offset, siteId, requestedContentTypes));
-                        totalRecords += getTotalRecords(filter, type, List.of(siteId));
+                        collectedContentTypes.addAll(this.contentTypeAPI.search(filter, type, orderByParam, limit, offset, siteId, requestedContentTypes, includeSystemTypes));
+                        totalRecords += getTotalRecords(filter, type, List.of(siteId), includeSystemTypes);
                     }
                 }
 

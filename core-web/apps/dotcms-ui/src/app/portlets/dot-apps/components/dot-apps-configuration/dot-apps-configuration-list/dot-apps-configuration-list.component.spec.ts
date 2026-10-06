@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import { NgClass } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
@@ -81,7 +83,7 @@ describe('DotAppsConfigurationListComponent', () => {
         });
 
         it('should emit action for edit --> Site Item', () => {
-            jest.spyOn(component.edit, 'emit');
+            vi.spyOn(component.edit, 'emit');
             const siteItem = fixture.debugElement.queryAll(By.css('dot-apps-configuration-item'))[0]
                 .componentInstance;
 
@@ -91,7 +93,7 @@ describe('DotAppsConfigurationListComponent', () => {
         });
 
         it('should emit action for export --> Site Item', () => {
-            jest.spyOn(component.export, 'emit');
+            vi.spyOn(component.export, 'emit');
             const siteItem = fixture.debugElement.queryAll(By.css('dot-apps-configuration-item'))[0]
                 .componentInstance;
 
@@ -101,7 +103,7 @@ describe('DotAppsConfigurationListComponent', () => {
         });
 
         it('should emit action for delete --> Site Item', () => {
-            jest.spyOn(component.delete, 'emit');
+            vi.spyOn(component.delete, 'emit');
             const siteItem = fixture.debugElement.queryAll(By.css('dot-apps-configuration-item'))[0]
                 .componentInstance;
 
@@ -118,7 +120,7 @@ describe('DotAppsConfigurationListComponent', () => {
         });
 
         it('should Load More button emit action', () => {
-            jest.spyOn(component.loadData, 'emit');
+            vi.spyOn(component.loadData, 'emit');
             const loadMore = fixture.debugElement.query(
                 By.css('.dot-apps-configuration-list__show-more')
             );

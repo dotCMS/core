@@ -32,6 +32,11 @@ const NG_DEFAULT_VALIDATORS_ERRORS_MSG: Record<DefaultsNGValidatorsTypes, string
 @Component({
     selector: 'dot-field-validation-message',
     templateUrl: './dot-field-validation-message.component.html',
+    // The host must not be a box of its own: inside a `.field` (flex column, gap-1) an empty host
+    // still takes a flex slot, so a field that merely *can* show an error sat 3.5px lower than one
+    // that cannot. `contents` makes the `<small>` the flex item and leaves nothing behind when
+    // there is no error to show.
+    styles: ':host { display: contents; }',
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [DotMessagePipe]
 })

@@ -1,5 +1,6 @@
-import { createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { fakeAsync, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -53,8 +54,8 @@ describe('DotDeviceSelectorComponent', () => {
 
     it('should emit the selected Device', () => {
         const pSelect = spectator.debugElement.query(By.css('p-select'));
-        jest.spyOn(spectator.component.selected, 'emit');
-        jest.spyOn(spectator.component, 'change');
+        vi.spyOn(spectator.component.selected, 'emit');
+        vi.spyOn(spectator.component, 'change');
 
         pSelect.triggerEventHandler('onChange', { value: mockDotDevices });
 
@@ -76,7 +77,7 @@ describe('DotDeviceSelectorComponent', () => {
     });
 
     it('should reload options when value change', () => {
-        jest.spyOn(dotDeviceService, 'get');
+        vi.spyOn(dotDeviceService, 'get');
         spectator.setInput('value', { ...mockDotDevices[1] });
         spectator.detectChanges();
         expect(dotDeviceService.get).toHaveBeenCalledTimes(1);
@@ -88,7 +89,7 @@ describe('DotDeviceSelectorComponent', () => {
         beforeEach(fakeAsync(() => {
             disabledSpectator = createComponent({ props: { value: mockDotDevices[0] } });
             const service = disabledSpectator.debugElement.injector.get(DotDevicesService);
-            jest.spyOn(service, 'get').mockReturnValue(of([]));
+            vi.spyOn(service, 'get').mockReturnValue(of([]));
             disabledSpectator.setInput('value', { ...mockDotDevices[1], inode: 'other' });
             tick();
             disabledSpectator.detectChanges();

@@ -1,6 +1,6 @@
 {
     "name": "@dotcms/ai",
-    "version": "0.1.0",
+    "version": "1.5.6",
     "description": "The dotCMS agentic runtime — run model-written or human-written code safely against a dotCMS instance, with auth and policy owned in one place.",
     "repository": {
         "type": "git",
@@ -16,14 +16,34 @@
     },
     "exports": {
         "./package.json": "./package.json",
-        "./runtime": "./src/runtime.ts",
-        "./sandbox": "./src/sandbox/index.ts",
-        "./adapter": "./src/adapter/index.ts",
-        "./spec": "./src/spec/index.ts"
+        "./runtime": {
+            "module": "./runtime.esm.js",
+            "types": "./runtime.d.ts",
+            "import": "./runtime.cjs.mjs",
+            "default": "./runtime.cjs.js"
+        },
+        "./sandbox": {
+            "module": "./runtime.esm.js",
+            "types": "./src/sandbox/index.d.ts",
+            "import": "./runtime.cjs.mjs",
+            "default": "./runtime.cjs.js"
+        },
+        "./adapter": {
+            "module": "./runtime.esm.js",
+            "types": "./src/adapter/index.d.ts",
+            "import": "./runtime.cjs.mjs",
+            "default": "./runtime.cjs.js"
+        },
+        "./spec": {
+            "module": "./spec.esm.js",
+            "types": "./src/spec/index.d.ts",
+            "import": "./spec.cjs.js",
+            "default": "./spec.cjs.js"
+        }
     },
     "typesVersions": {
         "*": {
-            "runtime": ["./src/runtime.d.ts"],
+            "runtime": ["./runtime.d.ts"],
             "sandbox": ["./src/sandbox/index.d.ts"],
             "adapter": ["./src/adapter/index.d.ts"],
             "spec": ["./src/spec/index.d.ts"]

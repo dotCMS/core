@@ -6,6 +6,7 @@ import static com.dotcms.security.apps.AppsUtil.digest;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.auth.providers.jwt.factories.SigningKeyFactory;
 import com.dotcms.enterprise.cluster.ClusterFactory;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
@@ -20,24 +21,33 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
-import com.liferay.util.FileUtil;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.control.Try;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
+import java.nio.channels.FileChannel;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.PosixFilePermissions;
+import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.KeyStore;
 import java.security.KeyStore.PasswordProtection;
 import java.security.KeyStore.SecretKeyEntry;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
@@ -60,12 +70,80 @@ public class SecretsKeyStoreHelper {
     private static final String SECRETS_STORE_FILE = "dotSecretsStore.p12";
     private static final String SECRETS_STORE_KEYSTORE_TYPE = "pkcs12";
     private static final String SECRETS_STORE_SECRET_KEY_FACTORY_TYPE = "PBE";
-    private static final String SECRETS_STORE_LOAD_TRIES = "SECRETS_STORE_LOAD_TRIES";
-    private static final String SECRETS_KEYSTORE_FILE_PATH_KEY = "SECRETS_KEYSTORE_FILE_PATH_KEY";
+    static final String SECRETS_STORE_LOAD_TRIES = "SECRETS_STORE_LOAD_TRIES";
+
+    /**
+     * Whether an App secrets store that cannot be loaded may be backed up and replaced with an
+     * empty one. Defaults to {@code false}: the store on disk is the only copy of every App
+     * credential, and a backup taken at that point is encrypted with the password that just
+     * failed, so replacing it is not a recovery -- it is the data loss reported in issue #36724.
+     */
+    static final String SECRETS_STORE_AUTO_RECREATE = "SECRETS_STORE_AUTO_RECREATE";
+
+    /**
+     * Base delay between attempts to re-read the store. Multiplied by the attempt number, so the
+     * default rides out roughly 300ms of a concurrent write on another node.
+     */
+    private static final String SECRETS_STORE_LOAD_RETRY_BACKOFF_MILLIS =
+            "SECRETS_STORE_LOAD_RETRY_BACKOFF_MILLIS";
+
+    /**
+     * How often a persistently unreadable store may be reported.
+     *
+     * Every consumer of a secret wraps its read defensively -- typically
+     * {@code Try.of(() -> getSecrets(...)).getOrElse(Optional.empty())} -- so a store this node
+     * cannot open degrades each App to "not configured" rather than raising into the request. The
+     * upside is that a mismatched store never takes an instance down; the downside is that the
+     * ERROR logged here is the only signal, and it would otherwise be emitted on every read: once
+     * per page render that touches a secret, per login attempt, per content save. An actionable
+     * message repeated thousands of times is not actionable, so it is reported once per interval.
+     */
+    private static final String SECRETS_STORE_LOAD_FAILURE_REPORT_INTERVAL_MILLIS =
+            "SECRETS_STORE_LOAD_FAILURE_REPORT_INTERVAL_MILLIS";
+
+    static final String SECRETS_KEYSTORE_FILE_PATH_KEY = "SECRETS_KEYSTORE_FILE_PATH_KEY";
     private static final String APPS_KEY_PROVIDER_CLASS = "APPS_KEY_PROVIDER_CLASS";
     private final String secretsKeyStorePath;
     private final List<StoreCreatedListener> storeCreatedListeners;
     private final Supplier<char[]> passwordSupplier;
+
+    /**
+     * When this instance last reported an unreadable store. Per-instance rather than static so that
+     * two helpers pointed at different stores cannot silence each other.
+     */
+    private final AtomicLong lastLoadFailureReportAt = new AtomicLong(0);
+
+    /**
+     * When this instance last exhausted its attempts and gave up, or 0 if the last read succeeded.
+     *
+     * Used to stop paying the retry backoff over and over for a failure already known to be
+     * persistent. The wrong-password case never retries -- an integrity failure is deterministic and
+     * breaks immediately -- but a truncated or zero-byte store raises an IOException with no
+     * UnrecoverableKeyException cause, which is indistinguishable from a torn read mid-write and so
+     * is retried. Verified against the JDK: a half-truncated store gives EOFException and a
+     * zero-byte one a bare IOException, neither with that cause. Now that a store is preserved
+     * rather than wiped and rebuilt, that state persists, and every read -- page render, login,
+     * content save -- would burn the full backoff (300ms at defaults) before degrading.
+     */
+    private final AtomicLong lastTerminalFailureAt = new AtomicLong(0);
+
+    /**
+     * Whether the admin notification for an unreadable store has already been raised in this JVM.
+     *
+     * Separate from {@link #lastLoadFailureReportAt}, and deliberately a one-shot latch rather than
+     * an interval: a log line is a stream, but a notification is a persisted row and a permanent
+     * item in an administrator's tray. Repeating it says nothing new. Measured on a container with
+     * the report interval shortened to 10s, a store left unreadable for five minutes produced 20
+     * notification rows; at the 60s default that is still thousands a day for a store nobody has
+     * got round to fixing. The recurring signal belongs in the log; the notification only has to
+     * say "go and look" once.
+     *
+     * Static, so it is one notification per JVM rather than per helper instance -- an operator does
+     * not need the same instruction twice because two components each hold a helper. A store that
+     * breaks again after being fixed re-notifies on the next restart, which in practice is how a
+     * salt or password change arrives anyway.
+     */
+    private static final AtomicBoolean LOAD_FAILURE_NOTIFIED = new AtomicBoolean(false);
 
     @VisibleForTesting
     public static String getSecretStorePath() {
@@ -124,33 +202,266 @@ public class SecretsKeyStoreHelper {
     */
     @VisibleForTesting
     KeyStore getSecretsStore() {
-        try {
-            final KeyStore keyStore = KeyStore.getInstance(SECRETS_STORE_KEYSTORE_TYPE);
-            final int maxLoadTries = Config.getIntProperty(SECRETS_STORE_LOAD_TRIES, 2);
+        return loadSecretsStore(true);
+    }
 
-            int tryCount = 1;
-            while (tryCount <= maxLoadTries) {
-                final File secretStoreFile = createStoreIfNeeded();
-                try (InputStream inputStream = Files.newInputStream(secretStoreFile.toPath())) {
-                    keyStore.load(inputStream, passwordSupplier.get());
-                    Logger.info(SecretsKeyStoreHelper.class,
-                            String.format("KeyStore loaded successfully after `%d` tries.", tryCount));
-                    break;
-                } catch (IOException gse) {
-                    //IOException wraps the underlying UnrecoverableKeyException
-                    Try.of(() -> handleStorageLoadException(gse));
-                    tryCount++;
+    /**
+     * @param allowRecreate whether a terminal failure may fall back to
+     *        {@link #handleUnrecoverableLoad(IOException, boolean)}'s destructive path. False on the
+     *        single retry after a recreate, so a store that still cannot be loaded raises instead of
+     *        recursing forever.
+     */
+    private KeyStore loadSecretsStore(final boolean allowRecreate) {
+
+        // Created at most once per call, deliberately OUTSIDE the retry loop below. Calling
+        // createStoreIfNeeded() on every attempt is what allowed a transient failure to be
+        // "recovered" into a brand new empty store: the first attempt deleted the file, the second
+        // recreated it empty, loaded it cleanly and reported success (issue #36724).
+        final File secretStoreFile = createStoreIfNeeded();
+
+        // Floored at one attempt. A configured 0 or a negative value would skip the loop entirely,
+        // leaving no failure to report, and the terminal handler would then declare a perfectly
+        // intact store permanently unreadable on this node -- with a diagnosis pointing at a
+        // password or corruption problem that does not exist. One attempt is the minimum that can
+        // answer the question the method was asked.
+        final int configuredTries = Math.max(1,
+                Config.getIntProperty(SECRETS_STORE_LOAD_TRIES, 3));
+        // Retrying only helps a genuinely transient failure. If this instance already exhausted its
+        // attempts recently, the condition is persistent, so try once and degrade instead of
+        // sleeping through the backoff on every read. The window is the report interval: once it
+        // lapses the full retry budget returns, so a store that has since been fixed is picked up.
+        final int maxLoadTries = recentlyFailedTerminally() ? 1 : configuredTries;
+        // Floored at zero: a negative backoff would make Thread.sleep throw
+        // IllegalArgumentException, which is not an IOException and would escape the retry loop.
+        final long backoffMillis = Math.max(0L,
+                Config.getLongProperty(SECRETS_STORE_LOAD_RETRY_BACKOFF_MILLIS, 100));
+
+        IOException lastFailure = null;
+        boolean interrupted = false;
+
+        for (int tryCount = 1; tryCount <= maxLoadTries; tryCount++) {
+            try (InputStream inputStream = Files.newInputStream(secretStoreFile.toPath())) {
+
+                final KeyStore keyStore = KeyStore.getInstance(SECRETS_STORE_KEYSTORE_TYPE);
+                keyStore.load(inputStream, passwordSupplier.get());
+
+                lastTerminalFailureAt.set(0);
+
+                if (tryCount > 1) {
+                    Logger.info(SecretsKeyStoreHelper.class, String.format(
+                            "App secrets store recovered on attempt %d of %d.", tryCount,
+                            maxLoadTries));
                 }
+                return keyStore;
+
+            } catch (IOException e) {
+                lastFailure = e;
+
+                // An integrity failure is deterministic -- either the password is wrong or the
+                // bytes are genuinely corrupt. Re-reading cannot change the outcome, so stop
+                // rather than spend the remaining attempts on it.
+                if (isIntegrityFailure(e) || tryCount == maxLoadTries) {
+                    break;
+                }
+
+                Logger.warn(SecretsKeyStoreHelper.class, String.format(
+                        "Could not read the App secrets store on attempt %d of %d (%s); retrying."
+                                + " Another node may be writing it.",
+                        tryCount, maxLoadTries, e.getMessage()));
+
+                try {
+                    Thread.sleep(backoffMillis * tryCount);
+                } catch (final InterruptedException ie) {
+                    // Thread.sleep clears the interrupt flag when it throws, so restore it: the
+                    // caller -- a shutdown hook, a request timeout -- is entitled to see that this
+                    // thread was interrupted. Stop retrying too, rather than sleeping again on a
+                    // thread that has been asked to stop; the loop falls through to the terminal
+                    // handler, which preserves the store and raises.
+                    Thread.currentThread().interrupt();
+                    interrupted = true;
+                    break;
+                }
+
+            } catch (GeneralSecurityException e) {
+                Logger.error(this.getClass(),
+                        "Unable to load secrets store " + SECRETS_STORE_FILE + ": " + e.getMessage(), e);
+                throw new DotRuntimeException(e);
             }
-
-            return keyStore;
-
-        } catch (Exception e) {
-            Logger.debug(this.getClass(),
-                    "Unable to load secrets store " + SECRETS_STORE_FILE + ": " + e);
-            throw new DotRuntimeException(e);
         }
 
+        // An interrupt says nothing about the store, so it must not suppress the retry budget for
+        // the next caller.
+        if (!interrupted) {
+            lastTerminalFailureAt.set(System.currentTimeMillis());
+        }
+
+        return handleUnrecoverableLoad(lastFailure, allowRecreate, interrupted);
+    }
+
+    /**
+     * Distinguishes "cannot decrypt" from "cannot read".
+     *
+     * A PKCS12 integrity failure -- a wrong password, or corrupt content -- arrives as an
+     * {@link IOException} wrapping an {@link UnrecoverableKeyException}. A torn, truncated or
+     * missing file does not, and is worth retrying. Before issue #36724 both were handled
+     * identically, which is why a password mismatch destroyed the store just as readily as
+     * corruption did.
+     */
+    private static boolean isIntegrityFailure(final IOException e) {
+        return null != e && e.getCause() instanceof UnrecoverableKeyException;
+    }
+
+    /**
+     * Whether this instance gave up on a read within the report interval, meaning the failure is
+     * already known to be persistent and retrying would only add latency.
+     */
+    private boolean recentlyFailedTerminally() {
+        final long last = lastTerminalFailureAt.get();
+        if (0 == last) {
+            return false;
+        }
+        final long interval = Config
+                .getLongProperty(SECRETS_STORE_LOAD_FAILURE_REPORT_INTERVAL_MILLIS, 60000);
+        return System.currentTimeMillis() - last < interval;
+    }
+
+    /**
+     * Raises the admin notification for an unreadable store at most once per JVM.
+     * See {@link #LOAD_FAILURE_NOTIFIED}.
+     */
+    private void notifyLoadFailureOnce() {
+        // Claim the latch first so only one thread sends, then release it again if the send failed.
+        // Latching unconditionally would lose the notification for the life of the JVM whenever
+        // sendFailureNotification() throws -- and it is most likely to throw during exactly the
+        // outage that made the store unreadable, since it needs a role lookup and a database write.
+        // Releasing lets the next read try again; the throttled ERROR keeps reporting meanwhile.
+        if (LOAD_FAILURE_NOTIFIED.compareAndSet(false, true)
+                && Try.run(this::sendFailureNotification)
+                        .onFailure(e -> Logger.warnAndDebug(SecretsKeyStoreHelper.class,
+                                "Could not notify administrators that the App secrets store is"
+                                        + " unreadable; will retry on a later read: " + e.getMessage(), e))
+                        .isFailure()) {
+            LOAD_FAILURE_NOTIFIED.set(false);
+        }
+    }
+
+    /**
+     * Whether the admin notification has yet been raised in this JVM. Only for tests to assert the
+     * one-shot behaviour without generating notification rows.
+     */
+    @VisibleForTesting
+    static boolean hasNotifiedLoadFailure() {
+        return LOAD_FAILURE_NOTIFIED.get();
+    }
+
+    /**
+     * Clears the notification latch. Tests only.
+     *
+     * The latch is static and never resets in production, deliberately -- see
+     * {@link #LOAD_FAILURE_NOTIFIED}. Within one Surefire fork that means it stays set once any test
+     * trips it, so without this a test could only ever assert {@code true}, and asserting the
+     * false-to-true transition or "not notified yet" would silently depend on which siblings ran
+     * first. Call it in setup rather than teardown, so a test is unaffected by whatever ran before.
+     */
+    @VisibleForTesting
+    static void resetNotifiedLoadFailureLatch() {
+        LOAD_FAILURE_NOTIFIED.set(false);
+    }
+
+    /**
+     * Whether the ERROR for an unreadable store should be logged now, rate-limited to one per
+     * {@link #SECRETS_STORE_LOAD_FAILURE_REPORT_INTERVAL_MILLIS}. The first failure always logs.
+     *
+     * Covers the log line only. The admin notification is a separate one-shot latch --
+     * {@link #notifyLoadFailureOnce()} -- because a persisted notification row should not repeat on
+     * an interval the way a log line can.
+     */
+    @VisibleForTesting
+    boolean shouldReportLoadFailure() {
+        final long interval = Config
+                .getLongProperty(SECRETS_STORE_LOAD_FAILURE_REPORT_INTERVAL_MILLIS, 60000);
+        final long now = System.currentTimeMillis();
+        final long last = lastLoadFailureReportAt.get();
+
+        return now - last > interval && lastLoadFailureReportAt.compareAndSet(last, now);
+    }
+
+    /**
+     * Terminal handler for a store that could not be loaded after every attempt.
+     *
+     * It does not delete anything unless an operator has explicitly opted in via
+     * {@link #SECRETS_STORE_AUTO_RECREATE}. Because {@link #saveValue(String, char[])} loads the
+     * store before mutating it, throwing here also prevents a caller from writing a
+     * nearly-empty store over a file that is intact but merely unreadable by this node.
+     */
+    private KeyStore handleUnrecoverableLoad(final IOException cause, final boolean allowRecreate,
+            final boolean interrupted) {
+
+        // The interrupted case is reported for what it is. Falling through to "could not be read"
+        // would blame the store for a shutdown or a request timeout, sending an operator looking for
+        // a corrupt file or a salt mismatch that does not exist.
+        final String diagnosis;
+        if (interrupted) {
+            diagnosis = "the thread was interrupted while waiting to re-read it, so the read was"
+                    + " abandoned. The store itself may well be fine; this usually means a shutdown"
+                    + " or a request timeout, not a problem with the file";
+        } else if (isIntegrityFailure(cause)) {
+            diagnosis = "the store could not be decrypted. The password is derived from the cluster"
+                    + " salt, so this usually means the salt changed or SECRETS_KEYSTORE_PASSWORD_KEY"
+                    + " differs between nodes";
+        } else {
+            diagnosis = "the store could not be read";
+        }
+
+        // An interrupt never justifies the destructive path, even with SECRETS_STORE_AUTO_RECREATE
+        // enabled. Nothing has been learned about the store: the read was abandoned before it could
+        // fail on its own merits. Backing it up and replacing it with an empty one here would let a
+        // shutdown or a request timeout discard every App credential.
+        if (interrupted || !allowRecreate
+                || !Config.getBooleanProperty(SECRETS_STORE_AUTO_RECREATE, false)) {
+
+            // The store is preserved, so this state persists until an operator fixes it -- and every
+            // read lands here again. Report it periodically instead of once per read; see
+            // SECRETS_STORE_LOAD_FAILURE_REPORT_INTERVAL_MILLIS.
+            if (shouldReportLoadFailure()) {
+                Logger.error(SecretsKeyStoreHelper.class, String.format(
+                        "Unable to load the App secrets store '%s': %s. The existing store has been"
+                                + " LEFT IN PLACE and no secrets were lost. Apps will not work until"
+                                + " this is resolved. Restore the correct salt/password, or set"
+                                + " %s=true to back it up and start over -- which DISCARDS every"
+                                + " stored App credential.",
+                        secretsKeyStorePath, diagnosis, SECRETS_STORE_AUTO_RECREATE), cause);
+            } else {
+                Logger.debug(SecretsKeyStoreHelper.class,
+                        () -> "App secrets store is still unreadable: " + diagnosis);
+            }
+
+            // Not on the interrupted path. The notification latch is one-shot for the life of the
+            // JVM, so spending it here -- on a read that was abandoned, where the diagnosis above
+            // says the store may well be fine -- would silently suppress the notification for a
+            // genuinely unreadable store failing later in the same JVM. The throttled ERROR still
+            // fires either way, so the signal is not lost, only the one-time "go and look".
+            if (!interrupted) {
+                notifyLoadFailureOnce();
+            }
+
+            throw new SecretsStoreUnreadableException(
+                    "Unable to load the App secrets store: " + diagnosis, cause);
+        }
+
+        // The destructive path runs once and then succeeds, so it is never throttled.
+        Try.run(this::sendFailureNotification);
+        Logger.error(SecretsKeyStoreHelper.class, String.format(
+                "Unable to load the App secrets store '%s': %s. %s is enabled, so it will be backed"
+                        + " up and replaced with an EMPTY store. Every App credential must be"
+                        + " re-entered; note the backup is encrypted with the same password that"
+                        + " just failed.",
+                secretsKeyStorePath, diagnosis, SECRETS_STORE_AUTO_RECREATE), cause);
+
+        Sneaky.sneaked(this::backupAndRemoveKeyStore).run();
+        // allowRecreate=false: if the freshly created store also fails to load, raise rather than
+        // recurse into another backup-and-delete cycle.
+        return loadSecretsStore(false);
     }
 
 
@@ -163,18 +474,122 @@ public class SecretsKeyStoreHelper {
      */
     private KeyStore saveSecretsStore(final KeyStore keyStore) {
         final File secretStoreFile = new File(secretsKeyStorePath);
-        final File secretStoreFileTmp = new File(secretStoreFile.getParent(), "dotSecretsStore_" + System.currentTimeMillis() + ".p12.tmp");
+        secretStoreFile.getParentFile().mkdirs();
 
-        secretStoreFileTmp.getParentFile().mkdirs();
-        try (OutputStream fos = Files.newOutputStream(secretStoreFileTmp.toPath())) {
-            keyStore.store(fos, passwordSupplier.get());
-            FileUtil.copyFile(secretStoreFileTmp, secretStoreFile);
-            secretStoreFileTmp.delete();
+        File secretStoreFileTmp = null;
+        try {
+            // Unique per writer, and in the destination's own directory because an atomic move is
+            // only available within a single filesystem.
+            //
+            // The name used to be derived from currentTimeMillis() alone, so two saves on this node
+            // landing in the same millisecond resolved to the same path, both opened it, and
+            // interleaved -- and publishAtomically would then rename the interleaved result into
+            // place as the live store. That used to be self-correcting, because a store that failed
+            // to load was wiped and rebuilt; now that the store is preserved (issue #36724), such a
+            // collision would leave it corrupt until an operator intervened.
+            //
+            // createTempFile also creates the file with owner-only permissions on POSIX, so the tmp
+            // never exists world-readable in the window before restrictPermissions runs.
+            secretStoreFileTmp = Files.createTempFile(secretStoreFile.getParentFile().toPath(),
+                    SECRETS_STORE_FILE + "_", ".tmp").toFile();
+
+            try (FileOutputStream fos = new FileOutputStream(secretStoreFileTmp)) {
+                keyStore.store(fos, passwordSupplier.get());
+                fos.flush();
+                // The rename below must not publish bytes that are still buffered.
+                fos.getFD().sync();
+            }
+
+            restrictPermissions(secretStoreFileTmp);
+            publishAtomically(secretStoreFileTmp, secretStoreFile);
+
         } catch (Exception e) {
-            Logger.error(this.getClass(), "unable to save secrets store " + secretStoreFileTmp + ": " + e);
+            Logger.error(this.getClass(),
+                    "unable to save secrets store " + secretStoreFileTmp + ": " + e, e);
             throw new DotRuntimeException(e);
+        } finally {
+            // The old code only deleted the tmp file on the happy path, leaking a copy of every
+            // secret on any failure.
+            final File tmpToClean = secretStoreFileTmp;
+            if (null != tmpToClean) {
+                Try.run(() -> Files.deleteIfExists(tmpToClean.toPath()));
+            }
         }
         return keyStore;
+    }
+
+    /**
+     * Publishes the store by renaming the tmp file over it, so a concurrent reader -- including one
+     * on another cluster node sharing this file -- sees either the whole previous store or the whole
+     * new one. Never a partial write, and never a missing file.
+     *
+     * Deliberately not {@code FileUtil.copyFile}, which this method replaced. That utility exists
+     * for content versioning and either hard-links (deleting the destination first) or truncates the
+     * destination and streams the bytes back in. Both leave the shared store empty or partial for a
+     * window, which is defects B1 and B2 of issue #36724.
+     */
+    private static void publishAtomically(final File source, final File destination)
+            throws IOException {
+        try {
+            Files.move(source.toPath(), destination.toPath(),
+                    StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+        } catch (AtomicMoveNotSupportedException e) {
+            Logger.warn(SecretsKeyStoreHelper.class, String.format(
+                    "The filesystem holding '%s' does not support atomic moves; falling back to a"
+                            + " non-atomic replace. Concurrent readers on other nodes may observe a"
+                            + " partial store on this filesystem.", destination), e);
+            Files.move(source.toPath(), destination.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        }
+
+        syncDirectory(destination.toPath().getParent());
+    }
+
+    /**
+     * Flushes the directory entry created by the rename, so the new name survives a crash.
+     *
+     * The tmp file's own contents are fsynced before the move, but that only guarantees the bytes.
+     * Without this, a crash in the window right after the rename can leave the directory entry
+     * unpersisted and the store reverts to its previous version. That is a much smaller exposure
+     * than the bug this class was changed to fix -- the previous version is a complete, readable
+     * store, so what is lost is the most recent save rather than every credential -- and it is
+     * strictly better than the truncate-and-stream it replaced, which could leave a partial file.
+     * Given the goal is not to lose the store, it is worth closing.
+     *
+     * Never fatal. Opening a directory as a channel works on Linux and macOS (verified on both, JDK
+     * 25) but is not guaranteed across every filesystem, and a save that reached this point has
+     * already been published successfully.
+     */
+    private static void syncDirectory(final Path directory) {
+        if (null == directory) {
+            return;
+        }
+        try (FileChannel channel = FileChannel.open(directory, StandardOpenOption.READ)) {
+            channel.force(true);
+        } catch (Exception e) {
+            Logger.debug(SecretsKeyStoreHelper.class, () -> String.format(
+                    "Could not flush the directory entry for '%s' (%s). The store is published; only"
+                            + " crash durability of the rename is affected.",
+                    directory, e.getMessage()));
+        }
+    }
+
+    /**
+     * Restricts the file to owner read/write.
+     *
+     * Applied to the tmp file *before* it is moved into place, because the published store inherits
+     * the tmp file's permissions. Previously both the tmp file and the store were created with
+     * whatever the default umask allowed, in a directory shared across the cluster.
+     */
+    private static void restrictPermissions(final File file) {
+        try {
+            final Path path = file.toPath();
+            if (path.getFileSystem().supportedFileAttributeViews().contains("posix")) {
+                Files.setPosixFilePermissions(path, PosixFilePermissions.fromString("rw-------"));
+            }
+        } catch (Exception e) {
+            Logger.warn(SecretsKeyStoreHelper.class,
+                    "Unable to restrict permissions on the App secrets store: " + e.getMessage());
+        }
     }
 
     /**
@@ -208,8 +623,27 @@ public class SecretsKeyStoreHelper {
                 return null;
             }
 
-        } catch (Exception e) {
-            Logger.error(SecretsKeyStoreHelper.class,e);
+        } catch (final Exception e) {
+            // An unreadable store has already been diagnosed and reported by handleUnrecoverableLoad,
+            // at ERROR and throttled to once per SECRETS_STORE_LOAD_FAILURE_REPORT_INTERVAL_MILLIS.
+            // Logging a second, un-throttled stack trace here would undo that: since issue #36724 the
+            // store is preserved rather than wiped, so the condition persists until an operator fixes
+            // it, and nothing caches a failed read -- SecretCachedKeyStoreImpl.getValue only caches
+            // what the supplier returns, so every getSecrets() on every request re-enters this method
+            // and would re-log. That is exactly the per-read flood this PR removes elsewhere, and the
+            // sibling containsKey() path already avoids it by logging at debug
+            // (SecretCachedKeyStoreImpl:59).
+            //
+            // Anything else reaching this catch is genuinely unexpected and still logs loudly.
+            if (ExceptionUtil.causedBy(e, SecretsStoreUnreadableException.class)) {
+                Logger.debug(SecretsKeyStoreHelper.class, () -> String.format(
+                        "Secrets store is unreadable; failing the read for key '%s'. Already reported.",
+                        variableKey));
+            } else {
+                Logger.error(SecretsKeyStoreHelper.class, e);
+            }
+            // Wrapped exactly as before: callers match this condition on the cause chain, so the
+            // shape they see must not change.
             throw new DotRuntimeException(e);
         }
     }
@@ -375,22 +809,6 @@ public class SecretsKeyStoreHelper {
                 new I18NMessage("apps.fail.recover.secrets.notification", null), null, // no actions
                 NotificationLevel.WARNING, NotificationType.GENERIC, Visibility.ROLE, cmsAdminRole.getId(), systemUser.getUserId(),
                 systemUser.getLocale());
-    }
-
-    /**
-     * handles the any security exception when loading the keyStore
-     * on failure the p12 store is back-up and then gets removed.
-     * @param gse
-     * @throws DotDataException
-     * @throws IOException
-     */
-    private boolean handleStorageLoadException(final IOException gse) throws DotDataException, IOException {
-        Logger.warn(SecretsKeyStoreHelper.class,
-                "Failed to recover secrets from key/store. The keyStore will be backup and then removed. A new empty store will be generated.",
-                gse);
-        backupAndRemoveKeyStore();
-        sendFailureNotification();
-        return true;
     }
 
     @FunctionalInterface

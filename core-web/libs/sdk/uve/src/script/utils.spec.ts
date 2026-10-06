@@ -1,3 +1,5 @@
+import { MockInstance, vi } from 'vitest';
+
 import { DotCMSUVEAction } from '@dotcms/types';
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 
@@ -13,16 +15,16 @@ import { DOT_SECTION_ID_PREFIX } from '../internal/constants';
 import { onScrollToSection } from '../internal/events';
 
 describe('scrollHandler', () => {
-    let postMessageSpy: jest.SpyInstance;
+    let postMessageSpy: MockInstance;
     let destroyScrollHandler: () => void;
 
     beforeEach(() => {
-        postMessageSpy = jest.spyOn(window.parent, 'postMessage').mockImplementation(jest.fn());
+        postMessageSpy = vi.spyOn(window.parent, 'postMessage').mockImplementation(vi.fn());
     });
 
     afterEach(() => {
         destroyScrollHandler?.();
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('sends IFRAME_SCROLL on window scroll', () => {
@@ -55,8 +57,8 @@ describe('scrollHandler', () => {
     it('binds through Zone.js native listeners when Zone is present, not the patched ones', () => {
         // Simulate a Zone.js-loaded page: expose the unpatched native methods
         // under the __zone_symbol__ keys the way Zone.js stashes them.
-        const nativeAdd = jest.fn();
-        const nativeRemove = jest.fn();
+        const nativeAdd = vi.fn();
+        const nativeRemove = vi.fn();
         const win = window as unknown as Record<string, unknown>;
 
         try {
@@ -65,7 +67,7 @@ describe('scrollHandler', () => {
             (globalThis as unknown as { Zone: unknown }).Zone = {
                 __symbol__: (name: string) => `__zone_symbol__${name}`
             };
-            const patchedAddSpy = jest.spyOn(window, 'addEventListener');
+            const patchedAddSpy = vi.spyOn(window, 'addEventListener');
 
             ({ destroyScrollHandler } = scrollHandler());
 
@@ -121,14 +123,14 @@ describe('addClassToEmptyContentlets', () => {
 });
 
 describe('setClientIsReady', () => {
-    let postMessageSpy: jest.SpyInstance;
+    let postMessageSpy: MockInstance;
 
     beforeEach(() => {
-        postMessageSpy = jest.spyOn(window.parent, 'postMessage').mockImplementation(jest.fn());
+        postMessageSpy = vi.spyOn(window.parent, 'postMessage').mockImplementation(vi.fn());
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('sends CLIENT_READY with no payload when called without config', () => {
@@ -153,17 +155,17 @@ describe('setClientIsReady', () => {
 
 describe('listenBlockEditorInlineEvent', () => {
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         document.body.innerHTML = '';
     });
 
     it('adds a DOMContentLoaded listener when readyState is not "complete"', () => {
         Object.defineProperty(document, 'readyState', {
             configurable: true,
-            get: jest.fn().mockReturnValue('loading')
+            get: vi.fn().mockReturnValue('loading')
         });
 
-        const addEventListenerSpy = jest.spyOn(document, 'addEventListener');
+        const addEventListenerSpy = vi.spyOn(document, 'addEventListener');
         listenBlockEditorInlineEvent();
 
         expect(addEventListenerSpy).toHaveBeenCalledWith('DOMContentLoaded', expect.any(Function));
@@ -172,10 +174,10 @@ describe('listenBlockEditorInlineEvent', () => {
     it('removes the DOMContentLoaded listener via destroyListenBlockEditorInlineEvent', () => {
         Object.defineProperty(document, 'readyState', {
             configurable: true,
-            get: jest.fn().mockReturnValue('loading')
+            get: vi.fn().mockReturnValue('loading')
         });
 
-        const removeEventListenerSpy = jest.spyOn(document, 'removeEventListener');
+        const removeEventListenerSpy = vi.spyOn(document, 'removeEventListener');
         const { destroyListenBlockEditorInlineEvent } = listenBlockEditorInlineEvent();
         destroyListenBlockEditorInlineEvent();
 
@@ -188,10 +190,10 @@ describe('listenBlockEditorInlineEvent', () => {
     it('does not add a DOMContentLoaded listener when readyState is "complete"', () => {
         Object.defineProperty(document, 'readyState', {
             configurable: true,
-            get: jest.fn().mockReturnValue('complete')
+            get: vi.fn().mockReturnValue('complete')
         });
 
-        const addEventListenerSpy = jest.spyOn(document, 'addEventListener');
+        const addEventListenerSpy = vi.spyOn(document, 'addEventListener');
         listenBlockEditorInlineEvent();
 
         expect(addEventListenerSpy).not.toHaveBeenCalledWith(
@@ -203,7 +205,7 @@ describe('listenBlockEditorInlineEvent', () => {
 
 describe('injectEmptyStateStyles', () => {
     afterEach(() => {
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
         document.head
             .querySelectorAll('[data-dot-styles="uve-empty-state"]')
             .forEach((el) => el.remove());
@@ -254,7 +256,7 @@ describe('injectEmptyStateStyles', () => {
     });
 
     it('falls back to the default label when localStorage JSON is malformed', () => {
-        jest.spyOn(Storage.prototype, 'getItem').mockReturnValue('not-valid-json');
+        vi.spyOn(Storage.prototype, 'getItem').mockReturnValue('not-valid-json');
 
         injectEmptyStateStyles();
 
@@ -284,11 +286,11 @@ describe('injectEmptyStateStyles', () => {
 });
 
 describe('onScrollToSection', () => {
-    let postMessageSpy: jest.SpyInstance;
+    let postMessageSpy: MockInstance;
     let unsubscribe: () => void;
 
     beforeEach(() => {
-        postMessageSpy = jest.spyOn(window.parent, 'postMessage').mockImplementation(jest.fn());
+        postMessageSpy = vi.spyOn(window.parent, 'postMessage').mockImplementation(vi.fn());
         ({ unsubscribe } = onScrollToSection((payload) => {
             window.parent.postMessage({ action: DotCMSUVEAction.SECTION_OFFSET, payload }, '*');
         }));
@@ -297,7 +299,7 @@ describe('onScrollToSection', () => {
     afterEach(() => {
         unsubscribe();
         document.body.innerHTML = '';
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('sends SECTION_OFFSET with offsetTop when the element is found via dot-section-{n}', () => {

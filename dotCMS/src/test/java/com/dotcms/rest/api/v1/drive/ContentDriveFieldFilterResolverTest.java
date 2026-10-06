@@ -2,274 +2,233 @@ package com.dotcms.rest.api.v1.drive;
 
 import com.dotcms.browser.FieldSearchCriteria;
 import com.dotcms.browser.FieldSearchCriteria.FilterKind;
-import com.dotcms.browser.FieldSearchCriteria.RoutingBucket;
-import com.dotcms.contenttype.model.field.BinaryField;
-import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.CheckboxField;
+import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.Field;
-import com.dotcms.contenttype.model.field.MultiSelectField;
-import com.dotcms.contenttype.model.field.RelationshipField;
-import com.dotcms.contenttype.model.field.SelectField;
-import com.dotcms.contenttype.model.field.TagField;
-import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.RadioField;
+import com.dotcms.contenttype.model.field.TimeField;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotcms.rest.exception.BadRequestException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.HashMap;
+import org.junit.Test;
+
 import java.util.List;
 import java.util.Map;
-import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
- * Fast, dependency-free unit tests for {@link ContentDriveFieldFilterResolver}: the value-shape →
- * {@link FilterKind} inference, the field-type → {@link RoutingBucket} routing, and every 400
- * validation path. Content types and fields are mocked, so this runs under surefire with no DB or
- * index.
+ * Unit tests for {@link ContentDriveFieldFilterResolver} — how a raw {@code userSearchable} value
+ * shape is validated against the field it names.
+ *
+ * <p>The value's JSON shape, not the field's data type, is what picks the operator: a boolean means
+ * {@link FilterKind#BOOLEAN}, and that kind is only accepted for a Checkbox. So a True/False
+ * <em>Radio</em> has to be filtered with the scalar string the UI sends, and the data-type-first
+ * handler routing is what turns it into an exact boolean term downstream. Sending a JSON boolean for
+ * one is rejected with HTTP 400 before any query is built — which is easy to get wrong, because the
+ * field really is a boolean.</p>
+ *
+ * <p>Needs no database: a {@link ContentType} and its fields are immutables.</p>
  */
 public class ContentDriveFieldFilterResolverTest {
 
+    private static final String RADIO_VAR = "runReport";
+    private static final String CHECKBOX_VAR = "active";
+    private static final String DATE_VAR = "postingDate";
+    private static final String TIME_VAR = "startTime";
+
     private final ContentDriveFieldFilterResolver resolver = new ContentDriveFieldFilterResolver();
-    private final ObjectMapper mapper = new ObjectMapper();
 
     /**
-     * Builds a mock content type whose {@code fieldMap} exposes one searchable+indexed field per
-     * supported type, plus a couple of rejectable fields.
+     * A content type carrying the two shapes that matter here: a True/False Radio (BOOL data type,
+     * authored with db-style option values) and a single-option Checkbox.
      */
-    private ContentType contentTypeWithAllFields() {
-        final Map<String, Field> fields = new HashMap<>();
-        fields.put("textF", searchableField(TextField.class));
-        fields.put("selectF", searchableField(SelectField.class));
-        fields.put("multiF", searchableField(MultiSelectField.class));
-        fields.put("checkboxF", searchableField(CheckboxField.class));
-        fields.put("dateF", searchableField(DateTimeField.class));
-        fields.put("tagF", searchableField(TagField.class));
-        fields.put("categoryF", searchableField(CategoryField.class));
-        fields.put("relationshipF", searchableField(RelationshipField.class));
-        fields.put("binaryF", searchableField(BinaryField.class));
-        fields.put("notSearchableF", flaggedField(TextField.class, false, true));
+    private ContentType contentType() {
+        final Field radio = FieldBuilder.builder(RadioField.class)
+                .name(RADIO_VAR)
+                .variable(RADIO_VAR)
+                .dataType(DataTypes.BOOL)
+                .values("Yes|1\r\nNo|0")
+                .searchable(true)
+                .indexed(true)
+                .build();
 
-        final ContentType contentType = mock(ContentType.class);
-        when(contentType.variable()).thenReturn("myCt");
-        when(contentType.fieldMap()).thenReturn(fields);
-        return contentType;
+        final Field checkbox = FieldBuilder.builder(CheckboxField.class)
+                .name(CHECKBOX_VAR)
+                .variable(CHECKBOX_VAR)
+                .values("yes")
+                .searchable(true)
+                .indexed(true)
+                .build();
+
+        final Field date = FieldBuilder.builder(DateTimeField.class)
+                .name(DATE_VAR)
+                .variable(DATE_VAR)
+                .searchable(true)
+                .indexed(true)
+                .build();
+
+        final Field time = FieldBuilder.builder(TimeField.class)
+                .name(TIME_VAR)
+                .variable(TIME_VAR)
+                .searchable(true)
+                .indexed(true)
+                .build();
+
+        final ContentType type = ImmutableSimpleContentType.builder()
+                .name("Filter Fixture")
+                .variable("filterFixture")
+                .id("filter-fixture-id")
+                .build();
+
+        // Seeds the lazy field list directly. `fields()` otherwise resolves through
+        // APILocator.getContentTypeFieldAPI(), which would need a database.
+        type.constructWithFields(List.of(radio, checkbox, date, time));
+
+        return type;
     }
-
-    private Field searchableField(final Class<? extends Field> type) {
-        return flaggedField(type, true, true);
-    }
-
-    private Field flaggedField(final Class<? extends Field> type, final boolean searchable,
-            final boolean indexed) {
-        final Field field = mock(type);
-        when(field.searchable()).thenReturn(searchable);
-        when(field.indexed()).thenReturn(indexed);
-        return field;
-    }
-
-    private FieldSearchCriteria single(final ContentType ct, final String var, final Object value) {
-        final List<FieldSearchCriteria> criteria = resolver.parse(Map.of(var, value), ct);
-        assertEquals("expected exactly one criterion", 1, criteria.size());
-        return criteria.get(0);
-    }
-
-    // ---- value-shape → FilterKind inference + routing ----
-
-    @Test
-    public void textScalarRoutesToIndexAsScalar() {
-        final ContentType ct = contentTypeWithAllFields();
-        final FieldSearchCriteria c = single(ct, "textF", "angular");
-        assertEquals(FilterKind.SCALAR, c.getKind());
-        assertEquals(RoutingBucket.INDEX, c.getBucket());
-        assertEquals(List.of("angular"), c.getValues());
-    }
-
-    @Test
-    public void selectScalarRoutesToIndex() {
-        final ContentType ct = contentTypeWithAllFields();
-        assertEquals(RoutingBucket.INDEX, single(ct, "selectF", "news").getBucket());
-    }
-
-    @Test
-    public void multiSelectListRoutesToIndexAsMulti() {
-        final ContentType ct = contentTypeWithAllFields();
-        final FieldSearchCriteria c = single(ct, "multiF", List.of("a", "b"));
-        assertEquals(FilterKind.MULTI, c.getKind());
-        assertEquals(RoutingBucket.INDEX, c.getBucket());
-        assertEquals(List.of("a", "b"), c.getValues());
-    }
-
-    @Test
-    public void checkboxBooleanRoutesToIndexAsBoolean() {
-        final ContentType ct = contentTypeWithAllFields();
-        final FieldSearchCriteria c = single(ct, "checkboxF", Boolean.TRUE);
-        assertEquals(FilterKind.BOOLEAN, c.getKind());
-        assertEquals(Boolean.TRUE, c.getBooleanValue());
-    }
-
-    @Test
-    public void checkboxListRoutesToIndexAsMulti() {
-        final ContentType ct = contentTypeWithAllFields();
-        assertEquals(FilterKind.MULTI, single(ct, "checkboxF", List.of("x", "y")).getKind());
-    }
-
-    @Test
-    public void dateRangeRoutesToIndexAsRange() {
-        final ContentType ct = contentTypeWithAllFields();
-        final FieldSearchCriteria c = single(ct, "dateF", Map.of("from", "2024-01-01", "to", "2025-01-01"));
-        assertEquals(FilterKind.RANGE, c.getKind());
-        assertEquals(RoutingBucket.INDEX, c.getBucket());
-        assertEquals("2024-01-01", c.getRangeFrom());
-        assertEquals("2025-01-01", c.getRangeTo());
-    }
-
-    @Test
-    public void openEndedRangeKeepsOnlyOneBound() {
-        final ContentType ct = contentTypeWithAllFields();
-        final Map<String, Object> onlyFrom = new HashMap<>();
-        onlyFrom.put("from", "2024-01-01");
-        final FieldSearchCriteria c = single(ct, "dateF", onlyFrom);
-        assertEquals("2024-01-01", c.getRangeFrom());
-        assertEquals(null, c.getRangeTo());
-    }
-
-    @Test
-    public void tagListRoutesToDatabase() {
-        final ContentType ct = contentTypeWithAllFields();
-        final FieldSearchCriteria c = single(ct, "tagF", List.of("angular", "cms"));
-        assertEquals(FilterKind.MULTI, c.getKind());
-        assertEquals(RoutingBucket.DB, c.getBucket());
-    }
-
-    @Test
-    public void categoryListRoutesToIndex() {
-        final ContentType ct = contentTypeWithAllFields();
-        assertEquals(RoutingBucket.INDEX, single(ct, "categoryF", List.of("inode1")).getBucket());
-    }
-
-    @Test
-    public void numberScalarIsTreatedAsString() {
-        final ContentType ct = contentTypeWithAllFields();
-        assertEquals(List.of("42"), single(ct, "textF", 42).getValues());
-    }
-
-    // ---- 400 validation paths ----
-
-    @Test
-    public void unknownKeyIsRejected() {
-        final ContentType ct = contentTypeWithAllFields();
-        assertThrows(BadRequestException.class,
-                () -> resolver.parse(Map.of("doesNotExist", "x"), ct));
-    }
-
-    @Test
-    public void nonSearchableFieldIsRejected() {
-        final ContentType ct = contentTypeWithAllFields();
-        assertThrows(BadRequestException.class,
-                () -> resolver.parse(Map.of("notSearchableF", "x"), ct));
-    }
-
-    @Test
-    public void relationshipListRoutesToDatabase() {
-        final ContentType ct = contentTypeWithAllFields();
-        final FieldSearchCriteria c = single(ct, "relationshipF", List.of("id1", "id2"));
-        assertEquals(FilterKind.MULTI, c.getKind());
-        assertEquals(RoutingBucket.DB, c.getBucket());
-        assertEquals(List.of("id1", "id2"), c.getValues());
-    }
-
-    @Test
-    public void relationshipScalarIdentifierRoutesToDatabase() {
-        final ContentType ct = contentTypeWithAllFields();
-        // A single identifier (not an array), e.g. a one-to-one relationship.
-        final FieldSearchCriteria c = single(ct, "relationshipF", "id1");
-        assertEquals(FilterKind.SCALAR, c.getKind());
-        assertEquals(RoutingBucket.DB, c.getBucket());
-        assertEquals(List.of("id1"), c.getValues());
-    }
-
-    @Test
-    public void tagScalarValueIsAccepted() {
-        final ContentType ct = contentTypeWithAllFields();
-        final FieldSearchCriteria c = single(ct, "tagF", "angular");
-        assertEquals(RoutingBucket.DB, c.getBucket());
-        assertEquals(List.of("angular"), c.getValues());
-    }
-
-    @Test
-    public void outOfScopeTypeIsRejected() {
-        final ContentType ct = contentTypeWithAllFields();
-        assertThrows(BadRequestException.class,
-                () -> resolver.parse(Map.of("binaryF", "x"), ct));
-    }
-
-    @Test
-    public void kindMismatchRangeOnTextIsRejected() {
-        final ContentType ct = contentTypeWithAllFields();
-        assertThrows(BadRequestException.class,
-                () -> resolver.parse(Map.of("textF", Map.of("from", "1", "to", "2")), ct));
-    }
-
-    @Test
-    public void blankRangeIsRejected() {
-        final ContentType ct = contentTypeWithAllFields();
-        assertThrows(BadRequestException.class,
-                () -> resolver.parse(Map.of("dateF", Map.of("from", "", "to", "")), ct));
-    }
-
-    @Test
-    public void emptyScalarIsRejected() {
-        final ContentType ct = contentTypeWithAllFields();
-        assertThrows(BadRequestException.class,
-                () -> resolver.parse(Map.of("textF", "   "), ct));
-    }
-
-    @Test
-    public void nullContentTypeWithFiltersIsRejected() {
-        assertThrows(BadRequestException.class,
-                () -> resolver.parse(Map.of("textF", "x"), null));
-    }
-
-    @Test
-    public void emptyMapReturnsNoCriteria() {
-        final ContentType ct = contentTypeWithAllFields();
-        assertTrue(resolver.parse(Map.of(), ct).isEmpty());
-    }
-
-    // ---- Jackson value shapes match inferKind branches ----
 
     /**
-     * Feeds the resolver with the exact runtime types Jackson produces from a JSON body (String,
-     * Boolean, List, LinkedHashMap, Integer) to confirm {@code inferKind} matches the real HTTP
-     * contract, not just hand-built Java types.
+     * The scalar string form the UI sends for a True/False Radio is accepted. This is the case that
+     * failed with HTTP 400 when the filter was expressed as a JSON boolean.
      */
     @Test
-    @SuppressWarnings("unchecked")
-    public void jacksonValueShapesInferCorrectKinds() throws Exception {
-        final String json = "{"
-                + "\"textF\": \"angular\","
-                + "\"multiF\": [\"a\", \"b\"],"
-                + "\"checkboxF\": true,"
-                + "\"dateF\": {\"from\": \"2024-01-01\", \"to\": \"2025-01-01\"},"
-                + "\"selectF\": 42"
-                + "}";
-        final Map<String, Object> userSearchable = mapper.readValue(json, Map.class);
-        final ContentType ct = contentTypeWithAllFields();
+    public void radioAcceptsAScalarStringValue() {
+        for (final String value : List.of("true", "false", "1", "0")) {
+            final List<FieldSearchCriteria> criteria =
+                    resolver.parse(Map.of(RADIO_VAR, value), contentType());
 
-        final Map<String, FilterKind> byField = new HashMap<>();
-        for (final FieldSearchCriteria c : resolver.parse(userSearchable, ct)) {
-            byField.put(c.getFieldVariable(), c.getKind());
+            assertEquals(1, criteria.size());
+            assertEquals("scalar operator for " + value,
+                    FilterKind.SCALAR, criteria.get(0).getKind());
+            assertTrue("value preserved for " + value,
+                    criteria.get(0).getValues().contains(value));
         }
-        assertEquals(FilterKind.SCALAR, byField.get("textF"));
-        assertEquals(FilterKind.MULTI, byField.get("multiF"));
-        assertEquals(FilterKind.BOOLEAN, byField.get("checkboxF"));
-        assertEquals(FilterKind.RANGE, byField.get("dateF"));
-        assertEquals(FilterKind.SCALAR, byField.get("selectF"));
+    }
+
+    /**
+     * A JSON boolean is read as a BOOLEAN filter, and that kind is Checkbox-only — so it is rejected
+     * for a Radio even though the field's data type IS boolean. Pinning this is the point: the
+     * integration test asked for exactly this and got a 400 rather than a wrong result set.
+     */
+    @Test
+    public void radioRejectsAJsonBooleanValue() {
+        final ContentType type = contentType();
+
+        assertThrows(BadRequestException.class,
+                () -> resolver.parse(Map.of(RADIO_VAR, true), type));
+        assertThrows(BadRequestException.class,
+                () -> resolver.parse(Map.of(RADIO_VAR, false), type));
+    }
+
+    /** A Checkbox is the one field a JSON boolean is valid for — ticked and unticked both. */
+    @Test
+    public void checkboxAcceptsAJsonBooleanValue() {
+        for (final Boolean value : List.of(Boolean.TRUE, Boolean.FALSE)) {
+            final List<FieldSearchCriteria> criteria =
+                    resolver.parse(Map.of(CHECKBOX_VAR, value), contentType());
+
+            assertEquals(1, criteria.size());
+            assertEquals(FilterKind.BOOLEAN, criteria.get(0).getKind());
+            assertEquals(value, criteria.get(0).getBooleanValue());
+        }
+    }
+
+    /** No filters is not an error, and needs no content type. */
+    @Test
+    public void emptyFiltersResolveToNothing() {
+        assertTrue(resolver.parse(Map.of(), contentType()).isEmpty());
+        assertTrue(resolver.parse(null, null).isEmpty());
+    }
+
+    /**
+     * A date range bound that is not a date is a bad request (issue #37488). Before, it was escaped
+     * and sent to the index, which rejected the query; the failure was swallowed and the filter
+     * silently matched nothing. Rejecting it here keeps user input from ever surfacing as a
+     * server-side index failure.
+     */
+    @Test
+    public void dateRangeWithUnparseableBoundIsRejected() {
+        final ContentType type = contentType();
+        for (final String bad : List.of("not-a-date", "not-a-date\"] OR title:*", "2024-13-45")) {
+            assertThrows("from=" + bad, BadRequestException.class,
+                    () -> resolver.parse(Map.of(DATE_VAR, Map.of("from", bad)), type));
+            assertThrows("to=" + bad, BadRequestException.class,
+                    () -> resolver.parse(Map.of(DATE_VAR, Map.of("to", bad)), type));
+        }
+    }
+
+    /**
+     * The shapes the client sends are accepted: a date, a wall-clock date-time, an instant, and
+     * {@code *} or a missing bound for an open-ended range.
+     */
+    @Test
+    public void dateRangeWithValidOrOpenBoundsIsAccepted() {
+        final ContentType type = contentType();
+        final List<Map<String, String>> ranges = List.of(
+                Map.of("from", "2024-01-01"),
+                Map.of("from", "2024-01-01T10:30:00", "to", "2024-12-31T23:59:59"),
+                Map.of("to", "2024-06-01T00:00:00Z"),
+                Map.of("from", "*", "to", "2025-01-01"));
+        for (final Map<String, String> range : ranges) {
+            final List<FieldSearchCriteria> criteria =
+                    resolver.parse(Map.of(DATE_VAR, range), type);
+            assertEquals("criteria for " + range, 1, criteria.size());
+            assertEquals(FilterKind.RANGE, criteria.get(0).getKind());
+        }
+    }
+
+    /**
+     * A Time field's range also accepts a bare time of day, which API clients send and the query
+     * builder matches against the indexed {@code HH:mm:ss} value, alongside the full ISO date-time
+     * the UI sends. Only the time part of the latter is compared.
+     */
+    @Test
+    public void timeRangeWithBareTimeIsAccepted() {
+        final ContentType type = contentType();
+        final List<Map<String, String>> ranges = List.of(
+                Map.of("from", "14:00:00", "to", "15:00:00"),
+                Map.of("from", "09:30"),
+                Map.of("from", "2025-01-01T14:00:00.000Z", "to", "2025-01-01T15:00:00.000Z"));
+        for (final Map<String, String> range : ranges) {
+            final List<FieldSearchCriteria> criteria =
+                    resolver.parse(Map.of(TIME_VAR, range), type);
+            assertEquals("criteria for " + range, 1, criteria.size());
+            assertEquals(FilterKind.RANGE, criteria.get(0).getKind());
+        }
+    }
+
+    /** A Time field's bound that is neither a time of day nor a date-time is a bad request. */
+    @Test
+    public void timeRangeWithUnparseableBoundIsRejected() {
+        final ContentType type = contentType();
+        for (final String bad : List.of("25:99:00", "noon", "14:00\"] OR title:*")) {
+            assertThrows("from=" + bad, BadRequestException.class,
+                    () -> resolver.parse(Map.of(TIME_VAR, Map.of("from", bad)), type));
+        }
+    }
+
+    /**
+     * A bare time is only a valid bound for a Time field; on a Date-Time field it names no day, so
+     * it stays a bad request.
+     */
+    @Test
+    public void dateRangeWithBareTimeIsRejected() {
+        final ContentType type = contentType();
+        assertThrows(BadRequestException.class,
+                () -> resolver.parse(Map.of(DATE_VAR, Map.of("from", "14:00:00")), type));
+    }
+
+    /** An unknown field name is a bad request rather than a silently ignored filter. */
+    @Test
+    public void unknownFieldIsRejected() {
+        final ContentType type = contentType();
+
+        assertThrows(BadRequestException.class,
+                () -> resolver.parse(Map.of("noSuchField", "x"), type));
     }
 }

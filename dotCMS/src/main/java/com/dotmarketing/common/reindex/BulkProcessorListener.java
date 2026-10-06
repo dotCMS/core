@@ -12,13 +12,16 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 /**
  * {@link IndexBulkListener} that handles the business logic before/after reindexing content.
@@ -35,6 +38,16 @@ public class BulkProcessorListener implements IndexBulkListener {
     final Map<String, ReindexEntry> workingRecords;
 
     static final List<String> RESERVED_IDS = List.of(Host.SYSTEM_HOST);
+
+    /** Stand-in used when the vendor reports a failed item without any message. */
+    static final String NO_FAILURE_MESSAGE = "(no failure message reported)";
+
+    /**
+     * Minimum gap between two systemic-rejection escalations for the same cause. Every batch is
+     * rejected while the cause lasts, so without a gap the escalation would flood the log at ERROR
+     * level — the very problem this reporting fixes.
+     */
+    private static final int ESCALATION_EVERY_MILLIS = (int) TimeUnit.MINUTES.toMillis(10);
 
     private volatile long contentletsIndexed;
     private int lastBatchSize;
@@ -110,11 +123,12 @@ public class BulkProcessorListener implements IndexBulkListener {
     @Override
     public void afterBulk(final long executionId, final List<IndexBulkItemResult> results) {
         if (shadow) {
-            // OS shadow — fire-and-forget; log individual failures for observability only
-            results.stream()
-                    .filter(IndexBulkItemResult::failed)
-                    .forEach(r -> logShadowWriteFailure(this.getClass(),
-                            "[OS] Index failure (fire-and-forget): " + r.failureMessage(), null));
+            // OS shadow — fire-and-forget, but summarised: a systemic rejection (permissions, TLS,
+            // unreachable cluster) repeats verbatim for every document in the batch, so logging one
+            // line per failed item buried the log — a real reindex emits hundreds of thousands of
+            // identical entries, hiding every other line including the actionable one below
+            // (observed on issue #36222, TC-056: ~900 identical WARNs in one minute).
+            reportShadowBatchFailures(results);
             return;
         }
         Logger.debug(this.getClass(), "Bulk process completed");
@@ -163,6 +177,140 @@ public class BulkProcessorListener implements IndexBulkListener {
         }
         Logger.error(ReindexThread.class, "Bulk process failed entirely: " + msg, failure);
         workingRecords.values().forEach(idx -> handleFailure(idx, msg));
+    }
+
+    /**
+     * Runs {@link #logShadowBatchFailures(List)} without ever letting it fail the callback.
+     *
+     * <p>Reporting a shadow failure must never become a failure itself. {@code flush()} of the
+     * OpenSearch adapter invokes this callback inside its own {@code try}, so a throw from here
+     * is re-entered as {@code afterBulk(executionId, throwable)} and logged as <em>"Bulk process
+     * failed entirely"</em> — a defect in the reporting would masquerade as the very condition
+     * this reporting exists to detect, on the signal an operator uses to decide whether the
+     * shadow store may be promoted.</p>
+     *
+     * <p>{@link Throwable}, not {@link Exception}, on purpose: the escalation path reaches
+     * {@code OSIndexAPIImpl} through {@link IndexConfigHelper#systemicFailureRemediation(String)},
+     * so a broken static initialiser in the OpenSearch adapter surfaces as an
+     * {@code ExceptionInInitializerError} / {@code NoClassDefFoundError}. Those are the failures
+     * worth containing here: nothing below catches them either
+     * ({@code CompositeBulkProcessor.close()} catches {@code Exception}, so its shadow-isolation
+     * branch is skipped) and they would reach {@code ReindexThread} as an opaque
+     * "ReindexThread Exception" naming neither OpenSearch nor the shadow store.</p>
+     *
+     * @param results every item result of the completed batch, successful ones included
+     */
+    private void reportShadowBatchFailures(final List<IndexBulkItemResult> results) {
+        try {
+            logShadowBatchFailures(results);
+        } catch (final Throwable t) { // NOSONAR - see javadoc: LinkageError is the case to contain
+            // Deliberately a plain warn: the recovery path must not re-enter the classifier that
+            // may have just failed, and a shadow-write reporting problem is not a reindex problem.
+            Logger.warn(this.getClass(), "[" + provider.name() + "] Unable to report shadow bulk"
+                    + " failures — indexing itself is unaffected: " + t, t);
+        }
+    }
+
+    /**
+     * Logs the failed items of a shadow bulk batch as one aggregated entry per distinct failure
+     * message, keeps the per-item detail at {@code DEBUG}, and escalates once when the whole batch
+     * was rejected for a systemic reason.
+     *
+     * @param results every item result of the completed batch, successful ones included
+     */
+    private void logShadowBatchFailures(final List<IndexBulkItemResult> results) {
+        final Map<String, Long> failuresByMessage = summarizeFailures(results);
+        if (failuresByMessage.isEmpty()) {
+            return;
+        }
+        final String tag = "[" + provider.name() + "] ";
+        failuresByMessage.forEach((message, count) -> logShadowWriteFailure(this.getClass(),
+                tag + "Index failure (fire-and-forget): " + count + " of " + results.size()
+                        + " item(s) in this batch — " + message, null));
+
+        if (Logger.isDebugEnabled(this.getClass())) {
+            results.stream()
+                    .filter(IndexBulkItemResult::failed)
+                    .forEach(result -> Logger.debug(this.getClass(), tag + "Failed item id="
+                            + result.id() + ": " + result.failureMessage()));
+        }
+
+        // Throttled by cause, not by time alone: the same rejection is reported at most once per
+        // ESCALATION_EVERY_MILLIS, while a different rejection is reported immediately.
+        systemicFailureEscalation(provider, results.size(), failuresByMessage)
+                .ifPresent(escalation -> Logger.errorEvery(this.getClass(),
+                        provider.name() + "|" + dominantFailure(failuresByMessage).orElse(""),
+                        escalation, ESCALATION_EVERY_MILLIS));
+    }
+
+    /**
+     * Counts the failed items of a batch grouped by failure message, preserving first-seen order.
+     * A systemic cause produces a single entry whose count equals the batch size; a per-document
+     * cause produces several entries, or one entry that covers only part of the batch.
+     *
+     * @param results every item result of the completed batch
+     * @return failure message → number of items that failed with it; empty when nothing failed
+     */
+    static Map<String, Long> summarizeFailures(final List<IndexBulkItemResult> results) {
+        final Map<String, Long> failuresByMessage = new LinkedHashMap<>();
+        for (final IndexBulkItemResult result : results) {
+            if (result.failed()) {
+                final String message = result.failureMessage();
+                failuresByMessage.merge(UtilMethods.isSet(message) ? message : NO_FAILURE_MESSAGE,
+                        1L, Long::sum);
+            }
+        }
+        return failuresByMessage;
+    }
+
+    /**
+     * Builds the actionable message for a shadow batch that was rejected <em>in full</em> for a
+     * systemic reason — the state where the shadow store silently stops receiving writes and
+     * diverges from the authoritative one, which must never be promoted by advancing the migration
+     * phase (issue #36222 follow-up: index creation was already covered by
+     * {@code ContentletIndexAPIImpl.handleOsBootstrapFailure}, the write path was not).
+     *
+     * <p>Deliberately silent unless <em>every</em> item failed: a partial failure is a per-document
+     * problem, and unclassifiable messages (mapping conflicts) are not migration blockers either.
+     * The phase is not reset here — a bulk rejection can be scoped to a single index, so the
+     * decision to halt is left to the operator, with this line and the readiness report as the
+     * signal.</p>
+     *
+     * @param provider          the shadow provider that rejected the batch
+     * @param batchSize         total items in the batch, successful ones included
+     * @param failuresByMessage output of {@link #summarizeFailures(List)}
+     * @return the escalation message, or empty when this batch does not warrant one
+     */
+    static Optional<String> systemicFailureEscalation(final IndexTag provider, final int batchSize,
+            final Map<String, Long> failuresByMessage) {
+        final long failed = failuresByMessage.values().stream().mapToLong(Long::longValue).sum();
+        if (batchSize <= 0 || failed < batchSize) {
+            return Optional.empty();
+        }
+        return dominantFailure(failuresByMessage)
+                .flatMap(dominant -> IndexConfigHelper
+                        .systemicFailureRemediation(dominant)
+                        .map(remediation -> "[" + provider.name() + "] EVERY document in this bulk"
+                                + " batch (" + batchSize + " item(s)) was rejected by "
+                                + provider.name() + " — likelyCause=" + remediation
+                                + ". The shadow store is NOT receiving writes and is diverging from"
+                                + " the authoritative store, so it must not be promoted: advancing"
+                                + " the migration phase would serve reads from a stale index."
+                                + " Fix the cause above, then run a full reindex to resynchronise."
+                                + " Rejection: " + dominant));
+    }
+
+    /**
+     * The failure message that accounts for most items of the batch. Doubles as the throttle
+     * identity of the escalation, so a change of cause is reported immediately.
+     *
+     * @param failuresByMessage output of {@link #summarizeFailures(List)}
+     * @return the dominant failure message, or empty when nothing failed
+     */
+    static Optional<String> dominantFailure(final Map<String, Long> failuresByMessage) {
+        return failuresByMessage.entrySet().stream()
+                .max(Map.Entry.comparingByValue())
+                .map(Map.Entry::getKey);
     }
 
     static String getMatchingReservedIdIfAny(final String id) {

@@ -2,6 +2,7 @@ package com.dotmarketing.business;
 
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.util.transform.TransformerLocator;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -17,7 +18,6 @@ import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.StringPool;
-import org.apache.logging.log4j.util.Strings;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -26,6 +26,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 
@@ -39,6 +40,24 @@ public class UserFactoryImpl implements UserFactory {
 
     private static final String USERID_COLUMN = "userid";
     private static final String AND_DELETE_IN_PROGRESS = " AND delete_in_progress = ";
+
+    /**
+     * Sort fields accepted by {@link #getUsersByName(String, List, int, int, UserAPI.FilteringParams)}, keyed by the
+     * exact API field name the Users portlet sends, mapped to the {@code ORDER BY} expression template for the
+     * {@code user_} table ({@code %1$s} is the direction). This map is deliberately local to the user query rather
+     * than an addition to the shared {@link SQLUtil} whitelist, which sixteen unrelated factories consult: the API
+     * names are not column names ({@code firstName} vs {@code firstname}) and must not leak into other tables' SQL.
+     * <ul>
+     *     <li>{@code firstName} breaks ties on {@code lastname} so same-named users keep a stable order.</li>
+     *     <li>{@code lastLoginDate} uses {@code NULLS LAST} in both directions: PostgreSQL sorts NULL first on
+     *     DESC, which would put never-logged-in users at the top of the portlet's default view.</li>
+     * </ul>
+     * Fields not in this map fall through to {@link SQLUtil#sanitizeSortBy(String)} exactly as before.
+     */
+    private static final Map<String, String> SORTABLE_USER_FIELDS = Map.of(
+            "firstName", "firstname %1$s, lastname %1$s",
+            "emailAddress", "emailaddress %1$s",
+            "lastLoginDate", "lastlogindate %1$s NULLS LAST");
 
     private final UserCache userCache;
 
@@ -101,6 +120,35 @@ public class UserFactoryImpl implements UserFactory {
         return defaultUser;
     }
 
+    /**
+     * Counts how many times {@link #loadUserById(String)} has actually queried the database
+     * (i.e. every cache miss), so tests can observe the thundering-herd fix for issue #37186
+     * (SC-001). No production code reads this — it exists purely to make DB round trips
+     * observable in unit/integration tests, since no query-counting harness existed before.
+     */
+    @VisibleForTesting
+    static final AtomicLong dbLookupCount = new AtomicLong(0);
+
+    @VisibleForTesting
+    static void incrementDbLookupCount() {
+        dbLookupCount.incrementAndGet();
+    }
+
+    /**
+     * Public (not package-private) despite {@code @VisibleForTesting}: the integration test for
+     * this counter lives in the separate {@code dotcms-integration} module, in package
+     * {@code com.dotcms.browser}, so package-private visibility would not reach it.
+     */
+    @VisibleForTesting
+    public static long getDbLookupCountForTesting() {
+        return dbLookupCount.get();
+    }
+
+    @VisibleForTesting
+    public static void resetDbLookupCountForTesting() {
+        dbLookupCount.set(0);
+    }
+
     @Override
     public User loadUserById(final String userId) throws DotDataException, NoSuchUserException {
         User user = userCache.get(userId);
@@ -111,6 +159,7 @@ public class UserFactoryImpl implements UserFactory {
                 dc.setSQL("select * from user_ where userid=?");
                 dc.addParam(userId.trim().toLowerCase());
                 List<Map<String, Object>> list = dc.loadObjectResults();
+                incrementDbLookupCount();
                 if(list.isEmpty()) {
                     throw new NoSuchUserException(userId);
                 }else{
@@ -160,43 +209,183 @@ public class UserFactoryImpl implements UserFactory {
 
     @Override
     public long getCountUsersByName(String filter, final List<Role> roles) {
-        filter = SQLUtil.sanitizeParameter(filter);
-        final DotConnect dotConnect = new DotConnect();
-        final boolean isFilteredByName = UtilMethods.isSet(filter);
-        filter = (isFilteredByName ? filter : Strings.EMPTY);
-        final StringBuilder baseSql = new StringBuilder(
-                "select count(*) as count from user_ where companyid <> ? and userid <> 'system' ");
-        if (UtilMethods.isSet(roles)) {
-            final String joinedRoleKeys = roles.stream().map(Role::getRoleKey)
-                    .map(s -> String.format("'%s'", s)).collect(Collectors.joining(","));
-            final String backendRoleFilter = String
-                    .format(" and exists ( select ur.user_id from users_cms_roles ur join cms_role r on ur.role_id = r.id where r.role_key in (%s) and ur.user_id = user_.userId )",
-                            joinedRoleKeys);
-            baseSql.append(backendRoleFilter);
-        }
+        return getCountUsersByName(filter, roles, new UserAPI.FilteringParams.Builder().build());
+    }
 
-        final String userFullName = DotConnect.concat(new String[]{"firstname", "' '", "lastname"});
+    @Override
+    public long getCountUsersByName(final String filter, final List<Role> roles,
+                                    final UserAPI.FilteringParams filteringParams) {
+        final StringBuilder baseSql = new StringBuilder("select count(*) as count from user_ where ");
+        baseSql.append(!filteringParams.includeDefaultUser() ? "companyid <> ? AND " : StringPool.BLANK);
+        baseSql.append(" userid <> 'system' ");
+        baseSql.append(!filteringParams.includeAnonymousUser() ? " AND userid <> 'anonymous' " : StringPool.BLANK);
+        appendRoleFilter(baseSql, roles);
 
+        final String sanitizeFilter = SQLUtil.sanitizeParameter(filter);
+        final boolean isFilteredByName = UtilMethods.isSet(sanitizeFilter);
         if (isFilteredByName) {
-            baseSql.append(" and lower(");
-            baseSql.append(userFullName);
-            baseSql.append(") like ?");
+            appendUserFilter(baseSql);
         }
 
         baseSql.append(AND_DELETE_IN_PROGRESS);
         baseSql.append(DbConnectionFactory.getDBFalse());
 
-        final String sql = baseSql.toString();
-        dotConnect.setSQL(sql);
+        final DotConnect dotConnect = new DotConnect();
+        dotConnect.setSQL(baseSql.toString());
         Logger.debug(UserFactoryImpl.class,
                 "::getCountUsersByName -> query: " + dotConnect.getSQL());
 
-        dotConnect.addParam(User.DEFAULT);
+        if (!filteringParams.includeDefaultUser()) {
+            dotConnect.addParam(User.DEFAULT);
+        }
+        addRoleFilterParams(dotConnect, roles);
         if (isFilteredByName) {
-            dotConnect.addParam("%" + filter.toLowerCase() + "%");
+            addUserFilterParams(dotConnect, sanitizeFilter);
         }
 
         return dotConnect.getInt("count");
+    }
+
+    /**
+     * Returns the SQL expressions that the user-search filter is matched against: user ID, first
+     * name, last name, email address, and the "first last" full name. Both the predicate and its
+     * bound parameters are derived from this list so they always stay in sync.
+     */
+    private static List<String> userFilterExpressions() {
+        final String userFullName = DotConnect.concat(new String[]{"firstname", "' '", "lastname"});
+        return List.of("lower(userid)", "lower(firstname)", "lower(lastname)",
+                "lower(emailaddress)", "lower(" + userFullName + ")");
+    }
+
+    /**
+     * Appends the parameterized predicate matching the user-search filter against every expression
+     * in {@link #userFilterExpressions()}. Callers must bind the filter value at the same SQL
+     * position via {@link #addUserFilterParams(DotConnect, String)}.
+     */
+    private static void appendUserFilter(final StringBuilder sql) {
+        sql.append(userFilterExpressions().stream()
+                .map(expression -> expression + " like ?")
+                .collect(Collectors.joining(" or ", " and (", ")")));
+    }
+
+    /**
+     * Binds one case-insensitive, partial-match parameter per expression appended by
+     * {@link #appendUserFilter(StringBuilder)}.
+     */
+    private static void addUserFilterParams(final DotConnect dotConnect, final String filter) {
+        final String likeParam = "%" + filter.toLowerCase() + "%";
+        userFilterExpressions().forEach(expression -> dotConnect.addParam(likeParam));
+    }
+
+    /**
+     * Appends the parameterized {@code EXISTS} sub-query restricting results to users that hold
+     * any of the specified Roles, matched by role id so roles without a roleKey are supported.
+     * Callers must bind one parameter per Role at the same SQL position via
+     * {@link #addRoleFilterParams(DotConnect, List)}.
+     */
+    private static void appendRoleFilter(final StringBuilder sql, final List<Role> roles) {
+        if (!UtilMethods.isSet(roles)) {
+            return;
+        }
+        final String placeholders = roles.stream().map(role -> "?")
+                .collect(Collectors.joining(StringPool.COMMA));
+        sql.append(" and exists ( select ur.user_id from users_cms_roles ur where ur.role_id in (")
+                .append(placeholders)
+                .append(") and ur.user_id = user_.userId )");
+    }
+
+    /**
+     * Binds the Role ids expected by the placeholders appended via
+     * {@link #appendRoleFilter(StringBuilder, List)}, resolving each id defensively through
+     * {@link #resolveRoleId(Role)}.
+     */
+    private static void addRoleFilterParams(final DotConnect dotConnect, final List<Role> roles) {
+        if (!UtilMethods.isSet(roles)) {
+            return;
+        }
+        roles.forEach(role -> dotConnect.addParam(resolveRoleId(role)));
+    }
+
+    /**
+     * Returns the role's id, falling back to a lookup by roleKey for Role instances that were
+     * not loaded through the API and carry only a key. A role that does not resolve returns
+     * null, which matches no users (the same behavior the previous role_key binding had for
+     * unresolvable roles). A lookup infrastructure failure propagates instead of masquerading
+     * as an empty result.
+     */
+    private static String resolveRoleId(final Role role) {
+        if (UtilMethods.isSet(role.getId())) {
+            return role.getId();
+        }
+        if (UtilMethods.isSet(role.getRoleKey())) {
+            try {
+                final Role loaded = APILocator.getRoleAPI().loadRoleByKey(role.getRoleKey());
+                if (null != loaded && UtilMethods.isSet(loaded.getId())) {
+                    return loaded.getId();
+                }
+            } catch (final DotDataException e) {
+                throw new DotRuntimeException(
+                        "Unable to resolve role id for roleKey: " + role.getRoleKey(), e);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Builds the {@code ORDER BY} clause (without the keyword) for {@link #getUsersByName(String, List, int, int,
+     * UserAPI.FilteringParams)}:
+     * <ol>
+     *     <li>No {@code orderBy}: the default expression in the requested direction (historically full name
+     *     ascending, since the direction defaults to ASC).</li>
+     *     <li>A key of {@link #SORTABLE_USER_FIELDS}: its template with the direction substituted; the shared
+     *     sanitizer is not consulted.</li>
+     *     <li>Anything else: {@link SQLUtil#sanitizeSortBy(String)} as before. A rejected term falls back to the
+     *     default expression. The direction is applied exactly once: a term the sanitizer returns with its own
+     *     direction -- a trailing {@code desc} or the leading-dash descending shorthand -- is honored as is, so
+     *     {@code mod_date desc} no longer becomes {@code mod_date desc asc} and {@code -mod_date} becomes
+     *     {@code mod_date desc} instead of the invalid {@code -mod_date asc}.</li>
+     * </ol>
+     *
+     * @param filteringParams   The filtering params carrying {@code orderBy} and {@code orderDirection}.
+     * @param defaultExpression The expression used when no valid sort field is provided.
+     *
+     * @return The clause to append after {@code order by}.
+     */
+    private static String buildOrderByClause(final UserAPI.FilteringParams filteringParams,
+                                             final String defaultExpression) {
+        final String direction = normalizeDirection(filteringParams.orderDirection());
+        final String defaultClause = defaultExpression + StringPool.SPACE + direction;
+        final String orderBy = filteringParams.orderBy();
+        if (!UtilMethods.isSet(orderBy)) {
+            return defaultClause;
+        }
+        final String template = SORTABLE_USER_FIELDS.get(orderBy.trim());
+        if (null != template) {
+            return String.format(template, direction);
+        }
+        final String sanitized = SQLUtil.sanitizeSortBy(orderBy);
+        if (!UtilMethods.isSet(sanitized)) {
+            return defaultClause;
+        }
+        // sanitizeSortBy encodes a caller-supplied direction in two shapes, and either wins over the direction
+        // param: a leading "-" (descending shorthand, e.g. "-mod_date") or a trailing " desc". It never returns a
+        // trailing " asc". Anything else gets the param applied exactly once.
+        if (sanitized.startsWith("-")) {
+            return sanitized.substring(1) + StringPool.SPACE + SQLUtil.DESC;
+        }
+        if (sanitized.toLowerCase().endsWith(SQLUtil._DESC)) {
+            return sanitized;
+        }
+        return sanitized + StringPool.SPACE + direction;
+    }
+
+    /**
+     * Reduces any direction spelling ({@code "DESC"}, {@code " desc"}, {@code null}) to {@link SQLUtil#ASC} or
+     * {@link SQLUtil#DESC}; anything that is not {@code desc} is ascending.
+     */
+    private static String normalizeDirection(final String direction) {
+        return UtilMethods.isSet(direction) && SQLUtil.DESC.equalsIgnoreCase(direction.trim())
+                ? SQLUtil.DESC : SQLUtil.ASC;
     }
 
     @Override
@@ -213,27 +402,16 @@ public class UserFactoryImpl implements UserFactory {
         baseSql.append(" userid <> 'system' ");
         baseSql.append(!filteringParams.includeAnonymousUser() ? " AND userid <> 'anonymous' " : StringPool.BLANK);
 
-        if (UtilMethods.isSet(roles)) {
-            final String joinedRoleKeys =
-                    roles.stream().map(Role::getRoleKey).map(s -> String.format("'%s'", s)).collect(Collectors.joining(StringPool.COMMA));
-            final String backendRoleFilter = String.format(" and exists ( select ur.user_id from users_cms_roles ur " +
-                                                                   "join cms_role r on ur.role_id = r.id where r" +
-                                                                   ".role_key in (%s) and ur.user_id = user_.userId )"
-                    , joinedRoleKeys);
-            baseSql.append(backendRoleFilter);
-        }
+        appendRoleFilter(baseSql, roles);
         final String userFullName = DotConnect.concat(new String[]{"firstname", "' '", "lastname"});
         final String sanitizeFilter = SQLUtil.sanitizeParameter(filter);
         boolean isFilteredByName = UtilMethods.isSet(sanitizeFilter);
         if (isFilteredByName) {
-            baseSql.append(" and lower(").append(userFullName).append(") like ?");
+            appendUserFilter(baseSql);
         }
         baseSql.append(AND_DELETE_IN_PROGRESS).append(DbConnectionFactory.getDBFalse());
 
-        baseSql.append(" order by ");
-        final String sanitizedOrderBy = SQLUtil.sanitizeSortBy(filteringParams.orderBy());
-        baseSql.append(UtilMethods.isSet(sanitizedOrderBy) ? sanitizedOrderBy : userFullName);
-        baseSql.append(UtilMethods.isSet(filteringParams.orderDirection()) ? filteringParams.orderDirection() : SQLUtil._ASC);
+        baseSql.append(" order by ").append(buildOrderByClause(filteringParams, userFullName));
 
         final String sql = baseSql.toString();
         final DotConnect dotConnect = new DotConnect();
@@ -242,8 +420,9 @@ public class UserFactoryImpl implements UserFactory {
         if (!filteringParams.includeDefaultUser()) {
             dotConnect.addParam(User.DEFAULT);
         }
+        addRoleFilterParams(dotConnect, roles);
         if (isFilteredByName) {
-            dotConnect.addParam("%" + sanitizeFilter.toLowerCase() + "%");
+            addUserFilterParams(dotConnect, sanitizeFilter);
         }
         if (start > -1) {
             dotConnect.setStartRow(start);

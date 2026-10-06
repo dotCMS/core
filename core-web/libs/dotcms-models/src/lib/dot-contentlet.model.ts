@@ -11,6 +11,15 @@ export interface DotCMSContentlet {
     binaryContentAsset?: string;
     binaryVersion?: string;
     contentType: string;
+    /**
+     * Whether the current user may edit the contentlet *right now* — stamped by the browser/drive
+     * search, not by the contentlet itself.
+     *
+     * True only when the caller has WRITE permission **and** holds the lock, so on a `locked` row a
+     * `false` means the lock belongs to somebody else. That makes it the cheapest available answer
+     * to "can I unlock this?", short of a per-item `_canlock` call.
+     */
+    contentEditable?: boolean;
     file?: string;
     folder: string;
     hasLiveVersion?: boolean;

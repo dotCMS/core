@@ -141,6 +141,14 @@ export class RouterEditContentHost implements EditContentHost {
         this.#navigationGuard(() => this.#navigateRepointingCurrentCrumb(inode));
     }
 
+    leaveDeletedContent(contentType: string): void {
+        // No unsaved-changes guard: the content is gone, so there is nothing to keep.
+        this.#router.navigate(['/c/content'], {
+            replaceUrl: true,
+            queryParams: { filter: contentType }
+        });
+    }
+
     goToRelatedContent(current: DotRelatedContentCrumb, target: DotRelatedContentCrumb): void {
         const trail = this.#relatedNav.appendToTrail(
             this.#relatedNav.trailInodes(),

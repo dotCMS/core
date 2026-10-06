@@ -1,4 +1,4 @@
-import { Component, Input, signal } from '@angular/core';
+import { Component, Input, signal, ChangeDetectionStrategy } from '@angular/core';
 
 import { UVE_MODE, BlockEditorNode } from '@dotcms/types';
 import { BlockEditorState } from '@dotcms/types/internal';
@@ -46,6 +46,7 @@ export type CustomRenderer = Record<string, DynamicComponentEntity>;
     selector: 'dotcms-block-editor-renderer',
     templateUrl: './dotcms-block-editor-renderer.component.html',
     styleUrls: ['./dotcms-block-editor-renderer.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [DotCMSBlockEditorItemComponent]
 })
 export class DotCMSBlockEditorRendererComponent {

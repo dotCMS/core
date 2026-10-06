@@ -728,14 +728,57 @@ public class LangChain4jModelFactoryTest {
     }
 
     /**
-     * Given an OpenRouter config,
+     * Given a valid OpenRouter config,
      * When buildEmbeddingModel is called,
-     * Then an UnsupportedOperationException is thrown since OpenRouter has no embeddings endpoint.
+     * Then an EmbeddingModel is returned successfully.
      */
     @Test
-    public void test_buildEmbeddingModel_openRouter_throws() {
-        assertThrows(UnsupportedOperationException.class,
-                () -> LangChain4jModelFactory.buildEmbeddingModel(openRouterConfig("openai/text-embedding-3-small")));
+    public void test_buildEmbeddingModel_openRouter_returnsModel() {
+        final EmbeddingModel model =
+                LangChain4jModelFactory.buildEmbeddingModel(openRouterConfig("openai/text-embedding-3-small"));
+        assertNotNull(model);
+    }
+
+    /**
+     * Given an OpenRouter embeddings config with a custom endpoint override,
+     * When buildEmbeddingModel is called,
+     * Then an EmbeddingModel is returned successfully.
+     */
+    @Test
+    public void test_buildEmbeddingModel_openRouter_customEndpoint_returnsModel() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .from(openRouterConfig("openai/text-embedding-3-small"))
+                .endpoint("https://custom.example.com/v1")
+                .build();
+        assertNotNull(LangChain4jModelFactory.buildEmbeddingModel(config));
+    }
+
+    /**
+     * Given an OpenRouter embeddings config without an apiKey,
+     * When buildEmbeddingModel is called,
+     * Then an IllegalArgumentException is thrown.
+     */
+    @Test
+    public void test_buildEmbeddingModel_openRouter_missingApiKey_throws() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("openrouter")
+                .model("openai/text-embedding-3-small")
+                .build();
+        assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildEmbeddingModel(config));
+    }
+
+    /**
+     * Given an OpenRouter embeddings config without a model,
+     * When buildEmbeddingModel is called,
+     * Then an IllegalArgumentException is thrown.
+     */
+    @Test
+    public void test_buildEmbeddingModel_openRouter_missingModel_throws() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("openrouter")
+                .apiKey("test-key")
+                .build();
+        assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildEmbeddingModel(config));
     }
 
     /**

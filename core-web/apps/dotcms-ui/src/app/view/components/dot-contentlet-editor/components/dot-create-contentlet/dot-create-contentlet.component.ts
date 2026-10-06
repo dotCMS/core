@@ -1,7 +1,14 @@
 import { merge, Observable } from 'rxjs';
 
 import { AsyncPipe } from '@angular/common';
-import { Component, EventEmitter, OnInit, Output, inject } from '@angular/core';
+import {
+    Component,
+    EventEmitter,
+    OnInit,
+    Output,
+    inject,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { filter, map } from 'rxjs/operators';
@@ -23,6 +30,7 @@ import { DotContentletWrapperComponent } from '../dot-contentlet-wrapper/dot-con
     selector: 'dot-create-contentlet',
     templateUrl: './dot-create-contentlet.component.html',
     styleUrls: ['./dot-create-contentlet.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [DotContentletWrapperComponent, AsyncPipe]
 })
 export class DotCreateContentletComponent implements OnInit {

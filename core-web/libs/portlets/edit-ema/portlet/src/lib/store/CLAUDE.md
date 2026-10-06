@@ -15,7 +15,6 @@ store/
     │   ├── withLock.ts       # Lock management
     │   ├── save/withSave.ts  # Save operations
     │   └── toolbar/withUVEToolbar.ts
-    ├── flags/withFlags.ts    # Feature flag signals
     ├── layout/withLayout.ts  # Layout tab computeds
     ├── track/withTrack.ts    # Analytics tracking
     ├── workflow/withWorkflow.ts
@@ -163,7 +162,7 @@ withSave → withLoad → withClient
 `withLoad` uses two `withMethods` calls: the first adds `updatePageParams` (no DI needed), the second injects all services. This is a workaround for ngrx/signals requiring methods to be available before they are used inside other methods. Do not collapse them into one block.
 
 ### Feature flag signals as a typed map
-`withFlags` fetches all feature flags from `DotPropertiesService` once and exposes them as a `flags()` signal: a strongly-typed record `UVEFlags`. Consuming features read individual flags via `flags().FEATURE_FLAG_*`. Never inject `DotPropertiesService` inside other features to read flags — always go through `flags()`.
+`withFlags` fetches all feature flags from `DotPropertiesService` once and exposes them as a `flags()` signal, typed from `UVE_FEATURE_FLAGS` (must be declared `as const` for the narrowing to apply). Consuming features read individual flags via `flags()[FeaturedFlags.FEATURE_FLAG_*]`. Never inject `DotPropertiesService` inside other features to read flags — always go through `flags()`.
 
 ### Debounced analytics
 `withTrack` wraps tracking calls in `DEBOUNCE_FOR_TRACKING` (5000ms) to avoid noise on rapid state changes. Always apply this wrapper to new tracking methods — raw analytics events on every signal change will flood the analytics backend.

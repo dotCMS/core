@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { of } from 'rxjs';
+import { MockInstance, vi } from 'vitest';
 
 import { TestBed, waitForAsync } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
@@ -38,7 +39,7 @@ route.queryParams = {};
 
 describe('DotIframePorletLegacyResolver', () => {
     let dotPageStateService: DotPageStateService;
-    let dotPageStateServiceRequestPageSpy: jest.SpyInstance;
+    let dotPageStateServiceRequestPageSpy: MockInstance;
     let resolver: DotIframePortletLegacyResolver;
     let dotLicenseService: DotLicenseService;
 
@@ -75,7 +76,7 @@ describe('DotIframePorletLegacyResolver', () => {
         });
 
         dotPageStateService = TestBed.inject(DotPageStateService);
-        dotPageStateServiceRequestPageSpy = jest.spyOn(dotPageStateService, 'requestPage');
+        dotPageStateServiceRequestPageSpy = vi.spyOn(dotPageStateService, 'requestPage');
         resolver = TestBed.inject(DotIframePortletLegacyResolver);
         dotLicenseService = TestBed.inject(DotLicenseService);
         state.url = '/rules';
@@ -84,7 +85,7 @@ describe('DotIframePorletLegacyResolver', () => {
     it('should return if user can access url to be rendered with current license', () => {
         const mock = new DotPageRenderState(mockUser(), new DotPageRender(mockDotRenderedPage()));
         dotPageStateServiceRequestPageSpy.mockReturnValue(of(mock));
-        jest.spyOn(dotLicenseService, 'canAccessEnterprisePortlet').mockReturnValue(of(true));
+        vi.spyOn(dotLicenseService, 'canAccessEnterprisePortlet').mockReturnValue(of(true));
 
         resolver.resolve(route, state).subscribe((canAccess: boolean) => {
             expect(canAccess).toEqual(true);

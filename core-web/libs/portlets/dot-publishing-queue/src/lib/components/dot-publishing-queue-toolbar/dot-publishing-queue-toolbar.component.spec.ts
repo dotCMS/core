@@ -1,11 +1,20 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { CUSTOM_ELEMENTS_SCHEMA, signal } from '@angular/core';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
-import { DotPublishingQueueToolbarComponent } from './dot-publishing-queue-toolbar.component';
+import {
+    DotPublishingQueueToolbarComponent,
+    SELECT_BUNDLE_ITEM_ID
+} from './dot-publishing-queue-toolbar.component';
 
 import { DotPublishingQueueStore } from '../../store/dot-publishing-queue.store';
 import { DotPublishingQueueStatusFilterComponent } from '../dot-publishing-queue-status-filter/dot-publishing-queue-status-filter.component';
@@ -16,15 +25,17 @@ describe('DotPublishingQueueToolbarComponent', () => {
 
     const bundlesSelectedIds = signal<string[]>([]);
     const bundlesTotal = signal<number>(0);
+    const draftBundlesTotal = signal<number | null>(null);
 
     function makeStoreStub() {
         return {
-            search: jest.fn().mockReturnValue(''),
-            setSearch: jest.fn(),
-            refresh: jest.fn(),
+            search: vi.fn().mockReturnValue(''),
+            setSearch: vi.fn(),
+            refresh: vi.fn(),
             bundlesSelectedIds,
             bundlesTotal,
-            retryBundles: jest.fn()
+            draftBundlesTotal,
+            retryBundles: vi.fn()
         };
     }
 
@@ -51,7 +62,11 @@ describe('DotPublishingQueueToolbarComponent', () => {
                     'publishing-queue.upload-bundle': 'Upload Bundle',
                     'publishing-queue.retry-send': 'Retry Send',
                     'publishing-queue.delete-bundles': 'Remove',
-                    'publishing-queue.selected': 'selected'
+                    'publishing-queue.selected': 'selected',
+                    'publishing-queue.bundles': 'Bundles',
+                    'publishing-queue.bundles.count': 'Bundles ({0})',
+                    'publishing-queue.add-bundle.select': 'Select Bundle',
+                    'publishing-queue.add-bundle.upload': 'Upload'
                 })
             }
         ],
@@ -59,18 +74,19 @@ describe('DotPublishingQueueToolbarComponent', () => {
     });
 
     beforeEach(() => {
-        jest.useFakeTimers();
+        vi.useFakeTimers();
         bundlesSelectedIds.set([]);
         bundlesTotal.set(0);
+        draftBundlesTotal.set(null);
         spectator = createComponent();
         store = spectator.inject(DotPublishingQueueStore, true) as unknown as ReturnType<
             typeof makeStoreStub
         >;
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     afterEach(() => {
-        jest.useRealTimers();
+        vi.useRealTimers();
     });
 
     describe('layout', () => {
@@ -82,22 +98,104 @@ describe('DotPublishingQueueToolbarComponent', () => {
         });
     });
 
+    describe('Bundles (N) trigger', () => {
+        it('shows the draft count in the button label', () => {
+            draftBundlesTotal.set(22);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('pq-add-bundle-btn-label'))?.textContent?.trim()).toBe(
+                'Bundles (22)'
+            );
+        });
+
+        it('shows a bare "Bundles" while the count is unknown, never "(0)"', () => {
+            draftBundlesTotal.set(null);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('pq-add-bundle-btn-label'))?.textContent?.trim()).toBe(
+                'Bundles'
+            );
+        });
+
+        it('shows "(0)" when the user genuinely has no drafts', () => {
+            draftBundlesTotal.set(0);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('pq-add-bundle-btn-label'))?.textContent?.trim()).toBe(
+                'Bundles (0)'
+            );
+        });
+
+        it('keeps the aria-label in sync with the visible count', () => {
+            draftBundlesTotal.set(7);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('pq-add-bundle-btn'))?.getAttribute('aria-label')).toBe(
+                'Bundles (7)'
+            );
+        });
+    });
+
     describe('Add Bundle dropdown', () => {
+        /** The menu is `appendTo="body"`, so its rows live outside the fixture. */
+        const queryMenu = (selector: string) => document.body.querySelector(selector);
+
+        function openMenu() {
+            spectator.click(
+                spectator.query(byTestId('pq-add-bundle-btn'))?.querySelector('button') ??
+                    (spectator.query(byTestId('pq-add-bundle-btn')) as HTMLElement)
+            );
+            spectator.detectChanges();
+        }
+
+        it('repeats the draft count next to Select Bundle so it matches the button', () => {
+            draftBundlesTotal.set(22);
+            spectator.detectChanges();
+            openMenu();
+
+            expect(queryMenu('[data-testid="pq-select-bundle-count"]')?.textContent?.trim()).toBe(
+                '22'
+            );
+        });
+
+        it('omits the count next to Select Bundle while it is unknown', () => {
+            draftBundlesTotal.set(null);
+            spectator.detectChanges();
+            openMenu();
+
+            expect(queryMenu('[data-testid="pq-select-bundle-count"]')).toBeNull();
+        });
+
+        it('does not put a count on the Upload row', () => {
+            draftBundlesTotal.set(22);
+            spectator.detectChanges();
+            openMenu();
+
+            expect(
+                document.body.querySelectorAll('[data-testid="pq-select-bundle-count"]').length
+            ).toBe(1);
+        });
+
+        it('tags the Select Bundle row so the item template can add the count', () => {
+            expect(spectator.component.addBundleItems[0].id).toBe(SELECT_BUNDLE_ITEM_ID);
+            expect(spectator.component.addBundleItems[1].id).toBeUndefined();
+        });
+
         it('exposes two menu items: Select Bundle + Upload', () => {
             expect(spectator.component.addBundleItems.length).toBe(2);
-            expect(spectator.component.addBundleItems[0].icon).toBe('pi pi-table');
-            expect(spectator.component.addBundleItems[1].icon).toBe('pi pi-upload');
+            expect(spectator.component.addBundleItems[0].label).toBeTruthy();
+            expect(spectator.component.addBundleItems[1].label).toBeTruthy();
         });
 
         it('Upload item → emits uploadClick', () => {
-            const emit = jest.fn();
+            const emit = vi.fn();
             spectator.component.$uploadClick.subscribe(emit);
             spectator.component.addBundleItems[1].command?.({} as never);
             expect(emit).toHaveBeenCalled();
         });
 
         it('Select Bundle item → emits selectBundleClick (placeholder for future dialog)', () => {
-            const emit = jest.fn();
+            const emit = vi.fn();
             spectator.component.$selectBundleClick.subscribe(emit);
             spectator.component.addBundleItems[0].command?.({} as never);
             expect(emit).toHaveBeenCalled();
@@ -107,20 +205,20 @@ describe('DotPublishingQueueToolbarComponent', () => {
     describe('search debounce', () => {
         it('calls store.setSearch only after 300ms', () => {
             spectator.component.onSearch('hello');
-            jest.advanceTimersByTime(299);
+            vi.advanceTimersByTime(299);
             expect(store.setSearch).not.toHaveBeenCalled();
 
-            jest.advanceTimersByTime(1);
+            vi.advanceTimersByTime(1);
             expect(store.setSearch).toHaveBeenCalledWith('hello');
         });
 
         it('coalesces rapid typing', () => {
             spectator.component.onSearch('a');
-            jest.advanceTimersByTime(100);
+            vi.advanceTimersByTime(100);
             spectator.component.onSearch('ab');
-            jest.advanceTimersByTime(100);
+            vi.advanceTimersByTime(100);
             spectator.component.onSearch('abc');
-            jest.advanceTimersByTime(300);
+            vi.advanceTimersByTime(300);
 
             expect(store.setSearch).toHaveBeenCalledTimes(1);
             expect(store.setSearch).toHaveBeenCalledWith('abc');
@@ -128,9 +226,9 @@ describe('DotPublishingQueueToolbarComponent', () => {
 
         it('skips duplicate values (distinctUntilChanged)', () => {
             spectator.component.onSearch('x');
-            jest.advanceTimersByTime(300);
+            vi.advanceTimersByTime(300);
             spectator.component.onSearch('x');
-            jest.advanceTimersByTime(300);
+            vi.advanceTimersByTime(300);
 
             expect(store.setSearch).toHaveBeenCalledTimes(1);
         });
@@ -191,7 +289,7 @@ describe('DotPublishingQueueToolbarComponent', () => {
         it('emits deleteClick when clicked', () => {
             bundlesSelectedIds.set(['b1']);
             spectator.detectChanges();
-            const emit = jest.fn();
+            const emit = vi.fn();
             spectator.component.$deleteClick.subscribe(emit);
             const btn = spectator.query(byTestId('pq-bulk-delete'));
             spectator.click(btn as HTMLButtonElement);

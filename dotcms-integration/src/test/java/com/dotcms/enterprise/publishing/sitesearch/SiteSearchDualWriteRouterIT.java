@@ -15,6 +15,7 @@ import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotmarketing.business.DotStateException;
 import com.dotcms.content.index.IndexAPIImpl;
 import com.dotcms.content.index.IndexConfigHelper;
+import com.dotcms.content.index.IndexTag;
 import com.dotcms.content.index.opensearch.OSIndexAPIImpl;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
@@ -82,6 +83,8 @@ public class SiteSearchDualWriteRouterIT extends IntegrationTestBase {
     private static final String SUFFIX = String.valueOf(Math.abs((long) RUN_ID.hashCode()));
 
     private static final String IDX = "sitesearch_" + SUFFIX;
+    /** Physical OpenSearch name of {@link #IDX}: the OS twin is {@code .os}-tagged (issue #36672). */
+    private static final String OS_IDX = IndexTag.OS.tag(IDX);
     private static final String DOC_ID = "ss-dualwrite-it-" + RUN_ID;
 
     @Inject
@@ -209,12 +212,12 @@ public class SiteSearchDualWriteRouterIT extends IntegrationTestBase {
         router.createSiteSearchIndex(IDX, null, 1);
         final ESIndexAPI esIndex = ((IndexAPIImpl) APILocator.getESIndexAPI()).esImpl();
         assertTrue("Pre: must exist in ES", esIndex.indexExists(IDX));
-        assertTrue("Pre: must exist in OS", osIndexAPI.indexExists(IDX));
+        assertTrue("Pre: must exist in OS", osIndexAPI.indexExists(OS_IDX));
 
         router.deleteIndex(IDX);
 
         assertFalse("Site-search index must be gone from ES", esIndex.indexExists(IDX));
-        assertFalse("Site-search index must be gone from OS", osIndexAPI.indexExists(IDX));
+        assertFalse("Site-search index must be gone from OS", osIndexAPI.indexExists(OS_IDX));
 
         Logger.info(this, "✅ test_deleteIndex_removesFromBothBackends passed");
     }
@@ -236,12 +239,95 @@ public class SiteSearchDualWriteRouterIT extends IntegrationTestBase {
             assertThrows(DotStateException.class, () -> router.deleteIndex(IDX));
             // The active index must survive in BOTH engines — the guard blocks before any delete.
             assertTrue("Active site-search index must survive in ES", esIndex.indexExists(IDX));
-            assertTrue("Active site-search index must survive in OS", osIndexAPI.indexExists(IDX));
+            assertTrue("Active site-search index must survive in OS", osIndexAPI.indexExists(OS_IDX));
         } finally {
             router.deactivateIndex(IDX);
         }
 
         Logger.info(this, "✅ test_deleteIndex_activeIndex_isRejected passed");
+    }
+
+    /**
+     * Given Scenario: dual-write phase; an index created via the router exists on both engines, then
+     *                 its OpenSearch twin is deleted out-of-band (simulating a failed shadow-create or
+     *                 a forward-only phase change that never built the OS mirror).
+     * When : {@code existsOnAllWriteEngines(IDX)} is queried.
+     * Then : it reports {@code true} while both twins exist and {@code false} once the OS twin is gone
+     *        — the gate that demotes an incremental crawl to a full rebuild so the missing mirror is
+     *        reconstructed instead of auto-created with a dynamic mapping (issue #36360).
+     */
+    @Test
+    public void test_existsOnAllWriteEngines_falseWhenOsTwinMissing() throws Exception {
+        router.createSiteSearchIndex(IDX, null, 1);
+        assertTrue("Both twins present → gate must allow incremental",
+                router.existsOnAllWriteEngines(IDX));
+
+        // Drop just the OpenSearch twin, leaving the ES index in place (the mirror-desync condition).
+        osIndexAPI.delete(OS_IDX);
+        assertFalse("OS twin missing → gate must force a full rebuild",
+                router.existsOnAllWriteEngines(IDX));
+
+        Logger.info(this, "✅ test_existsOnAllWriteEngines_falseWhenOsTwinMissing passed");
+    }
+
+    /**
+     * Given Scenario: dual-write phase; an index exists on both engines with equal content, then a
+     *                 document is written to the OpenSearch twin ALONE (simulating an ES shadow-write
+     *                 that failed fire-and-forget, so the engines drift while both still exist).
+     * When : {@code writeMirrorsInSync(IDX)} is queried.
+     * Then : it reports {@code true} while the counts match and {@code false} once they diverge — the
+     *        content-drift half of the incremental-crawl gate, which existence alone cannot catch
+     *        (issue #36360).
+     */
+    @Test
+    public void test_writeMirrorsInSync_falseOnContentDrift() throws Exception {
+        router.createSiteSearchIndex(IDX, null, 1);
+        assertTrue("Fresh mirror (both empty) must be in sync", router.writeMirrorsInSync(IDX));
+
+        // Drift: write one document to the OpenSearch twin only, bypassing the router fan-out.
+        final SiteSearchResult doc = new SiteSearchResult();
+        doc.setId(DOC_ID);
+        doc.setUrl("/ss-drift-it/" + RUN_ID);
+        doc.setTitle("Drift doc " + RUN_ID);
+        doc.setMimeType("text/html");
+        doc.setContent("dotcms mirror drift " + RUN_ID);
+        doc.setContentLength(doc.getContent().length());
+        osSiteSearchAPI.putToIndex(IDX, doc, "content");
+
+        assertFalse("OS twin ahead of ES → mirrors must be reported out of sync",
+                router.writeMirrorsInSync(IDX));
+
+        Logger.info(this, "✅ test_writeMirrorsInSync_falseOnContentDrift passed");
+    }
+
+    /**
+     * Given Scenario: an index is created on both engines in a dual-write phase, then the system is
+     *                 rolled back to Phase 0 (ES is the only write provider).
+     * When : {@code router.deleteIndex(IDX)} is called in Phase 0.
+     * Then : the index is removed from BOTH engines — the delete sweeps the OpenSearch twin even though
+     *        OS is not a write provider in Phase 0, so a phase-rollback leftover is not orphaned
+     *        (issue #36360, FM5).
+     */
+    @Test
+    public void test_deleteIndex_sweepsOrphanTwinInSingleProviderPhase() throws Exception {
+        router.createSiteSearchIndex(IDX, null, 1);
+        final ESIndexAPI esIndex = ((IndexAPIImpl) APILocator.getESIndexAPI()).esImpl();
+        assertTrue("Pre: must exist in ES", esIndex.indexExists(IDX));
+        assertTrue("Pre: OS twin must exist", osIndexAPI.indexExists(OS_IDX));
+
+        // Roll back to Phase 0: ES is the sole write provider, OS holds an orphan twin.
+        setPhase(0);
+        try {
+            router.deleteIndex(IDX);
+        } finally {
+            setPhase(PHASE_DUAL_WRITE_ES_READS);
+        }
+
+        assertFalse("ES index must be gone", esIndex.indexExists(IDX));
+        assertFalse("Orphan OS twin must be swept even in a single-provider phase",
+                osIndexAPI.indexExists(OS_IDX));
+
+        Logger.info(this, "✅ test_deleteIndex_sweepsOrphanTwinInSingleProviderPhase passed");
     }
 
     // =======================================================================
@@ -268,11 +354,11 @@ public class SiteSearchDualWriteRouterIT extends IntegrationTestBase {
 
     private synchronized void cleanupTestData() {
         try {
-            if (osIndexAPI.indexExists(IDX)) {
-                osIndexAPI.delete(IDX);
+            if (osIndexAPI.indexExists(OS_IDX)) {
+                osIndexAPI.delete(OS_IDX);
             }
         } catch (final Exception e) {
-            Logger.warn(this, "Cleanup: error removing OS index '" + IDX + "': " + e.getMessage());
+            Logger.warn(this, "Cleanup: error removing OS index '" + OS_IDX + "': " + e.getMessage());
         }
         // The dual-write create also lands an ES index; remove it directly on the ES cluster.
         try {

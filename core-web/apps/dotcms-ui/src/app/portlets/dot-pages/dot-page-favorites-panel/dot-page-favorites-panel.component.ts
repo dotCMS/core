@@ -1,4 +1,4 @@
-import { Component, inject, input, output, signal } from '@angular/core';
+import { Component, inject, input, output, signal, ChangeDetectionStrategy } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { PanelModule } from 'primeng/panel';
@@ -17,6 +17,7 @@ import { DotActionsMenuEventParams } from '../dot-pages.component';
     selector: 'dot-page-favorites-panel',
     templateUrl: './dot-page-favorites-panel.component.html',
     styleUrls: ['./dot-page-favorites-panel.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         DotMessagePipe,
         DotPagesCardComponent,

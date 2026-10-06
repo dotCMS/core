@@ -1,7 +1,15 @@
 import { Subject } from 'rxjs';
 
 import { AsyncPipe } from '@angular/common';
-import { Component, ElementRef, inject, OnDestroy, viewChild, viewChildren } from '@angular/core';
+import {
+    Component,
+    ElementRef,
+    inject,
+    OnDestroy,
+    viewChild,
+    viewChildren,
+    ChangeDetectionStrategy
+} from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -65,6 +73,7 @@ import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-ba
         DotContentletStatusBadgeComponent,
         AsyncPipe
     ],
+    changeDetection: ChangeDetectionStrategy.Eager,
     providers: [
         DotContainerListStore,
         DotContainerListResolver,

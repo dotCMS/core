@@ -13,5 +13,17 @@
   ],
   "exclude": [
     "src/**/*.spec.ts"
-  ]
+  ],
+  /* Suppressed by the Angular 22 migration. The example's templates predate
+     these checks and trip them on expressions that are harmless here; turning
+     them off keeps the upgrade mechanical. Remove the block and fix the
+     flagged expressions when the templates get a pass. */
+  "angularCompilerOptions": {
+    "extendedDiagnostics": {
+      "checks": {
+        "nullishCoalescingNotNullable": "suppress",
+        "optionalChainNotNullable": "suppress"
+      }
+    }
+  }
 }

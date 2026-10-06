@@ -85,6 +85,10 @@
                 <dotcms-block-editor-renderer-video [attrs]="node.attrs || {}" />
             }
 
+            @case (BLOCKS.DOT_AUDIO) {
+                <dotcms-block-editor-renderer-audio [attrs]="node.attrs || {}" />
+            }
+
             @case (BLOCKS.TABLE) {
                 <dotcms-block-editor-renderer-table [content]="node.content" [attrs]="node.attrs" />
             }

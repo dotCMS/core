@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import * as dotUtils from '@dotcms/utils/lib/dot-utils';
 
 describe('Dot Utils', () => {
@@ -6,7 +8,7 @@ describe('Dot Utils', () => {
         const fileName = 'doc.txt';
 
         // Mock URL.createObjectURL for JSDOM
-        const mockCreateObjectURL = jest.fn().mockReturnValue('mock-url');
+        const mockCreateObjectURL = vi.fn().mockReturnValue('mock-url');
         Object.defineProperty(window.URL, 'createObjectURL', {
             value: mockCreateObjectURL,
             writable: true

@@ -38,9 +38,78 @@ export async function createContentlet(
     expect(response.status()).toBe(200);
 
     const responseData = await response.json();
-    const entity = responseData.entity;
+
+    return extractFiredContentlet(responseData.entity);
+}
+
+/**
+ * Unwraps a contentlet from a workflow `fire` response.
+ *
+ * The endpoint does not return the contentlet directly — it returns
+ * `{ results: [ { "<identifier>": { ...contentlet } } ], summary: {...} }`. Returning `entity`
+ * as-is yields an object whose `identifier` is `undefined`, which fails silently at every call
+ * site (a cleanup `deleteContentlets([undefined])` simply deletes nothing).
+ *
+ * Mirrors the unwrapping already done in `fixtures/relationship.fixture.ts`. Falls back to the
+ * raw entity so an endpoint that does return a bare contentlet keeps working.
+ */
+function extractFiredContentlet(entity: unknown): Contentlet {
+    const results = (entity as { results?: Record<string, unknown>[] })?.results;
+
+    if (Array.isArray(results) && results.length > 0) {
+        const payload = Object.values(results[0])[0];
+
+        expect(
+            payload != null && typeof payload === 'object',
+            `fire response result entry missing contentlet: ${JSON.stringify(results[0])}`
+        ).toBe(true);
+
+        return payload as Contentlet;
+    }
 
     return entity as Contentlet;
+}
+
+/**
+ * Creates a dotAsset contentlet from an in-memory file, in one multipart call.
+ *
+ * Mirrors what the product itself does (`DotUploadFileService.uploadDotAsset` →
+ * `DotWorkflowActionsFireService.newContentlet`): a `PUT .../fire/NEW` whose body carries the binary
+ * as the `file` part and the contentlet as a `json` part. Going through `/api/v1/temp` first would
+ * work too, but that endpoint fingerprints the caller (session + origin), so a single call is one
+ * less thing to get wrong from a test runner.
+ *
+ * `indexPolicy=WAIT_FOR` is what makes this usable for seeding — the asset is searchable by the time
+ * the request returns, so a test can open a picker and expect to find it.
+ *
+ * @param request - Playwright APIRequestContext
+ * @param file - The file to store, as `{ name, mimeType, buffer }`
+ * @param hostFolder - Site identifier or folder id the asset is created under
+ * @returns The created contentlet
+ */
+export async function createDotAsset(
+    request: APIRequestContext,
+    file: { name: string; mimeType: string; buffer: Buffer },
+    hostFolder: string
+): Promise<Contentlet> {
+    const endpoint = `/api/v1/workflow/actions/default/fire/NEW?indexPolicy=WAIT_FOR`;
+    const response = await request.put(endpoint, {
+        multipart: {
+            file: { name: file.name, mimeType: file.mimeType, buffer: file.buffer },
+            json: JSON.stringify({
+                contentlet: { contentType: 'dotAsset', file: file.name, hostFolder }
+            })
+        },
+        headers: {
+            Authorization: generateBase64Credentials(admin1.username, admin1.password)
+        }
+    });
+
+    expect(response.status()).toBe(200);
+
+    const responseData = await response.json();
+
+    return responseData.entity as Contentlet;
 }
 
 /**
@@ -79,6 +148,11 @@ export async function relateContent(
 /**
  * Deletes contentlets by their identifiers.
  *
+ * Fires DESTROY through the WORKFLOW resource. `/api/v1/content/actions/...` — which this used to
+ * call — does not exist and answered 404 for every contentlet, so nothing was ever deleted and the
+ * 404 was swallowed as "already gone". Every suite using this leaked its seeded content into the
+ * environment on each run.
+ *
  * @param request - Playwright APIRequestContext
  * @param identifiers - Array of contentlet identifiers to delete
  */
@@ -87,7 +161,7 @@ export async function deleteContentlets(
     identifiers: string[]
 ): Promise<void> {
     for (const identifier of identifiers) {
-        const endpoint = `/api/v1/content/actions/default/fire/DESTROY?identifier=${identifier}`;
+        const endpoint = `/api/v1/workflow/actions/default/fire/DESTROY?identifier=${identifier}`;
         const response = await request.put(endpoint, {
             headers: {
                 Authorization: generateBase64Credentials(admin1.username, admin1.password)

@@ -1,19 +1,20 @@
 import { renderHook } from '@testing-library/react-hooks';
+import { Mock, vi } from 'vitest';
 
 import { UVE_MODE } from '@dotcms/types';
 import { getUVEState } from '@dotcms/uve';
 
 import { useDotCMSShowWhen } from '../../hooks/useDotCMSShowWhen';
 
-jest.mock('@dotcms/uve', () => ({
-    getUVEState: jest.fn()
+vi.mock('@dotcms/uve', () => ({
+    getUVEState: vi.fn()
 }));
 
 describe('useDotCMSShowWhen', () => {
-    const getUVEStateMock = getUVEState as jest.Mock;
+    const getUVEStateMock = getUVEState as Mock;
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     test('should return true when UVE mode matches the specified mode', () => {

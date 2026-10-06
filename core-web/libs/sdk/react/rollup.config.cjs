@@ -3,7 +3,9 @@ const { withNx } = require('@nx/rollup/with-nx');
 // These options were migrated by @nx/rollup:convert-to-inferred from project.json
 const options = {
     main: 'libs/sdk/react/src/index.ts',
-    generateExportsField: true,
+    // The exports map is hand-written in package.json — it needs a `react-server` condition
+    // that Nx cannot generate, and hand-writing it is simpler than patching the generated one.
+    generateExportsField: false,
     outputPath: '../../../dist/libs/sdk/react',
     tsConfig: './tsconfig.lib.json',
     project: './package.json',

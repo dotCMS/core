@@ -572,12 +572,18 @@ public class ContentHandler implements IHandler {
 	                if(isHost) {
                     	final String hostIdentifier = content.getIdentifier();
                     	final Host host = hostAPI.find(hostIdentifier, systemUser, false);
-						host.setProperty(Contentlet.DONT_VALIDATE_ME, true);
-						host.setProperty(Contentlet.DISABLE_WORKFLOW, true);
-                    	if(host.isDefault()) {
-                    		APILocator.getHostAPI().updateDefaultHost(host, systemUser, false);
+                    	if (!UtilMethods.isSet(host)) {
+                    	    Logger.warn(this.getClass(), "Host with identifier '" + hostIdentifier +
+                    	            "' was not found on the receiving server. This may be a related " +
+                    	            "contentlet bundled with a .host.xml extension. Skipping host update.");
+                    	} else {
+						    host.setProperty(Contentlet.DONT_VALIDATE_ME, true);
+						    host.setProperty(Contentlet.DISABLE_WORKFLOW, true);
+                    	    if (host.isDefault()) {
+                    		    APILocator.getHostAPI().updateDefaultHost(host, systemUser, false);
+                    	    }
+                    	    APILocator.getHostAPI().updateCache(host);
                     	}
-                    	APILocator.getHostAPI().updateCache(host);
                     }
 
 	                // pushing live content requires some cleanup we have on contentletAPI.publish
@@ -1053,12 +1059,15 @@ public class ContentHandler implements IHandler {
      *                             the receiving dotCMS instance.
      *
      * @return If the "correspondent" content is found such a content will be returned. Otherwise, the original content
-     * in the bundle will be returned.
+     * in the bundle will be returned. Index matches that can no longer be resolved from the database -- i.e., stale
+     * documents left behind by an index/database desynchronization -- are logged and skipped, so that they cannot
+     * block this bundle and every retry of it indefinitely.
      *
      * @throws DotDataException     An error occurred when retrieving the data.
      * @throws DotSecurityException A user permission error has occurred.
      */
-    private Contentlet findUniqueContentMatch(final Contentlet content, final List<Field> fields, final Pair<Long,Long> remoteLocalLanguages)
+    @VisibleForTesting
+    Contentlet findUniqueContentMatch(final Contentlet content, final List<Field> fields, final Pair<Long,Long> remoteLocalLanguages)
 			throws DotDataException, DotSecurityException {
 		final Identifier contentIdentifier = this.identifierAPI.find(content);
 		if (null != contentIdentifier && !UtilMethods.isSet(contentIdentifier.getId())) {
@@ -1089,6 +1098,10 @@ public class ContentHandler implements IHandler {
 							.append(" ");
 				}
 				luceneQuery.append(")");
+				// Only the working version of a contentlet is relevant for this check. Restricting the
+				// query here keeps stale documents left behind by an ES/DB desynchronization -- old live
+				// versions of destroyed content, for instance -- from ever being matched.
+				luceneQuery.append(" +working:true");
 				final int limit = 0;
 				final int offset = -1;
 				final String sortBy = "score";
@@ -1099,15 +1112,16 @@ public class ContentHandler implements IHandler {
 				if (null != contentlets && !contentlets.isEmpty()) {
 					// A contentlet with different Identifier but same unique value has been found. Update the local
                     // one WITHOUT CHANGING the local Identifier and Inode
-					final Contentlet matchingContent =
-							this.contentletAPI.find(contentlets.get(0).getInode(), systemUser,
-									!RESPECT_FRONTEND_ROLES);
+					final Optional<Contentlet> matchingContentOpt =
+							this.resolveUniqueContentMatch(contentlets, uniqueFields, luceneQuery.toString());
 
-                    if (null == matchingContent || !UtilMethods.isSet(matchingContent.getIdentifier())) {
-                        // It might be that the matching content doesn't exist in the DB anymore, or is archived
-                        throw new DotDataException(getUniqueMatchErrorMsg(uniqueFields, luceneQuery.toString(),
-                                contentlets.get(0)));
+                    if (matchingContentOpt.isEmpty()) {
+                        // Every match is a ghost: present in the index, but gone from the database. Failing here
+                        // would block this bundle -- and every retry of it -- forever, so the conflict is ignored
+                        // and the content is imported as new. Every stale entry was already logged as a warning.
+                        return content;
                     }
+                    final Contentlet matchingContent = matchingContentOpt.get();
                     existingContentMap.addExistingContent(
 							Pair.of(content.getIdentifier(), remoteLocalLanguages.getLeft()),
 							Pair.of(matchingContent.getIdentifier(), remoteLocalLanguages.getRight()));
@@ -1125,23 +1139,56 @@ public class ContentHandler implements IHandler {
 	}
 
     /**
-     * Utility method to generate the appropriate error message when {@link #findUniqueContentMatch(Contentlet, List,
-     * Pair)} method fails to retrieve a result.
+     * Takes the results matched by the unique-value Lucene query and returns the first one that can actually be
+     * loaded from the database. Any result that cannot be resolved is a "ghost": a document that lives in the
+     * index but whose contentlet is no longer in the {@code contentlet} table, usually the leftover of an
+     * ES/database desynchronization. Ghosts are logged as warnings and skipped instead of aborting the bundle.
+     *
+     * @param matches      The {@link ContentletSearch} results matched by the Lucene query.
+     * @param uniqueFields The list of unique {@link Field} objects in the contentlet that is being pushed.
+     * @param luceneQuery  The Lucene query used to find the contentlet that matches the unique value.
+     *
+     * @return The first matching {@link Contentlet} that exists in the database, or an empty {@link Optional} if
+     * every match is a ghost.
+     *
+     * @throws DotDataException     An error occurred when retrieving the data.
+     * @throws DotSecurityException A user permission error has occurred.
+     */
+    private Optional<Contentlet> resolveUniqueContentMatch(final List<ContentletSearch> matches,
+			final List<Field> uniqueFields, final String luceneQuery)
+			throws DotDataException, DotSecurityException {
+		final User systemUser = this.userAPI.getSystemUser();
+		for (final ContentletSearch match : matches) {
+			final Contentlet matchingContent =
+					this.contentletAPI.find(match.getInode(), systemUser, !RESPECT_FRONTEND_ROLES);
+			if (null != matchingContent && UtilMethods.isSet(matchingContent.getIdentifier())) {
+				return Optional.of(matchingContent);
+			}
+			Logger.warn(this, getUniqueMatchWarnMsg(uniqueFields, luceneQuery, match));
+		}
+		return Optional.empty();
+	}
+
+    /**
+     * Utility method to generate the appropriate warning message when {@link #findUniqueContentMatch(Contentlet, List,
+     * Pair)} matches a document in the index whose contentlet cannot be resolved via API.
      *
      * @param uniqueFields   The list of unique {@link Field} objects in the contentlet that is being pushed.
      * @param luceneQuery    The Lucene query used to find the contentlet that matches the unique value.
-     * @param matchedContent The first {@link ContentletSearch} result matched by the Lucene query.
+     * @param matchedContent The {@link ContentletSearch} result matched by the Lucene query.
      *
-     * @return The error message to display in the log.
+     * @return The warning message to display in the log.
      */
-    private String getUniqueMatchErrorMsg(final List<Field> uniqueFields, final String luceneQuery, final
+    private String getUniqueMatchWarnMsg(final List<Field> uniqueFields, final String luceneQuery, final
 	ContentletSearch matchedContent) {
 		final StringBuilder fieldsInfo = new StringBuilder();
 		for (final Field field : uniqueFields) {
 			fieldsInfo.append(field.getVelocityVarName()).append(" [").append(field.getInode()).append("], ");
 		}
-        return String.format("Lucene query [ %s ] matched existing content with ID '%s' / inode '%s' in ES Index, but" +
-                " it was not found via API. Unique fields: %s", luceneQuery, matchedContent.getIdentifier(),
+        return String.format("Stale index document detected during the unique-field check: Lucene query [ %s ] matched" +
+                " content with ID '%s' / inode '%s', but it was not found via API. Skipping it and treating it as no" +
+                " conflict. This points to an index/database desynchronization on this server, and a reindex of the" +
+                " affected content is recommended. Unique fields: %s", luceneQuery, matchedContent.getIdentifier(),
                 matchedContent.getInode(), fieldsInfo);
     }
 

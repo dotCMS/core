@@ -1,5 +1,6 @@
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
 
@@ -20,14 +21,14 @@ describe('DotPluginsUploadComponent', () => {
         component: DotPluginsUploadComponent,
         providers: [
             mockProvider(DotMessageService, { get: (key: string, ..._args: string[]) => key }),
-            mockProvider(DynamicDialogRef, { close: jest.fn() }),
-            mockProvider(DotOsgiService, { uploadBundles: jest.fn().mockReturnValue(of(null)) })
+            mockProvider(DynamicDialogRef, { close: vi.fn() }),
+            mockProvider(DotOsgiService, { uploadBundles: vi.fn().mockReturnValue(of(null)) })
         ],
         shallow: true
     });
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         spectator = createComponent();
         component = spectator.component;
         dialogRef = spectator.inject(DynamicDialogRef);
@@ -77,7 +78,7 @@ describe('DotPluginsUploadComponent', () => {
         });
 
         it('should show inline error and keep dialog open on HTTP error', () => {
-            (osgiService.uploadBundles as jest.Mock).mockReturnValue(
+            (osgiService.uploadBundles as Mock).mockReturnValue(
                 throwError(() => ({ error: { message: 'Upload failed' } }))
             );
 

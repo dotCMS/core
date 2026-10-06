@@ -1,4 +1,5 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { By } from '@angular/platform-browser';
 
@@ -23,7 +24,7 @@ const SAMPLE_DATA: EngagementPlatformMetrics[] = [
 describe('DotAnalyticsBarChartComponent', () => {
     let spectator: Spectator<DotAnalyticsBarChartComponent>;
 
-    const dialogOpenSpy = jest.fn();
+    const dialogOpenSpy = vi.fn();
 
     const createComponent = createComponentFactory({
         component: DotAnalyticsBarChartComponent,
@@ -37,7 +38,7 @@ describe('DotAnalyticsBarChartComponent', () => {
             {
                 provide: DotMessageService,
                 useValue: {
-                    get: jest.fn((key: string, ...args: string[]) => {
+                    get: vi.fn((key: string, ...args: string[]) => {
                         if (args.length) {
                             return `${key}[${args.join(',')}]`;
                         }
@@ -85,7 +86,7 @@ describe('DotAnalyticsBarChartComponent', () => {
         const fillTooltip = spectator.debugElement
             .queryAll(By.directive(Tooltip))
             .map((de) => de.injector.get(Tooltip))[0];
-        const activateSpy = jest.spyOn(fillTooltip, 'activate');
+        const activateSpy = vi.spyOn(fillTooltip, 'activate');
 
         spectator.triggerEventHandler('[data-testid="analytics-bar-row"]', 'mouseenter', {});
 

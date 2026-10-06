@@ -1,7 +1,14 @@
 import { Observable, Subject } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import {
+    Component,
+    OnDestroy,
+    OnInit,
+    inject,
+    signal,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import {
     FormControl,
     UntypedFormBuilder,
@@ -38,6 +45,7 @@ import { DotLoginPageStateService } from '../shared/services/dot-login-page-stat
     selector: 'dot-login-component',
     templateUrl: './dot-login.component.html',
     styleUrls: ['./dot-login.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         FormsModule,
         ReactiveFormsModule,

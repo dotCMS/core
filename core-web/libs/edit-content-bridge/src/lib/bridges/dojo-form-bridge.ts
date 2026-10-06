@@ -1,6 +1,6 @@
 import {
-    BrowserSelectorController,
-    BrowserSelectorOptions,
+    DotBrowserController,
+    DotBrowserOptions,
     FieldValidationState,
     FormBridge,
     FormFieldAPI,
@@ -27,7 +27,8 @@ interface FieldListener {
  */
 export class DojoFormBridge implements FormBridge {
     private fieldListeners: Map<string, FieldListener> = new Map();
-    private loadHandler?: () => void;
+    private loadHandlers: Set<() => void> = new Set();
+    private isDestroyed = false;
 
     constructor() {
         document.addEventListener('beforeunload', () => this.destroy());
@@ -56,6 +57,10 @@ export class DojoFormBridge implements FormBridge {
     /**
      * Sets the value of a field in the Dojo form.
      *
+     * Legacy fields are plain `<input>` / `<textarea>` elements, so every value is stored, and read
+     * back by {@link get}, as a string: an array comma-separated (as the legacy checkbox field
+     * stores its options), an object as JSON.
+     *
      * @param fieldId - The ID of the field to set the value for.
      * @param value - The value to set for the field.
      */
@@ -63,15 +68,33 @@ export class DojoFormBridge implements FormBridge {
         try {
             const element = document.getElementById(fieldId);
             if (element instanceof HTMLInputElement) {
-                element.value = String(value ?? '');
+                element.value = this.toFieldString(value);
                 element.dispatchEvent(new Event('change', { bubbles: true }));
             } else if (element instanceof HTMLTextAreaElement) {
-                element.textContent = String(value ?? '');
+                element.textContent = this.toFieldString(value);
                 element.dispatchEvent(new Event('change', { bubbles: true }));
             }
         } catch (error) {
             console.warn('Error setting field value:', error);
         }
+    }
+
+    /**
+     * Turns a field value into the string a legacy `<input>` / `<textarea>` holds.
+     *
+     * @param value - The value to store.
+     * @returns `''` for null, the items joined with `,` for an array, JSON for an object.
+     */
+    private toFieldString(value: FormFieldValue): string {
+        if (value === null || value === undefined) {
+            return '';
+        }
+
+        if (Array.isArray(value)) {
+            return value.join(',');
+        }
+
+        return typeof value === 'object' ? JSON.stringify(value) : String(value);
     }
 
     /**
@@ -195,10 +218,9 @@ export class DojoFormBridge implements FormBridge {
             this.cleanupFieldListeners(fieldId);
         });
 
-        if (this.loadHandler) {
-            window.removeEventListener('load', this.loadHandler);
-            this.loadHandler = undefined;
-        }
+        this.loadHandlers.forEach((handler) => window.removeEventListener('load', handler));
+        this.loadHandlers.clear();
+        this.isDestroyed = true;
     }
 
     /**
@@ -300,38 +322,53 @@ export class DojoFormBridge implements FormBridge {
     }
 
     /**
-     * Executes callback when bridge is ready, handling iframe load.
+     * Runs the callback once the page has loaded.
+     *
+     * A template that calls this after `load` has already fired (a script added late, or one that
+     * runs after an async step) is called back right away; waiting for a `load` that already
+     * happened would never call it at all. Every caller is called back, and none are once the
+     * bridge is destroyed.
      *
      * @param callback - The callback function to execute when the bridge is ready.
      */
     ready(callback: (api: FormBridge) => void): void {
-        // Wait for iframe to be fully loaded
-        this.loadHandler = () => {
+        if (this.isDestroyed) {
+            return;
+        }
+
+        if (document.readyState === 'complete') {
+            callback(this);
+
+            return;
+        }
+
+        const handler = () => {
+            this.loadHandlers.delete(handler);
             callback(this);
         };
 
-        window.addEventListener('load', this.loadHandler);
+        this.loadHandlers.add(handler);
+        window.addEventListener('load', handler, { once: true });
     }
 
     /**
-     * Opens a browser selector modal to allow the user to select content (pages, files, etc.).
+     * Not supported in the legacy Dojo editor — resolves `null` without opening anything.
      *
-     * @param _options - Configuration options for the browser selector.
-     * @returns A controller object to manage the dialog.
+     * The dialog has never existed on this page. What changed is that it now says so: a stub that
+     * silently resolved `null` was indistinguishable from the user pressing Cancel, leaving a
+     * template author with nothing to go on. Giving the old editor a working browser is a separate
+     * piece of work.
      *
-     * @example
-     * // Select a page
-     * bridge.openBrowserModal({
-     *   header: 'Select a Page',
-     *   mimeTypes: ['application/dotpage'],
-     *   onClose: (result) => console.log(result)
-     * });
+     * @returns A controller whose `close()` is a no-op; `onClose` is called once with `null`.
      */
-    openBrowserModal(_options: BrowserSelectorOptions): BrowserSelectorController {
-        // TODO: Implement browser selector modal for Dojo
-        return {
-            // eslint-disable-next-line @typescript-eslint/no-empty-function
-            close: () => {}
-        };
+    openBrowserModal(options: DotBrowserOptions = {}): DotBrowserController {
+        console.warn(
+            'DotCustomFieldApi.openBrowserModal is not available in the legacy edit contentlet — ' +
+                'no picker will open. It is supported only in the new Edit Content.'
+        );
+
+        options.onClose?.(null);
+
+        return { close: () => undefined };
     }
 }

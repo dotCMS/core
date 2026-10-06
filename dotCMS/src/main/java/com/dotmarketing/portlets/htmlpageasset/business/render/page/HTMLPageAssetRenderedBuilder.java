@@ -49,6 +49,8 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -96,6 +98,15 @@ public class HTMLPageAssetRenderedBuilder {
      * Prefix of the inline init function — referenced by {@code UVE_SCRIPT_BLOCK_PATTERN} in HTMLPageAssetRenderedAPIImpl.
      */
     public static final String UVE_INIT_FUNCTION_PREFIX = "<script>function initDotUVE()";
+
+    /**
+     * Matches the closing {@code </body>} tag case-insensitively against the <b>original</b> HTML.
+     * Deriving the index from a {@code toLowerCase()} copy is unsafe: some code points lowercase to
+     * more than one char (e.g. {@code İ} U+0130 -> {@code i} + U+0307), which shifts every
+     * subsequent index in the copy relative to the original. See #37072.
+     */
+    private static final Pattern CLOSING_BODY_TAG_PATTERN =
+            Pattern.compile("</body>", Pattern.CASE_INSENSITIVE);
 
     /**
      * Creates an instance of this Builder, along with all the required dotCMS APIs.
@@ -459,7 +470,11 @@ public class HTMLPageAssetRenderedBuilder {
         Logger.debug(this, () -> styleEditorScript.isPresent()
                 ? "Injecting UVE script with style editor schemas"
                 : "Injecting plain UVE script (no style editor schemas found)");
-        final int closingBodyIndex = html.toLowerCase().lastIndexOf("</body>");
+        final Matcher closingBodyMatcher = CLOSING_BODY_TAG_PATTERN.matcher(html);
+        int closingBodyIndex = -1;
+        while (closingBodyMatcher.find()) {
+            closingBodyIndex = closingBodyMatcher.start();
+        }
         if (closingBodyIndex != -1) {
             return html.substring(0, closingBodyIndex) + scripts + html.substring(closingBodyIndex);
         }

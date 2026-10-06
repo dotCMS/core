@@ -14,7 +14,12 @@
             dotAvatar />
     }
 </p-button>
-<p-popover #op data-testId="persona-op" [unstyled]="true" [appendTo]="'body'">
+<p-popover #op data-testId="persona-op" [appendTo]="'body'">
+    <!-- The popover supplies the panel chrome (border, radius, shadow) exactly as it does for
+         every other filter panel, so the listbox does not restate it. Rows carry a fixed height
+         on the option itself, not the item template, so the hover and selected bands cover the
+         full row — the theme zeroes option padding on the assumption that the panel's contents
+         own their vertical rhythm. -->
     <p-listbox
         size="small"
         (onChange)="onSelect($event); op.hide()"

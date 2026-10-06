@@ -31,7 +31,8 @@ export class DotEsSearchShellComponent {
 
     readonly unlicensedConfig: PrincipalConfiguration = {
         title: 'esSearch.unlicensed.title',
-        icon: 'pi-lock',
+        icon: 'lock',
+        iconStyle: 'material-symbols-rounded',
         subtitle: 'esSearch.unlicensed.description'
     };
 }

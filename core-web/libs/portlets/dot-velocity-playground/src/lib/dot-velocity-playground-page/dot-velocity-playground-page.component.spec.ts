@@ -1,6 +1,12 @@
 import { MonacoEditorLoaderService } from '@materia-ui/ngx-monaco-editor';
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import {
     DotGlobalMessageService,
@@ -15,29 +21,52 @@ import { DotVelocityPlaygroundStore } from './store/dot-velocity-playground.stor
 
 import { DotVelocityPlaygroundService } from '../services/dot-velocity-playground.service';
 
-type StoreOverrides = Partial<Record<string, jest.Mock>>;
+type StoreOverrides = Partial<Record<string, Mock>>;
+
+const MONACO_CTRL_CMD = 2048;
+const MONACO_ENTER = 3;
+
+/** Stubs the global Monaco namespace and returns a fake editor that records its actions. */
+const createFakeEditor = () => {
+    vi.stubGlobal('monaco', {
+        ...((globalThis as { monaco?: object }).monaco ?? {}),
+        KeyMod: { CtrlCmd: MONACO_CTRL_CMD },
+        KeyCode: { Enter: MONACO_ENTER },
+        // onEditorInit also registers the Velocity language on the same global.
+        languages: { getLanguages: () => [], register: vi.fn(), setMonarchTokensProvider: vi.fn() }
+    });
+    const addAction = vi.fn();
+
+    return {
+        editor: { addAction },
+        /** Simulates Monaco dispatching the Cmd/Ctrl + Enter keybinding. */
+        pressRunShortcut: () => addAction.mock.calls[0][0].run()
+    };
+};
 
 const buildStoreMock = (overrides: StoreOverrides = {}) => ({
-    code: jest.fn().mockReturnValue(''),
-    wrapCode: jest.fn().mockReturnValue(true),
-    splitterRatio: jest.fn().mockReturnValue([50, 50]),
-    history: jest.fn().mockReturnValue([]),
-    status: jest.fn().mockReturnValue(ComponentStatus.INIT),
-    output: jest.fn().mockReturnValue(''),
-    outputContentType: jest.fn().mockReturnValue('plaintext'),
-    elapsedMs: jest.fn().mockReturnValue(null),
-    errorMessage: jest.fn().mockReturnValue(null),
-    isLoading: jest.fn().mockReturnValue(false),
-    hasOutput: jest.fn().mockReturnValue(false),
-    hasError: jest.fn().mockReturnValue(false),
-    canRun: jest.fn().mockReturnValue(false),
-    hasHistory: jest.fn().mockReturnValue(false),
-    setCode: jest.fn(),
-    setWrapCode: jest.fn(),
-    setSplitterRatio: jest.fn(),
-    selectHistoryEntry: jest.fn(),
-    clearHistory: jest.fn(),
-    runScript: jest.fn(),
+    code: vi.fn().mockReturnValue(''),
+    wrapCode: vi.fn().mockReturnValue(true),
+    splitterRatio: vi.fn().mockReturnValue([50, 50]),
+    history: vi.fn().mockReturnValue([]),
+    status: vi.fn().mockReturnValue(ComponentStatus.INIT),
+    output: vi.fn().mockReturnValue(''),
+    outputContentType: vi.fn().mockReturnValue('plaintext'),
+    elapsedMs: vi.fn().mockReturnValue(null),
+    error: vi.fn().mockReturnValue(null),
+    warnings: vi.fn().mockReturnValue([]),
+    isLoading: vi.fn().mockReturnValue(false),
+    hasOutput: vi.fn().mockReturnValue(false),
+    hasError: vi.fn().mockReturnValue(false),
+    hasWarnings: vi.fn().mockReturnValue(false),
+    canRun: vi.fn().mockReturnValue(false),
+    hasHistory: vi.fn().mockReturnValue(false),
+    setCode: vi.fn(),
+    setWrapCode: vi.fn(),
+    setSplitterRatio: vi.fn(),
+    selectHistoryEntry: vi.fn(),
+    clearHistory: vi.fn(),
+    runScript: vi.fn(),
     ...overrides
 });
 
@@ -56,10 +85,10 @@ describe('DotVelocityPlaygroundPageComponent', () => {
             ]
         ],
         providers: [
-            mockProvider(DotMessageService, { get: jest.fn().mockReturnValue('') }),
+            mockProvider(DotMessageService, { get: vi.fn().mockReturnValue('') }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotGlobalMessageService),
-            mockProvider(DotClipboardUtil, { copy: jest.fn().mockResolvedValue(true) }),
+            mockProvider(DotClipboardUtil, { copy: vi.fn().mockResolvedValue(true) }),
             mockProvider(DotVelocityPlaygroundService),
             { provide: MonacoEditorLoaderService, useValue: { isMonacoLoaded$: of(false) } }
         ],
@@ -71,9 +100,18 @@ describe('DotVelocityPlaygroundPageComponent', () => {
         ]
     });
 
-    const setup = (storeOverrides: StoreOverrides = {}) => {
+    const setup = (
+        storeOverrides: StoreOverrides = {},
+        messageGetter: (key: string) => string = () => ''
+    ) => {
         pendingStoreOverrides = storeOverrides;
-        spectator = createComponent();
+        spectator = createComponent({
+            providers: [
+                mockProvider(DotMessageService, {
+                    get: vi.fn().mockImplementation(messageGetter)
+                })
+            ]
+        });
         return spectator.inject(DotVelocityPlaygroundStore, true);
     };
 
@@ -88,15 +126,15 @@ describe('DotVelocityPlaygroundPageComponent', () => {
 
     describe('run button', () => {
         it('is a no-op when canRun is false', () => {
-            const store = setup({ canRun: jest.fn().mockReturnValue(false) });
+            const store = setup({ canRun: vi.fn().mockReturnValue(false) });
             spectator.component.onRun();
             expect(store.runScript).not.toHaveBeenCalled();
         });
 
         it('triggers runScript when canRun is true', () => {
             const store = setup({
-                code: jest.fn().mockReturnValue('$x'),
-                canRun: jest.fn().mockReturnValue(true)
+                code: vi.fn().mockReturnValue('$x'),
+                canRun: vi.fn().mockReturnValue(true)
             });
             const btn = spectator
                 .query(byTestId('velocity-playground-run-btn'))
@@ -107,18 +145,70 @@ describe('DotVelocityPlaygroundPageComponent', () => {
         });
     });
 
+    describe('run keyboard shortcut', () => {
+        afterEach(() => {
+            vi.unstubAllGlobals();
+        });
+
+        it('binds Cmd/Ctrl + Enter on the script editor', () => {
+            setup();
+            const { editor } = createFakeEditor();
+            spectator.triggerEventHandler(
+                '[data-testid="velocity-playground-editor"]',
+                'init',
+                editor
+            );
+            expect(editor.addAction).toHaveBeenCalledWith(
+                expect.objectContaining({ keybindings: [MONACO_CTRL_CMD | MONACO_ENTER] })
+            );
+        });
+
+        it('runs the script when the shortcut is pressed', () => {
+            const store = setup({ canRun: vi.fn().mockReturnValue(true) });
+            const { editor, pressRunShortcut } = createFakeEditor();
+            spectator.triggerEventHandler(
+                '[data-testid="velocity-playground-editor"]',
+                'init',
+                editor
+            );
+            pressRunShortcut();
+            expect(store.runScript).toHaveBeenCalled();
+        });
+
+        it('is a no-op while a script is already running (canRun is false)', () => {
+            const store = setup({ canRun: vi.fn().mockReturnValue(false) });
+            const { editor, pressRunShortcut } = createFakeEditor();
+            spectator.triggerEventHandler(
+                '[data-testid="velocity-playground-editor"]',
+                'init',
+                editor
+            );
+            pressRunShortcut();
+            expect(store.runScript).not.toHaveBeenCalled();
+        });
+
+        it('states the shortcut in the Run button tooltip', () => {
+            setup();
+            const messageService = spectator.inject(DotMessageService);
+            expect(messageService.get).toHaveBeenCalledWith(
+                'velocityPlayground.action.run.tooltip',
+                spectator.component.runShortcutLabel
+            );
+        });
+    });
+
     describe('history select', () => {
         it('forwards selection to store.selectHistoryEntry', () => {
             const store = setup({
-                history: jest.fn().mockReturnValue(['$one', '$two']),
-                hasHistory: jest.fn().mockReturnValue(true)
+                history: vi.fn().mockReturnValue(['$one', '$two']),
+                hasHistory: vi.fn().mockReturnValue(true)
             });
             spectator.component.onHistoryChange('$two');
             expect(store.selectHistoryEntry).toHaveBeenCalledWith('$two');
         });
 
         it('ignores null values from the select clear', () => {
-            const store = setup({ hasHistory: jest.fn().mockReturnValue(true) });
+            const store = setup({ hasHistory: vi.fn().mockReturnValue(true) });
             spectator.component.onHistoryChange(null);
             expect(store.selectHistoryEntry).not.toHaveBeenCalled();
         });
@@ -134,57 +224,201 @@ describe('DotVelocityPlaygroundPageComponent', () => {
 
     describe('editor options computed signal', () => {
         it('exposes velocity language and wrap=on when wrapCode is true', () => {
-            setup({ wrapCode: jest.fn().mockReturnValue(true) });
+            setup({ wrapCode: vi.fn().mockReturnValue(true) });
             expect(spectator.component.$editorOptions().language).toBe('velocity-playground');
             expect(spectator.component.$editorOptions().wordWrap).toBe('on');
         });
 
         it('flips wordWrap to off when wrapCode is false', () => {
-            setup({ wrapCode: jest.fn().mockReturnValue(false) });
+            setup({ wrapCode: vi.fn().mockReturnValue(false) });
             expect(spectator.component.$editorOptions().wordWrap).toBe('off');
         });
 
-        it('applies the dot-velocity-dark Monaco theme', () => {
+        it('inherits the shared Monaco light theme — consistent with the other dev-tool portlets', () => {
             setup();
-            expect(spectator.component.$editorOptions().theme).toBe('dot-velocity-dark');
+            expect(spectator.component.$editorOptions().theme).toBe('vs');
         });
     });
 
     describe('output options computed signal', () => {
         it('mirrors outputContentType into the Monaco language', () => {
-            setup({ outputContentType: jest.fn().mockReturnValue('json') });
+            setup({ outputContentType: vi.fn().mockReturnValue('json') });
             expect(spectator.component.$outputOptions().language).toBe('json');
             expect(spectator.component.$outputOptions().readOnly).toBe(true);
         });
 
-        it('uses the same custom dark theme as the editor', () => {
+        it('inherits the shared Monaco light theme', () => {
             setup();
-            expect(spectator.component.$outputOptions().theme).toBe('dot-velocity-dark');
+            expect(spectator.component.$outputOptions().theme).toBe('vs');
         });
     });
 
     describe('error banner', () => {
-        it('renders when hasError is true', () => {
-            setup({
-                hasError: jest.fn().mockReturnValue(true),
-                errorMessage: jest.fn().mockReturnValue('Velocity failed'),
-                status: jest.fn().mockReturnValue(ComponentStatus.LOADED)
-            });
+        it('renders the message when an error is present', () => {
+            // Echo the message back so $errorSummary's DotMessageService.get is a pass-through,
+            // matching the real behavior for unknown keys (raw backend messages are not i18n keys).
+            setup(
+                {
+                    hasError: vi.fn().mockReturnValue(true),
+                    error: vi.fn().mockReturnValue({
+                        message: 'Velocity failed',
+                        structured: null,
+                        warnings: []
+                    }),
+                    status: vi.fn().mockReturnValue(ComponentStatus.LOADED)
+                },
+                (key: string) => key
+            );
             expect(spectator.query(byTestId('velocity-playground-error-banner'))).toBeTruthy();
+            expect(
+                spectator.query(byTestId('velocity-playground-error-message'))?.textContent?.trim()
+            ).toBe('Velocity failed');
+            // Unstructured error → no detail row.
+            expect(spectator.query(byTestId('velocity-playground-error-detail'))).toBeFalsy();
         });
 
-        it('is hidden when hasError is false', () => {
-            setup({ hasError: jest.fn().mockReturnValue(false) });
+        it('collapses a multi-line message to a single line in the banner', () => {
+            const multi =
+                'Encountered "<EOF>" at line 5, column 39\nWas expecting one of:\n  "[" ...';
+            setup(
+                {
+                    hasError: vi.fn().mockReturnValue(true),
+                    error: vi
+                        .fn()
+                        .mockReturnValue({ message: multi, structured: null, warnings: [] }),
+                    status: vi.fn().mockReturnValue(ComponentStatus.LOADED)
+                },
+                (key: string) => key
+            );
+
+            // Banner shows only the first line…
+            expect(
+                spectator.query(byTestId('velocity-playground-error-message'))?.textContent?.trim()
+            ).toBe('Encountered "<EOF>" at line 5, column 39');
+            // …while the trace pane keeps the full multi-line detail.
+            expect(spectator.component.$errorTrace()).toBe(multi);
+        });
+
+        it('renders the errorType chip and line/column locator for a structured error', () => {
+            setup({
+                hasError: vi.fn().mockReturnValue(true),
+                error: vi.fn().mockReturnValue({
+                    message: 'Encountered "#end"',
+                    warnings: [],
+                    structured: {
+                        message: 'Encountered "#end"',
+                        errorType: 'ParseErrorException',
+                        line: 12,
+                        column: 3
+                    }
+                }),
+                status: vi.fn().mockReturnValue(ComponentStatus.LOADED)
+            });
+
+            expect(spectator.query(byTestId('velocity-playground-error-detail'))).toBeTruthy();
+            expect(
+                spectator.query(byTestId('velocity-playground-error-type'))?.textContent?.trim()
+            ).toBe('ParseErrorException');
+            expect(spectator.query(byTestId('velocity-playground-error-location'))).toBeTruthy();
+        });
+
+        it('is hidden when there is no error', () => {
+            setup({ error: vi.fn().mockReturnValue(null) });
             expect(spectator.query(byTestId('velocity-playground-error-banner'))).toBeFalsy();
+        });
+
+        it('renders the error trace pane instead of the output editor on error', () => {
+            setup({
+                hasError: vi.fn().mockReturnValue(true),
+                error: vi.fn().mockReturnValue({
+                    message: 'Velocity failed',
+                    structured: null,
+                    warnings: []
+                }),
+                status: vi.fn().mockReturnValue(ComponentStatus.LOADED)
+            });
+
+            expect(spectator.query(byTestId('velocity-playground-error-editor'))).toBeTruthy();
+            // The normal output editor + "Ready" stats bar must not show alongside an error.
+            expect(spectator.query(byTestId('velocity-playground-output-editor'))).toBeFalsy();
+            expect(spectator.query(byTestId('velocity-playground-stats-bar'))).toBeFalsy();
+        });
+
+        it('$errorTrace composes the header and location lines from the structured error', () => {
+            setup(
+                {
+                    hasError: vi.fn().mockReturnValue(true),
+                    error: vi.fn().mockReturnValue({
+                        message: 'Encountered "#end"',
+                        warnings: [],
+                        structured: {
+                            message: 'Encountered "#end"',
+                            errorType: 'ParseErrorException',
+                            line: 12,
+                            column: 3
+                        }
+                    }),
+                    status: vi.fn().mockReturnValue(ComponentStatus.LOADED)
+                },
+                (key: string) => key
+            );
+
+            expect(spectator.component.$errorTrace()).toBe(
+                ['ParseErrorException: Encountered "#end"', '    at line 12, column 3'].join('\n')
+            );
+        });
+    });
+
+    describe('warnings banner', () => {
+        const warning = {
+            type: 'UNDEFINED_REFERENCE',
+            message: "Undefined reference '$x'",
+            reference: '$x',
+            line: 2,
+            column: 1
+        };
+
+        it('renders on a successful run that has warnings', () => {
+            setup(
+                {
+                    hasWarnings: vi.fn().mockReturnValue(true),
+                    warnings: vi.fn().mockReturnValue([warning]),
+                    hasError: vi.fn().mockReturnValue(false),
+                    status: vi.fn().mockReturnValue(ComponentStatus.LOADED)
+                },
+                (key: string) => key
+            );
+
+            expect(spectator.query(byTestId('velocity-playground-warnings-banner'))).toBeTruthy();
+            expect(spectator.queryAll(byTestId('velocity-playground-warning-item')).length).toBe(1);
+        });
+
+        it('is suppressed when there is also an error (the trace pane carries warnings)', () => {
+            setup({
+                hasWarnings: vi.fn().mockReturnValue(true),
+                warnings: vi.fn().mockReturnValue([warning]),
+                hasError: vi.fn().mockReturnValue(true),
+                error: vi
+                    .fn()
+                    .mockReturnValue({ message: 'boom', structured: null, warnings: [warning] }),
+                status: vi.fn().mockReturnValue(ComponentStatus.LOADED)
+            });
+
+            expect(spectator.query(byTestId('velocity-playground-warnings-banner'))).toBeFalsy();
+        });
+
+        it('is hidden when there are no warnings', () => {
+            setup({ hasWarnings: vi.fn().mockReturnValue(false) });
+            expect(spectator.query(byTestId('velocity-playground-warnings-banner'))).toBeFalsy();
         });
     });
 
     describe('content-type label', () => {
         it('renders the viewing label with the content type when output is present', () => {
             setup({
-                hasOutput: jest.fn().mockReturnValue(true),
-                outputContentType: jest.fn().mockReturnValue('json'),
-                status: jest.fn().mockReturnValue(ComponentStatus.LOADED)
+                hasOutput: vi.fn().mockReturnValue(true),
+                outputContentType: vi.fn().mockReturnValue('json'),
+                status: vi.fn().mockReturnValue(ComponentStatus.LOADED)
             });
             const label = spectator.query(byTestId('velocity-playground-content-type-chip'));
             expect(label?.textContent?.replace(/\s+/g, ' ').trim()).toBe('json');
@@ -211,7 +445,7 @@ describe('DotVelocityPlaygroundPageComponent', () => {
 
         it('useExample loads the snippet into the editor and hides the popover', () => {
             const store = setup();
-            const hideSpy = jest.fn();
+            const hideSpy = vi.fn();
             // Stub the $helpPopover viewChild so we don't depend on PrimeNG popover internals
             Object.defineProperty(spectator.component, '$helpPopover', {
                 value: () => ({ hide: hideSpy })
@@ -247,17 +481,17 @@ describe('DotVelocityPlaygroundPageComponent', () => {
     describe('empty output state', () => {
         it('renders dot-empty-container on INIT when there is no error', () => {
             setup({
-                status: jest.fn().mockReturnValue(ComponentStatus.INIT),
-                hasError: jest.fn().mockReturnValue(false)
+                status: vi.fn().mockReturnValue(ComponentStatus.INIT),
+                hasError: vi.fn().mockReturnValue(false)
             });
             expect(spectator.query(byTestId('velocity-playground-empty-output'))).toBeTruthy();
         });
 
         it('hides the empty state once a run has completed', () => {
             setup({
-                status: jest.fn().mockReturnValue(ComponentStatus.LOADED),
-                hasOutput: jest.fn().mockReturnValue(true),
-                output: jest.fn().mockReturnValue('rendered')
+                status: vi.fn().mockReturnValue(ComponentStatus.LOADED),
+                hasOutput: vi.fn().mockReturnValue(true),
+                output: vi.fn().mockReturnValue('rendered')
             });
             expect(spectator.query(byTestId('velocity-playground-empty-output'))).toBeFalsy();
         });
@@ -266,9 +500,9 @@ describe('DotVelocityPlaygroundPageComponent', () => {
     describe('loading state', () => {
         it('renders the dot-spinner while a script is running', () => {
             setup({
-                isLoading: jest.fn().mockReturnValue(true),
-                status: jest.fn().mockReturnValue(ComponentStatus.LOADING),
-                hasError: jest.fn().mockReturnValue(false)
+                isLoading: vi.fn().mockReturnValue(true),
+                status: vi.fn().mockReturnValue(ComponentStatus.LOADING),
+                hasError: vi.fn().mockReturnValue(false)
             });
             const container = spectator.query(byTestId('velocity-playground-loading'));
             expect(container).toBeTruthy();
@@ -277,10 +511,10 @@ describe('DotVelocityPlaygroundPageComponent', () => {
 
         it('hides the spinner once the run finishes', () => {
             setup({
-                isLoading: jest.fn().mockReturnValue(false),
-                status: jest.fn().mockReturnValue(ComponentStatus.LOADED),
-                hasOutput: jest.fn().mockReturnValue(true),
-                output: jest.fn().mockReturnValue('rendered')
+                isLoading: vi.fn().mockReturnValue(false),
+                status: vi.fn().mockReturnValue(ComponentStatus.LOADED),
+                hasOutput: vi.fn().mockReturnValue(true),
+                output: vi.fn().mockReturnValue('rendered')
             });
             expect(spectator.query(byTestId('velocity-playground-loading'))).toBeFalsy();
         });
@@ -291,11 +525,11 @@ describe('DotVelocityPlaygroundPageComponent', () => {
     describe('export buttons', () => {
         const loadedSetup = (overrides: StoreOverrides = {}) =>
             setup({
-                hasOutput: jest.fn().mockReturnValue(true),
-                output: jest.fn().mockReturnValue('rendered'),
-                outputContentType: jest.fn().mockReturnValue('json'),
-                status: jest.fn().mockReturnValue(ComponentStatus.LOADED),
-                code: jest.fn().mockReturnValue('#set($x = 1)'),
+                hasOutput: vi.fn().mockReturnValue(true),
+                output: vi.fn().mockReturnValue('rendered'),
+                outputContentType: vi.fn().mockReturnValue('json'),
+                status: vi.fn().mockReturnValue(ComponentStatus.LOADED),
+                code: vi.fn().mockReturnValue('#set($x = 1)'),
                 ...overrides
             });
 
@@ -318,12 +552,12 @@ describe('DotVelocityPlaygroundPageComponent', () => {
         it('copies a curl snippet that POSTs to /api/vtl/dynamic/ with the current code', async () => {
             loadedSetup();
             const clipboard = spectator.inject(DotClipboardUtil);
-            (clipboard.copy as jest.Mock).mockClear();
+            (clipboard.copy as Mock).mockClear();
             const curlCommand = spectator.component.exportItems[0].command;
             if (!curlCommand) throw new Error('curl command not registered');
             curlCommand({} as never);
             await Promise.resolve();
-            const [payload] = (clipboard.copy as jest.Mock).mock.calls[0];
+            const [payload] = (clipboard.copy as Mock).mock.calls[0];
             expect(payload).toContain('curl -X POST');
             expect(payload).toContain('/api/vtl/dynamic/');
             expect(payload).toContain('"velocity":"#set($x = 1)"');
@@ -332,21 +566,21 @@ describe('DotVelocityPlaygroundPageComponent', () => {
         it('copies a fetch snippet pointing at /api/vtl/dynamic/', async () => {
             loadedSetup();
             const clipboard = spectator.inject(DotClipboardUtil);
-            (clipboard.copy as jest.Mock).mockClear();
+            (clipboard.copy as Mock).mockClear();
             const fetchCommand = spectator.component.exportItems[1].command;
             if (!fetchCommand) throw new Error('fetch command not registered');
             fetchCommand({} as never);
             await Promise.resolve();
-            const [payload] = (clipboard.copy as jest.Mock).mock.calls[0];
+            const [payload] = (clipboard.copy as Mock).mock.calls[0];
             expect(payload).toContain("await fetch('/api/vtl/dynamic/'");
             expect(payload).toContain('"velocity": "#set($x = 1)"');
         });
 
         it('clicking Export downloads a file with an extension matching the content type', () => {
-            loadedSetup({ outputContentType: jest.fn().mockReturnValue('xml') });
+            loadedSetup({ outputContentType: vi.fn().mockReturnValue('xml') });
             const createObjectUrlOriginal = URL.createObjectURL;
-            URL.createObjectURL = jest.fn().mockReturnValue('blob:mock');
-            const appendSpy = jest.spyOn(document.body, 'appendChild');
+            URL.createObjectURL = vi.fn().mockReturnValue('blob:mock');
+            const appendSpy = vi.spyOn(document.body, 'appendChild');
 
             const exportBtn = spectator
                 .query(byTestId('velocity-playground-export-btn'))
@@ -366,7 +600,7 @@ describe('DotVelocityPlaygroundPageComponent', () => {
 
         it('toggleExportMenu delegates the click event to the menu', () => {
             loadedSetup();
-            const toggleSpy = jest.fn();
+            const toggleSpy = vi.fn();
             // Stub the $exportMenu viewChild — under JSDOM the <p-menu popup> overlay
             // doesn't always resolve, and we want this test to assert the delegation
             // explicitly rather than silently no-op.

@@ -1,3 +1,5 @@
+import { Mock, vi } from 'vitest';
+
 import { handleContentletClick } from './dot-analytics.click.utils';
 
 import {
@@ -9,46 +11,46 @@ import * as sharedUtils from '../../shared/utils/dot-analytics.utils';
 import * as impressionUtils from '../impression/dot-analytics.impression.utils';
 
 // Mock dependencies
-jest.mock('../../shared/utils/dot-analytics.utils');
-jest.mock('../impression/dot-analytics.impression.utils');
+vi.mock('../../shared/utils/dot-analytics.utils');
+vi.mock('../impression/dot-analytics.impression.utils');
 
 describe('Click Utils', () => {
     let mockLogger: ReturnType<typeof sharedUtils.createPluginLogger>;
 
     beforeEach(() => {
-        jest.clearAllMocks();
-        jest.useFakeTimers();
+        vi.clearAllMocks();
+        vi.useFakeTimers();
 
         mockLogger = {
-            debug: jest.fn(),
-            info: jest.fn(),
-            warn: jest.fn(),
-            error: jest.fn(),
-            log: jest.fn(),
-            group: jest.fn(),
-            groupEnd: jest.fn(),
-            time: jest.fn(),
-            timeEnd: jest.fn()
+            debug: vi.fn(),
+            info: vi.fn(),
+            warn: vi.fn(),
+            error: vi.fn(),
+            log: vi.fn(),
+            group: vi.fn(),
+            groupEnd: vi.fn(),
+            time: vi.fn(),
+            timeEnd: vi.fn()
         } as unknown as ReturnType<typeof sharedUtils.createPluginLogger>;
 
         // Mock getViewportMetrics
-        (impressionUtils.getViewportMetrics as jest.Mock).mockReturnValue({
+        (impressionUtils.getViewportMetrics as Mock).mockReturnValue({
             offsetPercentage: 50
         });
     });
 
     afterEach(() => {
-        jest.useRealTimers();
+        vi.useRealTimers();
     });
 
     describe('handleContentletClick()', () => {
-        let trackCallback: jest.Mock;
+        let trackCallback: Mock;
 
         beforeEach(() => {
-            trackCallback = jest.fn();
+            trackCallback = vi.fn();
 
             // Mock extractContentletData
-            (sharedUtils.extractContentletData as jest.Mock).mockReturnValue({
+            (sharedUtils.extractContentletData as Mock).mockReturnValue({
                 identifier: 'test-123',
                 inode: 'inode-456',
                 title: 'Test Content',
@@ -100,7 +102,7 @@ describe('Click Utils', () => {
                 document.body.appendChild(contentlet);
 
                 // Mock no identifier
-                (sharedUtils.extractContentletData as jest.Mock).mockReturnValue({
+                (sharedUtils.extractContentletData as Mock).mockReturnValue({
                     identifier: '',
                     inode: 'inode-456',
                     title: 'Test',
@@ -330,7 +332,7 @@ describe('Click Utils', () => {
                 const contentlet = createContentletWithButton('test-123');
                 document.body.appendChild(contentlet);
 
-                (impressionUtils.getViewportMetrics as jest.Mock).mockReturnValue({
+                (impressionUtils.getViewportMetrics as Mock).mockReturnValue({
                     offsetPercentage: 75
                 });
 

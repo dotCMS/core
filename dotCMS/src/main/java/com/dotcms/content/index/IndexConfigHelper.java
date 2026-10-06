@@ -1,9 +1,12 @@
 package com.dotcms.content.index;
 
+import com.dotcms.content.index.opensearch.OSIndexAPIImpl;
+import com.dotcms.content.index.opensearch.OSIndexAPIImpl.ConnectionFailureKind;
 import com.dotcms.content.index.opensearch.OSIndexProperty;
 import com.dotcms.featureflag.FeatureFlagName;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import java.util.Optional;
 
 /**
  * Central helper for reading index-layer configuration properties.
@@ -63,6 +66,28 @@ public interface IndexConfigHelper {
             case "ERROR": Logger.error(clazz, message, t); break;
             default:      Logger.warn(clazz,  message, t); break;
         }
+    }
+
+    /**
+     * Returns the operator-facing remediation for a shadow-write failure whose cause is
+     * <em>systemic</em> — a connection, TLS or permission problem that keeps rejecting every write
+     * until it is fixed — or {@link Optional#empty()} when the cause cannot be classified, which is
+     * the signature of a per-document problem (a mapping conflict, a malformed field) that must not
+     * be escalated as a migration blocker.
+     *
+     * <p>Exists as a neutral seam so callers outside the index layer — the reindex bulk listener,
+     * which deliberately carries no vendor imports — can escalate a systemic rejection without
+     * reaching into the OpenSearch adapter's classifier themselves (issue #36222 follow-up).</p>
+     *
+     * @param failureMessage vendor-reported failure text, or {@code null}
+     * @return {@code KIND (remediation)} for a systemic cause, empty otherwise
+     */
+    static Optional<String> systemicFailureRemediation(final String failureMessage) {
+        final ConnectionFailureKind kind = OSIndexAPIImpl.classifyFailureMessage(failureMessage);
+        if (kind == ConnectionFailureKind.UNKNOWN) {
+            return Optional.empty();
+        }
+        return Optional.of(kind.name() + " (" + kind.remediation() + ")");
     }
 
     // -------------------------------------------------------------------------

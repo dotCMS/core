@@ -177,6 +177,7 @@ function execCommand({
         subscript: () => editor.chain().setSubscript().focus().run(),
         superscript: () => editor.chain().setSuperscript().focus().run(),
         video: () => editor.commands.openAssetForm({ type: 'video' }),
+        audio: () => editor.commands.openAssetForm({ type: 'audio' }),
         aiContentPrompt: () => editor.commands.openAIPrompt(),
         aiContent: () => editor.commands.insertAINode(),
         aiImagePrompt: () => editor.commands.openImagePrompt(),

@@ -66,6 +66,14 @@ jobs:
     with:
       core-build: true
       run-pr-checks: true
+    secrets:
+      # READ-ONLY key: PR code is untrusted, and a build cache an attacker can
+      # write is replayed as a build output on trunk (CVE-2025-36852). Fork PRs
+      # receive no secrets at all and fall back to a normal uncached build.
+      build-cache-access-key: ${{ secrets.OVH_S3_BUILD_CACHE_BUCKET_ACCESS_KEY_RO }}
+      build-cache-secret-key: ${{ secrets.OVH_S3_BUILD_CACHE_BUCKET_SECRET_KEY_RO }}
+      build-cache-endpoint: ${{ secrets.OVH_S3_BUILD_CACHE_BUCKET_ENDPOINT }}
+      build-cache-bucket: ${{ secrets.OVH_S3_BUILD_CACHE_BUCKET_NAME }}
     permissions:
       contents: read
       packages: write
@@ -109,14 +117,141 @@ jobs:
       frontend: ${{ fromJSON(needs.initialize.outputs.filters).frontend == 'true' }}
       cli: ${{ fromJSON(needs.initialize.outputs.filters).cli == 'true' || fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
       e2e: ${{ fromJSON(needs.initialize.outputs.filters).build == 'true' }}
+      # Run the integration battery under an ES->OS migration phase when the PR carries an
+      # "OpenSearch:Phase-<N>" label. No label -> empty -> default phase-0 behavior.
+      opensearch_phase: >-
+        ${{ (contains(github.event.pull_request.labels.*.name, 'OpenSearch:Phase-1') && '1')
+         || (contains(github.event.pull_request.labels.*.name, 'OpenSearch:Phase-2') && '2')
+         || (contains(github.event.pull_request.labels.*.name, 'OpenSearch:Phase-3') && '3')
+         || '' }}
     secrets:
       DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
+
+  # Validate SDK package.json shapes - guards against a floating @dotcms/* version
+  # specifier (latest/next/*) regressing into an SDK lib's peerDependencies, a sibling
+  # SDK dependency reappearing in the wrong field, or an example app pinning a floating
+  # tag anywhere it isn't allowed (main's examples are the one deliberate exception for
+  # "latest" - see specs/37399-sdk-packaging-version-fix/spec.md). Also builds
+  # @dotcms/angular and fails if its Angular peer range admits a version older than the
+  # built artifact needs (#37680).
+  validate-sdk-package-shapes:
+    name: Validate SDK package.json shapes
+    needs: [ initialize ]
+    if: >-
+      always() && !cancelled() &&
+      (fromJSON(needs.initialize.outputs.filters).sdk_libs == 'true' ||
+       fromJSON(needs.initialize.outputs.filters).examples == 'true' ||
+       fromJSON(needs.initialize.outputs.filters).sdk_package_shapes == 'true')
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    # 20, not 10: the Angular peer-range check installs core-web and builds sdk-angular.
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: 'Setup Node'
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: 'core-web/.nvmrc'
+          cache: npm
+          cache-dependency-path: |
+            .github/scripts/validate-sdk-package-shapes/package-lock.json
+            .github/scripts/resolve-sdk-pin/package-lock.json
+            core-web/libs/sdk/angular/toolchain/package-lock.json
+
+      - name: 'Build and test validator'
+        working-directory: .github/scripts/validate-sdk-package-shapes
+        run: |
+          # --ignore-scripts: this manifest is PR-controlled on cicd_1-pr.yml, and npm
+          # lifecycle scripts would execute arbitrary code from an unmerged branch — see
+          # that workflow's own "PR checks are run on code that is not yet merged" header.
+          npm ci --ignore-scripts
+          npm run build
+          # The guardrail's own tests. Without this a broken validator is a green build:
+          # it would still exit 0 on manifests it should reject.
+          npm test
+        shell: bash
+
+      - name: 'Test resolve-sdk-pin'
+        working-directory: .github/scripts/resolve-sdk-pin
+        run: |
+          # The release pipeline invokes this module with a bare `node` - no install, no
+          # build - so CI is the only place its tests ever run. Without this step the
+          # resolver could be broken and every build would still be green.
+          npm ci --ignore-scripts
+          npm test
+        shell: bash
+
+      - name: 'Validate SDK lib and example manifests'
+        working-directory: .github/scripts/validate-sdk-package-shapes
+        env:
+          # This workflow only triggers for PRs targeting main or master (see the `on:`
+          # trigger above), and the validator treats BOTH as trunk - examples there are
+          # allowed to float on "latest" (see file header). Passing the real base ref
+          # rather than a hardcoded "main" keeps this honest if the trigger list changes.
+          TARGET_BRANCH: ${{ github.event.pull_request.base.ref }}
+        run: |
+          set -euo pipefail
+          FAIL=0
+
+          while IFS= read -r pkg_json; do
+            node dist/index.js "$pkg_json" || FAIL=1
+          done < <(find ../../../core-web/libs/sdk -maxdepth 2 -name package.json)
+
+          while IFS= read -r pkg_json; do
+            node dist/index.js "$pkg_json" --branch "$TARGET_BRANCH" || FAIL=1
+          done < <(find ../../../examples -maxdepth 2 -name package.json)
+
+          exit $FAIL
+        shell: bash
+
+      # The Angular peer-range check (#37680) reads the BUILT @dotcms/angular, so unlike the
+      # manifest checks above it needs core-web installed and the lib compiled. The build uses
+      # the Angular pinned in core-web/libs/sdk/angular/toolchain (the SDK's supported floor),
+      # not core-web's, so it also fails if SDK code uses an API newer than that floor.
+      # Skipped on examples-only changes: nothing that moves the floor lives there.
+      - name: 'Set up pnpm'
+        if: >-
+          fromJSON(needs.initialize.outputs.filters).sdk_libs == 'true' ||
+          fromJSON(needs.initialize.outputs.filters).sdk_package_shapes == 'true'
+        uses: pnpm/setup@703c52620218391530e48b9e8870d5c0082e1b9b # v2.1.0
+        with:
+          working-directory: core-web
+          install: false
+          cache: true
+
+      - name: 'Build @dotcms/angular'
+        if: >-
+          fromJSON(needs.initialize.outputs.filters).sdk_libs == 'true' ||
+          fromJSON(needs.initialize.outputs.filters).sdk_package_shapes == 'true'
+        working-directory: core-web
+        run: |
+          set -euo pipefail
+          pnpm install --frozen-lockfile
+          # production: the configuration deploy-javascript-sdk publishes.
+          pnpm exec nx build sdk-angular --configuration=production --skip-nx-cache
+        shell: bash
+
+      - name: 'Check Angular peer range against the built artifact'
+        if: >-
+          fromJSON(needs.initialize.outputs.filters).sdk_libs == 'true' ||
+          fromJSON(needs.initialize.outputs.filters).sdk_package_shapes == 'true'
+        working-directory: .github/scripts/validate-sdk-package-shapes
+        run: |
+          # Fails if core-web/libs/sdk/angular/package.json lets npm install @dotcms/angular
+          # next to an Angular older than the one its partial-compilation output needs.
+          node dist/check-angular-peer-floor.js \
+            ../../../core-web/libs/sdk/angular/package.json \
+            ../../../core-web/dist/libs/sdk/angular/fesm2022
+        shell: bash
 
   # Finalize job - aggregates results from previous jobs
   finalize:
     name: Finalize
     if: always()
-    needs: [ test ]
+    needs: [ test, validate-sdk-package-shapes ]
     uses: ./.github/workflows/cicd_comp_finalize-phase.yml
     with:
       needsData: ${{ toJson(needs) }}

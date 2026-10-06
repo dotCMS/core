@@ -1,9 +1,16 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { Mocked, vi } from 'vitest';
 
 import { signal } from '@angular/core';
 
 import { ConfirmationService } from 'primeng/api';
+import { Button } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotContentletEditUrlService, DotMessageService } from '@dotcms/data-access';
@@ -22,8 +29,8 @@ const ASSETS: BundleAssetView[] = [
 describe('DotPublishingQueueAssetListDialogComponent', () => {
     let spectator: Spectator<DotPublishingQueueAssetListDialogComponent>;
     let store: ReturnType<typeof storeStub>;
-    let confirmationService: jest.Mocked<ConfirmationService>;
-    let dialogRef: jest.Mocked<DynamicDialogRef>;
+    let confirmationService: Mocked<ConfirmationService>;
+    let dialogRef: Mocked<DynamicDialogRef>;
 
     const selectedAssets = signal<BundleAssetView[]>([]);
     const assetListStatus = signal<'init' | 'loading' | 'loaded' | 'error'>('loading');
@@ -34,7 +41,7 @@ describe('DotPublishingQueueAssetListDialogComponent', () => {
             selectedAssets,
             assetListStatus,
             selectedBundleId,
-            removeBundleAsset: jest.fn()
+            removeBundleAsset: vi.fn()
         };
     }
 
@@ -43,9 +50,9 @@ describe('DotPublishingQueueAssetListDialogComponent', () => {
         componentProviders: [mockProvider(DotPublishingQueueStore, storeStub())],
         providers: [
             ConfirmationService,
-            mockProvider(DynamicDialogRef, { close: jest.fn() }),
+            mockProvider(DynamicDialogRef, { close: vi.fn() }),
             mockProvider(DotContentletEditUrlService, {
-                resolveEditUrl: jest.fn().mockReturnValue(of('/dotAdmin/#/edit/inode/i1'))
+                resolveEditUrl: vi.fn().mockReturnValue(of('/dotAdmin/#/edit/inode/i1'))
             }),
             {
                 provide: DotMessageService,
@@ -53,7 +60,7 @@ describe('DotPublishingQueueAssetListDialogComponent', () => {
                     'publishing-queue.column.name': 'Name',
                     'publishing-queue.column.type': 'Type',
                     'publishing-queue.asset-list.empty': 'No items',
-                    'publishing-queue.asset-list.remove': 'Remove from bundle',
+                    'publishing-queue.select-bundle.delete-tooltip': 'Delete from bundle',
                     'publishing-queue.asset-list.remove-confirm.header':
                         'Remove asset from bundle?',
                     'publishing-queue.asset-list.remove-confirm.message':
@@ -76,15 +83,13 @@ describe('DotPublishingQueueAssetListDialogComponent', () => {
         store = spectator.inject(DotPublishingQueueStore, true) as unknown as ReturnType<
             typeof storeStub
         >;
-        confirmationService = spectator.inject(
-            ConfirmationService
-        ) as jest.Mocked<ConfirmationService>;
-        dialogRef = spectator.inject(DynamicDialogRef) as jest.Mocked<DynamicDialogRef>;
-        jest.spyOn(confirmationService, 'confirm').mockImplementation((cfg) => {
+        confirmationService = spectator.inject(ConfirmationService) as Mocked<ConfirmationService>;
+        dialogRef = spectator.inject(DynamicDialogRef) as Mocked<DynamicDialogRef>;
+        vi.spyOn(confirmationService, 'confirm').mockImplementation((cfg) => {
             cfg.accept?.();
             return confirmationService;
         });
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('reserves a fixed-height shell + always-mounted table header (no resize jank)', () => {
@@ -133,7 +138,7 @@ describe('DotPublishingQueueAssetListDialogComponent', () => {
         });
 
         it('opens the resolved contentlet URL in a new tab', () => {
-            const openSpy = jest.spyOn(window, 'open').mockReturnValue(null);
+            const openSpy = vi.spyOn(window, 'open').mockReturnValue(null);
             // First asset is a contentlet with a resolved URL (see mock in providers).
             spectator.component.onAssetRowClick(ASSETS[0]);
             expect(openSpy).toHaveBeenCalledWith('/dotAdmin/#/edit/inode/i1', '_blank', 'noopener');
@@ -141,7 +146,7 @@ describe('DotPublishingQueueAssetListDialogComponent', () => {
         });
 
         it('is a no-op for non-contentlet assets (no URL resolved)', () => {
-            const openSpy = jest.spyOn(window, 'open').mockReturnValue(null);
+            const openSpy = vi.spyOn(window, 'open').mockReturnValue(null);
             spectator.component.onAssetRowClick(ASSETS[1]);
             expect(openSpy).not.toHaveBeenCalled();
             openSpy.mockRestore();
@@ -181,6 +186,22 @@ describe('DotPublishingQueueAssetListDialogComponent', () => {
             expect(buttons.length).toBe(2);
         });
 
+        it('renders the trash button with the neutral secondary severity, not danger', () => {
+            const buttons = spectator
+                .queryAll(Button)
+                .filter(
+                    (button) => button.el.nativeElement.dataset.testid === 'pq-asset-remove-btn'
+                );
+
+            expect(buttons.length).toBe(2);
+            buttons.forEach((button) => expect(button.severity).toBe('secondary'));
+        });
+
+        it('labels the trash button like the Select Bundle dialog ("Delete from bundle")', () => {
+            const [button] = spectator.queryAll(byTestId('pq-asset-remove-btn'));
+            expect(button.getAttribute('aria-label')).toBe('Delete from bundle');
+        });
+
         it('confirms before removing, then calls store.removeBundleAsset with the asset id', () => {
             spectator.component.onRemoveAsset(ASSETS[0]);
             expect(confirmationService.confirm).toHaveBeenCalled();
@@ -212,7 +233,7 @@ describe('DotPublishingQueueAssetListDialogComponent', () => {
         });
 
         it('filters rows by title or type when search is set', () => {
-            jest.useFakeTimers();
+            vi.useFakeTimers();
             try {
                 selectedAssets.set(manyAssets);
                 assetListStatus.set('loaded');
@@ -220,14 +241,14 @@ describe('DotPublishingQueueAssetListDialogComponent', () => {
                 expect(spectator.queryAll(byTestId('pq-asset-list-row')).length).toBe(15);
 
                 spectator.component.onSearch('template');
-                jest.advanceTimersByTime(300);
+                vi.advanceTimersByTime(300);
                 spectator.detectChanges();
 
                 // Half the assets have type 'template' (every odd index) — 7 of 15
                 const rows = spectator.queryAll(byTestId('pq-asset-list-row'));
                 expect(rows.length).toBe(7);
             } finally {
-                jest.useRealTimers();
+                vi.useRealTimers();
             }
         });
 
@@ -274,14 +295,14 @@ describe('DotPublishingQueueAssetListDialogComponent — read-only (allowRemove=
                 selectedAssets,
                 assetListStatus,
                 selectedBundleId,
-                removeBundleAsset: jest.fn()
+                removeBundleAsset: vi.fn()
             })
         ],
         providers: [
             ConfirmationService,
-            mockProvider(DynamicDialogRef, { close: jest.fn() }),
+            mockProvider(DynamicDialogRef, { close: vi.fn() }),
             mockProvider(DotContentletEditUrlService, {
-                resolveEditUrl: jest.fn().mockReturnValue(of('/dotAdmin/#/edit/inode/i1'))
+                resolveEditUrl: vi.fn().mockReturnValue(of('/dotAdmin/#/edit/inode/i1'))
             }),
             { provide: DynamicDialogConfig, useValue: { data: { allowRemove: false } } },
             { provide: DotMessageService, useValue: new MockDotMessageService({}) }

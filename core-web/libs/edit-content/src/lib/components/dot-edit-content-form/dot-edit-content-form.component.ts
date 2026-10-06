@@ -11,6 +11,7 @@ import {
     DestroyRef,
     DOCUMENT,
     effect,
+    ElementRef,
     inject,
     OnInit,
     output,
@@ -42,6 +43,8 @@ import {
     DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
     DotCMSContentTypeField,
+    DotCMSFieldType,
+    DotCMSFieldTypes,
     DotCMSWorkflowAction,
     DotContentState,
     DotWorkflowPayload
@@ -50,19 +53,17 @@ import { GlobalStore } from '@dotcms/store';
 import { DotContentletStatusBadgeComponent, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
 
 import { DotEditContentCommandBarActionsComponent } from './components/dot-edit-content-command-bar-actions/dot-edit-content-command-bar-actions.component';
-import { resolutionValue } from './dot-edit-content-form-resolutions';
+import { resolveFieldValue } from './dot-edit-content-form-resolutions';
 
 import { TabViewInsertDirective } from '../../directives/tab-view-insert/tab-view-insert.directive';
 import { DISABLED_WYSIWYG_FIELD } from '../../models/disabledWYSIWYG.constant';
 import { CONTENT_SEARCH_ROUTE } from '../../models/dot-edit-content-field.constant';
-import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 import { FormValues } from '../../models/dot-edit-content-form.interface';
 import { DotWorkflowActionParams } from '../../models/dot-edit-content.model';
 import { DotEditContentStore } from '../../store/edit-content.store';
 import {
     generatePageEditUrl,
     generatePreviewUrl,
-    getFinalCastedValue,
     isFilteredType,
     isSingleColumnLayout,
     processFieldValue
@@ -127,6 +128,7 @@ export class DotEditContentFormComponent implements OnInit {
     readonly $store = inject(DotEditContentStore);
     readonly #router = inject(Router);
     readonly #destroyRef = inject(DestroyRef);
+    readonly #elementRef = inject(ElementRef);
     readonly #fb = inject(FormBuilder);
     readonly #dotWorkflowEventHandlerService = inject(DotWorkflowEventHandlerService);
     readonly #dotWizardService = inject(DotWizardService);
@@ -205,6 +207,14 @@ export class DotEditContentFormComponent implements OnInit {
 
     protected readonly $shouldRenderFields = signal(true);
     protected readonly $shouldRenderPreservedFields = signal(true);
+
+    /**
+     * True once the user has genuinely interacted with a field (see the capture-phase listeners set
+     * up in the constructor). While false, any form value change is async-CVA populate noise, so
+     * {@link initializeFormListener} re-marks the form pristine — decoupling "the user edited
+     * something" from load timing. Reset on each (re)build of the form in {@link initializeForm}.
+     */
+    #userTouched = false;
 
     /**
      * Subscription for form value changes - using this to manage the listener lifecycle
@@ -291,6 +301,30 @@ export class DotEditContentFormComponent implements OnInit {
     }
 
     constructor() {
+        // Detect the first REAL user interaction (pointer/keyboard/input from any field) in the
+        // CAPTURE phase, so `#userTouched` is set BEFORE the field's value-accessor emits
+        // `valueChanges` (which runs in the target/bubble phase) — only then can
+        // initializeFormListener tell a genuine edit apart from async-CVA populate noise.
+        // Programmatic `writeValue` on load never dispatches these DOM events, so it never trips it.
+        const host = this.#elementRef.nativeElement as HTMLElement;
+        const markTouched = () => {
+            this.#userTouched = true;
+        };
+        // `drop` is included because dragging a file in from the OS (e.g. onto the binary/file
+        // field) sets the control value programmatically via `(fileDropped)` — the drag starts
+        // outside the window, so no `pointerdown` precedes it. Without latching here, that first
+        // interaction would look like async-CVA populate and the edit would be marked pristine.
+        const interactionEvents = ['pointerdown', 'keydown', 'input', 'drop'] as const;
+        const listenerOptions: AddEventListenerOptions = { capture: true };
+        interactionEvents.forEach((type) =>
+            host.addEventListener(type, markTouched, listenerOptions)
+        );
+        this.#destroyRef.onDestroy(() =>
+            interactionEvents.forEach((type) =>
+                host.removeEventListener(type, markTouched, listenerOptions)
+            )
+        );
+
         /**
          * Effect that reinitializes the form when contentlet changes (e.g., when viewing historical versions)
          *
@@ -424,7 +458,12 @@ export class DotEditContentFormComponent implements OnInit {
         race(this.#appRef.isStable.pipe(filter(Boolean)), timer(500))
             .pipe(take(1), takeUntilDestroyed(this.#destroyRef))
             .subscribe(() => {
-                this.form?.markAsPristine();
+                // Gate on `#userTouched` for the same reason `initializeFormListener` does: if the
+                // user genuinely edited a field within the isStable/500ms window, clearing dirty
+                // here would silently drop that edit. Only clear load-time (untouched) CVA noise.
+                if (!this.#userTouched) {
+                    this.form?.markAsPristine();
+                }
             });
     }
 
@@ -454,6 +493,13 @@ export class DotEditContentFormComponent implements OnInit {
         this.formValueSubscription = this.form.valueChanges
             .pipe(takeUntilDestroyed(this.#destroyRef))
             .subscribe((value) => {
+                // Until the user has actually interacted, a value change is async-CVA populate,
+                // not an edit — keep the form pristine so the unsaved-changes guard never fires
+                // for load-time noise (independent of how slow the fields load).
+                if (!this.#userTouched) {
+                    this.form.markAsPristine();
+                }
+
                 this.onFormChange(value);
             });
     }
@@ -482,6 +528,9 @@ export class DotEditContentFormComponent implements OnInit {
         identifier
     }: DotWorkflowActionParams): void {
         if (this.form.invalid) {
+            // Gates the required errors: until a save is attempted no field shows one, however
+            // much the author has tabbed around. See BaseWrapperField.$hasError.
+            this.$store.markSubmitAttempted();
             this.form.markAllAsTouched();
             this.changeDetectorRef.detectChanges();
             this.$store.setFormStatus('invalid');
@@ -601,7 +650,7 @@ export class DotEditContentFormComponent implements OnInit {
                     return [key, fieldValue];
                 }
 
-                if (field.fieldType === FIELD_TYPES.CATEGORY) {
+                if (field.fieldType === DotCMSFieldTypes.CATEGORY) {
                     return [key, Array.isArray(fieldValue) ? fieldValue : []];
                 }
 
@@ -624,6 +673,10 @@ export class DotEditContentFormComponent implements OnInit {
      * @private
      */
     private initializeForm() {
+        // A fresh (re)build starts a new populate window: until the user interacts, changes are
+        // programmatic CVA noise, not edits.
+        this.#userTouched = false;
+
         const controls = this.$formFields().reduce(
             (acc, field) => ({
                 ...acc,
@@ -687,17 +740,10 @@ export class DotEditContentFormComponent implements OnInit {
         contentlet: DotCMSContentlet | null;
         isManualTranslation?: boolean;
     }): unknown {
-        const resolutionFn = resolutionValue[field.fieldType as FIELD_TYPES];
-        if (!resolutionFn) {
-            console.warn(`No resolution function found for field type: ${field.fieldType}`);
-
-            return null;
-        }
-
-        const queryParams = this.$store.queryParams();
-        const value = resolutionFn(contentlet, field, queryParams, isManualTranslation);
-
-        return getFinalCastedValue(value, field) ?? null;
+        // One call, one path. This used to look up a resolver, run it, then hand the result to
+        // getFinalCastedValue for a second pass that branched on the field type all over again
+        // (issue #31911).
+        return resolveFieldValue(contentlet, field, this.$store.queryParams(), isManualTranslation);
     }
 
     /**
@@ -719,14 +765,17 @@ export class DotEditContentFormComponent implements OnInit {
         if (field.required) {
             // Block Editor needs a custom validator that checks for actual text content,
             // not just the presence of a JSON structure
-            if (field.fieldType === FIELD_TYPES.BLOCK_EDITOR) {
+            if (field.fieldType === DotCMSFieldTypes.BLOCK_EDITOR) {
                 validators.push(blockEditorRequiredValidator());
             } else {
                 validators.push(Validators.required);
             }
         }
 
-        if (field.regexCheck) {
+        // `in` narrows the union to the arms that declare regexCheck — Text, TextArea, WYSIWYG
+        // and Custom. The other field types never carried one; the flat interface just made it
+        // look as though they might.
+        if ('regexCheck' in field && field.regexCheck) {
             try {
                 const regex = new RegExp(field.regexCheck);
                 validators.push(Validators.pattern(regex));
@@ -827,17 +876,17 @@ export class DotEditContentFormComponent implements OnInit {
      * Field types whose values and component state are preserved during manual translation.
      * Add to this list to protect additional fields from being cleared on locale copy.
      */
-    readonly #preservedFieldTypesOnManualTranslation: FIELD_TYPES[] = [
-        FIELD_TYPES.HOST_FOLDER,
-        FIELD_TYPES.RELATIONSHIP
+    readonly #preservedFieldTypesOnManualTranslation: DotCMSFieldType[] = [
+        DotCMSFieldTypes.HOST_FOLDER,
+        DotCMSFieldTypes.RELATIONSHIP
     ];
 
     /**
      * Returns true if the field type should survive a manual-translation reinit.
      * Used in the template to skip the flush for these fields.
      */
-    isPreservedField(fieldType: string): boolean {
-        return this.#preservedFieldTypesOnManualTranslation.includes(fieldType as FIELD_TYPES);
+    isPreservedField(fieldType: DotCMSFieldType): boolean {
+        return this.#preservedFieldTypesOnManualTranslation.includes(fieldType);
     }
 
     /**
@@ -845,9 +894,7 @@ export class DotEditContentFormComponent implements OnInit {
      */
     #capturePreservedFields(): Record<string, unknown> {
         return (this.$store.contentType()?.fields ?? [])
-            .filter((f) =>
-                this.#preservedFieldTypesOnManualTranslation.includes(f.fieldType as FIELD_TYPES)
-            )
+            .filter((f) => this.#preservedFieldTypesOnManualTranslation.includes(f.fieldType))
             .reduce(
                 (acc, f) => {
                     const value = this.form?.get(f.variable)?.value;

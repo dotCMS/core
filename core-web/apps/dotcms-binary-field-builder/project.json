@@ -91,17 +91,6 @@
             "options": {
                 "buildTarget": "dotcms-binary-field-builder:build"
             }
-        },
-        "test": {
-            "options": {
-                "passWithNoTests": true
-            },
-            "configurations": {
-                "ci": {
-                    "ci": true,
-                    "coverage": true
-                }
-            }
         }
     }
 }

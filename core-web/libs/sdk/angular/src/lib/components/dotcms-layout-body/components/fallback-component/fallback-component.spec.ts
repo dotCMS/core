@@ -1,4 +1,4 @@
-import { createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
 
 import { Component, Input } from '@angular/core';
 

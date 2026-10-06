@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom';
 import { SpectatorHost, createHostFactory } from '@openng/spectator';
+import { vi } from 'vitest';
 
 import { Component } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -342,7 +343,7 @@ describe('UveStyleEditorFieldInputComponent', () => {
 
         it('should emit commit on blur', () => {
             const input = setup();
-            const emitSpy = jest.fn();
+            const emitSpy = vi.fn();
             spectator.component.commit.subscribe(emitSpy);
 
             spectator.dispatchFakeEvent(input, 'blur');
@@ -352,7 +353,7 @@ describe('UveStyleEditorFieldInputComponent', () => {
 
         it('should emit commit when Enter is pressed', () => {
             const input = setup();
-            const emitSpy = jest.fn();
+            const emitSpy = vi.fn();
             spectator.component.commit.subscribe(emitSpy);
 
             spectator.dispatchKeyboardEvent(input, 'keydown', 'Enter');
@@ -362,7 +363,7 @@ describe('UveStyleEditorFieldInputComponent', () => {
 
         it('should NOT emit commit on other keystrokes', () => {
             const input = setup();
-            const emitSpy = jest.fn();
+            const emitSpy = vi.fn();
             spectator.component.commit.subscribe(emitSpy);
 
             spectator.dispatchKeyboardEvent(input, 'keydown', 'a');

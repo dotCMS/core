@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import { TestBed } from '@angular/core/testing';
 
 import { DotLocalstorageService } from './dot-localstorage.service';
@@ -51,7 +53,7 @@ describe('DotLocalstorageService', () => {
 
     describe('removeItem', () => {
         beforeEach(() => {
-            jest.spyOn(Storage.prototype, 'removeItem');
+            vi.spyOn(Storage.prototype, 'removeItem');
         });
 
         it('should remove', () => {
@@ -62,7 +64,7 @@ describe('DotLocalstorageService', () => {
 
     describe('clear', () => {
         beforeEach(() => {
-            jest.spyOn(Storage.prototype, 'clear');
+            vi.spyOn(Storage.prototype, 'clear');
         });
 
         it('should clean', () => {

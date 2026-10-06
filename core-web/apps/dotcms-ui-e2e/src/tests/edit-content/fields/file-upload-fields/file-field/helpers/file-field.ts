@@ -45,7 +45,10 @@ export class FileField {
         this.editButtonResponsive = this.root.getByTestId('edit-button-responsive');
         this.removeButton = this.root.getByTestId('remove-button');
         this.removeButtonResponsive = this.root.getByTestId('remove-button-responsive');
-        this.requiredError = this.root.locator('.error-message small');
+        // `small.p-field-error`, not `.error-message small`: #37464 replaced this field's own
+        // error markup with the footer every field type now shares, so the <small> carries the
+        // class itself rather than sitting inside a wrapper.
+        this.requiredError = this.root.locator('small.p-field-error');
     }
 
     async expectVisible() {
@@ -65,6 +68,23 @@ export class FileField {
         await this.fileInput.setInputFiles(file);
         await uploadResponse;
         await this.expectPreviewVisible();
+    }
+
+    /**
+     * Opens the AssetPicker ("Select Existing File/Image") and waits for its first result page.
+     *
+     * The picker searches as soon as it is configured, so waiting on that request is what tells us
+     * the list is ready to be asserted on rather than still empty.
+     */
+    async openSelectExistingDialog() {
+        const searchResponse = this.page.waitForResponse(
+            (response) =>
+                response.url().includes('/api/v1/drive/search') && response.status() === 200,
+            { timeout: 30000 }
+        );
+
+        await this.selectExistingFileBtn.getByRole('button').click();
+        await searchResponse;
     }
 
     async expectPreviewVisible() {

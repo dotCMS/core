@@ -1,4 +1,5 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { Mock, vi } from 'vitest';
 
 import { Component, Input } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
@@ -26,8 +27,8 @@ export class DotCMSBlockEditorRendererCustomComponent {
     @Input() node: BlockEditorNode | undefined;
 }
 
-jest.mock('@dotcms/uve', () => ({
-    getUVEState: jest.fn()
+vi.mock('@dotcms/uve', () => ({
+    getUVEState: vi.fn()
 }));
 
 /** Wraps `content` in a valid `doc` node so the native component renders it. */
@@ -37,7 +38,7 @@ const doc = (content: BlockEditorNode[]): BlockEditorNode => ({
 });
 
 describe('DotCMSBlockEditorRendererNativeComponent — semantic dispatch', () => {
-    const getUVEStateMock = getUVEState as jest.Mock;
+    const getUVEStateMock = getUVEState as Mock;
 
     let spectator: Spectator<DotCMSBlockEditorRendererNativeComponent>;
     const createComponent = createComponentFactory({
@@ -50,7 +51,7 @@ describe('DotCMSBlockEditorRendererNativeComponent — semantic dispatch', () =>
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     const render = (content: BlockEditorNode[]) => {
@@ -281,6 +282,137 @@ describe('DotCMSBlockEditorRendererNativeComponent — semantic dispatch', () =>
         });
     });
 
+    describe('Text — whitespace fidelity', () => {
+        // A text run must render byte-for-byte what the stored block says. Padding a
+        // run with stray whitespace stretches the mark's box past its text — an <a>
+        // underline and hit area bleeding into the neighbouring characters — and adds
+        // a visible gap wherever the neighbour is punctuation rather than a space.
+        it('should not pad a plain text run with whitespace', () => {
+            render([
+                {
+                    type: BlockEditorDefaultBlocks.PARAGRAPH,
+                    content: [{ type: BlockEditorDefaultBlocks.TEXT, text: 'Hello', marks: [] }]
+                }
+            ]);
+
+            expect(spectator.query('p')?.textContent).toBe('Hello');
+        });
+
+        it('should not pad the text inside a link mark', () => {
+            render([
+                {
+                    type: BlockEditorDefaultBlocks.PARAGRAPH,
+                    content: [
+                        {
+                            type: BlockEditorDefaultBlocks.TEXT,
+                            text: 'mylink',
+                            marks: [{ type: 'link', attrs: { href: '/foo' } }]
+                        }
+                    ]
+                }
+            ]);
+
+            expect(spectator.query('a')?.textContent).toBe('mylink');
+        });
+
+        it('should not pad the text inside a bold mark', () => {
+            render([
+                {
+                    type: BlockEditorDefaultBlocks.PARAGRAPH,
+                    content: [
+                        {
+                            type: BlockEditorDefaultBlocks.TEXT,
+                            text: 'Bold',
+                            marks: [{ type: 'bold', attrs: {} }]
+                        }
+                    ]
+                }
+            ]);
+
+            expect(spectator.query('strong')?.textContent).toBe('Bold');
+        });
+
+        it('should not pad the text inside stacked marks', () => {
+            render([
+                {
+                    type: BlockEditorDefaultBlocks.PARAGRAPH,
+                    content: [
+                        {
+                            type: BlockEditorDefaultBlocks.TEXT,
+                            text: 'Few',
+                            marks: [
+                                { type: 'underline', attrs: {} },
+                                { type: 'bold', attrs: {} }
+                            ]
+                        }
+                    ]
+                }
+            ]);
+
+            expect(spectator.query('u strong')?.textContent).toBe('Few');
+        });
+
+        it('should keep a link flush against the punctuation around it', () => {
+            render([
+                {
+                    type: BlockEditorDefaultBlocks.PARAGRAPH,
+                    content: [
+                        { type: BlockEditorDefaultBlocks.TEXT, text: 'See (', marks: [] },
+                        {
+                            type: BlockEditorDefaultBlocks.TEXT,
+                            text: 'mylink',
+                            marks: [{ type: 'link', attrs: { href: '/foo' } }]
+                        },
+                        { type: BlockEditorDefaultBlocks.TEXT, text: ').', marks: [] }
+                    ]
+                }
+            ]);
+
+            expect(spectator.query('p')?.textContent).toBe('See (mylink).');
+        });
+
+        it('should keep adjacent marked runs flush against each other', () => {
+            render([
+                {
+                    type: BlockEditorDefaultBlocks.PARAGRAPH,
+                    content: [
+                        {
+                            type: BlockEditorDefaultBlocks.TEXT,
+                            text: 'bold',
+                            marks: [{ type: 'bold', attrs: {} }]
+                        },
+                        {
+                            type: BlockEditorDefaultBlocks.TEXT,
+                            text: 'italic',
+                            marks: [{ type: 'italic', attrs: {} }]
+                        }
+                    ]
+                }
+            ]);
+
+            expect(spectator.query('p')?.textContent).toBe('bolditalic');
+        });
+
+        it('should preserve the author’s own spacing around a link exactly once', () => {
+            render([
+                {
+                    type: BlockEditorDefaultBlocks.PARAGRAPH,
+                    content: [
+                        { type: BlockEditorDefaultBlocks.TEXT, text: 'Go to ', marks: [] },
+                        {
+                            type: BlockEditorDefaultBlocks.TEXT,
+                            text: 'mylink',
+                            marks: [{ type: 'link', attrs: { href: '/foo' } }]
+                        },
+                        { type: BlockEditorDefaultBlocks.TEXT, text: ' now.', marks: [] }
+                    ]
+                }
+            ]);
+
+            expect(spectator.query('p')?.textContent).toBe('Go to mylink now.');
+        });
+    });
+
     describe('Headings', () => {
         it('should render a real <h2> for level "2"', () => {
             render([
@@ -461,6 +593,75 @@ describe('DotCMSBlockEditorRendererNativeComponent — semantic dispatch', () =>
             expect(img.style.height).toBe('auto');
         });
 
+        it('should wrap a linked dotImage in an anchor inside the figure', () => {
+            render([
+                {
+                    type: BlockEditorDefaultBlocks.DOT_IMAGE,
+                    attrs: { src: 'i.jpg', alt: 'a picture', href: '/about-us' },
+                    content: []
+                }
+            ]);
+
+            const anchor = spectator.query('figure > a') as HTMLAnchorElement;
+            expect(anchor).toBeTruthy();
+            expect(anchor.getAttribute('href')).toBe('/about-us');
+            expect(anchor.querySelector('img')?.getAttribute('src')).toBe('i.jpg');
+        });
+
+        it('should set target and rel on a linked dotImage that opens in a new tab', () => {
+            render([
+                {
+                    type: BlockEditorDefaultBlocks.DOT_IMAGE,
+                    attrs: { src: 'i.jpg', href: 'https://dotcms.com', target: '_blank' },
+                    content: []
+                }
+            ]);
+
+            const anchor = spectator.query('figure > a') as HTMLAnchorElement;
+            expect(anchor.getAttribute('target')).toBe('_blank');
+            expect(anchor.getAttribute('rel')).toBe('noopener noreferrer');
+        });
+
+        it('should keep the float wrapper style when the dotImage is linked', () => {
+            render([
+                {
+                    type: BlockEditorDefaultBlocks.DOT_IMAGE,
+                    attrs: { src: 'i.jpg', href: '/about-us', textWrap: 'right' },
+                    content: []
+                }
+            ]);
+
+            const figure = spectator.query('figure') as HTMLElement;
+            expect(figure.style.float).toBe('right');
+            expect(spectator.query('figure > a > img')).toBeTruthy();
+        });
+
+        it('should render a bare dotImage when the link was never set', () => {
+            render([
+                {
+                    type: BlockEditorDefaultBlocks.DOT_IMAGE,
+                    attrs: { src: 'i.jpg', href: null },
+                    content: []
+                }
+            ]);
+
+            expect(spectator.query('a')).toBeNull();
+            expect(spectator.query('figure > img')).toBeTruthy();
+        });
+
+        it('should render a bare dotImage when href is an empty string', () => {
+            render([
+                {
+                    type: BlockEditorDefaultBlocks.DOT_IMAGE,
+                    attrs: { src: 'i.jpg', href: '' },
+                    content: []
+                }
+            ]);
+
+            expect(spectator.query('a')).toBeNull();
+            expect(spectator.query('figure > img')).toBeTruthy();
+        });
+
         it('should render a real <video> for dotVideo, with no wrapper element', () => {
             render([
                 {
@@ -475,6 +676,22 @@ describe('DotCMSBlockEditorRendererNativeComponent — semantic dispatch', () =>
             expect(video?.querySelector('source')?.getAttribute('src')).toBe('video.mp4');
             expect(video?.querySelector('source')?.getAttribute('type')).toBe('video/mp4');
             expect(spectator.query('dotcms-block-editor-renderer-video')).toBeNull();
+        });
+
+        it('should render a real <audio> for dotAudio, with no wrapper element', () => {
+            render([
+                {
+                    type: BlockEditorDefaultBlocks.DOT_AUDIO,
+                    attrs: { src: 'audio.mp3', mimeType: 'audio/mpeg' },
+                    content: []
+                }
+            ]);
+
+            const audio = spectator.query('audio');
+            expect(audio).toBeTruthy();
+            expect(audio?.querySelector('source')?.getAttribute('src')).toBe('audio.mp3');
+            expect(audio?.querySelector('source')?.getAttribute('type')).toBe('audio/mpeg');
+            expect(spectator.query('dotcms-block-editor-renderer-audio')).toBeNull();
         });
 
         it('should render a real <table> for the table block, with no wrapper element', () => {

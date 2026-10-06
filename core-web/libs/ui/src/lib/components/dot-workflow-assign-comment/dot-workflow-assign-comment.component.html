@@ -1,0 +1,43 @@
+<!--
+    No header, footer or submit control: the host owns its own step frame and gates on `validChange`.
+    Either field can be absent, so both are guarded independently rather than assumed to come as a pair.
+-->
+<div class="form" data-testid="workflow-assign-comment">
+    @if (assignable()) {
+        <div class="field">
+            <label for="workflowAssign">{{ 'assignee.form.assignee' | dm }}</label>
+            <p-select
+                id="workflowAssign"
+                appendTo="body"
+                optionLabel="label"
+                optionValue="value"
+                [options]="$roleOptions()"
+                [filter]="true"
+                filterBy="label"
+                [filterPlaceholder]="'search' | dm"
+                [disabled]="disabled() || $loadingRoles()"
+                [ngModel]="$assign()"
+                data-testid="workflow-assign-select"
+                (ngModelChange)="onAssignChange($event)" />
+        </div>
+    }
+
+    @if (commentable()) {
+        <div class="field">
+            <label for="workflowComment">{{ 'comment.form.comments' | dm }}</label>
+            <!--
+                Enter is stopped from bubbling: a host may bind Enter to its own submit, and typing a
+                multi-line comment must not fire the action.
+            -->
+            <textarea
+                id="workflowComment"
+                pTextarea
+                rows="4"
+                [disabled]="disabled()"
+                [ngModel]="$comment()"
+                data-testid="workflow-comment-textarea"
+                (keydown.enter)="$event.stopPropagation()"
+                (ngModelChange)="onCommentChange($event)"></textarea>
+        </div>
+    }
+</div>

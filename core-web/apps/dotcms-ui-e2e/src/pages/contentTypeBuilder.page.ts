@@ -7,9 +7,8 @@ import { FieldsTypes, SiteorHostField, TextField } from '@models/newContentType.
  * Page object for the Angular content-type builder
  * (`/dotAdmin/#/content-types-angular/edit/{id}`).
  *
- * Recovers the drag-and-drop "add field" logic from the legacy
- * `e2e/dotcms-e2e-node/.../contentTypeForm.page.ts` and adds edit + persistence
- * verification used to guard the `DotFieldService` (`saveFields`/`updateField`) flow.
+ * Covers drag-and-drop "add field" in the builder plus edit and persistence
+ * verification for the `DotFieldService` (`saveFields`/`updateField`) flow.
  */
 export class ContentTypeBuilderPage {
     constructor(private page: Page) {}
@@ -25,6 +24,23 @@ export class ContentTypeBuilderPage {
      */
     async goToBuilder(contentTypeId: string) {
         await this.page.goto(`/dotAdmin/#/content-types-angular/edit/${contentTypeId}`);
+        await this.waitForBuilder();
+    }
+
+    /**
+     * Reloads the builder, discarding everything held in memory — open dialogs
+     * included.
+     *
+     * `goToBuilder` cannot stand in for this: navigating to the URL already in the
+     * address bar is a same-document fragment navigation, so nothing is torn down and
+     * a dialog left open stays open, intercepting the next click.
+     */
+    async reloadBuilder() {
+        await this.page.reload();
+        await this.waitForBuilder();
+    }
+
+    private async waitForBuilder() {
         await this.page.getByTestId('fields-bag-0').first().waitFor({ state: 'visible' });
         await this.page.getByTestId(DotCMSClazzes.TEXT).first().waitFor({ state: 'visible' });
     }
@@ -107,5 +123,28 @@ export class ContentTypeBuilderPage {
         expect(response.ok()).toBeTruthy();
 
         await expect(dialog).toBeHidden();
+    }
+
+    /** The field-properties dialog, scoped so we never match an unrelated `.p-dialog`. */
+    private fieldDialog(): Locator {
+        return this.page.locator('p-dynamicdialog:has(dot-edit-field-dialog) .p-dialog').first();
+    }
+
+    /**
+     * Opens a placed field's dialog and switches to its Field Variables tab —
+     * the second consumer of the shared Key/Value editor (#37191).
+     */
+    async openFieldVariables(fieldName: string) {
+        await this.placedField(fieldName).click();
+
+        const dialog = this.fieldDialog();
+        await dialog.waitFor({ state: 'visible' });
+        await dialog.getByRole('tab', { name: /field variables/i }).click();
+        await this.fieldVariablesPanel().waitFor({ state: 'visible' });
+    }
+
+    /** Root of the Field Variables editor, for scoping a `KeyValueField` helper. */
+    fieldVariablesPanel(): Locator {
+        return this.fieldDialog().locator('dot-content-type-fields-variables');
     }
 }

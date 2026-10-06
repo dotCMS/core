@@ -1,13 +1,20 @@
-import { Component, EventEmitter, Input, NgModule, Output } from '@angular/core';
+import {
+    Component,
+    EventEmitter,
+    Input,
+    NgModule,
+    Output,
+    ChangeDetectionStrategy
+} from '@angular/core';
 
 @Component({
-    // eslint-disable-next-line @angular-eslint/component-selector
     selector: 'p-splitButton',
     template: `
         <div class="p-splitbutton">
             <button (click)="onClick.emit()"></button>
         </div>
     `,
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class SplitButtonMockComponent {

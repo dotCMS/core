@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { createComponentFactory, mockProvider, Spectator, byTestId } from '@openng/spectator/jest';
+import {
+    createComponentFactory,
+    mockProvider,
+    Spectator,
+    byTestId
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { signal, WritableSignal } from '@angular/core';
 
@@ -49,14 +55,14 @@ describe('DotUveIframeComponent', () => {
         component: DotUveIframeComponent,
         providers: [
             mockProvider(DotSeoMetaTagsService, {
-                getMetaTagsResults: jest.fn().mockReturnValue(of(mockSeoResults))
+                getMetaTagsResults: vi.fn().mockReturnValue(of(mockSeoResults))
             }),
             mockProvider(DotSeoMetaTagsUtilService, {
-                getMetaTags: jest.fn().mockReturnValue(mockOgTags)
+                getMetaTags: vi.fn().mockReturnValue(mockOgTags)
             }),
             mockProvider(InlineEditService, {
-                injectInlineEdit: jest.fn(),
-                removeInlineEdit: jest.fn()
+                injectInlineEdit: vi.fn(),
+                removeInlineEdit: vi.fn()
             }),
             {
                 provide: UVEStore,
@@ -65,7 +71,7 @@ describe('DotUveIframeComponent', () => {
                     editorEnableInlineEdit: editorEnableInlineEditSignal,
                     pageType: pageTypeSignal,
                     $isEmaLegacyScriptInjectionEnabled: legacyScriptInjectionEnabledSignal,
-                    setSeoData: jest.fn()
+                    setSeoData: vi.fn()
                 })
             }
         ]
@@ -95,7 +101,7 @@ describe('DotUveIframeComponent', () => {
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     describe('Component Creation', () => {
@@ -167,13 +173,13 @@ describe('DotUveIframeComponent', () => {
         });
 
         it('should emit load event for HEADLESS page type', () => {
-            const loadSpy = jest.spyOn(component.load, 'emit');
+            const loadSpy = vi.spyOn(component.load, 'emit');
             component.onIframeLoad();
             expect(loadSpy).toHaveBeenCalledTimes(1);
         });
 
         it('should not insert page content for HEADLESS page type', () => {
-            const insertSpy = jest.spyOn(component as any, 'insertPageContent');
+            const insertSpy = vi.spyOn(component as any, 'insertPageContent');
             component.onIframeLoad();
             expect(insertSpy).not.toHaveBeenCalled();
         });
@@ -191,8 +197,8 @@ describe('DotUveIframeComponent', () => {
             mockIframe = document.createElement('iframe');
             mockDoc = document.implementation.createHTMLDocument();
             mockWindow = {
-                addEventListener: jest.fn(),
-                removeEventListener: jest.fn()
+                addEventListener: vi.fn(),
+                removeEventListener: vi.fn()
             } as unknown as Window;
 
             Object.defineProperty(mockIframe, 'contentDocument', {
@@ -208,19 +214,19 @@ describe('DotUveIframeComponent', () => {
         });
 
         it('should emit load event for TRADITIONAL page type', () => {
-            const loadSpy = jest.spyOn(component.load, 'emit');
+            const loadSpy = vi.spyOn(component.load, 'emit');
             component.onIframeLoad();
             expect(loadSpy).toHaveBeenCalledTimes(1);
         });
 
         it('should insert page content for TRADITIONAL page type', () => {
-            const insertSpy = jest.spyOn(component as any, 'insertPageContent');
+            const insertSpy = vi.spyOn(component as any, 'insertPageContent');
             component.onIframeLoad();
             expect(insertSpy).toHaveBeenCalledWith(mockPageRender, false);
         });
 
         it('should set SEO data for TRADITIONAL page type', () => {
-            const setSeoSpy = jest.spyOn(component as any, 'setSeoData');
+            const setSeoSpy = vi.spyOn(component as any, 'setSeoData');
             component.onIframeLoad();
             expect(setSeoSpy).toHaveBeenCalledTimes(1);
         });
@@ -262,8 +268,8 @@ describe('DotUveIframeComponent', () => {
         beforeEach(() => {
             mockIframe = document.createElement('iframe');
             mockWindow = {
-                addEventListener: jest.fn(),
-                removeEventListener: jest.fn()
+                addEventListener: vi.fn(),
+                removeEventListener: vi.fn()
             } as unknown as Window;
 
             Object.defineProperty(mockIframe, 'contentWindow', {
@@ -275,20 +281,18 @@ describe('DotUveIframeComponent', () => {
         });
 
         it('should subscribe to click events on iframe window', () => {
-            (mockWindow.addEventListener as jest.Mock).mockClear();
+            (mockWindow.addEventListener as Mock).mockClear();
             (component as any).handleInlineScripts(false);
             expect(mockWindow.addEventListener).toHaveBeenCalled();
-            expect((mockWindow.addEventListener as jest.Mock).mock.calls[0][0]).toBe('click');
-            expect(typeof (mockWindow.addEventListener as jest.Mock).mock.calls[0][1]).toBe(
-                'function'
-            );
+            expect((mockWindow.addEventListener as Mock).mock.calls[0][0]).toBe('click');
+            expect(typeof (mockWindow.addEventListener as Mock).mock.calls[0][1]).toBe('function');
         });
 
         it('should emit internalNav on click', () => {
-            const internalNavSpy = jest.spyOn(component.internalNav, 'emit');
+            const internalNavSpy = vi.spyOn(component.internalNav, 'emit');
             let clickHandler: ((e: MouseEvent) => void) | undefined;
 
-            (mockWindow.addEventListener as jest.Mock).mockImplementation(
+            (mockWindow.addEventListener as Mock).mockImplementation(
                 (event: string, handler: (e: MouseEvent) => void) => {
                     if (event === 'click') {
                         clickHandler = handler;
@@ -312,10 +316,10 @@ describe('DotUveIframeComponent', () => {
         });
 
         it('should emit inlineEditing on click', () => {
-            const inlineEditingSpy = jest.spyOn(component.inlineEditing, 'emit');
+            const inlineEditingSpy = vi.spyOn(component.inlineEditing, 'emit');
             let clickHandler: ((e: MouseEvent) => void) | undefined;
 
-            (mockWindow.addEventListener as jest.Mock).mockImplementation(
+            (mockWindow.addEventListener as Mock).mockImplementation(
                 (event: string, handler: (e: MouseEvent) => void) => {
                     if (event === 'click') {
                         clickHandler = handler;
@@ -349,7 +353,7 @@ describe('DotUveIframeComponent', () => {
         });
 
         it('should not handle scripts if contentWindow is not available', () => {
-            (mockInlineEditService.injectInlineEdit as jest.Mock).mockClear();
+            (mockInlineEditService.injectInlineEdit as Mock).mockClear();
             component.iframe = undefined as any;
             (component as any).handleInlineScripts(true);
             expect(mockInlineEditService.injectInlineEdit).not.toHaveBeenCalled();
@@ -361,7 +365,8 @@ describe('DotUveIframeComponent', () => {
 
             beforeEach(() => {
                 doc = document.implementation.createHTMLDocument();
-                (mockWindow.addEventListener as jest.Mock).mockImplementation(
+                Object.assign(mockWindow, { document: doc, scrollTo: vi.fn(), scrollY: 0 });
+                (mockWindow.addEventListener as Mock).mockImplementation(
                     (event: string, handler: (e: MouseEvent) => void) => {
                         if (event === 'click') {
                             clickHandler = handler;
@@ -383,8 +388,8 @@ describe('DotUveIframeComponent', () => {
                 const span = doc.createElement('span');
                 a.appendChild(span);
 
-                const internalNavSpy = jest.spyOn(component.internalNav, 'emit');
-                const inlineEditingSpy = jest.spyOn(component.inlineEditing, 'emit');
+                const internalNavSpy = vi.spyOn(component.internalNav, 'emit');
+                const inlineEditingSpy = vi.spyOn(component.inlineEditing, 'emit');
 
                 clickHandler?.(createClickWithTarget(span));
 
@@ -396,8 +401,8 @@ describe('DotUveIframeComponent', () => {
                 const a = doc.createElement('a');
                 a.setAttribute('href', '/page');
 
-                const internalNavSpy = jest.spyOn(component.internalNav, 'emit');
-                const inlineEditingSpy = jest.spyOn(component.inlineEditing, 'emit');
+                const internalNavSpy = vi.spyOn(component.internalNav, 'emit');
+                const inlineEditingSpy = vi.spyOn(component.inlineEditing, 'emit');
 
                 clickHandler?.(createClickWithTarget(a));
 
@@ -409,8 +414,8 @@ describe('DotUveIframeComponent', () => {
                 const div = doc.createElement('div');
                 div.dataset.mode = 'edit';
 
-                const internalNavSpy = jest.spyOn(component.internalNav, 'emit');
-                const inlineEditingSpy = jest.spyOn(component.inlineEditing, 'emit');
+                const internalNavSpy = vi.spyOn(component.internalNav, 'emit');
+                const inlineEditingSpy = vi.spyOn(component.inlineEditing, 'emit');
 
                 clickHandler?.(createClickWithTarget(div));
 
@@ -424,8 +429,8 @@ describe('DotUveIframeComponent', () => {
                 const inner = doc.createElement('span');
                 wrapper.appendChild(inner);
 
-                const internalNavSpy = jest.spyOn(component.internalNav, 'emit');
-                const inlineEditingSpy = jest.spyOn(component.inlineEditing, 'emit');
+                const internalNavSpy = vi.spyOn(component.internalNav, 'emit');
+                const inlineEditingSpy = vi.spyOn(component.inlineEditing, 'emit');
 
                 clickHandler?.(createClickWithTarget(inner));
 
@@ -436,8 +441,8 @@ describe('DotUveIframeComponent', () => {
             it('should not emit when click target is a plain element (no link, no data-mode)', () => {
                 const div = doc.createElement('div');
 
-                const internalNavSpy = jest.spyOn(component.internalNav, 'emit');
-                const inlineEditingSpy = jest.spyOn(component.inlineEditing, 'emit');
+                const internalNavSpy = vi.spyOn(component.internalNav, 'emit');
+                const inlineEditingSpy = vi.spyOn(component.inlineEditing, 'emit');
 
                 clickHandler?.(createClickWithTarget(div));
 
@@ -450,8 +455,8 @@ describe('DotUveIframeComponent', () => {
                 const span = doc.createElement('span');
                 a.appendChild(span);
 
-                const internalNavSpy = jest.spyOn(component.internalNav, 'emit');
-                const inlineEditingSpy = jest.spyOn(component.inlineEditing, 'emit');
+                const internalNavSpy = vi.spyOn(component.internalNav, 'emit');
+                const inlineEditingSpy = vi.spyOn(component.inlineEditing, 'emit');
 
                 clickHandler?.(createClickWithTarget(span));
 
@@ -459,17 +464,35 @@ describe('DotUveIframeComponent', () => {
                 expect(inlineEditingSpy).not.toHaveBeenCalled();
             });
 
-            it('should not emit for hash-only anchors (browser handles same-page scroll)', () => {
+            it('should not emit for hash-only anchors', () => {
                 const a = doc.createElement('a');
                 a.setAttribute('href', '#page-section');
 
-                const internalNavSpy = jest.spyOn(component.internalNav, 'emit');
-                const inlineEditingSpy = jest.spyOn(component.inlineEditing, 'emit');
+                const internalNavSpy = vi.spyOn(component.internalNav, 'emit');
+                const inlineEditingSpy = vi.spyOn(component.inlineEditing, 'emit');
 
                 clickHandler?.(createClickWithTarget(a));
 
                 expect(internalNavSpy).not.toHaveBeenCalled();
                 expect(inlineEditingSpy).not.toHaveBeenCalled();
+            });
+
+            // The srcdoc's base URL is the admin's, so a browser-handled
+            // "#section" would load the admin inside the canvas.
+            it('should cancel a hash-only anchor and scroll the iframe to its target', () => {
+                const target = doc.createElement('div');
+                target.id = 'page-section';
+                target.getBoundingClientRect = () => ({ top: 320 }) as DOMRect;
+                doc.body.appendChild(target);
+                const a = doc.createElement('a');
+                a.setAttribute('href', '#page-section');
+                const click = createClickWithTarget(a);
+                const preventDefaultSpy = vi.spyOn(click, 'preventDefault');
+
+                clickHandler?.(click);
+
+                expect(preventDefaultSpy).toHaveBeenCalled();
+                expect(mockWindow.scrollTo).toHaveBeenCalledWith({ top: 320, left: 0 });
             });
 
             // Anchor links are commonly placed inside an editable contentlet area
@@ -482,8 +505,8 @@ describe('DotUveIframeComponent', () => {
                 a.setAttribute('href', '#page-section');
                 wrapper.appendChild(a);
 
-                const internalNavSpy = jest.spyOn(component.internalNav, 'emit');
-                const inlineEditingSpy = jest.spyOn(component.inlineEditing, 'emit');
+                const internalNavSpy = vi.spyOn(component.internalNav, 'emit');
+                const inlineEditingSpy = vi.spyOn(component.inlineEditing, 'emit');
 
                 clickHandler?.(createClickWithTarget(a));
 
@@ -529,14 +552,14 @@ describe('DotUveIframeComponent', () => {
         });
 
         it('should not set SEO data if iframe element is not available', () => {
-            (mockDotSeoMetaTagsService.getMetaTagsResults as jest.Mock).mockClear();
+            (mockDotSeoMetaTagsService.getMetaTagsResults as Mock).mockClear();
             component.iframe = undefined as any;
             (component as any).setSeoData();
             expect(mockDotSeoMetaTagsService.getMetaTagsResults).not.toHaveBeenCalled();
         });
 
         it('should not set SEO data if contentDocument is not available', () => {
-            (mockDotSeoMetaTagsService.getMetaTagsResults as jest.Mock).mockClear();
+            (mockDotSeoMetaTagsService.getMetaTagsResults as Mock).mockClear();
             Object.defineProperty(mockIframe, 'contentDocument', {
                 value: null,
                 writable: true
@@ -555,8 +578,8 @@ describe('DotUveIframeComponent', () => {
 
             mockIframe = document.createElement('iframe');
             mockWindow = {
-                addEventListener: jest.fn(),
-                removeEventListener: jest.fn()
+                addEventListener: vi.fn(),
+                removeEventListener: vi.fn()
             } as unknown as Window;
 
             Object.defineProperty(mockIframe, 'contentWindow', {
@@ -598,8 +621,27 @@ describe('DotUveIframeComponent', () => {
             expect(mockIframe.srcdoc).toBe(mockPageRender);
         });
 
+        it('should re-write srcdoc when src is a new object reference with the same stringified value (traditional-page reset)', () => {
+            // Mirrors withEditor.ts's $iframeURL: TRADITIONAL pages always feed a
+            // brand-new `String('')` object on every load — even a re-navigation to
+            // the same page with byte-identical content — to force a native iframe
+            // reset. The dedup guard must not be fooled by two distinct String
+            // objects that stringify to the same value; otherwise the native reset
+            // wipes the iframe and the srcdoc write is wrongly skipped, leaving the
+            // canvas permanently blank (issue #37327).
+            spectator.setInput('src', new String('') as unknown as string);
+            component.onIframeLoad();
+            expect(mockIframe.srcdoc).toBe(mockPageRender);
+
+            mockIframe.srcdoc = 'SENTINEL';
+            spectator.setInput('src', new String('') as unknown as string);
+            component.onIframeLoad();
+
+            expect(mockIframe.srcdoc).toBe(mockPageRender);
+        });
+
         it('should still call handleInlineScripts on de-duplicated calls', () => {
-            const handleSpy = jest.spyOn(component as any, 'handleInlineScripts');
+            const handleSpy = vi.spyOn(component as any, 'handleInlineScripts');
             component.onIframeLoad();
             component.onIframeLoad();
 
@@ -625,14 +667,14 @@ describe('DotUveIframeComponent', () => {
         });
 
         it('should insert page content when pageType changes to TRADITIONAL', () => {
-            const insertSpy = jest.spyOn(component as any, 'insertPageContent');
+            const insertSpy = vi.spyOn(component as any, 'insertPageContent');
             pageTypeSignal.set(PageType.TRADITIONAL);
             spectator.detectChanges();
             expect(insertSpy).toHaveBeenCalled();
         });
 
         it('should not insert page content when pageType is HEADLESS', () => {
-            const insertSpy = jest.spyOn(component as any, 'insertPageContent');
+            const insertSpy = vi.spyOn(component as any, 'insertPageContent');
             spectator.detectChanges();
             expect(insertSpy).not.toHaveBeenCalled();
         });
@@ -640,21 +682,21 @@ describe('DotUveIframeComponent', () => {
 
     describe('Output Events', () => {
         it('should emit load event', () => {
-            const loadSpy = jest.spyOn(component.load, 'emit');
+            const loadSpy = vi.spyOn(component.load, 'emit');
             component.onIframeLoad();
             expect(loadSpy).toHaveBeenCalledTimes(1);
         });
 
         it('should emit internalNav event', () => {
             const mockEvent = new MouseEvent('click');
-            const internalNavSpy = jest.spyOn(component.internalNav, 'emit');
+            const internalNavSpy = vi.spyOn(component.internalNav, 'emit');
             component.internalNav.emit(mockEvent);
             expect(internalNavSpy).toHaveBeenCalledWith(mockEvent);
         });
 
         it('should emit inlineEditing event', () => {
             const mockEvent = new MouseEvent('click');
-            const inlineEditingSpy = jest.spyOn(component.inlineEditing, 'emit');
+            const inlineEditingSpy = vi.spyOn(component.inlineEditing, 'emit');
             component.inlineEditing.emit(mockEvent);
             expect(inlineEditingSpy).toHaveBeenCalledWith(mockEvent);
         });

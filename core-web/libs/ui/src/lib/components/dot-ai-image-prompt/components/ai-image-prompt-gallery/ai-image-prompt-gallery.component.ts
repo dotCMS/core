@@ -5,7 +5,8 @@ import {
     Input,
     OnChanges,
     Output,
-    SimpleChanges
+    SimpleChanges,
+    ChangeDetectionStrategy
 } from '@angular/core';
 
 import { SharedModule } from 'primeng/api';
@@ -33,6 +34,7 @@ import { DotMessagePipe } from './../../../../dot-message/dot-message.pipe';
         DotMessagePipe,
         DotEmptyContainerComponent
     ],
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./ai-image-prompt-gallery.component.scss']
 })
 export class AiImagePromptGalleryComponent implements OnChanges {

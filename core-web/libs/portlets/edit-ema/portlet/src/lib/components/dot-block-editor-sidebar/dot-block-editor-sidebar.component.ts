@@ -1,7 +1,15 @@
 import { Observable } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, inject, input, output, signal, viewChild } from '@angular/core';
+import {
+    Component,
+    inject,
+    input,
+    output,
+    signal,
+    viewChild,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
@@ -40,6 +48,7 @@ export const INLINE_EDIT_BLOCK_EDITOR_EVENT = 'edit-block-editor';
     selector: 'dot-block-editor-sidebar',
     templateUrl: './dot-block-editor-sidebar.component.html',
     styleUrls: ['./dot-block-editor-sidebar.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         FormsModule,
         DotCMSEditorComponent,

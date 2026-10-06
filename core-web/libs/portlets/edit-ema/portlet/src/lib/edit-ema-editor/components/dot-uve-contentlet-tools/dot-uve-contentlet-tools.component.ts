@@ -133,40 +133,6 @@ export class DotUveContentletToolsComponent {
     protected readonly buttonPosition = signal<'after' | 'before'>('after');
 
     /**
-     * Helper function to compare two contentlets by their identifier and container uuid.
-     * Returns true if they represent the same contentlet in the same container instance.
-     * Accepts any record carrying a `payload` field — works for both
-     * `ContentletArea` (hover) and `SelectedContentlet` (selected).
-     */
-    isSameContentlet(
-        a: { payload?: ActionPayload } | null | undefined,
-        b: { payload?: ActionPayload } | null | undefined
-    ): boolean {
-        if (!a || !b) {
-            return false;
-        }
-
-        const id1 = a.payload?.contentlet?.identifier;
-        const id2 = b.payload?.contentlet?.identifier;
-        const containerKey1 = `${a.payload?.container?.identifier}:${a.payload?.container?.uuid}`;
-        const containerKey2 = `${b.payload?.container?.identifier}:${b.payload?.container?.uuid}`;
-
-        return id1 !== undefined && id1 === id2 && containerKey1 === containerKey2;
-    }
-
-    /**
-     * Computed property to determine if the hovered contentlet is different from the selected one.
-     */
-    readonly isHoveredDifferentFromSelected = computed(() => {
-        const hovered = this.contentletArea();
-        const selected = this.selected();
-        if (!hovered || !selected) {
-            return true;
-        }
-        return !this.isSameContentlet(hovered, selected);
-    });
-
-    /**
      * Show the hover overlay whenever a contentlet is hovered. The hover
      * overlay is the only place that renders the action toolbar (drag,
      * edit, delete, etc.); the selected overlay is just a persistent
@@ -221,17 +187,56 @@ export class DotUveContentletToolsComponent {
     });
 
     /**
-     * Whether the selected container is represented by a temporary "empty" contentlet.
+     * Whether the current user holds EDIT permission on the hovered contentlet.
+     * Sourced from `data-dot-can-edit`, which the container renderer stamps on
+     * every contentlet in EDIT mode from a WRITE-level check against the
+     * contentlet instance.
+     *
+     * Fail-open by design: a missing value means allowed. Headless and
+     * SDK-rendered pages build their own wrappers and never emit the
+     * attribute, so denying on absence would grey out the toolbar on all of
+     * them.
      */
-    readonly isSelectedContainerEmpty = computed(() => {
-        return this.selectedContentContext()?.contentlet?.identifier === 'TEMP_EMPTY_CONTENTLET';
+    readonly canEditContentlet = computed(
+        () => this.contentContext()?.contentlet?.canEdit !== false
+    );
+
+    /**
+     * Tooltip key for the edit button. When the user lacks edit permission on
+     * this contentlet the tooltip explains why; otherwise it just labels the
+     * action, matching the other toolbar tooltips.
+     */
+    protected readonly editButtonTooltip = computed(() => {
+        if (!this.canEditContentlet()) {
+            return 'uve.contentlet.no.edit.permission';
+        }
+
+        return 'uve.tooltip.edit.full';
     });
 
     /**
-     * Whether there is at least one VTL file associated with the selected contentlet.
+     * Tooltip key for the quick-edit button. Shares the edit button's
+     * permission message — the quick-edit form writes the same contentlet, so
+     * the same explanation applies.
      */
-    readonly selectedHasVtlFiles = computed(() => {
-        return !!this.selectedContentContext()?.vtlFiles?.length;
+    protected readonly quickEditButtonTooltip = computed(() => {
+        if (!this.canEditContentlet()) {
+            return 'uve.contentlet.no.edit.permission';
+        }
+
+        return 'uve.tooltip.edit.quick';
+    });
+
+    /**
+     * Tooltip key for the style button. Style properties describe how this
+     * contentlet presents itself, so they follow contentlet permission.
+     */
+    protected readonly styleButtonTooltip = computed(() => {
+        if (!this.canEditContentlet()) {
+            return 'uve.contentlet.no.edit.permission';
+        }
+
+        return 'uve.tooltip.edit.style';
     });
 
     /**
@@ -272,16 +277,34 @@ export class DotUveContentletToolsComponent {
     });
 
     /**
-     * Menu items corresponding to the VTL files of the selected contentlet.
-     * Each item represents a file and triggers the `editVTL` output when clicked.
+     * Menu items for the VTL files of the **hovered** contentlet — the same
+     * contentlet `hasVtlFiles()` gates the `</>` button on.
+     *
+     * Hover, not selection: the button lives only in the hover toolbar, so the
+     * hovered contentlet is the only one it can belong to. Reading the selection
+     * here meant the button could be offered from one contentlet and filled from
+     * another, and the selected payload loses `vtlFiles` on every SET_BOUNDS
+     * re-anchor — so the menu opened empty after any layout shift.
+     *
+     * Choosing a file promotes the hovered contentlet to selected, so the
+     * selection border follows the contentlet whose VTL was opened. Promotion is
+     * on the command rather than the button click deliberately: opening the menu
+     * and dismissing it without picking should leave the selection alone.
+     *
+     * Returns `[]` rather than `undefined` so PrimeNG is never handed an
+     * undefined `[model]`, and so this honors its own declared return type.
      */
     readonly vtlMenuItems = computed<MenuItem[]>(() => {
-        const context = this.selected() ? this.selectedContentContext() : this.contentContext();
-        const { vtlFiles } = context ?? {};
-        return vtlFiles?.map((file) => ({
-            label: file?.name,
-            command: () => this.editVTL.emit(file)
-        }));
+        const { vtlFiles } = this.contentContext() ?? {};
+        return (
+            vtlFiles?.map((file) => ({
+                label: file?.name,
+                command: () => {
+                    this.promoteHoverToSelected();
+                    this.editVTL.emit(file);
+                }
+            })) ?? []
+        );
     });
 
     /**
@@ -307,6 +330,7 @@ export class DotUveContentletToolsComponent {
         items.push({
             label: this.#dotMessageService.get('uve.tooltip.edit.quick'),
             icon: 'pi pi-bolt',
+            disabled: !this.canEditContentlet(),
             command: () => {
                 this.promoteHoverToSelected();
                 this.openQuickEdit.emit();
@@ -317,6 +341,7 @@ export class DotUveContentletToolsComponent {
             items.push({
                 label: this.#dotMessageService.get('uve.tooltip.edit.style'),
                 icon: 'pi pi-palette',
+                disabled: !this.canEditContentlet(),
                 command: () => {
                     this.promoteHoverToSelected();
                     this.selectContent.emit(context);
@@ -327,6 +352,7 @@ export class DotUveContentletToolsComponent {
         items.push({
             label: this.#dotMessageService.get('uve.tooltip.edit.full'),
             icon: 'pi pi-pencil',
+            disabled: !this.canEditContentlet(),
             command: () => this.openFullEditor.emit(context)
         });
 
@@ -427,35 +453,9 @@ export class DotUveContentletToolsComponent {
     });
 
     /**
-     * Describes the draggable payload for the selected contentlet controls.
-     * Returns null-like values when the source data is incomplete, allowing
-     * the template to disable the drag affordance gracefully.
-     */
-    readonly dragPayload = computed(() => {
-        const selectedContext = this.selectedContentContext();
-        const { container, contentlet } = selectedContext;
-
-        if (!contentlet) {
-            return {
-                container: null,
-                contentlet: null,
-                showLabelImage: false,
-                move: false
-            };
-        }
-
-        return {
-            container,
-            contentlet,
-            showLabelImage: true,
-            move: true
-        };
-    });
-
-    /**
-     * Drag payload for the hovered contentlet's action toolbar. Mirrors
-     * `dragPayload` but reads from the hover context so the hover toolbar's
-     * drag handle dispatches the right contentlet.
+     * Drag payload for the hovered contentlet's action toolbar — reads the
+     * hover context so the drag handle dispatches the contentlet under the
+     * pointer.
      */
     readonly hoverDragPayload = computed(() => {
         const { container, contentlet } = this.contentContext();

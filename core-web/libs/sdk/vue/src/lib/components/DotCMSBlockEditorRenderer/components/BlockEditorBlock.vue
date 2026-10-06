@@ -4,6 +4,7 @@ import { BlockEditorDefaultBlocks } from '@dotcms/types/internal';
 
 import BulletList from './blocks/BulletList.vue';
 import CodeBlock from './blocks/CodeBlock.vue';
+import DotAudio from './blocks/DotAudio.vue';
 import DotContent from './blocks/DotContent.vue';
 import DotImage from './blocks/DotImage.vue';
 import DotVideo from './blocks/DotVideo.vue';
@@ -45,7 +46,8 @@ const CONTAINER_BLOCKS: Record<string, unknown> = {
 /** Node types that render themselves from attrs with no children slot. */
 const LEAF_BLOCKS: Record<string, unknown> = {
     [Blocks.DOT_IMAGE]: DotImage,
-    [Blocks.DOT_VIDEO]: DotVideo
+    [Blocks.DOT_VIDEO]: DotVideo,
+    [Blocks.DOT_AUDIO]: DotAudio
 };
 
 const containerComponent = (type: string) => CONTAINER_BLOCKS[type];

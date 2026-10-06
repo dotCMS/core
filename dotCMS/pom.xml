@@ -159,10 +159,6 @@
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
-            <artifactId>dot.commons-io</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.commons-httpclient</artifactId>
         </dependency>
         <dependency>
@@ -716,11 +712,6 @@
         </dependency>
 
 
-        <dependency>
-            <groupId>com.impossibl.pgjdbc-ng</groupId>
-            <artifactId>pgjdbc-ng</artifactId>
-        </dependency>
-
         <!--
          *****************************
            Cluster Support
@@ -1069,6 +1060,11 @@
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.nimbusds</groupId>
+            <artifactId>nimbus-jose-jwt</artifactId>
         </dependency>
 
         <dependency>
@@ -1718,6 +1714,34 @@
                         </configuration>
                     </execution>
                     <execution>
+                        <!-- Opt-in JVM agents; attached by setenv.sh (see add_otel_agent / add_pyroscope_agent) -->
+                        <id>copy-observability-agents</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>io.opentelemetry.javaagent</groupId>
+                                    <artifactId>opentelemetry-javaagent</artifactId>
+                                    <type>jar</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${assembly-directory}/${tomcat-dist-folder}/otel</outputDirectory>
+                                    <destFileName>opentelemetry-javaagent.jar</destFileName>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>io.pyroscope</groupId>
+                                    <artifactId>agent</artifactId>
+                                    <type>jar</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${assembly-directory}/${tomcat-dist-folder}/pyroscope</outputDirectory>
+                                    <destFileName>pyroscope.jar</destFileName>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>copy-redis</id>
                         <phase>prepare-package</phase>
                         <goals>
@@ -1983,6 +2007,7 @@
                 <configuration>
                     <imagesMap>
                         <dotcms>
+                            <name>${dotcms.image.name}</name>
                             <build>
                                 <dockerFileDir>${project.basedir}/src/main/docker/original</dockerFileDir>
                                 <buildx>
@@ -2160,7 +2185,9 @@
                         <package>com.dotcms.contenttype.model.field</package>
                         <package>com.dotcms.rendering.js</package>
                         <package>com.dotcms.ai.rest</package>
+                        <package>com.dotcms.inference.rest</package>
                         <package>com.dotcms.health</package>
+                        <package>com.dotcms.auth.dotAuth.rest</package>
                     </resourcePackages>
                 </configuration>
                 <executions>

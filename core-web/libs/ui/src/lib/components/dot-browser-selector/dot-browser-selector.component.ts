@@ -9,11 +9,12 @@ import {
     signal
 } from '@angular/core';
 
+import type { TreeNode } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotContentletService } from '@dotcms/data-access';
-import { ContentByFolderParams, TreeNodeSelectItem } from '@dotcms/dotcms-models';
+import { ContentByFolderParams, TreeNodeItem, TreeNodeSelectItem } from '@dotcms/dotcms-models';
 
 import { DotDataViewComponent } from './components/dot-dataview/dot-dataview.component';
 import { DotSideBarComponent } from './components/dot-sidebar/dot-sidebar.component';
@@ -67,6 +68,17 @@ export class DotBrowserSelectorComponent implements OnInit {
      * Note: System Host is treated as a valid selection and enables the button.
      */
     $uploadDisabled = computed(() => this.$folderParams().hostFolderId === '');
+
+    /**
+     * Whether uploading belongs in this browser at all: only a caller that turned both files and
+     * assets off is browsing something unuploadable — pages, or links. Anything else keeps the
+     * button, so a caller that says nothing about either is unaffected.
+     */
+    $canUpload = computed(() => {
+        const { showFiles, showDotAssets } = this.$folderParams();
+
+        return !(showFiles === false && showDotAssets === false);
+    });
 
     /**
      * Derives the file input accept attribute from the mimeTypes in folderParams.
@@ -135,5 +147,9 @@ export class DotBrowserSelectorComponent implements OnInit {
 
     onNodeExpand(event: TreeNodeSelectItem): void {
         this.store.loadChildren(event);
+    }
+
+    onLoadMore(node: TreeNode): void {
+        this.store.loadMore(node as TreeNodeItem);
     }
 }

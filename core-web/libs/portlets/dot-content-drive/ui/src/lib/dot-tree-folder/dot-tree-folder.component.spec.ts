@@ -1,21 +1,23 @@
-import { createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { Mock, vi } from 'vitest';
 
 import type { TreeNode } from 'primeng/api';
 import { SkeletonModule } from 'primeng/skeleton';
 import { Tree, TreeModule, TreeNodeExpandEvent, TreeNodeCollapseEvent } from 'primeng/tree';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { FolderNamePipe } from '@dotcms/ui';
+import { createLoadMoreTreeNode } from '@dotcms/dotcms-models';
+import { DotFolderTreeComponent, DotFolderNamePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotTreeFolderComponent } from './dot-tree-folder.component';
 
-import { SYSTEM_HOST_ID } from '../shared/constants';
+import { DotFolderTreeNodeItem } from '../shared/models';
 
 // Mock DragEvent since it's not available in Jest environment
 class DragEventMock extends Event {
-    override preventDefault = jest.fn();
-    override stopPropagation = jest.fn();
+    override preventDefault = vi.fn();
+    override stopPropagation = vi.fn();
     dataTransfer: { files?: FileList | null } | null = null;
 
     constructor(type: string) {
@@ -96,13 +98,14 @@ describe('DotTreeFolderComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotTreeFolderComponent,
-        imports: [TreeModule, SkeletonModule, FolderNamePipe],
+        imports: [TreeModule, SkeletonModule, DotFolderNamePipe, DotFolderTreeComponent],
         providers: [
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({
                     'content.drive.loading.folders.title': 'Loading folders...',
-                    'content-drive.tree.load-more': 'Load more'
+                    'content-drive.tree.load-more': 'Load more',
+                    'dot.file.field.host.folder.action.load.more': 'Load more'
                 })
             }
         ],
@@ -117,7 +120,6 @@ describe('DotTreeFolderComponent', () => {
         spectator.fixture.componentRef.setInput('folders', mockFolders);
         spectator.fixture.componentRef.setInput('loading', false);
         spectator.fixture.componentRef.setInput('selectedNode', mockSelectedNode);
-        spectator.fixture.componentRef.setInput('showFolderIconOnFirstOnly', false);
 
         spectator.detectChanges();
     });
@@ -130,8 +132,7 @@ describe('DotTreeFolderComponent', () => {
         it('should have the correct inputs', () => {
             expect(component.$folders()).toEqual(mockFolders);
             expect(component.$loading()).toBe(false);
-            expect(component.$selectedNode()).toEqual([mockSelectedNode]);
-            expect(component.$showFolderIconOnFirstOnly()).toBe(false);
+            expect(component.$selectedNode()).toEqual(mockSelectedNode);
         });
     });
 
@@ -158,55 +159,23 @@ describe('DotTreeFolderComponent', () => {
             expect(treeComponent.loadingMode).toBe('icon');
         });
 
-        it('should pass selectedNode to p-tree selection property', () => {
-            // Verify the component's signal has the correct value
-            expect(component.$selectedNode()).toEqual([mockSelectedNode]);
+        it('should pass selectedNode to the wrapper input', () => {
+            expect(component.$selectedNode()).toEqual(mockSelectedNode);
         });
 
         it('should set scrollHeight to auto', () => {
             expect(treeComponent.scrollHeight).toBe('auto');
         });
 
-        it('should have correct class when showFolderIconOnFirstOnly is false', () => {
-            spectator.fixture.componentRef.setInput('showFolderIconOnFirstOnly', false);
-            spectator.detectChanges();
-            const treeElement = spectator.query('p-tree');
-            expect(treeElement.classList.contains('folder-all')).toBe(true);
+        it('should enable folder icons on the shared tree', () => {
+            // The #36848 regression: Content Drive's folder rows lost their folder icon when the
+            // four trees were unified. The icon is owned by the shared component and opted into
+            // here, not reimplemented in this portlet.
+            expect(spectator.query(DotFolderTreeComponent)?.$showFolderIcons()).toBe(true);
         });
 
-        it('should have correct class when showFolderIconOnFirstOnly is true', () => {
-            spectator.fixture.componentRef.setInput('showFolderIconOnFirstOnly', true);
-            spectator.detectChanges();
-            const treeElement = spectator.query('p-tree');
-            expect(treeElement.classList.contains('first-only')).toBe(true);
-        });
-    });
-
-    describe('showFolderIconOnFirstOnly Input', () => {
-        it('should compute treeStyleClasses correctly when showFolderIconOnFirstOnly is false', () => {
-            spectator.fixture.componentRef.setInput('showFolderIconOnFirstOnly', false);
-            spectator.detectChanges();
-            expect(component.treeStyleClasses()).toBe('w-full h-full folder-all');
-        });
-
-        it('should compute treeStyleClasses correctly when showFolderIconOnFirstOnly is true', () => {
-            spectator.fixture.componentRef.setInput('showFolderIconOnFirstOnly', true);
-            spectator.detectChanges();
-            expect(component.treeStyleClasses()).toBe('w-full h-full first-only');
-        });
-
-        it('should update p-tree class when showFolderIconOnFirstOnly changes', () => {
-            const treeElement = spectator.query('p-tree');
-
-            spectator.fixture.componentRef.setInput('showFolderIconOnFirstOnly', true);
-            spectator.detectChanges();
-            expect(treeElement.classList.contains('first-only')).toBe(true);
-            expect(treeElement.classList.contains('folder-all')).toBe(false);
-
-            spectator.fixture.componentRef.setInput('showFolderIconOnFirstOnly', false);
-            spectator.detectChanges();
-            expect(treeElement.classList.contains('folder-all')).toBe(true);
-            expect(treeElement.classList.contains('first-only')).toBe(false);
+        it('should render a folder icon on each folder row', () => {
+            expect(spectator.queryAll(byTestId('tree-node-folder-icon')).length).toBeGreaterThan(0);
         });
     });
 
@@ -221,13 +190,11 @@ describe('DotTreeFolderComponent', () => {
             spectator.fixture.componentRef.setInput('selectedNode', newSelectedNode);
             spectator.detectChanges();
 
-            // Verify the component's signal has the transformed value (array)
-            expect(component.$selectedNode()).toEqual([newSelectedNode]);
+            expect(component.$selectedNode()).toEqual(newSelectedNode);
         });
 
         it('should update component signal when selectedNode changes', () => {
-            // Initial value should be transformed to array
-            expect(component.$selectedNode()).toEqual([mockSelectedNode]);
+            expect(component.$selectedNode()).toEqual(mockSelectedNode);
 
             const newSelectedNode: TreeNode = {
                 key: '1',
@@ -237,7 +204,7 @@ describe('DotTreeFolderComponent', () => {
 
             spectator.fixture.componentRef.setInput('selectedNode', newSelectedNode);
             spectator.detectChanges();
-            expect(component.$selectedNode()).toEqual([newSelectedNode]);
+            expect(component.$selectedNode()).toEqual(newSelectedNode);
         });
     });
 
@@ -249,7 +216,7 @@ describe('DotTreeFolderComponent', () => {
         });
 
         it('should emit onNodeSelect when tree node is selected', () => {
-            const onNodeSelectSpy = jest.spyOn(component.onNodeSelect, 'emit');
+            const onNodeSelectSpy = vi.spyOn(component.onNodeSelect, 'emit');
             const mockEvent: TreeNodeExpandEvent = {
                 originalEvent: new Event('click'),
                 node: mockFolders[0]
@@ -261,7 +228,7 @@ describe('DotTreeFolderComponent', () => {
         });
 
         it('should emit onNodeExpand when tree node is expanded', () => {
-            const onNodeExpandSpy = jest.spyOn(component.onNodeExpand, 'emit');
+            const onNodeExpandSpy = vi.spyOn(component.onNodeExpand, 'emit');
             const mockEvent: TreeNodeExpandEvent = {
                 originalEvent: new Event('click'),
                 node: mockFolders[0]
@@ -273,7 +240,7 @@ describe('DotTreeFolderComponent', () => {
         });
 
         it('should emit onNodeCollapse when tree node is collapsed', () => {
-            const onNodeCollapseSpy = jest.spyOn(component.onNodeCollapse, 'emit');
+            const onNodeCollapseSpy = vi.spyOn(component.onNodeCollapse, 'emit');
             const mockEvent: TreeNodeCollapseEvent = {
                 originalEvent: new Event('click'),
                 node: mockFolders[0]
@@ -285,9 +252,9 @@ describe('DotTreeFolderComponent', () => {
         });
 
         it('should trigger outputs through event handlers in template', () => {
-            const onNodeSelectSpy = jest.spyOn(component.onNodeSelect, 'emit');
-            const onNodeExpandSpy = jest.spyOn(component.onNodeExpand, 'emit');
-            const onNodeCollapseSpy = jest.spyOn(component.onNodeCollapse, 'emit');
+            const onNodeSelectSpy = vi.spyOn(component.onNodeSelect, 'emit');
+            const onNodeExpandSpy = vi.spyOn(component.onNodeExpand, 'emit');
+            const onNodeCollapseSpy = vi.spyOn(component.onNodeCollapse, 'emit');
 
             const mockSelectEvent: TreeNodeExpandEvent = {
                 originalEvent: new Event('select'),
@@ -313,13 +280,14 @@ describe('DotTreeFolderComponent', () => {
             expect(onNodeCollapseSpy).toHaveBeenCalledWith(mockCollapseEvent);
         });
 
-        it('should render a "Load more" button for a load-more node and emit loadMore on click without selecting', () => {
-            const loadMoreSpy = jest.spyOn(component.loadMore, 'emit');
-            const onNodeSelectSpy = jest.spyOn(component.onNodeSelect, 'emit');
+        it('should render a "Load more" button with plus icon and emit loadMore on click without selecting', () => {
+            const loadMoreSpy = vi.spyOn(component.loadMore, 'emit');
+            const onNodeSelectSpy = vi.spyOn(component.onNodeSelect, 'emit');
 
             const loadMoreNode: TreeNode = {
                 key: 'load-more:/application/',
-                label: 'content-drive.tree.load-more',
+                label: '',
+                type: 'load-more',
                 data: {
                     type: 'load-more',
                     path: '/application/',
@@ -337,6 +305,8 @@ describe('DotTreeFolderComponent', () => {
 
             const button = spectator.query('[data-testid="tree-load-more"]');
             expect(button).toBeTruthy();
+            expect(button?.querySelector('.pi-plus-circle')).toBeTruthy();
+            expect(button?.textContent).not.toContain('(40)');
 
             spectator.click(button as HTMLElement);
 
@@ -379,11 +349,30 @@ describe('DotTreeFolderComponent', () => {
             const treeElement = spectator.query('p-tree');
             expect(treeElement).toBeTruthy();
         });
-    });
 
-    describe('Constants', () => {
-        it('should export SYSTEM_HOST_ID constant', () => {
-            expect(SYSTEM_HOST_ID).toBe('SYSTEM_HOST');
+        it('should render its projected label inside the shared clipping element', () => {
+            // #37363: long names used to wrap onto several lines here. The shared tree owns the
+            // single-line clipping now, so this consumer's label sits inside its wrapper and the
+            // consumer keeps only what a row *says*.
+            const clips = spectator.queryAll(byTestId('tree-node-label-clip'));
+
+            expect(clips).toHaveLength(2);
+            expect(clips[0]?.querySelector('[data-testid="tree-node-label"]')).toBeTruthy();
+        });
+
+        it('should keep exactly one tree-node-label per row', () => {
+            // e2e guard: `contentDrive.page.ts` counts this test id.
+            expect(spectator.queryAll(byTestId('tree-node-label'))).toHaveLength(2);
+        });
+
+        it('should keep matching the drop-highlight selector with the label wrapper in place', () => {
+            // The highlight is `.p-tree-node-content:has(span.active)` in this consumer's SCSS.
+            // `:has()` matches descendants, so the wrapper should not break it — verified rather
+            // than assumed (research.md R7).
+            component.$activeDropNode.set(mockFolders[0].data);
+            spectator.detectChanges();
+
+            expect(spectator.query('.p-tree-node-content:has(span.active)')).toBeTruthy();
         });
     });
 
@@ -415,24 +404,24 @@ describe('DotTreeFolderComponent', () => {
     });
 
     describe('Drag and Drop', () => {
-        let elementRefSpy: ReturnType<typeof jest.spyOn>;
-        let uploadFilesSpyEmitter: ReturnType<typeof jest.spyOn>;
-        let moveItemsSpyEmitter: ReturnType<typeof jest.spyOn>;
+        let elementRefSpy: ReturnType<typeof vi.spyOn>;
+        let uploadFilesSpyEmitter: ReturnType<typeof vi.spyOn>;
+        let moveItemsSpyEmitter: ReturnType<typeof vi.spyOn>;
 
         beforeEach(() => {
-            uploadFilesSpyEmitter = jest.spyOn(component.uploadFiles, 'emit');
-            moveItemsSpyEmitter = jest.spyOn(component.moveItems, 'emit');
+            uploadFilesSpyEmitter = vi.spyOn(component.uploadFiles, 'emit');
+            moveItemsSpyEmitter = vi.spyOn(component.moveItems, 'emit');
 
             // Spy on the component's elementRef nativeElement.contains method
             if (component.elementRef?.nativeElement) {
-                elementRefSpy = jest
+                elementRefSpy = vi
                     .spyOn(component.elementRef.nativeElement, 'contains')
                     .mockReturnValue(false);
             }
         });
 
         afterEach(() => {
-            jest.clearAllMocks();
+            vi.clearAllMocks();
         });
 
         describe('dragenter', () => {
@@ -861,6 +850,301 @@ describe('DotTreeFolderComponent', () => {
                 component.$activeDropNode.set(null);
                 expect(component.$activeDropNode()).toBeNull();
             });
+        });
+    });
+
+    describe('right-click', () => {
+        const SITE_ID = 'site-1';
+
+        const folderNode: DotFolderTreeNodeItem = {
+            key: 'folder-1',
+            label: '/application/content/',
+            data: {
+                id: 'folder-1',
+                hostname: 'demo.dotcms.com',
+                path: '/application/content/',
+                type: 'folder'
+            }
+        };
+
+        const childNode: DotFolderTreeNodeItem = {
+            key: 'folder-2',
+            label: '/application/content/images/',
+            data: {
+                id: 'folder-2',
+                hostname: 'demo.dotcms.com',
+                path: '/application/content/images/',
+                type: 'folder'
+            }
+        };
+
+        // Built by the real factory: PrimeNG matches its template on `node.type`, so a hand-rolled
+        // literal carrying only `data.type` would never render as a sentinel.
+        const loadMoreNode = createLoadMoreTreeNode({
+            levelKey: '/application/content/',
+            nextPage: 2,
+            remaining: 10,
+            path: '/application/content/',
+            hostname: 'demo.dotcms.com'
+        }) as DotFolderTreeNodeItem;
+
+        // A site row rather than a folder: it carries no path, which is how it is told apart.
+        const siteNode: DotFolderTreeNodeItem = {
+            key: SITE_ID,
+            label: 'demo.dotcms.com',
+            data: {
+                id: SITE_ID,
+                hostname: 'demo.dotcms.com',
+                path: '',
+                type: 'folder'
+            }
+        };
+
+        /** The node's own row: toggler, icon and label, but not its children. */
+        const rowFor = (id: string): HTMLElement =>
+            spectator
+                .query(`[data-testid="tree-node-label"][data-id="${id}"]`)
+                .closest('.p-tree-node-content');
+
+        const rightClickOn = (target: Element) => {
+            const event = new MouseEvent('contextmenu', { cancelable: true, bubbles: true });
+            vi.spyOn(event, 'preventDefault');
+            target.dispatchEvent(event);
+
+            return event;
+        };
+
+        let emitted: Mock;
+
+        beforeEach(() => {
+            emitted = vi.fn();
+            component.rightClick.subscribe(emitted);
+
+            spectator.fixture.componentRef.setInput('folders', [
+                siteNode,
+                {
+                    ...folderNode,
+                    expanded: true,
+                    children: [childNode, loadMoreNode]
+                }
+            ]);
+            spectator.detectChanges();
+        });
+
+        it('should emit the event and the clicked folder', () => {
+            const event = rightClickOn(rowFor('folder-1'));
+
+            expect(emitted).toHaveBeenCalledWith({
+                event,
+                data: expect.objectContaining({ id: 'folder-1' })
+            });
+        });
+
+        it('should suppress the native browser menu for a folder node', () => {
+            const event = rightClickOn(rowFor('folder-1'));
+
+            expect(event.preventDefault).toHaveBeenCalled();
+        });
+
+        it('should respond anywhere on the row, not only on the label text', () => {
+            const label = spectator.query('[data-testid="tree-node-label"][data-id="folder-1"]');
+
+            rightClickOn(label);
+
+            expect(emitted).toHaveBeenCalledWith({
+                event: expect.anything(),
+                data: expect.objectContaining({ id: 'folder-1' })
+            });
+        });
+
+        it('should emit the nested folder, not its parent, when a child row is clicked', () => {
+            rightClickOn(rowFor('folder-2'));
+
+            expect(emitted).toHaveBeenCalledWith({
+                event: expect.anything(),
+                data: expect.objectContaining({ id: 'folder-2' })
+            });
+        });
+
+        it('should ignore a site row, which has no folder permissions to build a menu from', () => {
+            const event = rightClickOn(rowFor(SITE_ID));
+
+            expect(emitted).not.toHaveBeenCalled();
+            // No menu to show, so the native one is left alone rather than swallowed.
+            expect(event.preventDefault).not.toHaveBeenCalled();
+        });
+
+        it('should ignore "Load more" sentinels rather than opening the parent menu', () => {
+            const loadMore = spectator.query(byTestId('tree-load-more'));
+
+            const event = rightClickOn(loadMore);
+
+            expect(emitted).not.toHaveBeenCalled();
+            expect(event.preventDefault).not.toHaveBeenCalled();
+        });
+
+        it('should ignore a right-click outside any node row', () => {
+            const event = rightClickOn(spectator.element);
+
+            expect(emitted).not.toHaveBeenCalled();
+            expect(event.preventDefault).not.toHaveBeenCalled();
+        });
+    });
+
+    /**
+     * In-flight folder marking (#37063 US2).
+     *
+     * A folder being deleted must not behave like a folder. The grid already marks its rows — that
+     * shipped with #37166 — and this is the other half: without it an author can still walk into,
+     * expand, or drop content onto a folder that is being destroyed, and what they put there dies
+     * with it.
+     *
+     * Matched on `data.inode` OR `data.id`, the same "both keys" rule the grid follows: the search
+     * service only backfills one of them when the API returned none, so neither is reliably present.
+     */
+    describe('in-flight folders (#37063)', () => {
+        const inFlightNode: TreeNode = {
+            key: '9',
+            label: '/old-a',
+            data: { path: '/old-a', inode: 'inode-a', id: 'id-a' }
+        };
+
+        const healthyNode: TreeNode = {
+            key: '10',
+            label: '/keep',
+            data: { path: '/keep', inode: 'inode-keep', id: 'id-keep' }
+        };
+
+        const arrange = (inFlightKeys: string[]): void => {
+            spectator.fixture.componentRef.setInput('folders', [inFlightNode, healthyNode]);
+            spectator.fixture.componentRef.setInput('loading', false);
+            spectator.fixture.componentRef.setInput('inFlightKeys', inFlightKeys);
+            spectator.detectChanges();
+        };
+
+        it('should not let a marked node be navigated into', () => {
+            arrange(['inode-a']);
+            const spy = vi.spyOn(component.onNodeSelect, 'emit');
+
+            spectator.triggerEventHandler(Tree, 'onNodeSelect', {
+                originalEvent: new Event('click'),
+                node: inFlightNode
+            });
+
+            expect(spy).not.toHaveBeenCalled();
+        });
+
+        it('should not let a marked node be expanded', () => {
+            arrange(['inode-a']);
+            const spy = vi.spyOn(component.onNodeExpand, 'emit');
+
+            spectator.triggerEventHandler(Tree, 'onNodeExpand', {
+                originalEvent: new Event('click'),
+                node: inFlightNode
+            });
+
+            expect(spy).not.toHaveBeenCalled();
+        });
+
+        it('should let an unmarked node become a drop target', () => {
+            // The positive control for the test below. Without it that one passes on an empty DOM,
+            // proving only that nothing happened for some other reason.
+            arrange(['inode-a']);
+            const label = spectator.query('[data-node-key="10"]') as HTMLElement;
+
+            component.onDragOver(createDragOverEvent(label));
+
+            expect(component.$activeDropNode()).not.toBeNull();
+        });
+
+        it('should not let a marked node become a drop target', () => {
+            arrange(['inode-a']);
+            const label = spectator.query('[data-node-key="9"]') as HTMLElement;
+
+            component.onDragOver(createDragOverEvent(label));
+
+            expect(component.$activeDropNode()).toBeNull();
+        });
+
+        it('should still allow every interaction on an unmarked node', () => {
+            arrange(['inode-a']);
+            const spy = vi.spyOn(component.onNodeSelect, 'emit');
+
+            spectator.triggerEventHandler(Tree, 'onNodeSelect', {
+                originalEvent: new Event('click'),
+                node: healthyNode
+            });
+
+            expect(spy).toHaveBeenCalled();
+        });
+
+        it('should match on the identifier when the node carries no inode', () => {
+            arrange(['id-a']);
+            const spy = vi.spyOn(component.onNodeSelect, 'emit');
+
+            spectator.triggerEventHandler(Tree, 'onNodeSelect', {
+                originalEvent: new Event('click'),
+                node: inFlightNode
+            });
+
+            expect(spy).not.toHaveBeenCalled();
+        });
+
+        it('should report the marked node as busy to assistive technology', () => {
+            // Opacity and `pointer-events: none` reach one sense only, and the consequence of
+            // missing the signal is acting on a folder about to cease to exist (FR-014a, SC-012).
+            arrange(['inode-a']);
+
+            expect(spectator.query('[data-node-key="9"]')?.getAttribute('aria-busy')).toBe('true');
+            expect(spectator.query('[data-node-key="10"]')?.getAttribute('aria-busy')).toBeNull();
+        });
+
+        /**
+         * **The stylesheet's only hook.** `dot-tree-folder.component.scss` disables pointer events
+         * with `.p-tree-node-content:has([aria-busy="true"])`, so the busy marker has to sit INSIDE
+         * PrimeNG's clickable row for the rule to match anything.
+         *
+         * This matters because the TypeScript guard cannot do the job alone: PrimeNG commits its
+         * own selection before it emits, so swallowing `onNodeSelect` left the busy folder painted
+         * as the active row while the app stayed put (reported on PR dotCMS/core#37688). If PrimeNG
+         * renames the class or the label moves out of the row, nothing else here fails — the folder
+         * just silently becomes clickable again.
+         */
+        it('should put the busy marker inside the row the stylesheet disables', () => {
+            arrange(['inode-a']);
+
+            const row = spectator.query('.p-tree-node-content:has([aria-busy="true"])');
+
+            expect(row).toBeTruthy();
+            expect(row?.querySelector('[data-node-key="9"]')).toBeTruthy();
+        });
+
+        it('should mark nothing when no folders are in flight', () => {
+            // The input is optional: the AssetPicker renders this same tree and never passes it.
+            arrange([]);
+            const spy = vi.spyOn(component.onNodeSelect, 'emit');
+
+            spectator.triggerEventHandler(Tree, 'onNodeSelect', {
+                originalEvent: new Event('click'),
+                node: inFlightNode
+            });
+
+            expect(spy).toHaveBeenCalled();
+            expect(spectator.query('[data-node-key="9"]')?.getAttribute('aria-busy')).toBeNull();
+        });
+
+        it("should not mark a marked folder's children", () => {
+            // Marking covers the folders submitted and their own nodes, not what is inside them
+            // (FR-015). Walking descendants would cost a prefix test on every node on every render,
+            // for folders that are about to disappear anyway.
+            spectator.fixture.componentRef.setInput('folders', [
+                { ...inFlightNode, expanded: true, children: [healthyNode] }
+            ]);
+            spectator.fixture.componentRef.setInput('loading', false);
+            spectator.fixture.componentRef.setInput('inFlightKeys', ['inode-a']);
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-node-key="10"]')?.getAttribute('aria-busy')).toBeNull();
         });
     });
 });

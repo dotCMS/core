@@ -2,12 +2,7 @@ import { patchState, signalStoreFeature, type, withComputed, withMethods } from 
 
 import { computed, inject, Signal, untracked } from '@angular/core';
 
-import {
-    DotExperimentStatus,
-    DotTreeNode,
-    SeoMetaTags,
-    SeoMetaTagsResult
-} from '@dotcms/dotcms-models';
+import { DotTreeNode, SeoMetaTags, SeoMetaTagsResult } from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/types';
 import { StyleEditorFormSchema } from '@dotcms/types/internal';
 import { WINDOW } from '@dotcms/utils';
@@ -95,21 +90,19 @@ export function withEditor() {
 
             const editorHasAccessToEditMode = computed(() => {
                 const isPageEditable = store.pageAsset()?.page?.canEdit;
-                const isExperimentRunning = [
-                    DotExperimentStatus.RUNNING,
-                    DotExperimentStatus.SCHEDULED
-                ].includes(store.pageExperiment()?.status);
 
-                if (!isPageEditable || isExperimentRunning) {
+                // A live experiment no longer freezes the page (#37308). Editors can fix a variant
+                // mid-run; the shell's warning banner is what tells them the run's results will
+                // then mix data from before and after the change. Nothing here gates on
+                // experiment status any more — and nothing else here may be dropped with it.
+                if (!isPageEditable) {
                     return false;
                 }
 
-                // When feature flag is enabled, always allow access (user can toggle lock)
-                if (store.$lockFeatureEnabled()) {
-                    return true;
-                }
-
-                // Legacy behavior: block access if page is locked
+                // Editing always requires lock ownership: not locked at all, or
+                // locked by the current user. A lock held by someone else must be
+                // released (and re-locked by this user) before editing is allowed —
+                // this applies with or without the toggle-lock feature flag.
                 return !store.$lockIsPageLocked();
             });
 
@@ -122,17 +115,12 @@ export function withEditor() {
                 // their layout — the nav button stays disabled with the
                 // "advanced-template" tooltip.
                 const canDrawTemplate = store.pageAsset()?.template?.drawed;
-                const isExperimentRunning = [
-                    DotExperimentStatus.RUNNING,
-                    DotExperimentStatus.SCHEDULED
-                ].includes(store.pageExperiment()?.status);
 
-                return (
-                    canEditPage &&
-                    canDrawTemplate &&
-                    !isExperimentRunning &&
-                    !store.$lockIsPageLocked()
-                );
+                // A live experiment no longer blocks the layout either (#37308). Exactly one term
+                // left this expression; the other three still decide it, and each refuses for its
+                // own reason — no edit permission, a hand-coded template with no rows to move, or
+                // a lock held by someone else.
+                return canEditPage && canDrawTemplate && !store.$lockIsPageLocked();
             });
 
             // Public capabilities (exported via EditorComputed interface)

@@ -1,177 +1,224 @@
 import {
+    ChangeDetectionStrategy,
     Component,
+    ElementRef,
     computed,
     effect,
-    ElementRef,
     inject,
     input,
     output,
-    viewChild,
-    ChangeDetectionStrategy,
-    model,
-    ChangeDetectorRef
+    signal,
+    viewChild
 } from '@angular/core';
-import { FormsModule, ReactiveFormsModule, Validators, FormBuilder } from '@angular/forms';
+import {
+    AbstractControl,
+    NonNullableFormBuilder,
+    ReactiveFormsModule,
+    ValidationErrors
+} from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { TableModule } from 'primeng/table';
-import { TextareaModule } from 'primeng/textarea';
-import { ToggleSwitchModule } from 'primeng/toggleswitch';
-
-import { debounceTime, distinctUntilChanged, skip } from 'rxjs/operators';
 
 import { DotMessagePipe } from '../../../dot-message/dot-message.pipe';
 import { DotKeyValue } from '../dot-key-value-ng.component';
 
+/**
+ * One existing key/value pair.
+ *
+ * Attached as an attribute so the host IS the `tr`: PrimeNG themes its table with
+ * direct-child combinators (`.p-datatable-tbody > tr > td`), and an element wrapper
+ * between the tbody and the tr silently defeats every table style the theme provides.
+ */
 @Component({
-    selector: 'dot-key-value-table-row',
+    // `libs/ui` narrows this rule to element selectors; see the class doc for why
+    // that is not usable here.
+    // eslint-disable-next-line @angular-eslint/component-selector
+    selector: 'tr[dotKeyValueTableRow]',
     templateUrl: './dot-key-value-table-row.component.html',
-    host: { class: 'contents' },
-    imports: [
-        ButtonModule,
-        ToggleSwitchModule,
-        TextareaModule,
-        InputTextModule,
-        FormsModule,
-        ReactiveFormsModule,
-        TableModule,
-        DotMessagePipe
-    ],
+    // `group` drives the hover reveal of this row's actions. The row's own class is
+    // how e2e locates a row from a cell inside it, and predates the redesign.
+    host: { class: 'group dot-key-value-table-row' },
+    imports: [ButtonModule, InputTextModule, ReactiveFormsModule, TableModule, DotMessagePipe],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotKeyValueTableRowComponent {
-    /**
-     * Form builder service for creating reactive forms
-     */
-    #formBuilder = inject(FormBuilder);
+    #fb = inject(NonNullableFormBuilder);
 
-    /**
-     * Change detector reference
-     */
-    changeDetectorRef = inject(ChangeDetectorRef);
-
-    /**
-     * Event emitted when a variable is saved, containing the updated DotKeyValue
-     */
     save = output<DotKeyValue>();
 
-    /**
-     * Event emitted when a variable is deleted, containing the DotKeyValue to be removed
-     */
     delete = output<void>();
 
-    /**
-     * Input that controls whether to show a hidden field toggle
-     */
     $showHiddenField = input.required<boolean>({ alias: 'showHiddenField' });
 
-    /**
-     * Input that controls the index of the row
-     */
+    /** Renders the pair as plain text, with nothing that could change it. */
+    $readOnly = input<boolean>(false, { alias: 'readOnly' });
+
     $index = input.required<number>({ alias: 'index' });
 
-    /**
-     * Input that controls whether to show a drag and drop handle
-     */
-    $dragAndDrop = input.required<boolean>({ alias: 'dragAndDrop' });
+    $variable = input.required<DotKeyValue>({ alias: 'variable' });
 
     /**
-     * The key-value pair to be displayed and edited in this row
+     * The value input, which only exists while this row is being edited.
      */
-    $variable = model.required<DotKeyValue>({ alias: 'variable' });
+    $valueInput = viewChild<ElementRef<HTMLInputElement>>('valueInput');
+
+    /** The key input, which only exists while the key is being edited. */
+    $keyInput = viewChild<ElementRef<HTMLInputElement>>('keyInput');
 
     /**
-     * Reference to the value cell element in the template
+     * Which cell of this row is being edited, if any. At rest both are plain text;
+     * activating one swaps in its input.
      */
-    $valueCellRef = viewChild.required<ElementRef>('valueCell');
+    $editing = signal<'key' | 'value' | null>(null);
+
+    $isEditing = computed(() => this.$editing() === 'value');
+
+    $isEditingKey = computed(() => this.$editing() === 'key');
 
     /**
-     * Placeholder text shown for hidden password fields
+     * The text being edited, whichever cell is open.
+     *
+     * Carries the same validators the entry row applies to the same field, so adding
+     * `name` and renaming a row to `name` are refused for the same reason and say so
+     * in the same words. Which validators are attached depends on the cell, and is
+     * decided in {@link #beginEditing}.
      */
-    protected readonly passwordPlaceholder = '*****';
+    editControl = this.#fb.control('');
+
+    /** Keys held by other rows, so a rename cannot collide with one. */
+    $forbiddenkeys = input<Record<string, boolean>>({}, { alias: 'forbiddenkeys' });
+
+    /** Text captured when editing started, so Escape can put it back. */
+    #textBeforeEdit = '';
 
     /**
-     * Computed property that determines if the current field should be displayed as hidden
-     * @returns {boolean} True if the field should be hidden
+     * Whether this row's value is withheld, in which case the row states that and
+     * shows nothing else — no value, no input, no control.
+     *
+     * Gated on the capability, not just the flag: only the consumer that deals in
+     * secrets should render the withheld state (FR-024).
      */
-    $isHiddenField = computed(() => {
-        return this.$variable()?.hidden || false;
-    });
+    $isHiddenField = computed(() => this.$showHiddenField() && !!this.$variable()?.hidden);
 
-    /**
-     * Reactive form to handle the value and hidden state
-     */
-    form = this.#formBuilder.nonNullable.group({
-        value: ['', Validators.required],
-        hidden: [false]
-    });
-
-    /**
-     * Sets up an effect to sync the form values with the input variable
-     */
     constructor() {
+        // Focus the input as soon as it is rendered, so activating a value and
+        // typing is one uninterrupted motion for keyboard users.
         effect(() => {
-            const { value, hidden } = this.$variable();
-            this.form.patchValue({ value, hidden });
-            this.changeDetectorRef.detectChanges();
-        });
-
-        this.hiddenControl.valueChanges
-            .pipe(skip(1), debounceTime(50), distinctUntilChanged())
-            .subscribe(() => {
-                this.saveVariable();
-            });
-
-        this.valueControl.valueChanges
-            .pipe(skip(1), debounceTime(1000), distinctUntilChanged())
-            .subscribe(() => {
-                this.saveVariable();
-            });
-    }
-
-    /**
-     * Getter for the value form control
-     * @returns The value form control
-     */
-    get valueControl() {
-        return this.form.controls.value;
-    }
-
-    /**
-     * Getter for the hidden form control
-     * @returns The hidden form control
-     */
-    get hiddenControl() {
-        return this.form.controls.hidden;
-    }
-
-    /**
-     * Determines the input type based on the hidden state
-     * @returns {string} 'password' if hidden, 'text' otherwise
-     */
-    get inputType(): string {
-        return this.hiddenControl.value ? 'password' : 'text';
-    }
-
-    /**
-     * Handles Enter key press by preventing default behavior and triggering save
-     * @param {Event} event - The keyboard event
-     */
-    onPressEnter(event: Event): void {
-        event.preventDefault();
-        this.saveVariable();
-    }
-
-    /**
-     * Saves the variable by emitting the current form values
-     * Combines the original variable with updated value and hidden state
-     */
-    saveVariable(): void {
-        this.save.emit({
-            ...this.$variable(),
-            value: this.valueControl.value,
-            hidden: this.hiddenControl.value
+            if (this.$isEditing()) {
+                this.$valueInput()?.nativeElement.focus();
+            } else if (this.$isEditingKey()) {
+                this.$keyInput()?.nativeElement.focus();
+            }
         });
     }
+
+    startEdit(): void {
+        this.#beginEditing('value', this.$variable().value);
+    }
+
+    startEditKey(): void {
+        this.#beginEditing('key', this.$variable().key);
+    }
+
+    #beginEditing(cell: 'key' | 'value', text: string): void {
+        if (this.$readOnly()) {
+            return;
+        }
+
+        this.#textBeforeEdit = text;
+        this.editControl.setValidators(
+            cell === 'key' ? [this.#nonBlank, this.#keyValidator] : [this.#nonBlank]
+        );
+        this.editControl.setValue(text);
+        // Pristine, so the row opens without an error on text the user has not touched.
+        this.editControl.markAsPristine();
+        this.$editing.set(cell);
+    }
+
+    /**
+     * Commits the edit and returns the row to its at-rest presentation. Reached from
+     * Enter alone: moving focus away abandons the edit rather than committing it, so
+     * Enter is the one gesture that writes. Emits only when the text actually changed,
+     * so opening a row and closing it again is not an edit.
+     *
+     * An invalid edit — a blank key or value, or a rename onto a key another row
+     * already holds — keeps the input open with its message rather than closing.
+     * Closing would discard what the user typed without ever saying why it was
+     * refused, which is what this used to do. Escape and clicking away still abandon.
+     *
+     * Keys commit trimmed: surrounding space in a key is never meaningful, and two
+     * keys differing only by it would read as duplicates. Values commit exactly as
+     * typed, and are compared the same way, so deliberately adding a trailing space
+     * to a value is a change like any other — trimming only decides whether the
+     * value counts as blank.
+     */
+    commitEdit(event?: Event): void {
+        event?.preventDefault();
+
+        const cell = this.$editing();
+
+        if (!cell) {
+            return;
+        }
+
+        if (this.editControl.invalid) {
+            this.editControl.markAsDirty();
+
+            return;
+        }
+
+        const raw = this.editControl.value;
+        const text = cell === 'key' ? raw.trim() : raw;
+
+        this.$editing.set(null);
+
+        if (text === this.#textBeforeEdit) {
+            return;
+        }
+
+        this.save.emit(
+            cell === 'key'
+                ? { ...this.$variable(), key: text }
+                : { ...this.$variable(), value: text }
+        );
+    }
+
+    /**
+     * Discards the edit, from Escape or from focus leaving the input.
+     *
+     * Clicking away abandons rather than commits, which makes one rule for both ways
+     * out: Enter writes, anything else puts the row back as it was. The alternative —
+     * committing on blur — would have written a valid edit and discarded an invalid
+     * one from the very same gesture.
+     *
+     * Safe to reach twice: leaving edit mode removes the input, which fires `blur`
+     * again, and the second call finds nothing to do.
+     */
+    cancelEdit(event?: Event): void {
+        event?.preventDefault();
+        this.$editing.set(null);
+    }
+
+    /**
+     * Required, reported under the same `required` error the entry row uses so both
+     * rows can render the same message. A run of spaces is not a value.
+     */
+    #nonBlank = ({ value }: AbstractControl<string>): ValidationErrors | null =>
+        value?.trim() ? null : { required: true };
+
+    /**
+     * Rejects a rename onto a key another row already holds.
+     *
+     * This row's own key is in the map too, so it has to be excluded — otherwise the
+     * row would report itself as a duplicate the moment editing opened.
+     */
+    #keyValidator = ({ value }: AbstractControl<string>): ValidationErrors | null => {
+        const key = value?.trim() ?? '';
+
+        return key !== this.$variable().key && this.$forbiddenkeys()[key]
+            ? { duplicatedKey: true }
+            : null;
+    };
 }

@@ -1,5 +1,6 @@
-import { createHostFactory, SpectatorHost } from '@openng/spectator/jest';
+import { createHostFactory, SpectatorHost } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -148,11 +149,16 @@ describe('DotPersonaSelectorComponent', () => {
             }
         );
         paginatorService = spectator.component.paginationService;
+        // Seeded so the dropdown's showOverlayHandler() skips its deferred
+        // getBoundingClientRect(). That read runs in a setTimeout that fires after the
+        // test, when the panel's container is already null — jsdom has no layout to
+        // measure anyway. Jest discarded the resulting error; Vitest counts it.
+        spectator.component.searchableDropdown.overlayPanelMinHeight = '0';
         spectator.detectChanges();
     });
 
     it('should emit the selected persona', () => {
-        jest.spyOn(spectator.component.selected, 'emit');
+        vi.spyOn(spectator.component.selected, 'emit');
         spectator.triggerEventHandler('dot-searchable-dropdown', 'switch', defaultPersona);
         expect(spectator.component.selected.emit).toHaveBeenCalledWith(defaultPersona);
         expect(spectator.component.selected.emit).toHaveBeenCalledTimes(1);
@@ -164,7 +170,7 @@ describe('DotPersonaSelectorComponent', () => {
     });
 
     it('should call page change', () => {
-        jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(of([{ ...mockDotPersona }]));
+        vi.spyOn(paginatorService, 'getWithOffset').mockReturnValue(of([{ ...mockDotPersona }]));
         spectator.triggerEventHandler('dot-searchable-dropdown', 'pageChange', {
             filter: '',
             first: 10,
@@ -196,7 +202,7 @@ describe('DotPersonaSelectorComponent', () => {
     });
 
     it('should call toggle when selected dot-persona-selected-item', async () => {
-        jest.spyOn(spectator.component.searchableDropdown, 'toggleOverlayPanel');
+        vi.spyOn(spectator.component.searchableDropdown, 'toggleOverlayPanel');
         await spectator.fixture.whenStable();
 
         const selectedItem = spectator.query('dot-persona-selected-item');
@@ -246,7 +252,7 @@ describe('DotPersonaSelectorComponent', () => {
         spectator.detectChanges();
         await spectator.fixture.whenStable();
 
-        jest.spyOn(spectator.component.selected, 'emit');
+        vi.spyOn(spectator.component.selected, 'emit');
         openOverlay();
         await spectator.fixture.whenStable();
         spectator.detectChanges();
@@ -266,7 +272,7 @@ describe('DotPersonaSelectorComponent', () => {
         spectator.detectChanges();
         await spectator.fixture.whenStable();
 
-        jest.spyOn(spectator.component.delete, 'emit');
+        vi.spyOn(spectator.component.delete, 'emit');
         openOverlay();
         await spectator.fixture.whenStable();
         spectator.detectChanges();
@@ -293,7 +299,7 @@ describe('DotPersonaSelectorComponent', () => {
             openOverlay();
             const addPersonaIcon = spectator.query('p-button');
 
-            jest.spyOn(spectator.component.searchableDropdown, 'toggleOverlayPanel');
+            vi.spyOn(spectator.component.searchableDropdown, 'toggleOverlayPanel');
 
             spectator.triggerEventHandler('dot-searchable-dropdown', 'filterChange', 'Bill');
             spectator.click(addPersonaIcon);
@@ -306,9 +312,9 @@ describe('DotPersonaSelectorComponent', () => {
         });
 
         it('should emit persona and refresh the list on Add new persona', () => {
-            jest.spyOn(spectator.component.selected, 'emit');
-            jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(of([mockDotPersona]));
-            jest.spyOn(spectator.component.searchableDropdown, 'resetPanelMinHeight');
+            vi.spyOn(spectator.component.selected, 'emit');
+            vi.spyOn(paginatorService, 'getWithOffset').mockReturnValue(of([mockDotPersona]));
+            vi.spyOn(spectator.component.searchableDropdown, 'resetPanelMinHeight');
 
             spectator.triggerEventHandler(
                 'dot-add-persona-dialog',
@@ -333,14 +339,14 @@ describe('DotPersonaSelectorComponent', () => {
         });
 
         it('should call hide event on hide persona list', () => {
-            jest.spyOn(iframeOverlayService, 'hide');
+            vi.spyOn(iframeOverlayService, 'hide');
             spectator.triggerEventHandler('dot-searchable-dropdown', 'hide', {});
 
             expect(iframeOverlayService.hide).toHaveBeenCalled();
         });
 
         it('should call show event on show persona list', () => {
-            jest.spyOn(iframeOverlayService, 'show');
+            vi.spyOn(iframeOverlayService, 'show');
             spectator.triggerEventHandler('dot-searchable-dropdown', 'display', {});
 
             expect(iframeOverlayService.show).toHaveBeenCalled();

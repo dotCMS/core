@@ -7,6 +7,12 @@ on:
   pull_request:
     types: [opened, synchronize]
 
+# Reviewing a commit that has already been superseded helps nobody, and the run
+# holds a runner slot the rest of the pipeline is queueing for.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   # ─────────────────────────────────────────────────────────────────
   # Gate 1 — Pilot author allowlist
@@ -23,7 +29,7 @@ jobs:
         env:
           AUTHOR: ${{ github.event.pull_request.user.login }}
         run: |
-          PILOT_AUTHORS='["dsolistorres","gortiz-dotcms","dsilvam"]'
+          PILOT_AUTHORS='["danielsolis-dotcms","gortiz-dotcms","danielsilva-dotcms"]'
           if echo "$PILOT_AUTHORS" | jq -e --arg a "$AUTHOR" 'index($a) != null' > /dev/null; then
             echo "authorized=true" >> $GITHUB_OUTPUT
             echo "✅ $AUTHOR is in the pilot list"
@@ -45,7 +51,7 @@ jobs:
     outputs:
       has_java: ${{ steps.check.outputs.has_java }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
@@ -93,6 +99,13 @@ jobs:
       timeout_minutes: 30
       runner: ubuntu-latest
       enable_mention_detection: false
+      # No progress comment: claude-code-action finds the comment to reuse by
+      # "authored by the Claude app bot" with no per-workflow marker, so this
+      # review would grab — and overwrite — the code review comment posted by
+      # ai_claude-orchestrator.yml (#36761). STEP 5 below upserts this review's
+      # own <!-- dotcms-backend-review --> comment, so it needs no comment of
+      # its own. Only the code-review orchestrator owns a sticky comment.
+      track_progress: false
       claude_args: >-
         --allowedTools
         "Agent,Bash(git diff*),Bash(git log*),Bash(git show*),Bash(cat CLAUDE.md*),Bash(cat docs/backend/*),Bash(cat docs/core/*),Bash(cat dotCMS/src/*),Bash(find dotCMS/src -name '*.java'*),Bash(grep -rn dotCMS/src*),Bash(gh pr comment*),Bash(gh pr review*),Bash(gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments*),Bash(gh api repos/${{ github.repository }}/issues/comments/*),Bash(jq*)"

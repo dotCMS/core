@@ -14,7 +14,6 @@ import { GeoCategory } from '../models';
 
 @Component({
     selector: 'dot-page-scanner-geo-report',
-    standalone: true,
     imports: [AccordionModule, CardModule, ChartModule, ChipModule, DecimalPipe, DotMessagePipe],
     templateUrl: './dot-page-scanner-geo-report.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush

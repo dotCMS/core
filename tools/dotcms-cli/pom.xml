@@ -61,7 +61,10 @@
             <executions>
               <execution>
                 <goals>
-                  <goal>full-release</goal>
+                  <!-- Only create/update the GitHub release. Uploads are handled
+                       by publish-to-s3; there is no Artifactory uploader now,
+                       and full-release would run the (empty) upload phase. -->
+                  <goal>release</goal>
                 </goals>
                 <phase>validate</phase>
               </execution>

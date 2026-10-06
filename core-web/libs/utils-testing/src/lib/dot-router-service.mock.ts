@@ -1,4 +1,5 @@
 import { NEVER, of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { Injectable } from '@angular/core';
 
@@ -39,33 +40,33 @@ export class MockDotRouterService {
     _currentSavedURL = '';
     pageLeaveRequest$ = NEVER;
     canDeactivateRoute$ = of(true);
-    replaceQueryParams = jest.fn();
-    getPortletId = jest.fn().mockReturnValue('test');
-    goToEditContentType = jest.fn();
-    goToEditContentlet = jest.fn();
-    goToEditPage = jest.fn();
-    goToEditTask = jest.fn();
-    goToForgotPassword = jest.fn();
-    goToLogin = jest.fn();
-    goToContent = jest.fn();
-    goToCreateContent = jest.fn();
-    goToPreviousUrl = jest.fn();
-    goToStarter = jest.fn();
-    doLogOut = jest.fn();
-    goToMain = jest.fn();
-    goToURL = jest.fn();
-    gotoPortlet = jest.fn().mockImplementation(() => new Promise((resolve) => resolve(true)));
-    goToAppsConfiguration = jest.fn();
-    goToUpdateAppsConfiguration = jest.fn();
-    goToSiteBrowser = jest.fn();
-    isCurrentPortletCustom = jest.fn();
-    isCustomPortlet = jest.fn().mockReturnValue(false);
-    isJSPPortlet = jest.fn();
-    reloadCurrentPortlet = jest.fn();
-    goToEditTemplate = jest.fn();
-    allowRouteDeactivation = jest.fn();
-    forbidRouteDeactivation = jest.fn();
-    goToEditContainer = jest.fn();
+    replaceQueryParams = vi.fn();
+    getPortletId = vi.fn().mockReturnValue('test');
+    goToEditContentType = vi.fn();
+    goToEditContentlet = vi.fn();
+    goToEditPage = vi.fn();
+    goToEditTask = vi.fn();
+    goToForgotPassword = vi.fn();
+    goToLogin = vi.fn();
+    goToContent = vi.fn();
+    goToCreateContent = vi.fn();
+    goToPreviousUrl = vi.fn();
+    goToStarter = vi.fn();
+    doLogOut = vi.fn();
+    goToMain = vi.fn();
+    goToURL = vi.fn();
+    gotoPortlet = vi.fn().mockImplementation(() => new Promise((resolve) => resolve(true)));
+    goToAppsConfiguration = vi.fn();
+    goToUpdateAppsConfiguration = vi.fn();
+    goToSiteBrowser = vi.fn();
+    isCurrentPortletCustom = vi.fn();
+    isCustomPortlet = vi.fn().mockReturnValue(false);
+    isJSPPortlet = vi.fn();
+    reloadCurrentPortlet = vi.fn();
+    goToEditTemplate = vi.fn();
+    allowRouteDeactivation = vi.fn();
+    forbidRouteDeactivation = vi.fn();
+    goToEditContainer = vi.fn();
     isEditPage() {
         /* */
     }

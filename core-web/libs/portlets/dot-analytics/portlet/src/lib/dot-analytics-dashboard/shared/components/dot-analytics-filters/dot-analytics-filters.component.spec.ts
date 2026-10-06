@@ -1,6 +1,7 @@
 import { createFakeEvent } from '@openng/spectator';
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { addDays, format, startOfDay } from 'date-fns';
+import { vi } from 'vitest';
 
 import { Select } from 'primeng/select';
 
@@ -187,7 +188,7 @@ describe('DotAnalyticsFiltersComponent', () => {
 
     describe('onDateSelect (range picking)', () => {
         it('should set $rangeStart on first click and not emit', () => {
-            const changeFiltersSpy = jest.spyOn(spectator.component.changeFilters, 'emit');
+            const changeFiltersSpy = vi.spyOn(spectator.component.changeFilters, 'emit');
             const startDate = new Date('2024-01-01T00:00:00');
 
             spectator.component.onDateSelect(startDate);
@@ -197,7 +198,7 @@ describe('DotAnalyticsFiltersComponent', () => {
         });
 
         it('should emit a valid range and clear $rangeStart on second click', () => {
-            const changeFiltersSpy = jest.spyOn(spectator.component.changeFilters, 'emit');
+            const changeFiltersSpy = vi.spyOn(spectator.component.changeFilters, 'emit');
             const startDate = new Date('2024-01-01T00:00:00');
             const endDate = new Date('2024-01-31T00:00:00');
 
@@ -210,7 +211,7 @@ describe('DotAnalyticsFiltersComponent', () => {
         });
 
         it('should emit when range is exactly 7 days', () => {
-            const changeFiltersSpy = jest.spyOn(spectator.component.changeFilters, 'emit');
+            const changeFiltersSpy = vi.spyOn(spectator.component.changeFilters, 'emit');
             const startDate = new Date('2024-01-01T00:00:00');
             const endDate = new Date('2024-01-07T00:00:00');
 
@@ -222,7 +223,7 @@ describe('DotAnalyticsFiltersComponent', () => {
         });
 
         it('should not emit when range is shorter than 7 days', () => {
-            const changeFiltersSpy = jest.spyOn(spectator.component.changeFilters, 'emit');
+            const changeFiltersSpy = vi.spyOn(spectator.component.changeFilters, 'emit');
             const startDate = new Date('2024-01-01T00:00:00');
             const endDate = new Date('2024-01-06T00:00:00');
 
@@ -295,7 +296,7 @@ describe('DotAnalyticsFiltersComponent', () => {
 
     describe('onChangeTimeRange', () => {
         it('should emit time range when time range is selected', () => {
-            const changeFiltersSpy = jest.spyOn(spectator.component.changeFilters, 'emit');
+            const changeFiltersSpy = vi.spyOn(spectator.component.changeFilters, 'emit');
             spectator.triggerEventHandler(Select, 'onChange', {
                 value: TIME_RANGE_OPTIONS.last7days,
                 originalEvent: createFakeEvent('change')
@@ -305,7 +306,7 @@ describe('DotAnalyticsFiltersComponent', () => {
         });
 
         it('should not emit when custom time range is selected from dropdown', () => {
-            const changeFiltersSpy = jest.spyOn(spectator.component.changeFilters, 'emit');
+            const changeFiltersSpy = vi.spyOn(spectator.component.changeFilters, 'emit');
             spectator.triggerEventHandler(Select, 'onChange', {
                 value: TIME_RANGE_OPTIONS.custom,
                 originalEvent: createFakeEvent('change')

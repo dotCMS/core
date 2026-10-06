@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Icons and Media</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- inline critical CSS, kept byte-for-byte by the minifier -->
+        <style>
+.icon { width: 1em; height: 1em; vertical-align: -0.125em }
+.card { display: flex; flex-direction: column }
+.card-media { aspect-ratio: 16 / 9 }
+        </style>
+    </head>
+    <body class="page  media-page" id="icons-and-media">
+        <header class="site-header">
+            <nav class="site-nav" aria-label="Main">
+                <ul class="nav-list">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/home">Home <svg class="icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 1 L8 8 L15 1"></path></svg></a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/destinations">Destinations <svg class="icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 1 L8 8 L15 1"></path></svg></a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/activities">Activities <svg class="icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 1 L8 8 L15 1"></path></svg></a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/store">Store <svg class="icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 1 L8 8 L15 1"></path></svg></a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/blog">Blog <svg class="icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 1 L8 8 L15 1"></path></svg></a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/contact">Contact <svg class="icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 1 L8 8 L15 1"></path></svg></a>
+                    </li>
+                </ul>
+            </nav>
+            <form class="search" action="/search" method="get">
+                <label for="q">Search <svg class="icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 1 L8 8 L15 1"></path></svg></label>
+                <input id="q" name="q" type="search" value="two  spaces" placeholder="Find a trip">
+                <button type="submit">Go <svg class="icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 1 L8 8 L15 1"></path></svg></button>
+            </form>
+        </header>
+
+        <section class="cards" id="section-0">
+            <!-- section 0: media cards, one per element kind -->
+            <h2 class="section-title">Featured 0 <svg class="icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 1 L8 8 L15 1"></path></svg></h2>
+            <article class="card card-iframe" data-kind="iframe"
+                     data-config='{"id": "card-0", "label": "Reef Diving", "spacing": "a   b"}'>
+                <h3 class="card-title">Reef Diving <svg class="icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 1 L8 8 L15 1"></path></svg></h3>
+                <div class="card-media">
+                    <iframe class="embed" src="/media/reef.html" width="320" height="180" title="Reef"></iframe>
+                </div>
+                <p class="card-body">
+                    Book Reef Diving <a href="/book/0">now <svg class="icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 1 L8 8 L15 1"></path></svg></a> and save.
+                    Rated 4 &gt; 3 by our guides.
+                </p>
+                <p class="card-meta" lang="ja">予約　受付中</p>
+                <ul class="card-tags">
+                    <li>guided</li>
+                    <li>small  group</li>
+                </ul>
+            </article>
+            <article class="card card-video" data-kind="video"
+                     data-config='{"id": "card-1", "label": "Alpine Ascent", "spacing": "a   b"}'>
+                <h3 class="card-title">Alpine Ascent <svg class="icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 1 L8 8 L15 1"></path></svg></h3>
+                <div class="card-media">
+                    <video class="player" width="320" height="180" controls poster="/img/alpine.jpg">
+                            <source src="/media/alpine.mp4" type="video/mp4">
+                        </video>
+                </div>
+                <p class="card-body">
+                    Book Alpine Ascent <a href="/book/1">now <svg class="icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 1 L8 8 L15 1"></path></svg></a> and save.
+                    Rated 4 &gt; 3 by our guides.
+                </p>
+                <p class="card-meta" lang="ja">予約　受付中</p>
+                <ul class="card-tags">
+                    <li>guided</li>
+                    <li>small  group</li>
+                </ul>
+            </article>
+            <article class="card card-audio" data-kind="audio"
+                     data-config='{"id": "card-2", "label": "Trail Notes", "spacing": "a   b"}'>
+                <h3 class="card-title">Trail Notes <svg class="icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 1 L8 8 L15 1"></path></svg></h3>
+                <div class="card-media">
+                    <audio class="player" controls preload="none">
+                            <source src="/media/notes.mp3" type="audio/mpeg">
+                        </audio>
+                </div>
+                <p class="card-body">
+                    Book Trail Notes <a href="/book/2">now <svg class="icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 1 L8 8 L15 1"></path></svg></a> and save.
+                    Rated 4 &gt; 3 by our guides.
+                </p>
+                <p class="card-meta" lang="ja">予約　受付中</p>
+                <ul class="card-tags">
+                    <li>guided</li>
+                    <li>small  group</li>
+                </ul>
+            </article>
+            <article class="card card-canvas" data-kind="canvas"
+                     data-config='{"id": "card-3", "label": "Elevation Profile", "spacing": "a   b"}'>
+                <h3 class="card-title">Elevation Profile <svg class="icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 1 L8 8 L15 1"></path></svg></h3>
+                <div class="card-media">
+                    <canvas class="chart" id="profile" width="320" height="180"></canvas>
+                </div>
+                <p class="card-body">
+                    Book Elevation Profile <a href="/book/3">now <svg class="icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 1 L8 8 L15 1"></path></svg></a> and save.
+                    Rated 4 &gt; 3 by our guides.
+                </p>
+                <p class="card-meta" lang="ja">予約　受付中</p>
+                <ul class="card-tags">
+                    <li>guided</li>
+                    <li>small  group</li>
+                </ul>
+            </article>
+            <article class="card card-svg" data-kind="svg"
+                     data-config='{"id": "card-4", "label": "Route Sketch", "spacing": "a   b"}'>
+                <h3 class="card-title">Route Sketch <svg class="icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 1 L8 8 L15 1"></path></svg></h3>
+                <div class="card-media">
+                    <svg class="sketch" width="320" height="180" viewBox="0 0 320 180">
+                            <polyline points="0,180 80,120 160,140 240,60 320,90"></polyline>
+                            <text x="8" y="20">Route  A</text>
+                        </svg>
+                </div>
+                <p class="card-body">
+                    Book Route Sketch <a href="/book/4">now <svg class="icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 1 L8 8 L15 1"></path></svg></a> and save.
+                    Rated 4 &gt; 3 by our guides.
+                </p>
+                <p class="card-meta" lang="ja">予約　受付中</p>
+                <ul class="card-tags">
+                    <li>guided</li>
+                    <li>small  group</li>
+                </ul>
+            </article>
+        </section>
+        <section class="cards" id="section-1">
+            <!-- section 1: media cards, one per element kind -->
+            <h2 class="section-title">Featured 1 <svg class="icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 1 L8 8 L15 1"></path></svg></h2>
+            <article class="card card-iframe" data-kind="iframe"
+                     data-config='{"id": "card-5", "label": "Reef Diving", "spacing": "a   b"}'>
+                <h3 class="card-title">Reef Diving <svg class="icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 1 L8 8 L15 1"></path></svg></h3>
+                <div class="card-media">
+                    <iframe class="embed" src="/media/reef.html" width="320" height="180" title="Reef"></iframe>
+                </div>
+                <p class="card-body">
+                    Book Reef Diving <a href="/book/5">now <svg class="icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 1 L8 8 L15 1"></path></svg></a> and save.
+                    Rated 4 &gt; 3 by our guides.
+                </p>
+                <p class="card-meta" lang="ja">予約　受付中</p>
+                <ul class="card-tags">
+                    <li>guided</li>
+                    <li>small  group</li>
+                </ul>
+            </article>
+            <article class="card card-video" data-kind="video"
+                     data-config='{"id": "card-6", "label": "Alpine Ascent", "spacing": "a   b"}'>
+                <h3 class="card-title">Alpine Ascent <svg class="icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 1 L8 8 L15 1"></path></svg></h3>
+                <div class="card-media">
+                    <video class="player" width="320" height="180" controls poster="/img/alpine.jpg">
+                            <source src="/media/alpine.mp4" type="video/mp4">
+                        </video>
+                </div>
+                <p class="card-body">
+                    Book Alpine Ascent <a href="/book/6">now <svg class="icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 1 L8 8 L15 1"></path></svg></a> and save.
+                    Rated 4 &gt; 3 by our guides.
+                </p>
+                <p class="card-meta" lang="ja">予約　受付中</p>
+                <ul class="card-tags">
+                    <li>guided</li>
+                    <li>small  group</li>
+                </ul>
+            </article>
+            <article class="card card-audio" data-kind="audio"
+                     data-config='{"id": "card-7", "label": "Trail Notes", "spacing": "a   b"}'>
+                <h3 class="card-title">Trail Notes <svg class="icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 1 L8 8 L15 1"></path></svg></h3>
+                <div class="card-media">
+                    <audio class="player" controls preload="none">
+                            <source src="/media/notes.mp3" type="audio/mpeg">
+                        </audio>
+                </div>
+                <p class="card-body">
+                    Book Trail Notes <a href="/book/7">now <svg class="icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 1 L8 8 L15 1"></path></svg></a> and save.
+                    Rated 4 &gt; 3 by our guides.
+                </p>
+                <p class="card-meta" lang="ja">予約　受付中</p>
+                <ul class="card-tags">
+                    <li>guided</li>
+                    <li>small  group</li>
+                </ul>
+            </article>
+            <article class="card card-canvas" data-kind="canvas"
+                     data-config='{"id": "card-8", "label": "Elevation Profile", "spacing": "a   b"}'>
+                <h3 class="card-title">Elevation Profile <svg class="icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 1 L8 8 L15 1"></path></svg></h3>
+                <div class="card-media">
+                    <canvas class="chart" id="profile" width="320" height="180"></canvas>
+                </div>
+                <p class="card-body">
+                    Book Elevation Profile <a href="/book/8">now <svg class="icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 1 L8 8 L15 1"></path></svg></a> and save.
+                    Rated 4 &gt; 3 by our guides.
+                </p>
+                <p class="card-meta" lang="ja">予約　受付中</p>
+                <ul class="card-tags">
+                    <li>guided</li>
+                    <li>small  group</li>
+                </ul>
+            </article>
+            <article class="card card-svg" data-kind="svg"
+                     data-config='{"id": "card-9", "label": "Route Sketch", "spacing": "a   b"}'>
+                <h3 class="card-title">Route Sketch <svg class="icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 1 L8 8 L15 1"></path></svg></h3>
+                <div class="card-media">
+                    <svg class="sketch" width="320" height="180" viewBox="0 0 320 180">
+                            <polyline points="0,180 80,120 160,140 240,60 320,90"></polyline>
+                            <text x="8" y="20">Route  A</text>
+                        </svg>
+                </div>
+                <p class="card-body">
+                    Book Route Sketch <a href="/book/9">now <svg class="icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 1 L8 8 L15 1"></path></svg></a> and save.
+                    Rated 4 &gt; 3 by our guides.
+                </p>
+                <p class="card-meta" lang="ja">予約　受付中</p>
+                <ul class="card-tags">
+                    <li>guided</li>
+                    <li>small  group</li>
+                </ul>
+            </article>
+        </section>
+        <section class="cards" id="section-2">
+            <!-- section 2: media cards, one per element kind -->
+            <h2 class="section-title">Featured 2 <svg class="icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 1 L8 8 L15 1"></path></svg></h2>
+            <article class="card card-iframe" data-kind="iframe"
+                     data-config='{"id": "card-10", "label": "Reef Diving", "spacing": "a   b"}'>
+                <h3 class="card-title">Reef Diving <svg class="icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 1 L8 8 L15 1"></path></svg></h3>
+                <div class="card-media">
+                    <iframe class="embed" src="/media/reef.html" width="320" height="180" title="Reef"></iframe>
+                </div>
+                <p class="card-body">
+                    Book Reef Diving <a href="/book/10">now <svg class="icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 1 L8 8 L15 1"></path></svg></a> and save.
+                    Rated 4 &gt; 3 by our guides.
+                </p>
+                <p class="card-meta" lang="ja">予約　受付中</p>
+                <ul class="card-tags">
+                    <li>guided</li>
+                    <li>small  group</li>
+                </ul>
+            </article>
+            <article class="card card-video" data-kind="video"
+                     data-config='{"id": "card-11", "label": "Alpine Ascent", "spacing": "a   b"}'>
+                <h3 class="card-title">Alpine Ascent <svg class="icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 1 L8 8 L15 1"></path></svg></h3>
+                <div class="card-media">
+                    <video class="player" width="320" height="180" controls poster="/img/alpine.jpg">
+                            <source src="/media/alpine.mp4" type="video/mp4">
+                        </video>
+                </div>
+                <p class="card-body">
+                    Book Alpine Ascent <a href="/book/11">now <svg class="icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 1 L8 8 L15 1"></path></svg></a> and save.
+                    Rated 4 &gt; 3 by our guides.
+                </p>
+                <p class="card-meta" lang="ja">予約　受付中</p>
+                <ul class="card-tags">
+                    <li>guided</li>
+                    <li>small  group</li>
+                </ul>
+            </article>
+            <article class="card card-audio" data-kind="audio"
+                     data-config='{"id": "card-12", "label": "Trail Notes", "spacing": "a   b"}'>
+                <h3 class="card-title">Trail Notes <svg class="icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 1 L8 8 L15 1"></path></svg></h3>
+                <div class="card-media">
+                    <audio class="player" controls preload="none">
+                            <source src="/media/notes.mp3" type="audio/mpeg">
+                        </audio>
+                </div>
+                <p class="card-body">
+                    Book Trail Notes <a href="/book/12">now <svg class="icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 1 L8 8 L15 1"></path></svg></a> and save.
+                    Rated 4 &gt; 3 by our guides.
+                </p>
+                <p class="card-meta" lang="ja">予約　受付中</p>
+                <ul class="card-tags">
+                    <li>guided</li>
+                    <li>small  group</li>
+                </ul>
+            </article>
+            <article class="card card-canvas" data-kind="canvas"
+                     data-config='{"id": "card-13", "label": "Elevation Profile", "spacing": "a   b"}'>
+                <h3 class="card-title">Elevation Profile <svg class="icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 1 L8 8 L15 1"></path></svg></h3>
+                <div class="card-media">
+                    <canvas class="chart" id="profile" width="320" height="180"></canvas>
+                </div>
+                <p class="card-body">
+                    Book Elevation Profile <a href="/book/13">now <svg class="icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 1 L8 8 L15 1"></path></svg></a> and save.
+                    Rated 4 &gt; 3 by our guides.
+                </p>
+                <p class="card-meta" lang="ja">予約　受付中</p>
+                <ul class="card-tags">
+                    <li>guided</li>
+                    <li>small  group</li>
+                </ul>
+            </article>
+            <article class="card card-svg" data-kind="svg"
+                     data-config='{"id": "card-14", "label": "Route Sketch", "spacing": "a   b"}'>
+                <h3 class="card-title">Route Sketch <svg class="icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 1 L8 8 L15 1"></path></svg></h3>
+                <div class="card-media">
+                    <svg class="sketch" width="320" height="180" viewBox="0 0 320 180">
+                            <polyline points="0,180 80,120 160,140 240,60 320,90"></polyline>
+                            <text x="8" y="20">Route  A</text>
+                        </svg>
+                </div>
+                <p class="card-body">
+                    Book Route Sketch <a href="/book/14">now <svg class="icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 1 L8 8 L15 1"></path></svg></a> and save.
+                    Rated 4 &gt; 3 by our guides.
+                </p>
+                <p class="card-meta" lang="ja">予約　受付中</p>
+                <ul class="card-tags">
+                    <li>guided</li>
+                    <li>small  group</li>
+                </ul>
+            </article>
+        </section>
+
+        <section class="docs">
+            <h2>Sample request</h2>
+            <pre class="code">GET /api/v1/trips
+    Accept: application/json
+        X-Trace: keep   this   indentation</pre>
+            <textarea name="notes" rows="4">line one
+  line two
+    line three</textarea>
+        </section>
+
+        <noscript>Enable JavaScript to use the trip planner.</noscript>
+
+        <template id="card-template">
+            <article class="card"><h3></h3><div class="card-media"></div></article>
+        </template>
+
+        <footer class="site-footer">
+            <p>Contact <a href="mailto:info@example.com">info@example.com</a> <svg class="icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 1 L8 8 L15 1"></path></svg></p>
+        </footer>
+
+        <script>
+var planner = { ready: false }
+function initPlanner() {
+    planner.ready = true
+    console.log("planner ready")
+}
+initPlanner()
+</script>
+    </body>
+</html>

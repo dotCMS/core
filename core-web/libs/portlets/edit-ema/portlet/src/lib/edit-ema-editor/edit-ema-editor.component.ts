@@ -22,6 +22,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -31,6 +32,7 @@ import { InputGroupModule } from 'primeng/inputgroup';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { PopoverModule } from 'primeng/popover';
 import { ProgressBarModule } from 'primeng/progressbar';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TabsModule } from 'primeng/tabs';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
@@ -43,6 +45,7 @@ import {
     DotCopyContentService,
     DotHttpErrorManagerService,
     DotMessageService,
+    DotRouterService,
     DotTempFileUploadService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
@@ -53,11 +56,16 @@ import {
     DotCMSTempFile,
     DotLanguage,
     DotTreeNode,
+    EXPERIMENT_RETURN_PARAM,
     FeaturedFlags,
     SeoMetaTags,
     SeoMetaTagsResult
 } from '@dotcms/dotcms-models';
-import { DotEditContentDialogComponent, EditContentDialogData } from '@dotcms/edit-content';
+import {
+    DotEditContentDialogComponent,
+    DotEditContentSidePanelComponent,
+    EditContentDialogData
+} from '@dotcms/edit-content';
 import { DotPaletteListStore, DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
 import { DotCMSPage, DotCMSURLContentMap, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
@@ -85,11 +93,12 @@ import { EmaDragItem } from './components/ema-page-dropzone/types';
 
 import { DotBlockEditorSidebarComponent } from '../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
-import { DotPageApiService } from '../services/dot-page-api/dot-page-api.service';
+import { DotPageApiService, DotPageAssetKeys } from '../services/dot-page-api/dot-page-api.service';
 import { DotUveActionsHandlerService } from '../services/dot-uve-actions-handler/dot-uve-actions-handler.service';
 import { DotUveDragDropService } from '../services/dot-uve-drag-drop/dot-uve-drag-drop.service';
 import { UveIframeMessengerService } from '../services/iframe-messenger/uve-iframe-messenger.service';
 import { InlineEditService } from '../services/inline-edit/inline-edit.service';
+import { canEditOwningContentlet, notifyNoEditPermission } from '../shared/contentlet-permission';
 import {
     CONTAINER_INSERT_ERROR,
     EDITOR_STATE,
@@ -116,8 +125,10 @@ import {
     deleteContentletFromContainer,
     getTargetUrl,
     insertContentletInContainer,
+    isAssetPath,
     isSamePageNavigation,
     measureCanvasAvailableSize,
+    scrollIframeToFragment,
     shouldNavigate
 } from '../utils';
 
@@ -170,7 +181,9 @@ const MESSAGE_KEY = {
         PopoverModule,
         TooltipModule,
         DotMessagePipe,
-        DotUveDeviceControlsComponent
+        DotUveDeviceControlsComponent,
+        DotEditContentSidePanelComponent,
+        ProgressSpinnerModule
     ],
     providers: [
         DotPaletteListStore,
@@ -240,14 +253,35 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             );
 
             if (foundContentlet) {
-                contentlet = foundContentlet as DotCMSContentlet;
+                // The page-asset contentlet is the fresher one (new inode after
+                // a save), but it carries no permission — `canEdit` only exists
+                // on the DOM payload. Carry it across the swap or the quick-edit
+                // panel has nothing to gate on.
+                contentlet = {
+                    ...(foundContentlet as DotCMSContentlet),
+                    ...(contentletPayload?.canEdit === undefined
+                        ? {}
+                        : { canEdit: contentletPayload.canEdit })
+                };
             }
         }
 
         return { container, contentlet };
     });
+    /**
+     * Whether the currently selected contentlet may be modified. Drives the
+     * side panel's style tab and the style-editor guard, mirroring the
+     * quick-edit gate so neither tab offers a way to change a contentlet the
+     * user has no permission on. Fail-open when the permission is absent.
+     */
+    protected readonly $canEditSelectedContentlet = computed(
+        () => this.$contentletEditData()?.contentlet?.canEdit !== false
+    );
+
     private readonly dotMessageService = inject(DotMessageService);
     private readonly confirmationService = inject(ConfirmationService);
+    private readonly dotRouterService = inject(DotRouterService);
+    private readonly router = inject(Router);
     private readonly messageService = inject(MessageService);
     private readonly window = inject(WINDOW);
     private readonly cd = inject(ChangeDetectorRef);
@@ -269,6 +303,22 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
 
     readonly host = '*';
     readonly $ogTags: WritableSignal<SeoMetaTags> = signal(undefined);
+
+    /**
+     * Drives the Edit Content side panel: the content to open (create/edit) or `null` when closed.
+     * Only used when {@link $sidePanelEnabled} is on; the template renders the panel while set.
+     */
+    protected readonly $editContentPanel = signal<EditContentDialogData | null>(null);
+
+    /**
+     * Feature flag: when on, the editor opens in the side panel; when off, it opens in the centered
+     * dialog (previous behavior). Read from the UVE store's `withFlags` slice (batch-fetched once on
+     * init, degrades to `false` on a failed config read) — defaults to `false` until it resolves, so
+     * the dialog is used meanwhile.
+     */
+    protected readonly $sidePanelEnabled = computed(
+        () => this.uveStore.flags()[FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL] ?? false
+    );
 
     // Component builds its own editor props locally
     protected readonly $showDialogs = computed<boolean>(() => {
@@ -364,10 +414,12 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         const isLockedByCurrentUser = lockOptions?.isLockedByCurrentUser;
         const canLock = lockOptions?.canLock;
 
-        // For feature flag, we force the user to lock pages to edit
-        // So we show the lock overlay if the page is not locked
+        // For feature flag, we force the user to lock pages to edit, so the
+        // overlay stays up unless the current user is the one holding the lock —
+        // a page locked by someone else must be unlocked and re-locked by this
+        // user first, not just "any" lock.
         if (lockFeatureEnabled) {
-            return !isLocked;
+            return !isLockedByCurrentUser;
         }
 
         // Without feature flag, we show the lock overlay if the page is locked
@@ -419,9 +471,14 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
 
     readonly $translatePageEffect = effect(() => {
         const { page, currentLanguage } = this.uveStore.pageTranslateProps();
+        const status = this.uveStore.uveStatus();
 
-        if (currentLanguage && !currentLanguage?.translated) {
-            this.createNewTranslation(currentLanguage, page);
+        // Guard: only act on a freshly-loaded page. Without the LOADED check the effect
+        // could fire while a previous pageLoad is still in-flight (stale translated:false data).
+        // untracked: confirmationService.confirm reads PrimeNG-internal signals; tracking them
+        // would cause the effect to re-fire every time the dialog opens/closes.
+        if (status === UVE_STATUS.LOADED && currentLanguage && !currentLanguage.translated) {
+            untracked(() => this.createNewTranslation(currentLanguage, page));
         }
     });
 
@@ -432,7 +489,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
          */
         const { pageType } = this.uveStore.$reloadEditorContent();
         const isClientReady = untracked(() => this.uveStore.isClientReady());
-        const hasClientQuery = untracked(() => !!this.uveStore.requestMetadata());
+        const isGraphQLSourced = untracked(() => this.uveStore.pageAsset()?.source === 'graphql');
 
         untracked(() => {
             this.uveStore.resetEditorProperties();
@@ -443,13 +500,34 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             return;
         }
 
-        // Headless pages are driven entirely by the client's own GraphQL
-        // query. Never push a REST-sourced pageAsset into the iframe — it
-        // never carries the relationships that query defines, and the
-        // client already has its own correct render. Skip until a
-        // GraphQL-backed update (requestMetadata set from CLIENT_READY)
-        // is available; this effect re-fires once that happens.
-        if (pageType === PageType.HEADLESS && !hasClientQuery) {
+        // Headless pages are driven entirely by the client's own GraphQL query. Never push a
+        // REST-sourced pageAsset into the iframe — it never carries the relationships that
+        // query defines. Provenance is tracked explicitly on the stored asset (`source`)
+        // rather than inferred from whether a query was merely registered
+        // (`requestMetadata`): a registered-but-unresolved or aborted/failed GraphQL fetch
+        // leaves a stale REST asset in place while `requestMetadata` stays set, which the old
+        // `hasClientQuery` check could not distinguish from the resolved case (dotCMS/core#37097).
+        // Tell the client to reload itself from its own GraphQL source instead of pushing
+        // anything REST-shaped — but only ONCE per non-resolved streak. `$reloadEditorContent`
+        // re-emits on every CLIENT_READY re-announcement (setCustomClient unconditionally
+        // re-patches requestMetadata, which changes pageAsset()'s reference), including the one
+        // the reload we're about to send will itself trigger. Without this guard, a GraphQL
+        // fetch that stays unresolved (slow, aborted, or permanently failing) causes an
+        // uncapped reload → CLIENT_READY → reload loop, driving the client's iframe into
+        // continuous full navigations (regression found in #37097's post-merge QA).
+        if (pageType === PageType.HEADLESS && !isGraphQLSourced) {
+            const alreadyRequested = untracked(() => this.uveStore.pageReloadPending());
+
+            if (!alreadyRequested) {
+                untracked(() => this.uveStore.setPageReloadPending(true));
+                this.sendMessageToIframe(
+                    {
+                        name: __DOTCMS_UVE_EVENT__.UVE_RELOAD_PAGE
+                    },
+                    this.host
+                );
+            }
+
             return;
         }
 
@@ -749,21 +827,151 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
 
         const url = new URL(href, this.window.location.origin);
         // Get the query parameters from the URL
-        const urlQueryParams = Object.fromEntries(url.searchParams.entries());
+        const urlQueryParams: Record<string, string | undefined> = Object.fromEntries(
+            url.searchParams.entries()
+        );
 
-        if (url.hostname !== this.window.location.hostname) {
-            this.window.open(href, '_blank');
+        if (!this.#isPageSiteHost(url.hostname)) {
+            // Cancel first: without it the anchor also navigates the iframe to the
+            // external site, which usually refuses to be framed and blanks the canvas.
+            e.preventDefault();
+            this.#openInNewTab(url.href);
 
             return;
         }
 
-        // Same pathname (any hash/query): let the browser handle it (anchors, query-driven UI)
-        if (isSamePageNavigation(href, this.uveStore.pageParams()?.url)) {
+        // Files (PDFs, images, docs…) are not pages: the Page API cannot resolve
+        // them and the editor would show "Page not found". Open them in a new tab
+        // so the author can verify the link without leaving the editor.
+        if (isAssetPath(url.pathname)) {
+            // Cancel before opening, so the page under edit stays put whatever the
+            // open does. `url` is the origin-resolved form of `href`, which can
+            // still be a raw relative attribute when the click lands on a child of
+            // the anchor.
+            e.preventDefault();
+            this.#openInNewTab(url.href);
+
             return;
+        }
+
+        // A same-page hash with no query is an in-page anchor. Scroll the iframe
+        // ourselves: left to the browser, the link would load outside the editor
+        // instead of scrolling.
+        const isSamePageAnchor =
+            !!url.hash &&
+            !url.search &&
+            isSamePageNavigation(href, this.uveStore.pageParams()?.url ?? '');
+
+        if (isSamePageAnchor) {
+            e.preventDefault();
+            scrollIframeToFragment(this.contentWindow, url.hash);
+
+            return;
+        }
+
+        // Anything else loads through the Page API below. Left to the browser, the
+        // iframe of a traditional page navigates on its own and comes back blank,
+        // and the new query never reaches the page render (#36999, #37327).
+        //
+        // The previous link's query is cleared first, so the link's own query is
+        // the whole query of the next page instead of inheriting the old one through
+        // the `pageLoad` merge. That holds for any link, not only same-path ones:
+        // `/folder/` and `/folder/index` are the same page under two paths, and a
+        // filter must not follow the editor to another page either.
+        for (const key of this.#pageOwnedParamKeys()) {
+            if (!(key in urlQueryParams)) {
+                urlQueryParams[key] = undefined;
+            }
         }
 
         this.uveStore.pageLoad({ url: url.pathname, ...urlQueryParams });
         e.preventDefault();
+    }
+
+    /**
+     * Tells whether a link's hostname points at the site of the page being edited.
+     *
+     * Pages often link to their own site with an absolute URL
+     * (`https://www.site.com/news?year=2025`), and the admin usually runs on a
+     * different host than the site. Those links must load inside the editor like
+     * relative ones, so the site's hostname and aliases count as internal, as
+     * well as the admin host itself.
+     *
+     * @param {string} hostname - Hostname of the clicked link
+     * @return {boolean} `true` when the link belongs to the edited site
+     * @memberof EditEmaEditorComponent
+     */
+    #isPageSiteHost(hostname: string): boolean {
+        const site = this.uveStore.pageAsset()?.site;
+        // Aliases are stored one per line, but commas are accepted too.
+        const aliases = (site?.aliases ?? '').split(/[\s,]+/);
+        const siteHosts = [this.window.location.hostname, site?.hostname, ...aliases];
+
+        return siteHosts.some((host) => !!host && host.toLowerCase() === hostname.toLowerCase());
+    }
+
+    /**
+     * Returns the query params of the current page that the editor does not own,
+     * such as a filter a page link added.
+     *
+     * `pageLoad` merges new params over the current ones, so these would otherwise
+     * survive every later link navigation. Setting them to `undefined` clears
+     * them: `undefined` values are left out of both the Page API request and the
+     * admin URL. Editor params (language, persona, mode, variant, device…) are not
+     * returned, so they still follow the editor.
+     *
+     * @return {string[]} The keys of the page-owned params
+     * @memberof EditEmaEditorComponent
+     */
+    #pageOwnedParamKeys(): string[] {
+        const editorKeys = new Set<string>([
+            ...Object.values(DotPageAssetKeys),
+            EXPERIMENT_RETURN_PARAM,
+            'device',
+            'orientation',
+            'seo'
+        ]);
+
+        return Object.keys(this.uveStore.pageParams() ?? {}).filter((key) => !editorKeys.has(key));
+    }
+
+    /**
+     * Opens a URL in a new tab with the opener severed.
+     *
+     * Deliberately not `window.open(url, '_blank', 'noopener')`. A windowFeatures
+     * string makes Firefox classify the call as a popup request, and the iframe
+     * raising the gesture is sandboxed without `allow-popups`, so Firefox throws
+     * "DOMException: The operation is insecure". A `rel="noopener"` anchor is an
+     * ordinary tab navigation, which the sandbox permits, and carries the same
+     * opener guarantee, including for cross-origin targets where assigning
+     * `opener = null` on the returned window would not be allowed.
+     *
+     * @param {string} href - Absolute URL to open
+     * @memberof EditEmaEditorComponent
+     */
+    #openInNewTab(href: string): void {
+        let link: HTMLAnchorElement | null = null;
+
+        try {
+            const doc = this.window.document;
+
+            link = doc.createElement('a');
+            link.href = href;
+            link.target = '_blank';
+            link.rel = 'noopener';
+
+            doc.body.appendChild(link);
+            link.click();
+        } catch {
+            // Swallow. This runs inside the RxJS subscriber that feeds the iframe
+            // click handler, so an escaping throw would complete the subscription
+            // and kill link handling for the rest of the session.
+        } finally {
+            // `click()` is the call that throws when the open is refused, so
+            // cleanup has to be unconditional or every failed attempt strands an
+            // anchor in the admin document.
+            link?.remove();
+        }
     }
 
     /**
@@ -775,6 +983,16 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         const element: HTMLElement = target.dataset?.mode ? target : target.closest('[data-mode]');
 
         if (!element?.dataset.mode) {
+            return;
+        }
+
+        // Inline editing writes contentlet fields, so it is gated like the
+        // pencil and Quick Edit. Unlike them there is no control to disable, so
+        // the refusal has to be announced — a click that does nothing reads as
+        // a broken editor.
+        if (!canEditOwningContentlet(element)) {
+            notifyNoEditPermission(this.messageService, this.dotMessageService);
+
             return;
         }
 
@@ -1244,6 +1462,13 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
      * @memberof EditEmaEditorComponent
      */
     protected handleOpenQuickEdit(): void {
+        // Same defense in depth as the pencil: the quick-edit button is already
+        // disabled without EDIT permission on this contentlet, but the panel
+        // must not be reachable through a stale toolbar or a programmatic emit.
+        if (this.uveStore.editorSelected()?.payload?.contentlet?.canEdit === false) {
+            return;
+        }
+
         this.uveStore.setEditPanelOpen(true);
         patchState(this.#rightSidebarTabState, { currentTab: 0 });
     }
@@ -1261,7 +1486,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             return;
         }
 
-        this.#openContentForEdit(contentlet);
+        this.openContentForEdit(contentlet);
     }
 
     /**
@@ -1308,10 +1533,12 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     }
 
     /**
-     * Opens the new Angular editor if the content type has the flag enabled, otherwise the legacy dialog.
-     * Single entry point used by handleOpenFullEditor and handleEditWithCopyDecision.
+     * Opens the new Angular editor if the content type has the flag enabled, otherwise the legacy
+     * dialog. Single entry point used by handleOpenFullEditor and handleEditWithCopyDecision — and,
+     * since it's public, also by DotEmaShellComponent for the "Properties" nav action (editing the
+     * page's own contentlet), captured via the router-outlet `(activate)` reference to this component.
      */
-    #openContentForEdit(contentlet: DotCMSContentlet): void {
+    openContentForEdit(contentlet: DotCMSContentlet): void {
         const contentTypeVariable = contentlet.contentType;
         if (!contentTypeVariable) {
             this.dialog?.editContentlet(contentlet);
@@ -1370,9 +1597,20 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     }
 
     /**
-     * Opens the DotEditContentDialogComponent shell with the given header and dialog data.
+     * Opens the new Edit Content editor with the given header and dialog data — in the side panel
+     * when the feature flag is on, otherwise in the centered dialog (previous behavior).
      */
     #openDotEditContentShell(header: string, dialogData: EditContentDialogData): void {
+        if (this.$sidePanelEnabled()) {
+            // Side panel: shows `title` in its header (the dialog used `header`) and fires
+            // `dialogData.onContentSaved`/`onCancel` on close — so palette-drop / edit flows work
+            // unchanged.
+            this.$editContentPanel.set({ ...dialogData, title: header });
+
+            return;
+        }
+
+        // Side panel disabled: open the centered dialog (previous behavior).
         this.dialogService.open(DotEditContentDialogComponent, {
             appendTo: 'body',
             baseZIndex: 10000,
@@ -1411,9 +1649,18 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             return;
         }
 
+        // Defense in depth for the disabled pencil. The button is already
+        // disabled when the user lacks EDIT permission on this contentlet, but
+        // the toolbar can emit from stale bounds or be driven programmatically,
+        // so the guarantee must not rest on styling alone. Fail-open: only an
+        // explicit `false` denies, because headless pages carry no permission.
+        if (contentlet.canEdit === false) {
+            return;
+        }
+
         const onMultiplePages = Number(contentlet.onNumberOfPages ?? 1) > 1;
         if (!onMultiplePages) {
-            this.#openContentForEdit(contentlet as unknown as DotCMSContentlet);
+            this.openContentForEdit(contentlet as unknown as DotCMSContentlet);
             return;
         }
 
@@ -1436,7 +1683,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                         this.uveStore.pageReload();
                     }
 
-                    this.#openContentForEdit(target);
+                    this.openContentForEdit(target);
                 },
                 error: (error: HttpErrorResponse) => {
                     this.dotHttpErrorManagerService.handle(error);
@@ -1449,13 +1696,31 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     }
 
     /**
-     * Handles the edit of a VTL file.
+     * Handles the edit of a VTL file. `VTLFile` only carries `inode`/`name` (it comes from the
+     * client's postMessage payload), not `contentType`, so `openContentForEdit`'s flag check can't
+     * run on it directly — the full contentlet is resolved by inode first. Falls back to the legacy
+     * dialog if that lookup fails (network/permissions), matching this codebase's established
+     * "swallow the error, keep editing working via the legacy editor" fallback pattern.
      *
      * @param {VTLFile} vtlFile - The VTL file to be edited.
      * @memberof EditEmaEditorComponent
      */
     handleEditVTL(vtlFile: VTLFile) {
-        this.dialog.editVTLContentlet(vtlFile);
+        this.dotContentletService
+            .getContentletByInode(vtlFile.inode)
+            .pipe(
+                take(1),
+                takeUntilDestroyed(this.destroyRef),
+                catchError(() => of(null))
+            )
+            .subscribe((contentlet) => {
+                if (!contentlet) {
+                    this.dialog?.editVTLContentlet(vtlFile);
+                    return;
+                }
+
+                this.openContentForEdit(contentlet);
+            });
     }
 
     /**
@@ -1708,8 +1973,10 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                 this.translatePage({ page, newLanguage: language.id });
             },
             reject: () => {
-                // If is rejected, bring back the current language on selector
-                this.#goBackToCurrentLanguage();
+                // The user declined creating the translation, so there is no page to show
+                // in this language. Take them out of the dead-end instead of reloading the
+                // same untranslated URL (which would re-open this dialog — see #36661).
+                this.#redirectAfterTranslationRejected();
             }
         });
     }
@@ -1719,13 +1986,46 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     }
 
     /**
-     * Use the Page Language to navigate back to the current language
+     * Navigate the user away from an untranslated page after they decline creating a
+     * translation for it.
      *
-     * @memberof DotEmaShellComponent
+     * Redirects to the last different dotCMS URL the user was on before entering this
+     * UVE session; if there is no usable previous URL, falls back to the Pages portlet.
+     *
+     * Why `DotRouterService.previousUrl` is the right source:
+     * - Intra-UVE navigation (page/language/persona changes) is done with `pageLoad()` +
+     *   a silent `Location.go()` in the shell, which does NOT emit a router `NavigationEnd`.
+     *   So `previousUrl` is not polluted by same-page language switches — it holds the URL
+     *   from before the editor opened (e.g. the Pages portlet, or another portlet).
+     * - It is always an internal Angular route, never an external referrer, so the
+     *   "only follow dotCMS URLs" requirement is satisfied by construction.
+     *
+     * We deliberately skip previous URLs that are:
+     * - empty (no history — user opened the editor directly),
+     * - public routes (e.g. the login page),
+     * - any `/edit-page` route, which could resolve to the same untranslated page and
+     *   re-open this dialog (the #36661 loop).
+     *
+     * In all skipped cases we fall back to the Pages portlet so the user always lands on
+     * a valid page and is never left stuck on the untranslated one.
+     *
+     * @memberof EditEmaEditorComponent
      */
-    #goBackToCurrentLanguage(): void {
-        const currentLanguageId = this.uveStore.pageLanguage()?.id?.toString() ?? '1';
-        this.uveStore.pageLoad({ language_id: currentLanguageId });
+    #redirectAfterTranslationRejected(): void {
+        const previousUrl = this.dotRouterService.previousUrl;
+
+        const canUsePreviousUrl =
+            !!previousUrl &&
+            !this.dotRouterService.isPublicUrl(previousUrl) &&
+            !previousUrl.startsWith('/edit-page');
+
+        if (canUsePreviousUrl) {
+            this.router.navigateByUrl(previousUrl);
+
+            return;
+        }
+
+        this.dotRouterService.gotoPortlet('/pages');
     }
 
     #clientPayload() {
@@ -1742,6 +2042,12 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     }
 
     protected handleSelectContent(_contentletActionPayload: ActionPayload): void {
+        // Same gate as the pencil and Quick Edit: styling changes how this
+        // contentlet presents itself, so it follows contentlet permission.
+        if (!this.$canEditSelectedContentlet()) {
+            return;
+        }
+
         // The hover toolbar's `promoteHoverToSelected` (called inline in
         // the (click) before this output fires) has already pinned the
         // contentlet as `editorSelected`. We just need to open the

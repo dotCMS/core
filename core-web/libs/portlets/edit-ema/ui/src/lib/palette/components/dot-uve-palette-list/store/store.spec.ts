@@ -1,14 +1,24 @@
-import { describe, expect, it, beforeEach, afterEach, jest } from '@jest/globals';
-import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import {
+    Mock,
+    MockInstance,
+    Mocked,
+    afterEach,
+    beforeEach,
+    describe,
+    expect,
+    it,
+    vi
+} from 'vitest';
 
-jest.mock('../../../utils', () => {
-    // jest.requireActual is typed as unknown, cast so we can spread and reference exports
+vi.mock('../../../utils', async () => {
+    // vi.importActual is typed as unknown, cast so we can spread and reference exports
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const actual = jest.requireActual('../../../utils') as any;
+    const actual = (await vi.importActual('../../../utils')) as any;
     return {
         ...actual,
-        buildPaletteFavorite: jest.fn(actual.buildPaletteFavorite)
+        buildPaletteFavorite: vi.fn(actual.buildPaletteFavorite)
     };
 });
 
@@ -74,10 +84,10 @@ const mockESResponse = {
 describe('DotPaletteListStore', () => {
     let spectator: SpectatorService<InstanceType<typeof DotPaletteListStore>>;
     let store: InstanceType<typeof DotPaletteListStore>;
-    let pageContentTypeService: jest.Mocked<DotPageContentTypeService>;
-    let dotESContentService: jest.Mocked<DotESContentService>;
-    let dotFavoriteContentTypeService: jest.Mocked<DotFavoriteContentTypeService>;
-    let dotLocalstorageService: jest.Mocked<DotLocalstorageService>;
+    let pageContentTypeService: Mocked<DotPageContentTypeService>;
+    let dotESContentService: Mocked<DotESContentService>;
+    let dotFavoriteContentTypeService: Mocked<DotFavoriteContentTypeService>;
+    let dotLocalstorageService: Mocked<DotLocalstorageService>;
 
     // ===== Test Helper Functions =====
 
@@ -154,8 +164,8 @@ describe('DotPaletteListStore', () => {
             {
                 provide: DotLocalstorageService,
                 useValue: {
-                    getItem: jest.fn().mockReturnValue(null),
-                    setItem: jest.fn().mockReturnValue(undefined)
+                    getItem: vi.fn().mockReturnValue(null),
+                    setItem: vi.fn().mockReturnValue(undefined)
                 }
             }
         ],
@@ -472,7 +482,7 @@ describe('DotPaletteListStore', () => {
             });
 
             it('should not refresh store when adding favorites outside favorites view', () => {
-                const spy = jest.spyOn(store, 'setContentTypesFromFavorite');
+                const spy = vi.spyOn(store, 'setContentTypesFromFavorite');
 
                 store.addFavorite(mockContentTypes[0]);
 
@@ -501,7 +511,7 @@ describe('DotPaletteListStore', () => {
                     allowedContentTypes: { blog: true, banner: true }
                 });
 
-                (buildPaletteFavorite as unknown as jest.Mock).mockClear();
+                (buildPaletteFavorite as unknown as Mock).mockClear();
 
                 store.setContentTypesFromFavorite(mockContentTypes);
 
@@ -513,7 +523,7 @@ describe('DotPaletteListStore', () => {
             });
 
             it('should not refresh store when removing favorites outside favorites view', () => {
-                const spy = jest.spyOn(store, 'setContentTypesFromFavorite');
+                const spy = vi.spyOn(store, 'setContentTypesFromFavorite');
 
                 store.removeFavorite(mockContentTypes[0].id);
 
@@ -547,6 +557,16 @@ describe('DotPaletteListStore', () => {
                         types: ['WIDGET'],
                         per_page: 30
                     })
+                );
+            });
+
+            it('should NOT change system-type behaviour for the UVE WIDGET list type', () => {
+                // Excluding system types was asked for in the Content Drive picker only; UVE's own
+                // palette tab must keep the behaviour it has today.
+                store.getContentTypes({ listType: DotUVEPaletteListTypes.WIDGET });
+
+                expect(pageContentTypeService.getAllContentTypes).toHaveBeenCalledWith(
+                    expect.not.objectContaining({ system: expect.anything() })
                 );
             });
 
@@ -711,6 +731,20 @@ describe('DotPaletteListStore', () => {
                 );
 
                 it.each(pageAgnosticCases)(
+                    'should exclude system content types for $listType',
+                    ({ listType }) => {
+                        // System types (Host, Forms, Favorite Page) are not things a user creates
+                        // from these pickers. The backend defaults to including them, so the flag
+                        // has to be sent explicitly.
+                        store.getContentTypes({ listType });
+
+                        expect(pageContentTypeService.getAllContentTypes).toHaveBeenCalledWith(
+                            expect.objectContaining({ system: false })
+                        );
+                    }
+                );
+
+                it.each(pageAgnosticCases)(
                     'should use LIST_TYPE_BASE_TYPES mapping for $listType',
                     ({ listType }) => {
                         store.getContentTypes({ listType });
@@ -787,7 +821,7 @@ describe('DotPaletteListStore', () => {
             });
 
             it('should pass allowedContentTypes to buildPaletteFavorite for FAVORITES list type', () => {
-                (buildPaletteFavorite as unknown as jest.Mock).mockClear();
+                (buildPaletteFavorite as unknown as Mock).mockClear();
 
                 store.getContentTypes({
                     listType: DotUVEPaletteListTypes.FAVORITES,
@@ -975,10 +1009,10 @@ describe('DotPaletteListStore', () => {
     });
 
     describe('Error Handling', () => {
-        let consoleErrorSpy: jest.SpiedFunction<typeof console.error>;
+        let consoleErrorSpy: MockInstance<typeof console.error>;
 
         beforeEach(() => {
-            consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(jest.fn());
+            consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(vi.fn());
         });
 
         afterEach(() => {
@@ -1097,7 +1131,7 @@ describe('DotPaletteListStore', () => {
 // it can't be overridden after the default suite has already instantiated the store.
 describe('DotPaletteListStore — persistence disabled (transient consumers, e.g. Content Drive)', () => {
     let spectator: SpectatorService<InstanceType<typeof DotPaletteListStore>>;
-    let dotLocalstorageService: jest.Mocked<DotLocalstorageService>;
+    let dotLocalstorageService: Mocked<DotLocalstorageService>;
 
     const createService = createServiceFactory({
         service: DotPaletteListStore,
@@ -1107,8 +1141,8 @@ describe('DotPaletteListStore — persistence disabled (transient consumers, e.g
             {
                 provide: DotLocalstorageService,
                 useValue: {
-                    getItem: jest.fn().mockReturnValue(null),
-                    setItem: jest.fn().mockReturnValue(undefined)
+                    getItem: vi.fn().mockReturnValue(null),
+                    setItem: vi.fn().mockReturnValue(undefined)
                 }
             }
         ],

@@ -1,4 +1,5 @@
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
@@ -33,7 +34,7 @@ describe('DotAnalyticsPlatformsTableComponent', () => {
     const createComponent = createComponentFactory({
         component: DotAnalyticsPlatformsTableComponent,
         imports: [DotMessagePipe],
-        providers: [mockProvider(DotMessageService, { get: jest.fn((key: string) => key) })]
+        providers: [mockProvider(DotMessageService, { get: vi.fn((key: string) => key) })]
     });
 
     beforeEach(() => {

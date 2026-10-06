@@ -8,7 +8,8 @@ import { map, take } from 'rxjs/operators';
 import {
     DotActionBulkRequestOptions,
     DotCMSContentlet,
-    DotActionBulkResult
+    DotActionBulkResult,
+    DotFireDefaultActionResult
 } from '@dotcms/dotcms-models';
 
 export interface DotActionRequestOptions {
@@ -81,13 +82,20 @@ export class DotWorkflowActionsFireService {
     }
 
     /**
-     * Fire a default workflow action over one or multiple contentlets
+     * Fire a default workflow action over one or multiple contentlets.
+     *
+     * Resolves to the endpoint's `{ results, summary }` entity — **not** a contentlet list, which is
+     * what this used to claim. Individual contentlets can fail while the request itself succeeds
+     * with a 200, so callers reporting an outcome must read `summary.successCount` /
+     * `summary.failCount` rather than assume every inode they sent was acted on.
      *
      * @param {DotFireDefaultActionOptions} options
-     * @return {*}  {Observable<DotCMSContentlet[]>}
+     * @return {*}  {Observable<DotFireDefaultActionResult>}
      * @memberof DotWorkflowActionsFireService
      */
-    fireDefaultAction(options: DotFireDefaultActionOptions): Observable<DotCMSContentlet[]> {
+    fireDefaultAction(
+        options: DotFireDefaultActionOptions
+    ): Observable<DotFireDefaultActionResult> {
         const { action, inodes } = options;
         const url = `${this.BASE_URL}/actions/default/fire/${action}`;
         const urlParams = new HttpParams().set('indexPolicy', 'WAIT_FOR');
@@ -96,7 +104,7 @@ export class DotWorkflowActionsFireService {
         };
 
         return this.httpClient
-            .post<{ entity: DotCMSContentlet[] }>(url, body, {
+            .post<{ entity: DotFireDefaultActionResult }>(url, body, {
                 headers: this.defaultHeaders,
                 params: urlParams
             })

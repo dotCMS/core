@@ -1,0 +1,23 @@
+<ng-content />
+
+<div
+    class="message pointer-events-none visible absolute inset-0 z-1001 flex size-full items-center justify-center opacity-0 transition-all duration-300 ease-in-out"
+    data-testid="message">
+    <div class="flex flex-col items-center justify-center gap-3" data-testid="message-content">
+        @let blocked = $disabled() && $disabledMessage();
+
+        <div
+            class="flex h-[calc(48px+1.5rem)] w-[calc(48px+1.5rem)] items-center justify-center rounded-full"
+            [class]="blocked ? 'bg-orange-200' : 'bg-primary-200'">
+            <i
+                class="text-4xl!"
+                [class]="blocked ? 'pi pi-lock text-orange-500' : 'pi pi-upload text-primary-500'"
+                data-testid="message-content-icon"></i>
+        </div>
+        <span
+            class="max-w-md text-center text-lg leading-[140%]"
+            data-testid="message-content-text">
+            {{ blocked || ('content-drive-dropzone.message.drag-and-drop-header' | dm) }}
+        </span>
+    </div>
+</div>

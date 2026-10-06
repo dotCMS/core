@@ -1,4 +1,5 @@
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -61,7 +62,7 @@ describe('DotTemplateListResolverService', () => {
     });
 
     it('should set pagination params, get first page, check license and publish environments', () => {
-        jest.spyOn(pushPublishService, 'getEnvironments').mockReturnValue(
+        vi.spyOn(pushPublishService, 'getEnvironments').mockReturnValue(
             of([
                 {
                     id: '1',

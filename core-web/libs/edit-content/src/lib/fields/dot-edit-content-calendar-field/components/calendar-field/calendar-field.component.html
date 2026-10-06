@@ -12,16 +12,85 @@
     [hideOnDateTimeSelect]="false"
     [appendTo]="'body'"
     (onSelect)="onCalendarChange($event)"
-    (onClearClick)="onCalendarChange(null)"
     (onClear)="onCalendarChange(null)"
     [id]="'calendar-id-' + field.variable"
     [inputId]="field.variable"
     [attr.data-testid]="'calendar-input-' + field.variable"
     [showIcon]="true"
     [icon]="fieldTypeConfig.icon"
+    [fluid]="true"
     [showButtonBar]="true"
-    [showClear]="$isExpireDateField()"
+    [showClear]="true"
     [placeholder]="
         $isExpireDateField() ? ('edit.content.form.field.calendar.never.expires' | dm) : ''
     "
-    [attr.aria-label]="field.name" />
+    [ariaLabelledBy]="$inputLabelledBy()">
+    <!--
+        Replaces PrimeNG's stock footer (Today on the left, Clear on the right). Clear leaves
+        entirely — emptying the field is the on-field X above. The layout is our own flex row
+        rather than the theme's default justification, so the Date-only case, which renders no
+        timezone at all, still puts the action flush right with no empty slot holding its place.
+    -->
+    <ng-template #buttonbar>
+        <!--
+            Tailwind utilities, not component SCSS: the overlay is appended to body, so a
+            ':host ::ng-deep' rule never matches it — the selector requires the element to be a
+            descendant of the host. Tailwind's classes are global, so they apply wherever
+            PrimeNG moves these nodes.
+        -->
+        <div class="flex w-full items-center justify-between gap-2">
+            @if ($showFooterTimezone()) {
+                <span class="text-sm text-gray-500" data-testid="calendar-field-timezone">
+                    {{ $systemTimezone()?.label }}
+                </span>
+            }
+            <p-button
+                class="ml-auto"
+                size="small"
+                severity="secondary"
+                [outlined]="true"
+                data-testid="calendar-field-today-button"
+                [disabled]="!$canResolveServerTime()"
+                [label]="$footerActionLabel() | dm"
+                (keydown)="onFooterButtonKeydown($event)"
+                (onClick)="setCurrentServerDateTime()" />
+        </div>
+    </ng-template>
+
+    <!--
+        PrimeNG's default clear control is a bare <svg> with a click handler: not focusable,
+        no accessible name, unreachable by keyboard. Projecting a real button restores all
+        three. The click bubbles to the wrapping span PrimeNG puts the handler on, so Enter
+        and Space work through the native button behaviour without extra key handling.
+    -->
+    <ng-template #clearicon>
+        <button
+            type="button"
+            class="inline-flex cursor-pointer items-center justify-center border-0 bg-transparent p-0 text-inherit"
+            data-testid="calendar-clear-button"
+            [attr.aria-label]="'edit.content.form.field.calendar.clear' | dm">
+            <!--
+                The `!` is load-bearing: `.material-symbols-outlined` sets `font-size: 24px`
+                globally, and a plain `text-base` loses to it on source order. Without these the
+                glyph renders at 24px against the trigger icon's 14px, and PrimeNG's clear slot —
+                absolutely positioned with `margin-top: -7px`, calibrated for a ~14px icon — then
+                leaves it sitting 5px below the input's centre line. `leading-none` keeps the box
+                square so that offset stays at the 1px the stock icon also has.
+            -->
+            <span class="material-symbols-outlined text-base! leading-none!" aria-hidden="true">
+                close
+            </span>
+        </button>
+    </ng-template>
+</p-datepicker>
+
+<!--
+    The input's accessible name, as an id list on ariaLabelledBy: the field's name first, then the
+    timezone when there is one. Both nodes are always in the DOM, unlike the footer label, which
+    exists only while the overlay is open and would dangle the rest of the time. Visually hidden —
+    the visible statements are the field label and the footer label (FR-008, FR-008b).
+-->
+<span class="sr-only" [id]="$nameId()">{{ field.name }}</span>
+@if ($timezoneDescriptionId(); as timezoneId) {
+    <span class="sr-only" [id]="timezoneId">{{ $systemTimezone()?.label }}</span>
+}

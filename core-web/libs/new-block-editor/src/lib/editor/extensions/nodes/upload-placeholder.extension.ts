@@ -2,7 +2,7 @@ import { Editor, Node } from '@tiptap/core';
 import type { Node as PMNode } from '@tiptap/pm/model';
 
 /** Media kind shown in the placeholder UI and stored on the node. */
-export type UploadPlaceholderMediaType = 'image' | 'video';
+export type UploadPlaceholderMediaType = 'image' | 'video' | 'audio';
 
 /** Payload used when inserting one or more upload placeholders. */
 export type UploadPlaceholderItem = {
@@ -42,14 +42,15 @@ function findUploadPlaceholderPosition(doc: PMNode, placeholderId: string): numb
 /**
  * Material Symbol name for the placeholder row (host app must load the font).
  *
- * @param mediaType - Whether we are uploading an image or video.
+ * @param mediaType - Whether we are uploading an image, video, or audio file.
  * @returns Ligature text for `material-symbols-outlined`.
  */
 function createUploadPlaceholderIcon(mediaType: UploadPlaceholderMediaType): HTMLElement {
     const icon = document.createElement('span');
     icon.className = 'material-symbols-outlined upload-placeholder__icon';
     icon.setAttribute('aria-hidden', 'true');
-    icon.textContent = mediaType === 'video' ? 'videocam' : 'image';
+    icon.textContent =
+        mediaType === 'video' ? 'videocam' : mediaType === 'audio' ? 'audiotrack' : 'image';
     return icon;
 }
 

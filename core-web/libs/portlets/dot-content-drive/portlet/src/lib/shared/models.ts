@@ -1,20 +1,41 @@
 import {
+    DotBatchItemResult,
+    DotBulkUploadFailureReason,
     DotCMSContentTypeField,
-    DotContentDriveFolder,
+    DotContentDriveActionableFolder,
+    DotContentDriveActionableItem,
     DotContentDriveItem,
     DotFolder,
+    DotFolderBulkDuplicateReason,
+    DotFolderDeleteFailureReason,
+    DotLanguage,
     DotSite
 } from '@dotcms/dotcms-models';
-import { DotFolderTreeNodeData, DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
+import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
+import { DotUploadBaseType, DotUploadSelection, DotUploadSelectorPayload } from '@dotcms/ui';
 
-import { DIALOG_TYPE, UPLOAD_SELECTOR_OPTIONS } from './constants';
+import { DIALOG_TYPE } from './constants';
 
 /**
- * Base types the upload selector can produce, derived from the selector options so the type and the
- * rendered choices never drift apart.
+ * The parameters for the buildTreeFolderNodes function.
+ *
+ * @export
+ * @interface BuildTreeFolderNodesParams
  */
-export type DotContentDriveUploadBaseType = (typeof UPLOAD_SELECTOR_OPTIONS)[number]['baseType'];
+export interface BuildTreeFolderNodesParams {
+    folderHierarchyLevels: DotFolder[][];
+    targetPath: string;
+    rootNode: DotFolderTreeNodeItem;
+}
+
+/**
+ * Upload-flow types now live in `@dotcms/ui`, shared with the AssetPicker. Aliased here so the
+ * portlet keeps its own naming.
+ */
+export type DotContentDriveUploadBaseType = DotUploadBaseType;
+export type DotContentDriveUploadSelectorPayload = DotUploadSelectorPayload;
+export type DotContentDriveUploadSelection = DotUploadSelection;
 
 /**
  * The status of the content drive.
@@ -27,6 +48,25 @@ export enum DotContentDriveStatus {
     LOADED = 'loaded',
     ERROR = 'error'
 }
+
+/**
+ * Which fields a Content Drive search term is matched against.
+ *
+ * Not to be confused with a *browse* scope, which says where you are browsing. A browse scope says
+ * where you are; a search scope says how a search reads what is there.
+ *
+ * `as const` rather than a TS `enum`, per TYPESCRIPT_STANDARDS.md. The values are the wire contract
+ * and must match the server's `SearchScope`.
+ */
+export const DOT_CONTENT_DRIVE_SEARCH_SCOPE = {
+    /** The term is matched against every indexed field. The default, and today's behaviour. */
+    ALL_FIELDS: 'ALL_FIELDS',
+    /** The term is matched against the contentlet title only. */
+    TITLE: 'TITLE'
+} as const;
+
+export type DotContentDriveSearchScope =
+    (typeof DOT_CONTENT_DRIVE_SEARCH_SCOPE)[keyof typeof DOT_CONTENT_DRIVE_SEARCH_SCOPE];
 
 /**
  * The sort order of the content drive.
@@ -70,7 +110,16 @@ export interface DotContentDriveSort {
  */
 export interface DotContentDriveInit {
     currentSite: DotSite;
-    path: string;
+    /**
+     * The browsed location, or `undefined` when the URL carries none (`DEFAULT_PATH`).
+     *
+     * Declared as a required property holding `string | undefined` rather than an optional
+     * `path?: string`. The difference matters here: this interface is extended by
+     * {@link DotContentDriveState}, and an optional property makes the *signal* optional, so
+     * every `store.path()` call becomes "cannot invoke possibly undefined". This form keeps the
+     * signal required and puts the uncertainty where it actually lives, in the value.
+     */
+    path: string | undefined;
     filters: DotContentDriveFilters;
     isTreeExpanded: boolean;
 }
@@ -82,18 +131,240 @@ export interface DotContentDriveInit {
  * @interface DotContentDriveContextMenu
  */
 export interface DotContentDriveContextMenu {
-    triggeredEvent: Event;
-    contentlet: DotContentDriveItem;
+    triggeredEvent: Event | null;
+    /**
+     * The item the menu acts on. Folders arrive from two sources — a full row from the table and a
+     * search view from the sidebar tree — so this is the narrower actionable shape both satisfy.
+     */
+    contentlet: DotContentDriveActionableItem | null;
     showAddToBundle: boolean;
+}
+
+/**
+ * Header override for a dialog that has drilled into a sub-screen.
+ *
+ * The shared dialog's header lives in the shell, but a dialog body can navigate within itself — the
+ * Workflow Center drilling from its action list into an action's preview. Rather than the body
+ * rendering a second title (which reads as a duplicated header), it publishes the replacement here
+ * and the shell's one header renders it.
+ */
+export interface DotContentDriveDialogDrillDown {
+    /** Replaces the dialog title. Already-resolved text, not an i18n key. */
+    header: string;
+    /** Number of items the sub-screen is about to act on; rendered as the header's sub-line. */
+    itemCount: number;
 }
 
 export interface DotContentDriveDialog {
     type: keyof typeof DIALOG_TYPE;
     header: string;
     payload?:
-        | DotContentDriveFolder
+        | DotContentDriveActionableFolder
         | DotContentDriveContentTypeSelectorPayload
         | DotContentDriveUploadSelectorPayload;
+}
+
+/**
+ * A workflow action currently being applied to the selection.
+ *
+ * Held in the store rather than in the Action Center dialog so it survives the dialog being closed:
+ * the run continues, the toolbar keeps reporting it, and reopening the dialog sees a run already in
+ * progress instead of offering to fire it again.
+ */
+export interface DotContentDriveActionExecution {
+    /** Number of contentlets the run was fired over. */
+    total: number;
+    /**
+     * Copy this run names itself with, instead of the indicator's "Applying X to Y" form.
+     *
+     * For a run whose words are simply different: an upload's server phase is not applying anything
+     * to the folder, it is finishing files inside it, and the author has just been told they may
+     * leave — so the indicator has to read as the reassurance it now is rather than as an
+     * operation. Resolved with the target label and the total as arguments, in that order.
+     */
+    labelKey?: string;
+}
+
+/**
+ * A batch this store submitted, kept until its completion signal arrives.
+ *
+ * Two things travel with it. The folders let the shell decide whether the listing the author is
+ * looking at by then can show the result at all; the run id is what is still reporting the server
+ * phase on the indicator, and nothing but the completion knows to end it.
+ */
+export interface DotContentDriveUploadJob {
+    /** Where the batch landed, as `//hostname/path` refs. */
+    affectedFolders: string[];
+    /** The run reporting the server phase, if one is. */
+    runId?: string;
+    /**
+     * Which base type the batch was submitted as.
+     *
+     * Needed to describe its own outcome. A resubmitted `FILEASSET` batch is refused a second copy
+     * by the unique index over the lower-cased path; a `DOTASSET` one is not, because a dotAsset's
+     * `asset_name` is generated per contentlet and never contends — so the identical
+     * `duplicateSubmission` flag means "nothing was duplicated" for one and "everything was
+     * duplicated" for the other (FR-040b).
+     */
+    baseType?: string;
+}
+
+/**
+ * One run held in the store's registry.
+ *
+ * Several may be in flight at once (FR-015), so each carries its own identity and the items it is
+ * acting on. `runId` is allocated by the client at submission rather than taken from a server
+ * handle: the window a double-click has to fire twice is exactly the window before any handle has
+ * come back, so a server-side id would leave it unguarded.
+ */
+export interface DotContentDriveRun extends DotContentDriveActionExecution {
+    runId: string;
+    /**
+     * Which operation this is. Paired with {@link targets} it forms the repeat-fire guard, which is
+     * scoped to *this operation over these items* rather than to the portlet as a whole (FR-016) —
+     * so an upload running for minutes no longer blocks locking a row.
+     */
+    operation: string;
+    /** The inodes the run is acting on. Drives the guard, and the per-row busy marks. */
+    targets: string[];
+    /**
+     * Reported on the status indicator, but locks nothing.
+     *
+     * For work that leaves everything it touches usable while it runs, such as a folder duplicate:
+     * the author is told it is under way without the Action Center being refused meanwhile.
+     */
+    backgrounded?: boolean;
+}
+
+/**
+ * Outcome of a finished run, published for the shell to present as a toast.
+ *
+ * Counts come from the response, never from the number of items submitted: both endpoints answer 200
+ * with per-item failures inside, so an item locked by another user would otherwise read as a success.
+ */
+/**
+ * Which vocabulary an outcome's failures speak.
+ *
+ * A named constant rather than the bare strings: the producer in `withActionExecution` and the
+ * consumer in the shell both test it, and two literals that must agree are two chances to typo one.
+ */
+export const OUTCOME_KIND = {
+    UPLOAD: 'upload',
+    FOLDER_DELETE: 'folderDelete',
+    FOLDER_DUPLICATE: 'folderDuplicate'
+} as const;
+
+export type DotContentDriveOutcomeKind = (typeof OUTCOME_KIND)[keyof typeof OUTCOME_KIND];
+
+export interface DotContentDriveActionExecutionResult {
+    actionName: string;
+    /**
+     * Whether this run was a resubmission of a batch that had already succeeded.
+     *
+     * Changes what the same counts mean: all-failed-on-collision is "already uploaded" when it is a
+     * retry, and a real problem when it is not.
+     *
+     * **Not sufficient on its own** — see {@link baseType}. The flag says the batch repeats an
+     * earlier successful run; whether that left a second copy depends on the base type.
+     */
+    duplicateSubmission?: boolean;
+    /**
+     * The base type an upload ran as, where the outcome came from one.
+     *
+     * A resubmission means opposite things by base type (FR-040b): a `FILEASSET` batch is refused
+     * its second copy by the unique index, a `DOTASSET` batch creates one and reports clean
+     * success. Describing the outcome without this would tell half of all authors the opposite of
+     * what happened to their folder.
+     */
+    baseType?: string;
+    /**
+     * Per-file results, for a run that reports them.
+     *
+     * Counts alone tell an author three files failed and nothing they can act on. The names and
+     * reasons are the point of a partial outcome, and the reason codes are what map to product copy
+     * rather than the server's diagnostic message, which is never shown.
+     */
+    failures?: DotBatchItemResult<
+        DotBulkUploadFailureReason | DotFolderDeleteFailureReason | DotFolderBulkDuplicateReason
+    >[];
+    /**
+     * Which vocabulary {@link failures} speaks, and therefore which describer resolves it to copy.
+     *
+     * The reason sets do not overlap beyond `PERMISSION_DENIED` and `UNCLASSIFIED`, so guessing
+     * from the values would resolve a delete's `IN_USE` through upload's mapping and land on the
+     * unclassified fallback — a reason with copy, rendered as though it had none.
+     *
+     * Absent means upload, which is the only producer that predates this field.
+     */
+    outcomeKind?: DotContentDriveOutcomeKind;
+    /**
+     * The folders whose contents this run changed, as `//hostname/path` references.
+     *
+     * Used to decide whether the listing the author is *currently* looking at can show the outcome
+     * at all (FR-044): a move out of `/images/` says nothing about `/docs/`, so refetching `/docs/`
+     * costs a request and — since `loadItems` empties `selectedItems` — takes their selection, for a
+     * listing identical afterwards.
+     *
+     * Omitted means "reload regardless", which is what every synchronous caller wants: those act on
+     * rows in front of the author, so the browsed folder is the changed one by construction. Only a
+     * backgrounded run can settle after they have navigated away.
+     */
+    affectedFolders?: string[];
+    successCount: number;
+    skippedCount: number;
+    /**
+     * Spelled to match every job-backed producer rather than the view.
+     *
+     * `BulkRefreshContentletsProcessor` emits `failedCount`, and so does the bulk upload contract
+     * (`specs/37166-bulk-file-upload/contracts/bulk-upload-api.md` §3), which says so explicitly.
+     * Naming it `failCount` here meant a pushed outcome was translated on the way in, and every
+     * future job-backed consumer would translate it again for nothing (FR-032).
+     *
+     * The one place a translation remains is the workflow bulk-fire adapter, which reads
+     * `summary.failCount` — that API reports a `fails[]` list and no count at all, so a conversion
+     * there is real work rather than a rename.
+     */
+    failedCount: number;
+    /**
+     * i18n key for the partial-outcome copy, when the default does not fit.
+     *
+     * The default names workflow-specific causes next to each number — permissions and locks for
+     * failures, "not on their workflow step" for skips. Those are the right causes for a bulk fire and
+     * the wrong ones for anything else, and a shortfall explained by the wrong cause sends the user off
+     * to fix something that was never the problem. An action whose failures and skips mean something
+     * different supplies its own copy rather than borrowing that one.
+     */
+    partialDetailKey?: string;
+    /**
+     * Whether the run was stopped before it finished (#37062).
+     *
+     * Said as cancelled whatever the counts, so a run stopped after every folder it reached had
+     * succeeded does not read as a clean success. The bell says it the same way.
+     */
+    cancelled?: boolean;
+    /**
+     * Whether a clean success still needs saying.
+     *
+     * Success is silent by default: for most operations the listing visibly reflects it — the row
+     * publishes, moves, unlocks or disappears — and a notification then repeats what the author can
+     * already see. That repetition is the noise this feature set out to remove.
+     *
+     * It is not true for every operation. Add to Bundle and Push Publish change nothing in the
+     * listing, so without this the author gets a dialog that closes and no other sign anything
+     * happened — the "non-responding" complaint that started this. Those set it.
+     *
+     * A shortfall is always reported, with or without this.
+     */
+    confirmSuccess?: boolean;
+    /**
+     * Whether this outcome arrived unprompted, from a job that finished in the background.
+     *
+     * Every other result settles a request the user is waiting on, so closing the dialog and reloading
+     * the grid is the natural next step. A backgrounded one can land at any moment — minutes later,
+     * while the user is filling in a different action's form — and doing either would throw away work
+     * they are in the middle of.
+     */
+    backgrounded?: boolean;
 }
 
 /**
@@ -102,27 +373,6 @@ export interface DotContentDriveDialog {
  */
 export interface DotContentDriveContentTypeSelectorPayload {
     listType: DotUVEPaletteListTypes;
-}
-
-/**
- * Payload passed INTO the upload-type selector dialog. `files` is present for the drag-and-drop
- * flow (the dropped files are already known) and absent for the Upload-button flow (the OS file
- * picker opens after the user picks a type).
- */
-export interface DotContentDriveUploadSelectorPayload {
-    targetFolder?: DotFolderTreeNodeData;
-    files?: FileList;
-}
-
-/**
- * Object emitted BACK by the upload-type selector dialog. Carries everything needed to trigger the
- * upload (and, in the future, to remember the chosen type per folder — see epic #35436).
- * `targetFolder` is omitted when nothing is selected (uploads to the site root).
- */
-export interface DotContentDriveUploadSelection {
-    baseType: DotContentDriveUploadBaseType;
-    targetFolder?: DotFolderTreeNodeData;
-    files?: FileList;
 }
 
 export interface DotContentDrivePage {
@@ -166,6 +416,61 @@ export interface DotContentDriveState extends DotContentDriveInit {
      * hold the first search until fields load, instead of firing one that drops the `us.*` values.
      */
     userSearchableFieldsLoaded: boolean;
+    /**
+     * "Show In List" fields (`field.listed`) of the currently-selected single content type.
+     * Populated from the same content-type fetch as {@link userSearchableFields}; empty when 0 or
+     * >1 content types are selected. Consumed by the results table as extra columns.
+     */
+    showInListFields: DotCMSContentTypeField[];
+    /**
+     * Whether the Edit Content side panel is forcing the folder tree visually collapsed on a
+     * narrow viewport. Purely transient UI state — never persisted, never read from or written to
+     * the URL — kept separate from {@link DotContentDriveInit.isTreeExpanded} (the user's real,
+     * shareable preference) so the panel's temporary collapse can never overwrite it. See
+     * `isTreeVisuallyExpanded` (the computed both should render from) and `setTreeForceCollapsed`.
+     */
+    isTreeForceCollapsed: boolean;
+    /**
+     * Every language configured in the environment, from `DotLanguagesService.get()`.
+     *
+     * Held here rather than fetched per consumer so the Locale filter and the default-language seed
+     * share one request instead of issuing the same call twice.
+     */
+    languages: DotLanguage[];
+    /**
+     * Id of the environment's default language — the language flagged `defaultLanguage`, which is
+     * NOT necessarily id 1 nor the first entry returned.
+     *
+     * Seeds the `languageId` filter whenever no language is selected: a cold load, a URL without a
+     * language, a clear-all, or a Back/Forward restore. "No language" is not a neutral state — the
+     * backend omits the language term entirely, so every language version of a contentlet comes
+     * back as its own row (see `withDefaultLanguage`).
+     *
+     * `undefined` while the request is in flight, and if it fails or the environment declares no
+     * default — see {@link defaultLanguageLoaded}.
+     */
+    defaultLanguageId?: number;
+    /**
+     * Whether the languages request has settled — to a default id, to no default, or to a failure.
+     * Distinguishes "not fetched yet" from "fetched, nothing to seed", which lets the first search
+     * wait for the seed instead of firing once without a language (a flash of duplicated rows) and
+     * again with it. Always ends up `true`, so a failure degrades to the pre-seeding behaviour
+     * rather than hanging the portlet in `LOADING`.
+     */
+    defaultLanguageLoaded: boolean;
+    /**
+     * Whether the logged-in user holds the CMS Administrator role, from
+     * `DotCurrentUserService.getCurrentUser()`.
+     *
+     * Fetched once on portlet init rather than per consumer: it never changes within a session, and
+     * the Action Center needs it the instant the dialog opens.
+     *
+     * `false` until the request answers, which deliberately means an unresolved flag behaves exactly
+     * like a non-admin. The only consumer is the Unlock warning, whose copy says a foreign lock
+     * *may* require administrator permission — so an unresolved flag over-warns rather than letting
+     * a non-admin fire with no heads-up at all.
+     */
+    currentUserIsAdmin: boolean;
 }
 
 /**
@@ -181,6 +486,26 @@ export type DotKnownContentDriveFilters = {
     languageId: string[];
     // Each entry is `schemeId` or `schemeId:stepId` (single step pinned per scheme)
     workflow: string[];
+    // Content states to filter by: 'ARCHIVED' | 'UNPUBLISHED' | 'LOCKED'. Entries combine with OR,
+    // like `contentType` and `languageId` — selecting more returns more. Deliberately NOT seeded by
+    // `withFilterDefaults`: empty genuinely means "no status filtering", unlike `languageId` and
+    // `sharedAssets` where an absent key is not a neutral state.
+    status: string[];
+    // `'false'` hides SYSTEM_HOST (shared) assets, `'true'` shows them. Always present: the filter is
+    // seeded to `'true'` on a cold load, on "Clear all", and on a Back/Forward restore (see
+    // `withFilterDefaults`), so the value is explicit in the URL rather than implied by the key's
+    // absence.
+    sharedAssets: string;
+    // Which fields the `title` search term is matched against: 'TITLE' or 'ALL_FIELDS'.
+    //
+    // Note the key is NOT `title` — that one holds the search TERM. A scope whose value is 'TITLE'
+    // sitting beside a filter key named `title` is a collision waiting to happen, so they are kept
+    // apart deliberately.
+    //
+    // Present only when it differs from the default: `hasNonDefaultFilters` counts every key but
+    // two, so writing this one unconditionally would offer "Clear all" on a drive with nothing
+    // filtered at all.
+    searchScope: string;
 };
 
 /**
@@ -201,14 +526,82 @@ export type DotContentDriveFilters = Partial<DotKnownContentDriveFilters> & {
  */
 export type DotContentDriveDecodeFunction = (value: string) => string | string[];
 
+/** A single workflow filter entry: one scheme, optionally pinned to a step. */
+export interface WorkflowFilterEntry {
+    scheme: string;
+    step?: string;
+}
+
 /**
- * The parameters for the buildTreeFolderNodes function.
- *
- * @export
- * @interface buildTreeFolderNodesParams
+ * One level of the folder hierarchy returned by {@link getFolderHierarchyByPath}.
+ * `path` is the parent path that was queried; `folders` are its direct children (first page).
  */
-export interface BuildTreeFolderNodesParams {
-    folderHierarchyLevels: DotFolder[][];
-    targetPath: string;
-    rootNode: DotFolderTreeNodeItem;
+export type FolderTreeHierarchyLevel = {
+    path: string;
+    folders: DotFolder[];
+    totalEntries: number;
+    /**
+     * The 1-based page "Load more" should request next for this level, expressed in
+     * {@link FOLDER_TREE_PAGE_SIZE} units because that is what load-more pages by.
+     *
+     * Derived from the folders actually fetched, never from the rendered node count: a level can
+     * carry one extra folder that {@link resolveHierarchyAncestor} appended out of sort order, and
+     * counting that as paged-through would make load-more skip a page of real folders.
+     */
+    nextPage: number;
+};
+
+/** What the outcome path derives from a result before wording it. */
+export interface DotContentDriveOutcomeReading {
+    result: DotContentDriveActionExecutionResult;
+    /** A folder delete or duplication, as opposed to an upload or a workflow action. */
+    isFolderOutcome: boolean;
+    /** Skipped folders a selected parent already covered, which are not a shortfall. */
+    coveredCount: number;
+    /** Whether the run fell short of a clean success. */
+    isPartial: boolean;
+}
+
+/** Resolves a message key with arguments. Narrower than `DotMessageService` on purpose. */
+export type ResolveMessage = (key: string, ...args: string[]) => string;
+
+/**
+ * The words a folder operation's report is written in: one sentence per failure reason, and one
+ * for each of the two kinds of skip.
+ *
+ * The line builder below is shared, so bulk delete and bulk duplication (#37062) read the same way:
+ * the same grouping, the same name threshold, the same count-only overflow. What differs is only
+ * the copy, because an ancestor that *removed* a folder and one whose duplicate *carries* it are
+ * different facts.
+ */
+export interface DotFolderOutcomeVocabulary {
+    /** The message key explaining a failure reason, with its own unclassified fallback. */
+    keyForFailure: (reason: string | undefined) => string;
+    /** A folder an ancestor in the same submission already covered. Not a problem. */
+    skippedByParentKey: string;
+    /** A folder the run never reached, because it was cancelled first. */
+    skippedCancelledKey: string;
+}
+
+/** One page of a level's folders, as the folder search answers it. */
+export interface DotContentDriveFolderPage {
+    folders: DotFolderTreeNodeItem[];
+    totalEntries: number;
+}
+
+/** One level of a path being revealed, and where in the tree it hangs. */
+export interface DotContentDriveRevealLevel {
+    /** The folder this level has to hold. */
+    path: string;
+    /** The folder above it; undefined for the top level, which hangs from the site row. */
+    parentPath: string | undefined;
+    /** The path the level's folders are listed under. */
+    levelPath: string;
+    site: DotSite;
+}
+
+/** What a level's load answered: the page fetched, if any, and the folder to pin, if any. */
+export interface DotContentDriveRevealedLevel {
+    page: DotContentDriveFolderPage | undefined;
+    pinned: DotFolder | undefined;
 }

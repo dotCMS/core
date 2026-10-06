@@ -1,7 +1,9 @@
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import {
+    buildPersistedQueryKey,
     DotCurrentUserService,
     DotEsSearchService,
     DotHttpErrorManagerService,
@@ -93,19 +95,24 @@ describe('DotEsSearchStore', () => {
         service: DotEsSearchStore,
         providers: [
             mockProvider(DotEsSearchService, {
-                search: jest.fn().mockReturnValue(of(MOCK_RESPONSE))
+                search: vi.fn().mockReturnValue(of(MOCK_RESPONSE))
             }),
-            mockProvider(DotHttpErrorManagerService, { handle: jest.fn() }),
-            mockProvider(DotMessageService, { get: jest.fn().mockReturnValue('') }),
+            mockProvider(DotHttpErrorManagerService, { handle: vi.fn() }),
+            mockProvider(DotMessageService, { get: vi.fn().mockReturnValue('') }),
             mockProvider(DotCurrentUserService, {
-                getCurrentUser: jest.fn().mockReturnValue(of({ admin: false }))
+                getCurrentUser: vi.fn().mockReturnValue(of({ admin: false }))
             })
         ]
     });
 
     beforeEach(() => {
+        window.localStorage.clear();
         spectator = createService();
         spectator.flushEffects();
+    });
+
+    afterEach(() => {
+        window.localStorage.clear();
     });
 
     it('should initialise with INIT status and no response', () => {
@@ -177,9 +184,7 @@ describe('DotEsSearchStore', () => {
         it('should call httpErrorManager.handle and set ERROR status on failure', () => {
             const searchService = spectator.inject(DotEsSearchService);
             const errorManager = spectator.inject(DotHttpErrorManagerService);
-            (searchService.search as jest.Mock).mockReturnValueOnce(
-                throwError(() => new Error('fail'))
-            );
+            (searchService.search as Mock).mockReturnValueOnce(throwError(() => new Error('fail')));
 
             spectator.service.runSearch();
             expect(spectator.service.status()).toBe(ComponentStatus.ERROR);
@@ -199,7 +204,7 @@ describe('DotEsSearchStore', () => {
 
         it('should auto-set activeTab to aggregations when response has no hits but has aggregations', () => {
             const searchService = spectator.inject(DotEsSearchService);
-            (searchService.search as jest.Mock).mockReturnValueOnce(of(MOCK_AGG_RESPONSE));
+            (searchService.search as Mock).mockReturnValueOnce(of(MOCK_AGG_RESPONSE));
 
             spectator.service.runSearch();
             expect(spectator.service.activeTab()).toBe('aggregations');
@@ -232,10 +237,10 @@ describe('DotEsSearchStore', () => {
     });
 
     describe('aggregations computed', () => {
-        let searchMock: jest.Mock;
+        let searchMock: Mock;
 
         beforeEach(() => {
-            searchMock = spectator.inject(DotEsSearchService).search as jest.Mock;
+            searchMock = spectator.inject(DotEsSearchService).search as Mock;
             searchMock.mockReturnValue(of(MOCK_RESPONSE));
         });
 
@@ -267,10 +272,10 @@ describe('DotEsSearchStore', () => {
     });
 
     describe('suggestions computed', () => {
-        let searchMock: jest.Mock;
+        let searchMock: Mock;
 
         beforeEach(() => {
-            searchMock = spectator.inject(DotEsSearchService).search as jest.Mock;
+            searchMock = spectator.inject(DotEsSearchService).search as Mock;
             searchMock.mockReturnValue(of(MOCK_RESPONSE));
         });
 
@@ -321,7 +326,7 @@ describe('DotEsSearchStore', () => {
                 _score: 1,
                 _source: {}
             }));
-            (searchService.search as jest.Mock).mockReturnValueOnce(
+            (searchService.search as Mock).mockReturnValueOnce(
                 of({
                     ...MOCK_RESPONSE,
                     esresponse: [
@@ -346,7 +351,7 @@ describe('DotEsSearchStore', () => {
             // MOCK_RESPONSE: 1 hit returned, total = 10 → 1 < 10 → true
             // We need a response where returned === total
             const searchService = spectator.inject(DotEsSearchService);
-            (searchService.search as jest.Mock).mockReturnValueOnce(
+            (searchService.search as Mock).mockReturnValueOnce(
                 of({
                     ...MOCK_RESPONSE,
                     esresponse: [
@@ -372,7 +377,7 @@ describe('DotEsSearchStore', () => {
 
         it('should be true when size limits results below total (object total)', () => {
             const searchService = spectator.inject(DotEsSearchService);
-            (searchService.search as jest.Mock).mockReturnValueOnce(
+            (searchService.search as Mock).mockReturnValueOnce(
                 of({
                     ...MOCK_RESPONSE,
                     esresponse: [
@@ -415,7 +420,7 @@ describe('DotEsSearchStore', () => {
 
         it('should be true when search returns at least one contentlet', () => {
             const searchService = spectator.inject(DotEsSearchService);
-            (searchService.search as jest.Mock).mockReturnValueOnce(
+            (searchService.search as Mock).mockReturnValueOnce(
                 of({ ...MOCK_RESPONSE, contentlets: [{ identifier: 'abc', title: 'Test' }] })
             );
             spectator.service.runSearch();
@@ -424,9 +429,7 @@ describe('DotEsSearchStore', () => {
 
         it('should be false after an error', () => {
             const searchService = spectator.inject(DotEsSearchService);
-            (searchService.search as jest.Mock).mockReturnValueOnce(
-                throwError(() => new Error('fail'))
-            );
+            (searchService.search as Mock).mockReturnValueOnce(throwError(() => new Error('fail')));
             spectator.service.runSearch();
             expect(spectator.service.hasLoadedResults()).toBe(false);
         });
@@ -483,12 +486,12 @@ describe('DotEsSearchStore (admin user)', () => {
         service: DotEsSearchStore,
         providers: [
             mockProvider(DotEsSearchService, {
-                search: jest.fn().mockReturnValue(of(MOCK_RESPONSE))
+                search: vi.fn().mockReturnValue(of(MOCK_RESPONSE))
             }),
-            mockProvider(DotHttpErrorManagerService, { handle: jest.fn() }),
-            mockProvider(DotMessageService, { get: jest.fn().mockReturnValue('') }),
+            mockProvider(DotHttpErrorManagerService, { handle: vi.fn() }),
+            mockProvider(DotMessageService, { get: vi.fn().mockReturnValue('') }),
             mockProvider(DotCurrentUserService, {
-                getCurrentUser: jest.fn().mockReturnValue(of({ admin: true }))
+                getCurrentUser: vi.fn().mockReturnValue(of({ admin: true }))
             })
         ]
     });
@@ -500,5 +503,53 @@ describe('DotEsSearchStore (admin user)', () => {
 
     it('isAdmin() should be true when current user is admin', () => {
         expect(adminSpectator.service.isAdmin()).toBe(true);
+    });
+});
+
+describe('DotEsSearchStore persistedQuery', () => {
+    const persistedKey = buildPersistedQueryKey('es-search');
+
+    const createService = createServiceFactory({
+        service: DotEsSearchStore,
+        providers: [
+            mockProvider(DotEsSearchService, {
+                search: vi.fn().mockReturnValue(of(MOCK_RESPONSE))
+            }),
+            mockProvider(DotHttpErrorManagerService, { handle: vi.fn() }),
+            mockProvider(DotMessageService, { get: vi.fn().mockReturnValue('') }),
+            mockProvider(DotCurrentUserService, {
+                getCurrentUser: vi.fn().mockReturnValue(of({ admin: false }))
+            })
+        ]
+    });
+
+    beforeEach(() => {
+        window.localStorage.clear();
+    });
+
+    afterEach(() => {
+        window.localStorage.clear();
+    });
+
+    it('hydrates query from the persisted-query storage key', () => {
+        window.localStorage.setItem(persistedKey, JSON.stringify(MOCK_QUERY));
+
+        const spectator = createService();
+        spectator.flushEffects();
+
+        expect(spectator.service.query()).toBe(MOCK_QUERY);
+    });
+
+    it('clearPersistedQuery empties the query and removes the stored entry', () => {
+        window.localStorage.setItem(persistedKey, JSON.stringify(MOCK_QUERY));
+
+        const spectator = createService();
+        spectator.flushEffects();
+        expect(spectator.service.query()).toBe(MOCK_QUERY);
+
+        spectator.service.clearPersistedQuery();
+
+        expect(spectator.service.query()).toBe('');
+        expect(window.localStorage.getItem(persistedKey)).toBeNull();
     });
 });

@@ -1,5 +1,6 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { of, Subject, throwError } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -46,9 +47,9 @@ describe('DotUsageShellComponent', () => {
     };
 
     const createMockService = () => ({
-        getSummary: jest.fn().mockReturnValue(of(mockSummary)),
-        refresh: jest.fn().mockReturnValue(of(mockSummary)),
-        getErrorMessage: jest.fn().mockReturnValue('usage.dashboard.error.generic')
+        getSummary: vi.fn().mockReturnValue(of(mockSummary)),
+        refresh: vi.fn().mockReturnValue(of(mockSummary)),
+        getErrorMessage: vi.fn().mockReturnValue('usage.dashboard.error.generic')
     });
 
     let mockService: ReturnType<typeof createMockService>;
@@ -69,7 +70,7 @@ describe('DotUsageShellComponent', () => {
         // Create a fresh mock service for each test
         mockService = createMockService();
         // Mock console.error to avoid noise in test output
-        jest.spyOn(console, 'error').mockImplementation(() => {
+        vi.spyOn(console, 'error').mockImplementation(() => {
             // Do nothing
         });
         spectator = createComponent();
@@ -78,7 +79,7 @@ describe('DotUsageShellComponent', () => {
 
     afterEach(() => {
         // Restore console.error after each test
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
     });
 
     it('should create', () => {
@@ -139,8 +140,8 @@ describe('DotUsageShellComponent', () => {
 
         // Use a Subject to control when the observable emits
         const summarySubject = new Subject<UsageSummary>();
-        (usageService.getSummary as jest.Mock).mockClear();
-        (usageService.getSummary as jest.Mock).mockReturnValue(summarySubject.asObservable());
+        (usageService.getSummary as Mock).mockClear();
+        (usageService.getSummary as Mock).mockReturnValue(summarySubject.asObservable());
 
         // PrimeNG buttons use onClick event, not native click
         spectator.triggerEventHandler(
@@ -175,19 +176,17 @@ describe('DotUsageShellComponent', () => {
             status: 500,
             statusText: 'Internal Server Error'
         };
-        (usageService.getSummary as jest.Mock).mockReturnValue(throwError(() => httpError));
-        (usageService.getErrorMessage as jest.Mock).mockReturnValue(
-            'usage.dashboard.error.serverError'
-        );
+        (usageService.getSummary as Mock).mockReturnValue(throwError(() => httpError));
+        (usageService.getErrorMessage as Mock).mockReturnValue('usage.dashboard.error.serverError');
 
         // console.error is already mocked in beforeEach, but we can verify it was called
-        const errorCallCount = (console.error as jest.Mock).mock.calls.length;
+        const errorCallCount = (console.error as Mock).mock.calls.length;
 
         spectator.component.loadData();
 
         // Verify console.error was called (the mock from beforeEach should have been called)
         expect(console.error).toHaveBeenCalled();
-        expect((console.error as jest.Mock).mock.calls[errorCallCount][0]).toBe(
+        expect((console.error as Mock).mock.calls[errorCallCount][0]).toBe(
             'Failed to load usage data:'
         );
         expect(spectator.component.error()).toBe('usage.dashboard.error.serverError');
@@ -296,7 +295,7 @@ describe('DotUsageShellComponent', () => {
             | { unsubscribe: () => void }
             | undefined;
         if (subscription) {
-            const unsubscribeSpy = jest.spyOn(subscription, 'unsubscribe');
+            const unsubscribeSpy = vi.spyOn(subscription, 'unsubscribe');
             spectator.component.ngOnDestroy();
             expect(unsubscribeSpy).toHaveBeenCalled();
         }

@@ -245,6 +245,27 @@ public interface ContentTypeAPI {
   int countForSites(final String condition, final BaseContentType base, final List<String> siteIds) throws DotDataException;
 
   /**
+   * Counts the amount of Content Types in the DB filtered by the given condition, the Base
+   * Content Type, and the specific Sites they live in, optionally excluding system Content Types.
+   *
+   * @param condition          Condition that the Content Type needs to meet.
+   * @param base               The {@link BaseContentType} that must be searched for. If you need
+   *                           to get all types, use {@link BaseContentType#ANY}.
+   * @param siteIds            The list of Site IDs or Site Keys -- aka, site names -- where the
+   *                           Content Types live in.
+   * @param includeSystemTypes When {@code false}, system Content Types are excluded from the count
+   *                           (adds an {@code and system = false} predicate). When {@code true},
+   *                           behavior is unchanged.
+   *
+   * @return The total number of Content Types that meet the search criteria and live in the
+   * specified Sites.
+   *
+   * @throws DotDataException An error occurred when retrieving information from the database.
+   */
+  int countForSites(final String condition, final BaseContentType base, final List<String> siteIds,
+          final boolean includeSystemTypes) throws DotDataException;
+
+  /**
    * Counts the amount of Content Types in the DB filtered by the given condition and the BaseContentType.
    *
    * @param condition Condition that the Content Type needs to meet
@@ -488,12 +509,42 @@ public interface ContentTypeAPI {
    *                            passed by param. e.g:
    *                            offset = 0 -> start from the first record
    *                            offset = 10 -> start from the #11 record
-   * @param requestedContentTypes The Content Types that are explicitly requested to be included.
+   * @param requestedContentTypes The "ensure" set: Velocity Variable Names (or keys) of Content
+   *                            Types that must always be included in the result, regardless of the
+   *                            {@code condition} (name search) and any Site filter. This is not a
+   *                            Site filter -- it guarantees inclusion. Pass {@code null} or an empty
+   *                            list for no forced inclusions.
    * @return List of Content Types Objects
    * @throws DotDataException Error occurred when performing the action.
    */
   List<ContentType> search(String condition, BaseContentType base, String orderBy, int limit,
           int offset, String hostId, List<String> requestedContentTypes)
+          throws DotDataException;
+
+  /**
+   * Returns a List of content type based on the given condition and the Base Content Type,
+   * optionally excluding system Content Types.
+   *
+   * @param condition            Condition that the Content Type needs to meet
+   * @param base                 Base Content Type that wants to be searched
+   * @param orderBy              Specifies an order criteria for the results
+   * @param limit                Amount of results
+   * @param offset               Start position of the resulting list
+   * @param hostId               hostId where the content type lives, pass null to bring from all sites.
+   * @param requestedContentTypes The "ensure" set: Velocity Variable Names (or keys) of Content
+   *                            Types that must always be included in the result, regardless of the
+   *                            {@code condition} (name search) and any Site filter. This is not a
+   *                            Site filter -- it guarantees inclusion. Pass {@code null} or an empty
+   *                            list for no forced inclusions.
+   * @param includeSystemTypes   When {@code false}, excludes system Content Types via a dedicated
+   *                             {@code and system = false} predicate. When {@code true}, behavior
+   *                             is unchanged.
+   * @return List of Content Types Objects
+   * @throws DotDataException Error occurred when performing the action.
+   */
+  List<ContentType> search(String condition, BaseContentType base, String orderBy, int limit,
+          int offset, String hostId, List<String> requestedContentTypes,
+          boolean includeSystemTypes)
           throws DotDataException;
 
   /**
@@ -538,8 +589,10 @@ public interface ContentTypeAPI {
    *                  by param. e.g:
    *                  offset = 0 -> start from the first record
    *                  offset = 10 -> start from the #11 record
-   * @param includeContentTypeIds
-   *                  The Content Types that are explicitly required to be included.
+   * @param includeContentTypeIds The "ensure" set: Velocity Variable Names (or keys) of Content
+   *                  Types that must always be included in the result, regardless of the
+   *                  {@code condition} (name search) and the Site filter. This is not a Site filter
+   *                  -- it guarantees inclusion. Pass {@code null} or an empty list for none.
    *
    * @return The list of {@link ContentType} objects matching the specified search criteria.
    *
@@ -548,6 +601,34 @@ public interface ContentTypeAPI {
   List<ContentType> search(final List<String> sites, final String condition,
           final BaseContentType base, final String orderBy, final int limit, final int offset,
           List<String> includeContentTypeIds)
+          throws DotDataException;
+
+  /**
+   * Returns a list of Content Types living in the specified list of Sites, optionally excluding
+   * system Content Types.
+   *
+   * @param sites                The list of one or more Sites to search for Content Types.
+   * @param condition            Allows you to add more conditions to the query via SQL code.
+   * @param base                 The {@link BaseContentType} to search for.
+   * @param orderBy              The order-by clause, which is internally sanitized by this Factory.
+   * @param limit                The maximum number of returned items in the result set.
+   * @param offset               Start position of the result list.
+   * @param includeContentTypeIds The "ensure" set: Velocity Variable Names (or keys) of Content
+   *                             Types that must always be included in the result, regardless of the
+   *                             {@code condition} (name search) and the Site filter. This is not a
+   *                             Site filter -- it guarantees inclusion. Pass {@code null} or empty
+   *                             for none.
+   * @param includeSystemTypes   When {@code false}, excludes system Content Types via a dedicated
+   *                             {@code and system = false} predicate. When {@code true}, behavior
+   *                             is unchanged.
+   *
+   * @return The list of {@link ContentType} objects matching the specified search criteria.
+   *
+   * @throws DotDataException An error occurred when retrieving information from the database.
+   */
+  List<ContentType> search(final List<String> sites, final String condition,
+          final BaseContentType base, final String orderBy, final int limit, final int offset,
+          List<String> includeContentTypeIds, boolean includeSystemTypes)
           throws DotDataException;
 
   /**
@@ -575,6 +656,34 @@ public interface ContentTypeAPI {
   List<ContentType> searchMultipleTypes(final String condition, final java.util.Collection<BaseContentType> types,
                                         final String orderBy, final int limit, final int offset,
                                         final String siteId, final List<String> requestedContentTypes)
+          throws DotDataException;
+
+  /**
+   * Searches for Content Types matching multiple base types in a single efficient database query,
+   * optionally excluding system Content Types.
+   *
+   * @param condition          Filter condition that Content Types must meet.
+   * @param types              Collection of Base Content Types to search for (must not be empty).
+   * @param orderBy            The order-by clause, which is internally sanitized by the API.
+   * @param limit              Maximum number of items to return in the result set. Use -1 for no
+   *                           limit (up to 10000).
+   * @param offset             The page offset in the result set.
+   * @param siteId             The ID of the Site that Content Types live in. Can be null or empty
+   *                           for all sites.
+   * @param requestedContentTypes Optional list of specific content type variables to ensure are
+   *                           included.
+   * @param includeSystemTypes When {@code false}, excludes system Content Types via a dedicated
+   *                           {@code and system = false} predicate. When {@code true}, behavior is
+   *                           unchanged.
+   *
+   * @return The list of {@link ContentType} objects matching the criteria, sorted and paginated.
+   *
+   * @throws DotDataException An error occurred when retrieving information from the database.
+   */
+  List<ContentType> searchMultipleTypes(final String condition, final java.util.Collection<BaseContentType> types,
+                                        final String orderBy, final int limit, final int offset,
+                                        final String siteId, final List<String> requestedContentTypes,
+                                        final boolean includeSystemTypes)
           throws DotDataException;
 
   /**

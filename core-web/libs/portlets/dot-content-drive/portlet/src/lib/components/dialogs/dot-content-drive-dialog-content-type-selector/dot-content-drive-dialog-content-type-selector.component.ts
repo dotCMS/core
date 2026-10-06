@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, signal } f
 import { ButtonModule } from 'primeng/button';
 
 import { DotESContentService } from '@dotcms/data-access';
+import { DotFolderTreeNodeContentData } from '@dotcms/portlets/content-drive/ui';
 import {
     DOT_PALETTE_PERSIST_PREFERENCES,
     DotPaletteListStore,
@@ -11,6 +12,7 @@ import {
 } from '@dotcms/portlets/dot-ema/ui';
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { SYSTEM_HOST } from '../../../shared/constants';
 import { DotContentDriveNavigationService } from '../../../shared/services/dot-content-drive-navigation.service';
 import { DotContentDriveStore } from '../../../store/dot-content-drive.store';
 
@@ -69,9 +71,20 @@ export class DotContentDriveDialogContentTypeSelectorComponent {
      * At the site root both fall back to the current site (empty path / no inode).
      */
     #getCurrentFolder(): { folderPath?: string; folderInode?: string } {
+        // System Host is a destination in its own right, and the site in the switcher is only
+        // context while it is selected. Pasting the location onto the hostname would also produce
+        // `demo.dotcms.comSYSTEM_HOST` for the reserved word, which resolves to nothing.
+        if (this.#store.$systemHostSelected()) {
+            return { folderInode: SYSTEM_HOST.identifier };
+        }
+
         const hostname = this.#store.currentSite()?.hostname;
         const path = this.#store.path();
-        const inode = this.#store.selectedNode()?.data?.inode;
+        const data = this.#store.selectedNode()?.data;
+        const inode =
+            data?.type === 'folder' || data?.type === 'site'
+                ? (data as DotFolderTreeNodeContentData).inode
+                : undefined;
 
         return {
             folderPath: hostname ? `${hostname}${path ?? ''}` : undefined,

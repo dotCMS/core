@@ -8,6 +8,7 @@ import static com.dotmarketing.portlets.folders.business.FolderFactorySql.GET_CO
 import static com.dotmarketing.portlets.folders.business.FolderFactorySql.GET_CONTENT_TYPE_COUNT;
 
 import com.dotcms.browser.BrowserQuery;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.variant.VariantAPI;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.system.SimpleMapAppContext;
@@ -84,8 +85,20 @@ import org.apache.oro.text.regex.Perl5Matcher;
 public class FolderFactoryImpl extends FolderFactory {
 
   private static final String[] UPSERT_EXTRA_COLUMNS = {"name", "title", "show_on_menu",
-      "sort_order", "files_masks", "identifier", "default_file_type", "mod_date", "owner", "idate"};
+      "sort_order", "files_masks", "identifier", "default_file_type", "mod_date", "owner", "idate",
+      "default_base_type"};
   private final FolderCache folderCache = CacheLocator.getFolderCache();
+
+  /**
+   * Every column upserted by {@link #upsertFolder(Folder)}. Any column added here must also be
+   * copied by {@code FolderHandler}'s update branch, or push publishing will silently drop it when
+   * the folder already exists on the receiver (see issue #37459). {@code FolderHandlerTest} guards
+   * that contract against this list.
+   */
+  @VisibleForTesting
+  public static String[] getUpsertExtraColumns() {
+    return UPSERT_EXTRA_COLUMNS.clone();
+  }
 
   @Override
   protected boolean exists(String folderIdOrInode) throws DotDataException {
@@ -680,6 +693,7 @@ public class FolderFactoryImpl extends FolderFactory {
     newFolder.setSortOrder(initialFolder.getSortOrder());
     newFolder.setFilesMasks(initialFolder.getFilesMasks());
     newFolder.setDefaultFileType(initialFolder.getDefaultFileType());
+    newFolder.setDefaultBaseType(initialFolder.getDefaultBaseType());
     newFolder.setOwner(initialFolder.getOwner());
     newFolder.setIDate(initialFolder.getIDate());
     newFolder.setHostId(newParentHostId);
@@ -1418,6 +1432,8 @@ public class FolderFactoryImpl extends FolderFactory {
     } else {
       parameters.add(new Timestamp(folder.getIDate().getTime()));
     }
+
+    parameters.add(folder.getDefaultBaseType());
 
     Logger.info(this, "Upserting Folder: " + folder.getPath());
 

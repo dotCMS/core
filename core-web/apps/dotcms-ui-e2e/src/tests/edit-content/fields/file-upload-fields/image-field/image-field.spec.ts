@@ -1,16 +1,20 @@
 import { faker } from '@faker-js/faker';
 import { NewEditContentFormPage } from '@pages';
 import { expect, test } from '@playwright/test';
+import { Contentlet, createDotAsset, deleteContentlets } from '@requests/contentlets';
 import { ContentType, createFakeContentType, deleteContentType } from '@requests/contentType';
+import { getDefaultSite } from '@requests/sites';
 import {
     createFakePayloadImageField,
     createFakePayloadTextField
 } from '@utils/dot-content-types.mock';
 import { uniqueSuffix } from '@utils/utils';
 
+import { AssetPickerDialog } from '@components/asset-picker-dialog.component';
+
 import { ImageField } from './helpers/image-field';
 
-import { createTestPngFile } from '../helpers/file-test-data';
+import { createTestPngFile, createTestTextFile } from '../helpers/file-test-data';
 
 const IMAGE_FIELD_VARIABLE = 'imageField';
 const TEST_IMAGE = createTestPngFile();
@@ -117,6 +121,96 @@ test.describe('required image field', () => {
 
         await field.expectRequiredErrorVisible();
         await expect(page).not.toHaveURL(/\/content\/[a-f0-9-]+/);
+    });
+});
+
+test.describe('select an existing image through the AssetPicker', () => {
+    let seededImage: Contentlet | null = null;
+    let seededTextFile: Contentlet | null = null;
+    let imageName: string;
+    let textFileName: string;
+
+    // Two assets on purpose: the image is what the field can take, the text file is what it must
+    // refuse to offer. Both seeded through the REST API with unique names so the picker's search
+    // reaches exactly these regardless of what else lives in the environment.
+    test.beforeEach(async ({ request }) => {
+        const site = await getDefaultSite(request);
+        const suffix = uniqueSuffix();
+
+        seededImage = await createDotAsset(
+            request,
+            createTestPngFile(`e2e-picker-${suffix}.png`),
+            site.identifier
+        );
+        seededTextFile = await createDotAsset(
+            request,
+            createTestTextFile(`e2e-picker-${suffix}.txt`),
+            site.identifier
+        );
+
+        imageName = seededImage.title;
+        textFileName = seededTextFile.title;
+    });
+
+    test.afterEach(async ({ request }) => {
+        const identifiers = [seededImage, seededTextFile]
+            .filter((asset): asset is Contentlet => !!asset)
+            .map((asset) => asset.identifier);
+
+        if (identifiers.length) {
+            await deleteContentlets(request, identifiers);
+        }
+
+        seededImage = null;
+        seededTextFile = null;
+    });
+
+    test('open the picker, select an image, and populate the field @critical', async ({ page }) => {
+        const formPage = new NewEditContentFormPage(page);
+        await formPage.goToNew(contentTypeVariable);
+
+        const field = new ImageField(page, IMAGE_FIELD_VARIABLE);
+        await field.expectVisible();
+
+        const picker = new AssetPickerDialog(page);
+        await field.openSelectExistingDialog();
+        await picker.waitForVisible();
+        await picker.expectConfirmDisabled();
+
+        await picker.searchFor(imageName);
+        await picker.expectRowVisible(imageName);
+
+        await picker.selectRowByTitle(imageName);
+        await picker.expectRowSelected(imageName);
+
+        await picker.confirm();
+
+        await picker.expectClosed();
+        await field.expectPreviewVisible();
+        await field.expectThumbnailVisible();
+        await field.expectPreviewShowsFileName(imageName);
+    });
+
+    test('picker for an image field offers images but not other files', async ({ page }) => {
+        // The mimetype restriction is applied silently and cannot be cleared from the UI — an Image
+        // field that could return a .txt is broken.
+        const formPage = new NewEditContentFormPage(page);
+        await formPage.goToNew(contentTypeVariable);
+
+        const field = new ImageField(page, IMAGE_FIELD_VARIABLE);
+        await field.expectVisible();
+
+        const picker = new AssetPickerDialog(page);
+        await field.openSelectExistingDialog();
+        await picker.waitForVisible();
+
+        // Both assets share the suffix, so one search surfaces whichever the picker is willing
+        // to offer.
+        const sharedTerm = imageName.replace(/\.png$/, '');
+        await picker.searchFor(sharedTerm);
+
+        await picker.expectRowVisible(imageName);
+        await expect(picker.row(textFileName)).toHaveCount(0);
     });
 });
 

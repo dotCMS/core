@@ -1,4 +1,5 @@
 import fakeIndexedDB from 'fake-indexeddb';
+import { MockedFunction, vi } from 'vitest';
 
 import { IndexDBDatabaseHandler } from './index-db-database-handler';
 
@@ -50,8 +51,8 @@ describe('IndexedDB tests', () => {
 describe('SessionStorage EXPERIMENT_ALREADY_CHECKED_KEY handle', () => {
     Object.defineProperty(window, 'sessionStorage', {
         value: {
-            setItem: jest.fn(),
-            getItem: jest.fn()
+            setItem: vi.fn(),
+            getItem: vi.fn()
         },
         writable: true
     });
@@ -78,7 +79,7 @@ describe('SessionStorage EXPERIMENT_ALREADY_CHECKED_KEY handle', () => {
     });
 
     describe('checkFlagExperimentAlreadyChecked', () => {
-        const getItemMock = window.sessionStorage.getItem as jest.MockedFunction<
+        const getItemMock = window.sessionStorage.getItem as MockedFunction<
             typeof window.sessionStorage.getItem
         >;
 

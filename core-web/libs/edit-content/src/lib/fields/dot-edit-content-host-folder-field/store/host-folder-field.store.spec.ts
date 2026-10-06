@@ -1,7 +1,8 @@
 import { patchState } from '@ngrx/signals';
 import { unprotected } from '@ngrx/signals/testing';
-import { SpyObject, mockProvider } from '@openng/spectator/jest';
-import { Subject, of, throwError } from 'rxjs';
+import { SpyObject, mockProvider } from '@openng/spectator/vitest';
+import { EMPTY, of, Subject, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
@@ -60,8 +61,7 @@ function createSiteList(count: number, prefix = 'site'): TreeNodeItem[] {
             path: '',
             type: 'site'
         },
-        expandedIcon: 'pi pi-folder-open',
-        collapsedIcon: 'pi pi-folder'
+        icon: 'pi pi-globe'
     }));
 }
 
@@ -94,16 +94,16 @@ describe('HostFolderFiledStore', () => {
             providers: [
                 HostFolderFiledStore,
                 mockProvider(DotHttpErrorManagerService, {
-                    handle: jest.fn()
+                    handle: vi.fn()
                 }),
                 mockProvider(DotBrowsingService, {
-                    getSitesPage: jest.fn(() =>
-                        of(createSitesPageResponse(TREE_SELECT_SITES_MOCK))
-                    ),
-                    resolveSiteByHostname: jest.fn(),
-                    getCurrentSiteAsTreeNodeItem: jest.fn(),
-                    buildTreeByPaths: jest.fn(),
-                    searchFolders: jest.fn(() => of({ folders: [], pagination: mockPagination }))
+                    getSitesPage: vi.fn(() => of(createSitesPageResponse(TREE_SELECT_SITES_MOCK))),
+                    resolveSiteByHostname: vi.fn(),
+                    // The store pipes this when the field is required; a bare vi.fn()
+                    // returns undefined and it dereferences nothing.
+                    getCurrentSiteAsTreeNodeItem: vi.fn(() => EMPTY),
+                    buildTreeByPaths: vi.fn(),
+                    searchFolders: vi.fn(() => of({ folders: [], pagination: mockPagination }))
                 })
             ]
         });
@@ -433,8 +433,6 @@ describe('HostFolderFiledStore', () => {
                         path: '/folder1/',
                         type: 'folder'
                     },
-                    expandedIcon: 'pi pi-folder-open',
-                    collapsedIcon: 'pi pi-folder',
                     leaf: false
                 }
             ];
@@ -476,8 +474,6 @@ describe('HostFolderFiledStore', () => {
                     path: '/folder1/',
                     type: 'folder'
                 },
-                expandedIcon: 'pi pi-folder-open',
-                collapsedIcon: 'pi pi-folder',
                 leaf: false
             };
             const mockFolders: TreeNodeItem[] = [folder];
@@ -570,8 +566,6 @@ describe('HostFolderFiledStore', () => {
                     path: '/folder1/',
                     type: 'folder'
                 },
-                expandedIcon: 'pi pi-folder-open',
-                collapsedIcon: 'pi pi-folder',
                 leaf: false
             };
             const childFolders: TreeNodeItem[] = [
@@ -583,9 +577,7 @@ describe('HostFolderFiledStore', () => {
                         hostname: 'demo.dotcms.com',
                         path: '/folder1/child1/',
                         type: 'folder'
-                    },
-                    expandedIcon: 'pi pi-folder-open',
-                    collapsedIcon: 'pi pi-folder'
+                    }
                 }
             ];
             service.searchFolders.mockReturnValue(
@@ -622,8 +614,6 @@ describe('HostFolderFiledStore', () => {
                     path: '/folder1/',
                     type: 'folder'
                 },
-                expandedIcon: 'pi pi-folder-open',
-                collapsedIcon: 'pi pi-folder',
                 leaf: false
             };
             const pending$ = new Subject<{
@@ -1475,8 +1465,6 @@ describe('HostFolderFiledStore', () => {
                         path: '/folder1/',
                         type: 'folder'
                     },
-                    expandedIcon: 'pi pi-folder-open',
-                    collapsedIcon: 'pi pi-folder',
                     leaf: false
                 }
             ];
@@ -1549,8 +1537,7 @@ describe('HostFolderFiledStore', () => {
             key: label,
             label,
             data: { id: label, hostname: label, path: '', type: 'site' },
-            expandedIcon: 'pi pi-folder-open',
-            collapsedIcon: 'pi pi-folder'
+            icon: 'pi pi-globe'
         });
 
         it('should be false when total site count equals SITE_SEARCH_THRESHOLD', fakeAsync(() => {
@@ -1708,8 +1695,6 @@ describe('HostFolderFiledStore', () => {
                     path: '/folder1/',
                     type: 'folder'
                 },
-                expandedIcon: 'pi pi-folder-open',
-                collapsedIcon: 'pi pi-folder',
                 leaf: false
             }
         ];
@@ -1761,6 +1746,97 @@ describe('HostFolderFiledStore', () => {
 
             expect(store.showFolderSearch()).toBe(true);
         });
+
+        it('should stay true while folder search is loading with an active search term', fakeAsync(() => {
+            const search$ = new Subject<{
+                folders: TreeNodeItem[];
+                pagination: DotPagination;
+            }>();
+            service.searchFolders.mockReturnValue(search$.asObservable());
+
+            store.selectSite(site);
+            store.openOverlay();
+            store.search('ab');
+            tick(300);
+
+            expect(store.searchLoading()).toBe(true);
+            expect(store.showFoldersPanelLoading()).toBe(true);
+            expect(store.showFolderSearch()).toBe(true);
+
+            search$.next({ folders: [], pagination: mockPagination });
+            search$.complete();
+            tick();
+        }));
+    });
+
+    describe('sitesSearchLoading', () => {
+        beforeEach(() => {
+            mockSitesPage(service, TREE_SELECT_SITES_MOCK);
+            store.loadSites({ path: null, isRequired: false });
+            store.openOverlay();
+        });
+
+        it('should be false during the initial sites catalog load', () => {
+            patchState(unprotected(store), {
+                siteSearchTerm: '',
+                sitesPagination: {
+                    page: 1,
+                    hasMore: false,
+                    loading: true,
+                    totalEntries: 0
+                }
+            });
+
+            expect(store.sitesSearchLoading()).toBe(false);
+        });
+
+        it('should be true while a sites search request is in flight', fakeAsync(() => {
+            const sites$ = new Subject<{
+                sites: TreeNodeItem[];
+                pagination: DotPagination;
+            }>();
+            service.getSitesPage.mockReturnValue(sites$.asObservable());
+
+            store.filterSites('demo');
+            tick(300);
+
+            expect(store.sitesSearchLoading()).toBe(true);
+
+            sites$.next(createSitesPageResponse([TREE_SELECT_SITES_MOCK[0]]));
+            sites$.complete();
+            tick();
+
+            expect(store.sitesSearchLoading()).toBe(false);
+        }));
+
+        it('should stay false while loading more sites with an active search term', fakeAsync(() => {
+            const pageOne = createSiteList(SITE_PAGE_LIMIT);
+            const pageTwo$ = new Subject<{
+                sites: TreeNodeItem[];
+                pagination: DotPagination;
+            }>();
+
+            mockSitesPage(service, pageOne);
+            store.filterSites('demo');
+            tick(300);
+
+            expect(store.sitesSearchLoading()).toBe(false);
+            expect(store.siteSearchTerm()).toBe('demo');
+
+            service.getSitesPage.mockReturnValue(pageTwo$.asObservable());
+            store.loadMoreSites();
+            tick();
+
+            expect(store.sitesPagination().loading).toBe(true);
+            expect(store.sites().length).toBeGreaterThan(0);
+            expect(store.sitesSearchLoading()).toBe(false);
+
+            pageTwo$.next(createSitesPageResponse(createSiteList(1, 'page-two'), 80, 2));
+            pageTwo$.complete();
+            tick();
+
+            expect(store.sitesSearchLoading()).toBe(false);
+        }));
     });
 
     describe('filterSites', () => {
@@ -1777,7 +1853,7 @@ describe('HostFolderFiledStore', () => {
             tick(100);
 
             expect(store.sites()).toEqual(initialSites);
-            expect(store.siteSearchTerm()).toBe('');
+            expect(store.siteSearchTerm()).toBe('demo');
         }));
 
         it('should debounce and query the sites API with the search term', fakeAsync(() => {
@@ -1785,7 +1861,7 @@ describe('HostFolderFiledStore', () => {
             service.getSitesPage.mockClear();
 
             store.filterSites('demo');
-            expect(store.siteSearchTerm()).toBe('');
+            expect(store.siteSearchTerm()).toBe('demo');
 
             tick(300);
 

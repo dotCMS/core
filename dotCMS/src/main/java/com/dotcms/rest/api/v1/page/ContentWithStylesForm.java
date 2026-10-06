@@ -47,6 +47,16 @@ public class ContentWithStylesForm extends Validated {
     )
     private final String uuid;
 
+    @JsonProperty("personaTag")
+    @Schema(
+            description = "Raw Persona key tag (e.g. the value of viewAs.persona.keyTag) to personalize "
+                    + "this style update for. Do not include the 'dot:persona:' prefix -- the backend adds "
+                    + "it automatically. Omit for the default persona.",
+            example = "returning_visitor",
+            requiredMode = RequiredMode.NOT_REQUIRED
+    )
+    private final String personaTag;
+
     @JsonIgnore
     @Schema(hidden = true)
     private final Map<String, Map<String, Object>> contentletStyles;
@@ -58,10 +68,12 @@ public class ContentWithStylesForm extends Validated {
     @JsonCreator
     public ContentWithStylesForm(
             @JsonProperty("identifier") final String containerId,
-            @JsonProperty("uuid") final String uuid) {
+            @JsonProperty("uuid") final String uuid,
+            @JsonProperty("personaTag") final String personaTag) {
 
         this.containerId = containerId;
         this.uuid = uuid;
+        this.personaTag = personaTag;
         this.contentletStyles = new HashMap<>();
     }
 
@@ -76,6 +88,7 @@ public class ContentWithStylesForm extends Validated {
     public void addContentletStyle(final String contentletId, final Object styleProperties) {
         // Only process if it's not one of the known fields and is a Map
         if (!"containerId".equals(contentletId) && !"uuid".equals(contentletId)
+                && !"personaTag".equals(contentletId)
                 && styleProperties instanceof Map) {
 
             final Map<String, Object> styles = new HashMap<>((Map<String, Object>) styleProperties);
@@ -89,6 +102,10 @@ public class ContentWithStylesForm extends Validated {
 
     public String getUuid() {
         return uuid;
+    }
+
+    public String getPersonaTag() {
+        return personaTag;
     }
 
     /**

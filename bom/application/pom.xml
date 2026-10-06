@@ -21,15 +21,18 @@
         <swagger.version>2.2.34</swagger.version>
         <bytebuddy.version>1.18.1</bytebuddy.version>
         <batik.version>1.17</batik.version>
-        <bouncy-castle.version>1.84</bouncy-castle.version>
+        <bouncy-castle.version>1.85</bouncy-castle.version>
         <awaitility.version>4.0.0</awaitility.version>
         <shedlock.version>4.33.0</shedlock.version>
         <jackson.version>2.17.2</jackson.version>
         <jersey.version>2.47</jersey.version>
         <graalvm.polyglot.version>25.0.1</graalvm.polyglot.version>
-        <micrometer.version>1.13.10</micrometer.version>
+        <micrometer.version>1.15.12</micrometer.version>
+        <opentelemetry-javaagent.version>2.31.1</opentelemetry-javaagent.version>
+        <pyroscope-agent.version>2.9.2</pyroscope-agent.version>
         <opensearch.version>3.3.0</opensearch.version>
         <langchain4j.version>1.15.1</langchain4j.version>
+        <netty.version>4.1.138.Final</netty.version>
         <commonmark.version>0.22.0</commonmark.version>
         <jsoup.version>1.21.1</jsoup.version>
     </properties>
@@ -100,37 +103,17 @@
                 <version>3.4.41</version>
             </dependency>
 
-            <!-- Netty: pin to 4.1.118.Final to resolve conflict between pgjdbc-ng (4.1.63)
-                 and langchain4j-azure-open-ai (4.1.118). Required for DefaultHeaders$ValueValidator. -->
+            <!-- Netty: import the 4.1.x BOM so every Netty module resolves to a single version.
+                 Left to transitive resolution the trees disagree - azure-core-http-netty brings
+                 4.1.118, reactor-netty brings 4.1.112, netty-codec-http2 brings 4.1.132 and the
+                 awssdk netty-nio-client brings 4.1.130 - which fails at runtime with
+                 NoSuchMethodError, most visibly in DefaultHeaders$ValueValidator. -->
             <dependency>
                 <groupId>io.netty</groupId>
-                <artifactId>netty-common</artifactId>
-                <version>4.1.118.Final</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-buffer</artifactId>
-                <version>4.1.118.Final</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-transport</artifactId>
-                <version>4.1.118.Final</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-resolver</artifactId>
-                <version>4.1.118.Final</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-codec</artifactId>
-                <version>4.1.118.Final</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-handler</artifactId>
-                <version>4.1.118.Final</version>
+                <artifactId>netty-bom</artifactId>
+                <version>${netty.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
 
 
@@ -204,11 +187,6 @@
                 <groupId>com.dotcms.lib</groupId>
                 <artifactId>dot.commons-httpclient</artifactId>
                 <version>3.1_3</version>
-            </dependency>
-            <dependency>
-                <groupId>com.dotcms.lib</groupId>
-                <artifactId>dot.commons-io</artifactId>
-                <version>2.0.1_2</version>
             </dependency>
             <dependency>
                 <groupId>com.dotcms.lib</groupId>
@@ -829,7 +807,7 @@
             <dependency>
                 <groupId>org.postgresql</groupId>
                 <artifactId>postgresql</artifactId>
-                <version>42.7.2</version>
+                <version>42.7.13</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.checkerframework</groupId>
@@ -852,12 +830,6 @@
             </dependency>
 
 
-            <dependency>
-                <groupId>com.impossibl.pgjdbc-ng</groupId>
-                <artifactId>pgjdbc-ng</artifactId>
-                <version>0.8.9</version>
-            </dependency>
-
             <!--
              *****************************
                Cluster Support
@@ -866,7 +838,7 @@
            <dependency>
                 <groupId>dnsjava</groupId>
                 <artifactId>dnsjava</artifactId>
-                <version>3.5.3</version>
+                <version>3.6.5</version>
             </dependency>
 
             <dependency>
@@ -951,13 +923,13 @@
             <dependency>
                 <groupId>org.apache.httpcomponents.core5</groupId>
                 <artifactId>httpcore5</artifactId>
-                <version>5.3.4</version>
+                <version>5.4.3</version>
             </dependency>
 
             <dependency>
                 <groupId>org.apache.httpcomponents.core5</groupId>
                 <artifactId>httpcore5-h2</artifactId>
-                <version>5.3.4</version>
+                <version>5.4.3</version>
             </dependency>
 
             <dependency>
@@ -1034,7 +1006,7 @@
             <dependency>
                 <groupId>com.thoughtworks.xstream</groupId>
                 <artifactId>xstream</artifactId>
-                <version>1.4.20</version>
+                <version>1.4.21</version>
                 <exclusions>
                     <exclusion>
                         <groupId>xpp3</groupId>
@@ -1246,6 +1218,14 @@
                 <groupId>io.jsonwebtoken</groupId>
                 <artifactId>jjwt</artifactId>
                 <version>0.9.1</version>
+            </dependency>
+
+            <!-- Nimbus JOSE+JWT: id_token JWKS signature verification for the OIDC flow. -->
+            <!-- jjwt 0.9.x only handles HMAC; nimbus adds RS256/ES256 + RemoteJWKSet. -->
+            <dependency>
+                <groupId>com.nimbusds</groupId>
+                <artifactId>nimbus-jose-jwt</artifactId>
+                <version>9.37.4</version>
             </dependency>
 
             <dependency>
@@ -1654,6 +1634,19 @@
                 <version>${glowroot.version}</version>
                 <classifier>dist</classifier>
                 <type>zip</type>
+            </dependency>
+
+            <!-- JVM agents copied into the Tomcat dist and attached by setenv.sh when
+                 OTEL_JAVAAGENT_ENABLED / PYROSCOPE_AGENT_ENABLED is "true" -->
+            <dependency>
+                <groupId>io.opentelemetry.javaagent</groupId>
+                <artifactId>opentelemetry-javaagent</artifactId>
+                <version>${opentelemetry-javaagent.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.pyroscope</groupId>
+                <artifactId>agent</artifactId>
+                <version>${pyroscope-agent.version}</version>
             </dependency>
 
             <!--

@@ -12,10 +12,9 @@ import { ConfirmationService, MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ContextMenu, ContextMenuModule } from 'primeng/contextmenu';
-import { MenuModule } from 'primeng/menu';
+import { Menu, MenuModule } from 'primeng/menu';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TableLazyLoadEvent, TableModule } from 'primeng/table';
-import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 
 /* eslint-disable @nx/enforce-module-boundaries */
@@ -72,7 +71,6 @@ const ACTIVE_STATUSES = new Set<PublishAuditStatus>([
         MenuModule,
         SkeletonModule,
         TableModule,
-        TagModule,
         TooltipModule,
         DotEmptyContainerComponent,
         DotMessagePipe,
@@ -120,7 +118,8 @@ export class DotPublishingQueueTableComponent {
     }));
 
     readonly bundlesEmpty: PrincipalConfiguration = {
-        icon: 'pi-inbox',
+        icon: 'inbox',
+        iconStyle: 'material-symbols-rounded',
         title: this.#dotMessageService.get('publishing-queue.empty.bundles.title'),
         subtitle: this.#dotMessageService.get('publishing-queue.empty.bundles.subtitle')
     };
@@ -201,8 +200,50 @@ export class DotPublishingQueueTableComponent {
         return row ? this.kebabFor(row) : [];
     });
 
+    /** The row kebab currently open, if any. Each row owns its own popup `<p-menu>`
+     * and the kebab cell stops click propagation (so it doesn't open the row), which
+     * also keeps PrimeNG's outside-click listener from closing the previous popup —
+     * so the component closes it itself to keep a single row menu on screen. */
+    #openKebab: Menu | null = null;
+
+    /**
+     * Opens or closes a row's kebab menu, first closing any other row menu or the
+     * right-click context menu so only one menu is ever visible.
+     *
+     * @param menu  the row's popup menu
+     * @param event the click that triggered it, used to anchor the popup
+     */
+    onKebabToggle(menu: Menu, event: Event): void {
+        if (this.#openKebab && this.#openKebab !== menu) {
+            this.#openKebab.hide();
+        }
+
+        this.contextMenu()?.hide();
+        menu.toggle(event);
+        this.#openKebab = menu.visible ? menu : null;
+    }
+
+    /**
+     * Forgets a row's kebab once PrimeNG closes it (outside click, item command, Escape).
+     *
+     * @param menu the row's popup menu that just closed
+     */
+    onKebabHide(menu: Menu): void {
+        if (this.#openKebab === menu) {
+            this.#openKebab = null;
+        }
+    }
+
+    /**
+     * Shows the shared right-click menu for `row`, closing any open row kebab first.
+     *
+     * @param event the `contextmenu` event, prevented so the browser menu doesn't show
+     * @param row   the row that was right-clicked
+     */
     onRowContextMenu(event: MouseEvent, row: PublishingJobView): void {
         event.preventDefault();
+        this.#openKebab?.hide();
+        this.#openKebab = null;
         this.contextMenuRow.set(row);
         this.contextMenu()?.show(event);
     }
@@ -246,6 +287,18 @@ export class DotPublishingQueueTableComponent {
         if (!ok) {
             this.#globalMessage.error();
         }
+    }
+
+    /** "1 item" / "20 items" for the Items column link. Reuses the asset-list
+     * dialog's count keys so the link and the dialog it opens word the same
+     * number identically. */
+    itemsLabel(count: number): string {
+        return this.#dotMessageService.get(
+            count === 1
+                ? 'publishing-queue.asset-list.items-count.singular'
+                : 'publishing-queue.asset-list.items-count.plural',
+            String(count)
+        );
     }
 
     truncateBundleId(bundleId: string): string {

@@ -151,7 +151,7 @@ export function createRuntime(config: DotCMSRuntimeConfig): DotCMSRuntime {
             currentUser: context.currentUser
         };
         if (config.includeSpec) {
-            // Dynamic import so the ~550KB generated spec is only pulled in by consumers that
+            // Dynamic import so the ~400KB generated spec is only pulled in by consumers that
             // actually opt into it — a bare `@dotcms/ai/runtime` import never drags in the spec.
             const { getSpec } = await import('./spec/spec');
             variables.spec = getSpec();
@@ -219,6 +219,10 @@ export type { DotCMSErrorCode, SerializedDotCMSError } from './sandbox/errors';
 
 // Result shape returned by `run()`, and the binary-response helpers callers need to decode it.
 export type { SandboxResult, SandboxResultError } from './sandbox/types';
+
+// The context-cap helper that turns a `run()` result into the capped string a tool returns.
+export { formatSandboxResult } from './sandbox/format-result';
+export type { FormatSandboxResultOptions } from './sandbox/format-result';
 export { isBinaryResponseEnvelope } from './adapter/request-core';
 export type {
     BinaryResponseEnvelope,

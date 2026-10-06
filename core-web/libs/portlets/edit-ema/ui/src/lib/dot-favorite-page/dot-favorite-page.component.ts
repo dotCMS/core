@@ -7,7 +7,8 @@ import {
     OnDestroy,
     CUSTOM_ELEMENTS_SCHEMA,
     inject,
-    signal
+    signal,
+    ChangeDetectionStrategy
 } from '@angular/core';
 import { FormGroup, Validators, UntypedFormBuilder, ReactiveFormsModule } from '@angular/forms';
 
@@ -66,6 +67,7 @@ export interface DotFavoritePageFormData {
         AsyncPipe
     ],
     schemas: [CUSTOM_ELEMENTS_SCHEMA],
+    changeDetection: ChangeDetectionStrategy.Eager,
     providers: [
         DotFavoritePageStore,
         DotPageRenderService,

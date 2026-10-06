@@ -27,6 +27,12 @@ type DotCategoriesListStatus = 'init' | 'loading' | 'loaded' | 'error';
  */
 export const ALL_CATEGORIES_BUNDLE_IDENTIFIER = 'CAT';
 
+/**
+ * Failure toasts carry the per-category reasons returned by the backend, which take
+ * longer to read than the default toast life allows.
+ */
+const DELETE_FAILURE_TOAST_LIFE = 8000;
+
 interface DotCategoriesListState {
     categories: DotCategory[];
     selectedCategories: DotCategory[];
@@ -100,7 +106,41 @@ export const DotCategoriesListStore = signalStore(
                 });
         }
 
-        function handleCategoryAction<T>(source$: Observable<T>, onSuccess: () => void) {
+        /**
+         * A delete cascades over the whole subtree, so the number of categories actually
+         * removed is normally larger than the number the user selected. Both numbers are
+         * reported: the selection is what they acted on, the descendants are the blast radius.
+         */
+        function deleteSuccessMessage(successCount: number, descendantCount: number): string {
+            return descendantCount > 0
+                ? dotMessageService.get(
+                      'categories.delete.success.with-descendants',
+                      `${successCount}`,
+                      `${descendantCount}`
+                  )
+                : dotMessageService.get('categories.delete.success', `${successCount}`);
+        }
+
+        function deletePartialMessage(
+            successCount: number,
+            descendantCount: number,
+            failCount: number
+        ): string {
+            return descendantCount > 0
+                ? dotMessageService.get(
+                      'categories.delete.partial-success.with-descendants',
+                      `${successCount}`,
+                      `${descendantCount}`,
+                      `${failCount}`
+                  )
+                : dotMessageService.get(
+                      'categories.delete.partial-success',
+                      `${successCount}`,
+                      `${failCount}`
+                  );
+        }
+
+        function handleCategoryAction<T>(source$: Observable<T>, onSuccess: (response: T) => void) {
             patchState(store, { status: 'loading' });
             source$
                 .pipe(
@@ -112,7 +152,7 @@ export const DotCategoriesListStore = signalStore(
                         return EMPTY;
                     })
                 )
-                .subscribe(() => onSuccess());
+                .subscribe((response) => onSuccess(response));
         }
 
         return {
@@ -199,11 +239,44 @@ export const DotCategoriesListStore = signalStore(
 
             deleteCategories() {
                 const inodes = store.selectedCategories().map((c) => c.inode);
-                handleCategoryAction(categoriesService.deleteCategories(inodes), () => {
-                    messageService.add({
-                        severity: 'success',
-                        summary: dotMessageService.get('categories.delete.success')
-                    });
+                handleCategoryAction(categoriesService.deleteCategories(inodes), (response) => {
+                    // The endpoint answers 200 even when some categories were refused, so a
+                    // partial or total failure is only visible in the payload — never assume success.
+                    const result = response?.entity;
+                    const fails = result?.fails ?? [];
+                    const successCount = result?.successCount ?? 0;
+                    // deletedCount counts every category the cascade removed, descendants
+                    // included. Fall back to successCount so an older backend that does not
+                    // send it degrades to the plain "N deleted" message instead of NaN.
+                    const deletedCount = result?.deletedCount ?? successCount;
+                    const descendantCount = Math.max(0, deletedCount - successCount);
+
+                    if (fails.length === 0) {
+                        messageService.add({
+                            severity: 'success',
+                            summary: deleteSuccessMessage(successCount, descendantCount)
+                        });
+                    } else {
+                        // Reasons repeat across inodes (e.g. the same permission problem),
+                        // so collapse them into a single readable line.
+                        const reasons = [...new Set(fails.map((fail) => fail.errorMessage))].join(
+                            ' '
+                        );
+                        messageService.add({
+                            severity: successCount > 0 ? 'warn' : 'error',
+                            summary:
+                                successCount > 0
+                                    ? deletePartialMessage(
+                                          successCount,
+                                          descendantCount,
+                                          fails.length
+                                      )
+                                    : dotMessageService.get('categories.delete.failed'),
+                            detail: reasons,
+                            life: DELETE_FAILURE_TOAST_LIFE
+                        });
+                    }
+
                     patchState(store, { selectedCategories: [] });
                     loadCategories();
                 });

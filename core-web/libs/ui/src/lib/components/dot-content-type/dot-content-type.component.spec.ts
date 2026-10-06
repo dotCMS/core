@@ -6,8 +6,9 @@ import {
     Spectator,
     SpectatorHost,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -140,12 +141,12 @@ describe('DotContentTypeComponent', () => {
     describe('Lazy Loading', () => {
         beforeEach(() => {
             spectator.detectChanges();
-            jest.clearAllMocks();
+            vi.clearAllMocks();
         });
 
         it('should handle lazy load events from PrimeNG Select', () => {
             spectator.detectChanges();
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             spectator.triggerEventHandler(Select, 'onLazyLoad', { first: 40, last: 79 });
             spectator.detectChanges();
@@ -185,7 +186,7 @@ describe('DotContentTypeComponent', () => {
             );
 
             spectator.detectChanges();
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             spectator.triggerEventHandler(Select, 'onLazyLoad', { first: 40, last: 79 });
             spectator.detectChanges();
@@ -202,7 +203,7 @@ describe('DotContentTypeComponent', () => {
         it('should not load duplicate pages', () => {
             spectator.triggerEventHandler(Select, 'onLazyLoad', { first: 40, last: 79 });
             spectator.detectChanges();
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             // Try to load page 2 again
             spectator.triggerEventHandler(Select, 'onLazyLoad', { first: 40, last: 79 });
@@ -230,7 +231,7 @@ describe('DotContentTypeComponent', () => {
             );
 
             spectator.detectChanges();
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             // Manually set loading state to true
             patchState(spectator.component.$state, { loading: true });
@@ -278,7 +279,7 @@ describe('DotContentTypeComponent', () => {
             // Manually set totalRecords to 50 for this test
             patchState(spectator.component.$state, { totalRecords: 50 });
 
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             // Now try to load page 3, which would be beyond total of 50
             // The component should check and not load page 3
@@ -310,7 +311,7 @@ describe('DotContentTypeComponent', () => {
 
             spectator.detectChanges();
             tick();
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             // Trigger lazy load for page 1 (which will complete loading all pages)
             spectator.triggerEventHandler(Select, 'onLazyLoad', { first: 0, last: 39 });
@@ -347,7 +348,7 @@ describe('DotContentTypeComponent', () => {
             spectator.detectChanges();
             tick();
             spectator.detectChanges();
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             // Set a value that will NOT be in the loaded content types
             // The constructor effect will fetch it and add it to the list
@@ -367,7 +368,7 @@ describe('DotContentTypeComponent', () => {
                 pinnedOption: null
             });
 
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             // Trigger lazy load for page 1 (which will complete loading all pages)
             spectator.triggerEventHandler(Select, 'onLazyLoad', { first: 0, last: 39 });
@@ -384,7 +385,7 @@ describe('DotContentTypeComponent', () => {
     describe('Filtering Functionality', () => {
         beforeEach(() => {
             spectator.detectChanges();
-            jest.clearAllMocks();
+            vi.clearAllMocks();
         });
 
         it('should debounce filter changes', fakeAsync(() => {
@@ -431,7 +432,7 @@ describe('DotContentTypeComponent', () => {
             // Load page 2 first to mark it as loaded
             spectator.triggerEventHandler(Select, 'onLazyLoad', { first: 40, last: 79 });
             spectator.detectChanges();
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             // Apply filter - should reset loaded pages and clear content types
             // Calling the method directly because in the test above we tests the trigger from the HTML and is too complex so not worth it to test it again.
@@ -449,7 +450,7 @@ describe('DotContentTypeComponent', () => {
             // Verify that content types were cleared before filter load
             // The filter already loaded page 1, so now page 1 is in loadedPages
             // But if we try to load page 2 with filter, it should work since pages were reset
-            jest.clearAllMocks();
+            vi.clearAllMocks();
             contentTypeService.getContentTypesWithPagination.mockReturnValue(
                 of({
                     contentTypes: [
@@ -472,7 +473,7 @@ describe('DotContentTypeComponent', () => {
             // Apply a filter first
             spectator.component.onFilterChange('blog');
             tick(300);
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             // Clear filter
             spectator.component.onFilterChange('');
@@ -580,7 +581,7 @@ describe('DotContentTypeComponent', () => {
         });
 
         it('should trigger ControlValueAccessor onChange when model signal changes', () => {
-            const onChangeSpy = jest.fn();
+            const onChangeSpy = vi.fn();
             spectator.component.registerOnChange(onChangeSpy);
 
             const testValue = 'Blog';
@@ -598,7 +599,7 @@ describe('DotContentTypeComponent', () => {
 
         it('should emit onChange output when value changes', () => {
             spectator.detectChanges();
-            const onChangeSpy = jest.spyOn(spectator.component.onChange, 'emit');
+            const onChangeSpy = vi.spyOn(spectator.component.onChange, 'emit');
 
             const selectedContentType = mockContentTypes[0];
             // Call onContentTypeChange directly (bound from template: (onChange)="onContentTypeChange($event.value)")
@@ -610,7 +611,7 @@ describe('DotContentTypeComponent', () => {
         });
 
         it('should emit null when value is cleared', () => {
-            const onChangeSpy = jest.spyOn(spectator.component.onChange, 'emit');
+            const onChangeSpy = vi.spyOn(spectator.component.onChange, 'emit');
 
             spectator.triggerEventHandler(Select, 'onChange', { value: null });
 
@@ -619,7 +620,7 @@ describe('DotContentTypeComponent', () => {
         });
 
         it('should emit onShow output when select overlay is shown', () => {
-            const onShowSpy = jest.spyOn(spectator.component.onShow, 'emit');
+            const onShowSpy = vi.spyOn(spectator.component.onShow, 'emit');
 
             spectator.triggerEventHandler(Select, 'onShow', {} as unknown as AnimationEvent);
 
@@ -627,7 +628,7 @@ describe('DotContentTypeComponent', () => {
         });
 
         it('should emit onHide output when select overlay is hidden', () => {
-            const onHideSpy = jest.spyOn(spectator.component.onHide, 'emit');
+            const onHideSpy = vi.spyOn(spectator.component.onHide, 'emit');
 
             spectator.triggerEventHandler(Select, 'onHide', {} as unknown as AnimationEvent);
 

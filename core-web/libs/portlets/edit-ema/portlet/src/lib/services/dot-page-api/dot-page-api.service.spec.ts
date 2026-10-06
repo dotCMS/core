@@ -239,5 +239,36 @@ describe('DotPageApiService', () => {
                 }
             ]);
         });
+
+        it('should include personaTag in the payload when styling non-default-persona content', () => {
+            const payload = {
+                pageId: 'test-page-123',
+                containerIdentifier: 'container-id-456',
+                containerUUID: 'container-uuid-789',
+                contentletIdentifier: 'contentlet-id-abc',
+                styleProperties: {
+                    'font-size': '16px'
+                },
+                personaTag: 'persona.returning_visitor'
+            };
+
+            spectator.service.saveStyleProperties(payload).subscribe();
+
+            const { request } = spectator.expectOne(
+                '/api/v1/page/test-page-123/styles',
+                HttpMethod.PUT
+            );
+
+            expect(request.body).toEqual([
+                {
+                    identifier: 'container-id-456',
+                    uuid: 'container-uuid-789',
+                    personaTag: 'persona.returning_visitor',
+                    'contentlet-id-abc': {
+                        'font-size': '16px'
+                    }
+                }
+            ]);
+        });
     });
 });

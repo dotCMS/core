@@ -8,7 +8,8 @@ import {
     Injector,
     OnDestroy,
     OnInit,
-    ViewChild
+    ViewChild,
+    ChangeDetectionStrategy
 } from '@angular/core';
 
 import { ConfirmationService } from 'primeng/api';
@@ -23,6 +24,7 @@ import { DotAlertConfirmService } from '@dotcms/data-access';
 @Component({
     selector: 'dot-alert-confirm',
     templateUrl: './dot-alert-confirm.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [ConfirmDialogModule, DialogModule, ButtonModule]
 })
 export class DotAlertConfirmComponent implements OnInit, OnDestroy {

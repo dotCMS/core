@@ -181,7 +181,10 @@ public class ContentUtils {
 		 * Returns empty List if no results are found
 		 * @param query - Lucene Query used to search for content - Will append live, working, deleted, and language if not passed
 		 * @param limit 0 is the dotCMS max limit which is 10000. Becareful when searching for unlimited amount as all content will load into memory
-		 * @param sort - Velocity variable name to sort by.  this is a string and can contain multiple values "sort1 acs, sort2 desc"
+	 * @param sort - Velocity variable name to sort by. This is a string and can contain multiple values
+	 *             such as "Book.title asc, modDate desc". The search layer sorts text fields on their
+	 *             keyword mapping and appends {@code _dotraw} automatically; callers should prefer the
+	 *             unsuffixed field name. An already-suffixed name is also accepted and is not doubled.
 		 * @return  Returns empty List if no results are found
 		 */
 		public static List<Contentlet> pull(String query, String limit, String sort,User user, String tmDate){

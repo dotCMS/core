@@ -4,8 +4,9 @@ import {
     mockProvider,
     SpectatorHost,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { Component } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
@@ -48,10 +49,10 @@ describe('DotEditContentHostFolderFieldComponent', () => {
         providers: [
             HostFolderFiledStore,
             mockProvider(DotHttpErrorManagerService, {
-                handle: jest.fn()
+                handle: vi.fn()
             }),
             mockProvider(DotBrowsingService, {
-                getSitesPage: jest.fn(() =>
+                getSitesPage: vi.fn(() =>
                     of({
                         sites: TREE_SELECT_SITES_MOCK,
                         pagination: {
@@ -61,12 +62,10 @@ describe('DotEditContentHostFolderFieldComponent', () => {
                         }
                     })
                 ),
-                resolveSiteByHostname: jest.fn(() => of(null)),
-                getCurrentSiteAsTreeNodeItem: jest.fn(() => of(TREE_SELECT_SITES_MOCK[0])),
-                buildTreeByPaths: jest.fn(() =>
-                    of({ node: TREE_SELECT_SITES_MOCK[0], tree: null })
-                ),
-                searchFolders: jest.fn(() =>
+                resolveSiteByHostname: vi.fn(() => of(null)),
+                getCurrentSiteAsTreeNodeItem: vi.fn(() => of(TREE_SELECT_SITES_MOCK[0])),
+                buildTreeByPaths: vi.fn(() => of({ node: TREE_SELECT_SITES_MOCK[0], tree: null })),
+                searchFolders: vi.fn(() =>
                     of({
                         folders: [],
                         pagination: { currentPage: 1, perPage: 40, totalEntries: 0 }
@@ -248,5 +247,105 @@ describe('DotEditContentHostFolderFieldComponent', () => {
 
             expect(field.$isDisabled()).toBe(false);
         });
+    });
+});
+
+/**
+ * AC-209 — the control, not just the label, has to say the field is mandatory.
+ *
+ * The red asterisk is `::after` content and deliberately outside the label's accessible name, so
+ * a screen reader never announces it. Without `aria-required` on the control, a required field is
+ * announced exactly like an optional one.
+ *
+ * Host/Folder has no native form control: the affordance is a `<button>` that opens a tree picker.
+ * A bare button supports neither `aria-required` nor a `for` association, so it is given the
+ * combobox role it already behaves as — it carries `aria-expanded` and opens a listbox-like
+ * overlay — which is a role ARIA defines `aria-required` on.
+ */
+describe('DotEditContentHostFolderFieldComponent — required state for assistive technology', () => {
+    let spectator: SpectatorHost<DotEditContentHostFolderFieldComponent, MockFormComponent>;
+
+    const createHost = createHostFactory({
+        component: DotEditContentHostFolderFieldComponent,
+        host: MockFormComponent,
+        imports: [ReactiveFormsModule],
+        providers: [
+            HostFolderFiledStore,
+            mockProvider(DotHttpErrorManagerService, {
+                handle: vi.fn()
+            }),
+            mockProvider(DotBrowsingService, {
+                getSitesPage: vi.fn(() =>
+                    of({
+                        sites: TREE_SELECT_SITES_MOCK,
+                        pagination: {
+                            currentPage: 1,
+                            perPage: 40,
+                            totalEntries: TREE_SELECT_SITES_MOCK.length
+                        }
+                    })
+                ),
+                resolveSiteByHostname: vi.fn(() => of(null)),
+                getCurrentSiteAsTreeNodeItem: vi.fn(() => of(TREE_SELECT_SITES_MOCK[0])),
+                buildTreeByPaths: vi.fn(() => of({ node: TREE_SELECT_SITES_MOCK[0], tree: null })),
+                searchFolders: vi.fn(() =>
+                    of({
+                        folders: [],
+                        pagination: { currentPage: 1, perPage: 40, totalEntries: 0 }
+                    })
+                )
+            })
+        ],
+        detectChanges: false
+    });
+
+    const render = (required: boolean) => {
+        spectator = createHost(
+            `<form [formGroup]="formGroup">
+                <dot-edit-content-host-folder-field [field]="field" [contentlet]="contentlet" />
+            </form>`,
+            {
+                hostProps: {
+                    formGroup: new FormGroup({
+                        [HOST_FOLDER_TEXT_MOCK.variable]: new FormControl()
+                    }),
+                    field: { ...HOST_FOLDER_TEXT_MOCK, required },
+                    contentlet: createFakeContentlet({ [HOST_FOLDER_TEXT_MOCK.variable]: null })
+                }
+            }
+        );
+        spectator.detectChanges();
+
+        // Throwing rather than returning `T | null` keeps every caller's assertion honest: with
+        // an optional chain, `expect(render(false)?.getAttribute('aria-required')).toBeNull()`
+        // would pass just as happily if the trigger never rendered at all.
+        const trigger = spectator.query(byTestId('host-folder-trigger'));
+        if (!trigger) {
+            throw new Error('the default host-folder trigger did not render');
+        }
+
+        return trigger;
+    };
+
+    it('should give the trigger the id the label points at', () => {
+        const trigger = render(true);
+
+        expect(trigger.getAttribute('id')).toBe(HOST_FOLDER_TEXT_MOCK.variable);
+        expect(spectator.query('label')?.getAttribute('for')).toBe(HOST_FOLDER_TEXT_MOCK.variable);
+    });
+
+    it('should expose the trigger as a combobox, the role it already behaves as', () => {
+        const trigger = render(true);
+
+        expect(trigger.getAttribute('role')).toBe('combobox');
+        expect(trigger.getAttribute('aria-haspopup')).toBe('tree');
+    });
+
+    it('should mark the trigger required when the field is required', () => {
+        expect(render(true).getAttribute('aria-required')).toBe('true');
+    });
+
+    it('should not mark the trigger when the field is not required', () => {
+        expect(render(false).getAttribute('aria-required')).toBeNull();
     });
 });

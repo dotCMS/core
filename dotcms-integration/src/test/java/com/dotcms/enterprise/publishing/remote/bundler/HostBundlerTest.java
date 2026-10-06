@@ -1,5 +1,6 @@
 package com.dotcms.enterprise.publishing.remote.bundler;
 
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.*;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.PusheableAsset;
@@ -17,11 +18,13 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.util.FileUtil;
+import com.dotmarketing.portlets.structure.model.Relationship;
+import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -30,13 +33,13 @@ import java.io.IOException;
 import java.util.List;
 
 import static com.dotcms.util.CollectionsUtils.list;
-import static com.dotcms.util.CollectionsUtils.set;
+import static org.junit.Assert.assertFalse;
 import static org.mockito.Mockito.mock;
 
 @RunWith(DataProviderRunner.class)
 public class HostBundlerTest {
 
-
+    @BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
@@ -106,6 +109,74 @@ public class HostBundlerTest {
             for (final Host host : hosts) {
                 FileTestUtil.assertBundleFile(directoryBundleOutput.getFile(), host, testCase.expectedFilePath);
             }
+        }
+    }
+
+    /**
+     * Method to Test: {@link HostBundler#generate(BundleOutput, BundlerStatus)}
+     * Given scenario: A Site is bundled that has a related non-Host contentlet
+     *   (e.g. a Widget attached via a Relationship field), simulating push-publishing
+     *   with the "Only Selected Items" filter as described in issue #34522.
+     * Expected result: The related non-Host contentlet must NOT be written as a
+     *   {@code .host.xml} file in the bundle. Only the Site itself should appear.
+     *   This verifies the guard {@code !isHost() && !isFileAsset()} in
+     *   {@link HostBundler#writeFileToDisk}.
+     */
+    @Test
+    public void test_relatedNonHostContentlet_isNotBundledAsHostXml() throws Exception {
+        // Given: a ContentType and a legacy Relationship between Host and that type
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final ContentType hostContentType = APILocator.getContentTypeAPI(APILocator.systemUser(), false)
+                .find(Host.HOST_VELOCITY_VAR_NAME);
+        final Relationship relationship = new RelationshipDataGen()
+                .parentContentType(hostContentType)
+                .childContentType(contentType)
+                .nextPersisted();
+
+        // And: a live Site with a related contentlet of the non-Host ContentType
+        final Host site = new SiteDataGen().nextPersisted(true);
+        final Contentlet relatedContent = new ContentletDataGen(contentType).nextPersisted();
+        APILocator.getContentletAPI().relateContent(
+                site, relationship, list(relatedContent), APILocator.systemUser(), false);
+
+        // When: the Site is bundled (mimicking push-publishing Only Selected Items)
+        final BundlerStatus status = mock(BundlerStatus.class);
+        final HostBundler bundler = new HostBundler();
+        final FilterDescriptor filterDescriptor = new FilterDescriptorDataGen().nextPersisted();
+        final PushPublisherConfig config = new PushPublisherConfig();
+
+        try (ManifestBuilder manifestBuilder = new TestManifestBuilder()) {
+            config.setManifestBuilder(manifestBuilder);
+            config.add(site, PusheableAsset.SITE, StringPool.BLANK);
+            config.setOperation(PublisherConfig.Operation.PUBLISH);
+
+            new BundleDataGen()
+                    .pushPublisherConfig(config)
+                    .addAssets(list(site))
+                    .filter(filterDescriptor)
+                    .nextPersisted();
+
+            final DirectoryBundleOutput directoryBundleOutput = new DirectoryBundleOutput(config);
+            bundler.setConfig(config);
+            bundler.generate(directoryBundleOutput, status);
+
+            // Then: the related non-Host contentlet is NOT present in the bundle as a .host.xml file
+            final List<File> hostXmlFiles = FileUtil.listFilesRecursively(
+                    directoryBundleOutput.getFile(), new HostBundler().getFileFilter());
+
+            assertFalse("Bundle should contain at least the Site's .host.xml file",
+                    hostXmlFiles.isEmpty());
+
+            final String relatedContentId = relatedContent.getIdentifier();
+            final boolean relatedContentBundled = hostXmlFiles.stream()
+                    .anyMatch(f -> f.getAbsolutePath().contains(relatedContentId));
+            assertFalse(
+                    "Non-Host related contentlet '" + relatedContentId +
+                            "' must not be bundled as .host.xml (regression: issue #34522)",
+                    relatedContentBundled);
+
+            // And the Site itself is still correctly bundled
+            FileTestUtil.assertBundleFile(directoryBundleOutput.getFile(), site, "/bundlers-test/hos");
         }
     }
 

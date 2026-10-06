@@ -1504,11 +1504,13 @@ public class TagAPITest extends IntegrationTestBase {
 		final String tagvalue1 = "mytesttag1";
 
 		final Tag tag1 = Try.of(()->APILocator.getTagAPI().saveTag(tagvalue1, testUser.getUserId(), defaultHostId)).getOrNull();
+		// One content type for all iterations: getWikiLikeContentType() creates a brand-new
+		// content type per call, and 100 of them means 100 ES mapping updates
+		final ContentType contentType = TestDataUtils.getWikiLikeContentType();
 		IntStream.range(0, 100).forEach(r -> {
 
 			try {
 				final Contentlet contentAsset = new Contentlet();
-				ContentType contentType = TestDataUtils.getWikiLikeContentType();
 				contentAsset.setContentTypeId(contentType.id());
 				contentAsset.setHost(defaultHostId);
 				contentAsset.setProperty(WIKI_SYSPUBLISHDATE_VARNAME, new Date());

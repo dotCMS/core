@@ -4,8 +4,8 @@ Condensed rules for reviewing test files. For full patterns and tutorials, see [
 
 ## Required Framework
 
-- **Spectator** (`@ngneat/spectator/jest`) is required for all tests
-- **Jest** (or Vitest) as test runner
+- **Spectator** (`@openng/spectator/vitest`) is required for all tests
+- **Vitest** as test runner
 - **`@dotcms/utils-testing`** createFake functions for domain mocks
 
 ## Critical Violations 🔴 (Must Fix)
@@ -14,7 +14,7 @@ Condensed rules for reviewing test files. For full patterns and tutorials, see [
 - **Direct input assignment**: `spectator.component.prop = value` → use `spectator.setInput('prop', value)`
 - **Missing detectChanges**: After `setInput`, `click`, or state changes, must call `spectator.detectChanges()` before assertions on DOM
 - **Wrong factory**: Using `createComponentFactory` for services, or `createServiceFactory` for components
-- **Missing mockProvider**: Dependencies not mocked → use `mockProvider(Service, { method: jest.fn() })`
+- **Missing mockProvider**: Dependencies not mocked → use `mockProvider(Service, { method: vi.fn() })`
 
 ### Broken Test Patterns
 - **No assertions**: Test body has no `expect()` calls
@@ -86,3 +86,8 @@ Condensed rules for reviewing test files. For full patterns and tutorials, see [
 | Events | `createFakeEvent`, `createFakeMouseEvent`, `createFakeKeyboardEvent` |
 
 See [TESTING_FRONTEND.md](./TESTING_FRONTEND.md) for full examples and tutorials.
+
+## See also
+- [README.md](./README.md) — Index of all frontend docs, and which one to load when
+- [TESTING_FRONTEND.md](./TESTING_FRONTEND.md) — Writing tests (this doc is for **reviewing** them)
+- [ANGULAR_STANDARDS.md](./ANGULAR_STANDARDS.md) — The single source of truth for Angular rules

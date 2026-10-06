@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -91,7 +93,7 @@ describe('DotMessageDisplayComponent', () => {
 
     it('should add a new message', () => {
         const messageService = fixture.componentRef.injector.get(MessageService);
-        jest.spyOn(messageService, 'add');
+        vi.spyOn(messageService, 'add');
 
         dotMessageDisplayServiceMock.messages$.next({
             life: 300,
@@ -110,7 +112,7 @@ describe('DotMessageDisplayComponent', () => {
 
     it('should map WARNING severity to PrimeNG "warn"', () => {
         const messageService = fixture.componentRef.injector.get(MessageService);
-        jest.spyOn(messageService, 'add');
+        vi.spyOn(messageService, 'add');
 
         dotMessageDisplayServiceMock.messages$.next({
             life: 300,
@@ -141,7 +143,7 @@ describe('DotMessageDisplayComponent', () => {
     });
 
     it('should unsubscribe', () => {
-        jest.spyOn(dotMessageDisplayServiceMock, 'unsubscribe');
+        vi.spyOn(dotMessageDisplayServiceMock, 'unsubscribe');
         component.ngOnDestroy();
         expect(dotMessageDisplayServiceMock.unsubscribe).toHaveBeenCalled();
     });

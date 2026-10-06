@@ -1,6 +1,14 @@
 import { forkJoin, Subject } from 'rxjs';
 
-import { ChangeDetectorRef, Component, inject, OnDestroy, OnInit, viewChild } from '@angular/core';
+import {
+    ChangeDetectorRef,
+    Component,
+    inject,
+    OnDestroy,
+    OnInit,
+    viewChild,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { map, take } from 'rxjs/operators';
@@ -64,6 +72,7 @@ type DotRowActions = {
         DotPortletBaseComponent,
         DotDynamicDirective
     ],
+    changeDetection: ChangeDetectionStrategy.Eager,
     providers: [
         DotContentTypeStore,
         DotContentTypesInfoService,

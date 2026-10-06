@@ -1,6 +1,6 @@
 import { filter, map, startWith, switchMap } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
@@ -63,7 +63,7 @@ interface ErrorState {
 
 @Component({
   selector: 'app-page',
-  imports: [CommonModule, DotCMSLayoutBodyComponent, LoadingComponent, ErrorComponent],
+  imports: [DotCMSLayoutBodyComponent, LoadingComponent, ErrorComponent],
   providers: [DotCMSEditablePageService],
   templateUrl: './page.html',
   styleUrl: './page.css',

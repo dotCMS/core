@@ -1,7 +1,7 @@
-import { expect, it, describe, beforeEach } from '@jest/globals';
-import { createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { MarkdownModule } from 'ngx-markdown';
 import { of, Subject } from 'rxjs';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
@@ -25,11 +25,11 @@ describe('DotAppsListComponent', () => {
 
     const mockDialogStore = {
         // Methods
-        openImport: jest.fn(),
-        openExport: jest.fn(),
-        close: jest.fn(),
-        exportConfiguration: jest.fn(),
-        importConfiguration: jest.fn(),
+        openImport: vi.fn(),
+        openExport: vi.fn(),
+        close: vi.fn(),
+        exportConfiguration: vi.fn(),
+        importConfiguration: vi.fn(),
         // Signals needed by dialog component
         visible: signal(false),
         action: signal(null),
@@ -44,7 +44,7 @@ describe('DotAppsListComponent', () => {
     };
 
     const mockDotAppsService = {
-        get: jest.fn().mockReturnValue(of(appsResponse))
+        get: vi.fn().mockReturnValue(of(appsResponse))
     };
 
     const messageServiceMock = new MockDotMessageService({
@@ -117,7 +117,7 @@ describe('DotAppsListComponent', () => {
     describe('Export Button State', () => {
         it('should enable export button when apps have configurations', () => {
             // appsResponse has one app with configurationsCount: 1
-            expect(spectator.component.isExportButtonDisabled()).toBe(true);
+            expect(spectator.component.hasExportableApps()).toBe(true);
         });
 
         it('should disable export button when no apps have configurations', () => {
@@ -133,7 +133,32 @@ describe('DotAppsListComponent', () => {
             spectator.component.reloadAppsData();
             spectator.detectChanges();
 
-            expect(spectator.component.isExportButtonDisabled()).toBe(false);
+            expect(spectator.component.hasExportableApps()).toBe(false);
+        });
+
+        it('should show the SAML app in the grid alongside the others', () => {
+            const appsWithSamlConfig: DotApp[] = [
+                { ...appsResponse[0], configurationsCount: 0 },
+                { ...appsResponse[1], configurationsCount: 0 },
+                {
+                    allowExtraParams: true,
+                    configurationsCount: 1,
+                    key: 'dotsaml-config',
+                    name: 'SAML',
+                    description: 'SAML config'
+                }
+            ];
+            mockDotAppsService.get.mockReturnValue(of(appsWithSamlConfig));
+
+            spectator.component.reloadAppsData();
+            spectator.detectChanges();
+
+            expect(spectator.component.hasExportableApps()).toBe(true);
+            expect(
+                spectator.component.state
+                    .displayedApps()
+                    .some((app) => app.key === 'dotsaml-config')
+            ).toBe(true);
         });
     });
 
@@ -152,7 +177,7 @@ describe('DotAppsListComponent', () => {
         });
 
         it('should call openImportDialog when import button is clicked in template', () => {
-            jest.spyOn(spectator.component, 'openImportDialog');
+            vi.spyOn(spectator.component, 'openImportDialog');
             const importBtn = spectator.query('.dot-apps-configuration__action_import_button');
             if (importBtn) {
                 spectator.click(importBtn);
@@ -162,7 +187,7 @@ describe('DotAppsListComponent', () => {
         });
 
         it('should call openExportDialog when export button is clicked in template', () => {
-            jest.spyOn(spectator.component, 'openExportDialog');
+            vi.spyOn(spectator.component, 'openExportDialog');
             const exportBtn = spectator.query('.dot-apps-configuration__action_export_button');
             if (exportBtn) {
                 spectator.click(exportBtn);

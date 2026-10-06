@@ -6,6 +6,9 @@ import static com.dotcms.content.index.IndexConfigHelper.isReadEnabled;
 
 import static com.dotcms.content.index.IndexConfigHelper.logShadowWriteFailure;
 
+import com.dotcms.content.index.domain.InvalidSearchQueryException;
+import com.dotcms.content.index.domain.QueryRejectedByOpenSearchException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import java.util.List;
 import java.util.function.Consumer;
@@ -178,6 +181,10 @@ public final class PhaseRouter<T> {
      * <p><strong>Phase 2 only</strong>: OS is the read provider but ES is still active.
      * If OS throws a runtime exception the error is logged at {@code ERROR} level and the
      * read is retried against ES, so a transient OS failure never surfaces to the caller.
+     * A failure caused by the request itself — a query that is not JSON, a security rule — is not
+     * retried: it propagates, logged at {@code WARN} with its cause (see {@link #isCallerError}).
+     * A query OpenSearch refused as malformed is still retried, logged at {@code WARN} as a query
+     * that will fail at Phase 3 (see {@link #isRejectedByOpenSearch}).
      * In all other phases the call is forwarded to the read provider without a safety net:
      * Phase 0/1 read from ES (no fallback needed); Phase 3 reads from OS (ES decommissioned).</p>
      *
@@ -185,17 +192,164 @@ public final class PhaseRouter<T> {
      * @return    result from the read provider (or ES fallback in Phase 2)
      */
     public <R> R read(final Function<T, R> fn) {
+        return read(null, fn);
+    }
+
+    /**
+     * Same as {@link #read(Function)}, but names the operation in the fallback log line.
+     *
+     * <p>The plain {@link #read(Function)} can only report the cause, because the operation it
+     * runs is an opaque lambda. That is enough to know <em>something</em> fell back, but not
+     * enough for log-based monitoring to say <em>what</em> stopped working — which is the
+     * early-warning signal the migration design promises. Callers on a read path that matters
+     * operationally should pass a name.</p>
+     *
+     * @param operation short name of the operation being routed, e.g. {@code "indexCount"};
+     *                  may be {@code null}, in which case the log line omits it
+     * @param fn        must not throw checked exceptions; use {@link #readChecked} otherwise
+     */
+    public <R> R read(final String operation, final Function<T, R> fn) {
         if (!isPhase2()) {
             return fn.apply(readProvider());
         }
         try {
             return fn.apply(osImpl);
         } catch (final RuntimeException e) {
-            Logger.error(PhaseRouter.class,
-                    "OS read failed in Phase 2 — falling back to ES. "
-                    + "OS index may be stale or unavailable. Cause: " + e.getMessage(), e);
+            if (isCallerError(e)) {
+                Logger.warn(PhaseRouter.class, callerErrorMessage(operation, e));
+                throw e;
+            }
+            if (isRejectedByOpenSearch(e)) {
+                Logger.warn(PhaseRouter.class, rejectedQueryMessage(operation, e));
+            } else {
+                Logger.error(PhaseRouter.class, fallbackMessage(operation, e), e);
+            }
             return fn.apply(esImpl);
         }
+    }
+
+    /**
+     * Builds the Phase 2 fallback log line.
+     *
+     * <p>Named operation and root cause are both deliberate. This line is the migration
+     * design's early-warning signal that OS has stopped answering, so it has to say
+     * <em>what</em> stopped working and <em>why</em> — a monitor that can only see "a read fell
+     * back" cannot tell a dead node from a single malformed query. The root cause matters
+     * because providers wrap failures in a generic message: the actionable text
+     * ("Connection refused", "index_not_found_exception") is further down the chain.</p>
+     */
+    private static String fallbackMessage(final String operation, final Throwable failure) {
+        final StringBuilder message = new StringBuilder("OS read failed in Phase 2");
+        if (null != operation && !operation.isBlank()) {
+            message.append(" [").append(operation).append(']');
+        }
+        message.append(" — falling back to ES. OS index may be stale or unavailable. Cause: ")
+                .append(failure.getMessage());
+        final String rootCause = rootCauseMessage(failure);
+        if (null != rootCause) {
+            message.append(" / root cause: ").append(rootCause);
+        }
+        return message.toString();
+    }
+
+    /**
+     * Whether a Phase 2 read failed because of what the caller sent rather than because of the
+     * OpenSearch index or cluster: an invalid query, or a security rule the caller did not satisfy.
+     *
+     * <p>Such a failure is not what the fallback exists for. Elasticsearch parses and authorises the
+     * same request the same way, so retrying there fails identically after doing the work twice, and
+     * the fallback's log line would blame the index for a problem in the request (issue #37637). The
+     * whole cause chain is inspected because intermediate layers wrap the provider's exception.</p>
+     */
+    static boolean isCallerError(final Throwable failure) {
+        Throwable current = failure;
+        while (null != current) {
+            if (current instanceof InvalidSearchQueryException
+                    || current instanceof DotSecurityException) {
+                return true;
+            }
+            if (current.getCause() == current) {
+                return false;
+            }
+            current = current.getCause();
+        }
+        return false;
+    }
+
+    /**
+     * Whether OpenSearch parsed the request and refused it. Unlike a caller error this still falls
+     * back: Elasticsearch 7 accepts syntax OpenSearch 3 dropped, so the query may succeed there.
+     * What it must not do is log as an index problem (issue #37637).
+     */
+    static boolean isRejectedByOpenSearch(final Throwable failure) {
+        Throwable current = failure;
+        while (null != current) {
+            if (current instanceof QueryRejectedByOpenSearchException) {
+                return true;
+            }
+            if (current.getCause() == current) {
+                return false;
+            }
+            current = current.getCause();
+        }
+        return false;
+    }
+
+    /**
+     * The log line for a Phase 2 read OpenSearch refused as malformed and that is being retried on
+     * Elasticsearch: names the operation and OpenSearch's reason, and says the query will fail once
+     * reads no longer fall back — the early warning a migrating site needs to rewrite it.
+     */
+    static String rejectedQueryMessage(final String operation, final Throwable failure) {
+        final StringBuilder message = new StringBuilder("OS rejected a read in Phase 2");
+        if (null != operation && !operation.isBlank()) {
+            message.append(" [").append(operation).append(']');
+        }
+        message.append(" as malformed; retrying on ES, which may accept syntax OpenSearch does "
+                + "not. This query will fail at Phase 3 unless it is rewritten for OpenSearch. "
+                + "Cause: ").append(failure.getMessage());
+        final String rootCause = rootCauseMessage(failure);
+        if (null != rootCause) {
+            message.append(" / root cause: ").append(rootCause);
+        }
+        return message.toString();
+    }
+
+    /**
+     * The log line for a Phase 2 read that failed on the caller's side and was not retried: names the
+     * operation and the cause, and deliberately says nothing about the index being stale or
+     * unavailable, because it is not.
+     */
+    static String callerErrorMessage(final String operation, final Throwable failure) {
+        final StringBuilder message = new StringBuilder("OS read rejected in Phase 2");
+        if (null != operation && !operation.isBlank()) {
+            message.append(" [").append(operation).append(']');
+        }
+        message.append(" — the request is invalid, not the index; not retrying on ES, where it would "
+                + "fail the same way. Cause: ").append(failure.getMessage());
+        final String rootCause = rootCauseMessage(failure);
+        if (null != rootCause) {
+            message.append(" / root cause: ").append(rootCause);
+        }
+        return message.toString();
+    }
+
+    /**
+     * Message of the deepest cause, or {@code null} when the failure is not wrapping anything
+     * that adds information.
+     */
+    private static String rootCauseMessage(final Throwable failure) {
+        Throwable current = failure;
+        while (null != current.getCause() && current.getCause() != current) {
+            current = current.getCause();
+        }
+        if (current == failure) {
+            return null;
+        }
+        final String message = current.getMessage();
+        return null == message || message.isBlank()
+                ? current.getClass().getSimpleName()
+                : current.getClass().getSimpleName() + ": " + message;
     }
 
     /**
@@ -290,7 +444,8 @@ public final class PhaseRouter<T> {
      * Delegates a checked read to the current read provider with automatic ES fallback in Phase 2.
      *
      * <p>Same fallback semantics as {@link #read}: in Phase 2 an OS exception is caught,
-     * logged at {@code ERROR}, and the read is retried against ES.
+     * logged at {@code ERROR}, and the read is retried against ES — unless the request itself
+     * caused the failure, which propagates (see {@link #isCallerError}).
      * In Phase 0/1 reads from ES; in Phase 3 reads from OS — no fallback in either case.</p>
      *
      * @throws Exception the exception thrown by the fallback provider (ES), if both fail
@@ -302,9 +457,15 @@ public final class PhaseRouter<T> {
         try {
             return fn.apply(osImpl);
         } catch (final Exception e) {
-            Logger.error(PhaseRouter.class,
-                    "OS read failed in Phase 2 — falling back to ES. "
-                    + "OS index may be stale or unavailable. Cause: " + e.getMessage(), e);
+            if (isCallerError(e)) {
+                Logger.warn(PhaseRouter.class, callerErrorMessage(null, e));
+                throw e;
+            }
+            if (isRejectedByOpenSearch(e)) {
+                Logger.warn(PhaseRouter.class, rejectedQueryMessage(null, e));
+            } else {
+                Logger.error(PhaseRouter.class, fallbackMessage(null, e), e);
+            }
             return fn.apply(esImpl);
         }
     }

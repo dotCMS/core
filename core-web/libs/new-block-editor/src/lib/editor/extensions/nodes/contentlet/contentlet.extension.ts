@@ -25,13 +25,15 @@ export {
  * Embedded dotCMS contentlet node. Canonical storage is ProseMirror JSON (`type: dotContent`,
  * `attrs.data`). HTML uses {@link CONTENTLET_HTML_HOST_TAG} plus a `data` JSON attribute (skinny
  * ref) for paste / export; the Angular node view is only for editing.
+ *
+ * Leave `draggable` at its default (`false`). Reordering uses the block gutter DragHandle;
+ * `draggable: true` on this atom raced that handle and duplicated nodes on reorder (#36976).
  */
 export function createDotContentlet(injector: Injector) {
     return Node.create({
         name: DOT_CONTENTLET_NODE_NAME,
         group: 'block',
         atom: true,
-        draggable: true,
 
         addAttributes() {
             return {

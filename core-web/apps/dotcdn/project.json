@@ -80,28 +80,6 @@
             "options": {
                 "buildTarget": "dotcdn:build"
             }
-        },
-        "test": {
-            "outputs": ["{workspaceRoot}/coverage/apps/dotcdn"],
-            "options": {
-                "passWithNoTests": true,
-                "styles": [
-                    "libs/dotcms-scss/angular/styles.scss",
-                    "node_modules/primeicons/primeicons.css",
-                    "apps/dotcdn/src/styles.scss"
-                ],
-                "assets": ["apps/dotcdn/src/favicon.ico", "apps/dotcdn/src/assets"],
-                "stylePreprocessorOptions": {
-                    "includePaths": ["libs/dotcms-scss/angular"]
-                },
-                "scripts": ["node_modules/chart.js/dist/Chart.js"]
-            },
-            "configurations": {
-                "ci": {
-                    "ci": true,
-                    "coverage": true
-                }
-            }
         }
     }
 }

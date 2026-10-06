@@ -99,7 +99,7 @@ public class AppsResource {
                     helper.getAvailableDescriptorViewsWithErrors(user, filter);
             final List<ErrorEntity> errors = result._2.stream()
                     .map(error -> new ErrorEntity(
-                            "app-descriptor-load-error",
+                            error.getErrorCode(),
                             error.getMessage(),
                             error.getFileName()))
                     .collect(Collectors.toList());

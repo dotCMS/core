@@ -88,6 +88,66 @@ const HARNESS_BODY = `
         return arr.slice(0, n);
       };
 
+      // Resolve OpenAPI $refs against spec.components.schemas, expanding nested refs up to
+      // 'depth' levels. Beyond depth, { $ref } objects are left verbatim so the model can
+      // resolve the next hop in a follow-up query (progressive disclosure). Only available in
+      // the search sandbox, where the 'spec' global is injected.
+      //
+      // THREE bounds, not one. 'depth' alone was never sufficient: it is chosen by the model,
+      // and asking for a bigger number is exactly what a model does when depth 2 looks
+      // truncated. Expansion copies the whole target subtree per $ref hop with no memo, so
+      // cost grows multiplicatively with fan-out — and the committed spec is NOT acyclic
+      // (self-refs on FolderView/MultiPart/Permissionable, the BodyPart -> MultiPart ->
+      // BodyPart cycle, and fan-out around 10 on PageView). resolveRef('PageView', 12) would
+      // exhaust the worker's heap and get it killed, which the caller sees as an opaque
+      // sandbox death with the accumulated logs lost. The formatSandboxResult cap does not
+      // help: that applies to the result string, long after the graph is built in memory.
+      globalThis.resolveRef = (schemaOrName, depth = 2) => {
+        const MAX_DEPTH = 5;
+        const MAX_NODES = 50000;
+        const spec = globalThis.spec;
+        const schemas = spec && spec.components && spec.components.schemas;
+        if (!schemas) {
+          throw new Error('resolveRef() needs the spec global (spec.components.schemas). It is only available in the search sandbox.');
+        }
+        // Clamped rather than rejected, and the clamp is self-evident in the output: an
+        // unexpanded { $ref } is the same signal the model already follows for a deeper hop.
+        const requested = Number(depth);
+        const maxDepth = Math.max(0, Math.min(Number.isFinite(requested) ? requested : 2, MAX_DEPTH));
+        let budget = MAX_NODES;
+        const nameOf = (ref) => String(ref).split('/').pop();
+        const expand = (node, d, path) => {
+          if (--budget < 0) {
+            throw new Error('resolveRef() expanded more than ' + MAX_NODES + ' nodes and was stopped before exhausting worker memory. Resolve a smaller schema, or use a lower depth and follow the remaining $refs in a second call.');
+          }
+          if (Array.isArray(node)) return node.map((item) => expand(item, d, path));
+          if (!node || typeof node !== 'object') return node;
+          if (typeof node.$ref === 'string') {
+            if (d <= 0) return node;
+            const name = nameOf(node.$ref);
+            // Already on this branch's ancestry: expanding again would recurse forever on a
+            // self-referential or mutually-referential schema. Leaving the $ref verbatim is
+            // the same progressive-disclosure contract as running out of depth.
+            if (path.indexOf(name) !== -1) return node;
+            const target = schemas[name];
+            if (!target) return node;
+            return expand(target, d - 1, path.concat(name));
+          }
+          const out = {};
+          for (const key of Object.keys(node)) out[key] = expand(node[key], d, path);
+          return out;
+        };
+        if (typeof schemaOrName === 'string') {
+          const name = nameOf(schemaOrName);
+          const target = schemas[name];
+          if (!target) {
+            throw new Error('Unknown schema "' + schemaOrName + '". List names with Object.keys(spec.components.schemas).');
+          }
+          return expand(target, maxDepth, [name]);
+        }
+        return expand(schemaOrName, maxDepth, []);
+      };
+
       __onMessage(async (msg) => {
         const { type, data } = msg;
 

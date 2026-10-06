@@ -1,4 +1,5 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { Mock, vi } from 'vitest';
 
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmPopup } from 'primeng/confirmpopup';
@@ -27,13 +28,13 @@ describe('RemoveConfirmDialogComponent', () => {
 
     beforeEach(() => {
         spectator = createComponent();
-        jest.spyOn(ConfirmPopup.prototype, 'bindScrollListener').mockImplementation(jest.fn());
+        vi.spyOn(ConfirmPopup.prototype, 'bindScrollListener').mockImplementation(vi.fn());
     });
 
     it('should emit confirm event and call accept function', () => {
-        const confirmEventSpy = jest.spyOn(spectator.component.deleteConfirmed, 'emit');
+        const confirmEventSpy = vi.spyOn(spectator.component.deleteConfirmed, 'emit');
         const confirmationService = spectator.inject(ConfirmationService, true);
-        const confirmSpy = jest
+        const confirmSpy = vi
             .spyOn(confirmationService, 'confirm')
             .mockImplementation((options) => {
                 // Simulate accept callback
@@ -41,7 +42,7 @@ describe('RemoveConfirmDialogComponent', () => {
                     options.accept();
                 }
                 return {} as ConfirmationService;
-            }) as jest.Mock;
+            }) as Mock;
 
         const deleteButtonComponent = spectator.query(byTestId('btn-remove-item'));
         const mockEvent = { target: deleteButtonComponent } as unknown as Event;
@@ -52,9 +53,9 @@ describe('RemoveConfirmDialogComponent', () => {
     });
 
     it('should emit confirm event and call reject function', () => {
-        const rejectEventSpy = jest.spyOn(spectator.component.deleteRejected, 'emit');
+        const rejectEventSpy = vi.spyOn(spectator.component.deleteRejected, 'emit');
         const confirmationService = spectator.inject(ConfirmationService, true);
-        const confirmSpy = jest
+        const confirmSpy = vi
             .spyOn(confirmationService, 'confirm')
             .mockImplementation((options) => {
                 // Simulate reject callback
@@ -62,7 +63,7 @@ describe('RemoveConfirmDialogComponent', () => {
                     options.reject();
                 }
                 return {} as ConfirmationService;
-            }) as jest.Mock;
+            }) as Mock;
 
         const deleteButtonComponent = spectator.query(byTestId('btn-remove-item'));
         const mockEvent = { target: deleteButtonComponent } as unknown as Event;
@@ -73,13 +74,13 @@ describe('RemoveConfirmDialogComponent', () => {
     });
 
     it('should call reject function when esc is pressed', () => {
-        const rejectEventSpy = jest.spyOn(spectator.component.deleteRejected, 'emit');
+        const rejectEventSpy = vi.spyOn(spectator.component.deleteRejected, 'emit');
         const confirmationService = spectator.inject(ConfirmationService, true);
-        const mockPopup = { close: jest.fn() } as unknown as ConfirmationService;
-        jest.spyOn(confirmationService, 'confirm').mockImplementation((_options) => {
+        const mockPopup = { close: vi.fn() } as unknown as ConfirmationService;
+        vi.spyOn(confirmationService, 'confirm').mockImplementation((_options) => {
             // Don't call accept/reject, just return a mock popup
             return mockPopup;
-        }) as jest.Mock;
+        }) as Mock;
 
         const deleteButtonComponent = spectator.query(byTestId('btn-remove-item'));
         const mockEvent = { target: deleteButtonComponent } as unknown as Event;
@@ -93,7 +94,7 @@ describe('RemoveConfirmDialogComponent', () => {
 
     it('should emit confirmation when button is clicked and skipConfirmation is set to true', () => {
         spectator.component.skipConfirmation = true;
-        const confirmEventSpy = jest.spyOn(spectator.component.deleteConfirmed, 'emit');
+        const confirmEventSpy = vi.spyOn(spectator.component.deleteConfirmed, 'emit');
 
         const deleteButton = spectator.query(byTestId('btn-remove-item'));
         spectator.dispatchMouseEvent(deleteButton, 'onClick');
@@ -103,7 +104,7 @@ describe('RemoveConfirmDialogComponent', () => {
 
     it('should not emit confirmation when button is clicked and skipConfirmation is set to false', () => {
         spectator.component.skipConfirmation = false;
-        const confirmEventSpy = jest.spyOn(spectator.component.deleteConfirmed, 'emit');
+        const confirmEventSpy = vi.spyOn(spectator.component.deleteConfirmed, 'emit');
 
         const deleteButton = spectator.query(byTestId('btn-remove-item'));
         spectator.dispatchMouseEvent(deleteButton, 'onClick');

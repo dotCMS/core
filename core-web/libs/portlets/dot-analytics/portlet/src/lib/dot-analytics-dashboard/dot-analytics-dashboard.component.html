@@ -1,4 +1,4 @@
-<div class="flex flex-col portlet-wrapper" data-testid="analytics-dashboard">
+<div class="portlet-wrapper flex flex-col" data-testid="analytics-dashboard">
     @if ($showMessage()) {
         <p-message
             severity="info"
@@ -16,11 +16,11 @@
     }
 
     <p-tabs [lazy]="true">
-        <div class="analytics-dashboard-toolbar bg-gray-100 border-b border-gray-300 px-4">
-            <div class="flex justify-between items-center gap-4 min-h-12">
-                <div class="flex items-center gap-4 min-w-0">
+        <div class="analytics-dashboard-toolbar border-b border-gray-300 bg-gray-100 px-4">
+            <div class="flex min-h-12 items-center justify-between gap-4">
+                <div class="flex min-w-0 items-center gap-4">
                     <p-tablist
-                        class="shrink-0 min-w-0 border-0 bg-transparent shadow-none"
+                        class="min-w-0 shrink-0 border-0 bg-transparent shadow-none"
                         [pt]="tabListPt">
                         @for (tab of tabs; track tab.id) {
                             <p-tab
@@ -46,7 +46,21 @@
             </div>
         </div>
     </p-tabs>
-    <div class="p-8">
+    <div class="analytics-dashboard-body relative p-8">
+        <!-- Full-report loading overlay: mirrors dot-edit-content-layout's reload overlay
+             (same spinner + semi-transparent backdrop) so the ~2s customer-environment load
+             time for each tab reads consistently with the rest of the app, instead of just
+             the per-widget skeletons underneath. -->
+        @if (store.$isReportLoading()) {
+            <div
+                class="analytics-dashboard-body__loading-overlay absolute inset-0 z-10 flex items-center justify-center bg-white/60"
+                role="status"
+                aria-live="polite"
+                [attr.aria-label]="'Loading' | dm"
+                data-testid="analytics-dashboard-loading-overlay">
+                <i class="pi pi-spin pi-spinner text-4xl text-gray-500" aria-hidden="true"></i>
+            </div>
+        }
         <router-outlet />
     </div>
 </div>

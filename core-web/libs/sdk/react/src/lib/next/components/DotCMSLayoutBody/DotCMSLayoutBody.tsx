@@ -10,7 +10,12 @@ import { Row } from '../Row/Row';
 export interface DotCMSLayoutBodyProps<
     TContentlet extends DotCMSBasicContentlet = DotCMSBasicContentlet
 > {
-    page: DotCMSPageAsset;
+    /**
+     * The DotCMS page asset. Can be `undefined` while `useEditableDotCMSPage` is still waiting
+     * on the UVE editor to resolve a draft/non-live page — the component renders `ErrorMessage`
+     * until it arrives.
+     */
+    page: DotCMSPageAsset | undefined;
     components: {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         [key: string]: React.ComponentType<TContentlet> | React.ComponentType<any>;
@@ -52,11 +57,19 @@ export interface DotCMSLayoutBodyProps<
  * @returns {JSX.Element} The rendered DotCMS page body or an error message if the layout body is missing.
  *
  */
+/**
+ * Hoisted so the defaults keep a stable identity across renders. As inline `= {}` defaults
+ * they produced a fresh object on every render, which invalidated the page context's useMemo
+ * and re-rendered every container and contentlet in the tree.
+ */
+const NO_COMPONENTS: DotCMSLayoutBodyProps['components'] = {};
+const NO_SLOTS: NonNullable<DotCMSLayoutBodyProps['slots']> = {};
+
 export const DotCMSLayoutBody = ({
     page,
-    components = {},
+    components = NO_COMPONENTS,
     mode = 'production',
-    slots = {}
+    slots = NO_SLOTS
 }: DotCMSLayoutBodyProps) => {
     const dotCMSPageBody = page?.layout?.body;
 

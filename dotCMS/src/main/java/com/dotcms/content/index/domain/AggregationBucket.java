@@ -155,6 +155,35 @@ public record AggregationBucket(
     }
 
     /**
+     * Creates a bucket from an OpenSearch date-histogram bucket, including its sub-aggregations. The
+     * OpenSearch date-histogram key is epoch-milliseconds as a {@code long}; it is stored as a
+     * numeric String so {@link #getKeyAsNumber()} returns the epoch-millis, matching the
+     * Elasticsearch date-histogram normalization in {@link #fromHistogram}.
+     */
+    public static AggregationBucket fromOS(
+            final org.opensearch.client.opensearch._types.aggregations.DateHistogramBucket osBucket) {
+        return builder()
+                .key(String.valueOf(osBucket.key()))
+                .docCount(osBucket.docCount())
+                .subAggregations(Aggregation.fromOS(osBucket.aggregations()))
+                .build();
+    }
+
+    /**
+     * Creates a bucket from an OpenSearch numeric-histogram bucket, including its sub-aggregations.
+     * The key ({@code double}) is normalized to its {@code long} form so it matches the Elasticsearch
+     * numeric-histogram normalization in {@link #fromHistogram} (which calls {@code longValue()}).
+     */
+    public static AggregationBucket fromOS(
+            final org.opensearch.client.opensearch._types.aggregations.HistogramBucket osBucket) {
+        return builder()
+                .key(String.valueOf((long) osBucket.key()))
+                .docCount(osBucket.docCount())
+                .subAggregations(Aggregation.fromOS(osBucket.aggregations()))
+                .build();
+    }
+
+    /**
      * Fluent builder for {@link AggregationBucket}. An unset {@code subAggregations} defaults to an
      * empty map, preserving the lenient behaviour of the former Immutables builder.
      */

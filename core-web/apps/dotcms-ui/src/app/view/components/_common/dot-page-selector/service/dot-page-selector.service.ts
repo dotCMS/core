@@ -44,6 +44,15 @@ interface DotESSearchResponse<T> {
 const PAGE_BASE_TYPE_QUERY = '+basetype:5';
 const MAX_RESULTS_SIZE = 20;
 
+/**
+ * Page lookups for the legacy `dot-page-selector` autocomplete.
+ *
+ * `DotPagesBrowserService` (`libs/data-access/src/lib/dot-pages`) hits the same two endpoints for
+ * the newer picker dialogs: it could not reuse this one because a library cannot depend on an app,
+ * and because this service answers with the label/value shape an autocomplete needs rather than
+ * table rows. Changing the queries here should be weighed against that service — the two are meant
+ * to be folded into one page-access layer in `data-access`.
+ */
 @Injectable()
 export class DotPageSelectorService {
     private http = inject(HttpClient);

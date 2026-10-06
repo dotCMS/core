@@ -1,7 +1,15 @@
 import { Observable } from 'rxjs';
 
 import { AsyncPipe } from '@angular/common';
-import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
+import {
+    Component,
+    EventEmitter,
+    Input,
+    OnInit,
+    Output,
+    inject,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { SelectItem } from 'primeng/api';
@@ -16,6 +24,7 @@ import { StructureTypeView } from '@dotcms/dotcms-models';
     selector: 'dot-base-type-selector',
     templateUrl: './dot-base-type-selector.component.html',
     styleUrls: ['./dot-base-type-selector.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [SelectModule, FormsModule, AsyncPipe]
 })
 export class DotBaseTypeSelectorComponent implements OnInit {

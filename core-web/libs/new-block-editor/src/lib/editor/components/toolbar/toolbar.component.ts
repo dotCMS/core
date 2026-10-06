@@ -213,16 +213,6 @@ export class ToolbarComponent implements OnDestroy {
             this.store.isAllowed('codeBlock')
     );
 
-    protected readonly showInsertGroup = computed(
-        () =>
-            this.store.isAllowed('link') ||
-            this.store.isAllowed('image') ||
-            this.store.isAllowed('video') ||
-            this.store.isAllowed('table') ||
-            this.store.isAllowed('emoji') ||
-            this.showAssetByUrl()
-    );
-
     /**
      * The "Add asset by URL" popover inserts an image, plain video, or YouTube embed —
      * show the trigger only when at least one of those node types is permitted by
@@ -481,6 +471,12 @@ export class ToolbarComponent implements OnDestroy {
         event.preventDefault();
         event.stopPropagation();
         this.editorModal.openVideoPicker(this.editor());
+    }
+
+    protected openAudioDialog(event: MouseEvent): void {
+        event.preventDefault();
+        event.stopPropagation();
+        this.editorModal.openAudioPicker(this.editor());
     }
 
     protected openTableDialog(event: MouseEvent): void {

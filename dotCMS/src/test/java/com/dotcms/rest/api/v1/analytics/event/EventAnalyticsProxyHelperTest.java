@@ -53,6 +53,15 @@ public class EventAnalyticsProxyHelperTest {
     }
 
     @Test
+    public void isAllowedRelativePath_acceptsDomainDrivenQueryPaths() {
+        // dotCMS/core#36628 — the new domain-driven query resources replacing the
+        // per-metric event/session/conversion endpoints above.
+        assertTrue(EventAnalyticsProxyHelper.isAllowedRelativePath("events"));
+        assertTrue(EventAnalyticsProxyHelper.isAllowedRelativePath("sessions"));
+        assertTrue(EventAnalyticsProxyHelper.isAllowedRelativePath("content"));
+    }
+
+    @Test
     public void isAllowedRelativePath_rejectsNullEmptyBlank() {
         assertFalse(EventAnalyticsProxyHelper.isAllowedRelativePath(null));
         assertFalse(EventAnalyticsProxyHelper.isAllowedRelativePath(""));

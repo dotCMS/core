@@ -1,4 +1,5 @@
-import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { DotWizardInput, DotWizardStep } from '@dotcms/dotcms-models';
 
@@ -41,8 +42,8 @@ describe('DotWizardService', () => {
     });
 
     it('should complete the stream without emitting when cancel is called', () => {
-        const next = jest.fn();
-        const complete = jest.fn();
+        const next = vi.fn();
+        const complete = vi.fn();
         service.open(mockWizardInput).subscribe({ next, complete });
         service.cancel();
         expect(next).not.toHaveBeenCalled();
@@ -50,8 +51,8 @@ describe('DotWizardService', () => {
     });
 
     it('should not deliver output from a new open() to a previous (cancelled) subscription', () => {
-        const firstNext = jest.fn();
-        const secondNext = jest.fn();
+        const firstNext = vi.fn();
+        const secondNext = vi.fn();
 
         service.open(mockWizardInput).subscribe(firstNext);
         service.cancel(); // user dismissed the first wizard
@@ -64,9 +65,9 @@ describe('DotWizardService', () => {
     });
 
     it('should complete a previous stream when open() is called again without cancel', () => {
-        const firstNext = jest.fn();
-        const firstComplete = jest.fn();
-        const secondNext = jest.fn();
+        const firstNext = vi.fn();
+        const firstComplete = vi.fn();
+        const secondNext = vi.fn();
 
         service.open(mockWizardInput).subscribe({ next: firstNext, complete: firstComplete });
         service.open(mockWizardInput).subscribe(secondNext);
@@ -78,8 +79,8 @@ describe('DotWizardService', () => {
     });
 
     it('should complete after output$ so take(1) consumers unsubscribe cleanly', () => {
-        const next = jest.fn();
-        const complete = jest.fn();
+        const next = vi.fn();
+        const complete = vi.fn();
         service.open(mockWizardInput).subscribe({ next, complete });
         service.output$(mockOutput);
         expect(next).toHaveBeenCalledWith(mockOutput);

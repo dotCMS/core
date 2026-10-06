@@ -108,6 +108,8 @@
          client <-HTTPS-> proxy:443 <-HTTPS-> dotCMS:8443
          To use APR and native openssl for https, add:
          sslImplementationName="org.apache.tomcat.util.net.openssl.OpenSSLImplementation"
+         CMS_SSL_PROTOCOLS restricts the offered TLS versions (default TLSv1.3;
+         set e.g. "TLSv1.2+TLSv1.3" or "all" to allow legacy TLS 1.2 clients)
     -->
     <Connector
         port="${CMS_SSL_PORT:-8443}"
@@ -128,6 +130,7 @@
         useSendfile="${CMS_USE_SENDFILE:-false}"
         maxHttpHeaderSize="${CMS_MAX_HTTP_HEADER_SIZE:-16384}"
         SSLEnabled="${CMS_SSL_ENABLED:-true}"
+        SSLProtocol="${CMS_SSL_PROTOCOLS:-TLSv1.3}"
         SSLCertificateFile="${CMS_SSL_CERTIFICATE_FILE:-/data/shared/assets/certs/local.dotcms.site.pem}"
         SSLCertificateKeyFile="${CMS_SSL_CERTIFICATE_KEY_FILE:-/data/shared/assets/certs/local.dotcms.site-key.pem}"
         keystorePass="${CMS_KEYSTORE_PASS:-dotcms}"

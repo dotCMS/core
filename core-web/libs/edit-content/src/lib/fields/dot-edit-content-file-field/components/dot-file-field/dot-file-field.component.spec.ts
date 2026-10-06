@@ -1,18 +1,27 @@
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { signal } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
 import {
-    DotAiService,
+    DotAiConfigService,
     DotMessageService,
+    DotSiteService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
-import { DotGeneratedAIImage, PromptType } from '@dotcms/dotcms-models';
+import { DotGeneratedAIImage, DotSite, PromptType } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
+import {
+    ASSET_PICKER_LAUNCHER,
+    AngularAssetPickerLauncher,
+    DotAssetPickerComponent
+} from '@dotcms/ui';
 import { createFakeContentlet } from '@dotcms/utils-testing';
 
 import { DotFileFieldComponent } from './dot-file-field.component';
@@ -29,6 +38,14 @@ import { DotFileFieldPreviewComponent } from '../dot-file-field-preview/dot-file
 import { DotFileFieldUiMessageComponent } from '../dot-file-field-ui-message/dot-file-field-ui-message.component';
 import { DotFormFileEditorComponent } from '../dot-form-file-editor/dot-form-file-editor.component';
 
+/** The AssetPicker needs a site to browse; GlobalStore supplies it. */
+const SITE_MOCK: DotSite = {
+    identifier: 'site-1',
+    hostname: 'demo.dotcms.com',
+    aliases: null,
+    archived: false
+};
+
 describe('DotFileFieldComponent', () => {
     let spectator: Spectator<DotFileFieldComponent>;
 
@@ -36,8 +53,8 @@ describe('DotFileFieldComponent', () => {
     // (provided at factory level so it survives component re-creation without
     // triggering a post-instantiation `overrideProvider`).
     const mockImageEditorLauncher = {
-        isAvailable: jest.fn().mockReturnValue(false),
-        open: jest.fn().mockReturnValue(of(null))
+        isAvailable: vi.fn().mockReturnValue(false),
+        open: vi.fn().mockReturnValue(of(null))
     };
 
     const createComponent = createComponentFactory({
@@ -45,18 +62,24 @@ describe('DotFileFieldComponent', () => {
         imports: [ReactiveFormsModule],
         componentMocks: [DotFileFieldPreviewComponent, DotFileFieldUiMessageComponent],
         providers: [
+            mockProvider(GlobalStore, { siteDetails: signal(SITE_MOCK) }),
             FileFieldStore,
             mockProvider(DotFileFieldUploadService),
             mockProvider(DialogService),
+            mockProvider(DotSiteService, { getCurrentSite: vi.fn(() => of(SITE_MOCK)) }),
+            // Angular Edit Content host: the launcher is what makes the new AssetPicker the
+            // picker here. The legacy-host branch lives in
+            // `dot-file-field.component.legacy-picker.spec.ts`.
+            { provide: ASSET_PICKER_LAUNCHER, useClass: AngularAssetPickerLauncher },
             LegacyDialogImageEditorLauncher,
             LegacyDojoImageEditorLauncher,
             mockProvider(DotWorkflowActionsFireService),
             { provide: IMAGE_EDITOR_LAUNCHER, useValue: mockImageEditorLauncher },
             mockProvider(DotMessageService, {
-                get: jest.fn().mockReturnValue('Test Message')
+                get: vi.fn().mockReturnValue('Test Message')
             }),
-            mockProvider(DotAiService, {
-                checkPluginInstallation: jest.fn().mockReturnValue(of(false))
+            mockProvider(DotAiConfigService, {
+                checkPluginInstallation: vi.fn().mockReturnValue(of(false))
             }),
             provideHttpClient(),
             provideHttpClientTesting()
@@ -112,9 +135,9 @@ describe('DotFileFieldComponent', () => {
             });
 
             const dialogService = spectator.inject(DialogService);
-            (dialogService.open as jest.Mock).mockReturnValue({
+            (dialogService.open as Mock).mockReturnValue({
                 onClose: of(AI_IMAGE),
-                close: jest.fn()
+                close: vi.fn()
             });
 
             spectator.detectChanges();
@@ -122,10 +145,33 @@ describe('DotFileFieldComponent', () => {
             return dialogService;
         };
 
+        /**
+         * AC-209 — this widget has no control a label can reach: the file input is display:none,
+         * and what is left are a dropzone and buttons. The widget names itself instead.
+         *
+         * `labelledBy` is an input rather than a value derived here, because this component also
+         * compiles into the dotcms-binary-field-builder bundle the legacy Dojo editor loads, where
+         * no such label exists. Left empty there, the attribute is simply absent rather than
+         * pointing at an id that is not on the page.
+         */
+        it('should expose itself as a group, named only when a label id is supplied', () => {
+            spectator.detectChanges();
+
+            expect(spectator.element.getAttribute('role')).toBe('group');
+            expect(spectator.element.getAttribute('aria-labelledby')).toBeNull();
+
+            spectator.setInput('labelledBy', 'label-' + IMAGE_FIELD_MOCK.variable);
+            spectator.detectChanges();
+
+            expect(spectator.element.getAttribute('aria-labelledby')).toBe(
+                'label-' + IMAGE_FIELD_MOCK.variable
+            );
+        });
+
         it('should store the AI image as a temp file for Binary fields', () => {
             setupWithField(BINARY_FIELD_MOCK);
 
-            const setPreviewFileSpy = jest.spyOn(spectator.component.store, 'setPreviewFile');
+            const setPreviewFileSpy = vi.spyOn(spectator.component.store, 'setPreviewFile');
 
             spectator.component.showAIImagePromptDialog();
 
@@ -144,7 +190,7 @@ describe('DotFileFieldComponent', () => {
         it('should store the AI image as a contentlet for Image fields', () => {
             setupWithField(IMAGE_FIELD_MOCK);
 
-            const setPreviewFileSpy = jest.spyOn(spectator.component.store, 'setPreviewFile');
+            const setPreviewFileSpy = vi.spyOn(spectator.component.store, 'setPreviewFile');
 
             spectator.component.showAIImagePromptDialog();
 
@@ -186,9 +232,9 @@ describe('DotFileFieldComponent', () => {
             mockImageEditorLauncher.open.mockReturnValue(of(EDITED_TEMP_FILE));
             setupBinaryWithImage();
 
-            const applySpy = jest
+            const applySpy = vi
                 .spyOn(spectator.component.store, 'applyEditedImage')
-                .mockImplementation();
+                .mockImplementation(() => undefined);
 
             spectator.component.onEditImage();
 
@@ -210,12 +256,12 @@ describe('DotFileFieldComponent', () => {
             const legacy = spectator.fixture.debugElement.injector.get(
                 LegacyDialogImageEditorLauncher
             );
-            const legacyOpenSpy = jest
+            const legacyOpenSpy = vi
                 .spyOn(legacy, 'open')
                 .mockReturnValue(of(EDITED_TEMP_FILE) as never);
-            const applySpy = jest
+            const applySpy = vi
                 .spyOn(spectator.component.store, 'applyEditedImage')
-                .mockImplementation();
+                .mockImplementation(() => undefined);
 
             spectator.component.onEditImage();
 
@@ -229,9 +275,9 @@ describe('DotFileFieldComponent', () => {
             setupBinaryWithImage();
 
             const dialogService = spectator.inject(DialogService);
-            (dialogService.open as jest.Mock).mockReturnValue({
+            (dialogService.open as Mock).mockReturnValue({
                 onClose: of(null),
-                close: jest.fn()
+                close: vi.fn()
             });
 
             spectator.component.store.setPreviewFile({
@@ -268,9 +314,9 @@ describe('DotFileFieldComponent', () => {
             setupBinaryWithImage();
 
             const dialogService = spectator.inject(DialogService);
-            (dialogService.open as jest.Mock).mockReturnValue({
+            (dialogService.open as Mock).mockReturnValue({
                 onClose: of(null),
-                close: jest.fn()
+                close: vi.fn()
             });
 
             spectator.component.store.setPreviewFile({
@@ -379,6 +425,38 @@ describe('DotFileFieldComponent', () => {
             } as never);
             spectator.detectChanges();
             expect(spectator.component.$canEditImage()).toBe(false);
+        });
+    });
+
+    describe('select existing file (Angular host)', () => {
+        /** Stubs `DialogService.open` so the picker can be opened and inspected. */
+        const stubDialog = () => {
+            const dialogService = spectator.inject(DialogService);
+            (dialogService.open as Mock).mockReturnValue({
+                onClose: of(null),
+                close: vi.fn()
+            });
+
+            return dialogService;
+        };
+
+        it('should open the new AssetPicker', () => {
+            const dialogService = stubDialog();
+
+            spectator.component.showSelectExistingFileDialog();
+
+            expect((dialogService.open as Mock).mock.calls[0][0]).toBe(DotAssetPickerComponent);
+        });
+
+        it('should scope the picker to the field it was opened from', () => {
+            const dialogService = stubDialog();
+
+            spectator.component.showSelectExistingFileDialog();
+
+            // IMAGE_FIELD_MOCK is the mounted field, so the picker narrows to images silently.
+            expect((dialogService.open as Mock).mock.calls[0][1].data).toEqual(
+                expect.objectContaining({ site: SITE_MOCK, mimeTypes: ['image/*'] })
+            );
         });
     });
 

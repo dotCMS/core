@@ -1,5 +1,6 @@
-import { byTestId, createHostFactory, mockProvider, SpectatorHost } from '@openng/spectator/jest';
+import { byTestId, createHostFactory, mockProvider, SpectatorHost } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -34,7 +35,7 @@ import {
 import { DotEditContentMonacoEditorControlComponent } from '../../shared/dot-edit-content-monaco-editor-control/dot-edit-content-monaco-editor-control.component';
 
 const mockScrollIntoView = () => {
-    Element.prototype.scrollIntoView = jest.fn();
+    Element.prototype.scrollIntoView = vi.fn();
 };
 
 const mockSystemWideConfig = { systemWideOption: 'value' };
@@ -75,7 +76,7 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
         ],
         providers: [
             mockProvider(DotWysiwygPluginService, {
-                initializePlugins: jest.fn()
+                initializePlugins: vi.fn()
             }),
             mockProvider(DotWysiwygTinymceService, {
                 getProps: () => of(mockSystemWideConfig)
@@ -97,7 +98,7 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
     });
 
     afterEach(() => {
-        jest.resetAllMocks();
+        vi.resetAllMocks();
     });
 
     describe('should have the variable as id', () => {
@@ -139,7 +140,7 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
             expect(spectator.query(DotWysiwygTinymceComponent)).toBeTruthy();
             expect(spectator.query(DotEditContentMonacoEditorControlComponent)).toBeNull();
 
-            const onEditorChangeSpy = jest.spyOn(spectator.component, 'onEditorChange');
+            const onEditorChangeSpy = vi.spyOn(spectator.component, 'onEditorChange');
 
             // Trigger onChange event with Monaco editor option
             const monacoOption = EditorOptions.find((opt) => opt.value === AvailableEditor.Monaco);
@@ -174,7 +175,7 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
 
         it('should call onSelectLanguageVariable when language variable is selected', () => {
             // Spy on component method
-            const spy = jest.spyOn(spectator.component, 'onSelectLanguageVariable');
+            const spy = vi.spyOn(spectator.component, 'onSelectLanguageVariable');
 
             // Get language variable selector component
             const languageVariableSelector = spectator.query(DotLanguageVariableSelectorComponent);
@@ -215,7 +216,7 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
             switchSpectator.detectChanges();
 
             // Spy on the output event
-            const disabledWYSIWYGChangeSpy = jest.fn();
+            const disabledWYSIWYGChangeSpy = vi.fn();
             switchSpectator.output('disabledWYSIWYGChange').subscribe(disabledWYSIWYGChangeSpy);
 
             // Act: Switch to Monaco editor (no content, so no confirmation dialog)
@@ -252,7 +253,7 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
             switchBackSpectator.detectChanges();
 
             // Spy on the output event
-            const disabledWYSIWYGChangeSpy = jest.fn();
+            const disabledWYSIWYGChangeSpy = vi.fn();
             switchBackSpectator.output('disabledWYSIWYGChange').subscribe(disabledWYSIWYGChangeSpy);
 
             // Act: Switch to TinyMCE editor (should work without confirmation)
@@ -322,7 +323,7 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
             preserveSpectator.detectChanges();
 
             // Spy on the output event
-            const disabledWYSIWYGChangeSpy = jest.fn();
+            const disabledWYSIWYGChangeSpy = vi.fn();
             preserveSpectator.output('disabledWYSIWYGChange').subscribe(disabledWYSIWYGChangeSpy);
 
             // Act: Switch to Monaco editor for current field
@@ -361,7 +362,7 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
             );
             workflowSpectator.detectChanges();
 
-            const disabledWYSIWYGChangeSpy = jest.fn();
+            const disabledWYSIWYGChangeSpy = vi.fn();
             workflowSpectator.output('disabledWYSIWYGChange').subscribe(disabledWYSIWYGChangeSpy);
 
             // Act 1: Switch to Monaco

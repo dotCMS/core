@@ -184,18 +184,21 @@ public class CompletionsResource {
                 .getUser();
         final Host host;
         try {
-            host = resolveHost(siteId, request, user);
+            host = AiHostResolver.resolveHost(siteId, request, user);
         } catch (final DotSecurityException e) {
             return Response.status(Response.Status.FORBIDDEN)
-                    .entity(Map.of(AiKeys.ERROR, "Access denied to site: " + sanitize(siteId)))
+                    .entity(Map.of(AiKeys.ERROR, "Access denied to site: " + AiHostResolver.sanitize(siteId)))
                     .build();
         }
         final AppConfig appConfig = ConfigService.INSTANCE.config(host);
 
         final Map<String, Object> map = new HashMap<>();
-        map.put(AiKeys.CONFIG_HOST, host.getHostname() + " (falls back to system host)");
-
         final String providerConfig = appConfig.getProviderConfig();
+        final String requestedHost = host.getHostname();
+
+        map.put(AiKeys.CONFIG_HOST, requestedHost);
+        map.put(AiKeys.CONFIG_HOST_INHERITED, isInheritedConfig(requestedHost, appConfig));
+
         if (StringUtils.isNotBlank(providerConfig)) {
             map.put(AppKeys.PROVIDER_CONFIG.key, redactCredentials(providerConfig));
         }
@@ -207,6 +210,27 @@ public class CompletionsResource {
         map.put("settings", settings);
 
         return Response.ok(map).build();
+    }
+
+    /**
+     * Whether the configuration being reported came from the System Host rather than from the
+     * site it was asked for.
+     *
+     * {@link ConfigService#config(Host)} falls back to the System Host's secrets when a site
+     * has none of its own, keeping only the hostname it ended up using — so the two hostnames
+     * differing is what "inherited" means here.
+     *
+     * Gated on there being a configuration at all, because that same fallback reports the
+     * System Host whether or not the System Host had any secrets either. Without the gate, an
+     * instance with nothing configured anywhere claims to have inherited settings it never
+     * found.
+     *
+     * Reported as its own field rather than concatenated into the hostname so the client can
+     * label and translate it.
+     */
+    static boolean isInheritedConfig(final String requestedHost, final AppConfig appConfig) {
+        return StringUtils.isNotBlank(appConfig.getProviderConfig())
+                && !requestedHost.equalsIgnoreCase(appConfig.getHost());
     }
 
     @PUT
@@ -255,10 +279,10 @@ public class CompletionsResource {
         }
 
         try {
-            final Host host = resolveHostStrict(siteId, request, user);
+            final Host host = AiHostResolver.resolveHostStrict(siteId, request, user);
             if (host == null) {
                 final String msg = StringUtils.isNotBlank(siteId)
-                        ? "Site not found: " + sanitize(siteId)
+                        ? "Site not found: " + AiHostResolver.sanitize(siteId)
                         : "Could not resolve current site from request";
                 return Response.status(Response.Status.BAD_REQUEST)
                         .entity(Map.of(AiKeys.ERROR, msg))
@@ -309,7 +333,7 @@ public class CompletionsResource {
 
         } catch (final DotSecurityException e) {
             return Response.status(Response.Status.FORBIDDEN)
-                    .entity(Map.of(AiKeys.ERROR, "Access denied to site: " + sanitize(siteId)))
+                    .entity(Map.of(AiKeys.ERROR, "Access denied to site: " + AiHostResolver.sanitize(siteId)))
                     .build();
         } catch (final Exception e) {
             Logger.error(CompletionsResource.class, "Failed to save AI config: " + e.getMessage(), e);
@@ -345,65 +369,6 @@ public class CompletionsResource {
         } else if (node.isArray()) {
             node.forEach(CompletionsResource::redactNode);
         }
-    }
-
-    /**
-     * Resolves a host from {@code siteId} and falls back to the HTTP host on failure.
-     * Throws {@link DotSecurityException} when the user lacks permission for the requested site.
-     * Falls back to the HTTP-derived host when {@code siteId} is blank or not found.
-     */
-    private static Host resolveHost(final String siteId,
-                                    final HttpServletRequest request,
-                                    final User user) throws DotSecurityException {
-        if (StringUtils.isNotBlank(siteId)) {
-            try {
-                final Host found = findHost(siteId, user);
-                if (found != null) {
-                    return found;
-                }
-            } catch (final DotSecurityException e) {
-                throw e;
-            } catch (final Exception e) {
-                Logger.warn(CompletionsResource.class,
-                        "Could not resolve siteId '" + sanitize(siteId) + "', falling back to current host: " + e.getMessage());
-            }
-        }
-        return WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
-    }
-
-    /**
-     * Resolves a host from {@code siteId} strictly — no fallback.
-     * Falls back to the HTTP-derived host when siteId is blank.
-     * Returns {@code null} when the site is not found.
-     * Throws {@link DotSecurityException} when the user lacks permission.
-     * Use for write operations where silently targeting the wrong site is unacceptable.
-     */
-    private static Host resolveHostStrict(final String siteId,
-                                          final HttpServletRequest request,
-                                          final User user) throws DotSecurityException {
-        if (StringUtils.isBlank(siteId)) {
-            return WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
-        }
-        try {
-            return findHost(siteId, user);
-        } catch (final DotSecurityException e) {
-            throw e;
-        } catch (final Exception e) {
-            Logger.warn(CompletionsResource.class, "Could not resolve siteId '" + sanitize(siteId) + "': " + e.getMessage());
-            return null;
-        }
-    }
-
-    private static String sanitize(final String value) {
-        return value == null ? "null" : value.replaceAll("[\r\n\t]", "_");
-    }
-
-    private static Host findHost(final String siteId, final User user) throws Exception {
-        if ("SYSTEM_HOST".equalsIgnoreCase(siteId)) {
-            return APILocator.systemHost();
-        }
-        final Host found = APILocator.getHostAPI().find(siteId, user, false);
-        return (found != null && StringUtils.isNotBlank(found.getIdentifier()) && !found.isArchived()) ? found : null;
     }
 
     private static Response badRequestResponse() {

@@ -1,8 +1,6 @@
 <%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
 <%@page import="org.apache.commons.lang.StringEscapeUtils"%>
 <%@page import="com.dotcms.publisher.business.PublishAuditUtil"%>
-<%@page import="com.dotmarketing.business.PermissionAPI"%>
-<%@page import="com.dotmarketing.beans.PermissionableProxy"%>
 <%@page import="com.dotcms.publisher.business.PublishQueueElement"%>
 <%@page import="com.dotmarketing.util.DateUtil"%>
 <%@page import="java.text.SimpleDateFormat"%>
@@ -21,6 +19,9 @@
 <%@page import="com.dotcms.publisher.bundle.business.BundleAPI"%>
 <%@page import="com.dotcms.publisher.bundle.bean.Bundle"%>
 <%@page import="java.util.List"%>
+<%@page import="java.util.LinkedHashMap"%>
+<%@page import="java.util.Set"%>
+<%@page import="com.dotcms.publisher.business.PublishQueuePermissionFilter"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="java.util.Calendar"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
@@ -77,11 +78,27 @@
     	deleteBundleElements=true;
     }
     String elementsToDelete=null;
+    int malformedDeleteEntries = 0;
 
     try{
     	if(deleteQueueElements){
-	    	for(String identifier : deleteQueueElementsStr.split(",")){
-	    		pubAPI.deleteElementFromPublishQueueTableAndAuditStatus(identifier);
+	    	for(String entry : deleteQueueElementsStr.split(",")){
+	    		// Each entry is <assetId>$<bundleId>. Split on the LAST '$', not the first: an asset
+	    		// identifier may legally contain '$' - an OSGI bundle's identifier is a jar file name
+	    		// (PublisherAPIImpl:207) - whereas a bundle id never does. Splitting left-to-right
+	    		// would mis-parse "my$plugin.jar$B" into asset="my", bundle="plugin.jar", delete zero
+	    		// rows and reload the pane looking like success: the exact silent no-op #36861 fixes.
+	    		final int separator = entry.lastIndexOf('$');
+	    		final String assetToDelete = separator > 0 ? entry.substring(0, separator) : null;
+	    		final String bundleOfAsset = separator > 0 ? entry.substring(separator + 1) : null;
+
+	    		if(!UtilMethods.isSet(assetToDelete) || !UtilMethods.isSet(bundleOfAsset)){
+	    			// The bundle is mandatory - deleting without it would clear the asset from every
+	    			// bundle holding it. Tell the user rather than silently skipping.
+	    			malformedDeleteEntries++;
+	    			continue;
+	    		}
+	    		pubAPI.deleteElementFromPublishQueueTableAndAuditStatus(assetToDelete, bundleOfAsset);
 	    	}
     	}
 
@@ -96,10 +113,10 @@
    		counter =  pubAPI.countQueueBundleIds();
 
     }catch(DotPublisherException e){
-    	iresults = new ArrayList();
+    	iresults = new ArrayList<Map<String,Object>>();
     	nastyError = e.toString();
     }catch(Exception pe){
-    	iresults = new ArrayList();
+    	iresults = new ArrayList<Map<String,Object>>();
     	nastyError = pe.toString();
     }
 
@@ -133,6 +150,10 @@
 
 	function checkAllBundle(x){
 		var chk = dijit.byId("bundle_to_delete_" + x).checked;
+		 // ".b<bundleId> input" is correct and deliberate, despite the class being authored on the
+		 // <input>: dijit.form.CheckBox moves the source node's classes onto its wrapper <div> and
+		 // nests the real <input> inside it, so the descendant form is what actually matches.
+		 // "input.b<bundleId>" matches nothing once the widgets are built - verified by test.
 		 dojo.query(".b" + x  + " input").forEach(function(box){
 			 dijit.byId(box.id).disabled = chk;
 			 dijit.byId(box.id).setValue(chk);
@@ -150,17 +171,53 @@
 		refreshQueueList(url);
 	}
 
+   /**
+    * Returns the CheckBox widget for a node, or null when the node was never upgraded.
+    *
+    * dijit.getEnclosingWidget() walks UP the DOM, so for a plain <input> it returns the nearest
+    * enclosing widget - the queueContent ContentPane. That has no .checked (undefined, falsy) and
+    * no .disabled (undefined, so !undefined is true), which is why an un-upgraded checkbox used to
+    * be skipped silently instead of throwing. See issue #36861.
+    */
+   function queueCheckBoxFor(node){
+	   var widget = dijit.getEnclosingWidget(node);
+
+	   return (widget && typeof widget.checked === "boolean") ? widget : null;
+   }
+
    function deleteQueue(){
 	   var url="layout=<%=layout%>&offset=<%=offset%>&limit=<%=limit%>";
 
 		var ids="";
+		var malformed=0;
 		var nodes = dojo.query('.queue_to_delete');
 		   dojo.forEach(nodes, function(node) {
-			   if(dijit.getEnclosingWidget(node).checked && !dijit.getEnclosingWidget(node).disabled){
-				   var nodeValue = dijit.getEnclosingWidget(node).value;
-				   ids+=","+nodeValue.split("$")[0];
+			   var box = queueCheckBoxFor(node);
+			   if(box && box.checked && !box.disabled){
+				   // value is <asset>$<operation>$<bundleId>. Read the last two segments from the
+				   // RIGHT and rejoin the rest: an asset identifier may legally contain '$' (an
+				   // OSGI bundle's identifier is a jar file name), while the operation and bundle
+				   // id never do. Taking parts[0] would truncate such an asset and send a delete
+				   // that matches nothing - see issue #36861.
+				   var parts = box.value.split("$");
+				   if(parts.length < 3){
+					   malformed++;
+
+					   return;
+				   }
+				   var bundleId = parts[parts.length - 1];
+				   var assetId = parts.slice(0, parts.length - 2).join("$");
+				   ids+=","+assetId+"$"+bundleId;
 			   }
 		   });
+		if(malformed > 0){
+			// A checkbox whose value does not carry its bundle cannot be deleted safely - deleting
+			// by asset alone would clear it from every bundle. Say so rather than dropping it.
+			alert("<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publisher_delete_malformed_selection")) %>");
+
+			return;
+		}
+
 		if(ids != ""){
 			url+="&delete="+ids.substring(1);
 		}
@@ -169,19 +226,36 @@
    }
 
    function deleteBundle(url) {
+	   var deletingQueueElements = url.indexOf("&delete=") > -1;
 	   var ids="";
 		var nodes = dojo.query('.bundle_to_delete');
 		   dojo.forEach(nodes, function(node) {
-			   if(dijit.getEnclosingWidget(node).checked){
-				   ids+=","+dijit.getEnclosingWidget(node).value;
+			   var box = queueCheckBoxFor(node);
+			   if(box && box.checked){
+				   ids+=","+box.value;
 			   }
 		   });
 		if(ids != ""){
 			url+="&deleteBundle="+ids.substring(1);
 		}
+
+		if(ids == "" && !deletingQueueElements){
+			// Nothing was collected. Reloading the pane here would look exactly like a successful
+			// delete, which is how this failure stayed invisible for so long - tell the user.
+			alert("<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publisher_delete_nothing_selected")) %>");
+
+			return;
+		}
+
 		refreshQueueList(url);
    }
 </script>
+
+<%if(malformedDeleteEntries > 0){%>
+		<dl>
+			<dt style='color:red;'><%= LanguageUtil.get(pageContext, "publisher_delete_malformed_selection") %></dt>
+		</dl>
+<%}%>
 
 <%if(UtilMethods.isSet(nastyError)){%>
 		<dl>
@@ -203,36 +277,33 @@
 	</table>
 
 <%} else {
-	//Check bundle permissions
-	Map<String, Boolean> permissionMap = new HashMap<String, Boolean>();
-	PermissionAPI permAPI = APILocator.getPermissionAPI();
-	List<PublishQueueElement> bundleAssets = null;
+	// Resolve each bundle's queue elements ONCE and reuse them for both the permission check and
+	// the render below. This loop used to call getQueueElementsByBundleId twice per bundle.
+	final Map<String, List<PublishQueueElement>> elementsByBundle =
+			new LinkedHashMap<String, List<PublishQueueElement>>();
+	final Map<String, PublishQueueElement> firstElementByBundle =
+			new LinkedHashMap<String, PublishQueueElement>();
+
 	for(Map<String,Object> bundle : iresults) {
-		bundleAssets = pubAPI.getQueueElementsByBundleId((String)bundle.get("bundle_id"));
+		final String currentBundleId = (String) bundle.get("bundle_id");
+		final List<PublishQueueElement> elements = pubAPI.getQueueElementsByBundleId(currentBundleId);
 
-		for(PublishQueueElement c : bundleAssets) {
-
-			String identifier = c.getAsset();
-			String assetType = c.getType();
-
-			PermissionableProxy pp = new PermissionableProxy();
-			pp.setIdentifier(identifier);
-			pp.setType(assetType);
-			pp.setInode(identifier);
-
-			permissionMap.put(
-					(String) bundle.get("bundle_id"),
-					new Boolean(permAPI.doesUserHavePermission(pp, PermissionAPI.PERMISSION_PUBLISH, user)));
-			break;
-		}
+		elementsByBundle.put(currentBundleId, elements);
+		// A bundle's visibility is judged from its FIRST queue element only - preserving the
+		// behaviour of the per-bundle loop this replaces, which broke after one element.
+		firstElementByBundle.put(currentBundleId, elements.isEmpty() ? null : elements.get(0));
 	}
 
+	// One batched permission query instead of one per bundle (ADR-0020). A bundle missing from the
+	// permitted set is simply not shown - previously a missing map entry NPE'd the whole render.
+	final Set<String> permittedBundleIds =
+			PublishQueuePermissionFilter.permittedBundleIds(firstElementByBundle, user);
 
-	bundleAssets = null;
+	List<PublishQueueElement> bundleAssets = null;
 	for(Map<String,Object> bundle : iresults) {
 
-		if(permissionMap.get(bundle.get("bundle_id")).equals(Boolean.TRUE)) {
-		bundleAssets = pubAPI.getQueueElementsByBundleId((String)bundle.get("bundle_id"));
+		if(permittedBundleIds.contains(bundle.get("bundle_id"))) {
+		bundleAssets = elementsByBundle.get(bundle.get("bundle_id"));
 		Bundle bundleObj = APILocator.getBundleAPI().getBundleById((String)bundle.get("bundle_id"));
 		%>
 
@@ -309,8 +380,17 @@
 							type="checkbox"
 							class="queue_to_delete b<%=bundle.get("bundle_id") %>"
 							name="queue_to_delete"
-							value="<%=asset.get(PublishQueueElementTransformer.ASSET_KEY) %>$<%=asset.get(PublishQueueElementTransformer.OPERATION_KEY)  %>"
-							id="queue_to_delete_<%=asset.get(PublishQueueElementTransformer.ASSET_KEY) %>$<%=asset.get(PublishQueueElementTransformer.OPERATION_KEY)  %>" />
+							<%-- <asset>$<operation>$<bundleId>. deleteQueue() still reads the bare asset id as
+							     split("$")[0]; the trailing bundle id is what lets the delete be scoped to the
+							     bundle the row was clicked in, instead of clearing the asset from every bundle
+							     that has it queued. See issue #36861. --%>
+							value="<%=asset.get(PublishQueueElementTransformer.ASSET_KEY) %>$<%=asset.get(PublishQueueElementTransformer.OPERATION_KEY)  %>$<%=bundle.get("bundle_id") %>"
+							<%-- The bundle id is part of the widget id because the same asset and operation
+							     can be queued in more than one bundle on the same page. Without it the second
+							     dijit.form.CheckBox collides in the widget registry, dojo/parser throws, and the
+							     rest of the parse pass is abandoned - leaving every checkbox below it an
+							     un-upgraded <input> that Delete silently skips. See issue #36861. --%>
+							id="queue_to_delete_<%=asset.get(PublishQueueElementTransformer.ASSET_KEY) %>$<%=asset.get(PublishQueueElementTransformer.OPERATION_KEY)  %>$<%=bundle.get("bundle_id") %>" />
 				</td>
 
 

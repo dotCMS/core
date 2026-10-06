@@ -1,6 +1,6 @@
-import { describe, expect, it } from '@jest/globals';
 import { Spectator, createComponentFactory, mockProvider } from '@openng/spectator';
 import { of } from 'rxjs';
+import { describe, expect, it, vi } from 'vitest';
 
 import { AsyncPipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
@@ -110,7 +110,12 @@ describe('DotEmaBookmarksComponent', () => {
 
     it('should open a dynamic dialog when toggleBookmark is called', () => {
         const dialogService = spectator.inject(DialogService);
-        const dialogServiceOpenSpy = jest.spyOn(dialogService, 'open');
+        // mockImplementation, not a bare spy: the real open() instantiates
+        // DotFavoritePageComponent, which needs DotSessionStorageService — absent here,
+        // so Angular threw NG0201 from inside the click handler and reported it
+        // asynchronously, which Jest dropped. The component ignores the returned ref,
+        // and the assertion below is only about the arguments.
+        const dialogServiceOpenSpy = vi.spyOn(dialogService, 'open').mockImplementation(() => null);
 
         const button = spectator.debugElement.query(By.css('[data-testId="bookmark-button"]'));
 

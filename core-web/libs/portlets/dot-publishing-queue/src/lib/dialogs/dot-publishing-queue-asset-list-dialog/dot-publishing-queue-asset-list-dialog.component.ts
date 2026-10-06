@@ -205,7 +205,7 @@ export class DotPublishingQueueAssetListDialogComponent {
                 'publishing-queue.asset-list.remove-confirm.message',
                 asset.title || asset.asset
             ),
-            acceptLabel: this.#dotMessageService.get('publishing-queue.remove'),
+            acceptLabel: this.#dotMessageService.get('publishing-queue.delete'),
             rejectLabel: this.#dotMessageService.get('publishing-queue.cancel'),
             acceptButtonStyleClass: 'p-button-danger',
             rejectButtonStyleClass: 'p-button-text',

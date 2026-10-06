@@ -1,0 +1,7 @@
+<dot-chip-filter
+    mode="toggle"
+    [title]="'content-drive.shared-assets-filter.title' | dm"
+    [toggled]="$enabled()"
+    (clicked)="onToggle()"
+    (removed)="onRemove()"
+    data-testid="shared-assets-filter-chip" />

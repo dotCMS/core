@@ -1,17 +1,30 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
+import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
+import { Mock, MockInstance, vi } from 'vitest';
 
 import { Location } from '@angular/common';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
 
+import { MessageService } from 'primeng/api';
+
 import {
+    buildPersistedQueryKey,
     DotContentletEditUrlService,
+    DotContentSearchService,
     DotCurrentUserService,
     DotGlobalMessageService,
     DotHttpErrorManagerService,
-    DotMessageService
+    DotMessageService,
+    DotPropertiesService
 } from '@dotcms/data-access';
-import { ComponentStatus } from '@dotcms/dotcms-models';
+import { ComponentStatus, FeaturedFlags } from '@dotcms/dotcms-models';
+import { DotEditContentSidePanelComponent } from '@dotcms/edit-content';
 import { DotClipboardUtil } from '@dotcms/ui';
 
 import { DotQueryToolPageComponent } from './dot-query-tool-page.component';
@@ -26,48 +39,79 @@ const SAMPLE_CONTENTLET = {
     contentType: 'htmlpageasset'
 };
 
-const buildStoreMock = (overrides: Partial<Record<string, jest.Mock>> = {}) => ({
-    query: jest.fn().mockReturnValue(''),
-    sort: jest.fn().mockReturnValue(''),
-    offset: jest.fn().mockReturnValue(0),
-    limit: jest.fn().mockReturnValue(DEFAULT_LIMIT),
-    userId: jest.fn().mockReturnValue(''),
-    isAdmin: jest.fn().mockReturnValue(false),
-    status: jest.fn().mockReturnValue(ComponentStatus.INIT),
-    response: jest.fn().mockReturnValue(null),
-    contentlets: jest.fn().mockReturnValue([]),
-    resultsSize: jest.fn().mockReturnValue(0),
-    queryTook: jest.fn().mockReturnValue(0),
-    contentTook: jest.fn().mockReturnValue(0),
-    rawJson: jest.fn().mockReturnValue(''),
-    queryTimeMs: jest.fn().mockReturnValue(null),
-    activeTab: jest.fn().mockReturnValue('results'),
-    isLoading: jest.fn().mockReturnValue(false),
-    hasLoadedResults: jest.fn().mockReturnValue(false),
-    showingFrom: jest.fn().mockReturnValue(0),
-    showingTo: jest.fn().mockReturnValue(0),
-    apiRequestBody: jest
+const buildStoreMock = (overrides: Partial<Record<string, Mock>> = {}) => ({
+    query: vi.fn().mockReturnValue(''),
+    sort: vi.fn().mockReturnValue(''),
+    offset: vi.fn().mockReturnValue(0),
+    limit: vi.fn().mockReturnValue(DEFAULT_LIMIT),
+    userId: vi.fn().mockReturnValue(''),
+    isAdmin: vi.fn().mockReturnValue(false),
+    status: vi.fn().mockReturnValue(ComponentStatus.INIT),
+    response: vi.fn().mockReturnValue(null),
+    contentlets: vi.fn().mockReturnValue([]),
+    resultsSize: vi.fn().mockReturnValue(0),
+    queryTook: vi.fn().mockReturnValue(0),
+    contentTook: vi.fn().mockReturnValue(0),
+    rawJson: vi.fn().mockReturnValue(''),
+    queryTimeMs: vi.fn().mockReturnValue(null),
+    activeTab: vi.fn().mockReturnValue('results'),
+    isLoading: vi.fn().mockReturnValue(false),
+    hasLoadedResults: vi.fn().mockReturnValue(false),
+    showingFrom: vi.fn().mockReturnValue(0),
+    showingTo: vi.fn().mockReturnValue(0),
+    apiRequestBody: vi
         .fn()
         .mockReturnValue({ query: '', sort: '', offset: 0, limit: DEFAULT_LIMIT }),
-    limitWasCapped: jest.fn().mockReturnValue(false),
-    emptyStateConfig: jest
-        .fn()
-        .mockReturnValue({ title: 'Empty', icon: 'pi-search', subtitle: '' }),
-    setQuery: jest.fn(),
-    setSort: jest.fn(),
-    setOffset: jest.fn(),
-    setLimit: jest.fn(),
-    setUserId: jest.fn(),
-    setActiveTab: jest.fn(),
-    resetOffset: jest.fn(),
-    runSearch: jest.fn(),
+    limitWasCapped: vi.fn().mockReturnValue(false),
+    // `withFlags` slice — side panel off by default (empty map ⇒ `flags()[FLAG] ?? false` is false).
+    flags: vi.fn().mockReturnValue({}),
+    emptyStateConfig: vi.fn().mockReturnValue({
+        title: 'Empty',
+        icon: 'search',
+        iconStyle: 'material-symbols-rounded',
+        subtitle: ''
+    }),
+    setQuery: vi.fn(),
+    setSort: vi.fn(),
+    setOffset: vi.fn(),
+    setLimit: vi.fn(),
+    setUserId: vi.fn(),
+    setActiveTab: vi.fn(),
+    resetOffset: vi.fn(),
+    runSearch: vi.fn(),
     ...overrides
 });
 
+/**
+ * The injected store is a SpyObject, so its signal members type as spies rather than plain
+ * signals and will not accept a bare mock. Writing through a record view keeps the one-line
+ * stubs below readable.
+ */
+const stubbed = (store: unknown) => store as Record<string, unknown>;
+
+const MONACO_CTRL_CMD = 2048;
+const MONACO_ENTER = 3;
+
+/** Stubs the global Monaco namespace and returns a fake editor that records its actions. */
+const createFakeEditor = () => {
+    vi.stubGlobal('monaco', {
+        ...((globalThis as { monaco?: object }).monaco ?? {}),
+        KeyMod: { CtrlCmd: MONACO_CTRL_CMD },
+        KeyCode: { Enter: MONACO_ENTER }
+    });
+    const addAction = vi.fn();
+
+    return {
+        editor: { addAction },
+        /** Simulates Monaco dispatching the Cmd/Ctrl + Enter keybinding. */
+        pressRunShortcut: () => addAction.mock.calls[0][0].run()
+    };
+};
+
 describe('DotQueryToolPageComponent', () => {
     let spectator: Spectator<DotQueryToolPageComponent>;
-    let locationReplaceStateSpy: jest.Mock;
-    let pendingStoreOverrides: Partial<Record<string, jest.Mock>> = {};
+    let locationReplaceStateSpy: Mock;
+    let pendingStoreOverrides: Partial<Record<string, Mock>> = {};
 
     const createComponent = createComponentFactory({
         component: DotQueryToolPageComponent,
@@ -81,25 +125,30 @@ describe('DotQueryToolPageComponent', () => {
             ]
         ],
         providers: [
-            mockProvider(DotMessageService, { get: jest.fn().mockReturnValue('') }),
+            mockProvider(DotMessageService, { get: vi.fn().mockReturnValue('') }),
             mockProvider(DotHttpErrorManagerService),
-            mockProvider(DotGlobalMessageService, { error: jest.fn() }),
+            mockProvider(DotGlobalMessageService, { error: vi.fn() }),
             mockProvider(DotQueryToolService),
             mockProvider(DotContentletEditUrlService, {
-                resolveEditUrl: jest.fn()
+                resolveEditUrl: vi.fn()
+            }),
+            // Deep-link resolve for `?editContent=`; empty by default (no panel opens on load).
+            mockProvider(DotContentSearchService, {
+                get: vi.fn().mockReturnValue(of({ jsonObjectView: { contentlets: [] } }))
             })
         ],
         componentProviders: [
             { provide: DotQueryToolStore, useFactory: () => buildStoreMock(pendingStoreOverrides) },
             DotClipboardUtil
+            // Flag off by default (store mock's `flags()` returns `{}`) → results open in a new tab.
         ]
     });
 
     const setup = (
         params: Record<string, string> = {},
-        storeOverrides: Partial<Record<string, jest.Mock>> = {}
+        storeOverrides: Partial<Record<string, Mock>> = {}
     ) => {
-        locationReplaceStateSpy = jest.fn();
+        locationReplaceStateSpy = vi.fn();
         pendingStoreOverrides = storeOverrides;
         spectator = createComponent({
             providers: [
@@ -107,7 +156,15 @@ describe('DotQueryToolPageComponent', () => {
                     provide: ActivatedRoute,
                     useValue: { snapshot: { queryParamMap: convertToParamMap(params) } }
                 },
-                { provide: Location, useValue: { replaceState: locationReplaceStateSpy } }
+                {
+                    provide: Location,
+                    useValue: {
+                        replaceState: locationReplaceStateSpy,
+                        go: vi.fn(),
+                        path: vi.fn().mockReturnValue(''),
+                        subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() })
+                    }
+                }
             ]
         });
         return spectator.inject(DotQueryToolStore, true);
@@ -145,6 +202,22 @@ describe('DotQueryToolPageComponent', () => {
             const store = spectator.inject(DotQueryToolStore, true);
             expect(store.runSearch).not.toHaveBeenCalled();
         });
+
+        it('leaves the store query untouched when the URL carries no q', () => {
+            // The store hydrates `query` from localStorage in its own onInit, which runs before
+            // ngOnInit. Writing the (absent) `q` param over it wipes the restored query from the
+            // UI. Storage itself survives — the persistence pipeline's `skip(1)` absorbs the stray
+            // '' — so the damage is confined to the editor the user is looking at.
+            setup({});
+            const store = spectator.inject(DotQueryToolStore, true);
+            expect(store.setQuery).not.toHaveBeenCalled();
+        });
+
+        it('applies an explicitly empty q, so a shared ?q= link still clears the editor', () => {
+            setup({ q: '' });
+            const store = spectator.inject(DotQueryToolStore, true);
+            expect(store.setQuery).toHaveBeenCalledWith('');
+        });
     });
 
     describe('Submit button', () => {
@@ -157,7 +230,7 @@ describe('DotQueryToolPageComponent', () => {
 
         it('resets offset and triggers runSearch when clicked', () => {
             const store = setup();
-            store.query = jest.fn().mockReturnValue('+live:true');
+            stubbed(store)['query'] = vi.fn().mockReturnValue('+live:true');
             spectator.fixture.componentRef.changeDetectorRef.markForCheck();
             spectator.detectChanges();
             const btn = spectator.query(byTestId('query-tool-run-btn'))?.querySelector('button');
@@ -173,8 +246,8 @@ describe('DotQueryToolPageComponent', () => {
             setup(
                 {},
                 {
-                    query: jest.fn().mockReturnValue('+live:true'),
-                    status: jest.fn().mockReturnValue(ComponentStatus.LOADED)
+                    query: vi.fn().mockReturnValue('+live:true'),
+                    status: vi.fn().mockReturnValue(ComponentStatus.LOADED)
                 }
             );
             expect(locationReplaceStateSpy).toHaveBeenCalled();
@@ -184,8 +257,8 @@ describe('DotQueryToolPageComponent', () => {
             setup(
                 {},
                 {
-                    query: jest.fn().mockReturnValue('+broken:('),
-                    status: jest.fn().mockReturnValue(ComponentStatus.ERROR)
+                    query: vi.fn().mockReturnValue('+broken:('),
+                    status: vi.fn().mockReturnValue(ComponentStatus.ERROR)
                 }
             );
             expect(locationReplaceStateSpy).toHaveBeenCalled();
@@ -195,8 +268,8 @@ describe('DotQueryToolPageComponent', () => {
             setup(
                 {},
                 {
-                    query: jest.fn().mockReturnValue('+live:true'),
-                    status: jest.fn().mockReturnValue(ComponentStatus.LOADING)
+                    query: vi.fn().mockReturnValue('+live:true'),
+                    status: vi.fn().mockReturnValue(ComponentStatus.LOADING)
                 }
             );
             expect(locationReplaceStateSpy).not.toHaveBeenCalled();
@@ -208,13 +281,72 @@ describe('DotQueryToolPageComponent', () => {
         });
     });
 
+    describe('Run keyboard shortcut', () => {
+        afterEach(() => {
+            vi.unstubAllGlobals();
+        });
+
+        it('binds Cmd/Ctrl + Enter on the query editor', () => {
+            setup();
+            const { editor } = createFakeEditor();
+            spectator.triggerEventHandler(
+                '[data-testid="query-tool-query-editor"]',
+                'init',
+                editor
+            );
+            expect(editor.addAction).toHaveBeenCalledWith(
+                expect.objectContaining({ keybindings: [MONACO_CTRL_CMD | MONACO_ENTER] })
+            );
+        });
+
+        it('runs the query when the shortcut is pressed', () => {
+            const store = setup({}, { query: vi.fn().mockReturnValue('+live:true') });
+            const { editor, pressRunShortcut } = createFakeEditor();
+            spectator.triggerEventHandler(
+                '[data-testid="query-tool-query-editor"]',
+                'init',
+                editor
+            );
+            pressRunShortcut();
+            expect(store.resetOffset).toHaveBeenCalled();
+            expect(store.runSearch).toHaveBeenCalled();
+        });
+
+        it('is a no-op while a search is already in flight', () => {
+            const store = setup(
+                {},
+                {
+                    query: vi.fn().mockReturnValue('+live:true'),
+                    isLoading: vi.fn().mockReturnValue(true)
+                }
+            );
+            const { editor, pressRunShortcut } = createFakeEditor();
+            spectator.triggerEventHandler(
+                '[data-testid="query-tool-query-editor"]',
+                'init',
+                editor
+            );
+            pressRunShortcut();
+            expect(store.runSearch).not.toHaveBeenCalled();
+        });
+
+        it('states the shortcut in the Run button tooltip', () => {
+            setup();
+            const messageService = spectator.inject(DotMessageService);
+            expect(messageService.get).toHaveBeenCalledWith(
+                'queryTool.action.run.tooltip',
+                spectator.component.runShortcutLabel
+            );
+        });
+    });
+
     describe('Result title click', () => {
-        let windowOpenSpy: jest.SpyInstance;
-        let placeholderWindow: { location: { href: string }; close: jest.Mock };
+        let windowOpenSpy: MockInstance;
+        let placeholderWindow: { location: { href: string }; close: Mock };
 
         beforeEach(() => {
-            placeholderWindow = { location: { href: '' }, close: jest.fn() };
-            windowOpenSpy = jest
+            placeholderWindow = { location: { href: '' }, close: vi.fn() };
+            windowOpenSpy = vi
                 .spyOn(window, 'open')
                 .mockReturnValue(placeholderWindow as unknown as Window);
         });
@@ -226,7 +358,7 @@ describe('DotQueryToolPageComponent', () => {
         it('opens a placeholder tab synchronously, then assigns the resolved URL', () => {
             setup();
             const resolver = spectator.inject(DotContentletEditUrlService);
-            (resolver.resolveEditUrl as jest.Mock).mockReturnValue(
+            (resolver.resolveEditUrl as Mock).mockReturnValue(
                 of('/dotAdmin/#/edit-page/content?url=%2Fabout-us&language_id=1&mId=edit')
             );
 
@@ -242,9 +374,7 @@ describe('DotQueryToolPageComponent', () => {
         it('forwards the contentlet to the resolver and assigns the new-editor URL', () => {
             setup();
             const resolver = spectator.inject(DotContentletEditUrlService);
-            (resolver.resolveEditUrl as jest.Mock).mockReturnValue(
-                of('/dotAdmin/#/content/inode-1')
-            );
+            (resolver.resolveEditUrl as Mock).mockReturnValue(of('/dotAdmin/#/content/inode-1'));
 
             spectator.component.onResultClick(SAMPLE_CONTENTLET as never, new MouseEvent('click'));
 
@@ -254,9 +384,7 @@ describe('DotQueryToolPageComponent', () => {
         it('assigns the legacy-editor URL when the resolver returns the legacy path', () => {
             setup();
             const resolver = spectator.inject(DotContentletEditUrlService);
-            (resolver.resolveEditUrl as jest.Mock).mockReturnValue(
-                of('/dotAdmin/#/c/content/inode-1')
-            );
+            (resolver.resolveEditUrl as Mock).mockReturnValue(of('/dotAdmin/#/c/content/inode-1'));
 
             spectator.component.onResultClick(SAMPLE_CONTENTLET as never, new MouseEvent('click'));
 
@@ -290,7 +418,7 @@ describe('DotQueryToolPageComponent', () => {
     describe('Share menu', () => {
         const setupClipboardSpy = () => {
             const clipboard = spectator.inject(DotClipboardUtil, true);
-            return jest.spyOn(clipboard, 'copy').mockResolvedValue(true);
+            return vi.spyOn(clipboard, 'copy').mockResolvedValue(true);
         };
 
         it('exposes three items (URL, cURL, fetch) with no icons, each command bound', () => {
@@ -311,7 +439,7 @@ describe('DotQueryToolPageComponent', () => {
 
         it('Copy as cURL targets the _search endpoint with the store request body', () => {
             const store = setup();
-            store.apiRequestBody = jest.fn().mockReturnValue({
+            stubbed(store)['apiRequestBody'] = vi.fn().mockReturnValue({
                 query: '+live:true',
                 sort: 'modDate desc',
                 limit: 50,
@@ -333,7 +461,7 @@ describe('DotQueryToolPageComponent', () => {
 
         it('Copy as fetch emits a fetch() call against the _search endpoint', () => {
             const store = setup();
-            store.apiRequestBody = jest
+            stubbed(store)['apiRequestBody'] = vi
                 .fn()
                 .mockReturnValue({ query: '+live:true', sort: '', limit: 20, offset: 0 });
             const copySpy = setupClipboardSpy();
@@ -344,5 +472,380 @@ describe('DotQueryToolPageComponent', () => {
             expect(snippet).toContain(`credentials: 'include'`);
             expect(snippet).toContain(`"query": "+live:true"`);
         });
+    });
+});
+
+// Sibling top-level describe (own TestBed): the side panel feature flag is ON. New-editor results
+// open in the in-page panel instead of a new tab; legacy/page results still open in a new tab.
+describe('DotQueryToolPageComponent (side panel enabled)', () => {
+    let spectator: Spectator<DotQueryToolPageComponent>;
+    let windowOpenSpy: MockInstance;
+
+    const createComponent = createComponentFactory({
+        component: DotQueryToolPageComponent,
+        overrideComponents: [
+            [
+                DotQueryToolPageComponent,
+                {
+                    // Stub the side panel so setting `$editPanelRequest` renders a light element we
+                    // can drive its `(saved)`/`(closed)` outputs on, instead of the real editor.
+                    remove: {
+                        providers: [DotQueryToolStore, DotCurrentUserService],
+                        imports: [DotEditContentSidePanelComponent]
+                    },
+                    add: { imports: [MockComponent(DotEditContentSidePanelComponent)] }
+                }
+            ]
+        ],
+        providers: [
+            mockProvider(DotMessageService, { get: vi.fn().mockReturnValue('') }),
+            mockProvider(DotHttpErrorManagerService),
+            mockProvider(DotGlobalMessageService, { error: vi.fn() }),
+            mockProvider(DotQueryToolService),
+            mockProvider(DotContentletEditUrlService, { resolveEditUrl: vi.fn() }),
+            mockProvider(DotContentSearchService, {
+                get: vi.fn().mockReturnValue(of({ jsonObjectView: { contentlets: [] } }))
+            })
+        ],
+        componentProviders: [
+            // Flag on (store mock's `flags()` reports the side panel enabled) → new-editor results
+            // open in the side panel instead of a new tab.
+            {
+                provide: DotQueryToolStore,
+                useFactory: () =>
+                    buildStoreMock({
+                        flags: vi.fn().mockReturnValue({
+                            [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: true
+                        })
+                    })
+            },
+            DotClipboardUtil
+        ]
+    });
+
+    beforeEach(() => {
+        windowOpenSpy = vi.spyOn(window, 'open').mockReturnValue(null);
+        spectator = createComponent({
+            providers: [
+                {
+                    provide: ActivatedRoute,
+                    useValue: { snapshot: { queryParamMap: convertToParamMap({}) } }
+                },
+                {
+                    provide: Location,
+                    useValue: {
+                        replaceState: vi.fn(),
+                        go: vi.fn(),
+                        path: vi.fn().mockReturnValue(''),
+                        subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() })
+                    }
+                }
+            ]
+        });
+    });
+
+    afterEach(() => windowOpenSpy.mockRestore());
+
+    it('opens the new-editor result in the side panel (no new tab)', () => {
+        const resolver = spectator.inject(DotContentletEditUrlService);
+        (resolver.resolveEditUrl as Mock).mockReturnValue(of('/dotAdmin/#/content/inode-1'));
+
+        spectator.component.onResultClick(SAMPLE_CONTENTLET as never, new MouseEvent('click'));
+
+        expect(windowOpenSpy).not.toHaveBeenCalled();
+        expect(spectator.component.$editPanelRequest()).toEqual({
+            mode: 'edit',
+            contentletInode: 'inode-1',
+            identifier: 'id-1',
+            title: 'Home'
+        });
+    });
+
+    it('reflects the open panel in the URL via editContent (history push, so Back can pop it)', () => {
+        const resolver = spectator.inject(DotContentletEditUrlService);
+        (resolver.resolveEditUrl as Mock).mockReturnValue(of('/dotAdmin/#/content/inode-1'));
+        const location = spectator.inject(Location);
+
+        spectator.component.onResultClick(SAMPLE_CONTENTLET as never, new MouseEvent('click'));
+        spectator.flushEffects();
+
+        expect(location.go).toHaveBeenCalledWith(expect.stringContaining('editContent=id-1'));
+    });
+
+    it('uses replaceState (not go) when the panel closes, so Back cannot resurrect the removed param', () => {
+        const resolver = spectator.inject(DotContentletEditUrlService);
+        (resolver.resolveEditUrl as Mock).mockReturnValue(of('/dotAdmin/#/content/inode-1'));
+        const location = spectator.inject(Location);
+
+        spectator.component.onResultClick(SAMPLE_CONTENTLET as never, new MouseEvent('click'));
+        spectator.flushEffects();
+        (location.go as Mock).mockClear();
+        (location.replaceState as Mock).mockClear();
+
+        spectator.component.$editPanelRequest.set(null);
+        spectator.flushEffects();
+
+        expect(location.replaceState).toHaveBeenCalledTimes(1);
+        expect(location.go).not.toHaveBeenCalled();
+    });
+
+    it('routes browser Back through the panel close guard (does not clear silently)', () => {
+        const requestClose = vi.fn();
+        vi.spyOn(spectator.component, '$sidePanel').mockReturnValue({
+            requestClose
+        } as unknown as DotEditContentSidePanelComponent);
+        spectator.component.$editPanelRequest.set({
+            mode: 'edit',
+            contentletInode: 'inode-1',
+            identifier: 'id-1'
+        });
+        const location = spectator.inject(Location);
+        const popstate = (location.subscribe as Mock).mock.calls[0][0] as (event: {
+            url: string;
+        }) => void;
+
+        popstate({ url: '/query-tool?q=x' });
+
+        expect(requestClose).toHaveBeenCalledTimes(1);
+        expect(location.replaceState).toHaveBeenCalled();
+    });
+
+    it('opens legacy-editor results in a new tab (not the panel)', () => {
+        const resolver = spectator.inject(DotContentletEditUrlService);
+        (resolver.resolveEditUrl as Mock).mockReturnValue(of('/dotAdmin/#/c/content/inode-1'));
+
+        spectator.component.onResultClick(SAMPLE_CONTENTLET as never, new MouseEvent('click'));
+
+        expect(windowOpenSpy).toHaveBeenCalledWith('/dotAdmin/#/c/content/inode-1', '_blank');
+        expect(spectator.component.$editPanelRequest()).toBeNull();
+    });
+
+    it('reloads results on the panel (saved) output and clears the request on (closed)', async () => {
+        const store = spectator.inject(DotQueryToolStore, true);
+        spectator.component.$editPanelRequest.set({ mode: 'edit', contentletInode: 'inode-1' });
+        spectator.detectChanges();
+        // The panel is behind `@defer`; its dynamic import resolves as a microtask, so the element
+        // isn't in the DOM until the fixture settles.
+        await spectator.fixture.whenStable();
+        spectator.detectChanges();
+
+        // Drive the real template bindings (saved)/(closed), not the handlers directly.
+        const panelSelector = '[data-testid="query-tool-edit-panel"]';
+        spectator.triggerEventHandler(panelSelector, 'saved', undefined);
+        expect(store.runSearch).toHaveBeenCalledTimes(1);
+
+        spectator.triggerEventHandler(panelSelector, 'closed', undefined);
+        expect(spectator.component.$editPanelRequest()).toBeNull();
+    });
+});
+
+// Sibling top-level describe (own TestBed): the `?editContent=` deep link is read in `ngOnInit`,
+// so — unlike the shell's constructor-time read — it CAN share this factory's shape, but each test
+// still needs its own `ActivatedRoute`/flag value before construction, hence a dedicated describe.
+describe('DotQueryToolPageComponent (editContent deep link)', () => {
+    let spectator: Spectator<DotQueryToolPageComponent>;
+    // Side-panel flag as reported by the store's `withFlags` slice; set per test before mounting.
+    let flagsValue: Partial<Record<FeaturedFlags, boolean>>;
+
+    const createComponent = createComponentFactory({
+        component: DotQueryToolPageComponent,
+        overrideComponents: [
+            [
+                DotQueryToolPageComponent,
+                {
+                    remove: {
+                        providers: [DotQueryToolStore, DotCurrentUserService],
+                        imports: [DotEditContentSidePanelComponent]
+                    },
+                    add: { imports: [MockComponent(DotEditContentSidePanelComponent)] }
+                }
+            ]
+        ],
+        providers: [
+            mockProvider(DotMessageService, { get: vi.fn().mockReturnValue('') }),
+            mockProvider(DotHttpErrorManagerService),
+            mockProvider(DotGlobalMessageService, { error: vi.fn() }),
+            mockProvider(DotQueryToolService),
+            mockProvider(DotContentletEditUrlService, { resolveEditUrl: vi.fn() })
+        ],
+        componentProviders: [
+            {
+                provide: DotQueryToolStore,
+                useFactory: () => buildStoreMock({ flags: vi.fn(() => flagsValue) })
+            },
+            DotClipboardUtil
+        ]
+    });
+
+    beforeEach(() => {
+        flagsValue = { [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: true };
+    });
+
+    const mount = (editContent: string) =>
+        createComponent({
+            providers: [
+                {
+                    provide: ActivatedRoute,
+                    useValue: { snapshot: { queryParamMap: convertToParamMap({ editContent }) } }
+                },
+                {
+                    provide: Location,
+                    useValue: {
+                        replaceState: vi.fn(),
+                        go: vi.fn(),
+                        path: vi.fn().mockReturnValue(''),
+                        subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() })
+                    }
+                },
+                mockProvider(DotContentSearchService, {
+                    get: vi
+                        .fn()
+                        .mockReturnValue(
+                            of({ jsonObjectView: { contentlets: [SAMPLE_CONTENTLET] } })
+                        )
+                })
+            ]
+        });
+
+    it('resolves and opens the panel from a shared link when the side panel flag is on', () => {
+        spectator = mount('id-1');
+
+        expect(spectator.component.$editPanelRequest()).toEqual({
+            mode: 'edit',
+            contentletInode: 'inode-1',
+            identifier: 'id-1',
+            title: 'Home'
+        });
+    });
+
+    it('ignores the deep link when the side panel flag is off (no in-page editor to open it in)', () => {
+        flagsValue = {};
+
+        spectator = mount('id-1');
+
+        expect(spectator.component.$editPanelRequest()).toBeNull();
+    });
+
+    it('ignores the deep link when the flag never resolved (empty slice ⇒ off, same as #3)', () => {
+        // withFlags degrades to an empty slice on a failed config read; the deep link must not throw
+        // and must not open the panel — same safe outcome as the flag being explicitly off.
+        flagsValue = {};
+
+        expect(() => (spectator = mount('id-1'))).not.toThrow();
+        expect(spectator.component.$editPanelRequest()).toBeNull();
+    });
+});
+
+// Sibling top-level describe with the REAL store (every other describe here mocks it, so the
+// store's own `onInit` never runs and the ngOnInit/hydration ordering can't be observed). This is
+// the QA-reported path: type a query, leave the portlet, come back, query is gone.
+describe('DotQueryToolPageComponent (persisted query, real store)', () => {
+    let spectator: Spectator<DotQueryToolPageComponent>;
+    const persistedKey = buildPersistedQueryKey('query-tool');
+
+    const createComponent = createComponentFactory({
+        component: DotQueryToolPageComponent,
+        overrideComponents: [
+            [
+                DotQueryToolPageComponent,
+                {
+                    remove: { imports: [DotEditContentSidePanelComponent] },
+                    add: { imports: [MockComponent(DotEditContentSidePanelComponent)] }
+                }
+            ]
+        ],
+        providers: [
+            mockProvider(DotMessageService, { get: vi.fn().mockReturnValue('') }),
+            mockProvider(DotHttpErrorManagerService),
+            mockProvider(DotGlobalMessageService, { error: vi.fn() }),
+            mockProvider(DotQueryToolService, {
+                search: vi
+                    .fn()
+                    .mockReturnValue(of({ resultsSize: 0, jsonObjectView: { contentlets: [] } }))
+            }),
+            mockProvider(DotContentletEditUrlService, { resolveEditUrl: vi.fn() }),
+            mockProvider(DotContentSearchService, {
+                get: vi.fn().mockReturnValue(of({ jsonObjectView: { contentlets: [] } }))
+            }),
+            mockProvider(DotPropertiesService, { getFeatureFlags: vi.fn().mockReturnValue(of({})) })
+        ],
+        // Spectator REPLACES the component's own `providers` with this list, so the real store has
+        // to be named here — that is the whole point of this describe.
+        componentProviders: [
+            DotQueryToolStore,
+            mockProvider(DotCurrentUserService, {
+                getCurrentUser: vi.fn().mockReturnValue(of({ admin: true }))
+            }),
+            // The store is built by the component injector, so `withFlags`' DotPropertiesService
+            // has to be reachable from here rather than only at the TestBed root.
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: vi.fn().mockReturnValue(of({}))
+            }),
+            DotClipboardUtil,
+            MessageService
+        ]
+    });
+
+    const mount = (params: Record<string, string> = {}) =>
+        createComponent({
+            providers: [
+                {
+                    provide: ActivatedRoute,
+                    useValue: { snapshot: { queryParamMap: convertToParamMap(params) } }
+                },
+                {
+                    provide: Location,
+                    useValue: {
+                        replaceState: vi.fn(),
+                        go: vi.fn(),
+                        path: vi.fn().mockReturnValue(''),
+                        subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() })
+                    }
+                }
+            ]
+        });
+
+    beforeEach(() => {
+        vi.useFakeTimers();
+        window.localStorage.clear();
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+        window.localStorage.clear();
+    });
+
+    it('restores the persisted query when the portlet is reopened without params', () => {
+        window.localStorage.setItem(persistedKey, JSON.stringify('+contentType:Blog'));
+
+        spectator = mount();
+
+        expect(spectator.component.store.query()).toBe('+contentType:Blog');
+    });
+
+    it('never erases the stored entry on reopen, whatever the restore path does', () => {
+        // NOT a regression test for the ngOnInit guard — this passes with that guard reverted,
+        // because the persistence pipeline's `skip(1)` absorbs the stray '' before it can reach
+        // `removeKey`. It guards the invariant underneath: reopening the portlet is a read, and
+        // must never destroy the saved query. That `skip(1)` is the only thing standing between
+        // a stray write-on-init and silent data loss, so it is worth pinning on its own.
+        window.localStorage.setItem(persistedKey, JSON.stringify('+contentType:Blog'));
+
+        spectator = mount();
+        // flushEffects() pushes the field signal through the rxMethod effect; only then does the
+        // debounce timer exist for the fake clock to advance. Skipping it is what makes fake
+        // timers look like they do not drive this pipeline.
+        spectator.flushEffects();
+        vi.advanceTimersByTime(500);
+
+        expect(window.localStorage.getItem(persistedKey)).toBe(JSON.stringify('+contentType:Blog'));
+    });
+
+    it('lets a ?q= deep link win over the persisted query', () => {
+        window.localStorage.setItem(persistedKey, JSON.stringify('+contentType:Blog'));
+
+        spectator = mount({ q: '+live:true' });
+
+        expect(spectator.component.store.query()).toBe('+live:true');
     });
 });

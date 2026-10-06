@@ -1,5 +1,6 @@
-import { createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { BehaviorSubject, NEVER, Subject, of } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { HttpHeaders } from '@angular/common/http';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
@@ -23,14 +24,14 @@ const makeRuleServiceMock = (errorsSubject$: Subject<unknown>) => ({
     ruleActionTypes$: new BehaviorSubject([]),
     _ruleActionTypes: {},
     _conditionTypes: {},
-    requestRules: jest.fn(),
-    loadRules: jest.fn().mockReturnValue(NEVER)
+    requestRules: vi.fn(),
+    loadRules: vi.fn().mockReturnValue(NEVER)
 });
 
 describe('DotRuleEngineContainerComponent', () => {
     let spectator: Spectator<DotRuleEngineContainerComponent>;
     let errorsSubject$: Subject<unknown>;
-    let showErrorMessage: jest.Mock;
+    let showErrorMessage: Mock;
 
     const createComponent = createComponentFactory({
         component: DotRuleEngineContainerComponent,
@@ -45,18 +46,18 @@ describe('DotRuleEngineContainerComponent', () => {
             { provide: ActionService, useValue: { error: NEVER } },
             {
                 provide: BundleService,
-                useValue: { loadPublishEnvironments: jest.fn().mockReturnValue(of([])) }
+                useValue: { loadPublishEnvironments: vi.fn().mockReturnValue(of([])) }
             },
             { provide: ConditionGroupService, useValue: { error: NEVER } },
             { provide: ConditionService, useValue: { error: NEVER } },
-            { provide: LoggerService, useValue: { info: jest.fn(), error: jest.fn() } },
+            { provide: LoggerService, useValue: { info: vi.fn(), error: vi.fn() } },
             { provide: ActivatedRoute, useValue: { params: of({}), queryParams: of({}) } }
         ]
     });
 
     beforeEach(() => {
         errorsSubject$ = new Subject();
-        showErrorMessage = jest.fn();
+        showErrorMessage = vi.fn();
 
         spectator = createComponent({
             providers: [

@@ -44,6 +44,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import static com.dotmarketing.business.UserHelper.validateMaximumLength;
+import static com.dotmarketing.business.UserHelper.validateName;
 import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
 
 /**
@@ -157,6 +158,13 @@ public class UserAPIImpl implements UserAPI {
     @Override
     public long getCountUsersByName(String filter, List<Role> roles) {
         return userFactory.getCountUsersByName(filter, roles);
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public long getCountUsersByName(final String filter, final List<Role> roles,
+                                    final FilteringParams filteringParams) {
+        return userFactory.getCountUsersByName(filter, roles, filteringParams);
     }
 
     @CloseDBIfOpened
@@ -442,6 +450,7 @@ public class UserAPIImpl implements UserAPI {
             throw new DotSecurityException(
                     "User doesn't have permission to save the user which is trying to be saved");
         }
+        validateName(userToSave.getFirstName(), userToSave.getLastName());
         validateMaximumLength(userToSave.getFirstName(),userToSave.getLastName(),userToSave.getEmailAddress());
         userFactory.save(userToSave);
         PasswordTrackerLocalManager passwordTracker = PasswordTrackerLocalManagerFactory

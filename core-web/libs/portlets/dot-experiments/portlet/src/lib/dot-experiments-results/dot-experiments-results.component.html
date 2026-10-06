@@ -1,0 +1,86 @@
+@if ($isMisconfigured()) {
+    <div
+        class="flex min-h-0 flex-1 items-center justify-center p-6"
+        data-testid="experiments-results-misconfiguration">
+        <dot-empty-container
+            [configuration]="$misconfiguredConfiguration()"
+            [hideContactUsLink]="true"
+            [buttonLabel]="'experiments.configure.action.back-to-list' | dm"
+            [secondaryButton]="true"
+            (buttonAction)="onBackToList()" />
+    </div>
+} @else if (store.$hasLoadError()) {
+    <div
+        class="flex min-h-0 flex-1 items-center justify-center p-6"
+        data-testid="experiments-results-error">
+        <dot-empty-container
+            [configuration]="errorConfiguration"
+            [hideContactUsLink]="true"
+            [buttonLabel]="'experiments.list.error.retry' | dm"
+            (buttonAction)="onRetry()" />
+    </div>
+} @else if ($isLoading()) {
+    <div
+        class="flex min-h-0 flex-1 flex-col overflow-hidden"
+        data-testid="experiments-results-loading">
+        <div class="flex flex-none items-center gap-4 border-b border-surface-200 px-8 py-4">
+            <p-skeleton shape="circle" size="2.125rem" />
+            <div class="flex flex-col gap-2">
+                <p-skeleton height="1.5rem" width="18rem" />
+                <p-skeleton height="1rem" width="12rem" />
+            </div>
+        </div>
+
+        <div class="flex min-h-0 flex-1 flex-col items-center overflow-hidden px-8 pt-5">
+            <div class="container flex w-full flex-col gap-6">
+                <p-skeleton height="5.5rem" width="100%" borderRadius="0.5rem" />
+                <p-skeleton height="20rem" width="100%" borderRadius="0.5rem" />
+                <p-skeleton height="14rem" width="100%" borderRadius="0.5rem" />
+            </div>
+        </div>
+    </div>
+} @else {
+    <dot-experiments-results-header />
+
+    @if (store.reportUnavailable()) {
+        <div
+            class="flex flex-none items-center gap-2 border-b border-yellow-200 bg-yellow-50 px-8 py-3 text-sm text-yellow-800"
+            data-testid="experiments-results-report-unavailable">
+            <span class="material-symbols-rounded text-xl! leading-none" aria-hidden="true">
+                warning
+            </span>
+            <span>{{ 'experiments.results.unavailable' | dm }}</span>
+        </div>
+    }
+
+    <div
+        class="flex min-h-0 flex-1 flex-col items-center overflow-y-auto px-8 pt-5 pb-14"
+        data-testid="experiments-results-body">
+        <div class="container flex w-full flex-col gap-6">
+            <dot-experiments-results-stat-strip
+                [status]="store.$status()"
+                [suggestedWinner]="store.$suggestedWinner()"
+                [promotedVariant]="store.$promotedVariant()"
+                [goalName]="store.experiment()?.goals?.primary?.name ?? null"
+                [scheduling]="store.experiment()?.scheduling ?? null"
+                [sessionsReached]="store.results()?.sessions?.total ?? 0"
+                [isWaitingForData]="store.$isWaitingForData()"
+                [isSaving]="store.$isSaving()"
+                (promoteRequested)="onPromote($event)" />
+            @if ($hasNothingToReport()) {
+                <dot-experiments-results-empty
+                    [title]="$emptyReportTitle"
+                    [subtitle]="$emptyReportSubtitle()" />
+            } @else {
+                <dot-experiments-results-charts />
+                <dot-experiments-results-summary-table />
+            }
+        </div>
+    </div>
+
+    <p-confirmDialog
+        [key]="CONFIRM_KEY"
+        [draggable]="false"
+        [position]="'center'"
+        [style]="{ width: '500px' }" />
+}

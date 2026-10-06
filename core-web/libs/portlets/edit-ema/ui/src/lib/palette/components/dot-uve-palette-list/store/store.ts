@@ -116,14 +116,19 @@ export const DotPaletteListStore = signalStore(
 
             // Page-agnostic list types (e.g. Content Drive "New" menu): fetch content types of
             // the mapped base types from the global endpoint (no page context), with server-side
-            // pagination so it scales on large instances. System types (e.g. Favorite Page) are
-            // excluded server-side — see backend issue #36072.
+            // pagination so it scales on large instances.
+            //
+            // `system: false` drops the system types (Host, Forms, Favorite Page) — creating those
+            // from this picker makes no sense. The backend supports it (see #36072) but defaults to
+            // *including* them for backward compatibility, so the flag has to be sent explicitly.
+            // Scoped to this branch on purpose: UVE's own palette tabs below keep their behaviour.
             const baseTypes = LIST_TYPE_BASE_TYPES[listType];
             if (baseTypes) {
                 return pageContentTypeService.getAllContentTypes({
                     ...params,
                     types: baseTypes,
-                    per_page: DEFAULT_PER_PAGE
+                    per_page: DEFAULT_PER_PAGE,
+                    system: false
                 });
             }
 

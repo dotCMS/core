@@ -13,7 +13,6 @@ import com.dotcms.content.index.domain.ClusterIndexHealth;
 import com.dotcms.content.index.domain.IndexStats;
 import com.dotmarketing.business.APILocator;
 import com.google.common.collect.ImmutableList;
-import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 
 
@@ -37,15 +36,15 @@ public class IndexResourceHelper {
     
 
 
-    public List<Map<String,Object>> indexStatsList(final User user)  {
+    public List<Map<String,Object>> indexStatsList()  {
 
 
         Map<String,ClusterIndexHealth> clusterHealth = esapi.getClusterHealth();
-        // Hide OS-tagged (.os) migration indices from the maintenance dashboard outside Phase 3,
-        // unless the acting user holds the configured QA/preview role. Operational paths keep the
-        // full set; only this display sink filters — see MigrationIndexVisibility.
-        List<String> openIndices=MigrationIndexVisibility.filter(idxApi.listDotCMSIndices(), user);
-        List<String> closedIndices=MigrationIndexVisibility.filter(idxApi.listDotCMSClosedIndices(), user);
+        // Hide OS-tagged (.os) migration indices from the maintenance dashboard outside Phase 3
+        // (phase-based, for everyone). Operational paths keep the full set; only this display sink
+        // filters — see MigrationIndexVisibility.
+        List<String> openIndices=MigrationIndexVisibility.filter(idxApi.listDotCMSIndices());
+        List<String> closedIndices=MigrationIndexVisibility.filter(idxApi.listDotCMSClosedIndices());
         List<String> currentIdx = Try.of(()->idxApi.getCurrentIndex()).getOrElse(ImmutableList.of());
         List<String> newIdx =Try.of(()->idxApi.getNewIndex()).getOrElse(ImmutableList.of());
         Map<String, IndexStats> indexInfo = esapi.getIndicesStats();

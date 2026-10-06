@@ -448,9 +448,13 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
             return null;
         }
         if(field instanceof KeyValueField){
-            //KeyValues are stored as List to preserve the order of their elements so some additional logic is required here
+            // KeyValues are stored in contentlet_as_json as a JSON array (List<Entry<?>>) to
+            // preserve insertion order — JSON object key order is not guaranteed by spec.
+            // On the read path, convert back to OrderedKeyValueMap: a LinkedHashMap subclass
+            // whose @JsonSerialize annotation prevents the REST ObjectMapper from re-sorting
+            // keys alphabetically (SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS).
             List<com.dotcms.content.model.type.keyvalue.Entry<?>> asList = (List<com.dotcms.content.model.type.keyvalue.Entry<?>>)value;
-            return KeyValueField.asMap(asList);
+            return KeyValueField.asMap(asList);   // returns OrderedKeyValueMap
         }
         //We store Dates as Instants in our json so a bit of extra conversion is required for backwards compatibility
         return value instanceof Instant ? Date.from((Instant)value) : value;

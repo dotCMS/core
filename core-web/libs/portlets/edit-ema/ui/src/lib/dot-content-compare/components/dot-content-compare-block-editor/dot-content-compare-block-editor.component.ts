@@ -1,4 +1,13 @@
-import { Component, WritableSignal, effect, inject, input, signal, viewChild } from '@angular/core';
+import {
+    Component,
+    WritableSignal,
+    effect,
+    inject,
+    input,
+    signal,
+    viewChild,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import { outputToObservable, toSignal } from '@angular/core/rxjs-interop';
 
 import { Editor } from '@tiptap/core';
@@ -16,6 +25,7 @@ type AnyBlockEditor = DotCMSEditorComponent | DotBlockEditorComponent;
 @Component({
     selector: 'dot-content-compare-block-editor',
     templateUrl: './dot-content-compare-block-editor.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [DotCMSEditorComponent, BlockEditorModule, DotSafeHtmlPipe, DotDiffPipe]
 })
 export class DotContentCompareBlockEditorComponent {

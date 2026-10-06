@@ -1,48 +1,28 @@
 <section
     class="dot-section flex flex-col border-b border-surface-200 py-3"
     data-testid="dot-section">
-    @if ($title()) {
-        <div
-            class="sticky top-0 z-10 flex min-h-12 shrink-0 cursor-pointer items-center justify-between rounded-md px-2 py-1 transition-colors hover:bg-surface-50"
-            role="button"
-            tabindex="0"
-            [attr.aria-expanded]="!$collapsed()"
-            data-testid="dot-section-toggle"
-            (click)="toggle()"
-            (keydown.enter)="toggle()"
-            (keydown.space)="$event.preventDefault(); toggle()">
-            <h2
-                class="m-0 text-sm leading-none font-bold tracking-[0.08em] text-gray-500 lowercase first-letter:uppercase"
-                data-testid="dot-section-title">
-                {{ $title() }}
-            </h2>
-            <div class="flex items-center gap-2">
-                @if (actionTemplate) {
-                    <div
-                        class="text-sm text-primary-500"
-                        data-testid="dot-section-action"
-                        (click)="$event.stopPropagation()"
-                        (keydown)="$event.stopPropagation()">
-                        <ng-container *ngTemplateOutlet="actionTemplate" />
-                    </div>
-                }
-                <i
-                    class="pi pi-chevron-down text-xs text-gray-500 transition-transform"
-                    [class.rotate-180]="!$collapsed()"
-                    data-testid="dot-section-chevron"></i>
-            </div>
-        </div>
-    }
-    <!-- Collapsible body: real slide down/up by animating the actual height via a
-         grid-template-rows transition (0fr <-> 1fr). Pure CSS, eased, works for any
-         content height. The inner pt-2 is the header/content gap and collapses too. -->
-    <div
-        class="grid transition-[grid-template-rows] duration-200 ease-in-out"
-        [style.grid-template-rows]="$collapsed() ? '0fr' : '1fr'">
-        <div class="min-h-0 overflow-hidden">
-            <div class="pt-2" data-testid="dot-section-content">
-                <ng-content />
-            </div>
-        </div>
-    </div>
+    <!-- Single-panel accordion: PrimeNG drives the click/keyboard toggle, the slide
+         motion and `aria-expanded`; this template only supplies the header/content look. -->
+    <p-accordion [value]="$accordionValue()" (valueChange)="onValueChange($event)">
+        <p-accordion-panel [value]="key()">
+            @if ($title()) {
+                <p-accordion-header data-testid="dot-section-toggle">
+                    <span data-testid="dot-section-title">{{ $title() }}</span>
+                    @if (actionTemplate) {
+                        <div
+                            data-testid="dot-section-action"
+                            (click)="$event.stopPropagation()"
+                            (keydown)="$event.stopPropagation()">
+                            <ng-container *ngTemplateOutlet="actionTemplate" />
+                        </div>
+                    }
+                </p-accordion-header>
+            }
+            <p-accordion-content [pt]="{ content: { class: '!p-0' } }">
+                <div class="pt-2" data-testid="dot-section-content">
+                    <ng-content />
+                </div>
+            </p-accordion-content>
+        </p-accordion-panel>
+    </p-accordion>
 </section>

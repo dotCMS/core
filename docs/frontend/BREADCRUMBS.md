@@ -166,3 +166,8 @@ myFeatureTab: {
 - Use **`truncateBreadcrumbs(index)`** only when you need programmatic truncation; normal “back to existing URL” truncation is handled by the store.  
 - Breadcrumb items are PrimeNG `MenuItem`; use `/dotAdmin/#/...` for admin URLs.  
 - The crumb trail UI reads `globalStore.breadcrumbs()`; do not manage a separate local breadcrumb state in components.
+
+## See also
+- [README.md](./README.md) — Index of all frontend docs, and which one to load when
+- [STATE_MANAGEMENT.md](./STATE_MANAGEMENT.md) — GlobalStore and NgRx Signal Store patterns
+- [ANGULAR_STANDARDS.md](./ANGULAR_STANDARDS.md) — The single source of truth for Angular rules

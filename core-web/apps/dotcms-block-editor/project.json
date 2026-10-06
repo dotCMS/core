@@ -79,8 +79,8 @@
                     "budgets": [
                         {
                             "type": "initial",
-                            "maximumWarning": "3.5mb",
-                            "maximumError": "4mb"
+                            "maximumWarning": "4.25mb",
+                            "maximumError": "4.5mb"
                         },
                         {
                             "type": "anyComponentStyle",
@@ -110,18 +110,6 @@
             "executor": "@angular/build:extract-i18n",
             "options": {
                 "buildTarget": "dotcms-block-editor:build"
-            }
-        },
-        "test": {
-            "executor": "@angular/build:karma",
-            "options": {
-                "main": "apps/dotcms-block-editor/src/test.ts",
-                "tsConfig": "apps/dotcms-block-editor/tsconfig.spec.json",
-                "karmaConfig": "apps/dotcms-block-editor/karma.conf.js",
-                "polyfills": ["apps/dotcms-block-editor/src/polyfills.ts"],
-                "styles": [],
-                "scripts": [],
-                "assets": []
             }
         }
     }

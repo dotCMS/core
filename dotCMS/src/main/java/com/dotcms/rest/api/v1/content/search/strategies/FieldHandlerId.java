@@ -17,6 +17,9 @@ public enum FieldHandlerId {
     SITE_ID("siteId"),
     FOLDER_ID("folderId"),
     TEXT("text"),
+    // Fields whose Data Type is True/False are mapped as an ES boolean, so they need an exact term
+    // instead of the TEXT handler's contains-style wildcard — see BooleanFieldStrategy
+    BOOLEAN("boolean"),
     BINARY("binary"),
     DATE_TIME("dateTime"),
     KEY_VALUE("keyValue"),

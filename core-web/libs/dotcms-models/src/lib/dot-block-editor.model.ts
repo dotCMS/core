@@ -1,9 +1,10 @@
-export type EditorAssetTypes = 'image' | 'video';
+export type EditorAssetTypes = 'image' | 'video' | 'audio';
 
 export type Action = {
     command: string;
     menuLabel: string;
     icon: string;
+    /** Must match the TipTap node name exported by the remote bundle (e.g. `customGallery`). */
     name: string;
 };
 

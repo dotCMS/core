@@ -1,4 +1,5 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { Drawer } from 'primeng/drawer';
 
@@ -13,7 +14,7 @@ describe('DotSidebarHeaderComponent', () => {
             {
                 provide: Drawer,
                 useValue: {
-                    hide: jest.fn()
+                    hide: vi.fn()
                 }
             }
         ]

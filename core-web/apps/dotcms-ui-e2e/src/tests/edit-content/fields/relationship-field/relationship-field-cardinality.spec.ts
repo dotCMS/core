@@ -1,7 +1,7 @@
 import { NewEditContentFormPage } from '@pages';
 
+import { AddRelationshipsDialog } from './helpers/add-relationships-dialog';
 import { RelationshipField } from './helpers/relationship-field';
-import { SelectExistingContentDialog } from './helpers/select-existing-content-dialog';
 
 import {
     CARDINALITY,
@@ -100,7 +100,7 @@ test.describe('Cardinality Constraints', () => {
         }) => {
             const formPage = new NewEditContentFormPage(adminPage);
             const relField = new RelationshipField(adminPage, 'comments');
-            const dialog = new SelectExistingContentDialog(adminPage);
+            const dialog = new AddRelationshipsDialog(adminPage);
 
             await formPage.goToContent(postB.inode);
 
@@ -201,7 +201,7 @@ test.describe('Cardinality Constraints', () => {
         }) => {
             const formPage = new NewEditContentFormPage(adminPage);
             const relField = new RelationshipField(adminPage, 'rel');
-            const dialog = new SelectExistingContentDialog(adminPage);
+            const dialog = new AddRelationshipsDialog(adminPage);
 
             await formPage.goToContent(parentB.inode);
 
@@ -220,7 +220,7 @@ test.describe('Cardinality Constraints', () => {
         }) => {
             const formPage = new NewEditContentFormPage(adminPage);
             const relField = new RelationshipField(adminPage, 'rel');
-            const dialog = new SelectExistingContentDialog(adminPage);
+            const dialog = new AddRelationshipsDialog(adminPage);
 
             // Navigate to create a NEW parent contentlet
             await formPage.goToNew(parentType.variable);

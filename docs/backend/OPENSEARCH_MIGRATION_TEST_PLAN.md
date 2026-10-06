@@ -6,7 +6,7 @@
 **Fix PR:** [#35632 — Startup hardening, automatic migration shutdown, phase-aware index init, thread-safe formatter](https://github.com/dotCMS/core/pull/35632)
 **Scope:** ElasticSearch → OpenSearch dual-write and read migration
 
-**Status:** Phases 0 and 1 are fully testable. Phase 2 dual-write is testable — every ES write is mirrored to OS and can be verified via OpenSearch Dashboards — but the dotCMS query layer has **not yet been migrated**, so application-level read validation is only partial in Phase 2. Phase 3 is **not functionally testable** at this time (documented cases only). PR #35632 introduced an **automatic migration shutdown**: when OpenSearch is unreachable or reports the wrong version in Phase ≥ 1, dotCMS resets to Phase 0 by itself and keeps serving from ES — it does **not** crash or hang. The visible effects of that shutdown are two `ERROR` lines + one `WARN` line (there is **no** `FATAL` on the startup path — see **Helpers / H5**). This plan is written for a tester who exercises the system from the outside; the test cases live in **Groups 1–16** below.
+**Status:** All four phases (0–3) are now testable end-to-end, **including Phase 3**. The dotCMS query/read layer has been migrated, so application-level reads can be validated against OpenSearch in phases 2 and 3 — not only via the dashboards. The migration is close to complete but still under active QA: **expect to find bugs, and file them** against the QA epic [#35476](https://github.com/dotCMS/core/issues/35476). PR #35632 introduced an **automatic migration shutdown**: when OpenSearch is unreachable or reports the wrong version in Phase ≥ 1, dotCMS resets to Phase 0 by itself and keeps serving from ES — it does **not** crash or hang. The visible effects of that shutdown are two `ERROR` lines + one `WARN` line (there is **no** `FATAL` on the startup path — see **Helpers / H5**). This plan is written for a tester who exercises the system from the outside; the test cases live in **Groups 1–16** below.
 
 ---
 
@@ -16,12 +16,13 @@
 dotCMS **dual-writes** content to both engines, that it **degrades safely** when OpenSearch is missing or
 misconfigured (it falls back to ES, never crashing or hanging), and that the index lifecycle (create /
 delete / reindex) and the `/v1/esindex` REST API stay correct and in sync with the `indicies` DB table.
-It is written for a tester who works **from the outside** — admin UI, REST API, startup log, Kibana /
+It is written for a tester who works **from the outside** — admin UI, REST API, startup log,
 OpenSearch Dashboards, and SQL — without reading source code.
 
 **Minimum setup.** Bring up the migration stack with one command
-(`docker compose -f docker/docker-compose-examples/os-migration/docker-compose.yml up -d`), which gives you
-ES 7.10 + Kibana and OpenSearch 3.x + OS Dashboards on one network; wait for both engines' health checks to
+(`docker compose -f docker/docker-compose-examples/single-node-os-migration/docker-compose.yml up -d`),
+which gives you OpenSearch 1.3 and OpenSearch 3.8, each with its own Dashboards, plus dotCMS and the
+database on one network; wait for both engines' health checks to
 pass, then start dotCMS (`http://localhost:8082`, `admin:admin`) pointed at that stack. The full table of
 services and ports is in **Environment**; the limited-user (non-admin OS) variant is in **Group 16**.
 
@@ -30,13 +31,18 @@ services and ports is in **Environment**; the limited-user (non-admin OS) varian
 | Variable | Purpose |
 |---|---|
 | `FEATURE_FLAG_OPEN_SEARCH_PHASE` | Selects how far the migration runs: `0` = ES only, `1` = dual-write / ES reads, `2` = dual-write / OS reads, `3` = OS only. This is the switch most cases toggle. |
-| `OS_ENDPOINTS` | URL of the OpenSearch (new engine) cluster, e.g. `http://localhost:9201`. Must be a **separate** instance from ES — pointing it at the ES URL or at the ES address is what the safety guards in Groups 1–2 detect. |
+| `OS_ENDPOINTS` | URL of the OpenSearch (new engine) cluster. Inside the lab network it is `https://opensearch3:9200`; from your machine the same cluster is `https://localhost:9201`. Must be a **separate** instance from ES — pointing it at the ES URL or at the ES address is what the safety guards in Groups 1–2 detect. |
 | `OS_AUTH_TYPE` | Authentication scheme dotCMS uses to talk to OpenSearch (`BASIC` for these cases). |
-| `OS_AUTH_BASIC_USER` / `OS_AUTH_BASIC_PASSWORD` | Credentials for OpenSearch. With the open dev stack these are `admin` / `admin`; the limited-user stack (Group 16) uses the restricted `dotcms-es-user`. |
-| `OS_TLS_ENABLED` | Whether the OpenSearch connection uses TLS (`false` for the open dev stack; the limited-user stack uses HTTPS plus `OS_TLS_TRUST_SELF_SIGNED=true`). |
+| `OS_AUTH_BASIC_USER` / `OS_AUTH_BASIC_PASSWORD` | Credentials dotCMS uses for OpenSearch. The lab stack provisions the restricted `dotcms-es-user` on both engines and connects dotCMS with it by default (Group 16 exercises that path explicitly); its password is the `$ES_USER_PW` value in the compose file. An `admin` account exists too — `admin`/`admin` on the old engine, `$OS_ADMIN_PW` on the new one — but that is the direct-`curl` credential, not what dotCMS authenticates with. |
+| `OS_TLS_ENABLED` | Whether the OpenSearch connection uses TLS. The lab serves HTTPS with a self-signed certificate, so set it to `true` together with `OS_TLS_TRUST_SELF_SIGNED=true`. |
 
-> A phase change is read at startup **and** on each routing decision, so it takes effect without a restart —
-> but every cluster node must carry the same value. See **Environment** for the multi-node layout (Group 3).
+> A phase change is re-read on each routing decision, so the **routing** (which engine gets writes /
+> serves reads) takes effect without a restart; every cluster node must carry the same value. **But the
+> one-time setup for a phase runs only at startup** — the OS connectivity / version / endpoint-separation
+> validation, the automatic migration shutdown, and the creation of the OS index and its `indicies` rows.
+> So **turning the migration on (Phase 0 → 1) requires a restart** (otherwise the OS index is never
+> created and validation never runs), and advancing to a later phase should restart to re-validate the
+> phase actually in effect. See **Environment** for the multi-node layout (Group 3).
 
 ---
 
@@ -46,7 +52,7 @@ Validate that the ES → OpenSearch migration pipeline delivers:
 
 1. **Zero regression** on ES-backed functionality (Phase 0 / no flag set).
 2. **Correct dual-write** in Phase 1 — every ES write is mirrored to OS; failures on OS are fire-and-forget (never affect the business operation).
-3. **Correct dual-read** in Phase 2 — reads switch to OS; field mappings are structurally equivalent to ES; record counts match between the two indices (partial scope — see Status).
+3. **Correct dual-read** in Phase 2 — reads switch to OS; field mappings are structurally equivalent to ES; record counts match between the two indices, and a failed OS read falls back to ES.
 4. **Correct index lifecycle** across all phases — activate, deactivate, delete, and reindex operations behave consistently and keep the `indicies` DB table in sync.
 5. **Safe failure modes** — dotCMS starts gracefully when OpenSearch is unavailable. In Phase ≥ 1, an unreachable or mismatched OS automatically shuts the migration off (resets to Phase 0 in memory) and dotCMS keeps running on ES.
 6. **REST API parity** — `/v1/esindex` endpoints behave correctly in both single-backend and dual-write phases, and enforce authentication.
@@ -69,10 +75,10 @@ Full specification: [`docs/backend/OPENSEARCH_MIGRATION.md`](OPENSEARCH_MIGRATIO
 
 | Phase | Testable? | Limitation |
 |-------|-----------|------------|
-| 0 | Yes — fully | No dependencies beyond existing ES stack |
-| 1 | Yes — fully | Dual-write verified via Kibana + OS Dashboards |
-| 2 | Partially | Dual-write testable via OS Dashboards; application-level reads **not testable** — dotCMS query layer not yet migrated |
-| 3 | No | Query layer not migrated; OS-only reads are broken; no ES fallback — activating Phase 3 produces broken application reads |
+| 0 | Yes — fully | No dependencies beyond the existing ES stack |
+| 1 | Yes — fully | Dual-write verified via both engines' Dashboards |
+| 2 | Yes — fully | Reads served by OS; application-level reads validated end-to-end, with automatic fallback to ES on a failed OS read |
+| 3 | Yes — fully | OS-only writes, reads, and reindex; ES decommissioned, so OS failures surface to the caller (no fallback) |
 
 ---
 
@@ -99,13 +105,13 @@ Full specification: [`docs/backend/OPENSEARCH_MIGRATION.md`](OPENSEARCH_MIGRATIO
 
 | Term used in this plan | What it means in plain words |
 |------------------------|------------------------------|
-| **Old search engine (ES)** | Elasticsearch — the search engine dotCMS uses today. It always works. Default port `9200`, inspected with **Kibana** (`5601`). |
+| **Old search engine** | The engine dotCMS uses today — in the lab stack, OpenSearch 1.3 standing in for any pre-migration deployment (real Elasticsearch 7.x or OpenSearch 1.x; dotCMS reaches both through the same legacy client). It always works. Port `9200`, inspected with its own **OpenSearch Dashboards** (`5601`). |
 | **New search engine (OS)** | OpenSearch — the engine we are migrating to. Default port `9201`, inspected with **OpenSearch Dashboards** (`5602`). |
 | **Migration phase** | How far along the migration the system is. **Phase 0** = old engine only. **Phase 1** = save to *both* engines, but search only the old one. (Phases 2 and 3 are out of scope here.) |
 | **Dual-write** | In Phase 1, every content change is written to *both* search engines at the same time. |
 | **Automatic migration shutdown** | A safety feature: if at startup the new engine cannot be reached or is the wrong version, dotCMS **turns the migration off by itself**, drops back to Phase 0 (old engine only) and keeps running normally. It does **not** crash and does **not** hang. (Internally this is the behavior the developers call "halt migration" — you only need to recognize it by its visible effects.) |
 | **Index** | The store where a search engine keeps content so it can be searched. Each engine has its own index, and index names contain a timestamp (e.g. `cluster_08abc3.working_20260421120000`). |
-| **`.os` suffix (the "tag")** | The marker that tells a new-engine (OpenSearch) index apart from an old-engine (Elasticsearch) one. New-engine index names **end in `.os`** (e.g. `cluster_08abc3.working_20260406.os`); old-engine names do not. This suffix is part of the real index name and is **visible everywhere** — in the cluster, in the database, and in the dotCMS REST API responses. (It is NOT an `os::` prefix — if you see `os::` in any older doc, that doc is outdated.) |
+| **`.os` suffix (the "tag")** | The marker that tells a new-engine index apart from an old-engine one. New-engine index names **end in `.os`** (e.g. `cluster_08abc3.working_20260406.os`); old-engine names do not. This suffix is part of the real index name and is **visible everywhere** — in the cluster, in the database, and in the dotCMS REST API responses. (It is NOT an `os::` prefix — if you see `os::` in any older doc, that doc is outdated.) |
 | **Reindex (rebuild)** | Refilling an index from scratch with all content. It is a heavy operation and must **not** happen without a real reason. |
 | **`indicies` table** | The database table where dotCMS records which indexes exist. It stores the full physical name (cluster prefix + tag). New-engine rows **end in `.os`**; old-engine rows do not. |
 
@@ -113,24 +119,32 @@ Full specification: [`docs/backend/OPENSEARCH_MIGRATION.md`](OPENSEARCH_MIGRATIO
 
 ## Environment
 
-Start the migration stack once (gives you ES + Kibana and OS + OS Dashboards on one network):
+Start the migration stack once (gives you both engines, their Dashboards, dotCMS and the database on
+one network):
 
 ```bash
-docker compose -f docker/docker-compose-examples/os-migration/docker-compose.yml up -d
+docker compose -f docker/docker-compose-examples/single-node-os-migration/docker-compose.yml up -d
 ```
 
 | Service               | URL                     | Used for                          |
 |-----------------------|-------------------------|-----------------------------------|
-| Old engine (ES 7.10)  | http://localhost:9200   | Direct REST queries               |
-| Kibana                | http://localhost:5601   | Inspect / query the OLD index     |
-| New engine (OS 3.x)   | http://localhost:9201   | Direct REST queries               |
+| Old engine (OS 1.3)   | https://localhost:9200  | Direct REST queries               |
+| OS Dashboards (old)   | http://localhost:5601   | Inspect / query the OLD index     |
+| New engine (OS 3.8)   | https://localhost:9201  | Direct REST queries               |
 | OpenSearch Dashboards | http://localhost:5602   | Inspect / query the NEW index     |
 | dotCMS                | http://localhost:8082   | Admin UI + REST API (`admin:admin`)|
 
-> Wait for both engines' health checks to pass before starting dotCMS:
+> **Both engines speak HTTPS with a self-signed certificate**, so every direct `curl` below uses
+> `-k`. The new engine has its own admin password; load it from the compose file once per shell:
 > ```bash
-> curl -s http://localhost:9200/_cluster/health | jq .status
-> curl -s http://localhost:9201/_cluster/health | jq .status
+> export OS_ADMIN_PW=$(grep OPENSEARCH_INITIAL_ADMIN_PASSWORD \
+>   docker/docker-compose-examples/single-node-os-migration/docker-compose.yml | head -1 | cut -d'"' -f2)
+> ```
+>
+> Then wait for both engines' health checks to pass before starting dotCMS:
+> ```bash
+> curl -sk -u admin:admin          https://localhost:9200/_cluster/health | jq .status
+> curl -sk -u admin:"$OS_ADMIN_PW" https://localhost:9201/_cluster/health | jq .status
 > ```
 
 dotCMS migration settings live in `dotmarketing-config.properties`
@@ -140,11 +154,12 @@ dotCMS migration settings live in `dotmarketing-config.properties`
 # Migration phase: 0 = old engine only, 1 = dual-write (search old engine)
 FEATURE_FLAG_OPEN_SEARCH_PHASE=1
 # New-engine connection
-OS_ENDPOINTS=http://localhost:9201
+OS_ENDPOINTS=https://localhost:9201
 OS_AUTH_TYPE=BASIC
-OS_AUTH_BASIC_USER=admin
-OS_AUTH_BASIC_PASSWORD=admin
-OS_TLS_ENABLED=false
+OS_AUTH_BASIC_USER=dotcms-es-user
+OS_AUTH_BASIC_PASSWORD=<the $ES_USER_PW value from the compose file>
+OS_TLS_ENABLED=true
+OS_TLS_TRUST_SELF_SIGNED=true
 ```
 
 ### Multi-node setup (Group 3)
@@ -152,7 +167,7 @@ OS_TLS_ENABLED=false
 For the cases that need two dotCMS nodes, run two instances against the **same** PostgreSQL DB and the
 **same** ES + OS clusters:
 
-- **Node 1** — port `8082`, shared DB, `OS_ENDPOINTS=http://localhost:9201`
+- **Node 1** — port `8082`, shared DB, `OS_ENDPOINTS=https://localhost:9201`
 - **Node 2** — port `8083`, same DB, same `OS_ENDPOINTS`
 
 Both nodes must share the same phase and endpoint values (in `dotcms-config-cluster.properties`).
@@ -169,10 +184,10 @@ old-engine names do not.
 # What dotCMS knows about (names keep the .os tag but drop the cluster prefix):
 curl -s -u admin:admin http://localhost:8082/api/v1/esindex | jq .
 
-# The exact physical names each engine actually holds (use THESE for direct curl / Kibana /
-# OpenSearch Dashboards queries — they include the cluster prefix and, for OS, the .os suffix):
-curl -s -u admin:admin http://localhost:9200/_cat/indices?v   # OLD engine (no .os)
-curl -s -u admin:admin http://localhost:9201/_cat/indices?v   # NEW engine (ends in .os)
+# The exact physical names each engine actually holds (use THESE for direct curl and Dashboards
+# queries — they include the cluster prefix and, for the new engine, the .os suffix):
+curl -sk -u admin:admin https://localhost:9200/_cat/indices?v   # OLD engine (no .os)
+curl -sk -u admin:"$OS_ADMIN_PW" https://localhost:9201/_cat/indices?v   # NEW engine (ends in .os)
 ```
 Or in the UI: **Admin → System → Index**. Note the *working* and *live* index names — you will paste
 them into later steps.
@@ -201,8 +216,8 @@ SELECT CASE WHEN index_name LIKE '%.os' THEN 'NEW' ELSE 'OLD' END AS engine,
 one ends in `.os`):
 
 ```bash
-curl -s -u admin:admin http://localhost:9200/<old-index-name>/_count       # e.g. cluster_X.working_20230101
-curl -s -u admin:admin http://localhost:9201/<new-index-name.os>/_count     # e.g. cluster_X.working_20260406.os
+curl -sk -u admin:admin https://localhost:9200/<old-index-name>/_count       # e.g. cluster_X.working_20230101
+curl -sk -u admin:"$OS_ADMIN_PW" https://localhost:9201/<new-index-name.os>/_count     # e.g. cluster_X.working_20260406.os
 ```
 
 **H5 — The exact log lines of an automatic migration shutdown.** When the safety feature fires at
@@ -211,7 +226,7 @@ from the code — match it when a case says "the shutdown fired". Note the level
 and one `WARN` line — there is NO `FATAL` line on this path.**
 
 ```
-ERROR  OpenSearch configuration error — halting OS migration, dotCMS will fall back to ES-only: <reason>
+ERROR  OpenSearch startup validation FAILED — halting OS migration; dotCMS falls back to ES-only (PHASE_0_MIGRATION_NOT_STARTED): <reason>
 ERROR  OpenSearch migration halted: invalid configuration detected at startup. Verify OS_ENDPOINTS, OS version, and FEATURE_FLAG_OPEN_SEARCH_PHASE, then restart dotCMS.
 WARN   Migration phase reset to PHASE_0_MIGRATION_NOT_STARTED (was PHASE_1_DUAL_WRITE_ES_READS). This change is runtime-only — persist it in dotmarketing-config.properties to survive a restart.
 ```
@@ -242,8 +257,8 @@ When the migration starts **successfully** (no shutdown) you instead see an `INF
 - **Risk:** High
 - **Preconditions:**
   - Old engine running and healthy; new engine **stopped**.
-    `docker compose -f docker/docker-compose-examples/os-migration/docker-compose.yml up -d elasticsearch kibana`
-  - dotCMS configured with `FEATURE_FLAG_OPEN_SEARCH_PHASE=1` and `OS_ENDPOINTS=http://localhost:9201`.
+    `docker compose -f docker/docker-compose-examples/single-node-os-migration/docker-compose.yml up -d opensearch1 opensearch1-dashboards`
+  - dotCMS configured with `FEATURE_FLAG_OPEN_SEARCH_PHASE=1` and `OS_ENDPOINTS=https://localhost:9201`.
 - **Steps:**
   1. Start dotCMS. Watch the log until startup finishes — do not kill it even if it pauses while it
      tries to reach the new engine.
@@ -268,17 +283,17 @@ When the migration starts **successfully** (no shutdown) you instead see an `INF
   irrelevant: dotCMS never even tries to use it.
 - **Risk:** High
 - **Preconditions:**
-  - Old engine running; new engine **stopped** (`docker compose stop opensearch`).
+  - Old engine running; new engine **stopped** (`docker compose stop opensearch3`).
   - dotCMS configured with `FEATURE_FLAG_OPEN_SEARCH_PHASE=0` (or no migration flag at all).
 - **Steps:**
   1. Start dotCMS and watch the startup log.
   2. Create a content item, publish it, and search for it.
-  3. In Kibana, confirm the new document is in the old-engine index.
+  3. In the old engine's Dashboards, confirm the new document is in the old-engine index.
 - **Expected Result:**
   - dotCMS starts normally. **None** of the H5 shutdown lines appear (no "halting OS migration",
     no "Migration phase reset…"). No "OS version check passed" line either.
   - The log shows **no attempt** to connect to the new engine.
-  - Create / publish / search succeed; the document is visible in Kibana.
+  - Create / publish / search succeed; the document is visible in the old engine's Dashboards.
 - **Type:** Manual
 
 ## TC-004 — Turning the migration on must NOT trigger a needless full rebuild
@@ -319,7 +334,7 @@ When the migration starts **successfully** (no shutdown) you instead see an `INF
        -u admin:admin -X PUT http://localhost:8082/api/v1/esindex/create/shards/1
      ```
   2. Collect the 20 returned index names from `/tmp/idx_*.json`.
-  3. List the engine's indexes: `curl -s -u admin:admin http://localhost:9200/_cat/indices?v`.
+  3. List the engine's indexes: `curl -sk -u admin:admin https://localhost:9200/_cat/indices?v`.
 - **Expected Result:**
   - All 20 requests return HTTP **200**.
   - All 20 returned names are well-formed: no spaces, no empty/null segments, no truncated timestamps.
@@ -370,27 +385,28 @@ When the migration starts **successfully** (no shutdown) you instead see an `INF
     reason `OpenSearch cluster is not reachable: <cause>. Check OS_ENDPOINTS configuration.`
 - **Type:** Manual
 
-## TC-008 — `OS_ENDPOINTS` points to something that is not OpenSearch 3.x (e.g. an Elasticsearch cluster)
+## TC-008 — `OS_ENDPOINTS` points to something that is not OpenSearch 3.x (e.g. the old engine)
 
 > Absorbs the former TC-002 ("wrong version at startup"). The scenario is the same; here it is framed
 > as a configuration mistake with an explicit recipe to reproduce it.
 
 - **Objective:** When the configured OpenSearch address actually answers but reports the wrong
-  version (it is not OpenSearch 3.x), dotCMS must still start normally and keep serving from ES; the
-  migration is left off because the version is wrong.
-- **How to induce:** start dotCMS with the OpenSearch connection string pointing at the **Elasticsearch**
-  URL — i.e. set `OS_ENDPOINTS=http://localhost:9200` (the ES port). ES replies, but it reports
-  version 7.10.x, which is not `3.x`.
+  version (it is not OpenSearch 3.x), dotCMS must still start normally and keep serving from the old
+  engine; the migration is left off because the version is wrong.
+- **How to induce:** start dotCMS with the OpenSearch connection string pointing at the **old engine**
+  URL — i.e. set `OS_ENDPOINTS=https://localhost:9200` (the old engine's port). It replies, but it reports
+  version 1.3.x, which is not `3.x`.
 - **Risk:** Medium
-- **Preconditions:** Both engines up; `FEATURE_FLAG_OPEN_SEARCH_PHASE=1`, `OS_ENDPOINTS=http://localhost:9200`.
+- **Preconditions:** Both engines up; `FEATURE_FLAG_OPEN_SEARCH_PHASE=1`, `OS_ENDPOINTS=https://localhost:9200`.
 - **Steps:**
   1. Start dotCMS and read the startup log.
   2. Check the phase (**H2**); list indexes (**H1**) and check the DB (**H3**).
 - **Expected Result:**
   - **dotCMS starts and runs normally on the old engine.**
   - The migration is left off; the log shows the expected error lines (H5) with reason
-    `OpenSearch version mismatch: expected 3.x but connected cluster reports version 7.10.x. Check OS_ENDPOINTS configuration.`
-    (the version number will be whatever ES reports), followed by the phase-reset `WARN`.
+    `OpenSearch version mismatch: expected 3.x but connected cluster reports version 1.3.x. Check OS_ENDPOINTS configuration.`
+    (the version number will be whatever that cluster reports — anything not starting with `3.` is a
+    valid way to run this case), followed by the phase-reset `WARN`.
   - Only old-engine indexes are listed; no `.os` rows in the database.
   - (Because the OpenSearch address equals the ES address, the version check is what fails first;
     the "same endpoint(s)" check is a secondary guard.)
@@ -443,7 +459,7 @@ When the migration starts **successfully** (no shutdown) you instead see an `INF
   degraded state — it is not a crash.
 - **Risk:** Medium
 - **Preconditions:** Node 1 with `OS_ENDPOINTS=http://localhost:9999` (wrong port); Node 2 with the
-  correct `OS_ENDPOINTS=http://localhost:9201`. Both at Phase 1.
+  correct `OS_ENDPOINTS=https://localhost:9201`. Both at Phase 1.
 - **Steps:**
   1. Start both nodes; read each node's startup log (**H2**).
   2. Publish a content item from **Node 2**.
@@ -476,7 +492,7 @@ When the migration starts **successfully** (no shutdown) you instead see an `INF
   2. Create and publish 3 items, giving `searchableField` a distinctive value like `findme_<uuid>`
      and `plainField` the value `hidden_<uuid>`.
   3. Find both working index names (**H1**).
-  4. In **Kibana** (old index) and **OpenSearch Dashboards** (new index), run the same two queries:
+  4. In the **old engine's Dashboards** (old index) and the **new engine's Dashboards** (new index), run the same two queries:
      ```json
      POST /<index>/_search { "query": { "match": { "searchablefield": "findme_<uuid>" } } }
      POST /<index>/_search { "query": { "match": { "plainfield": "hidden_<uuid>" } } }
@@ -496,7 +512,7 @@ When the migration starts **successfully** (no shutdown) you instead see an `INF
 - **Steps:**
   1. Edit the Content Type and set the field's **Searchable = yes**. Save.
   2. Create and publish an item with a distinctive value `nowsearchable_<uuid>` in that field.
-  3. Run the matching `_search` query (as in TC-012) in **both** Kibana and OpenSearch Dashboards.
+  3. Run the matching `_search` query (as in TC-012) in **both** engines' Dashboards.
 - **Expected Result:**
   - The newly published item is found by that field's value in **both** engines.
   - The result is consistent across the two engines.
@@ -533,8 +549,8 @@ When the migration starts **successfully** (no shutdown) you instead see an `INF
   1. Create and publish a content item; note its identifier.
   2. Find both working index names (**H1**). Confirm the document exists in each:
      ```bash
-     curl -s -u admin:admin http://localhost:9200/<old-index>/_doc/<identifier>   # expect 200/found
-     curl -s -u admin:admin http://localhost:9201/<new-index.os>/_doc/<identifier>   # new index ends in .os; expect 200/found
+     curl -sk -u admin:admin https://localhost:9200/<old-index>/_doc/<identifier>   # expect 200/found
+     curl -sk -u admin:"$OS_ADMIN_PW" https://localhost:9201/<new-index.os>/_doc/<identifier>   # new index ends in .os; expect 200/found
      ```
   3. In the admin UI, **unpublish** then **delete** the item.
   4. Wait ~5 seconds. Re-run both `_doc` requests.
@@ -572,8 +588,8 @@ When the migration starts **successfully** (no shutdown) you instead see an `INF
      `SELECT index_name FROM indicies WHERE index_name LIKE '%working%';`
   2. Delete the old-engine index (the one without `.os`) via the API:
      `curl -s -u admin:admin -X DELETE http://localhost:8082/api/v1/esindex/<old-index-name>`
-  3. Confirm in the old engine it is gone: `curl -s -u admin:admin http://localhost:9200/<old-index-name>` → 404.
-  4. Confirm in the new engine it still exists: `curl -s -u admin:admin http://localhost:9201/<new-index-name.os>` → 200.
+  3. Confirm in the old engine it is gone: `curl -sk -u admin:admin https://localhost:9200/<old-index-name>` → 404.
+  4. Confirm in the new engine it still exists: `curl -sk -u admin:"$OS_ADMIN_PW" https://localhost:9201/<new-index-name.os>` → 200.
   5. Re-run the SQL from step 1.
 - **Expected Result:**
   - The delete returns HTTP **200**.
@@ -620,7 +636,7 @@ When the migration starts **successfully** (no shutdown) you instead see an `INF
 - **Steps:**
   1. Create a spare (non-active) index: `curl -s -u admin:admin -X PUT http://localhost:8082/api/v1/esindex/create/shards/1`. Note the name.
   2. Go to **Admin → System → Index**, find the new index, click **Delete**, confirm.
-  3. In Kibana: `GET /<new-index-name>` → expect 404.
+  3. In the old engine's Dashboards: `GET /<new-index-name>` → expect 404.
   4. SQL: `SELECT * FROM indicies WHERE index_name = '<deleted_name>';`
 - **Expected Result:**
   - The index disappears from the UI list.
@@ -639,7 +655,7 @@ When the migration starts **successfully** (no shutdown) you instead see an `INF
 - **Steps:**
   1. Note the new-engine index name (ends in `.os`) and its document count (**H1**, **H4**).
   2. **Admin → System → Index → Reindex**. Wait for completion.
-  3. In Kibana, identify the now-active old-engine index.
+  3. In the old engine's Dashboards, identify the now-active old-engine index.
   4. In OpenSearch Dashboards, confirm whether the new-engine index is the same as before.
   5. Run **H3**.
   6. After the rebuild, publish a new content item, then check it landed in both engines (**H4** / search).
@@ -671,7 +687,7 @@ When the migration starts **successfully** (no shutdown) you instead see an `INF
   2. Confirm it exists in the engine (**H1** / `_cat/indices`) and in the DB:
      `SELECT * FROM indicies WHERE index_name = '<created-name>';`
   3. Delete it: `curl -s -i -u admin:admin -X DELETE http://localhost:8082/api/v1/esindex/<created-name>`
-  4. Confirm it is gone from the engine: `curl -s -u admin:admin http://localhost:9200/<created-name>` → 404
+  4. Confirm it is gone from the engine: `curl -sk -u admin:admin https://localhost:9200/<created-name>` → 404
      (use `:9201` and the `.os` name if you created a new-engine index).
   5. Re-run the SQL from step 2.
 - **Expected Result:**
@@ -710,7 +726,7 @@ When the migration starts **successfully** (no shutdown) you instead see an `INF
 
 # Group 8 — Same query, both engines: results must match
 
-> These cases compare what each engine returns for the same query. Use Kibana for the old index and
+> These cases compare what each engine returns for the same query. Use the old engine's Dashboards for the old index and
 > OpenSearch Dashboards for the new index, and compare the returned document ids.
 
 ## TC-023 — "Starts-with phrase" search returns equivalent results in both engines
@@ -722,7 +738,7 @@ When the migration starts **successfully** (no shutdown) you instead see an `INF
 - **Steps:**
   1. Create and publish 10 Blog posts whose titles start with `Test article`.
   2. Find both working index names (**H1**).
-  3. In Kibana (old) and OpenSearch Dashboards (new), run:
+  3. In the old engine's Dashboards and the new engine's Dashboards, run:
      `POST /<index>/_search { "query": { "match_phrase_prefix": { "blog.title": "Test art" } } }`
   4. Compare the document counts and the returned `_id` values.
 - **Expected Result:**
@@ -741,9 +757,9 @@ When the migration starts **successfully** (no shutdown) you instead see an `INF
 - **Steps:**
   1. Create a content item with restricted permissions (admin-only, not anonymous). Publish it; note its id.
   2. Query the old engine directly (bypasses permissions):
-     `curl -s -u admin:admin "http://localhost:9200/<old-index>/_search?q=identifier:<id>"`
+     `curl -sk -u admin:admin "https://localhost:9200/<old-index>/_search?q=identifier:<id>"`
   3. Query the new engine directly:
-     `curl -s -u admin:admin "http://localhost:9201/<new-index.os>/_search?q=identifier:<id>"`  (new index ends in .os)
+     `curl -sk -u admin:"$OS_ADMIN_PW" "https://localhost:9201/<new-index.os>/_search?q=identifier:<id>"`  (new index ends in .os)
   4. Query through dotCMS **as an anonymous user** (no credentials):
      `curl -s -i "http://localhost:8082/api/content/search/-query/+identifier:<id> -live false"`
 - **Expected Result:**
@@ -762,7 +778,7 @@ When the migration starts **successfully** (no shutdown) you instead see an `INF
   1. Create and publish 5 items of a content type with a long-text field (e.g. Blog `body`), all
      containing the phrase `quantum entanglement hypothesis`.
   2. Find both working index names (**H1**).
-  3. In Kibana and OpenSearch Dashboards run:
+  3. In both engines' Dashboards, run:
      `POST /<index>/_search { "query": { "match": { "blog.body": "quantum entanglement" } } }`
   4. Compare the returned `_id` values.
 - **Expected Result:**
@@ -780,7 +796,7 @@ When the migration starts **successfully** (no shutdown) you instead see an `INF
   run the migration when the **new-engine address is the same as the old-engine address** (they must
   be separate instances). dotCMS keeps serving from ES; the migration is left off.
 - **How to induce:** point both ES and OS at the **same OpenSearch 3.x instance**, e.g.
-  `ES_ENDPOINTS=http://localhost:9201` and `OS_ENDPOINTS=http://localhost:9201`. (This is the one
+  `ES_ENDPOINTS=https://localhost:9201` and `OS_ENDPOINTS=https://localhost:9201`. (This is the one
   way to reach the separation guard; if you point OS at the ES port instead, the version check fails
   first — that is TC-008.)
 - **Risk:** Medium
@@ -806,7 +822,7 @@ When the migration starts **successfully** (no shutdown) you instead see an `INF
 - **Preconditions:** dotCMS in **Phase 1** with OpenSearch initially reachable.
 - **Steps:**
   1. Confirm Phase 1 is active (**H2**).
-  2. Stop OpenSearch (`docker compose stop opensearch`).
+  2. Stop OpenSearch (`docker compose stop opensearch3`).
   3. Trigger an index operation against the new engine and watch the log.
 - **Expected Result:**
   - The log shows per-attempt errors similar to `OpenSearch Connection Attempt #N: <cause>` (ERROR),
@@ -815,7 +831,7 @@ When the migration starts **successfully** (no shutdown) you instead see an `INF
     non-blocking).
 - **Type:** Manual
 
-## TC-039 — Phase 2: when an OpenSearch read fails, dotCMS falls back to ES (partial scope)
+## TC-039 — Phase 2: when an OpenSearch read fails, dotCMS falls back to ES
 
 - **Objective:** In Phase 2 the new engine serves reads. Prove that if an OpenSearch read throws,
   dotCMS automatically retries the read against the old engine so the user still gets a correct
@@ -824,31 +840,46 @@ When the migration starts **successfully** (no shutdown) you instead see an `INF
   stop OpenSearch, or delete/close the OS working index) and then run a content search.
 - **Risk:** Medium
 - **Preconditions:** dotCMS in **Phase 2**, content already dual-written.
-  > Phase 2 is only partially testable in this plan (the higher-level query layer is not fully
-  > migrated) — focus on the read-fallback behavior and the log line.
+  > Focus this case on the read-fallback behavior and the log line: content is served correctly even
+  > when the OS read throws, and the failure is logged for operators.
 - **Steps:**
   1. Confirm content is searchable in Phase 2.
   2. Break OpenSearch reads (stop OS or remove the OS working index).
-  3. Run the same search again.
+  3. Search again — but **change the query on every call** (see the warning below).
+  4. Also search a content type you have **not** queried since the server started, so its count is
+     not cached either. That variant used to fail differently: a `500` instead of an empty `200`.
 - **Expected Result:**
-  - The search still returns the correct result (served from ES).
-  - The log shows an ERROR similar to
-    `OS read failed in Phase 2 — falling back to ES. OS index may be stale or unavailable. Cause: …`
+  - The search still returns the correct result (served from ES), for every content type that has
+    live content. Not zero results, and not a `500`.
+  - The log shows an ERROR naming the operation and the root cause, similar to
+    `OS read failed in Phase 2 [indexCount] — falling back to ES. OS index may be stale or
+    unavailable. Cause: … / root cause: ConnectException: Connection refused`
 - **Type:** Manual
 
-## TC-040 — Phase 3 does NOT auto-rollback (documentation / negative case — out of functional scope)
+> ⚠️ **This case gave a false PASS before #37413 and can do so again.** Repeating an *identical*
+> search returns the pre-outage result from the query cache, which is indistinguishable from a
+> working fallback. Vary the query — a different `offset` on each call is enough — or you are
+> testing the cache, not the fallback. A count is cached without `offset` in its key, so also
+> exercise a content type never queried since startup.
+>
+> A second false-pass route: if a *count* is what fails, some paths propagate the error while the
+> *search* path used to convert it to an empty result on the spot. Check the returned total, not
+> just the absence of an error.
+
+## TC-040 — Phase 3 does NOT auto-rollback (negative case)
 
 - **Objective:** Document that the automatic fallback to ES exists only in Phases 1–2. In Phase 3 (ES
   decommissioned) a failed OpenSearch startup validation must NOT silently roll back to ES; it fails
-  loudly instead. **Phase 3 is not functionally testable in this plan — this case only pins the
-  expected log/behavior so nobody assumes the Phase-1 fallback applies.**
-- **Risk:** Low (informational)
-- **Preconditions:** Would require Phase 3 — do not actually run; record expected behavior only.
-- **Expected Result (documented):**
+  loudly instead. **This case pins that behavior so nobody assumes the Phase-1/2 fallback applies in
+  Phase 3.**
+- **Risk:** Medium
+- **Preconditions:** dotCMS configured for **Phase 3** with an OpenSearch cluster that then fails
+  startup validation (e.g. stop the target engine, or point `OS_ENDPOINTS` at a wrong/unreachable URL).
+- **Expected Result:**
   - dotCMS does **not** reset to Phase 0. A `DotRuntimeException` is raised whose message starts with
     `OpenSearch startup validation failed in PHASE_3_OPENSEARCH_ONLY.` and the outer handler logs it
     as `FATAL Failed to create new indexes: …`.
-- **Type:** Manual (documentation only)
+- **Type:** Manual
 
 ---
 
@@ -909,7 +940,7 @@ When the migration starts **successfully** (no shutdown) you instead see an `INF
 - **Preconditions:** dotCMS in **Phase 1**; new-engine index created.
 - **Steps:**
   1. Find the OS working index name (**H1**, ends in `.os`).
-  2. `curl -s -u admin:admin http://localhost:9201/<new-index.os>/_settings | jq .`
+  2. `curl -sk -u admin:"$OS_ADMIN_PW" https://localhost:9201/<new-index.os>/_settings | jq .`
 - **Expected Result:**
   - The settings include an explicit `number_of_replicas` value (present, not absent/defaulted).
 - **Type:** Manual
@@ -952,7 +983,7 @@ When the migration starts **successfully** (no shutdown) you instead see an `INF
 - **Steps:**
   1. Create and publish an item in language A, then add and publish a language-B version (same identifier).
   2. Find both working index names (**H1**).
-  3. In Kibana and OpenSearch Dashboards, search by identifier and inspect `languageid`.
+  3. In both engines' Dashboards, search by identifier and inspect `languageid`.
 - **Expected Result:**
   - Both engines contain **two documents** for that identifier, one per `languageid`.
   - The set of (identifier, languageid) pairs matches between engines.
@@ -1013,7 +1044,7 @@ When the migration starts **successfully** (no shutdown) you instead see an `INF
   incomplete OS index would surface directly to users).
 - **Risk:** High
 - **Preconditions:** dotCMS in **Phase 2** with content present in both engines.
-  > Phase 2 is only partially testable in this plan; focus on which engines get rebuilt and on completeness.
+  > In Phase 2 OS also serves reads, so an incomplete OS index surfaces directly to users — focus on which engines get rebuilt and on completeness.
 - **Steps:** Same as TC-048, run in Phase 2.
 - **Expected Result (desired — decision B):**
   - Both engines rebuilt to the expected count; reindex completes without hanging.
@@ -1092,33 +1123,48 @@ When the migration starts **successfully** (no shutdown) you instead see an `INF
 
 ## Setup — limited-user stack and the provisioning script
 
-**Stack:** `docker/docker-compose-examples/os-migration/docker-compose.limited-user.yml` (OS 3.x with
-the security plugin ON, provisioned with the non-admin `dotcms-es-user`). The
-`docker/docker-compose-examples/single-node-os-migration/` variant runs OS 1.x + OS 3.x, both
-provisioned the same way.
+**Stack:** the same `docker/docker-compose-examples/single-node-os-migration/docker-compose.yml`
+used above — there's no separate limited-user file. It already provisions both an admin user and
+the non-admin `dotcms-es-user` (with the restricted `dotcms-role`) on both OS 1.x and OS 3.x by
+default, so no extra setup is needed to test the limited-user path.
 
 ```bash
-docker compose -f docker/docker-compose-examples/os-migration/docker-compose.limited-user.yml up -d
+docker compose -f docker/docker-compose-examples/single-node-os-migration/docker-compose.yml up -d
 ```
 
 **Users on OS 3.x (port 9201, HTTPS):**
 
 | User | Password | Role |
 |---|---|---|
-| `admin` | `Dev!Search3-Kx9mP-2026` | cluster admin |
-| `dotcms-es-user` | `Dev!dotcms-EsUser-2026` | `dotcms-role` (limited) |
+| `admin` | `$OS_ADMIN_PW` | cluster admin |
+| `dotcms-es-user` | `$ES_USER_PW` | `dotcms-role` (limited) |
 
-**Provisioning script `opensearch.py`** — runs once via the `opensearch-provision` service; creates
+These are throwaway dev values, but this plan does not print them — the compose file is the only
+place they live, so a copy of this document never carries a password and never a stale one. Export
+them once, in the shell you run the cases from:
+
+```bash
+COMPOSE=docker/docker-compose-examples/single-node-os-migration/docker-compose.yml
+export OS_ADMIN_PW=$(grep OPENSEARCH_INITIAL_ADMIN_PASSWORD "$COMPOSE" | head -1 | cut -d'"' -f2)
+export ES_USER_PW=$(grep DOT_ES_AUTH_BASIC_PASSWORD  "$COMPOSE" | head -1 | cut -d"'" -f2)
+echo "${OS_ADMIN_PW:?not found}" "${ES_USER_PW:?not found}" >/dev/null && echo "credentials loaded"
+```
+
+The limited-user stack provisions the same two accounts with the same values, which is why reading
+them from the committed `single-node-os-migration` compose file is safe. Every `curl` below assumes
+both variables are exported; a `401` is the first thing to check.
+
+**Provisioning script `opensearch.py`** — runs once via the `opensearch3-provision` service; creates
 per customer an internal user `<customer>-es-user`, action groups, a role `<customer>-role`, and the
 role mapping. Run it manually:
 
 ```bash
 # Re-run the bundled provisioner against the running stack (idempotent):
-docker compose -f docker/docker-compose-examples/os-migration/docker-compose.limited-user.yml run --rm opensearch-provision
+docker compose -f docker/docker-compose-examples/single-node-os-migration/docker-compose.yml run --rm opensearch3-provision
 
 # Or standalone against any reachable cluster:
-./opensearch.py --admin-user admin --admin-pass 'Dev!Search3-Kx9mP-2026' \
-  --password 'Dev!dotcms-EsUser-2026' --customer dotcms --host localhost --port 9201
+./opensearch.py --admin-user admin --admin-pass "$OS_ADMIN_PW" \
+  --password "$ES_USER_PW" --customer dotcms --host localhost --port 9201
 ```
 
 The `dotcms-role` grants:
@@ -1141,7 +1187,7 @@ DOT_ES_ENDPOINTS=http://<host>:9200
 DOT_OS_ENDPOINTS=https://<host>:9201
 DOT_OS_AUTH_TYPE=BASIC
 DOT_OS_AUTH_BASIC_USER=dotcms-es-user
-DOT_OS_AUTH_BASIC_PASSWORD=Dev!dotcms-EsUser-2026
+DOT_OS_AUTH_BASIC_PASSWORD=<the $ES_USER_PW value from the compose file>
 DOT_OS_TLS_TRUST_SELF_SIGNED=true
 DOT_FEATURE_FLAG_OPEN_SEARCH_PHASE=1
 DOT_DOTCMS_CLUSTER_ID=dotcms-os-migration   # MUST start with the customer name
@@ -1152,13 +1198,13 @@ DOT_DOTCMS_CLUSTER_ID=dotcms-os-migration   # MUST start with the customer name
 - **Objective:** the script creates the non-admin user, role, and mapping with the expected permissions.
 - **Risk:** Medium
 - **Steps:**
-  1. Launch the limited-user stack; let `opensearch-provision` finish.
+  1. Launch the limited-user stack; let `opensearch3-provision` finish.
   2. List internal users:
-     `curl -sk https://localhost:9201/_plugins/_security/api/internalusers?pretty -u admin:'Dev!Search3-Kx9mP-2026'` → `dotcms-es-user` present.
+     `curl -sk https://localhost:9201/_plugins/_security/api/internalusers?pretty -u admin:"$OS_ADMIN_PW"` → `dotcms-es-user` present.
   3. Inspect the role:
-     `curl -sk https://localhost:9201/_plugins/_security/api/roles/dotcms-role?pretty -u admin:'Dev!Search3-Kx9mP-2026'`.
+     `curl -sk https://localhost:9201/_plugins/_security/api/roles/dotcms-role?pretty -u admin:"$OS_ADMIN_PW"`.
   4. Confirm the limited user reaches the cluster root:
-     `curl -sk https://localhost:9201/ -u dotcms-es-user:'Dev!dotcms-EsUser-2026'` → HTTP 200.
+     `curl -sk https://localhost:9201/ -u dotcms-es-user:"$ES_USER_PW"` → HTTP 200.
 - **Expected Result:**
   - `dotcms-es-user` and `dotcms-role` exist; the role grants the index/cluster/all-index permissions
     listed in Setup, **including `cluster:monitor/main`**.
@@ -1190,7 +1236,7 @@ DOT_DOTCMS_CLUSTER_ID=dotcms-os-migration   # MUST start with the customer name
 - **Steps:**
   1. Create and publish a content item; note its identifier.
   2. As the limited user, confirm it in OS (find the index name first, ends in `.os`):
-     `curl -sk "https://localhost:9201/<cluster_dotcms….working_….os>/_doc/<id>" -u dotcms-es-user:'Dev!dotcms-EsUser-2026'`.
+     `curl -sk "https://localhost:9201/<cluster_dotcms….working_….os>/_doc/<id>" -u dotcms-es-user:"$ES_USER_PW"`.
 - **Expected Result:**
   - The document is present in the OS 3.x working index (200/found).
   - No permission (403) errors in the dotCMS log for the OS write.
@@ -1216,10 +1262,10 @@ DOT_DOTCMS_CLUSTER_ID=dotcms-os-migration   # MUST start with the customer name
 
 - **Objective:** the limited role's scroll/read permissions are sufficient for dotCMS searches against OS.
 - **Risk:** Medium
-- **Preconditions:** content dual-written (TC-055); to exercise OS reads use Phase 2 (partial scope) or query OS directly.
+- **Preconditions:** content dual-written (TC-055); to exercise OS reads use Phase 2 or query OS directly.
 - **Steps:**
   1. As the limited user, search the OS working index:
-     `curl -sk "https://localhost:9201/<…os>/_search?q=*:*" -u dotcms-es-user:'Dev!dotcms-EsUser-2026'`.
+     `curl -sk "https://localhost:9201/<…os>/_search?q=*:*" -u dotcms-es-user:"$ES_USER_PW"`.
   2. (Phase 2) run a dotCMS content search and confirm results.
 - **Expected Result:**
   - Search returns results (no 403); scroll-based reads succeed.
@@ -1272,7 +1318,7 @@ DOT_DOTCMS_CLUSTER_ID=dotcms-os-migration   # MUST start with the customer name
 7. TC-036 (delete happy path) → TC-016, TC-017, TC-018, TC-019, TC-020 (index delete & rebuild)
 8. TC-021, TC-022 (delete API security)
 9. TC-023, TC-024, TC-025 (cross-engine query equivalence)
-10. TC-037 (same-endpoint guard), TC-038 (connection give-up), TC-039 (Phase 2 fallback), TC-040 (Phase 3 doc-only)
+10. TC-037 (same-endpoint guard), TC-038 (connection give-up), TC-039 (Phase 2 fallback), TC-040 (Phase 3 no auto-rollback)
 11. TC-041 (divergent-name fan-out — open issue), TC-042 (rollback drift)
 12. TC-043 (replicas setting), TC-044 (permission update), TC-045 (draft working/live), TC-046 (multi-language)
 13. TC-047 (Phase 0 reindex baseline) → TC-048 (Phase 1 both) → TC-049 (Phase 2 both) → TC-050 (Phase 3 OS-only); for each run TC-051 (completeness) and TC-052 (no-hang / diagnose)
@@ -1283,7 +1329,6 @@ DOT_DOTCMS_CLUSTER_ID=dotcms-os-migration   # MUST start with the customer name
 > a separate workstream under the same epic (#35476). Mapping to the epic: G1–G8 = #35635–#35642;
 > G12=#36218, G13=#36219, G14=#36220; G15 = reindex (TC-047–TC-052); G16 = limited-user (TC-053–TC-058).
 >
-> Lower-confidence / out-of-scope flags: TC-039 & TC-040 (Phase 2/3 — partial/doc-only),
-> TC-041 & TC-042 (known open issue — expect bug reports, not clean pass/fail),
+> Lower-confidence flags: TC-041 & TC-042 (known open issue — expect bug reports, not clean pass/fail),
 > TC-048 & TC-049 (assert DESIRED reindex-to-both per decision B — current build may rebuild ES only;
 > record as gap), TC-050 (Phase 3 — needs Phase 3 env; known bugs #36077/#36054).

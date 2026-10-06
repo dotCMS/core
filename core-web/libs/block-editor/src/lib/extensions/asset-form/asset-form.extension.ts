@@ -184,6 +184,9 @@ export const BubbleAssetFormExtension = (viewContainerRef: ViewContainerRef) => 
 
                             case 'image':
                                 return chain().insertImage(payload, position).run();
+
+                            case 'audio':
+                                return chain().insertAudio?.(payload, position).run();
                         }
                     }
             };

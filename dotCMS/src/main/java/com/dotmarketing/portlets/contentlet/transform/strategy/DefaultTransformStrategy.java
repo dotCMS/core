@@ -123,7 +123,19 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
         }
 
         final Host site = toolBox.hostAPI.find(contentlet.getHost(), APILocator.systemUser(), true);
-        map.put(HOST_NAME, site != null ? site.getHostname() : NOT_APPLICABLE);
+        //`hostName` is a derived convenience property: the name of the Site this Contentlet lives
+        //on. The Host Content Type declares a real field with that same variable ("Site Key"), and
+        //a custom type may too, so writing the derived value would destroy the stored one - every
+        //Site lives on the System Host, so every Site would report "System Host". Same reasoning as
+        //the URL_FIELD guard below. HOST_KEY needs no guard: "host" is a reserved field variable.
+        if (declaresField(type, HOST_NAME)) {
+            //The stored field wins, but the key still has to be there: this map has always carried
+            //a non-null hostName, so a declared-but-unset field falls back to the sentinel rather
+            //than dropping the key and handing callers a null.
+            map.putIfAbsent(HOST_NAME, NOT_APPLICABLE);
+        } else {
+            map.put(HOST_NAME, site != null ? site.getHostname() : NOT_APPLICABLE);
+        }
         map.put(HOST_KEY, site != null ? site.getIdentifier() : NOT_APPLICABLE);
 
         final String urlMap = toolBox.contentletAPI
@@ -145,6 +157,29 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
         map.put(DISABLED_WYSIWYG_KEY, contentlet.getDisabledWysiwyg());
 
         this.addAuditProperties(contentlet, map);
+    }
+
+    /**
+     * Tells whether a Content Type declares a field of its own whose variable is the given name.
+     * <p>
+     * The Contentlet map is a single flat namespace holding both stored field values and derived
+     * properties computed at read time, so the two can collide. {@link com.dotcms.contenttype.business.FieldFactoryImpl#RESERVED_FIELD_VARS}
+     * keeps most derived keys safe by refusing them as field variables, but {@code hostName} is not
+     * on that list — and the Host Content Type declares one, the required Text field labelled "Site
+     * Key". When a Content Type owns the variable, its stored value must win.
+     * <p>
+     * Deliberately iterates {@link ContentType#fields()} rather than calling
+     * {@link ContentType#fieldMap()}: the latter collects into a Guava {@code ImmutableMap}, which
+     * throws on a field whose variable is {@code null} — legal in the database.
+     *
+     * @param type          The {@link ContentType} to inspect. A {@code null} type declares nothing.
+     * @param fieldVariable The field variable to look for.
+     *
+     * @return {@code true} if the Content Type declares a field with that variable.
+     */
+    public static boolean declaresField(final ContentType type, final String fieldVariable) {
+        return null != type && type.fields().stream()
+                .anyMatch(field -> null != field && fieldVariable.equals(field.variable()));
     }
 
     /**
@@ -396,13 +431,29 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
      * Use this method to add any additional property
      * @param contentlet Same contentlet with any additional property added
      */
+    /**
+     * Resolves the display name for {@code contentlet}'s modifying user, reusing the value
+     * {@link #addAuditProperties} already put under {@link Contentlet#MOD_USER_NAME_KEY} when
+     * both it and {@link #addVersionProperties} run for the same row (issue #37186, User Story
+     * 2). Once the warm-up in {@code BrowserAPIImpl} makes the id cache-warm, a second
+     * {@code loadUserById} call for the same id is only a cache hit, not a DB round trip — this
+     * still avoids the redundant call-count/CPU overhead, and matters independently for any
+     * other caller of this strategy that doesn't warm up first.
+     */
+    private String resolveModUserName(final Contentlet contentlet, final Map<String, Object> map) {
+        if (map.containsKey(MOD_USER_NAME_KEY)) {
+            return (String) map.get(MOD_USER_NAME_KEY);
+        }
+        final User modUser = Try.of(() -> toolBox.userAPI.loadUserById(contentlet.getModUser())).getOrNull();
+        return null != modUser ? modUser.getFullName() : NOT_APPLICABLE;
+    }
+
     private void addVersionProperties(final Contentlet contentlet, final Map<String, Object> map, final Set<TransformOptions> options)
             throws DotSecurityException, DotDataException {
         if(!options.contains(VERSION_INFO)){
             return;
         }
-        final User modUser = toolBox.userAPI.loadUserById(contentlet.getModUser());
-        map.put("modUserName", null != modUser ? modUser.getFullName() : NOT_APPLICABLE);
+        map.put(MOD_USER_NAME_KEY, resolveModUserName(contentlet, map));
         map.put(WORKING_KEY, contentlet.isWorking());
         map.put(LIVE_KEY, contentlet.isLive());
         map.put(ARCHIVED_KEY, contentlet.isArchived());
@@ -413,10 +464,20 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
         map.put("hasLiveVersion", toolBox.versionableAPI.hasLiveVersion(contentlet));
         final Optional<String> lockedByOpt = Try.of(()->toolBox.versionableAPI.getLockedBy(contentlet)).getOrElse(Optional.empty());
         if (lockedByOpt.isPresent()) {
-
-            final User user = toolBox.userAPI.loadUserById(lockedByOpt.get());
-            map.put("lockedBy", Map.of("userId", user.getUserId(),
-                    "firstName", user.getFirstName(), "lastName", user.getLastName()));
+            // issue #37186 (FR-004a): an orphaned locked-by id must degrade this one field, not
+            // fail the whole transform — same fallback pattern as modUser above and
+            // addAuditProperties, instead of an uncaught NoSuchUserException. The map still
+            // always carries a "lockedBy" entry when locked==true (FR-003 identical listing
+            // content) — a resolution failure falls back to the unresolved id with "N/A" names
+            // instead of omitting the key entirely.
+            final User user = Try.of(() -> toolBox.userAPI.loadUserById(lockedByOpt.get())).getOrNull();
+            if (null != user) {
+                map.put("lockedBy", Map.of("userId", user.getUserId(),
+                        "firstName", user.getFirstName(), "lastName", user.getLastName()));
+            } else {
+                map.put("lockedBy", Map.of("userId", lockedByOpt.get(),
+                        "firstName", NOT_APPLICABLE, "lastName", ""));
+            }
         }
 
         final Optional<ContentletVersionInfo> versionInfo =

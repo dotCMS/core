@@ -1,17 +1,23 @@
 package com.dotcms.rest.api.v1.drive;
 
+import com.dotcms.browser.BrowserAPIImpl;
 import com.dotcms.browser.FieldSearchCriteria;
 import com.dotcms.browser.FieldSearchCriteria.FilterKind;
 import com.dotcms.browser.FieldSearchCriteria.RoutingBucket;
+import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.CheckboxField;
+import com.dotcms.contenttype.model.field.CustomField;
 import com.dotcms.contenttype.model.field.DateField;
 import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.JSONField;
+import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.field.MultiSelectField;
 import com.dotcms.contenttype.model.field.RadioField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.SelectField;
+import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TextAreaField;
 import com.dotcms.contenttype.model.field.TextField;
@@ -34,8 +40,7 @@ import java.util.Map;
  *   <li>resolves each key against the request's single content type,</li>
  *   <li>rejects unknown keys and fields that are not {@code searchable && indexed}
  *       (mirrors {@code StructureAjax.getSearchableStructureFields}),</li>
- *   <li>rejects out-of-scope field types (dividers, Binary, JSON, Key/Value, Block Editor,
- *       Constant, Hidden, Custom, Relationship — the latter is v1.1),</li>
+ *   <li>rejects out-of-scope field types (dividers, Constant, Hidden, File/Image, Host/Folder),</li>
  *   <li>infers the operator ({@link FilterKind}) from the value shape and validates it against
  *       the field type, and</li>
  *   <li>assigns the routing bucket ({@link RoutingBucket}) per the ADR-0018 contract: Tag → DB,
@@ -169,7 +174,39 @@ public class ContentDriveFieldFilterResolver {
                     "Field '%s' range filter must set at least one non-empty 'from'/'to' bound.",
                     fieldVariable));
         }
+        checkDateBound(fieldVariable, field, FROM_KEY, from);
+        checkDateBound(fieldVariable, field, TO_KEY, to);
         return FieldSearchCriteria.range(fieldVariable, field, contentType, bucket, from, to);
+    }
+
+    /**
+     * Rejects a range bound that is not a date, using the same parsing the query builder applies
+     * later ({@link BrowserAPIImpl#parseFlexibleDate(String)}). A Time field also accepts a bare
+     * time of day ({@link BrowserAPIImpl#parseBareTime(String)}), which API clients send and the
+     * builder matches as is. A missing bound and {@code *} mean open-ended and are accepted.
+     * Without this, a non-date reached the index as an invalid range query; now that index failures
+     * fail the request, it must be caught here as bad input (HTTP 400) instead of surfacing as a
+     * server error (issue #37488).
+     *
+     * @param fieldVariable The field the range filters on, for the error message.
+     * @param field         The field the range filters on.
+     * @param boundName     {@code from} or {@code to}, for the error message.
+     * @param bound         The trimmed bound, or {@code null} when absent.
+     * @throws BadRequestException when the bound is set and is not a recognizable date.
+     */
+    private static void checkDateBound(final String fieldVariable, final Field field,
+            final String boundName, final String bound) {
+        if (null == bound || "*".equals(bound)) {
+            return;
+        }
+        if (field instanceof TimeField && null != BrowserAPIImpl.parseBareTime(bound)) {
+            return;
+        }
+        if (null == BrowserAPIImpl.parseFlexibleDate(bound)) {
+            throw new BadRequestException(String.format(
+                    "Field '%s' range '%s' bound is not a valid date; use ISO-8601, e.g. "
+                            + "2024-01-31 or 2024-01-31T10:30:00.", fieldVariable, boundName));
+        }
     }
 
     /**
@@ -205,9 +242,9 @@ public class ContentDriveFieldFilterResolver {
 
     /**
      * Maps a field type to its routing bucket per the ADR-0018 contract, or {@code null} when the
-     * field type is out of scope (dividers, Binary, JSON, Key/Value, Block Editor, Constant, Hidden,
-     * Custom, File/Image, Host/Folder are excluded). Tag and Relationship resolve in the DB to
-     * preserve read-your-writes; everything else in scope resolves against the index.
+     * field type is out of scope (dividers, Constant, Hidden, File/Image, Host/Folder are excluded).
+     * Tag and Relationship resolve in the DB to preserve read-your-writes; everything else in scope
+     * resolves against the index.
      */
     private RoutingBucket routingBucketFor(final Field field) {
         if (field instanceof TagField || field instanceof RelationshipField) {
@@ -230,7 +267,15 @@ public class ContentDriveFieldFilterResolver {
                 || field instanceof DateField
                 || field instanceof TimeField
                 || field instanceof DateTimeField
-                || field instanceof CategoryField;
+                || field instanceof CategoryField
+                // Text-backed fields that reuse the shared TEXT/BINARY/KEY_VALUE handlers: a raw
+                // contains match against the indexed value (JSON/StoryBlock/Custom = full text,
+                // Binary = file name, Key/Value = the `.key_value` subfield).
+                || field instanceof JSONField
+                || field instanceof StoryBlockField
+                || field instanceof CustomField
+                || field instanceof BinaryField
+                || field instanceof KeyValueField;
     }
 
     /**
@@ -256,6 +301,13 @@ public class ContentDriveFieldFilterResolver {
                         || field instanceof WysiwygField
                         || field instanceof SelectField
                         || field instanceof RadioField
+                        // Text-backed types filtered as a single contains term. Key/Value receives
+                        // a `key_value`-joined term (exact pair) or a bare term (loose) from the FE.
+                        || field instanceof JSONField
+                        || field instanceof StoryBlockField
+                        || field instanceof CustomField
+                        || field instanceof BinaryField
+                        || field instanceof KeyValueField
                         || isMultiValueField(field);
             default:
                 return false;

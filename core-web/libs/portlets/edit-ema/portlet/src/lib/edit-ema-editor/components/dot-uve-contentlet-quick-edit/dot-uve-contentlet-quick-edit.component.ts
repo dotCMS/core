@@ -22,7 +22,14 @@ import { ContentletEditData, ContentletField } from './types';
 import { UVEStore } from '../../../store/dot-uve.store';
 import { getQuickEditFields, parseFieldValues } from '../../utils';
 
-type QuickEditMode = 'decide' | 'loading' | 'form' | 'empty' | 'no-fields' | 'no-selection';
+type QuickEditMode =
+    | 'decide'
+    | 'loading'
+    | 'form'
+    | 'empty'
+    | 'no-fields'
+    | 'no-permission'
+    | 'no-selection';
 
 /**
  * Side-panel quick-edit container. Owns mode resolution and
@@ -64,6 +71,14 @@ export class DotUveContentletQuickEditComponent {
         () => this.data().contentlet?.contentType === TEMP_EMPTY_CONTENTLET_TYPE
     );
 
+    /**
+     * Whether the user may edit the selected contentlet. Read from the DOM
+     * payload's `canEdit`, which `$contentletEditData` carries across the
+     * page-asset swap. Fail-open: absent means allowed, since headless pages
+     * never supply it.
+     */
+    readonly $canEditContentlet = computed(() => this.data().contentlet?.canEdit !== false);
+
     readonly $isLoadingContentType = computed(() => {
         const contentType = this.data().contentlet?.contentType;
         return (
@@ -102,6 +117,9 @@ export class DotUveContentletQuickEditComponent {
      */
     readonly $mode = computed<QuickEditMode>(() => {
         if (this.$isEmptyContainer()) return 'empty';
+        // Ranked above 'decide' on purpose: a user who cannot edit the original
+        // must not be offered the copy-and-edit prompt from here either.
+        if (!this.$canEditContentlet()) return 'no-permission';
         if (this.$needsCopyDecision()) return 'decide';
         if (this.$isLoadingContentType()) return 'loading';
         if (this.$fields().length > 0) return 'form';

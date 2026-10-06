@@ -56,12 +56,7 @@ import {
     PushBundleForm,
     PushBundleOperation
 } from '@dotcms/dotcms-models';
-import {
-    DotCopyButtonComponent,
-    DotEmptyContainerComponent,
-    DotMessagePipe,
-    PrincipalConfiguration
-} from '@dotcms/ui';
+import { DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
 import { getDownloadLink } from '@dotcms/utils';
 
 import {
@@ -77,25 +72,31 @@ interface BundleRow {
     name: string;
 }
 
+interface EmptyStateConfig {
+    icon: string;
+    messageKey: string;
+}
+
 /** Map asset `type` string (lowercase, comes from `PusheableAsset.getType()`)
- * to a PrimeIcon. Unknown types fall back to a generic file icon. */
+ * to a Material Symbols Rounded ligature name. Unknown types fall back to a
+ * generic file icon. Rendered via `<span class="material-symbols-rounded">`. */
 const TYPE_ICONS: Record<string, string> = {
-    contentlet: 'pi pi-file',
-    contenttype: 'pi pi-box',
-    template: 'pi pi-window-maximize',
-    containers: 'pi pi-th-large',
-    folder: 'pi pi-folder',
-    host: 'pi pi-globe',
-    category: 'pi pi-tag',
-    links: 'pi pi-link',
-    workflow: 'pi pi-cog',
-    language: 'pi pi-language',
-    rule: 'pi pi-shield',
-    user: 'pi pi-user',
-    osgi: 'pi pi-box',
-    relationship: 'pi pi-share-alt',
-    experiment: 'pi pi-chart-bar',
-    variant: 'pi pi-clone'
+    contentlet: 'description',
+    contenttype: 'inventory_2',
+    template: 'open_in_new',
+    containers: 'grid_view',
+    folder: 'folder',
+    host: 'public',
+    category: 'sell',
+    links: 'link',
+    workflow: 'settings',
+    language: 'translate',
+    rule: 'shield',
+    user: 'person',
+    osgi: 'inventory_2',
+    relationship: 'share',
+    experiment: 'bar_chart',
+    variant: 'file_copy'
 };
 
 const BUNDLES_PER_PAGE = 6;
@@ -124,7 +125,6 @@ const ASSETS_PER_PAGE = 10;
         TooltipModule,
         DotCopyButtonComponent,
         DotDownloadBundleFormComponent,
-        DotEmptyContainerComponent,
         DotMessagePipe,
         DotPushPublishFormComponent
     ],
@@ -179,8 +179,13 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
 
     readonly assetsPerPage = ASSETS_PER_PAGE;
 
-    readonly bundlesSkeleton = Array.from({ length: 6 });
-    readonly assetsSkeleton = Array.from({ length: 6 });
+    /** Stable per-row keys — PrimeNG's `dataKey` skips `undefined` slots. */
+    readonly bundlesSkeleton = Array.from({ length: 6 }, (_, i) => ({
+        id: `__skel_${i}`
+    }));
+    readonly assetsSkeleton = Array.from({ length: 6 }, (_, i) => ({
+        asset: `__skel_${i}`
+    }));
 
     /** `table-layout: fixed` + `width: 100%` so column widths are driven by the
      * `<col>`/header widths instead of by cell content. Without this, a long
@@ -267,53 +272,33 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
 
     readonly $assetsTotal = computed(() => this.$assets().length);
 
-    /** Empty-state configuration for the bundles pane. Splits the "no results"
-     * copy between "nothing exists yet" and "search returned nothing" so the
-     * user gets the right cue for what to do next. */
-    readonly $bundlesEmptyConfig = computed<PrincipalConfiguration>(() => {
+    /** Empty-state config for the bundles pane. Splits "nothing saved yet" from
+     * "search returned nothing" so the icon + copy guide the user's next move. */
+    readonly $bundlesEmptyConfig = computed<EmptyStateConfig>(() => {
         const hasSearch = this.$bundleSearch().trim().length > 0;
         return hasSearch
             ? {
-                  icon: 'pi-search',
-                  title: this.#dotMessageService.get(
-                      'publishing-queue.select-bundle.empty.search.title'
-                  ),
-                  subtitle: this.#dotMessageService.get(
-                      'publishing-queue.select-bundle.empty.search.subtitle'
-                  )
+                  icon: 'search_off',
+                  messageKey: 'publishing-queue.select-bundle.empty.search'
               }
             : {
-                  icon: 'pi-inbox',
-                  title: this.#dotMessageService.get('publishing-queue.select-bundle.empty.title'),
-                  subtitle: this.#dotMessageService.get(
-                      'publishing-queue.select-bundle.empty.subtitle'
-                  )
+                  icon: 'inbox',
+                  messageKey: 'publishing-queue.select-bundle.empty'
               };
     });
 
-    /** Empty-state configuration for the assets pane. Distinguishes "no bundle
-     * picked yet" (guide the user toward the left list) from "picked bundle is
-     * empty" (tell them where to add content). */
-    readonly $assetsEmptyConfig = computed<PrincipalConfiguration>(() => {
+    /** Empty-state config for the assets pane. Distinguishes "no bundle picked
+     * yet" (steer the user to the left list) from "picked bundle is empty". */
+    readonly $assetsEmptyConfig = computed<EmptyStateConfig>(() => {
         const hasActive = this.$activeBundleId() !== null;
         return hasActive
             ? {
-                  icon: 'pi-box',
-                  title: this.#dotMessageService.get(
-                      'publishing-queue.select-bundle.asset-empty.title'
-                  ),
-                  subtitle: this.#dotMessageService.get(
-                      'publishing-queue.select-bundle.asset-empty.subtitle'
-                  )
+                  icon: 'inventory_2',
+                  messageKey: 'publishing-queue.select-bundle.asset-empty'
               }
             : {
-                  icon: 'pi-hand-point-left',
-                  title: this.#dotMessageService.get(
-                      'publishing-queue.select-bundle.no-active.title'
-                  ),
-                  subtitle: this.#dotMessageService.get(
-                      'publishing-queue.select-bundle.no-active.subtitle'
-                  )
+                  icon: 'search_off',
+                  messageKey: 'publishing-queue.select-bundle.no-active'
               };
     });
 
@@ -403,7 +388,7 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
     }
 
     typeIcon(type: string): string {
-        return TYPE_ICONS[(type ?? '').toLowerCase()] ?? 'pi pi-file';
+        return TYPE_ICONS[(type ?? '').toLowerCase()] ?? 'description';
     }
 
     onRemoveAsset(asset: BundleAssetView): void {
@@ -419,9 +404,8 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
                 'publishing-queue.asset-list.remove-confirm.message',
                 asset.title || asset.asset
             ),
-            acceptLabel: this.#dotMessageService.get('publishing-queue.remove'),
+            acceptLabel: this.#dotMessageService.get('publishing-queue.delete'),
             rejectLabel: this.#dotMessageService.get('publishing-queue.cancel'),
-            acceptButtonStyleClass: 'p-button-danger',
             rejectButtonStyleClass: 'p-button-text',
             defaultFocus: 'reject',
             closable: true,
@@ -449,12 +433,14 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
         }
         this.$validationWarningKey.set(null);
         this.#confirmationService.confirm({
-            header: this.#dotMessageService.get('publishing-queue.delete.confirm.header'),
+            header: this.#dotMessageService.get(
+                'publishing-queue.select-bundle.remove.confirm.header'
+            ),
             message: this.#dotMessageService.get(
                 'publishing-queue.select-bundle.remove.confirm.message',
                 String(ids.length)
             ),
-            acceptLabel: this.#dotMessageService.get('publishing-queue.history.kebab.delete'),
+            acceptLabel: this.#dotMessageService.get('publishing-queue.remove'),
             rejectLabel: this.#dotMessageService.get('publishing-queue.cancel'),
             acceptButtonStyleClass: 'p-button-primary',
             rejectButtonStyleClass: 'p-button-text',
@@ -694,6 +680,7 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
     }
 
     #loadAssets(bundleId: string): void {
+        this.$assets.set([]);
         this.$assetsStatus.set('loading');
         this.$assetEditUrls.set(new Map());
         this.#publishingService

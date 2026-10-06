@@ -34,11 +34,33 @@ The `@dotcms/react` SDK is the DotCMS official React library. It empowers React 
 
 ### Get a dotCMS Environment
 
-#### Version Compatibility
+#### Which SDK Version Should I Use?
 
--   **Recommended**: dotCMS Evergreen
--   **Minimum**: dotCMS v25.05
--   **Best Experience**: Latest Evergreen release
+dotCMS SDKs are published in lockstep with dotCMS itself: every `@dotcms/*` package ships
+at the **exact same version number** as the dotCMS release it was built for (e.g. dotCMS
+`26.7.14-1` → `@dotcms/client@26.7.14-1`, `@dotcms/react@26.7.14-1`, and so on).
+
+**Simple rule of thumb: use the SDK version that matches your dotCMS instance's version.**
+
+You don't have to upgrade the SDK every time dotCMS releases a new version (or vice versa).
+Most releases don't change anything the SDKs rely on, so an older SDK usually keeps working
+fine against a newer dotCMS instance. Occasionally, though, a release does include a real
+breaking change — and if your SDK is older than that point, it will stop working correctly.
+
+You don't need to track this yourself: your dotCMS instance always knows the oldest SDK
+version it still supports, and the SDK checks itself against it automatically. If you're
+using an SDK that's too old, you'll see a clear warning in your console telling you to
+upgrade.
+
+**Recommendation:** pin your SDKs to the same version as your dotCMS instance, and only bump
+them when you upgrade dotCMS — or when the console tells you to.
+
+> **On an LTS release?** LTS releases don't currently get their own matching SDK version.
+> Until that's addressed, use the SDK version published for the closest regular release at
+> or before your LTS version.
+>
+> Want more background on how dotCMS releases and support windows work? See
+> [Release & Support Lifecycle](https://dev.dotcms.com/docs/release-support-lifecycle).
 
 #### Environment Setup
 
@@ -82,9 +104,18 @@ For detailed instructions, please refer to the [dotCMS API Documentation - Read-
 npm install @dotcms/react@latest
 ```
 
-This will automatically install the required dependencies:
+You also need to install these packages yourself:
 - `@dotcms/uve`: Enables interaction with the [Universal Visual Editor](https://dev.dotcms.com/docs/uve-headless-config) for real-time content editing
 - `@dotcms/client`: Provides the core client functionality for fetching and managing dotCMS data
+- `@dotcms/types`: TypeScript definitions used throughout the API
+
+```bash
+npm install @dotcms/uve @dotcms/client @dotcms/types
+```
+
+> npm 7+ and pnpm install these automatically as peer dependencies alongside `@dotcms/react`.
+> **Yarn Classic (1.x) and npm below v7 do not** — they only print a warning if one is missing,
+> so on those package managers you must add them explicitly as shown above.
 
 ### dotCMS Client Configuration
 
@@ -277,22 +308,69 @@ The layout renders the pre-rendered slot node for a contentlet if one exists, ot
 
 #### Component Mapping
 
-The `DotCMSLayoutBody` component uses a `components` prop to map content type variable names to React components. This allows you to render different components for different content types. Example:
+The `DotCMSLayoutBody` component uses a `components` prop to map content type variable names to React components. This allows you to render different components for different content types.
 
-```typescript
-const DYNAMIC_COMPONENTS = {
-    Blog: MyBlogCard,
-    Product: DotCMSProductComponent
+**Load the mapped components dynamically.** A static map makes every component reachable from the client entry, so a visitor downloads all of them on every route — even the ones that page never renders. Wrapping each in a dynamic import gives each component its own chunk, fetched only when a page actually contains that content type.
+
+In Next.js, use `next/dynamic`:
+
+```tsx
+import dynamic from 'next/dynamic';
+
+import { CustomNoComponent } from './Empty';
+
+export const pageComponents = {
+    Blog: dynamic(() => import('./MyBlogCard')),
+    Product: dynamic(() => import('./DotCMSProductComponent')),
+    // The fallback for unmapped content types stays eager: it should render without
+    // waiting on a network round-trip, and it is small.
+    CustomNoComponent
 };
 ```
 
+Anywhere else — Astro, Vite, plain React — use `React.lazy`:
+
+```tsx
+import { lazy } from 'react';
+
+export const pageComponents = {
+    Blog: lazy(() => import('./MyBlogCard')),
+    Product: lazy(() => import('./DotCMSProductComponent'))
+};
+```
+
+`next/dynamic` brings its own Suspense boundary. `React.lazy` does not, but you do not need to add one: `DotCMSLayoutBody` wraps every contentlet in a Suspense boundary, so a lazy component can be mapped directly.
+
 -   Keys (e.g., `Blog`, `Product`): Match your [content type variable names](https://dev.dotcms.com/docs/content-types#VariableNames) in dotCMS
--   Values: Dynamic imports of your React components that render each content type
--   Supports lazy loading through dynamic imports
--   Components must be standalone or declared in a module
+-   Values: any React component type — including the result of `next/dynamic` or `React.lazy`
 
 > [!TIP]
 > Always use the exact content type variable name from dotCMS as the key. You can find this in the Content Types section of your dotCMS admin panel.
+
+> [!WARNING]
+> Avoid re-exporting your content-type components from a barrel (`export * from './Banner'`). Anything importing that barrel makes every component statically reachable, which puts them all back in the initial bundle no matter how the map loads them.
+
+#### Migrating an existing app to dynamic mapping
+
+Earlier versions of our examples showed a static component map, so an app built from them ships **every** mapped component on **every** route. If you have dozens of content types, that is the single biggest thing you can fix — and upgrading the SDK does not fix it for you, because the map lives in your code.
+
+Measured on the Next.js example with 135 mapped content types, one realistic component each:
+
+| Component map | Initial route JS | Mapped components in the initial bundle |
+| --- | --- | --- |
+| Static imports | 892.7 KB raw / 250.4 KB gzip | **135 of 135** |
+| `next/dynamic` | 792.6 KB raw / 238.1 KB gzip | **0 of 135** |
+
+Every mapped component leaves the initial route and is fetched only when a page contains that content type. How much weight that removes depends on your components: the 100 KB above is what 135 modest ones cost, and real component libraries are usually heavier.
+
+To migrate:
+
+1. Wrap each entry in the map with `next/dynamic` (or `React.lazy` outside Next.js). Keep the unmatched-type fallback eager.
+2. Delete any barrel that re-exports your content-type components, and import them directly where you need them elsewhere. A single `export * from './Banner'` re-exports every component from one module and undoes the whole change.
+3. Do the same for the `customRenderers` map you pass to `DotCMSBlockEditorRenderer` if it maps more than a handful of components.
+4. Rebuild and confirm. The quickest check is to map a component no page uses, give it a unique string, and grep the production client chunks for that string — it should appear only in its own chunk. `examples/scripts/check-initial-bundle.mjs` in this repository does exactly that for the Next.js and Astro examples and can be pointed at your build.
+
+`next/dynamic` keeps server rendering on by default, so this does not change what the crawler sees.
 
 
 ### DotCMSEditableText

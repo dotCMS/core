@@ -1,10 +1,11 @@
 import { SpectatorService, createServiceFactory } from '@openng/spectator';
+import { Mock, vi } from 'vitest';
 
 import { TestBed } from '@angular/core/testing';
 
 // Mock the getUVEState function
-jest.mock('@dotcms/uve', () => ({
-    getUVEState: jest.fn()
+vi.mock('@dotcms/uve', () => ({
+    getUVEState: vi.fn()
 }));
 
 import { DotCMSPageAsset, UVE_MODE } from '@dotcms/types';
@@ -15,6 +16,7 @@ import { DotCMSStore, EMPTY_DOTCMS_PAGE_STORE } from './dotcms.store';
 
 import { DotCMSPageStore } from '../models';
 import { PageResponseMock } from '../utils/testing.utils';
+
 describe('DotCMSStore', () => {
     let spectator: SpectatorService<DotCMSStore>;
     let service: DotCMSStore;
@@ -25,7 +27,7 @@ describe('DotCMSStore', () => {
         TestBed.configureTestingModule({});
         spectator = createService();
         service = spectator.service;
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('should return the empty store', () => {
@@ -46,19 +48,19 @@ describe('DotCMSStore', () => {
 
     describe('$isDevMode', () => {
         it('should return true when UVE mode is EDIT', () => {
-            (getUVEState as jest.Mock).mockReturnValue({ mode: UVE_MODE.EDIT });
+            (getUVEState as Mock).mockReturnValue({ mode: UVE_MODE.EDIT });
 
             expect(service.$isDevMode()).toBe(true);
         });
 
         it('should return false when UVE mode is not EDIT', () => {
-            (getUVEState as jest.Mock).mockReturnValue({ mode: UVE_MODE.PREVIEW });
+            (getUVEState as Mock).mockReturnValue({ mode: UVE_MODE.PREVIEW });
 
             expect(service.$isDevMode()).toBe(false);
         });
 
         it('should use store mode when UVE state is not available', () => {
-            (getUVEState as jest.Mock).mockReturnValue(undefined);
+            (getUVEState as Mock).mockReturnValue(undefined);
 
             service.setStore({
                 page: {} as DotCMSPageAsset,
@@ -70,7 +72,7 @@ describe('DotCMSStore', () => {
         });
 
         it('should return false when store mode is PRODUCTION and UVE state is not available', () => {
-            (getUVEState as jest.Mock).mockReturnValue(undefined);
+            (getUVEState as Mock).mockReturnValue(undefined);
 
             service.setStore({
                 page: {} as DotCMSPageAsset,

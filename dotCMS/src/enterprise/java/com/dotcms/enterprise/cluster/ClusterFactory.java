@@ -56,6 +56,7 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import org.elasticsearch.common.settings.Settings.Builder;
 
@@ -64,7 +65,14 @@ public class ClusterFactory {
 
 
     private static boolean CLUSTER_INITED=false;
-	private static List<Server> KNOWN_SERVERS=Collections.EMPTY_LIST;
+	private static List<Server> KNOWN_SERVERS=Collections.emptyList();
+
+    /**
+     * Consecutive cluster cache-transport rewire failures. Reset to zero on the first
+     * successful rewire. Surfaced by the cache-transport health check and metrics so a
+     * persistently failing rewire is visible instead of being logged and forgotten.
+     */
+    private static final AtomicLong REWIRE_FAILURES = new AtomicLong(0);
 
     private static final String VERIFY_REQUIRED_TABLES =
             "SELECT dc.cluster_id, dc.cluster_salt, cs.server_id, cs.cluster_id, cs.name, "
@@ -343,8 +351,8 @@ public class ClusterFactory {
 		try{
 			List<Server> aliveServers = APILocator.getServerAPI().getAliveServers();
 
-            if (!aliveServers.equals(KNOWN_SERVERS) || !aliveServers
-                    .contains(APILocator.getServerAPI().getCurrentServer()) ) {
+            if (shouldRewire(aliveServers, KNOWN_SERVERS,
+                    APILocator.getServerAPI().getCurrentServer(), REWIRE_FAILURES.get())) {
 
 				rewireCluster();
 			}
@@ -352,23 +360,58 @@ public class ClusterFactory {
 		catch(Exception e){
 			Logger.error(ClusterFactory.class, "Unable to rewire cluster:" + e.getMessage());
 			Logger.error(ClusterFactory.class, "servers:" + KNOWN_SERVERS);
-			
-			
+
+
 			throw new DotRuntimeException(e);
 		}
+    }
+
+    /**
+     * Decides whether {@link #rewireCluster()} should run on this heartbeat.
+     *
+     * Extracted from {@link #rewireClusterIfNeeded()} so it can be unit tested without the
+     * enterprise statics, {@code APILocator} and license state that method needs. Pure function of
+     * its arguments; behaviour is unchanged from the inline condition it replaces.
+     *
+     * A rewire is needed when any of the following holds:
+     *
+     * - {@code pendingFailures > 0} -- a previous rewire failed and must be retried. This is the
+     *   clause added for issue #36803. The membership comparison below only fires when the
+     *   alive-server set *changes*, so without this a rewire that failed while membership then
+     *   settled back to {@code knownServers} would never be attempted again: the transport would
+     *   stay broken, {@code REWIRE_FAILURES} could never return to zero, and the cache-transport
+     *   health check would report unhealthy indefinitely.
+     * - cluster membership changed since the last successful rewire.
+     * - this server is missing from the alive set, so its own registration needs redoing.
+     *
+     * @param aliveServers   servers currently seen as alive
+     * @param knownServers   membership as of the last *successful* rewire
+     * @param currentServer  this server
+     * @param pendingFailures consecutive rewire failures not yet cleared by a success
+     */
+    @VisibleForTesting
+    static boolean shouldRewire(final List<Server> aliveServers, final List<Server> knownServers,
+                                final Server currentServer, final long pendingFailures) {
+
+        return pendingFailures > 0
+                || !aliveServers.equals(knownServers)
+                || !aliveServers.contains(currentServer);
     }
     
     public static void rewireCluster() throws Exception {
 
         if(clusterReady()) {
-            addMeToCacheIfNeeded();
-            KNOWN_SERVERS  = APILocator.getServerAPI().getAliveServers();
+            if (addMeToCacheIfNeeded()) {
+                // only remember the alive-server set when the rewire actually succeeded,
+                // otherwise a failed transport init would never be retried
+                KNOWN_SERVERS = APILocator.getServerAPI().getAliveServers();
+            }
         }else {
             Logger.info(ClusterFactory.class, "Cluster not yet active. Not rewiring");
         }
     }
 
-     private static void addMeToCacheIfNeeded() throws DotDataException  {
+     private static boolean addMeToCacheIfNeeded() throws DotDataException  {
          if(isEnterprise()) {
 
              final Server localServer = APILocator.getServerAPI().getOrCreateMyServer();
@@ -378,15 +421,29 @@ public class ClusterFactory {
                      getImplementationObject()).setCluster(localServer);
                  ((ChainableCacheAdministratorImpl) CacheLocator.getCacheAdministrator().
                      getImplementationObject()).testCluster();
+                 REWIRE_FAILURES.set(0);
+                 return true;
              } catch (Exception e) {
-                 Logger.error(ClusterFactory.class, e.getMessage(), e);
+                 final long failures = REWIRE_FAILURES.incrementAndGet();
+                 Logger.error(ClusterFactory.class, "Unable to (re)initialize the cluster cache transport"
+                         + " (consecutive failures: " + failures
+                         + "). Cache invalidations are NOT reaching other nodes: " + e.getMessage(), e);
+                 return false;
              }
 
-                 
-             
          } else {
-             CacheLocator.getCacheAdministrator().getTransport().shutdown(); 
+             CacheLocator.getCacheAdministrator().getTransport().shutdown();
+             return true;
          }
+    }
+
+    /**
+     * Consecutive cluster cache-transport rewire failures, zero when the last rewire succeeded.
+     *
+     * @see #REWIRE_FAILURES
+     */
+    public static long getRewireFailures() {
+        return REWIRE_FAILURES.get();
     }
      
      private static boolean isEnterprise() {

@@ -1,19 +1,21 @@
 import {
-    Spectator,
-    SpyObject,
     byTestId,
     createComponentFactory,
-    mockProvider
-} from '@openng/spectator/jest';
+    mockProvider,
+    Spectator,
+    SpyObject
+} from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
-import { fakeAsync, tick } from '@angular/core/testing';
-import { ReactiveFormsModule } from '@angular/forms';
+import { By } from '@angular/platform-browser';
 
-import { IconFieldModule } from 'primeng/iconfield';
-import { InputIconModule } from 'primeng/inputicon';
-import { InputTextModule } from 'primeng/inputtext';
+import { Popover } from 'primeng/popover';
+import { Tooltip } from 'primeng/tooltip';
+import { ZIndexUtils } from 'primeng/utils';
 
-import { ALL_FOLDER } from '@dotcms/portlets/content-drive/ui';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotSearchInputComponent } from '@dotcms/ui';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentDriveSearchInputComponent } from './dot-content-drive-search-input.component';
 
@@ -21,172 +23,438 @@ import { DotContentDriveStore } from '../../../../store/dot-content-drive.store'
 
 describe('DotContentDriveSearchInputComponent', () => {
     let spectator: Spectator<DotContentDriveSearchInputComponent>;
-    let mockStore: SpyObject<InstanceType<typeof DotContentDriveStore>>;
+    let store: SpyObject<InstanceType<typeof DotContentDriveStore>>;
 
     const createComponent = createComponentFactory({
         component: DotContentDriveSearchInputComponent,
-        imports: [ReactiveFormsModule, IconFieldModule, InputIconModule, InputTextModule],
         providers: [
             mockProvider(DotContentDriveStore, {
-                patchFilters: jest.fn(),
-                removeFilter: jest.fn(),
-                getFilterValue: jest.fn(),
-                setGlobalSearch: jest.fn(),
-                setSelectedNode: jest.fn()
-            })
+                getFilterValue: vi.fn().mockReturnValue(undefined),
+                setGlobalSearch: vi.fn(),
+                selectAllSiteContent: vi.fn(),
+                setSearchScope: vi.fn()
+            }),
+            {
+                provide: DotMessageService,
+                useValue: new MockDotMessageService({ search: 'Search' })
+            }
         ],
         detectChanges: false
     });
 
+    const searchInput = () =>
+        spectator.fixture.debugElement.query(By.directive(DotSearchInputComponent));
+
     beforeEach(() => {
         spectator = createComponent();
-        mockStore = spectator.inject(DotContentDriveStore);
-        mockStore.getFilterValue.mockReturnValue(undefined);
+        store = spectator.inject(DotContentDriveStore, true);
+        store.getFilterValue.mockReset().mockReturnValue(undefined);
     });
 
-    afterEach(() => {
-        jest.clearAllMocks();
+    afterEach(() => vi.clearAllMocks());
+
+    it('should render the shared search input', () => {
+        spectator.detectChanges();
+
+        expect(searchInput()).toBeTruthy();
     });
 
-    describe('Component Initialization', () => {
-        it('should create successfully', () => {
-            expect(spectator.component).toBeTruthy();
-        });
+    it('should bind the store title filter as the value', () => {
+        store.getFilterValue.mockReturnValue('blog');
+        spectator.detectChanges();
 
-        it('should initialize with empty form control by default', () => {
+        expect(searchInput().componentInstance.$value()).toBe('blog');
+        expect(store.getFilterValue).toHaveBeenCalledWith('title');
+    });
+
+    it('should bind an empty value when no title filter is set', () => {
+        spectator.detectChanges();
+
+        expect(searchInput().componentInstance.$value()).toBe('');
+    });
+
+    it('should push the emitted term to the store and reset the folder scope', () => {
+        spectator.detectChanges();
+
+        spectator.triggerEventHandler(searchInput(), 'search', 'blog');
+
+        expect(store.setGlobalSearch).toHaveBeenCalledWith('blog');
+        // All site content, not the site row: the results span the whole site at any depth, and
+        // the site row now means the root alone. Selecting it would have the sidebar naming a
+        // narrower place than the list is showing.
+        expect(store.selectAllSiteContent).toHaveBeenCalled();
+    });
+
+    it('should clear the search in the store when an empty term is emitted', () => {
+        store.getFilterValue.mockReturnValue('blog');
+        spectator.detectChanges();
+
+        spectator.triggerEventHandler(searchInput(), 'search', '');
+
+        expect(store.setGlobalSearch).toHaveBeenCalledWith('');
+        expect(store.selectAllSiteContent).toHaveBeenCalled();
+    });
+
+    // The claim lives here rather than in the shell because this component is the one holding the
+    // search box; the shell would have to reach three levels down to find it.
+    describe('search scope', () => {
+        // Absent from the filters means the default. The key is deliberately NOT `title` — that
+        // holds the search TERM, and a scope whose value is 'TITLE' beside it would be a collision.
+        const withScope = (scope?: string) =>
+            store.getFilterValue.mockImplementation((key: string) =>
+                key === 'searchScope' ? scope : undefined
+            );
+
+        it('should render the scope control next to the search input', () => {
             spectator.detectChanges();
 
-            expect(spectator.component.searchControl.value).toBe('');
+            expect(spectator.query(byTestId('search-scope-trigger'))).toBeTruthy();
+            expect(searchInput()).toBeTruthy();
         });
 
-        it('should load existing filter value from store on init', () => {
-            const existingValue = 'existing search term';
-            mockStore.getFilterValue.mockReturnValue(existingValue);
-
+        it('should show the active scope on the trigger', () => {
+            withScope('TITLE');
             spectator.detectChanges();
 
-            expect(mockStore.getFilterValue).toHaveBeenCalledWith('title');
-            expect(spectator.component.searchControl.value).toBe(existingValue);
+            expect(spectator.component['$activeScopeLabel']()).toBe(
+                'content-drive.search.scope.title'
+            );
+        });
+
+        it('should start on Title when nothing is stored', () => {
+            // Title is the default (search box cleanup on #37062): it is what an author typing a
+            // name expects, and the cheaper search.
+            withScope(undefined);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('search-scope-active'))?.textContent?.trim()).toBe(
+                'content-drive.search.scope.title'
+            );
+        });
+
+        it('should read the stored scope when one is set', () => {
+            withScope('TITLE');
+            spectator.detectChanges();
+
+            expect(spectator.component['$searchScope']()).toBe('TITLE');
+        });
+
+        // The placeholder deliberately does NOT describe the active scope — it is always the
+        // shared component's own default ("Search"), so no [placeholder] binding is passed at all.
+        // Regression guard for both directions: scope changes must not reintroduce one.
+        it('should leave the input on its default placeholder in Title scope', () => {
+            withScope('TITLE');
+            spectator.detectChanges();
+
+            expect(searchInput().componentInstance.$placeholder()).toBe('search');
+        });
+
+        it('should leave the input on its default placeholder in All Fields scope', () => {
+            withScope(undefined);
+            spectator.detectChanges();
+
+            expect(searchInput().componentInstance.$placeholder()).toBe('search');
+        });
+
+        it('should record a newly chosen scope', () => {
+            withScope(undefined);
+            spectator.detectChanges();
+            spectator.click(byTestId('search-scope-trigger'));
+            spectator.detectChanges();
+
+            spectator.triggerEventHandler(
+                '[data-testid="search-scope-panel"]',
+                'ngModelChange',
+                'ALL_FIELDS'
+            );
+
+            expect(store.setSearchScope).toHaveBeenCalledWith('ALL_FIELDS');
+        });
+
+        it('should ignore re-selecting the scope that is already active', () => {
+            withScope('TITLE');
+            spectator.detectChanges();
+
+            spectator.component['onScopeChange']('TITLE');
+
+            // Re-running cannot change the results, and it would reset the user to page 1.
+            expect(store.setSearchScope).not.toHaveBeenCalled();
+        });
+
+        // p-listbox is single-select with metaKeySelection=false, so re-clicking the already
+        // active option TOGGLES it and emits `null` via (ngModelChange) instead of the option's
+        // value. Before the null guard, that null slipped past the "already active" check (`null
+        // !== 'TITLE'`) and reached the store as a real scope change — silently dropping the user
+        // back to All Fields and marking a clean drive as filtered (issue #37554 review).
+        it('should ignore a null emission from re-clicking the active scope in the listbox', () => {
+            withScope('TITLE');
+            spectator.detectChanges();
+
+            spectator.component['onScopeChange'](null);
+
+            expect(store.setSearchScope).not.toHaveBeenCalled();
+        });
+
+        it('should name the control for assistive technology', () => {
+            spectator.detectChanges();
+
+            expect(
+                spectator.query(byTestId('search-scope-trigger'))?.getAttribute('aria-label')
+            ).toBeTruthy();
+        });
+
+        // Lara centers a button's content, so label and chevron recentered as one group every time
+        // the active scope changed — "Title" and "All Fields" rendered at different offsets.
+        // `TRIGGER_PT` pins them to the button's edges instead; asserted through the rendered
+        // inline style, so a lost PT slot fails here rather than in QA.
+        it('should keep the trigger label and chevron in place when the scope changes', () => {
+            spectator.detectChanges();
+
+            const trigger = spectator.query(byTestId('search-scope-trigger')) as HTMLElement;
+
+            expect(trigger.style.justifyContent).toBe('space-between');
+        });
+
+        // The gray of `p-button-secondary` must go white through the PT inline style, not a
+        // Tailwind class: PrimeNG's styles are appended to the head after the Tailwind stylesheet,
+        // so `bg-white` loses the cascade war at equal specificity. The value is the input's own
+        // token variable, so both halves of the field stay the same white in any theme.
+        it('should paint the trigger with the field background', () => {
+            spectator.detectChanges();
+
+            const trigger = spectator.query(byTestId('search-scope-trigger')) as HTMLElement;
+
+            expect(trigger.style.background).toBe('var(--p-inputtext-background)');
+        });
+
+        it('should offer a distinct explanation for each option in the panel', () => {
+            spectator.detectChanges();
+
+            // Two labels do not carry the distinction between "the item's name" and "anything
+            // written inside it", and the control is new. The explanation lives on each option
+            // row in the panel, not on the trigger — asserted through the directive instances
+            // rather than an ng-reflect attribute, which Angular only emits in development mode.
+            spectator.click(byTestId('search-scope-trigger'));
+            spectator.detectChanges();
+
+            const tooltips = spectator.queryAll(Tooltip);
+
+            expect(tooltips.length).toBe(2);
+            expect(tooltips.every((tooltip) => !!tooltip.content)).toBe(true);
+
+            const contents = tooltips.map((tooltip) => tooltip.content);
+
+            expect(new Set(contents).size).toBe(2);
         });
     });
 
-    describe('Template', () => {
-        beforeEach(() => {
+    /**
+     * An option's explanation must not outlive the panel it explains (search box cleanup on
+     * #37062). Hovering an option and then choosing it, or closing the panel, left its tooltip
+     * floating over the page.
+     */
+    describe('scope option tooltips', () => {
+        const openPanelAndHover = () => {
             spectator.detectChanges();
-        });
-
-        it('should render search input element', () => {
-            const input = spectator.query('input');
-            expect(input).toBeTruthy();
-        });
-
-        it('should bind form control to input', () => {
-            const input = spectator.query('input') as HTMLInputElement;
-
-            spectator.component.searchControl.setValue('test value');
+            spectator.click(byTestId('search-scope-trigger'));
             spectator.detectChanges();
 
-            expect(input.value).toBe('test value');
+            // A native event: Spectator's `dispatchMouseEvent` calls `initMouseEvent`, which this
+            // DOM does not implement. Looked up on the document because the panel renders in an
+            // overlay outside the component.
+            // Asserted on both sides: without an option to hover, or a tooltip it raised, the
+            // tests below would find no tooltip for a reason that proves nothing.
+            expect(option()).toBeTruthy();
+            option()?.dispatchEvent(new MouseEvent('mouseenter'));
+            vi.runAllTimers();
+            spectator.detectChanges();
+            expect(tooltipOnPage()).toBeTruthy();
+        };
+
+        const option = () =>
+            document.querySelector<HTMLElement>('[data-testid="search-scope-option-ALL_FIELDS"]');
+
+        // By PrimeNG's class: the tooltip is an overlay PrimeNG appends to the page itself, so it
+        // cannot carry a test id of ours.
+        const tooltipOnPage = () => document.querySelector('.p-tooltip');
+
+        beforeEach(() => vi.useFakeTimers());
+
+        afterEach(() => vi.useRealTimers());
+
+        it('should show the explanation while an option is hovered', () => {
+            openPanelAndHover();
+
+            expect(tooltipOnPage()).toBeTruthy();
+        });
+
+        it('should leave no tooltip behind once an option is chosen', () => {
+            openPanelAndHover();
+
+            option()?.click();
+            vi.runAllTimers();
+            spectator.detectChanges();
+
+            expect(tooltipOnPage()).toBeNull();
+        });
+
+        it('should leave no tooltip behind when the panel is closed with Escape', () => {
+            openPanelAndHover();
+
+            // Native for the same reason as the hover: no `initKeyboardEvent` in this DOM.
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape' }));
+            vi.runAllTimers();
+            spectator.detectChanges();
+
+            expect(tooltipOnPage()).toBeNull();
+        });
+
+        it('should leave no tooltip behind when the panel is closed by clicking outside it', async () => {
+            // The panel only hears a click outside it once its enter motion has started, which is
+            // where it binds that listener and then emits `onShow`. Clicking before then closes
+            // nothing, and the test would be about timing rather than the tooltips.
+            let listening = false;
+            spectator.query(Popover)?.onShow.subscribe(() => (listening = true));
+
+            openPanelAndHover();
+            await vi.waitFor(() => {
+                spectator.detectChanges();
+                expect(listening).toBe(true);
+            });
+
+            spectator.click(document.body);
+            vi.runAllTimers();
+            spectator.detectChanges();
+
+            expect(tooltipOnPage()).toBeNull();
         });
     });
 
-    describe('Global Search Action', () => {
-        beforeEach(() => {
+    describe('search shortcut', () => {
+        /** Dispatches from `target` (the document unless a field is given), the way a browser would. */
+        const press = (init: KeyboardEventInit, target: EventTarget = document): KeyboardEvent => {
+            const event = new KeyboardEvent('keydown', {
+                bubbles: true,
+                cancelable: true,
+                ...init
+            });
+            target.dispatchEvent(event);
+
+            return event;
+        };
+
+        const pressSlash = (target?: EventTarget) => press({ key: '/' }, target);
+        const pressModK = (target?: EventTarget) => press({ key: 'k', metaKey: true }, target);
+
+        const input = () => spectator.query('[data-testid="search-input-field"]');
+
+        it('should focus the search field', () => {
             spectator.detectChanges();
+
+            pressSlash();
+
+            expect(document.activeElement).toBe(input());
         });
 
-        it('should call patchFilters after debounce when input has value', fakeAsync(() => {
-            const input = spectator.query('input') as HTMLInputElement;
-
-            spectator.typeInElement('search term', input);
-            tick(500);
-
-            expect(mockStore.setGlobalSearch).toHaveBeenCalledWith('search term');
-            expect(mockStore.setSelectedNode).toHaveBeenCalledWith(ALL_FOLDER);
-        }));
-
-        it('should call removeFilter when input is empty', fakeAsync(() => {
-            const input = spectator.query('input') as HTMLInputElement;
-
-            spectator.typeInElement('   ', input);
-            tick(500);
-
-            expect(mockStore.setGlobalSearch).toHaveBeenCalledWith('');
-            expect(mockStore.setSelectedNode).toHaveBeenCalledWith(ALL_FOLDER);
-        }));
-
-        it('should debounce input changes by 500ms', fakeAsync(() => {
-            const input = spectator.query('input') as HTMLInputElement;
-
-            spectator.typeInElement('test', input);
-
-            expect(mockStore.patchFilters).not.toHaveBeenCalled();
-
-            tick(499);
-            expect(mockStore.patchFilters).not.toHaveBeenCalled();
-
-            tick(1);
-            expect(mockStore.setGlobalSearch).toHaveBeenCalledWith('test');
-            expect(mockStore.setSelectedNode).toHaveBeenCalledWith(ALL_FOLDER);
-        }));
-
-        it('should trim whitespace from input values', fakeAsync(() => {
-            const input = spectator.query('input') as HTMLInputElement;
-
-            spectator.typeInElement('  trimmed value  ', input);
-            tick(500);
-
-            expect(mockStore.setGlobalSearch).toHaveBeenCalledWith('trimmed value');
-            expect(mockStore.setSelectedNode).toHaveBeenCalledWith(ALL_FOLDER);
-        }));
-
-        it('should handle special characters correctly', fakeAsync(() => {
-            const input = spectator.query('input') as HTMLInputElement;
-            const specialChars = 'test-search+term (with) special chars!';
-
-            spectator.typeInElement(specialChars, input);
-            tick(500);
-
-            expect(mockStore.setGlobalSearch).toHaveBeenCalledWith(specialChars);
-            expect(mockStore.setSelectedNode).toHaveBeenCalledWith(ALL_FOLDER);
-        }));
-    });
-
-    describe('OnDestroy', () => {
-        it('should not call store methods after component is destroyed', fakeAsync(() => {
+        // Kept as an alias for the habit, so both keys have to work.
+        it('should focus the search field from the alias too', () => {
             spectator.detectChanges();
-            const input = spectator.query('input') as HTMLInputElement;
 
-            spectator.typeInElement('test', input);
+            pressModK();
+
+            expect(document.activeElement).toBe(input());
+        });
+
+        it('should preserve a term already entered', () => {
+            store.getFilterValue.mockReturnValue('blog');
+            spectator.detectChanges();
+
+            pressSlash();
+
+            expect((input() as HTMLInputElement).value).toBe('blog');
+        });
+
+        // The slash is the one that has to hold: some browsers open a quick-find bar on it, which
+        // would steal the keystroke and the focus the shortcut just placed.
+        it('should suppress the browser default so no quick-find bar opens', () => {
+            spectator.detectChanges();
+
+            const event = pressSlash();
+
+            expect(event.defaultPrevented).toBe(true);
+        });
+
+        it('should suppress the browser default for the alias too', () => {
+            spectator.detectChanges();
+
+            const event = pressModK();
+
+            expect(event.defaultPrevented).toBe(true);
+        });
+
+        /**
+         * Review finding: this is the base-layer box, and the shell's own dialogs (Action Center,
+         * folder and content-type selectors, upload) claim neither combination. Without standing
+         * down, the shortcut pulls focus to the search field *behind* an open modal. Escape and the
+         * tree toggle already decline the same way, for the same reason.
+         *
+         * `getCurrent` is mocked rather than trusted: the z-index stack is a module-level singleton
+         * and an earlier test in the file can leave an entry behind.
+         */
+        it('should decline while an overlay is above the listing', () => {
+            vi.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1101);
+            spectator.detectChanges();
+
+            const event = pressSlash();
+
+            expect(document.activeElement).not.toBe(input());
+            expect(event.defaultPrevented).toBe(false);
+        });
+
+        // The modifier form carries no typing guard, so it reaches the handler from anywhere inside
+        // an open dialog. It has to stand down too.
+        it('should decline the alias while an overlay is above the listing', () => {
+            vi.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1101);
+            spectator.detectChanges();
+
+            const event = pressModK();
+
+            expect(document.activeElement).not.toBe(input());
+            // Both halves of standing down: the focus stays put *and* the key is left for whatever
+            // is above to use. Asserting only the first would pass while the key was swallowed.
+            expect(event.defaultPrevented).toBe(false);
+        });
+
+        it('should resume once the overlay closes', () => {
+            const stack = vi.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1101);
+            spectator.detectChanges();
+            pressSlash();
+
+            stack.mockReturnValue(0);
+            pressSlash();
+
+            expect(document.activeElement).toBe(input());
+        });
+
+        // The reason a bare printable key needs the registry's typing rule: without it, typing a
+        // slash into the very box the shortcut focuses would re-fire the shortcut instead of
+        // entering a character.
+        it('should let a slash typed into the search field through as text', () => {
+            spectator.detectChanges();
+
+            const event = pressSlash(input() as HTMLElement);
+
+            expect(event.defaultPrevented).toBe(false);
+        });
+
+        it('should release the claim when the component is destroyed', () => {
+            spectator.detectChanges();
+            const field = input();
+
             spectator.fixture.destroy();
-            tick(500);
+            press();
 
-            expect(mockStore.patchFilters).not.toHaveBeenCalled();
-        }));
-    });
-
-    describe('Clear Icon', () => {
-        it('should appear when input has value', () => {
-            mockStore.getFilterValue.mockReturnValue('test value');
-            spectator.detectChanges();
-
-            expect(spectator.query(byTestId('search-icon-clear'))).toBeTruthy();
-        });
-
-        it('should not appear when input is empty', () => {
-            mockStore.getFilterValue.mockReturnValue('');
-            spectator.detectChanges();
-
-            expect(spectator.query(byTestId('search-icon-clear'))).not.toBeTruthy();
-        });
-
-        it('should clear input when clear icon is clicked', () => {
-            mockStore.getFilterValue.mockReturnValue('test value');
-            spectator.detectChanges();
-
-            spectator.click(spectator.query(byTestId('search-icon-clear')));
-
-            expect(spectator.component.searchControl.value).toBe(null);
+            expect(document.activeElement).not.toBe(field);
         });
     });
 });

@@ -5,7 +5,6 @@ import { CardModule } from 'primeng/card';
 import { DotMessageService } from '@dotcms/data-access';
 import {
     ContentConversionRow,
-    ConversionOverviewData,
     DotAnalyticsDashboardStore,
     MetricData,
     transformContentConversionsData,
@@ -19,7 +18,6 @@ import { DotAnalyticsMetricComponent } from '../../../shared/components/dot-anal
 import { TIME_PERIOD_OPTIONS } from '../../../shared/constants';
 import { ChartData } from '../../../shared/types';
 import DotAnalyticsContentConversionsTableComponent from '../dot-analytics-content-conversions-table/dot-analytics-content-conversions-table.component';
-import DotAnalyticsConversionsOverviewTableComponent from '../dot-analytics-conversions-overview-table/dot-analytics-conversions-overview-table.component';
 
 /**
  * Conversions Report Component
@@ -38,7 +36,6 @@ import DotAnalyticsConversionsOverviewTableComponent from '../dot-analytics-conv
         DotAnalyticsMetricComponent,
         DotAnalyticsChartComponent,
         DotAnalyticsContentConversionsTableComponent,
-        DotAnalyticsConversionsOverviewTableComponent,
         DotMessagePipe
     ],
     templateUrl: './dot-analytics-conversions-report.component.html',
@@ -81,18 +78,6 @@ export default class DotAnalyticsConversionsReportComponent {
     /** Loading/error status for the content conversions table */
     protected readonly $contentConversionsStatus = computed(
         () => this.store.contentConversions().status
-    );
-
-    /** Data rows for the conversions overview table */
-    protected readonly $conversionsOverviewData = computed<ConversionOverviewData[]>(() => {
-        const conversionsOverview = this.store.conversionsOverview();
-
-        return conversionsOverview.data ?? [];
-    });
-
-    /** Loading/error status for the conversions overview table */
-    protected readonly $conversionsOverviewStatus = computed(
-        () => this.store.conversionsOverview().status
     );
 
     /** Aggregated metric cards data (total conversions, converting visitors, conversion rate) */

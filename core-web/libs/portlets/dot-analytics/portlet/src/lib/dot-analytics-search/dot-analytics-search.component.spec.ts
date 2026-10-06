@@ -1,6 +1,12 @@
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { MockModule } from 'ng-mocks';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -82,7 +88,7 @@ describe('DotAnalyticsSearchComponent', () => {
     });
 
     it('should call getResults with valid JSON', () => {
-        const getResultsSpy = jest.spyOn(store, 'getResults');
+        const getResultsSpy = vi.spyOn(store, 'getResults');
 
         store.setQuery('{"measures": ["request.count"]}');
 
@@ -132,7 +138,7 @@ describe('DotAnalyticsSearchComponent', () => {
         }));
 
         it('should call setQuery when a query example button is clicked', fakeAsync(() => {
-            const setQuerySpy = jest.spyOn(store, 'setQuery');
+            const setQuerySpy = vi.spyOn(store, 'setQuery');
             const queryExamples = store.queryExamples();
             const helpButton = spectator.query(byTestId('help-button')) as HTMLButtonElement;
             spectator.click(helpButton);

@@ -21,7 +21,7 @@ canonical reference for build commands, project structure, and coding patterns.
 
 ```bash
 sdk env install   # Java 25 via SDKMAN, pinned in .sdkmanrc
-nvm use           # Node 22.15+ via nvm, pinned in .nvmrc
+nvm use           # Node 22.22.3+ via nvm, pinned in .nvmrc
 ```
 
 - **Java:** core modules compile to and run on Java 25. A wrong JDK gives cryptic
@@ -226,8 +226,8 @@ More detail: [`docs/testing/`](docs/testing/) and [`docs/frontend/TESTING_FRONTE
     [`dotCMS/src/main/java/com/dotcms/featureflag/FeatureFlagName.java`](dotCMS/src/main/java/com/dotcms/featureflag/FeatureFlagName.java).
 - **Starter site:** a **starter** is a ZIP of seed content (sites, content types,
   pages, assets) that dotCMS loads on first startup to give you a populated instance
-  instead of an empty one. Published starters live in our Artifactory:
-  [`repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/`](https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/).
+  instead of an empty one. Published starters live in our Maven repository on
+  BunnyCDN: [`dotcms-repo.b-cdn.net/libs-release/com/dotcms/starter/`](https://dotcms-repo.b-cdn.net/libs-release/com/dotcms/starter/).
   To pick one, set the `<starter.deploy.version>` property in `parent/pom.xml`, drop a
   renamed `starter.zip` into `dotCMS/target/starter/`, or point `DOT_STARTER_DATA_LOAD`
   at a starter URL. Full details in [`dotBackendOnboarding.md`](dotBackendOnboarding.md).
@@ -303,12 +303,16 @@ Ask Claude *"what skills can help with X?"* if you're unsure.
 
 - Architecture: [`docs/core/ARCHITECTURE_OVERVIEW.md`](docs/core/ARCHITECTURE_OVERVIEW.md)
 - Git workflows: [`docs/core/GIT_WORKFLOWS.md`](docs/core/GIT_WORKFLOWS.md)
+- Spec-driven development (Spec-Kit): [`docs/core/SPEC_KIT_QUICK_START.md`](docs/core/SPEC_KIT_QUICK_START.md)
+  — how we take non-trivial features and bugs from issue to merged code: the spec ships
+  and is reviewed as its own PR before any implementation starts
 - CI/CD: [`docs/core/CICD_PIPELINE.md`](docs/core/CICD_PIPELINE.md)
 - Security: [`docs/core/SECURITY_PRINCIPLES.md`](docs/core/SECURITY_PRINCIPLES.md)
 - Backend (Java/Maven): [`docs/backend/`](docs/backend/) — start with
   [`JAVA_STANDARDS.md`](docs/backend/JAVA_STANDARDS.md) and [`MAVEN_BUILD_SYSTEM.md`](docs/backend/MAVEN_BUILD_SYSTEM.md)
 - Frontend (Angular/TS): [`core-web/CLAUDE.md`](core-web/CLAUDE.md) and
-  [`docs/frontend/`](docs/frontend/) — start with [`ANGULAR_STANDARDS.md`](docs/frontend/ANGULAR_STANDARDS.md)
+  [`docs/frontend/README.md`](docs/frontend/README.md) — the index of all frontend docs; start with
+  [`ANGULAR_STANDARDS.md`](docs/frontend/ANGULAR_STANDARDS.md), the single source of truth
 - Testing: [`docs/testing/`](docs/testing/)
 - The `justfile` at the repo root — the source of truth for `just` commands.
 

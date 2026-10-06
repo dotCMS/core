@@ -1,4 +1,5 @@
-import { createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { Mock, vi } from 'vitest';
 
 import { BlockEditorNode, UVE_MODE } from '@dotcms/types';
 import { BlockEditorState } from '@dotcms/types/internal';
@@ -15,12 +16,12 @@ const MOCK_UVE_STATE = {
     languageId: 'test'
 };
 
-jest.mock('@dotcms/uve', () => ({
-    getUVEState: jest.fn()
+vi.mock('@dotcms/uve', () => ({
+    getUVEState: vi.fn()
 }));
 
 describe('DotCMSBlockEditorRendererNativeComponent', () => {
-    const getUVEStateMock = getUVEState as jest.Mock;
+    const getUVEStateMock = getUVEState as Mock;
 
     let spectator: Spectator<DotCMSBlockEditorRendererNativeComponent>;
     let component: DotCMSBlockEditorRendererNativeComponent;
@@ -54,7 +55,7 @@ describe('DotCMSBlockEditorRendererNativeComponent', () => {
     });
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
 
         getUVEStateMock.mockReturnValue({ ...MOCK_UVE_STATE, mode: UVE_MODE.EDIT });
 

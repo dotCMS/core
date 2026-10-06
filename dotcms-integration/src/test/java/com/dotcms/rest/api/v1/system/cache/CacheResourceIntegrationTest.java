@@ -277,6 +277,21 @@ public class CacheResourceIntegrationTest {
         assertEquals(200, result.getStatus());
     }
 
+    /**
+     * Given: Authenticated admin user
+     * When: deleteMenuCache is called
+     * Then: Returns success — covers the newly added user dereference on this path
+     */
+    @Test
+    public void test_deleteMenuCache_returns_success() {
+
+        final ResponseEntityStringView result =
+                cacheResource.deleteMenuCache(mockAuthenticatedRequest(), mockResponse);
+
+        assertNotNull(result);
+        assertEquals("flushed menucache", result.getEntity());
+    }
+
     // =========================================================================
     // Helper
     // =========================================================================

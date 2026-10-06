@@ -31,7 +31,7 @@ public class RequestCostPublisherTest extends UnitTestBase {
     private RequestCostSnapshot anySnapshot() {
         return new RequestCostSnapshot(
                 "c", "e", "2026-05-19T00:00:00Z",
-                60, 0L, 0d, 0d, 0L, 0d, 0d);
+                60, 0L, 0d, 0d, 0L, 0d, 0d, 0d, 0d);
     }
 
     @Test

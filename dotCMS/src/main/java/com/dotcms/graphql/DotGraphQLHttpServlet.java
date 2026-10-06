@@ -1,10 +1,13 @@
 package com.dotcms.graphql;
 
+import com.dotcms.cost.RequestCost;
+import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.rest.api.CorsFilter;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import graphql.kickstart.servlet.AbstractGraphQLHttpServlet;
+import graphql.kickstart.execution.GraphQLQueryInvoker;
 import graphql.kickstart.servlet.GraphQLConfiguration;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
@@ -41,6 +44,11 @@ public class DotGraphQLHttpServlet extends AbstractGraphQLHttpServlet {
                 .with(new DotGraphQLSchemaProvider())
                 .with(List.of(new DotGraphQLServletListener()))
                 .with(new DotGraphQLContextBuilder())
+                // Reports narrowing clauses that matched nothing, through the response's
+                // `extensions`. A client that ignores extensions is unaffected. See #34540.
+                .with(GraphQLQueryInvoker.newBuilder()
+                        .withInstrumentation(new UnmatchedTypeConditionInstrumentation())
+                        .build())
                 .build();
     }
 
@@ -74,6 +82,7 @@ public class DotGraphQLHttpServlet extends AbstractGraphQLHttpServlet {
      * @param request
      * @param response
      */
+    @RequestCost(Price.GRAPHQL_QUERY)
     protected void handleRequest(HttpServletRequest request, HttpServletResponse response) {
         corsHeaders.get().forEach(response::setHeader);
         try {

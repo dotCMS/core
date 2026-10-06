@@ -1,4 +1,5 @@
 import { of, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { CommonModule } from '@angular/common';
 import { DebugElement, SimpleChange } from '@angular/core';
@@ -23,7 +24,7 @@ const messageServiceMock = new MockDotMessageService({
 });
 
 const mockFieldVariablesServiceWithData = {
-    load: jest.fn().mockReturnValue(
+    load: vi.fn().mockReturnValue(
         of([
             {
                 clazz: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',
@@ -34,20 +35,90 @@ const mockFieldVariablesServiceWithData = {
             }
         ])
     ),
-    save: jest.fn().mockReturnValue(of([])),
-    delete: jest.fn().mockReturnValue(of([]))
+    save: vi.fn().mockReturnValue(of([])),
+    delete: vi.fn().mockReturnValue(of([]))
 };
 
 const mockFieldVariablesServiceEmpty = {
-    load: jest.fn().mockReturnValue(of([])),
-    save: jest.fn().mockReturnValue(of([])),
-    delete: jest.fn().mockReturnValue(of([]))
+    load: vi.fn().mockReturnValue(of([])),
+    save: vi.fn().mockReturnValue(of([])),
+    delete: vi.fn().mockReturnValue(of([]))
 };
 
 const MOCK_FIELD: Partial<DotCMSContentTypeField> = {
     id: 'f965a51b-130a-435f-b646-41e07d685363',
     name: 'testField',
     clazz: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField'
+} as unknown;
+
+const CUSTOM_BLOCK_FIELD: Partial<DotCMSContentTypeField> = {
+    ...MOCK_FIELD,
+    fieldVariables: [
+        {
+            key: 'customBlocks',
+            value: JSON.stringify({
+                extensions: [
+                    {
+                        url: 'https://example.com/custom-gallery.js',
+                        actions: [
+                            {
+                                command: 'addCustomGallery',
+                                menuLabel: 'Custom Gallery',
+                                icon: 'photo_library',
+                                name: 'customGallery'
+                            }
+                        ]
+                    }
+                ]
+            })
+        }
+    ]
+} as unknown;
+
+const CUSTOM_BLOCK_FIELD_WITH_NAME_FALLBACK: Partial<DotCMSContentTypeField> = {
+    ...MOCK_FIELD,
+    fieldVariables: [
+        {
+            key: 'customBlocks',
+            value: JSON.stringify({
+                extensions: [
+                    {
+                        url: 'https://example.com/custom-gallery.js',
+                        actions: [
+                            {
+                                command: 'addCustomGallery',
+                                menuLabel: 'Custom Gallery',
+                                icon: 'photo_library',
+                                name: 'customGallery'
+                            },
+                            {
+                                command: 'addBynderImage',
+                                menuLabel: '',
+                                icon: 'image',
+                                name: 'bynderImage'
+                            },
+                            {
+                                command: 'addParagraphDuplicate',
+                                menuLabel: 'Paragraph Duplicate',
+                                icon: 'notes',
+                                name: 'paragraph'
+                            },
+                            {
+                                command: 'missingName',
+                                menuLabel: 'Missing Name',
+                                icon: 'warning'
+                            }
+                        ]
+                    }
+                ]
+            })
+        }
+    ]
+} as unknown;
+
+const MALFORMED_CUSTOM_BLOCK_FIELD: Partial<DotCMSContentTypeField> = {
+    ...MOCK_FIELD,
+    fieldVariables: [{ key: 'customBlocks', value: '{ not json' }]
 } as unknown;
 
 describe('DotBlockEditorSettingsComponent', () => {
@@ -106,7 +177,7 @@ describe('DotBlockEditorSettingsComponent', () => {
 
         it('should emit changeControls when isVisible input is true', () => {
             fixture.detectChanges();
-            jest.spyOn(component.$changeControls, 'emit');
+            vi.spyOn(component.$changeControls, 'emit');
             component.ngOnChanges({
                 $isVisible: new SimpleChange(false, true, false)
             });
@@ -115,7 +186,7 @@ describe('DotBlockEditorSettingsComponent', () => {
         });
 
         it('should emit valid output on form change', () => {
-            jest.spyOn(component.$valid, 'emit');
+            vi.spyOn(component.$valid, 'emit');
             fixture.detectChanges();
             component.form.get('allowedBlocks').setValue(['codeblock']);
             expect(component.$valid.emit).toHaveBeenCalled();
@@ -123,7 +194,7 @@ describe('DotBlockEditorSettingsComponent', () => {
 
         it('should save properties on saveSettings', () => {
             mockFieldVariablesServiceWithData.save.mockReturnValue(of(mockFieldVariables[0]));
-            jest.spyOn(component.$save, 'emit');
+            vi.spyOn(component.$save, 'emit');
             fixture.detectChanges();
             component.saveSettings();
             expect(dotFieldVariableService.save).toHaveBeenCalledTimes(amountFields);
@@ -133,7 +204,7 @@ describe('DotBlockEditorSettingsComponent', () => {
 
         it('should delete properties on saveSettings when is empty', () => {
             mockFieldVariablesServiceWithData.delete.mockReturnValue(of(mockFieldVariables[0]));
-            jest.spyOn(component.$save, 'emit');
+            vi.spyOn(component.$save, 'emit');
             fixture.detectChanges();
             component.form.get('allowedBlocks').setValue([]);
             component.saveSettings();
@@ -144,8 +215,8 @@ describe('DotBlockEditorSettingsComponent', () => {
 
         it('should handle error if save properties failed', () => {
             mockFieldVariablesServiceWithData.save.mockReturnValue(throwError(() => ({})));
-            jest.spyOn(dotHttpErrorManagerService, 'handle').mockReturnValue(of());
-            jest.spyOn(component.$save, 'emit');
+            vi.spyOn(dotHttpErrorManagerService, 'handle').mockReturnValue(of());
+            vi.spyOn(component.$save, 'emit');
             fixture.detectChanges();
             component.saveSettings();
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
@@ -231,6 +302,22 @@ describe('DotBlockEditorSettingsComponent', () => {
             expect(dotFieldVariableService.delete).not.toHaveBeenCalled();
             expect(dotFieldVariableService.save).not.toHaveBeenCalled();
         });
+
+        it('should persist custom remote block names exactly like built-in blocks', () => {
+            fixture.componentRef.setInput('field', CUSTOM_BLOCK_FIELD);
+            fixture.detectChanges();
+
+            component.form.get('allowedBlocks').setValue(['customGallery']);
+            component.saveSettings();
+
+            expect(dotFieldVariableService.save).toHaveBeenCalledWith(
+                CUSTOM_BLOCK_FIELD,
+                expect.objectContaining({
+                    key: 'allowedBlocks',
+                    value: 'customGallery'
+                })
+            );
+        });
     });
 
     describe('Options', () => {
@@ -273,6 +360,69 @@ describe('DotBlockEditorSettingsComponent', () => {
             );
 
             expect(paragraphOption).not.toBeDefined();
+        });
+
+        it('should append remote custom block options after the built-in list', () => {
+            const fixture = TestBed.createComponent(DotBlockEditorSettingsComponent);
+            fixture.componentRef.setInput('field', CUSTOM_BLOCK_FIELD);
+            fixture.detectChanges();
+
+            const options = fixture.componentInstance.settingsMap.allowedBlocks.options;
+            const builtInOptions = getEditorBlockOptions();
+
+            expect(options).toHaveLength(builtInOptions.length + 1);
+            expect(options.slice(0, builtInOptions.length)).toEqual(builtInOptions);
+            expect(options.at(-1)).toEqual({ code: 'customGallery', label: 'Custom Gallery' });
+        });
+
+        it('should fallback the label to name, drop duplicates, and warn on missing names', () => {
+            const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+            const fixture = TestBed.createComponent(DotBlockEditorSettingsComponent);
+            fixture.componentRef.setInput('field', CUSTOM_BLOCK_FIELD_WITH_NAME_FALLBACK);
+            fixture.detectChanges();
+
+            const options = fixture.componentInstance.settingsMap.allowedBlocks.options;
+            const builtInOptions = getEditorBlockOptions();
+
+            expect(options).toContainEqual({ code: 'customGallery', label: 'Custom Gallery' });
+            expect(options).toContainEqual({ code: 'bynderImage', label: 'bynderImage' });
+            expect(options.filter((option) => option.code === 'paragraph')).toHaveLength(1);
+            expect(options).toHaveLength(builtInOptions.length + 3);
+            expect(warn).toHaveBeenCalled();
+
+            warn.mockRestore();
+        });
+
+        it('should ignore malformed customBlocks payloads gracefully', () => {
+            const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+            const fixture = TestBed.createComponent(DotBlockEditorSettingsComponent);
+            fixture.componentRef.setInput('field', MALFORMED_CUSTOM_BLOCK_FIELD);
+            fixture.detectChanges();
+
+            expect(fixture.componentInstance.settingsMap.allowedBlocks.options).toEqual(
+                getEditorBlockOptions()
+            );
+            expect(warn).toHaveBeenCalled();
+
+            warn.mockRestore();
+        });
+
+        it('should recompute the options when the field input changes after init', () => {
+            const fixture = TestBed.createComponent(DotBlockEditorSettingsComponent);
+            fixture.componentRef.setInput('field', MOCK_FIELD);
+            fixture.detectChanges();
+
+            expect(fixture.componentInstance.settingsMap.allowedBlocks.options).toEqual(
+                getEditorBlockOptions()
+            );
+
+            fixture.componentRef.setInput('field', CUSTOM_BLOCK_FIELD);
+            fixture.detectChanges();
+
+            expect(fixture.componentInstance.settingsMap.allowedBlocks.options.at(-1)).toEqual({
+                code: 'customGallery',
+                label: 'Custom Gallery'
+            });
         });
     });
 });

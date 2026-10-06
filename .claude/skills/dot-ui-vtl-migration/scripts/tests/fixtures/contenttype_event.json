@@ -1,0 +1,14 @@
+{
+  "entity": {
+    "id": "ct-event",
+    "variable": "Event",
+    "fields": [
+      {
+        "id": "field-event-organizer",
+        "variable": "organizer",
+        "clazz": "com.dotcms.contenttype.model.field.ImmutableCustomField",
+        "values": "#dotParse(\"/dA/asset-shared-001\")"
+      }
+    ]
+  }
+}

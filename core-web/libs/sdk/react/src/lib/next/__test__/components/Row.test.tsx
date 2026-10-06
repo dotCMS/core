@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
+import { vi } from 'vitest';
 
 import { DotPageAssetLayoutRow } from '@dotcms/types';
 import { DOT_SECTION_ID_PREFIX } from '@dotcms/uve/internal';
@@ -13,7 +14,7 @@ const MOCK_ROW: DotPageAssetLayoutRow = {
     columns: [MOCK_COLUMN]
 };
 
-jest.mock('../../components/Column/Column', () => ({
+vi.mock('../../components/Column/Column', () => ({
     Column: ({ column }: any) => <div data-testid="mock-column">{column?.width}</div>
 }));
 

@@ -12,7 +12,7 @@
 # Frontend context indicators  
 - File paths: /core-web/
 - File types: .ts, .html, .scss, package.json
-- Commands: nx, yarn
+- Commands: pnpm nx, pnpm
 ```
 
 ### 2. Documentation Reading Priority
@@ -27,8 +27,8 @@
 5. docs/backend/MAVEN_BUILD_SYSTEM.md
 
 # For Frontend tasks (add these)
-4. docs/frontend/ANGULAR_STANDARDS.md
-5. docs/frontend/STYLING_STANDARDS.md
+4. docs/frontend/README.md          # index — which frontend doc to load when
+5. docs/frontend/ANGULAR_STANDARDS.md  # single source of truth for Angular rules
 ```
 
 ### 3. TodoWrite Usage (Required for Multi-Step Tasks)
@@ -171,10 +171,10 @@
 ### Frontend Testing
 ```bash
 # Unit tests
-cd core-web && nx run dotcms-ui:test
+cd core-web && pnpm nx run dotcms-ui:test
 
 # E2E tests (if available)
-cd core-web && nx run dotcms-ui:e2e
+cd core-web && pnpm nx run dotcms-ui:e2e
 ```
 
 ### Cross-Domain Testing
@@ -204,13 +204,13 @@ cd core-web && nx run dotcms-ui:e2e
 ### Frontend Build Sequence
 ```bash
 # Development server
-cd core-web && nx run dotcms-ui:serve
+cd core-web && pnpm nx run dotcms-ui:serve
 
 # Build check
-cd core-web && nx build dotcms-ui
+cd core-web && pnpm nx build dotcms-ui
 
 # Test run
-cd core-web && nx run dotcms-ui:test
+cd core-web && pnpm nx run dotcms-ui:test
 ```
 
 ## Maintenance Pattern

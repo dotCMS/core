@@ -17,8 +17,8 @@ import org.junit.Test;
 
 /**
  * Pins the headline requirement: the libvips image engine is selected purely by the
- * {@code IMAGE_API_USE_LIBVIPS} feature flag, with the legacy engine as the default, and both engines
- * expose the identical filter-key contract.
+ * {@code IMAGE_API_USE_LIBVIPS} feature flag, and both engines expose the identical filter-key
+ * contract. Each case sets the flag explicitly, so it is independent of the shipped default.
  */
 public class ImageFilterExporterEngineSelectionTest {
 

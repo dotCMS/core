@@ -18,7 +18,6 @@ import { FiltersState } from './with-filters.feature';
 import { DotAnalyticsService } from '../../services/dot-analytics.service';
 import {
     ContentAttributionData,
-    ConversionOverviewData,
     ConvertingVisitorsEntity,
     RequestState,
     TimeRangeInput,
@@ -60,16 +59,12 @@ export interface ConversionsState {
     totalConversions: RequestState<TotalEventsData>;
     /** Converting visitors metric (includes uniqueVisitors and uniqueConvertingVisitors) */
     convertingVisitors: RequestState<ConvertingVisitorsEntity>;
-    /** Site-wide conversion rate */
-    conversionRate: RequestState<number>;
     /** Conversion trend timeline data */
     conversionTrend: RequestState<TotalEventsByDayData[]>;
     /** Traffic vs conversions comparison data (per day) */
     trafficVsConversions: RequestState<TrafficVsConversionsDayData[]>;
     /** Content attribution table data */
     contentConversions: RequestState<ContentAttributionData[]>;
-    /** Conversions overview table data */
-    conversionsOverview: RequestState<ConversionOverviewData[]>;
 }
 
 /**
@@ -78,11 +73,9 @@ export interface ConversionsState {
 const initialConversionsState: ConversionsState = {
     totalConversions: createInitialRequestState(),
     convertingVisitors: createInitialRequestState(),
-    conversionRate: createInitialRequestState(),
     conversionTrend: createInitialRequestState(),
     trafficVsConversions: createInitialRequestState(),
-    contentConversions: createInitialRequestState(),
-    conversionsOverview: createInitialRequestState()
+    contentConversions: createInitialRequestState()
 };
 
 /**
@@ -450,65 +443,6 @@ export function withConversions() {
                 ),
 
                 /**
-                 * Loads conversions overview table data.
-                 */
-                _loadConversionsOverview: rxMethod<{
-                    timeRange: TimeRangeInput;
-                    currentSiteId: string;
-                }>(
-                    pipe(
-                        tap(() =>
-                            patchState(store, {
-                                conversionsOverview: {
-                                    status: ComponentStatus.LOADING,
-                                    data: null,
-                                    error: null
-                                }
-                            })
-                        ),
-                        switchMap(({ timeRange, currentSiteId }) => {
-                            const rangeParams = toApiRangeParams(timeRange);
-
-                            return analyticsService
-                                .getConversionsOverview({
-                                    ...rangeParams,
-                                    siteId: currentSiteId,
-                                    page: 1,
-                                    pageSize: 20,
-                                    orderBy: 'totalConversions',
-                                    orderDir: 'desc'
-                                })
-                                .pipe(
-                                    tapResponse({
-                                        next: (data) => {
-                                            patchState(store, {
-                                                conversionsOverview: {
-                                                    status: ComponentStatus.LOADED,
-                                                    data,
-                                                    error: null
-                                                }
-                                            });
-                                        },
-                                        error: (error: unknown) => {
-                                            patchState(store, {
-                                                conversionsOverview: {
-                                                    status: ComponentStatus.ERROR,
-                                                    data: null,
-                                                    error: conversionsFeatureErrorMessage(
-                                                        error,
-                                                        dotMessageService,
-                                                        'analytics.error.loading.conversions-overview'
-                                                    )
-                                                }
-                                            });
-                                        }
-                                    })
-                                );
-                        })
-                    )
-                ),
-
-                /**
                  * Loads all conversions data.
                  * This method is called when the conversions tab is activated.
                  */
@@ -520,11 +454,9 @@ export function withConversions() {
                         patchState(store, {
                             totalConversions: createInitialRequestState(),
                             convertingVisitors: createInitialRequestState(),
-                            conversionRate: createInitialRequestState(),
                             conversionTrend: createInitialRequestState(),
                             trafficVsConversions: createInitialRequestState(),
-                            contentConversions: createInitialRequestState(),
-                            conversionsOverview: createInitialRequestState()
+                            contentConversions: createInitialRequestState()
                         });
                         return;
                     }
@@ -534,7 +466,6 @@ export function withConversions() {
                     this._loadConvertingVisitors({ timeRange, currentSiteId });
                     this._loadTrafficVsConversions({ timeRange, currentSiteId });
                     this._loadContentConversions({ timeRange, currentSiteId });
-                    this._loadConversionsOverview({ timeRange, currentSiteId });
                 }
             })
         )

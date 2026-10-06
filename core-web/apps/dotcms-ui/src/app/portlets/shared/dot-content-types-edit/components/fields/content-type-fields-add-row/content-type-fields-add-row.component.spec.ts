@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -35,15 +37,15 @@ describe('ContentTypeFieldsAddRowComponent', () => {
     beforeEach(() => {
         Object.defineProperty(window, 'matchMedia', {
             writable: true,
-            value: jest.fn().mockImplementation((query) => ({
+            value: vi.fn().mockImplementation((query) => ({
                 matches: false,
                 media: query,
                 onchange: null,
-                addListener: jest.fn(),
-                removeListener: jest.fn(),
-                addEventListener: jest.fn(),
-                removeEventListener: jest.fn(),
-                dispatchEvent: jest.fn()
+                addListener: vi.fn(),
+                removeListener: vi.fn(),
+                addEventListener: vi.fn(),
+                removeEventListener: vi.fn(),
+                dispatchEvent: vi.fn()
             }))
         });
 
@@ -106,7 +108,7 @@ describe('ContentTypeFieldsAddRowComponent', () => {
     });
 
     it('should bind send notification after click on Add Tab button', () => {
-        jest.spyOn(dotEventsService, 'notify');
+        vi.spyOn(dotEventsService, 'notify');
         fixture.detectChanges();
         comp.actions[1].command();
         expect(dotEventsService.notify).toHaveBeenCalledWith('add-tab-divider');
@@ -138,7 +140,7 @@ describe('ContentTypeFieldsAddRowComponent', () => {
         comp.rowState = 'select';
         fixture.detectChanges();
 
-        jest.spyOn(comp, 'setColumnSelect');
+        vi.spyOn(comp, 'setColumnSelect');
         dotEventsService.notify('add-row');
         tick(201); // Wait for the setTimeout in setColumnSelect
 
@@ -146,7 +148,7 @@ describe('ContentTypeFieldsAddRowComponent', () => {
     }));
 
     it('should handle ViewChild properly when in select state', fakeAsync(() => {
-        jest.spyOn(comp, 'setFocus');
+        vi.spyOn(comp, 'setFocus');
 
         comp.setColumnSelect();
         fixture.detectChanges();

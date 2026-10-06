@@ -581,8 +581,11 @@ private static void addDeleteOldSiteSearchIndicesJob (final Scheduler scheduler)
    private static void addServerHeartbeatJob () {
 
        final int initialDelay = Config.getIntProperty("SERVER_HEARTBEAT_INITIAL_DELAY_SECONDS", 60);
-       final int delaySeconds = Config.getIntProperty("SERVER_HEARTBEAT_RUN_EVERY_SECONDS", 60); // runs every 5 seconds.
-       
+       // Both default to one minute, matching the HEARTBEAT_CRON_EXPRESSION (0 0/1 * * * ?) this
+       // replaced when the schedulers were unified. The cadence bounds how quickly a node notices
+       // a cluster membership change or retries a failed cache-transport rewire.
+       final int delaySeconds = Config.getIntProperty("SERVER_HEARTBEAT_RUN_EVERY_SECONDS", 60);
+
        DotConcurrentFactory.getScheduledThreadPoolExecutor().scheduleAtFixedRate(() -> {
            Try.run(() -> new ServerHeartbeatJob().execute(null)).onFailure(e->Logger.warnAndDebug(DotInitScheduler.class, e));
        }, initialDelay, delaySeconds, TimeUnit.SECONDS);

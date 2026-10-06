@@ -53,6 +53,12 @@ export class DotCopyButtonComponent {
      */
     tooltipPosition = input('bottom');
 
+    /**
+     * Icon family to render. Defaults to PrimeIcons for backward compatibility;
+     * modernized portlets opt in to Material Symbols Rounded via iconStyle="material-symbols-rounded".
+     */
+    iconStyle = input<'pi' | 'material-symbols-rounded'>('pi');
+
     /** Icon-only mode (no label) uses fixed dimensions for compact input-field integration. */
     $clazz = computed(() => {
         if (this.label()) {

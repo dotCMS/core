@@ -39,15 +39,15 @@
     <build>
         <plugins>
             <!-- dotcms-postman runs the Newman/Postman suite via pnpm (exec-maven-plugin
-                 calling installs/node/pnpm), matching core-web's package manager. -->
+                 calling installs/node/bin/pnpm), matching core-web's package manager. -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
                 <configuration>
-                    <executable>${node.install.dir}/pnpm</executable>
+                    <executable>${pnpm.executable}</executable>
                     <workingDirectory>${project.basedir}</workingDirectory>
                     <environmentVariables>
-                        <PATH>${node.install.dir}:${env.PATH}</PATH>
+                        <PATH>${pnpm.bin.dir}:${node.install.dir}:${env.PATH}</PATH>
                     </environmentVariables>
                 </configuration>
                 <executions>

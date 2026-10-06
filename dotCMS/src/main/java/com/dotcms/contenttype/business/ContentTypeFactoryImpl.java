@@ -226,7 +226,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
   @Override
   public List<ContentType> findUrlMapped() throws DotDataException {
       try {
-          return dbSearch(" url_map_pattern is not null ", BaseContentType.ANY.getType(), "mod_date", -1, 0, null);
+          return dbSearch(" url_map_pattern is not null ", BaseContentType.ANY.getType(), "mod_date", -1, 0, null, true);
       } catch (DotSecurityException e) {
           throw new DotDataException("Security validation failed: " + e.getMessage(), e);
       }
@@ -258,8 +258,8 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
             throws DotDataException {
         try {
             return UtilMethods.isSet(siteId)
-                    ? dbSearch(search, baseType, orderBy, limit, offset, List.of(siteId))
-                    : dbSearch(search, baseType,orderBy, limit, offset, null);
+                    ? dbSearch(search, baseType, orderBy, limit, offset, List.of(siteId), true)
+                    : dbSearch(search, baseType,orderBy, limit, offset, null, true);
         } catch (DotSecurityException e) {
             throw new DotDataException("Security validation failed: " + e.getMessage(), e);
         }
@@ -299,8 +299,15 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
   @Override
   public List<ContentType> search(final List<String> sites, final String search, final int type,
                                   final String orderBy, final int limit, final int offset) throws DotDataException {
+      return search(sites, search, type, orderBy, limit, offset, true);
+  }
+
+  @Override
+  public List<ContentType> search(final List<String> sites, final String search, final int type,
+                                  final String orderBy, final int limit, final int offset,
+                                  final boolean includeSystemTypes) throws DotDataException {
       try {
-          return dbSearch(search, type, orderBy, limit, offset, sites);
+          return dbSearch(search, type, orderBy, limit, offset, sites, includeSystemTypes);
       } catch (DotSecurityException e) {
           throw new DotDataException("Security validation failed: " + e.getMessage(), e);
       }
@@ -730,6 +737,9 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
  * @param offset   The requested page number of the result set, for pagination purposes.
  * @param siteIds  The list of one or more Sites to search for Content Types. You can pass down
  *                 their Identifiers or Site Keys.
+ * @param includeSystemTypes When {@code false}, excludes system Content Types via a dedicated
+ *                 {@code and structure.system = false} predicate. When {@code true}, behavior is
+ *                 unchanged.
  *
  * @return The list of {@link ContentType} objects matching the specified search criteria.
  *
@@ -737,7 +747,8 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
  */
  @CloseDBIfOpened
  private List<ContentType> dbSearch(final String search, final int baseType, String orderBy,
-                                    int limit, final int offset, final List<String> siteIds) throws DotDataException, DotSecurityException {
+                                    int limit, final int offset, final List<String> siteIds,
+                                    final boolean includeSystemTypes) throws DotDataException, DotSecurityException {
     if (limit == 0) {
         throw new DotDataException("The 'limit' param must be greater than 0");
     }
@@ -779,7 +790,13 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
         sqlBuilder.append(" AND structuretype <> ").append(BaseContentType.FORM.getType())
                   .append(" AND structuretype <> ").append(BaseContentType.PERSONA.getType()).append(" ");
     }
-    
+
+    // Dedicated system predicate: excludes system Content Types when requested, independent of
+    // the search/condition string so it combines (ANDs) with the name filter.
+    if (!includeSystemTypes) {
+        sqlBuilder.append(" AND coalesce(structure.system, false) = ? ");
+    }
+
     // SECURITY: Add sites filter using parameterized LIKE clauses for substring matching
     if (!validatedSites.isEmpty()) {
         // Build multiple OR conditions with proper parameterization and escaping
@@ -807,7 +824,12 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
     
     // Add common search parameters using helper method
     addCommonSearchParameters(dc, searchCondition);
-    
+
+    // Bind the system predicate parameter (order matches its position in the SQL above).
+    if (!includeSystemTypes) {
+        dc.addParam(false);
+    }
+
     // Add site parameters for LIKE clauses (substring matching with escaping)
     if (!validatedSites.isEmpty()) {
         // Add escaped LIKE patterns with wildcards: %escaped_site%
@@ -1402,10 +1424,23 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
      * {@inheritDoc}
      */
     @Override
-    @CloseDBIfOpened
     public List<ContentType> searchMultipleTypes(final String search, final Collection<BaseContentType> types,
                                                   final String orderBy, final int limit, final int offset,
                                                   final String siteId, final List<String> requestedContentTypes)
+            throws DotDataException {
+        return searchMultipleTypes(search, types, orderBy, limit, offset, siteId,
+                requestedContentTypes, true);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @CloseDBIfOpened
+    public List<ContentType> searchMultipleTypes(final String search, final Collection<BaseContentType> types,
+                                                  final String orderBy, final int limit, final int offset,
+                                                  final String siteId, final List<String> requestedContentTypes,
+                                                  final boolean includeSystemTypes)
             throws DotDataException {
 
         if (types == null || types.isEmpty()) {
@@ -1501,12 +1536,12 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
                 }
                 first = false;
 
-                // Build individual SELECT for this type
-                if (LOAD_FROM_CACHE.get()) {
-                    unionQuery.append(ContentTypeSql.SELECT_ONLY_INODE_FIELD);
-                } else {
-                    unionQuery.append(ContentTypeSql.SELECT_ALL_STRUCTURE_FIELDS_EXCLUDE_MARKED_FOR_DELETE);
-                }
+                // Build individual SELECT for this type. Both cache and non-cache modes select the
+                // full structure columns so the UNION's ORDER BY can reference the sort column(s):
+                // a UNION ORDER BY may only reference SELECT-list columns. In cache mode we still
+                // hydrate each row's ContentType from cache by inode (see below), so only the
+                // current page's columns are materialized.
+                unionQuery.append(ContentTypeSql.SELECT_ALL_STRUCTURE_FIELDS_EXCLUDE_MARKED_FOR_DELETE);
 
                 unionQuery.append(" and (inode.inode like ? or lower(name) like ? or velocity_var_name like ?) ");
 
@@ -1533,6 +1568,13 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
                 if (searchCondition.isCommunityEdition) {
                     unionQuery.append(" AND structuretype <> ").append(BaseContentType.FORM.getType())
                               .append(" AND structuretype <> ").append(BaseContentType.PERSONA.getType()).append(" ");
+                }
+
+                // Dedicated system predicate: excludes system Content Types when requested,
+                // independent of the search/condition string so it combines with the name filter.
+                if (!includeSystemTypes) {
+                    unionQuery.append(" AND coalesce(structure.system, false) = ? ");
+                    parameters.add(false);
                 }
 
                 // SECURITY: Add sites filter using parameterized LIKE clauses
@@ -1567,21 +1609,24 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
                     unionQuery.append(" AND inode.inode NOT IN (").append(notInPlaceholders).append(") ");
                     parameters.addAll(excludeList);
                 }
-
-                if (LOAD_FROM_CACHE.get()) {
-                    unionQuery.append(ContentTypeSql.NON_MARKED_FOR_DELETION);
-                }
             }
 
-            // Add ORDER BY only when NOT loading from cache
-            // When loading from cache, we only select inode, so ORDER BY columns aren't available
-            // We'll sort in Java after loading from cache instead
-            if (!LOAD_FROM_CACHE.get()) {
-                unionQuery.append(" order by ").append(sanitizedOrderBy);
-            }
+            // Order the whole UNION globally BEFORE pagination, in both cache and non-cache modes.
+            // The UNION is wrapped in a subquery so the ORDER BY may use expressions such as
+            // lower(name): a bare "UNION ... ORDER BY <expr>" is rejected by the DB, which allows
+            // only output column names/ordinals there. Lower-casing the string sort column makes
+            // the DB order agree with the case-insensitive Java comparator that merges the page
+            // (STEP 4), even under a case-sensitive collation. The trailing inode key makes this a
+            // total order (stable tie-break) so pages are disjoint and reproducible across separate
+            // page requests (no reappearance).
+            final String pagedQuery = "select * from (" + unionQuery + ") dotcms_multi_type_union"
+                    + " order by " + buildUnionOrderBy(sanitizedOrderBy);
 
-            // Execute the UNION query
-            dc.setSQL(unionQuery.toString());
+            // Execute the ordered query
+            dc.setSQL(pagedQuery);
+            // Paginate at the DB in both modes: the result is globally ordered, so setMaxRows/
+            // setStartRow yield the correct global page (~perPage rows materialized, not the whole
+            // set). In cache mode we then hydrate only those rows' ContentTypes from cache by inode.
             dc.setMaxRows(remainingLimit);
             dc.setStartRow(adjustedOffset);
 
@@ -1595,7 +1640,8 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
             // Transform results
             final List<ContentType> queryResults;
             if (LOAD_FROM_CACHE.get()) {
-                // Load from cache then sort in Java (SQL ORDER BY not available with inode-only select)
+                // The DB already returned this page globally ordered and paginated; hydrate only
+                // the page's rows from cache by inode, preserving the DB order.
                 queryResults = dc.loadObjectResults()
                         .stream()
                         .map(typeMap -> Try.of(() -> find((String) typeMap.get(INODE_COLUMN)))
@@ -1604,11 +1650,15 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
                                                 typeMap.get(INODE_COLUMN), getErrorMessage(e)), e))
                                 .getOrNull())
                         .filter(Objects::nonNull)
-                        .sorted(createContentTypeComparator(orderByForComparator))
                         .collect(Collectors.toList());
             } else {
                 queryResults = new DbContentTypeTransformer(dc.loadObjectResults()).asList();
             }
+
+            // Before merging the DB page, note whether any ensure item was already added (STEP 1).
+            // Without ensure items, the DB page is the authoritative ordering and must not be
+            // re-sorted in Java (see STEP 4).
+            final boolean ensureItemsMerged = !result.isEmpty();
 
             // STEP 3: Merge UNION query results with ensure types, avoiding duplicates
             for (ContentType ct : queryResults) {
@@ -1621,10 +1671,12 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
                 }
             }
 
-            // STEP 4: Sort the final merged results
-            // When ensure parameter is used, we need to re-sort the combined list
-            // to maintain consistent ordering across ensure and query results
-            if (!result.isEmpty()) {
+            // STEP 4: Re-sort in Java ONLY when ensure items were merged, to interleave them with
+            // the DB page under the requested order. Without ensure items the DB already returned
+            // the page globally ordered (authoritative); re-sorting here would break orderby
+            // columns the comparator does not model (e.g. sort_order), which is exactly what the
+            // DB ordering handles correctly.
+            if (ensureItemsMerged && !result.isEmpty()) {
                 result.sort(createContentTypeComparator(orderByForComparator));
             }
 
@@ -1662,6 +1714,84 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
             // Default to ascending if no direction specified
             return sanitizedOrderBy + " asc";
         }
+    }
+
+    /**
+     * Columns projected by the multi-type UNION subselect (see
+     * {@link ContentTypeSql#SELECT_ALL_STRUCTURE_FIELDS}). Only these may be referenced by the
+     * wrapping {@code ORDER BY}; anything else (e.g. whitelisted-but-unprojected values such as
+     * {@code title} or {@code keywords}) would produce invalid SQL and falls back to the default.
+     */
+    private static final Set<String> ORDERABLE_UNION_COLUMNS = Set.of(
+            "inode", "owner", "idate", "name", "description", "default_structure", "page_detail",
+            "structuretype", "system", "fixed", "velocity_var_name", "url_map_pattern", "host",
+            "folder", "expire_date_var", "publish_date_var", "mod_date", "icon",
+            "marked_for_deletion", "sort_order", "metadata");
+
+    /**
+     * Subset of {@link #ORDERABLE_UNION_COLUMNS} that the Java comparator sorts case-insensitively;
+     * the SQL {@code lower()}s these so the DB order matches the comparator when ensure items are
+     * merged.
+     */
+    private static final Set<String> CASE_INSENSITIVE_ORDER_COLUMNS = Set.of(
+            "name", "velocity_var_name", "description");
+
+    /**
+     * Builds the multi-type UNION's SQL {@code ORDER BY} body. The clause is applied to the query
+     * that wraps the UNION, so it may use expressions such as {@code lower(name)}.
+     * <ul>
+     *     <li>Direction is parsed from a trailing {@code asc}/{@code desc} <b>or</b> a leading
+     *     {@code -} shorthand (both forms {@link com.dotmarketing.common.util.SQLUtil#sanitizeSortBy}
+     *     can emit); the {@code -} form is mapped to {@code desc} rather than left as invalid SQL.</li>
+     *     <li>The sort column must be one projected by the subselect. Whitelisted values that are
+     *     not real structure columns (e.g. {@code title}, {@code keywords}, {@code page_url}), SQL
+     *     functions, or multi-column expressions fall back to the default {@code name} ordering
+     *     instead of emitting invalid SQL (pre-fix, cache mode simply skipped SQL ordering).</li>
+     *     <li>String columns (name, velocity var name, description) are {@code lower()}-ed so the
+     *     DB order matches the case-insensitive Java comparator used when ensure items are merged.</li>
+     *     <li>A trailing {@code inode} key keeps a stable total order across pages.</li>
+     * </ul>
+     *
+     * @param sanitizedOrderBy The already-sanitized order-by (e.g. "name", "name desc", "-name").
+     * @return The SQL order-by body (without the leading {@code order by} keyword).
+     */
+    private String buildUnionOrderBy(final String sanitizedOrderBy) {
+        String work = sanitizedOrderBy == null ? "" : sanitizedOrderBy.trim();
+
+        // Direction: leading "-" shorthand or trailing " asc"/" desc".
+        boolean descending = false;
+        if (work.startsWith("-")) {
+            descending = true;
+            work = work.substring(1).trim();
+        }
+        final String lower = work.toLowerCase();
+        if (lower.endsWith(" desc")) {
+            descending = true;
+            work = work.substring(0, work.length() - " desc".length()).trim();
+        } else if (lower.endsWith(" asc")) {
+            work = work.substring(0, work.length() - " asc".length()).trim();
+        }
+
+        final String requestedColumn = work;
+        final String normalized = com.dotcms.contenttype.util.ContentTypeFieldNames
+                .normalize(requestedColumn).toLowerCase();
+        final String direction = descending ? " desc" : "";
+
+        final String orderColumn;
+        if (ORDERABLE_UNION_COLUMNS.contains(normalized)) {
+            orderColumn = CASE_INSENSITIVE_ORDER_COLUMNS.contains(normalized)
+                    ? "lower(" + normalized + ")"
+                    : normalized;
+        } else {
+            // Not a column projected by the subselect (function, multi-column expression, or a
+            // whitelisted-but-unprojected value). Fall back to the default name ordering instead
+            // of emitting invalid SQL.
+            Logger.debug(this, () -> "Unsupported multi-type order-by '" + requestedColumn
+                    + "', falling back to name");
+            orderColumn = "lower(" + com.dotcms.contenttype.util.ContentTypeFieldNames.NAME + ")";
+        }
+
+        return orderColumn + direction + ", " + INODE_COLUMN;
     }
 
     /**
@@ -1719,9 +1849,14 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
                     ct -> ct.description() != null ? ct.description().toLowerCase() : "",
                     java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder()));
 
+            case ContentTypeFactory.SORT_ORDER_COLUMN:
+                return java.util.Comparator.comparingInt(ContentType::sortOrder);
+
             default:
-                // Default to name if unknown field
-                Logger.debug(this, () -> "Unknown field for comparator: " + normalizedField + ", defaulting to name");
+                // Unknown field: warn (not debug) so a silent fall-through to name is visible, then
+                // default to name to preserve a deterministic order.
+                Logger.warn(this, "Unsupported field for Content Type comparator: '" + normalizedField
+                        + "'; defaulting to name ordering");
                 return java.util.Comparator.comparing(
                     ct -> ct.name() != null ? ct.name().toLowerCase() : "",
                     java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder()));

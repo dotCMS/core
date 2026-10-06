@@ -8,14 +8,21 @@
  *      |-> IDLE = Finished delete, saving, editing
  * ERROR = Error state for the component
  **/
-export enum ComponentStatus {
-    INIT = 'INIT',
-    LOADING = 'LOADING',
-    LOADED = 'LOADED',
-    SAVING = 'SAVING',
-    IDLE = 'IDLE',
-    ERROR = 'ERROR'
-}
+export const ComponentStatus = {
+    INIT: 'INIT',
+    LOADING: 'LOADING',
+    LOADED: 'LOADED',
+    SAVING: 'SAVING',
+    IDLE: 'IDLE',
+    ERROR: 'ERROR'
+} as const;
+
+/**
+ * Union of the status values, so a plain `'LOADING'` is assignable where a status is expected —
+ * an enum member's type would not have been. `as const` over `enum` per TYPESCRIPT_STANDARDS;
+ * same shape as `HealthStatusTypes`. `ComponentStatus.LOADING` keeps working unchanged.
+ */
+export type ComponentStatus = (typeof ComponentStatus)[keyof typeof ComponentStatus];
 
 export const enum FeaturedFlags {
     LOAD_FRONTEND_EXPERIMENTS = 'FEATURE_FLAG_EXPERIMENTS',
@@ -36,7 +43,15 @@ export const enum FeaturedFlags {
     FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION = 'FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION',
     FEATURE_FLAG_NEW_BLOCK_EDITOR = 'FEATURE_FLAG_NEW_BLOCK_EDITOR',
     FEATURE_FLAG_REPORT_ISSUE_ENABLED = 'FEATURE_FLAG_REPORT_ISSUE_ENABLED',
-    FEATURE_FLAG_LOCALE_SELECTOR_V2 = 'FEATURE_FLAG_LOCALE_SELECTOR_V2'
+    FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL = 'FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL',
+    FEATURE_FLAG_DOTAI_CONFIG_UI = 'FEATURE_FLAG_DOTAI_CONFIG_UI',
+    /**
+     * Selects which experiments experience the UVE Experiments navigation item leads to: the new
+     * site-wide portlet when on, the legacy per-page screens when off. Off by default. Distinct
+     * from `LOAD_FRONTEND_EXPERIMENTS` above, which names the backend kill-switch for the whole
+     * Experiments feature and has no consumers here. Retired by #37008.
+     */
+    FEATURE_FLAG_EXPERIMENTS_PORTLET = 'FEATURE_FLAG_EXPERIMENTS_PORTLET'
 }
 
 export const enum DotConfigurationVariables {

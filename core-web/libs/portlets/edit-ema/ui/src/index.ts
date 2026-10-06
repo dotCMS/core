@@ -8,6 +8,9 @@ export * from './lib/dot-content-compare/dot-content-compare.component';
 export * from './lib/dot-content-compare/components/dot-content-compare-dialog/dot-content-compare-dialog.component';
 export * from './lib/dot-page-scanner-report/dot-page-scanner-report.component';
 export * from './lib/dot-page-scanner-report/dot-page-scanner.service';
+// Scan-result display models + grouping, shared with the Accessibility Studio.
+export * from './lib/dot-page-scanner-report/models';
+export * from './lib/dot-page-scanner-report/a11y-groups';
 
 // Reusable content-type palette list (shared with Content Drive)
 export * from './lib/palette/components/dot-uve-palette-list/dot-uve-palette-list.component';

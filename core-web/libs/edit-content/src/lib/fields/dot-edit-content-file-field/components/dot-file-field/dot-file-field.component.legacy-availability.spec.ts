@@ -1,5 +1,6 @@
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -8,10 +9,12 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import {
-    DotAiService,
+    DotAiConfigService,
     DotMessageService,
+    DotSiteService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
+import { DotSite } from '@dotcms/dotcms-models';
 import { createFakeContentlet } from '@dotcms/utils-testing';
 
 import { DotFileFieldComponent } from './dot-file-field.component';
@@ -39,6 +42,14 @@ import { DotFileFieldUiMessageComponent } from '../dot-file-field-ui-message/dot
  * `createComponentFactory` per file, and this scenario needs a factory that
  * omits the launcher token.
  */
+/** The AssetPicker needs a site to browse. */
+const SITE_MOCK: DotSite = {
+    identifier: 'site-1',
+    hostname: 'demo.dotcms.com',
+    aliases: null,
+    archived: false
+};
+
 describe('DotFileFieldComponent — legacy host availability (no Angular launcher)', () => {
     let spectator: Spectator<DotFileFieldComponent>;
 
@@ -47,15 +58,20 @@ describe('DotFileFieldComponent — legacy host availability (no Angular launche
         imports: [ReactiveFormsModule],
         componentMocks: [DotFileFieldPreviewComponent, DotFileFieldUiMessageComponent],
         providers: [
+            // Deliberately NO Router and NO GlobalStore: the legacy Dojo host is a custom element
+            // bootstrapped without a router, so anything the component pulls in has to survive that.
+            mockProvider(DotSiteService, {
+                getCurrentSite: vi.fn().mockReturnValue(of(SITE_MOCK))
+            }),
             FileFieldStore,
             mockProvider(DotFileFieldUploadService),
             mockProvider(DialogService),
             LegacyDialogImageEditorLauncher,
             LegacyDojoImageEditorLauncher,
             mockProvider(DotWorkflowActionsFireService),
-            mockProvider(DotMessageService, { get: jest.fn().mockReturnValue('Test Message') }),
-            mockProvider(DotAiService, {
-                checkPluginInstallation: jest.fn().mockReturnValue(of(false))
+            mockProvider(DotMessageService, { get: vi.fn().mockReturnValue('Test Message') }),
+            mockProvider(DotAiConfigService, {
+                checkPluginInstallation: vi.fn().mockReturnValue(of(false))
             }),
             provideHttpClient(),
             provideHttpClientTesting()
@@ -81,6 +97,21 @@ describe('DotFileFieldComponent — legacy host availability (no Angular launche
         });
         spectator.detectChanges();
     };
+
+    it('constructs in a host with no Router, as the legacy custom element has none', () => {
+        // Regression: injecting `GlobalStore` here dragged in `withBreadcrumbs`, which does
+        // `inject(Router)` eagerly. `dotcms-binary-field-builder` bootstraps without a router, so
+        // the whole Binary Field blew up with NG0201 and rendered nothing in the Dojo editor.
+        expect(() =>
+            createComponent({
+                props: {
+                    field: BINARY_FIELD_MOCK,
+                    contentlet: createFakeContentlet({ [BINARY_FIELD_MOCK.variable]: null }),
+                    hasError: false
+                } as never
+            })
+        ).not.toThrow();
+    });
 
     it('hides the editor for an Image field even when the asset is an image', () => {
         setReferencedImageAsset(IMAGE_FIELD_MOCK);

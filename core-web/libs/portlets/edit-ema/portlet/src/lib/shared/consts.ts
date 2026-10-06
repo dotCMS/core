@@ -1,4 +1,5 @@
 import { DotDeviceListItem, FeaturedFlags } from '@dotcms/dotcms-models';
+import { DotFeatureFlags } from '@dotcms/store';
 import { DotCMSViewAsPersona } from '@dotcms/types';
 import { StyleEditorFieldType } from '@dotcms/types/internal';
 
@@ -114,8 +115,18 @@ export const UVE_FEATURE_FLAGS = [
     FeaturedFlags.FEATURE_FLAG_UVE_TOGGLE_LOCK,
     FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR,
     FeaturedFlags.FEATURE_FLAG_PAGE_SCANNER,
-    FeaturedFlags.FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION
-];
+    FeaturedFlags.FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION,
+    // Gates the Edit Content side panel (create/edit contentlet in a slide-in over the editor).
+    FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL
+] as const;
+
+/**
+ * Type of the `flags` slice `withFlags(UVE_FEATURE_FLAGS)` contributes to the store — derived from
+ * the list above so it can never drift from the flags actually fetched. Features that read
+ * individual flags (not just contribute to the list) extend their `state` type constraint with
+ * this, since `UVEState` itself does not declare `flags` (`withFlags` owns that slice).
+ */
+export type UVEFeatureFlags = DotFeatureFlags<(typeof UVE_FEATURE_FLAGS)[number]>;
 
 export const DEFAULT_DEVICE: DotDeviceListItem = {
     icon: 'pi pi-desktop',

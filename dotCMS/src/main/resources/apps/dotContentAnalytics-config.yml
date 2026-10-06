@@ -4,6 +4,21 @@ allowExtraParameters: false
 description: "The Content Analytics App allows you to track and analyze user interactions with your content (like impressions and clicks) across your dotCMS sites, helping you understand engagement and optimize your content strategy."
 
 params:
+  persistenceMode:
+    hidden: false
+    type: "SELECT"
+    label: "Persistence Mode"
+    hint: "Read & Write persists new analytics events to the Content Analytics infrastructure. Read Only stops this instance from sending new events, while dashboards and existing data keep working exactly as before."
+    required: true
+    value:
+      -
+        label: "Read & Write"
+        value: "readwrite"
+        selected: true
+      -
+        label: "Read Only"
+        value: "readonly"
+
   siteAuth:
     value: ""
     hidden: false

@@ -1,19 +1,19 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { MockInstance, MockedFunction, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DEFAULT_QUEUE_CONFIG } from '../constants';
 import { sendAnalyticsEvent } from '../http/dot-analytics.http';
 import { DotCMSAnalyticsConfig, DotCMSAnalyticsEventContext, DotCMSEvent } from '../models';
 
 // Mock the HTTP utility
-jest.mock('../http/dot-analytics.http', () => ({
-    sendAnalyticsEvent: jest.fn(() => Promise.resolve(true))
+vi.mock('../http/dot-analytics.http', () => ({
+    sendAnalyticsEvent: vi.fn(() => Promise.resolve(true))
 }));
 
 // Mock @analytics/queue-utils
-jest.mock('@analytics/queue-utils', () => ({
+vi.mock('@analytics/queue-utils', () => ({
     __esModule: true,
-    default: jest.fn()
+    default: vi.fn()
 }));
 
 // Import after mocking
@@ -24,20 +24,20 @@ import smartQueue from '@analytics/queue-utils';
 import { createAnalyticsQueue } from './dot-analytics.queue.utils';
 
 // Mock queue methods
-const mockQueuePush = jest.fn();
-const mockQueueSize = jest.fn();
-const mockQueueFlush = jest.fn();
-const mockQueuePause = jest.fn();
-const mockQueueResume = jest.fn();
+const mockQueuePush = vi.fn();
+const mockQueueSize = vi.fn();
+const mockQueueFlush = vi.fn();
+const mockQueuePause = vi.fn();
+const mockQueueResume = vi.fn();
 
 // Mock console methods
-const mockConsoleLog = jest.spyOn(console, 'log').mockImplementation(() => {
+const mockConsoleLog = vi.spyOn(console, 'log').mockImplementation(() => {
     // do nothing
 });
-const mockConsoleWarn = jest.spyOn(console, 'warn').mockImplementation(() => {
+const mockConsoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => {
     // do nothing
 });
-const mockConsoleInfo = jest.spyOn(console, 'info').mockImplementation(() => {
+const mockConsoleInfo = vi.spyOn(console, 'info').mockImplementation(() => {
     // do nothing
 });
 
@@ -45,13 +45,13 @@ describe('createAnalyticsQueue', () => {
     let mockConfig: DotCMSAnalyticsConfig;
     let mockContext: DotCMSAnalyticsEventContext;
     let mockEvent: DotCMSEvent;
-    let addEventListenerSpy: jest.SpiedFunction<typeof window.addEventListener>;
+    let addEventListenerSpy: MockInstance<typeof window.addEventListener>;
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    let removeEventListenerSpy: jest.SpiedFunction<typeof window.removeEventListener>;
+    let removeEventListenerSpy: MockInstance<typeof window.removeEventListener>;
 
     beforeEach(() => {
         // Reset all mocks
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         mockQueuePush.mockClear();
         mockQueueSize.mockClear();
         mockQueueFlush.mockClear();
@@ -72,11 +72,11 @@ describe('createAnalyticsQueue', () => {
             pause: mockQueuePause,
             resume: mockQueueResume
         };
-        (smartQueue as jest.MockedFunction<typeof smartQueue>).mockReturnValue(mockQueue as any);
+        (smartQueue as MockedFunction<typeof smartQueue>).mockReturnValue(mockQueue as any);
 
         // Setup window event listener spies
-        addEventListenerSpy = jest.spyOn(window, 'addEventListener');
-        removeEventListenerSpy = jest.spyOn(window, 'removeEventListener');
+        addEventListenerSpy = vi.spyOn(window, 'addEventListener');
+        removeEventListenerSpy = vi.spyOn(window, 'removeEventListener');
 
         // Clear sessionStorage to prevent test leakage
         sessionStorage.clear();
@@ -84,7 +84,7 @@ describe('createAnalyticsQueue', () => {
         // Mock crypto.randomUUID globally for all tests
         Object.defineProperty(globalThis, 'crypto', {
             value: {
-                randomUUID: jest.fn(() => 'test-tab-id-12345')
+                randomUUID: vi.fn(() => 'test-tab-id-12345')
             },
             writable: true,
             configurable: true
@@ -204,7 +204,7 @@ describe('createAnalyticsQueue', () => {
         });
 
         it('should setup page visibility and unload event listeners', () => {
-            const documentSpy = jest.spyOn(document, 'addEventListener');
+            const documentSpy = vi.spyOn(document, 'addEventListener');
             const queue = createAnalyticsQueue(mockConfig);
             queue.initialize();
 
@@ -324,7 +324,7 @@ describe('createAnalyticsQueue', () => {
             queue.initialize();
 
             // Get the callback function passed to smartQueue
-            const mockedSmartQueue = smartQueue as jest.MockedFunction<typeof smartQueue>;
+            const mockedSmartQueue = smartQueue as MockedFunction<typeof smartQueue>;
             const sendBatchCallback = mockedSmartQueue.mock.calls[0][0];
 
             // Enqueue to set context
@@ -349,7 +349,7 @@ describe('createAnalyticsQueue', () => {
             const queue = createAnalyticsQueue(mockConfig);
             queue.initialize();
 
-            const mockedSmartQueue = smartQueue as jest.MockedFunction<typeof smartQueue>;
+            const mockedSmartQueue = smartQueue as MockedFunction<typeof smartQueue>;
             const sendBatchCallback = mockedSmartQueue.mock.calls[0][0];
 
             // Don't enqueue anything (no context set)
@@ -363,7 +363,7 @@ describe('createAnalyticsQueue', () => {
             const queue = createAnalyticsQueue(debugConfig);
             queue.initialize();
 
-            const mockedSmartQueue = smartQueue as jest.MockedFunction<typeof smartQueue>;
+            const mockedSmartQueue = smartQueue as MockedFunction<typeof smartQueue>;
             const sendBatchCallback = mockedSmartQueue.mock.calls[0][0];
 
             queue.enqueue(mockEvent, mockContext);
@@ -382,7 +382,7 @@ describe('createAnalyticsQueue', () => {
 
     describe('flushRemaining', () => {
         it('should flush all events when page becomes hidden', () => {
-            const documentSpy = jest.spyOn(document, 'addEventListener');
+            const documentSpy = vi.spyOn(document, 'addEventListener');
             const queue = createAnalyticsQueue(mockConfig);
             queue.initialize();
 
@@ -416,7 +416,7 @@ describe('createAnalyticsQueue', () => {
             const queue = createAnalyticsQueue(mockConfig);
             queue.initialize();
 
-            const mockedSmartQueue = smartQueue as jest.MockedFunction<typeof smartQueue>;
+            const mockedSmartQueue = smartQueue as MockedFunction<typeof smartQueue>;
             const sendBatchCallback = mockedSmartQueue.mock.calls[0][0];
 
             queue.enqueue(mockEvent, mockContext);
@@ -538,7 +538,7 @@ describe('createAnalyticsQueue', () => {
             const queue = createAnalyticsQueue(mockConfig);
             queue.initialize();
 
-            const mockedSmartQueue = smartQueue as jest.MockedFunction<typeof smartQueue>;
+            const mockedSmartQueue = smartQueue as MockedFunction<typeof smartQueue>;
             const sendBatchCallback = mockedSmartQueue.mock.calls[0][0];
 
             // Enqueue and trigger flush (sets useKeepalive = true)
@@ -574,7 +574,7 @@ describe('createAnalyticsQueue', () => {
             const queue = createAnalyticsQueue(debugConfig);
             queue.initialize();
 
-            const mockedSmartQueue = smartQueue as jest.MockedFunction<typeof smartQueue>;
+            const mockedSmartQueue = smartQueue as MockedFunction<typeof smartQueue>;
             const sendBatchCallback = mockedSmartQueue.mock.calls[0][0];
 
             queue.enqueue(mockEvent, mockContext);
@@ -594,7 +594,7 @@ describe('createAnalyticsQueue', () => {
             const queue = createAnalyticsQueue(debugConfig);
             queue.initialize();
 
-            const mockedSmartQueue = smartQueue as jest.MockedFunction<typeof smartQueue>;
+            const mockedSmartQueue = smartQueue as MockedFunction<typeof smartQueue>;
             const sendBatchCallback = mockedSmartQueue.mock.calls[0][0];
 
             queue.enqueue(mockEvent, mockContext);
@@ -661,22 +661,22 @@ describe('createAnalyticsQueue', () => {
 
     describe('Queue Persistence', () => {
         let mockSessionStorage: { [key: string]: string };
-        let sessionStorageGetItem: jest.SpiedFunction<typeof sessionStorage.getItem>;
-        let sessionStorageSetItem: jest.SpiedFunction<typeof sessionStorage.setItem>;
-        let sessionStorageRemoveItem: jest.SpiedFunction<typeof sessionStorage.removeItem>;
+        let sessionStorageGetItem: MockInstance<typeof sessionStorage.getItem>;
+        let sessionStorageSetItem: MockInstance<typeof sessionStorage.setItem>;
+        let sessionStorageRemoveItem: MockInstance<typeof sessionStorage.removeItem>;
 
         beforeEach(() => {
             // Mock sessionStorage
             mockSessionStorage = {};
-            sessionStorageGetItem = jest
+            sessionStorageGetItem = vi
                 .spyOn(Storage.prototype, 'getItem')
                 .mockImplementation((key: string) => mockSessionStorage[key] || null);
-            sessionStorageSetItem = jest
+            sessionStorageSetItem = vi
                 .spyOn(Storage.prototype, 'setItem')
                 .mockImplementation((key: string, value: string) => {
                     mockSessionStorage[key] = value;
                 });
-            sessionStorageRemoveItem = jest
+            sessionStorageRemoveItem = vi
                 .spyOn(Storage.prototype, 'removeItem')
                 .mockImplementation((key: string) => {
                     delete mockSessionStorage[key];
@@ -794,7 +794,7 @@ describe('createAnalyticsQueue', () => {
             const queue = createAnalyticsQueue(mockConfig);
             queue.initialize();
 
-            const mockedSmartQueue = smartQueue as jest.MockedFunction<typeof smartQueue>;
+            const mockedSmartQueue = smartQueue as MockedFunction<typeof smartQueue>;
             const sendBatchCallback = mockedSmartQueue.mock.calls[0][0];
 
             queue.enqueue(mockEvent, mockContext);
@@ -813,7 +813,7 @@ describe('createAnalyticsQueue', () => {
             const queue = createAnalyticsQueue(mockConfig);
             queue.initialize();
 
-            const mockedSmartQueue = smartQueue as jest.MockedFunction<typeof smartQueue>;
+            const mockedSmartQueue = smartQueue as MockedFunction<typeof smartQueue>;
             const sendBatchCallback = mockedSmartQueue.mock.calls[0][0];
 
             queue.enqueue(mockEvent, mockContext);
@@ -840,7 +840,7 @@ describe('createAnalyticsQueue', () => {
         it('should handle corrupted storage gracefully', () => {
             mockSessionStorage['dot_analytics_queue_test-tab-id-12345'] = 'invalid-json{';
 
-            const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {
+            const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {
                 // Prevent logger.error (which uses console.error) from affecting the test
             });
 
@@ -919,7 +919,7 @@ describe('createAnalyticsQueue', () => {
         });
 
         it('should persist to storage on SPA navigation', () => {
-            const documentSpy = jest.spyOn(document, 'addEventListener');
+            const documentSpy = vi.spyOn(document, 'addEventListener');
             const queue = createAnalyticsQueue(mockConfig);
             queue.initialize();
 

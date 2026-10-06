@@ -43,11 +43,31 @@ public class IndicesFactoryImpl implements IndicesFactory {
         "SELECT COUNT(*) as count FROM indicies WHERE index_version = ? AND index_version IS NOT NULL";
     private static final String COUNT_INDICES_BY_VERSION_SQL =
         "SELECT COUNT(*) as count FROM indicies WHERE index_version = ? AND index_version IS NOT NULL";
-    // Phase 3 cleanup: remove the legacy ES content-index pointers (NULL version) while
-    // preserving the still-unmigrated site_search pointer. OS rows carry a non-NULL version.
-    private static final String DELETE_LEGACY_CONTENT_INDICES_SQL =
+    /**
+     * Phase 3 cleanup: removes the <em>transient</em> legacy Elasticsearch reindex pointers (NULL
+     * version), and nothing else.
+     *
+     * <p><strong>Why the active live/working rows are deliberately NOT included.</strong> They are the
+     * only record of which Elasticsearch index held the content before the migration — and that index
+     * is still on the cluster, because the nightly cleanup job routes through the phase router, which
+     * in Phase 3 addresses OpenSearch only and can never delete it. Dropping the pointer therefore
+     * loses the index permanently: nothing else names it, and a rollback shortly after the cutover —
+     * the realistic failure case — has to rebuild from scratch instead of falling back to it
+     * (issue #37635). They also cost nothing to keep: live and working are two fixed rows that get
+     * overwritten, never accumulated. What accumulated, and what this cleanup was written for, are the
+     * reindex slots — one pair per reindex.</p>
+     *
+     * <p>Note that in an up-to-date installation those reindex rows are no longer produced either:
+     * both writers of Elasticsearch pointers ({@code bootstrapAndPointES} and
+     * {@code initAndPointReindex}) are gated off in Phase 3. This remains as a one-time sweep of rows
+     * left behind by installations that reindexed in Phase 3 before that gate existed (issue #36077).</p>
+     *
+     * <p>The still-unmigrated {@code site_search} pointer is out of scope, and OpenSearch rows are
+     * untouched because they carry a non-NULL version.</p>
+     */
+    private static final String DELETE_LEGACY_REINDEX_INDICES_SQL =
         "DELETE FROM indicies WHERE index_version IS NULL " +
-        "AND index_type IN ('live', 'working', 'reindex_live', 'reindex_working')";
+        "AND index_type IN ('reindex_live', 'reindex_working')";
 
     @Override
     public Optional<VersionedIndices> loadIndices(String version) throws DotDataException {
@@ -174,16 +194,17 @@ public class IndicesFactoryImpl implements IndicesFactory {
     }
 
     @Override
-    public int removeLegacyIndices() throws DotDataException {
+    public int removeLegacyReindexIndices() throws DotDataException {
         try {
             final DotConnect dotConnect = new DotConnect();
-            final int deletedRows = dotConnect.executeUpdate(DELETE_LEGACY_CONTENT_INDICES_SQL);
+            final int deletedRows = dotConnect.executeUpdate(DELETE_LEGACY_REINDEX_INDICES_SQL);
             Logger.info(this, "Removed " + deletedRows
-                    + " legacy ES content-index row(s) from indicies (Phase 3 cleanup)");
+                    + " legacy ES reindex-slot row(s) from indicies (Phase 3 cleanup);"
+                    + " the active live/working pointers are preserved on purpose");
             return deletedRows;
         } catch (Exception e) {
-            Logger.error(this, "Failed to remove legacy ES content-index rows", e);
-            throw new DotDataException("Failed to remove legacy ES content-index rows", e);
+            Logger.error(this, "Failed to remove legacy ES reindex-slot rows", e);
+            throw new DotDataException("Failed to remove legacy ES reindex-slot rows", e);
         }
     }
 

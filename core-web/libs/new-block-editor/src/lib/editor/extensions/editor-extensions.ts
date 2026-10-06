@@ -2,9 +2,10 @@ import { common, createLowlight } from 'lowlight';
 
 import type { Injector } from '@angular/core';
 
-import type { AnyExtension, Extensions } from '@tiptap/core';
+import { flattenExtensions, type AnyExtension, type Extensions } from '@tiptap/core';
 import CharacterCount from '@tiptap/extension-character-count';
-import Emoji, { emojis } from '@tiptap/extension-emoji';
+import { emojis } from '@tiptap/extension-emoji';
+import Highlight from '@tiptap/extension-highlight';
 import Placeholder from '@tiptap/extension-placeholder';
 import Subscript from '@tiptap/extension-subscript';
 import Superscript from '@tiptap/extension-superscript';
@@ -15,13 +16,16 @@ import StarterKit from '@tiptap/starter-kit';
 import type { DotMessageService } from '@dotcms/data-access';
 
 import { createBlockGutterDragHandle } from './block-gutter.extension';
+import { createDotEmoji } from './dot-emoji.extension';
 import { IndentExtension } from './indent.extension';
 import { DotLink } from './link.extension';
 import { AIContent } from './nodes/ai-content.extension';
+import { Audio } from './nodes/audio.extension';
 import { createCodeBlock } from './nodes/code-block/code-block.extension';
 import { createDotContentlet } from './nodes/contentlet/contentlet.extension';
 import { GridBlock, GridColumn } from './nodes/grid.extension';
 import { DotImage } from './nodes/image.extension';
+import { UnsupportedBlock } from './nodes/unsupported-block.extension';
 import {
     createUploadPlaceholderExtension,
     type UploadPlaceholderMediaType
@@ -31,6 +35,7 @@ import { SelectionPreserveExtension } from './selection-preserve.extension';
 import { createSlashCommandExtension } from './slash-command.extension';
 import { TableActiveCellsPlugin } from './table-active-cells.plugin';
 import { createDotTableExtensions } from './table-extensions';
+import { UnsupportedMark } from './unsupported-mark.extension';
 
 import { EditorPopoverService } from '../services/editor-popover.service';
 
@@ -51,6 +56,18 @@ export function createEditorExtensions(
                 t(`dot.block.editor.upload.media-type.${mediaType}`)
             )
     };
+    /**
+     * Only gate with this if the key is selectable in Allowed Blocks — that list comes from
+     * `getEditorBlockOptions()`, which offers block nodes only. `link`, `emoji` and `youtube`
+     * are not in it, so gating their REGISTRATION dropped the extension on every restricted
+     * field instead of restricting anything: `link` (a mark) aborted `Node.fromJSON` for the
+     * whole document, `emoji`/`youtube` resurfaced as `Unsupported block (…)` (#37175).
+     *
+     * The same reasoning applies to their AUTHORING paths, which #37175 left gated: a key the
+     * settings UI cannot produce is never a configuration, only a misfire. `emoji` was ungated
+     * in #37340 and `link` in #36351; both are now unconditional. `youtube` is the last of the
+     * three still gated (its "Add asset by URL" tab) — a known defect, tracked separately.
+     */
     const has = (name: string): boolean => !allowedBlocks || allowedBlocks.includes(name);
 
     // Headings use customer-facing per-level names ("heading1".."heading6"). When the field
@@ -67,7 +84,7 @@ export function createEditorExtensions(
               : { levels: allowedHeadingLevels };
     const lowlight = createLowlight(common);
 
-    return [
+    const baseExtensions: Extensions = [
         StarterKit.configure({
             dropcursor: {
                 color: '#6366f1',
@@ -78,8 +95,13 @@ export function createEditorExtensions(
             orderedList: has('orderedList') ? {} : false,
             blockquote: has('blockquote') ? {} : false,
             codeBlock: false,
+            // StarterKit v3 bundles Link; the editor registers its own DotLink (name
+            // 'link') below, so disable StarterKit's to avoid a duplicate 'link' extension.
+            link: false,
             horizontalRule: has('horizontalRule') ? {} : false
         }),
+        UnsupportedBlock,
+        UnsupportedMark,
         ...(has('codeBlock') ? [createCodeBlock(injector, lowlight)] : []),
         createBlockGutterDragHandle(t('dot.block.editor.gutter.add-block')),
         CharacterCount,
@@ -108,38 +130,43 @@ export function createEditorExtensions(
               ]
             : []),
         ...(has('image') ? [DotImage] : []),
-        ...(has('link')
-            ? [
-                  DotLink.configure({
-                      openOnClick: false,
-                      enableClickSelection: true,
-                      autolink: true,
-                      linkOnPaste: true,
-                      HTMLAttributes: {
-                          rel: 'noopener noreferrer',
-                          target: '_self'
-                      }
-                  })
-              ]
-            : []),
+        // Always registered — see `has()` — and never gated at all (#36351). `link` is not
+        // selectable in Allowed Blocks, so the old `has('link')` gate on the two flags below was
+        // true ONLY on an unrestricted field: restricting any block silently killed auto-linking
+        // and link-on-paste, and hid the toolbar button, with no admin having chosen it.
+        // Passed explicitly rather than left to the upstream defaults so a TipTap bump cannot
+        // reintroduce the reported defect.
+        DotLink.configure({
+            openOnClick: false,
+            enableClickSelection: true,
+            autolink: true,
+            linkOnPaste: true,
+            HTMLAttributes: {
+                rel: 'noopener noreferrer',
+                target: '_self'
+            }
+        }),
         ...(has('video') ? [Video] : []),
-        ...(has('youtube')
-            ? [
-                  Youtube.configure({
-                      height: 300,
-                      width: 400,
-                      interfaceLanguage: 'us',
-                      nocookie: true,
-                      modestBranding: true
-                  })
-              ]
-            : []),
+        ...(has('audio') ? [Audio] : []),
+        // Always registered — see `has()`. Authoring gate: the "Add asset by URL" popover,
+        // already behind `showAssetByUrl()`.
+        Youtube.configure({
+            height: 300,
+            width: 400,
+            interfaceLanguage: 'us',
+            nocookie: true,
+            modestBranding: true
+        }),
         ...(has('dotContent') ? [createDotContentlet(injector)] : []),
         ...(has('gridBlock') ? [GridBlock, GridColumn] : []),
         TextAlign.configure({ types: ['heading', 'paragraph'] }),
         IndentExtension,
         Superscript,
         Subscript,
+        // Legacy-compat + parity: the legacy editor registers Highlight, so stored content can
+        // carry `highlight` marks. Without it here TipTap aborts the whole document (#37145).
+        // Styled via `.tiptap mark` in editor.component.css rather than inline HTMLAttributes.
+        Highlight,
         createUploadPlaceholderExtension(uploadCopy),
         // Legacy-compat only: the new editor never creates `aiContent` nodes (AI Content
         // dialog inserts the generated HTML via `commands.insertContent` so it becomes
@@ -148,44 +175,62 @@ export function createEditorExtensions(
         // `aiContent` block — still parses and renders. Removing it would silently drop
         // those blocks on load. See `ai-content.extension.ts` for details.
         AIContent,
-        ...(has('emoji')
-            ? [
-                  Emoji.configure({
-                      emojis,
-                      enableEmoticons: true,
-                      suggestion: {
-                          char: ':',
-                          items: () => [],
-                          render: () => ({
-                              onStart: () => undefined,
-                              onUpdate: () => undefined,
-                              onKeyDown: () => false,
-                              onExit: () => undefined
-                          })
-                      }
-                  })
-              ]
-            : []),
+        // Always registered, and NOTHING creates an `emoji` node any more — the registration
+        // exists so stored nodes still parse, and so `:shortcode:`/`:)` can resolve a character.
+        // See `dot-emoji.extension.ts` for the full reasoning (#37340).
+        //
+        // `enableEmoticons` is no longer gated on `has('emoji')`: `emoji` is not selectable in
+        // Allowed Blocks at all (`getEditorBlockOptions()` offers block nodes only, #37175), so
+        // that gate was true ONLY on fields with no restriction — silently removing `:)` from
+        // every field that restricted anything else. Nobody configured that.
+        //
+        // The inert `suggestion` block is gone with the Suggestion plugin it configured.
+        createDotEmoji(menuService).configure({
+            emojis,
+            enableEmoticons: true
+        }),
         SelectionPreserveExtension,
-        createSlashCommandExtension(menuService),
-        ...remoteExtensions,
-        Placeholder.configure({
-            showOnlyCurrent: true,
-            placeholder: ({ node, editor }) => {
-                if (editor.isEmpty && node.type.name === 'paragraph') {
-                    return t('dot.block.editor.placeholder.empty-paragraph');
-                }
-                if (node.type.name === 'heading') {
-                    return t('block-editor.placeholder.heading', String(node.attrs['level']));
-                }
-                if (node.type.name === 'paragraph') {
-                    return t('dot.block.editor.placeholder.paragraph');
-                }
-                if (node.type.name === 'blockquote') {
-                    return t('dot.block.editor.placeholder.blockquote');
-                }
-                return '';
-            }
-        })
+        createSlashCommandExtension(menuService)
     ];
+
+    const placeholder = Placeholder.configure({
+        showOnlyCurrent: true,
+        placeholder: ({ node, editor }) => {
+            if (editor.isEmpty && node.type.name === 'paragraph') {
+                return t('dot.block.editor.placeholder.empty-paragraph');
+            }
+            if (node.type.name === 'heading') {
+                return t('block-editor.placeholder.heading', String(node.attrs['level']));
+            }
+            if (node.type.name === 'paragraph') {
+                return t('dot.block.editor.placeholder.paragraph');
+            }
+            if (node.type.name === 'blockquote') {
+                return t('dot.block.editor.placeholder.blockquote');
+            }
+            return '';
+        }
+    });
+
+    // Drop any remote (customBlocks) extension whose name collides with a built-in.
+    // StarterKit bundles several extensions internally (e.g. `underline`), so we compare
+    // against the FLATTENED built-in set — not just the top-level array — otherwise a remote
+    // bundle that ships its own copies of core marks/nodes would double-register and TipTap
+    // warns "Duplicate extension names found". The editor's own extension always wins.
+    const builtInNames = new Set(
+        flattenExtensions([...baseExtensions, placeholder]).map((ext) => ext.name)
+    );
+    const dedupedRemoteExtensions = remoteExtensions.filter((ext) => {
+        if (builtInNames.has(ext.name)) {
+            console.warn(
+                `[remote-extension] skipping "${ext.name}": already registered by the editor`
+            );
+
+            return false;
+        }
+
+        return true;
+    });
+
+    return [...baseExtensions, ...dedupedRemoteExtensions, placeholder];
 }

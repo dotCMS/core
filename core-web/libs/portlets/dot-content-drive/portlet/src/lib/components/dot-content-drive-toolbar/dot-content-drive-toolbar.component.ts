@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -14,16 +15,27 @@ import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
 import { ToolbarModule } from 'primeng/toolbar';
+import { TooltipModule } from 'primeng/tooltip';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import {
+    DotFolderTreeNodeContentData,
+    LOAD_MORE_NODE_TYPE
+} from '@dotcms/portlets/content-drive/ui';
 import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
-import { DotMessagePipe } from '@dotcms/ui';
+import {
+    DotContentTypeFilterChipComponent,
+    DotFieldFilterComponent,
+    DotFieldFilterMenuComponent,
+    DotFilterBarComponent,
+    DotFilterChipError,
+    DotLanguageFilterChipComponent,
+    DotMessagePipe,
+    DotStatusFilterComponent,
+    DotUploadButtonComponent
+} from '@dotcms/ui';
 
-import { DotContentDriveContentTypeFilterComponent } from './components/dot-content-drive-content-type-filter/dot-content-drive-content-type-filter.component';
-import { DotContentDriveFieldFilterComponent } from './components/dot-content-drive-field-filter/dot-content-drive-field-filter.component';
-import { DotContentDriveFieldFilterMenuComponent } from './components/dot-content-drive-field-filter-menu/dot-content-drive-field-filter-menu.component';
-import { DotContentDriveLanguageFieldComponent } from './components/dot-content-drive-language-field/dot-content-drive-language-field.component';
 import { DotContentDriveSearchInputComponent } from './components/dot-content-drive-search-input/dot-content-drive-search-input.component';
 import { DotContentDriveTreeTogglerComponent } from './components/dot-content-drive-tree-toggler/dot-content-drive-tree-toggler.component';
 import { DotContentDriveWorkflowActionsComponent } from './components/dot-content-drive-workflow-actions/dot-content-drive-workflow-actions.component';
@@ -104,14 +116,18 @@ interface ToolbarAnimationState {
         ButtonModule,
         MenuModule,
         DotMessagePipe,
+        DotUploadButtonComponent,
         DotContentDriveTreeTogglerComponent,
-        DotContentDriveContentTypeFilterComponent,
+        DotContentTypeFilterChipComponent,
         DotContentDriveSearchInputComponent,
-        DotContentDriveLanguageFieldComponent,
+        DotLanguageFilterChipComponent,
         DotContentDriveWorkflowActionsComponent,
         DotContentDriveWorkflowFilterComponent,
-        DotContentDriveFieldFilterComponent,
-        DotContentDriveFieldFilterMenuComponent
+        DotFieldFilterComponent,
+        DotFieldFilterMenuComponent,
+        DotFilterBarComponent,
+        DotStatusFilterComponent,
+        TooltipModule
     ],
     templateUrl: './dot-content-drive-toolbar.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -174,10 +190,61 @@ interface ToolbarAnimationState {
 export class DotContentDriveToolbarComponent {
     readonly #store = inject(DotContentDriveStore);
     readonly #dotMessageService = inject(DotMessageService);
+    readonly #httpErrorManager = inject(DotHttpErrorManagerService);
 
-    $upload = output<void>({ alias: 'upload' });
+    // Emits the click event so the shell can anchor the upload-type popover to the button.
+    $upload = output<MouseEvent>({ alias: 'upload' });
 
-    readonly $items = signal<MenuItem[]>([
+    /**
+     * Base type the current folder pins uploads to, if any. `dot-upload-button` turns it into the
+     * folder-aware label ("Upload Asset" / "Upload File" / "Upload").
+     */
+    /**
+     * Whether the browsed folder accepts new children — the store's answer, shared with the drop
+     * zone so the three creation affordances can never disagree about the same folder.
+     */
+    protected readonly $canAddChildren = this.#store.$canAddChildren;
+
+    /** Empty when creation is allowed, so the buttons carry no tooltip in the normal case. */
+    /**
+     * Why creating and uploading are unavailable, when they are.
+     *
+     * Two different refusals reach the same disabled buttons, and they must not say the same
+     * thing. In all site content nothing is wrong with the user's permissions: the view simply
+     * spans the whole site and names no place for new content to land. Telling them they lack
+     * permission there would send them to an administrator for a problem they do not have.
+     */
+    protected readonly $addChildrenTooltip = computed(() => {
+        if (this.$canAddChildren()) {
+            return '';
+        }
+
+        // One reason left, and it is always a permission one: every scope that reaches here now
+        // has a place for content to land.
+        return 'content-drive.add-new.no-add-children';
+    });
+
+    protected readonly $uploadBaseType = computed(() => {
+        const data = this.#store.selectedNode()?.data;
+
+        return data && data.type !== LOAD_MORE_NODE_TYPE
+            ? ((data as DotFolderTreeNodeContentData).defaultBaseType ?? null)
+            : null;
+    });
+
+    /**
+     * What the "New" menu offers, which depends on where the user is.
+     *
+     * A computed rather than a fixed list because System Host takes one entry away. It lists no
+     * folders -- `listsFolders` answers false for that scope, and its sidebar row opens no tree --
+     * so a folder created there could never be shown again by this portlet. The dialog could not
+     * even name where it would land: the location is a reserved word, so the path preview read
+     * `//demo.dotcms.comSYSTEM_HOST/`.
+     *
+     * Content types stay. System Host holds content, and adding some is the whole reason the scope
+     * accepts new items at all.
+     */
+    readonly $items = computed<MenuItem[]>(() => [
         {
             label: this.#dotMessageService.get('content-drive.add-new.all-content-types'),
             icon: 'grid_view',
@@ -189,17 +256,25 @@ export class DotContentDriveToolbarComponent {
             icon: option.icon,
             command: () => this.#openContentTypeSelector(option.listType)
         })),
-        { separator: true },
-        {
-            label: this.#dotMessageService.get('content-drive.add-new.context-menu.folder'),
-            icon: 'folder',
-            command: () => {
-                this.#store.setDialog({
-                    type: DIALOG_TYPE.FOLDER,
-                    header: this.#dotMessageService.get('content-drive.dialog.folder.header')
-                });
-            }
-        }
+        ...(this.#store.$systemHostSelected()
+            ? []
+            : [
+                  { separator: true },
+                  {
+                      label: this.#dotMessageService.get(
+                          'content-drive.add-new.context-menu.folder'
+                      ),
+                      icon: 'folder',
+                      command: () => {
+                          this.#store.setDialog({
+                              type: DIALOG_TYPE.FOLDER,
+                              header: this.#dotMessageService.get(
+                                  'content-drive.dialog.folder.header'
+                              )
+                          });
+                      }
+                  }
+              ])
     ]);
 
     /**
@@ -215,9 +290,28 @@ export class DotContentDriveToolbarComponent {
         });
     }
 
-    readonly $treeExpanded = this.#store.isTreeExpanded;
     readonly $showWorkflowActions = computed(() => !!this.#store.selectedItems().length);
-    readonly $hasFilters = computed(() => Object.keys(this.#store.filters()).length > 0);
+
+    /**
+     * The environment's default locale, which this drive re-seeds on every path that builds filters
+     * from scratch. Handed to the Locale chip so it can tell a clearable selection from one whose X
+     * would simply put the same value back.
+     *
+     * `?? null` because the store leaves it `undefined` until `/api/v2/languages` answers, and the
+     * chip's input is `number | null` — an absent default means "nothing is re-seeded", which is the
+     * right reading while the lookup is still in flight.
+     */
+    readonly $defaultLanguageId = computed(() => this.#store.defaultLanguageId() ?? null);
+
+    /**
+     * Whether anything that locks is in flight, which is all the toolbar needs to know: it disables
+     * the Action Center while such a run is going and says so in the tooltip. A backgrounded run,
+     * such as a folder duplicate, is left out: it is reported, but locks nothing. Reporting runs is
+     * the shell's job, because the shell owns the outlet they are reported through.
+     */
+    readonly $activeRunCount = this.#store.toolbarBlockingRunCount;
+
+    readonly $hasRunInFlight = computed(() => this.$activeRunCount() > 0);
 
     /**
      * Active field-filter chips, in the order the user added them (the store keeps `userSearchableActive`
@@ -235,8 +329,27 @@ export class DotContentDriveToolbarComponent {
             .filter((field): field is DotCMSContentTypeField => field !== undefined);
     });
 
-    onClearAll(): void {
-        this.#store.clearFilters();
+    /**
+     * The shared "More" menu could not load a content type's fields.
+     *
+     * The chip reports *that* it failed and stays interactive; how that is announced is the
+     * surface's call, and on this one it is the platform's usual error handling — the same channel
+     * the menu reached itself before it moved to `@dotcms/ui`, where `DotHttpErrorManagerService`
+     * cannot be injected at all (it transitively needs `Router`, which the legacy Dojo host that
+     * bundle boots in has none of).
+     *
+     * The chip hands over a translation key rather than the response, so the payload is
+     * synthesized: a 400 whose `header` is that key, which is the one branch of the manager that
+     * renders a caller-supplied message instead of a status-generic one. The status is the only
+     * fidelity lost — a failed field fetch showed a generic dialog before too.
+     */
+    onFieldFilterError(error: DotFilterChipError): void {
+        this.#httpErrorManager.handle(
+            new HttpErrorResponse({
+                status: 400,
+                error: { header: error.messageKey, message: error.messageKey }
+            })
+        );
     }
 
     /**
@@ -258,13 +371,51 @@ export class DotContentDriveToolbarComponent {
     readonly $displayButton = computed(() => this.$animationState().addNewButton);
     readonly $displayActions = computed(() => this.$animationState().workflowActions);
 
-    readonly $togglerStyles = computed(() => ({
-        opacity: this.$treeExpanded() ? '0' : '1',
-        visibility: this.$treeExpanded() ? 'hidden' : 'visible',
-        transition: 'all 0.3s ease-in-out',
-        width: this.$treeExpanded() ? '0' : undefined,
-        minWidth: this.$treeExpanded() ? '0' : undefined
-    }));
+    /**
+     * The "Action Center" button is offered from the first selected contentlet, *alongside* the flat
+     * action buttons rather than instead of them. The flat buttons cover the common per-item
+     * actions; the dialog adds what they cannot express — per-action eligibility counts and the
+     * workflow actions grouped by scheme — and that is just as useful for one item as for many.
+     *
+     * Folders count: Add to Bundle and Push Publish both take a folder identifier, so a folder-only
+     * selection still has something to act on. The actions that do not apply drop themselves out of
+     * the list rather than the dialog refusing to open.
+     */
+    readonly $displayActionCenter = computed(
+        () => this.$displayActions() && this.#store.selectedItems().length > 0
+    );
+
+    /**
+     * Opens the Action Center dialog for the current selection.
+     */
+    protected onOpenActionCenter(): void {
+        // The button is disabled during a run, but the guard lives here too: a disabled attribute
+        // is a UI affordance, not a lock on the store.
+        //
+        // Counted rather than read off `$actionExecution`: that one names a run only when there is
+        // exactly one, so gating on it let the dialog open precisely when several were in flight.
+        if (this.$hasRunInFlight()) {
+            return;
+        }
+
+        this.#store.setDialog({
+            type: DIALOG_TYPE.ACTION_CENTER,
+            header: this.#dotMessageService.get('content-drive.action-center.header')
+        });
+    }
+
+    /**
+     * Why the Workflow Center is unavailable, or `''` when it is available.
+     *
+     * The dialog is refused outright during a run rather than opened in a useless state. Reopening
+     * mid-run used to give a dialog with every row, both footers and Done disabled — because
+     * `$executing` gates all of them — which then closed itself the moment the run settled. Firing a
+     * second action over a fresh selection was never possible either way: the store rejects a second
+     * run while one is in flight.
+     */
+    readonly $actionCenterTooltip = computed(() =>
+        this.$hasRunInFlight() ? 'content-drive.action-center.busy' : ''
+    );
 
     /** Pending animation-sequencing timer; cleared on each transition so rapid toggles don't race. */
     #animationTimeout: ReturnType<typeof setTimeout> | undefined;

@@ -1,0 +1,57 @@
+<div class="flex min-w-0 items-center gap-4">
+    <p-button
+        [rounded]="true"
+        [outlined]="true"
+        severity="secondary"
+        size="small"
+        styleClass="w-9 h-9 min-w-9 p-0"
+        (onClick)="onBackToList()"
+        [attr.aria-label]="'experiments.configure.action.back-to-list' | dm"
+        [pTooltip]="'experiments.configure.action.back-to-list' | dm"
+        tooltipPosition="bottom"
+        data-testid="experiments-results-back-btn">
+        <span class="material-symbols-rounded text-xl! leading-none" aria-hidden="true">
+            arrow_back
+        </span>
+    </p-button>
+
+    <div class="flex min-w-0 flex-col gap-0.5">
+        <div class="flex items-center gap-2.5">
+            <h1
+                class="m-0 truncate text-xl font-semibold text-surface-900"
+                [title]="$title()"
+                data-testid="experiments-results-title">
+                {{ $title() }}
+            </h1>
+            <p-tag
+                [severity]="$statusSeverity()"
+                [value]="$statusLabelKey() | dm"
+                data-testid="experiments-results-status-tag" />
+        </div>
+        <span
+            class="truncate text-sm text-surface-500"
+            [title]="$subline()"
+            data-testid="experiments-results-subline">
+            {{ $subline() }}
+        </span>
+    </div>
+</div>
+
+<div class="flex flex-none items-center gap-2">
+    <p-button
+        [outlined]="true"
+        severity="secondary"
+        [label]="'experiments.action.configuration' | dm"
+        (onClick)="onConfiguration()"
+        data-testid="experiments-results-configuration-btn" />
+
+    @if ($showStop()) {
+        <p-button
+            [outlined]="true"
+            severity="danger"
+            [label]="'experiments.action.stop-experiment' | dm"
+            [disabled]="store.$isSaving()"
+            (onClick)="confirmStop()"
+            data-testid="experiments-results-stop-btn" />
+    }
+</div>

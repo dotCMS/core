@@ -3,7 +3,7 @@ import {
     createServiceFactory,
     mockProvider,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
@@ -70,15 +70,16 @@ describe('DotLocalesListStore', () => {
         });
     });
 
-    it('should load locales', (done) => {
-        spectator.service.vm$.subscribe((viewModel) => {
-            expect(viewModel.locales.length).toBe(2);
-            expect(viewModel.countries).toEqual([...mockLanguagesISO.countries]);
-            expect(viewModel.languages).toEqual([...mockLanguagesISO.languages]);
+    it('should load locales', () =>
+        new Promise<void>((done) => {
+            spectator.service.vm$.subscribe((viewModel) => {
+                expect(viewModel.locales.length).toBe(2);
+                expect(viewModel.countries).toEqual([...mockLanguagesISO.countries]);
+                expect(viewModel.languages).toEqual([...mockLanguagesISO.languages]);
 
-            done();
-        });
-    });
+                done();
+            });
+        }));
 
     it('should make default locale', () => {
         const mockDefaultLocaleId = 1;

@@ -1,4 +1,10 @@
-import { Spectator, byTestId, createComponentFactory, mockProvider } from '@openng/spectator/jest';
+import {
+    Spectator,
+    byTestId,
+    createComponentFactory,
+    mockProvider
+} from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 
@@ -149,7 +155,7 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
                 initialContentletState: state
             });
             spectator.detectChanges();
-            jest.spyOn(spectator.component.commentSubmitted, 'emit');
+            vi.spyOn(spectator.component.commentSubmitted, 'emit');
         });
 
         it('should show comment form when initialContentletState is not new', () => {
@@ -398,27 +404,44 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
             expect(getValidationErrorMsg()).toBeFalsy();
         });
 
-        it('should keep the error slot present with a fixed height regardless of error state, to avoid shifting the sticky footer', () => {
+        it('should keep the meta row present with a fixed height regardless of error state, to avoid shifting the sticky footer', () => {
             const form = spectator.query(byTestId('activities-form'));
-            const getSlot = () => spectator.query(byTestId('activities-error-slot'));
+            const getMetaRow = () => spectator.query(byTestId('activities-meta-row'));
 
-            // No error yet: slot must still be present and reserve its height.
-            expect(getSlot()).toExist();
-            expect(getSlot()).toHaveClass('h-3.5');
+            // No error yet: row must still be present and reserve its height.
+            expect(getMetaRow()).toExist();
+            expect(getMetaRow()).toHaveClass('min-h-4');
 
-            // Error shown: slot's height class must not change.
+            // Error shown: row's height class must not change.
             spectator.dispatchFakeEvent(form, 'submit');
             spectator.detectChanges();
             expect(getValidationErrorMsg()).toBeTruthy();
-            expect(getSlot()).toExist();
-            expect(getSlot()).toHaveClass('h-3.5');
+            expect(getMetaRow()).toExist();
+            expect(getMetaRow()).toHaveClass('min-h-4');
 
-            // Error cleared: slot's height class must still not change.
+            // Error cleared: row's height class must still not change.
             spectator.component.clearComment();
             spectator.detectChanges();
             expect(getValidationErrorMsg()).toBeFalsy();
-            expect(getSlot()).toExist();
-            expect(getSlot()).toHaveClass('h-3.5');
+            expect(getMetaRow()).toExist();
+            expect(getMetaRow()).toHaveClass('min-h-4');
+        });
+
+        it('should lay out the error on the left and the character counter on the right of the same row', () => {
+            const metaRow = spectator.query(byTestId('activities-meta-row'));
+            const validationMessage = metaRow.querySelector('dot-field-validation-message');
+            const charCounter = metaRow.querySelector('[data-testid="activities-char-counter"]');
+
+            // Both live in the same row, error first (left), counter last (right).
+            expect(validationMessage).toExist();
+            expect(charCounter).toExist();
+            expect(metaRow.firstElementChild).toBe(validationMessage);
+            expect(metaRow.lastElementChild).toBe(charCounter);
+
+            // The counter is pinned right by the message taking the free space,
+            // so it stays right-aligned even when no error is rendered.
+            expect(validationMessage).toHaveClass('flex-1');
+            expect(charCounter).toHaveClass('shrink-0');
         });
 
         it('should reset form state when clearComment is called', () => {

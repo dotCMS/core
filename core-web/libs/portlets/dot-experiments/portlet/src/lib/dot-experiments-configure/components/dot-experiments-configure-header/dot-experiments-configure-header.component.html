@@ -1,0 +1,94 @@
+<div class="flex min-w-0 items-center gap-4">
+    <p-button
+        [rounded]="true"
+        [outlined]="true"
+        severity="secondary"
+        size="small"
+        styleClass="w-9 h-9 min-w-9 p-0"
+        (onClick)="onBackToList()"
+        [attr.aria-label]="'experiments.configure.action.back-to-list' | dm"
+        [pTooltip]="'experiments.configure.action.back-to-list' | dm"
+        tooltipPosition="bottom"
+        data-testid="experiments-configure-back-btn">
+        <span class="material-symbols-rounded text-xl! leading-none" aria-hidden="true">
+            arrow_back
+        </span>
+    </p-button>
+
+    <div class="flex min-w-0 flex-col gap-0.5">
+        <div class="flex items-center gap-2.5">
+            <h1
+                class="m-0 truncate text-xl font-semibold text-surface-900"
+                [title]="$title()"
+                data-testid="experiments-configure-title">
+                {{ $title() }}
+            </h1>
+            <p-tag
+                [severity]="$statusSeverity()"
+                [value]="$statusLabelKey() | dm"
+                data-testid="experiments-configure-status-tag" />
+        </div>
+        <span
+            class="truncate text-sm text-surface-500"
+            [title]="$subline()"
+            data-testid="experiments-configure-subline">
+            {{ $subline() }}
+        </span>
+    </div>
+</div>
+
+<div class="flex flex-none items-center gap-2">
+    @if ($showResults()) {
+        <p-button
+            [outlined]="true"
+            severity="secondary"
+            [label]="'experiments.action.view.results' | dm"
+            (onClick)="onViewResults()"
+            data-testid="experiments-configure-results-btn" />
+    }
+
+    @if ($showStop()) {
+        <p-button
+            [outlined]="true"
+            severity="danger"
+            [label]="'experiments.action.stop-experiment' | dm"
+            (onClick)="confirmStop()"
+            data-testid="experiments-configure-stop-btn" />
+    }
+
+    @if ($hasMenuItems()) {
+        <!--
+            Sized square, like the back arrow above it. `[rounded]` only rounds the corners; a
+            button is made *circular* by being as wide as it is tall, and PrimeNG can only do that
+            when it knows the content is an icon — which it infers from its own `icon` input, not
+            from a projected `<span>`. Left alone the horizontal padding wins and the pill shows.
+        -->
+        <p-button
+            [text]="true"
+            [rounded]="true"
+            severity="secondary"
+            styleClass="w-9 h-9 min-w-9 p-0"
+            (onClick)="actionsMenu.toggle($event)"
+            [attr.aria-label]="'experiments.list.actions.menu' | dm"
+            data-testid="experiments-configure-actions-btn">
+            <span class="material-symbols-rounded text-xl! leading-none" aria-hidden="true">
+                more_vert
+            </span>
+        </p-button>
+    }
+
+    <!--
+        `hidden` on the host, not on the menu: `appendTo="body"` moves the *popup* out, but this
+        element stays in the flex row as a zero-width item and drags the row's `gap` with it,
+        pushing the kebab 7px in from the header's edge — where it stopped lining up with the
+        panel's own buttons above it. The popup is positioned against the button passed to
+        `toggle($event)`, so the host's display has nothing to do with where it opens.
+    -->
+    <p-menu #actionsMenu [model]="$menuItems()" [popup]="true" appendTo="body" class="hidden" />
+
+    @if ($addToBundleAssetId(); as assetIdentifier) {
+        <dot-add-to-bundle
+            [assetIdentifier]="assetIdentifier"
+            (cancel)="$addToBundleAssetId.set(null)" />
+    }
+</div>

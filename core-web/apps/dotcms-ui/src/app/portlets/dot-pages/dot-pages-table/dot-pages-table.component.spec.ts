@@ -1,6 +1,7 @@
-import { createHostFactory, SpectatorHost } from '@openng/spectator/jest';
+import { createHostFactory, SpectatorHost } from '@openng/spectator/vitest';
 import { MockProvider } from 'ng-mocks';
 import { of } from 'rxjs';
+import { Mocked, vi } from 'vitest';
 
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { fakeAsync, flush, tick } from '@angular/core/testing';
@@ -39,21 +40,21 @@ const rowSelectEvent = (data: DotCMSContentlet): RowSelectArg => ({ data }) as R
 // Mock window.matchMedia for PrimeNG ContextMenu (JSDOM does not provide it)
 Object.defineProperty(window, 'matchMedia', {
     writable: true,
-    value: jest.fn().mockImplementation((query: string) => ({
+    value: vi.fn().mockImplementation((query: string) => ({
         matches: false,
         media: query,
         onchange: null,
-        addListener: jest.fn(),
-        removeListener: jest.fn(),
-        addEventListener: jest.fn(),
-        removeEventListener: jest.fn(),
-        dispatchEvent: jest.fn()
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn()
     }))
 });
 
 describe('DotPagesTableComponent', () => {
     let spectator: SpectatorHost<DotPagesTableComponent>;
-    let mockDotMessageService: jest.Mocked<Pick<DotMessageService, 'get'>>;
+    let mockDotMessageService: Mocked<Pick<DotMessageService, 'get'>>;
 
     interface HostComponent {
         pages: DotCMSContentlet[];
@@ -159,14 +160,14 @@ describe('DotPagesTableComponent', () => {
         providers: [
             MockProvider(DotFormatDateService),
             MockProvider(DotPageActionsService, {
-                getItems: jest.fn().mockReturnValue(of([]))
+                getItems: vi.fn().mockReturnValue(of([]))
             })
         ]
     });
 
     beforeEach(() => {
         mockDotMessageService = {
-            get: jest.fn((key: string) => key)
+            get: vi.fn((key: string) => key)
         };
 
         spectator = createHost(
@@ -235,7 +236,7 @@ describe('DotPagesTableComponent', () => {
 
     describe('Search Control', () => {
         it('should debounce search input by 300ms', fakeAsync(() => {
-            const searchSpy = jest.fn();
+            const searchSpy = vi.fn();
             spectator.component.search.subscribe(searchSpy);
 
             setSearchValue('test');
@@ -253,7 +254,7 @@ describe('DotPagesTableComponent', () => {
         }));
 
         it('should emit distinct values only', fakeAsync(() => {
-            const searchSpy = jest.fn();
+            const searchSpy = vi.fn();
             spectator.component.search.subscribe(searchSpy);
 
             // Set same value twice
@@ -269,7 +270,7 @@ describe('DotPagesTableComponent', () => {
         }));
 
         it('should emit new distinct value after debounce', fakeAsync(() => {
-            const searchSpy = jest.fn();
+            const searchSpy = vi.fn();
             spectator.component.search.subscribe(searchSpy);
 
             setSearchValue('test1');
@@ -285,7 +286,7 @@ describe('DotPagesTableComponent', () => {
         }));
 
         it('should handle rapid typing correctly', fakeAsync(() => {
-            const searchSpy = jest.fn();
+            const searchSpy = vi.fn();
             spectator.component.search.subscribe(searchSpy);
 
             // Simulate rapid typing
@@ -306,7 +307,7 @@ describe('DotPagesTableComponent', () => {
         }));
 
         it('should handle empty search string', fakeAsync(() => {
-            const searchSpy = jest.fn();
+            const searchSpy = vi.fn();
             spectator.component.search.subscribe(searchSpy);
 
             setSearchValue('');
@@ -320,7 +321,7 @@ describe('DotPagesTableComponent', () => {
 
     describe('Language Control', () => {
         it('should emit language change immediately without debounce', () => {
-            const languageChangeSpy = jest.fn();
+            const languageChangeSpy = vi.fn();
             spectator.component.languageChange.subscribe(languageChangeSpy);
 
             spectator.component.languageControl.setValue(1);
@@ -330,7 +331,7 @@ describe('DotPagesTableComponent', () => {
         });
 
         it('should emit null for "All" languages option', () => {
-            const languageChangeSpy = jest.fn();
+            const languageChangeSpy = vi.fn();
             spectator.component.languageChange.subscribe(languageChangeSpy);
 
             spectator.component.languageControl.setValue(null);
@@ -339,7 +340,7 @@ describe('DotPagesTableComponent', () => {
         });
 
         it('should emit distinct language values only', () => {
-            const languageChangeSpy = jest.fn();
+            const languageChangeSpy = vi.fn();
             spectator.component.languageChange.subscribe(languageChangeSpy);
 
             spectator.component.languageControl.setValue(1);
@@ -349,7 +350,7 @@ describe('DotPagesTableComponent', () => {
         });
 
         it('should emit when changing between different languages', () => {
-            const languageChangeSpy = jest.fn();
+            const languageChangeSpy = vi.fn();
             spectator.component.languageChange.subscribe(languageChangeSpy);
 
             spectator.component.languageControl.setValue(1);
@@ -365,7 +366,7 @@ describe('DotPagesTableComponent', () => {
 
     describe('Archived Control', () => {
         it('should emit archived change immediately without debounce', () => {
-            const archivedChangeSpy = jest.fn();
+            const archivedChangeSpy = vi.fn();
             spectator.component.archivedChange.subscribe(archivedChangeSpy);
 
             spectator.component.archivedControl.setValue(true);
@@ -375,7 +376,7 @@ describe('DotPagesTableComponent', () => {
         });
 
         it('should emit false for unchecked state', () => {
-            const archivedChangeSpy = jest.fn();
+            const archivedChangeSpy = vi.fn();
             spectator.component.archivedChange.subscribe(archivedChangeSpy);
 
             spectator.component.archivedControl.setValue(false);
@@ -384,7 +385,7 @@ describe('DotPagesTableComponent', () => {
         });
 
         it('should emit distinct archived values only', () => {
-            const archivedChangeSpy = jest.fn();
+            const archivedChangeSpy = vi.fn();
             spectator.component.archivedChange.subscribe(archivedChangeSpy);
 
             spectator.component.archivedControl.setValue(true);
@@ -394,7 +395,7 @@ describe('DotPagesTableComponent', () => {
         });
 
         it('should emit when toggling archived checkbox', () => {
-            const archivedChangeSpy = jest.fn();
+            const archivedChangeSpy = vi.fn();
             spectator.component.archivedChange.subscribe(archivedChangeSpy);
 
             spectator.component.archivedControl.setValue(true);
@@ -410,7 +411,7 @@ describe('DotPagesTableComponent', () => {
 
     describe('Lazy Load Handling', () => {
         it('should emit lazy load events after initialization', () => {
-            const lazyLoadSpy = jest.fn();
+            const lazyLoadSpy = vi.fn();
             spectator.component.lazyLoad.subscribe(lazyLoadSpy);
 
             const mockLazyLoadEvent = {
@@ -428,7 +429,7 @@ describe('DotPagesTableComponent', () => {
         });
 
         it('should emit multiple lazy load events', () => {
-            const lazyLoadSpy = jest.fn();
+            const lazyLoadSpy = vi.fn();
             spectator.component.lazyLoad.subscribe(lazyLoadSpy);
 
             const events = [
@@ -449,7 +450,7 @@ describe('DotPagesTableComponent', () => {
         });
 
         it('should pass through lazy load event data correctly', () => {
-            const lazyLoadSpy = jest.fn();
+            const lazyLoadSpy = vi.fn();
             spectator.component.lazyLoad.subscribe(lazyLoadSpy);
 
             const complexEvent: LazyLoadEvent = {
@@ -474,7 +475,7 @@ describe('DotPagesTableComponent', () => {
 
     describe('Row Selection', () => {
         it('should emit navigation URL with urlMap and languageId', () => {
-            const navigateToPageSpy = jest.fn();
+            const navigateToPageSpy = vi.fn();
             spectator.component.navigateToPage.subscribe(navigateToPageSpy);
 
             spectator.triggerEventHandler('p-table', 'onRowSelect', rowSelectEvent(MOCK_PAGES[0]));
@@ -483,7 +484,7 @@ describe('DotPagesTableComponent', () => {
         });
 
         it('should use url property when urlMap is not available', () => {
-            const navigateToPageSpy = jest.fn();
+            const navigateToPageSpy = vi.fn();
             spectator.component.navigateToPage.subscribe(navigateToPageSpy);
 
             spectator.triggerEventHandler('p-table', 'onRowSelect', rowSelectEvent(MOCK_PAGES[1]));
@@ -492,7 +493,7 @@ describe('DotPagesTableComponent', () => {
         });
 
         it('should prefer urlMap over url when both are present', () => {
-            const navigateToPageSpy = jest.fn();
+            const navigateToPageSpy = vi.fn();
             spectator.component.navigateToPage.subscribe(navigateToPageSpy);
 
             spectator.triggerEventHandler(
@@ -507,7 +508,7 @@ describe('DotPagesTableComponent', () => {
         });
 
         it('should handle empty URL gracefully', () => {
-            const navigateToPageSpy = jest.fn();
+            const navigateToPageSpy = vi.fn();
             spectator.component.navigateToPage.subscribe(navigateToPageSpy);
 
             spectator.triggerEventHandler(
@@ -520,7 +521,7 @@ describe('DotPagesTableComponent', () => {
         });
 
         it('should handle missing languageId', () => {
-            const navigateToPageSpy = jest.fn();
+            const navigateToPageSpy = vi.fn();
             spectator.component.navigateToPage.subscribe(navigateToPageSpy);
 
             spectator.triggerEventHandler(
@@ -533,7 +534,7 @@ describe('DotPagesTableComponent', () => {
         });
 
         it('should handle various languageId types', () => {
-            const navigateToPageSpy = jest.fn();
+            const navigateToPageSpy = vi.fn();
             spectator.component.navigateToPage.subscribe(navigateToPageSpy);
 
             // Number languageId
@@ -561,7 +562,7 @@ describe('DotPagesTableComponent', () => {
 
         it('should stop event propagation', () => {
             const mockEvent = {
-                stopPropagation: jest.fn()
+                stopPropagation: vi.fn()
             } as unknown as MouseEvent;
 
             spectator.triggerEventHandler('#pageActionButton-0', 'onClick', mockEvent);
@@ -570,11 +571,11 @@ describe('DotPagesTableComponent', () => {
         });
 
         it('should emit openMenu event with originalEvent and data', () => {
-            const openMenuSpy = jest.fn();
+            const openMenuSpy = vi.fn();
             spectator.component.openMenu.subscribe(openMenuSpy);
 
             const mockEvent = {
-                stopPropagation: jest.fn()
+                stopPropagation: vi.fn()
             } as unknown as MouseEvent;
 
             spectator.triggerEventHandler('#pageActionButton-0', 'onClick', mockEvent);
@@ -586,12 +587,12 @@ describe('DotPagesTableComponent', () => {
         });
 
         it('should handle menu action for different pages', () => {
-            const openMenuSpy = jest.fn();
+            const openMenuSpy = vi.fn();
             spectator.component.openMenu.subscribe(openMenuSpy);
 
             MOCK_PAGES.forEach((page, index) => {
                 const mockEvent = {
-                    stopPropagation: jest.fn()
+                    stopPropagation: vi.fn()
                 } as unknown as MouseEvent;
 
                 spectator.triggerEventHandler(`#pageActionButton-${index}`, 'onClick', mockEvent);
@@ -609,7 +610,7 @@ describe('DotPagesTableComponent', () => {
 
     describe('Page Events', () => {
         it('should emit createPage event when the create button is clicked', () => {
-            const createPageSpy = jest.fn();
+            const createPageSpy = vi.fn();
             spectator.component.createPage.subscribe(createPageSpy);
 
             // Ensure the caption create button is the only p-button (avoid row action buttons)
@@ -622,7 +623,7 @@ describe('DotPagesTableComponent', () => {
         });
 
         it('should emit pageChange event when p-table emits onPage', () => {
-            const pageChangeSpy = jest.fn();
+            const pageChangeSpy = vi.fn();
             spectator.component.pageChange.subscribe(pageChangeSpy);
 
             spectator.triggerEventHandler('p-table', 'onPage', {});
@@ -698,7 +699,7 @@ describe('DotPagesTableComponent', () => {
         });
 
         it('should handle page with null urlMap and url', () => {
-            const navigateToPageSpy = jest.fn();
+            const navigateToPageSpy = vi.fn();
             spectator.component.navigateToPage.subscribe(navigateToPageSpy);
 
             spectator.triggerEventHandler(
@@ -721,8 +722,8 @@ describe('DotPagesTableComponent', () => {
         beforeEach(() => spectator.detectChanges());
 
         it('should handle complete search workflow', fakeAsync(() => {
-            const searchSpy = jest.fn();
-            const lazyLoadSpy = jest.fn();
+            const searchSpy = vi.fn();
+            const lazyLoadSpy = vi.fn();
 
             spectator.component.search.subscribe(searchSpy);
             spectator.component.lazyLoad.subscribe(lazyLoadSpy);
@@ -742,9 +743,9 @@ describe('DotPagesTableComponent', () => {
         }));
 
         it('should handle filter combination workflow', fakeAsync(() => {
-            const searchSpy = jest.fn();
-            const languageChangeSpy = jest.fn();
-            const archivedChangeSpy = jest.fn();
+            const searchSpy = vi.fn();
+            const languageChangeSpy = vi.fn();
+            const archivedChangeSpy = vi.fn();
 
             spectator.component.search.subscribe(searchSpy);
             spectator.component.languageChange.subscribe(languageChangeSpy);
@@ -767,7 +768,7 @@ describe('DotPagesTableComponent', () => {
         }));
 
         it('should handle row selection and navigation workflow', () => {
-            const navigateToPageSpy = jest.fn();
+            const navigateToPageSpy = vi.fn();
             spectator.component.navigateToPage.subscribe(navigateToPageSpy);
 
             // User selects a page row
@@ -778,11 +779,11 @@ describe('DotPagesTableComponent', () => {
         });
 
         it('should handle menu action workflow', () => {
-            const openMenuSpy = jest.fn();
+            const openMenuSpy = vi.fn();
             spectator.component.openMenu.subscribe(openMenuSpy);
 
             const mockEvent = {
-                stopPropagation: jest.fn()
+                stopPropagation: vi.fn()
             } as unknown as MouseEvent;
 
             const mockPage = MOCK_PAGES[0];
@@ -799,8 +800,8 @@ describe('DotPagesTableComponent', () => {
         });
 
         it('should handle pagination workflow', () => {
-            const lazyLoadSpy = jest.fn();
-            const pageChangeSpy = jest.fn();
+            const lazyLoadSpy = vi.fn();
+            const pageChangeSpy = vi.fn();
 
             spectator.component.lazyLoad.subscribe(lazyLoadSpy);
             spectator.component.pageChange.subscribe(pageChangeSpy);
@@ -814,7 +815,7 @@ describe('DotPagesTableComponent', () => {
         });
 
         it('should handle sorting workflow', () => {
-            const lazyLoadSpy = jest.fn();
+            const lazyLoadSpy = vi.fn();
             spectator.component.lazyLoad.subscribe(lazyLoadSpy);
 
             // User changes sort
@@ -832,7 +833,7 @@ describe('DotPagesTableComponent', () => {
         });
 
         it('should handle create page workflow', () => {
-            const createPageSpy = jest.fn();
+            const createPageSpy = vi.fn();
             spectator.component.createPage.subscribe(createPageSpy);
 
             // User clicks create button
@@ -844,9 +845,9 @@ describe('DotPagesTableComponent', () => {
         });
 
         it('should handle rapid filter changes workflow', fakeAsync(() => {
-            const searchSpy = jest.fn();
-            const languageChangeSpy = jest.fn();
-            const archivedChangeSpy = jest.fn();
+            const searchSpy = vi.fn();
+            const languageChangeSpy = vi.fn();
+            const archivedChangeSpy = vi.fn();
 
             spectator.component.search.subscribe(searchSpy);
             spectator.component.languageChange.subscribe(languageChangeSpy);

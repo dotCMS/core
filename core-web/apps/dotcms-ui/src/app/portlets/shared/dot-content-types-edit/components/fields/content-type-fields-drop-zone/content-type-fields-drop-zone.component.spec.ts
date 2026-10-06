@@ -1,5 +1,6 @@
 import { DragulaModule, DragulaService } from 'ng2-dragula';
 import { Observable, of, Subject } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -134,7 +135,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
     let fixture: ComponentFixture<ContentTypeFieldsDropZoneComponent>;
     let de: DebugElement;
     const mockRouter = {
-        navigate: jest.fn()
+        navigate: vi.fn()
     };
     const messageServiceMock = new MockDotMessageService({
         'contenttypes.dropzone.action.save': 'Save',
@@ -145,21 +146,21 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
 
     let dragDropService: TestFieldDragDropService;
     let dialogOnClose: Subject<DotEditFieldDialogResult>;
-    const dialogServiceMock = { open: jest.fn() };
+    const dialogServiceMock = { open: vi.fn() };
 
     beforeEach(waitForAsync(() => {
         // Mock matchMedia for PrimeNG components
         Object.defineProperty(window, 'matchMedia', {
             writable: true,
-            value: jest.fn().mockImplementation((query) => ({
+            value: vi.fn().mockImplementation((query) => ({
                 matches: false,
                 media: query,
                 onchange: null,
-                addListener: jest.fn(),
-                removeListener: jest.fn(),
-                addEventListener: jest.fn(),
-                removeEventListener: jest.fn(),
-                dispatchEvent: jest.fn()
+                addListener: vi.fn(),
+                removeListener: vi.fn(),
+                addEventListener: vi.fn(),
+                removeEventListener: vi.fn(),
+                dispatchEvent: vi.fn()
             }))
         });
 
@@ -300,7 +301,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         fieldRow1.divider.id = 'test';
         comp.fieldRows = [fieldRow1, fieldRow2];
 
-        jest.spyOn(comp.removeFields, 'emit');
+        vi.spyOn(comp.removeFields, 'emit');
         comp.removeFieldRow(fieldRow2, 1);
 
         expect(comp.removeFields.emit).toHaveBeenCalledTimes(0);
@@ -382,7 +383,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         comp.fieldRows = [fieldRow];
         fixture.detectChanges();
 
-        jest.spyOn(comp.editField, 'emit');
+        vi.spyOn(comp.editField, 'emit');
 
         comp.editFieldHandler(field);
 
@@ -402,7 +403,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         fixture.detectChanges();
         dotEventsService.notify('add-tab-divider', null);
 
-        jest.spyOn(comp.saveFields, 'emit');
+        vi.spyOn(comp.saveFields, 'emit');
 
         const dividerField = comp.fieldRows[0].divider;
         dialogOnClose.next({ kind: 'saved', field: dividerField });
@@ -423,7 +424,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         comp.fieldRows = [fieldRow];
         fixture.detectChanges();
 
-        jest.spyOn(comp.editField, 'emit');
+        vi.spyOn(comp.editField, 'emit');
 
         comp.editFieldHandler(field);
 
@@ -478,7 +479,7 @@ describe('Load fields and drag and drop', () => {
     let de: DebugElement;
 
     const mockRouter = {
-        navigate: jest.fn()
+        navigate: vi.fn()
     };
     const messageServiceMock = new MockDotMessageService({
         'contenttypes.dropzone.action.save': 'Save',
@@ -489,20 +490,20 @@ describe('Load fields and drag and drop', () => {
 
     let testFieldDragDropService: TestFieldDragDropService;
     let dialogOnClose: Subject<DotEditFieldDialogResult>;
-    const dialogServiceMock = { open: jest.fn() };
+    const dialogServiceMock = { open: vi.fn() };
 
     beforeEach(waitForAsync(() => {
         Object.defineProperty(window, 'matchMedia', {
             writable: true,
-            value: jest.fn().mockImplementation((query) => ({
+            value: vi.fn().mockImplementation((query) => ({
                 matches: false,
                 media: query,
                 onchange: null,
-                addListener: jest.fn(),
-                removeListener: jest.fn(),
-                addEventListener: jest.fn(),
-                removeEventListener: jest.fn(),
-                dispatchEvent: jest.fn()
+                addListener: vi.fn(),
+                removeListener: vi.fn(),
+                addEventListener: vi.fn(),
+                removeEventListener: vi.fn(),
+                dispatchEvent: vi.fn()
             }))
         });
 
@@ -727,7 +728,7 @@ describe('Load fields and drag and drop', () => {
             clazz: DotCMSClazzes.TEXT,
             name: 'field 5'
         };
-        const spy = jest.spyOn(comp, 'editFieldHandler');
+        const spy = vi.spyOn(comp, 'editFieldHandler');
 
         fixture.detectChanges();
 
@@ -738,7 +739,7 @@ describe('Load fields and drag and drop', () => {
     });
 
     it('should save all updated fields', fakeAsync(() => {
-        jest.spyOn(testFieldDragDropService, 'isDraggedEventStarted').mockReturnValue(false);
+        vi.spyOn(testFieldDragDropService, 'isDraggedEventStarted').mockReturnValue(false);
 
         const updatedField = fakeFields[2].columns[0].fields[0];
 
@@ -747,7 +748,7 @@ describe('Load fields and drag and drop', () => {
         tick(100);
         comp.editFieldHandler(updatedField);
 
-        jest.spyOn(comp.editField, 'emit');
+        vi.spyOn(comp.editField, 'emit');
 
         const fieldUpdated = {
             ...dotcmsContentTypeFieldBasicMock,
@@ -767,7 +768,7 @@ describe('Load fields and drag and drop', () => {
 
     it('should not save any fields', fakeAsync(() => {
         comp.currentField = null;
-        jest.spyOn(testFieldDragDropService, 'isDraggedEventStarted').mockReturnValue(true);
+        vi.spyOn(testFieldDragDropService, 'isDraggedEventStarted').mockReturnValue(true);
 
         const updatedField = fakeFields[2].columns[0].fields[0];
 
@@ -776,13 +777,13 @@ describe('Load fields and drag and drop', () => {
         tick(100);
         comp.editFieldHandler(updatedField);
 
-        jest.spyOn(comp.editField, 'emit');
+        vi.spyOn(comp.editField, 'emit');
 
         expect(comp.currentField).toBeNull();
     }));
 
     it('should emit and create 2 columns', () => {
-        jest.spyOn(comp, 'addRow');
+        vi.spyOn(comp, 'addRow');
         fixture.detectChanges();
         const addRowsContainer = de.query(By.css('dot-add-rows')).componentInstance;
         addRowsContainer.$selectColums.emit(2);
@@ -843,56 +844,59 @@ describe('Load fields and drag and drop', () => {
         expect(hostComp.loading).toBe(false);
     });
 
-    it('should save all the fields (moving the last line to the top)', (done) => {
-        fixture.detectChanges();
+    it('should save all the fields (moving the last line to the top)', () =>
+        new Promise<void>((done) => {
+            fixture.detectChanges();
 
-        const fieldMoved = [
-            structuredClone(comp.fieldRows[1]),
-            structuredClone(comp.fieldRows[0]),
-            structuredClone(comp.fieldRows[2])
-        ];
+            const fieldMoved = [
+                structuredClone(comp.fieldRows[1]),
+                structuredClone(comp.fieldRows[0]),
+                structuredClone(comp.fieldRows[2])
+            ];
 
-        comp.saveFields.subscribe((data) => {
-            expect(data).toEqual(fieldMoved);
-            expect(comp.fieldRows).toEqual(fieldMoved);
-            done();
-        });
+            comp.saveFields.subscribe((data) => {
+                expect(data).toEqual(fieldMoved);
+                expect(comp.fieldRows).toEqual(fieldMoved);
+                done();
+            });
 
-        testFieldDragDropService._fieldRowDropFromTarget.next(fieldMoved);
-    });
+            testFieldDragDropService._fieldRowDropFromTarget.next(fieldMoved);
+        }));
 
-    it('should break columns and emit save', (done) => {
-        fixture.detectChanges();
-        comp.fieldRows = fieldsWithBreakColumn;
+    it('should break columns and emit save', () =>
+        new Promise<void>((done) => {
+            fixture.detectChanges();
+            comp.fieldRows = fieldsWithBreakColumn;
 
-        comp.saveFields.subscribe((data) => {
-            expect(data).toEqual(fieldsBrokenWithColumns);
-            done();
-        });
+            comp.saveFields.subscribe((data) => {
+                expect(data).toEqual(fieldsBrokenWithColumns);
+                done();
+            });
 
-        testFieldDragDropService._fieldDropFromSource.next({
-            item: {
-                clazz: COLUMN_BREAK_FIELD.clazz
-            }
-        });
-    });
+            testFieldDragDropService._fieldDropFromSource.next({
+                item: {
+                    clazz: COLUMN_BREAK_FIELD.clazz
+                }
+            });
+        }));
 
-    it('should not open Edit Dialog when drag & drop event happens', (done) => {
-        fixture.detectChanges();
+    it('should not open Edit Dialog when drag & drop event happens', () =>
+        new Promise<void>((done) => {
+            fixture.detectChanges();
 
-        const fieldMoved = [
-            structuredClone(comp.fieldRows[1]),
-            structuredClone(comp.fieldRows[0]),
-            structuredClone(comp.fieldRows[2])
-        ];
+            const fieldMoved = [
+                structuredClone(comp.fieldRows[1]),
+                structuredClone(comp.fieldRows[0]),
+                structuredClone(comp.fieldRows[2])
+            ];
 
-        comp.saveFields.subscribe(() => {
-            expect(dialogServiceMock.open).not.toHaveBeenCalled();
-            done();
-        });
+            comp.saveFields.subscribe(() => {
+                expect(dialogServiceMock.open).not.toHaveBeenCalled();
+                done();
+            });
 
-        testFieldDragDropService._fieldRowDropFromTarget.next(fieldMoved);
-    });
+            testFieldDragDropService._fieldRowDropFromTarget.next(fieldMoved);
+        }));
 
     it('should save all the new fields and at the end DraggedStarted event should be false', () => {
         becomeNewField(fakeFields[2].divider);
@@ -922,7 +926,7 @@ describe('Load fields and drag and drop', () => {
             name: 'nameField'
         };
 
-        const spy = jest.spyOn(comp, 'removeField');
+        const spy = vi.spyOn(comp, 'removeField');
 
         fixture.detectChanges();
 
@@ -960,7 +964,7 @@ describe('Load fields and drag and drop', () => {
         it('Should show dot-loading-indicator when loading is set to true', fakeAsync(() => {
             const dropZoneFixture = TestBed.createComponent(ContentTypeFieldsDropZoneComponent);
             const localComponent = dropZoneFixture.componentInstance;
-            const showSpy = jest.spyOn(dotLoadingIndicatorServiceMock, 'show');
+            const showSpy = vi.spyOn(dotLoadingIndicatorServiceMock, 'show');
 
             dropZoneFixture.componentRef.setInput('loading', true);
             dropZoneFixture.detectChanges();
@@ -973,7 +977,7 @@ describe('Load fields and drag and drop', () => {
         it('Should hide dot-loading-indicator when loading is set to false', fakeAsync(() => {
             const dropZoneFixture = TestBed.createComponent(ContentTypeFieldsDropZoneComponent);
             const localComponent = dropZoneFixture.componentInstance;
-            const hideSpy = jest.spyOn(dotLoadingIndicatorServiceMock, 'hide');
+            const hideSpy = vi.spyOn(dotLoadingIndicatorServiceMock, 'hide');
 
             dropZoneFixture.componentRef.setInput('loading', true);
             dropZoneFixture.detectChanges();

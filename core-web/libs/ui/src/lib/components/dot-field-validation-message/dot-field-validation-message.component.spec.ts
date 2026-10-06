@@ -1,4 +1,4 @@
-import { byTestId, createHostFactory, SpectatorHost } from '@openng/spectator/jest';
+import { byTestId, createHostFactory, SpectatorHost } from '@openng/spectator/vitest';
 
 import { Component } from '@angular/core';
 import { ReactiveFormsModule, UntypedFormControl, Validators } from '@angular/forms';

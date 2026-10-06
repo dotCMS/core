@@ -2,22 +2,118 @@ import type { TreeNode } from 'primeng/api';
 
 import { DotFolder } from './dot-folder.model';
 
+/** `node.type` / `node.data.type` value for the synthetic "Load more" sentinel. */
+export const LOAD_MORE_NODE_TYPE = 'load-more' as const;
+
 /**
- * Data payload for tree nodes in the browser selector.
- * Represents either a site (host) or a folder within the content tree.
- *
- * @type TreeNodeData
- * @property {'site' | 'folder'} type - Whether this node represents a site or a folder
- * @property {string} path - The full path of the node in the content tree
- * @property {string} hostname - The hostname where the site/folder resides
- * @property {string} id - Unique identifier for the node
+ * Shared page size for folder-tree levels (Content Drive sidebar, Host Folder Field, etc.).
+ * Keep consumers on this single limit so load-more behavior stays consistent.
  */
-export type TreeNodeData = {
+export const DOT_FOLDER_TREE_PAGE_SIZE = 40;
+
+/**
+ * Data payload for site or folder nodes in the browser selector and shared folder tree.
+ */
+export type TreeNodeContentData = {
     type: 'site' | 'folder';
     path: string;
     hostname: string;
     id: string;
+    /** Folder inode — used by Content Drive / AssetPicker to open the content editor pre-selected. */
+    inode?: string;
+    /**
+     * Folder upload preference (`DOTASSET`/`FILEASSET`, or `null`/absent for "ask each time").
+     * Drives folder-aware Upload behavior in Content Drive.
+     */
+    defaultBaseType?: string | null;
+    /** True when the node was selected from the folder list/table rather than the tree. */
+    fromTable?: boolean;
 };
+
+/**
+ * Data payload for synthetic load-more sentinel nodes.
+ * Pagination fields and parent context are optional (Content Drive uses them; Host Folder does not).
+ */
+export type TreeNodeLoadMoreData = {
+    type: typeof LOAD_MORE_NODE_TYPE;
+    id: string;
+    nextPage?: number;
+    remaining?: number;
+    /** Parent path for pagination (Content Drive). */
+    path?: string;
+    hostname?: string;
+};
+
+/**
+ * Discriminated data payload for tree nodes in the browser selector and shared folder tree.
+ */
+export type TreeNodeData = TreeNodeContentData | TreeNodeLoadMoreData;
+
+/**
+ * Options for {@link createLoadMoreTreeNode}.
+ * Always sets both `node.type` and `node.data.type` to {@link LOAD_MORE_NODE_TYPE}.
+ */
+export type CreateLoadMoreTreeNodeOptions = {
+    /** Suffix used in `load-more:{levelKey}` for `key` and `data.id`. */
+    levelKey: string;
+    label?: string;
+    nextPage?: number;
+    remaining?: number;
+    path?: string;
+    hostname?: string;
+};
+
+/**
+ * Creates a synthetic "Load more" tree node with dual-type enforcement:
+ * PrimeNG templates match `node.type`, consumers filter on `node.data.type`.
+ */
+export function createLoadMoreTreeNode(options: CreateLoadMoreTreeNodeOptions): TreeNodeItem {
+    const key = `${LOAD_MORE_NODE_TYPE}:${options.levelKey}`;
+
+    const data: TreeNodeLoadMoreData = {
+        type: LOAD_MORE_NODE_TYPE,
+        id: key
+    };
+
+    if (options.nextPage !== undefined) {
+        data.nextPage = options.nextPage;
+    }
+
+    if (options.remaining !== undefined) {
+        data.remaining = options.remaining;
+    }
+
+    if (options.path !== undefined) {
+        data.path = options.path;
+    }
+
+    if (options.hostname !== undefined) {
+        data.hostname = options.hostname;
+    }
+
+    return {
+        key,
+        label: options.label ?? '',
+        type: LOAD_MORE_NODE_TYPE,
+        selectable: false,
+        leaf: true,
+        data
+    };
+}
+
+/**
+ * Type guard for content (site/folder) tree node data.
+ */
+export function isTreeNodeContentData(data: TreeNodeData): data is TreeNodeContentData {
+    return data.type === 'site' || data.type === 'folder';
+}
+
+/**
+ * Type guard for load-more tree node data.
+ */
+export function isTreeNodeLoadMoreData(data: TreeNodeData): data is TreeNodeLoadMoreData {
+    return data.type === LOAD_MORE_NODE_TYPE;
+}
 
 /**
  * PrimeNG tree node wrapping TreeNodeData.

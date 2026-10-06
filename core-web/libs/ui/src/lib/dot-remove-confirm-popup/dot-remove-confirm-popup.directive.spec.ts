@@ -1,4 +1,5 @@
-import { createHostFactory, SpectatorHost } from '@openng/spectator/jest';
+import { createHostFactory, SpectatorHost } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { Component } from '@angular/core';
 
@@ -33,7 +34,7 @@ describe('DotRemoveConfirmPopupWithEscape', () => {
     });
 
     it('should close the confirmPopup with escape', () => {
-        jest.spyOn(confirmationService, 'close');
+        vi.spyOn(confirmationService, 'close');
 
         const event = new KeyboardEvent('keydown', {
             key: 'Escape',

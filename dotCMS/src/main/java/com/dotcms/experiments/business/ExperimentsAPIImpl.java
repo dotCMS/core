@@ -29,7 +29,7 @@ import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
 import com.dotcms.cube.CubeJSClient;
 import com.dotcms.cube.CubeJSClientFactory;
 import com.dotcms.cube.CubeJSQuery;
-import com.dotcms.cube.CubeJSResultSet;
+import com.dotcms.cube.AnalyticsResultSet;
 import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotcms.experiments.business.result.*;
 import com.dotcms.exception.NotAllowedException;
@@ -209,6 +209,13 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
                 existingExperiment))) {
             experimentToSave = experimentToSave.withScheduling(
                     Optional.of(validateScheduling(experimentToSave.scheduling().get())));
+        }
+
+        if (existingExperiment.isPresent()
+                && !existingExperiment.get().pageId().equals(experimentToSave.pageId())) {
+            validatePageChange(existingExperiment.get());
+            experimentToSave = experimentToSave.withTrafficProportion(
+                    regenerateControlVariantUrl(experimentToSave));
         }
 
         factory.save(experimentToSave);
@@ -1006,6 +1013,77 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
                 experimentVariant.id());
     }
 
+    /**
+     * Refuses a Page change the Experiment is not allowed to make.
+     *
+     * <p>The Page may only change while the Experiment is a {@link Status#DRAFT} whose only Variant
+     * is the control. Every other Variant holds a copy of the current Page's layout — see
+     * {@link #copyMultiTrees} — so repointing the Experiment would orphan it. The control is exempt
+     * from that copy: it holds no duplicated layout because it <em>is</em> the Page.
+     *
+     * <p>Checked here rather than in the REST layer so it holds for every caller. Only a changed
+     * Page reaches this method, so the saves that keep their Page — {@code addVariant},
+     * {@code deleteVariant}, {@code promoteVariant}, {@code start}, {@code end} — never pay for it.
+     *
+     * @param persistedExperiment the Experiment as currently stored, which is the state the rule
+     *                            is about
+     */
+    private void validatePageChange(final Experiment persistedExperiment) {
+
+        DotPreconditions.isTrue(persistedExperiment.status() == Status.DRAFT,
+                IllegalArgumentException.class,
+                () -> "The Page of an Experiment can only be changed while it is in DRAFT status. "
+                        + "This Experiment is " + persistedExperiment.status() + ".");
+
+        DotPreconditions.isTrue(hasOnlyTheControlVariant(persistedExperiment),
+                IllegalArgumentException.class,
+                () -> "The Page of an Experiment cannot be changed once it has Variants other than "
+                        + "the control, because each one holds a copy of the current Page's layout. "
+                        + "Delete them before changing the Page.");
+    }
+
+    /**
+     * Whether the control is the Experiment's only Variant.
+     *
+     * <p>Identified by its id rather than by its {@code Original} description: the id is what
+     * {@link #addVariant} keys off when it decides whether to copy the Page's layout, so matching
+     * on it covers exactly the Variants that hold a copy.
+     */
+    private boolean hasOnlyTheControlVariant(final Experiment experiment) {
+        final SortedSet<ExperimentVariant> variants = experiment.trafficProportion().variants();
+
+        return variants.size() == 1 && DEFAULT_VARIANT.name().equals(variants.first().id());
+    }
+
+    /**
+     * Rebuilds the control Variant's stored {@code url} from the Experiment's current Page.
+     *
+     * <p>{@link #createExperimentVariant} bakes the Page's URI into every Variant at the moment it
+     * is created, the control included, and nothing recomputes it on read. So when an Experiment
+     * changes Page the control keeps handing back a link to the previous one — which is what the
+     * "copy preview URL" action would give the user.
+     *
+     * <p>Only the control is rewritten. A non-control Variant's url belongs to the Page its layout
+     * was copied from, and an Experiment carrying one cannot change Page in the first place.
+     */
+    private TrafficProportion regenerateControlVariantUrl(final Experiment experiment)
+            throws DotDataException {
+
+        final Contentlet pageContentlet = contentletAPI
+                .findContentletByIdentifierAnyLanguage(experiment.pageId(), false);
+        final HTMLPageAsset page = pageAssetAPI.fromContentlet(pageContentlet);
+        final String controlUrl = page.getURI() + "?variantName=" + DEFAULT_VARIANT.name();
+
+        final TrafficProportion trafficProportion = experiment.trafficProportion();
+        final TreeSet<ExperimentVariant> variants = trafficProportion.variants().stream()
+                .map(variant -> DEFAULT_VARIANT.name().equals(variant.id())
+                        ? ExperimentVariant.builder().from(variant).url(controlUrl).build()
+                        : variant)
+                .collect(Collectors.toCollection(TreeSet::new));
+
+        return trafficProportion.withVariants(variants);
+    }
+
     private ExperimentVariant createExperimentVariant(final Experiment experiment,
             final String variantDescription)
             throws DotDataException {
@@ -1225,13 +1303,13 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
             RESULTS_QUERY_VALID_STATUSES.contains(experimentFromDataBase.status()),
             "The Experiment must be RUNNING or ENDED to get results");
 
-        final CubeJSResultSet totalSessions = getTotalSessions(experimentFromDataBase, user);
-        final CubeJSResultSet summarize = getSummary(experimentFromDataBase, user);
+        final AnalyticsResultSet totalSessions = getTotalSessions(experimentFromDataBase, user);
+        final AnalyticsResultSet summarize = getSummary(experimentFromDataBase, user);
         return getResults(experimentFromDataBase, totalSessions, summarize);
     }
 
-    private ExperimentResults getResults(final Experiment experiment, final CubeJSResultSet totalSessions,
-                                         final CubeJSResultSet summarize) {
+    private ExperimentResults getResults(final Experiment experiment, final AnalyticsResultSet totalSessions,
+                                         final AnalyticsResultSet summarize) {
 
         final Goals goals = experiment.goals()
                 .orElseThrow(() -> new IllegalArgumentException("The Experiment must have a Goal"));
@@ -1349,17 +1427,13 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
         return bayesianAPI.doBayesian(bayesianInput);
     }
 
-    public CubeJSResultSet getSummary(final Experiment experiment,
+    public AnalyticsResultSet getSummary(final Experiment experiment,
                                              final User user) throws DotDataException, DotSecurityException {
-        final CubeJSClient cubeClient = cubeJSClientFactory.create(user);
-        final CubeJSQuery cubeJSQuery = ExperimentResultsQueryFactory.INSTANCE.createWithDayGranularity(experiment);
-        return cubeClient.send(cubeJSQuery);
+        return ExperimentResultsQueryFactory.INSTANCE.executeByDay(experiment, user);
     }
 
-    public CubeJSResultSet getTotalSessions(final Experiment experiment, final User user) throws DotDataException, DotSecurityException {
-        final CubeJSClient cubeClient = cubeJSClientFactory.create(user);
-        final CubeJSQuery cubeJSQuery = ExperimentResultsQueryFactory.INSTANCE.create(experiment);
-        return cubeClient.send(cubeJSQuery);
+    public AnalyticsResultSet getTotalSessions(final Experiment experiment, final User user) throws DotDataException, DotSecurityException {
+        return ExperimentResultsQueryFactory.INSTANCE.executeAggregate(experiment, user);
     }
 
     @Override

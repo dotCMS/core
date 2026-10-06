@@ -1,5 +1,11 @@
-import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@openng/spectator/jest';
+import {
+    createComponentFactory,
+    mockProvider,
+    Spectator,
+    SpyObject
+} from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { Select } from 'primeng/select';
 
@@ -62,7 +68,7 @@ describe('DotLanguageSelectorComponent', () => {
 
     describe('initialization', () => {
         it('should load languages and select the default language when value is empty', async () => {
-            const cvaOnChange = jest.fn();
+            const cvaOnChange = vi.fn();
             spectator.component.registerOnChange(cvaOnChange);
 
             spectator.detectChanges();
@@ -111,10 +117,10 @@ describe('DotLanguageSelectorComponent', () => {
 
     describe('interactions', () => {
         it('should emit onChange (id) and call ControlValueAccessor touched when a language is selected', () => {
-            const onChangeSpy = jest.fn();
-            const onLanguageChangeSpy = jest.fn();
-            const onTouchedSpy = jest.fn();
-            const cvaOnChange = jest.fn();
+            const onChangeSpy = vi.fn();
+            const onLanguageChangeSpy = vi.fn();
+            const onTouchedSpy = vi.fn();
+            const cvaOnChange = vi.fn();
 
             spectator.component.onChange.subscribe(onChangeSpy);
             spectator.component.onLanguageChange.subscribe(onLanguageChangeSpy);
@@ -143,8 +149,8 @@ describe('DotLanguageSelectorComponent', () => {
         });
 
         it('should emit onShow and onHide when the dropdown is shown/hidden', () => {
-            const showSpy = jest.fn();
-            const hideSpy = jest.fn();
+            const showSpy = vi.fn();
+            const hideSpy = vi.fn();
 
             spectator.component.onShow.subscribe(showSpy);
             spectator.component.onHide.subscribe(hideSpy);
@@ -173,7 +179,7 @@ describe('DotLanguageSelectorComponent', () => {
             expect(selectInstance).toBeTruthy();
 
             // PrimeNG internal input ref may vary by version; stub it to validate our host focus behavior.
-            const focusSpy = jest.fn();
+            const focusSpy = vi.fn();
             selectInstance.focusInputViewChild = { nativeElement: { focus: focusSpy } };
 
             spectator.element.dispatchEvent(new FocusEvent('focus'));

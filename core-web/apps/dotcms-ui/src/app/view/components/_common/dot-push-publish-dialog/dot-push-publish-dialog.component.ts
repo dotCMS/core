@@ -1,6 +1,14 @@
 import { Subject } from 'rxjs';
 
-import { ChangeDetectorRef, Component, OnDestroy, OnInit, inject, output } from '@angular/core';
+import {
+    ChangeDetectorRef,
+    Component,
+    OnDestroy,
+    OnInit,
+    inject,
+    output,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -39,6 +47,7 @@ import { DotPushPublishFormComponent } from '../forms/dot-push-publish-form/dot-
         ButtonModule,
         DotPushPublishFormComponent
     ],
+    changeDetection: ChangeDetectionStrategy.Eager,
     providers: [DotPushPublishFiltersService]
 })
 export class DotPushPublishDialogComponent implements OnInit, OnDestroy {
@@ -85,6 +94,17 @@ export class DotPushPublishDialogComponent implements OnInit, OnDestroy {
     }
 
     /**
+     * Sync dialog visibility from PrimeNG; only tear down when closing.
+     * @param {boolean} visible
+     * @memberof DotPushPublishDialogComponent
+     */
+    onVisibleChange(visible: boolean): void {
+        if (!visible) {
+            this.close();
+        }
+    }
+
+    /**
      * When form is submitted
      * If form is valid then call pushPublishService with the corresponding form values
      * @memberof DotPushPublishDialogComponent
@@ -125,6 +145,9 @@ export class DotPushPublishDialogComponent implements OnInit, OnDestroy {
         this.eventData = data;
         this.setDialogConfig();
         this.dialogShow = true;
+        // Iframe ng-event → Subject can update state without a view check that
+        // propagates [visible] into PrimeNG's OnPush Dialog; force sync.
+        this.cdr.detectChanges();
     }
 
     private setDialogConfig(): void {

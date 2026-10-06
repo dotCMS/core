@@ -6,6 +6,10 @@ import java.util.Objects;
 /**
  * Encapsulates all parameters for {@link FolderAPI#searchFolders}.
  * Construct via {@link #builder()}.
+ *
+ * <p>{@code includePermissions} opts into per-folder permission computation: when {@code false}
+ * (the default) the resulting views carry a {@code null} permission list and no extra permission
+ * query is issued.
  */
 public record FolderSearchParams(
         String name,
@@ -17,7 +21,8 @@ public record FolderSearchParams(
         int limit,
         int offset,
         String orderBy,
-        String orderDirection) {
+        String orderDirection,
+        boolean includePermissions) {
 
     public static Builder builder() {
         return new Builder();
@@ -34,6 +39,7 @@ public record FolderSearchParams(
         private int offset = 0;
         private String orderBy = "folder.name";
         private String orderDirection = "ASC";
+        private boolean includePermissions = false;
 
         private Builder() {}
 
@@ -47,12 +53,13 @@ public record FolderSearchParams(
         public Builder offset(final int offset) { this.offset = offset; return this; }
         public Builder orderBy(final String orderBy) { this.orderBy = orderBy; return this; }
         public Builder orderDirection(final String orderDirection) { this.orderDirection = orderDirection; return this; }
+        public Builder includePermissions(final boolean includePermissions) { this.includePermissions = includePermissions; return this; }
 
         public FolderSearchParams build() {
             Objects.requireNonNull(siteId, "siteId is required");
             Objects.requireNonNull(user,   "user is required");
             return new FolderSearchParams(name, path, recursive, siteId, user,
-                    respectFrontendRoles, limit, offset, orderBy, orderDirection);
+                    respectFrontendRoles, limit, offset, orderBy, orderDirection, includePermissions);
         }
     }
 }

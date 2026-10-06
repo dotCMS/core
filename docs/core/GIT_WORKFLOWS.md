@@ -30,6 +30,39 @@ issue-{issue_number}-{short-description}
 - Add descriptive suffix with hyphens (no spaces)
 - Keep descriptions concise but meaningful
 
+**Worktree-style branches** are also accepted, where the issue number follows a namespace
+segment instead of starting the ref:
+
+- `nicobytes/36850-upgrade-github-actions-to-node-24-runtime-majors`
+- `oidacra/37132-picker-per-host`
+
+The digits must come directly after the `/`. The issue-linking check reads the number from
+either layout, so `user/123-description` links as reliably as `issue-123-description`.
+
+### Linking a PR to its issue
+
+Every PR must reference an issue — `.github/workflows/issue_comp_link-issue-to-pr.yml` blocks
+the merge otherwise. Use one of these:
+
+| Form | Effect on merge |
+|---|---|
+| `Fixes #123`, `Closes #123`, `Resolves #123` | Issue is **closed** |
+| `Fixes org/repo#123`, or the full issue URL | Cross-repo issue is closed |
+| `Refs #123`, `Part of #123`, `Related to #123`, `Contributes to #123` | Issue **stays open** |
+| PR title ends with `(#123)` | Same-repo issue **stays open** |
+
+Non-closing forms take a same-repo `#123` only — the cross-repo and full-URL variants exist
+for closing keywords.
+
+Use a non-closing form when the PR advances an issue that a *later* PR actually resolves — a
+Spec-Kit PR 1 carries the spec for an issue that PR 2 does the work for, so a closing keyword
+there would retire the issue while the implementation is still unwritten. A closing keyword
+anywhere in the body always outranks a non-closing reference.
+
+If the body and title carry no reference at all, the check falls back to the branch name and
+appends `This PR fixes: #N` to the body — writing the closing keyword for you. Spell out
+`Refs #N` when you do not want that, or end the PR title with `(#N)`.
+
 ### Commit and PR Title Strategy
 
 #### Individual Commit Messages
@@ -240,10 +273,10 @@ When working on Angular frontend code:
 3. **Build Commands**:
    ```bash
    # Development server
-   cd core-web && nx run dotcms-ui:serve
+   cd core-web && pnpm nx run dotcms-ui:serve
    
    # Run tests
-   cd core-web && nx run dotcms-ui:test
+   cd core-web && pnpm nx run dotcms-ui:test
    ```
 
 ### Cross-Domain Changes
@@ -372,7 +405,7 @@ git push origin issue-12345-short-description
 ./mvnw install -pl :dotcms-core -DskipTests
 
 # Frontend development
-cd core-web && nx run dotcms-ui:serve
+cd core-web && pnpm nx run dotcms-ui:serve
 
 # Full build with tests
 ./mvnw clean install

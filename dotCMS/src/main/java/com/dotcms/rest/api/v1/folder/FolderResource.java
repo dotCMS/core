@@ -22,9 +22,11 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.browser.BrowserUtil;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import com.dotcms.rest.ResponseEntityListView;
@@ -69,6 +71,19 @@ public class FolderResource implements Serializable {
     static final String SITE_ID_PARAM  = "siteId";
     static final String PATH_PARAM     = "path";
     static final String RECURSIVE_PARAM = "recursive";
+    static final String INCLUDE_PERMISSIONS_PARAM = "includePermissions";
+
+    /**
+     * Upper bound on {@code perPage} when {@code includePermissions=true}. Permission resolution is
+     * batched but chunked by 500 ids per type, so an unbounded page turns three batch calls into
+     * hundreds of queries. Requests above this cap are rejected rather than silently served without
+     * permissions, which would be indistinguishable from "the user has no grants".
+     */
+    static final String PERMISSIONS_MAX_PER_PAGE_KEY = "content.drive.folder.search.permissions.max.per.page";
+    static final int PERMISSIONS_MAX_PER_PAGE_DEFAULT = 200;
+
+    /** Mirrors {@link PaginationUtil}'s own fallback for {@code dotcms.paginator.rows}. */
+    static final int DEFAULT_PAGINATION_ROWS = 10;
 
     private final WebResource webResource;
     private final FolderHelper folderHelper;
@@ -269,7 +284,15 @@ public class FolderResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response loadFolderByURI(@Context final HttpServletRequest httpServletRequest,
                                           @Context final HttpServletResponse httpServletResponse,
+                                          @Parameter(description = "Site hostname the folder lives on (e.g. 'demo.dotcms.com').",
+                                                  required = true)
                                           @PathParam("siteName") final String siteName,
+                                          @Parameter(description = "Folder path within the site, as a plain path — "
+                                                  + "e.g. 'application/themes/travel' (a leading slash is optional and added "
+                                                  + "if missing). Embedded slashes are allowed (they select nested folders). "
+                                                  + "Pass the raw path; do NOT percent-encode the slashes (a pre-encoded "
+                                                  + "'%2F...' will not match).",
+                                                  required = true)
                                           @PathParam("uri") final String uri){
         Response response = null;
         final InitDataObject initData = this.webResource.init(null, httpServletRequest, httpServletResponse, true, null);
@@ -522,6 +545,7 @@ public class FolderResource implements Serializable {
      * @param siteId              site identifier (required)
      * @param page                1-based page number (default: 1)
      * @param perPage             results per page (default: 40)
+     * @param includePermissions  {@code true} to populate each view's {@code permissions} array
      * @return paginated list of matching {@link FolderSearchView} objects
      */
     @GET
@@ -533,13 +557,18 @@ public class FolderResource implements Serializable {
             summary = "Search folders",
             description = "Returns folders within a site matching an optional name filter and/or " +
                     "path scope. Supports recursive depth control, standard pagination, and sorting. " +
-                    "With no 'name' and default path '/' + recursive=true, all site folders are returned.")
+                    "With no 'name' and default path '/' + recursive=true, all site folders are returned. " +
+                    "Each folder carries the detail fields a folder-edit form needs (title, sortOrder, " +
+                    "filesMasks, defaultFileType, showOnMenu, defaultBaseType). Set " +
+                    "'includePermissions=true' to also receive the permission types the requesting user " +
+                    "holds on each folder; that flag caps 'perPage' (see the parameter description).")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200",
                     description = "Paginated list of matching folders",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
-                            schema = @Schema(implementation = ResponseEntityPaginatedDataView.class))),
-            @ApiResponse(responseCode = "400", description = "'siteId' is required; 'name' must be at least 2 characters if provided"),
+                            schema = @Schema(implementation = ResponseEntityFolderSearchView.class))),
+            @ApiResponse(responseCode = "400", description = "'siteId' is required; 'name' must be at least 2 characters if provided; " +
+                    "'perPage' exceeds the maximum allowed when 'includePermissions' is true"),
             @ApiResponse(responseCode = "401", description = "User is not authenticated"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
@@ -563,7 +592,15 @@ public class FolderResource implements Serializable {
             @Parameter(description = "Page number (1-based, default 1)")
             @DefaultValue("1") @QueryParam(PaginationUtil.PAGE) final int page,
             @Parameter(description = "Number of results per page (default 40)")
-            @DefaultValue("40") @QueryParam(PaginationUtil.PER_PAGE) final int perPage) {
+            @DefaultValue("40") @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
+            @Parameter(description = "When true, each returned folder includes a 'permissions' array with the "
+                    + "permission types the requesting user holds on it (READ, EDIT, PUBLISH, EDIT_PERMISSIONS, "
+                    + "CAN_ADD_CHILDREN). When false (the default) 'permissions' is null — meaning 'not requested', "
+                    + "which is not the same as an empty array ('requested, no grants'). Because permissions are "
+                    + "resolved per page, enabling this flag caps 'perPage' at the value of the '"
+                    + PERMISSIONS_MAX_PER_PAGE_KEY + "' configuration property (default "
+                    + PERMISSIONS_MAX_PER_PAGE_DEFAULT + "); a larger 'perPage' is rejected with a 400.")
+            @DefaultValue("false") @QueryParam(INCLUDE_PERMISSIONS_PARAM) final boolean includePermissions) {
 
         if (!UtilMethods.isSet(siteId)) {
             throw new BadRequestException("'siteId' query parameter is required");
@@ -571,7 +608,6 @@ public class FolderResource implements Serializable {
         if (UtilMethods.isSet(name) && name.length() < 2) {
             throw new BadRequestException("'name' must be at least 2 characters long");
         }
-
         final User user = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .requiredBackendUser(true)
@@ -579,12 +615,17 @@ public class FolderResource implements Serializable {
                 .rejectWhenNoUser(true)
                 .init().getUser();
 
+        // Deliberately below init(): unlike the checks above, this message discloses a configured
+        // value, so an unauthenticated caller should get a 401 rather than the cap.
+        validatePermissionsPerPage(includePermissions, perPage);
+
         validateSiteReadAccess(siteId, user);
 
         final Map<String, Object> extraParams = Map.of(
                 SITE_ID_PARAM, siteId,
                 PATH_PARAM, path,
-                RECURSIVE_PARAM, recursive);
+                RECURSIVE_PARAM, recursive,
+                INCLUDE_PERMISSIONS_PARAM, includePermissions);
 
         final OrderDirection orderDirection = switch (direction.toUpperCase()) {
             case "DESC" -> OrderDirection.DESC;
@@ -604,6 +645,41 @@ public class FolderResource implements Serializable {
                 .build();
 
         return folderSearchPaginationUtil.getPageView(params);
+    }
+
+    /**
+     * Rejects requests that would resolve permissions for a page larger than
+     * {@link #PERMISSIONS_MAX_PER_PAGE_KEY} allows.
+     *
+     * <p>The check runs against the <b>effective</b> page size, not the raw query parameter:
+     * {@link PaginationUtil} replaces any {@code perPage <= 0} with
+     * {@code Config.getIntProperty(DOTCMS_PAGINATION_ROWS, 10)}. Validating the raw value would let
+     * {@code ?includePermissions=true&per_page=0} through and then page at whatever
+     * {@code dotcms.paginator.rows} happens to be — harmless at its default of 10, but it makes this
+     * guard depend on an unrelated property, so a deployment that raises that property above the cap
+     * would silently reopen the hole this check exists to close.
+     *
+     * @param includePermissions whether the caller asked for the {@code permissions} array
+     * @param perPage            the raw {@code per_page} query parameter
+     */
+    private void validatePermissionsPerPage(final boolean includePermissions, final int perPage) {
+        if (!includePermissions) {
+            return;
+        }
+        final int effectivePerPage = perPage <= 0
+                ? Config.getIntProperty(WebKeys.DOTCMS_PAGINATION_ROWS, DEFAULT_PAGINATION_ROWS)
+                : perPage;
+        final int permissionsMaxPerPage =
+                Config.getIntProperty(PERMISSIONS_MAX_PER_PAGE_KEY, PERMISSIONS_MAX_PER_PAGE_DEFAULT);
+        if (effectivePerPage > permissionsMaxPerPage) {
+            // Varargs form on purpose: HttpStatusCodeException runs String.format over the message
+            // itself, so pre-formatting here would format twice and blow up on a literal '%'.
+            throw new BadRequestException(
+                    "'perPage' cannot exceed %s when '%s' is true (effective page size: %s). "
+                            + "Request a smaller page, or drop '%s' to page without permissions.",
+                    String.valueOf(permissionsMaxPerPage), INCLUDE_PERMISSIONS_PARAM,
+                    String.valueOf(effectivePerPage), INCLUDE_PERMISSIONS_PARAM);
+        }
     }
 
     /**

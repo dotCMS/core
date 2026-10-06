@@ -1,4 +1,5 @@
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -88,9 +89,9 @@ describe('DotAddContentletComponent', () => {
                     provide: IframeOverlayService,
                     useValue: {
                         overlay: of(false),
-                        show: jest.fn(),
-                        hide: jest.fn(),
-                        toggle: jest.fn()
+                        show: vi.fn(),
+                        hide: vi.fn(),
+                        toggle: vi.fn()
                     }
                 },
                 DotcmsConfigService,
@@ -100,7 +101,7 @@ describe('DotAddContentletComponent', () => {
                 {
                     provide: DotCustomEventHandlerService,
                     useValue: {
-                        handle: jest.fn()
+                        handle: vi.fn()
                     }
                 }
             ]
@@ -113,8 +114,8 @@ describe('DotAddContentletComponent', () => {
         component = de.componentInstance;
         dotContentletEditorService = de.injector.get(DotContentletEditorService);
 
-        jest.spyOn(component.shutdown, 'emit');
-        jest.spyOn(component.custom, 'emit');
+        vi.spyOn(component.shutdown, 'emit');
+        vi.spyOn(component.custom, 'emit');
 
         fixture.detectChanges();
 
@@ -149,8 +150,8 @@ describe('DotAddContentletComponent', () => {
                     baseTypes: 'content,form'
                 },
                 events: {
-                    load: jest.fn(),
-                    keyDown: jest.fn()
+                    load: vi.fn(),
+                    keyDown: vi.fn()
                 }
             });
 

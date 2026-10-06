@@ -1,6 +1,8 @@
 package com.dotcms.rendering.velocity.viewtools.navigation;
 
 
+import com.dotcms.business.interceptor.RequestCostHandler;
+import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.rest.api.v1.browsertree.BrowserTreeHelper;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -115,6 +117,15 @@ public class NavTool implements ViewTool {
                 return new NavResultHydrated(result, this.context);
             }
         }
+
+        // Charged here, past the nav-cache short-circuit above, so a cached nav stays cheap -
+        // same placement as DotDirective.render and VelocityLiveMode.writePage. Only the actual
+        // build pays: the folder/menu-item walk below (findMenuItems, findSubFolders,
+        // IdentifierAPI.find) is not metered anywhere else, which is what this flat fee covers.
+        // Content-backed menu items still stack their own CONTENT_FROM_CACHE/CONTENT_FROM_DB
+        // charges through the content factory - that stacking is intended.
+        RequestCostHandler.incrementCost(Price.NAV_BUILD, NavTool.class, "getNav",
+                new Object[]{path, languageId});
 
         String parentId;
         if (!folder.getInode()

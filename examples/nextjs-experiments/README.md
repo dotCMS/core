@@ -1,5 +1,12 @@
 # dotCMS + Next.js: Experiments (A/B Testing) Example
 
+> [!NOTE]
+> This example's `@dotcms/*` dependencies are pinned to `latest`, matching a dotCMS Evergreen
+> instance (always the current release). If your dotCMS instance is **not** on Evergreen — an
+> older self-hosted release, or an LTS server — installing as-is may fail with GraphQL
+> `FieldUndefined` errors. Check your server's version and replace `latest` with that exact
+> version for every `@dotcms/*` entry in `package.json` before installing.
+
 ## Introduction & Overview
 
 This project demonstrates how to run **A/B Experiments** on a [Next.js](https://nextjs.org/) front end powered by [dotCMS](https://dotcms.com/) as a headless CMS. It builds on the standard fully-editable-page integration and adds the dotCMS **Experiments** feature, so you can:
@@ -404,6 +411,7 @@ export function Page({ pageContent }: PageProps) {
 > - `redirectFn: replace` (from Next.js's `useRouter`) lets experiments perform client-side redirects when a variant requires navigating to a different URL.
 > - The `experimentsConfig.apiKey` guard means the wrapping only happens when `NEXT_PUBLIC_DOTCMS_EXPERIMENTS_KEY` is set — with no key, the page renders normally without experiments.
 > - Render the resulting `DotCMSLayoutBodyComponent` (not the raw `DotCMSLayoutBody`) so the experiments wrapping actually takes effect.
+> - `pageComponents` comes from `src/components/content-types/index.ts`, where each Content Type is mapped through `next/dynamic` so it is fetched only when a page actually contains it. Wrapping with `withExperiments` does not change that — keep the map dynamic. See the [Next.js example README](../nextjs/README.md#content-type-to-react-component-mapping) for the reasoning.
 
 ## Experiments (headless)
 

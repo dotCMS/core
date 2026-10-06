@@ -48,21 +48,9 @@ export function getSelectionModeByCardinality(
     return isSingleMode ? 'single' : 'multiple';
 }
 
-/**
- * Extracts the content type ID from a relationship field.
- *
- * @param field - The DotCMS content type field object containing the relationship data
- * @returns The content type ID, or null if not found
- */
-export function getContentTypeIdFromRelationship(field: DotCMSContentTypeField): string | null {
-    if (!field?.relationships?.velocityVar) {
-        return null;
-    }
-
-    const [contentTypeId] = field.relationships.velocityVar.split('.');
-
-    return contentTypeId || null;
-}
+// Moved to `@dotcms/ui` alongside the shared field filter, which derives the same id to open a
+// relationship picker. Re-exported so this library's own callers are untouched.
+export { getContentTypeIdFromRelationship } from '@dotcms/ui';
 
 /**
  * Get the header for a field.

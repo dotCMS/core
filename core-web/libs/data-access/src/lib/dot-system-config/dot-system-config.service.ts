@@ -81,7 +81,10 @@ export class DotSystemConfigService {
             systemTimezone: config.systemTimezone,
             languages: config.languages,
             license: config.license,
-            cluster: config.cluster
+            cluster: config.cluster,
+            bulkUpload: config.bulkUpload,
+            folderBulkDelete: config.folderBulkDelete,
+            folderBulkDuplicate: config.folderBulkDuplicate
         };
     }
 }

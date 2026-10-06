@@ -1,6 +1,15 @@
 import { Subject } from 'rxjs';
 
-import { Component, DestroyRef, inject, OnInit, output, signal, viewChild } from '@angular/core';
+import {
+    Component,
+    DestroyRef,
+    inject,
+    OnInit,
+    output,
+    signal,
+    viewChild,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
@@ -37,6 +46,7 @@ const CONTENT_TYPE_CATEGORIES = [
 @Component({
     selector: 'dot-favorite-selector',
     imports: [FormsModule, ListboxModule, DotMessagePipe, PopoverModule],
+    changeDetection: ChangeDetectionStrategy.Eager,
     templateUrl: './dot-favorite-selector.component.html'
 })
 /**

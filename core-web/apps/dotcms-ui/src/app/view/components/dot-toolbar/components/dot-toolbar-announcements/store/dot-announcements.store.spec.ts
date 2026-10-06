@@ -1,5 +1,6 @@
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { HttpClient } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -21,7 +22,7 @@ describe('AnnouncementsStore', () => {
                 useValue: siteServiceMock
             },
             mockProvider(HttpClient, {
-                get: jest.fn().mockReturnValue(
+                get: vi.fn().mockReturnValue(
                     of({
                         entity: [
                             {
@@ -44,56 +45,60 @@ describe('AnnouncementsStore', () => {
         spectator = createService();
     });
 
-    it('should fetch announcements', (done) => {
-        localStorage.removeItem('dotAnnouncementsData');
-        const mockAnnouncements: Announcement[] = [
-            {
-                title: 'Test Announcement',
-                type: 'announcement',
-                announcementDateAsISO8601: '2024-01-31T17:51',
-                identifier: 'test-announcement-id',
-                inode: '123',
-                hasBeenRead: false,
-                url: 'https://www.example.com?utm_source=platform&utm_medium=announcement&utm_campaign=demo.dotcms.com'
-            }
-        ];
-        spectator.service.load();
-        spectator.service.state$.subscribe((state) => {
-            expect(state.announcements).toEqual(mockAnnouncements);
-            expect(state.announcements[0].hasBeenRead).toBe(false);
-            done();
-        });
-    });
+    it('should fetch announcements', () =>
+        new Promise<void>((done) => {
+            localStorage.removeItem('dotAnnouncementsData');
+            const mockAnnouncements: Announcement[] = [
+                {
+                    title: 'Test Announcement',
+                    type: 'announcement',
+                    announcementDateAsISO8601: '2024-01-31T17:51',
+                    identifier: 'test-announcement-id',
+                    inode: '123',
+                    hasBeenRead: false,
+                    url: 'https://www.example.com?utm_source=platform&utm_medium=announcement&utm_campaign=demo.dotcms.com'
+                }
+            ];
+            spectator.service.load();
+            spectator.service.state$.subscribe((state) => {
+                expect(state.announcements).toEqual(mockAnnouncements);
+                expect(state.announcements[0].hasBeenRead).toBe(false);
+                done();
+            });
+        }));
 
-    it('should not mark announcements as unread when there are no new announcements', (done) => {
-        localStorage.removeItem('dotAnnouncementsData');
-        spectator.service.load();
-        spectator.service.markAnnouncementsAsRead();
+    it('should not mark announcements as unread when there are no new announcements', () =>
+        new Promise<void>((done) => {
+            localStorage.removeItem('dotAnnouncementsData');
+            spectator.service.load();
+            spectator.service.markAnnouncementsAsRead();
 
-        spectator.service.state$.subscribe((state) => {
-            expect(state.showUnreadAnnouncement).toBe(false);
-            expect(state.announcements[0].hasBeenRead).toBe(true);
-            done();
-        });
-    });
+            spectator.service.state$.subscribe((state) => {
+                expect(state.showUnreadAnnouncement).toBe(false);
+                expect(state.announcements[0].hasBeenRead).toBe(true);
+                done();
+            });
+        }));
 
-    it('should mark announcements as unread', (done) => {
-        localStorage.removeItem('dotAnnouncementsData');
+    it('should mark announcements as unread', () =>
+        new Promise<void>((done) => {
+            localStorage.removeItem('dotAnnouncementsData');
 
-        spectator.service.load();
-        spectator.service.state$.subscribe((state) => {
-            expect(state.showUnreadAnnouncement).toBe(true);
-            done();
-        });
-    });
+            spectator.service.load();
+            spectator.service.state$.subscribe((state) => {
+                expect(state.showUnreadAnnouncement).toBe(true);
+                done();
+            });
+        }));
 
-    it('should update the url when the site changes', (done) => {
-        spectator.service.load();
-        spectator.service.state$.subscribe((state) => {
-            expect(state.announcements[0].url).toBe(
-                'https://www.example.com?utm_source=platform&utm_medium=announcement&utm_campaign=demo.dotcms.com'
-            );
-            done();
-        });
-    });
+    it('should update the url when the site changes', () =>
+        new Promise<void>((done) => {
+            spectator.service.load();
+            spectator.service.state$.subscribe((state) => {
+                expect(state.announcements[0].url).toBe(
+                    'https://www.example.com?utm_source=platform&utm_medium=announcement&utm_campaign=demo.dotcms.com'
+                );
+                done();
+            });
+        }));
 });

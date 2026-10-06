@@ -1,12 +1,13 @@
-import { describe, expect, it } from '@jest/globals';
 import { patchState, signalStore, withState } from '@ngrx/signals';
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { describe, expect, it, vi } from 'vitest';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { DotPropertiesService } from '@dotcms/data-access';
 import { DotLanguage } from '@dotcms/dotcms-models';
+import { withFlags } from '@dotcms/store';
 import { UVE_MODE } from '@dotcms/types';
 
 import { withPage } from './withPage';
@@ -19,7 +20,6 @@ import { PERSONA_KEY } from '../../../shared/consts';
 import { MOCK_RESPONSE_HEADLESS } from '../../../shared/mocks';
 import { UVEState } from '../../models';
 import { createInitialUVEState } from '../../testing/mocks';
-import { withFlags } from '../flags/withFlags';
 
 const initialState = createInitialUVEState();
 
@@ -45,7 +45,7 @@ describe('withPage', () => {
             mockProvider(Router),
             mockProvider(ActivatedRoute),
             mockProvider(DotPropertiesService, {
-                getFeatureFlags: jest.fn().mockReturnValue(of(false))
+                getFeatureFlags: vi.fn().mockReturnValue(of(false))
             }),
             {
                 provide: DotPageApiService,
@@ -53,7 +53,7 @@ describe('withPage', () => {
                     get: () => of({}),
                     getClientPage: () => of({}),
                     getGraphQLPage: () => of({}),
-                    save: jest.fn()
+                    save: vi.fn()
                 }
             }
         ]
@@ -138,6 +138,112 @@ describe('withPage', () => {
             // Everything else stays untouched
             expect(store.isClientReady()).toBe(true);
             expect(store.pageAssetResponse()).not.toBeNull();
+        });
+    });
+
+    describe('pageAssetResponse.source', () => {
+        const mockPageAsset = { page: { identifier: 'p1' } } as Parameters<
+            typeof store.setPageAsset
+        >[0]['pageAsset'];
+
+        it('should set source to rest when the payload specifies it', () => {
+            store.setPageAsset({ pageAsset: mockPageAsset, source: 'rest' });
+
+            expect(store.pageAssetResponse()?.source).toBe('rest');
+        });
+
+        it('should set source to graphql when the payload specifies it', () => {
+            store.setPageAsset({ pageAsset: mockPageAsset, source: 'graphql' });
+
+            expect(store.pageAssetResponse()?.source).toBe('graphql');
+        });
+
+        it('should inherit the current source when the payload omits it', () => {
+            store.setPageAsset({ pageAsset: mockPageAsset, source: 'graphql' });
+
+            // A mutate-in-place update (e.g. an optimistic edit or layout change) that
+            // does not pass `source` must not silently reclassify GraphQL-sourced data as REST.
+            store.setPageAsset({
+                pageAsset: { ...mockPageAsset, layout: {} } as Parameters<
+                    typeof store.setPageAsset
+                >[0]['pageAsset']
+            });
+
+            expect(store.pageAssetResponse()?.source).toBe('graphql');
+        });
+
+        it('should leave source undefined (not invent a value) when the payload omits it and there is no current response to inherit from', () => {
+            store.setPageAsset({ pageAsset: mockPageAsset });
+
+            expect(store.pageAssetResponse()?.source).toBeUndefined();
+        });
+
+        it('should clear source along with the rest of pageAssetResponse on resetClientConfiguration', () => {
+            store.setPageAsset({ pageAsset: mockPageAsset, source: 'graphql' });
+
+            store.resetClientConfiguration();
+
+            expect(store.pageAssetResponse()).toBeNull();
+        });
+    });
+
+    describe('pageReloadPending', () => {
+        // Bounds the headless reload effect to one UVE_RELOAD_PAGE request per non-resolved
+        // streak — see dotCMS/core#37097's post-merge QA regression (endless client reload
+        // loop). This suite covers the store-level state transitions the effect relies on;
+        // edit-ema-editor.component.spec.ts covers the effect's own bounded-send behavior.
+        const mockPageAsset = { page: { identifier: 'p1' } } as Parameters<
+            typeof store.setPageAsset
+        >[0]['pageAsset'];
+
+        it('should default to false', () => {
+            expect(store.pageReloadPending()).toBe(false);
+        });
+
+        it('should be settable via setPageReloadPending', () => {
+            store.setPageReloadPending(true);
+
+            expect(store.pageReloadPending()).toBe(true);
+        });
+
+        it('should clear when setPageAsset resolves the asset to graphql-sourced', () => {
+            store.setPageReloadPending(true);
+
+            store.setPageAsset({ pageAsset: mockPageAsset, source: 'graphql' });
+
+            expect(store.pageReloadPending()).toBe(false);
+        });
+
+        it('should NOT clear when setPageAsset sets a rest-sourced asset', () => {
+            store.setPageReloadPending(true);
+
+            store.setPageAsset({ pageAsset: mockPageAsset, source: 'rest' });
+
+            expect(store.pageReloadPending()).toBe(true);
+        });
+
+        it('should NOT clear when setPageAsset omits source (mutate-in-place)', () => {
+            store.setPageReloadPending(true);
+
+            store.setPageAsset({ pageAsset: mockPageAsset });
+
+            expect(store.pageReloadPending()).toBe(true);
+        });
+
+        it('should clear on markPageLoading, so a new navigation gets its own fresh reload request', () => {
+            store.setPageReloadPending(true);
+
+            store.markPageLoading();
+
+            expect(store.pageReloadPending()).toBe(false);
+        });
+
+        it('should clear on resetClientConfiguration', () => {
+            store.setPageReloadPending(true);
+
+            store.resetClientConfiguration();
+
+            expect(store.pageReloadPending()).toBe(false);
         });
     });
 

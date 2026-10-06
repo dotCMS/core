@@ -9,7 +9,8 @@ import {
     OnInit,
     SimpleChanges,
     ViewChild,
-    inject
+    inject,
+    ChangeDetectionStrategy
 } from '@angular/core';
 import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 
@@ -34,6 +35,7 @@ import { DotWorkflowsActionsSelectorFieldService } from './services/dot-workflow
             useExisting: forwardRef(() => DotWorkflowsActionsSelectorFieldComponent)
         }
     ],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [FormsModule, SelectModule, DotMessagePipe, AsyncPipe]
 })
 export class DotWorkflowsActionsSelectorFieldComponent

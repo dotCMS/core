@@ -1,4 +1,9 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 
 import { DotMessageService } from '@dotcms/data-access';
 
@@ -53,6 +58,24 @@ describe('DotEmptyContainerComponent', () => {
             );
         });
     });
+    describe('With Material Symbols Rounded icon style', () => {
+        it('should render a material-symbols-rounded span with the icon name as content', () => {
+            spectator.setInput('configuration', {
+                title: 'MS title',
+                subtitle: 'MS subtitle',
+                icon: 'search',
+                iconStyle: 'material-symbols-rounded'
+            });
+            spectator.detectChanges();
+
+            const icon = spectator.query(byTestId('message-icon'));
+            expect(icon).toExist();
+            expect(icon.tagName.toLowerCase()).toBe('span');
+            expect(icon).toHaveClass('material-symbols-rounded');
+            expect(icon.textContent.trim()).toBe('search');
+        });
+    });
+
     describe('With extra message', () => {
         it('should has extra message', () => {
             expect(spectator.query(byTestId('message-principal'))).toExist();

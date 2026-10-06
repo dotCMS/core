@@ -40,7 +40,6 @@ interface DotPageScannerState {
 
 @Component({
     selector: 'dot-page-scanner-report',
-    standalone: true,
     providers: [DotPageScannerService],
     imports: [
         DialogModule,

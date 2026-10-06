@@ -15,7 +15,13 @@ import { computed, inject } from '@angular/core';
 
 import { switchMap, tap } from 'rxjs/operators';
 
-import { DotHttpErrorManagerService } from '@dotcms/data-access';
+import {
+    DotHttpErrorManagerService,
+    readJson,
+    removeKey,
+    withPersistedQuery,
+    writeJson
+} from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
 import {
@@ -25,15 +31,15 @@ import {
     HISTORY_STORAGE_KEY,
     isValidHistory,
     isValidRatio,
-    readJson,
-    removeKey,
+    parseVelocityError,
     SPLITTER_STORAGE_KEY,
-    WRAP_STORAGE_KEY,
-    writeJson
+    WRAP_STORAGE_KEY
 } from '../../dot-velocity-playground.utils';
 import {
+    DotVelocityPlaygroundError,
     DotVelocityPlaygroundResponse,
-    DotVelocityResponseContentType
+    DotVelocityResponseContentType,
+    VelocityWarning
 } from '../../models/dot-velocity-playground.models';
 import { DotVelocityPlaygroundService } from '../../services/dot-velocity-playground.service';
 
@@ -49,7 +55,8 @@ export interface VelocityPlaygroundState {
     output: string;
     outputContentType: DotVelocityResponseContentType;
     elapsedMs: number | null;
-    errorMessage: string | null;
+    error: DotVelocityPlaygroundError | null;
+    warnings: VelocityWarning[];
 }
 
 const initialState: VelocityPlaygroundState = {
@@ -61,17 +68,20 @@ const initialState: VelocityPlaygroundState = {
     output: '',
     outputContentType: 'plaintext',
     elapsedMs: null,
-    errorMessage: null
+    error: null,
+    warnings: []
 };
 
 export const DotVelocityPlaygroundStore = signalStore(
     withState<VelocityPlaygroundState>(initialState),
+    withPersistedQuery({ portletKey: 'velocity-playground', field: 'code' }),
     withComputed((store) => ({
         isLoading: computed(() => store.status() === ComponentStatus.LOADING),
         hasOutput: computed(
             () => store.status() === ComponentStatus.LOADED && store.output().length > 0
         ),
-        hasError: computed(() => store.errorMessage() !== null),
+        hasError: computed(() => store.error() !== null),
+        hasWarnings: computed(() => store.warnings().length > 0),
         canRun: computed(
             () => store.code().trim().length > 0 && store.status() !== ComponentStatus.LOADING
         ),
@@ -114,7 +124,8 @@ export const DotVelocityPlaygroundStore = signalStore(
                         patchState(store, {
                             status: ComponentStatus.LOADING,
                             output: '',
-                            errorMessage: null,
+                            error: null,
+                            warnings: [],
                             elapsedMs: null
                         })
                     ),
@@ -132,24 +143,26 @@ export const DotVelocityPlaygroundStore = signalStore(
                                         output: formatBody(response.body, response.contentType),
                                         outputContentType: response.contentType,
                                         elapsedMs: response.elapsedMs,
+                                        warnings: response.warnings,
                                         history: nextHistory
                                     });
                                 },
                                 error: (error: HttpErrorResponse) => {
-                                    // responseType: 'text' → error.error holds the raw VTL error body.
-                                    const serverBody =
-                                        typeof error?.error === 'string' && error.error.trim()
-                                            ? error.error
-                                            : null;
+                                    // The backend returns a structured 400
+                                    // ({ errors: [...], warnings: [...] }) for Velocity
+                                    // parse/runtime errors. Keep those inline; only fall back to
+                                    // the global (modal) handler for infrastructure failures
+                                    // (network, 403 license, 500…).
+                                    const { error: parsed, isVelocityError } =
+                                        parseVelocityError(error);
                                     patchState(store, {
                                         status: ComponentStatus.LOADED,
-                                        errorMessage:
-                                            serverBody ??
-                                            error?.error?.message ??
-                                            error?.message ??
-                                            'velocityPlayground.error.unknown'
+                                        error: parsed,
+                                        warnings: parsed.warnings
                                     });
-                                    httpErrorManager.handle(error);
+                                    if (!isVelocityError) {
+                                        httpErrorManager.handle(error);
+                                    }
                                 }
                             })
                         );
@@ -174,8 +187,7 @@ export const DotVelocityPlaygroundStore = signalStore(
             patchState(store, {
                 history: sanitizedHistory,
                 splitterRatio: sanitizedRatio,
-                wrapCode: typeof wrapCode === 'boolean' ? wrapCode : true,
-                code: sanitizedHistory[0] ?? ''
+                wrapCode: typeof wrapCode === 'boolean' ? wrapCode : true
             });
         }
     })

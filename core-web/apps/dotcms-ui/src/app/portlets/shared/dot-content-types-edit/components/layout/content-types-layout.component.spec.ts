@@ -3,25 +3,27 @@
 
 Object.defineProperty(window, 'matchMedia', {
     writable: true,
-    value: jest.fn().mockImplementation((query) => ({
+    value: vi.fn().mockImplementation((query) => ({
         matches: false,
         media: query,
         onchange: null,
-        addListener: jest.fn(),
-        removeListener: jest.fn(),
-        addEventListener: jest.fn(),
-        removeEventListener: jest.fn(),
-        dispatchEvent: jest.fn()
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn()
     }))
 });
 
 import { EMPTY, of } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ActivatedRoute, Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
@@ -37,6 +39,7 @@ import {
     DotIframeService,
     DotMessageService,
     DotRouterService,
+    DotSystemConfigService,
     DotUiColorsService
 } from '@dotcms/data-access';
 import { LoggerService, LoginService } from '@dotcms/dotcms-js';
@@ -58,6 +61,7 @@ import {
 import { ContentTypesLayoutComponent } from './content-types-layout.component';
 
 import { DotAddToMenuService } from '../../../../../api/services/add-to-menu/add-to-menu.service';
+import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { DotInlineEditComponent } from '../../../../../view/components/_common/dot-inline-edit/dot-inline-edit.component';
 import { IframeComponent } from '../../../../../view/components/_common/iframe/iframe-component/iframe.component';
 import { IframeOverlayService } from '../../../../../view/components/_common/iframe/service/iframe-overlay.service';
@@ -102,16 +106,6 @@ class TestHostComponent {
 }
 
 @Component({
-    selector: 'dot-add-to-menu',
-    template: ``,
-    standalone: true
-})
-class MockDotAddToMenuComponent {
-    @Input() contentType: DotCMSContentType;
-    @Output() cancel = new EventEmitter<boolean>();
-}
-
-@Component({
     selector: 'dot-style-editor-builder',
     template: '',
     standalone: true
@@ -137,7 +131,7 @@ describe('ContentTypesLayoutComponent', () => {
     let fixture: ComponentFixture<TestHostComponent>;
     let de: DebugElement;
 
-    beforeEach(() => {
+    beforeEach(async () => {
         const messageServiceMock = new MockDotMessageService({
             'contenttypes.sidebar.components.title': 'Field Title',
             'contenttypes.tab.fields.header': 'Fields Header Tab',
@@ -149,7 +143,15 @@ describe('ContentTypesLayoutComponent', () => {
             'contenttypes.form.identifier': 'Identifier',
             'contenttypes.dropzone.rows.add': 'Add Row',
             'contenttypes.content.row': 'Row',
-            'contenttypes.content.add_to_menu': 'Add To Menu'
+            'contenttypes.content.add_to_menu': 'Add To Menu',
+            'contenttypes.content.add_to_menu.header': 'Add to Menu',
+            'contenttypes.content.add_to_menu.name': 'Name',
+            'contenttypes.content.add_to_menu.show_under': 'Show under',
+            'contenttypes.content.add_to_menu.default_view': 'Default view',
+            'custom.content.portlet.dataViewMode.card': 'card',
+            'custom.content.portlet.dataViewMode.list': 'list',
+            add: 'Add',
+            cancel: 'Cancel'
         });
 
         TestBed.configureTestingModule({
@@ -163,6 +165,7 @@ describe('ContentTypesLayoutComponent', () => {
                 TabsModule,
                 DotIconComponent,
                 RouterTestingModule,
+                BrowserAnimationsModule,
                 DotApiLinkComponent,
                 DotCopyLinkComponent,
                 DotSafeHtmlPipe,
@@ -181,45 +184,70 @@ describe('ContentTypesLayoutComponent', () => {
                 DotEventsService,
                 DotAddToMenuService,
                 {
+                    provide: DotMenuService,
+                    useValue: {
+                        loadMenu: vi.fn().mockReturnValue(
+                            of([
+                                {
+                                    id: '123',
+                                    name: 'Menu 1',
+                                    label: 'Menu 1',
+                                    tabName: 'Name',
+                                    tabDescription: 'Description',
+                                    tabIcon: 'icon',
+                                    url: '/url/index',
+                                    active: false,
+                                    isOpen: false,
+                                    menuItems: []
+                                }
+                            ])
+                        )
+                    }
+                },
+                {
+                    provide: DotSystemConfigService,
+                    useValue: { getSystemConfig: () => of({}) }
+                },
+                {
                     provide: DotIframeService,
                     useValue: {
-                        reloadData: jest.fn(),
-                        reloaded: jest.fn().mockReturnValue(of({})),
-                        ran: jest.fn().mockReturnValue(of({})),
-                        reloadedColors: jest.fn().mockReturnValue(of({}))
+                        reloadData: vi.fn(),
+                        reloaded: vi.fn().mockReturnValue(of({})),
+                        ran: vi.fn().mockReturnValue(of({})),
+                        reloadedColors: vi.fn().mockReturnValue(of({}))
                     }
                 },
                 {
                     provide: DotRouterService,
                     useValue: { currentPortlet: { id: 'test-portlet-id' } }
                 },
-                { provide: DotUiColorsService, useValue: { setColors: jest.fn() } },
+                { provide: DotUiColorsService, useValue: { setColors: vi.fn() } },
                 {
                     provide: DotLoadingIndicatorService,
                     useValue: {
                         display: false,
-                        show: jest.fn(),
-                        hide: jest.fn()
+                        show: vi.fn(),
+                        hide: vi.fn()
                     }
                 },
                 {
                     provide: IframeOverlayService,
                     useValue: {
                         overlay: of(false),
-                        show: jest.fn(),
-                        hide: jest.fn(),
-                        toggle: jest.fn()
+                        show: vi.fn(),
+                        hide: vi.fn(),
+                        toggle: vi.fn()
                     }
                 },
-                { provide: LoggerService, useValue: { debug: jest.fn(), error: jest.fn() } },
+                { provide: LoggerService, useValue: { debug: vi.fn(), error: vi.fn() } },
                 { provide: LoginService, useValue: { isLogin$: of(true) } },
                 {
                     provide: DotHttpErrorManagerService,
-                    useValue: { handle: jest.fn().mockReturnValue(of({})) }
+                    useValue: { handle: vi.fn().mockReturnValue(of({})) }
                 },
                 {
                     provide: DotAlertConfirmService,
-                    useValue: { confirm: jest.fn(), alert: jest.fn() }
+                    useValue: { confirm: vi.fn(), alert: vi.fn() }
                 },
                 {
                     provide: ActivatedRoute,
@@ -237,21 +265,16 @@ describe('ContentTypesLayoutComponent', () => {
                     }
                 }
             ]
-        });
-
-        // Override ContentTypesLayoutComponent to use the mock IframeComponent
-        TestBed.overrideComponent(ContentTypesLayoutComponent, {
+        }).overrideComponent(ContentTypesLayoutComponent, {
             remove: {
-                imports: [IframeComponent, DotAddToMenuComponent, DotStyleEditorBuilderComponent]
+                imports: [IframeComponent, DotStyleEditorBuilderComponent]
             },
             add: {
-                imports: [
-                    TestDotIframeComponent,
-                    MockDotAddToMenuComponent,
-                    MockDotStyleEditorBuilderComponent
-                ]
+                imports: [TestDotIframeComponent, MockDotStyleEditorBuilderComponent]
             }
         });
+
+        await TestBed.compileComponents();
 
         fixture = TestBed.createComponent(TestHostComponent);
         const originalDetectChanges = fixture.detectChanges.bind(fixture);
@@ -279,7 +302,7 @@ describe('ContentTypesLayoutComponent', () => {
         const fieldDragDropService: FieldDragDropService =
             fixture.debugElement.injector.get(FieldDragDropService);
         fixture.componentRef.setInput('contentType', fakeContentType);
-        jest.spyOn(fieldDragDropService, 'setBagOptions');
+        vi.spyOn(fieldDragDropService, 'setBagOptions');
         fixture.detectChanges();
         expect(fieldDragDropService.setBagOptions).toHaveBeenCalledTimes(1);
     });
@@ -289,7 +312,7 @@ describe('ContentTypesLayoutComponent', () => {
         fixture.detectChanges();
 
         const router = fixture.debugElement.injector.get(Router);
-        jest.spyOn(router, 'navigate');
+        vi.spyOn(router, 'navigate');
 
         de.componentInstance.onTabChange('permissions');
 
@@ -312,21 +335,20 @@ describe('ContentTypesLayoutComponent', () => {
         });
 
         it('should have open Add to Menu Dialog and close', () => {
-            jest.spyOn(de.componentInstance, 'addContentInMenu');
-            // Add-to-menu is now triggered programmatically (via context menu)
             de.componentInstance.addContentInMenu();
             fixture.detectChanges();
-            expect(de.componentInstance.addContentInMenu).toHaveBeenCalled();
-            expect(de.componentInstance.addToMenuContentType).toBe(true);
-            const AddToMenuDialog: MockDotAddToMenuComponent = de.query(
-                By.css('dot-add-to-menu')
-            ).componentInstance;
-            expect(de.query(By.css('dot-add-to-menu'))).toBeTruthy();
-            AddToMenuDialog.cancel.emit(true);
-            de.componentInstance.addToMenuContentType = false;
+
+            expect(de.componentInstance.$addToMenuContentType()).toBe(true);
+
+            const addToMenuEl = de.query(By.css('dot-add-to-menu'));
+            expect(addToMenuEl).toBeTruthy();
+
+            const addToMenuDialog = addToMenuEl!.componentInstance as DotAddToMenuComponent;
+            addToMenuDialog.cancel.emit(true);
             fixture.detectChanges();
+
             expect(de.query(By.css('dot-add-to-menu'))).toBeFalsy();
-            expect(de.componentInstance.addToMenuContentType).toBe(false);
+            expect(de.componentInstance.$addToMenuContentType()).toBe(false);
         });
     });
 
@@ -373,7 +395,7 @@ describe('ContentTypesLayoutComponent', () => {
             });
 
             // Hiding the rows list for 5.0
-            xit('should have a field row list', () => {
+            it.skip('should have a field row list', () => {
                 const fieldRowList = pTabPanel.query(By.css('dot-content-type-fields-row-list'));
                 expect(fieldRowList).not.toBeNull();
             });
@@ -385,7 +407,7 @@ describe('ContentTypesLayoutComponent', () => {
                 beforeEach(() => {
                     splitButton = pTabPanel.query(By.css('p-splitbutton'));
                     dotEventsService = fixture.debugElement.injector.get(DotEventsService);
-                    jest.spyOn(dotEventsService, 'notify');
+                    vi.spyOn(dotEventsService, 'notify');
                 });
 
                 it('should have the correct label', () => {
@@ -411,7 +433,7 @@ describe('ContentTypesLayoutComponent', () => {
                     expect(dotEventsService.notify).toHaveBeenCalledTimes(1);
 
                     // Clear the mock before the second call
-                    (dotEventsService.notify as jest.Mock).mockClear();
+                    (dotEventsService.notify as Mock).mockClear();
 
                     addTabDivider.command({ originalEvent: createFakeEvent('click') });
                     expect(dotEventsService.notify).toHaveBeenCalledWith('add-tab-divider');

@@ -1,4 +1,5 @@
-import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -17,7 +18,12 @@ import {
 } from '@dotcms/data-access';
 import { DotcmsConfigService, LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
 import { GlobalStore } from '@dotcms/store';
-import { DotCurrentUserServiceMock, LoginServiceMock, mockAuth } from '@dotcms/utils-testing';
+import {
+    DOT_SYSTEM_CONFIG_SERVICE_MOCK,
+    DotCurrentUserServiceMock,
+    LoginServiceMock,
+    mockAuth
+} from '@dotcms/utils-testing';
 
 import { DotToolbarUserStore } from './dot-toolbar-user.store';
 
@@ -57,7 +63,7 @@ describe('DotToolbarUserStore', () => {
             { provide: LoginService, useClass: LoginServiceMock },
             {
                 provide: DotSystemConfigService,
-                useValue: { getSystemConfig: () => ({}) }
+                useValue: DOT_SYSTEM_CONFIG_SERVICE_MOCK
             },
             GlobalStore,
             provideHttpClient(),
@@ -113,14 +119,14 @@ describe('DotToolbarUserStore', () => {
     });
 
     it('should trigger loginService logoutAs, navigate to first portlet and reload the page when logoutAs is called', fakeAsync(() => {
-        jest.spyOn(dotNavigationService, 'goToFirstPortlet').mockReturnValue(
+        vi.spyOn(dotNavigationService, 'goToFirstPortlet').mockReturnValue(
             new Promise((resolve) => {
                 resolve(true);
             })
         );
 
-        jest.spyOn(loginService, 'logoutAs');
-        jest.spyOn(locationService, 'reload');
+        vi.spyOn(loginService, 'logoutAs');
+        vi.spyOn(locationService, 'reload');
 
         store.logoutAs();
 

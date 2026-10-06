@@ -1,5 +1,6 @@
-import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/jest';
+import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { DotContainer, DotConfigurationVariables, CONTAINER_SOURCE } from '@dotcms/dotcms-models';
 
@@ -42,7 +43,7 @@ describe('DotContainersService', () => {
             {
                 provide: DotPropertiesService,
                 useValue: {
-                    getKey: jest.fn().mockReturnValue(of('null'))
+                    getKey: vi.fn().mockReturnValue(of('null'))
                 }
             }
         ]
@@ -52,11 +53,11 @@ describe('DotContainersService', () => {
         spectator = createHttp();
         dotPropertiesService = spectator.inject(DotPropertiesService);
         // Reset the mock to return null by default
-        jest.spyOn(dotPropertiesService, 'getKey').mockReturnValue(of('null'));
+        vi.spyOn(dotPropertiesService, 'getKey').mockReturnValue(of('null'));
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     describe('Constructor and Initialization', () => {
@@ -79,7 +80,7 @@ describe('DotContainersService', () => {
         });
 
         it('should filter out initial values', () => {
-            const spy = jest.fn();
+            const spy = vi.fn();
             spectator.service.defaultContainer$.subscribe(spy);
 
             // The observable filters out the initial state (initialized: false)
@@ -203,11 +204,11 @@ describe('DotContainersService', () => {
             req.flush({ entity: multipleContainers });
         });
 
-        it('should return undefined when no containers are found', () => {
+        it('should return null when no containers are found', () => {
             const title = 'Non-existent Container';
 
             spectator.service.getContainerByTitle(title).subscribe((container) => {
-                expect(container).toBeUndefined();
+                expect(container).toBeNull();
             });
 
             const req = spectator.expectOne(
@@ -221,7 +222,7 @@ describe('DotContainersService', () => {
             const title = '';
 
             spectator.service.getContainerByTitle(title).subscribe((container) => {
-                expect(container).toBeUndefined();
+                expect(container).toBeNull();
             });
 
             const req = spectator.expectOne(
@@ -239,7 +240,7 @@ describe('DotContainersService', () => {
             const errorResponse = { status: 500, statusText: 'Internal Server Error' };
 
             spectator.service.getFiltered(filter, perPage).subscribe({
-                next: () => fail('Should have failed'),
+                next: () => expect.fail('Should have failed'),
                 error: (error) => {
                     expect(error.status).toBe(500);
                 }
@@ -257,7 +258,7 @@ describe('DotContainersService', () => {
             const errorResponse = { status: 404, statusText: 'Not Found' };
 
             spectator.service.getContainerByTitle(title).subscribe({
-                next: () => fail('Should have failed'),
+                next: () => expect.fail('Should have failed'),
                 error: (error) => {
                     expect(error.status).toBe(404);
                 }

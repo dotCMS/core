@@ -3,8 +3,9 @@ import {
     mockProvider,
     SpectatorService,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
@@ -44,7 +45,7 @@ describe('CategoryFieldStore', () => {
     });
 
     afterEach(() => {
-        jest.resetAllMocks();
+        vi.resetAllMocks();
     });
 
     it('should initialize with default state', () => {
@@ -79,7 +80,7 @@ describe('CategoryFieldStore', () => {
             it('should fetch the categories with the rootCategoryInode', () => {
                 const rootCategoryInode = CATEGORY_FIELD_MOCK.values;
 
-                const getChildrenSpy = jest.spyOn(categoriesService, 'getChildren');
+                const getChildrenSpy = vi.spyOn(categoriesService, 'getChildren');
 
                 store.getCategories();
                 expect(getChildrenSpy).toHaveBeenCalled();
@@ -87,7 +88,7 @@ describe('CategoryFieldStore', () => {
             });
 
             it('should fetch the categories with the inode sent', () => {
-                const getChildrenSpy = jest
+                const getChildrenSpy = vi
                     .spyOn(categoriesService, 'getChildren')
                     .mockReturnValue(of(CATEGORY_LEVEL_2));
 

@@ -2,7 +2,7 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 
-import { DotAiService } from '@dotcms/data-access';
+import { DotAiContentService } from '@dotcms/data-access';
 
 import { AIContentPromptComponent } from './ai-content-prompt.component';
 
@@ -14,7 +14,7 @@ describe('AIContentPromptComponent', () => {
         await TestBed.configureTestingModule({
             imports: [ReactiveFormsModule, HttpClientTestingModule],
             declarations: [AIContentPromptComponent],
-            providers: [DotAiService]
+            providers: [DotAiContentService]
         }).compileComponents();
 
         fixture = TestBed.createComponent(AIContentPromptComponent);

@@ -1,41 +1,43 @@
-import { forkJoin, Observable } from 'rxjs';
+import { forkJoin, Observable, of } from 'rxjs';
 
-import { map } from 'rxjs/operators';
+import { catchError, map, switchMap } from 'rxjs/operators';
 
 import { DotFolderService } from '@dotcms/data-access';
 import {
-    DotCMSContentTypeField,
-    DotContentDriveDateRange,
-    DotContentDriveFolder,
-    DotContentDriveItem,
-    DotContentDriveUserSearchableValue,
+    createLoadMoreTreeNode,
+    PERMISSIONS_TYPE,
+    DotContentDriveActionableFolder,
+    DotContentDriveActionableItem,
+    DotContentDriveBrowseScope,
     DotFolder,
-    DotPagination,
     DotSite,
-    FolderSearchView
-} from '@dotcms/dotcms-models';
-import { getSingleSelectableFieldOptions } from '@dotcms/edit-content';
-import {
-    DotFolderTreeNodeItem,
-    LOAD_MORE_LABEL_KEY,
+    FolderSearchView,
     LOAD_MORE_NODE_TYPE
-} from '@dotcms/portlets/content-drive/ui';
+} from '@dotcms/dotcms-models';
+import { DotFolderTreeNodeData, DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 
 import { createTreeNode, generateAllParentPaths } from './tree-folder.utils';
 
 import {
-    FIELD_FILTER_CHECKBOX_TYPE,
-    FIELD_FILTER_DATE_TYPES,
-    FIELD_FILTER_MULTI_VALUE_TYPES,
+    CONTENT_STATUS,
+    FOLDER_NAME_FILTER_MIN_LENGTH,
+    FOLDER_TREE_HIERARCHY_PAGE_SIZE,
     FOLDER_TREE_PAGE_SIZE,
-    FOLDER_TREE_SEARCH_PAGE_SIZE,
-    USER_SEARCHABLE_PREFIX,
-    USER_SEARCHABLE_VALUE_SEPARATOR
+    ROOT_PATH,
+    SHARED_ASSETS_ENABLED_VALUE,
+    SHARED_ASSETS_FILTER_KEY,
+    SYSTEM_HOST,
+    SYSTEM_HOST_PATH,
+    USER_SEARCHABLE_PREFIX
 } from '../shared/constants';
 import {
+    DOT_CONTENT_DRIVE_SEARCH_SCOPE,
     DotContentDriveDecodeFunction,
     DotContentDriveFilters,
-    DotKnownContentDriveFilters
+    DotContentDriveSearchScope,
+    DotKnownContentDriveFilters,
+    FolderTreeHierarchyLevel,
+    WorkflowFilterEntry
 } from '../shared/models';
 
 /**
@@ -44,7 +46,10 @@ import {
  * @param {string} value
  * @return {*}  {string[]}
  */
-const multiSelector: DotContentDriveDecodeFunction = (value = ''): string[] =>
+// Deliberately NOT annotated as DotContentDriveDecodeFunction: that type returns
+// `string | string[]`, which would hide the array from callers that compose on top of this one
+// (the `status` decoder filters the result). Still assignable where a decode function is expected.
+const multiSelector = (value = ''): string[] =>
     value
         .split(',')
         .map((v) => v.trim())
@@ -57,12 +62,6 @@ const multiSelector: DotContentDriveDecodeFunction = (value = ''): string[] =>
  * @return {*}  {string}
  */
 const singleSelector: DotContentDriveDecodeFunction = (value = ''): string => value.trim();
-
-/** A single workflow filter entry: one scheme, optionally pinned to a step. */
-export interface WorkflowFilterEntry {
-    scheme: string;
-    step?: string;
-}
 
 /** Separator for the `schemeId[:stepId]` workflow token encoding. */
 export const WORKFLOW_TOKEN_SEPARATOR = ':';
@@ -105,6 +104,13 @@ export function parseWorkflowFilter(tokens: string[] = []): WorkflowFilterEntry[
 }
 
 /**
+ * Whether a raw string names a real {@link CONTENT_STATUS}. Used to sanitize the URL on the way in.
+ */
+function isContentStatus(value: string): boolean {
+    return (Object.values(CONTENT_STATUS) as string[]).includes(value);
+}
+
+/**
  * Decodes the value by the key. This is a dictionary of functions that will be used to decode the value by the key.
  *
  * @example
@@ -127,8 +133,38 @@ export const decodeByFilterKey: Record<
     title: singleSelector,
     languageId: multiSelector,
     // Each entry is `schemeId` or `schemeId:stepId`; comma-separated in the URL
-    workflow: multiSelector
+    workflow: multiSelector,
+    // MUST be listed explicitly. Unknown keys fall through to the comma sniff in
+    // `decodeFilterValue`, so a single selected status (`status:ARCHIVED`) would decode to the
+    // STRING 'ARCHIVED' while two would decode to an array. Every consumer checks
+    // `filters()?.status?.length`, which is 8 for that string — the filter would appear to work
+    // right up until someone selected exactly one status.
+    //
+    // Unrecognized values are dropped here rather than sent on. The endpoint rejects an unknown
+    // status with a 400 (it will not silently widen the result set), and that 400 would surface as
+    // a stopped spinner over a stale grid. A stale or hand-edited URL should degrade to "no status
+    // filter", which is how the other filters already behave — an unknown contentType id is
+    // dropped server-side rather than failing the request.
+    status: (value) => multiSelector(value).filter(isContentStatus),
+    sharedAssets: singleSelector,
+    // MUST be listed explicitly, for the same reason `status` is: an unrecognized value has to be
+    // dropped here rather than passed on. The endpoint rejects an unknown search scope with a 400
+    // — it will not silently widen or narrow the results — and that 400 would surface as a stopped
+    // spinner over a stale grid. A stale or hand-edited URL should degrade to "no scope", which
+    // resolves to the default.
+    //
+    // Dropped rather than replaced with the default value: a present key counts as a non-default
+    // filter (`hasNonDefaultFilters`), so writing ALL_FIELDS here would offer "Clear all" on a
+    // drive with nothing filtered at all.
+    searchScope: (value) => (isSearchScope(value) ? value : '')
 };
+
+/** Narrows a raw URL value to a search scope, so an unknown one can be dropped. */
+function isSearchScope(value: string): value is DotContentDriveSearchScope {
+    return Object.values(DOT_CONTENT_DRIVE_SEARCH_SCOPE).includes(
+        value as DotContentDriveSearchScope
+    );
+}
 
 /**
  * Decodes the filters string into a record of key-value pairs.
@@ -165,26 +201,44 @@ export function decodeFilters(filters: string): DotContentDriveFilters {
         const key = filter.substring(0, colonIndex).trim();
         const value = filter.substring(colonIndex + 1).trim();
 
-        // Field-filter (user-searchable) values are stored raw: the field type — not comma
-        // sniffing — decides their shape downstream, so never split/trim them here.
-        if (key.startsWith(USER_SEARCHABLE_PREFIX)) {
-            acc[key] = singleSelector(value);
+        // key stays `string` for assignment so the open index signature applies;
+        // narrowing happens only inside decodeFilterValue for the known-key lookup.
+        const decoded = decodeFilterValue(key, value);
 
+        // A key that decoded to nothing is not a filter. Dropping it keeps a sanitized URL from
+        // carrying a key with no meaning — and it is what lets a decoder reject an unrecognized
+        // value (see `status` and `searchScope`) by returning empty. `encodeFilters` never writes
+        // an empty value, so an empty decoded one can only come from a stale or hand-edited URL.
+        if (Array.isArray(decoded) ? decoded.length === 0 : decoded === '') {
             return acc;
         }
 
-        const decodeFunction = decodeByFilterKey[key];
-
-        if (decodeFunction) {
-            // Use decode function for known keys
-            acc[key] = decodeFunction(value);
-        } else {
-            // Use default functions for unknown keys
-            acc[key] = value.includes(',') ? multiSelector(value) : singleSelector(value);
-        }
+        acc[key] = decoded;
 
         return acc;
     }, {} as DotContentDriveFilters);
+}
+
+function isKnownFilterKey(key: string): key is keyof DotKnownContentDriveFilters {
+    return Object.hasOwn(decodeByFilterKey, key);
+}
+
+/**
+ * Decodes a single filter value. Known keys use {@link decodeByFilterKey};
+ * user-searchable field filters stay raw; unknown keys sniff for commas.
+ */
+function decodeFilterValue(key: string, value: string): string | string[] {
+    // Field-filter (user-searchable) values are stored raw: the field type — not comma
+    // sniffing — decides their shape downstream, so never split/trim them here.
+    if (key.startsWith(USER_SEARCHABLE_PREFIX)) {
+        return singleSelector(value);
+    }
+
+    if (isKnownFilterKey(key)) {
+        return decodeByFilterKey[key](value);
+    }
+
+    return value.includes(',') ? multiSelector(value) : singleSelector(value);
 }
 
 /**
@@ -234,6 +288,133 @@ export function encodeFilters(filters: DotContentDriveFilters): string {
 }
 
 /**
+ * Guarantees the language filter always carries a value, seeding the environment's default
+ * language whenever nothing is selected.
+ *
+ * "No language selected" is not the neutral state it looks like: the backend omits the language
+ * term from the query entirely (`LuceneQueryBuilder.getSystemSearchableQueryTerms`), so every
+ * language version of a contentlet comes back as its own row. Selecting the default explicitly is
+ * both what users expect to see and an honest reflection of what is applied — so the seeded value
+ * lands in `filters` (and therefore in the URL) like any other selection.
+ *
+ * Returns the filters untouched when the default is unknown — the languages request has not
+ * answered yet, or failed — so the portlet degrades to exactly its pre-seeding behaviour instead
+ * of inventing a language. Never mutates the input.
+ *
+ * @param {DotContentDriveFilters} filters The filters to seed.
+ * @param {number} [defaultLanguageId] The environment's default language id, when known.
+ * @return {*} {DotContentDriveFilters} The filters, with `languageId` guaranteed when possible.
+ */
+export function withDefaultLanguage(
+    filters: DotContentDriveFilters,
+    defaultLanguageId?: number
+): DotContentDriveFilters {
+    if (!defaultLanguageId || filters?.languageId?.length) {
+        return filters;
+    }
+
+    return { ...filters, languageId: [String(defaultLanguageId)] };
+}
+
+/**
+ * Seeds the shared-assets toggle with its default when the filters do not carry it.
+ *
+ * The toggle is on by default, which could have been left implicit — no key meaning on. It is
+ * seeded instead so the state that is applied is always visible in the URL rather than inferred from
+ * something missing, and so "Clear all" lands on the same explicit value a fresh load does.
+ *
+ * Never mutates the input.
+ *
+ * @param {DotContentDriveFilters} filters The filters to seed.
+ * @return {*} {DotContentDriveFilters} The filters, with the shared-assets key guaranteed.
+ */
+export function withDefaultSharedAssets(filters: DotContentDriveFilters): DotContentDriveFilters {
+    if (filters?.[SHARED_ASSETS_FILTER_KEY]) {
+        return filters;
+    }
+
+    return { ...filters, [SHARED_ASSETS_FILTER_KEY]: SHARED_ASSETS_ENABLED_VALUE };
+}
+
+/**
+ * Whether any filter is set to something other than its default.
+ *
+ * Not the same question as "are there filters at all": the seeded defaults — the environment language
+ * and the shared-assets toggle — are always present, so counting keys would answer yes on a drive
+ * nobody has filtered. Consumers use this to decide whether there is anything worth offering to
+ * clear.
+ *
+ * A filter explicitly set to its default value counts as default, which is deliberate: selecting the
+ * default language by hand is indistinguishable from the seeded state, and clearing it would just
+ * re-select the same thing.
+ *
+ * @param {DotContentDriveFilters} filters The filters to inspect.
+ * @param {number} [defaultLanguageId] The environment's default language id, when known.
+ * @return {*} {boolean} True when at least one filter differs from its default.
+ */
+export function hasNonDefaultFilters(
+    filters: DotContentDriveFilters,
+    defaultLanguageId?: number
+): boolean {
+    return Object.entries(filters ?? {}).some(([key, value]) => {
+        if (key === SHARED_ASSETS_FILTER_KEY) {
+            return value !== SHARED_ASSETS_ENABLED_VALUE;
+        }
+
+        if (key === 'languageId') {
+            const languages = Array.isArray(value) ? value : [value];
+
+            return !(
+                defaultLanguageId &&
+                languages.length === 1 &&
+                languages[0] === String(defaultLanguageId)
+            );
+        }
+
+        return true;
+    });
+}
+
+/**
+ * Applies every filter default in one pass, for the paths that build a filter set from scratch or
+ * from the URL: init, "Clear all", removing a single filter, and history restore. Keeping them
+ * together is what stops one of those paths from quietly missing a default.
+ *
+ * @param {DotContentDriveFilters} filters The filters to seed.
+ * @param {number} [defaultLanguageId] The environment's default language id, when known.
+ * @return {*} {DotContentDriveFilters} The filters, with defaults applied.
+ */
+export function withFilterDefaults(
+    filters: DotContentDriveFilters,
+    defaultLanguageId?: number
+): DotContentDriveFilters {
+    return withDefaultSharedAssets(withDefaultLanguage(filters, defaultLanguageId));
+}
+
+/**
+ * Encodes the filters with their keys in a stable (alphabetical) order, for **comparison only**.
+ *
+ * {@link encodeFilters} follows insertion order, which makes two equivalent filter sets encode
+ * differently — `title:x;languageId:1` vs `languageId:1;title:x`. That is harmless in the URL but
+ * not when the encoded string is used to decide whether state changed. Never use this to write the
+ * URL; it would reorder the params users see.
+ *
+ * @param {DotContentDriveFilters} filters The filters to encode.
+ * @return {*} {string} A key-order-independent encoding of the filters.
+ */
+export function sortedEncodedFilters(filters: DotContentDriveFilters): string {
+    if (!filters) {
+        return '';
+    }
+
+    return encodeFilters(
+        Object.fromEntries(
+            Object.entries(filters).sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
+        )
+    );
+}
+
+/**
  * Adapts a `FolderSearchView` (returned by `GET /api/v1/folder/search`) into the `DotFolder`
  * shape the tree builder consumes.
  *
@@ -258,49 +439,139 @@ export function folderSearchViewToDotFolder(view: FolderSearchView, hostName: st
         hostName,
         path: `${parentPath}${view.name}/`,
         addChildrenAllowed: view.addChildrenAllowed,
-        hasChildren: view.hasChildren
+        hasChildren: view.hasChildren,
+        defaultBaseType: view.defaultBaseType,
+        name: view.name,
+        title: view.title,
+        sortOrder: view.sortOrder,
+        filesMasks: view.filesMasks,
+        defaultFileType: view.defaultFileType,
+        showOnMenu: view.showOnMenu,
+        // `null` (not requested) and `[]` (requested, no grants) mean different things, and the
+        // difference drives behavior: a node whose permissions were never fetched must resolve them
+        // on demand before its context menu can gate correctly, while an empty array is a final
+        // answer. Collapse `null` to `undefined` (the optional-field idiom) and keep `[]` intact.
+        permissions: view.permissions ?? undefined
     };
 }
 
 /**
- * Warns when a folder level has more folders than the single page we request, so the truncation is
- * not silent. The tree renders a whole level at once; if a level ever exceeds
- * {@link FOLDER_TREE_SEARCH_PAGE_SIZE}, pagination/infinite-scroll would be needed.
+ * The last segment of a folder path: `/a/b/` → `b`, `/a/` → `a`.
  *
- * @param {string} path - The folder level path being loaded
- * @param {DotPagination} pagination - Pagination metadata returned by the search endpoint
+ * @param {string} folderPath - A folder's own path, with or without a trailing slash
+ * @returns {string} the folder's own name, or `''` for the site root
  */
-function warnIfFolderLevelTruncated(path: string, pagination?: DotPagination): void {
-    if (pagination && pagination.totalEntries > FOLDER_TREE_SEARCH_PAGE_SIZE) {
-        console.warn(
-            `Folder tree: level "${path}" has ${pagination.totalEntries} folders but only ` +
-                `${FOLDER_TREE_SEARCH_PAGE_SIZE} are shown.`
+export function getPathLeafName(folderPath: string): string {
+    const segments = folderPath.split('/').filter(Boolean);
+
+    return segments[segments.length - 1] ?? '';
+}
+
+/**
+ * Fetches one specific folder of a level directly, for the case where a deep-linked ancestor sorts
+ * past the level's first hierarchy page and would otherwise be missing from the tree.
+ *
+ * The tree has to show the folder the drive is open on. Widening the hierarchy page to guarantee
+ * that is not an option: `includePermissions=true` caps `per_page`
+ * (`content.drive.folder.search.permissions.max.per.page`), and the nodes on first paint need
+ * permissions to gate their context menu. Paging the level until the folder turns up is not one
+ * either: it trades one request for an unbounded chain to find something we already know the exact
+ * path of. So the level is queried once more, narrowed by the folder's own name, and matched on
+ * exact path.
+ *
+ * `POST /api/v1/folder/byPath` would be the natural "fetch this one folder" call, but it is
+ * deprecated for removal, returns a path's *subfolders* rather than the folder itself, and carries
+ * no permissions.
+ *
+ * Resolves to `undefined` rather than failing, in three cases, all of which leave the folder
+ * unpinned. The `name` filter needs {@link FOLDER_NAME_FILTER_MIN_LENGTH} characters, so a
+ * one-character folder name drops the filter and falls back to the level's first page; `name` is a
+ * case-insensitive *partial* match, so a level holding more same-substring siblings than fit one
+ * page can still exclude the target (both need a level wide enough to have overflowed in the first
+ * place; an exact-match or identifier filter would close them); and the request itself can fail.
+ *
+ * Swallowing that failure is the point. This is a best-effort extra request on top of the page the
+ * level already has, and its caller runs inside a `forkJoin`: letting a transient 500 through would
+ * reject the whole hierarchy load, which `loadFolders` turns into an empty tree. A folder that
+ * cannot be pinned must cost that folder's pin, not every readable folder on screen.
+ *
+ * @param {string} levelPath - Parent path being listed, e.g. `/a/`
+ * @param {string} ancestorPath - Full path of the folder to resolve, e.g. `/a/b/`
+ * @param {DotSite} site - The site to scope the search
+ * @param {DotFolderService} dotFolderService - The folder service
+ * @returns {Observable<DotFolder | undefined>} the folder, or `undefined` if it could not be reached
+ */
+export function resolveHierarchyAncestor(
+    levelPath: string,
+    ancestorPath: string,
+    site: DotSite,
+    dotFolderService: DotFolderService
+): Observable<DotFolder | undefined> {
+    const name = getPathLeafName(ancestorPath);
+
+    return dotFolderService
+        .searchFolders({
+            siteId: site.identifier,
+            path: levelPath,
+            recursive: false,
+            name: name.length >= FOLDER_NAME_FILTER_MIN_LENGTH ? name : undefined,
+            orderby: 'name',
+            direction: 'ASC',
+            page: 1,
+            per_page: FOLDER_TREE_HIERARCHY_PAGE_SIZE,
+            includePermissions: true
+        })
+        .pipe(
+            map(({ folders }) =>
+                folders
+                    .map((view) => folderSearchViewToDotFolder(view, site.hostname))
+                    .find((folder) => folder.path === ancestorPath)
+            ),
+            catchError(() => of(undefined))
         );
-    }
 }
 
 /**
  * Fetches the folders for every level of a target path using parallel search calls, so the sidebar
- * tree can be rendered expanded down to that path.
+ * tree can be rendered expanded down to that path (deep-link restore).
  *
  * One `GET /api/v1/folder/search` (non-recursive) call is made per level, starting at the site root
- * (`'/'`) and descending through each parent path. Each call returns the direct children of that
- * level. Results are ordered to mirror the levels of the target path.
+ * (`'/'`) and descending through each parent path, all in parallel. Every level requests
+ * `includePermissions`, so each node the tree renders on first paint can gate its context menu
+ * without a second round-trip. That pins the page to {@link FOLDER_TREE_HIERARCHY_PAGE_SIZE}, the
+ * backend's cap when permissions are requested.
+ *
+ * Because the page is capped, a level wide enough can sort the next ancestor past it. The drive
+ * still has to show the folder it is open on, so that one folder is fetched individually (see
+ * {@link resolveHierarchyAncestor}) rather than the page being widened, and is *pinned to the top*
+ * of its level. Pinning rather than appending is deliberate: dropped in at the end it would read as
+ * the next folder in sort order, which it is not, and it would sit next to the level's "Load more"
+ * where it is easy to miss. At the top it reads as "the folder you are in". If the user later pages
+ * far enough to reach its real position, {@link mergeFolderNodePage} moves it there.
+ *
+ * Interactive expand/load-more use {@link getFolderNodesByPath} with {@link FOLDER_TREE_PAGE_SIZE}.
+ * Callers should append load-more via {@link applyLoadMoreToHierarchy} when `totalEntries` exceeds
+ * the returned page.
  *
  * @param {string} folderPath - The folder path (without hostname) to expand to, e.g. `/a/b/`
  * @param {DotSite} site - The site to scope the search (its `identifier` and `hostname` are used)
  * @param {DotFolderService} dotFolderService - The folder service
- * @returns {Observable<DotFolder[][]>} Observable that emits one folder array per path level
+ * @returns {Observable<FolderTreeHierarchyLevel[]>} one level descriptor per path
  */
 export function getFolderHierarchyByPath(
     folderPath: string,
     site: DotSite,
     dotFolderService: DotFolderService
-): Observable<DotFolder[][]> {
+): Observable<FolderTreeHierarchyLevel[]> {
     // The root level (`'/'`) is always fetched first; deeper levels come from the target path.
     const paths = ['/', ...generateAllParentPaths(folderPath)];
 
-    const folderRequests = paths.map((path) =>
+    // Level `i` is the one that must contain `expectedPaths[i]` for the tree to keep descending.
+    // The deepest level has no entry here: it holds the target folder's own children, so there is
+    // nothing further to reach and its first page is all the tree needs.
+    const expectedPaths = generateAllParentPaths(folderPath);
+
+    const folderRequests = paths.map((path, levelIndex) =>
         dotFolderService
             .searchFolders({
                 siteId: site.identifier,
@@ -308,13 +579,39 @@ export function getFolderHierarchyByPath(
                 recursive: false,
                 orderby: 'name',
                 direction: 'ASC',
-                per_page: FOLDER_TREE_SEARCH_PAGE_SIZE
+                page: 1,
+                per_page: FOLDER_TREE_HIERARCHY_PAGE_SIZE,
+                includePermissions: true
             })
             .pipe(
-                map(({ folders, pagination }) => {
-                    warnIfFolderLevelTruncated(path, pagination);
+                map(({ folders, pagination }) => ({
+                    path,
+                    folders: folders.map((view) =>
+                        folderSearchViewToDotFolder(view, site.hostname)
+                    ),
+                    totalEntries: pagination?.totalEntries ?? folders.length,
+                    // Whole pages consumed, converted to load-more's page size. Safe because the
+                    // hierarchy page is a multiple of it; a partial page means the level is fully
+                    // loaded and no "Load more" is appended, so the value goes unused.
+                    nextPage: Math.floor(folders.length / FOLDER_TREE_PAGE_SIZE) + 1
+                })),
+                switchMap((level) => {
+                    const expectedPath = expectedPaths[levelIndex];
 
-                    return folders.map((view) => folderSearchViewToDotFolder(view, site.hostname));
+                    if (!expectedPath || level.folders.some(({ path }) => path === expectedPath)) {
+                        return of(level);
+                    }
+
+                    return resolveHierarchyAncestor(
+                        path,
+                        expectedPath,
+                        site,
+                        dotFolderService
+                    ).pipe(
+                        map((ancestor) =>
+                            ancestor ? { ...level, folders: [ancestor, ...level.folders] } : level
+                        )
+                    );
                 })
             )
     );
@@ -348,7 +645,11 @@ export function getFolderNodesByPath(
             orderby: 'name',
             direction: 'ASC',
             page,
-            per_page: FOLDER_TREE_PAGE_SIZE
+            per_page: FOLDER_TREE_PAGE_SIZE,
+            // Safe to request here: this page size (40) is well under the backend cap, so nodes
+            // loaded by expanding a folder carry their permissions and their context menu opens
+            // without a second round-trip.
+            includePermissions: true
         })
         .pipe(
             map(({ folders, pagination }) => ({
@@ -377,230 +678,337 @@ export function buildLoadMoreNode(
     nextPage: number,
     remaining: number
 ): DotFolderTreeNodeItem {
-    const key = `${LOAD_MORE_NODE_TYPE}:${parentPath}`;
+    // Leave `label` empty so DotFolderTree uses the shared loadMoreLabelKey
+    // (same (+) Load more chrome as Host Folder Field / Browser Selector).
+    return createLoadMoreTreeNode({
+        levelKey: parentPath,
+        nextPage,
+        remaining,
+        path: parentPath,
+        hostname: hostName
+    }) as DotFolderTreeNodeItem;
+}
 
-    return {
-        key,
-        label: LOAD_MORE_LABEL_KEY,
-        data: {
-            type: LOAD_MORE_NODE_TYPE,
-            path: parentPath,
-            hostname: hostName,
-            id: key,
-            nextPage,
-            remaining
-        },
-        leaf: true,
-        selectable: false
-    };
+/**
+ * Merges a freshly loaded page of folder nodes into the ones a level already shows.
+ *
+ * Plain concatenation is not enough because the hierarchy load can pin a folder to the top of a
+ * level out of sort order (see {@link getFolderHierarchyByPath}). Page far enough and that same
+ * folder arrives again in its real position, which would render it twice.
+ *
+ * The already-rendered node wins on identity but takes the incoming node's position: it may be
+ * expanded, hold loaded children and carry the current selection, none of which the fresh copy has.
+ * So the pinned folder stops being pinned and settles where it belongs, with its subtree intact.
+ *
+ * @param {DotFolderTreeNodeItem[]} loaded - Nodes already rendered for the level (no "Load more")
+ * @param {DotFolderTreeNodeItem[]} page - The newly fetched page, in sort order
+ * @returns {DotFolderTreeNodeItem[]} the merged level, free of duplicates
+ */
+export function mergeFolderNodePage(
+    loaded: DotFolderTreeNodeItem[],
+    page: DotFolderTreeNodeItem[]
+): DotFolderTreeNodeItem[] {
+    const nodeId = (node: DotFolderTreeNodeItem): string | undefined =>
+        node.data?.type !== LOAD_MORE_NODE_TYPE ? node.data?.id : undefined;
+
+    const existingById = new Map(
+        loaded.flatMap((node) => {
+            const id = nodeId(node);
+
+            return id ? [[id, node] as const] : [];
+        })
+    );
+
+    const incomingIds = new Set(page.flatMap((node) => nodeId(node) ?? []));
+
+    return [
+        ...loaded.filter((node) => {
+            const id = nodeId(node);
+
+            return !id || !incomingIds.has(id);
+        }),
+        ...page.map((node) => {
+            const id = nodeId(node);
+
+            return (id && existingById.get(id)) || node;
+        })
+    ];
+}
+
+/**
+ * Appends a "Load more" sentinel when more folders remain beyond the loaded page.
+ */
+export function appendLoadMoreNodes(
+    children: DotFolderTreeNodeItem[],
+    totalEntries: number,
+    path: string,
+    hostname: string,
+    nextPage: number
+): DotFolderTreeNodeItem[] {
+    if (children.length >= totalEntries) {
+        return [...children];
+    }
+
+    return [
+        ...children,
+        buildLoadMoreNode(path, hostname, nextPage, totalEntries - children.length)
+    ];
+}
+
+/**
+ * Applies load-more sentinels to each level of a freshly built hierarchy.
+ * Root-level sentinels sit as siblings of root folders; nested ones go under the parent node.
+ *
+ * Each level carries its own `nextPage`, because the hierarchy pages at
+ * {@link FOLDER_TREE_HIERARCHY_PAGE_SIZE} while load-more pages at {@link FOLDER_TREE_PAGE_SIZE}.
+ * Resuming at a fixed page would re-request folders already on screen.
+ */
+export function applyLoadMoreToHierarchy(
+    rootNodes: DotFolderTreeNodeItem[],
+    levels: FolderTreeHierarchyLevel[],
+    hostname: string
+): DotFolderTreeNodeItem[] {
+    if (!levels.length) {
+        return rootNodes;
+    }
+
+    const roots = appendLoadMoreNodes(
+        rootNodes,
+        levels[0].totalEntries,
+        levels[0].path,
+        hostname,
+        levels[0].nextPage
+    );
+
+    for (let i = 1; i < levels.length; i++) {
+        const level = levels[i];
+        const parent = findFolderNodeByPath(level.path, roots);
+
+        if (!parent) {
+            continue;
+        }
+
+        parent.children = appendLoadMoreNodes(
+            (parent.children as DotFolderTreeNodeItem[] | undefined) ?? [],
+            level.totalEntries,
+            level.path,
+            hostname,
+            level.nextPage
+        );
+    }
+
+    return roots;
+}
+
+function findFolderNodeByPath(
+    path: string,
+    nodes: DotFolderTreeNodeItem[]
+): DotFolderTreeNodeItem | undefined {
+    for (const node of nodes) {
+        if (node.data?.type !== LOAD_MORE_NODE_TYPE && node.data?.path === path) {
+            return node;
+        }
+
+        const found = node.children
+            ? findFolderNodeByPath(path, node.children as DotFolderTreeNodeItem[])
+            : undefined;
+
+        if (found) {
+            return found;
+        }
+    }
+
+    return undefined;
 }
 
 /**
  * Checks if an item is a folder.
  *
- * @param {DotContentDriveItem} item - The item to check
+ * Narrows to the actionable folder shape rather than the full table row, so it serves folders from
+ * both views. Called with a `DotContentDriveItem` (the table's list) it still narrows to
+ * `DotContentDriveFolder`, since that is the only folder member of that union.
+ *
+ * @param {DotContentDriveActionableItem} item - The item to check
  * @returns {boolean} True if the item is a folder, false otherwise
  */
-export function isFolder(item: DotContentDriveItem): item is DotContentDriveFolder {
+export function isFolder(
+    item: DotContentDriveActionableItem
+): item is DotContentDriveActionableFolder {
     return item != null && 'type' in item && item.type === 'folder';
 }
 
-/** True when the field type stores a `{ from, to }` date range (Date / Date-and-Time / Time). */
-export function isDateFieldFilterType(fieldType: string): boolean {
-    return (FIELD_FILTER_DATE_TYPES as readonly string[]).includes(fieldType);
-}
-
-/** True when the field type stores a list of values (Multi-Select / Checkbox / Tag / …). */
-export function isMultiValueFieldFilterType(fieldType: string): boolean {
-    return FIELD_FILTER_MULTI_VALUE_TYPES.includes(fieldType);
-}
+// The `us.*` value layer moved to `@dotcms/ui` with the field-filter chips: both surfaces build
+// the same request from the same bag, so the reshaping has to be one implementation rather than two
+// that can drift. Re-exported here so this portlet's own importers — the store's request builder,
+// the URL decode layer and their specs — keep their imports.
+export {
+    buildUserSearchablePayload,
+    getUserSearchableActive,
+    isBinaryCheckboxField,
+    isDateFieldFilterType,
+    isMultiValueFieldFilterType,
+    parseMultiValue,
+    parseUserSearchableValue,
+    serializeMultiValue,
+    serializeUserSearchableValue,
+    toLocalIsoString
+} from '@dotcms/ui';
 
 /**
- * The field variables that have a `us.*` field-filter entry in the bag, in insertion order.
- * Parsed at the same layer as {@link decodeFilters} so the store just stores the result.
+ * Whether the user may add children to a drop target.
  *
- * @param {DotContentDriveFilters} filters
- * @return {*}  {string[]}
- */
-export function getUserSearchableActive(filters: DotContentDriveFilters): string[] {
-    return Object.keys(filters ?? {})
-        .filter((key) => key.startsWith(USER_SEARCHABLE_PREFIX))
-        .map((key) => key.slice(USER_SEARCHABLE_PREFIX.length));
-}
-
-/**
- * True for a binary (boolean) checkbox — a Checkbox field with a single option (e.g. `|true`).
- * Unlike a multi-option checkbox, this is a single boolean *value* (true/false), not a selection.
- */
-export function isBinaryCheckboxField(field: DotCMSContentTypeField): boolean {
-    return (
-        field.fieldType === FIELD_FILTER_CHECKBOX_TYPE &&
-        getSingleSelectableFieldOptions(field.values ?? '', field.dataType).length <= 1
-    );
-}
-
-/**
- * Reshapes a raw stored field-filter string into the payload value for its field type:
- * date → `{ from, to }`, multi-select → `string[]`, everything else → the raw string.
- * Returns `undefined` when the value is effectively empty (so callers can skip it).
+ * The one rule behind every creation affordance in the drive — the New menu, Upload, the grid drop
+ * zone, and a drag onto a tree folder — so the four cannot disagree about the same folder.
  *
- * @param {string} raw - The raw value stored in the filter bag.
- * @param {string} fieldType - The content-type field type (e.g. `Text`, `Date`, `Multi-Select`).
- * @return {*}  {(DotContentDriveUserSearchableValue | undefined)}
+ * A node with no permissions is the site root: its parent is the host rather than a folder, and no
+ * folder endpoint reports on it, so `siteCanAddChildren` answers that case. Both unknowns resolve to
+ * **allowed** — a lookup still in flight, and an instance too old to report the field — because
+ * denying on an unknown takes the action away from users who hold the permission, and the server
+ * still refuses what it enforces.
+ *
+ * Note what the server actually enforces, since the gate is not uniformly a preview of it: creating
+ * a folder checks this (`FolderAPIImpl:673`) and so does moving a contentlet
+ * (`ESContentletAPIImpl:607`), but the contentlet checkin path does **not**, so an upload is not
+ * refused server-side. The gate is still applied there, so that one route into a folder does not
+ * quietly allow what the other two forbid.
+ *
+ * @param {DotFolderTreeNodeData} [target] - The folder being dropped on or browsed
+ * @param {boolean} [siteCanAddChildren] - The site-level answer, for the root
+ * @returns {boolean} Whether creation should be offered
  */
-export function parseUserSearchableValue(
-    raw: string,
-    fieldType: string
-): DotContentDriveUserSearchableValue | undefined {
-    if (!raw) {
-        return undefined;
+export function canAddChildrenTo(
+    target: DotFolderTreeNodeData | undefined | null,
+    siteCanAddChildren: boolean | undefined
+): boolean {
+    if (!target) {
+        return true;
     }
 
-    if (isDateFieldFilterType(fieldType)) {
-        const [from = '', to = ''] = raw.split(USER_SEARCHABLE_VALUE_SEPARATOR);
+    const permissions = (target as { permissions?: string[] }).permissions;
 
-        return from || to ? { from, to } : undefined;
+    if (!permissions?.length) {
+        return siteCanAddChildren !== false;
     }
 
-    if (isMultiValueFieldFilterType(fieldType)) {
-        const values = parseMultiValue(raw);
-
-        return values.length ? values : undefined;
-    }
-
-    return raw;
+    return permissions.includes(PERMISSIONS_TYPE.CAN_ADD_CHILDREN);
 }
 
-/** Safe `decodeURIComponent` that returns the input unchanged on a malformed sequence. */
-const safeDecode = (value: string): string => {
-    try {
-        return decodeURIComponent(value);
-    } catch {
-        return value;
+/**
+ * Turns the one value that says where the user is browsing into the two the endpoint expects.
+ *
+ * The sidebar can select four things and the URL carries one value for all of them: absent means
+ * all site content, `/` means the site root, a deeper path means that folder, and a reserved word
+ * means System Host. Keeping it to one value is what stops a location and a scope disagreeing,
+ * and this is the single place the two representations meet.
+ *
+ * Written as a mapping rather than interpolation on purpose. Pasting the location into the path
+ * produces `//demo.dotcms.comSYSTEM_HOST` for the reserved word, which resolves to nothing.
+ *
+ * A folder deliberately gets **no** scope: it is addressed by its path, the endpoint refuses a
+ * scope alongside a folder path, and a scope there is what would turn the listing into every
+ * descendant.
+ */
+export function toRequestLocation(
+    hostname: string | undefined,
+    path: string | undefined
+): { assetPath: string; browseScope?: DotContentDriveBrowseScope } {
+    const siteRoot = `//${hostname}/`;
+
+    if (!path?.length) {
+        return { assetPath: siteRoot, browseScope: 'ALL' };
     }
+
+    if (path === SYSTEM_HOST_PATH) {
+        return { assetPath: siteRoot, browseScope: 'SYSTEM_HOST' };
+    }
+
+    if (path === ROOT_PATH) {
+        return { assetPath: siteRoot, browseScope: 'ROOT' };
+    }
+
+    return { assetPath: `//${hostname}${path}` };
+}
+
+/**
+ * Whether the listing should ask for folders at all.
+ *
+ * Browsing all site content is a flat listing over every folder on the site, so folder rows there
+ * are noise -- the tree beside it is how folders are navigated. Searching is the other case: a
+ * name is being matched rather than a place browsed, and a match should be found wherever it
+ * lives. That is #37479's FR-011, that folder matching behaves the same in either search scope,
+ * and suppressing folders for the whole of all site content broke it at the default view.
+ *
+ * System Host is unconditional: it has no folders to list either way. `getFolders` returns an
+ * empty list for that scope, so asking spends a query to be told nothing.
+ *
+ * @param browseScope which scope the listing is showing
+ * @param isSearching whether a text filter is narrowing it
+ */
+export function listsFolders(
+    browseScope: DotContentDriveBrowseScope | undefined,
+    isSearching: boolean
+): boolean {
+    if (browseScope === 'SYSTEM_HOST') {
+        return false;
+    }
+
+    return browseScope !== 'ALL' || isSearching;
+}
+
+/**
+ * Canonical form for comparing two folder references: `//hostname/path`, lower-cased and without a
+ * trailing slash.
+ *
+ * The two sides arrive spelled differently — a move destination comes in as `//hostname/path/` from
+ * the tree, the browsed folder as a bare path plus the current site — so they are normalised rather
+ * than compared as given. Lower-casing is not a convenience: dotCMS resolves asset paths through a
+ * unique index over the lower-cased full path per host, so two spellings of one folder *are* one
+ * folder.
+ */
+export const toFolderRef = (hostname: string | null | undefined, path: string | null | undefined) =>
+    normalizeFolderRef(`//${hostname ?? ''}${path ?? ''}`);
+
+/** Normalises an already-formed `//hostname/path` reference. See {@link toFolderRef}. */
+export const normalizeFolderRef = (ref: string | null | undefined): string =>
+    (ref ?? '').toLowerCase().replace(/\/+$/, '');
+
+/**
+ * The folder reference for the location the drive is on, in the form runs are compared against.
+ *
+ * Not {@link toFolderRef} applied to the site and the location directly, because the location is
+ * not always a path on the browsed site. System Host belongs to no site, so pairing its reserved
+ * location value with whatever hostname the switcher happens to show produced
+ * `//demo.dotcms.comsystem_host` — a reference to nothing, which matched no run's affected folders.
+ * The listing therefore never reloaded after an upload landed there.
+ *
+ * @param {string | null | undefined} hostname - The browsed site's hostname
+ * @param {string | null | undefined} path - The location, which may not be a folder path at all
+ * @returns {string} the canonical reference for what is on screen
+ */
+export const browsedFolderRef = (
+    hostname: string | null | undefined,
+    path: string | null | undefined
+): string =>
+    path === SYSTEM_HOST_PATH
+        ? toFolderRef(SYSTEM_HOST.hostname, ROOT_PATH)
+        : toFolderRef(hostname, path);
+
+/**
+ * Which wording an upload run names itself with.
+ *
+ * The messages spell "file" or "files" out instead of hedging with "file(s)", so the count has to
+ * choose between them, and only the caller knows the count. Nothing here names a destination: the
+ * drive already shows where the author is, and the sentence was long enough that the part they
+ * could read at a glance was getting lost behind the part they could not.
+ *
+ * @param {number} count - How many files the batch carries
+ * @param {{ backgrounded?: boolean }} [options] - Whether the batch is the server's now
+ * @returns {string} the message key for that run
+ */
+export const uploadIndicatorKey = (count: number, options?: { backgrounded?: boolean }): string => {
+    const base = options?.backgrounded
+        ? 'content-drive.upload.indicator.background'
+        : 'content-drive.upload.indicator';
+
+    return count === 1 ? `${base}.one` : base;
 };
-
-/**
- * Splits a stored multi-value string back into its values. Each value is percent-encoded on
- * serialize (see {@link serializeMultiValue}) so a value containing the separator — e.g. a tag
- * label like `"News, Press"` — round-trips intact.
- *
- * @param {string} raw
- * @return {*}  {string[]}
- */
-export function parseMultiValue(raw: string): string[] {
-    if (!raw) {
-        return [];
-    }
-
-    return raw
-        .split(USER_SEARCHABLE_VALUE_SEPARATOR)
-        .map((value) => safeDecode(value.trim()))
-        .filter(Boolean);
-}
-
-/**
- * Joins multi-value entries into the stored string, percent-encoding each value so it can safely
- * contain the separator. Inverse of {@link parseMultiValue}.
- *
- * @param {string[]} values
- * @return {*}  {string}
- */
-export function serializeMultiValue(values: string[]): string {
-    return values.map(encodeURIComponent).join(USER_SEARCHABLE_VALUE_SEPARATOR);
-}
-
-/**
- * Serializes a shaped field-filter value back into the raw string stored in the filter bag,
- * inverse of {@link parseUserSearchableValue}. Empty values serialize to `''` so the URL encoder
- * (which drops empty entries) leaves no dangling criterion.
- *
- * @param {(DotContentDriveUserSearchableValue | null | undefined)} value
- * @param {string} fieldType
- * @return {*}  {string}
- */
-/** Narrows a user-searchable value to a `{ from, to }` date range (object, not array). */
-function isDateRange(value: DotContentDriveUserSearchableValue): value is DotContentDriveDateRange {
-    return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-export function serializeUserSearchableValue(
-    value: DotContentDriveUserSearchableValue | null | undefined,
-    fieldType: string
-): string {
-    if (value == null) {
-        return '';
-    }
-
-    if (isDateFieldFilterType(fieldType)) {
-        // Guard the shape rather than blindly casting: a mismatched fieldType/value pair yields ''
-        // (not filtering) instead of a misleading partial range.
-        if (!isDateRange(value)) {
-            return '';
-        }
-
-        if (!value.from && !value.to) {
-            return '';
-        }
-
-        return `${value.from ?? ''}${USER_SEARCHABLE_VALUE_SEPARATOR}${value.to ?? ''}`;
-    }
-
-    if (isMultiValueFieldFilterType(fieldType)) {
-        return serializeMultiValue(Array.isArray(value) ? value : []);
-    }
-
-    return String(value);
-}
-
-/**
- * Builds the `userSearchable` payload object from the flat filter bag, keyed by field variable.
- * Only `us.`-prefixed entries whose field metadata is known (loaded) are considered. A binary
- * checkbox emits its boolean value when set (`true`/`false`); every field type is included only
- * when its value is non-empty. Returns `undefined` when there are no active field filters.
- *
- * @param {DotContentDriveFilters} filters - The full filter bag.
- * @param {DotCMSContentTypeField[]} fields - The active content type's searchable fields.
- * @return {*}  {(Record<string, DotContentDriveUserSearchableValue> | undefined)}
- */
-export function buildUserSearchablePayload(
-    filters: DotContentDriveFilters,
-    fields: DotCMSContentTypeField[]
-): Record<string, DotContentDriveUserSearchableValue> | undefined {
-    const fieldByVariable = new Map(fields.map((field) => [field.variable, field]));
-    const payload: Record<string, DotContentDriveUserSearchableValue> = {};
-
-    for (const [key, raw] of Object.entries(filters ?? {})) {
-        if (!key.startsWith(USER_SEARCHABLE_PREFIX)) {
-            continue;
-        }
-
-        const variable = key.slice(USER_SEARCHABLE_PREFIX.length);
-        const field = fieldByVariable.get(variable);
-        if (!field) {
-            continue;
-        }
-
-        const rawValue = Array.isArray(raw)
-            ? raw.join(USER_SEARCHABLE_VALUE_SEPARATOR)
-            : (raw ?? '');
-
-        // A binary checkbox filters for the chosen boolean; empty means not filtering.
-        if (isBinaryCheckboxField(field)) {
-            if (rawValue === 'true' || rawValue === 'false') {
-                payload[variable] = rawValue === 'true';
-            }
-
-            continue;
-        }
-
-        const value = parseUserSearchableValue(rawValue, field.fieldType);
-        if (value === undefined) {
-            continue;
-        }
-
-        payload[variable] = value;
-    }
-
-    return Object.keys(payload).length ? payload : undefined;
-}

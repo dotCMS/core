@@ -83,6 +83,13 @@
                 *##set($item = $element)#*
                 *##parse("static/storyblock/dotVideo.vtl")#*
             *##end#*
+        *##elseif( $element.type == "dotAudio" )#*
+            *##if($dotStoryBlockRenderHelper)#*
+                *#$dotStoryBlockRenderHelper.render($element)#*
+            *##else#*
+                *##set($item = $element)#*
+                *##parse("static/storyblock/dotAudio.vtl")#*
+            *##end#*
         *##elseif( $element.type == "gridBlock" )#*
             *##set($item = $element)#*
             *##parse("static/storyblock/gridBlock.vtl")#*

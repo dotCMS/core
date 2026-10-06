@@ -1,5 +1,6 @@
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
-import { createHostFactory, SpectatorHost } from '@openng/spectator/jest';
+import { createHostFactory, SpectatorHost } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { Component } from '@angular/core';
 import { FormGroup, FormControl, ReactiveFormsModule } from '@angular/forms';
@@ -70,6 +71,8 @@ describe('DotEditContentMonacoEditorControlComponent', () => {
         const expectedOptions = {
             ...DEFAULT_MONACO_CONFIG,
             theme: 'vs',
+            // Monaco owns its DOM, so the field name reaches it through this option.
+            ariaLabel: WYSIWYG_MOCK.name,
             language: 'plaintext' // due the auto detect language is plaintext
         };
 
@@ -118,14 +121,27 @@ describe('DotEditContentMonacoEditorControlComponent', () => {
         const expectedOptions = {
             ...DEFAULT_MONACO_CONFIG,
             ...customProps,
+            ariaLabel: WYSIWYG_MOCK.name,
             language: 'plaintext' // due the auto detect language is plaintext
         };
         expect(component.$monacoOptions()).toEqual(expectedOptions);
     });
 
     it('should register Velocity language when Monaco is loaded', () => {
-        const registerSpy = jest.spyOn(component, 'registerVelocityLanguage');
+        const registerSpy = vi.spyOn(component, 'registerVelocityLanguage');
         spectator.detectChanges();
         expect(registerSpy).toHaveBeenCalled();
+    });
+
+    /**
+     * AC-209 — a third-party editor owns its DOM, so `<label for>` cannot reach inside it. Both
+     * editors expose a documented option for the accessible name of their own surface, which is
+     * where the field name belongs: otherwise the control announces itself generically, or with no
+     * name at all.
+     */
+    it('should name the editor from the field so it is not announced unnamed', () => {
+        spectator.detectChanges();
+
+        expect(component.$monacoOptions().ariaLabel).toBe(WYSIWYG_MOCK.name);
     });
 });

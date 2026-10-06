@@ -1,6 +1,7 @@
 package com.dotmarketing.util;
 
 import java.text.DecimalFormat;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 public class NumberUtil {
@@ -77,5 +78,78 @@ public class NumberUtil {
 		}
 		return value != null ? Integer.parseInt(value.toString()) : 0;
 	} // asInt.
+
+	/**
+	 * Best-effort coercion to a {@link Long} of a value that may already be a {@link Number} or a
+	 * numeric {@link String}.
+	 *
+	 * <p>Unlike {@link #toLong(String, Supplier)} this reports failure instead of substituting a
+	 * default: an empty result means "this value is not a long", which lets the caller omit the
+	 * value entirely rather than fabricate one. Parsing is strict — a value carrying a fractional
+	 * part is <em>not</em> silently truncated.</p>
+	 *
+	 * @param value the value to coerce; may be null
+	 * @return the coerced value, or empty when it cannot be represented as a long
+	 */
+	public static Optional<Long> toLongOrEmpty(final Object value) {
+
+		if (value instanceof Number) {
+			final Number number = (Number) value;
+			// Reject a value carrying a fractional part rather than truncating it silently.
+			// Also rejects NaN and the infinities, whose longValue() is a meaningless clamp.
+			if (number.longValue() != number.doubleValue()) {
+				return Optional.empty();
+			}
+			return Optional.of(number.longValue());
+		}
+		if (!(value instanceof String)) {
+			return Optional.empty();
+		}
+		final String candidate = ((String) value).trim();
+		if (!UtilMethods.isSet(candidate)) {
+			return Optional.empty();
+		}
+		try {
+			return Optional.of(Long.parseLong(candidate));
+		} catch (final NumberFormatException e) {
+			// Not a long: non-numeric text, a fractional value, or beyond Long's range.
+			return Optional.empty();
+		}
+	} // toLongOrEmpty.
+
+	/**
+	 * Best-effort coercion to a {@link Float} of a value that may already be a {@link Number} or a
+	 * numeric {@link String}. Same reporting semantics as {@link #toLongOrEmpty(Object)}.
+	 *
+	 * @param value the value to coerce; may be null
+	 * @return the coerced value, or empty when it cannot be represented as a finite float
+	 */
+	public static Optional<Float> toFloatOrEmpty(final Object value) {
+
+		if (value instanceof Number) {
+			return finiteOrEmpty(((Number) value).floatValue());
+		}
+		if (!(value instanceof String)) {
+			return Optional.empty();
+		}
+		final String candidate = ((String) value).trim();
+		if (!UtilMethods.isSet(candidate)) {
+			return Optional.empty();
+		}
+		try {
+			return finiteOrEmpty(Float.parseFloat(candidate));
+		} catch (final NumberFormatException e) {
+			return Optional.empty();
+		}
+	} // toFloatOrEmpty.
+
+	/**
+	 * Guards against the non-finite values {@link Float#parseFloat} accepts. "Infinity" and "NaN"
+	 * parse successfully but cannot be serialized to JSON, so letting them through would push the
+	 * failure downstream into the index write instead of reporting it here.
+	 */
+	private static Optional<Float> finiteOrEmpty(final float candidate) {
+		return Float.isFinite(candidate) ? Optional.of(candidate) : Optional.empty();
+	} // finiteOrEmpty.
 
 } // E:O:F:NumberUtil

@@ -1,8 +1,9 @@
-import { byTestId, createHostFactory, SpectatorHost } from '@openng/spectator/jest';
+import { byTestId, createHostFactory, SpectatorHost } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { DotLanguagesService } from '@dotcms/data-access';
@@ -14,6 +15,7 @@ import { DotEditContentJsonFieldComponent } from './dot-edit-content-json-field.
 
 import { AvailableLanguageMonaco } from '../../models/dot-edit-content-field.constant';
 import { DotEditContentMonacoEditorControlComponent } from '../../shared/dot-edit-content-monaco-editor-control/dot-edit-content-monaco-editor-control.component';
+import { DotEditContentStore } from '../../store/edit-content.store';
 import { JSON_FIELD_MOCK } from '../../utils/mocks';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -30,7 +32,12 @@ export class MockFormComponent {
     contentlet: DotCMSContentlet;
     field: DotCMSContentTypeField;
 }
+/** Flipped by tests that need the required error to surface (#37464 gates it on save). */
+const submitAttempted = signal(false);
+
 describe('DotEditContentJsonFieldComponent', () => {
+    beforeEach(() => submitAttempted.set(false));
+
     let spectator: SpectatorHost<DotEditContentJsonFieldComponent, MockFormComponent>;
 
     const createHost = createHostFactory({
@@ -43,6 +50,7 @@ describe('DotEditContentJsonFieldComponent', () => {
             DotEditContentMonacoEditorControlComponent
         ],
         providers: [
+            { provide: DotEditContentStore, useValue: { hasAttemptedSubmit: submitAttempted } },
             { provide: DotLanguagesService, useValue: new DotLanguagesServiceMock() },
             provideHttpClient(),
             provideHttpClientTesting()
@@ -93,7 +101,7 @@ describe('DotEditContentJsonFieldComponent', () => {
             const monacoEditor = spectator.query(DotEditContentMonacoEditorControlComponent);
             // Mock $forcedLanguage signal for this test
             Object.defineProperty(monacoEditor, '$forcedLanguage', {
-                value: jest.fn().mockReturnValue(AvailableLanguageMonaco.Json),
+                value: vi.fn().mockReturnValue(AvailableLanguageMonaco.Json),
                 writable: true,
                 configurable: true
             });
@@ -102,7 +110,7 @@ describe('DotEditContentJsonFieldComponent', () => {
 
         it('should call insertLanguageVariableInMonaco when language variable is selected', () => {
             // Mock the insertLanguageVariableInMonaco private method
-            const insertLanguageVariableInMonacoMock = jest.fn();
+            const insertLanguageVariableInMonacoMock = vi.fn();
             spectator.component['insertLanguageVariableInMonaco'] =
                 insertLanguageVariableInMonacoMock;
 
@@ -116,10 +124,10 @@ describe('DotEditContentJsonFieldComponent', () => {
 
         it('should call onSelectLanguageVariable when language variable is selected', () => {
             // Spy on component method
-            const spy = jest.spyOn(spectator.component, 'onSelectLanguageVariable');
+            const spy = vi.spyOn(spectator.component, 'onSelectLanguageVariable');
 
             // Mock insertLanguageVariableInMonaco to avoid calling real insertContent
-            spectator.component['insertLanguageVariableInMonaco'] = jest.fn();
+            spectator.component['insertLanguageVariableInMonaco'] = vi.fn();
 
             // Get language variable selector component
             const languageVariableSelector = spectator.query(DotLanguageVariableSelectorComponent);
@@ -171,9 +179,12 @@ describe('DotEditContentJsonFieldComponent', () => {
             const formControl = spectator.component.formControl;
             formControl.setErrors({ required: true });
             formControl.markAsTouched();
+            // The error is gated on a save attempt now, not on touched (#37464), and the markup is
+            // the shared `.p-field-error`, not the old unstyled `.error-message`.
+            submitAttempted.set(true);
             spectator.detectChanges();
 
-            expect(spectator.query('.error-message')).toBeTruthy();
+            expect(spectator.query('.p-field-error')).toBeTruthy();
         });
     });
 

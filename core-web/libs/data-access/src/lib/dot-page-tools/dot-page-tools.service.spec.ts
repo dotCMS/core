@@ -20,19 +20,20 @@ describe('DotPageToolsService', () => {
         httpMock = injector.inject(HttpTestingController);
     });
 
-    it('should get Page Tools', (done) => {
-        const url = 'assets/seo/page-tools.json';
+    it('should get Page Tools', () =>
+        new Promise<void>((done) => {
+            const url = 'assets/seo/page-tools.json';
 
-        dotPageToolsService.get().subscribe((result) => {
-            expect(result).toEqual(mockPageTools.pageTools);
-            done();
-        });
+            dotPageToolsService.get().subscribe((result) => {
+                expect(result).toEqual(mockPageTools.pageTools);
+                done();
+            });
 
-        const req = httpMock.expectOne(url);
-        expect(req.request.method).toBe('GET');
+            const req = httpMock.expectOne(url);
+            expect(req.request.method).toBe('GET');
 
-        req.flush(mockPageTools);
-    });
+            req.flush(mockPageTools);
+        }));
 
     afterEach(() => {
         httpMock.verify();

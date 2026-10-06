@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 @Component({
     selector: 'dot-page-scanner-message',
-    standalone: true,
     templateUrl: './dot-page-scanner-message.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })

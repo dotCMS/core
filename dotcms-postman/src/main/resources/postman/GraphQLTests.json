@@ -505,6 +505,71 @@
 							"response": []
 						},
 						{
+							"name": "GivenDotAssetBehindImageField_NarrowingClauses_ShouldResolveAndWarnOverHttp",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"",
+											"pm.test(\"No errors\", function () {",
+											"    pm.expect(jsonData.errors, 'FAILED:[errors]').to.be.undefined;",
+											"});",
+											"",
+											"pm.test(\"The asset field resolves to the concrete type and honours matching clauses\", function () {",
+											"    var rows = jsonData.data[pm.collectionVariables.get(\"contentTypeVAR\") + \"Collection\"];",
+											"    pm.expect(rows.length, 'FAILED:[rows]').to.eql(1);",
+											"    var image = rows[0].myImage;",
+											"    pm.expect(image.__typename, 'FAILED:[__typename]').to.eql(\"DotAsset\");",
+											"    pm.expect(image.identifier, 'FAILED:[identifier]').to.eql(pm.collectionVariables.get(\"dotAssetIdentifier\"));",
+											"    pm.expect(image.asset.name, 'FAILED:[asset.name]').to.eql(\"dotcms.png\");",
+											"    pm.expect(image.fileName, 'FAILED:[fileName]').to.not.be.undefined;",
+											"});",
+											"",
+											"pm.test(\"Only the clause that matched nothing is reported in extensions.warnings\", function () {",
+											"    pm.expect(jsonData.extensions, 'FAILED:[extensions]').to.not.be.undefined;",
+											"    var warnings = jsonData.extensions.warnings;",
+											"    pm.expect(warnings.length, 'FAILED:[warnings.length]').to.eql(1);",
+											"    pm.expect(warnings[0].typeCondition, 'FAILED:[typeCondition]').to.eql(\"FileAsset\");",
+											"    pm.expect(warnings[0].path, 'FAILED:[path]').to.include(\"myImage\");",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "graphql",
+									"graphql": {
+										"query": "{\n  {{contentTypeVAR}}Collection(query: \"+identifier:{{contentIdentifier}}\") {\n    myImage {\n      __typename\n      identifier\n      ... on DotAsset { asset { name } }\n      ... on DotFileasset { fileName }\n      ... on FileAsset { title }\n    }\n  }\n}",
+										"variables": ""
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/graphql",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"graphql"
+									]
+								},
+								"description": "An Image field is typed by the DotFileasset interface (#34540). Over HTTP: the field reports the concrete type, clauses on the concrete type and on the interface both contribute data and produce no warning, and the clause on a type the asset is not is named in extensions.warnings."
+							},
+							"response": []
+						},
+						{
 							"name": "Create Page Content without Image",
 							"event": [
 								{

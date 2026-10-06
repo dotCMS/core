@@ -13,6 +13,7 @@ import {
     input,
     numberAttribute,
     OnDestroy,
+    OnInit,
     output,
     signal
 } from '@angular/core';
@@ -23,6 +24,7 @@ import { ConfirmDialog } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import { type AnyExtension, Editor, type JSONContent } from '@tiptap/core';
+import { emojis } from '@tiptap/extension-emoji';
 import { type EditorView } from '@tiptap/pm/view';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -51,12 +53,13 @@ import { DotUploadService } from './services/dot-upload.service';
 import { EditorModalService } from './services/editor-modal.service';
 import { EditorPopoverService } from './services/editor-popover.service';
 import { EditorStore } from './store/editor.store';
+import { contentMatchesEditorDocument } from './utils/content-match.utils';
+import { healEmojiHtml, healEmojiNodes } from './utils/emoji-heal.utils';
 import { loadRemoteExtensions, parseCustomBlocksField } from './utils/remote-extensions.loader';
-
-/** Stringifies the editor document for form output (plain ProseMirror JSON, no extra attrs). */
-function editorDocumentJsonText(editor: Editor): string {
-    return JSON.stringify(editor.getJSON());
-}
+import {
+    preserveUnknownNodesInDocument,
+    restoreUnknownBlockNodes
+} from './utils/unknown-block.utils';
 
 /**
  * Keeps "scroll the caret into view" confined to the editor's own scroll container.
@@ -123,21 +126,12 @@ function parseAllowedContentTypes(field: DotCMSContentTypeField | undefined): st
     return field?.fieldVariables?.find((v) => v.key === 'contentTypes')?.value ?? '';
 }
 
-/** True when {@link parsed} represents the same document already in {@link editor}. */
-function editorContentMatchesParsed(editor: Editor, parsed: string | JSONContent): boolean {
-    const currentJson = editorDocumentJsonText(editor);
-    if (typeof parsed === 'string') {
-        const trimmed = parsed.trimStart();
-        if (trimmed.startsWith('{')) {
-            try {
-                return JSON.stringify(JSON.parse(parsed)) === currentJson;
-            } catch {
-                return false;
-            }
-        }
-        return parsed === editor.getHTML();
-    }
-    return JSON.stringify(parsed) === currentJson;
+function getKnownNodeNames(editor: Editor): Set<string> {
+    return new Set(Object.keys(editor.schema.nodes));
+}
+
+function getKnownMarkNames(editor: Editor): Set<string> {
+    return new Set(Object.keys(editor.schema.marks));
 }
 
 /**
@@ -223,13 +217,18 @@ function normalizeEditorContent(
                         class="editor-scroll-container relative overflow-y-auto overscroll-contain"
                         [class.editor-scroll-container--locked]="anyOverlayOpen()"
                         [style]="scrollContainerStyle()">
+                        <!--
+                            role / aria-multiline / aria-label are NOT here: ngx-tiptap mounts
+                            ProseMirror's contenteditable as a CHILD of this element, so this
+                            div never receives focus. Naming it left the element a screen reader
+                            actually lands on unnamed, and declared a second, nested
+                            role="textbox". Those three now ride on the contenteditable itself,
+                            via editorProps.attributes in buildEditor().
+                        -->
                         <div
                             tiptap
                             [editor]="ed"
                             class="prose max-w-none"
-                            role="textbox"
-                            aria-multiline="true"
-                            [attr.aria-label]="'dot.block.editor.editor.aria-label' | dm"
                             aria-haspopup="listbox"
                             aria-controls="slash-command-menu"
                             [attr.aria-expanded]="menuService.isOpen()"
@@ -276,7 +275,7 @@ function normalizeEditorContent(
         </div>
     `
 })
-export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
+export class DotCMSEditorComponent implements OnInit, OnDestroy, ControlValueAccessor {
     /** Slash menu state; used by the template for ARIA on the ProseMirror surface. */
     protected readonly menuService = inject(SlashMenuService);
 
@@ -286,7 +285,7 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
     /** Opens/closes caret-anchored popovers and supplies payloads (e.g. link edit context). */
     private readonly popovers = inject(EditorPopoverService);
 
-    /** Uploads user-dropped image and video files to dotCMS. */
+    /** Uploads user-dropped image, video, and audio files to dotCMS. */
     private readonly dotUpload = inject(DotUploadService);
 
     /** Document root for fullscreen scroll lock and global key listeners. */
@@ -312,6 +311,18 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
      * character limit, custom styles, count bar visibility, and custom remote extensions.
      */
     readonly field = input<DotCMSContentTypeField | undefined>(undefined);
+
+    /**
+     * The name announced for the editable surface.
+     *
+     * The field's own name when there is one: on a content type with several rich-text fields the
+     * generic string is identical for all of them, so a screen reader cannot tell which one is
+     * focused. Falls back to the translated generic label where the editor runs standalone, with
+     * no field behind it.
+     */
+    protected readonly $accessibleName = computed(
+        () => this.field()?.name || this.dotMessageService.get('dot.block.editor.editor.aria-label')
+    );
 
     /**
      * The DotCMS contentlet currently being edited.
@@ -411,6 +422,23 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
     private pendingValue: string | JSONContent | null = null;
 
     /**
+     * The raw `value` reference most recently loaded into the editor, or `undefined` when
+     * nothing has been loaded yet.
+     *
+     * Compared by identity, never serialized. This exists because the value effect below is
+     * re-run by Angular without any of its inputs changing: selecting a node with an Angular
+     * node view makes `ngx-tiptap` write that node view's `selected` input, and Angular's
+     * `setInput` marks every ancestor view dirty, which re-flushes this component's effects
+     * (#36985). Measured: wrapping the effect's reads in `untracked()` — leaving it with zero
+     * dependencies — does not stop it re-running, so narrowing dependencies cannot fix this.
+     *
+     * Identity is the right gate because `setInput` returns early when the new value is
+     * `Object.is`-equal to the previous one, so on a spurious re-run the host has written
+     * nothing and `value()` yields the very same object.
+     */
+    #loadedValue: string | JSONContent | undefined = undefined;
+
+    /**
      * Buffers a {@link setDisabledState} call that arrives before the editor exists.
      * Applied right after {@link buildEditor} returns.
      */
@@ -429,14 +457,21 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
             onCreate: ({ editor }) => syncCharacterStatsFromEditor(editor, this.stats),
             onUpdate: ({ editor }) => {
                 syncCharacterStatsFromEditor(editor, this.stats);
-                const json = this.withDocStats(editor.getJSON());
-                this.onChange(JSON.stringify(json));
-                this.valueChange.emit(json);
+                this.emitValue(editor);
             },
             onBlur: () => {
                 this.onTouched();
             },
             editorProps: {
+                // ProseMirror owns the contenteditable, and ngx-tiptap mounts it as a child of
+                // the host div — so this is the only way to put attributes on the element that
+                // actually takes focus. Binding them in the template puts them on the parent,
+                // which announces nothing.
+                attributes: {
+                    role: 'textbox',
+                    'aria-multiline': 'true',
+                    'aria-label': this.$accessibleName()
+                },
                 handleDrop: (view, event, slice, moved) =>
                     handleMediaDrop(
                         editor,
@@ -445,7 +480,8 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
                         slice,
                         moved,
                         (file) => this.dotUpload.uploadImage(file),
-                        (file) => this.dotUpload.uploadVideo(file)
+                        (file) => this.dotUpload.uploadVideo(file),
+                        (file) => this.dotUpload.uploadAudio(file)
                     ),
                 handleScrollToSelection: (view) => scrollCaretIntoEditorContainer(view)
             },
@@ -462,9 +498,132 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
     }
 
     /**
-     * Pins a freshly built editor inside the {@link editor} signal and drains any
-     * value / disabled state that arrived through {@link ControlValueAccessor} while
-     * the editor was still mounting on the slow path.
+     * Pushes the editor's current document out to the host — the reactive-form control and the
+     * `valueChange` output.
+     *
+     * Shared by {@link buildEditor}'s `onUpdate` and by {@link loadContent} when the emoji heal
+     * rewrote something, so both paths emit the identical shape. They used to differ, which is
+     * how a healed document could sit in the editor while the form control still held the
+     * unhealed string.
+     */
+    private emitValue(editor: Editor): void {
+        const currentJson = editor.getJSON();
+        const json = this.withDocStats({
+            ...currentJson,
+            content: restoreUnknownBlockNodes(currentJson.content ?? [])
+        });
+
+        this.onChange(JSON.stringify(json));
+        this.valueChange.emit(json);
+    }
+
+    /**
+     * Replaces the editor's document with `content`, normalizing it first: unknown node types
+     * become the `dotUnsupportedBlock` placeholder so custom blocks survive the round trip, and
+     * legacy `emoji` nodes become the text they should always have been.
+     *
+     * Every load goes through here — the initial one from {@link commitEditor}, later host
+     * pushes from the `value` effect, and reactive-forms writes from {@link writeValue} — so
+     * there is one place where the document is replaced rather than three near-copies.
+     *
+     * **Order matters, and the heal must run LAST.** An earlier revision ran it first and claimed
+     * the order made no difference. It does: `preserveUnknownBlockNodes` swallows an unknown node
+     * whole into `attrs.originalNode`, which `unknown-block.util.ts` documents as inert data kept
+     * byte-for-byte as stored — the mark pass skips `dotUnsupportedBlock` precisely to honour that.
+     * Healing first meant rewriting `emoji` nodes nested inside a customer's custom block before
+     * that payload was stashed, so the "original" restored on save was not the original.
+     *
+     * Running the heal after makes the payload structurally unreachable — it lives in `attrs`, and
+     * `healNode` only recurses into `content` — rather than relying on a known-node-name list
+     * staying in sync.
+     */
+    private loadContent(editor: Editor, content: string | JSONContent): void {
+        const parsed = normalizeEditorContent(content);
+
+        if (typeof parsed === 'string') {
+            // A non-JSON string value is treated as HTML by `normalizeEditorContent`. dotCMS does
+            // not store Story Block fields that way, but hosts embedding the editor can pass HTML —
+            // and that markup can carry rendered emoji spans, so it needs healing too.
+            //
+            // `transformPastedHTML` does NOT cover this: it only runs on paste. Without the call
+            // below, the `fallbackImage` span's inner `<img src="cdn.jsdelivr.net/…">` is left
+            // exposed and `DotImage` claims it as a dotCMS image node.
+            const healedHtml = healEmojiHtml(parsed, emojis);
+
+            editor.commands.setContent(healedHtml, { emitUpdate: false });
+
+            // Emit for the same reason the JSON path does: without it the host keeps the unhealed
+            // string and a plain Save throws the repair away. Gated on the heal having actually
+            // rewritten something, so an HTML value with no emoji span leaves the form pristine.
+            if (healedHtml !== parsed) {
+                this.emitHealedValue(editor);
+            }
+
+            return;
+        }
+
+        const preserved = preserveUnknownNodesInDocument(
+            parsed,
+            getKnownNodeNames(editor),
+            getKnownMarkNames(editor)
+        );
+        const healed = healEmojiNodes(preserved, emojis);
+
+        editor.commands.setContent(healed, { emitUpdate: false });
+
+        // `emitUpdate: false` above is deliberate: a host push or a reactive-forms write must not
+        // look like an author edit. But when the heal actually rewrote something, the document in
+        // the editor no longer matches the value the host is holding, and without an emit the
+        // repair is lost the moment the author saves without typing anything — which is exactly
+        // what they would do, having seen the © render correctly.
+        //
+        // `healEmojiNodes` returns the SAME reference when it changed nothing, so this fires only
+        // for content that actually carried an `emoji` node. Everything else is untouched and the
+        // form stays pristine.
+        //
+        // Deferred to a microtask because `writeValue` is one of this method's callers, and
+        // calling `onChange` synchronously inside it trips Angular's "value changed after it was
+        // checked" check (NG0100).
+        if (healed !== preserved) {
+            this.emitHealedValue(editor);
+        }
+    }
+
+    /**
+     * Emits after a healing load.
+     *
+     * Deferred to a microtask because `writeValue` is one of `loadContent`'s callers, and calling
+     * `onChange` synchronously inside it trips Angular's "value changed after it was checked"
+     * check (NG0100).
+     *
+     * FINDING 5: the stats sync is not incidental. `withDocStats` bails when `charCount()` is `<= 0`
+     * and `syncCharacterStatsFromEditor` runs only from `onCreate` / `onUpdate` — and this path
+     * sets content with `emitUpdate: false`, so nothing had refreshed the count. Without the sync
+     * the healed emit silently drops `charCount`, `wordCount` and `readingTime` from the stored
+     * document.
+     */
+    private emitHealedValue(editor: Editor): void {
+        queueMicrotask(() => {
+            if (editor.isDestroyed) {
+                return;
+            }
+
+            syncCharacterStatsFromEditor(editor, this.stats);
+            this.emitValue(editor);
+        });
+    }
+
+    /**
+     * Pins a freshly built editor inside the {@link editor} signal and loads the initial
+     * document — from the {@link ControlValueAccessor} write that arrived while the editor was
+     * still mounting, or from the `value` input when the host is the web component.
+     *
+     * This is the single load point for both hosts, which is why no host detection is needed:
+     * the reactive-forms host never sets `value`, and the web-component host never calls
+     * `writeValue`. It deliberately mirrors the legacy editor, which loads once in
+     * `editor.on('create')` and does not react to `value` afterwards — and does not have
+     * #36985 as a result. `on('create')` itself is unusable here because it fires inside
+     * `new Editor(...)`, before {@link editor} is set on the line below.
      */
     private commitEditor(editor: Editor): void {
         this.editor.set(editor);
@@ -474,12 +633,21 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
             this.pendingDisabled = null;
         }
 
+        // Reactive forms take precedence: a `writeValue` that arrived during mounting is the
+        // authoritative content for that host. Only one of the two ever has a value.
         if (this.pendingValue !== null) {
-            const parsed = normalizeEditorContent(this.pendingValue);
-            if (!editorContentMatchesParsed(editor, parsed)) {
-                editor.commands.setContent(parsed, { emitUpdate: false });
+            if (this.pendingValue !== '') {
+                this.loadContent(editor, this.pendingValue);
             }
             this.pendingValue = null;
+
+            return;
+        }
+
+        const initial = this.value();
+        if (initial) {
+            this.#loadedValue = initial;
+            this.loadContent(editor, initial);
         }
     }
 
@@ -587,18 +755,28 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
             this.store.setLanguageId(id);
         });
 
-        // Sync value input → editor (for web component / non-CVA usage).
-        // Guard: skip when value is empty to avoid overriding CVA-set content on init;
-        // skip when unchanged so two-way [value] + (valueChange) does not reset the cursor.
-        // Also tracks `editor()` so the effect re-fires once the slow-path editor mounts.
+        // Sync value input → editor, for the web-component host where there is no
+        // ControlValueAccessor. The initial load happens in `commitEditor`; this effect exists
+        // only to pick up a host that later swaps in a different document.
+        //
+        // Angular re-runs this effect whenever any descendant Angular node view writes an input
+        // — which happens every time a `dotContent` or `codeBlock` node is selected. Nothing it
+        // reads has changed on those runs, so the identity check below is what makes a click
+        // free. Do NOT replace it with a content comparison: that is what #36985 was, and the
+        // whole point is to answer without inspecting the document at all.
+        //
+        // Bail order is load-bearing. Emptiness must be tested before the latch, or `''` latches
+        // and content never loads. The editor and drag bails must NOT latch either, or the
+        // value would be discarded and never retried (#36976 — a setContent mid-drag turns a
+        // move into a duplicate).
         effect(() => {
             const v = this.value();
             if (!v) return;
+            if (v === this.#loadedValue) return;
             const ed = this.editor();
-            if (!ed) return;
-            const parsed = normalizeEditorContent(v);
-            if (editorContentMatchesParsed(ed, parsed)) return;
-            ed.commands.setContent(parsed, { emitUpdate: false });
+            if (!ed || ed.view.dragging) return;
+            this.#loadedValue = v;
+            this.loadContent(ed, v);
         });
 
         // Preserve selection highlight while any popover or slash menu is open
@@ -627,12 +805,24 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
                 this.document.body.style.overflow = '';
             });
         });
+    }
 
-        // Editor init: fast path (no customBlocks) is synchronous so existing tests
-        // and consumers see no behaviour change. Slow path (customBlocks set) defers
-        // construction until the remote ES-module URLs resolve — TipTap's schema is
-        // frozen at construction time, so adding extensions later is impossible
-        // without destroying the editor and losing ProseMirror state.
+    /**
+     * Builds the TipTap editor once the `field` input is bound.
+     *
+     * This MUST run in {@link ngOnInit}, not the constructor: `field` is a signal
+     * `input()` and Angular binds inputs *after* construction, so reading `this.field()`
+     * in the constructor always sees `undefined` — which silently skips every customer's
+     * `customBlocks` remote extensions (the editor would boot without them and then fail
+     * to parse stored content that references their node types). See #36646.
+     *
+     * Fast path (no customBlocks) builds synchronously. Slow path (customBlocks set) defers
+     * construction until the remote ES-module URLs resolve — TipTap's schema is frozen at
+     * construction time, so extensions must all be present before `new Editor`. `writeValue`
+     * / `setDisabledState` arriving before the editor mounts are buffered via
+     * {@link pendingValue} / {@link pendingDisabled} and drained in {@link commitEditor}.
+     */
+    ngOnInit(): void {
         const parsedCustomBlocks = parseCustomBlocksField(this.field());
         if (parsedCustomBlocks.extensions.length === 0) {
             this.commitEditor(this.buildEditor([]));
@@ -700,9 +890,16 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
             this.pendingValue = content ?? '';
             return;
         }
-        const parsed = normalizeEditorContent(content);
-        if (editorContentMatchesParsed(ed, parsed)) return;
-        ed.commands.setContent(parsed, { emitUpdate: false });
+        if (ed.view.dragging) return;
+
+        // The only call site that still compares documents. Angular reactive forms can
+        // legitimately write more than once — `setValue`, `patchValue`, `reset` — and unlike the
+        // `value` input there is no stable reference to latch on, because the host stringifies.
+        // The value effect uses an identity latch instead, and `commitEditor` is a one-shot
+        // drain that needs no guard at all.
+        if (contentMatchesEditorDocument(ed, content ?? '')) return;
+
+        this.loadContent(ed, content ?? '');
     }
 
     /** @inheritdoc */

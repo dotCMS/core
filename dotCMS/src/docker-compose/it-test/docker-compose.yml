@@ -37,7 +37,7 @@ services:
             - es_net
 
     opensearch-test-upgrade:
-        image: ${OS_IMAGE_UPGRADE:-opensearchproject/opensearch:3.0.0}
+        image: ${OS_IMAGE_UPGRADE:-opensearchproject/opensearch:3.8.0}
         environment:
             - cluster.name=opensearch-upgrade-cluster
             - node.name=opensearch-upgrade-node

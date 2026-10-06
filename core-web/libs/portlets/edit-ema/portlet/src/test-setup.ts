@@ -1,14 +1,17 @@
-import { setupZoneTestEnv } from 'jest-preset-angular/setup-env/zone';
+import '@analogjs/vitest-angular/setup-zone';
+import '@angular/compiler';
+import '@analogjs/vitest-angular/setup-snapshots';
+import { setupTestBed } from '@analogjs/vitest-angular/setup-testbed';
+import { vi } from 'vitest';
+
+import { provideZoneChangeDetection } from '@angular/core';
 
 import { setupResizeObserverMock } from '@dotcms/utils-testing';
 
 // 10s max per test to catch infinite loops / runaway tests
-jest.setTimeout(10000);
+vi.setConfig({ testTimeout: 10000 });
 
-setupZoneTestEnv({
-    errorOnUnknownElements: true,
-    errorOnUnknownProperties: true
-});
+setupTestBed({ zoneless: false, providers: [provideZoneChangeDetection()] });
 
 // Setup global mocks
 setupResizeObserverMock();
@@ -19,15 +22,15 @@ setupResizeObserverMock();
 if (typeof window !== 'undefined' && !window.matchMedia) {
     Object.defineProperty(window, 'matchMedia', {
         writable: true,
-        value: jest.fn().mockImplementation((query: string) => ({
+        value: vi.fn().mockImplementation((query: string) => ({
             matches: false,
             media: query,
             onchange: null,
-            addListener: jest.fn(),
-            removeListener: jest.fn(),
-            addEventListener: jest.fn(),
-            removeEventListener: jest.fn(),
-            dispatchEvent: jest.fn()
+            addListener: vi.fn(),
+            removeListener: vi.fn(),
+            addEventListener: vi.fn(),
+            removeEventListener: vi.fn(),
+            dispatchEvent: vi.fn()
         }))
     });
 }
@@ -59,7 +62,7 @@ console.warn = () => {
 // JSDOM does not implement navigation (location.reload/assign/replace throw "Not implemented: navigation").
 // Patch Location.prototype so all location objects (including iframe contentWindow.location) use no-ops in tests.
 if (typeof window !== 'undefined' && window.location?.constructor?.prototype) {
-    const noop = jest.fn();
+    const noop = vi.fn();
     const proto = window.location.constructor.prototype as Record<string, unknown>;
     for (const method of ['reload', 'assign', 'replace']) {
         if (proto[method] !== noop) {

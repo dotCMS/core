@@ -6,7 +6,8 @@ import {
     HostListener,
     inject,
     signal,
-    viewChild
+    viewChild,
+    ChangeDetectionStrategy
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterOutlet } from '@angular/router';
@@ -96,6 +97,7 @@ type SavePageEventData = {
         DotCreatePageDialogComponent,
         TieredMenu
     ],
+    changeDetection: ChangeDetectionStrategy.Eager,
     host: {
         class: 'h-full overflow-auto p-6 block'
     }

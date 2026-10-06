@@ -81,3 +81,16 @@ export interface TableColumn {
     header: string;
     type: 'text' | 'title' | 'language' | 'status' | 'image';
 }
+
+/**
+ * The relationship settings the editor actually runs on, established once at the service edge.
+ *
+ * `ContentTypeRelationshipField.relationships` is required by the type but arrives as raw HTTP
+ * JSON, so `RelationshipFieldService.prepareField` validates it and publishes this instead.
+ * Consumers read it from the store rather than reaching back into the field, which is what makes
+ * the non-optional access safe: a field without a usable descriptor never reaches a loaded store.
+ */
+export interface RelationshipDescriptor {
+    cardinality: number;
+    isParentField: boolean;
+}

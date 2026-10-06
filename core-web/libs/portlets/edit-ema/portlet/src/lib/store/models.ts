@@ -10,13 +10,12 @@ import {
 import { DotCMSPage } from '@dotcms/types';
 import { StyleEditorFormSchema } from '@dotcms/types/internal';
 
-import { UVEFlags } from './features/flags/models';
-
 import {
     Container,
     ContentletArea,
     EmaDragItem
 } from '../edit-ema-editor/components/ema-page-dropzone/types';
+import { UVEFeatureFlags } from '../shared/consts';
 import { EDITOR_STATE, UVE_STATUS } from '../shared/enums';
 import { DotPageAssetParams, SelectedContentlet } from '../shared/models';
 
@@ -78,8 +77,15 @@ export interface UVEState {
     uveCurrentUser: CurrentUser | null;
 
     // ============ FLAGS (withFlags) ============
-    // Note: flags added by withFlags feature - kept optional for backwards compatibility
-    flags?: UVEFlags;
+    /**
+     * Feature-flag slice. `withFlags` owns it at runtime (it declares and populates it); this
+     * declaration exists purely so features constrained on `UVEState` can READ `flags()` without a
+     * cast — a `signalStoreFeature` returned from a generic function (which `withFlags` is) loses
+     * its state contribution during composition in ngrx/signals, so the slice is invisible to
+     * consumers otherwise. The type is derived from `UVE_FEATURE_FLAGS`, so it cannot drift from
+     * the flags actually fetched.
+     */
+    flags: UVEFeatureFlags;
 
     // ============ PAGE DOMAIN (withPage) ============
     pageParams: DotPageAssetParams | null;

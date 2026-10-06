@@ -7,7 +7,8 @@ import {
     OnInit,
     QueryList,
     ViewChildren,
-    inject
+    inject,
+    ChangeDetectionStrategy
 } from '@angular/core';
 
 import { DialogModule, Dialog } from 'primeng/dialog';
@@ -35,6 +36,7 @@ interface DotLargeMessageDisplayParams {
     templateUrl: './dot-large-message-display.component.html',
     styleUrls: ['./dot-large-message-display.component.scss'],
     imports: [DialogModule],
+    changeDetection: ChangeDetectionStrategy.Eager,
     providers: [DotParseHtmlService]
 })
 export class DotLargeMessageDisplayComponent implements OnInit, OnDestroy, AfterViewInit {

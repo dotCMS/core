@@ -29,7 +29,7 @@ interface ActivityRendererData {
 }
 
 export function DetailPage({ pageContent }: DetailPageProps) {
-    const { pageAsset, content = {} } = useEditableDotCMSPage(pageContent);
+    const { pageAsset, content = {} } = useEditableDotCMSPage(pageContent) ?? {};
     const urlContentMap = pageAsset?.urlContentMap as
         | (DotCMSBasicContentlet & { blogContent?: BlockEditorNode })
         | undefined;
@@ -74,7 +74,7 @@ export function DetailPage({ pageContent }: DetailPageProps) {
                     </div>
                 )}
 
-                <div onClick={handleClick}>
+                <div onClick={handleClick} >
                     <DotCMSBlockEditorRenderer
                         blocks={blogContent}
                         className={blockEditorClasses}

@@ -12,7 +12,8 @@ import {
     input,
     output,
     signal,
-    viewChild
+    viewChild,
+    ChangeDetectionStrategy
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
@@ -71,6 +72,7 @@ type TableRowSelectEvent<T> = {
         ReactiveFormsModule,
         DotContentletStatusBadgeComponent
     ],
+    changeDetection: ChangeDetectionStrategy.Eager,
     schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class DotPagesTableComponent {

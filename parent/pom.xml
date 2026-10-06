@@ -18,8 +18,11 @@
         <!-- default load from .sdkmanrc file -->
         <!--suppress UnresolvedMavenProperty -->
         <sdkman.java.version>${ext.java}</sdkman.java.version>
-        <!-- allows for override version of base for docker container separate from build -->
-        <runtime.docker.sdkman.java.version>${sdkman.java.version}</runtime.docker.sdkman.java.version>
+        <!-- allows for override version of base for docker container separate from build.
+             Docker-tag-safe form of sdkman.java.version: docker tags cannot contain '+',
+             so the SDKMAN id (e.g. 25.0.4+1-ms) is written 25.0.4-1-ms. Keep in sync
+             with .sdkmanrc when bumping the java version. -->
+        <runtime.docker.sdkman.java.version>25.0.4-1-ms</runtime.docker.sdkman.java.version>
 
         <!-- this is the version of source we support in source must be same or less that running version
          run version is set by .sdkmanrc file in project root should update only after downstream plugins and projects
@@ -76,7 +79,7 @@
         <vipsffm.libpath.args></vipsffm.libpath.args>
 
         <maven.deploy.skip>false</maven.deploy.skip>
-        <tomcat.version>9.0.120</tomcat.version>
+        <tomcat.version>9.0.122</tomcat.version>
         <!-- Add any properties here that are to have defaults and overrides set in the environment properties -->
         <!--suppress UnresolvedMavenProperty -->
         <mvn.environment.name>${ext.mvn.environment.name}</mvn.environment.name>
@@ -1988,6 +1991,13 @@
         </profile>
     </profiles>
     <repositories>
+        <!--
+            dotCMS releases are published to the BunnyCDN S3 repository under
+            libs-release by .github/scripts/publish-to-s3/publish.sh. Shared
+            snapshots are not published and there is no libs-snapshot root.
+            Maven Central remains the default remote for third-party artifacts,
+            so no Maven Central redirect is needed here.
+        -->
         <repository>
             <releases>
                 <enabled>true</enabled>
@@ -1996,47 +2006,24 @@
                 <enabled>false</enabled>
             </snapshots>
             <id>dotcms-libs</id>
-            <url>https://repo.dotcms.com/artifactory/libs-release</url>
-        </repository>
-        <repository>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>dotcms-libs-snapshot-local</id>
-            <name>IDotCMS libs Snapshots</name>
-            <url>https://repo.dotcms.com/artifactory/libs-snapshot-local</url>
+            <url>https://dotcms-repo.b-cdn.net/libs-release</url>
         </repository>
     </repositories>
     <pluginRepositories>
         <pluginRepository>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>
             <id>dotcms-libs</id>
-            <url>https://repo.dotcms.com/artifactory/libs-release</url>
-        </pluginRepository>
-        <pluginRepository>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-            <id>dotcms-libs-snapshot</id>
-            <url>https://repo.dotcms.com/artifactory/libs-snapshot</url>
+            <url>https://dotcms-repo.b-cdn.net/libs-release</url>
         </pluginRepository>
     </pluginRepositories>
-    <distributionManagement>
-        <repository>
-            <id>dotcms-libs-local</id>
-            <name>DotCMS libs Release</name>
-            <url>https://repo.dotcms.com/artifactory/libs-release-local</url>
-        </repository>
-        <snapshotRepository>
-            <id>dotcms-libs-snapshot-local</id>
-            <name>IDotCMS libs Snapshots</name>
-            <url>https://repo.dotcms.com/artifactory/libs-snapshot-local</url>
-        </snapshotRepository>
-    </distributionManagement>
-
+    <!--
+        Publishing to the S3-compatible repository is handled by
+        .github/scripts/publish-to-s3/publish.sh, so there is no Artifactory
+        distribution target here anymore.
+    -->
 </project>

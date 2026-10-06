@@ -1,5 +1,6 @@
-import { createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { MockComponent } from 'ng-mocks';
+import { vi } from 'vitest';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
@@ -46,7 +47,7 @@ describe('DotAssetSearchDialogComponent', () => {
     });
 
     it('should close dialog with selected asset on addAsset', () => {
-        const spy = jest.spyOn(dynamicDialogRef, 'close');
+        const spy = vi.spyOn(dynamicDialogRef, 'close');
         spectator.triggerEventHandler(DotAssetSearchComponent, 'addAsset', EMPTY_CONTENTLET);
         expect(spy).toHaveBeenCalledWith(EMPTY_CONTENTLET);
     });

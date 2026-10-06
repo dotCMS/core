@@ -10,7 +10,8 @@ import {
     OnInit,
     Renderer2,
     SecurityContext,
-    ViewChild
+    ViewChild,
+    ChangeDetectionStrategy
 } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 
@@ -44,6 +45,7 @@ interface DotEditableTextEditor {
     templateUrl: './dotcms-editable-text.component.html',
     styleUrl: './dotcms-editable-text.component.css',
     imports: [EditorComponent],
+    changeDetection: ChangeDetectionStrategy.Eager,
     providers: [
         {
             provide: TINYMCE_SCRIPT_SRC,

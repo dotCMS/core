@@ -1,5 +1,5 @@
-import { expect, it } from '@jest/globals';
 import { SpectatorService, createServiceFactory } from '@openng/spectator';
+import { expect, it } from 'vitest';
 
 import { SEO_RULES_COLORS, SEO_RULES_ICONS } from '@dotcms/dotcms-models';
 

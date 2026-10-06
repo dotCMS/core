@@ -3804,6 +3804,270 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "Inference v1",
+      "item": [
+        {
+          "name": "Anonymous request is rejected",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Anonymous callers get 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"model\": \"gpt-4o-mini\",\n    \"messages\": [\n        {\n            \"role\": \"user\",\n            \"content\": \"hello\"\n        }\n    ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/inference/v1/chat/completions",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "inference",
+                "v1",
+                "chat",
+                "completions"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "No CORS headers are emitted",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// FR-030: server-side only. The credential is a long-lived dotCMS token with its",
+                  "// owner's full authority, so CORS would invite putting it in browser JavaScript.",
+                  "// The request has to actually authenticate for this to mean anything: a 401",
+                  "// carries no Access-Control-Allow-Origin either, so asserting the header's",
+                  "// absence against a refused request passes whatever CORS does.",
+                  "pm.test('Request authenticated', function () {",
+                  "    pm.expect(pm.response.code, 'expected an authenticated response').to.not.equal(401);",
+                  "});",
+                  "pm.test('No Access-Control-Allow-Origin header', function () {",
+                  "    pm.expect(pm.response.headers.has('Access-Control-Allow-Origin')).to.be.false;",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Origin",
+                "value": "https://example.com"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"model\": \"gpt-4o-mini\",\n    \"messages\": [\n        {\n            \"role\": \"user\",\n            \"content\": \"hello\"\n        }\n    ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/inference/v1/chat/completions",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "inference",
+                "v1",
+                "chat",
+                "completions"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Missing model is rejected",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// FR-024: the model is required; no alias, no implicit default.",
+                  "pm.test('Status is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Error names the offending field', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.error.param, 'param names model').equals('model');",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"messages\": [\n        {\n            \"role\": \"user\",\n            \"content\": \"hello\"\n        }\n    ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/inference/v1/chat/completions",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "inference",
+                "v1",
+                "chat",
+                "completions"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Completion reports the serving site",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// FR-020 / SC-005: every response names the site whose configuration served it,",
+                  "// so spend can be attributed without reading server logs.",
+                  "pm.test('Status code should be ok 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Resolved-site header is present', function () {",
+                  "    pm.expect(pm.response.headers.has('X-dotCMS-Resolved-Site')).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test('Response carries the standard envelope', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.object, 'object type').equals('chat.completion');",
+                  "    pm.expect(jsonData.id, 'id is present').to.not.be.undefined;",
+                  "    pm.expect(jsonData.created, 'created is present').to.not.be.undefined;",
+                  "    pm.expect(jsonData.model, 'model is present').to.not.be.undefined;",
+                  "    pm.expect(jsonData.choices[0].finish_reason, 'finish_reason present').to.not.be.undefined;",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"model\": \"gpt-4o-mini\",\n    \"messages\": [\n        {\n            \"role\": \"user\",\n            \"content\": \"What recent breakthroughs in medical research have the potential to significantly impact public health?\"\n        }\n    ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/inference/v1/chat/completions",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "inference",
+                "v1",
+                "chat",
+                "completions"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
     }
   ],
   "event": [
@@ -3812,7 +4076,49 @@
       "script": {
         "type": "text/javascript",
         "packages": {},
-        "exec": [        ]
+        "exec": [
+          "if (!pm.environment.get('jwt')) {",
+          "    console.log(\"generating....\")",
+          "    const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
+          "    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
+          "",
+          "    if (!pm.environment.get('jwt')) {",
+          "        const username = pm.environment.get(\"user\");",
+          "        const password = pm.environment.get(\"password\");",
+          "        const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
+          "",
+          "        const requestOptions = {",
+          "            url: apiUrl,",
+          "            method: \"POST\",",
+          "            header: {",
+          "                \"accept\": \"*/*\",",
+          "                \"content-type\": \"application/json\",",
+          "                \"Authorization\": `Basic ${basicAuth}`",
+          "            },",
+          "            body: {",
+          "                mode: \"raw\",",
+          "                raw: JSON.stringify({",
+          "                    \"expirationSeconds\": 7200,",
+          "                    \"userId\": \"dotcms.org.1\",",
+          "                    \"network\": \"0.0.0.0/0\",",
+          "                    \"claims\": {\"label\": \"postman-tests\"}",
+          "                })",
+          "            }",
+          "        };",
+          "",
+          "        pm.sendRequest(requestOptions, function (err, response) {",
+          "            if (err) {",
+          "                console.log(err);",
+          "            } else {",
+          "                const jwt = response.json().entity.jwt;",
+          "                pm.environment.set('jwt', jwt);",
+          "                console.log(jwt);",
+          "            }",
+          "        });",
+          "    }",
+          "}",
+          ""
+        ]
       }
     },
     {

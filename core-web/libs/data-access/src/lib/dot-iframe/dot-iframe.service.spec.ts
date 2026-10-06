@@ -1,4 +1,5 @@
-import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { Injectable } from '@angular/core';
 
@@ -32,36 +33,39 @@ describe('DotIframeService', () => {
         service = spectator.service;
     });
 
-    it('should trigger reload action', (done) => {
-        service.reloaded().subscribe((res) => {
-            expect(res).toEqual({ name: 'reload' });
-            done();
-        });
+    it('should trigger reload action', () =>
+        new Promise<void>((done) => {
+            service.reloaded().subscribe((res) => {
+                expect(res).toEqual({ name: 'reload' });
+                done();
+            });
 
-        service.reload();
-    });
+            service.reload();
+        }));
 
-    it('should trigger reload colors action', (done) => {
-        service.reloadedColors().subscribe((res) => {
-            expect(res).toEqual({ name: 'colors' });
-            done();
-        });
+    it('should trigger reload colors action', () =>
+        new Promise<void>((done) => {
+            service.reloadedColors().subscribe((res) => {
+                expect(res).toEqual({ name: 'colors' });
+                done();
+            });
 
-        service.reloadColors();
-    });
+            service.reloadColors();
+        }));
 
-    it('should trigger ran action', (done) => {
-        service.ran().subscribe((res) => {
-            expect(res).toEqual({ name: 'functionName' });
-            done();
-        });
+    it('should trigger ran action', () =>
+        new Promise<void>((done) => {
+            service.ran().subscribe((res) => {
+                expect(res).toEqual({ name: 'functionName' });
+                done();
+            });
 
-        service.run({ name: 'functionName' });
-    });
+            service.run({ name: 'functionName' });
+        }));
 
     describe('reload portlet data', () => {
         beforeEach(() => {
-            jest.spyOn(service, 'run');
+            vi.spyOn(service, 'run');
         });
 
         it('should reload data for content', () => {

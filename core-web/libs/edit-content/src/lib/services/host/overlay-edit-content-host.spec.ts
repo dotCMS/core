@@ -1,6 +1,7 @@
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
+import { Mock, vi } from 'vitest';
 
-import { DynamicDialogConfig } from 'primeng/dynamicdialog';
+import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
@@ -11,18 +12,19 @@ import { DotRelatedContentNavigationStore } from '../../store/dot-related-conten
 describe('OverlayEditContentHost', () => {
     let spectator: SpectatorService<OverlayEditContentHost>;
     let host: OverlayEditContentHost;
-    let relatedNav: { appendToTrail: jest.Mock; titleCache: jest.Mock; registerTitle: jest.Mock };
+    let relatedNav: { appendToTrail: Mock; titleCache: Mock; registerTitle: Mock };
     let config: DynamicDialogConfig;
 
     const createHost = createServiceFactory({
         service: OverlayEditContentHost,
         providers: [
             mockProvider(DotRelatedContentNavigationStore, {
-                appendToTrail: jest.fn().mockReturnValue(['inode-a', 'inode-b']),
-                titleCache: jest.fn().mockReturnValue({ 'inode-a': 'A', 'inode-b': 'B' }),
-                registerTitle: jest.fn()
+                appendToTrail: vi.fn().mockReturnValue(['inode-a', 'inode-b']),
+                titleCache: vi.fn().mockReturnValue({ 'inode-a': 'A', 'inode-b': 'B' }),
+                registerTitle: vi.fn()
             }),
-            mockProvider(DynamicDialogConfig, { data: undefined })
+            mockProvider(DynamicDialogConfig, { data: undefined }),
+            mockProvider(DynamicDialogRef, { close: vi.fn() })
         ]
     });
 
@@ -62,16 +64,44 @@ describe('OverlayEditContentHost', () => {
         });
     });
 
-    describe('saved$', () => {
-        it('emits the contentlet reported via reportSaved', (done) => {
-            const contentlet = { inode: 'x', title: 't' } as DotCMSContentlet;
-            host.saved$.subscribe((c) => {
-                expect(c).toBe(contentlet);
-                done();
-            });
+    describe('leaveDeletedContent', () => {
+        it('closes a DialogService dialog through its ref', () => {
+            host.leaveDeletedContent('SimpleWidget');
 
-            host.reportSaved(contentlet);
+            expect(spectator.inject(DynamicDialogRef).close).toHaveBeenCalled();
         });
+
+        it('emits left$ so overlays without a dialog ref (side panel) can close', () => {
+            const leftSpy = vi.fn();
+            host.left$.subscribe(leftSpy);
+
+            host.leaveDeletedContent('SimpleWidget');
+
+            expect(leftSpy).toHaveBeenCalledTimes(1);
+        });
+
+        it('stops reporting saves once the content is deleted', () => {
+            const savedSpy = vi.fn();
+            host.saved$.subscribe(savedSpy);
+
+            host.leaveDeletedContent('SimpleWidget');
+            host.reportSaved({ inode: 'x', title: 't' } as DotCMSContentlet);
+
+            expect(savedSpy).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('saved$', () => {
+        it('emits the contentlet reported via reportSaved', () =>
+            new Promise<void>((done) => {
+                const contentlet = { inode: 'x', title: 't' } as DotCMSContentlet;
+                host.saved$.subscribe((c) => {
+                    expect(c).toBe(contentlet);
+                    done();
+                });
+
+                host.reportSaved(contentlet);
+            }));
     });
 
     // Chrome intents overlay another context, so they are safe no-ops.
@@ -81,14 +111,15 @@ describe('OverlayEditContentHost', () => {
     });
 
     describe('goToRestoredVersion', () => {
-        it('emits an in-place reload for the restored inode (no route to navigate)', (done) => {
-            host.inPlaceNavigation$.subscribe((request) => {
-                expect(request).toEqual({ inode: 'inode-restored' });
-                done();
-            });
+        it('emits an in-place reload for the restored inode (no route to navigate)', () =>
+            new Promise<void>((done) => {
+                host.inPlaceNavigation$.subscribe((request) => {
+                    expect(request).toEqual({ inode: 'inode-restored' });
+                    done();
+                });
 
-            host.goToRestoredVersion('inode-restored');
-        });
+                host.goToRestoredVersion('inode-restored');
+            }));
     });
 
     describe('goToSavedContent', () => {
@@ -112,48 +143,51 @@ describe('OverlayEditContentHost', () => {
     });
 
     describe('goToRelatedContent', () => {
-        it('emits a reload request carrying the DEFERRED trail (not committed yet)', (done) => {
-            host.inPlaceNavigation$.subscribe((request) => {
-                expect(request).toEqual({ inode: 'inode-b', trail: ['inode-a', 'inode-b'] });
-                // Trail is NOT committed until setTrail is called by the layout.
-                expect(host.trail()).toEqual([]);
-                done();
-            });
+        it('emits a reload request carrying the DEFERRED trail (not committed yet)', () =>
+            new Promise<void>((done) => {
+                host.inPlaceNavigation$.subscribe((request) => {
+                    expect(request).toEqual({ inode: 'inode-b', trail: ['inode-a', 'inode-b'] });
+                    // Trail is NOT committed until setTrail is called by the layout.
+                    expect(host.trail()).toEqual([]);
+                    done();
+                });
 
-            host.goToRelatedContent(
-                { inode: 'inode-a', title: 'A' },
-                { inode: 'inode-b', title: 'B' }
-            );
+                host.goToRelatedContent(
+                    { inode: 'inode-a', title: 'A' },
+                    { inode: 'inode-b', title: 'B' }
+                );
 
-            expect(relatedNav.appendToTrail).toHaveBeenCalledWith(
-                [],
-                { inode: 'inode-a', title: 'A' },
-                { inode: 'inode-b', title: 'B' }
-            );
-        });
+                expect(relatedNav.appendToTrail).toHaveBeenCalledWith(
+                    [],
+                    { inode: 'inode-a', title: 'A' },
+                    { inode: 'inode-b', title: 'B' }
+                );
+            }));
     });
 
     describe('goToCrumb', () => {
-        it('emits a reload request with the trimmed trail (deferred)', (done) => {
-            host.inPlaceNavigation$.subscribe((request) => {
-                expect(request).toEqual({ inode: 'inode-a', trail: ['inode-a'] });
-                done();
-            });
+        it('emits a reload request with the trimmed trail (deferred)', () =>
+            new Promise<void>((done) => {
+                host.inPlaceNavigation$.subscribe((request) => {
+                    expect(request).toEqual({ inode: 'inode-a', trail: ['inode-a'] });
+                    done();
+                });
 
-            host.goToCrumb('inode-a', ['inode-a']);
-        });
+                host.goToCrumb('inode-a', ['inode-a']);
+            }));
     });
 
     describe('reloadContent (locale switch)', () => {
-        it('emits a reload request WITHOUT a trail (keeps the current trail)', (done) => {
-            host.inPlaceNavigation$.subscribe((request) => {
-                expect(request).toEqual({ inode: 'inode-5' });
-                expect(request.trail).toBeUndefined();
-                done();
-            });
+        it('emits a reload request WITHOUT a trail (keeps the current trail)', () =>
+            new Promise<void>((done) => {
+                host.inPlaceNavigation$.subscribe((request) => {
+                    expect(request).toEqual({ inode: 'inode-5' });
+                    expect(request.trail).toBeUndefined();
+                    done();
+                });
 
-            host.reloadContent('inode-5');
-        });
+                host.reloadContent('inode-5');
+            }));
     });
 
     describe('setTrail', () => {
@@ -164,5 +198,28 @@ describe('OverlayEditContentHost', () => {
                 { inode: 'inode-b', title: 'B' }
             ]);
         });
+    });
+});
+
+describe('OverlayEditContentHost without a dialog ref (side panel injector)', () => {
+    const createHostWithoutRef = createServiceFactory({
+        service: OverlayEditContentHost,
+        providers: [
+            mockProvider(DotRelatedContentNavigationStore, {
+                appendToTrail: vi.fn(),
+                titleCache: vi.fn().mockReturnValue({}),
+                registerTitle: vi.fn()
+            }),
+            mockProvider(DynamicDialogConfig, { data: undefined })
+        ]
+    });
+
+    it('still emits left$ and does not throw', () => {
+        const hostWithoutRef = createHostWithoutRef().service;
+        const leftSpy = vi.fn();
+        hostWithoutRef.left$.subscribe(leftSpy);
+
+        expect(() => hostWithoutRef.leaveDeletedContent('SimpleWidget')).not.toThrow();
+        expect(leftSpy).toHaveBeenCalledTimes(1);
     });
 });

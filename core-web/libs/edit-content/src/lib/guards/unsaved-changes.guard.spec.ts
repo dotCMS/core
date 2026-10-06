@@ -1,4 +1,5 @@
-import { mockProvider } from '@openng/spectator/jest';
+import { mockProvider } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot, type CanDeactivateFn } from '@angular/router';
@@ -53,14 +54,14 @@ describe('unsavedChangesGuard', () => {
         TestBed.configureTestingModule({
             providers: [
                 mockProvider(ConfirmationService, {
-                    confirm: jest.fn((confirmation: Confirmation) => {
+                    confirm: vi.fn((confirmation: Confirmation) => {
                         capturedConfirmation = confirmation;
 
                         return undefined;
                     })
                 }),
                 mockProvider(DotMessageService, {
-                    get: jest.fn((key: string) => key)
+                    get: vi.fn((key: string) => key)
                 })
             ]
         });
@@ -140,7 +141,7 @@ describe('unsavedChangesGuard', () => {
     });
 
     it('should allow navigation when the user clicks "Discard changes" (reject)', async () => {
-        const markFormPristine = jest.fn();
+        const markFormPristine = vi.fn();
         const component = buildComponent({
             hasUnsavedChanges: () => true,
             markFormPristine
@@ -166,7 +167,7 @@ describe('unsavedChangesGuard', () => {
     // dismissals as "Keep editing" so an accidental click on the X (or
     // a stray ESC keypress) never silently discards the user's work.
     it('should cancel navigation when the user dismisses the dialog (X / ESC → CANCEL)', async () => {
-        const markFormPristine = jest.fn();
+        const markFormPristine = vi.fn();
         const component = buildComponent({
             hasUnsavedChanges: () => true,
             markFormPristine

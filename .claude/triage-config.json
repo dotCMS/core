@@ -28,7 +28,6 @@
       "areas": [
         "core-web/apps/dotcms-block-editor",
         "core-web/libs/block-editor",
-        "core-web/libs/dot-layout-grid",
         "core-web/libs/template-builder",
         "core-web/libs/portlets/edit-ema",
         "core-web/libs/portlets/dot-content-drive",

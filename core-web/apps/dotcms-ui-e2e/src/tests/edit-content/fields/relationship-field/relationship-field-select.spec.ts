@@ -1,7 +1,7 @@
 import { NewEditContentFormPage } from '@pages';
 
+import { AddRelationshipsDialog } from './helpers/add-relationships-dialog';
 import { RelationshipField } from './helpers/relationship-field';
-import { SelectExistingContentDialog } from './helpers/select-existing-content-dialog';
 
 import { CARDINALITY, expect, test } from '../../../../fixtures/relationship.fixture';
 
@@ -56,7 +56,7 @@ test.describe('Single Selection (1:1 / M:1)', () => {
                 await formPage.goToNew(blogTypeVariable);
 
                 const relationshipField = new RelationshipField(adminPage);
-                const dialog = new SelectExistingContentDialog(adminPage);
+                const dialog = new AddRelationshipsDialog(adminPage);
 
                 await relationshipField.clickRelateExisting();
                 await dialog.waitForVisible();
@@ -77,7 +77,7 @@ test.describe('Single Selection (1:1 / M:1)', () => {
                 await formPage.goToNew(blogTypeVariable);
 
                 const relationshipField = new RelationshipField(adminPage);
-                const dialog = new SelectExistingContentDialog(adminPage);
+                const dialog = new AddRelationshipsDialog(adminPage);
 
                 await formPage.fillTextField(`Blog ${cardinality.name} ${testSuffix}`);
 
@@ -94,31 +94,43 @@ test.describe('Single Selection (1:1 / M:1)', () => {
                 await relationshipField.expectRowCount(1);
             });
 
-            test('apply button disabled with no selection @smoke', async ({ adminPage }) => {
+            /**
+             * FR-013 — inverted from the dialog this replaced, deliberately.
+             *
+             * That dialog carried `[disabled]="totalItems === 0"`, which made "uncheck the last
+             * row" the single case where unchecking could not unrelate: the editor cleared the
+             * selection and then had no way to submit it. Confirming an empty selection is a valid
+             * instruction — it means "relate nothing" — so the button stays live in every state.
+             */
+            test('confirm stays enabled with no selection @smoke', async ({ adminPage }) => {
                 const formPage = new NewEditContentFormPage(adminPage);
                 await formPage.goToNew(blogTypeVariable);
 
                 const relationshipField = new RelationshipField(adminPage);
-                const dialog = new SelectExistingContentDialog(adminPage);
+                const dialog = new AddRelationshipsDialog(adminPage);
 
                 await relationshipField.clickRelateExisting();
                 await dialog.waitForVisible();
                 await dialog.waitForContentLoaded();
 
-                await dialog.expectApplyDisabled();
+                await dialog.expectConfirmAlwaysEnabled();
 
                 await dialog.selectSingleItem(0);
-                await dialog.expectApplyEnabled();
+                await dialog.expectConfirmAlwaysEnabled();
 
                 await dialog.clickCancel();
             });
 
+            /**
+             * The behaviour the enabled button exists for: relate one item, reopen, clear it, and
+             * confirm the empty selection. The relationship must end up empty.
+             */
             test('cancel discards selection @smoke', async ({ adminPage }) => {
                 const formPage = new NewEditContentFormPage(adminPage);
                 await formPage.goToNew(blogTypeVariable);
 
                 const relationshipField = new RelationshipField(adminPage);
-                const dialog = new SelectExistingContentDialog(adminPage);
+                const dialog = new AddRelationshipsDialog(adminPage);
 
                 await relationshipField.clickRelateExisting();
                 await dialog.waitForVisible();
@@ -138,7 +150,7 @@ test.describe('Single Selection (1:1 / M:1)', () => {
                 await formPage.goToNew(blogTypeVariable);
 
                 const relationshipField = new RelationshipField(adminPage);
-                const dialog = new SelectExistingContentDialog(adminPage);
+                const dialog = new AddRelationshipsDialog(adminPage);
 
                 await relationshipField.clickRelateExisting();
                 await dialog.waitForVisible();
@@ -206,7 +218,7 @@ test.describe('Multiple Selection (1:M / M:M)', () => {
                 await formPage.goToNew(blogTypeVariable);
 
                 const relationshipField = new RelationshipField(adminPage);
-                const dialog = new SelectExistingContentDialog(adminPage);
+                const dialog = new AddRelationshipsDialog(adminPage);
 
                 await relationshipField.clickRelateExisting();
                 await dialog.waitForVisible();
@@ -223,7 +235,7 @@ test.describe('Multiple Selection (1:M / M:M)', () => {
                 await formPage.goToNew(blogTypeVariable);
 
                 const relationshipField = new RelationshipField(adminPage);
-                const dialog = new SelectExistingContentDialog(adminPage);
+                const dialog = new AddRelationshipsDialog(adminPage);
 
                 await relationshipField.clickRelateExisting();
                 await dialog.waitForVisible();
@@ -245,7 +257,7 @@ test.describe('Multiple Selection (1:M / M:M)', () => {
                 await formPage.goToNew(blogTypeVariable);
 
                 const relationshipField = new RelationshipField(adminPage);
-                const dialog = new SelectExistingContentDialog(adminPage);
+                const dialog = new AddRelationshipsDialog(adminPage);
 
                 await formPage.fillTextField(`Blog ${cardinality.name} Multi ${testSuffix}`);
 
@@ -262,19 +274,60 @@ test.describe('Multiple Selection (1:M / M:M)', () => {
                 await relationshipField.expectRowCount(3);
             });
 
+            /**
+             * FR-013's reason for existing, end to end.
+             *
+             * Only meaningful on a multi-cardinality field: FR-016 keeps the picker shut once a
+             * single-cardinality field holds its item, so there the way back to empty is the row's
+             * delete button, not a second trip through the dialog. Written against single
+             * cardinality first, where it failed against exactly that rule.
+             */
+            test('confirming an empty selection unrelates everything @critical', async ({
+                adminPage
+            }) => {
+                const formPage = new NewEditContentFormPage(adminPage);
+                await formPage.goToNew(blogTypeVariable);
+
+                const relationshipField = new RelationshipField(adminPage);
+                const dialog = new AddRelationshipsDialog(adminPage);
+
+                await relationshipField.clickRelateExisting();
+                await dialog.waitForVisible();
+                await dialog.waitForContentLoaded();
+                await dialog.selectItems([0, 1]);
+                await dialog.clickApply();
+                await dialog.expectClosed();
+                await relationshipField.expectRowCount(2);
+
+                // Reopen: both rows come back checked (FR-009), so clicking them clears the set.
+                await relationshipField.clickRelateExisting();
+                await dialog.waitForVisible();
+                await dialog.waitForContentLoaded();
+                await dialog.expectCheckedRowCount(2);
+
+                await dialog.selectItems([0, 1]);
+                await dialog.expectCheckedRowCount(0);
+
+                await dialog.expectConfirmAlwaysEnabled();
+                await dialog.clickApply();
+                await dialog.expectClosed();
+
+                await relationshipField.expectEmpty();
+            });
+
             test('select all with header checkbox @smoke', async ({ adminPage }) => {
                 const formPage = new NewEditContentFormPage(adminPage);
                 await formPage.goToNew(blogTypeVariable);
 
                 const relationshipField = new RelationshipField(adminPage);
-                const dialog = new SelectExistingContentDialog(adminPage);
+                const dialog = new AddRelationshipsDialog(adminPage);
 
                 await relationshipField.clickRelateExisting();
                 await dialog.waitForVisible();
                 await dialog.waitForContentLoaded();
 
                 await dialog.toggleSelectAll();
-                await dialog.expectApplyEnabled();
+                await dialog.expectConfirmAlwaysEnabled();
 
                 await dialog.clickApply();
                 await dialog.expectClosed();
@@ -332,28 +385,29 @@ test.describe('Create New Inline', () => {
         const relationshipField = new RelationshipField(adminPage);
         await relationshipField.clickCreateNew();
 
-        const createDialog = adminPage.locator('.p-dialog-create-content .p-dialog');
-        await expect(createDialog).toBeVisible({ timeout: 10000 });
+        // With the side-panel feature flag on, "New content" opens the editor in a slide-in
+        // panel (p-drawer, teleported to body), not the centered create dialog.
+        const sidePanel = adminPage.locator('.p-drawer');
+        await expect(sidePanel).toBeVisible({ timeout: 10000 });
 
-        const titleInput = createDialog.getByTestId('title').first();
+        const titleInput = sidePanel.getByTestId('title').first();
         await titleInput.waitFor({ state: 'visible', timeout: 10000 });
         await titleInput.fill(`Inline Author ${testSuffix}`);
 
         const responsePromise = adminPage.waitForResponse((response) =>
             response.url().includes('/api/v1/workflow/actions/')
         );
-        const saveButton = createDialog.getByRole('button', { name: /Save/ });
+        const saveButton = sidePanel.getByRole('button', { name: /Save/ });
         await saveButton.waitFor({ state: 'visible', timeout: 5000 });
         await saveButton.click();
         await responsePromise;
 
-        // Dialog stays open after save — close via X button
-        const closeButton = createDialog.locator(
-            '.p-dialog-header-close, button[aria-label="Close"]'
-        );
+        // Panel stays open after save — close via the header X. Closing fires onContentSaved,
+        // which adds the newly created content to the relationship.
+        const closeButton = sidePanel.getByTestId('side-panel-close');
         await closeButton.waitFor({ state: 'visible', timeout: 5000 });
         await closeButton.click();
-        await expect(createDialog).toBeHidden({ timeout: 10000 });
+        await expect(sidePanel).toBeHidden({ timeout: 10000 });
 
         await relationshipField.expectRowCount(1);
     });
@@ -371,34 +425,32 @@ test.describe('Create New Inline', () => {
         const relationshipField = new RelationshipField(adminPage);
         await relationshipField.clickCreateNew();
 
-        const createDialog = adminPage.locator('.p-dialog-create-content .p-dialog');
-        await expect(createDialog).toBeVisible({ timeout: 10000 });
+        const sidePanel = adminPage.locator('.p-drawer');
+        await expect(sidePanel).toBeVisible({ timeout: 10000 });
 
         await adminPage.keyboard.press('Escape');
-        await expect(createDialog).toBeHidden({ timeout: 5000 });
+        await expect(sidePanel).toBeHidden({ timeout: 5000 });
 
         const textField = adminPage.getByTestId('title');
         await expect(textField).toHaveValue(outerTitle);
         await relationshipField.expectEmpty();
     });
 
-    test('dismiss create dialog via X button @smoke', async ({ adminPage }) => {
+    test('dismiss create panel via X button @smoke', async ({ adminPage }) => {
         const formPage = new NewEditContentFormPage(adminPage);
         await formPage.goToNew(blogTypeVariable);
 
         const relationshipField = new RelationshipField(adminPage);
         await relationshipField.clickCreateNew();
 
-        const createDialog = adminPage.locator('.p-dialog-create-content .p-dialog');
-        await expect(createDialog).toBeVisible({ timeout: 10000 });
+        const sidePanel = adminPage.locator('.p-drawer');
+        await expect(sidePanel).toBeVisible({ timeout: 10000 });
 
-        const closeButton = createDialog.locator(
-            '.p-dialog-header-close, button[aria-label="Close"]'
-        );
+        const closeButton = sidePanel.getByTestId('side-panel-close');
         await expect(closeButton).toBeVisible({ timeout: 5000 });
         await closeButton.click();
 
-        await expect(createDialog).toBeHidden({ timeout: 5000 });
+        await expect(sidePanel).toBeHidden({ timeout: 5000 });
         await relationshipField.expectEmpty();
     });
 });
@@ -442,16 +494,18 @@ test.describe('New Content Disabled (No New Editor)', () => {
 // ─── Menu Disabled in Single Mode (Item Already Exists) ─────────
 
 test.describe('Menu Disabled When Single Item Exists', () => {
-    // Serial: beforeEach shares mutable `let` vars across tests.
-    test.describe.configure({ mode: 'serial' });
-
+    // Single-test describe: describe-level lets are safe (worker runs tests sequentially).
+    // If a second test is added, move setup into each test with try/finally cleanup.
+    let authorTypeId: string | undefined;
     let authorTypeVariable: string;
+    let blogTypeId: string | undefined;
     let blogTypeVariable: string;
 
     test.beforeEach(async ({ apiHelpers, testSuffix }) => {
         const authorType = await apiHelpers.createContentType(
             apiHelpers.authorPayload(`SingleFull_${testSuffix}`)
         );
+        authorTypeId = authorType.id;
         authorTypeVariable = authorType.variable;
 
         const blogType = await apiHelpers.createContentType(
@@ -464,6 +518,7 @@ test.describe('Menu Disabled When Single Item Exists', () => {
                 CARDINALITY.ONE_TO_ONE
             )
         );
+        blogTypeId = blogType.id;
         blogTypeVariable = blogType.variable;
 
         await apiHelpers.createContentlet(authorTypeVariable, {
@@ -472,12 +527,21 @@ test.describe('Menu Disabled When Single Item Exists', () => {
         });
     });
 
+    test.afterEach(async ({ apiHelpers }) => {
+        if (blogTypeId) {
+            await apiHelpers.deleteContentType(blogTypeId);
+        }
+        if (authorTypeId) {
+            await apiHelpers.deleteContentType(authorTypeId);
+        }
+    });
+
     test('existing content disabled after selecting item @smoke', async ({ adminPage }) => {
         const formPage = new NewEditContentFormPage(adminPage);
         await formPage.goToNew(blogTypeVariable);
 
         const relationshipField = new RelationshipField(adminPage);
-        const dialog = new SelectExistingContentDialog(adminPage);
+        const dialog = new AddRelationshipsDialog(adminPage);
 
         await relationshipField.clickRelateExisting();
         await dialog.waitForVisible();

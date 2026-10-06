@@ -7,12 +7,14 @@ import {
     Component,
     computed,
     DestroyRef,
+    ElementRef,
     forwardRef,
     inject,
     Injector,
     input,
     signal,
-    viewChild
+    viewChild,
+    booleanAttribute
 } from '@angular/core';
 import { NG_VALUE_ACCESSOR } from '@angular/forms';
 
@@ -24,10 +26,17 @@ import { Popover, PopoverModule } from 'primeng/popover';
 import { ScrollerLazyLoadEvent, ScrollerModule } from 'primeng/scroller';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TooltipModule } from 'primeng/tooltip';
-import { Tree, TreeModule } from 'primeng/tree';
 
 import { TreeNodeItem, TreeNodeSelectItem } from '@dotcms/dotcms-models';
-import { DotMessagePipe, DotTruncatePathPipe } from '@dotcms/ui';
+import {
+    DotFolderSearchResultsComponent,
+    DotFolderTreeComponent,
+    DotFolderNamePipe,
+    DotMessagePipe,
+    DotTruncatedLabelComponent
+} from '@dotcms/ui';
+
+import { alignOverlayLeftToTrigger } from './host-folder-field-overlay.utils';
 
 import { BaseControlValueAccessor } from '../../../shared/base-control-value-accesor';
 import { HostFolderFiledStore } from '../../store/host-folder-field.store';
@@ -47,14 +56,16 @@ import { HostFolderFiledStore } from '../../store/host-folder-field.store';
         PopoverModule,
         ScrollerModule,
         SkeletonModule,
-        TreeModule,
+        DotFolderTreeComponent,
+        DotTruncatedLabelComponent,
+        DotFolderSearchResultsComponent,
         ButtonModule,
         TooltipModule,
         IconFieldModule,
         InputIconModule,
         InputTextModule,
         DotMessagePipe,
-        DotTruncatePathPipe
+        DotFolderNamePipe
     ],
     templateUrl: './host-folder-field.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -79,16 +90,50 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
      * It is used to display the required state of the field.
      */
     $isRequired = input.required<boolean>({ alias: 'isRequired' });
+
+    /**
+     * The id the field's label points at, so the two are associated.
+     *
+     * This field has no native form control — the affordance is a button that opens a tree picker
+     * — so without an explicit id there is nothing for `<label for>` to reach, and a screen reader
+     * announces the control with no name.
+     */
+    $controlId = input<string>('', { alias: 'controlId' });
+
+    /**
+     * Whether to render this component's own trigger — the input-styled button and its
+     * copy-to-clipboard action.
+     *
+     * Set it to `false` and project a trigger through the `[hostFolderTrigger]` slot instead. The
+     * component keeps owning the browser — sites, folder tree, in-site search, Select/Cancel — and
+     * the caller decides what summons it.
+     *
+     * The seam exists because the relationship picker needs a **filter chip**, matching the Locale
+     * chip beside it, not something shaped like a form input. Restyling this trigger for that case
+     * would put picker looks inside a content-type field, and hiding its parts one input at a time
+     * (`showCopy`, then the next one) is a slope with no bottom.
+     *
+     * Defaults to `true`, so every existing call site is unchanged.
+     */
+    $showDefaultTrigger = input(true, {
+        alias: 'showDefaultTrigger',
+        transform: booleanAttribute
+    });
     /**
      * Reference to the overlay panel, used to close it programmatically after
      * committing a selection.
      */
     $overlay = viewChild<Popover>(Popover);
     /**
+     * References to the overlay search inputs, used to restore focus after clearing.
+     */
+    $sitesSearchInput = viewChild<ElementRef<HTMLInputElement>>('sitesSearchInput');
+    $folderSearchInput = viewChild<ElementRef<HTMLInputElement>>('folderSearchInput');
+    /**
      * Reference to the folders tree, used to scroll the selected node into view when the
      * overlay opens.
      */
-    $folderTree = viewChild<Tree>('folderTree');
+    $folderTree = viewChild<DotFolderTreeComponent>('folderTree');
     /**
      * A readonly instance of the HostFolderFiledStore injected into the component.
      * This store is used to manage the state and actions related to the host folder field.
@@ -121,6 +166,16 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
     };
 
     /**
+     * PrimeNG tooltip text uses `white-space: pre-line` and `word-break: break-word`, and the
+     * root caps width at `--p-tooltip-max-width` (12.5rem). Inline overrides keep site hostnames
+     * on one line; Tailwind classes on tooltipStyleClass do not reach `.p-tooltip-text`.
+     */
+    protected readonly siteTooltipPt = {
+        root: { style: { maxWidth: 'none' } },
+        text: { style: { whiteSpace: 'nowrap', wordBreak: 'normal' } }
+    };
+
+    /**
      * Removes PrimeNG's default tree padding; the folders section manages its own spacing.
      * Search results use top-aligned icons and roomier row spacing to match the design.
      * PrimeNG sets node gap/padding via CSS variables (`--p-tree-node-gap`, etc.) which beat
@@ -142,15 +197,15 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
             nodeChildren: { class: 'min-w-0 overflow-x-hidden' },
             nodeContent: isSearching
                 ? {
-                      class: 'min-w-0 max-w-full overflow-hidden !items-start',
+                      class: 'max-w-full overflow-hidden !items-start',
                       style: {
                           '--p-tree-node-gap': '1rem',
                           '--p-tree-node-padding': '0.5rem'
                       }
                   }
-                : { class: 'min-w-0 max-w-full overflow-hidden' },
+                : { class: 'max-w-full overflow-hidden' },
             nodeIcon: isSearching ? { class: 'mt-1 shrink-0 self-start' } : undefined,
-            nodeLabel: { class: 'min-w-0 flex-1 overflow-hidden leading-snug' }
+            nodeLabel: { class: 'leading-snug' }
         };
     });
 
@@ -168,12 +223,33 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
     readonly #injector = inject(Injector);
     readonly #clipboard = inject(Clipboard);
     #copyResetTimer: ReturnType<typeof setTimeout> | undefined;
+    #overlayTrigger: HTMLElement | null = null;
 
     constructor() {
         super();
         this.handlePathToSaveChange(this.store.pathToSave);
         this.handleChangeValue(this.$value);
         this.#destroyRef.onDestroy(() => clearTimeout(this.#copyResetTimer));
+    }
+
+    /**
+     * Activates a **projected** trigger from the keyboard.
+     *
+     * Needed because a projected trigger need not be a native `<button>`. The filter chip the
+     * relationship picker projects is a `role="button"` host that turns Enter and Space into its
+     * own Angular output, and an Angular output does not dispatch a bubbling DOM click — so the
+     * wrapper's `click` listener never heard it. The chip was focusable, announced itself as a
+     * button, and did nothing on Enter while the mouse worked.
+     *
+     * `preventDefault` is what keeps this safe for the other case. On a native `<button>` the
+     * browser synthesises a click from Enter and Space, which would reach the wrapper's `click`
+     * listener and toggle the overlay a second time — opening and closing it in one keystroke.
+     * Suppressing the default stops that click being generated, so either kind of trigger
+     * activates exactly once.
+     */
+    onProjectedTriggerKeydown(event: Event): void {
+        event.preventDefault();
+        this.toggleOverlay(event);
     }
 
     /**
@@ -186,17 +262,23 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
         }
 
         const trigger = event.currentTarget as HTMLElement;
+        this.#overlayTrigger = trigger;
         this.$overlayWidth.set(`${trigger.offsetWidth}px`);
         this.$overlay()?.toggle(event, trigger);
     }
 
     /**
-     * Opens the overlay and scrolls the currently selected folder into view once the tree
-     * has finished rendering (and loading, if the initial folders request is still pending).
+     * Opens the overlay, left-aligns it to the trigger, and scrolls the selected folder into view.
      */
     onOverlayShow(): void {
         this.store.openOverlay();
-        afterNextRender(() => this.#scrollSelectedFolderIntoView(), { injector: this.#injector });
+        afterNextRender(
+            () => {
+                this.#alignPopoverToTrigger();
+                this.#scrollSelectedFolderIntoView();
+            },
+            { injector: this.#injector }
+        );
     }
 
     /**
@@ -211,6 +293,16 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
      */
     onFolderSelect(event: TreeNodeSelectItem): void {
         this.store.setPendingNode(event.node);
+    }
+
+    /**
+     * Stages a folder picked from the flat search results.
+     *
+     * Separate from {@link onFolderSelect} only because the shared list emits the node directly,
+     * while `p-tree` wraps it in a select event. Same effect.
+     */
+    onSearchResultSelect(node: TreeNodeItem): void {
+        this.store.setPendingNode(node);
     }
 
     /**
@@ -233,6 +325,22 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
      */
     onSiteSearchInput(event: Event): void {
         this.store.filterSites(this.#readInputValue(event));
+    }
+
+    /**
+     * Clears the sites search and restores focus to the input.
+     */
+    clearSitesSearch(): void {
+        this.store.filterSites('');
+        this.#focusSearchInput(this.$sitesSearchInput());
+    }
+
+    /**
+     * Clears the folders search and restores focus to the input.
+     */
+    clearFolderSearch(): void {
+        this.store.search('');
+        this.#focusSearchInput(this.$folderSearchInput());
     }
 
     /**
@@ -282,25 +390,25 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
         return (event.target as HTMLInputElement).value;
     }
 
+    #focusSearchInput(inputRef: ElementRef<HTMLInputElement> | undefined): void {
+        afterNextRender(() => inputRef?.nativeElement.focus(), { injector: this.#injector });
+    }
+
+    #alignPopoverToTrigger(): void {
+        const trigger = this.#overlayTrigger;
+        const container = this.$overlay()?.container;
+
+        if (!trigger || !container) {
+            return;
+        }
+
+        alignOverlayLeftToTrigger(trigger, container);
+    }
+
     /**
      * Formats a search-result folder node as a human-readable breadcrumb for the
      * secondary label line (hostname + folder segments joined with ` / `).
      */
-    protected formatSearchNodePath(node: TreeNodeItem): string {
-        const hostname = node.data?.hostname?.replace('//', '') ?? '';
-        const path = node.data?.path;
-
-        if (!path || path === '/') {
-            return hostname;
-        }
-
-        const segments = path
-            .replace(/^\/+|\/+$/g, '')
-            .split('/')
-            .filter(Boolean);
-
-        return [hostname, ...segments].join(' / ');
-    }
 
     /**
      * Loads the next page for the level owning the "Load more" sentinel node clicked.
@@ -308,8 +416,8 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
      * the folder whose children are being paginated, or `undefined` for the root-level
      * sentinel (which maps to `loadMore(null)`).
      */
-    onLoadMoreNode(node: TreeNodeItem, event: Event): void {
-        event.stopPropagation();
+    onLoadMoreNode(node: TreeNodeItem, event?: Event): void {
+        event?.stopPropagation();
 
         if (this.store.isSearching()) {
             this.store.loadMoreSearchResults();
@@ -362,7 +470,9 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
             return;
         }
 
-        const treeRoot = this.$folderTree()?.el?.nativeElement as HTMLElement | undefined;
+        const folderTree = this.$folderTree();
+        const treeRoot = (folderTree?.tree()?.el?.nativeElement ??
+            folderTree?.elementRef.nativeElement) as HTMLElement | undefined;
         const selectedNode = treeRoot?.querySelector<HTMLElement>(
             '.p-tree-node-content.p-tree-node-selected'
         );

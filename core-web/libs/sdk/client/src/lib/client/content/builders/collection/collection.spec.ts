@@ -1,4 +1,4 @@
-/// <reference types="jest" />
+import { MockedClass, vi } from 'vitest';
 
 import {
     DotRequestOptions,
@@ -15,11 +15,11 @@ import { SortBy } from '../../shared/types';
 import { Equals } from '../query/lucene-syntax';
 
 // Mock the FetchHttpClient
-jest.mock('../../../adapters/fetch-http-client');
+vi.mock('../../../adapters/fetch-http-client');
 
 describe('CollectionBuilder', () => {
-    const mockRequest = jest.fn();
-    const MockedFetchHttpClient = FetchHttpClient as jest.MockedClass<typeof FetchHttpClient>;
+    const mockRequest = vi.fn();
+    const MockedFetchHttpClient = FetchHttpClient as MockedClass<typeof FetchHttpClient>;
 
     const requestOptions: DotRequestOptions = {
         cache: 'no-cache' // To simulate a valid request
@@ -63,12 +63,14 @@ describe('CollectionBuilder', () => {
 
     beforeEach(() => {
         mockRequest.mockReset();
-        MockedFetchHttpClient.mockImplementation(
-            () =>
-                ({
-                    request: mockRequest
-                }) as Partial<FetchHttpClient> as FetchHttpClient
-        );
+        // A function expression, not an arrow: Vitest invokes a mocked class's
+        // implementation with `new`, and arrows are not constructible. Jest's automock
+        // wrapped the factory, so the arrow worked there.
+        MockedFetchHttpClient.mockImplementation(function () {
+            return {
+                request: mockRequest
+            } as Partial<FetchHttpClient> as FetchHttpClient;
+        });
 
         mockRequest.mockResolvedValue(mockResponseData);
     });
@@ -143,7 +145,7 @@ describe('CollectionBuilder', () => {
             const contentType = 'song';
             const collectionBuilder = createCollectionBuilder(contentType);
 
-            const onfulfilledCallback = jest.fn((_data) => {
+            const onfulfilledCallback = vi.fn((_data) => {
                 // Callback with no return statement (returns void)
             });
 
@@ -431,7 +433,7 @@ describe('CollectionBuilder', () => {
 
             // Spy on all the methods
             methods.forEach((method) => {
-                jest.spyOn(collectionBuilder, method as keyof CollectionBuilder);
+                vi.spyOn(collectionBuilder, method as keyof CollectionBuilder);
             });
 
             // Start of the test
@@ -768,56 +770,58 @@ describe('CollectionBuilder', () => {
     });
 
     describe('fetch is rejected', () => {
-        it('should trigger onrejected callback', (done) => {
-            const contentType = 'song';
-            const collectionBuilder = createCollectionBuilder(contentType).language(13);
+        it('should trigger onrejected callback', () =>
+            new Promise<void>((done) => {
+                const contentType = 'song';
+                const collectionBuilder = createCollectionBuilder(contentType).language(13);
 
-            // Mock the request to return a rejected promise
-            mockRequest.mockRejectedValue(new Error('URL is invalid'));
+                // Mock the request to return a rejected promise
+                mockRequest.mockRejectedValue(new Error('URL is invalid'));
 
-            collectionBuilder.then(
-                (response) => {
-                    /* */
-                    return response;
-                },
-                (error) => {
+                collectionBuilder.then(
+                    (response) => {
+                        /* */
+                        return response;
+                    },
+                    (error) => {
+                        expect(error).toBeInstanceOf(DotErrorContent);
+                        if (error instanceof DotErrorContent) {
+                            expect(error.contentType).toBe('song');
+                            expect(error.operation).toBe('fetch');
+                            expect(error.message).toBe(
+                                "Content API failed for 'song' (fetch): URL is invalid"
+                            );
+                            expect(error.query).toBeDefined();
+                        }
+                        done();
+                        return error;
+                    }
+                );
+            }));
+
+        it('should trigger catch method', () =>
+            new Promise<void>((done) => {
+                const contentType = 'song';
+                const collectionBuilder = createCollectionBuilder(contentType).query((dotQuery) =>
+                    dotQuery.field('author').equals('Linkin Park')
+                );
+
+                // Mock the request to return a rejected promise
+                mockRequest.mockRejectedValue(new Error('DNS are not resolving'));
+
+                collectionBuilder.then().catch((error) => {
                     expect(error).toBeInstanceOf(DotErrorContent);
                     if (error instanceof DotErrorContent) {
                         expect(error.contentType).toBe('song');
                         expect(error.operation).toBe('fetch');
                         expect(error.message).toBe(
-                            "Content API failed for 'song' (fetch): URL is invalid"
+                            "Content API failed for 'song' (fetch): DNS are not resolving"
                         );
                         expect(error.query).toBeDefined();
                     }
                     done();
-                    return error;
-                }
-            );
-        });
-
-        it('should trigger catch method', (done) => {
-            const contentType = 'song';
-            const collectionBuilder = createCollectionBuilder(contentType).query((dotQuery) =>
-                dotQuery.field('author').equals('Linkin Park')
-            );
-
-            // Mock the request to return a rejected promise
-            mockRequest.mockRejectedValue(new Error('DNS are not resolving'));
-
-            collectionBuilder.then().catch((error) => {
-                expect(error).toBeInstanceOf(DotErrorContent);
-                if (error instanceof DotErrorContent) {
-                    expect(error.contentType).toBe('song');
-                    expect(error.operation).toBe('fetch');
-                    expect(error.message).toBe(
-                        "Content API failed for 'song' (fetch): DNS are not resolving"
-                    );
-                    expect(error.query).toBeDefined();
-                }
-                done();
-            });
-        });
+                });
+            }));
 
         it('should trigger catch of try catch block', async () => {
             const contentType = 'song';
@@ -857,7 +861,7 @@ describe('CollectionBuilder', () => {
 
             try {
                 await collectionBuilder;
-                fail('Expected DotCMSContentError to be thrown');
+                expect.fail('Expected DotCMSContentError to be thrown');
             } catch (error) {
                 expect(error).toBeInstanceOf(DotErrorContent);
                 if (error instanceof DotErrorContent) {
@@ -872,40 +876,41 @@ describe('CollectionBuilder', () => {
             }
         });
 
-        it('should handle HttpError in onrejected callback', (done) => {
-            const contentType = 'song';
-            const collectionBuilder = createCollectionBuilder(contentType).language(13);
+        it('should handle HttpError in onrejected callback', () =>
+            new Promise<void>((done) => {
+                const contentType = 'song';
+                const collectionBuilder = createCollectionBuilder(contentType).language(13);
 
-            const httpError = new DotHttpError({
-                status: 500,
-                statusText: 'Internal Server Error',
-                message: 'Server error occurred',
-                data: { error: 'Internal server error' }
-            });
+                const httpError = new DotHttpError({
+                    status: 500,
+                    statusText: 'Internal Server Error',
+                    message: 'Server error occurred',
+                    data: { error: 'Internal server error' }
+                });
 
-            // Mock the request to throw an HttpError
-            mockRequest.mockRejectedValue(httpError);
+                // Mock the request to throw an HttpError
+                mockRequest.mockRejectedValue(httpError);
 
-            collectionBuilder.then(
-                (response) => {
-                    fail('Expected onrejected callback to be called');
-                    return response;
-                },
-                (error) => {
-                    expect(error).toBeInstanceOf(DotErrorContent);
-                    if (error instanceof DotErrorContent) {
-                        expect(error.contentType).toBe('song');
-                        expect(error.operation).toBe('fetch');
-                        expect(error.httpError).toBe(httpError);
-                        expect(error.message).toBe(
-                            "Content API failed for 'song' (fetch): Server error occurred"
-                        );
-                        expect(error.query).toBeDefined();
+                collectionBuilder.then(
+                    (response) => {
+                        expect.fail('Expected onrejected callback to be called');
+                        return response;
+                    },
+                    (error) => {
+                        expect(error).toBeInstanceOf(DotErrorContent);
+                        if (error instanceof DotErrorContent) {
+                            expect(error.contentType).toBe('song');
+                            expect(error.operation).toBe('fetch');
+                            expect(error.httpError).toBe(httpError);
+                            expect(error.message).toBe(
+                                "Content API failed for 'song' (fetch): Server error occurred"
+                            );
+                            expect(error.query).toBeDefined();
+                        }
+                        done();
+                        return error;
                     }
-                    done();
-                    return error;
-                }
-            );
-        });
+                );
+            }));
     });
 });

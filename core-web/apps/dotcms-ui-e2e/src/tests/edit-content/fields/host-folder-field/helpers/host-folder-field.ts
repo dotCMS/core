@@ -13,6 +13,7 @@ export class HostFolderField {
     readonly foldersPanel: Locator;
     readonly searchInput: Locator;
     readonly folderTree: Locator;
+    readonly folderSearchResults: Locator;
     readonly selectButton: Locator;
     readonly copyButton: Locator;
     readonly copyIcon: Locator;
@@ -30,6 +31,9 @@ export class HostFolderField {
         this.foldersPanel = page.getByTestId('host-folder-folders');
         this.searchInput = page.getByTestId('host-folder-search-input');
         this.folderTree = page.getByTestId('host-folder-tree');
+        // Search results are a flat list, not a tree (#37208), so the folders panel has two
+        // different renderings depending on whether a term is active.
+        this.folderSearchResults = page.getByTestId('host-folder-search-results');
         this.selectButton = page.getByTestId('host-folder-select');
         this.copyButton = this.root.getByTestId('host-folder-copy');
         this.copyIcon = this.root.getByTestId('host-folder-copy-icon');
@@ -137,8 +141,21 @@ export class HostFolderField {
         return text;
     }
 
+    /**
+     * A folder row, in whichever of the two renderings is on screen.
+     *
+     * Browsing draws a tree; searching draws a flat list (#37208). Callers that search and then
+     * click a result — `selectFolderFlow` does exactly that — would otherwise be looking for tree
+     * markup that is not there.
+     */
     folderNode(name: string): Locator {
-        return this.folderTree.locator('.p-tree-node-content', { hasText: name });
+        return this.folderTree
+            .locator('.p-tree-node-content', { hasText: name })
+            .or(
+                this.folderSearchResults
+                    .getByTestId('host-folder-search-result')
+                    .filter({ hasText: name })
+            );
     }
 
     async clickFolder(name: string) {

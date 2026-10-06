@@ -1,7 +1,7 @@
 import { NewEditContentFormPage } from '@pages';
 
+import { AddRelationshipsDialog } from './helpers/add-relationships-dialog';
 import { RelationshipField } from './helpers/relationship-field';
-import { SelectExistingContentDialog } from './helpers/select-existing-content-dialog';
 
 import {
     CARDINALITY,
@@ -70,7 +70,7 @@ test.describe('Add More Relations', () => {
         await formPage.goToContent(blogContentlet.inode);
 
         const relationshipField = new RelationshipField(adminPage);
-        const selectDialog = new SelectExistingContentDialog(adminPage);
+        const selectDialog = new AddRelationshipsDialog(adminPage);
 
         await relationshipField.expectRowCount(2);
 
@@ -232,7 +232,7 @@ test.describe('Delete and Re-add (Single Mode)', () => {
         await formPage.goToContent(blogContentlet.inode);
 
         const relationshipField = new RelationshipField(adminPage);
-        const selectDialog = new SelectExistingContentDialog(adminPage);
+        const selectDialog = new AddRelationshipsDialog(adminPage);
 
         await relationshipField.expectRowCount(1);
         // In single mode, menu options are disabled when item exists

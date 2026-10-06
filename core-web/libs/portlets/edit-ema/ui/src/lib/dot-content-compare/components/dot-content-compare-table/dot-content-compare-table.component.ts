@@ -1,5 +1,13 @@
 import { JsonPipe } from '@angular/common';
-import { Component, EventEmitter, Input, Output, inject, input } from '@angular/core';
+import {
+    Component,
+    EventEmitter,
+    Input,
+    Output,
+    inject,
+    input,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -19,6 +27,7 @@ import { DotContentComparePreviewFieldComponent } from '../fields/dot-content-co
     selector: 'dot-content-compare-table',
     templateUrl: './dot-content-compare-table.component.html',
     styleUrls: ['./dot-content-compare-table.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         FormsModule,
         TableModule,

@@ -1,13 +1,13 @@
-import { describe, expect, it } from '@jest/globals';
 import { patchState } from '@ngrx/signals';
 import {
     SpectatorRouting,
     byTestId,
     createRoutingFactory,
     mockProvider
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { MockComponent } from 'ng-mocks';
 import { of, Subject, throwError } from 'rxjs';
+import { Mock, MockInstance, describe, expect, it, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -58,6 +58,7 @@ import { DEFAULT_VARIANT_ID, DotCMSContentlet, FeaturedFlags } from '@dotcms/dot
 import { DotPaletteListStore, DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
 import { DotCMSURLContentMap, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
+import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 import { DotCopyContentModalService, SafeUrlPipe } from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
 import {
@@ -106,26 +107,27 @@ import {
     dotPropertiesServiceMock,
     mockCurrentUser
 } from '../shared/mocks';
-import { ActionPayload } from '../shared/models';
+import { ActionPayload, ContentletPayload, VTLFile } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
-import { IframeAccessMode } from '../store/models';
+import { WithPageApiMethods } from '../store/features/page-api/withPageApi';
+import { IframeAccessMode, PageType } from '../store/models';
 
-global.URL.createObjectURL = jest.fn(
+global.URL.createObjectURL = vi.fn(
     () => 'blob:http://localhost:3000/12345678-1234-1234-1234-123456789012'
 );
 
 // Mock window.matchMedia for PrimeNG components
 Object.defineProperty(window, 'matchMedia', {
     writable: true,
-    value: jest.fn().mockImplementation((query: string) => ({
+    value: vi.fn().mockImplementation((query: string) => ({
         matches: false,
         media: query,
         onchange: null,
-        addListener: jest.fn(),
-        removeListener: jest.fn(),
-        addEventListener: jest.fn(),
-        removeEventListener: jest.fn(),
-        dispatchEvent: jest.fn()
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn()
     }))
 });
 
@@ -152,18 +154,20 @@ const mockGlobalStore = {
 };
 
 const mockDotUveActionsHandlerService = {
-    handleAction: jest.fn((_message: unknown, _deps: unknown) => of({}))
+    handleAction: vi.fn((_message: unknown, _deps: unknown) => of({}))
 };
 
 const mockDotUveDragDropService = {
-    setupDragEvents: jest.fn()
+    setupDragEvents: vi.fn()
 };
 
 const mockInlineEditService = {
-    enableInlineEdit: jest.fn(),
-    disableInlineEdit: jest.fn(),
-    injectInlineEdit: jest.fn(),
-    removeInlineEdit: jest.fn()
+    enableInlineEdit: vi.fn(),
+    disableInlineEdit: vi.fn(),
+    injectInlineEdit: vi.fn(),
+    removeInlineEdit: vi.fn(),
+    handleInlineEdit: vi.fn(),
+    initEditor: vi.fn()
 };
 
 // Stub components to avoid ng-mocks signal query issues
@@ -338,7 +342,7 @@ const createRouting = () =>
             {
                 provide: DotAnalyticsTrackerService,
                 useValue: {
-                    track: jest.fn()
+                    track: vi.fn()
                 }
             },
             {
@@ -447,9 +451,14 @@ describe('EditEmaEditorComponent', () => {
     describe('with queryParams and permission', () => {
         let spectator: SpectatorRouting<EditEmaEditorComponent>;
         let store: InstanceType<typeof UVEStore>;
+
+        // `withPageApi`'s methods reach the UVEStore type through an index signature, so
+        // a plain `vi.spyOn(store, ...)` cannot see them. Spying through the feature's own
+        // interface keeps the call typed and still installs the spy on the real store.
+        const pageApi = () => store as unknown as WithPageApiMethods;
         let confirmationService: ConfirmationService;
         let messageService: MessageService;
-        let addMessageSpy: jest.SpyInstance;
+        let addMessageSpy: MockInstance;
 
         const createComponent = createRouting();
 
@@ -474,10 +483,10 @@ describe('EditEmaEditorComponent', () => {
             store = spectator.inject(UVEStore, true);
             confirmationService = spectator.inject(ConfirmationService, true);
             messageService = spectator.inject(MessageService, true);
-            addMessageSpy = jest.spyOn(messageService, 'add');
+            addMessageSpy = vi.spyOn(messageService, 'add');
             mockDotUveActionsHandlerService.handleAction.mockClear();
 
-            store.pageLoad({
+            pageApi().pageLoad({
                 clientHost: 'http://localhost:3000',
                 url: 'index',
                 language_id: '1',
@@ -491,21 +500,21 @@ describe('EditEmaEditorComponent', () => {
             const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
             if (iframe) {
                 const mockContentWindow = {
-                    addEventListener: jest.fn(),
-                    removeEventListener: jest.fn(),
-                    postMessage: jest.fn(),
-                    scrollTo: jest.fn(),
+                    addEventListener: vi.fn(),
+                    removeEventListener: vi.fn(),
+                    postMessage: vi.fn(),
+                    scrollTo: vi.fn(),
                     document: {
-                        getElementById: jest.fn(),
-                        querySelector: jest.fn(),
-                        createElement: jest.fn(),
+                        getElementById: vi.fn(),
+                        querySelector: vi.fn(),
+                        createElement: vi.fn(),
                         body: {
-                            appendChild: jest.fn(),
-                            querySelector: jest.fn()
+                            appendChild: vi.fn(),
+                            querySelector: vi.fn()
                         },
                         head: {
-                            appendChild: jest.fn(),
-                            querySelector: jest.fn()
+                            appendChild: vi.fn(),
+                            querySelector: vi.fn()
                         }
                     }
                 };
@@ -518,11 +527,11 @@ describe('EditEmaEditorComponent', () => {
 
         describe('DOM', () => {
             beforeEach(() => {
-                jest.useFakeTimers(); // Mock the timers
+                vi.useFakeTimers(); // Mock the timers
             });
 
             afterEach(() => {
-                jest.useRealTimers(); // Restore the real timers after each test
+                vi.useRealTimers(); // Restore the real timers after each test
             });
 
             it('should hide components when the store changes', () => {
@@ -619,18 +628,32 @@ describe('EditEmaEditorComponent', () => {
                 expect(toolbar).not.toBeNull();
             });
 
-            it('should hide components when the store changes for a variant', () => {
-                // Dialog may remain in DOM when appended to body
-                const componentsToHide = ['palette', 'dropzone', 'contentlet-tools'];
-
+            /**
+             * Reversed by #37308 — this used to assert the opposite.
+             *
+             * The name said "for a variant", but no variant term ever gated these: they sit under
+             * `editorCanEditContent()`, and what hid them was the RUNNING experiment this spec's
+             * `DotExperimentsService` mock returns for `i-have-a-running-experiment`. That guard is
+             * gone, so the editing tools a variant fix actually needs — the palette to add with, the
+             * dropzone to drop on, the contentlet tools to edit with — are present while the
+             * experiment runs. The shell's warning banner is what tells the editor the run's results
+             * will now mix data from before and after the change.
+             */
+            it('should keep the palette while a variant experiment is running', () => {
                 spectator.detectChanges();
 
                 spectator.activatedRouteStub.setQueryParam('variantName', 'hello-there');
 
                 spectator.detectChanges();
-                store.pageLoad({
+                pageApi().pageLoad({
                     url: 'index',
                     language_id: '5',
+                    // Carried deliberately. `editorCanEditContent` is
+                    // `editorHasAccessToEditMode() && viewMode === EDIT`, and this call replaces the
+                    // params the describe set up — so omitting the mode hides the palette for a
+                    // reason that has nothing to do with the experiment, and the assertion stops
+                    // testing what it names.
+                    mode: UVE_MODE.EDIT,
                     [PERSONA_KEY]: DEFAULT_PERSONA.identifier,
                     variantName: 'hello-there',
                     experimentId: 'i-have-a-running-experiment'
@@ -638,9 +661,10 @@ describe('EditEmaEditorComponent', () => {
 
                 spectator.detectChanges();
 
-                componentsToHide.forEach((testId) => {
-                    expect(spectator.query(byTestId(testId))).toBeNull();
-                });
+                // Only the palette: `contentlet-tools` needs a hovered contentlet area and
+                // `dropzone` needs active drag bounds, so neither renders in a static fixture
+                // whatever this guard does.
+                expect(spectator.query(byTestId('palette'))).not.toBeNull();
             });
 
             it('should show the editor components when there is a running experiement and initialize the editor in a default variant', async () => {
@@ -650,7 +674,7 @@ describe('EditEmaEditorComponent', () => {
 
                 spectator.detectChanges();
 
-                store.pageLoad({
+                pageApi().pageLoad({
                     url: 'index',
                     language_id: '5',
                     [PERSONA_KEY]: DEFAULT_PERSONA.identifier
@@ -667,7 +691,7 @@ describe('EditEmaEditorComponent', () => {
 
             it('should reload when Block editor is saved', () => {
                 const blockEditorSidebar = spectator.query(DotBlockEditorSidebarComponent);
-                const spy = jest.spyOn(store, 'pageReload');
+                const spy = vi.spyOn(pageApi(), 'pageReload');
                 blockEditorSidebar.onSaved.emit();
                 expect(spy).toHaveBeenCalled();
             });
@@ -677,7 +701,7 @@ describe('EditEmaEditorComponent', () => {
 
                 spectator.detectChanges();
 
-                store.pageLoad({
+                pageApi().pageLoad({
                     url: 'index',
                     language_id: '9'
                 });
@@ -898,9 +922,29 @@ describe('EditEmaEditorComponent', () => {
                         expect(spectator.component.$showLockOverlay()).toBe(true);
                     });
 
-                    it('should hide overlay when page is locked', () => {
+                    it('should show overlay when page is locked by another user', () => {
                         patchState(store, {
                             pageAssetResponse: { pageAsset: lockedByAnotherUser }
+                        });
+
+                        expect(spectator.component.$showLockOverlay()).toBe(true);
+                    });
+
+                    it('should hide overlay when page is locked by the current user', () => {
+                        patchState(store, {
+                            uveCurrentUser: mockCurrentUser,
+                            pageAssetResponse: {
+                                pageAsset: {
+                                    ...MOCK_RESPONSE_HEADLESS,
+                                    page: {
+                                        ...MOCK_RESPONSE_HEADLESS.page,
+                                        locked: true,
+                                        lockedBy: mockCurrentUser.userId,
+                                        lockedByName: mockCurrentUser.givenName,
+                                        canLock: true
+                                    }
+                                }
+                            }
                         });
 
                         expect(spectator.component.$showLockOverlay()).toBe(false);
@@ -975,6 +1019,181 @@ describe('EditEmaEditorComponent', () => {
             });
         });
 
+        describe('$handleReloadContentEffect — headless provenance gate (#37097)', () => {
+            // Precondition for reaching the headless-specific branch under test at all: the
+            // effect's first gate returns immediately (no message, not even UVE_RELOAD_PAGE)
+            // when `pageType === TRADITIONAL || !isClientReady` — that gate is unrelated to
+            // this bug (it predates #36410) and stays untouched, so every case below sets
+            // isClientReady true to exercise the branch the fix actually changes.
+            let postMessageSpy: MockInstance;
+
+            beforeEach(() => {
+                // `this.iframe` (used by sendMessageToIframe/reloadIframeContent) is a getter
+                // that unwraps to DotUveIframeComponent's own inner <iframe> ElementRef — NOT
+                // the `[data-testId="iframe"]` host element the outer beforeEach mocks (that's
+                // the <dot-uve-iframe> wrapper). Spy on the REAL jsdom-provided contentWindow
+                // in place — replacing it wholesale (as the outer mock does for the wrapper)
+                // breaks jsdom's own async iframe `load` event plumbing for later tests.
+                const realContentWindow = spectator.component.iframe?.nativeElement.contentWindow;
+                if (!realContentWindow) {
+                    throw new Error(
+                        'expected the real jsdom iframe contentWindow to be present — check the outer beforeEach'
+                    );
+                }
+                postMessageSpy = vi
+                    .spyOn(realContentWindow, 'postMessage')
+                    .mockImplementation(() => undefined);
+                // Spectator store type doesn't satisfy WritableStateSource but runtime works —
+                // same cast withPage.spec.ts's patchStoreState helper documents.
+                patchState(store as Parameters<typeof patchState>[0], { isClientReady: true });
+                postMessageSpy.mockClear();
+            });
+
+            it('should send UVE_RELOAD_PAGE (never UVE_SET_PAGE_DATA) when no GraphQL request was ever registered', () => {
+                // requestMetadata null, pageAssetResponse.source rest (the initial REST load
+                // from the outer beforeEach's store.pageLoad)
+                store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS, source: 'rest' });
+                spectator.flushEffects();
+
+                expect(postMessageSpy).toHaveBeenCalledWith(
+                    expect.objectContaining({ name: __DOTCMS_UVE_EVENT__.UVE_RELOAD_PAGE }),
+                    '*'
+                );
+                expect(postMessageSpy).not.toHaveBeenCalledWith(
+                    expect.objectContaining({ name: __DOTCMS_UVE_EVENT__.UVE_SET_PAGE_DATA }),
+                    expect.anything()
+                );
+            });
+
+            it('should send UVE_RELOAD_PAGE (never UVE_SET_PAGE_DATA) when the GraphQL request is registered but not yet resolved', () => {
+                store.setCustomClient({ query: 'query', variables: {} });
+                store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS, source: 'rest' });
+                spectator.flushEffects();
+
+                expect(postMessageSpy).toHaveBeenCalledWith(
+                    expect.objectContaining({ name: __DOTCMS_UVE_EVENT__.UVE_RELOAD_PAGE }),
+                    '*'
+                );
+                expect(postMessageSpy).not.toHaveBeenCalledWith(
+                    expect.objectContaining({ name: __DOTCMS_UVE_EVENT__.UVE_SET_PAGE_DATA }),
+                    expect.anything()
+                );
+            });
+
+            it('should send UVE_RELOAD_PAGE (never UVE_SET_PAGE_DATA) when the GraphQL request was registered then aborted/failed, leaving a stale REST asset', () => {
+                // This is the row #36410's gate could not distinguish from the row above —
+                // requestMetadata is non-null in both, so the old `hasClientQuery` check let
+                // this one through. `source` distinguishes it correctly.
+                store.setCustomClient({ query: 'query', variables: {} });
+                store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS, source: 'rest' });
+                spectator.flushEffects();
+
+                expect(postMessageSpy).toHaveBeenCalledWith(
+                    expect.objectContaining({ name: __DOTCMS_UVE_EVENT__.UVE_RELOAD_PAGE }),
+                    '*'
+                );
+                expect(postMessageSpy).not.toHaveBeenCalledWith(
+                    expect.objectContaining({ name: __DOTCMS_UVE_EVENT__.UVE_SET_PAGE_DATA }),
+                    expect.anything()
+                );
+            });
+
+            it('should send UVE_SET_PAGE_DATA (never UVE_RELOAD_PAGE) once the stored asset is GraphQL-sourced', () => {
+                store.setCustomClient({ query: 'query', variables: {} });
+                store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS, source: 'graphql' });
+                spectator.flushEffects();
+
+                expect(postMessageSpy).toHaveBeenCalledWith(
+                    expect.objectContaining({ name: __DOTCMS_UVE_EVENT__.UVE_SET_PAGE_DATA }),
+                    '*'
+                );
+                expect(postMessageSpy).not.toHaveBeenCalledWith(
+                    expect.objectContaining({ name: __DOTCMS_UVE_EVENT__.UVE_RELOAD_PAGE }),
+                    expect.anything()
+                );
+            });
+
+            describe('bounded reload — regression from #37097 post-merge QA', () => {
+                // QA on the merged fix found an endless client reload loop: every CLIENT_READY
+                // re-announcement unconditionally re-patches requestMetadata (setCustomClient),
+                // which changes pageAsset()'s reference and re-fires this effect. If the asset
+                // is still REST-sourced (GraphQL never resolved — slow, aborted, or permanently
+                // broken), the effect resent UVE_RELOAD_PAGE on every re-fire, and each reload
+                // the client performs triggers a fresh CLIENT_READY, looping indefinitely.
+                it('should send UVE_RELOAD_PAGE only once across repeated CLIENT_READY-style re-announcements while the asset stays REST-sourced', () => {
+                    store.setCustomClient({ query: 'query', variables: {} });
+                    store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS, source: 'rest' });
+                    spectator.flushEffects();
+
+                    // Simulate the client's browser reload re-announcing itself several times
+                    // (a duplicate CLIENT_READY unconditionally re-patches requestMetadata,
+                    // which is exactly what changes pageAsset()'s reference and re-fires the
+                    // effect) while the fetch still never resolves to GraphQL.
+                    for (let i = 0; i < 10; i++) {
+                        store.setCustomClient({ query: 'query', variables: { attempt: `${i}` } });
+                        spectator.flushEffects();
+                    }
+
+                    const reloadCalls = postMessageSpy.mock.calls.filter(
+                        ([message]) => message?.name === __DOTCMS_UVE_EVENT__.UVE_RELOAD_PAGE
+                    );
+                    expect(reloadCalls.length).toBe(1);
+                    expect(postMessageSpy).not.toHaveBeenCalledWith(
+                        expect.objectContaining({ name: __DOTCMS_UVE_EVENT__.UVE_SET_PAGE_DATA }),
+                        expect.anything()
+                    );
+                });
+
+                it('should send a fresh UVE_RELOAD_PAGE once the asset resolves to GraphQL and later regresses to REST on a new page', () => {
+                    store.setCustomClient({ query: 'query', variables: {} });
+                    store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS, source: 'rest' });
+                    spectator.flushEffects();
+                    postMessageSpy.mockClear();
+
+                    // Resolves: clears the pending flag.
+                    store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS, source: 'graphql' });
+                    spectator.flushEffects();
+                    postMessageSpy.mockClear();
+
+                    // A new navigation (markPageLoading) resets pageReloadPending so a fresh
+                    // REST-sourced streak on the NEW page gets its own single reload request,
+                    // rather than being silently suppressed by a stale flag from the old page.
+                    // markPageLoading also resets isClientReady (unrelated pre-existing gate),
+                    // so re-establish it the way a genuine post-navigation CLIENT_READY would.
+                    store.markPageLoading();
+                    patchState(store as Parameters<typeof patchState>[0], {
+                        isClientReady: true
+                    });
+                    store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS, source: 'rest' });
+                    spectator.flushEffects();
+
+                    const reloadCalls = postMessageSpy.mock.calls.filter(
+                        ([message]) => message?.name === __DOTCMS_UVE_EVENT__.UVE_RELOAD_PAGE
+                    );
+                    expect(reloadCalls.length).toBe(1);
+                });
+            });
+
+            it('should never touch the iframe for a TRADITIONAL page regardless of source (regression)', () => {
+                // Spectator store type doesn't satisfy WritableStateSource but runtime works —
+                // same cast withPage.spec.ts's patchStoreState helper documents.
+                patchState(store as Parameters<typeof patchState>[0], {
+                    pageType: PageType.TRADITIONAL
+                });
+                store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS, source: 'rest' });
+                spectator.flushEffects();
+
+                expect(postMessageSpy).not.toHaveBeenCalledWith(
+                    expect.objectContaining({ name: __DOTCMS_UVE_EVENT__.UVE_SET_PAGE_DATA }),
+                    expect.anything()
+                );
+                expect(postMessageSpy).not.toHaveBeenCalledWith(
+                    expect.objectContaining({ name: __DOTCMS_UVE_EVENT__.UVE_RELOAD_PAGE }),
+                    expect.anything()
+                );
+            });
+        });
+
         describe('customer actions', () => {
             describe('delete', () => {
                 it('should open a confirm dialog and save on confirm', () => {
@@ -1015,8 +1234,8 @@ describe('EditEmaEditorComponent', () => {
 
                     spectator.detectChanges();
 
-                    const confirmDialogOpen = jest.spyOn(confirmationService, 'confirm');
-                    const saveMock = jest.spyOn(store, 'editorSave');
+                    const confirmDialogOpen = vi.spyOn(confirmationService, 'confirm');
+                    const saveMock = vi.spyOn(pageApi(), 'editorSave');
 
                     spectator.triggerEventHandler(
                         DotUveContentletToolsComponent,
@@ -1039,10 +1258,10 @@ describe('EditEmaEditorComponent', () => {
             });
 
             describe('checkAndResetActiveContentlet', () => {
-                let resetActiveContentletSpy: jest.SpyInstance;
+                let resetActiveContentletSpy: MockInstance;
 
                 beforeEach(() => {
-                    resetActiveContentletSpy = jest.spyOn(store, 'resetSelected');
+                    resetActiveContentletSpy = vi.spyOn(store, 'resetSelected');
                 });
 
                 afterEach(() => {
@@ -1116,7 +1335,7 @@ describe('EditEmaEditorComponent', () => {
 
                         spectator.detectChanges();
 
-                        const confirmDialogOpen = jest.spyOn(confirmationService, 'confirm');
+                        const confirmDialogOpen = vi.spyOn(confirmationService, 'confirm');
 
                         spectator.triggerEventHandler(
                             DotUveContentletToolsComponent,
@@ -1198,7 +1417,7 @@ describe('EditEmaEditorComponent', () => {
 
                         spectator.detectChanges();
 
-                        const confirmDialogOpen = jest.spyOn(confirmationService, 'confirm');
+                        const confirmDialogOpen = vi.spyOn(confirmationService, 'confirm');
 
                         spectator.triggerEventHandler(
                             DotUveContentletToolsComponent,
@@ -1217,7 +1436,7 @@ describe('EditEmaEditorComponent', () => {
             });
 
             describe('resetActiveContentletOnUnlock', () => {
-                let resetActiveContentletSpy: jest.SpyInstance;
+                let resetActiveContentletSpy: MockInstance;
                 /** Use the same store instance the component uses so patches are visible to its effect */
                 let componentStore: InstanceType<typeof UVEStore>;
 
@@ -1227,7 +1446,7 @@ describe('EditEmaEditorComponent', () => {
                             uveStore: InstanceType<typeof UVEStore>;
                         }
                     ).uveStore;
-                    resetActiveContentletSpy = jest.spyOn(componentStore, 'resetSelected');
+                    resetActiveContentletSpy = vi.spyOn(componentStore, 'resetSelected');
 
                     // Enable the toggle lock feature flag by patching store flags directly
                     // Since flags are loaded in onInit, we patch them after store initialization
@@ -1390,7 +1609,7 @@ describe('EditEmaEditorComponent', () => {
                 it('should edit urlContentMap page', () => {
                     spectator.detectChanges();
                     const dialog = spectator.query(DotEmaDialogComponent);
-                    jest.spyOn(dialog, 'editUrlContentMapContentlet');
+                    vi.spyOn(dialog!, 'editUrlContentMapContentlet');
 
                     const payload = {
                         identifier: '123',
@@ -1409,8 +1628,8 @@ describe('EditEmaEditorComponent', () => {
 
                 describe('reorder navigation', () => {
                     it('should reload the page after saving the new navigation order', () => {
-                        const reloadSpy = jest.spyOn(store, 'pageReload');
-                        const messageSpy = jest.spyOn(messageService, 'add');
+                        const reloadSpy = vi.spyOn(pageApi(), 'pageReload');
+                        const messageSpy = vi.spyOn(messageService, 'add');
                         const dialog = spectator.debugElement.query(
                             By.css("[data-testId='ema-dialog']")
                         );
@@ -1439,7 +1658,7 @@ describe('EditEmaEditorComponent', () => {
                     });
 
                     it('should advice the users when they can not save the new order', () => {
-                        const messageSpy = jest.spyOn(messageService, 'add');
+                        const messageSpy = vi.spyOn(messageService, 'add');
                         const dialog = spectator.debugElement.query(
                             By.css("[data-testId='ema-dialog']")
                         );
@@ -1460,11 +1679,11 @@ describe('EditEmaEditorComponent', () => {
                         });
                     });
 
-                    afterEach(() => jest.clearAllMocks());
+                    afterEach(() => vi.clearAllMocks());
                 });
 
                 beforeEach(() => {
-                    jest.clearAllMocks();
+                    vi.clearAllMocks();
                 });
             });
 
@@ -1472,7 +1691,7 @@ describe('EditEmaEditorComponent', () => {
                 it('should add contentlet after backend emit SAVE_CONTENTLET', () => {
                     spectator.detectChanges();
 
-                    const editorSaveMock = jest.spyOn(store, 'editorSave');
+                    const editorSaveMock = vi.spyOn(pageApi(), 'editorSave');
 
                     const payload: ActionPayload = { ...PAYLOAD_MOCK };
 
@@ -1593,7 +1812,7 @@ describe('EditEmaEditorComponent', () => {
                 });
 
                 it('should add contentlet after backend emit CONTENT_SEARCH_SELECT', () => {
-                    const saveMock = jest.spyOn(store, 'editorSave');
+                    const saveMock = vi.spyOn(pageApi(), 'editorSave');
 
                     spectator.detectChanges();
 
@@ -1748,7 +1967,7 @@ describe('EditEmaEditorComponent', () => {
                 });
 
                 it('should add widget after backend emit CONTENT_SEARCH_SELECT', () => {
-                    const saveMock = jest.spyOn(store, 'editorSave');
+                    const saveMock = vi.spyOn(pageApi(), 'editorSave');
 
                     spectator.detectChanges();
 
@@ -1945,10 +2164,10 @@ describe('EditEmaEditorComponent', () => {
 
                 describe('VTL Page', () => {
                     beforeEach(() => {
-                        jest.useFakeTimers(); // Mock the timers
+                        vi.useFakeTimers(); // Mock the timers
                         spectator.detectChanges();
 
-                        store.pageLoad({
+                        pageApi().pageLoad({
                             url: 'index',
                             language_id: '3',
                             [PERSONA_KEY]: DEFAULT_PERSONA.identifier,
@@ -1958,7 +2177,7 @@ describe('EditEmaEditorComponent', () => {
 
                     it.skip('iframe should have the correct content when is VTL', () => {
                         spectator.detectChanges();
-                        jest.runOnlyPendingTimers();
+                        vi.runOnlyPendingTimers();
 
                         const iframe = spectator.debugElement.query(
                             By.css('[data-testId="iframe"]')
@@ -1979,23 +2198,23 @@ describe('EditEmaEditorComponent', () => {
                         const iframe = spectator.debugElement.query(
                             By.css('[data-testId="iframe"]')
                         );
-                        const scrollSpy = jest
+                        const scrollSpy = vi
                             .spyOn(
                                 spectator.component.iframe.nativeElement.contentWindow,
                                 'scrollTo'
                             )
-                            .mockImplementation(() => jest.fn);
+                            .mockImplementation(() => undefined);
 
                         iframe.nativeElement.contentWindow.scrollTo(0, 100); //Scroll down
 
-                        store.pageLoad({
+                        pageApi().pageLoad({
                             url: 'index',
                             language_id: '4',
                             [PERSONA_KEY]: DEFAULT_PERSONA.identifier
                         });
 
                         spectator.detectChanges();
-                        jest.runOnlyPendingTimers();
+                        vi.runOnlyPendingTimers();
 
                         iframe.nativeElement.dispatchEvent(new Event('load'));
                         spectator.detectChanges();
@@ -2014,7 +2233,7 @@ describe('EditEmaEditorComponent', () => {
 
                 it('should not call navigate on load same url', () => {
                     const router = spectator.inject(Router);
-                    jest.spyOn(router, 'navigate');
+                    vi.spyOn(router, 'navigate');
 
                     spectator.detectChanges();
 
@@ -2055,7 +2274,7 @@ describe('EditEmaEditorComponent', () => {
                     spectator.activatedRouteStub.setQueryParam('variantName', 'hello-there');
 
                     spectator.detectChanges();
-                    store.pageLoad({
+                    pageApi().pageLoad({
                         url: 'index',
                         language_id: '5',
                         [PERSONA_KEY]: DEFAULT_PERSONA.identifier,
@@ -2073,14 +2292,14 @@ describe('EditEmaEditorComponent', () => {
 
             describe('language selected', () => {
                 it('should update the URL and language when the user create a new translation changing the URL', () => {
-                    store.pageLoad({
+                    pageApi().pageLoad({
                         clientHost: 'http://localhost:3000',
                         url: 'index',
                         language_id: '2',
                         [PERSONA_KEY]: DEFAULT_PERSONA.identifier
                     });
 
-                    const pageLoadSpy = jest.spyOn(store, 'pageLoad');
+                    const pageLoadSpy = vi.spyOn(pageApi(), 'pageLoad');
 
                     spectator.detectChanges();
                     const dialog = spectator.debugElement.query(
@@ -2116,14 +2335,14 @@ describe('EditEmaEditorComponent', () => {
                 });
 
                 it('should update the language when the user create a new translation', () => {
-                    store.pageLoad({
+                    pageApi().pageLoad({
                         clientHost: 'http://localhost:3000',
                         url: 'test-url',
                         language_id: '1',
                         [PERSONA_KEY]: DEFAULT_PERSONA.identifier
                     });
 
-                    const pageLoadSpy = jest.spyOn(store, 'pageLoad');
+                    const pageLoadSpy = vi.spyOn(pageApi(), 'pageLoad');
                     spectator.detectChanges();
 
                     const dialog = spectator.debugElement.query(
@@ -2147,7 +2366,7 @@ describe('EditEmaEditorComponent', () => {
                 });
 
                 it('should call dialog.translatePage when toolbar emits translatePage', () => {
-                    store.pageLoad({
+                    pageApi().pageLoad({
                         clientHost: 'http://localhost:3000',
                         url: 'index',
                         language_id: '1',
@@ -2159,7 +2378,7 @@ describe('EditEmaEditorComponent', () => {
                         page: { identifier: 'test-page-123', inode: 'inode-123' },
                         newLanguage: 2
                     };
-                    const dialogTranslatePageSpy = jest.spyOn(
+                    const dialogTranslatePageSpy = vi.spyOn(
                         spectator.component.dialog,
                         'translatePage'
                     );
@@ -2174,15 +2393,193 @@ describe('EditEmaEditorComponent', () => {
                 });
             });
 
+            describe('$translatePageEffect — dialog loop prevention', () => {
+                it('should NOT show the translation dialog when uveStatus is LOADING', () => {
+                    const confirmSpy = vi.spyOn(
+                        spectator.inject(ConfirmationService, true),
+                        'confirm'
+                    );
+
+                    // Load with an untranslated language (language_id=2 returns viewAs.language.id=2,
+                    // and mockLanguageArray has id:2 with translated:false)
+                    pageApi().pageLoad({
+                        clientHost: 'http://localhost:3000',
+                        url: 'index',
+                        language_id: '2',
+                        [PERSONA_KEY]: DEFAULT_PERSONA.identifier
+                    });
+
+                    // Immediately force LOADING status before effects flush — simulates in-flight state
+                    patchState(store, { uveStatus: UVE_STATUS.LOADING });
+                    spectator.flushEffects();
+                    spectator.detectChanges();
+
+                    expect(confirmSpy).not.toHaveBeenCalled();
+                });
+
+                /**
+                 * Reject the translation dialog raised by the effect and return the
+                 * reject callback's side effects. Loads an untranslated language
+                 * (language_id=2), flushes the effect that opens the dialog, then invokes
+                 * its `reject` handler to simulate the user clicking "No".
+                 */
+                const triggerTranslationReject = () => {
+                    const confirmationService = spectator.inject(ConfirmationService, true);
+                    // Set up the spy BEFORE loading so we capture the confirm call made by the effect
+                    const confirmSpy = vi.spyOn(confirmationService, 'confirm');
+
+                    // language_id=2 → viewAs.language.id=2, pageLanguages has id:2 translated:false
+                    pageApi().pageLoad({
+                        clientHost: 'http://localhost:3000',
+                        url: 'index',
+                        language_id: '2',
+                        [PERSONA_KEY]: DEFAULT_PERSONA.identifier
+                    });
+
+                    spectator.flushEffects();
+                    spectator.detectChanges();
+
+                    // The effect should have shown the dialog because currentLanguage.translated=false
+                    expect(confirmSpy).toHaveBeenCalled();
+
+                    // Track navigation triggered only by the reject callback
+                    const dotRouterService = spectator.inject(DotRouterService, true);
+                    const router = spectator.inject(Router);
+                    const navigateByUrlSpy = vi
+                        .spyOn(router, 'navigateByUrl')
+                        .mockResolvedValue(true);
+                    const gotoPortletSpy = vi
+                        .spyOn(dotRouterService, 'gotoPortlet')
+                        .mockResolvedValue(true);
+                    const pageLoadSpy = vi.spyOn(pageApi(), 'pageLoad');
+
+                    const reject = () => (confirmSpy.mock.calls[0][0] as Confirmation).reject?.();
+
+                    return {
+                        dotRouterService,
+                        navigateByUrlSpy,
+                        gotoPortletSpy,
+                        pageLoadSpy,
+                        reject
+                    };
+                };
+
+                /**
+                 * Stub the DotRouterService `previousUrl` getter (it is a mock provider, so
+                 * the getter is not present by default) and its `isPublicUrl` guard.
+                 */
+                const stubPreviousUrl = (
+                    dotRouterService: DotRouterService,
+                    previousUrl: string,
+                    isPublicUrl = false
+                ) => {
+                    Object.defineProperty(dotRouterService, 'previousUrl', {
+                        get: () => previousUrl,
+                        configurable: true
+                    });
+                    vi.spyOn(dotRouterService, 'isPublicUrl').mockReturnValue(isPublicUrl);
+                };
+
+                it('should redirect to the previous dotCMS URL when the user rejects creating a new translation', () => {
+                    const {
+                        dotRouterService,
+                        navigateByUrlSpy,
+                        gotoPortletSpy,
+                        pageLoadSpy,
+                        reject
+                    } = triggerTranslationReject();
+
+                    stubPreviousUrl(dotRouterService, '/pages/import');
+
+                    reject();
+
+                    // Redirect to the last different dotCMS URL, NOT a reload of the same
+                    // untranslated page (which would re-open the dialog — #36661 loop).
+                    expect(navigateByUrlSpy).toHaveBeenCalledWith('/pages/import');
+                    expect(gotoPortletSpy).not.toHaveBeenCalled();
+                    expect(pageLoadSpy).not.toHaveBeenCalled();
+                });
+
+                it('should redirect to the Pages portlet when there is no usable previous URL', () => {
+                    const { dotRouterService, navigateByUrlSpy, gotoPortletSpy, reject } =
+                        triggerTranslationReject();
+
+                    // No history (user opened the editor directly)
+                    stubPreviousUrl(dotRouterService, '');
+
+                    reject();
+
+                    expect(gotoPortletSpy).toHaveBeenCalledWith('/pages');
+                    expect(navigateByUrlSpy).not.toHaveBeenCalled();
+                });
+
+                it('should redirect to the Pages portlet when the previous URL is another edit-page route', () => {
+                    const { dotRouterService, navigateByUrlSpy, gotoPortletSpy, reject } =
+                        triggerTranslationReject();
+
+                    // A previous /edit-page URL could resolve to the same untranslated page
+                    // and re-open the dialog, so it must be skipped in favor of /pages.
+                    stubPreviousUrl(
+                        dotRouterService,
+                        '/edit-page/content?url=/index&language_id=2'
+                    );
+
+                    reject();
+
+                    expect(gotoPortletSpy).toHaveBeenCalledWith('/pages');
+                    expect(navigateByUrlSpy).not.toHaveBeenCalled();
+                });
+
+                it('should redirect to the Pages portlet when the previous URL is a public route', () => {
+                    const { dotRouterService, navigateByUrlSpy, gotoPortletSpy, reject } =
+                        triggerTranslationReject();
+
+                    stubPreviousUrl(dotRouterService, '/public/login', true);
+
+                    reject();
+
+                    expect(gotoPortletSpy).toHaveBeenCalledWith('/pages');
+                    expect(navigateByUrlSpy).not.toHaveBeenCalled();
+                });
+
+                it('should redirect away (no dead-end) even when the page has no translated language', () => {
+                    const { dotRouterService, gotoPortletSpy, pageLoadSpy, reject } =
+                        triggerTranslationReject();
+
+                    // Only untranslated languages exist — the old behavior bailed and left
+                    // the user stuck. The user must still be navigated away.
+                    // protectedState:false on the root store makes patchState available in tests.
+                    patchState(store, {
+                        pageLanguages: [
+                            {
+                                id: 2,
+                                languageCode: 'es',
+                                countryCode: 'ES',
+                                language: 'Spanish',
+                                country: 'España',
+                                translated: false
+                            }
+                        ]
+                    });
+
+                    stubPreviousUrl(dotRouterService, '');
+
+                    reject();
+
+                    expect(gotoPortletSpy).toHaveBeenCalledWith('/pages');
+                    expect(pageLoadSpy).not.toHaveBeenCalled();
+                });
+            });
+
             describe('handleOpenFullEditor', () => {
                 afterEach(() => {
-                    jest.restoreAllMocks();
+                    vi.restoreAllMocks();
                 });
 
                 it('should open legacy ema dialog when the content type does not enable the new editor', () => {
                     const dotContentTypeService =
                         spectator.debugElement.injector.get(DotContentTypeService);
-                    jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                    vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
                         of(
                             createFakeContentType({
                                 variable: 'test',
@@ -2193,11 +2590,8 @@ describe('EditEmaEditorComponent', () => {
                             })
                         )
                     );
-                    const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
-                    const dialogServiceOpenSpy = jest.spyOn(
-                        spectator.inject(DialogService),
-                        'open'
-                    );
+                    const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
+                    const dialogServiceOpenSpy = vi.spyOn(spectator.inject(DialogService), 'open');
 
                     store.setSelected({
                         bounds: { x: 0, y: 0, width: 0, height: 0 },
@@ -2216,7 +2610,7 @@ describe('EditEmaEditorComponent', () => {
                 it('should open the new edit content dialog when CONTENT_EDITOR2_ENABLED is true on the content type', async () => {
                     const dotContentTypeService =
                         spectator.debugElement.injector.get(DotContentTypeService);
-                    jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                    vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
                         of(
                             createFakeContentType({
                                 variable: 'test',
@@ -2227,12 +2621,12 @@ describe('EditEmaEditorComponent', () => {
                             })
                         )
                     );
-                    const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
+                    const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
                     const dialogRefMock = {
                         onClose: new Subject<void | unknown>(),
-                        close: jest.fn()
+                        close: vi.fn()
                     };
-                    const dialogServiceOpenSpy = jest
+                    const dialogServiceOpenSpy = vi
                         .spyOn(spectator.inject(DialogService), 'open')
                         .mockReturnValue(dialogRefMock as unknown as DynamicDialogRef);
 
@@ -2260,14 +2654,11 @@ describe('EditEmaEditorComponent', () => {
                 it('should fall back to legacy dialog when getContentType throws', () => {
                     const dotContentTypeService =
                         spectator.debugElement.injector.get(DotContentTypeService);
-                    jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                    vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
                         throwError(() => new Error('network error'))
                     );
-                    const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
-                    const dialogServiceOpenSpy = jest.spyOn(
-                        spectator.inject(DialogService),
-                        'open'
-                    );
+                    const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
+                    const dialogServiceOpenSpy = vi.spyOn(spectator.inject(DialogService), 'open');
 
                     store.setSelected({
                         bounds: { x: 0, y: 0, width: 0, height: 0 },
@@ -2284,24 +2675,121 @@ describe('EditEmaEditorComponent', () => {
                 });
             });
 
+            describe('handleEditVTL', () => {
+                const VTL_FILE_MOCK: VTLFile = { inode: 'vtl-inode-123', name: 'my-template.vtl' };
+
+                afterEach(() => {
+                    vi.restoreAllMocks();
+                });
+
+                it('should open the legacy VTL dialog when the contentlet lookup fails', () => {
+                    const dotContentletService =
+                        spectator.debugElement.injector.get(DotContentletService);
+                    vi.spyOn(dotContentletService, 'getContentletByInode').mockReturnValue(
+                        throwError(() => new Error('network error'))
+                    );
+                    const dialogSpy = vi.spyOn(spectator.component.dialog, 'editVTLContentlet');
+
+                    spectator.component.handleEditVTL(VTL_FILE_MOCK);
+                    spectator.detectChanges();
+
+                    expect(dialogSpy).toHaveBeenCalledWith(VTL_FILE_MOCK);
+                });
+
+                it('should open the legacy dialog when the resolved content type does not enable the new editor', () => {
+                    const dotContentletService =
+                        spectator.debugElement.injector.get(DotContentletService);
+                    vi.spyOn(dotContentletService, 'getContentletByInode').mockReturnValue(
+                        of({ ...URL_MAP_CONTENTLET, inode: 'vtl-inode-123', contentType: 'test' })
+                    );
+                    const dotContentTypeService =
+                        spectator.debugElement.injector.get(DotContentTypeService);
+                    vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                        of(
+                            createFakeContentType({
+                                variable: 'test',
+                                name: 'Test',
+                                metadata: {
+                                    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false
+                                }
+                            })
+                        )
+                    );
+                    const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
+                    const dialogServiceOpenSpy = vi.spyOn(spectator.inject(DialogService), 'open');
+
+                    spectator.component.handleEditVTL(VTL_FILE_MOCK);
+                    spectator.detectChanges();
+
+                    expect(dialogSpy).toHaveBeenCalledWith(
+                        expect.objectContaining({ inode: 'vtl-inode-123' })
+                    );
+                    expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
+                });
+
+                it('should open the new edit content flow when CONTENT_EDITOR2_ENABLED is true on the resolved content type', async () => {
+                    const dotContentletService =
+                        spectator.debugElement.injector.get(DotContentletService);
+                    vi.spyOn(dotContentletService, 'getContentletByInode').mockReturnValue(
+                        of({ ...URL_MAP_CONTENTLET, inode: 'vtl-inode-123', contentType: 'test' })
+                    );
+                    const dotContentTypeService =
+                        spectator.debugElement.injector.get(DotContentTypeService);
+                    vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                        of(
+                            createFakeContentType({
+                                variable: 'test',
+                                name: 'Test',
+                                metadata: {
+                                    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true
+                                }
+                            })
+                        )
+                    );
+                    const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
+                    const dialogRefMock = {
+                        onClose: new Subject<void | unknown>(),
+                        close: vi.fn()
+                    };
+                    const dialogServiceOpenSpy = vi
+                        .spyOn(spectator.inject(DialogService), 'open')
+                        .mockReturnValue(dialogRefMock as unknown as DynamicDialogRef);
+
+                    spectator.component.handleEditVTL(VTL_FILE_MOCK);
+                    spectator.detectChanges();
+
+                    await spectator.fixture.whenStable();
+
+                    expect(dialogSpy).not.toHaveBeenCalled();
+                    expect(dialogServiceOpenSpy).toHaveBeenCalled();
+                    const [, config] = dialogServiceOpenSpy.mock.calls[0];
+                    expect(config.data).toEqual(
+                        expect.objectContaining({
+                            mode: 'edit',
+                            contentletInode: 'vtl-inode-123'
+                        })
+                    );
+                });
+            });
+
             describe('handleEditWithCopyDecision', () => {
                 const MULTI_PAGE_PAYLOAD: ActionPayload = {
                     ...EDIT_ACTION_PAYLOAD_MOCK,
                     contentlet: {
                         ...EDIT_ACTION_PAYLOAD_MOCK.contentlet,
                         onNumberOfPages: 2
-                    }
+                    } as ContentletPayload
                 };
 
                 afterEach(() => {
-                    jest.restoreAllMocks();
+                    vi.restoreAllMocks();
                 });
 
                 describe('single-page contentlet (onNumberOfPages: 1)', () => {
                     it('should open legacy dialog when feature flag is disabled', () => {
                         const dotContentTypeService =
                             spectator.debugElement.injector.get(DotContentTypeService);
-                        jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                        vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
                             of(
                                 createFakeContentType({
                                     variable: 'test',
@@ -2312,8 +2800,8 @@ describe('EditEmaEditorComponent', () => {
                                 })
                             )
                         );
-                        const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
-                        const dialogServiceOpenSpy = jest.spyOn(
+                        const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
+                        const dialogServiceOpenSpy = vi.spyOn(
                             spectator.inject(DialogService),
                             'open'
                         );
@@ -2330,7 +2818,7 @@ describe('EditEmaEditorComponent', () => {
                     it('should open new edit content dialog when feature flag is enabled', async () => {
                         const dotContentTypeService =
                             spectator.debugElement.injector.get(DotContentTypeService);
-                        jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                        vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
                             of(
                                 createFakeContentType({
                                     variable: 'test',
@@ -2341,12 +2829,12 @@ describe('EditEmaEditorComponent', () => {
                                 })
                             )
                         );
-                        const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
+                        const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
                         const dialogRefMock = {
                             onClose: new Subject<void | unknown>(),
-                            close: jest.fn()
+                            close: vi.fn()
                         };
-                        const dialogServiceOpenSpy = jest
+                        const dialogServiceOpenSpy = vi
                             .spyOn(spectator.inject(DialogService), 'open')
                             .mockReturnValue(dialogRefMock as unknown as DynamicDialogRef);
 
@@ -2369,11 +2857,11 @@ describe('EditEmaEditorComponent', () => {
                     it('should fall back to legacy dialog when getContentType throws', () => {
                         const dotContentTypeService =
                             spectator.debugElement.injector.get(DotContentTypeService);
-                        jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                        vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
                             throwError(() => new Error('network error'))
                         );
-                        const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
-                        const dialogServiceOpenSpy = jest.spyOn(
+                        const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
+                        const dialogServiceOpenSpy = vi.spyOn(
                             spectator.inject(DialogService),
                             'open'
                         );
@@ -2392,7 +2880,7 @@ describe('EditEmaEditorComponent', () => {
                     it('should open legacy dialog when flag is disabled and user edits all pages', () => {
                         const dotContentTypeService =
                             spectator.debugElement.injector.get(DotContentTypeService);
-                        jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                        vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
                             of(
                                 createFakeContentType({
                                     variable: 'test',
@@ -2403,12 +2891,12 @@ describe('EditEmaEditorComponent', () => {
                                 })
                             )
                         );
-                        jest.spyOn(
+                        vi.spyOn(
                             spectator.inject(DotCopyContentModalService),
                             'open'
                         ).mockReturnValue(of({ shouldCopy: false }));
-                        const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
-                        const dialogServiceOpenSpy = jest.spyOn(
+                        const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
+                        const dialogServiceOpenSpy = vi.spyOn(
                             spectator.inject(DialogService),
                             'open'
                         );
@@ -2425,7 +2913,7 @@ describe('EditEmaEditorComponent', () => {
                     it('should open new edit content dialog when flag is enabled and user edits all pages', async () => {
                         const dotContentTypeService =
                             spectator.debugElement.injector.get(DotContentTypeService);
-                        jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                        vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
                             of(
                                 createFakeContentType({
                                     variable: 'test',
@@ -2436,16 +2924,16 @@ describe('EditEmaEditorComponent', () => {
                                 })
                             )
                         );
-                        jest.spyOn(
+                        vi.spyOn(
                             spectator.inject(DotCopyContentModalService),
                             'open'
                         ).mockReturnValue(of({ shouldCopy: false }));
-                        const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
+                        const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
                         const dialogRefMock = {
                             onClose: new Subject<void | unknown>(),
-                            close: jest.fn()
+                            close: vi.fn()
                         };
-                        const dialogServiceOpenSpy = jest
+                        const dialogServiceOpenSpy = vi
                             .spyOn(spectator.inject(DialogService), 'open')
                             .mockReturnValue(dialogRefMock as unknown as DynamicDialogRef);
 
@@ -2469,7 +2957,7 @@ describe('EditEmaEditorComponent', () => {
                         const COPIED_INODE = 'copied-contentlet-inode-456';
                         const dotContentTypeService =
                             spectator.debugElement.injector.get(DotContentTypeService);
-                        jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                        vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
                             of(
                                 createFakeContentType({
                                     variable: 'test',
@@ -2480,22 +2968,22 @@ describe('EditEmaEditorComponent', () => {
                                 })
                             )
                         );
-                        jest.spyOn(
+                        vi.spyOn(
                             spectator.inject(DotCopyContentModalService),
                             'open'
                         ).mockReturnValue(of({ shouldCopy: true }));
-                        jest.spyOn(
+                        vi.spyOn(
                             spectator.inject(DotCopyContentService),
                             'copyInPage'
                         ).mockReturnValue(
                             of({ inode: COPIED_INODE, contentType: 'test' } as DotCMSContentlet)
                         );
-                        const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
+                        const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
                         const dialogRefMock = {
                             onClose: new Subject<void | unknown>(),
-                            close: jest.fn()
+                            close: vi.fn()
                         };
-                        const dialogServiceOpenSpy = jest
+                        const dialogServiceOpenSpy = vi
                             .spyOn(spectator.inject(DialogService), 'open')
                             .mockReturnValue(dialogRefMock as unknown as DynamicDialogRef);
 
@@ -2518,23 +3006,23 @@ describe('EditEmaEditorComponent', () => {
                     it('should fall back to legacy dialog and still reload page when getContentType throws after copy', () => {
                         const dotContentTypeService =
                             spectator.debugElement.injector.get(DotContentTypeService);
-                        jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                        vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
                             throwError(() => new Error('network error'))
                         );
-                        jest.spyOn(
+                        vi.spyOn(
                             spectator.inject(DotCopyContentModalService),
                             'open'
                         ).mockReturnValue(of({ shouldCopy: true }));
                         const COPIED_INODE = 'copied-contentlet-inode-456';
-                        jest.spyOn(
+                        vi.spyOn(
                             spectator.inject(DotCopyContentService),
                             'copyInPage'
                         ).mockReturnValue(
                             of({ inode: COPIED_INODE, contentType: 'test' } as DotCMSContentlet)
                         );
-                        const pageReloadSpy = jest.spyOn(store, 'pageReload');
-                        const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
-                        const dialogServiceOpenSpy = jest.spyOn(
+                        const pageReloadSpy = vi.spyOn(pageApi(), 'pageReload');
+                        const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
+                        const dialogServiceOpenSpy = vi.spyOn(
                             spectator.inject(DialogService),
                             'open'
                         );
@@ -2548,6 +3036,332 @@ describe('EditEmaEditorComponent', () => {
                         );
                         expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
                     });
+                });
+
+                describe('contentlet edit permission (#37376)', () => {
+                    const DENIED_PAYLOAD: ActionPayload = {
+                        ...EDIT_ACTION_PAYLOAD_MOCK,
+                        contentlet: {
+                            ...EDIT_ACTION_PAYLOAD_MOCK.contentlet,
+                            canEdit: false
+                        }
+                    };
+
+                    const DENIED_MULTI_PAGE_PAYLOAD: ActionPayload = {
+                        ...MULTI_PAGE_PAYLOAD,
+                        contentlet: {
+                            ...MULTI_PAGE_PAYLOAD.contentlet,
+                            canEdit: false
+                        }
+                    };
+
+                    it('should not open any editor for a contentlet the user cannot edit', () => {
+                        // Mock the content type so the permitted path WOULD open
+                        // the legacy dialog synchronously. Without this the test
+                        // would pass vacuously, proving nothing about the guard.
+                        const dotContentTypeService =
+                            spectator.debugElement.injector.get(DotContentTypeService);
+                        vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                            of(
+                                createFakeContentType({
+                                    variable: 'test',
+                                    name: 'Test',
+                                    metadata: {
+                                        [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false
+                                    }
+                                })
+                            )
+                        );
+                        const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
+                        const dialogServiceOpenSpy = vi.spyOn(
+                            spectator.inject(DialogService),
+                            'open'
+                        );
+
+                        spectator.component['handleEditWithCopyDecision'](DENIED_PAYLOAD);
+                        spectator.detectChanges();
+
+                        expect(dialogSpy).not.toHaveBeenCalled();
+                        expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
+                    });
+
+                    it('should not open the copy decision modal for a denied multi-page contentlet', () => {
+                        // The modal is the first thing the multi-page path does,
+                        // so it must never be reached — the user cannot edit the
+                        // original nor be offered a copy of it here.
+                        const copyModalSpy = vi.spyOn(
+                            spectator.inject(DotCopyContentModalService),
+                            'open'
+                        );
+
+                        spectator.component['handleEditWithCopyDecision'](
+                            DENIED_MULTI_PAGE_PAYLOAD
+                        );
+                        spectator.detectChanges();
+
+                        expect(copyModalSpy).not.toHaveBeenCalled();
+                    });
+
+                    it('should still open the copy decision modal when the user can edit', () => {
+                        const copyModalSpy = vi
+                            .spyOn(spectator.inject(DotCopyContentModalService), 'open')
+                            .mockReturnValue(of({ shouldCopy: false }));
+
+                        spectator.component['handleEditWithCopyDecision'](MULTI_PAGE_PAYLOAD);
+                        spectator.detectChanges();
+
+                        expect(copyModalSpy).toHaveBeenCalled();
+                    });
+
+                    it('should still open the editor when the permission field is absent', () => {
+                        // Headless payloads carry no canEdit; fail open.
+                        const dotContentTypeService =
+                            spectator.debugElement.injector.get(DotContentTypeService);
+                        vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                            of(
+                                createFakeContentType({
+                                    variable: 'test',
+                                    name: 'Test',
+                                    metadata: {
+                                        [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false
+                                    }
+                                })
+                            )
+                        );
+                        const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
+
+                        spectator.component['handleEditWithCopyDecision'](EDIT_ACTION_PAYLOAD_MOCK);
+                        spectator.detectChanges();
+
+                        expect(dialogSpy).toHaveBeenCalled();
+                    });
+                });
+            });
+
+            describe('quick edit permission (#37376)', () => {
+                const SELECTED_BOUNDS = { x: 0, y: 0, width: 0, height: 0 };
+
+                const selectContentlet = (canEdit?: boolean) => {
+                    store.setSelected({
+                        bounds: SELECTED_BOUNDS,
+                        payload: {
+                            ...EDIT_ACTION_PAYLOAD_MOCK,
+                            contentlet: {
+                                ...EDIT_ACTION_PAYLOAD_MOCK.contentlet,
+                                ...(canEdit === undefined ? {} : { canEdit })
+                            }
+                        }
+                    });
+                    spectator.detectChanges();
+                };
+
+                it('should preserve canEdit through the page-asset swap in $contentletEditData', () => {
+                    // $contentletEditData replaces the DOM payload contentlet
+                    // with the page-asset one to pick up a fresh inode after a
+                    // save. The permission exists only on the DOM payload, so
+                    // it has to survive that swap or the panel cannot be gated.
+                    //
+                    // The container is injected into the store so the swap is
+                    // guaranteed to fire — the assertion on the swapped inode
+                    // is what stops this test from passing vacuously.
+                    const componentUveStore = spectator.component['uveStore'];
+                    const pageAsset = componentUveStore.pageAsset();
+
+                    componentUveStore.updatePageResponse({
+                        ...pageAsset,
+                        containers: {
+                            'perm-container': {
+                                container: { identifier: 'perm-container' },
+                                containerStructures: [],
+                                contentlets: {
+                                    'uuid-1': [
+                                        {
+                                            identifier: 'perm-contentlet',
+                                            inode: 'fresh-inode-from-page-asset',
+                                            contentType: 'test'
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    } as unknown as Parameters<typeof componentUveStore.updatePageResponse>[0]);
+                    spectator.detectChanges();
+
+                    componentUveStore.setSelected({
+                        bounds: SELECTED_BOUNDS,
+                        payload: {
+                            ...EDIT_ACTION_PAYLOAD_MOCK,
+                            container: {
+                                ...EDIT_ACTION_PAYLOAD_MOCK.container,
+                                identifier: 'perm-container',
+                                uuid: '1'
+                            },
+                            contentlet: {
+                                ...EDIT_ACTION_PAYLOAD_MOCK.contentlet,
+                                identifier: 'perm-contentlet',
+                                inode: 'stale-inode-from-dom',
+                                canEdit: false
+                            }
+                        }
+                    });
+                    spectator.detectChanges();
+
+                    const result = spectator.component['$contentletEditData']();
+
+                    expect(result.contentlet?.inode).toBe('fresh-inode-from-page-asset');
+                    expect(result.contentlet?.canEdit).toBe(false);
+                });
+
+                it('should leave canEdit undefined when the payload has none', () => {
+                    selectContentlet(undefined);
+
+                    expect(
+                        spectator.component['$contentletEditData']().contentlet?.canEdit
+                    ).toBeUndefined();
+                });
+
+                it('should not open the quick edit panel for a denied contentlet', () => {
+                    const setEditPanelOpenSpy = vi.spyOn(store, 'setEditPanelOpen');
+                    selectContentlet(false);
+                    setEditPanelOpenSpy.mockClear();
+
+                    spectator.component['handleOpenQuickEdit']();
+                    spectator.detectChanges();
+
+                    expect(setEditPanelOpenSpy).not.toHaveBeenCalled();
+                });
+
+                it('should open the quick edit panel when the user can edit', () => {
+                    const setEditPanelOpenSpy = vi.spyOn(store, 'setEditPanelOpen');
+                    selectContentlet(true);
+                    setEditPanelOpenSpy.mockClear();
+
+                    spectator.component['handleOpenQuickEdit']();
+                    spectator.detectChanges();
+
+                    expect(setEditPanelOpenSpy).toHaveBeenCalledWith(true);
+                });
+            });
+
+            describe('inline editing permission (#37376)', () => {
+                /**
+                 * Build a `[data-mode]` field inside a contentlet wrapper,
+                 * mirroring what the container renderer emits.
+                 */
+                const buildInlineTarget = (canEdit?: string): HTMLElement => {
+                    const wrapper = document.createElement('div');
+                    wrapper.dataset['dotObject'] = 'contentlet';
+                    wrapper.dataset['dotInode'] = 'inode-123';
+                    if (canEdit !== undefined) {
+                        wrapper.dataset['dotCanEdit'] = canEdit;
+                    }
+
+                    const field = document.createElement('div');
+                    field.dataset['mode'] = 'minimal';
+                    field.dataset['inode'] = 'inode-123';
+                    field.dataset['fieldName'] = 'body';
+                    field.dataset['language'] = '1';
+                    wrapper.appendChild(field);
+                    document.body.appendChild(wrapper);
+
+                    return field;
+                };
+
+                const clickInlineField = (canEdit?: string) => {
+                    const target = buildInlineTarget(canEdit);
+                    spectator.component.handleInlineEditing({
+                        target
+                    } as unknown as MouseEvent);
+                    spectator.detectChanges();
+                };
+
+                it('should not start inline editing on a contentlet the user cannot edit', () => {
+                    const inlineEditSpy = mockInlineEditService.handleInlineEdit;
+                    inlineEditSpy.mockClear();
+
+                    clickInlineField('false');
+
+                    expect(inlineEditSpy).not.toHaveBeenCalled();
+                });
+
+                it('should tell the user why with a toast instead of failing silently', () => {
+                    // The field has no control to grey out and no hover target
+                    // for a tooltip, so a silent no-op reads as a broken editor.
+                    addMessageSpy.mockClear();
+
+                    clickInlineField('false');
+
+                    expect(addMessageSpy).toHaveBeenCalledWith(
+                        expect.objectContaining({
+                            detail: 'uve.contentlet.no.edit.permission'
+                        })
+                    );
+                });
+
+                it('should start inline editing when the user can edit', () => {
+                    const inlineEditSpy = mockInlineEditService.handleInlineEdit;
+                    inlineEditSpy.mockClear();
+
+                    clickInlineField('true');
+
+                    expect(inlineEditSpy).toHaveBeenCalled();
+                });
+
+                it('should start inline editing when the permission attribute is absent', () => {
+                    // Headless pages never emit it; fail open.
+                    const inlineEditSpy = mockInlineEditService.handleInlineEdit;
+                    inlineEditSpy.mockClear();
+
+                    clickInlineField(undefined);
+
+                    expect(inlineEditSpy).toHaveBeenCalled();
+                });
+            });
+
+            describe('style editor permission (#37376)', () => {
+                const SELECTED = { x: 0, y: 0, width: 0, height: 0 };
+
+                const selectWith = (canEdit?: boolean) => {
+                    spectator.component['uveStore'].setSelected({
+                        bounds: SELECTED,
+                        payload: {
+                            ...EDIT_ACTION_PAYLOAD_MOCK,
+                            contentlet: {
+                                ...EDIT_ACTION_PAYLOAD_MOCK.contentlet,
+                                ...(canEdit === undefined ? {} : { canEdit })
+                            }
+                        }
+                    });
+                    spectator.detectChanges();
+                };
+
+                it('should report the selected contentlet as not styleable when denied', () => {
+                    selectWith(false);
+
+                    expect(spectator.component['$canEditSelectedContentlet']()).toBe(false);
+                });
+
+                it('should allow styling when the user can edit', () => {
+                    selectWith(true);
+
+                    expect(spectator.component['$canEditSelectedContentlet']()).toBe(true);
+                });
+
+                it('should allow styling when the permission is absent', () => {
+                    selectWith(undefined);
+
+                    expect(spectator.component['$canEditSelectedContentlet']()).toBe(true);
+                });
+
+                it('should not open the style editor panel for a denied contentlet', () => {
+                    const setEditPanelOpenSpy = vi.spyOn(store, 'setEditPanelOpen');
+                    selectWith(false);
+                    setEditPanelOpenSpy.mockClear();
+
+                    spectator.component['handleSelectContent'](EDIT_ACTION_PAYLOAD_MOCK);
+                    spectator.detectChanges();
+
+                    expect(setEditPanelOpenSpy).not.toHaveBeenCalled();
                 });
             });
 
@@ -2565,13 +3379,13 @@ describe('EditEmaEditorComponent', () => {
                 };
 
                 afterEach(() => {
-                    jest.restoreAllMocks();
+                    vi.restoreAllMocks();
                 });
 
                 it('should open the new edit content dialog when CONTENT_EDITOR2_ENABLED is true', () => {
                     const dotContentTypeService =
                         spectator.debugElement.injector.get(DotContentTypeService);
-                    jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                    vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
                         of(
                             createFakeContentType({
                                 variable: 'TestContentType',
@@ -2585,12 +3399,12 @@ describe('EditEmaEditorComponent', () => {
 
                     const dialogRefMock = {
                         onClose: new Subject<void | unknown>(),
-                        close: jest.fn()
+                        close: vi.fn()
                     };
-                    const dialogServiceOpenSpy = jest
+                    const dialogServiceOpenSpy = vi
                         .spyOn(spectator.inject(DialogService), 'open')
                         .mockReturnValue(dialogRefMock as unknown as DynamicDialogRef);
-                    const createFromPaletteSpy = jest.spyOn(
+                    const createFromPaletteSpy = vi.spyOn(
                         spectator.component.dialog,
                         'createContentletFromPalette'
                     );
@@ -2612,7 +3426,7 @@ describe('EditEmaEditorComponent', () => {
                 it('should open the legacy dialog when CONTENT_EDITOR2_ENABLED is false', () => {
                     const dotContentTypeService =
                         spectator.debugElement.injector.get(DotContentTypeService);
-                    jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                    vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
                         of(
                             createFakeContentType({
                                 variable: 'TestContentType',
@@ -2624,11 +3438,8 @@ describe('EditEmaEditorComponent', () => {
                         )
                     );
 
-                    const dialogServiceOpenSpy = jest.spyOn(
-                        spectator.inject(DialogService),
-                        'open'
-                    );
-                    const createFromPaletteSpy = jest.spyOn(
+                    const dialogServiceOpenSpy = vi.spyOn(spectator.inject(DialogService), 'open');
+                    const createFromPaletteSpy = vi.spyOn(
                         spectator.component.dialog,
                         'createContentletFromPalette'
                     );
@@ -2648,15 +3459,12 @@ describe('EditEmaEditorComponent', () => {
                 it('should fall back to legacy dialog when getContentType throws', () => {
                     const dotContentTypeService =
                         spectator.debugElement.injector.get(DotContentTypeService);
-                    jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                    vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
                         throwError(() => new Error('network error'))
                     );
 
-                    const dialogServiceOpenSpy = jest.spyOn(
-                        spectator.inject(DialogService),
-                        'open'
-                    );
-                    const createFromPaletteSpy = jest.spyOn(
+                    const dialogServiceOpenSpy = vi.spyOn(spectator.inject(DialogService), 'open');
+                    const createFromPaletteSpy = vi.spyOn(
                         spectator.component.dialog,
                         'createContentletFromPalette'
                     );
@@ -2686,13 +3494,13 @@ describe('EditEmaEditorComponent', () => {
                 });
 
                 afterEach(() => {
-                    jest.restoreAllMocks();
+                    vi.restoreAllMocks();
                 });
 
                 it('should open the new edit content dialog when CONTENT_EDITOR2_ENABLED is true', () => {
                     const dotContentTypeService =
                         spectator.debugElement.injector.get(DotContentTypeService);
-                    jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                    vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
                         of(
                             createFakeContentType({
                                 variable: 'TestContentType',
@@ -2706,12 +3514,12 @@ describe('EditEmaEditorComponent', () => {
 
                     const dialogRefMock = {
                         onClose: new Subject<void | unknown>(),
-                        close: jest.fn()
+                        close: vi.fn()
                     };
-                    const dialogServiceOpenSpy = jest
+                    const dialogServiceOpenSpy = vi
                         .spyOn(spectator.inject(DialogService), 'open')
                         .mockReturnValue(dialogRefMock as unknown as DynamicDialogRef);
-                    const createContentletSpy = jest.spyOn(
+                    const createContentletSpy = vi.spyOn(
                         spectator.component.dialog,
                         'createContentlet'
                     );
@@ -2738,7 +3546,7 @@ describe('EditEmaEditorComponent', () => {
                 it('should open the legacy create dialog when CONTENT_EDITOR2_ENABLED is false', () => {
                     const dotContentTypeService =
                         spectator.debugElement.injector.get(DotContentTypeService);
-                    jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                    vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
                         of(
                             createFakeContentType({
                                 variable: 'TestContentType',
@@ -2750,11 +3558,8 @@ describe('EditEmaEditorComponent', () => {
                         )
                     );
 
-                    const dialogServiceOpenSpy = jest.spyOn(
-                        spectator.inject(DialogService),
-                        'open'
-                    );
-                    const createContentletSpy = jest.spyOn(
+                    const dialogServiceOpenSpy = vi.spyOn(spectator.inject(DialogService), 'open');
+                    const createContentletSpy = vi.spyOn(
                         spectator.component.dialog,
                         'createContentlet'
                     );
@@ -2780,15 +3585,12 @@ describe('EditEmaEditorComponent', () => {
                 it('should fall back to legacy create dialog when getContentType throws', () => {
                     const dotContentTypeService =
                         spectator.debugElement.injector.get(DotContentTypeService);
-                    jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                    vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
                         throwError(() => new Error('network error'))
                     );
 
-                    const dialogServiceOpenSpy = jest.spyOn(
-                        spectator.inject(DialogService),
-                        'open'
-                    );
-                    const createContentletSpy = jest.spyOn(
+                    const dialogServiceOpenSpy = vi.spyOn(spectator.inject(DialogService), 'open');
+                    const createContentletSpy = vi.spyOn(
                         spectator.component.dialog,
                         'createContentlet'
                     );
@@ -2831,41 +3633,63 @@ describe('EditEmaEditorComponent', () => {
             });
 
             describe('handleInternalNav', () => {
-                let pageLoadSpy: jest.SpyInstance;
-                let windowOpenSpy: jest.Mock;
+                let pageLoadSpy: MockInstance;
+                let windowOpenSpy: Mock;
+                let openedLink: {
+                    href: string;
+                    target: string;
+                    rel: string;
+                    click: Mock;
+                    remove: Mock;
+                };
                 let mockWindow: {
                     location: { origin: string; hostname: string };
-                    open: jest.Mock;
+                    open: Mock;
+                    document: { createElement: Mock; body: { appendChild: Mock } };
                 };
 
                 beforeEach(() => {
+                    // Asset links are opened through a `rel="noopener"` anchor rather
+                    // than window.open, so the sandboxed iframe's gesture is not
+                    // treated as a popup request. See EditEmaEditorComponent.
+                    openedLink = {
+                        href: '',
+                        target: '',
+                        rel: '',
+                        click: vi.fn(),
+                        remove: vi.fn()
+                    };
                     mockWindow = {
                         location: {
                             origin: 'http://localhost:3000',
                             hostname: 'localhost'
                         },
-                        open: jest.fn()
+                        open: vi.fn(),
+                        document: {
+                            createElement: vi.fn().mockReturnValue(openedLink),
+                            body: { appendChild: vi.fn() }
+                        }
                     };
                     (spectator.component as unknown as { window: typeof mockWindow }).window =
                         mockWindow;
-                    pageLoadSpy = jest.spyOn(store, 'pageLoad');
+                    pageLoadSpy = vi.spyOn(pageApi(), 'pageLoad');
                     windowOpenSpy = mockWindow.open;
                 });
 
                 const createMockEvent = (href: string, isInlineEditing = false): MouseEvent => {
                     const mockAnchor = {
                         href,
-                        getAttribute: jest.fn().mockReturnValue(href),
-                        closest: jest.fn().mockReturnValue({ href, getAttribute: () => href })
+                        getAttribute: vi.fn().mockReturnValue(href),
+                        closest: vi.fn().mockReturnValue({ href, getAttribute: () => href })
                     };
 
                     const mockEvent = {
                         target: mockAnchor,
-                        preventDefault: jest.fn()
+                        preventDefault: vi.fn()
                     } as unknown as MouseEvent;
 
                     // Mock the store state for inline editing (editorState returns EDITOR_STATE enum directly)
-                    jest.spyOn(store, 'editorState').mockReturnValue(
+                    vi.spyOn(store, 'editorState').mockReturnValue(
                         isInlineEditing ? EDITOR_STATE.INLINE_EDITING : EDITOR_STATE.IDLE
                     );
 
@@ -2875,10 +3699,10 @@ describe('EditEmaEditorComponent', () => {
                 it('should not do anything if href is empty', () => {
                     const mockEvent = {
                         target: { href: '', closest: () => null },
-                        preventDefault: jest.fn()
+                        preventDefault: vi.fn()
                     } as unknown as MouseEvent;
 
-                    jest.spyOn(store, 'editorState').mockReturnValue(EDITOR_STATE.IDLE);
+                    vi.spyOn(store, 'editorState').mockReturnValue(EDITOR_STATE.IDLE);
 
                     spectator.component.handleInternalNav(mockEvent);
 
@@ -2901,8 +3725,68 @@ describe('EditEmaEditorComponent', () => {
 
                     spectator.component.handleInternalNav(mockEvent);
 
-                    expect(windowOpenSpy).toHaveBeenCalledWith(externalUrl, '_blank');
+                    expect(openedLink.href).toBe(externalUrl);
+                    expect(openedLink.target).toBe('_blank');
+                    expect(openedLink.click).toHaveBeenCalled();
                     expect(pageLoadSpy).not.toHaveBeenCalled();
+                });
+
+                // Without it the anchor also navigates the iframe to the external
+                // site, which refuses to be framed and blanks the canvas.
+                it('should keep the iframe on the page when opening an external URL', () => {
+                    const mockEvent = createMockEvent('https://external-site.com/page');
+
+                    spectator.component.handleInternalNav(mockEvent);
+
+                    expect(mockEvent.preventDefault).toHaveBeenCalled();
+                });
+
+                describe('absolute URLs to the edited site', () => {
+                    beforeEach(() => {
+                        const pageAsset = store.pageAsset();
+
+                        vi.spyOn(store, 'pageAsset').mockReturnValue({
+                            ...pageAsset,
+                            site: {
+                                ...pageAsset?.site,
+                                hostname: 'www.site.com',
+                                aliases: 'site.com\nalias.site.com'
+                            }
+                        } as ReturnType<typeof store.pageAsset>);
+                    });
+
+                    it('should load a link to the site hostname inside the editor', () => {
+                        const mockEvent = createMockEvent(
+                            'https://www.site.com/news?anno_pubblicazione=2025'
+                        );
+
+                        spectator.component.handleInternalNav(mockEvent);
+
+                        expect(openedLink.click).not.toHaveBeenCalled();
+                        expect(pageLoadSpy).toHaveBeenCalledWith({
+                            url: '/news',
+                            anno_pubblicazione: '2025'
+                        });
+                        expect(mockEvent.preventDefault).toHaveBeenCalled();
+                    });
+
+                    it('should load a link to a site alias inside the editor', () => {
+                        const mockEvent = createMockEvent('https://alias.site.com/news');
+
+                        spectator.component.handleInternalNav(mockEvent);
+
+                        expect(openedLink.click).not.toHaveBeenCalled();
+                        expect(pageLoadSpy).toHaveBeenCalledWith({ url: '/news' });
+                    });
+
+                    it('should still open a different site in a new tab', () => {
+                        const mockEvent = createMockEvent('https://other-site.com/news');
+
+                        spectator.component.handleInternalNav(mockEvent);
+
+                        expect(openedLink.click).toHaveBeenCalled();
+                        expect(pageLoadSpy).not.toHaveBeenCalled();
+                    });
                 });
 
                 it('should load page asset with pathname only for internal URL without query params', () => {
@@ -2913,6 +3797,100 @@ describe('EditEmaEditorComponent', () => {
 
                     expect(pageLoadSpy).toHaveBeenCalledWith({
                         url: '/test-page'
+                    });
+                    expect(mockEvent.preventDefault).toHaveBeenCalled();
+                });
+
+                it('should open a same-host PDF link in a new tab instead of loading it as a page', () => {
+                    const pdfUrl = 'http://localhost:3000/application/files/report.pdf';
+                    const mockEvent = createMockEvent(pdfUrl);
+
+                    spectator.component.handleInternalNav(mockEvent);
+
+                    expect(openedLink.href).toBe(pdfUrl);
+                    expect(openedLink.target).toBe('_blank');
+                    expect(openedLink.click).toHaveBeenCalled();
+                    expect(pageLoadSpy).not.toHaveBeenCalled();
+                    expect(mockEvent.preventDefault).toHaveBeenCalled();
+                });
+
+                it('should open a /dA/ asset link in a new tab instead of loading it as a page', () => {
+                    const assetUrl = 'http://localhost:3000/dA/abc123/asset/report.pdf';
+                    const mockEvent = createMockEvent(assetUrl);
+
+                    spectator.component.handleInternalNav(mockEvent);
+
+                    expect(openedLink.href).toBe(assetUrl);
+                    expect(openedLink.click).toHaveBeenCalled();
+                    expect(pageLoadSpy).not.toHaveBeenCalled();
+                    expect(mockEvent.preventDefault).toHaveBeenCalled();
+                });
+
+                it('should sever the opener without a windowFeatures popup request', () => {
+                    // A windowFeatures string makes Firefox treat the call as a popup,
+                    // which the iframe sandbox rejects with "The operation is insecure".
+                    const mockEvent = createMockEvent(
+                        'http://localhost:3000/dA/abc123/asset/photo.jpg'
+                    );
+
+                    spectator.component.handleInternalNav(mockEvent);
+
+                    expect(openedLink.rel).toBe('noopener');
+                    expect(windowOpenSpy).not.toHaveBeenCalled();
+                });
+
+                it('should resolve a relative asset href against the site origin, not the admin path', () => {
+                    // The click lands on a child of the anchor, so `target.href` is undefined
+                    // and the raw (relative) href attribute is what reaches the handler.
+                    const mockEvent = {
+                        target: {
+                            closest: vi.fn().mockReturnValue({
+                                getAttribute: () => 'files/report.pdf'
+                            })
+                        },
+                        preventDefault: vi.fn()
+                    } as unknown as MouseEvent;
+
+                    vi.spyOn(store, 'editorState').mockReturnValue(EDITOR_STATE.IDLE);
+
+                    spectator.component.handleInternalNav(mockEvent);
+
+                    expect(openedLink.href).toBe('http://localhost:3000/files/report.pdf');
+                    expect(openedLink.click).toHaveBeenCalled();
+                    expect(pageLoadSpy).not.toHaveBeenCalled();
+                    expect(mockEvent.preventDefault).toHaveBeenCalled();
+                });
+
+                it('should keep the iframe on the page when opening a new tab throws', () => {
+                    // The click must still be cancelled if the open fails for any
+                    // reason, or the anchor navigates the iframe to the asset, and the
+                    // throw must not escape into the RxJS subscriber driving this.
+                    openedLink.click.mockImplementation(() => {
+                        throw new DOMException('The operation is insecure.');
+                    });
+
+                    const mockEvent = createMockEvent(
+                        'http://localhost:3000/dA/abc123/asset/photo.jpg'
+                    );
+
+                    expect(() => spectator.component.handleInternalNav(mockEvent)).not.toThrow();
+
+                    expect(mockEvent.preventDefault).toHaveBeenCalled();
+                    expect(pageLoadSpy).not.toHaveBeenCalled();
+                    // click() is what throws, so cleanup has to be unconditional or
+                    // every refused open strands an anchor in the admin document.
+                    expect(openedLink.remove).toHaveBeenCalled();
+                });
+
+                it('should still load a page when the URL uses the page extension', () => {
+                    const pageUrl = 'http://localhost:3000/test-page/index.html';
+                    const mockEvent = createMockEvent(pageUrl);
+
+                    spectator.component.handleInternalNav(mockEvent);
+
+                    expect(windowOpenSpy).not.toHaveBeenCalled();
+                    expect(pageLoadSpy).toHaveBeenCalledWith({
+                        url: '/test-page/index.html'
                     });
                     expect(mockEvent.preventDefault).toHaveBeenCalled();
                 });
@@ -2981,17 +3959,17 @@ describe('EditEmaEditorComponent', () => {
                     const mockEvent = {
                         target: {
                             href: null,
-                            closest: jest.fn().mockReturnValue({
+                            closest: vi.fn().mockReturnValue({
                                 href: 'http://localhost:3000/fallback-page?test=123',
-                                getAttribute: jest
+                                getAttribute: vi
                                     .fn()
                                     .mockReturnValue('http://localhost:3000/fallback-page?test=123')
                             })
                         },
-                        preventDefault: jest.fn()
+                        preventDefault: vi.fn()
                     } as unknown as MouseEvent;
 
-                    jest.spyOn(store, 'editorState').mockReturnValue(EDITOR_STATE.IDLE);
+                    vi.spyOn(store, 'editorState').mockReturnValue(EDITOR_STATE.IDLE);
 
                     spectator.component.handleInternalNav(mockEvent);
 
@@ -3010,17 +3988,19 @@ describe('EditEmaEditorComponent', () => {
                     });
 
                     beforeEach(() => {
-                        jest.spyOn(store, 'pageParams').mockReturnValue(samePathPageParams());
+                        vi.spyOn(store, 'pageParams').mockReturnValue(samePathPageParams());
                     });
 
-                    it('should not trigger pageLoad for hash-only navigation on same page', () => {
+                    // Cancelled so the link can't load outside the editor; the
+                    // iframe is scrolled instead of reloaded.
+                    it('should cancel hash-only navigation on same page without reloading', () => {
                         const hashUrl = 'http://localhost:3000/current-page#sectionA';
                         const mockEvent = createMockEvent(hashUrl);
 
                         spectator.component.handleInternalNav(mockEvent);
 
                         expect(pageLoadSpy).not.toHaveBeenCalled();
-                        expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+                        expect(mockEvent.preventDefault).toHaveBeenCalled();
                     });
 
                     it('should not trigger pageLoad for hash-only with complex id', () => {
@@ -3032,34 +4012,169 @@ describe('EditEmaEditorComponent', () => {
                         expect(pageLoadSpy).not.toHaveBeenCalled();
                     });
 
-                    it('should not trigger pageLoad for query-only navigation on same page', () => {
+                    // Traditional pages render in an iframe UVE writes itself, so a
+                    // browser-handled query change leaves it blank and never reaches
+                    // the Page API (#36999). It has to go through pageLoad.
+                    it('should trigger pageLoad with the new query for query-only navigation on same page', () => {
                         const queryUrl = 'http://localhost:3000/current-page?tab=2';
                         const mockEvent = createMockEvent(queryUrl);
 
                         spectator.component.handleInternalNav(mockEvent);
 
-                        expect(pageLoadSpy).not.toHaveBeenCalled();
-                        expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+                        expect(pageLoadSpy).toHaveBeenCalledWith({
+                            url: '/current-page',
+                            tab: '2'
+                        });
+                        expect(mockEvent.preventDefault).toHaveBeenCalled();
                     });
 
-                    it('should not trigger pageLoad for multiple query params on same page', () => {
+                    it('should pass every query param for multiple query params on same page', () => {
                         const queryUrl =
                             'http://localhost:3000/current-page?filter=value&sort=date';
                         const mockEvent = createMockEvent(queryUrl);
 
                         spectator.component.handleInternalNav(mockEvent);
 
-                        expect(pageLoadSpy).not.toHaveBeenCalled();
+                        expect(pageLoadSpy).toHaveBeenCalledWith({
+                            url: '/current-page',
+                            filter: 'value',
+                            sort: 'date'
+                        });
                     });
 
-                    it('should not trigger pageLoad when both hash and query are present on same path', () => {
+                    it('should trigger pageLoad when both hash and query are present on same path', () => {
                         const combinedUrl = 'http://localhost:3000/current-page?tab=2#section';
                         const mockEvent = createMockEvent(combinedUrl);
 
                         spectator.component.handleInternalNav(mockEvent);
 
-                        expect(pageLoadSpy).not.toHaveBeenCalled();
-                        expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+                        expect(pageLoadSpy).toHaveBeenCalledWith({
+                            url: '/current-page',
+                            tab: '2'
+                        });
+                        expect(mockEvent.preventDefault).toHaveBeenCalled();
+                    });
+
+                    it('should load a new language for a same-path language_id link', () => {
+                        const languageUrl = 'http://localhost:3000/current-page?language_id=3';
+                        const mockEvent = createMockEvent(languageUrl);
+
+                        spectator.component.handleInternalNav(mockEvent);
+
+                        expect(pageLoadSpy).toHaveBeenCalledWith({
+                            url: '/current-page',
+                            language_id: '3'
+                        });
+                        expect(mockEvent.preventDefault).toHaveBeenCalled();
+                    });
+
+                    describe('when the current page already carries a page query param', () => {
+                        beforeEach(() => {
+                            vi.spyOn(store, 'pageParams').mockReturnValue({
+                                ...samePathPageParams(),
+                                mode: UVE_MODE.EDIT,
+                                device: 'mobile',
+                                anno_pubblicazione: '2025'
+                            });
+                        });
+
+                        it('should clear it when the link no longer sets it', () => {
+                            const mockEvent = createMockEvent('http://localhost:3000/current-page');
+
+                            spectator.component.handleInternalNav(mockEvent);
+
+                            // Strict: toHaveBeenCalledWith would treat an undefined key as absent.
+                            expect(pageLoadSpy.mock.lastCall?.[0]).toStrictEqual({
+                                url: '/current-page',
+                                anno_pubblicazione: undefined
+                            });
+                        });
+
+                        // `/folder/` and `/folder/index` are one page under two paths, so
+                        // the path comparison sees a different page. The filter must still
+                        // be cleared on the first click (QA follow-up on #36999).
+                        it('should clear it when the link reaches the same page by its index path', () => {
+                            vi.spyOn(store, 'pageParams').mockReturnValue({
+                                ...samePathPageParams(),
+                                url: '/folder/',
+                                anno_pubblicazione: '2026'
+                            });
+                            const mockEvent = createMockEvent('http://localhost:3000/folder/index');
+
+                            spectator.component.handleInternalNav(mockEvent);
+
+                            // Strict: toHaveBeenCalledWith would treat an undefined key as absent.
+                            expect(pageLoadSpy.mock.lastCall?.[0]).toStrictEqual({
+                                url: '/folder/index',
+                                anno_pubblicazione: undefined
+                            });
+                        });
+
+                        it('should not carry it to a different page', () => {
+                            const mockEvent = createMockEvent('http://localhost:3000/other-page');
+
+                            spectator.component.handleInternalNav(mockEvent);
+
+                            // Strict: toHaveBeenCalledWith would treat an undefined key as absent.
+                            expect(pageLoadSpy.mock.lastCall?.[0]).toStrictEqual({
+                                url: '/other-page',
+                                anno_pubblicazione: undefined
+                            });
+                        });
+
+                        it('should replace it with the value a different page link sets', () => {
+                            const mockEvent = createMockEvent(
+                                'http://localhost:3000/other-page?anno_pubblicazione=2024'
+                            );
+
+                            spectator.component.handleInternalNav(mockEvent);
+
+                            expect(pageLoadSpy).toHaveBeenCalledWith({
+                                url: '/other-page',
+                                anno_pubblicazione: '2024'
+                            });
+                        });
+
+                        it('should replace it when the link sets a new value', () => {
+                            const mockEvent = createMockEvent(
+                                'http://localhost:3000/current-page?anno_pubblicazione=2024'
+                            );
+
+                            spectator.component.handleInternalNav(mockEvent);
+
+                            expect(pageLoadSpy).toHaveBeenCalledWith({
+                                url: '/current-page',
+                                anno_pubblicazione: '2024'
+                            });
+                        });
+
+                        it('should still scroll a hash-only link without reloading', () => {
+                            const mockEvent = createMockEvent(
+                                'http://localhost:3000/current-page#section'
+                            );
+
+                            spectator.component.handleInternalNav(mockEvent);
+
+                            expect(pageLoadSpy).not.toHaveBeenCalled();
+                        });
+                    });
+
+                    it('should trigger pageLoad when re-clicking an exact duplicate of the current URL (no hash, no query)', () => {
+                        // Confirmed live (dotCMS/core#37327): for a traditional page, the
+                        // iframe's real location is always the synthetic `about:srcdoc`. If
+                        // this early-returns without calling preventDefault() for an exact
+                        // duplicate link (no hash/query to react to), the anchor's own
+                        // default action navigates the iframe to a live fetch of the real
+                        // URL, permanently blanking the edit canvas with no console error.
+                        const duplicateUrl = 'http://localhost:3000/current-page';
+                        const mockEvent = createMockEvent(duplicateUrl);
+
+                        spectator.component.handleInternalNav(mockEvent);
+
+                        expect(pageLoadSpy).toHaveBeenCalledWith({
+                            url: '/current-page'
+                        });
+                        expect(mockEvent.preventDefault).toHaveBeenCalled();
                     });
 
                     it('should trigger pageLoad when navigating to different page with hash', () => {
@@ -3088,7 +4203,7 @@ describe('EditEmaEditorComponent', () => {
                     });
 
                     it('should handle root path hash navigation', () => {
-                        jest.spyOn(store, 'pageParams').mockReturnValue({
+                        vi.spyOn(store, 'pageParams').mockReturnValue({
                             url: '/',
                             language_id: '1',
                             [PERSONA_KEY]: DEFAULT_PERSONA.identifier
@@ -3111,16 +4226,16 @@ describe('EditEmaEditorComponent', () => {
                         const mockEvent = {
                             target: {
                                 href: 'about:blank#page-section',
-                                getAttribute: jest.fn().mockReturnValue('#page-section'),
-                                closest: jest.fn().mockReturnValue({
+                                getAttribute: vi.fn().mockReturnValue('#page-section'),
+                                closest: vi.fn().mockReturnValue({
                                     href: 'about:blank#page-section',
                                     getAttribute: () => '#page-section'
                                 })
                             },
-                            preventDefault: jest.fn()
+                            preventDefault: vi.fn()
                         } as unknown as MouseEvent;
 
-                        jest.spyOn(store, 'editorState').mockReturnValue(EDITOR_STATE.IDLE);
+                        vi.spyOn(store, 'editorState').mockReturnValue(EDITOR_STATE.IDLE);
 
                         spectator.component.handleInternalNav(mockEvent);
 
@@ -3131,13 +4246,13 @@ describe('EditEmaEditorComponent', () => {
                 });
 
                 afterEach(() => {
-                    jest.clearAllMocks();
+                    vi.clearAllMocks();
                 });
             });
 
             describe('handleSectionOffset', () => {
                 it('scrolls the iframe contentWindow (not the canvas viewport) to the offset', () => {
-                    const scrollToSpy = jest.fn();
+                    const scrollToSpy = vi.fn();
                     Object.defineProperty(spectator.component.iframeComponent, 'contentWindow', {
                         value: { scrollTo: scrollToSpy },
                         configurable: true
@@ -3153,7 +4268,7 @@ describe('EditEmaEditorComponent', () => {
                 });
 
                 it('clamps negative offsetTop to 0', () => {
-                    const scrollToSpy = jest.fn();
+                    const scrollToSpy = vi.fn();
                     Object.defineProperty(spectator.component.iframeComponent, 'contentWindow', {
                         value: { scrollTo: scrollToSpy },
                         configurable: true
@@ -3179,7 +4294,7 @@ describe('EditEmaEditorComponent', () => {
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
-        jest.useRealTimers(); // Restore the real timers after each test
+        vi.clearAllMocks();
+        vi.useRealTimers(); // Restore the real timers after each test
     });
 });

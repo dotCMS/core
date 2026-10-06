@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
@@ -18,6 +18,7 @@ import { DotKeyValue } from '../../../../shared/models/dot-key-value-ng/dot-key-
     selector: 'dot-apps-configuration-detail',
     templateUrl: './dot-apps-configuration-detail.component.html',
     styleUrls: ['./dot-apps-configuration-detail.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         ButtonModule,
         DotKeyValueComponent,

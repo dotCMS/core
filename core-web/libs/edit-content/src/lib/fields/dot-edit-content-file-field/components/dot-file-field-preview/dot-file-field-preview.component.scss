@@ -123,7 +123,11 @@
     position: absolute;
     right: 0.5rem;
     top: 0.5rem;
-    z-index: 100;
+    // Kept in the same 1-2 range as the other actions: these only need to sit above the
+    // thumbnail/code preview. A higher value let them paint over the form's sticky tab list
+    // (z-index: 10, carries the status chip + permissions/references), which was visible while
+    // scrolling on narrow containers — the only layout where these filled variants render.
+    z-index: 2;
     flex-direction: column;
     gap: 0.5rem;
 

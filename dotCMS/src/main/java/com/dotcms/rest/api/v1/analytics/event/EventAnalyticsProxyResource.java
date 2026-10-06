@@ -10,6 +10,7 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.analytics.content.util.ContentAnalyticsUtil;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
+import com.dotcms.security.apps.Secret;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -45,6 +46,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -68,6 +70,12 @@ import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
 @Tag(name = "Content Analytics",
         description = "Proxy endpoints that forward analytics requests to the dot-ca-event-manager service.")
 public class EventAnalyticsProxyResource {
+
+    /** App-secret key holding the Persistence Mode value; see {@code dotContentAnalytics-config.yml}. */
+    private static final String PERSISTENCE_MODE_KEY = "persistenceMode";
+
+    /** Value that gates event ingest off; anything else (including absent) forwards as today. */
+    private static final String PERSISTENCE_MODE_READONLY = "readonly";
 
     private final WebResource webResource;
 
@@ -95,6 +103,15 @@ public class EventAnalyticsProxyResource {
      *
      * <p>Read-side endpoints (e.g. {@code total-events}, {@code unique-visitors}) are GETs
      * served by {@link #proxyGetRequest} via the catch-all {@code /v1/analytics/{path:.*}}.
+     *
+     * <p>Once the site is resolved, the Content Analytics app's {@code persistenceMode} secret
+     * is read: when it is {@code "readonly"}, the forward is skipped entirely and this method
+     * resumes the async response itself with a {@code 200} carrying the same
+     * {@link ResponseEntityView} JSON envelope shape (an empty object) a genuine forwarded
+     * request's success response would carry, so callers see no error, do not retry, and any
+     * caller that parses the response body on success still gets valid JSON. Any other value,
+     * or the key being absent (pre-{@code persistenceMode} instances), forwards exactly as
+     * before. See {@code specs/37521-content-analytics-mode/contracts/persistence-mode-gate.md}.
      *
      * @param request        the HTTP servlet request
      * @param response       the HTTP servlet response
@@ -209,6 +226,26 @@ public class EventAnalyticsProxyResource {
                     .entity(new ResponseEntityView<>(
                             List.of(new ErrorEntity(ValidationErrorCode.INVALID_JSON.name(), e.getMessage()))))
                     .build());
+            return;
+        }
+
+        final Secret persistenceMode = ContentAnalyticsUtil.getAppSecrets(site).get(PERSISTENCE_MODE_KEY);
+        if (null != persistenceMode && PERSISTENCE_MODE_READONLY.equals(persistenceMode.getString())) {
+            // Read Only suppressing an event is expected, everyday behavior for an instance an
+            // admin deliberately chose not to persist from -- not a fault condition, hence debug
+            // (not warn/error) here. A missing persistenceMode secret (pre-feature instances,
+            // see FR-002/FR-002a) falls through to the unchanged forward below, same as
+            // "readwrite" -- see contracts/persistence-mode-gate.md.
+            final Host debugSite = site;
+            Logger.debug(this, () -> "Persistence Mode is Read Only for site '"
+                    + debugSite.getIdentifier() + "' - suppressing analytics event forward");
+            // Match the documented 200 contract (an `application/json` object envelope, per the
+            // @ApiResponse below) with the same ResponseEntityView shape a genuine forwarded
+            // request's success response carries (see EventAnalyticsProxyHelper#wrapUpstreamResponse)
+            // -- an empty-bodied 200 (Response.ok().build()) would satisfy simple response.ok
+            // checks, but breaks any caller that calls response.json() on every 2xx, not just on
+            // error, expecting the documented envelope.
+            asyncResponse.resume(Response.ok(new ResponseEntityView<>(Collections.emptyMap())).build());
             return;
         }
 

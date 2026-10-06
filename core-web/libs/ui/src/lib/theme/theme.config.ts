@@ -19,6 +19,18 @@ import { DotUiColorsService } from '@dotcms/data-access';
  * Future direction: register secondary as a custom token group via the preset's `extend`
  * option to get engine-managed --p-secondary-* tokens. See issue #35869.
  */
+/**
+ * Height of a single `p-listbox` option, in pixels: Lara's `0.625rem 1rem` option padding plus
+ * the option's line height, at this app's root font size. The preset does not set it — this is
+ * what Lara renders — so a PrimeNG or theme upgrade that changes the padding or font needs it
+ * re-measured.
+ *
+ * Exported because virtual scrolling needs the row height as a number: PrimeNG cannot measure
+ * it, so `[virtualScrollItemSize]` must be told, and a listbox whose item size disagrees with
+ * its rendered rows scrolls wrong. Import this instead of re-measuring per component.
+ */
+export const LISTBOX_OPTION_HEIGHT = 40.6;
+
 export const CustomLaraPreset = definePreset(Lara, {
     semantic: {
         primary: DotUiColorsService.getDefaultPrimeNGPalette()
@@ -68,6 +80,46 @@ export const CustomLaraPreset = definePreset(Lara, {
                 padding: '0.5rem'
             }
         },
+        blockui: {
+            // A blocked panel is greyed out, not dimmed: the mask is white, so what is behind it
+            // fades toward the page rather than darkening.
+            //
+            // Through `--px-mask-background` rather than `background`: the base rule reads
+            // `var(--px-mask-background, dt('mask.background'))`, so this is the hook meant for
+            // exactly this — no specificity or layer-order fight with `.p-overlay-mask`, and the
+            // shared token stays where it is, which every dialog backdrop also reads.
+            css: `
+                .p-blockui-mask {
+                    --px-mask-background: rgb(255 255 255 / 0.65);
+                }
+            `
+        },
+        panel: {
+            // A panel whose footer slot is empty still draws the band, because PrimeNG renders it
+            // on the template existing rather than on it producing anything. `dot-panel-no-footer`
+            // is for a card that offers a footer only some of the time: the template stays put —
+            // Panel resolves it once, through a plain `@ContentChild`, and is OnPush — and this
+            // takes the empty band out of the layout.
+            css: `
+                .dot-panel-no-footer .p-panel-footer {
+                    display: none;
+                }
+
+                /*
+                 * The footer band matches the header's fill. Lara greys the header per colour
+                 * scheme (surface.50 light, surface.800 dark) and leaves the footer transparent,
+                 * so a card carrying actions at the bottom read as an unbounded continuation of
+                 * its content. Taken from the header's own emitted variable rather than from a
+                 * surface token, so the two cannot drift and dark mode follows for free.
+                 *
+                 * Panel exposes no footer background design token — only footer.padding — which
+                 * is why this is css rather than a token override.
+                 */
+                .p-panel-footer {
+                    background: var(--p-panel-header-background);
+                }
+            `
+        },
         card: {
             root: {
                 shadow: 'none'
@@ -83,7 +135,7 @@ export const CustomLaraPreset = definePreset(Lara, {
         },
         chip: {
             // dotCMS chips are compact by default: 1.75rem (24.5px at the 14px root)
-            // tall, vertically centered, with a small label. Applied to the base
+            // tall, vertically centered, with a small label, matching `p-tag`. Applied to the base
             // `.p-chip` so every chip (locale, relationship, etc.) gets the size
             // without per-template classes. PrimeNG has no chip size token, so this
             // is expressed as CSS — same mechanism as card/confirmpopup. Content
@@ -97,9 +149,10 @@ export const CustomLaraPreset = definePreset(Lara, {
             // changes.
             css: `
                 .p-chip {
-                    height: calc(var(--spacing) * 7); /* 1.75rem */
+                    height: calc(var(--spacing) * 6); /* 1.5rem — the same height as a tag */
                     padding: 0 calc(var(--spacing) * 2); /* 0.5rem */
                     font-size: var(--text-xs); /* 0.75rem */
+                    line-height: 1;
                 }
                 .p-chip .p-chip-remove-icon {
                     order: -1;
@@ -117,9 +170,16 @@ export const CustomLaraPreset = definePreset(Lara, {
             // there is no --radius-full token.
             css: `
                 .p-tag {
-                    height: calc(var(--spacing) * 7); /* 1.75rem — same fixed height as chip */
+                    height: calc(var(--spacing) * 6); /* 1.5rem — the same height as a chip */
                     border-radius: calc(infinity * 1px);
-                    padding: 0 calc(var(--spacing) * 3); /* 0 0.75rem — vertical centering via inline-flex */
+                    padding: 0 calc(var(--spacing) * 2.5); /* 0 0.625rem — vertical centering via inline-flex */
+                    /* A tag annotates the text beside it, so it has to read as smaller than that
+                       text rather than competing with it. Lara inherits the body size, which left
+                       the pill as tall as the line it labels. The line-height is pinned too: an
+                       inherited one keeps the label box at body height and the fixed height above
+                       cannot shrink it. */
+                    font-size: var(--text-xs);
+                    line-height: 1;
                     font-weight: var(--font-weight-medium); /* 500 */
                 }
             `,
@@ -166,6 +226,16 @@ export const CustomLaraPreset = definePreset(Lara, {
                 }
             }
         },
+        toast: {
+            root: {
+                // Lara draws a 6px severity-coloured stripe down the left edge
+                // (its own default is '0 0 0 6px'). Every toast in the app is a plain
+                // rectangle instead: severity is already carried by the background, the
+                // icon and the text colour, and the stripe only adds a second, louder
+                // way to say the same thing.
+                borderWidth: '0'
+            }
+        },
         toolbar: {
             root: {
                 borderRadius: '0',
@@ -178,6 +248,76 @@ export const CustomLaraPreset = definePreset(Lara, {
                 .p-confirmpopup:before,
                 .p-confirmpopup:after {
                     display: none !important;
+                }
+            `
+        },
+        popover: {
+            // Popovers are panels app-wide, and what the content area does depends on what is put
+            // in it. Plain block markup — a list, a form, a help blurb — gets the panel's inset
+            // from here, so no consumer has to restate it. A component dropped straight into a
+            // popover is instead the panel itself: a listbox's options have to reach the edges for
+            // the hover and selected bands to cover the full row, and a component that lays out a
+            // search box above such a list already spaces its own parts. So the inset applies when
+            // the content's direct children include a block element, and not when the content is
+            // the component.
+            //
+            // Keying on `> div` rather than naming the components keeps this out of the business of
+            // knowing which ones own their spacing: a wrapper component reads the same as the
+            // listbox it wraps, which a `> p-listbox` selector would have missed. Checked against
+            // all 27 popover consumers; several also pin `p-0` through `pt`, which wins over both
+            // rules anyway.
+            //
+            // `dot-popover-flush` is the opt-out for a panel built from plain markup that still
+            // wants its rows to run full bleed — the Content Drive filter panels that carry their
+            // own header rows, and the template-builder layout properties panel.
+            css: `
+                .p-popover {
+                    border-radius: var(--radius-lg);
+                    overflow: hidden;
+                }
+                .p-popover .p-popover-content {
+                    padding: 0;
+                }
+                .p-popover .p-popover-content:has(> div) {
+                    padding: calc(var(--spacing) * 4); /* 1rem */
+                }
+                .p-popover.dot-popover-flush .p-popover-content {
+                    padding: 0;
+                }
+            `
+        },
+        listbox: {
+            // Listboxes drop their own chrome (border, radius, shadow) app-wide: they are
+            // effectively always rendered inside a container that already provides it — a
+            // popover panel, a sidebar, a bubble menu. Option padding, selection colors and
+            // checkbox size follow the filter-panel design spec.
+            css: `
+                .p-listbox {
+                    /* The only structural rule: a listbox is always inside something that
+                       already draws an edge (popover panel, sidebar, bubble menu), so drawing
+                       its own produces a border inside a border. Row height and padding are
+                       left to Lara — its 0.625rem/1rem option padding is exactly the 40.6px
+                       row these lists have always rendered (see LISTBOX_OPTION_HEIGHT). */
+                    border: 0;
+                    border-radius: 0;
+                    box-shadow: none;
+
+                    /* Design spec: soft grey hover, primary text on the selected row, and a
+                       16px checkbox rather than Lara's larger default. */
+                    --p-listbox-option-focus-background: var(--p-slate-50);
+                    --p-listbox-option-selected-color: var(--p-primary-700);
+                    --p-listbox-option-selected-focus-color: var(--p-primary-700);
+                    --p-checkbox-width: 16px;
+                    --p-checkbox-height: 16px;
+
+                    /* Keep a selected option's background when it also has focus, instead of
+                       swapping to the focus background. Points at the SEMANTIC token: the
+                       component-level --p-listbox-option-selected-background is only emitted
+                       when overridden, so referencing it resolved to empty and flattened the
+                       selected row to white. */
+                    --p-listbox-option-selected-focus-background: var(
+                        --p-list-option-selected-background
+                    );
                 }
             `
         }

@@ -1,6 +1,7 @@
 import { InferInputSignals } from '@openng/spectator';
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
 import { of, throwError, timer } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { HttpClient } from '@angular/common/http';
 import { computed, signal } from '@angular/core';
@@ -27,6 +28,7 @@ import {
 import { UVE_STATUS } from '../../../../../shared/enums';
 import { ActionPayload, SelectedContentlet } from '../../../../../shared/models';
 import { UVEStore } from '../../../../../store/dot-uve.store';
+import { PageData } from '../../../../../store/features/editor/models';
 import { PageType } from '../../../../../store/models';
 
 // Workaround: the `schema` input alias causes a compilation error when used directly.
@@ -43,12 +45,13 @@ type MockUveStore = {
     editorSelected: ReturnType<typeof signal<SelectedContentlet | null>>;
     pageAsset: ReturnType<typeof computed<DotCMSPageAsset | null>>;
     pageType: ReturnType<typeof signal<PageType>>;
-    saveStyleEditor: jest.Mock;
-    rollbackPageAssetResponse: jest.Mock;
-    addCurrentPageToHistory: jest.Mock;
-    setPageAsset: jest.Mock;
-    setUveStatus: jest.Mock;
-    pageReload: jest.Mock;
+    $pageData: ReturnType<typeof signal<PageData>>;
+    saveStyleEditor: Mock;
+    rollbackPageAssetResponse: Mock;
+    addCurrentPageToHistory: Mock;
+    setPageAsset: Mock;
+    setUveStatus: Mock;
+    pageReload: Mock;
 };
 
 const createMockSchema = (): StyleEditorFormSchema => ({
@@ -189,14 +192,21 @@ describe('DotUveStyleEditorFormComponent', () => {
                 return pageAsset ? { ...pageAsset, clientResponse: pageAsset } : null;
             }),
             pageType: signal(PageType.HEADLESS),
-            saveStyleEditor: jest.fn().mockReturnValue(of({})),
-            rollbackPageAssetResponse: jest.fn().mockReturnValue(true),
-            addCurrentPageToHistory: jest.fn(),
-            setPageAsset: jest.fn((payload: { pageAsset: DotCMSPageAsset | null }) => {
+            $pageData: signal<PageData>({
+                containers: [],
+                personalization: 'dot:default',
+                id: 'test-page',
+                languageId: 1,
+                personaTag: undefined
+            }),
+            saveStyleEditor: vi.fn().mockReturnValue(of({})),
+            rollbackPageAssetResponse: vi.fn().mockReturnValue(true),
+            addCurrentPageToHistory: vi.fn(),
+            setPageAsset: vi.fn((payload: { pageAsset: DotCMSPageAsset | null }) => {
                 pageAssetSignal.set(payload?.pageAsset ?? null);
             }),
-            setUveStatus: jest.fn(),
-            pageReload: jest.fn()
+            setUveStatus: vi.fn(),
+            pageReload: vi.fn()
         };
 
         spectator = createTestComponent();

@@ -3,6 +3,7 @@ package com.dotcms.publisher.business;
 import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.contenttype.model.type.ContentType;
@@ -14,10 +15,13 @@ import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
+import com.dotcms.publisher.pusher.PushPublishClientFactory;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publishing.PublisherConfig.DeliveryStrategy;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.business.UniqueLanguageDataGen;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -25,12 +29,17 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import java.lang.reflect.Method;
+import javax.ws.rs.client.Client;
+import org.glassfish.jersey.client.ClientProperties;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.mockito.Mockito;
+import org.quartz.JobDataMap;
+import org.quartz.JobExecutionContext;
 
 /**
  * Integration tests for {@link PublisherQueueJob}.
@@ -231,6 +240,147 @@ public class PublisherQueueJobTest {
      * Invokes the package-private-by-reflection {@code PublisherQueueJob#updateAuditStatus(List)}
      * with an empty in-queue list (the parameter is irrelevant to the branches under test).
      */
+    /**
+     * Method to test: {@code PushPublishClientFactory.newClient()}, the single place that builds the
+     * REST client used by {@link com.dotcms.publisher.pusher.PushPublisher} to upload bundles and by
+     * {@link PublisherQueueJob} to poll bundle status on the receivers.
+     * <p>
+     * Given scenario: {@code PUSH_PUBLISH_CONNECT_TIMEOUT_MS} is set, unset, and set to zero.
+     * <p>
+     * Expected result: The client carries the configured value as Jersey's
+     * {@link ClientProperties#CONNECT_TIMEOUT}; with no property the default is 10000 ms; with zero
+     * no bound is applied (Jersey's "wait forever", today's behavior). Before the fix the factory
+     * does not exist and the client built by {@code RestClientBuilder} has no connect timeout at all,
+     * which is what let one unreachable endpoint block the publisher for minutes per attempt.
+     */
+    @Test
+    public void test_clientFactory_appliesConfiguredConnectTimeout() throws Exception {
+        final String key = "PUSH_PUBLISH_CONNECT_TIMEOUT_MS";
+        final String original = Config.getStringProperty(key, null);
+        try {
+            Config.setProperty(key, 2500);
+            assertEquals("Configured value must be applied as the Jersey connect timeout",
+                    2500, newPublishClient().getConfiguration().getProperty(ClientProperties.CONNECT_TIMEOUT));
+
+            Config.setProperty(key, null);
+            assertEquals("Default connect timeout must be 10 seconds",
+                    10000, newPublishClient().getConfiguration().getProperty(ClientProperties.CONNECT_TIMEOUT));
+
+            Config.setProperty(key, 0);
+            final Object unbounded = newPublishClient().getConfiguration().getProperty(ClientProperties.CONNECT_TIMEOUT);
+            assertTrue("Zero must leave the connect wait unbounded (property absent or 0)",
+                    unbounded == null || Integer.valueOf(0).equals(unbounded));
+
+            // The shared builder used by the integrity checker, announcements loader and API-token
+            // code must stay untouched: the timeout belongs to the push-publish clients only.
+            Config.setProperty(key, 2500);
+            assertNull("RestClientBuilder.newClient() must not carry the push-publish connect timeout",
+                    com.dotcms.rest.RestClientBuilder.newClient().getConfiguration()
+                            .getProperty(ClientProperties.CONNECT_TIMEOUT));
+        } finally {
+            Config.setProperty(key, original);
+        }
+    }
+
+    private static Client newPublishClient() {
+        return PushPublishClientFactory.newClient();
+    }
+
+    /**
+     * Method to test: the per-bundle fault isolation in {@link PublisherQueueJob#execute}.
+     * <p>
+     * Given scenario: Two bundles are due in the publishing queue. The first one carries a queue row
+     * whose {@code operation} column is NULL, which makes the send loop throw a
+     * {@code NullPointerException} while reading it. Before the fix, only
+     * {@code DotPublishingException} was caught per bundle: any other throwable escaped to the
+     * outer catch, the run ended, and the second bundle was never looked at. On the next tick the
+     * broken bundle sorted first again and the run died again.
+     * <p>
+     * Expected result: The broken bundle is finalized as {@link Status#FAILED_TO_PUBLISH} with the
+     * error recorded and its queue rows removed, and the second bundle is still processed in the same
+     * run (it gets an audit row; its send to the unreachable endpoint fails on its own merits).
+     */
+    @Test
+    public void test_unexpectedErrorInOneBundle_finalizesItAndContinues() throws Exception {
+        final User user = APILocator.getUserAPI().loadByUserByEmail(
+                "admin@dotcms.com", APILocator.getUserAPI().getSystemUser(), false);
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Language language = new UniqueLanguageDataGen().nextPersisted();
+        final ContentType contentType = new ContentTypeDataGen().host(host).nextPersisted();
+        final Contentlet contentA = new ContentletDataGen(contentType.id())
+                .languageId(language.getId()).host(host).nextPersisted();
+        final Contentlet contentB = new ContentletDataGen(contentType.id())
+                .languageId(language.getId()).host(host).nextPersisted();
+
+        final Environment environment = PublisherTestUtil.createEnvironment(user);
+        // 127.0.0.1:999 — refused immediately, so bundle B fails fast on its own.
+        final PublishingEndPoint endpoint = PublisherTestUtil.createEndpoint(environment);
+        final Bundle bundleA = PublisherTestUtil.createBundle("broken-" + System.nanoTime(), user, environment);
+        final Bundle bundleB = PublisherTestUtil.createBundle("behind-" + System.nanoTime(), user, environment);
+
+        try {
+            final long now = System.currentTimeMillis();
+            // A is due first, B right after it, so A is processed first in the loop.
+            PublisherAPI.getInstance().addContentsToPublish(
+                    list(contentA.getIdentifier()), bundleA.getId(), new Date(now - 120_000L), user);
+            PublisherAPI.getInstance().addContentsToPublish(
+                    list(contentB.getIdentifier()), bundleB.getId(), new Date(now - 60_000L), user);
+
+            // Corrupt A: a NULL operation makes Integer.parseInt(bundle.get("operation").toString())
+            // in the send loop throw a NullPointerException.
+            new DotConnect()
+                    .setSQL("update publishing_queue set operation = null where bundle_id = ?")
+                    .addParam(bundleA.getId())
+                    .loadResult();
+
+            runJobOnce();
+
+            final PublishAuditStatus auditA = APILocator.getPublishAuditAPI()
+                    .getPublishAuditStatus(bundleA.getId());
+            assertTrue("The broken bundle must have an audit row after the run", auditA != null);
+            assertEquals("The broken bundle must be finalized as FAILED_TO_PUBLISH",
+                    Status.FAILED_TO_PUBLISH, auditA.getStatus());
+            assertFalse("The broken bundle must be removed from the publishing queue",
+                    isBundleQueued(bundleA.getId()));
+            assertTrue("The broken bundle must record the error in its endpoint detail",
+                    APILocator.getPublishAuditAPI().getPublishAuditStatus(bundleA.getId())
+                            .getStatusPojo().getEndpointsMap().values().stream()
+                            .flatMap(group -> group.values().stream())
+                            .anyMatch(detail -> UtilMethods.isSet(detail.getInfo())));
+
+            final PublishAuditStatus auditB = APILocator.getPublishAuditAPI()
+                    .getPublishAuditStatus(bundleB.getId());
+            assertTrue("The bundle behind the broken one must still be processed in the same run",
+                    auditB != null);
+            assertEquals("The bundle behind the broken one fails on its own merits (endpoint refused)",
+                    Status.FAILED_TO_SEND_TO_ALL_GROUPS, auditB.getStatus());
+        } finally {
+            PublisherTestUtil.cleanBundleEndpointEnv(bundleA, endpoint, environment);
+            try {
+                APILocator.getPublishAuditAPI().deletePublishAuditStatus(bundleB.getId());
+                PublisherAPI.getInstance().deleteElementsFromPublishQueueTable(bundleB.getId());
+                APILocator.getBundleAPI().deleteBundleAndDependencies(bundleB.getId(), user);
+            } catch (Exception e) {
+                // best-effort cleanup
+            }
+        }
+    }
+
+    /**
+     * Runs one {@link PublisherQueueJob#execute} cycle with a mocked Quartz context, the way the
+     * cron would: fire time now, previous fire time one minute ago, delivery strategy ALL_ENDPOINTS.
+     */
+    private void runJobOnce() throws Exception {
+        final JobDataMap dataMap = new JobDataMap();
+        dataMap.put("deliveryStrategy", DeliveryStrategy.ALL_ENDPOINTS);
+        final JobExecutionContext context = Mockito.mock(JobExecutionContext.class);
+        Mockito.when(context.getFireTime()).thenReturn(new Date());
+        Mockito.when(context.getPreviousFireTime()).thenReturn(new Date(System.currentTimeMillis() - 60_000L));
+        Mockito.when(context.getMergedJobDataMap()).thenReturn(dataMap);
+        new PublisherQueueJob().execute(context);
+    }
+
     private void invokeUpdateAuditStatus() throws Exception {
         final PublisherQueueJob job = new PublisherQueueJob();
         final Method updateAuditStatus =

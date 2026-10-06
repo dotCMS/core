@@ -20,6 +20,7 @@ import { PanelModule } from 'primeng/panel';
 import { Popover, PopoverModule } from 'primeng/popover';
 import { SelectModule } from 'primeng/select';
 import { SplitterModule } from 'primeng/splitter';
+import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { filter, take } from 'rxjs/operators';
@@ -32,22 +33,27 @@ import {
     DotClipboardUtil,
     DotEmptyContainerComponent,
     DotMessagePipe,
+    DotMonacoRunShortcutEditor,
     DotSpinnerComponent,
-    PrincipalConfiguration
+    getDotMonacoRunShortcutLabel,
+    PrincipalConfiguration,
+    registerDotMonacoRunShortcut
 } from '@dotcms/ui';
 import { buildCurlSnippet, buildFetchSnippet, getDownloadLink } from '@dotcms/utils';
 
+import { DotVelocityPlaygroundWarningsComponent } from './dot-velocity-playground-warnings/dot-velocity-playground-warnings.component';
 import { DotVelocityPlaygroundStore } from './store/dot-velocity-playground.store';
 
 import {
+    firstLine,
+    formatErrorTrace,
     formatHistoryLabel,
     getDownloadParams,
     VELOCITY_HELP_EXAMPLES
 } from '../dot-velocity-playground.utils';
 import {
     ensureVelocityLanguageRegistered,
-    VELOCITY_LANGUAGE_ID,
-    VELOCITY_THEME_ID
+    VELOCITY_LANGUAGE_ID
 } from '../monaco/register-velocity';
 
 @Component({
@@ -64,9 +70,11 @@ import {
         MenuModule,
         PanelModule,
         PopoverModule,
+        TagModule,
         DotEmptyContainerComponent,
         DotSpinnerComponent,
-        DotMessagePipe
+        DotMessagePipe,
+        DotVelocityPlaygroundWarningsComponent
     ],
     providers: [DotVelocityPlaygroundStore, DotClipboardUtil],
     templateUrl: './dot-velocity-playground-page.component.html',
@@ -85,6 +93,9 @@ export class DotVelocityPlaygroundPageComponent {
     // Memoized i18n fallback used by every history-label render.
     readonly #emptyHistoryLabel = this.#messageService.get('velocityPlayground.history.empty');
 
+    /** Keyboard shortcut shown in the Run button tooltip (`⌘ + Enter` / `Ctrl + Enter`). */
+    readonly runShortcutLabel = getDotMonacoRunShortcutLabel(this.#document.defaultView?.navigator);
+
     // 2. State signals (viewChild signals + local state) — $ prefix
     readonly $helpPopover = viewChild.required<Popover>('helpPopoverEl');
     readonly $exportMenu = viewChild<Menu>('exportMenu');
@@ -93,18 +104,41 @@ export class DotVelocityPlaygroundPageComponent {
     // 3. Computed signals — $ prefix
     readonly $editorOptions = computed(() => ({
         ...DOT_MONACO_BASE_OPTIONS,
-        theme: VELOCITY_THEME_ID,
         language: VELOCITY_LANGUAGE_ID,
         wordWrap: this.store.wrapCode() ? 'on' : 'off'
     }));
 
     readonly $outputOptions = computed(() => ({
         ...DOT_MONACO_RAW_OPTIONS,
-        theme: VELOCITY_THEME_ID,
         language: this.store.outputContentType(),
         wordWrap: this.store.wrapCode() ? 'on' : 'off',
         readOnly: true
     }));
+
+    // Read-only, plaintext options for the error "stack trace" pane.
+    readonly $errorEditorOptions = computed(() => ({
+        ...DOT_MONACO_RAW_OPTIONS,
+        language: 'plaintext',
+        wordWrap: this.store.wrapCode() ? 'on' : 'off',
+        readOnly: true,
+        lineNumbers: 'off',
+        folding: false
+    }));
+
+    // Full error rendered as a copyable, stack-trace-style block for the output pane.
+    readonly $errorTrace = computed(() => {
+        const error = this.store.error();
+        if (!error) return '';
+        const resolvedMessage = this.#messageService.get(error.message);
+        return formatErrorTrace(error, resolvedMessage);
+    });
+
+    // Single-line summary for the banner — the full multi-line detail lives in the trace pane.
+    readonly $errorSummary = computed(() => {
+        const error = this.store.error();
+        if (!error) return '';
+        return firstLine(this.#messageService.get(error.message));
+    });
 
     readonly $historyOptions = computed(() =>
         this.store.history().map((entry) => ({
@@ -132,7 +166,8 @@ export class DotVelocityPlaygroundPageComponent {
     readonly emptyOutputConfig: PrincipalConfiguration = {
         title: this.#messageService.get('velocityPlayground.output.empty'),
         subtitle: this.#messageService.get('velocityPlayground.output.empty.hint'),
-        icon: 'pi-search'
+        icon: 'search',
+        iconStyle: 'material-symbols-rounded'
     };
 
     // 5. Lifecycle
@@ -151,8 +186,17 @@ export class DotVelocityPlaygroundPageComponent {
     }
 
     // 6. Public methods
-    onEditorInit(): void {
+    /**
+     * Registers the Velocity language once Monaco is available and binds `Cmd/Ctrl + Enter`
+     * inside the script editor to the same action as the Run button.
+     *
+     * @param editor the Monaco editor instance emitted by `ngx-monaco-editor`
+     */
+    onEditorInit(editor: DotMonacoRunShortcutEditor): void {
         ensureVelocityLanguageRegistered();
+        registerDotMonacoRunShortcut(editor, () => this.onRun(), {
+            label: this.#messageService.get('velocityPlayground.action.run')
+        });
     }
 
     onRun(): void {

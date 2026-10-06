@@ -5,7 +5,13 @@ import {
     getErrorMessage,
     shouldShowField
 } from '../utils';
-import { basicField, dotFormLayoutMock } from '../../../../test/mocks';
+import {
+    basicField,
+    dotFormLayoutMock,
+    keyValueFieldMock,
+    selectFieldMock,
+    textFieldMock
+} from '../../../../test/mocks';
 
 describe('getFieldVariableValue', () => {
     const variables = [
@@ -69,30 +75,9 @@ describe('shouldShowField', () => {
 describe('getFieldsFromLayout', () => {
     it('should fields array', () => {
         expect(getFieldsFromLayout(dotFormLayoutMock)).toEqual([
-            {
-                ...basicField,
-                variable: 'textfield1',
-                required: true,
-                name: 'TexField',
-                fieldType: 'Text'
-            },
-            {
-                ...basicField,
-                defaultValue: 'key|value,llave|valor',
-                fieldType: 'Key-Value',
-                name: 'Key Value:',
-                required: false,
-                variable: 'keyvalue2'
-            },
-            {
-                ...basicField,
-                defaultValue: '2',
-                fieldType: 'Select',
-                name: 'Dropdwon',
-                required: false,
-                values: '|,labelA|1,labelB|2,labelC|3',
-                variable: 'dropdown3'
-            }
+            textFieldMock,
+            keyValueFieldMock,
+            selectFieldMock
         ]);
     });
 });

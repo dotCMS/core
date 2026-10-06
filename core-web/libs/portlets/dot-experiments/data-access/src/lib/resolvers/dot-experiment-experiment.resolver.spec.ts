@@ -3,7 +3,7 @@ import {
     mockProvider,
     SpectatorService,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
 
 import { ActivatedRouteSnapshot } from '@angular/router';
@@ -30,25 +30,27 @@ describe('DotExperimentExperimentResolver', () => {
         activatedRouteSnapshotMock = spectator.inject(ActivatedRouteSnapshot);
     });
 
-    it("shouldn't get a experiment by experimentId", (done) => {
-        activatedRouteSnapshotMock.queryParams = {};
+    it("shouldn't get a experiment by experimentId", () =>
+        new Promise<void>((done) => {
+            activatedRouteSnapshotMock.queryParams = {};
 
-        spectator.service.resolve(activatedRouteSnapshotMock).subscribe((result) => {
-            expect(result).toBe(null);
-            done();
-        });
-    });
+            spectator.service.resolve(activatedRouteSnapshotMock).subscribe((result) => {
+                expect(result).toBe(null);
+                done();
+            });
+        }));
 
-    it('should get a experiment by experimentId', (done) => {
-        const experimentId = '123';
-        activatedRouteSnapshotMock.queryParams = { experimentId };
+    it('should get a experiment by experimentId', () =>
+        new Promise<void>((done) => {
+            const experimentId = '123';
+            activatedRouteSnapshotMock.queryParams = { experimentId };
 
-        dotExperimentsService.getById.mockReturnValue(of(EXPERIMENT_MOCK));
+            dotExperimentsService.getById.mockReturnValue(of(EXPERIMENT_MOCK));
 
-        spectator.service.resolve(activatedRouteSnapshotMock).subscribe((result) => {
-            expect(result).toBe(EXPERIMENT_MOCK);
-            expect(dotExperimentsService.getById).toHaveBeenCalledWith(experimentId);
-            done();
-        });
-    });
+            spectator.service.resolve(activatedRouteSnapshotMock).subscribe((result) => {
+                expect(result).toBe(EXPERIMENT_MOCK);
+                expect(dotExperimentsService.getById).toHaveBeenCalledWith(experimentId);
+                done();
+            });
+        }));
 });

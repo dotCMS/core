@@ -1,5 +1,6 @@
-import { createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { BehaviorSubject } from 'rxjs';
+import { vi } from 'vitest';
 
 import { JsonPipe } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
@@ -131,8 +132,8 @@ describe('DotWorkflowsActionsSelectorFieldComponent', () => {
         serviceMock = spectator.inject(
             DotWorkflowsActionsSelectorFieldService
         ) as unknown as DotWorkflowsActionsSelectorFieldServiceMock;
-        jest.spyOn(serviceMock, 'get');
-        jest.spyOn(serviceMock, 'load');
+        vi.spyOn(serviceMock, 'get');
+        vi.spyOn(serviceMock, 'load');
     });
 
     describe('initialization', () => {

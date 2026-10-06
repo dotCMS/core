@@ -5,8 +5,6 @@ import { HostFolderField } from './helpers/host-folder-field';
 import { test } from '../../../../fixtures/host-folder.fixture';
 
 test.describe('Folder Context Pre-fill — File Asset Content Type', () => {
-    test.describe.configure({ mode: 'serial' });
-
     let contentTypeId: string;
     let contentTypeVariable: string;
     let siteName: string;

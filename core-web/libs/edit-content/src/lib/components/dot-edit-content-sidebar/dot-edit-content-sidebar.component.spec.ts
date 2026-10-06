@@ -5,9 +5,10 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { MockComponent } from 'ng-mocks';
 import { NEVER, of, Subject } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -25,7 +26,6 @@ import {
     DotHttpErrorManagerService,
     DotLanguagesService,
     DotMessageService,
-    DotPropertiesService,
     DotSiteService,
     DotSystemConfigService,
     DotVersionableService,
@@ -42,6 +42,7 @@ import { DotWorkflowActionsComponent } from '@dotcms/ui';
 import {
     createFakeContentlet,
     createFakeLanguage,
+    DOT_SYSTEM_CONFIG_SERVICE_MOCK,
     MOCK_SINGLE_WORKFLOW_ACTIONS,
     mockWorkflowsActions
 } from '@dotcms/utils-testing';
@@ -49,7 +50,7 @@ import {
 import { DotEditContentSidebarActivitiesComponent } from './components/dot-edit-content-sidebar-activities/dot-edit-content-sidebar-activities.component';
 import { DotEditContentSidebarHistoryComponent } from './components/dot-edit-content-sidebar-history/dot-edit-content-sidebar-history.component';
 import { DotEditContentSidebarInformationComponent } from './components/dot-edit-content-sidebar-information/dot-edit-content-sidebar-information.component';
-import { DotEditContentSidebarLocalesComponent } from './components/dot-edit-content-sidebar-locales/dot-edit-content-sidebar-locales.component';
+import { DotEditContentSidebarLocalesSelectorComponent } from './components/dot-edit-content-sidebar-locales/dot-edit-content-sidebar-locales-selector/dot-edit-content-sidebar-locales-selector.component';
 import { DotEditContentSidebarSectionComponent } from './components/dot-edit-content-sidebar-section/dot-edit-content-sidebar-section.component';
 import { DotEditContentSidebarWorkflowComponent } from './components/dot-edit-content-sidebar-workflow/dot-edit-content-sidebar-workflow.component';
 import { DotEditContentSidebarComponent } from './dot-edit-content-sidebar.component';
@@ -89,7 +90,7 @@ describe('DotEditContentSidebarComponent', () => {
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotMessageService),
             mockProvider(Router, {
-                navigate: jest.fn().mockReturnValue(Promise.resolve(true)),
+                navigate: vi.fn().mockReturnValue(Promise.resolve(true)),
                 url: '/test-url',
                 events: of()
             }),
@@ -100,16 +101,13 @@ describe('DotEditContentSidebarComponent', () => {
             mockProvider(DotLanguagesService),
             mockProvider(DotVersionableService),
             mockProvider(DotSiteService),
-            mockProvider(DotSystemConfigService),
-            mockProvider(DotPropertiesService, {
-                getFeatureFlag: jest.fn().mockReturnValue(of(false))
-            }),
+            mockProvider(DotSystemConfigService, DOT_SYSTEM_CONFIG_SERVICE_MOCK),
             {
                 provide: DialogService,
                 useValue: {
-                    open: jest.fn().mockReturnValue({
+                    open: vi.fn().mockReturnValue({
                         onClose: new Subject<void>(),
-                        close: jest.fn()
+                        close: vi.fn()
                     })
                 }
             },
@@ -123,7 +121,7 @@ describe('DotEditContentSidebarComponent', () => {
                             userId: '123',
                             userName: 'John Doe'
                         }),
-                    isPortletInMenu: jest.fn().mockReturnValue(of(false))
+                    isPortletInMenu: vi.fn().mockReturnValue(of(false))
                 }
             },
             {
@@ -137,10 +135,11 @@ describe('DotEditContentSidebarComponent', () => {
             {
                 provide: EDIT_CONTENT_HOST,
                 useValue: {
-                    setContentTitle: jest.fn(),
-                    addBreadcrumb: jest.fn(),
-                    goToSavedContent: jest.fn(),
-                    goToRestoredVersion: jest.fn()
+                    setContentTitle: vi.fn(),
+                    addBreadcrumb: vi.fn(),
+                    goToSavedContent: vi.fn(),
+                    leaveDeletedContent: vi.fn(),
+                    goToRestoredVersion: vi.fn()
                 }
             }
         ]
@@ -155,7 +154,7 @@ describe('DotEditContentSidebarComponent', () => {
         dotContentletService = spectator.inject(DotContentletService);
 
         // Mock the initial UI state
-        jest.spyOn(utils, 'getStoredUIState').mockReturnValue({
+        vi.spyOn(utils, 'getStoredUIState').mockReturnValue({
             view: 'form',
             activeTab: 0,
             isSidebarOpen: true,
@@ -228,14 +227,17 @@ describe('DotEditContentSidebarComponent', () => {
                 expect(workflowComponent).toBeTruthy();
             });
 
-            it('should render DotEditContentSidebarLocalesComponent when locale data is available', () => {
+            it('should render DotEditContentSidebarLocalesSelectorComponent when locale data is available', () => {
                 const mockLocale = createFakeLanguage();
                 patchState(store as unknown as WritableStateSource<object>, {
+                    locales: [mockLocale],
                     systemDefaultLocale: mockLocale,
                     currentLocale: mockLocale
                 });
                 spectator.detectChanges();
-                const localesComponent = spectator.query(DotEditContentSidebarLocalesComponent);
+                const localesComponent = spectator.query(
+                    DotEditContentSidebarLocalesSelectorComponent
+                );
                 expect(localesComponent).toBeTruthy();
             });
 
@@ -286,11 +288,12 @@ describe('DotEditContentSidebarComponent', () => {
         it('should render locales section with data-testId when on info tab and locale data is available', () => {
             const mockLocale = createFakeLanguage();
             patchState(store as unknown as WritableStateSource<object>, {
+                locales: [mockLocale],
                 systemDefaultLocale: mockLocale,
                 currentLocale: mockLocale
             });
             spectator.detectChanges();
-            const localesElement = spectator.query(byTestId('locales'));
+            const localesElement = spectator.query(byTestId('locales-selector'));
             expect(localesElement).toBeTruthy();
         });
     });
@@ -298,7 +301,7 @@ describe('DotEditContentSidebarComponent', () => {
     describe('Tabs', () => {
         it('should render the first tab as the Actions tab with the bolt icon', () => {
             const messageService = spectator.inject(DotMessageService);
-            const getSpy = jest.spyOn(messageService, 'get');
+            const getSpy = vi.spyOn(messageService, 'get');
 
             const tabView = spectator.query(byTestId('sidebar-tabs'));
             const tabs = tabView.querySelectorAll('[role="tab"]');
@@ -369,8 +372,8 @@ describe('DotEditContentSidebarComponent', () => {
             });
 
             it('should call store.lockContent when clicking the button on unlocked content', () => {
-                const lockSpy = jest.spyOn(store, 'lockContent').mockImplementation();
-                jest.spyOn(store, 'isContentLocked').mockReturnValue(false);
+                const lockSpy = vi.spyOn(store, 'lockContent').mockImplementation(() => undefined);
+                vi.spyOn(store, 'isContentLocked').mockReturnValue(false);
                 spectator.detectChanges();
 
                 spectator.click(byTestId('sidebar-lock-button'));
@@ -379,8 +382,10 @@ describe('DotEditContentSidebarComponent', () => {
             });
 
             it('should call store.unlockContent when clicking the button on locked content', () => {
-                const unlockSpy = jest.spyOn(store, 'unlockContent').mockImplementation();
-                jest.spyOn(store, 'isContentLocked').mockReturnValue(true);
+                const unlockSpy = vi
+                    .spyOn(store, 'unlockContent')
+                    .mockImplementation(() => undefined);
+                vi.spyOn(store, 'isContentLocked').mockReturnValue(true);
                 spectator.detectChanges();
 
                 spectator.click(byTestId('sidebar-lock-button'));
@@ -391,7 +396,7 @@ describe('DotEditContentSidebarComponent', () => {
             it('should put the store in a loading state when the lock button is clicked', () => {
                 // Use a request that never resolves so the store stays in the loading
                 // state after the click; let the real lockContent method run (no spy).
-                jest.spyOn(store, 'isContentLocked').mockReturnValue(false);
+                vi.spyOn(store, 'isContentLocked').mockReturnValue(false);
                 dotContentletService.lockContent.mockReturnValue(NEVER);
                 spectator.detectChanges();
 
@@ -404,10 +409,12 @@ describe('DotEditContentSidebarComponent', () => {
 
             it('should confirm before releasing a lock held by another user', () => {
                 const confirmationService = spectator.inject(ConfirmationService, true);
-                const confirmSpy = jest.spyOn(confirmationService, 'confirm');
-                const unlockSpy = jest.spyOn(store, 'unlockContent').mockImplementation();
-                jest.spyOn(store, 'isLockedByAnotherUser').mockReturnValue(true);
-                jest.spyOn(store, 'lockedByName').mockReturnValue('Anna García');
+                const confirmSpy = vi.spyOn(confirmationService, 'confirm');
+                const unlockSpy = vi
+                    .spyOn(store, 'unlockContent')
+                    .mockImplementation(() => undefined);
+                vi.spyOn(store, 'isLockedByAnotherUser').mockReturnValue(true);
+                vi.spyOn(store, 'lockedByName').mockReturnValue('Anna García');
                 spectator.detectChanges();
 
                 spectator.click(byTestId('sidebar-lock-button'));
@@ -429,7 +436,7 @@ describe('DotEditContentSidebarComponent', () => {
             });
 
             it('should emit workflowActionFired when the actions component fires an action', () => {
-                const emitSpy = jest.spyOn(spectator.component.workflowActionFired, 'emit');
+                const emitSpy = vi.spyOn(spectator.component.workflowActionFired, 'emit');
                 const actionsComponent = spectator.query(DotWorkflowActionsComponent);
                 const action = { id: 'action-1' } as DotCMSWorkflowAction;
 
@@ -440,14 +447,15 @@ describe('DotEditContentSidebarComponent', () => {
         });
 
         describe('sections', () => {
-            it('should carry the expected persistence keys on the three sections', () => {
+            it('should carry the expected persistence keys on the three sections, in display order', () => {
                 const sections = spectator.queryAll(DotEditContentSidebarSectionComponent);
                 // The History tab also renders sidebar-sections (history.*); scope to the Actions ones.
                 const keys = sections
                     .map((section) => section.key())
                     .filter((key) => key.startsWith('actions.'));
 
-                expect(keys).toEqual(['actions.locales', 'actions.workflow', 'actions.details']);
+                // queryAll returns DOM order, so this also pins the section order in the tab.
+                expect(keys).toEqual(['actions.details', 'actions.locales', 'actions.workflow']);
             });
         });
     });
@@ -514,7 +522,7 @@ describe('DotEditContentSidebarComponent', () => {
                 expect(activitiesTabLink).toBeTruthy();
 
                 // Verify store update
-                const storeSpy = jest.spyOn(store, 'setActiveSidebarTab');
+                const storeSpy = vi.spyOn(store, 'setActiveSidebarTab');
                 spectator.click(activitiesTabLink);
                 tick();
 
@@ -543,7 +551,7 @@ describe('DotEditContentSidebarComponent', () => {
                 expect(historyTabLink).toBeTruthy();
 
                 // Verify store update
-                const storeSpy = jest.spyOn(store, 'setActiveSidebarTab');
+                const storeSpy = vi.spyOn(store, 'setActiveSidebarTab');
                 spectator.click(historyTabLink);
                 tick();
 
@@ -563,12 +571,12 @@ describe('DotEditContentSidebarComponent', () => {
                 tick();
                 spectator.detectChanges();
 
-                const storeSpy = jest.spyOn(store, 'loadVersions');
+                const storeSpy = vi.spyOn(store, 'loadVersions');
                 const component = spectator.component;
 
                 // Mock the identifier signal to return a test value
                 Object.defineProperty(component, '$identifier', {
-                    value: jest.fn().mockReturnValue('test-identifier'),
+                    value: vi.fn().mockReturnValue('test-identifier'),
                     writable: true
                 });
 
@@ -586,12 +594,12 @@ describe('DotEditContentSidebarComponent', () => {
                 tick();
                 spectator.detectChanges();
 
-                const storeSpy = jest.spyOn(store, 'loadPushPublishHistory');
+                const storeSpy = vi.spyOn(store, 'loadPushPublishHistory');
                 const component = spectator.component;
 
                 // Mock the identifier signal to return a test value
                 Object.defineProperty(component, '$identifier', {
-                    value: jest.fn().mockReturnValue('test-identifier'),
+                    value: vi.fn().mockReturnValue('test-identifier'),
                     writable: true
                 });
 
@@ -607,12 +615,12 @@ describe('DotEditContentSidebarComponent', () => {
                 tick();
                 spectator.detectChanges();
 
-                const storeSpy = jest.spyOn(store, 'deletePushPublishHistory');
+                const storeSpy = vi.spyOn(store, 'deletePushPublishHistory');
                 const component = spectator.component;
 
                 // Mock the identifier signal to return a test value
                 Object.defineProperty(component, '$identifier', {
-                    value: jest.fn().mockReturnValue('test-identifier'),
+                    value: vi.fn().mockReturnValue('test-identifier'),
                     writable: true
                 });
 
@@ -636,19 +644,19 @@ describe('DotEditContentSidebarComponent', () => {
             it('should call setActiveSidebarTab with index 0 when first tab is selected', fakeAsync(() => {
                 store.setActiveSidebarTab(1);
                 tick();
-                const storeSpy = jest.spyOn(store, 'setActiveSidebarTab');
+                const storeSpy = vi.spyOn(store, 'setActiveSidebarTab');
                 spectator.component.onActiveIndexChange(0);
                 expect(storeSpy).toHaveBeenCalledWith(0);
             }));
 
             it('should call setActiveSidebarTab with index 1 when history tab is selected', fakeAsync(() => {
-                const storeSpy = jest.spyOn(store, 'setActiveSidebarTab');
+                const storeSpy = vi.spyOn(store, 'setActiveSidebarTab');
                 spectator.component.onActiveIndexChange(1);
                 expect(storeSpy).toHaveBeenCalledWith(1);
             }));
 
             it('should call setActiveSidebarTab with the exact index from the event', fakeAsync(() => {
-                const storeSpy = jest.spyOn(store, 'setActiveSidebarTab');
+                const storeSpy = vi.spyOn(store, 'setActiveSidebarTab');
                 spectator.component.onActiveIndexChange(2);
                 expect(storeSpy).toHaveBeenCalledWith(2);
             }));
@@ -656,10 +664,10 @@ describe('DotEditContentSidebarComponent', () => {
 
         describe('Event Handlers - Success', () => {
             it('should call store.addComment when onCommentSubmitted is called with a comment', fakeAsync(() => {
-                const storeSpy = jest.spyOn(store, 'addComment');
+                const storeSpy = vi.spyOn(store, 'addComment');
                 const component = spectator.component;
                 Object.defineProperty(component, '$identifier', {
-                    value: jest.fn().mockReturnValue('test-identifier'),
+                    value: vi.fn().mockReturnValue('test-identifier'),
                     writable: true
                 });
                 component.onCommentSubmitted('My comment');
@@ -670,7 +678,9 @@ describe('DotEditContentSidebarComponent', () => {
             }));
 
             it('should call store.fireWorkflowAction when fireResetWorkflowAction (reset path) is invoked', fakeAsync(() => {
-                const storeSpy = jest.spyOn(store, 'fireWorkflowAction').mockImplementation();
+                const storeSpy = vi
+                    .spyOn(store, 'fireWorkflowAction')
+                    .mockImplementation(() => undefined);
 
                 spectator.component.fireResetWorkflowAction('reset-action-id');
 
@@ -682,10 +692,10 @@ describe('DotEditContentSidebarComponent', () => {
 
         describe('Event Handlers - Failure and Edge Cases', () => {
             it('should NOT call loadVersions when onVersionsPageChange is called and identifier is undefined', fakeAsync(() => {
-                const storeSpy = jest.spyOn(store, 'loadVersions');
+                const storeSpy = vi.spyOn(store, 'loadVersions');
                 const component = spectator.component;
                 Object.defineProperty(component, '$identifier', {
-                    value: jest.fn().mockReturnValue(undefined),
+                    value: vi.fn().mockReturnValue(undefined),
                     writable: true
                 });
                 component.onVersionsPageChange(1);
@@ -693,10 +703,10 @@ describe('DotEditContentSidebarComponent', () => {
             }));
 
             it('should NOT call loadVersions when onVersionsPageChange is called and identifier is empty string', fakeAsync(() => {
-                const storeSpy = jest.spyOn(store, 'loadVersions');
+                const storeSpy = vi.spyOn(store, 'loadVersions');
                 const component = spectator.component;
                 Object.defineProperty(component, '$identifier', {
-                    value: jest.fn().mockReturnValue(''),
+                    value: vi.fn().mockReturnValue(''),
                     writable: true
                 });
                 component.onVersionsPageChange(1);
@@ -704,10 +714,10 @@ describe('DotEditContentSidebarComponent', () => {
             }));
 
             it('should NOT call loadPushPublishHistory when onPushPublishPageChange is called and identifier is undefined', fakeAsync(() => {
-                const storeSpy = jest.spyOn(store, 'loadPushPublishHistory');
+                const storeSpy = vi.spyOn(store, 'loadPushPublishHistory');
                 const component = spectator.component;
                 Object.defineProperty(component, '$identifier', {
-                    value: jest.fn().mockReturnValue(undefined),
+                    value: vi.fn().mockReturnValue(undefined),
                     writable: true
                 });
                 component.onPushPublishPageChange(2);
@@ -715,10 +725,10 @@ describe('DotEditContentSidebarComponent', () => {
             }));
 
             it('should NOT call deletePushPublishHistory when onDeletePushPublishHistory is called and identifier is undefined', fakeAsync(() => {
-                const storeSpy = jest.spyOn(store, 'deletePushPublishHistory');
+                const storeSpy = vi.spyOn(store, 'deletePushPublishHistory');
                 const component = spectator.component;
                 Object.defineProperty(component, '$identifier', {
-                    value: jest.fn().mockReturnValue(undefined),
+                    value: vi.fn().mockReturnValue(undefined),
                     writable: true
                 });
                 component.onDeletePushPublishHistory();
@@ -726,10 +736,10 @@ describe('DotEditContentSidebarComponent', () => {
             }));
 
             it('should NOT call deletePushPublishHistory when onDeletePushPublishHistory is called and identifier is null', fakeAsync(() => {
-                const storeSpy = jest.spyOn(store, 'deletePushPublishHistory');
+                const storeSpy = vi.spyOn(store, 'deletePushPublishHistory');
                 const component = spectator.component;
                 Object.defineProperty(component, '$identifier', {
-                    value: jest.fn().mockReturnValue(null),
+                    value: vi.fn().mockReturnValue(null),
                     writable: true
                 });
                 component.onDeletePushPublishHistory();
@@ -737,10 +747,10 @@ describe('DotEditContentSidebarComponent', () => {
             }));
 
             it('should still call addComment when onCommentSubmitted is called even if identifier is undefined', fakeAsync(() => {
-                const storeSpy = jest.spyOn(store, 'addComment');
+                const storeSpy = vi.spyOn(store, 'addComment');
                 const component = spectator.component;
                 Object.defineProperty(component, '$identifier', {
-                    value: jest.fn().mockReturnValue(undefined),
+                    value: vi.fn().mockReturnValue(undefined),
                     writable: true
                 });
                 component.onCommentSubmitted('Comment with no identifier');
@@ -805,7 +815,7 @@ describe('DotEditContentSidebarComponent', () => {
                 dotContentletService.getContentletByInode.mockReturnValue(
                     of(mockHistoricalContentlet)
                 );
-                const exitSpy = jest.spyOn(store, 'exitHistoricalView');
+                const exitSpy = vi.spyOn(store, 'exitHistoricalView');
 
                 store.loadVersionContent('historical-inode');
                 tick();
@@ -819,7 +829,7 @@ describe('DotEditContentSidebarComponent', () => {
                 dotContentletService.getContentletByInode.mockReturnValue(
                     of(mockHistoricalContentlet)
                 );
-                const restoreSpy = jest.spyOn(store, 'restoreCurrentHistoricalVersion');
+                const restoreSpy = vi.spyOn(store, 'restoreCurrentHistoricalVersion');
 
                 store.loadVersionContent('historical-inode');
                 tick();
@@ -877,7 +887,7 @@ describe('DotEditContentSidebarComponent', () => {
                 tick();
                 spectator.detectChanges();
 
-                const exitSpy = jest.spyOn(store, 'exitCompareView');
+                const exitSpy = vi.spyOn(store, 'exitCompareView');
                 spectator.click(byTestId('close-compare-button'));
                 expect(exitSpy).toHaveBeenCalled();
             }));
@@ -889,7 +899,7 @@ describe('DotEditContentSidebarComponent', () => {
                 tick();
                 spectator.detectChanges();
 
-                const restoreSpy = jest.spyOn(store, 'restoreCurrentHistoricalVersion');
+                const restoreSpy = vi.spyOn(store, 'restoreCurrentHistoricalVersion');
                 spectator.click(byTestId('restore-compare-version-button'));
                 expect(restoreSpy).toHaveBeenCalled();
             }));

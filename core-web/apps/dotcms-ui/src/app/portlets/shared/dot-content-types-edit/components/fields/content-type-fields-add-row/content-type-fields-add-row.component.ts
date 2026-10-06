@@ -8,7 +8,8 @@ import {
     inject,
     input,
     output,
-    viewChild
+    viewChild,
+    ChangeDetectionStrategy
 } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
@@ -32,6 +33,7 @@ import { DotMessagePipe } from '@dotcms/ui';
     selector: 'dot-add-rows',
     styleUrls: ['./content-type-fields-add-row.component.scss'],
     templateUrl: './content-type-fields-add-row.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [ButtonModule, TooltipModule, SplitButtonModule, DotMessagePipe]
 })
 export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {

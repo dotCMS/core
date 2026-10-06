@@ -3,7 +3,8 @@ import {
     mockProvider,
     SpectatorDirective,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { Component, ViewContainerRef } from '@angular/core';
 import { UntypedFormGroup } from '@angular/forms';
@@ -66,8 +67,8 @@ describe('Directive: DynamicFieldPropertyDirective', () => {
         host: CustomHostComponent,
         providers: [
             mockProvider(FieldPropertyService, {
-                getComponent: jest.fn().mockReturnValue(DynamicComponent),
-                getFieldType: jest.fn().mockReturnValue({
+                getComponent: vi.fn().mockReturnValue(DynamicComponent),
+                getFieldType: vi.fn().mockReturnValue({
                     helpText: 'helpText'
                 })
             }),

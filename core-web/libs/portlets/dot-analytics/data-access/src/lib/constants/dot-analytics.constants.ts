@@ -1,20 +1,15 @@
 /**
- * Full path for conversion **content attribution** (dotCMS analytics proxy).
- * Always use this — never `/api/v1/conversion/content/attribution` without `analytics`:
- * that path is not registered and returns 404 when the UI is served from localhost:4200.
+ * Domain-driven query resources (dotCMS/core#36628), replacing the old per-metric `event`/
+ * `session`/`conversion` proxy endpoints. All three return the same unified tabular envelope
+ * ({@link AnalyticsQueryResponse}).
  *
- * Proxies to upstream `/v1/conversion/content/attribution`.
+ * Note: `/v1/analytics/conversion` (the old conversions-overview list) has no domain-driven
+ * replacement — Product dropped that resource entirely, and the "Conversions Overview" table
+ * widget that used to read it was removed from the dashboard rather than migrated.
  */
-export const ANALYTICS_CONVERSION_CONTENT_ATTRIBUTION_URL =
-    '/api/v1/analytics/conversion/content/attribution' as const;
-
-/**
- * Full path for conversions **overview** list (dotCMS analytics proxy).
- * Always use this — never call `/api/v1/conversion` without `analytics` from the UI dev server.
- *
- * Proxies to upstream `/v1/conversion`.
- */
-export const ANALYTICS_CONVERSION_URL = '/api/v1/analytics/conversion' as const;
+export const ANALYTICS_EVENTS_URL = '/api/v1/analytics/events' as const;
+export const ANALYTICS_SESSIONS_URL = '/api/v1/analytics/sessions' as const;
+export const ANALYTICS_CONTENT_URL = '/api/v1/analytics/content' as const;
 
 export const TIME_RANGE_OPTIONS = {
     last7days: 'last7days',

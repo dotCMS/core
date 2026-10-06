@@ -1,8 +1,10 @@
 package com.dotcms.contenttype.business;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
-import com.dotcms.content.elasticsearch.business.IndiciesInfo;
+import com.dotcms.content.elasticsearch.business.IndexType;
+import com.dotcms.content.index.IndexConfigHelper;
 import com.dotcms.contenttype.business.FieldAPITest.UniqueConstraintTestCase.DuplicateType;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.DateField;
@@ -85,6 +87,7 @@ import static com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALIT
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assume.assumeFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -1433,18 +1436,22 @@ public class FieldAPITest extends IntegrationTestBase {
                     .build();
             field = fieldAPI.save(field, user);
 
-            final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
+            // Resolve the active index names through the phase-aware getter: loadIndicies() reports
+            // the ES store, empty under Phase 3 (OS-only), so getWorking()/getLive() return null.
+            final ContentletIndexAPI contentletIndexAPI = APILocator.getContentletIndexAPI();
+            final String workingIndex = contentletIndexAPI.getActiveIndexName(IndexType.WORKING.getPrefix());
+            final String liveIndex = contentletIndexAPI.getActiveIndexName(IndexType.LIVE.getPrefix());
             final ESMappingAPIImpl mappingAPI = new ESMappingAPIImpl();
 
             //verify mapping on working index
             Map<String, Object> mapping = mappingAPI
-                    .getFieldMappingAsMap(indiciesInfo.getWorking(),
+                    .getFieldMappingAsMap(workingIndex,
                             (type.variable() + StringPool.PERIOD + field.variable()));
             assertFalse(UtilMethods.isSet(mapping));
 
             //verify mapping on live index
             mapping = mappingAPI
-                    .getFieldMappingAsMap(indiciesInfo.getLive(),
+                    .getFieldMappingAsMap(liveIndex,
                             (type.variable() + StringPool.PERIOD + field.variable()));
             assertFalse(UtilMethods.isSet(mapping));
         }finally{
@@ -1462,6 +1469,12 @@ public class FieldAPITest extends IntegrationTestBase {
     @Test
     public void test_SaveNewIndexedField_ShouldAddESMapping()
             throws DotSecurityException, DotDataException, IOException {
+        // Asserts the ES static putMapping-on-field-save behavior. Under Phase 3 (OS-only) fields
+        // are not statically mapped on save — OS relies on dynamic templates, so the mapping only
+        // materializes once content of the type is indexed (see #36237). That OS behavior is covered
+        // by ESMappingUtilHelperTest (which indexes content before checking the mapping).
+        assumeFalse("ES static field-mapping-on-save test skipped under Phase 3 (OS dynamic templates)",
+                IndexConfigHelper.MigrationPhase.current().isMigrationComplete());
         final long time = System.currentTimeMillis();
         final ContentType type = new ContentTypeDataGen().nextPersisted();
         try {
@@ -1473,12 +1486,16 @@ public class FieldAPITest extends IntegrationTestBase {
                     .build();
             field = fieldAPI.save(field, user);
 
-            final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
+            // Resolve the active index names through the phase-aware getter: loadIndicies() reports
+            // the ES store, empty under Phase 3 (OS-only), so getWorking()/getLive() return null.
+            final ContentletIndexAPI contentletIndexAPI = APILocator.getContentletIndexAPI();
+            final String workingIndex = contentletIndexAPI.getActiveIndexName(IndexType.WORKING.getPrefix());
+            final String liveIndex = contentletIndexAPI.getActiveIndexName(IndexType.LIVE.getPrefix());
             final ESMappingAPIImpl mappingAPI = new ESMappingAPIImpl();
 
             //verify mapping on working index
             Map<String, String> mapping = (Map<String, String>) mappingAPI
-                    .getFieldMappingAsMap(indiciesInfo.getWorking(),
+                    .getFieldMappingAsMap(workingIndex,
                             (type.variable() + StringPool.PERIOD + field.variable())
                                     .toLowerCase()).get(field.variable());
             assertTrue(UtilMethods.isSet(mapping.get("type")));
@@ -1486,7 +1503,7 @@ public class FieldAPITest extends IntegrationTestBase {
 
             //verify mapping on live index
             mapping = (Map<String, String>) mappingAPI
-                    .getFieldMappingAsMap(indiciesInfo.getLive(),
+                    .getFieldMappingAsMap(liveIndex,
                             (type.variable() + StringPool.PERIOD + field.variable())
                                     .toLowerCase()).get(field.variable());
             assertTrue(UtilMethods.isSet(mapping.get("type")));
@@ -1494,7 +1511,7 @@ public class FieldAPITest extends IntegrationTestBase {
 
             //validate _dotraw fields
             mapping = (Map<String, String>) mappingAPI
-                    .getFieldMappingAsMap(indiciesInfo.getLive(),
+                    .getFieldMappingAsMap(liveIndex,
                             (type.variable() + StringPool.PERIOD + field.variable() + "_dotraw")
                                     .toLowerCase()).get(field.variable() + "_dotraw");
             assertTrue(UtilMethods.isSet(mapping.get("type")));
@@ -1515,18 +1532,28 @@ public class FieldAPITest extends IntegrationTestBase {
     @Test
     public void test_SaveNewRelationshipField_ShouldAddESMapping()
             throws DotSecurityException, DotDataException, IOException {
+        // Asserts the ES static putMapping-on-field-save behavior. Under Phase 3 (OS-only) fields
+        // are not statically mapped on save — OS relies on dynamic templates, so the mapping only
+        // materializes once content of the type is indexed (see #36237). That OS behavior is covered
+        // by ESMappingUtilHelperTest (which indexes content before checking the mapping).
+        assumeFalse("ES static field-mapping-on-save test skipped under Phase 3 (OS dynamic templates)",
+                IndexConfigHelper.MigrationPhase.current().isMigrationComplete());
         final long time = System.currentTimeMillis();
         final ContentType type = createAndSaveSimpleContentType("contentType" + time);
         try {
             final Field field = createAndSaveRelationshipField("newRel",
                     type.id(), type.variable(), CARDINALITY);
 
-            final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
+            // Resolve the active index names through the phase-aware getter: loadIndicies() reports
+            // the ES store, empty under Phase 3 (OS-only), so getWorking()/getLive() return null.
+            final ContentletIndexAPI contentletIndexAPI = APILocator.getContentletIndexAPI();
+            final String workingIndex = contentletIndexAPI.getActiveIndexName(IndexType.WORKING.getPrefix());
+            final String liveIndex = contentletIndexAPI.getActiveIndexName(IndexType.LIVE.getPrefix());
             final ESMappingAPIImpl mappingAPI = new ESMappingAPIImpl();
 
             //verify mapping on working index
             Map<String, String> mapping = (Map<String, String>) mappingAPI
-                    .getFieldMappingAsMap(indiciesInfo.getWorking(),
+                    .getFieldMappingAsMap(workingIndex,
                             (type.variable() + StringPool.PERIOD + field.variable())
                                     .toLowerCase()).get(field.variable().toLowerCase());
             assertTrue(UtilMethods.isSet(mapping.get("type")));
@@ -1534,7 +1561,7 @@ public class FieldAPITest extends IntegrationTestBase {
 
             //verify mapping on live index
             mapping = (Map<String, String>) mappingAPI
-                    .getFieldMappingAsMap(indiciesInfo.getLive(),
+                    .getFieldMappingAsMap(liveIndex,
                             (type.variable() + StringPool.PERIOD + field.variable())
                                     .toLowerCase()).get(field.variable().toLowerCase());
             assertTrue(UtilMethods.isSet(mapping.get("type")));

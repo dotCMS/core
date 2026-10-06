@@ -74,6 +74,7 @@
                     "node_modules/primeicons/primeicons.css",
                     "libs/dotcms-scss/angular/styles.scss",
                     "apps/dotcms-ui/src/style.css",
+                    "apps/dotcms-ui/src/daisyui-theme.css",
                     "node_modules/gridstack/dist/gridstack.min.css"
                 ],
                 "scripts": [],
@@ -127,7 +128,12 @@
         "serve": {
             "continuous": true,
             "executor": "@angular/build:dev-server",
-            "dependsOn": [],
+            "dependsOn": [
+                {
+                    "target": "build",
+                    "projects": ["dotcms-webcomponents"]
+                }
+            ],
             "defaultConfiguration": "development",
             "options": {
                 "proxyConfig": "apps/dotcms-ui/proxy-dev.conf.mjs",
@@ -149,17 +155,6 @@
             "executor": "@angular/build:extract-i18n",
             "options": {
                 "buildTarget": "dotcms-ui:build"
-            }
-        },
-        "test": {
-            "options": {
-                "passWithNoTests": false
-            },
-            "configurations": {
-                "ci": {
-                    "ci": true,
-                    "coverage": true
-                }
             }
         }
     }

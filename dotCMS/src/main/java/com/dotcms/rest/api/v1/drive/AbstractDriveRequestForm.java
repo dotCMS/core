@@ -1,6 +1,10 @@
 package com.dotcms.rest.api.v1.drive;
 
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.util.HostUtil;
+import com.liferay.util.StringPool;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -72,6 +76,7 @@ import org.immutables.value.Value;
 @Value.Immutable
 @JsonSerialize(as = DriveRequestForm.class)
 @JsonDeserialize(as = DriveRequestForm.class)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public interface AbstractDriveRequestForm {
 
     /**
@@ -111,6 +116,71 @@ public interface AbstractDriveRequestForm {
     @JsonProperty("includeSystemHost")
     @Value.Default
     default boolean includeSystemHost(){return true;}
+
+    /**
+     * Which slice of content to list: the whole site, the site root alone, or System Host.
+     * <p>
+     * <b>Omitting it means today's behavior, exactly.</b> It carries no default on purpose: at the
+     * site root an omitted scope and {@link BrowseScope#ALL} agree, but inside a folder they do
+     * not, and defaulting the field would silently turn every existing folder request recursive.
+     * That guarantee is what leaves the Asset Picker, which calls this same endpoint, untouched.
+     * </p>
+     * <p>
+     * Only valid with a site-root {@link #assetPath()}. The three scopes are things you can only
+     * be in at the top of a site; a folder is addressed by its path, so a scope named alongside a
+     * folder path is two contradictory statements and is refused rather than resolved.
+     * </p>
+     * <p>
+     * {@link #includeSystemHost()} is read only when this is {@code ALL} or omitted — the other
+     * two scopes already answer the System Host question themselves.
+     * </p>
+     *
+     * @return the requested browse scope, or null for today's behavior
+     */
+    @Nullable
+    @JsonProperty("browseScope")
+    BrowseScope browseScope();
+
+    /**
+     * A browse scope is only meaningful at the site root, so one named alongside a folder path is
+     * refused.
+     * <p>
+     * <b>Refused rather than resolved by precedence.</b> A caller that names both has said two
+     * contradictory things, and honouring either one would quietly list somewhere they did not
+     * ask for. This follows {@code BulkUploadForm}, which refuses a submission naming both a
+     * folder and a site for the same reason. Ignoring the scope instead would be kinder to a
+     * sloppy caller and would hide the caller's bug.
+     * </p>
+     * <p>
+     * The path is split here rather than resolved: this asks only whether anything follows the
+     * site, which needs no site lookup and no database. Resolving the path is
+     * {@code AssetPathResolver}'s job and happens later, once the request is known to be coherent.
+     * </p>
+     */
+    @Value.Check
+    default void checkBrowseScopeIsAtTheSiteRoot() {
+        if (null == browseScope()) {
+            return;
+        }
+        final String pathWithinSite = pathWithinSite(assetPath());
+        if (!pathWithinSite.isEmpty() && !StringPool.FORWARD_SLASH.equals(pathWithinSite)) {
+            throw new BadRequestException(String.format(
+                    "browseScope is only valid at the site root; got '%s' with path '%s'",
+                    browseScope().name(), pathWithinSite));
+        }
+    }
+
+    /**
+     * The portion of {@code //site/some/path/} that follows the site, or an empty string when the
+     * path names a site and nothing else.
+     */
+    static String pathWithinSite(final String assetPath) {
+        final String withoutHostIndicator = assetPath.startsWith(HostUtil.HOST_INDICATOR)
+                ? assetPath.substring(HostUtil.HOST_INDICATOR.length())
+                : assetPath;
+        final int firstSlash = withoutHostIndicator.indexOf(StringPool.FORWARD_SLASH);
+        return firstSlash < 0 ? StringPool.BLANK : withoutHostIndicator.substring(firstSlash);
+    }
 
     /**
      * List of language identifiers to include in the search.
@@ -327,6 +397,13 @@ public interface AbstractDriveRequestForm {
      *   <li><strong>Working:</strong> Draft/unpublished content in progress</li>
      * </ul>
      *
+     * <p>
+     * <b>Interaction with {@link #status()}:</b> selecting {@code ARCHIVED} or {@code UNPUBLISHED}
+     * forces the query onto the working version, because neither state has a live one. That choice
+     * applies to the whole query, so combining {@code live: true} with either of those statuses
+     * returns working-version fields despite the request for live content. Not reachable from the
+     * Content Drive UI, which leaves this at its default.
+     *
      * @return true to include only live content, false to include working content (default)
      */
     @JsonProperty("live")
@@ -356,9 +433,86 @@ public interface AbstractDriveRequestForm {
     default boolean archived() { return false; }
 
 
+    /**
+     * Content states to filter by. Accepted values: {@code ARCHIVED}, {@code UNPUBLISHED},
+     * {@code LOCKED}.
+     * <p>
+     * Entries combine with <b>OR</b> — the result is content in <i>any</i> of the selected states,
+     * so adding a status never shrinks the result set. This matches {@link #contentTypes()} and
+     * {@link #language()}; it is not an intersection.
+     * <p>
+     * Excluding archived content is the browse query's standing default rather than a fourth value
+     * here: {@code ARCHIVED} is the only status that admits archived content, so
+     * {@code ["UNPUBLISHED"]} means "unpublished and not archived".
+     * <p>
+     * Defaults to empty, which is skipped entirely and preserves today's behavior exactly. An
+     * unrecognized value is rejected with a 400 by {@link ContentDriveHelper}, consistent with how
+     * {@link #userSearchable()} rejects unknown keys. Declared as strings rather than the enum so
+     * that rejection stays an explicit {@code BadRequestException} rather than a Jackson
+     * deserialization error.
+     * <p>
+     * Has <b>no side effects on other fields</b>. In particular it does not touch
+     * {@link #showFolders()}: folders carry no status, so the Content Drive UI stops asking for
+     * them once a status is selected, but that is the caller's decision and this endpoint honours
+     * whatever it is sent.
+     *
+     * @return content states to filter by, defaults to an empty list (no status filtering)
+     */
+    @JsonProperty("status")
+    @Value.Default
+    default List<String> status() { return List.of(); }
+
     @JsonProperty("showFolders")
     @Value.Default
     default boolean showFolders(){return true; }
+
+    /**
+     * Whether to include menu Links in results.
+     * <p>
+     * When false (default), menu Links are never returned, so existing callers are unaffected.
+     * When true, the Links directly under the resolved {@code assetPath} are returned alongside
+     * folders and contentlets, filtered by the requesting user's READ permission.
+     * </p>
+     * <p>
+     * Links are not a {@code BaseContentType}, so this flag is <b>orthogonal</b> to
+     * {@code baseTypes} rather than a value within it:
+     * </p>
+     * <ul>
+     *   <li>{@code showLinks: true} with {@code baseTypes} omitted returns links <i>plus</i>
+     *       content of every base type.</li>
+     *   <li>{@code showLinks: true, baseTypes: ["HTMLPAGE"]} returns links plus pages.</li>
+     *   <li>{@code showLinks: true, baseTypes: [], showFolders: false} returns links
+     *       <i>only</i> — an empty {@code baseTypes} array disables the content query.</li>
+     * </ul>
+     * <p>
+     * Links are ignored when {@code mimeTypes}, {@code workflow} or {@code userSearchable}
+     * filters are present: a Link carries no file MIME type, no workflow state and no fields, so
+     * it could never satisfy any of them.
+     * Links are also always the <i>direct</i> children of the resolved path — they are never
+     * gathered recursively across subfolders, matching the legacy {@code /api/v1/browser}
+     * endpoint.
+     * </p>
+     * <p>
+     * Two ordering and filtering details are worth knowing:
+     * </p>
+     * <ul>
+     *   <li><b>Links page in title order, independent of {@code sortBy}.</b> The page slice is
+     *       taken in title-ascending order (identifier as tiebreaker) so that an index-based
+     *       {@code linkCursor} stays stable; {@code sortBy} then reorders the items already
+     *       selected. This matches the other two sources — folders slice in name-ascending order
+     *       and contentlets in {@code mod_date} order, likewise regardless of {@code sortBy}.</li>
+     *   <li><b>{@code filters.filterFolders} does not gate link titles.</b> That flag only
+     *       controls whether folder <i>names</i> are narrowed by {@code filters.text}; link titles
+     *       are always narrowed when {@code filters.text} is set, because a link is a selectable
+     *       leaf rather than something to navigate into. There is no {@code filterLinks}
+     *       equivalent.</li>
+     * </ul>
+     *
+     * @return true to include menu Links, false to exclude (default)
+     */
+    @JsonProperty("showLinks")
+    @Value.Default
+    default boolean showLinks(){ return false; }
 
     /**
      * Content cursor: the DB row to start scanning content from (returned as
@@ -396,6 +550,23 @@ public interface AbstractDriveRequestForm {
     @JsonProperty("folderCursor")
     @Value.Default
     default int folderCursor() { return 0; }
+
+    /**
+     * Link cursor: the index into the link list to start from (returned as
+     * {@code nextLinkCursor} in the previous page response).
+     * <p>
+     * On the first page leave this at 0. On subsequent pages pass the
+     * {@code nextLinkCursor} value from the previous response. When the
+     * previous response returned {@code hasMoreLinks: false} you should
+     * also set {@code showLinks: false} to skip the link query entirely
+     * on pages where all links have already been shown.
+     * </p>
+     *
+     * @return link list index to start from, defaults to 0
+     */
+    @JsonProperty("linkCursor")
+    @Value.Default
+    default int linkCursor() { return 0; }
 
     /**
      * Per-field value filters, keyed by field variable name.

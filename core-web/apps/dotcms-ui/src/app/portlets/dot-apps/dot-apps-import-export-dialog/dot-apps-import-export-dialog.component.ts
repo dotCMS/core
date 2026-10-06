@@ -1,4 +1,4 @@
-import { Component, DestroyRef, effect, inject } from '@angular/core';
+import { Component, DestroyRef, effect, inject, ChangeDetectionStrategy } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
     ReactiveFormsModule,
@@ -23,6 +23,7 @@ import { DotAppsImportExportDialogStore } from './store/dot-apps-import-export-d
 @Component({
     selector: 'dot-apps-import-export-dialog',
     templateUrl: './dot-apps-import-export-dialog.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         ReactiveFormsModule,
         DialogModule,

@@ -1,0 +1,440 @@
+{
+ "info": {
+  "_postman_id": "125b2baf-6ed4-48f2-9200-5832c86a64d6",
+  "name": "BulkUploadResource",
+  "description": "Postman collection for POST /api/v1/assets/_bulkupload (#37166).\n\nStub created by /speckit-implement T003. Requests are added under T021, which sits behind the US1 TDD gates (T022 approval, T023 Red) - do not add them ahead of those.\n\nContract: specs/37166-bulk-file-upload/contracts/bulk-upload-api.md",
+  "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+ },
+ "item": [
+  {
+   "name": "Setup",
+   "item": [
+    {
+     "name": "Get default site",
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status code is 200\", function () {\n    pm.response.to.have.status(200);\n\n    const entity = pm.response.json().entity;\n    pm.collectionVariables.set(\"hostname\", entity.hostname);\n    pm.collectionVariables.set(\"hostIdentifier\", entity.identifier);\n});"
+        ]
+       }
+      }
+     ],
+     "request": {
+      "method": "GET",
+      "header": [],
+      "url": {
+       "raw": "{{serverURL}}/api/v1/site/defaultSite",
+       "host": [
+        "{{serverURL}}"
+       ],
+       "path": [
+        "api",
+        "v1",
+        "site",
+        "defaultSite"
+       ]
+      }
+     },
+     "response": []
+    },
+    {
+     "name": "Create Test Folder",
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test(\"Status code should be 200\", function () {\n    pm.response.to.have.status(200);\n});\n\nvar jsonData = pm.response.json();\npm.collectionVariables.set(\"folderId\", jsonData.entity[0].identifier);\n\npm.test(\"Test folder created\", function () {\n    pm.expect(jsonData.entity[0].name).to.eql('drive-test-bulk-upload');\n});"
+        ]
+       }
+      }
+     ],
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "body": {
+       "mode": "raw",
+       "raw": "\n    [\"/drive-test-bulk-upload/\"]\n",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      },
+      "url": {
+       "raw": "{{serverURL}}/api/v1/folder/createfolders/{{hostname}}",
+       "host": [
+        "{{serverURL}}"
+       ],
+       "path": [
+        "api",
+        "v1",
+        "folder",
+        "createfolders",
+        "{{hostname}}"
+       ]
+      }
+     },
+     "response": []
+    }
+   ]
+  },
+  {
+   "name": "Accepts a batch and answers 202 with a handle",
+   "event": [
+    {
+     "listen": "test",
+     "script": {
+      "type": "text/javascript",
+      "exec": [
+       "pm.test('202 Accepted, not 200 - the work has not happened yet', function () {\n    pm.response.to.have.status(202);\n});\npm.test('carries both jobId and statusUrl', function () {\n    const e = pm.response.json().entity;\n    pm.expect(e).to.have.property('jobId');\n    pm.expect(e).to.have.property('statusUrl');\n    pm.collectionVariables.set('jobId', e.jobId);\n});"
+      ]
+     }
+    }
+   ],
+   "request": {
+    "method": "POST",
+    "header": [
+     {
+      "key": "Origin",
+      "value": "{{serverURL}}"
+     }
+    ],
+    "body": {
+     "mode": "formdata",
+     "formdata": [
+      {
+       "key": "files",
+       "type": "file",
+       "src": "resources/bulkupload/a.txt"
+      },
+      {
+       "key": "files",
+       "type": "file",
+       "src": "resources/bulkupload/b.txt"
+      },
+      {
+       "key": "form",
+       "value": "{\"baseType\":\"DOTASSET\",\"folderId\":\"{{folderId}}\"}",
+       "type": "text"
+      }
+     ]
+    },
+    "url": {
+     "raw": "{{serverURL}}/api/v1/assets/_bulkupload",
+     "host": [
+      "{{serverURL}}"
+     ],
+     "path": [
+      "api",
+      "v1",
+      "assets",
+      "_bulkupload"
+     ]
+    },
+    "description": "The happy path. The response must arrive before the files exist - 202 means queued, not done - and must carry statusUrl as well as jobId so the client is not left assembling URLs by hand."
+   },
+   "response": []
+  },
+  {
+   "name": "Refuses a batch with no files",
+   "event": [
+    {
+     "listen": "test",
+     "script": {
+      "type": "text/javascript",
+      "exec": [
+       "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });\n\npm.test('Response body contains expected message', function () {\n    pm.response.to.have.jsonBody('message', 'A bulk upload requires at least one file');\n});"
+      ]
+     }
+    }
+   ],
+   "request": {
+    "method": "POST",
+    "header": [
+     {
+      "key": "Origin",
+      "value": "{{serverURL}}"
+     }
+    ],
+    "body": {
+     "mode": "formdata",
+     "formdata": [
+      {
+       "key": "form",
+       "value": "{\"baseType\":\"DOTASSET\",\"folderId\":\"{{folderId}}\"}",
+       "type": "text"
+      }
+     ]
+    },
+    "url": {
+     "raw": "{{serverURL}}/api/v1/assets/_bulkupload",
+     "host": [
+      "{{serverURL}}"
+     ],
+     "path": [
+      "api",
+      "v1",
+      "assets",
+      "_bulkupload"
+     ]
+    },
+    "description": "An empty batch is not an empty success (spec FR-003)."
+   },
+   "response": []
+  },
+  {
+   "name": "Refuses an unsupported baseType",
+   "event": [
+    {
+     "listen": "test",
+     "script": {
+      "type": "text/javascript",
+      "exec": [
+       "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });\n\npm.test('Response body contains expected message', function () {\n    var jsonData = pm.response.json();\n    pm.expect(jsonData[0].message).to.eql('baseType must be DOTASSET or FILEASSET');\n});"
+      ]
+     }
+    }
+   ],
+   "request": {
+    "method": "POST",
+    "header": [
+     {
+      "key": "Origin",
+      "value": "{{serverURL}}"
+     }
+    ],
+    "body": {
+     "mode": "formdata",
+     "formdata": [
+      {
+       "key": "files",
+       "type": "file",
+       "src": "resources/bulkupload/a.txt"
+      },
+      {
+       "key": "form",
+       "value": "{\"baseType\":\"HTMLPAGE\",\"folderId\":\"{{folderId}}\"}",
+       "type": "text"
+      }
+     ]
+    },
+    "url": {
+     "raw": "{{serverURL}}/api/v1/assets/_bulkupload",
+     "host": [
+      "{{serverURL}}"
+     ],
+     "path": [
+      "api",
+      "v1",
+      "assets",
+      "_bulkupload"
+     ]
+    },
+    "description": "Only DOTASSET and FILEASSET carry files; anything else reaches the creation path with no binary to place (spec FR-003)."
+   },
+   "response": []
+  },
+  {
+   "name": "Refuses both folderId and siteId together",
+   "event": [
+    {
+     "listen": "test",
+     "script": {
+      "type": "text/javascript",
+      "exec": [
+       "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });\n\npm.test(\"Error response contains expected structure\", function () {\n    var jsonData = pm.response.json();\n    pm.expect(jsonData).to.be.an(\"array\");\n    pm.expect(jsonData[0]).to.have.property(\"fieldName\", \"exactlyOneTargetGiven\");\n    pm.expect(jsonData[0]).to.have.property(\"message\", \"Exactly one of folderId or siteId is required\");\n});"
+      ]
+     }
+    }
+   ],
+   "request": {
+    "method": "POST",
+    "header": [
+     {
+      "key": "Origin",
+      "value": "{{serverURL}}"
+     }
+    ],
+    "body": {
+     "mode": "formdata",
+     "formdata": [
+      {
+       "key": "files",
+       "type": "file",
+       "src": "resources/bulkupload/a.txt"
+      },
+      {
+       "key": "form",
+       "value": "{\"baseType\":\"DOTASSET\",\"folderId\":\"{{folderId}}\",\"siteId\":\"{{hostIdentifier}}\"}",
+       "type": "text"
+      }
+     ]
+    },
+    "url": {
+     "raw": "{{serverURL}}/api/v1/assets/_bulkupload",
+     "host": [
+      "{{serverURL}}"
+     ],
+     "path": [
+      "api",
+      "v1",
+      "assets",
+      "_bulkupload"
+     ]
+    },
+    "description": "Two targets is neither a merge nor a preference order - the caller has said two contradictory things and the server must not choose (ADR-0020)."
+   },
+   "response": []
+  },
+  {
+   "name": "Refuses a declared total over the ceiling with 413",
+   "event": [
+    {
+     "listen": "test",
+     "script": {
+      "type": "text/javascript",
+      "exec": [
+       "pm.test('413 Content Too Large, not 400', function () {\n    pm.response.to.have.status(413);\n});\n\npm.test('Response has expected error message for size ceiling exceeded', function () {\n    var jsonData = pm.response.json();\n    pm.expect(jsonData.message).to.include('exceeds the maximum');\n});\n"
+      ]
+     }
+    }
+   ],
+   "request": {
+    "method": "POST",
+    "header": [
+     {
+      "key": "Origin",
+      "value": "{{serverURL}}"
+     }
+    ],
+    "body": {
+     "mode": "formdata",
+     "formdata": [
+      {
+       "key": "files",
+       "type": "file",
+       "src": "resources/bulkupload/a.txt"
+      },
+      {
+       "key": "form",
+       "value": "{\"baseType\":\"DOTASSET\",\"folderId\":\"{{folderId}}\",\"totalSizeBytes\":9999999999}",
+       "type": "text"
+      }
+     ]
+    },
+    "url": {
+     "raw": "{{serverURL}}/api/v1/assets/_bulkupload",
+     "host": [
+      "{{serverURL}}"
+     ],
+     "path": [
+      "api",
+      "v1",
+      "assets",
+      "_bulkupload"
+     ]
+    },
+    "description": "The courtesy refusal (spec FR-013c.1): decided before the body is read, so an author is not made to upload gigabytes before being told no. 413 rather than 400 because a size problem has a different fix from a shape problem."
+   },
+   "response": []
+  }
+ ],
+ "auth": {
+  "type": "bearer",
+  "bearer": [
+   {
+    "key": "token",
+    "value": "{{jwt}}",
+    "type": "string"
+   }
+  ]
+ },
+ "event": [
+  {
+   "listen": "prerequest",
+   "script": {
+    "type": "text/javascript",
+    "packages": {},
+    "exec": [
+     "   ",
+     "if(!pm.collectionVariables.get('jwt')){",
+     "    console.log(\"generating....\")",
+     "    const serverURL = pm.environment.get('serverURL') || pm.collectionVariables.get('baseUrl'); // Get the server URL from the environment variable",
+     "    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
+     "",
+     "        const username = pm.environment.get(\"user\") || pm.collectionVariables.get('user'); ",
+     "        const password = pm.environment.get(\"password\") || pm.collectionVariables.get('password');",
+     "        const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
+     "",
+     "        const requestOptions = {",
+     "            url: apiUrl,",
+     "            method: \"POST\",",
+     "            header: {",
+     "                \"accept\": \"*/*\",",
+     "                \"content-type\": \"application/json\",",
+     "                \"Authorization\": `Basic ${basicAuth}`",
+     "            },",
+     "            body: {",
+     "                mode: \"raw\",",
+     "                raw: JSON.stringify({",
+     "                    \"expirationSeconds\": 7200,",
+     "                    \"userId\": \"dotcms.org.1\",",
+     "                    \"network\": \"0.0.0.0/0\",",
+     "                    \"claims\": {\"label\": \"postman-tests\"}",
+     "                })",
+     "            }",
+     "        };",
+     "",
+     "        pm.sendRequest(requestOptions, function (err, response) {",
+     "            if (err) {",
+     "                console.log(err);",
+     "            } else {",
+     "                const jwt = response.json().entity.jwt;",
+     "                pm.collectionVariables.set('jwt', jwt);",
+     "                console.log(\"Successfully got a jwt :\" + jwt);",
+     "            }",
+     "        });    ",
+     "}           "
+    ]
+   }
+  },
+  {
+   "listen": "test",
+   "script": {
+    "type": "text/javascript",
+    "packages": {},
+    "exec": [
+     ""
+    ]
+   }
+  }
+ ],
+ "variable": [
+  {
+   "key": "jwt",
+   "value": ""
+  },
+  {
+   "key": "hostname",
+   "value": ""
+  },
+  {
+   "key": "hostIdentifier",
+   "value": ""
+  },
+  {
+   "key": "folderId",
+   "value": ""
+  }
+ ]
+}

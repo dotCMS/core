@@ -22,7 +22,8 @@ import { DialogModule } from 'primeng/dialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotSiteService } from '@dotcms/data-access';
+import { ContentTypeCustomField, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { createFormBridge, FormBridge } from '@dotcms/edit-content-bridge';
 import { WINDOW } from '@dotcms/utils';
 
@@ -67,7 +68,7 @@ export class NativeFieldComponent implements OnInit, OnDestroy {
     /**
      * The field to render.
      */
-    $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
+    $field = input.required<ContentTypeCustomField>({ alias: 'field' });
     /**
      * The content type to render the field for.
      */
@@ -78,6 +79,9 @@ export class NativeFieldComponent implements OnInit, OnDestroy {
      * It is used to manage dialog interactions within the component.
      */
     readonly #dialogService = inject(DialogService);
+
+    /** Resolves the site `openBrowserModal` browses; see `createFormBridge`. */
+    readonly #siteService = inject(DotSiteService);
     /**
      * The template code of the field.
      * This content is expected to be sanitized on the backend before reaching this component.
@@ -114,6 +118,10 @@ export class NativeFieldComponent implements OnInit, OnDestroy {
      * References to style elements created by this component.
      */
     #styleElements: HTMLStyleElement[] = [];
+    /**
+     * Set on destroy, so scripts still waiting on an external one are never inserted.
+     */
+    #isDestroyed = false;
 
     constructor() {
         this.mountComponent(this.$isBridgeReady);
@@ -131,6 +139,8 @@ export class NativeFieldComponent implements OnInit, OnDestroy {
             form,
             zone: this.#zone,
             dialogService: this.#dialogService,
+            // The bridge has no injector of its own, so the site lookup is handed to it.
+            resolveSite: () => this.#siteService.getCurrentSite(),
             onFieldVisibilityChange: (fieldVariable, visible) => {
                 this.#store.setFieldVisibility(fieldVariable, visible);
             }
@@ -285,7 +295,26 @@ export class NativeFieldComponent implements OnInit, OnDestroy {
         // SECURITY: Scripts are executed as-is. Content must be sanitized on the backend.
         // Consider implementing Content Security Policy (CSP) at the application level
         // to restrict script sources and execution contexts.
-        scripts.forEach((parsedScript) => {
+        this.#insertScripts(scripts, hostElement);
+    });
+
+    /**
+     * Inserts the template's scripts in the order they appear, as the browser would on a page.
+     *
+     * A script added from code with `src` loads asynchronously, so an inline script after it would
+     * otherwise run before the library it depends on (a map, a picker) is there. Each external
+     * script is awaited — on `load` or `error`, so a broken URL cannot stall the rest — unless the
+     * template marked it `async` itself or it is a module, which already opt out of ordering.
+     *
+     * @param scripts - The scripts parsed out of the template, in document order
+     * @param hostElement - The element the scripts are appended to
+     */
+    async #insertScripts(scripts: HTMLScriptElement[], hostElement: HTMLElement): Promise<void> {
+        for (const parsedScript of scripts) {
+            if (this.#isDestroyed) {
+                return;
+            }
+
             const scriptElement = this.#window.document.createElement('script');
 
             // A. Copy attributes (src, type, async, defer, integrity, etc.)
@@ -304,13 +333,29 @@ export class NativeFieldComponent implements OnInit, OnDestroy {
                 scriptElement.textContent = parsedScript.textContent;
             }
 
+            const mustWait =
+                scriptElement.hasAttribute('src') &&
+                !scriptElement.hasAttribute('async') &&
+                scriptElement.type !== 'module';
+            const settled = mustWait
+                ? new Promise<void>((resolve) => {
+                      scriptElement.addEventListener('load', () => resolve(), { once: true });
+                      scriptElement.addEventListener('error', () => resolve(), { once: true });
+                  })
+                : null;
+
             // C. Inject to execute
-            // Note: Scripts with 'src' will be loaded asynchronously by default when inserted.
             hostElement.appendChild(scriptElement);
-        });
-    });
+
+            if (settled) {
+                await settled;
+            }
+        }
+    }
 
     ngOnDestroy(): void {
+        this.#isDestroyed = true;
+
         // Clean up style elements
         this.#styleElements.forEach((styleElement) => {
             if (styleElement.parentNode) {

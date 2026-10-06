@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { BehaviorSubject, Observable, of, Subject } from 'rxjs';
+import { MockInstance, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -137,7 +138,7 @@ const messageServiceMock = new MockDotMessageService({
 });
 
 interface TemplateStoreValueType {
-    [key: string]: jest.SpyInstance;
+    [key: string]: MockInstance;
 }
 
 const mockSystemConfig: DotSystemConfig = {
@@ -200,7 +201,7 @@ describe('DotTemplateCreateEditComponent', () => {
 
     const globalStoreMock = {
         switchSiteEvent$: () => switchSiteSubject.asObservable(),
-        addNewBreadcrumb: jest.fn()
+        addNewBreadcrumb: vi.fn()
     };
 
     beforeEach(async () => {
@@ -242,7 +243,7 @@ describe('DotTemplateCreateEditComponent', () => {
                 {
                     provide: DotTempFileUploadService,
                     useValue: {
-                        upload: jest.fn().mockReturnValue(
+                        upload: vi.fn().mockReturnValue(
                             of([
                                 {
                                     assetVersion: '',
@@ -256,7 +257,7 @@ describe('DotTemplateCreateEditComponent', () => {
                 {
                     provide: DotWorkflowActionsFireService,
                     useValue: {
-                        publishContentletAndWaitForIndex: jest.fn().mockReturnValue(
+                        publishContentletAndWaitForIndex: vi.fn().mockReturnValue(
                             of({
                                 identifier: ''
                             })
@@ -266,7 +267,7 @@ describe('DotTemplateCreateEditComponent', () => {
                 {
                     provide: DotCrudService,
                     useValue: {
-                        getDataById: jest.fn().mockReturnValue(
+                        getDataById: vi.fn().mockReturnValue(
                             of([
                                 {
                                     identifier: ''
@@ -287,7 +288,7 @@ describe('DotTemplateCreateEditComponent', () => {
                         url: '',
                         paginationPerPage: '',
                         totalRecords: mockDotThemes.length,
-                        get: jest.fn().mockReturnValue(of([...mockDotThemes])),
+                        get: vi.fn().mockReturnValue(of([...mockDotThemes])),
                         setExtraParams() {
                             //
                         },
@@ -303,7 +304,7 @@ describe('DotTemplateCreateEditComponent', () => {
                 {
                     provide: DotThemesService,
                     useValue: {
-                        get: jest.fn().mockReturnValue(of(mockDotThemes[1]))
+                        get: vi.fn().mockReturnValue(of(mockDotThemes[1]))
                     }
                 },
                 { provide: DotSystemConfigService, useClass: MockDotSystemConfigService },
@@ -340,14 +341,14 @@ describe('DotTemplateCreateEditComponent', () => {
             .compileComponents();
 
         templateStoreValue = {
-            createTemplate: jest.fn(),
-            goToEditTemplate: jest.fn(),
-            goToTemplateList: jest.fn(),
-            saveTemplate: jest.fn(),
-            saveWorkingTemplate: jest.fn(),
-            saveAndPublishTemplate: jest.fn(),
-            updateTemplate: jest.fn(),
-            updateWorkingTemplate: jest.fn()
+            createTemplate: vi.fn(),
+            goToEditTemplate: vi.fn(),
+            goToTemplateList: vi.fn(),
+            saveTemplate: vi.fn(),
+            saveWorkingTemplate: vi.fn(),
+            saveAndPublishTemplate: vi.fn(),
+            updateTemplate: vi.fn(),
+            updateWorkingTemplate: vi.fn()
         };
     });
 
@@ -377,7 +378,7 @@ describe('DotTemplateCreateEditComponent', () => {
 
                 dialogService = fixture.debugElement.injector.get(DialogService);
                 store = fixture.debugElement.injector.get(DotTemplateStore);
-                jest.spyOn(dialogService, 'open');
+                vi.spyOn(dialogService, 'open');
 
                 fixture.detectChanges();
             });
@@ -432,7 +433,7 @@ describe('DotTemplateCreateEditComponent', () => {
                 expect(store.goToTemplateList).toHaveBeenCalledTimes(1);
             });
 
-            xit('should save template when save dialog button is clicked', async () => {
+            it.skip('should save template when save dialog button is clicked', async () => {
                 await makeFormValid(fixture);
 
                 const button: HTMLButtonElement = document.querySelector(
@@ -477,7 +478,7 @@ describe('DotTemplateCreateEditComponent', () => {
 
                 dialogService = fixture.debugElement.injector.get(DialogService);
                 store = fixture.debugElement.injector.get(DotTemplateStore);
-                jest.spyOn(dialogService, 'open');
+                vi.spyOn(dialogService, 'open');
 
                 fixture.detectChanges();
             });
@@ -546,10 +547,10 @@ describe('DotTemplateCreateEditComponent', () => {
                 };
                 const storeMock = {
                     ...templateStoreValue,
-                    saveTemplate: jest.fn(),
-                    saveAndPublishTemplate: jest.fn(),
-                    goToTemplateList: jest.fn(),
-                    goToEditTemplate: jest.fn(),
+                    saveTemplate: vi.fn(),
+                    saveAndPublishTemplate: vi.fn(),
+                    goToTemplateList: vi.fn(),
+                    goToEditTemplate: vi.fn(),
                     vm$: of({
                         working: template,
                         original: template,
@@ -563,7 +564,7 @@ describe('DotTemplateCreateEditComponent', () => {
 
                 dialogService = fixture.debugElement.injector.get(DialogService);
                 store = fixture.debugElement.injector.get(DotTemplateStore);
-                jest.spyOn(dialogService, 'open');
+                vi.spyOn(dialogService, 'open');
 
                 fixture.detectChanges();
             });
@@ -800,7 +801,7 @@ describe('DotTemplateCreateEditComponent', () => {
 
                 dialogService = fixture.debugElement.injector.get(DialogService);
                 store = fixture.debugElement.injector.get(DotTemplateStore);
-                jest.spyOn(dialogService, 'open');
+                vi.spyOn(dialogService, 'open');
 
                 fixture.detectChanges();
             });
@@ -856,7 +857,7 @@ describe('DotTemplateCreateEditComponent', () => {
 
             dialogService = fixture.debugElement.injector.get(DialogService);
             store = fixture.debugElement.injector.get(DotTemplateStore);
-            jest.spyOn(dialogService, 'open');
+            vi.spyOn(dialogService, 'open');
 
             subject.next({
                 working: EMPTY_TEMPLATE_ADVANCED,

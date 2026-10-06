@@ -1,0 +1,46 @@
+/**
+ * Filtering, sorting and paging all swap the rows underneath the header. Without this the set
+ * changes in a single frame, which reads as a jolt; a short fade makes it register as a change
+ * rather than a flicker. Deliberately brief — this should be felt more than seen.
+ *
+ * Applied to the rows rather than the table so the header, toolbar and paginator stay put.
+ */
+:host ::ng-deep tbody > tr {
+    animation: dot-experiments-row-enter 140ms ease-out;
+}
+
+@keyframes dot-experiments-row-enter {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+// Motion is decoration here, so it is the first thing to drop for anyone who asked for less.
+@media (prefers-reduced-motion: reduce) {
+    :host ::ng-deep tbody > tr {
+        animation: none;
+    }
+}
+
+/**
+ * The table's outer cells share the panel's inset, so the first column starts under the drawer's
+ * title and the last ends under its buttons (`PANEL_INSET`).
+ *
+ * `::ng-deep` because the cells belong to `p-table`, and scoped to the panel because the portlet's
+ * list sits in a page with its own gutter and keeps the datatable's own padding.
+ */
+:host(.dot-experiments-list--in-panel) ::ng-deep {
+    th:first-child,
+    td:first-child {
+        padding-inline-start: 1.25rem;
+    }
+
+    th:last-child,
+    td:last-child {
+        padding-inline-end: 1.25rem;
+    }
+}

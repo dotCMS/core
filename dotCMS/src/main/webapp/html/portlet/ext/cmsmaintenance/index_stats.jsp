@@ -45,10 +45,11 @@ try {
 List<String> currentIdx =idxApi.getCurrentIndex();
 List<String> newIdx =idxApi.getNewIndex();
 
-// Hide OS-tagged (.os) migration indices outside Phase 3 unless the user holds the configured
-// QA/preview role. Only this display sink filters; operational paths keep the full set.
-List<String> indices=MigrationIndexVisibility.filter(idxApi.listDotCMSIndices(), user);
-List<String> closedIndices=MigrationIndexVisibility.filter(idxApi.listDotCMSClosedIndices(), user);
+// Hide OS-tagged (.os) migration indices outside Phase 3 (phase-based, for everyone). Only this
+// display sink filters; operational paths keep the full set. Support/QA see migration detail via the
+// role-gated readiness endpoint, not this portlet (issue #36360).
+List<String> indices=MigrationIndexVisibility.filter(idxApi.listDotCMSIndices());
+List<String> closedIndices=MigrationIndexVisibility.filter(idxApi.listDotCMSClosedIndices());
 Map<String, IndexStats> indexInfo = esapi.getIndicesStats();
 
 SimpleDateFormat dater = new SimpleDateFormat("yyyyMMddHHmmss");

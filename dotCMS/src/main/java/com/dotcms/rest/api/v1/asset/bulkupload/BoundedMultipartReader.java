@@ -1,0 +1,206 @@
+package com.dotcms.rest.api.v1.asset.bulkupload;
+
+import com.dotcms.exception.ExceptionUtil;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Logger;
+import com.dotcms.jobs.business.batch.BatchFailureReason;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Reads a bulk-upload submission part by part, staging as it goes and stopping the moment a
+ * ceiling is crossed.
+ * <p>
+ * <b>This is the only bound on what gets staged.</b> Research R10 established that nothing below it
+ * caps a request: {@code TEMP_RESOURCE_MAX_FILE_SIZE} ships as {@code -1} — the config comment says
+ * "authenticated users are unlimited" — the staging layer counts neither files nor bytes, and the
+ * servlet container has no multipart limit configured. That last point cuts both ways and is worth
+ * reading twice: it is why this class has to exist, and it is also why this class cannot be the
+ * bound on what the container <i>receives</i>.
+ * <p>
+ * Two behaviours are load-bearing and are why this is a class rather than a loop inside the
+ * resource:
+ * <ul>
+ *   <li>It aborts <b>part by part</b>, so no submission over a ceiling <b>stages</b> more than the
+ *       ceiling. Scoped deliberately: this bounds what reaches the <i>assets volume</i>, where
+ *       what lands stays until the nightly sweep collects it. It does <b>not</b> bound what the
+ *       container already received — Jersey deserializes the whole multipart entity before the
+ *       resource method is entered, spooling every part over the 4096-byte default threshold to
+ *       {@code java.io.tmpdir}. Bounding that needs a request-size limit at the connector or the
+ *       reverse proxy, and neither exists today (see {@code BulkUploadResource}).</li>
+ *   <li>It reclaims over the <b>whole read</b>, not just its own refusal path. A read that dies
+ *       underneath it — the author navigated away, the connection dropped — raises nothing from
+ *       this side, so a reclaim scoped to the refusal would leave it for {@code BinaryCleanupJob},
+ *       whose default cron only fires during the midnight hour: up to a day of a dead
+ *       submission's bytes on shared storage (spec FR-013d.2, C-001a1).</li>
+ * </ul>
+ *
+ * @author dotCMS
+ */
+public class BoundedMultipartReader {
+
+    private final BatchStaging staging;
+    private final int maxFiles;
+    private final long maxTotalBytes;
+    private final long perFileCeiling;
+
+    public BoundedMultipartReader(final BatchStaging staging,
+                                  final int maxFiles,
+                                  final long maxTotalBytes) {
+        this(staging, maxFiles, maxTotalBytes, -1L);
+    }
+
+    /**
+     * @param perFileCeiling the staging layer's own per-file ceiling, or {@code -1} for none. When
+     *                       set, this reader enforces it itself so that crossing it is a fact
+     *                       rather than a guess — see {@link PerFileCeilingExceededException}.
+     */
+    public BoundedMultipartReader(final BatchStaging staging,
+                                  final int maxFiles,
+                                  final long maxTotalBytes,
+                                  final long perFileCeiling) {
+        this.staging = staging;
+        this.maxFiles = maxFiles;
+        this.maxTotalBytes = maxTotalBytes;
+        this.perFileCeiling = perFileCeiling;
+    }
+
+    /**
+     * Stages every part in order, refusing as soon as either ceiling is crossed and reclaiming
+     * whatever was staged before that point.
+     *
+     * @return the staged parts, in submission order, when the whole body was read within both
+     *         ceilings
+     * @throws BulkUploadRefusedException when a ceiling is crossed; everything staged so far has
+     *                                    been reclaimed before it is thrown
+     */
+    public List<StagedPart> read(final Iterable<UploadPart> parts) {
+
+        final List<StagedPart> staged = new ArrayList<>();
+        long totalBytes = 0L;
+        boolean completed = false;
+
+        // The reclaim is scoped to the whole read, not to the refusal branch. A refusal is raised
+        // here, so a narrower scope would still catch it — but a read that dies underneath (the
+        // author navigated away, the connection dropped) raises nothing of ours, and that is the
+        // likelier of the two because it is the author's own action rather than a limit being hit.
+        // BinaryCleanupJob would eventually collect what is missed here, but its default cron only
+        // fires during the midnight hour, so "eventually" is up to a day on shared storage.
+        try {
+            for (final UploadPart part : parts) {
+
+                if (staged.size() + 1 > maxFiles) {
+                    throw new BulkUploadRefusedException(
+                            BulkUploadRefusedException.Ceiling.FILE_COUNT,
+                            String.format("Batch exceeds the maximum of %d files", maxFiles));
+                }
+
+                // Staged before it is counted, because the size is only a fact once staging has
+                // measured it — a declared figure can be under-stated or absent (spec FR-013).
+                final StagedPart stagedPart = stageWithinCeiling(part);
+                staged.add(stagedPart);
+
+                // A refused part contributes nothing to the batch total, because nothing of it was
+                // measured. That under-counts the batch by whatever the author actually sent for
+                // it, which is the right way to be wrong here: the total exists to bound what
+                // reaches DISK, and a refused part reaches none.
+                if (stagedPart.isStaged()) {
+                    totalBytes += stagedPart.sizeBytes();
+                }
+
+                if (totalBytes > maxTotalBytes) {
+                    throw new BulkUploadRefusedException(
+                            BulkUploadRefusedException.Ceiling.TOTAL_SIZE,
+                            String.format("Batch exceeds the maximum total size of %d bytes",
+                                    maxTotalBytes));
+                }
+            }
+            completed = true;
+            return staged;
+
+        } catch (final IOException e) {
+            // The read died underneath us. Wrapped rather than swallowed: the caller has to know
+            // the submission never became a run, and the finally below has already cleaned up.
+            throw new DotRuntimeException("Bulk upload submission failed while reading: "
+                    + e.getMessage(), e);
+        } finally {
+            if (!completed) {
+                reclaimAll(staged);
+            }
+        }
+    }
+
+    /**
+     * Stages one part, turning a crossing of the per-file ceiling into <b>that part's</b> refusal
+     * rather than the whole submission's.
+     * <p>
+     * FR-011 requires a size rejection to be the file's own failure and to leave the batch running,
+     * and that must hold whether the ceiling is the content type's (decided later, by the run, from
+     * the measured size) or the staging layer's (decided here, because the file never finishes
+     * being written). Before this, the second case took the entire submission down with it.
+     */
+    private StagedPart stageWithinCeiling(final UploadPart part) throws IOException {
+
+        if (perFileCeiling <= 0) {
+            // Unbounded, which is how the staging layer ships. Nothing is wrapped, so the ordinary
+            // path is exactly what it was.
+            return staging.stage(part.fileName(), part.content());
+        }
+
+        try {
+            return staging.stage(part.fileName(),
+                    new CeilingBoundedInputStream(part.content(), part.fileName(),
+                            perFileCeiling));
+        } catch (final RuntimeException e) {
+            // MATCHED ON THE CAUSE, NOT ON THE THROWN TYPE, and that is the whole point.
+            //
+            // CeilingBoundedInputStream raises from read(...), which happens INSIDE
+            // TempFileAPI.createTempFile — whose catch(Exception) rewraps everything it sees in a
+            // DotRuntimeException (TempFileAPI:194). Java matches catch clauses on the thrown
+            // type, so a clause naming PerFileCeilingExceededException is unreachable through the
+            // only staging implementation that ships: what arrives here is a DotRuntimeException
+            // carrying ours as its cause, it matches nothing, and one over-size file takes the
+            // whole submission down with a 500 — the exact behaviour this class exists to prevent
+            // (FR-011).
+            //
+            // causedBy walks the chain including the exception itself, so this also covers a
+            // staging layer that does not wrap.
+            if (!ExceptionUtil.causedBy(e, PerFileCeilingExceededException.class)) {
+                throw e;
+            }
+            Logger.info(this, String.format(
+                    "'%s' crossed the staging layer's per-file ceiling of %d bytes; recorded as "
+                            + "that file's own failure", part.fileName(), perFileCeiling));
+            return StagedPart.refused(part.fileName(), BatchFailureReason.OVER_SIZE_LIMIT);
+        }
+    }
+
+    /**
+     * Hands every part staged so far back for cleanup. Best-effort per part: one failure must not
+     * stop the rest being reclaimed, and none of it may mask the exception already unwinding.
+     * <p>
+     * <b>Parts that were never staged are skipped, not reclaimed.</b> A part refused by the
+     * per-file ceiling has no {@code tempFileId} by construction — nothing of it reached the
+     * staging layer — so asking for it back would log the warning below about content that will
+     * outlive the batch, for content that was never written. That warning has to stay credible: it
+     * is the only notice anyone gets that this run left bytes behind, and the nightly sweep that
+     * would eventually collect them says nothing when it does.
+     */
+    private void reclaimAll(final List<StagedPart> staged) {
+        for (final StagedPart part : staged) {
+            if (!part.isStaged()) {
+                continue;
+            }
+            try {
+                staging.reclaim(part.tempFileId());
+            } catch (final Exception e) {
+                Logger.warn(this, String.format(
+                        "Could not reclaim staged content '%s' for an abandoned or refused bulk "
+                                + "upload; it will sit on the assets volume until BinaryCleanupJob "
+                                + "collects it, which by default runs in the midnight hour: %s",
+                        part.tempFileId(), e.getMessage()), e);
+            }
+        }
+    }
+}

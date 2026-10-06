@@ -6,11 +6,13 @@ import type { BlockEditorNode } from '@dotcms/types';
 interface DotCMSImageAttrs {
     src: string;
     alt: string;
+    href?: string | null;
+    target?: string | null;
     textWrap?: 'left' | 'right';
     textAlign?: string;
 }
 
-/** Renders a dotCMS image block with optional text-wrap / alignment. */
+/** Renders a dotCMS image block with optional link, text-wrap / alignment. */
 const props = defineProps<{ node: BlockEditorNode }>();
 
 const attrs = computed(() => (props.node.attrs ?? {}) as unknown as DotCMSImageAttrs);
@@ -36,10 +38,35 @@ const wrapperStyle = computed<CSSProperties>(() => {
 const imgStyle = computed<CSSProperties | undefined>(() =>
     attrs.value.textWrap ? { maxWidth: '100%', height: 'auto' } : undefined
 );
+
+/**
+ * The link assigned to the image in the Block Editor, stored as `href` /
+ * `target` on the `dotImage` node. `null` when the image has no link, i.e.
+ * when `href` is `null`. The truthiness check also covers the transient `''`
+ * the editor writes while unsetting a link.
+ *
+ * `rel` guards against reverse tabnabbing when the link opens in a new tab.
+ */
+const link = computed(() => {
+    const { href, target } = attrs.value;
+
+    if (!href) {
+        return null;
+    }
+
+    return {
+        href,
+        target: target ?? undefined,
+        rel: target === '_blank' ? 'noopener noreferrer' : undefined
+    };
+});
 </script>
 
 <template>
     <figure :style="wrapperStyle">
-        <img :alt="attrs.alt" :src="attrs.src" :style="imgStyle" />
+        <a v-if="link" :href="link.href" :target="link.target" :rel="link.rel">
+            <img :alt="attrs.alt" :src="attrs.src" :style="imgStyle" />
+        </a>
+        <img v-else :alt="attrs.alt" :src="attrs.src" :style="imgStyle" />
     </figure>
 </template>

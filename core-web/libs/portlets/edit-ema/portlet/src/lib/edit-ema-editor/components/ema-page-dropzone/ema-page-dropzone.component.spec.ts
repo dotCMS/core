@@ -1,4 +1,5 @@
 import { Spectator, createComponentFactory } from '@openng/spectator';
+import { vi } from 'vitest';
 
 import { CommonModule } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -85,7 +86,7 @@ describe('EmaPageDropzoneComponent', () => {
     describe('events', () => {
         describe('contentlet', () => {
             it('should show drop zone error when container is full', () => {
-                const spyDotMessageSerivice = jest.spyOn(dotMessageService, 'get');
+                const spyDotMessageSerivice = vi.spyOn(dotMessageService, 'get');
 
                 const NEW_BOUNDS_MOCK = getBoundsMock({
                     ...ACTION_MOCK,
@@ -134,7 +135,7 @@ describe('EmaPageDropzoneComponent', () => {
             });
 
             it('should show one maximum content error when container is full and only allow one', () => {
-                const spyDotMessageSerivice = jest.spyOn(dotMessageService, 'get');
+                const spyDotMessageSerivice = vi.spyOn(dotMessageService, 'get');
                 const NEW_BOUNDS_MOCK = getBoundsMock({
                     ...ACTION_MOCK,
                     container: {
@@ -218,7 +219,7 @@ describe('EmaPageDropzoneComponent', () => {
 
         describe('empty container', () => {
             it('should show drop zone error when the contentType is not accepted in the container', () => {
-                const spyDotMessageSerivice = jest.spyOn(dotMessageService, 'get');
+                const spyDotMessageSerivice = vi.spyOn(dotMessageService, 'get');
 
                 spectator.setInput('dragItem', {
                     ...ITEM_MOCK,

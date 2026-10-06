@@ -1504,6 +1504,275 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "Find folders — includePermissions omitted leaves permissions null",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code should be 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const entity = pm.response.json().entity;",
+                  "",
+                  "pm.test(\"permissions is null when not requested (not an empty array)\", function () {",
+                  "    pm.expect(entity).to.not.be.empty;",
+                  "    entity.forEach(function(folder) {",
+                  "        pm.expect(folder).to.have.property('permissions');",
+                  "        pm.expect(folder.permissions).to.be.null;",
+                  "    });",
+                  "});",
+                  "",
+                  "pm.test(\"folder-detail fields are present regardless of the flag\", function () {",
+                  "    entity.forEach(function(folder) {",
+                  "        pm.expect(folder).to.have.property('title');",
+                  "        pm.expect(folder).to.have.property('sortOrder');",
+                  "        pm.expect(folder).to.have.property('filesMasks');",
+                  "        pm.expect(folder).to.have.property('defaultFileType');",
+                  "        pm.expect(folder).to.have.property('showOnMenu');",
+                  "        pm.expect(folder.sortOrder).to.be.a('number');",
+                  "        pm.expect(folder.showOnMenu).to.be.a('boolean');",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/folder/search?name=images&siteId={{byNameSiteId}}&recursive=true",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "folder",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "name",
+                  "value": "images"
+                },
+                {
+                  "key": "siteId",
+                  "value": "{{byNameSiteId}}"
+                },
+                {
+                  "key": "recursive",
+                  "value": "true"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Find folders — includePermissions=true returns permission types",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code should be 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const entity = pm.response.json().entity;",
+                  "const allowed = ['READ', 'EDIT', 'PUBLISH', 'EDIT_PERMISSIONS', 'CAN_ADD_CHILDREN'];",
+                  "",
+                  "// This request runs as an admin, so it asserts the contract (shape, spelling, READ",
+                  "// always present) rather than permission gating. Gating is covered by the integration",
+                  "// tests, which must run as a limited user because filterCollection short-circuits for",
+                  "// CMS Admin.",
+                  "pm.test(\"permissions is an array drawn from the five known types\", function () {",
+                  "    pm.expect(entity).to.not.be.empty;",
+                  "    entity.forEach(function(folder) {",
+                  "        pm.expect(folder.permissions).to.be.an('array');",
+                  "        folder.permissions.forEach(function(permission) {",
+                  "            pm.expect(allowed).to.include(permission);",
+                  "        });",
+                  "    });",
+                  "});",
+                  "",
+                  "pm.test(\"READ is always present and the WRITE alias never is\", function () {",
+                  "    entity.forEach(function(folder) {",
+                  "        pm.expect(folder.permissions).to.include('READ');",
+                  "        pm.expect(folder.permissions).to.not.include('WRITE');",
+                  "    });",
+                  "});",
+                  "",
+                  "pm.test(\"addChildrenAllowed agrees with the permissions array\", function () {",
+                  "    entity.forEach(function(folder) {",
+                  "        pm.expect(folder.permissions.includes('CAN_ADD_CHILDREN'))",
+                  "            .to.eql(folder.addChildrenAllowed);",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/folder/search?name=images&siteId={{byNameSiteId}}&recursive=true&includePermissions=true",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "folder",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "name",
+                  "value": "images"
+                },
+                {
+                  "key": "siteId",
+                  "value": "{{byNameSiteId}}"
+                },
+                {
+                  "key": "recursive",
+                  "value": "true"
+                },
+                {
+                  "key": "includePermissions",
+                  "value": "true"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Find folders — includePermissions with per_page above the cap returns 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code should be 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test(\"the error names the cap so the caller can page correctly\", function () {",
+                  "    pm.expect(pm.response.text()).to.include('includePermissions');",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/folder/search?name=images&siteId={{byNameSiteId}}&recursive=true&includePermissions=true&per_page=10000",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "folder",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "name",
+                  "value": "images"
+                },
+                {
+                  "key": "siteId",
+                  "value": "{{byNameSiteId}}"
+                },
+                {
+                  "key": "recursive",
+                  "value": "true"
+                },
+                {
+                  "key": "includePermissions",
+                  "value": "true"
+                },
+                {
+                  "key": "per_page",
+                  "value": "10000"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Find folders — per_page above the cap without the flag still succeeds",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code should be 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"the cap does not constrain callers that do not ask for permissions\", function () {",
+                  "    pm.expect(pm.response.json().entity).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/folder/search?name=images&siteId={{byNameSiteId}}&recursive=true&per_page=10000",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "folder",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "name",
+                  "value": "images"
+                },
+                {
+                  "key": "siteId",
+                  "value": "{{byNameSiteId}}"
+                },
+                {
+                  "key": "recursive",
+                  "value": "true"
+                },
+                {
+                  "key": "per_page",
+                  "value": "10000"
+                }
+              ]
+            }
+          },
+          "response": []
         }
       ]
     },

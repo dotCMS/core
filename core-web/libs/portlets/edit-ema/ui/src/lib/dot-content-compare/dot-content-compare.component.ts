@@ -1,7 +1,15 @@
 import { Observable } from 'rxjs';
 
 import { AsyncPipe } from '@angular/common';
-import { Component, EventEmitter, Input, Output, inject, input } from '@angular/core';
+import {
+    Component,
+    EventEmitter,
+    Input,
+    Output,
+    inject,
+    input,
+    ChangeDetectionStrategy
+} from '@angular/core';
 
 import { DotAlertConfirmService, DotMessageService, DotIframeService } from '@dotcms/data-access';
 import { DotContentCompareEvent } from '@dotcms/dotcms-models';
@@ -14,6 +22,7 @@ import { DotContentCompareState, DotContentCompareStore } from './store/dot-cont
     templateUrl: './dot-content-compare.component.html',
     styleUrls: ['./dot-content-compare.component.scss'],
     providers: [DotContentCompareStore],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [DotContentCompareTableComponent, AsyncPipe]
 })
 export class DotContentCompareComponent {

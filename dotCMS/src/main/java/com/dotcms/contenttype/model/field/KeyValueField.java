@@ -11,7 +11,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.collect.ImmutableList;
 import java.util.Collection;
-import java.util.LinkedHashMap;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -66,9 +66,22 @@ public abstract class KeyValueField extends Field {
 	}
 
 	/**
-	 * {@inheritDoc}
-     * @return
-     */
+	 * Converts an incoming value (JSON string or Map) into a {@link FieldValueBuilder}
+	 * (specifically a {@link KeyValueType} builder) whose {@code value} is a
+	 * {@code List<Entry<?>>}.
+	 *
+	 * <p>The list form deliberately preserves insertion order for the DB write path:
+	 * Jackson serializes it as a JSON <em>array</em>
+	 * (e.g. {@code "value":[{"key":"B","value":"b"},{"key":"D","value":"d"}]}),
+	 * which guarantees key order across the {@code contentlet_as_json} round-trip.
+	 * A JSON object would not guarantee key order per specification.</p>
+	 *
+	 * <p>On the read path the list is converted back to an {@link OrderedKeyValueMap}
+	 * via {@link #asMap(List)}.</p>
+	 *
+	 * @return a {@link FieldValueBuilder} ({@code KeyValueType.Builder}) wrapped in an
+	 *         Optional, or empty if the value type is not a String or Map
+	 */
 	@Override
 	public Optional<FieldValueBuilder> fieldValue(final Object value) {
 		if (value instanceof String) {
@@ -94,10 +107,22 @@ public abstract class KeyValueField extends Field {
 		return Optional.empty();
 	}
 
+	/**
+	 * Converts the {@code List<Entry<?>>} representation (used for DB storage) back into an
+	 * {@link OrderedKeyValueMap}, preserving the insertion order from the JSON array.
+	 *
+	 * <p>{@link OrderedKeyValueMap} is a {@link java.util.LinkedHashMap} subclass annotated
+	 * with a custom {@code @JsonSerialize} that writes entries in iteration order, bypassing
+	 * {@code SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS} which would otherwise re-sort
+	 * keys alphabetically in REST responses.</p>
+	 *
+	 * @see OrderedKeyValueMap for the full write/read cycle documentation
+	 * @see com.dotcms.content.model.type.keyvalue.AbstractKeyValueType for why a List is used
+	 *      in the DB rather than a JSON object
+	 */
 	@JsonIgnore
 	public static Map<String,?> asMap(final List<Entry<?>> asList){
-		//This impl allows me to deal with null value
-		final Map<String, Object> result = new LinkedHashMap<>();
+		final OrderedKeyValueMap result = new OrderedKeyValueMap();
 		asList.forEach(entry -> result.put(entry.key, entry.value));
 		return result;
 	}

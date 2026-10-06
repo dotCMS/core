@@ -1,4 +1,5 @@
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
@@ -89,7 +90,7 @@ describe('DotLicenseService', () => {
     });
 
     it('should return true with any URL and user has license', () => {
-        jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(true));
+        vi.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(true));
         let result: boolean;
         dotLicenseService
             .canAccessEnterprisePortlet('/whatever')
@@ -99,7 +100,7 @@ describe('DotLicenseService', () => {
     });
 
     it('should return true when URL is not enterprise and user do not has license', () => {
-        jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(false));
+        vi.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(false));
         let result: boolean;
         dotLicenseService
             .canAccessEnterprisePortlet('/whatever')
@@ -109,7 +110,7 @@ describe('DotLicenseService', () => {
     });
 
     it('should return false when URL is enterprise and user do not has license', () => {
-        jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(false));
+        vi.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(false));
         const urls = [
             '/rules',
             '/c/publishing-queue',

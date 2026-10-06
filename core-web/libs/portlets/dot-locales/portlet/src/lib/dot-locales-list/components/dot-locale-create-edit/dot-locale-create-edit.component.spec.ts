@@ -1,5 +1,6 @@
 import { Spectator, createComponentFactory } from '@openng/spectator';
-import { byTestId } from '@openng/spectator/jest';
+import { byTestId } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
@@ -51,7 +52,7 @@ describe('DotLocaleCreateEditComponent', () => {
                 ]
             });
             ref = spectator.inject(DynamicDialogRef);
-            jest.spyOn(ref, 'close');
+            vi.spyOn(ref, 'close');
         });
 
         it('should load data correctly', () => {
@@ -107,7 +108,7 @@ describe('DotLocaleCreateEditComponent', () => {
                 ]
             });
             ref = spectator.inject(DynamicDialogRef);
-            jest.spyOn(ref, 'close');
+            vi.spyOn(ref, 'close');
         });
 
         it('should load the add Standard Locale form correctly', () => {

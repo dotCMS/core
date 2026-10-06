@@ -1,4 +1,4 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { PublishAuditStatus } from '@dotcms/dotcms-models';
@@ -10,11 +10,10 @@ import {
 } from './dot-publishing-status-chip.component';
 
 describe('publishingStatusBucket (pure fn)', () => {
-    const cases: Array<[PublishAuditStatus, 'success' | 'danger' | 'warning' | 'info']> = [
+    const cases: Array<[PublishAuditStatus, 'success' | 'danger' | 'warn' | 'info']> = [
         [PublishAuditStatus.SUCCESS, 'success'],
-        [PublishAuditStatus.BUNDLE_SENT_SUCCESSFULLY, 'success'],
         [PublishAuditStatus.BUNDLE_SAVED_SUCCESSFULLY, 'success'],
-        [PublishAuditStatus.SUCCESS_WITH_WARNINGS, 'warning'],
+        [PublishAuditStatus.SUCCESS_WITH_WARNINGS, 'warn'],
         [PublishAuditStatus.FAILED_TO_SEND_TO_ALL_GROUPS, 'danger'],
         [PublishAuditStatus.FAILED_TO_SEND_TO_SOME_GROUPS, 'danger'],
         [PublishAuditStatus.FAILED_TO_BUNDLE, 'danger'],
@@ -26,10 +25,11 @@ describe('publishingStatusBucket (pure fn)', () => {
         [PublishAuditStatus.WAITING_FOR_PUBLISHING, 'info'],
         [PublishAuditStatus.BUNDLE_REQUESTED, 'info'],
         [PublishAuditStatus.SCHEDULED, 'info'],
-        [PublishAuditStatus.BUNDLING, 'warning'],
-        [PublishAuditStatus.SENDING_TO_ENDPOINTS, 'warning'],
-        [PublishAuditStatus.PUBLISHING_BUNDLE, 'warning'],
-        [PublishAuditStatus.RECEIVED_BUNDLE, 'warning']
+        [PublishAuditStatus.BUNDLING, 'warn'],
+        [PublishAuditStatus.SENDING_TO_ENDPOINTS, 'warn'],
+        [PublishAuditStatus.BUNDLE_SENT_SUCCESSFULLY, 'warn'],
+        [PublishAuditStatus.PUBLISHING_BUNDLE, 'warn'],
+        [PublishAuditStatus.RECEIVED_BUNDLE, 'warn']
     ];
 
     it('covers every value of PublishAuditStatus', () => {
@@ -57,6 +57,7 @@ describe('DotPublishingStatusChipComponent', () => {
                     'publishing-queue.status.SUCCESS': 'Success',
                     'publishing-queue.status.FAILED_TO_PUBLISH': 'Publish error',
                     'publishing-queue.status.BUNDLING': 'Bundling',
+                    'publishing-queue.status.BUNDLE_SENT_SUCCESSFULLY': 'Sent',
                     'publishing-queue.status.WAITING_FOR_PUBLISHING': 'Waiting'
                 })
             }
@@ -87,10 +88,28 @@ describe('DotPublishingStatusChipComponent', () => {
         expect(spectator.component.$bucket()).toBe('danger');
     });
 
-    it('exposes warning severity for BUNDLING status (in-flight)', () => {
+    it('exposes warn severity for BUNDLING status (in-flight)', () => {
         spectator = createComponent({ props: { status: PublishAuditStatus.BUNDLING } });
         spectator.detectChanges();
-        expect(spectator.component.$bucket()).toBe('warning');
+        expect(spectator.component.$bucket()).toBe('warn');
+    });
+
+    it('renders BUNDLE_SENT_SUCCESSFULLY as "Sent" with warn severity (uploaded, not installed yet)', () => {
+        spectator = createComponent();
+        spectator.setInput('status', PublishAuditStatus.BUNDLE_SENT_SUCCESSFULLY);
+        spectator.detectChanges();
+        expect(spectator.query(byTestId('pq-status-chip'))).toHaveText('Sent');
+        expect(spectator.query(byTestId('pq-status-chip'))).not.toHaveText('Success');
+        expect(spectator.component.$bucket()).toBe('warn');
+    });
+
+    it('only ever emits severities PrimeNG renders — an unknown one falls back to the solid primary fill', () => {
+        // `p-tag` derives `p-tag-{severity}`; a value outside this set produces no
+        // class at all and the tag renders like a primary button.
+        const valid = new Set(['success', 'secondary', 'info', 'warn', 'danger', 'contrast']);
+        for (const status of Object.values(PublishAuditStatus)) {
+            expect(valid).toContain(publishingStatusBucket(status as PublishAuditStatus));
+        }
     });
 
     it('exposes info severity for WAITING_FOR_PUBLISHING status', () => {

@@ -40,7 +40,10 @@ import {
     DotContentletStatusBadgeComponent,
     DotEmptyContainerComponent,
     DotMessagePipe,
-    PrincipalConfiguration
+    DotMonacoRunShortcutEditor,
+    getDotMonacoRunShortcutLabel,
+    PrincipalConfiguration,
+    registerDotMonacoRunShortcut
 } from '@dotcms/ui';
 import { buildCurlSnippet, buildFetchSnippet, getDownloadLink } from '@dotcms/utils';
 
@@ -124,6 +127,9 @@ export class DotEsSearchPageComponent {
     readonly #globalMessage = inject(DotGlobalMessageService);
     readonly #clipboard = inject(DotClipboardUtil);
 
+    /** Keyboard shortcut shown in the Run button tooltip (`⌘ + Enter` / `Ctrl + Enter`). */
+    readonly runShortcutLabel = getDotMonacoRunShortcutLabel(this.#document.defaultView?.navigator);
+
     readonly exportMenu = viewChild<Menu>('exportMenu');
     readonly helpPopover = viewChild.required<Popover>('helpPopoverEl');
 
@@ -146,7 +152,8 @@ export class DotEsSearchPageComponent {
     readonly noHitsConfig: PrincipalConfiguration = {
         title: this.#messageService.get('esSearch.results.noHits'),
         subtitle: this.#messageService.get('esSearch.results.noHits.subtitle'),
-        icon: 'pi-search'
+        icon: 'search',
+        iconStyle: 'material-symbols-rounded'
     };
 
     readonly $parsedAggregations = computed<ParsedAggregation[]>(() => {
@@ -242,6 +249,20 @@ export class DotEsSearchPageComponent {
     onRun(): void {
         if (this.$hasEditorErrors() || !this.store.query()) return;
         this.store.runSearch();
+    }
+
+    /**
+     * Binds `Cmd/Ctrl + Enter` inside the query editor to the same action as the Run button.
+     * The shortcut is ignored while a search is already in flight, where the Run button is
+     * disabled too.
+     *
+     * @param editor the Monaco editor instance emitted by `ngx-monaco-editor`
+     */
+    onQueryEditorInit(editor: DotMonacoRunShortcutEditor): void {
+        registerDotMonacoRunShortcut(editor, () => this.onRun(), {
+            label: this.#messageService.get('esSearch.action.run'),
+            canRun: () => !this.store.isLoading()
+        });
     }
 
     useExample(query: string): void {
