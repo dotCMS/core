@@ -315,7 +315,8 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
         final String filterKey = APILocator.getBundleAPI().getBundleById(bundleId).getFilterKey();
         final FilterDescriptor filterDescriptor = this.getFilterDescriptorByKey(filterKey);
         final PublisherFilterImpl publisherFilter = new PublisherFilterImpl(filterKey, (Boolean)filterDescriptor.getFilters().getOrDefault(FilterDescriptor.DEPENDENCIES_KEY,true),
-                (Boolean)filterDescriptor.getFilters().getOrDefault(FilterDescriptor.RELATIONSHIPS_KEY,true));
+                (Boolean)filterDescriptor.getFilters().getOrDefault(FilterDescriptor.RELATIONSHIPS_KEY,true),
+                (Boolean)filterDescriptor.getFilters().getOrDefault(FilterDescriptor.RELATIONSHIPS_SECOND_LEVEL_KEY,false));
 
         if(filterDescriptor.getFilters().containsKey(FilterDescriptor.EXCLUDE_CLASSES_KEY)){
             List.class.cast(filterDescriptor.getFilters().get(FilterDescriptor.EXCLUDE_CLASSES_KEY)).forEach(type -> publisherFilter.addTypeToExcludeClassesSet(type.toString()));

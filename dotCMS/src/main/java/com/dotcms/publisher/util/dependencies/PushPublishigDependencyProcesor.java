@@ -67,6 +67,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
@@ -93,6 +94,17 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
     private final PushedAssetUtil pushedAssetUtil;
     private final Lazy<StoryBlockAPI> storyBlockAPI = Lazy.of(APILocator::getStoryBlockAPI);
     private final Lazy<ContentletAPI> contentletAPI = Lazy.of(APILocator::getContentletAPI);
+
+    /**
+     * Tracks, for the lifetime of this bundle generation, which Contentlet identifiers have
+     * already "consumed" the one extra relationship-traversal hop that
+     * {@link PublisherFilter#isRelationshipsSecondLevel()} allows. A Contentlet's identifier is
+     * added to this set right before its related content is recursively enqueued for its own
+     * dependency processing; once present, that Contentlet's own related content is added to the
+     * bundle without being recursed into again. This both caps traversal at exactly one extra
+     * level and makes circular relationship chains inherently non-recursive beyond that point.
+     */
+    private final Set<String> relationshipHopConsumed = ConcurrentHashMap.newKeySet();
 
     /**
      * Creates an instance of the Push Publishing Dependency Processor mechanism, and initializes all the different data
@@ -479,12 +491,27 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
                         contentRelationships.keySet(), ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(contentlet));
 
                 if(publisherFilter.isRelationships() && publisherFilter.isDependencies()) {
+                    // Only recurse into a related Contentlet's OWN relationships when the current
+                    // Contentlet hasn't itself already consumed its one allowed extra hop — this
+                    // caps traversal at exactly one extra level instead of recursing unbounded.
+                    final boolean recurseOneMoreLevel = publisherFilter.isRelationshipsSecondLevel()
+                            && !relationshipHopConsumed.contains(contentId);
+
                     for (Entry<Relationship, List<Contentlet>> relationshipListEntry : contentRelationships
                             .entrySet()) {
-                        contentsToProcess.addAll(relationshipListEntry.getValue());
+                        if (recurseOneMoreLevel) {
+                            relationshipListEntry.getValue().forEach(
+                                    relatedContentlet -> relationshipHopConsumed.add(relatedContentlet.getIdentifier()));
 
-                        tryToAddAll(PusheableAsset.CONTENTLET, relationshipListEntry.getValue(),
-                                ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(relationshipListEntry.getKey()));
+                            tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET,
+                                    relationshipListEntry.getValue(),
+                                    ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(relationshipListEntry.getKey()));
+                        } else {
+                            contentsToProcess.addAll(relationshipListEntry.getValue());
+
+                            tryToAddAll(PusheableAsset.CONTENTLET, relationshipListEntry.getValue(),
+                                    ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(relationshipListEntry.getKey()));
+                        }
                     }
                 }
 
