@@ -451,7 +451,8 @@ export function withContent() {
                                                 navigationOverride?.switchToLegacyEditor(
                                                     host.resolveIdentity(),
                                                     contentlet ?? null,
-                                                    contentType.variable
+                                                    // Set: the update above already read its id.
+                                                    contentType!.variable
                                                 )
                                             ) {
                                                 return;

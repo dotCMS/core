@@ -40,10 +40,16 @@ import { SYSTEM_HOST } from '../constants';
  * environment default, used to pick a version's language. It carries no flags: Content Drive no
  * longer reads the side-panel flag (#37759, FR-006).
  */
+/**
+ * The environment default language. Held apart from the store mock because the store types it as
+ * a `Signal`, which a test cannot call `mockReturnValue` on.
+ */
+const defaultLanguageId = vi.fn<() => number | undefined>();
+
 const mockStore = () =>
     mockProvider(DotContentDriveStore, {
         getFilterValue: vi.fn().mockReturnValue(undefined),
-        defaultLanguageId: vi.fn().mockReturnValue(undefined),
+        defaultLanguageId,
         // What `currentFolder()` reads: a site root, outside System Host.
         $systemHostSelected: signal(false),
         currentSite: vi.fn().mockReturnValue({ hostname: 'demo.dotcms.com' }),
@@ -103,11 +109,11 @@ describe('DotContentDriveNavigationService', () => {
         location = spectator.inject(Location);
         httpErrorManager = spectator.inject(DotHttpErrorManagerService);
         contentSearch = spectator.inject(DotContentSearchService);
-        store = spectator.inject(DotContentDriveStore, true);
+        store = spectator.inject(DotContentDriveStore);
         // The store mock's functions are shared across tests and `clearAllMocks` keeps their
         // return values, so start every test with no language known.
         store.getFilterValue.mockReturnValue(undefined);
-        store.defaultLanguageId.mockReturnValue(undefined);
+        defaultLanguageId.mockReturnValue(undefined);
         (spectator.inject(DotActionUrlService).getCreateContentletUrl as Mock).mockReturnValue(
             of(CREATE_URL)
         );
@@ -293,7 +299,7 @@ describe('DotContentDriveNavigationService', () => {
             'opens the legacy create panel when the new-editor setting is %s',
             (_label, metadata) => {
                 location.path.mockReturnValue('/content-drive?path=/foo&filters=bar');
-                store.defaultLanguageId.mockReturnValue(1);
+                defaultLanguageId.mockReturnValue(1);
                 contentTypeService.getContentType.mockReturnValue(
                     of(
                         createFakeContentType({
@@ -336,7 +342,7 @@ describe('DotContentDriveNavigationService', () => {
          */
         it('opens nothing when the legacy create screen cannot be resolved', () => {
             const error = new HttpErrorResponse({ status: 403 });
-            store.defaultLanguageId.mockReturnValue(1);
+            defaultLanguageId.mockReturnValue(1);
             contentTypeService.getContentType.mockReturnValue(
                 of(
                     createFakeContentType({
@@ -376,7 +382,7 @@ describe('DotContentDriveNavigationService', () => {
                 ['the new editor', true]
             ])('starts in the first filtered language in %s', (_label, newEditor) => {
                 store.getFilterValue.mockReturnValue(['3', '4']);
-                store.defaultLanguageId.mockReturnValue(1);
+                defaultLanguageId.mockReturnValue(1);
                 contentTypeService.getContentType.mockReturnValue(of(typeWith(newEditor)));
 
                 service.createContent('blog');
@@ -392,7 +398,7 @@ describe('DotContentDriveNavigationService', () => {
                 'starts in the default language when nothing is filtered, in %s',
                 (_label, newEditor) => {
                     store.getFilterValue.mockReturnValue(undefined);
-                    store.defaultLanguageId.mockReturnValue(2);
+                    defaultLanguageId.mockReturnValue(2);
                     contentTypeService.getContentType.mockReturnValue(of(typeWith(newEditor)));
 
                     service.createContent('blog');
@@ -405,7 +411,7 @@ describe('DotContentDriveNavigationService', () => {
             it('ignores the language of the current URL, which names the open edit, not the list', () => {
                 location.path.mockReturnValue('/content-drive?editContent=id-1&editContentLang=5');
                 store.getFilterValue.mockReturnValue(undefined);
-                store.defaultLanguageId.mockReturnValue(2);
+                defaultLanguageId.mockReturnValue(2);
                 contentTypeService.getContentType.mockReturnValue(of(typeWith(false)));
 
                 service.createContent('blog');
@@ -788,7 +794,7 @@ describe('DotContentDriveNavigationService', () => {
 
             it('reopens its create as a legacy create, in the same folder and language', () => {
                 contentTypeService.getContentType.mockReturnValue(of(NEW_EDITOR_TYPE));
-                store.defaultLanguageId.mockReturnValue(2);
+                defaultLanguageId.mockReturnValue(2);
                 service.createContent('blog', { folderInode: 'inode-1' });
 
                 const handled = service.switchToLegacyEditor(
@@ -950,7 +956,7 @@ describe('DotContentDriveNavigationService', () => {
 
             contentSearch.get.mockClear();
             store.getFilterValue.mockReturnValue(undefined);
-            store.defaultLanguageId.mockReturnValue(4);
+            defaultLanguageId.mockReturnValue(4);
             answerWith([createFakeContentlet({ inode: 'i' })]);
 
             service.openEditByIdentifier('shared-identifier');
@@ -981,7 +987,7 @@ describe('DotContentDriveNavigationService', () => {
 
         it('should not run a second lookup when no language is known at all', () => {
             store.getFilterValue.mockReturnValue(undefined);
-            store.defaultLanguageId.mockReturnValue(undefined);
+            defaultLanguageId.mockReturnValue(undefined);
             answerWith([createFakeContentlet({ inode: 'i' })]);
 
             service.openEditByIdentifier('shared-identifier');

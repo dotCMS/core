@@ -424,7 +424,7 @@ describe('DotLegacyEditorSidePanelComponent', () => {
                 () => {
                     const mask = document.createElement('div');
                     document.body.appendChild(mask);
-                    spectator.query(Drawer).mask = mask;
+                    spectator.query(Drawer)!.mask = mask;
                     mask.dispatchEvent(new MouseEvent('click', { bubbles: true }));
                     mask.remove();
                 }
@@ -775,7 +775,7 @@ describe('DotLegacyEditorSidePanelComponent', () => {
             document.body.appendChild(mask);
 
             if (ownedByPanel) {
-                spectator.query(Drawer).mask = mask;
+                spectator.query(Drawer)!.mask = mask;
             }
 
             mask.dispatchEvent(new MouseEvent('click', { bubbles: true }));

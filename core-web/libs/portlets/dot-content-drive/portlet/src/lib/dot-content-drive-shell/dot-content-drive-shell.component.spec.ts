@@ -6137,7 +6137,7 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
         });
 
     it('opens the panel by identifier from a shared ?editContent= link on construction', () => {
-        deepLinkQueryParams.editContent = DEEP_LINK_ID;
+        deepLinkQueryParams['editContent'] = DEEP_LINK_ID;
         mountShell();
 
         expect(openEditByIdentifier).toHaveBeenCalledWith(DEEP_LINK_ID, undefined);
@@ -6146,7 +6146,7 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
     it('forwards the language from the link so the exact version reopens', () => {
         // An identifier has one version per language, so without this the resolver can only guess —
         // and it runs before the store's languages request has resolved.
-        deepLinkQueryParams.editContent = DEEP_LINK_ID;
+        deepLinkQueryParams['editContent'] = DEEP_LINK_ID;
         deepLinkQueryParams.editContentLang = '2';
         mountShell();
 
@@ -6154,7 +6154,7 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
     });
 
     it('ignores a non-numeric language on the link', () => {
-        deepLinkQueryParams.editContent = DEEP_LINK_ID;
+        deepLinkQueryParams['editContent'] = DEEP_LINK_ID;
         deepLinkQueryParams.editContentLang = 'nope';
         mountShell();
 
@@ -6176,12 +6176,12 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
 
         beforeEach(() => {
             delete deepLinkQueryParams['editContent'];
-            deepLinkQueryParams.createContent = 'Banner';
+            deepLinkQueryParams['createContent'] = 'Banner';
         });
 
         afterAll(() => {
             delete deepLinkQueryParams['createContent'];
-            deepLinkQueryParams.editContent = DEEP_LINK_ID;
+            deepLinkQueryParams['editContent'] = DEEP_LINK_ID;
         });
 
         it('opens the create form in the folder Content Drive shows, once the tree has loaded', () => {
@@ -6242,7 +6242,7 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
         afterEach(() => {
             delete deepLinkQueryParams['createContent'];
             delete deepLinkQueryParams['editFolder'];
-            deepLinkQueryParams.editContent = DEEP_LINK_ID;
+            deepLinkQueryParams['editContent'] = DEEP_LINK_ID;
         });
 
         /** What the shell writes to clear every panel and folder-dialog param, keeping the rest. */
@@ -6303,7 +6303,7 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
             delete deepLinkQueryParams['createFolder'];
             delete deepLinkQueryParams['editFolder'];
             delete deepLinkQueryParams['folderPermissions'];
-            deepLinkQueryParams.editContent = DEEP_LINK_ID;
+            deepLinkQueryParams['editContent'] = DEEP_LINK_ID;
             canAddChildrenSignal.set(true);
         });
 
@@ -6317,7 +6317,7 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
             } as DotFolderTreeNodeItem;
 
             beforeEach(() => {
-                deepLinkQueryParams.createFolder = 'true';
+                deepLinkQueryParams['createFolder'] = 'true';
             });
 
             it('opens New Folder once the tree has loaded and the folder accepts children', () => {
@@ -6351,7 +6351,7 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
 
         describe('Folder Settings', () => {
             beforeEach(() => {
-                deepLinkQueryParams.editFolder = FOLDER_ID;
+                deepLinkQueryParams['editFolder'] = FOLDER_ID;
             });
 
             it('resolves the folder by id and opens its settings when the author can edit it', () => {
@@ -6447,7 +6447,7 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
 
         describe('Edit Permissions', () => {
             beforeEach(() => {
-                deepLinkQueryParams.folderPermissions = FOLDER_ID;
+                deepLinkQueryParams['folderPermissions'] = FOLDER_ID;
                 getFolderById.mockReturnValue(of(FOLDER_BEAN));
             });
 
