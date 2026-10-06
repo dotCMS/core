@@ -337,16 +337,13 @@ Use the type name from Step 4b: `Bug` | `Task` | `Spike` | `Feature` | `Epic` | 
 
 See [references/github-apis.md](references/github-apis.md) — Section A.
 
-### Step 10 — Add to Project #7, set Technology and Priority
+### Step 10 — Set Technology and Priority in Project #7
 
 No extra user input needed — derived from Step 5 and Step 5b.
 
-1. **Get the project item ID** — Section B of [references/github-apis.md](references/github-apis.md).
-2. **Ensure Project #7 membership:**
-   - **Empty item ID** → the issue is not in Project #7 (`gh issue create` without `--template` does not apply the template's project). Add it with Section I of [references/github-apis.md](references/github-apis.md) (`addProjectV2ItemById`) and use the item ID it returns.
-   - **Non-empty item ID** → the issue is already in Project #7; skip the add. Never add it twice.
-3. **Set Technology** — single-select field via Section C, using IDs from [references/project-fields.md](references/project-fields.md). The issue must end with Technology set in both branches of step 2.
-4. **Set Priority** — if Step 5b chose a value other than None, set it via Section C, using the Priority field and option IDs from [references/project-fields.md](references/project-fields.md) ("Field: Priority"). With None, leave Priority unset.
+1. Get the project item ID (Section B of [references/github-apis.md](references/github-apis.md)). Project #7 auto-adds new issues a few seconds after creation; if the item ID is empty, wait and retry.
+2. Set the Technology single-select field (Section C) using IDs from [references/project-fields.md](references/project-fields.md)
+3. If Step 5b chose a value other than None, set the Priority field (Section C) using IDs from [references/project-fields.md](references/project-fields.md). With None, leave it unset.
 
 Status defaults to "New" automatically — do not set it.
 
@@ -365,7 +362,6 @@ Report back:
 - Feature label applied
 - `Type :` label applied (if any)
 - Native type set
-- Project #7 membership (added, or already present)
 - Technology field set in Project #7
 - Priority field set in Project #7 (or "unset")
 - Any relationships established
@@ -396,7 +392,6 @@ For each expected field, explicitly confirm ✓ correct or flag ✗ gap:
 - **Team label** (`Team : *`): Present and correct?
 - **`Type :` label**: Present and matching the issue type?
 - **Native GitHub type**: Matches the issue template type?
-- **Project #7 membership**: Is the issue in Project #7?
 - **Technology field** (Project #7): Set? Correct for the content?
 
 Show a validation table to the user, e.g.:
@@ -405,7 +400,6 @@ Show a validation table to the user, e.g.:
 ✓ Team : Enablement — team label, correct
 ✗ Type : Spike      — missing
 ✗ Native type       — Task (should be Spike)
-✓ Project #7        — member
 ✗ Technology        — not set (should be Platform)
 ```
 
@@ -421,7 +415,7 @@ Then propose the changes needed based on the gaps found. Any title, body or comm
 | Labels (remove) | `gh issue edit N --repo dotCMS/core --remove-label "LABEL"` |
 | Title | `gh issue edit N --repo dotCMS/core --title "NEW TITLE"` |
 | Native type | `gh api repos/dotCMS/core/issues/N -X PATCH -f type='TYPE_NAME'` |
-| Project Status / Technology / Priority | Section B of [references/github-apis.md](references/github-apis.md) to get the item ID; if empty, add with Section I first; then Section C |
+| Project Status / Technology / Priority | GraphQL mutation — Section C of [references/github-apis.md](references/github-apis.md) |
 | Add sub-issue | Section E of [references/github-apis.md](references/github-apis.md) |
 | Remove sub-issue | Section G of [references/github-apis.md](references/github-apis.md) |
 
