@@ -1,0 +1,37 @@
+@let tag = $healthTag();
+
+<p-panel data-testid="network-section">
+    <ng-template #header>
+        <div class="flex w-full items-center gap-2">
+            <h3 class="m-0 font-semibold" data-testid="network-section-title">
+                {{ titleKey() | dm }}
+            </h3>
+            @if (subtitle()) {
+                <span class="truncate text-gray-500" data-testid="network-section-subtitle">
+                    {{ subtitle() }}
+                </span>
+            }
+            <p-tag
+                class="ml-auto"
+                [severity]="tag.severity"
+                [value]="tag.labelKey | dm"
+                data-testid="network-section-health" />
+        </div>
+    </ng-template>
+
+    <dl class="m-0">
+        @for (row of rows(); track row.labelKey) {
+            <div
+                class="flex justify-between gap-4 border-b border-surface py-2 last:border-b-0"
+                data-testid="network-section-row">
+                <dt class="text-gray-500">{{ row.labelKey | dm }}</dt>
+                <dd
+                    class="m-0 text-right break-all tabular-nums"
+                    [class.font-mono]="row.mono"
+                    data-testid="network-section-value">
+                    {{ row.value ?? '—' }}
+                </dd>
+            </div>
+        }
+    </dl>
+</p-panel>

@@ -1,0 +1,60 @@
+@if (store.showSkeleton()) {
+    <div class="flex min-h-0 flex-1" data-testid="network-loading" aria-busy="true">
+        <div class="flex w-74 shrink-0 flex-col gap-2.5 border-r border-surface p-3">
+            <p-skeleton width="5rem" height="1.25rem" styleClass="mx-1 my-2" />
+            @for (card of skeletonCards; track card) {
+                <p-skeleton height="5.5rem" />
+            }
+        </div>
+        <div class="flex flex-1 flex-col gap-4 p-5">
+            <p-skeleton width="12rem" height="1.75rem" />
+            <div class="grid grid-cols-4 gap-3">
+                @for (card of [1, 2, 3, 4]; track card) {
+                    <p-skeleton height="4rem" />
+                }
+            </div>
+            <p-skeleton height="16rem" />
+            <p-skeleton height="16rem" />
+        </div>
+    </div>
+} @else if (store.showUnlicensed()) {
+    <dot-empty-container
+        class="flex-1"
+        [configuration]="$unlicensedConfig()"
+        data-testid="network-unlicensed" />
+} @else if (store.showError()) {
+    <dot-empty-container
+        class="flex-1"
+        [configuration]="$errorConfig()"
+        [buttonLabel]="$retryLabel()"
+        [hideContactUsLink]="true"
+        (buttonAction)="store.load()"
+        data-testid="network-error" />
+} @else if (store.showEmpty()) {
+    <dot-empty-container
+        class="flex-1"
+        [configuration]="$emptyConfig()"
+        [buttonLabel]="$retryLabel()"
+        [secondaryButton]="true"
+        [hideContactUsLink]="true"
+        (buttonAction)="store.load()"
+        data-testid="network-empty" />
+} @else {
+    <dot-network-node-list
+        class="w-74 shrink-0 border-r border-surface"
+        [nodes]="store.sortedNodes()"
+        [selectedServerId]="store.selectedServerId()"
+        [currentServerId]="store.currentServerId()"
+        (selectNode)="store.selectNode($event)"
+        data-testid="network-node-list" />
+
+    @if (store.selectedNode(); as node) {
+        <dot-network-node-detail
+            class="min-w-0 flex-1"
+            [node]="node"
+            [isCurrent]="node.serverId === store.currentServerId()"
+            [refreshing]="store.isRefreshing()"
+            (refresh)="store.load()"
+            data-testid="network-node-detail" />
+    }
+}
