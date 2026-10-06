@@ -76,9 +76,9 @@ other content. Setting `CONTENTLET_JSON_MAX_STRING_LENGTH_MB` has no effect.
   `ContentletIndexOperationsES`, `ContentletIndexOperationsOS`, `BulkProcessorListener`); the
   queue itself is legacy (`com.dotmarketing.common.reindex.ReindexThread`,
   `ReindexQueueFactory`). The fix is expected to stay in the modern classes.
-- **Related known decisions**: OpenSearch write failures are fire-and-forget in Phases 1 and 2
-  and must propagate in Phase 3 (see `docs/backend/OPENSEARCH_MIGRATION.md`). The plan consults
-  `dotCMS/platform-adrs`.
+- **Related known decisions**: OpenSearch content write failures are fire-and-forget in Phase 1,
+  where OpenSearch is a shadow, and must propagate from Phase 2 on, once it serves reads (see
+  `docs/backend/OPENSEARCH_MIGRATION.md`). The plan consults `dotCMS/platform-adrs`.
 
 ## Root-Cause Hypothesis
 
@@ -165,7 +165,7 @@ Open questions (to confirm in planning, not blocking the spec):
 - Whole-group failure handling distinguishes an error caused by document content from a
   transport or access error. Transport and access errors keep today's behaviour (the group is
   marked failed and retried).
-- In Phase 1/2, a serialization failure on the shadow engine does not mark the primary's entry
+- In Phase 1, a serialization failure on the shadow engine does not mark the primary's entry
   failed (only if the open question above is confirmed).
 
 **Explicitly out of scope / non-goals**:
