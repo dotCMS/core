@@ -337,7 +337,15 @@ describe('DotContentDriveNavigationService', () => {
                 );
 
                 store.path.mockReturnValue('/foo/');
-                store.selectedNode.mockReturnValue({ data: { type: 'folder', inode: 'inode-1' } });
+                store.selectedNode.mockReturnValue({
+                    data: {
+                        type: 'folder',
+                        id: 'folder-1',
+                        inode: 'inode-1',
+                        path: '/foo/',
+                        hostname: 'demo.dotcms.com'
+                    }
+                });
 
                 service.createContent('news');
 

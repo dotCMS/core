@@ -1,4 +1,5 @@
 import { patchState } from '@ngrx/signals';
+import { unprotected } from '@ngrx/signals/testing';
 import {
     byTestId,
     createComponentFactory,
@@ -1359,7 +1360,7 @@ describe.each([
 
         /** Puts the store in the state a loaded contentlet produces, so the sidebar renders. */
         const loadContentlet = (contentlet = MOCK_CONTENTLET_1_TAB) => {
-            patchState(store, {
+            patchState(unprotected(store), {
                 contentlet,
                 contentType: CONTENT_TYPE_MOCK,
                 state: ComponentStatus.LOADED
@@ -1393,7 +1394,7 @@ describe.each([
         it('should fetch sidebar data even while the sidebar component is not rendered', fakeAsync(() => {
             // `@if` is false here (not loaded, not saving, not reloading), so the sidebar is
             // never mounted — yet the data must still load, because the store owns it.
-            patchState(store, {
+            patchState(unprotected(store), {
                 contentlet: MOCK_CONTENTLET_1_TAB,
                 state: ComponentStatus.LOADING
             });
@@ -1409,7 +1410,7 @@ describe.each([
         // Before there is any content the editor renders nothing, so a spinner fills it.
         it('should show a spinner on the first load, until the content is loaded', () => {
             const loading = () => spectator.query(byTestId('edit-content-layout__loading'));
-            patchState(store, { contentType: null, state: ComponentStatus.LOADING });
+            patchState(unprotected(store), { contentType: null, state: ComponentStatus.LOADING });
             spectator.detectChanges();
 
             expect(loading()).not.toBeNull();
@@ -1429,7 +1430,7 @@ describe.each([
             dotEditContentService.getVersions.mockClear();
 
             // Flip the `@if` off — Angular destroys the sidebar and, before this fix, its effects.
-            patchState(store, { contentType: null, state: ComponentStatus.LOADING });
+            patchState(unprotected(store), { contentType: null, state: ComponentStatus.LOADING });
             spectator.detectChanges();
             tick();
             expect(spectator.query('dot-edit-content-sidebar')).toBeNull();
@@ -1455,7 +1456,7 @@ describe.each([
             dotEditContentService.getReferencePages.mockClear();
             dotEditContentService.getVersions.mockClear();
 
-            patchState(store, {
+            patchState(unprotected(store), {
                 contentlet: { ...MOCK_CONTENTLET_1_TAB, inode: 'inode-after-publish' }
             });
             spectator.detectChanges();
