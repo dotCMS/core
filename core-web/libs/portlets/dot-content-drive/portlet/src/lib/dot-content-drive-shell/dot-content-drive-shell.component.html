@@ -277,8 +277,8 @@
 }
 
 <!-- The legacy (JSP) editor, for content types that have not opted into the new editor (#37759).
-     Kept apart from the new-editor panel above so removing the legacy editor later only removes
-     this block. Not deferred: it is a thin iframe host, with nothing heavy to split out. -->
+     Kept apart from the new-editor panel above. Remove with the legacy editor. Not deferred: it
+     is a thin iframe host, with nothing heavy to split out. -->
 @if ($legacyPanelRequest(); as request) {
     <dot-legacy-editor-side-panel
         #legacyPanelRef

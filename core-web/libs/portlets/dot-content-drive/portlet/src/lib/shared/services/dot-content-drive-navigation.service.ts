@@ -26,9 +26,9 @@ import {
 } from '@dotcms/edit-content';
 import { DotFolderTreeNodeContentData } from '@dotcms/portlets/content-drive/ui';
 
-import { DotLegacyEditorRequest } from '../../components/dot-legacy-editor-side-panel/dot-legacy-editor-side-panel.model';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 import { SYSTEM_HOST } from '../constants';
+import { DotLegacyEditorRequest } from '../legacy-editor.models';
 import { DotContentDrivePanelLocation, DotContentDrivePanelRequest } from '../models';
 
 /** Shape of the `/api/content/_search` entity we read the resolved contentlet from. */
@@ -41,6 +41,7 @@ const CONTENT_DRIVE_PORTLET_ID = 'content-drive';
 
 // Provided at the Content Drive shell level (not `root`) so it can inject the shell-scoped
 // DotContentDriveStore and read the list's language filter and default language from it.
+// `EditContentNavigationOverride` and its methods: Remove with the legacy editor.
 @Injectable()
 export class DotContentDriveNavigationService implements EditContentNavigationOverride {
     readonly #dotContentTypeService = inject(DotContentTypeService);
@@ -68,7 +69,7 @@ export class DotContentDriveNavigationService implements EditContentNavigationOv
 
     /**
      * The content to show in the legacy-editor side panel, or `null` when it is closed. The shell
-     * renders that panel while this is set.
+     * renders that panel while this is set. Remove with the legacy editor.
      */
     readonly $legacyPanelRequest = computed<DotLegacyEditorRequest | null>(() => {
         const request = this.#panelRequest();
@@ -140,6 +141,7 @@ export class DotContentDriveNavigationService implements EditContentNavigationOv
             .subscribe((contentType) => {
                 const languageId = this.#createLanguageId();
 
+                // Remove with the legacy editor.
                 if (usesLegacyEditor(contentType)) {
                     // The variable the server answered with, not the one the caller (or a link)
                     // passed in. Unknown language only if the default failed to load: 1 is what
@@ -169,7 +171,7 @@ export class DotContentDriveNavigationService implements EditContentNavigationOv
      * Opens the legacy create form, once the server has named its screen. Resolving it first means
      * a type the server won't serve shows the standard error and opens nothing: no panel, no
      * `createContent` in the URL, no history entry (#37759, edge case "Legacy create form cannot
-     * be resolved").
+     * be resolved"). Remove with the legacy editor.
      *
      * @param contentTypeVariable The type to create.
      * @param title The type's name, for the panel header.
@@ -241,7 +243,7 @@ export class DotContentDriveNavigationService implements EditContentNavigationOv
      *
      * Content Drive answers only for the panel it opened. Any other editor that inherits the
      * override (a related content opened from a relationship field) is declined, and navigates as
-     * it does outside Content Drive.
+     * it does outside Content Drive. Remove with the legacy editor.
      *
      * @param opened What the editor was opened with.
      * @param contentlet The content being edited, or `null` for a create that was never saved.
@@ -301,7 +303,7 @@ export class DotContentDriveNavigationService implements EditContentNavigationOv
     /**
      * The content of Content Drive's new-editor panel failed to load, after the standard error
      * was shown: close the panel, keeping the folder, filters and page (#37759, FR-029). Any other
-     * editor is declined, as for {@link switchToLegacyEditor}.
+     * editor is declined, as for {@link switchToLegacyEditor}. Remove with the legacy editor.
      *
      * @param opened What the editor was opened with.
      * @returns Whether Content Drive closed its panel.
@@ -320,7 +322,7 @@ export class DotContentDriveNavigationService implements EditContentNavigationOv
      * The new-editor panel Content Drive has open, when it is the editor that was opened with
      * `opened`: the same content for an edit, the same type for a create. What the editor was
      * opened with comes from the request Content Drive sent, and stays the same across the
-     * editor's in-place reloads (a language switch).
+     * editor's in-place reloads (a language switch). Remove with the legacy editor.
      *
      * @param opened What the editor was opened with.
      * @returns The open request's data, or `null` for any other editor.
@@ -467,6 +469,7 @@ export class DotContentDriveNavigationService implements EditContentNavigationOv
         identifier: string,
         contentType: DotCMSContentType | undefined
     ): void {
+        // Remove with the legacy editor.
         if (usesLegacyEditor(contentType)) {
             this.#openPanel({
                 editor: 'legacy',
@@ -587,7 +590,7 @@ export class DotContentDriveNavigationService implements EditContentNavigationOv
 /**
  * Whether a content type edits in the legacy editor: it has not opted into the new editor
  * (`CONTENT_EDITOR2_ENABLED` in its metadata). The type's own setting is the only thing that decides
- * it (#37759, FR-007).
+ * it (#37759, FR-007). Remove with the legacy editor.
  *
  * @param contentType The content type, or `undefined` when the lookup returned nothing.
  * @returns `true` for the legacy editor.

@@ -76,7 +76,6 @@ import { DOT_SYSTEM_CONFIG_SERVICE_MOCK, mockLocales } from '@dotcms/utils-testi
 import { DotContentDriveShellComponent } from './dot-content-drive-shell.component';
 
 import { DotLegacyEditorSidePanelComponent } from '../components/dot-legacy-editor-side-panel/dot-legacy-editor-side-panel.component';
-import { DotLegacyEditorRequest } from '../components/dot-legacy-editor-side-panel/dot-legacy-editor-side-panel.model';
 import {
     ACTION_CENTER_DIALOG_CONTENT_STYLE,
     ACTION_CENTER_DIALOG_CLASS,
@@ -90,6 +89,7 @@ import {
     WARNING_MESSAGE_LIFE,
     MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
 } from '../shared/constants';
+import { DotLegacyEditorRequest } from '../shared/legacy-editor.models';
 import {
     MOCK_ITEMS,
     MOCK_ROUTE,
@@ -5032,8 +5032,12 @@ describe('DotContentDriveShellComponent', () => {
             header: 'content-drive.dialog.folder.header'
         };
 
-        const urlParams = () =>
-            (router.createUrlTree as Mock).mock.calls.at(-1)?.[1]?.queryParams ?? {};
+        /** The last URL the shell built carries these query params, among others. */
+        const expectLastUrlParams = (params: Record<string, string | null>) =>
+            expect(router.createUrlTree).toHaveBeenLastCalledWith(
+                [],
+                expect.objectContaining({ queryParams: expect.objectContaining(params) })
+            );
 
         describe('Edit Permissions', () => {
             it('opens the permissions JSP dialog, with the config the context menu used', () => {
@@ -5091,14 +5095,12 @@ describe('DotContentDriveShellComponent', () => {
                 dialogSignal.set(dialog);
                 spectator.detectChanges();
 
-                expect(urlParams()).toEqual(
-                    expect.objectContaining({
-                        createFolder: null,
-                        editFolder: null,
-                        folderPermissions: null,
-                        ...param
-                    })
-                );
+                expectLastUrlParams({
+                    createFolder: null,
+                    editFolder: null,
+                    folderPermissions: null,
+                    ...param
+                });
                 expect(location.go).toHaveBeenCalledTimes(1);
             }
         );
@@ -5112,7 +5114,7 @@ describe('DotContentDriveShellComponent', () => {
             dialogSignal.set(undefined);
             spectator.detectChanges();
 
-            expect(urlParams()).toEqual(expect.objectContaining({ editFolder: null }));
+            expectLastUrlParams({ editFolder: null });
             expect(location.replaceState).toHaveBeenCalledTimes(1);
             expect(location.go).not.toHaveBeenCalled();
         });
@@ -5121,13 +5123,7 @@ describe('DotContentDriveShellComponent', () => {
             dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
             spectator.detectChanges();
 
-            expect(urlParams()).toEqual(
-                expect.objectContaining({
-                    createFolder: null,
-                    editFolder: null,
-                    folderPermissions: null
-                })
-            );
+            expectLastUrlParams({ createFolder: null, editFolder: null, folderPermissions: null });
         });
 
         describe('browser Back', () => {
@@ -6486,10 +6482,12 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
                 const spectator = mountShell();
                 spectator.detectChanges();
 
-                expect(
-                    (spectator.inject(Router).createUrlTree as Mock).mock.calls.at(-1)?.[1]
-                        ?.queryParams
-                ).toEqual(expect.objectContaining({ folderPermissions: null }));
+                expect(spectator.inject(Router).createUrlTree).toHaveBeenLastCalledWith(
+                    [],
+                    expect.objectContaining({
+                        queryParams: expect.objectContaining({ folderPermissions: null })
+                    })
+                );
             });
 
             it('opens Edit Permissions when the author may edit the folder permissions', () => {

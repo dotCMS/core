@@ -1,3 +1,6 @@
+// The legacy-editor side panel's contract, shared with the navigation service that opens it.
+// Remove with the legacy editor.
+
 /**
  * What the legacy-editor side panel is asked to open (#37759).
  *

@@ -42,7 +42,7 @@ import {
     DotLegacyEditorPageRequest,
     DotLegacyEditorRequest,
     DotLegacyEditorSaved
-} from './dot-legacy-editor-side-panel.model';
+} from '../../shared/legacy-editor.models';
 
 /** The admin route every legacy portlet screen is served from. */
 const LAYOUT_URL = '/c/portal/layout';
@@ -84,7 +84,8 @@ interface LegacyEditorEventDetail {
  *
  * It looks and behaves like the new-editor side panel (`DotEditContentSidePanelComponent`): the
  * same drawer, width toggle, mask and close rules. It is kept separate from it so that removing the
- * legacy editor later means deleting this folder and the shell's routing branch, nothing else.
+ * legacy editor later never touches the new-editor panel. Remove with the legacy editor. Every other piece that goes
+ * with it carries the same phrase.
  *
  * The panel never navigates. It handles the legacy editor events that need no decision from the
  * opener, and reports the rest through its outputs, so Content Drive decides what a save or a close

@@ -173,8 +173,8 @@ export function withContent() {
                 dotWorkflowService = inject(DotWorkflowService),
                 dotMessageService = inject(DotMessageService),
                 host = inject(EDIT_CONTENT_HOST),
-                // Only Content Drive provides it (#37759, FR-028, FR-029). Remove with the legacy
-                // editor.
+                // Only Content Drive provides it (#37759, FR-028, FR-029).
+                // Remove with the legacy editor.
                 navigationOverride = inject(EDIT_CONTENT_NAVIGATION_OVERRIDE, { optional: true })
             ) => ({
                 /**
@@ -403,6 +403,7 @@ export function withContent() {
                                         });
                                         dotHttpErrorManagerService.handle(error);
 
+                                        // Remove with the legacy editor.
                                         if (
                                             navigationOverride?.leaveOnLoadError(
                                                 host.resolveIdentity()
@@ -447,6 +448,7 @@ export function withContent() {
                                 .pipe(
                                     tapResponse({
                                         next: () => {
+                                            // Remove with the legacy editor.
                                             if (
                                                 navigationOverride?.switchToLegacyEditor(
                                                     host.resolveIdentity(),

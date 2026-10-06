@@ -93,10 +93,6 @@ import { DotContentDriveToolbarComponent } from '../components/dot-content-drive
 import { DotFolderListViewContextMenuComponent } from '../components/dot-folder-list-context-menu/dot-folder-list-context-menu.component';
 import { DotLegacyEditorSidePanelComponent } from '../components/dot-legacy-editor-side-panel/dot-legacy-editor-side-panel.component';
 import {
-    DotLegacyEditorPageRequest,
-    DotLegacyEditorSaved
-} from '../components/dot-legacy-editor-side-panel/dot-legacy-editor-side-panel.model';
-import {
     ACTION_CENTER_DIALOG_CONTENT_STYLE,
     ACTION_CENTER_DIALOG_CLASS,
     CONTENT_DRIVE_URL_PARAM,
@@ -110,6 +106,7 @@ import {
     ROOT_PATH,
     SYSTEM_HOST
 } from '../shared/constants';
+import { DotLegacyEditorPageRequest, DotLegacyEditorSaved } from '../shared/legacy-editor.models';
 import {
     DotContentDriveActionExecutionResult,
     DotContentDriveContentTypeSelectorPayload,
@@ -162,6 +159,9 @@ function isLoadedSite(site: DotSite | undefined): site is DotSite {
     return !!site && site.identifier !== SYSTEM_HOST.identifier;
 }
 
+/** What the user may do to a folder, as `DotPermissionsService.getUserAccess` answers it. */
+type DotFolderUserAccess = { canEdit: boolean; canEditPermissions: boolean };
+
 @Component({
     selector: 'dot-content-drive-shell',
     imports: [
@@ -182,6 +182,7 @@ function isLoadedSite(site: DotSite | undefined): site is DotSite {
         DotStatusToastComponent,
         DotToastComponent,
         DotEditContentSidePanelComponent,
+        // Remove with the legacy editor.
         DotLegacyEditorSidePanelComponent,
         ProgressSpinnerModule,
         DotContentDriveActionCenterComponent,
@@ -208,6 +209,7 @@ function isLoadedSite(site: DotSite | undefined): site is DotSite {
         DotContentDriveNavigationService,
         // Lets the new-editor side panel's "switch to the old editor" and load error stay in
         // Content Drive. Only this shell provides it (#37759, FR-028, FR-029).
+        // Remove with the legacy editor.
         provideContentDriveNavigationOverride(),
         DotWorkflowsActionsService,
         MessageService,
@@ -349,7 +351,10 @@ export class DotContentDriveShellComponent implements OnDestroy {
     /** Edit Content side panel request, driven by the navigation service; read by the template. */
     protected readonly $editPanelRequest = this.#navigationService.$editPanelRequest;
 
-    /** Legacy-editor side panel request, driven by the navigation service; read by the template. */
+    /**
+     * Legacy-editor side panel request, driven by the navigation service; read by the template.
+     * Remove with the legacy editor.
+     */
     protected readonly $legacyPanelRequest = this.#navigationService.$legacyPanelRequest;
 
     /** Whether either side panel is open. */
@@ -389,7 +394,10 @@ export class DotContentDriveShellComponent implements OnDestroy {
         return this.$legacyPanel() ?? this.$sidePanel();
     }
 
-    /** The rendered legacy-editor panel, so browser Back can route its close through it. */
+    /**
+     * The rendered legacy-editor panel, so browser Back can route its close through it.
+     * Remove with the legacy editor.
+     */
     protected readonly $legacyPanel =
         viewChild<DotLegacyEditorSidePanelComponent>('legacyPanelRef');
 
@@ -1677,6 +1685,49 @@ export class DotContentDriveShellComponent implements OnDestroy {
      * @param identifier The folder's identifier.
      */
     #openFolderSettingsFromUrl(identifier: string): void {
+        this.#openFolderDialogFromUrl(
+            identifier,
+            (access) => access.canEdit,
+            (folder, access) => ({
+                type: DIALOG_TYPE.FOLDER,
+                header: this.#dotMessageService.get('content-drive.dialog.folder.header.edit'),
+                payload: toActionableFolder(folder, access)
+            })
+        );
+    }
+
+    /**
+     * Opens Edit Permissions for a folder a `folderPermissions` link names (#37759, FR-031), when
+     * the user may edit that folder's permissions, the same rule as the context menu (FR-033).
+     *
+     * @param identifier The folder's identifier.
+     */
+    #openFolderPermissionsFromUrl(identifier: string): void {
+        this.#openFolderDialogFromUrl(
+            identifier,
+            (access) => access.canEditPermissions,
+            () => ({
+                type: DIALOG_TYPE.FOLDER_PERMISSIONS,
+                header: this.#dotMessageService.get('Edit-Permissions'),
+                payload: { identifier }
+            })
+        );
+    }
+
+    /**
+     * Opens the dialog a folder link names, under the same rules for every folder dialog: the folder
+     * and the user's access to it are resolved first, a folder in another site is refused as not
+     * found, and a user without the access the dialog needs gets the standard permission error.
+     *
+     * @param identifier The folder's identifier.
+     * @param allowed Whether the user's access lets them open this dialog.
+     * @param dialogFor The dialog to open for the resolved folder.
+     */
+    #openFolderDialogFromUrl(
+        identifier: string,
+        allowed: (access: DotFolderUserAccess) => boolean,
+        dialogFor: (folder: DotFolderBean, access: DotFolderUserAccess) => DotContentDriveDialog
+    ): void {
         forkJoin({
             folder: this.#folderService.getFolderById(identifier),
             access: this.#permissionsService.getUserAccess(identifier),
@@ -1689,55 +1740,13 @@ export class DotContentDriveShellComponent implements OnDestroy {
                         return;
                     }
 
-                    if (!access.canEdit) {
+                    if (!allowed(access)) {
                         this.#reportForbidden();
 
                         return;
                     }
 
-                    this.#store.setDialog({
-                        type: DIALOG_TYPE.FOLDER,
-                        header: this.#dotMessageService.get(
-                            'content-drive.dialog.folder.header.edit'
-                        ),
-                        payload: toActionableFolder(folder, access)
-                    });
-                },
-                error: (error: HttpErrorResponse) => this.#httpErrorManager.handle(error)
-            });
-    }
-
-    /**
-     * Opens Edit Permissions for a folder a `folderPermissions` link names (#37759, FR-031), when
-     * the user may edit that folder's permissions, the same rule as the context menu (FR-033). The
-     * folder is resolved too, only to refuse one in another site, as Folder Settings does.
-     *
-     * @param identifier The folder's identifier.
-     */
-    #openFolderPermissionsFromUrl(identifier: string): void {
-        forkJoin({
-            folder: this.#folderService.getFolderById(identifier),
-            access: this.#permissionsService.getUserAccess(identifier),
-            site: this.#currentSite$()
-        })
-            .pipe(take(1))
-            .subscribe({
-                next: ({ folder, access: { canEditPermissions }, site }) => {
-                    if (this.#refuseIfInAnotherSite(folder, site)) {
-                        return;
-                    }
-
-                    if (!canEditPermissions) {
-                        this.#reportForbidden();
-
-                        return;
-                    }
-
-                    this.#store.setDialog({
-                        type: DIALOG_TYPE.FOLDER_PERMISSIONS,
-                        header: this.#dotMessageService.get('Edit-Permissions'),
-                        payload: { identifier }
-                    });
+                    this.#store.setDialog(dialogFor(folder, access));
                 },
                 error: (error: HttpErrorResponse) => this.#httpErrorManager.handle(error)
             });
@@ -2024,7 +2033,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
 
     /**
      * A save in the legacy panel, including a workflow action: refresh the list quietly and keep
-     * the panel open (#37759, FR-013).
+     * the panel open (#37759, FR-013). Remove with the legacy editor.
      */
     protected onLegacyPanelSaved({ identifier, languageId }: DotLegacyEditorSaved) {
         this.#store.reloadContentDrive({ quiet: true });
@@ -2034,6 +2043,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
 
     /**
      * The author switched language inside the legacy editor: the URL follows (#37759, FR-020).
+     * Remove with the legacy editor.
      *
      * @param languageId The language the editor now shows.
      */
@@ -2056,6 +2066,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
      * The legacy panel closed, for any reason. Refresh the list quietly every time: a close after a
      * delete looks exactly like a cancel, and a move or a language switch sends no event at all, so
      * one extra list request is cheaper than missing a change (#37759, FR-014, FR-015).
+     * Remove with the legacy editor.
      */
     protected onLegacyPanelClosed() {
         this.#navigationService.closeEditPanel();
@@ -2064,7 +2075,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
 
     /**
      * Bring Back restored an older version in the legacy panel. The editor reloads with it and
-     * sends no save, so refresh the list quietly here (#37759, US6).
+     * sends no save, so refresh the list quietly here (#37759, US6). Remove with the legacy editor.
      */
     protected onLegacyPanelRestored() {
         this.#store.reloadContentDrive({ quiet: true });
@@ -2073,7 +2084,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
     /**
      * The first save of a new page in the legacy panel: close it, refresh the list, and open the
      * page in the page editor in the language the editor named, as Content Search does (#37759,
-     * FR-008).
+     * FR-008). Remove with the legacy editor.
      *
      * @param request The page to open and its language.
      */

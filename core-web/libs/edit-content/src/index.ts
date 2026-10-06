@@ -34,7 +34,8 @@ export type {
 export { DotHostFolderFieldComponent } from './lib/fields/dot-edit-content-host-folder-field/components/host-folder-field/host-folder-field.component';
 
 // Lets Content Drive take over "switch to the old editor" and a load error in its own panel
-// (#37759). Remove with the legacy editor.
+// (#37759).
+// Remove with the legacy editor.
 export { EDIT_CONTENT_NAVIGATION_OVERRIDE } from './lib/models/edit-content-navigation-override';
 export type { EditContentNavigationOverride } from './lib/models/edit-content-navigation-override';
 export type { EditContentIdentity } from './lib/services/host/edit-content-host.model';

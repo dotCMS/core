@@ -17,8 +17,7 @@ import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
 import { DotUploadBaseType, DotUploadSelection, DotUploadSelectorPayload } from '@dotcms/ui';
 
 import { DIALOG_TYPE } from './constants';
-
-import { DotLegacyEditorRequest } from '../components/dot-legacy-editor-side-panel/dot-legacy-editor-side-panel.model';
+import { DotLegacyEditorRequest } from './legacy-editor.models';
 
 /**
  * The parameters for the buildTreeFolderNodes function.
@@ -179,6 +178,7 @@ export interface DotContentDriveFolderPermissionsPayload {
  */
 export type DotContentDrivePanelRequest =
     | { editor: 'new'; data: EditContentDialogData }
+    // Remove with the legacy editor.
     | { editor: 'legacy'; data: DotLegacyEditorRequest };
 
 /**

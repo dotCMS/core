@@ -29,7 +29,8 @@ import { DotSidePanelNavController } from '@dotcms/edit-content';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotLegacyEditorSidePanelComponent } from './dot-legacy-editor-side-panel.component';
-import { DotLegacyEditorRequest } from './dot-legacy-editor-side-panel.model';
+
+import { DotLegacyEditorRequest } from '../../shared/legacy-editor.models';
 
 /** The legacy editor's edit screen, as UVE and the full-page wrapper load it. */
 const LAYOUT_PATH = '/c/portal/layout';
