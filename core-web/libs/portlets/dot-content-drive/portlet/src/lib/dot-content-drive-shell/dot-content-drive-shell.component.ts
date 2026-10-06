@@ -341,10 +341,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
 
         untracked(() => {
             this.#pendingCreate.set(null);
-            this.#navigationService.createContent(
-                contentType,
-                this.#navigationService.currentFolder()
-            );
+            this.#navigationService.createContent(contentType);
         });
     });
 

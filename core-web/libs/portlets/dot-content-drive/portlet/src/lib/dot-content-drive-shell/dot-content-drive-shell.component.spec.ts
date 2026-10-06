@@ -5855,9 +5855,6 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
     // Held at describe scope so we can clear it before each mount (mockProvider reuses the same fn).
     const openEditByIdentifier = vi.fn();
     const createContent = vi.fn();
-    /** Where the navigation service says a create from here goes. */
-    const CURRENT_FOLDER = { folderPath: 'demo.dotcms.com/test/path', folderInode: 'folder-inode' };
-    const currentFolder = vi.fn().mockReturnValue(CURRENT_FOLDER);
     // What a `createContent` link waits for before it opens: the tree's first load, and the
     // default language a create may start in (#37759, FR-024).
     const folders = signal<DotFolderTreeNodeItem[]>([]);
@@ -5916,7 +5913,6 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
                 createContent,
                 closeEditPanel: vi.fn(),
                 openEditByIdentifier,
-                currentFolder,
                 $editPanelRequest: signal(null),
                 $legacyPanelRequest: signal(null),
                 $panelLocation: signal(null)
@@ -6180,7 +6176,8 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
             deepLinkQueryParams['editContent'] = DEEP_LINK_ID;
         });
 
-        it('opens the create form in the folder Content Drive shows, once the tree has loaded', () => {
+        // The folder is the navigation service's call; the shell only waits for the tree.
+        it('opens the create form, once the tree has loaded', () => {
             const spectator = mountShell();
             spectator.detectChanges();
 
@@ -6190,7 +6187,7 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
             spectator.detectChanges();
 
             expect(createContent).toHaveBeenCalledTimes(1);
-            expect(createContent).toHaveBeenCalledWith('Banner', CURRENT_FOLDER);
+            expect(createContent).toHaveBeenCalledWith('Banner');
             expect(openEditByIdentifier).not.toHaveBeenCalled();
         });
 

@@ -118,16 +118,15 @@ export class DotContentDriveNavigationService implements EditContentNavigationOv
      *
      * The form starts in the language the list is filtered by, or Content Drive's default language
      * when there is no language filter, so the new content shows in the list once saved (FR-003).
+     * It goes in the folder Content Drive is showing ({@link #currentFolder}).
      *
      * @param contentTypeVariable - The variable name of the content type to create
-     * @param folder - Where the new content goes, usually {@link currentFolder}. `folderPath`
-     * (`hostname/path`) pre-selects the Host/Folder field in the new editor; `folderInode`
-     * pre-selects the target folder in the legacy editor.
      */
-    createContent(
-        contentTypeVariable: string,
-        folder: { folderPath?: string; folderInode?: string } = {}
-    ): void {
+    createContent(contentTypeVariable: string): void {
+        // Read before the type lookup, so the content lands in the folder the author was looking at
+        // when they asked, even if they browse while the request is in flight.
+        const folder = this.#currentFolder();
+
         this.#dotContentTypeService
             .getContentType(contentTypeVariable)
             .pipe(
@@ -205,7 +204,8 @@ export class DotContentDriveNavigationService implements EditContentNavigationOv
 
     /**
      * The folder Content Drive is showing, as a create needs it, so new content lands where the
-     * author is looking. Shared by the create action and `createContent` links.
+     * author is looking: a create from the create action or a `createContent` link, and the legacy
+     * create that "switch to the old editor" opens.
      *
      * At the site root both fall back to the current site (empty path / no inode). System Host is a
      * destination in its own right, and the site in the switcher is only context while it is
@@ -214,7 +214,7 @@ export class DotContentDriveNavigationService implements EditContentNavigationOv
      *
      * @returns `folderPath` (`hostname/path`) for the new editor, `folderInode` for the legacy one.
      */
-    currentFolder(): { folderPath?: string; folderInode?: string } {
+    #currentFolder(): { folderPath?: string; folderInode?: string } {
         if (this.#store.$systemHostSelected()) {
             return { folderInode: SYSTEM_HOST.identifier };
         }
@@ -263,7 +263,7 @@ export class DotContentDriveNavigationService implements EditContentNavigationOv
 
         if (!contentlet) {
             this.#openLegacyCreate(contentTypeVariable, open.title ?? contentTypeVariable, {
-                folderInode: this.currentFolder().folderInode,
+                folderInode: this.#currentFolder().folderInode,
                 languageId: open.languageId ?? this.#createLanguageId() ?? 1
             });
 

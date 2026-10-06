@@ -57,8 +57,7 @@ describe('DotContentDriveDialogContentTypeSelectorComponent', () => {
                 $systemHostSelected: systemHostSelected
             }),
             mockProvider(DotContentDriveNavigationService, {
-                createContent: vi.fn(),
-                currentFolder: vi.fn().mockReturnValue({})
+                createContent: vi.fn()
             }),
             {
                 provide: DotMessageService,
@@ -140,19 +139,15 @@ describe('DotContentDriveDialogContentTypeSelectorComponent', () => {
         });
 
         // Where the new content goes is the navigation service's call, shared with `createContent`
-        // links (#37759); the selector only hands it on.
-        it('should create the content in the folder the navigation service names and close the dialog', () => {
-            // Deliberately not what the store mock would yield, so only the service can be its source.
-            const folder = { folderPath: 'from-navigation/', folderInode: 'navigation-inode' };
-            navigationService.currentFolder.mockReturnValue(folder);
-
+        // links (#37759); the selector only names the type.
+        it('should ask the navigation service to create the chosen type and close the dialog', () => {
             const createButton = spectator
                 .query(byTestId('content-type-selector-create'))
                 ?.querySelector('button');
 
             spectator.click(createButton);
 
-            expect(navigationService.createContent).toHaveBeenCalledWith(SELECTED_VARIABLE, folder);
+            expect(navigationService.createContent).toHaveBeenCalledWith(SELECTED_VARIABLE);
             expect(store.closeDialog).toHaveBeenCalled();
         });
     });

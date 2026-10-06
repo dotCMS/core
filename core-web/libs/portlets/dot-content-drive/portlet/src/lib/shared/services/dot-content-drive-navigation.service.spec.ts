@@ -4,7 +4,7 @@ import {
     mockProvider,
     SpyObject
 } from '@openng/spectator/vitest';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { Mock, Mocked, describe, expect, it, vi } from 'vitest';
 
 import { Location } from '@angular/common';
@@ -22,6 +22,7 @@ import {
 import {
     DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
+    DotCMSContentType,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
 import { EDIT_CONTENT_NAVIGATION_OVERRIDE } from '@dotcms/edit-content';
@@ -50,7 +51,7 @@ const mockStore = () =>
     mockProvider(DotContentDriveStore, {
         getFilterValue: vi.fn().mockReturnValue(undefined),
         defaultLanguageId,
-        // What `currentFolder()` reads: a site root, outside System Host.
+        // The folder a create lands in: a site root, outside System Host.
         $systemHostSelected: signal(false),
         currentSite: vi.fn().mockReturnValue({ hostname: 'demo.dotcms.com' }),
         path: vi.fn().mockReturnValue(''),
@@ -114,6 +115,9 @@ describe('DotContentDriveNavigationService', () => {
         // return values, so start every test with no language known.
         store.getFilterValue.mockReturnValue(undefined);
         defaultLanguageId.mockReturnValue(undefined);
+        // Same for the folder being browsed: every test starts at the site root.
+        store.path.mockReturnValue('');
+        store.selectedNode.mockReturnValue(undefined);
         (spectator.inject(DotActionUrlService).getCreateContentletUrl as Mock).mockReturnValue(
             of(CREATE_URL)
         );
@@ -246,7 +250,7 @@ describe('DotContentDriveNavigationService', () => {
     });
 
     describe('createContent', () => {
-        it('should open the new editor side panel when feature flag is enabled and no folder given', () => {
+        it('should open the new editor side panel when feature flag is enabled, at the site root', () => {
             const mockContentType = createFakeContentType({
                 id: 'blog',
                 name: 'Blog',
@@ -261,13 +265,13 @@ describe('DotContentDriveNavigationService', () => {
             expect(service.$editPanelRequest()).toEqual({
                 mode: 'new',
                 contentTypeId: 'blog',
-                folderPath: undefined,
+                folderPath: 'demo.dotcms.com',
                 title: 'Blog'
             });
             expect(router.navigate).not.toHaveBeenCalled();
         });
 
-        it('should forward folderPath to the new editor side panel so it is created in the current folder', () => {
+        it('should create in the folder being browsed, as folderPath for the new editor side panel', () => {
             const mockContentType = createFakeContentType({
                 id: 'blog',
                 name: 'Blog',
@@ -275,8 +279,9 @@ describe('DotContentDriveNavigationService', () => {
             });
 
             contentTypeService.getContentType.mockReturnValue(of(mockContentType));
+            store.path.mockReturnValue('/about-us/');
 
-            service.createContent('blog', { folderPath: 'demo.dotcms.com/about-us/' });
+            service.createContent('blog');
 
             expect(service.$editPanelRequest()).toEqual({
                 mode: 'new',
@@ -285,6 +290,26 @@ describe('DotContentDriveNavigationService', () => {
                 title: 'Blog'
             });
             expect(router.navigate).not.toHaveBeenCalled();
+        });
+
+        // The author may browse elsewhere while the type is looked up. The content still goes where
+        // they were when they asked.
+        it('should create in the folder browsed when asked, not the one browsed when the type arrives', () => {
+            const contentType$ = new Subject<DotCMSContentType>();
+            contentTypeService.getContentType.mockReturnValue(contentType$);
+            store.path.mockReturnValue('/about-us/');
+
+            service.createContent('blog');
+            store.path.mockReturnValue('/news/');
+            contentType$.next(
+                createFakeContentType({
+                    id: 'blog',
+                    name: 'Blog',
+                    metadata: { [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true }
+                })
+            );
+
+            expect(service.$editPanelRequest()?.folderPath).toBe('demo.dotcms.com/about-us/');
         });
 
         /**
@@ -311,10 +336,10 @@ describe('DotContentDriveNavigationService', () => {
                     )
                 );
 
-                service.createContent('news', {
-                    folderPath: 'demo.dotcms.com/foo/',
-                    folderInode: 'inode-1'
-                });
+                store.path.mockReturnValue('/foo/');
+                store.selectedNode.mockReturnValue({ data: { type: 'folder', inode: 'inode-1' } });
+
+                service.createContent('news');
 
                 // The create screen is resolved before the panel opens (#37759, T112).
                 expect(
@@ -357,7 +382,7 @@ describe('DotContentDriveNavigationService', () => {
                 throwError(() => error)
             );
 
-            service.createContent('news', { folderInode: 'inode-1' });
+            service.createContent('news');
 
             expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
             expect(service.$legacyPanelRequest()).toBeNull();
@@ -795,7 +820,7 @@ describe('DotContentDriveNavigationService', () => {
             it('reopens its create as a legacy create, in the same folder and language', () => {
                 contentTypeService.getContentType.mockReturnValue(of(NEW_EDITOR_TYPE));
                 defaultLanguageId.mockReturnValue(2);
-                service.createContent('blog', { folderInode: 'inode-1' });
+                service.createContent('blog');
 
                 const handled = service.switchToLegacyEditor(
                     { contentTypeId: 'blog' },
@@ -1202,8 +1227,9 @@ describe.each([
  * Where a create from Content Drive puts the new content: the folder being browsed. Shared by the
  * create action and by `createContent` links, so both land in the same place (#37759, FR-003).
  */
-describe('DotContentDriveNavigationService.currentFolder', () => {
+describe('DotContentDriveNavigationService, where a create lands', () => {
     let spectator: SpectatorService<DotContentDriveNavigationService>;
+    const getContentType = vi.fn();
     const systemHostSelected = signal(false);
     const currentSite = vi.fn();
     const path = vi.fn();
@@ -1213,7 +1239,7 @@ describe('DotContentDriveNavigationService.currentFolder', () => {
         service: DotContentDriveNavigationService,
         providers: [
             mockProvider(Router, { navigate: vi.fn() }),
-            mockProvider(DotContentTypeService, { getContentType: vi.fn() }),
+            mockProvider(DotContentTypeService, { getContentType }),
             mockProvider(DotRouterService, { goToEditPage: vi.fn() }),
             mockProvider(Location, { path: vi.fn() }),
             mockProvider(DotHttpErrorManagerService, { handle: vi.fn() }),
@@ -1240,8 +1266,35 @@ describe('DotContentDriveNavigationService.currentFolder', () => {
         spectator = createService();
     });
 
+    /**
+     * Where a create from here puts the new content, read back from the panel each editor opens:
+     * the new editor takes the host path, the legacy one the folder inode.
+     */
+    const createdIn = () => {
+        const service = spectator.service;
+
+        getContentType.mockReturnValue(
+            of(
+                createFakeContentType({
+                    variable: 'blog',
+                    metadata: { [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true }
+                })
+            )
+        );
+        service.createContent('blog');
+        const folderPath = service.$editPanelRequest()?.folderPath;
+
+        getContentType.mockReturnValue(
+            of(createFakeContentType({ variable: 'news', metadata: {} }))
+        );
+        service.createContent('news');
+        const folderInode = service.$legacyPanelRequest()?.folderInode;
+
+        return { folderPath, folderInode };
+    };
+
     it('names the browsed folder: its host path for the new editor, its inode for the legacy one', () => {
-        expect(spectator.service.currentFolder()).toEqual({
+        expect(createdIn()).toEqual({
             folderPath: 'demo.dotcms.com/about-us/',
             folderInode: 'inode-1'
         });
@@ -1251,7 +1304,7 @@ describe('DotContentDriveNavigationService.currentFolder', () => {
         path.mockReturnValue(undefined);
         selectedNode.mockReturnValue({ data: { inode: '' } });
 
-        expect(spectator.service.currentFolder()).toEqual({
+        expect(createdIn()).toEqual({
             folderPath: 'demo.dotcms.com',
             folderInode: undefined
         });
@@ -1261,7 +1314,7 @@ describe('DotContentDriveNavigationService.currentFolder', () => {
         path.mockReturnValue('');
         selectedNode.mockReturnValue({ data: { type: 'site', inode: 'site-inode' } });
 
-        expect(spectator.service.currentFolder()).toEqual({
+        expect(createdIn()).toEqual({
             folderPath: 'demo.dotcms.com',
             folderInode: 'site-inode'
         });
@@ -1270,6 +1323,6 @@ describe('DotContentDriveNavigationService.currentFolder', () => {
     it('names System Host by its identifier, never pasted onto the site hostname', () => {
         systemHostSelected.set(true);
 
-        expect(spectator.service.currentFolder()).toEqual({ folderInode: SYSTEM_HOST.identifier });
+        expect(createdIn()).toEqual({ folderInode: SYSTEM_HOST.identifier });
     });
 });

@@ -63,7 +63,7 @@ export class DotContentDriveDialogContentTypeSelectorComponent {
         }
 
         this.#store.closeDialog();
-        this.#navigationService.createContent(variable, this.#navigationService.currentFolder());
+        this.#navigationService.createContent(variable);
     }
 
     protected onCancel(): void {
