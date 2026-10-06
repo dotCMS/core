@@ -1,9 +1,22 @@
-import { HttpError, type DotCMSRuntime } from '@dotcms/ai/runtime';
+import { LayoutRow } from './shared/page-common';
+import { normalizePagePath } from './shared/page-path';
+import { RESOLVE_ENDPOINTS, resolveSite } from './shared/resolve';
 
-import { LayoutRow } from './page-common';
-import { normalizePagePath } from './page-path';
-import { resolveSite } from './resolve';
-import { errorMessage } from './runtime';
+import { HttpError, ValidationError, type DotCMSRuntime } from '../../runtime';
+import { CONTEXT_ENDPOINTS, type Endpoint } from '../toolkit/endpoints';
+import { errorMessage, withMessage } from '../toolkit/tool-runtime';
+
+/**
+ * Every endpoint `placeContent` calls — the `page_place_content` tool enforces exactly this
+ * list, and `page-place-content.spec.ts` checks every request against it. Add a request, add it
+ * here.
+ */
+export const PAGE_PLACE_CONTENT_ENDPOINTS: readonly Endpoint[] = [
+    ...CONTEXT_ENDPOINTS,
+    ...RESOLVE_ENDPOINTS,
+    'GET /api/v1/page/json/**',
+    'POST /api/v1/page/{pageId}/content'
+];
 
 /** The default variant when the caller does not name one. */
 export const DEFAULT_VARIANT = 'DEFAULT';
@@ -210,7 +223,7 @@ async function resolvePageTarget(
     const requestedSite = explicitSite?.trim();
 
     if (!requestedSite && !qualifiedHost) {
-        throw new Error(
+        throw new ValidationError(
             '`site` is required for page placement when `path` is not host-qualified. ' +
                 'Pass a site hostname/identifier or use `//hostname/path`; refusing to choose the ' +
                 'default site prevents writes to the wrong page on multi-site instances.'
@@ -225,7 +238,7 @@ async function resolvePageTarget(
     const embedded = qualifiedHost ? await resolveSite(dotcms, qualifiedHost) : undefined;
 
     if (explicit && embedded && explicit.identifier !== embedded.identifier) {
-        throw new Error(
+        throw new ValidationError(
             `Conflicting sites: path targets "${qualifiedHost}" but site targets ` +
                 `"${requestedSite}". Pass one site consistently; no request was made.`
         );
@@ -249,7 +262,9 @@ async function resolvePageTarget(
  */
 function validateAssignments(slots: SlotAssignment[] | undefined): SlotAssignment[] {
     if (!slots || slots.length === 0) {
-        throw new Error('`slots` is required and must contain at least one slot assignment.');
+        throw new ValidationError(
+            '`slots` is required and must contain at least one slot assignment.'
+        );
     }
     return slots;
 }
@@ -299,7 +314,7 @@ function resolveSlot(address: SlotAddress, slots: PageSlot[]): PageSlot {
     if (typeof address === 'number') {
         const index = address - 1; // 1-based, in layout order.
         if (!Number.isInteger(address) || index < 0 || index >= slots.length) {
-            throw new Error(
+            throw new ValidationError(
                 `Slot index ${address} is out of range. The page has ${slots.length} slot(s): ` +
                     `${describeSlots(slots)}.`
             );
@@ -322,7 +337,7 @@ function resolveSlot(address: SlotAddress, slots: PageSlot[]): PageSlot {
             : slots.filter((slot) => containerMatchRank(slot.identifier, wanted) === bestRank);
 
     if (matches.length === 0) {
-        throw new Error(
+        throw new ValidationError(
             `No slot on the page uses container "${address.container}". Available slots: ` +
                 `${describeSlots(slots)}.`
         );
@@ -332,7 +347,7 @@ function resolveSlot(address: SlotAddress, slots: PageSlot[]): PageSlot {
         const exact = matches.find((slot) => slot.uuid === String(address.instance));
         if (!exact) {
             const instances = matches.map((slot) => `'${slot.uuid}'`).join(', ');
-            throw new Error(
+            throw new ValidationError(
                 `Container "${address.container}" has no slot with instance '${address.instance}'. ` +
                     `Available instances: ${instances}.`
             );
@@ -342,7 +357,7 @@ function resolveSlot(address: SlotAddress, slots: PageSlot[]): PageSlot {
 
     if (matches.length > 1) {
         const instances = matches.map((slot) => `'${slot.uuid}'`).join(', ');
-        throw new Error(
+        throw new ValidationError(
             `Container "${address.container}" appears in ${matches.length} slots ` +
                 `(instances: ${instances}). Pass slot.instance to disambiguate.`
         );
@@ -425,7 +440,7 @@ function bestContainerKey(keys: string[], wanted: string): string | undefined {
     }
 
     if (best.length > 1) {
-        throw new Error(
+        throw new ValidationError(
             `Container "${wanted}" is ambiguous — it matches ${best.length} containers on this ` +
                 `page equally well: ${best.join(', ')}. Pass the full container path or id to ` +
                 `disambiguate; guessing here could write content into the wrong container.`
@@ -481,7 +496,7 @@ async function loadPageSlots(
 
     const entity = response.entity;
     if (!entity || !entity.page) {
-        throw new Error(
+        throw new ValidationError(
             `Page "${path}" was not found (no page at this url for language ${languageId}).`
         );
     }
@@ -589,12 +604,14 @@ async function postContent(
     } catch (error) {
         const message = errorMessage(error);
 
+        // Each explanation is added to the save's own error (`withMessage`), never a new one:
+        // its class and status are what tell the model whether a retry can help.
         if (error instanceof HttpError && error.status === 409) {
-            throw withCause(
+            throw withMessage(
+                error,
                 'Page content save was rejected as a net-loss conflict (the change would remove more ' +
                     'content than allowed, or the page changed underneath this write). Re-read the page ' +
-                    `and retry. Original error: ${message}`,
-                error
+                    `and retry. Original error: ${message}`
             );
         }
 
@@ -603,31 +620,16 @@ async function postContent(
         // the model cannot tell that the fix is a different container or a different content
         // type — so it retries the identical call and fails identically.
         if (error instanceof HttpError && error.status === 400) {
-            throw withCause(
+            throw withMessage(
+                error,
                 'Page content save was rejected (HTTP 400). The usual cause is a contentlet whose ' +
                     'CONTENT TYPE is not permitted in the container it was placed in — check the ' +
                     "container's allowed content types and either place a permitted type or choose " +
                     'a different container. Retrying this same call unchanged will fail the same ' +
-                    `way. Original error: ${message}`,
-                error
+                    `way. Original error: ${message}`
             );
         }
 
-        throw withCause(`Failed to save page content: ${message}`, error);
+        throw withMessage(error, `Failed to save page content: ${message}`);
     }
-}
-
-/**
- * An `Error` carrying the original as `cause`.
- *
- * Written by assignment rather than `new Error(msg, { cause })` because that constructor
- * overload needs the ES2022 lib and this project targets lower. Threading the cause matters:
- * without it the typed `HttpError` — and with it `code` and `status` — is flattened to a
- * message here and can never reach the tool boundary that reports `retryable`.
- */
-function withCause(message: string, cause: unknown): Error {
-    const error = new Error(message);
-    (error as Error & { cause?: unknown }).cause = cause;
-
-    return error;
 }
