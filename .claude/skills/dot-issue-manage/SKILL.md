@@ -17,29 +17,34 @@ AI-agent-native skill for managing GitHub issues in `dotCMS/core`. Infers where 
 
 These rules are **NON-SKIPPABLE**. They apply to CREATE, to UPDATE, and to the Step 11 cross-reference comment — including quick-draft. Quick-draft skips only the Issue Refinement loop (Step 7b); the gate and the preview still run.
 
-### Rule 1 — No customer identifiers
+### Rule 1 — No customer data
 
-`dotCMS/core` is a public repository and GitHub keeps edit history, so scrubbing text later does not remove it. Never put any of the following in a title, body or comment:
+`dotCMS/core` is a public repository and GitHub keeps edit history, so scrubbing text later does not remove it. Never put customer data of any kind in anything written to GitHub — title, body, comment or attachment. This includes, and is not limited to:
 
 - Customer names
 - Their site domains and URLs
 - Site-specific identifiers: their content type names, theme CSS classes, CDN or hosting vendor
+- Their content, code, markup, configuration or screenshots
+- Personal data: names, emails, usernames, IP addresses
+- Logs, stack traces or payloads that carry any of the above
+- Credentials, tokens, keys, and contract details
 
-Refer to "a customer site" instead. When code or markup comes from a customer site, generalize it before including it.
+Linking the related support ticket is fine and expected (the defect template asks for it). Refer to "a customer site" instead. When code, markup or logs come from a customer site, reduce them to a generic reproduction before including them. When in doubt, leave it out.
 
 ### Rule 2 — Pre-write gate
 
 Run before every `gh issue create`, every `gh issue edit` that changes the title or body, and every `gh issue comment`:
 
-1. **Customer identifiers** — collect every customer identifier that appeared in the conversation (names, domains, site-specific identifiers) and grep the full draft (title, body, comment) case-insensitively for each one.
+1. **Customer data** — collect every piece of customer data that appeared in the conversation (anything Rule 1 lists) and grep the full draft (title, body, comment) case-insensitively for each term. Also read the draft for customer data the grep cannot catch, such as pasted content, logs or personal data.
 2. **URLs** — extract every URL from the draft and flag any whose host is not one of:
    - a dotCMS domain: `dotcms.com`, `dotcms.dev`, and their subdomains
+   - the dotCMS support desk: `dotcms.freshdesk.com`
    - a GitHub domain: `github.com`, `githubusercontent.com`, and their subdomains
    - `localhost` or `127.0.0.1`
 
 Outcomes:
 
-- **Customer identifier match** → block. Show the matched terms, rewrite the text to remove them, and re-run the gate.
+- **Customer data match** → block. Show the matched terms, rewrite the text to remove them, and re-run the gate.
 - **Flagged URL** → block. Show the URL and continue only after the user removes it or explicitly confirms it is not a customer site.
 - **No match** → pass silently; do not ask an extra question.
 
@@ -125,7 +130,7 @@ Always read fresh — never assume structure.
 
 Concise, imperative, in English. Translate from Spanish if needed.
 
-Apply [Critical Rules](#critical-rules) Rule 1 — no customer identifiers in the title.
+Apply [Critical Rules](#critical-rules) Rule 1 — no customer data in the title (the rule covers every text written to GitHub).
 
 ### Step 4 — Select feature label (optional)
 
@@ -286,7 +291,7 @@ The checkbox output from Phase 6 becomes the **Acceptance Criteria section** of 
 
 Match the template structure read in Step 2. Populate all fields substantively from the user's description.
 
-Apply [Critical Rules](#critical-rules) Rule 1 — no customer identifiers anywhere in the body.
+Apply [Critical Rules](#critical-rules) Rule 1 — no customer data anywhere in the body (the rule covers every text written to GitHub).
 
 **Priority (from Step 5b):**
 - **Task** type with a chosen value → write the template's `### Priority` section with that value. `Critical` is written too, even though the `task.yaml` dropdown lists only High / Medium / Low.
