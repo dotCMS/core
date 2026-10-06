@@ -162,7 +162,11 @@ describe('DotLegacyEditorSidePanelComponent', () => {
     const loadFrame = (search = ''): StubFrame => {
         const iframe = getIframe() as HTMLIFrameElement;
         const doc = document.implementation.createHTMLDocument('legacy editor');
-        const win = { document: doc, location: { search } } as unknown as Window;
+        // An EventTarget, so the panel can listen to the window as it does to the real one.
+        const win = Object.assign(new EventTarget(), {
+            document: doc,
+            location: { search }
+        }) as unknown as Window;
 
         Object.defineProperty(iframe, 'contentWindow', { configurable: true, get: () => win });
         iframe.dispatchEvent(new Event('load'));
@@ -650,6 +654,48 @@ describe('DotLegacyEditorSidePanelComponent', () => {
 
             expect(pageEditor).toHaveBeenCalledWith({ url: '/blog/new-page', languageId: 2 });
             expect(closed).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('loading', () => {
+        const spinner = () => spectator.query(byTestId('legacy-editor-loading'), { root: true });
+
+        it('shows a spinner until the legacy editor has loaded', () => {
+            open();
+
+            expect(spinner()).toBeTruthy();
+
+            loadFrame();
+            spectator.detectChanges();
+
+            expect(spinner()).toBeNull();
+        });
+
+        // The editor reloads itself on a save, a language switch or a restored version.
+        it('shows it again while the legacy editor reloads itself', () => {
+            open();
+            const { win } = loadFrame();
+            spectator.detectChanges();
+
+            win.dispatchEvent(new Event('pagehide'));
+            spectator.detectChanges();
+
+            expect(spinner()).toBeTruthy();
+
+            loadFrame();
+            spectator.detectChanges();
+
+            expect(spinner()).toBeNull();
+        });
+
+        it('shows it again when the panel opens other content', () => {
+            open();
+            loadFrame();
+            spectator.detectChanges();
+
+            open({ ...EDIT_REQUEST, inode: 'other-inode' });
+
+            expect(spinner()).toBeTruthy();
         });
     });
 

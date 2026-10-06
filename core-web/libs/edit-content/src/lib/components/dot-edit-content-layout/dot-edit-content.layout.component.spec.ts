@@ -1406,6 +1406,19 @@ describe.each([
             expect(dotEditContentService.getVersions).toHaveBeenCalled();
         }));
 
+        // Before there is any content the editor renders nothing, so a spinner fills it.
+        it('should show a spinner on the first load, until the content is loaded', () => {
+            const loading = () => spectator.query(byTestId('edit-content-layout__loading'));
+            patchState(store, { contentType: null, state: ComponentStatus.LOADING });
+            spectator.detectChanges();
+
+            expect(loading()).not.toBeNull();
+
+            loadContentlet();
+
+            expect(loading()).toBeNull();
+        });
+
         it('should refresh after the sidebar component is destroyed and recreated', fakeAsync(() => {
             loadContentlet();
             tick();

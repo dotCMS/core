@@ -57,13 +57,23 @@
         </div>
     </ng-template>
     @if ($url(); as url) {
-        <iframe
-            #iframe
-            class="size-full flex-1 border-0"
-            [src]="url"
-            [title]="request()?.title ?? ''"
-            (load)="onIframeLoad()"
-            data-testid="legacy-editor-iframe"></iframe>
+        <div class="relative flex size-full flex-1">
+            <iframe
+                #iframe
+                class="size-full flex-1 border-0"
+                [src]="url"
+                [title]="request()?.title ?? ''"
+                (load)="onIframeLoad()"
+                data-testid="legacy-editor-iframe"></iframe>
+            <!-- The same spinner the new editor shows while it reloads. -->
+            @if ($loading()) {
+                <div
+                    class="absolute inset-0 flex items-center justify-center bg-white/60"
+                    data-testid="legacy-editor-loading">
+                    <i class="pi pi-spin pi-spinner text-4xl text-gray-500"></i>
+                </div>
+            }
+        </div>
     }
 </p-drawer>
 

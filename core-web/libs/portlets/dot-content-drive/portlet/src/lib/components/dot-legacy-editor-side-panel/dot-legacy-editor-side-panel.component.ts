@@ -179,6 +179,13 @@ export class DotLegacyEditorSidePanelComponent implements OnDestroy {
             : null;
     });
 
+    /**
+     * Whether the legacy editor is loading a document: set again whenever the panel loads a new URL,
+     * and while the editor reloads itself (a save, a language switch, a restored version). The
+     * iframe shows nothing useful until then, so a spinner covers it.
+     */
+    protected readonly $loading = linkedSignal(() => this.$url() !== null);
+
     /** Withdraws the Escape claim; called on destroy. */
     readonly #withdrawShortcuts: () => void;
 
@@ -252,6 +259,7 @@ export class DotLegacyEditorSidePanelComponent implements OnDestroy {
      */
     protected onIframeLoad(): void {
         this.#detachFrame();
+        this.$loading.set(false);
         // A new document holds none of the changes the old one had.
         this.#dirty.set(false);
 
@@ -265,7 +273,7 @@ export class DotLegacyEditorSidePanelComponent implements OnDestroy {
 
         this.#followLanguage(editorWindow?.location?.search);
 
-        if (!doc) {
+        if (!editorWindow || !doc) {
             this.#detachFrame = () => undefined;
 
             return;
@@ -290,12 +298,18 @@ export class DotLegacyEditorSidePanelComponent implements OnDestroy {
             }
         };
 
+        // The editor is leaving this document for a new one (it reloads on a save, a language switch
+        // or a restored version): cover it until the next `load`.
+        const onPageHide = () => this.#zone.run(() => this.$loading.set(true));
+
         doc.addEventListener('ng-event', onLegacyEvent);
         doc.addEventListener('keydown', onKeydown);
+        editorWindow.addEventListener('pagehide', onPageHide);
 
         this.#detachFrame = () => {
             doc.removeEventListener('ng-event', onLegacyEvent);
             doc.removeEventListener('keydown', onKeydown);
+            editorWindow.removeEventListener('pagehide', onPageHide);
         };
     }
 
