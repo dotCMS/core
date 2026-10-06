@@ -52,8 +52,8 @@ describe('DotKeyValueTableHeaderRowComponent', () => {
     });
 
     const fill = (key: string, value: string) => {
-        spectator.typeInElement(key, spectator.query(byTestId('key-input')));
-        spectator.typeInElement(value, spectator.query(byTestId('value-input')));
+        spectator.typeInElement(key, spectator.query(byTestId('key-input'))!);
+        spectator.typeInElement(value, spectator.query(byTestId('value-input'))!);
         spectator.detectChanges();
     };
 
@@ -63,7 +63,7 @@ describe('DotKeyValueTableHeaderRowComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.component.form.valid).toBe(false);
-            expect(spectator.query('small.text-red-500').textContent).toContain(
+            expect(spectator.query('small.text-red-500')!.textContent).toContain(
                 'This field is required'
             );
         });
@@ -74,7 +74,7 @@ describe('DotKeyValueTableHeaderRowComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.component.keyControl.hasError('duplicatedKey')).toBe(true);
-            expect(spectator.query('small.text-red-500').textContent).toContain(
+            expect(spectator.query('small.text-red-500')!.textContent).toContain(
                 'This key already exists'
             );
         });
@@ -132,7 +132,7 @@ describe('DotKeyValueTableHeaderRowComponent', () => {
 
             fill('fromKeyboard', 'value');
             spectator
-                .query(byTestId('value-input'))
+                .query(byTestId('value-input'))!
                 .dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
             spectator.detectChanges();
 
@@ -141,7 +141,7 @@ describe('DotKeyValueTableHeaderRowComponent', () => {
 
         // FR-012: consecutive pairs must be enterable without reaching for the pointer.
         it('should clear the form and refocus the key input after a successful add', () => {
-            const keyInput = spectator.query<HTMLInputElement>(byTestId('key-input'));
+            const keyInput = spectator.query<HTMLInputElement>(byTestId('key-input'))!;
 
             fill('newKey', 'newValue');
             spectator.click(byTestId('save-button'));
@@ -155,7 +155,7 @@ describe('DotKeyValueTableHeaderRowComponent', () => {
 
     describe('keyboard navigation', () => {
         it('should advance from key to value on Enter when the key is usable', () => {
-            const keyInput = spectator.query<HTMLInputElement>(byTestId('key-input'));
+            const keyInput = spectator.query<HTMLInputElement>(byTestId('key-input'))!;
             spectator.typeInElement('valid-key', keyInput);
             keyInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
 
@@ -163,7 +163,7 @@ describe('DotKeyValueTableHeaderRowComponent', () => {
         });
 
         it('should stay on the key input when the key is invalid', () => {
-            const keyInput = spectator.query<HTMLInputElement>(byTestId('key-input'));
+            const keyInput = spectator.query<HTMLInputElement>(byTestId('key-input'))!;
             spectator.typeInElement('name', keyInput); // duplicate
             keyInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
 
@@ -173,7 +173,7 @@ describe('DotKeyValueTableHeaderRowComponent', () => {
         it('should reset the row on Escape', () => {
             fill('abandoned', 'value');
             spectator
-                .query(byTestId('key-input'))
+                .query(byTestId('key-input'))!
                 .dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
             spectator.detectChanges();
 
@@ -199,7 +199,7 @@ describe('DotKeyValueTableHeaderRowComponent', () => {
             spectator.click(byTestId('dot-key-value-new-visibility-toggle'));
             spectator.detectChanges();
 
-            expect(spectator.query<HTMLInputElement>(byTestId('value-input')).type).toBe(
+            expect(spectator.query<HTMLInputElement>(byTestId('value-input'))!.type).toBe(
                 'password'
             );
         });
@@ -216,14 +216,14 @@ describe('DotKeyValueTableHeaderRowComponent', () => {
             toggle();
             toggle();
 
-            expect(spectator.query<HTMLInputElement>(byTestId('value-input')).type).toBe('text');
+            expect(spectator.query<HTMLInputElement>(byTestId('value-input'))!.type).toBe('text');
             expect(
                 spectator
-                    .query(byTestId('dot-key-value-new-visibility-toggle'))
+                    .query(byTestId('dot-key-value-new-visibility-toggle'))!
                     .getAttribute('aria-pressed')
             ).toBe('false');
             expect(
-                spectator.query(byTestId('dot-key-value-new-visibility-toggle')).textContent.trim()
+                spectator.query(byTestId('dot-key-value-new-visibility-toggle'))!.textContent.trim()
             ).toBe('visibility');
         });
     });
@@ -240,7 +240,7 @@ describe('DotKeyValueTableHeaderRowComponent', () => {
             const event = Object.assign(new Event('paste', { bubbles: true, cancelable: true }), {
                 clipboardData: { getData: () => text }
             });
-            spectator.element.querySelector('[data-testId="key-input"]').dispatchEvent(event);
+            spectator.element.querySelector('[data-testId="key-input"]')!.dispatchEvent(event);
             spectator.detectChanges();
 
             return event;

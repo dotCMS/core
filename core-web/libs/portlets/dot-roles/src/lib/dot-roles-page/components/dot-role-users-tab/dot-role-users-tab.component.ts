@@ -46,7 +46,7 @@ const MEMBER_SEARCH_DEBOUNCE_MS = 300;
 // and de-duplicated in the store. A server page of one ancestor is not a page
 // of that union, so each ancestor is pulled whole (`ROLE_MEMBERS_PAGE_SIZE`)
 // and `p-table` pages the merged array. See the note on that constant.
-const MEMBERS_ROWS_PER_PAGE_OPTIONS = [20, 40, 60] as const;
+const MEMBERS_ROWS_PER_PAGE_OPTIONS: number[] = [20, 40, 60];
 const MEMBERS_DEFAULT_ROWS_PER_PAGE = 20;
 
 @Component({

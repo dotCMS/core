@@ -38,22 +38,22 @@ export class LoginService {
     currentUserLanguageId = '';
     private country = '';
     private lang = '';
-    private urls: Record<string, string>;
+    // Typed by inference rather than `Record<string, string>` so each endpoint is a named
+    // property; that keeps dot access valid under `noPropertyAccessFromIndexSignature`.
+    private readonly urls = {
+        changePassword: '/api/v1/changePassword',
+        getAuth: '/api/v1/authentication/logInUser',
+        loginAs: '/api/v1/users/loginas',
+        logout: '/api/v1/logout',
+        logoutAs: '/api/v1/users/logoutas',
+        recoverPassword: '/api/v1/forgotpassword',
+        serverInfo: '/api/v1/loginform',
+        userAuth: '/api/v1/authentication',
+        current: '/api/v1/users/current/'
+    };
 
     constructor() {
         this._loginAsUsersList$ = new Subject<User[]>();
-
-        this.urls = {
-            changePassword: '/api/v1/changePassword',
-            getAuth: '/api/v1/authentication/logInUser',
-            loginAs: '/api/v1/users/loginas',
-            logout: '/api/v1/logout',
-            logoutAs: '/api/v1/users/logoutas',
-            recoverPassword: '/api/v1/forgotpassword',
-            serverInfo: '/api/v1/loginform',
-            userAuth: '/api/v1/authentication',
-            current: '/api/v1/users/current/'
-        };
 
         this.dotcmsEventsService.subscribeTo('SESSION_DESTROYED').subscribe(() => {
             this.logOutUser();
@@ -77,7 +77,11 @@ export class LoginService {
         return this._logout$.asObservable();
     }
 
-    private _auth: Auth;
+    // TODO(#35939): assigned by `setAuth()` during the login flow, never in the constructor.
+    // Modelling it as `Auth | undefined` is the truthful type, but the public `auth` getter is
+    // consumed by already-strict projects (global-store, data-access), so widening it is a
+    // public-API change that belongs in its own issue.
+    private _auth!: Auth;
 
     get auth(): Auth {
         return this._auth;
@@ -266,10 +270,10 @@ export class LoginService {
     /**
      * Subscribe to ser change and call received function on change.
      *
-     * @param {(params?: unknown) => void} func
+     * @param {(auth: Auth) => void} func
      * @memberof LoginService
      */
-    watchUser(func: (params?: unknown) => void): void {
+    watchUser(func: (auth: Auth) => void): void {
         if (this.auth) {
             func(this.auth);
         }
@@ -291,7 +295,7 @@ export class LoginService {
         this._auth = this.getFullAuth(auth);
         this._auth$.next(this.getFullAuth(auth));
 
-        this.currentUserLanguageId = auth.user.languageId;
+        this.currentUserLanguageId = auth.user.languageId ?? '';
 
         // When not logged user we need to fire the observable chain
         if (!auth.user) {
@@ -373,6 +377,8 @@ export interface User {
 
 export interface Auth {
     user: User;
-    loginAsUser: User;
+    // Null whenever nobody is impersonating. Callers already guard with
+    // `auth.loginAsUser || auth.user`; the type just never said so.
+    loginAsUser: User | null;
     isLoginAs?: boolean;
 }

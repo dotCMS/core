@@ -91,7 +91,8 @@ const defaultVmMock: VmReportExperiment = {
     status: ComponentStatus.INIT,
     winnerLegendSummary: { icon: 'icon', legend: 'legend' },
     suggestedWinner: null,
-    promotedVariant: null
+    // `undefined`, not null: `getPromotedVariant$` is a `find`, so no promoted variant means absent.
+    promotedVariant: undefined
 };
 
 const EXPERIMENT_MOCK = getExperimentMock(0);
@@ -215,10 +216,12 @@ describe('DotExperimentsReportsComponent', () => {
         spectator.detectChanges();
         vi.spyOn(store, 'loadExperimentAndResults');
 
+        // The output emits void; `triggerEventHandler` still wants an argument, and undefined is
+        // what a void emission actually delivers.
         spectator.triggerEventHandler(
             DotExperimentsExperimentSummaryComponent,
             'updateResults',
-            null
+            undefined
         );
 
         expect(store.loadExperimentAndResults).toHaveBeenCalledWith(
@@ -230,7 +233,9 @@ describe('DotExperimentsReportsComponent', () => {
         spectator.component.vm$ = of({
             ...defaultVmMock,
             experiment: {
-                ...defaultVmMock.experiment,
+                // `defaultVmMock.experiment` is `DotExperiment | null`, so spreading it yields a
+                // partial. It is a real experiment in this fixture — see `defaultVmMock` above.
+                ...defaultVmMock.experiment!,
                 status: DotExperimentStatus.RUNNING
             },
             isLoading: false
@@ -243,7 +248,9 @@ describe('DotExperimentsReportsComponent', () => {
         spectator.component.vm$ = of({
             ...defaultVmMock,
             experiment: {
-                ...defaultVmMock.experiment,
+                // `defaultVmMock.experiment` is `DotExperiment | null`, so spreading it yields a
+                // partial. It is a real experiment in this fixture — see `defaultVmMock` above.
+                ...defaultVmMock.experiment!,
                 status: DotExperimentStatus.RUNNING
             },
             isLoading: false
@@ -270,7 +277,9 @@ describe('DotExperimentsReportsComponent', () => {
         spectator.component.vm$ = of({
             ...defaultVmMock,
             experiment: {
-                ...defaultVmMock.experiment,
+                // `defaultVmMock.experiment` is `DotExperiment | null`, so spreading it yields a
+                // partial. It is a real experiment in this fixture — see `defaultVmMock` above.
+                ...defaultVmMock.experiment!,
                 status: DotExperimentStatus.RUNNING
             },
             isLoading: false
@@ -286,7 +295,7 @@ describe('DotExperimentsReportsComponent', () => {
         const mockEvent = new MouseEvent('click');
         spectator.component.promoteVariant(
             mockEvent,
-            defaultVmMock.experiment.id,
+            defaultVmMock.experiment!.id!,
             EXPERIMENT_RESULTS_DETAIL_DATA_MOCK[0]
         );
 
@@ -298,12 +307,14 @@ describe('DotExperimentsReportsComponent', () => {
         confirmOptions.accept();
 
         expect(store.promoteVariant).toHaveBeenCalledWith({
-            experimentId: defaultVmMock.experiment.id,
+            experimentId: defaultVmMock.experiment!.id!,
             variant: EXPERIMENT_RESULTS_DETAIL_DATA_MOCK[0]
         });
     });
 
     afterAll(() => {
-        delete global.ResizeObserver;
+        // Cast because `delete` requires an optional property and the global is declared required;
+        // the test installed it in `beforeAll` and is putting the environment back.
+        delete (global as { ResizeObserver?: unknown }).ResizeObserver;
     });
 });

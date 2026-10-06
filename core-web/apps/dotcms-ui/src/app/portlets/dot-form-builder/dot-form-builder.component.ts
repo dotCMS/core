@@ -20,9 +20,9 @@ import { DotContentTypesPortletComponent } from '../shared/dot-content-types-lis
 export class DotFormBuilderComponent implements OnInit {
     private route = inject(ActivatedRoute);
 
-    haveLicense$: Observable<boolean>;
+    haveLicense$!: Observable<boolean>;
 
     ngOnInit() {
-        this.haveLicense$ = this.route.data.pipe(map((x) => x?.haveLicense));
+        this.haveLicense$ = this.route.data.pipe(map((x) => x?.['haveLicense']));
     }
 }

@@ -3,14 +3,14 @@ import { Subject } from 'rxjs';
 import {
     Component,
     EventEmitter,
-    Input,
     OnChanges,
     OnDestroy,
     OnInit,
     Output,
     SimpleChanges,
     inject,
-    ChangeDetectionStrategy
+    ChangeDetectionStrategy,
+    input
 } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup, ReactiveFormsModule } from '@angular/forms';
 
@@ -21,27 +21,16 @@ import { DotContainer } from '@dotcms/dotcms-models';
 
 import { DotPortletToolbarActions } from '../../../../shared/models/dot-portlet-toolbar.model/dot-portlet-toolbar-actions.model';
 import { DotGlobalMessageComponent } from '../../../../view/components/_common/dot-global-message/dot-global-message.component';
-import { DotTextareaContentComponent } from '../../../../view/components/_common/dot-textarea-content/dot-textarea-content.component';
+import {
+    DotTextareaMonacoInit,
+    DotTextareaContentComponent
+} from '../../../../view/components/_common/dot-textarea-content/dot-textarea-content.component';
 import { DotContainerSelectorComponent } from '../../../../view/components/dot-container-selector/dot-container-selector.component';
 import { DotPortletToolbarComponent } from '../../../../view/components/dot-portlet-base/components/dot-portlet-toolbar/dot-portlet-toolbar.component';
 import { DotPortletBaseComponent } from '../../../../view/components/dot-portlet-base/dot-portlet-base.component';
 import { DotTemplateItem } from '../store/dot-template.store';
 
-interface MonacoEditorOperation {
-    range: number;
-    text: string;
-    forceMoveMarkers: boolean;
-}
-
-interface MonacoEditorInfo {
-    name: string;
-    editor: MonacoEditor;
-}
-
-interface MonacoEditor {
-    getSelection: () => number;
-    executeEdits: (action: string, data: MonacoEditorOperation[]) => void;
-}
+type MonacoEditorInfo = DotTextareaMonacoInit;
 
 @Component({
     selector: 'dot-template-advanced',
@@ -65,28 +54,28 @@ export class DotTemplateAdvancedComponent implements OnInit, OnDestroy, OnChange
     @Output() save = new EventEmitter<DotTemplateItem>();
     @Output() cancel = new EventEmitter();
 
-    @Input() body: string;
-    @Input() didTemplateChanged: boolean;
+    readonly body = input<string>();
+    readonly didTemplateChanged = input<boolean>();
 
     // `any` because the type of the editor in the ngx-monaco-editor package is not typed
-    editor: MonacoEditor;
-    form: UntypedFormGroup;
-    actions: DotPortletToolbarActions;
+    editor!: DotTextareaMonacoInit['editor'];
+    form!: UntypedFormGroup;
+    actions!: DotPortletToolbarActions;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     ngOnInit(): void {
-        this.form = this.fb.group({ body: this.body });
+        this.form = this.fb.group({ body: this.body() });
 
         this.form.valueChanges
             .pipe(takeUntil(this.destroy$))
             .subscribe(() => this.updateTemplate.emit(this.form.value));
 
-        this.actions = this.getActions(!this.didTemplateChanged);
+        this.actions = this.getActions(!this.didTemplateChanged());
     }
 
     ngOnChanges(changes: SimpleChanges) {
-        if (changes.didTemplateChanged) {
-            this.actions = this.getActions(!changes.didTemplateChanged.currentValue);
+        if (changes['didTemplateChanged']) {
+            this.actions = this.getActions(!changes['didTemplateChanged'].currentValue);
         }
     }
 
@@ -115,6 +104,12 @@ export class DotTemplateAdvancedComponent implements OnInit, OnDestroy, OnChange
     containerChange(container: DotContainer): void {
         const selection = this.editor.getSelection();
 
+        // `getSelection()` is null when the editor has never held focus, and `executeEdits`
+        // needs a range. The previous hand-rolled `getSelection: () => number` hid this.
+        if (!selection) {
+            return;
+        }
+
         const id = this.setContainerId(container);
 
         const text = `## Container: ${
@@ -125,9 +120,13 @@ export class DotTemplateAdvancedComponent implements OnInit, OnDestroy, OnChange
     }
 
     private setContainerId({ identifier, hostName }: DotContainer): string {
+        if (!hostName) {
+            return identifier;
+        }
+
         const regex = new RegExp('//' + hostName);
 
-        return identifier?.includes(hostName) ? identifier.replace(regex, '') : identifier;
+        return identifier.includes(hostName) ? identifier.replace(regex, '') : identifier;
     }
 
     private getActions(disabled = true): DotPortletToolbarActions {

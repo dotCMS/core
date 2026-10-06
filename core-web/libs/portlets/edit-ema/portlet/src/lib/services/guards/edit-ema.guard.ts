@@ -6,9 +6,14 @@ import { DEFAULT_PERSONA, PERSONA_KEY } from '../../shared/consts';
 /**
  * Query parameters required for EMA (Edit Mode Architecture) pages.
  */
+/**
+ * `language_id` is a `string` like the rest: these are URL query parameters. `DEFAULT_QUERY_PARAMS`
+ * fills it with `'1'` and the only consumer spreads the result into `Router.createUrlTree`, so the
+ * `number` here described neither end — and it made the params accumulator's value type `never`.
+ */
 type EmaQueryParams = {
     url: string;
-    language_id: number;
+    language_id: string;
     [PERSONA_KEY]: string;
     variantName: string;
 };
@@ -17,8 +22,12 @@ type EmaQueryParams = {
  * Result of query parameter validation.
  */
 type ConfirmQueryParamsResult = {
-    /** The missing query parameters with their default values */
-    newQueryParams: EmaQueryParams | null;
+    /**
+     * The *missing* query parameters with their default values — `Partial`, because that is what it
+     * has always held: only the keys found absent, spread over the route's existing ones by the
+     * caller. Null when nothing was missing.
+     */
+    newQueryParams: Partial<EmaQueryParams> | null;
     /** Whether any required query params were missing and defaults were applied */
     didQueryParamsGetCompleted: boolean;
 };
@@ -28,7 +37,9 @@ type ConfirmQueryParamsResult = {
  * If any of these are missing from the URL, the guard will redirect
  * with these defaults applied.
  */
-const DEFAULT_QUERY_PARAMS: ReadonlyArray<{ key: string; value: string }> = [
+// `keyof EmaQueryParams` rather than `string`: these keys index the accumulator built in
+// `confirmQueryParams`, and a plain `string` cannot.
+const DEFAULT_QUERY_PARAMS: ReadonlyArray<{ key: keyof EmaQueryParams; value: string }> = [
     {
         key: 'language_id',
         value: '1'
@@ -125,7 +136,11 @@ function getFullChildPath(route: ActivatedRouteSnapshot | null): string {
  *   - `newQueryParams`: The missing params with their default values, or null if none missing
  */
 function confirmQueryParams(queryParams: Params): ConfirmQueryParamsResult {
-    const { missing, ...missingQueryParams } = DEFAULT_QUERY_PARAMS.reduce(
+    // The accumulator's type comes from the seed, which names only `missing` — so every
+    // `acc[key] = ...` below was writing a key the inferred type did not have.
+    const { missing, ...missingQueryParams } = DEFAULT_QUERY_PARAMS.reduce<
+        { missing: boolean } & Partial<EmaQueryParams>
+    >(
         (acc, { key, value }) => {
             // Special handling for 'url': treat empty/whitespace-only as missing
             if (key === 'url' && queryParams[key]?.trim()?.length === 0) {
@@ -153,7 +168,7 @@ function confirmQueryParams(queryParams: Params): ConfirmQueryParamsResult {
     if (missing) {
         return {
             didQueryParamsGetCompleted: true,
-            newQueryParams: missingQueryParams as EmaQueryParams
+            newQueryParams: missingQueryParams
         };
     }
 

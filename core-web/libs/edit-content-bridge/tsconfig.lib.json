@@ -10,7 +10,6 @@
         "types": ["node", "vite/client"],
         "skipLibCheck": true,
         "noPropertyAccessFromIndexSignature": false,
-        "downlevelIteration": true,
         "strictPropertyInitialization": false
     },
     "include": ["src/**/*.ts"],

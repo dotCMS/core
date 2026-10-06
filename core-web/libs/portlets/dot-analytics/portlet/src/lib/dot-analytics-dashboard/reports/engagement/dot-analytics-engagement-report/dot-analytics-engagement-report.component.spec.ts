@@ -74,7 +74,11 @@ const MOCK_PLATFORMS: EngagementPlatforms = {
 describe('DotAnalyticsEngagementReportComponent', () => {
     let spectator: Spectator<DotAnalyticsEngagementReportComponent>;
 
-    const mockKpis = signal({
+    const mockKpis = signal<{
+        status: ComponentStatus;
+        data: typeof MOCK_KPIS | null;
+        error: string | null;
+    }>({
         status: ComponentStatus.LOADED,
         data: MOCK_KPIS,
         error: null
@@ -163,7 +167,7 @@ describe('DotAnalyticsEngagementReportComponent', () => {
         it('should display 4 metric components (1 engagement rate + 3 KPIs)', () => {
             spectator = createComponent();
             spectator.detectChanges();
-            const metrics = spectator.queryAll(DotAnalyticsMetricComponent);
+            const metrics = spectator.queryAll(DotAnalyticsMetricComponent)!;
             expect(metrics.length).toBe(4);
         });
 
@@ -175,14 +179,14 @@ describe('DotAnalyticsEngagementReportComponent', () => {
                 await block.render(DeferBlockState.Complete);
             }
             spectator.detectChanges();
-            const pies = spectator.queryAll(DotAnalyticsPieChartComponent);
+            const pies = spectator.queryAll(DotAnalyticsPieChartComponent)!;
             expect(pies.length).toBe(1);
         });
 
         it('should display sparkline component inside engagement rate metric', () => {
             spectator = createComponent();
             spectator.detectChanges();
-            const sparklines = spectator.queryAll(DotAnalyticsSparklineComponent);
+            const sparklines = spectator.queryAll(DotAnalyticsSparklineComponent)!;
             expect(sparklines.length).toBe(1);
         });
 
@@ -194,7 +198,7 @@ describe('DotAnalyticsEngagementReportComponent', () => {
                 await block.render(DeferBlockState.Complete);
             }
             spectator.detectChanges();
-            const charts = spectator.queryAll(DotAnalyticsBarEngagementChartComponent);
+            const charts = spectator.queryAll(DotAnalyticsBarEngagementChartComponent)!;
             expect(charts.length).toBe(3);
         });
 
@@ -206,9 +210,9 @@ describe('DotAnalyticsEngagementReportComponent', () => {
                 await block.render(DeferBlockState.Complete);
             }
             spectator.detectChanges();
-            expect(spectator.query(byTestId('analytics-engagement-device-chart'))).toBeTruthy();
-            expect(spectator.query(byTestId('analytics-engagement-browser-chart'))).toBeTruthy();
-            expect(spectator.query(byTestId('analytics-engagement-language-chart'))).toBeTruthy();
+            expect(spectator.query(byTestId('analytics-engagement-device-chart'))!).toBeTruthy();
+            expect(spectator.query(byTestId('analytics-engagement-browser-chart'))!).toBeTruthy();
+            expect(spectator.query(byTestId('analytics-engagement-language-chart'))!).toBeTruthy();
         });
     });
 
@@ -222,7 +226,7 @@ describe('DotAnalyticsEngagementReportComponent', () => {
         it('should show info icon in engagement rate metric', () => {
             spectator = createComponent();
             spectator.detectChanges();
-            const infoIcon = spectator.query(byTestId('engagement-info-icon'));
+            const infoIcon = spectator.query(byTestId('engagement-info-icon'))!;
             expect(infoIcon).toBeTruthy();
         });
 

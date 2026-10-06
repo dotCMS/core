@@ -70,7 +70,7 @@ describe('DotUveDeviceSelectorComponent - Presentational', () => {
         });
 
         it('should emit device change when selecting a custom device', () => {
-            const customDevice = mockDevices.find((d) => !d._isDefault);
+            const customDevice = mockDevices.find((d) => !d._isDefault)!;
 
             spectator.component.onDeviceSelect(customDevice);
 
@@ -82,7 +82,7 @@ describe('DotUveDeviceSelectorComponent - Presentational', () => {
         });
 
         it('should emit default device when selecting same device (toggle off)', () => {
-            const customDevice = mockDevices.find((d) => !d._isDefault);
+            const customDevice = mockDevices.find((d) => !d._isDefault)!;
             const state: DeviceSelectorState = {
                 device: customDevice,
                 socialMedia: null,
@@ -101,7 +101,7 @@ describe('DotUveDeviceSelectorComponent - Presentational', () => {
         });
 
         it('should show custom device name in more button label', () => {
-            const customDevice = mockDevices.find((d) => !d._isDefault);
+            const customDevice = mockDevices.find((d) => !d._isDefault)!;
             const state: DeviceSelectorState = {
                 device: customDevice,
                 socialMedia: null,
@@ -223,7 +223,7 @@ describe('DotUveDeviceSelectorComponent - Presentational', () => {
 
     describe('More Button Active State', () => {
         it('should be active when custom device is selected', () => {
-            const customDevice = mockDevices.find((d) => !d._isDefault);
+            const customDevice = mockDevices.find((d) => !d._isDefault)!;
             const state: DeviceSelectorState = {
                 device: customDevice,
                 socialMedia: null,

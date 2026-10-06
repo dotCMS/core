@@ -176,10 +176,10 @@ describe('DotAnalyticsTopPagesTableComponent', () => {
             spectator = createComponent({
                 props: {
                     tableState: createMockTableState([], ComponentStatus.LOADED)
-                } as unknown
+                } as unknown as NonNullable<Parameters<typeof createComponent>[0]>['props']
             });
 
-            const emptyState = spectator.query('[data-testid="empty-table-state"]');
+            const emptyState = spectator.query('[data-testid="empty-table-state"]')!;
             expect(emptyState).toExist();
         });
 
@@ -187,10 +187,10 @@ describe('DotAnalyticsTopPagesTableComponent', () => {
             spectator = createComponent({
                 props: {
                     tableState: createMockTableState([], ComponentStatus.LOADED)
-                } as unknown
+                } as unknown as NonNullable<Parameters<typeof createComponent>[0]>['props']
             });
 
-            const emptyState = spectator.query('dot-analytics-empty-state');
+            const emptyState = spectator.query('dot-analytics-empty-state')!;
             expect(emptyState).toExist();
         });
 
@@ -198,10 +198,10 @@ describe('DotAnalyticsTopPagesTableComponent', () => {
             spectator = createComponent({
                 props: {
                     tableState: createMockTableState(mockTableData, ComponentStatus.LOADED)
-                } as unknown
+                } as unknown as NonNullable<Parameters<typeof createComponent>[0]>['props']
             });
 
-            const emptyState = spectator.query('[data-testid="empty-table-state"]');
+            const emptyState = spectator.query('[data-testid="empty-table-state"]')!;
             expect(emptyState).not.toExist();
         });
     });
@@ -211,10 +211,10 @@ describe('DotAnalyticsTopPagesTableComponent', () => {
             spectator = createComponent({
                 props: {
                     tableState: createMockTableState(mockTableData, ComponentStatus.ERROR)
-                } as unknown
+                } as unknown as NonNullable<Parameters<typeof createComponent>[0]>['props']
             });
 
-            const stateMessage = spectator.query('dot-analytics-state-message');
+            const stateMessage = spectator.query('dot-analytics-state-message')!;
             expect(stateMessage).toExist();
         });
 
@@ -222,10 +222,10 @@ describe('DotAnalyticsTopPagesTableComponent', () => {
             spectator = createComponent({
                 props: {
                     tableState: createMockTableState(mockTableData, ComponentStatus.LOADED)
-                } as unknown
+                } as unknown as NonNullable<Parameters<typeof createComponent>[0]>['props']
             });
 
-            const stateMessage = spectator.query('dot-analytics-state-message');
+            const stateMessage = spectator.query('dot-analytics-state-message')!;
             expect(stateMessage).not.toExist();
         });
     });

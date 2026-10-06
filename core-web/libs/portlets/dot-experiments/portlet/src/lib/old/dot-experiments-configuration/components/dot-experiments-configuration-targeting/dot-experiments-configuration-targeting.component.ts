@@ -25,7 +25,7 @@ export class DotExperimentsConfigurationTargetingComponent {
 
     vm$: Observable<{
         experimentId: string;
-        status: StepStatus;
+        status: StepStatus | null;
         isExperimentADraft: boolean;
         disabledTooltipLabel: string | null;
     }> = this.dotExperimentsConfigurationStore.targetStepVm$.pipe(
@@ -36,7 +36,7 @@ export class DotExperimentsConfigurationTargetingComponent {
         // to be implemented
     }
 
-    private handleSidebar(_status: StepStatus) {
+    private handleSidebar(_status: StepStatus | null) {
         // to be implemented
     }
 }

@@ -21,7 +21,7 @@ export interface SelectionFeedback {
 })
 export class DotAutocompleteComponent {
     @Element()
-    el: HTMLElement;
+    el!: HTMLElement;
 
     /** (optional) Disables field's interaction */
     @Prop({ reflect: true })
@@ -43,21 +43,34 @@ export class DotAutocompleteComponent {
     @Prop({ reflect: true })
     debounce = 300;
 
-    /** Function or array of string to get the data to use for the autocomplete search */
+    /**
+     * Function or array of string to get the data to use for the autocomplete search.
+     *
+     * Null until a consumer supplies one, which `componentDidLoad` checks before initialising.
+     */
     @Prop()
-    data: () => Promise<string[]> | string[] = null;
+    data: (() => Promise<string[]> | string[]) | null = null;
 
+    /**
+     * Emitted when a suggestion is chosen.
+     *
+     * Typed `SelectionFeedback`, not `string`: nothing in this component calls `.emit()` — the event
+     * is dispatched by autocomplete.js on the inner input and bubbles to the host — and its payload
+     * is the library's own feedback object, which is what `dot-tags.onSelectHandler` reads
+     * (`detail.selection.value`). The declaration exists to type the `onSelection` prop.
+     */
     @Event()
-    selection: EventEmitter<string>;
+    selection!: EventEmitter<SelectionFeedback>;
     @Event()
-    enter: EventEmitter<string>;
+    enter!: EventEmitter<string>;
     @Event()
-    lostFocus: EventEmitter<FocusEvent>;
+    lostFocus!: EventEmitter<FocusEvent>;
 
     private readonly id = `autoComplete${new Date().getTime()}`;
     private enteredSuggestionList = false;
 
-    private keyEvent = {
+    /** Keyed by `KeyboardEvent.key`, so most keys miss — `handleKeyDown` checks before invoking. */
+    private keyEvent: Record<string, ((value: string) => void) | undefined> = {
         ArrowDown: this.enteredList.bind(this),
         ArrowUp: this.enteredList.bind(this),
         Enter: this.emitEnter.bind(this),
@@ -74,11 +87,11 @@ export class DotAutocompleteComponent {
         return (
             <input
                 autoComplete="off"
-                disabled={this.disabled || null}
+                disabled={this.disabled || undefined}
                 id={this.id}
                 onBlur={(event: FocusEvent) => this.handleBlur(event)}
                 onKeyDown={(event: KeyboardEvent) => this.handleKeyDown(event)}
-                placeholder={this.placeholder || null}
+                placeholder={this.placeholder || undefined}
             />
         );
     }
@@ -99,18 +112,21 @@ export class DotAutocompleteComponent {
     }
 
     private handleKeyDown(event: KeyboardEvent): void {
-        const { value } = this.getInputElement();
+        const value = this.getInputElement()?.value;
 
-        if (value && this.keyEvent[event.key]) {
+        const handler = this.keyEvent[event.key];
+
+        if (value && handler) {
             event.preventDefault();
-            this.keyEvent[event.key](value);
+            handler(value);
         }
     }
 
     private handleBlur(event: FocusEvent): void {
         event.preventDefault();
         setTimeout(() => {
-            if (document.activeElement.parentElement !== this.getResultList()) {
+            // Null when nothing holds focus, in which case focus certainly is not in the list.
+            if (document.activeElement?.parentElement !== this.getResultList()) {
                 this.clean();
                 this.lostFocus.emit(event);
             }
@@ -118,17 +134,27 @@ export class DotAutocompleteComponent {
     }
 
     private clean(): void {
-        this.getInputElement().value = '';
+        const input = this.getInputElement();
+
+        if (input) {
+            input.value = '';
+        }
         this.cleanOptions();
         this.enteredSuggestionList = false;
     }
 
     private cleanOptions(): void {
-        this.getResultList().innerHTML = '';
+        const list = this.getResultList();
+
+        if (list) {
+            list.innerHTML = '';
+        }
     }
 
     private enteredList(): void {
-        this.enteredSuggestionList = !this.getResultList().attributes['hidden'];
+        // `getNamedItem` rather than a string index: `NamedNodeMap` has no index signature, and the
+        // list itself is absent until the autocomplete has rendered its first suggestions.
+        this.enteredSuggestionList = !this.getResultList()?.attributes.getNamedItem('hidden');
     }
 
     private emitEnter(select: string): void {
@@ -138,7 +164,7 @@ export class DotAutocompleteComponent {
         this.clean();
     }
 
-    private getInputElement(): HTMLInputElement {
+    private getInputElement(): HTMLInputElement | null {
         return this.el.querySelector(`#${this.id}`);
     }
 
@@ -165,7 +191,7 @@ export class DotAutocompleteComponent {
             },
             events: {
                 input: {
-                    selection: (event) => {
+                    selection: (event: Event) => {
                         event.preventDefault();
                         this.focusOnInput();
                         this.clean();
@@ -183,10 +209,11 @@ export class DotAutocompleteComponent {
     }
 
     private focusOnInput(): void {
-        this.getInputElement().focus();
+        this.getInputElement()?.focus();
     }
 
-    private getResultList(): HTMLElement {
+    /** Null until the autocomplete has rendered its suggestion list, which `clearList` already checks. */
+    private getResultList(): HTMLElement | null {
         return this.el.querySelector(`#${this.getResultListId()}`);
     }
 
@@ -196,9 +223,10 @@ export class DotAutocompleteComponent {
 
     private async getData(): Promise<string[]> {
         const autocomplete = this.getInputElement();
-        autocomplete.setAttribute('placeholder', 'Loading...');
+        autocomplete?.setAttribute('placeholder', 'Loading...');
         const data = typeof this.data === 'function' ? await this.data() : [];
-        autocomplete.setAttribute('placeholder', this.placeholder || '');
+        autocomplete?.setAttribute('placeholder', this.placeholder || '');
+
         return data;
     }
 }

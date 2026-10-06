@@ -63,7 +63,7 @@ export class DotUploadService {
     async uploadImage(file: File): Promise<UploadedImage> {
         const contentlet = await this.publishAsset(file);
         return {
-            src: sameOriginAssetUrl(contentlet.asset),
+            src: sameOriginAssetUrl(contentlet['asset']),
             data: toAssetData(contentlet) satisfies DotImageData
         };
     }
@@ -71,7 +71,7 @@ export class DotUploadService {
     async uploadVideo(file: File): Promise<UploadedVideo> {
         const contentlet = await this.publishAsset(file);
         return {
-            src: sameOriginAssetUrl(contentlet.asset),
+            src: sameOriginAssetUrl(contentlet['asset']),
             data: toAssetData(contentlet) satisfies DotVideoData,
             // mimeType / width / height / orientation from the published contentlet's metadata,
             // matching what the dotCMS picker path stores (parity with legacy getVideoAttrs).
@@ -82,7 +82,7 @@ export class DotUploadService {
     async uploadAudio(file: File): Promise<UploadedAudio> {
         const contentlet = await this.publishAsset(file);
         return {
-            src: sameOriginAssetUrl(contentlet.asset),
+            src: sameOriginAssetUrl(contentlet['asset']),
             data: toAssetData(contentlet) satisfies DotAudioData,
             // mimeType from the published contentlet's metadata, matching the dotCMS picker path.
             mimeType: audioMetaAttrsFromContentlet(contentlet).mimeType
@@ -99,7 +99,7 @@ export class DotUploadService {
         }
         // Workflow PUBLISH wraps the contentlet under the content-type variable key.
         const contentlet = Object.values(wrapped)[0];
-        if (!contentlet?.asset) {
+        if (!contentlet?.['asset']) {
             throw new Error('Publish: missing asset path');
         }
         return contentlet;
@@ -112,6 +112,6 @@ function toAssetData(contentlet: DotCMSContentlet): DotImageData {
         inode: contentlet.inode,
         languageId: contentlet.languageId,
         title: contentlet.title ?? '',
-        asset: contentlet.asset
+        asset: contentlet['asset']
     };
 }

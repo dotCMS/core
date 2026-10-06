@@ -59,12 +59,16 @@ describe('ValidMenuGuardService', () => {
         dotMenuService = TestBed.inject(DotMenuService);
         dotRouterService = TestBed.inject(DotRouterService);
         dotNavigationService = TestBed.inject(DotNavigationService);
-        mockRouterStateSnapshot = { toString: vi.fn() } as unknown as RouterStateSnapshot;
-        mockActivatedRouteSnapshot = { toString: vi.fn() } as unknown as ActivatedRouteSnapshot;
+        // Minimal snapshots rather than `vi.fn<T>(name, methods)`: that shape is
+        // `jasmine.createSpyObj` migrated mechanically, and `vi.fn` takes neither argument — it
+        // produced a `Mock` standing in for a router snapshot, which is why these two
+        // declarations reported ~30 missing properties. The specs only ever read `url` and `params`.
+        mockRouterStateSnapshot = { url: '' } as RouterStateSnapshot;
+        mockActivatedRouteSnapshot = { params: {} } as ActivatedRouteSnapshot;
     });
 
     it('should allow access to Menu Portlets', () => {
-        let result: boolean;
+        let result: boolean | undefined;
         mockRouterStateSnapshot.url = '/test';
         vi.spyOn(dotMenuService, 'isPortletInMenu').mockReturnValue(observableOf(true));
         menuGuardService
@@ -76,7 +80,7 @@ describe('ValidMenuGuardService', () => {
     });
 
     it('should prevent access to Menu Portlets', () => {
-        let result: boolean;
+        let result: boolean | undefined;
         mockRouterStateSnapshot.url = '/test';
         vi.spyOn(dotMenuService, 'isPortletInMenu').mockReturnValue(observableOf(false));
         menuGuardService
@@ -89,7 +93,7 @@ describe('ValidMenuGuardService', () => {
     });
 
     it('should allow children access to Menu Portlets', () => {
-        let result: boolean;
+        let result: boolean | undefined;
         mockRouterStateSnapshot.url = '/test';
         vi.spyOn(dotMenuService, 'isPortletInMenu').mockReturnValue(observableOf(true));
         menuGuardService
@@ -101,7 +105,7 @@ describe('ValidMenuGuardService', () => {
     });
 
     it('should prevent children access to Menu Portlets', () => {
-        let result: boolean;
+        let result: boolean | undefined;
         mockRouterStateSnapshot.url = '/test';
         vi.spyOn(dotMenuService, 'isPortletInMenu').mockReturnValue(observableOf(false));
         menuGuardService

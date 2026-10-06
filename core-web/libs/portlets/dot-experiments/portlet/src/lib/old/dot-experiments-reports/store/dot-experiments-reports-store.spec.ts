@@ -159,7 +159,7 @@ describe('DotExperimentsReportsStore', () => {
                 spectator.service.loadExperimentAndResults(EXPERIMENT_MOCK.id);
 
                 store.state$.subscribe(({ experiment }) => {
-                    expect(experiment.status).toEqual(DotExperimentStatus.ENDED);
+                    expect(experiment!.status!).toEqual(DotExperimentStatus.ENDED);
                 });
                 store.summaryWinnerLegend$.subscribe((summaryWinnerLegend) => {
                     expect(summaryWinnerLegend).toEqual(

@@ -37,11 +37,13 @@ export class TabViewInsertDirective implements AfterViewInit {
             return;
         }
 
-        this.insertContent();
+        this.insertContent(this.#tabView);
     }
 
-    private insertContent() {
-        const tabViewElement = this.#tabView.el.nativeElement;
+    // Takes the narrowed instance as a parameter: `#tabView` is an optional injection, and the
+    // null check in `ngAfterViewInit` does not narrow the field across a method boundary.
+    private insertContent(tabView: Tabs) {
+        const tabViewElement = tabView.el.nativeElement;
         // Try new tabs API structure first (.p-tablist), fallback to old (.p-tabview-nav-content)
         const tabViewNavContent =
             tabViewElement.querySelector('.p-tablist') ||
@@ -53,22 +55,16 @@ export class TabViewInsertDirective implements AfterViewInit {
             return;
         }
 
-        if (this.$prependTpl()) {
-            this.insertTemplate(
-                this.$prependTpl()!,
-                tabViewNavContent,
-                true,
-                this.$prependContext()
-            );
+        const prependTpl = this.$prependTpl();
+
+        if (prependTpl) {
+            this.insertTemplate(prependTpl, tabViewNavContent, true, this.$prependContext());
         }
 
-        if (this.$appendTpl()) {
-            this.insertTemplate(
-                this.$appendTpl()!,
-                tabViewNavContent,
-                false,
-                this.$appendContext()
-            );
+        const appendTpl = this.$appendTpl();
+
+        if (appendTpl) {
+            this.insertTemplate(appendTpl, tabViewNavContent, false, this.$appendContext());
         }
     }
 

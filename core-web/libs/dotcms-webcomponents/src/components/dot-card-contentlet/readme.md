@@ -5,13 +5,13 @@
 
 ## Properties
 
-| Property             | Attribute              | Description | Type                    | Default     |
-| -------------------- | ---------------------- | ----------- | ----------------------- | ----------- |
-| `checked`            | `checked`              |             | `boolean`               | `undefined` |
-| `iconSize`           | `icon-size`            |             | `string`                | `'96px'`    |
-| `item`               | --                     |             | `DotCardContentletItem` | `undefined` |
-| `showVideoThumbnail` | `show-video-thumbnail` |             | `boolean`               | `false`     |
-| `thumbnailSize`      | `thumbnail-size`       |             | `string`                | `'260'`     |
+| Property             | Attribute              | Description                                                                                                                                                                                                                                       | Type                    | Default     |
+| -------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- | ----------- |
+| `checked`            | `checked`              |                                                                                                                                                                                                                                                   | `boolean \| undefined`  | `undefined` |
+| `iconSize`           | `icon-size`            |                                                                                                                                                                                                                                                   | `string`                | `'96px'`    |
+| `item` _(required)_  | --                     | Required in practice, not optional: `render` reads `contentlet.language` and `contentlet.locked` with no guard, so a missing item has always thrown. Third component with this shape, after `dot-contentlet-thumbnail` and `dot-video-thumbnail`. | `DotCardContentletItem` | `undefined` |
+| `showVideoThumbnail` | `show-video-thumbnail` |                                                                                                                                                                                                                                                   | `boolean`               | `false`     |
+| `thumbnailSize`      | `thumbnail-size`       |                                                                                                                                                                                                                                                   | `string`                | `'260'`     |
 
 
 ## Events

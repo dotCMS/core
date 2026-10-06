@@ -28,6 +28,12 @@ export const MOCK_ROUTE = {
     }
 };
 
+/**
+ * `DotSite` is deliberately the minimal, normalised site entity — its own doc says "Do NOT use the
+ * old `Site` or `SiteEntity` types". These fixtures carried the full legacy host DTO (`categoryId`,
+ * `contentTypeId`, `dotAsset`, `folder`, `languageId`, …), which excess-property checking rejects.
+ * Trimmed to what the model declares; the specs only read `identifier` and `hostname`.
+ */
 export const MOCK_SITES: DotSite[] = [
     {
         aliases: 'demo.com,www.demo.com',

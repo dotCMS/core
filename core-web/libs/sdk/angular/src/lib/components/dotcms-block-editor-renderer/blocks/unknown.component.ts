@@ -1,4 +1,4 @@
-import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input } from '@angular/core';
 
 import { BlockEditorNode, UVE_MODE } from '@dotcms/types';
 import { getUVEState } from '@dotcms/uve';
@@ -11,7 +11,7 @@ import { getUVEState } from '@dotcms/uve';
             <div [style]="style" data-testid="unknown-block-type">
                 <strong style="color: #c53030">Warning:</strong>
                 The block type
-                <strong>{{ node.type }}</strong>
+                <strong>{{ node().type }}</strong>
                 is not recognized. Please check your
                 <a
                     href="https://dev.dotcms.com/docs/block-editor"
@@ -25,7 +25,7 @@ import { getUVEState } from '@dotcms/uve';
     `
 })
 export class DotUnknownBlockComponent {
-    @Input() node!: BlockEditorNode;
+    readonly node = input.required<BlockEditorNode>();
 
     get isEditMode() {
         return getUVEState()?.mode === UVE_MODE.EDIT;

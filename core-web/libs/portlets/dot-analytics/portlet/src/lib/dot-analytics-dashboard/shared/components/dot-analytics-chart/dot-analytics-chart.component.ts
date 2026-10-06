@@ -1,4 +1,4 @@
-import { Chart, ChartDataset, ChartTypeRegistry, TooltipItem } from 'chart.js';
+import { Chart, ChartDataset, ChartTypeRegistry, Plugin, TooltipItem } from 'chart.js';
 
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import {
@@ -8,7 +8,8 @@ import {
     effect,
     inject,
     input,
-    NgZone
+    NgZone,
+    Signal
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 
@@ -165,7 +166,7 @@ export class DotAnalyticsChartComponent {
      * Plugins array - only includes lineDrawPlugin when chart has line datasets.
      * Bar-only charts get empty plugins to use native Chart.js animation.
      */
-    protected readonly $plugins = computed(() => {
+    protected readonly $plugins: Signal<Plugin[]> = computed(() => {
         return this.#hasLineDatasets() ? [this.#lineDrawPlugin] : [];
     });
 

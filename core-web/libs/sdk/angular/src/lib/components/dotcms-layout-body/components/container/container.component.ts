@@ -3,9 +3,9 @@ import {
     Component,
     computed,
     inject,
-    Input,
     OnChanges,
-    signal
+    signal,
+    input
 } from '@angular/core';
 
 import { DotCMSBasicContentlet, DotCMSColumnContainer, EditableContainerData } from '@dotcms/types';
@@ -35,7 +35,7 @@ import { ContentletComponent } from '../../components/contentlet/contentlet.comp
     imports: [ContainerNotFoundComponent, EmptyContainerComponent, ContentletComponent],
     template: `
         @if (!$containerData()) {
-            <dotcms-container-not-found [identifier]="container.identifier" />
+            <dotcms-container-not-found [identifier]="container().identifier" />
         } @else if ($isEmpty()) {
             <dotcms-empty-container />
         } @else {
@@ -59,7 +59,7 @@ export class ContainerComponent implements OnChanges {
     /**
      * The container data to be rendered
      */
-    @Input({ required: true }) container!: DotCMSColumnContainer;
+    readonly container = input.required<DotCMSColumnContainer>();
 
     #dotCMSStore = inject(DotCMSStore);
 
@@ -84,7 +84,8 @@ export class ContainerComponent implements OnChanges {
             return;
         }
 
-        this.$containerData.set(getContainersData(page, this.container));
-        this.$contentlets.set(getContentletsInContainer(page, this.container));
+        const container = this.container();
+        this.$containerData.set(getContainersData(page, container));
+        this.$contentlets.set(getContentletsInContainer(page, container));
     }
 }

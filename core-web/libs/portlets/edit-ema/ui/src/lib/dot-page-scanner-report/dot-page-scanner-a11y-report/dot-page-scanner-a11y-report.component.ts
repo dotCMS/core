@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 import { AccordionModule } from 'primeng/accordion';
 import { CardModule } from 'primeng/card';
 import { ChipModule } from 'primeng/chip';
+import { AccordionPassThrough } from 'primeng/types/accordion';
 
 import { DotColorIconComponent, DotMessagePipe } from '@dotcms/ui';
 
@@ -34,6 +35,15 @@ export class DotPageScannerA11yReportComponent {
             .reduce((total, group) => total + group.count, 0)
     );
 
+    /**
+     * PrimeNG types `pt.motion` as `MotionOptions` (animation config), which has no way to
+     * express the wrapper attributes below — but the runtime spreads this straight into the
+     * motion options, and the collapse fix documented above was verified against it. The value
+     * is therefore left byte-for-byte as it was; only the cast is new.
+     *
+     * TODO(#37120): confirm with PrimeNG whether `pt.motion` still honours `root`, then drop
+     * either the cast or the workaround.
+     */
     protected readonly accordionPt = {
         motion: {
             root: {
@@ -42,5 +52,5 @@ export class DotPageScannerA11yReportComponent {
                 }
             }
         }
-    };
+    } as unknown as AccordionPassThrough;
 }

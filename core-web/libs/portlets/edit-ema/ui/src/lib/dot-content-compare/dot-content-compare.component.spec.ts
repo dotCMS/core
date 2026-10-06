@@ -37,7 +37,7 @@ const DotContentCompareEventMOCK = {
     template: '<dot-content-compare [data]="data"  (shutdown)="shutdown.emit(true)"  />'
 })
 class TestHostComponent {
-    @Input() data: DotContentCompareEvent;
+    @Input() data!: DotContentCompareEvent;
     @Output() shutdown = new EventEmitter<boolean>();
 }
 
@@ -139,7 +139,7 @@ describe('DotContentCompareComponent', () => {
 
     it('should bring back version after confirm and emit shutdown', () => {
         vi.spyOn(dotAlertConfirmService, 'confirm').mockImplementation((conf) => {
-            conf.accept();
+            conf.accept?.();
         });
         const emitSpy = vi.spyOn(hostComponent.shutdown, 'emit');
         const iframeServiceSpy = vi.spyOn(dotIframeService, 'run');

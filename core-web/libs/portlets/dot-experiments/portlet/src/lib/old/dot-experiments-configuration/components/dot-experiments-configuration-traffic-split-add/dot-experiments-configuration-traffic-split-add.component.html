@@ -1,98 +1,102 @@
 @if (vm$ | async; as vm) {
-    <p-drawer
-        dotSidebar
-        position="right"
-        closable="false"
-        (onHide)="closeSidebar()"
-        [(visible)]="vm.status.isOpen"
-        dotSize="{{ sidebarSizes.MD }}">
-        <ng-template #header>
-            <dot-sidebar-header
-                [actionButtonTpl]="actionHeaderBtnTpl"
-                dotTitle="{{ 'experiments.configure.traffic.split.title' | dm }}" />
-        </ng-template>
-        <div class="flex flex-col overflow-x-hidden py-5">
-            <form
-                [formGroup]="form"
-                class="p-fluid flex flex-col"
-                data-testId="add-traffic-split-form"
-                novalidate>
-                <div class="mb-5 flex flex-col gap-3">
-                    <label class="text-base font-bold">
-                        {{ 'experiments.configure.traffic.split.name' | dm }}
-                    </label>
-                    <div class="flex items-center gap-2">
-                        <p-radiobutton
-                            (click)="splitVariantsEvenly()"
-                            [inputId]="'splitEvenly'"
-                            [value]="splitEvenly"
-                            formControlName="type" />
-                        <label [for]="'splitEvenly'" class="cursor-pointer">
-                            {{ 'experiments.configure.traffic.split.evenly' | dm }}
+    @if (vm.status; as status) {
+        <p-drawer
+            dotSidebar
+            position="right"
+            closable="false"
+            (onHide)="closeSidebar()"
+            [(visible)]="status.isOpen"
+            dotSize="{{ sidebarSizes.MD }}">
+            <ng-template #header>
+                <dot-sidebar-header
+                    [actionButtonTpl]="actionHeaderBtnTpl"
+                    dotTitle="{{ 'experiments.configure.traffic.split.title' | dm }}" />
+            </ng-template>
+            <div class="flex flex-col overflow-x-hidden py-5">
+                <form
+                    [formGroup]="form"
+                    class="p-fluid flex flex-col"
+                    data-testId="add-traffic-split-form"
+                    novalidate>
+                    <div class="mb-5 flex flex-col gap-3">
+                        <label class="text-base font-bold">
+                            {{ 'experiments.configure.traffic.split.name' | dm }}
                         </label>
+                        <div class="flex items-center gap-2">
+                            <p-radiobutton
+                                (click)="splitVariantsEvenly()"
+                                [inputId]="'splitEvenly'"
+                                [value]="splitEvenly"
+                                formControlName="type" />
+                            <label [for]="'splitEvenly'" class="cursor-pointer">
+                                {{ 'experiments.configure.traffic.split.evenly' | dm }}
+                            </label>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <p-radiobutton
+                                [inputId]="'customPercentages'"
+                                [value]="customPercentages"
+                                formControlName="type" />
+                            <label [for]="'customPercentages'" class="cursor-pointer">
+                                {{ 'experiments.configure.traffic.split.custom' | dm }}
+                            </label>
+                        </div>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <p-radiobutton
-                            [inputId]="'customPercentages'"
-                            [value]="customPercentages"
-                            formControlName="type" />
-                        <label [for]="'customPercentages'" class="cursor-pointer">
-                            {{ 'experiments.configure.traffic.split.custom' | dm }}
-                        </label>
-                    </div>
-                </div>
-                <div class="flex flex-col overflow-x-hidden">
-                    <header
-                        class="mb-2 flex min-h-[2.7rem] items-center justify-between gap-2 text-base font-bold text-gray-700 uppercase">
-                        <span class="min-w-0 shrink">{{ 'variant' | dm }}</span>
-                        <span class="w-auto shrink-0 px-2 text-center">%</span>
-                    </header>
-                    <ng-container formArrayName="variants">
-                        @for (variant of variants.controls; track variant; let i = $index) {
-                            <div
-                                [formGroupName]="i"
-                                class="mb-2 flex min-h-[2.7rem] items-center justify-between gap-2">
-                                <span class="min-w-0 shrink truncate" data-testId="variant-name">
-                                    {{ variant.value.name }}
-                                </span>
-                                @if (form.value.type === customPercentages) {
-                                    <div class="w-auto shrink-0">
-                                        <p-inputnumber
-                                            (onInput)="checkControl(i, $event.value)"
-                                            [maxFractionDigits]="2"
-                                            [max]="100"
-                                            [min]="0"
-                                            [inputStyleClass]="'text-right'"
-                                            class="w-full"
-                                            formControlName="weight"
-                                            mode="decimal" />
-                                    </div>
-                                } @else {
+                    <div class="flex flex-col overflow-x-hidden">
+                        <header
+                            class="mb-2 flex min-h-[2.7rem] items-center justify-between gap-2 text-base font-bold text-gray-700 uppercase">
+                            <span class="min-w-0 shrink">{{ 'variant' | dm }}</span>
+                            <span class="w-auto shrink-0 px-2 text-center">%</span>
+                        </header>
+                        <ng-container formArrayName="variants">
+                            @for (variant of variants.controls; track variant; let i = $index) {
+                                <div
+                                    [formGroupName]="i"
+                                    class="mb-2 flex min-h-[2.7rem] items-center justify-between gap-2">
                                     <span
-                                        class="w-auto shrink-0 px-2 text-center"
-                                        data-testId="variant-weight">
-                                        {{ variant.value.weight }}
+                                        class="min-w-0 shrink truncate"
+                                        data-testId="variant-name">
+                                        {{ variant.value.name }}
                                     </span>
-                                }
-                            </div>
-                        }
-                    </ng-container>
-                </div>
-                @if (variants.invalid) {
-                    <small class="mt-2 self-end text-red-500" data-testId="dotErrorMsg">
-                        {{ 'experiments.configure.traffic.split.variants.error' | dm }}
-                    </small>
-                }
-            </form>
-        </div>
-    </p-drawer>
-    <ng-template #actionHeaderBtnTpl>
-        <p-button
-            (onClick)="save(vm.experimentId)"
-            [disabled]="!form.valid"
-            [loading]="vm.status.status === stepStatus.SAVING"
-            data-testId="add-traffic-split-button"
-            [label]="'Done' | dm"
-            type="button" />
-    </ng-template>
+                                    @if (form.value.type === customPercentages) {
+                                        <div class="w-auto shrink-0">
+                                            <p-inputnumber
+                                                (onInput)="checkControl(i, $event.value)"
+                                                [maxFractionDigits]="2"
+                                                [max]="100"
+                                                [min]="0"
+                                                [inputStyleClass]="'text-right'"
+                                                class="w-full"
+                                                formControlName="weight"
+                                                mode="decimal" />
+                                        </div>
+                                    } @else {
+                                        <span
+                                            class="w-auto shrink-0 px-2 text-center"
+                                            data-testId="variant-weight">
+                                            {{ variant.value.weight }}
+                                        </span>
+                                    }
+                                </div>
+                            }
+                        </ng-container>
+                    </div>
+                    @if (variants.invalid) {
+                        <small class="mt-2 self-end text-red-500" data-testId="dotErrorMsg">
+                            {{ 'experiments.configure.traffic.split.variants.error' | dm }}
+                        </small>
+                    }
+                </form>
+            </div>
+        </p-drawer>
+        <ng-template #actionHeaderBtnTpl>
+            <p-button
+                (onClick)="save(vm.experimentId)"
+                [disabled]="!form.valid"
+                [loading]="status.status === stepStatus.SAVING"
+                data-testId="add-traffic-split-button"
+                [label]="'Done' | dm"
+                type="button" />
+        </ng-template>
+    }
 }

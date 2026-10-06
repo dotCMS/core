@@ -32,6 +32,9 @@
             "options": {
                 "packageRoot": "dist/libs/sdk/experiments"
             }
+        },
+        "typecheck": {
+            "dependsOn": ["^build"]
         }
     }
 }

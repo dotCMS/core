@@ -8,7 +8,7 @@
     @if (showAddToBundleDialog()) {
         <dot-add-to-bundle
             (cancel)="showAddToBundleDialog.set(false)"
-            [assetIdentifier]="rule.key" />
+            [assetIdentifier]="rule.key ?? ''" />
     }
     <div
         [class.hidden]="hidden"
@@ -57,7 +57,7 @@
                             [ngModelOptions]="{ standalone: true }"
                             [options]="fireOnOptions$ | async"
                             [style]="{ width: '9.5rem' }"
-                            [placeholder]="fireOnPlaceholder$ | async"
+                            [placeholder]="(fireOnPlaceholder$ | async) ?? undefined"
                             class="max-w-48 min-w-48 flex-none shrink-0"
                             appendTo="body" />
                     }

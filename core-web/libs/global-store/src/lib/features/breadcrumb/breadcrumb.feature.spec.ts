@@ -658,10 +658,14 @@ describe('withBreadcrumbs Feature', () => {
         });
 
         it('should handle breadcrumbs with null properties', () => {
+            // `MenuItem` declares `label`/`url` as `string | undefined`, but real menu data
+            // (legacy APIs, bad config) can hand back `null` — this test is specifically about
+            // tolerating that, so the cast states the deliberate type mismatch rather than
+            // widening `MenuItem` itself.
             const crumbsWithNull: MenuItem[] = [
                 { label: 'Page', url: '/page' },
-                { label: null, url: '/null-label' },
-                { label: 'Last', url: null }
+                { label: null, url: '/null-label' } as unknown as MenuItem,
+                { label: 'Last', url: null } as unknown as MenuItem
             ];
 
             store.setBreadcrumbs(crumbsWithNull);
@@ -1242,7 +1246,7 @@ describe('withBreadcrumbs Feature', () => {
 
             const breadcrumbs = storeWithRouter.breadcrumbs();
             // The analytics tab crumb should survive the base breadcrumb reset
-            expect(breadcrumbs.some((c) => c.id === 'analytics-conversions')).toBe(true);
+            expect(breadcrumbs.some((c: MenuItem) => c.id === 'analytics-conversions')).toBe(true);
         });
     });
 });

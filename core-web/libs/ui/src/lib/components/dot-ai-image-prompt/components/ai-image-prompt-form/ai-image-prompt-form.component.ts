@@ -66,7 +66,7 @@ export class AiImagePromptFormComponent implements OnChanges {
      * The value of the generated AI image.
      */
     @Input()
-    value: DotGeneratedAIImage;
+    value!: DotGeneratedAIImage;
 
     @Input()
     isLoading = false;
@@ -86,14 +86,14 @@ export class AiImagePromptFormComponent implements OnChanges {
     @Output()
     generate = new EventEmitter<void>();
 
-    form: FormGroup;
-    aiProcessedPrompt: string;
+    form!: FormGroup;
+    aiProcessedPrompt = '';
     dotMessageService = inject(DotMessageService);
     promptTextAreaPlaceholder = 'block-editor.extension.ai-image.custom.placeholder';
     promptLabel = 'block-editor.extension.ai-image.prompt';
     submitButtonLabel = 'block-editor.extension.ai-image.generate';
     requiredPrompt = true;
-    tooltipText: string = null;
+    tooltipText: string | null = null;
     private isUpdatingValidators = false;
     private destroyRef = inject(DestroyRef);
 
@@ -130,7 +130,7 @@ export class AiImagePromptFormComponent implements OnChanges {
             )
             .subscribe((value: AIImagePrompt) => this.valueChange.emit(value));
 
-        typeControl.valueChanges
+        typeControl!.valueChanges
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe((type) => this.updatePromptControl(type));
     }
@@ -139,8 +139,8 @@ export class AiImagePromptFormComponent implements OnChanges {
         this.isUpdatingValidators = true;
         const promptControl = this.form.get('text');
         const isInputType = type === PromptType.INPUT;
-        promptControl.setValidators(isInputType ? Validators.required : null);
-        promptControl.updateValueAndValidity();
+        promptControl!.setValidators(isInputType ? Validators.required : null);
+        promptControl!.updateValueAndValidity();
         this.setPromptLabels(isInputType);
         this.isUpdatingValidators = false;
         this.requiredPrompt = isInputType;
@@ -175,7 +175,7 @@ export class AiImagePromptFormComponent implements OnChanges {
             this.form.clearValidators();
             this.form.updateValueAndValidity();
 
-            this.aiProcessedPrompt = updatedValue.response?.revised_prompt;
+            this.aiProcessedPrompt = updatedValue.response?.revised_prompt ?? '';
         }
     }
 

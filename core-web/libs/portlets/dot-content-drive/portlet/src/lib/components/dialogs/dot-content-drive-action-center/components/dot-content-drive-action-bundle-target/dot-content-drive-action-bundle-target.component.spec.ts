@@ -41,7 +41,7 @@ describe('DotContentDriveActionBundleTargetComponent', () => {
             provideHttpClient(),
             provideHttpClientTesting(),
             mockProvider(DotMessageService, {
-                get: vi.fn().mockImplementation((key: string) => key)
+                get: vi.fn().mockImplementation((key) => key as string)
             }),
             mockProvider(DotCurrentUserService)
         ],

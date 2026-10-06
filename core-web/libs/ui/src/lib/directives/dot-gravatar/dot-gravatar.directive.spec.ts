@@ -42,12 +42,12 @@ describe('DotGravatarDirective', () => {
 
         it('should set the avatar image with gravatar URL', () => {
             spectator.detectChanges();
-            const avatarComponent = spectator.queryHost(Avatar);
+            const avatarComponent = spectator.queryHost(Avatar)!;
             const expectedHash = md5(testEmail.trim().toLowerCase());
             const expectedUrl = `https://www.gravatar.com/avatar/${expectedHash}?s=48&r=g&d=404`;
 
             expect(avatarComponent.image).toBe(expectedUrl);
-            expect(avatarComponent.label).toBeNull();
+            expect(avatarComponent.label).toBeUndefined();
         });
 
         it('should extract first letter from email', () => {
@@ -58,13 +58,13 @@ describe('DotGravatarDirective', () => {
 
         it('should fallback to letter when image fails to load', () => {
             spectator.detectChanges();
-            const avatarComponent = spectator.queryHost(Avatar);
+            const avatarComponent = spectator.queryHost(Avatar)!;
 
             // Simulate image error - directive handler runs sync and updates avatar
             avatarComponent.onImageError.emit(new Event('error'));
 
             expect(avatarComponent.label).toBe('T');
-            expect(avatarComponent.image).toBeNull();
+            expect(avatarComponent.image).toBeUndefined();
         });
     });
 
@@ -130,10 +130,10 @@ describe('DotGravatarDirective', () => {
 
         it('should display first letter as fallback', () => {
             spectator.detectChanges();
-            const avatarComponent = spectator.queryHost(Avatar);
+            const avatarComponent = spectator.queryHost(Avatar)!;
 
             expect(avatarComponent.label).toBe('N');
-            expect(avatarComponent.image).toBeNull();
+            expect(avatarComponent.image).toBeUndefined();
         });
     });
 
@@ -165,10 +165,10 @@ describe('DotGravatarDirective', () => {
 
         it('should display default fallback letter "A"', () => {
             spectator.detectChanges();
-            const avatarComponent = spectator.queryHost(Avatar);
+            const avatarComponent = spectator.queryHost(Avatar)!;
 
             expect(avatarComponent.label).toBe('A');
-            expect(avatarComponent.image).toBeNull();
+            expect(avatarComponent.image).toBeUndefined();
         });
 
         it('should return "A" for first letter when email is empty', () => {
@@ -215,8 +215,8 @@ describe('DotGravatarDirective', () => {
             );
             spectator.detectChanges();
 
-            const avatarComponent = spectator.queryHost(Avatar);
-            expect(avatarComponent.image).toBeNull();
+            const avatarComponent = spectator.queryHost(Avatar)!;
+            expect(avatarComponent.image).toBeUndefined();
             expect(avatarComponent.label).toBe('I');
         });
     });

@@ -62,7 +62,7 @@ import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-co
 })
 export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, OnDestroy {
     sidebarSizes = SIDEBAR_SIZES;
-    form: FormGroup;
+    form!: FormGroup;
     goals = GOALS_METADATA_MAP;
     goalsTypes = GOAL_TYPES;
     statusList = ComponentStatus;
@@ -71,7 +71,7 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
     private readonly dotExperimentsConfigurationStore: DotExperimentsConfigurationStore = inject(
         DotExperimentsConfigurationStore
     );
-    vm$: Observable<{ experimentId: string; goals: Goals; status: StepStatus }> =
+    vm$: Observable<{ experimentId: string; goals: Goals | null; status: StepStatus | null }> =
         this.dotExperimentsConfigurationStore.goalsStepVm$;
     private readonly dotMessageService: DotMessageService = inject(DotMessageService);
 
@@ -151,8 +151,9 @@ export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, O
 
     private listenType() {
         this.form
+            // `get` reports a missing control; `primary.type` is built by `initForm` above.
             .get('primary.type')
-            .valueChanges.pipe(takeUntil(this.destroy$))
+            ?.valueChanges.pipe(takeUntil(this.destroy$))
             .subscribe((value) => {
                 this.defineDefaultName(value);
                 this.resetGoalConditions();

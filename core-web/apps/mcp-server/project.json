@@ -52,6 +52,9 @@
             "options": {
                 "args": ["src/**/*.ts"]
             }
+        },
+        "typecheck": {
+            "dependsOn": ["^generate-spec"]
         }
     }
 }

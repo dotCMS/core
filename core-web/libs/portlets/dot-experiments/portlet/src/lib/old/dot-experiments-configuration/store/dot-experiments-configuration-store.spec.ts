@@ -722,6 +722,8 @@ describe('DotExperimentsConfigurationStore', () => {
                     })
                 );
 
+                store.loadExperiment(EXPERIMENT_MOCK.id);
+
                 store.setSelectedScheduling({
                     scheduling: expectedScheduling,
                     experimentId: EXPERIMENT_MOCK.id
@@ -760,6 +762,8 @@ describe('DotExperimentsConfigurationStore', () => {
                         trafficAllocation: expectedTrafficAllocation
                     })
                 );
+
+                store.loadExperiment(EXPERIMENT_MOCK.id);
 
                 store.setSelectedAllocation({
                     trafficAllocation: expectedTrafficAllocation,
@@ -805,6 +809,8 @@ describe('DotExperimentsConfigurationStore', () => {
                         trafficProportion: expectedTrafficProportion
                     })
                 );
+
+                store.loadExperiment(EXPERIMENT_MOCK.id);
 
                 store.setSelectedTrafficProportion({
                     trafficProportion: expectedTrafficProportion,

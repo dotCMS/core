@@ -21,13 +21,17 @@ export class DotHtmlToImage {
     @Prop({ reflect: false, mutable: true })
     width = '';
 
-    @Event() pageThumbnail: EventEmitter<{
-        file: File;
-        error?: string;
+    @Event() pageThumbnail!: EventEmitter<{
+        /** Null on every failure path — a document that would not open, a script that would not load. */
+        file: File | null;
+        /** A message, or the caught value itself when the failure came from a `try`/`catch`. */
+        error?: unknown;
     }>;
-    @State() previewImg: string;
+    /** Unset until the async postMessage handler resolves; `render()` branches on its absence. */
+    @State() previewImg?: string;
 
-    boundOnMessageHandler = null;
+    /** Held so `disconnectedCallback` can remove the very listener `onLoad` added. */
+    boundOnMessageHandler: ((event: MessageEvent) => void) | null = null;
     iframeId = `iframe_${Math.floor(Date.now() / 1000).toString()}`;
     loadScript = `
         html2canvas(document.body, {
@@ -101,8 +105,14 @@ export class DotHtmlToImage {
     }
 
     private getIframeDocument(): HtmlIframeDoc {
-        const iframe: HTMLIFrameElement = document.querySelector(`#${this.iframeId}`);
-        const doc = iframe.contentDocument || iframe.contentWindow.document;
+        const iframe = document.querySelector<HTMLIFrameElement>(`#${this.iframeId}`);
+        // Both are absent only if the iframe has been detached, in which case there is nothing to
+        // render into. Throwing keeps the previous behaviour, and both callers already catch.
+        const doc = iframe?.contentDocument || iframe?.contentWindow?.document;
+
+        if (!iframe || !doc) {
+            throw new Error(`dot-html-to-image: iframe #${this.iframeId} has no document`);
+        }
 
         return { doc, iframe };
     }
@@ -123,10 +133,18 @@ export class DotHtmlToImage {
     }
 
     disconnectedCallback() {
-        window.removeEventListener('message', this.boundOnMessageHandler);
+        if (this.boundOnMessageHandler) {
+            window.removeEventListener('message', this.boundOnMessageHandler);
+        }
     }
 
-    private onMessageHandler(iframe, component, event) {
+    // `bind(null, iframe, this)` supplies the first two arguments, so the listener itself only
+    // receives the event — hence the parameter order.
+    private onMessageHandler(
+        iframe: HTMLIFrameElement,
+        component: DotHtmlToImage,
+        event: MessageEvent
+    ) {
         if (event.data.iframeId !== component.iframeId) return;
 
         if (event.data.error) {
@@ -141,7 +159,7 @@ export class DotHtmlToImage {
         const img = document.createElement('img');
         img.src = previewImg;
         img.style.width = '100%';
-        iframe.parentElement.appendChild(img);
+        iframe.parentElement?.appendChild(img);
 
         component.pageThumbnail.emit({ file: fileObj });
     }

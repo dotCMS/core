@@ -25,7 +25,7 @@ import StarterKit from '@tiptap/starter-kit';
     template: '<div>Block Editor Mock</div>'
 })
 export class BlockEditorMockComponent implements OnInit {
-    @Input() value: JSONContent;
+    @Input() value!: JSONContent;
     readonly editor = signal<Editor | null>(null);
     @Output() valueChange = new EventEmitter<JSONContent>();
 

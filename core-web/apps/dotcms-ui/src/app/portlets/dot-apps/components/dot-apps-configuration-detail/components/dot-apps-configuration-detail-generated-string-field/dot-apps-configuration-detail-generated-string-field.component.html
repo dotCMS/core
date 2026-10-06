@@ -1,7 +1,7 @@
 @let field = $field();
 
 <div class="flex flex-col gap-2" data-testid="generated-string-field">
-    <div class="flex items-start gap-2 relative">
+    <div class="relative flex items-start gap-2">
         <input
             type="text"
             class="flex-1"
@@ -18,7 +18,7 @@
             [loading]="$isLoading()"
             (click)="generateString($event)"
             pButton
-            [label]="field.buttonLabel"></button>
+            [label]="field.buttonLabel ?? ''"></button>
     </div>
 
     @if (field.hint) {

@@ -49,7 +49,7 @@ export class DotExperimentsConfigurationVariantsAddComponent implements OnInit {
     private readonly dotExperimentsConfigurationStore = inject(DotExperimentsConfigurationStore);
 
     stepStatus = ComponentStatus;
-    form: FormGroup;
+    form!: FormGroup;
     sidebarSizes = SIDEBAR_SIZES;
     vm$: Observable<ConfigurationVariantStepViewModel> =
         this.dotExperimentsConfigurationStore.variantsStepVm$;

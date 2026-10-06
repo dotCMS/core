@@ -43,7 +43,7 @@
             class="dot-apps-configuration__description relative mt-2 max-w-4xl"
             [class.dot-apps-configuration__description__show-more]="showMore()">
             <markdown>{{ app.description }}</markdown>
-            @if (app.description.length > 270) {
+            @if ((app.description?.length ?? 0) > 270) {
                 <a
                     (click)="toggleShowMore()"
                     class="dot-apps-configuration__description__link_show-more absolute right-0 bottom-0 z-10 cursor-pointer bg-white pl-1 text-base">

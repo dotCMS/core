@@ -28,22 +28,21 @@ export const EMPTY_FIELD: DotCMSContentTypeFieldTemplate = {
     contentTypeId: '',
     fieldTypeLabel: '',
     fieldVariables: [],
-    fixed: null,
+    fixed: false,
     forceIncludeInApi: false,
-    iDate: null,
-    id: null,
-    indexed: null,
-    listed: null,
-    modDate: null,
-    name: null,
-    readOnly: null,
-    required: null,
-    searchable: null,
-    sortOrder: null,
-    unique: null,
-    variable: null,
+    iDate: 0,
+    id: '',
+    indexed: false,
+    listed: false,
+    modDate: 0,
+    name: '',
+    readOnly: false,
+    required: false,
+    searchable: false,
+    sortOrder: 0,
+    unique: false,
+    variable: '',
     defaultValue: null,
-    hint: null,
     values: null
 };
 
@@ -263,22 +262,28 @@ export class FieldUtil {
      * @memberof FieldUtil
      */
     static getFieldsWithoutLayout(layout: DotCMSContentTypeLayoutRow[]): DotCMSContentTypeField[] {
-        return layout
-            .map((row: DotCMSContentTypeLayoutRow) => row.columns)
-            .filter((columns: DotCMSContentTypeLayoutColumn[]) => !!columns)
-            .reduce(
-                (
-                    accumulator: DotCMSContentTypeLayoutColumn[],
-                    currentValue: DotCMSContentTypeLayoutColumn[]
-                ) => accumulator.concat(currentValue),
-                []
-            )
-            .map((fieldColumn) => fieldColumn.fields)
-            .reduce(
-                (accumulator: DotCMSContentTypeField[], currentValue: DotCMSContentTypeField[]) =>
-                    accumulator.concat(currentValue),
-                []
-            );
+        return (
+            layout
+                .map((row: DotCMSContentTypeLayoutRow) => row.columns)
+                // Type guard rather than a plain truthy filter: `columns` is optional on the row, and
+                // only a predicate signature narrows it away for the `reduce` below.
+                .filter((columns): columns is DotCMSContentTypeLayoutColumn[] => !!columns)
+                .reduce(
+                    (
+                        accumulator: DotCMSContentTypeLayoutColumn[],
+                        currentValue: DotCMSContentTypeLayoutColumn[]
+                    ) => accumulator.concat(currentValue),
+                    []
+                )
+                .map((fieldColumn) => fieldColumn.fields)
+                .reduce(
+                    (
+                        accumulator: DotCMSContentTypeField[],
+                        currentValue: DotCMSContentTypeField[]
+                    ) => accumulator.concat(currentValue),
+                    []
+                )
+        );
     }
 
     /**

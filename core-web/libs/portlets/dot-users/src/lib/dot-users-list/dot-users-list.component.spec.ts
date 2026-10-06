@@ -96,7 +96,7 @@ function fakeRoute(
 ): Partial<ActivatedRoute> {
     // Two-step cast: `ActivatedRouteSnapshot` has 15+ required fields
     // (url, params, queryParams, fragment, …) the component never reads
-    // here, and strict-gate's TS check refuses the direct `as` cast
+    // here, and TypeScript's strict mode refuses the direct `as` cast
     // since 4.x. Going through `unknown` is the standard escape hatch
     // for "I really do only need `data` on this mock, trust me."
     return {

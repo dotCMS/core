@@ -56,7 +56,7 @@ const MOCK_HTMLPAGE_CONTENTLET: DotCMSContentlet = {
     archived: false,
     working: true,
     live: true
-} as DotCMSContentlet;
+} as unknown as DotCMSContentlet;
 
 const MOCK_CONTENT_CONTENTLET: DotCMSContentlet = {
     identifier: 'content-456',
@@ -102,7 +102,7 @@ const MOCK_WORKFLOW_ACTION_NO_INPUTS: DotCMSWorkflowAction = {
     nextAssign: 'user1',
     nextStep: 'step1',
     schemeId: 'scheme1'
-} as DotCMSWorkflowAction;
+} as unknown as DotCMSWorkflowAction;
 
 const MOCK_WORKFLOW_ACTION_WITH_INPUTS: DotCMSWorkflowAction = {
     id: 'workflow-2',
@@ -117,7 +117,7 @@ const MOCK_WORKFLOW_ACTION_WITH_INPUTS: DotCMSWorkflowAction = {
     nextAssign: 'user2',
     nextStep: 'step2',
     schemeId: 'scheme1'
-} as DotCMSWorkflowAction;
+} as unknown as DotCMSWorkflowAction;
 
 const MOCK_PERMISSIONS = {
     CONTENTLETS: {
@@ -632,6 +632,8 @@ describe('DotPageActionsService', () => {
     describe('Edge Cases', () => {
         it('should handle contentlet without baseType', () =>
             new Promise<void>((done) => {
+                // The model declares `baseType` required; this test drives the guard for a
+                // contentlet that reaches the UI without one.
                 const contentletWithoutBaseType = {
                     ...MOCK_HTMLPAGE_CONTENTLET,
                     baseType: undefined

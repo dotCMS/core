@@ -1,4 +1,4 @@
-@if (!isLoading && !images?.length) {
+@if (!isLoading && !images.length) {
     <div
         [className]="'s' + size + ' ai-image-gallery__placeholder'"
         data-testid="ai-image-gallery__placeholder">
@@ -34,15 +34,15 @@
         width="30px"
         height="20px" />
 }
-@if (!isLoading && images?.length) {
+@if (!isLoading && images.length) {
     <p-galleria
         (activeIndexChange)="activeIndexChange.emit($event)"
         [activeIndex]="activeImageIndex"
         [circular]="true"
-        [showItemNavigators]="images?.length > 1"
+        [showItemNavigators]="images.length > 1"
         [showThumbnails]="false"
         [value]="images"
-        visible="true">
+        [visible]="true">
         <ng-template pTemplate="item" let-item>
             @if (item.response) {
                 <p-image
@@ -65,7 +65,7 @@
         </ng-template>
     </p-galleria>
 }
-@if (!isLoading && images?.length) {
+@if (!isLoading && images.length) {
     <span class="mt-1 self-center">
         {{ activeImageIndex + 1 }} {{ 'of' | dm }} {{ images.length }}
     </span>

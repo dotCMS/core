@@ -9,7 +9,7 @@ import { Mock, vi } from 'vitest';
 
 import { signal } from '@angular/core';
 
-import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { DialogService, DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { Editor } from '@tiptap/core';
 
@@ -93,7 +93,13 @@ describe('EditorModalService — asset pickers', () => {
     };
 
     /** The config object handed to `DialogService.open` for the Nth call. */
-    const openedConfig = (call = 0) => dialogService.open.mock.calls[call][1];
+    const openedConfig = (call = 0) =>
+        dialogService.open.mock.calls[call][1] as DynamicDialogConfig<{
+            mimeTypes: string[];
+            title: string;
+            site: DotSite;
+            languageId: string;
+        }>;
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -116,18 +122,18 @@ describe('EditorModalService — asset pickers', () => {
         });
 
         it('should restrict the picker to its own mime types', () => {
-            expect(openedConfig().data.mimeTypes).toEqual(mimeTypes);
+            expect(openedConfig().data!.mimeTypes).toEqual(mimeTypes);
         });
 
         it('should title the picker for what it is picking', () => {
             // The picker draws its own header, so the title travels in `data`, not `header`.
-            expect(openedConfig().data.title).toBe(titleKey);
+            expect(openedConfig().data!.title).toBe(titleKey);
             expect(openedConfig().showHeader).toBe(false);
         });
 
         it('should browse the current site in the editor locale', () => {
-            expect(openedConfig().data.site).toBe(SITE);
-            expect(openedConfig().data.languageId).toBe(String(LANGUAGE_ID));
+            expect(openedConfig().data!.site).toBe(SITE);
+            expect(openedConfig().data!.languageId).toBe(String(LANGUAGE_ID));
         });
 
         it('should clear the fullscreen editor shell backdrop', () => {

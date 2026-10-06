@@ -20,19 +20,21 @@ class RouterMock {
         }
     };
 
-    navigate = vi.fn(() => {
+    // Signatures are explicit: a bare `vi.fn(() => ...)` infers zero parameters,
+    // which makes every toHaveBeenCalledWith assertion below a type error.
+    navigate = vi.fn<Promise<boolean>, [commands: unknown[], extras?: unknown]>(() => {
         return new Promise((resolve) => {
             resolve(true);
         });
     });
 
-    navigateByUrl = vi.fn(() => {
+    navigateByUrl = vi.fn<Promise<boolean>, [url: unknown, extras?: unknown]>(() => {
         return new Promise((resolve) => {
             resolve(true);
         });
     });
 
-    createUrlTree = vi.fn((link) => {
+    createUrlTree = vi.fn((link: unknown, _extras?: unknown) => {
         return link;
     });
 

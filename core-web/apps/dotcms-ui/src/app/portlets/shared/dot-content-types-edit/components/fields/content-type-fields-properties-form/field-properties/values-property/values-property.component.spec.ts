@@ -26,8 +26,8 @@ import { DotFieldHelperComponent } from '../../../../../../../../view/components
     standalone: false
 })
 class TestFieldValidationMessageComponent {
-    @Input() field: NgControl;
-    @Input() message: string;
+    @Input() field!: NgControl;
+    @Input() message!: string;
 }
 
 @Component({
@@ -43,8 +43,8 @@ class TestFieldValidationMessageComponent {
     ]
 })
 class DotTextareaContentMockComponent implements ControlValueAccessor {
-    @Input() show: string[];
-    @Input() height: string;
+    @Input() show!: string[];
+    @Input() height!: string;
 
     propagateChange = (_: unknown) => {
         //

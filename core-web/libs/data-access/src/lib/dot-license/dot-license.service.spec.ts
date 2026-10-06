@@ -91,7 +91,7 @@ describe('DotLicenseService', () => {
 
     it('should return true with any URL and user has license', () => {
         vi.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(true));
-        let result: boolean;
+        let result: boolean | undefined;
         dotLicenseService
             .canAccessEnterprisePortlet('/whatever')
             .subscribe((res) => (result = res));
@@ -101,7 +101,7 @@ describe('DotLicenseService', () => {
 
     it('should return true when URL is not enterprise and user do not has license', () => {
         vi.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(false));
-        let result: boolean;
+        let result: boolean | undefined;
         dotLicenseService
             .canAccessEnterprisePortlet('/whatever')
             .subscribe((res) => (result = res));

@@ -1,6 +1,6 @@
 import { Injectable, Type, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ValidationErrors } from '@angular/forms';
+import { ValidatorFn } from '@angular/forms';
 
 import { map } from 'rxjs/operators';
 
@@ -15,7 +15,7 @@ import {
     FEATURE_FLAG_NOT_FOUND
 } from '@dotcms/dotcms-models';
 
-import { DATA_TYPE_PROPERTY_INFO } from './data-type-property-info';
+import { DataTypeOption, DATA_TYPE_PROPERTY_INFO } from './data-type-property-info';
 import { PROPERTY_INFO } from './field-property-info';
 
 import { FieldType } from '../models';
@@ -89,7 +89,7 @@ export class FieldPropertyService {
      * @param propertyName - The name of the property
      * @returns The component type for the property, or null if not found
      */
-    getComponent(propertyName: string): Type<DotDynamicFieldComponent> {
+    getComponent(propertyName: string): Type<DotDynamicFieldComponent> | null {
         return PROPERTY_INFO[propertyName] ? PROPERTY_INFO[propertyName].component : null;
     }
 
@@ -121,16 +121,16 @@ export class FieldPropertyService {
             );
             return fieldVariable?.value || this.$newRenderModeDefault();
         }
-        return field[propertyName];
+        return field[propertyName as keyof DotCMSContentTypeField];
     }
 
     /**
      * Gets the display order for a property
      * @param propertyName - The name of the property
-     * @returns The order number for the property, or null if not found
+     * @returns The order number for the property, or 0 for one with no declared order
      */
     getOrder(propertyName: string): number {
-        return PROPERTY_INFO[propertyName] ? PROPERTY_INFO[propertyName].order : null;
+        return PROPERTY_INFO[propertyName]?.order ?? 0;
     }
 
     /**
@@ -140,17 +140,18 @@ export class FieldPropertyService {
      * @returns Array of validation errors, or empty array if no validations are defined
      * @see https://angular.io/guide/form-validation
      */
-    getValidations(propertyName: string): ValidationErrors[] {
-        return PROPERTY_INFO[propertyName] ? PROPERTY_INFO[propertyName].validations || [] : [];
+    getValidations(propertyName: string): ValidatorFn[] {
+        return PROPERTY_INFO[propertyName]?.validations ?? [];
     }
 
     /**
      * Checks if a property should be disabled in edit mode
      * @param propertyName - The name of the property to check
-     * @returns True if the property should be disabled in edit mode, null if not specified
+     * @returns True if the property should be disabled in edit mode; a property that does not
+     * declare the flag is not disabled
      */
     isDisabledInEditMode(propertyName: string): boolean {
-        return PROPERTY_INFO[propertyName] ? PROPERTY_INFO[propertyName].disabledInEdit : null;
+        return PROPERTY_INFO[propertyName]?.disabledInEdit ?? false;
     }
 
     /**
@@ -158,10 +159,8 @@ export class FieldPropertyService {
      * @param fieldTypeClass - The field type's class identifier
      * @returns Array of property names for the field type, or undefined if field type not found
      */
-    getProperties(fieldTypeClass: string): string[] {
-        const fieldType = this.fieldTypes.get(fieldTypeClass);
-
-        return fieldType !== undefined ? fieldType.properties : undefined;
+    getProperties(fieldTypeClass: string): string[] | undefined {
+        return this.fieldTypes.get(fieldTypeClass)?.properties;
     }
 
     /**
@@ -169,17 +168,17 @@ export class FieldPropertyService {
      * @param fieldTypeClass - The field type's class identifier
      * @returns The FieldType object, or undefined if not found
      */
-    getFieldType(fieldTypeClass: string): FieldType {
+    getFieldType(fieldTypeClass: string): FieldType | undefined {
         return this.fieldTypes.get(fieldTypeClass);
     }
 
     /**
      * Gets the allowed values for the dataType property of a specific field type
      * @param fieldTypeClass - The field type's class identifier
-     * @returns Array of allowed data type values for the field type
+     * @returns The selectable data types for the field type, empty for an unknown class
      */
-    getDataTypeValues(fieldTypeClass: string): string[] {
-        return DATA_TYPE_PROPERTY_INFO[fieldTypeClass];
+    getDataTypeValues(fieldTypeClass: string): DataTypeOption[] {
+        return DATA_TYPE_PROPERTY_INFO[fieldTypeClass] ?? [];
     }
 
     /**
@@ -188,10 +187,12 @@ export class FieldPropertyService {
      * @returns The default data type value, or null if not found
      * @private
      */
-    private getDataType(fieldTypeClass: string): unknown {
-        return DATA_TYPE_PROPERTY_INFO[fieldTypeClass]
-            ? DATA_TYPE_PROPERTY_INFO[fieldTypeClass][0].value
-            : null;
+    private getDataType(fieldTypeClass?: string): unknown {
+        if (!fieldTypeClass) {
+            return null;
+        }
+
+        return DATA_TYPE_PROPERTY_INFO[fieldTypeClass]?.[0]?.value ?? null;
     }
 
     /**
@@ -201,6 +202,6 @@ export class FieldPropertyService {
      * @private
      */
     private getPropInfo(propertyName: string): unknown {
-        return PROPERTY_INFO[propertyName] ? PROPERTY_INFO[propertyName].defaultValue : null;
+        return PROPERTY_INFO[propertyName]?.defaultValue ?? null;
     }
 }

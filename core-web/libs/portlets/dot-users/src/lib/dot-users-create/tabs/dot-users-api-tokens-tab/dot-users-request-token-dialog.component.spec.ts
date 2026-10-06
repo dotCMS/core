@@ -85,27 +85,27 @@ describe('DotUsersRequestTokenDialogComponent', () => {
     });
 
     it('should require Label before submitting', () => {
-        spectator.component.form.controls.label.setValue('');
+        spectator.component['form'].controls.label.setValue('');
 
         spectator.click(submitButton(spectator));
 
         expect(usersService.createApiToken).not.toHaveBeenCalled();
-        expect(spectator.component.form.controls.label.touched).toBe(true);
+        expect(spectator.component['form'].controls.label.touched).toBe(true);
     });
 
     it('should default expires to ~3 years out and reject a past date with `past`', () => {
         // Force a date in 2000 — always in the past regardless of when
         // the suite runs. Simpler than mocking Date globally.
-        spectator.component.form.patchValue({ label: 'ci', expires: '2000-01-01' });
+        spectator.component['form'].patchValue({ label: 'ci', expires: '2000-01-01' });
 
         spectator.click(submitButton(spectator));
 
         expect(usersService.createApiToken).not.toHaveBeenCalled();
-        expect(spectator.component.form.controls.expires.errors?.['past']).toBe(true);
+        expect(spectator.component['form'].controls.expires.errors?.['past']).toBe(true);
     });
 
     it('should close with the create result when the API resolves', () => {
-        spectator.component.form.patchValue({ label: 'ci' });
+        spectator.component['form'].patchValue({ label: 'ci' });
 
         spectator.click(submitButton(spectator));
 
@@ -122,7 +122,7 @@ describe('DotUsersRequestTokenDialogComponent', () => {
         const nowMs = new Date(2030, 5, 1, 12, 0, 0).getTime();
         vi.spyOn(Date, 'now').mockReturnValue(nowMs);
 
-        spectator.component.form.patchValue({
+        spectator.component['form'].patchValue({
             label: '  ci  ',
             expires: '2030-06-11',
             network: '  10.0.0.0/8  '
@@ -145,7 +145,7 @@ describe('DotUsersRequestTokenDialogComponent', () => {
         const error = new Error('boom');
         (usersService.createApiToken as Mock).mockReturnValueOnce(throwError(() => error));
 
-        spectator.component.form.patchValue({ label: 'ci' });
+        spectator.component['form'].patchValue({ label: 'ci' });
         spectator.detectChanges();
         spectator.click(submitButton(spectator));
 

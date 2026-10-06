@@ -7,8 +7,8 @@ import {
     Component,
     ElementRef,
     HostListener,
-    Input,
-    inject
+    inject,
+    input
 } from '@angular/core';
 
 @Component({
@@ -20,15 +20,15 @@ import {
 export class AddWidgetComponent implements AfterViewInit {
     private el = inject(ElementRef);
 
-    @Input() label = 'Add Widget';
-    @Input() icon = '';
-    @Input() gridstackOptions: GridStackWidget;
+    readonly label = input('Add Widget');
+    readonly icon = input('');
+    readonly gridstackOptions = input<GridStackWidget>();
 
     protected imageError = false;
 
     ngAfterViewInit(): void {
         this.el.nativeElement.gridstackNode = {
-            ...this.gridstackOptions
+            ...this.gridstackOptions()
         };
     }
 
@@ -64,7 +64,7 @@ export class AddWidgetComponent implements AfterViewInit {
         */
 
         this.el.nativeElement.gridstackNode = {
-            ...this.gridstackOptions
+            ...this.gridstackOptions()
         };
     }
 

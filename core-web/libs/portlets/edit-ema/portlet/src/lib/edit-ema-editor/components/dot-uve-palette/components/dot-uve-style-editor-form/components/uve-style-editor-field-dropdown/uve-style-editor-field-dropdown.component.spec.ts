@@ -5,7 +5,7 @@ import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { Select } from 'primeng/select';
 
-import { StyleEditorFieldSchema, StyleEditorRadioOptionObject } from '@dotcms/uve';
+import { StyleEditorFieldSchema, StyleEditorRadioOptionObject } from '@dotcms/types/internal';
 
 import { UveStyleEditorFieldDropdownComponent } from './uve-style-editor-field-dropdown.component';
 
@@ -15,9 +15,10 @@ import { UveStyleEditorFieldDropdownComponent } from './uve-style-editor-field-d
     template: ''
 })
 export class MockFormComponent {
-    // Host Props
-    formGroup: FormGroup;
-    field: StyleEditorFieldSchema;
+    // Host Props — `!` because Spectator sets them through `hostProps`, not the constructor, which
+    // is exactly what `strictPropertyInitialization` cannot see.
+    formGroup!: FormGroup;
+    field!: StyleEditorFieldSchema;
 }
 
 const createMockField = (
@@ -65,7 +66,7 @@ describe('UveStyleEditorFieldDropdownComponent', () => {
             );
             spectator.detectChanges();
 
-            const label = spectator.query('.field label');
+            const label = spectator.query('.field label')!;
             expect(label).toBeTruthy();
             expect(label.textContent.trim()).toBe('Font Family');
         });
@@ -91,7 +92,7 @@ describe('UveStyleEditorFieldDropdownComponent', () => {
             );
             spectator.detectChanges();
 
-            const select = spectator.query(Select);
+            const select = spectator.query(Select)!;
             expect(select).toBeTruthy();
         });
 
@@ -115,7 +116,7 @@ describe('UveStyleEditorFieldDropdownComponent', () => {
             );
             spectator.detectChanges();
 
-            const select = spectator.query(Select);
+            const select = spectator.query(Select)!;
             expect(select.inputId).toBe('test-field');
         });
 
@@ -139,7 +140,7 @@ describe('UveStyleEditorFieldDropdownComponent', () => {
             );
             spectator.detectChanges();
 
-            const select = spectator.query(Select);
+            const select = spectator.query(Select)!;
             expect(select.optionLabel).toBe('label');
             expect(select.optionValue).toBe('value');
         });
@@ -164,7 +165,7 @@ describe('UveStyleEditorFieldDropdownComponent', () => {
             );
             spectator.detectChanges();
 
-            const select = spectator.query(Select);
+            const select = spectator.query(Select)!;
             expect(select.showClear).toBe(false);
         });
     });
@@ -218,7 +219,7 @@ describe('UveStyleEditorFieldDropdownComponent', () => {
             );
             spectator.detectChanges();
 
-            const select = spectator.query(Select);
+            const select = spectator.query(Select)!;
             expect(select.options).toEqual(options);
         });
 
@@ -299,7 +300,7 @@ describe('UveStyleEditorFieldDropdownComponent', () => {
             );
             spectator.detectChanges();
 
-            const select = spectator.query(Select);
+            const select = spectator.query(Select)!;
             expect(select.value).toBe('Arial');
             expect(formControl.value).toBe('Arial');
         });
@@ -327,7 +328,7 @@ describe('UveStyleEditorFieldDropdownComponent', () => {
             );
             spectator.detectChanges();
 
-            const select = spectator.query(Select);
+            const select = spectator.query(Select)!;
             expect(formControl.value).toBe('Arial');
 
             formControl.setValue('Helvetica');
@@ -360,7 +361,7 @@ describe('UveStyleEditorFieldDropdownComponent', () => {
             spectator.detectChanges();
 
             expect(formControl.value).toBeNull();
-            const select = spectator.query(Select);
+            const select = spectator.query(Select)!;
             expect(select.value).toBeNull();
         });
     });

@@ -4,8 +4,6 @@
         "outDir": "../../dist/out-tsc",
         "module": "preserve",
         "types": ["vitest/globals", "vitest/importMeta", "vite/client", "node", "vitest"],
-        "strict": false,
-        "noPropertyAccessFromIndexSignature": false,
         "moduleResolution": "bundler",
         "isolatedModules": true
     },

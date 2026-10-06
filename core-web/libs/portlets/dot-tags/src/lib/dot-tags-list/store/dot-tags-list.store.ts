@@ -8,6 +8,7 @@ import {
 } from '@ngrx/signals';
 import { EMPTY, Observable } from 'rxjs';
 
+import { HttpErrorResponse } from '@angular/common/http';
 import { computed, effect, inject, untracked } from '@angular/core';
 
 import { catchError, take } from 'rxjs/operators';
@@ -117,7 +118,7 @@ export const DotTagsListStore = signalStore(
                 const date = new Date().toISOString().slice(0, 10);
                 getDownloadLink(blob, `tags-export-${date}.csv`).click();
             } catch (error) {
-                httpErrorManager.handle(error);
+                httpErrorManager.handle(error as HttpErrorResponse);
             }
         }
 

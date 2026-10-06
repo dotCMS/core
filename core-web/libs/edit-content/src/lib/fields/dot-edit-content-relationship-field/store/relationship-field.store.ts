@@ -168,7 +168,9 @@ export const RelationshipFieldStore = signalStore(
              */
             initialize: rxMethod<{
                 field: ContentTypeRelationshipField;
-                contentlet: DotCMSContentlet;
+                // Nullable, as the three comments below already state: manual translation runs
+                // this with no contentlet, and the effect branches on `contentlet != null`.
+                contentlet: DotCMSContentlet | null;
                 targetLanguageId?: number;
                 targetLanguage?: DotLanguage;
             }>(

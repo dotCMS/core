@@ -1,6 +1,6 @@
-@import "../../../../dotcms-scss/shared/colors";
+@use "../../../../dotcms-scss/shared/colors";
 
 .active {
-    color: $color-palette-primary-500;
+    color: colors.$color-palette-primary-500;
     pointer-events: none;
 }

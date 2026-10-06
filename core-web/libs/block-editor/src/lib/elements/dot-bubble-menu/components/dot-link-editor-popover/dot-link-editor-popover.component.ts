@@ -84,7 +84,7 @@ const REL_OPTIONS = [
     imports: [FormsModule, Listbox, InputText, Select, Skeleton, Button, EditorModalDirective]
 })
 export class DotLinkEditorPopoverComponent implements OnDestroy {
-    @ViewChild('popover', { read: EditorModalDirective }) private popover: EditorModalDirective;
+    @ViewChild('popover', { read: EditorModalDirective }) private popover!: EditorModalDirective;
     @ViewChild('input', { read: ElementRef }) private searchInput?: ElementRef<HTMLInputElement>;
     @ViewChild('resultListbox') private searchResultsListbox?: Listbox;
 
@@ -149,11 +149,9 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
      * Handles the Escape key press to close the popover.
      * This provides a consistent way for users to cancel link editing.
      */
-    @HostListener('document:keydown.escape', ['$event'])
-    protected onEscapeKey(event: KeyboardEvent) {
-        if (event.key === 'Escape') {
-            this.popover.hide();
-        }
+    @HostListener('document:keydown.escape')
+    protected onEscapeKey() {
+        this.popover.hide();
     }
 
     /**
@@ -353,7 +351,7 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
                         hasTitleImage: c.hasTitleImage,
                         inode: c.inode,
                         displayName: c.title,
-                        url: c.path || c.urlMap
+                        url: c['path'] || c['urlMap']
                     }))
                 );
                 this.isSearching.set(false);

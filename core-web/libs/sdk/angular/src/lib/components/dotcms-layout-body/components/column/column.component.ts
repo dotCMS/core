@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, HostBinding, Input, OnChanges } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostBinding, OnChanges, input } from '@angular/core';
 
 import { DotPageAssetLayoutColumn } from '@dotcms/types';
 import { combineClasses, getColumnPositionClasses } from '@dotcms/uve/internal';
@@ -15,8 +15,8 @@ import { ContainerComponent } from '../container/container.component';
     selector: 'dotcms-column',
     imports: [ContainerComponent],
     template: `
-        <div [class]="column.styleClass" data-testid="dotcms-column">
-            @for (container of column.containers; track $index) {
+        <div [class]="column().styleClass" data-testid="dotcms-column">
+            @for (container of column().containers; track $index) {
                 <dotcms-container [container]="container" />
             }
         </div>
@@ -28,12 +28,12 @@ export class ColumnComponent implements OnChanges {
     /**
      * The column data to be rendered
      */
-    @Input({ required: true }) column!: DotPageAssetLayoutColumn;
+    readonly column = input.required<DotPageAssetLayoutColumn>();
 
     @HostBinding('class') customClasses = '';
 
     ngOnChanges() {
-        const positionClasses = getColumnPositionClasses(this.column);
+        const positionClasses = getColumnPositionClasses(this.column());
 
         this.customClasses = combineClasses([positionClasses.startClass, positionClasses.endClass]);
     }

@@ -509,7 +509,9 @@ export class DotUsersRolesTabComponent {
      * a leaf — dropping any node with a nullish key is defensive; in
      * practice `$grantedTreeNodes` always sets one.
      */
-    protected onGrantedTreeSelectionChange(selection: TreeNode | TreeNode[] | null): void {
+    protected onGrantedTreeSelectionChange(
+        selection: TreeNode | TreeNode[] | null | undefined
+    ): void {
         const nodes = Array.isArray(selection) ? selection : selection ? [selection] : [];
         this.$selectedGranted.set(nodes.map((node) => node.key ?? '').filter((key) => !!key));
     }
@@ -522,7 +524,7 @@ export class DotUsersRolesTabComponent {
      * — filtering by `isGrantableLeaf` drops those non-leaf entries
      * cleanly.
      */
-    protected onTreeSelectionChange(selection: TreeNode | TreeNode[] | null): void {
+    protected onTreeSelectionChange(selection: TreeNode | TreeNode[] | null | undefined): void {
         const nodes = Array.isArray(selection) ? selection : selection ? [selection] : [];
         this.$selectedTreeNodes.set(nodes);
         const leafIds = nodes

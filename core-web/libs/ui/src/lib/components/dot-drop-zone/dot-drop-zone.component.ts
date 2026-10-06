@@ -175,7 +175,8 @@ export class DotDropZoneComponent {
         if (items) {
             return Array.from(items)
                 .filter((item) => item.kind === 'file')
-                .map((item) => item.getAsFile());
+                .map((item) => item.getAsFile())
+                .filter((file): file is File => file !== null);
         }
 
         return Array.from(files) || [];

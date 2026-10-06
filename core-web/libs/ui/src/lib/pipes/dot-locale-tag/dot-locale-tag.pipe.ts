@@ -19,7 +19,10 @@ export class DotLocaleTagPipe implements PipeTransform {
      * @param {Map<number, DotLanguage>} languagesMap - Map of language id to DotLanguage.
      * @returns {string} The ISO code or '-' if not found.
      */
-    transform(languageId: number, languagesMap: Map<number, DotLanguage>): string {
+    transform(
+        languageId: number | null | undefined,
+        languagesMap: Map<number, DotLanguage> | null | undefined
+    ): string {
         if (!languageId || !languagesMap) {
             return '-';
         }

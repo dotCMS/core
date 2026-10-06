@@ -24,7 +24,11 @@ import {
     PushPublishService
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
-import { DotProcessedWorkflowPayload, DotWorkflowPayload } from '@dotcms/dotcms-models';
+import {
+    DotCMSWorkflowAction,
+    DotProcessedWorkflowPayload,
+    DotWorkflowPayload
+} from '@dotcms/dotcms-models';
 import { DotWorkflowActionsComponent } from '@dotcms/ui';
 import {
     LoginServiceMock,
@@ -82,6 +86,9 @@ const workflowActionMock = {
     actionInputs: [
         {
             id: '1232',
+            // `DotCMSWorkflowInput.body` is a `Record<string, unknown>`. The tests only pass this
+            // straight through and assert it comes out the other side, so an empty object says
+            // the same thing as the empty array did — and matches the model.
             body: {}
         }
     ]
@@ -111,7 +118,7 @@ const pageSnapshotSignal = signal({
 
 const uveStoreMock = {
     pageAsset: pageSnapshotSignal,
-    workflowActions: signal([]),
+    workflowActions: signal<DotCMSWorkflowAction[]>([]),
     workflowIsLoading: signal(false),
     editorCanEditContent: () => canEditPageContentSignal(),
     pageParams: signal(pageParams),
@@ -177,7 +184,7 @@ describe('DotUveWorkflowActionsComponent', () => {
             uveStoreMock.workflowIsLoading.set(true);
             spectator.detectChanges();
 
-            const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
+            const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent)!;
             expect(dotWorkflowActionsComponent.actions()).toEqual([]);
             expect(dotWorkflowActionsComponent.loading()).toBeTruthy();
             expect(dotWorkflowActionsComponent.size()).toBe('small');
@@ -187,7 +194,7 @@ describe('DotUveWorkflowActionsComponent', () => {
             canEditPageContentSignal.set(false);
             spectator.detectChanges();
 
-            const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
+            const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent)!;
             expect(dotWorkflowActionsComponent.disabled()).toBeTruthy();
         });
     });
@@ -201,7 +208,7 @@ describe('DotUveWorkflowActionsComponent', () => {
         });
 
         it('should load workflow actions', () => {
-            const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
+            const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent)!;
 
             expect(dotWorkflowActionsComponent!.actions()).toEqual(mockWorkflowsActions);
             expect(dotWorkflowActionsComponent!.loading()).toBeFalsy();
@@ -295,7 +302,7 @@ describe('DotUveWorkflowActionsComponent', () => {
                 .spyOn(dotWorkflowActionsFireService, 'fireTo')
                 .mockReturnValue(of(dotcmsContentletMock));
 
-            const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
+            const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent)!;
             dotWorkflowActionsComponent.actionFired.emit(workflowActionMock);
 
             expect(spyWizard).toHaveBeenCalledWith(wizardInputMock);
@@ -319,9 +326,16 @@ describe('DotUveWorkflowActionsComponent', () => {
             const spyCheckPublishEnvironments = vi
                 .spyOn(dotWorkflowEventHandlerService, 'checkPublishEnvironments')
                 .mockReturnValue(of(true));
+            // `setWizardInput` returns null for an action with no collectable inputs, and the
+            // component no longer calls `open(null)` — so a test about opening the wizard has to
+            // supply one, the way the test above already does.
+            vi.spyOn(dotWorkflowEventHandlerService, 'setWizardInput').mockReturnValue({
+                steps: [],
+                title: 'title'
+            });
             const spyWizard = vi.spyOn(dotWizardService, 'open');
 
-            const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
+            const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent)!;
 
             dotWorkflowActionsComponent!.actionFired.emit(workflowActionMock);
 
@@ -336,7 +350,7 @@ describe('DotUveWorkflowActionsComponent', () => {
                 .mockReturnValue(of(false));
             const spyWizard = vi.spyOn(dotWizardService, 'open');
 
-            const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
+            const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent)!;
 
             dotWorkflowActionsComponent.actionFired.emit(workflowActionMock);
 

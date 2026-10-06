@@ -13,7 +13,7 @@ class TestHostComponent {}
 describe('DotParseHtmlService', () => {
     let dotParseHtmlService: DotParseHtmlService;
     let fixture: ComponentFixture<TestHostComponent>;
-    let target;
+    let target: HTMLDivElement;
 
     beforeEach(() => {
         TestBed.configureTestingModule({

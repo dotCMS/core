@@ -32,9 +32,9 @@ export class DotAlertConfirmComponent implements OnInit, OnDestroy {
     private confirmationService = inject(ConfirmationService);
     private injector = inject(Injector);
 
-    @ViewChild('cd') cd: ConfirmDialog;
-    @ViewChild('confirmBtn') confirmBtn: ElementRef;
-    @ViewChild('acceptBtn') acceptBtn: ElementRef;
+    @ViewChild('cd') cd!: ConfirmDialog;
+    @ViewChild('confirmBtn') confirmBtn!: ElementRef;
+    @ViewChild('acceptBtn') acceptBtn!: ElementRef;
 
     private destroy$ = new Subject<boolean>();
 

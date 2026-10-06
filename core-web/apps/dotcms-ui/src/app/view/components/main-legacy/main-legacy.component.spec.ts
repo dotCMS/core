@@ -72,7 +72,7 @@ class MockDotDialogComponent {}
     standalone: false
 })
 class MockDotToolbarComponent {
-    @Input() collapsed: boolean;
+    @Input() collapsed!: boolean;
 }
 
 @Component({
@@ -88,7 +88,7 @@ class MockDotGenerateSecurePasswordComponent {}
     standalone: false
 })
 class MockDotMainNavComponent {
-    @Input() collapsed: boolean;
+    @Input() collapsed!: boolean;
 }
 
 @Component({

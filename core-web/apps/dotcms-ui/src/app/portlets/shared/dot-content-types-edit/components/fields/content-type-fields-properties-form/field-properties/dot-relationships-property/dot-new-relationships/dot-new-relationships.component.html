@@ -4,7 +4,7 @@
     </label>
     <dot-content-type
         [ngModel]="contentType"
-        [disabled]="editing"
+        [disabled]="editing()"
         [placeholder]="
             'contenttypes.field.properties.relationship.new.content_type.placeholder' | dm
         "
@@ -16,7 +16,7 @@
     <label for="cardinality">{{ 'contenttypes.field.properties.relationships.label' | dm }}</label>
     <dot-cardinality-selector
         (switch)="cardinalityChanged($event)"
-        [value]="cardinality"
-        [disabled]="editing"
+        [value]="cardinality()"
+        [disabled]="editing()"
         id="cardinality" />
 </div>

@@ -2,7 +2,7 @@ import { vi } from 'vitest';
 
 import { Extension } from '@tiptap/core';
 
-import type { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import type { Action, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 import { loadRemoteExtensions, parseCustomBlocksField } from './remote-extensions.loader';
 
@@ -151,11 +151,13 @@ describe('loadRemoteExtensions', () => {
                     {
                         url: 'https://example.com/custom-gallery.js',
                         actions: [
+                            // `name` is deliberately absent — this is exactly the case
+                            // the warning under test is meant to catch.
                             {
                                 command: 'insertGallery',
                                 menuLabel: 'Custom Gallery',
                                 icon: 'photo_library'
-                            }
+                            } as Action
                         ]
                     }
                 ]

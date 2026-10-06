@@ -42,7 +42,7 @@ import { getDotAttributesFromElement, setDotAttributesToElement } from '../dot-f
 })
 export class DotSelectComponent {
     @Element()
-    el: HTMLElement;
+    el!: HTMLElement;
 
     /** Value set from the dropdown option */
     @Prop({ mutable: true, reflect: true })
@@ -77,14 +77,14 @@ export class DotSelectComponent {
     disabled = false;
 
     @State()
-    _options: DotOption[];
+    _options!: DotOption[];
     @State()
-    status: DotFieldStatus;
+    status!: DotFieldStatus;
 
     @Event()
-    dotValueChange: EventEmitter<DotFieldValueEvent>;
+    dotValueChange!: EventEmitter<DotFieldValueEvent>;
     @Event()
-    dotStatusChange: EventEmitter<DotFieldStatusEvent>;
+    dotStatusChange!: EventEmitter<DotFieldStatusEvent>;
 
     _dotTouched = false;
     _dotPristine = true;
@@ -99,7 +99,7 @@ export class DotSelectComponent {
     @Watch('options')
     optionsWatch(): void {
         const validOptions = checkProp<DotSelectComponent, string>(this, 'options');
-        this._options = getDotOptionsFromFieldValue(validOptions);
+        this._options = getDotOptionsFromFieldValue(validOptions ?? '');
     }
 
     /**
@@ -139,7 +139,7 @@ export class DotSelectComponent {
                         {this._options.map((item: DotOption) => {
                             return (
                                 <option
-                                    selected={this.value === item.value ? true : null}
+                                    selected={this.value === item.value ? true : undefined}
                                     value={item.value}>
                                     {item.label}
                                 </option>
@@ -157,13 +157,13 @@ export class DotSelectComponent {
         this.optionsWatch();
     }
 
-    private shouldBeDisabled(): boolean {
-        return this.disabled ? true : null;
+    private shouldBeDisabled(): boolean | undefined {
+        return this.disabled ? true : undefined;
     }
 
     // Todo: find how to set proper TYPE in TS
-    private setValue(event): void {
-        this.value = event.target.value;
+    private setValue(event: Event): void {
+        this.value = (event.target as HTMLSelectElement).value;
         this.status = updateStatus(this.status, {
             dotTouched: true,
             dotPristine: false,

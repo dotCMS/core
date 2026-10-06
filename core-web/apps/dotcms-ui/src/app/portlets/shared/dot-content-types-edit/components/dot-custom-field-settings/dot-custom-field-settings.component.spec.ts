@@ -23,7 +23,7 @@ import {
     NEW_RENDER_MODE_VARIABLE_KEY
 } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
-import { MockDotMessageService } from '@dotcms/utils-testing';
+import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotCustomFieldSettingsComponent } from './dot-custom-field-settings.component';
 import { DotHideLabelSettingsComponent } from './sections/dot-hide-label-settings';
@@ -52,29 +52,13 @@ const MOCK_SAVED_VARIABLE: DotFieldVariable = {
 };
 
 const MOCK_FIELD: DotCMSContentTypeField = {
+    // Everything else comes from the shared mock: this literal had `null` in eighteen fields the
+    // model declares non-nullable, and the same eighteen were copied into all three specs.
+    ...dotcmsContentTypeFieldBasicMock,
     contentTypeId: 'content-type-id-123',
     id: 'field-id-456',
     clazz: DotCMSClazzes.CUSTOM_FIELD,
-    name: 'My Custom Field',
-    dataType: null,
-    fieldType: '',
-    fieldTypeLabel: '',
-    fieldVariables: [],
-    fixed: null,
-    iDate: null,
-    indexed: null,
-    listed: null,
-    modDate: null,
-    readOnly: null,
-    required: null,
-    searchable: null,
-    sortOrder: null,
-    unique: null,
-    variable: null,
-    defaultValue: null,
-    hint: null,
-    regexCheck: undefined,
-    values: null
+    name: 'My Custom Field'
 };
 
 type RenderOptionsFormTree = FieldTree<{
@@ -137,7 +121,7 @@ describe('DotCustomFieldSettingsComponent', () => {
         });
 
         it('should pass the field input to dot-hide-label-settings', () => {
-            const child = spectator.query(DotHideLabelSettingsComponent);
+            const child = spectator.query(DotHideLabelSettingsComponent)!;
             expect(child.$field()).toEqual(MOCK_FIELD);
         });
 
@@ -149,12 +133,12 @@ describe('DotCustomFieldSettingsComponent', () => {
         });
 
         it('should render the dot-render-options-settings child component (default iframe mode)', () => {
-            const child = spectator.query(DotRenderOptionsSettingsComponent);
+            const child = spectator.query(DotRenderOptionsSettingsComponent)!;
             expect(child).not.toBeNull();
         });
 
         it('should pass the field input to dot-render-options-settings', () => {
-            const child = spectator.query(DotRenderOptionsSettingsComponent);
+            const child = spectator.query(DotRenderOptionsSettingsComponent)!;
             expect(child.$field()).toEqual(MOCK_FIELD);
         });
 
@@ -198,8 +182,9 @@ describe('DotCustomFieldSettingsComponent', () => {
         it('should emit true when a section becomes dirty and valid', () => {
             vi.spyOn(component.$valid, 'emit');
 
-            const ft = (spectator.query(DotRenderOptionsSettingsComponent) as WithRenderFormTree)
-                .formTree;
+            const ft = (
+                spectator.query(DotRenderOptionsSettingsComponent) as unknown as WithRenderFormTree
+            ).formTree;
             ft().markAsDirty();
             spectator.flushEffects();
 
@@ -209,8 +194,9 @@ describe('DotCustomFieldSettingsComponent', () => {
         it('should emit false when a section is dirty but invalid', () => {
             vi.spyOn(component.$valid, 'emit');
 
-            const ft = (spectator.query(DotRenderOptionsSettingsComponent) as WithRenderFormTree)
-                .formTree;
+            const ft = (
+                spectator.query(DotRenderOptionsSettingsComponent) as unknown as WithRenderFormTree
+            ).formTree;
             ft.showAsModal().value.set(true);
             ft.customFieldWidth().value.set(0);
             ft().markAsDirty();
@@ -247,8 +233,9 @@ describe('DotCustomFieldSettingsComponent', () => {
         it('should call save on the renderOptions section when it is dirty', () => {
             vi.spyOn(component.$save, 'emit');
 
-            const ft = (spectator.query(DotRenderOptionsSettingsComponent) as WithRenderFormTree)
-                .formTree;
+            const ft = (
+                spectator.query(DotRenderOptionsSettingsComponent) as unknown as WithRenderFormTree
+            ).formTree;
             ft.showAsModal().value.set(true);
             ft().markAsDirty();
 
@@ -261,8 +248,9 @@ describe('DotCustomFieldSettingsComponent', () => {
         it('should emit $save after successful save', () => {
             vi.spyOn(component.$save, 'emit');
 
-            const ft = (spectator.query(DotRenderOptionsSettingsComponent) as WithRenderFormTree)
-                .formTree;
+            const ft = (
+                spectator.query(DotRenderOptionsSettingsComponent) as unknown as WithRenderFormTree
+            ).formTree;
             ft().markAsDirty();
 
             component.saveSettings();
@@ -276,8 +264,9 @@ describe('DotCustomFieldSettingsComponent', () => {
             );
             vi.spyOn(component.$save, 'emit');
 
-            const ft = (spectator.query(DotRenderOptionsSettingsComponent) as WithRenderFormTree)
-                .formTree;
+            const ft = (
+                spectator.query(DotRenderOptionsSettingsComponent) as unknown as WithRenderFormTree
+            ).formTree;
             ft().markAsDirty();
 
             component.saveSettings();
@@ -289,8 +278,9 @@ describe('DotCustomFieldSettingsComponent', () => {
         it('should call save on the hideLabel section when it is dirty', () => {
             vi.spyOn(component.$save, 'emit');
 
-            const ft = (spectator.query(DotHideLabelSettingsComponent) as WithHideLabelFormTree)
-                .formTree;
+            const ft = (
+                spectator.query(DotHideLabelSettingsComponent) as unknown as WithHideLabelFormTree
+            ).formTree;
             ft.hideLabel().value.set(true);
             ft().markAsDirty();
 
@@ -307,13 +297,14 @@ describe('DotCustomFieldSettingsComponent', () => {
             vi.spyOn(component.$save, 'emit');
 
             const renderFt = (
-                spectator.query(DotRenderOptionsSettingsComponent) as WithRenderFormTree
+                spectator.query(DotRenderOptionsSettingsComponent) as unknown as WithRenderFormTree
             ).formTree;
             renderFt.showAsModal().value.set(true);
             renderFt().markAsDirty();
 
-            const hideFt = (spectator.query(DotHideLabelSettingsComponent) as WithHideLabelFormTree)
-                .formTree;
+            const hideFt = (
+                spectator.query(DotHideLabelSettingsComponent) as unknown as WithHideLabelFormTree
+            ).formTree;
             hideFt.hideLabel().value.set(true);
             hideFt().markAsDirty();
 
@@ -352,8 +343,9 @@ describe('DotCustomFieldSettingsComponent', () => {
         });
 
         it('should emit $changeControls with accept.disabled false when a section is dirty and valid', () => {
-            const ft = (spectator.query(DotRenderOptionsSettingsComponent) as WithRenderFormTree)
-                .formTree;
+            const ft = (
+                spectator.query(DotRenderOptionsSettingsComponent) as unknown as WithRenderFormTree
+            ).formTree;
             ft.showAsModal().value.set(true);
             ft().markAsDirty();
 
@@ -361,7 +353,7 @@ describe('DotCustomFieldSettingsComponent', () => {
             spectator.setInput('isVisible', true);
 
             const emitted = emitSpy.mock.calls[0][0] as DotDialogActions;
-            expect(emitted.accept.disabled).toBe(false);
+            expect(emitted.accept!.disabled).toBe(false);
         });
 
         it('should call saveSettings when the emitted accept.action is invoked', () => {

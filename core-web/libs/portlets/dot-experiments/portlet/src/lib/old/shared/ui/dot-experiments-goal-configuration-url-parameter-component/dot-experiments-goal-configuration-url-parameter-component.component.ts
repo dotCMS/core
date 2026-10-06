@@ -66,12 +66,19 @@ export class DotExperimentsGoalConfigurationUrlParameterComponentComponent
      * @private
      */
     private listenOperatorChanges(): void {
-        this.conditionsFormArray.controls.forEach((condition: FormGroup) => {
+        // `FormArray.controls` is `AbstractControl[]`; each entry here is the condition group that
+        // `addConditionToForm` built, and `get` reports the absent case for both lookups below.
+        this.conditionsFormArray.controls.forEach((condition: AbstractControl) => {
             condition
                 .get('operator')
-                .valueChanges.pipe(takeUntil(this.destroy$))
+                ?.valueChanges.pipe(takeUntil(this.destroy$))
                 .subscribe((value: string) => {
-                    const valueControl: AbstractControl = condition.get('value.value');
+                    const valueControl = condition.get('value.value');
+
+                    if (!valueControl) {
+                        return;
+                    }
+
                     if (value === GOAL_OPERATORS.EXISTS) {
                         valueControl.disable();
                     } else {

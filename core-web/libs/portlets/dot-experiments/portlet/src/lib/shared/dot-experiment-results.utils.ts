@@ -1,3 +1,7 @@
+// `jstat.d.ts` is an ambient `declare module`, not a module: importing it would register
+// nothing. The reference is what pulls it into the program. See ./jstat.d.ts.
+// eslint-disable-next-line @typescript-eslint/triple-slash-reference
+/// <reference path="./jstat.d.ts" />
 import { ChartData } from 'chart.js';
 import { jStat } from 'jstat';
 
@@ -46,8 +50,11 @@ export const getPropertyColors = (index: number): LineChartColorsProperties => {
     return ExperimentChartDatasetColorsVariants[index];
 };
 
-export const isPromotedVariant = (experiment: DotExperiment, variantName: string): boolean => {
-    return !!experiment.trafficProportion.variants.find(({ id }) => id === variantName)?.promoted;
+export const isPromotedVariant = (
+    experiment: DotExperiment | null,
+    variantName: string
+): boolean => {
+    return !!experiment?.trafficProportion.variants.find(({ id }) => id === variantName)?.promoted;
 };
 
 export const getPreviousDay = (givenDate: string) => {

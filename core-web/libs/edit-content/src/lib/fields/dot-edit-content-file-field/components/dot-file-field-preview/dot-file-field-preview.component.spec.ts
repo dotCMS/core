@@ -1,9 +1,9 @@
 import {
-    Spectator,
+    byTestId,
     createComponentFactory,
     mockProvider,
-    SpyObject,
-    byTestId
+    Spectator,
+    SpyObject
 } from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
@@ -19,6 +19,8 @@ import { DotCopyButtonComponent } from '@dotcms/ui';
 import { DotFileFieldPreviewComponent } from './dot-file-field-preview.component';
 
 import { NEW_FILE_MOCK, TEMP_FILE_MOCK, NEW_FILE_EDITABLE_MOCK } from '../../../../utils/mocks';
+
+import type { InferInputSignals } from '@openng/spectator';
 
 describe('DotFileFieldPreviewComponent', () => {
     let spectator: Spectator<DotFileFieldPreviewComponent>;
@@ -52,7 +54,7 @@ describe('DotFileFieldPreviewComponent', () => {
                         source: 'temp',
                         file: TEMP_FILE_MOCK
                     }
-                } as unknown
+                } as unknown as InferInputSignals<DotFileFieldPreviewComponent>
             });
             dotResourceLinksService = spectator.inject(DotResourceLinksService, true);
         });
@@ -73,7 +75,7 @@ describe('DotFileFieldPreviewComponent', () => {
 
             expect(spectator.query(byTestId('contentlet-thumbnail'))).toBeTruthy();
             expect(
-                spectator.query(byTestId('dot-content-thumbnail-image')).getAttribute('src')
+                spectator.query(byTestId('dot-content-thumbnail-image'))!.getAttribute('src')
             ).toBe(TEMP_FILE_MOCK.thumbnailUrl);
         });
 
@@ -86,7 +88,7 @@ describe('DotFileFieldPreviewComponent', () => {
 
             spectator.detectChanges();
 
-            spectator.click(spectator.query(byTestId('download-btn')));
+            spectator.click(spectator.query(byTestId('download-btn'))!);
             expect(downloadSpy).toHaveBeenCalledWith(expectedUrl);
         });
 
@@ -94,7 +96,7 @@ describe('DotFileFieldPreviewComponent', () => {
             spectator.setInput('previewFile', {
                 source: 'temp',
                 file: { ...TEMP_FILE_MOCK, metadata: undefined }
-            } as unknown);
+            } as unknown as InferInputSignals<DotFileFieldPreviewComponent>);
             spectator.detectChanges();
 
             expect(spectator.component).toBeTruthy();
@@ -105,7 +107,7 @@ describe('DotFileFieldPreviewComponent', () => {
             spectator.setInput('previewFile', {
                 source: 'temp',
                 file: { ...TEMP_FILE_MOCK, referenceUrl: '' }
-            } as unknown);
+            } as unknown as InferInputSignals<DotFileFieldPreviewComponent>);
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('download-btn'))).toBeFalsy();
@@ -118,7 +120,7 @@ describe('DotFileFieldPreviewComponent', () => {
             spectator.setInput('previewFile', {
                 source: 'temp',
                 file: { ...TEMP_FILE_MOCK, image: false, mimeType: 'unknown', metadata: null }
-            } as unknown);
+            } as unknown as InferInputSignals<DotFileFieldPreviewComponent>);
 
             expect(() => spectator.detectChanges()).not.toThrow();
             expect(spectator.component).toBeTruthy();
@@ -133,7 +135,7 @@ describe('DotFileFieldPreviewComponent', () => {
                         source: 'contentlet',
                         file: NEW_FILE_MOCK.entity
                     }
-                } as unknown
+                } as unknown as InferInputSignals<DotFileFieldPreviewComponent>
             });
             dotResourceLinksService = spectator.inject(DotResourceLinksService, true);
         });
@@ -150,14 +152,14 @@ describe('DotFileFieldPreviewComponent', () => {
 
             expect(spectator.query(byTestId('contentlet-thumbnail'))).toBeTruthy();
             expect(
-                spectator.query(byTestId('dot-content-thumbnail-image')).getAttribute('src')
+                spectator.query(byTestId('dot-content-thumbnail-image'))!.getAttribute('src')
             ).toBe(`/dA/${inode}/asset/500w/50q?r=${modDate}`);
         });
 
         it('should show proper metadata', () => {
             spectator.detectChanges();
 
-            const { title, width, height } = NEW_FILE_MOCK.entity.assetMetaData;
+            const { title, width, height } = NEW_FILE_MOCK.entity['assetMetaData'];
 
             const metadataTitleElement = spectator.query(byTestId('metadata-title'));
             const metadataDimensionsElement = spectator.query(byTestId('metadata-dimensions'));
@@ -171,9 +173,9 @@ describe('DotFileFieldPreviewComponent', () => {
         it('should show a dialog when click on the proper btn', async () => {
             spectator.detectChanges();
 
-            const infoBtnElement = spectator.query(byTestId('info-btn'));
+            const infoBtnElement = spectator.query(byTestId('info-btn'))!;
 
-            const dialogComponent = spectator.query(Dialog);
+            const dialogComponent = spectator.query(Dialog)!;
 
             spectator.click(infoBtnElement);
             expect(dialogComponent.visible).toBeTruthy();
@@ -182,9 +184,9 @@ describe('DotFileFieldPreviewComponent', () => {
         it('should show a dialog when click on the proper responsive btn', async () => {
             spectator.detectChanges();
 
-            const infoBtnElement = spectator.query(byTestId('info-btn-responsive'));
+            const infoBtnElement = spectator.query(byTestId('info-btn-responsive'))!;
 
-            const dialogComponent = spectator.query(Dialog);
+            const dialogComponent = spectator.query(Dialog)!;
 
             spectator.click(infoBtnElement);
             expect(dialogComponent.visible).toBeTruthy();
@@ -201,7 +203,7 @@ describe('DotFileFieldPreviewComponent', () => {
 
             spectator.detectChanges();
 
-            const downloadBtnElement = spectator.query(byTestId('download-btn'));
+            const downloadBtnElement = spectator.query(byTestId('download-btn'))!;
 
             spectator.click(downloadBtnElement);
             expect(downloadSpy).toHaveBeenCalledWith(expectedUrl);
@@ -217,7 +219,7 @@ describe('DotFileFieldPreviewComponent', () => {
         it('should there are the proper resources links', async () => {
             spectator.detectChanges();
 
-            const infoBtnElement = spectator.query(byTestId('info-btn'));
+            const infoBtnElement = spectator.query(byTestId('info-btn'))!;
 
             spectator.click(infoBtnElement);
             spectator.detectChanges();
@@ -238,7 +240,7 @@ describe('DotFileFieldPreviewComponent', () => {
                         source: 'contentlet',
                         file: NEW_FILE_EDITABLE_MOCK.entity
                     }
-                } as unknown
+                } as unknown as InferInputSignals<DotFileFieldPreviewComponent>
             });
             dotResourceLinksService = spectator.inject(DotResourceLinksService, true);
         });
@@ -258,21 +260,21 @@ describe('DotFileFieldPreviewComponent', () => {
                         file: NEW_FILE_MOCK.entity
                     },
                     disabled: true
-                } as unknown
+                } as unknown as InferInputSignals<DotFileFieldPreviewComponent>
             });
             dotResourceLinksService = spectator.inject(DotResourceLinksService, true);
             spectator.detectChanges();
         });
 
         it('should disable info button when disabled', () => {
-            const infoBtnComponent = spectator.query(byTestId('info-btn'));
+            const infoBtnComponent = spectator.query(byTestId('info-btn'))!;
             const actualButton = infoBtnComponent.querySelector('button') as HTMLButtonElement;
             expect(infoBtnComponent).toBeTruthy();
             expect(actualButton.disabled).toBe(true);
         });
 
         it('should disable download button when disabled', () => {
-            const downloadBtnComponent = spectator.query(byTestId('download-btn'));
+            const downloadBtnComponent = spectator.query(byTestId('download-btn'))!;
             const actualButton = downloadBtnComponent.querySelector('button') as HTMLButtonElement;
             expect(downloadBtnComponent).toBeTruthy();
             expect(actualButton.disabled).toBe(true);
@@ -284,8 +286,12 @@ describe('DotFileFieldPreviewComponent', () => {
                 byTestId('download-btn-responsive')
             );
 
-            expect(infoResponsiveBtnComponent?.querySelector('button').disabled).toBe(true);
-            expect(downloadResponsiveBtnComponent?.querySelector('button').disabled).toBe(true);
+            expect(
+                infoResponsiveBtnComponent?.querySelector<HTMLButtonElement>('button')!.disabled
+            ).toBe(true);
+            expect(
+                downloadResponsiveBtnComponent?.querySelector<HTMLButtonElement>('button')!.disabled
+            ).toBe(true);
         });
 
         it('should prevent download action when disabled', () => {
@@ -293,11 +299,11 @@ describe('DotFileFieldPreviewComponent', () => {
                 .spyOn(spectator.component, 'downloadAsset')
                 .mockImplementation(vi.fn());
 
-            const downloadBtnComponent = spectator.query(byTestId('download-btn'));
+            const downloadBtnComponent = spectator.query(byTestId('download-btn'))!;
             const actualDownloadBtn = downloadBtnComponent.querySelector('button');
 
             // Since button is disabled, clicking should not trigger download
-            spectator.click(actualDownloadBtn);
+            spectator.click(actualDownloadBtn!);
 
             expect(downloadSpy).not.toHaveBeenCalled();
         });
@@ -307,20 +313,20 @@ describe('DotFileFieldPreviewComponent', () => {
                 .spyOn(spectator.component, 'downloadAsset')
                 .mockImplementation(vi.fn());
 
-            const downloadBtnComponent = spectator.query(byTestId('download-btn'));
+            const downloadBtnComponent = spectator.query(byTestId('download-btn'))!;
             const actualDownloadBtn = downloadBtnComponent.querySelector('button');
 
-            expect(actualDownloadBtn.disabled).toBe(true);
+            expect(actualDownloadBtn!.disabled).toBe(true);
 
-            spectator.click(actualDownloadBtn);
+            spectator.click(actualDownloadBtn!);
 
             expect(downloadSpy).not.toHaveBeenCalled();
         });
 
         it('should not open dialog when clicking disabled info button', () => {
-            const infoBtnComponent = spectator.query(byTestId('info-btn'));
+            const infoBtnComponent = spectator.query(byTestId('info-btn'))!;
             const actualButton = infoBtnComponent.querySelector('button') as HTMLButtonElement;
-            const dialogComponent = spectator.query(Dialog);
+            const dialogComponent = spectator.query(Dialog)!;
 
             // Verify button is actually disabled
             expect(actualButton.disabled).toBe(true);
@@ -337,7 +343,7 @@ describe('DotFileFieldPreviewComponent', () => {
             const actualButton = infoResponsiveBtnComponent?.querySelector(
                 'button'
             ) as HTMLButtonElement;
-            const dialogComponent = spectator.query(Dialog);
+            const dialogComponent = spectator.query(Dialog)!;
 
             // Verify button is actually disabled
             expect(actualButton?.disabled).toBe(true);
@@ -363,7 +369,7 @@ describe('DotFileFieldPreviewComponent', () => {
                             file: TEMP_FILE_MOCK
                         },
                         disabled: true
-                    } as unknown
+                    } as unknown as InferInputSignals<DotFileFieldPreviewComponent>
                 });
                 tempFileSpectator.detectChanges();
             });
@@ -389,13 +395,13 @@ describe('DotFileFieldPreviewComponent', () => {
             // Note: disabled state is already set in parent beforeEach
 
             it('should show responsive info button as disabled', () => {
-                const infoBtnComponent = spectator.query(byTestId('info-btn-responsive'));
+                const infoBtnComponent = spectator.query(byTestId('info-btn-responsive'))!;
                 const actualButton = infoBtnComponent?.querySelector('button') as HTMLButtonElement;
                 expect(actualButton?.disabled).toBe(true);
             });
 
             it('should show responsive download button as disabled', () => {
-                const downloadBtnComponent = spectator.query(byTestId('download-btn-responsive'));
+                const downloadBtnComponent = spectator.query(byTestId('download-btn-responsive'))!;
                 const actualButton = downloadBtnComponent?.querySelector(
                     'button'
                 ) as HTMLButtonElement;

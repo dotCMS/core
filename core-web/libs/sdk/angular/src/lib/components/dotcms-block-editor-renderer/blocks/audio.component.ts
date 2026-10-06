@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 import { BlockEditorNode } from '@dotcms/types';
 
@@ -11,7 +11,7 @@ import { BlockEditorNode } from '@dotcms/types';
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
         <audio [controls]="true" preload="metadata">
-            <source [src]="attrs?.['src']" [type]="attrs?.['mimeType']" />
+            <source [src]="attrs()?.['src']" [type]="attrs()?.['mimeType']" />
             Your browser does not support the
             <code>audio</code>
             element.
@@ -19,5 +19,5 @@ import { BlockEditorNode } from '@dotcms/types';
     `
 })
 export class DotAudioBlock {
-    @Input() attrs!: BlockEditorNode['attrs'];
+    readonly attrs = input<BlockEditorNode['attrs']>();
 }

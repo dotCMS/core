@@ -81,7 +81,7 @@ export class DragHandleDirective implements AfterViewInit, OnDestroy {
             editor: editor,
             element: this.elementRef.nativeElement,
             pluginKey: this.pluginKey(),
-            onNodeChange: (data) => {
+            onNodeChange: (data: { node: Node | null; editor: Editor; pos: number }) => {
                 const onNodeChange = this.onNodeChange();
                 if (onNodeChange) {
                     onNodeChange(data);
@@ -91,15 +91,20 @@ export class DragHandleDirective implements AfterViewInit, OnDestroy {
             },
             computePositionConfig: tippyOpts?.placement
                 ? {
-                      placement:
-                          tippyOpts.placement as DragHandlePluginProps['computePositionConfig']['placement']
+                      placement: tippyOpts.placement as NonNullable<
+                          DragHandlePluginProps['computePositionConfig']
+                      >['placement']
                   }
                 : undefined
         } as unknown as DragHandlePluginProps);
 
         this.plugin.set(plugin);
 
-        editor.registerPlugin(this.plugin());
+        const registeredPlugin = this.plugin();
+
+        if (registeredPlugin) {
+            editor.registerPlugin(registeredPlugin);
+        }
     }
 
     ngOnDestroy(): void {

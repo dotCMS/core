@@ -15,7 +15,7 @@
             [isLoading]="store.isLoading()"
             [images]="store.images()"
             [activeImageIndex]="store.galleryActiveIndex()"
-            [size]="store.formValue()?.size ?? '1024x1024'" />
+            [size]="store.formValue().size" />
         @if (store.isLoading() || store.hasImages()) {
             <div class="flex justify-end gap-1">
                 <p-button

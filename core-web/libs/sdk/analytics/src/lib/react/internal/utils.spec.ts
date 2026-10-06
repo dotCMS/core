@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { DotCMSAnalytics } from '../../core/shared/models';
+import { DotCMSAnalytics, DotCMSAnalyticsConfig } from '../../core/shared/models';
 
 // Mock initializeContentAnalytics to avoid real initialization
 const mockAnalyticsInstance = {
@@ -8,7 +8,9 @@ const mockAnalyticsInstance = {
     track: vi.fn()
 } as unknown as DotCMSAnalytics;
 
-const mockInitialize = vi.fn(() => mockAnalyticsInstance);
+const mockInitialize = vi.fn<(config: DotCMSAnalyticsConfig) => DotCMSAnalytics>(
+    () => mockAnalyticsInstance
+);
 
 vi.mock('../../core/dot-analytics.content', () => ({
     initializeContentAnalytics: mockInitialize

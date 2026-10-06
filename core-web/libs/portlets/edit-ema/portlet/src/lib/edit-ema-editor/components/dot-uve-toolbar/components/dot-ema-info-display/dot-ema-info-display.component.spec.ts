@@ -204,7 +204,7 @@ describe('DotEmaInfoDisplayComponent - Presentational', () => {
             const options: InfoOptions = {
                 info: { message: 'Test', args: [] },
                 icon: 'pi pi-test',
-                id: null,
+                id: undefined,
                 actionIcon: 'pi pi-check'
             };
             spectator.setInput('options', options);

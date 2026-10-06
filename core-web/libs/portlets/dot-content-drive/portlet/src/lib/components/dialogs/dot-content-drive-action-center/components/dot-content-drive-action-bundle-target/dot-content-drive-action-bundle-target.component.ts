@@ -142,7 +142,9 @@ export class DotContentDriveActionBundleTargetComponent implements OnInit {
 /** Reads the remembered bundle, tolerating the absent and the corrupt. */
 const readLastBundleUsed = (): DotBundle | null => {
     try {
-        return JSON.parse(sessionStorage.getItem(LAST_BUNDLE_USED)) as DotBundle | null;
+        // `?? 'null'` for the absent key: `getItem` returns `string | null`, and `JSON.parse`
+        // of the literal `null` yields null — the same value this returned before.
+        return JSON.parse(sessionStorage.getItem(LAST_BUNDLE_USED) ?? 'null') as DotBundle | null;
     } catch {
         // Hand-edited or half-written storage must not take the step down with it.
         return null;

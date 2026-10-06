@@ -17,6 +17,8 @@ import { DotExperimentsReportDailyDetailsComponent } from './dot-experiments-rep
 import { DotExperimentsDetailsTableComponent } from '../../../../shared/ui/dot-experiments-details-table/dot-experiments-details-table.component';
 import { DotExperimentsReportsStore } from '../../store/dot-experiments-reports-store';
 
+import type { InferInputSignals } from '@openng/spectator';
+
 const messageServiceMock = new MockDotMessageService({
     'experiment.reports.promote.warning': 'Are you sure you want to promote this variant?',
     Yes: 'Yes',
@@ -86,7 +88,7 @@ describe('DotExperimentsReportDailyDetailsComponent', () => {
                 hasEnoughSessions: true,
                 experimentId: 'experiment-123',
                 promotedVariantId: null
-            } as unknown
+            } as unknown as InferInputSignals<DotExperimentsReportDailyDetailsComponent>
         });
 
         store = spectator.inject(DotExperimentsReportsStore);
@@ -101,8 +103,8 @@ describe('DotExperimentsReportDailyDetailsComponent', () => {
         const detailsTableComponent = spectator.query(DotExperimentsDetailsTableComponent);
 
         expect(detailsTableComponent).toExist();
-        expect(detailsTableComponent.$data()).toEqual(DETAIL_DATA_MOCK);
-        expect(detailsTableComponent.$isEmpty()).toBe(false);
+        expect(detailsTableComponent!.$data()!).toEqual(DETAIL_DATA_MOCK);
+        expect(detailsTableComponent!.$isEmpty()!).toBe(false);
     });
 
     it('should show promote variant', () => {

@@ -4,6 +4,7 @@ import { vi } from 'vitest';
 import { signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
+import { DotCustomFieldApiWindow } from '@dotcms/edit-content-bridge';
 import { WINDOW } from '@dotcms/utils';
 import { createFakeContentlet, createFakeCustomField } from '@dotcms/utils-testing';
 
@@ -69,7 +70,7 @@ describe('NativeFieldComponent', () => {
 
         it('should initialize form bridge', () => {
             expect(spectator.component.$isBridgeReady()).toBe(true);
-            expect(window['DotCustomFieldApi']).toBeDefined();
+            expect((window as unknown as DotCustomFieldApiWindow).DotCustomFieldApi).toBeDefined();
         });
 
         it('should compute template code from field rendered property', () => {
@@ -333,11 +334,11 @@ describe('NativeFieldComponent', () => {
         });
 
         it('should expose DotCustomFieldApi on window', () => {
-            expect(window['DotCustomFieldApi']).toBeDefined();
+            expect((window as unknown as DotCustomFieldApiWindow).DotCustomFieldApi).toBeDefined();
         });
 
         it('should destroy form bridge on component destroy', () => {
-            const api = window['DotCustomFieldApi'];
+            const api = (window as unknown as DotCustomFieldApiWindow).DotCustomFieldApi;
             const destroySpy = vi.spyOn(api, 'destroy');
 
             spectator.fixture.destroy();
@@ -347,7 +348,7 @@ describe('NativeFieldComponent', () => {
 
         it('should call store.setFieldVisibility(variable, true) when bridge show() is called', () => {
             const store = spectator.inject(DotEditContentStore);
-            const api = window['DotCustomFieldApi'];
+            const api = (window as unknown as DotCustomFieldApiWindow).DotCustomFieldApi;
             const targetVariable = 'someField';
 
             api.getField(targetVariable).show();
@@ -357,7 +358,7 @@ describe('NativeFieldComponent', () => {
 
         it('should call store.setFieldVisibility(variable, false) when bridge hide() is called', () => {
             const store = spectator.inject(DotEditContentStore);
-            const api = window['DotCustomFieldApi'];
+            const api = (window as unknown as DotCustomFieldApiWindow).DotCustomFieldApi;
             const targetVariable = 'anotherField';
 
             api.getField(targetVariable).hide();
@@ -476,7 +477,7 @@ describe('NativeFieldComponent', () => {
         });
 
         it('should clean up resources on destroy', () => {
-            const initialApi = window['DotCustomFieldApi'];
+            const initialApi = (window as unknown as DotCustomFieldApiWindow).DotCustomFieldApi;
             expect(initialApi).toBeDefined();
 
             spectator.fixture.destroy();

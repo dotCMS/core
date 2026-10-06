@@ -12,10 +12,16 @@ import {
  */
 export interface DotWorkflowActionParams {
     workflow: DotCMSWorkflowAction;
-    inode: string;
+    /**
+     * Absent for brand-new content, which has no inode until the workflow action saves it. This
+     * is load-bearing: `onWorkflowActionFired` in the layout carries an explicit note not to guard
+     * on it, because doing so silently blocks creating content.
+     */
+    inode?: string;
     contentType: string;
     languageId: string;
-    identifier: string;
+    /** Absent for brand-new content, for the same reason as {@link DotWorkflowActionParams.inode}. */
+    identifier?: string;
 }
 
 /**
@@ -36,7 +42,8 @@ export type DotActivityViewState = 'idle' | 'create';
 
 export interface DotWorkflowState extends DotCMSWorkflowStatus {
     contentState: DotContentletState;
-    resetAction?: DotCMSWorkflowAction;
+    /** Null when the scheme has no reset action; the API sends null rather than omitting it. */
+    resetAction?: DotCMSWorkflowAction | null;
 }
 
 /**

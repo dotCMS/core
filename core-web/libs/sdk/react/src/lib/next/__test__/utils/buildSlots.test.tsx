@@ -1,14 +1,22 @@
 import '@testing-library/jest-dom';
 
+import { DotCMSPageAssetContainers } from '@dotcms/types';
+
 import { buildSlots } from '../../utils/buildSlots';
 
-const makeContainers = (contentlets: object[]) => ({
-    'container-1': {
-        contentlets: {
-            'uuid-1': contentlets
+/**
+ * `buildSlots` only destructures `contentlets` off each container, so the fixture supplies
+ * just that. The cast records what the test actually exercises instead of inventing a full
+ * `DotCMSPageAssetContainer`.
+ */
+const makeContainers = (contentlets: object[]) =>
+    ({
+        'container-1': {
+            contentlets: {
+                'uuid-1': contentlets
+            }
         }
-    }
-});
+    }) as unknown as DotCMSPageAssetContainers;
 
 describe('buildSlots', () => {
     test('returns empty record when no server components provided', async () => {
@@ -69,7 +77,7 @@ describe('buildSlots', () => {
             'container-2': {
                 contentlets: { 'uuid-2': [{ identifier: 'id-2', contentType: 'Blog' }] }
             }
-        };
+        } as unknown as DotCMSPageAssetContainers;
 
         const result = await buildSlots(containers, { Blog: BlogComponent });
         expect(result).toHaveProperty('id-1');

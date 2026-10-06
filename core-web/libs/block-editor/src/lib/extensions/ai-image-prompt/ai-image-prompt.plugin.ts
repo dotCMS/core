@@ -2,7 +2,7 @@ import { Node } from 'prosemirror-model';
 import { EditorState, Plugin, PluginKey, Transaction } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import { Subject } from 'rxjs';
-import { Instance, Props } from 'tippy.js';
+import { Instance } from 'tippy.js';
 
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
@@ -34,20 +34,19 @@ export type AIImagePromptViewProps = AIImagePromptProps & {
 export class AIImagePromptView {
     public editor: Editor;
 
-    public node: Node;
+    public node: Node | null = null;
 
     public view: EditorView;
 
     public tippy: Instance | undefined;
 
-    public tippyOptions: Partial<Props>;
-
     public pluginKey: PluginKey;
 
     private destroy$ = new Subject<boolean>();
 
-    #dialogService: DialogService | null = null;
-    #dotMessageService: DotMessageService | null = null;
+    // Both are assigned unconditionally from the constructor props.
+    #dialogService: DialogService;
+    #dotMessageService: DotMessageService;
     #dialogRef: DynamicDialogRef | null = null;
 
     /**
@@ -77,7 +76,7 @@ export class AIImagePromptView {
                 'block-editor.extension.ai-image.dialog-title'
             );
 
-            this.#dialogRef = this.#dialogService.open(DotAIImagePromptComponent, {
+            const dialogRef = this.#dialogService.open(DotAIImagePromptComponent, {
                 header,
                 appendTo: 'body',
                 closeOnEscape: false,
@@ -91,7 +90,9 @@ export class AIImagePromptView {
                 data: { context }
             });
 
-            this.#dialogRef.onClose
+            this.#dialogRef = dialogRef;
+
+            dialogRef?.onClose
                 .pipe(takeUntil(this.destroy$))
                 .subscribe((selectedImage: DotGeneratedAIImage) => {
                     if (selectedImage?.response) {

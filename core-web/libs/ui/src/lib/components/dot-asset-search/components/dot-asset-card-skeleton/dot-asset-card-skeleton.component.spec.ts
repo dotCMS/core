@@ -23,18 +23,18 @@ describe('DotAssetCardSkeletonComponent', () => {
     });
 
     it('should have the right inputs for each p-skeleton', () => {
-        const headerSkeleton = spectator.query('[data-testId="p-skeleton-header"]');
+        const headerSkeleton = spectator.query('[data-testId="p-skeleton-header"]')!;
         expect(headerSkeleton.getAttribute('shape')).toEqual('square');
         expect(headerSkeleton.getAttribute('size')).toEqual('94px');
 
-        const bodySkeleton = spectator.query('[data-testId="p-skeleton-body"]');
+        const bodySkeleton = spectator.query('[data-testId="p-skeleton-body"]')!;
         expect(bodySkeleton.getAttribute('height')).toEqual('1rem');
 
-        const state1Skeleton = spectator.query('[data-testId="p-skeleton-state-1"]');
+        const state1Skeleton = spectator.query('[data-testId="p-skeleton-state-1"]')!;
         expect(state1Skeleton.getAttribute('width')).toEqual('2rem');
         expect(state1Skeleton.getAttribute('height')).toEqual('1rem');
 
-        const state2Skeleton = spectator.query('[data-testId="p-skeleton-state-2"]');
+        const state2Skeleton = spectator.query('[data-testId="p-skeleton-state-2"]')!;
         expect(state2Skeleton.getAttribute('shape')).toEqual('circle');
         expect(state2Skeleton.getAttribute('size')).toEqual('16px');
     });

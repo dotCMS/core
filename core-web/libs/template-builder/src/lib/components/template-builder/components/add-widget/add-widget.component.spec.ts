@@ -42,17 +42,17 @@ describe('AddWidgetComponent', () => {
 
     describe('inputs', () => {
         it('should set label', () => {
-            expect(component.label).toBe('Add Widget');
+            expect(component.label()).toBe('Add Widget');
         });
 
         it('should have row icon', () => {
-            expect(component.icon).toBe(rowIcon);
+            expect(component.icon()).toBe(rowIcon);
         });
 
         it('should have col icon', () => {
-            component.icon = colIcon;
+            fixture.componentRef.setInput('icon', colIcon);
             fixture.detectChanges();
-            expect(component.icon).toBe(colIcon);
+            expect(component.icon()).toBe(colIcon);
         });
     });
 
@@ -64,14 +64,14 @@ describe('AddWidgetComponent', () => {
         });
 
         it('should have a image element with the row icon', () => {
-            component.icon = rowIcon;
+            fixture.componentRef.setInput('icon', rowIcon);
             fixture.detectChanges();
             const img = de.query(By.css('img'));
             expect(img.nativeElement.src).toContain(rowIcon);
         });
 
         it('it should have material icon element when image load fails', () => {
-            component.icon = 'add';
+            fixture.componentRef.setInput('icon', 'add');
             fixture.detectChanges();
             const img = de.query(By.css('img'));
             img.triggerEventHandler('error', null);

@@ -79,7 +79,7 @@ describe('DotHistoryTimelineItemComponent', () => {
         });
 
         it('should not render a tooltip on the content wrapper', () => {
-            const wrapper = spectator.query(byTestId('content-wrapper'));
+            const wrapper = spectator.query(byTestId('content-wrapper'))!;
             expect(wrapper).toBeTruthy();
             expect(wrapper.getAttribute('tooltipPosition')).toBeNull();
             expect(spectator.query(byTestId('overlay-title'))).toBeFalsy();
@@ -90,7 +90,7 @@ describe('DotHistoryTimelineItemComponent', () => {
         });
 
         it('should render user information', () => {
-            const userName = spectator.query(byTestId('history-user'));
+            const userName = spectator.query(byTestId('history-user'))!;
             expect(userName.textContent?.trim()).toBe('admin@dotcms.com');
         });
 
@@ -159,7 +159,7 @@ describe('DotHistoryTimelineItemComponent', () => {
             });
             spectator.detectChanges();
 
-            const timeDisplay = spectator.query(byTestId('time-display'));
+            const timeDisplay = spectator.query(byTestId('time-display'))!;
             expect(timeDisplay.textContent?.trim()).toBe('May 16, 2026 - 1:10 PM');
         });
 
@@ -172,7 +172,7 @@ describe('DotHistoryTimelineItemComponent', () => {
             });
             spectator.detectChanges();
 
-            const timeDisplay = spectator.query(byTestId('time-display'));
+            const timeDisplay = spectator.query(byTestId('time-display'))!;
             expect(timeDisplay.textContent?.trim()).toBe('May 16, 2026 - 1:10 PM');
         });
 
@@ -184,7 +184,7 @@ describe('DotHistoryTimelineItemComponent', () => {
             spectator.setInput('item', { ...mockVersionItem, modDate });
             spectator.detectChanges();
 
-            const timeDisplay = spectator.query(byTestId('time-display'));
+            const timeDisplay = spectator.query(byTestId('time-display'))!;
             expect(timeDisplay.textContent?.trim()).toBe(expected);
         });
 
@@ -197,7 +197,7 @@ describe('DotHistoryTimelineItemComponent', () => {
                 spectator.setInput('item', { ...mockVersionItem, ...overrides });
                 spectator.detectChanges();
 
-                const timeDisplay = spectator.query(byTestId('time-display'));
+                const timeDisplay = spectator.query(byTestId('time-display'))!;
                 expect(timeDisplay.textContent?.trim()).not.toMatch(/now|ago|current/i);
             }
         });
@@ -378,7 +378,7 @@ describe('DotHistoryTimelineItemComponent', () => {
             spectator.setInput('isActive', true);
             spectator.detectChanges();
 
-            const wrapper = spectator.query(byTestId('content-wrapper'));
+            const wrapper = spectator.query(byTestId('content-wrapper'))!;
             expect(wrapper?.classList.contains('bg-primary-50')).toBe(true);
         });
 
@@ -386,7 +386,7 @@ describe('DotHistoryTimelineItemComponent', () => {
             spectator.setInput('isActive', false);
             spectator.detectChanges();
 
-            const wrapper = spectator.query(byTestId('content-wrapper'));
+            const wrapper = spectator.query(byTestId('content-wrapper'))!;
             expect(wrapper?.classList.contains('bg-primary-50')).toBe(false);
         });
     });

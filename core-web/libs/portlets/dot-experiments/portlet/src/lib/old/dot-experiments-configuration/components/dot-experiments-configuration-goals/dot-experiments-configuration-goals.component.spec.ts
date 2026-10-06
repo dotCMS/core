@@ -51,12 +51,12 @@ const EXPERIMENT_MOCK = getExperimentMock(0);
 const EXPERIMENT_MOCK_WITH_GOAL = getExperimentMock(2);
 
 function getVmMock(
-    goals = GoalsMock,
-    disabledTooltipLabel = null
+    goals: Goals | null = GoalsMock,
+    disabledTooltipLabel: string | null = null
 ): {
     experimentId: string;
-    goals: Goals;
-    status: StepStatus;
+    goals: Goals | null;
+    status: StepStatus | null;
     isExperimentADraft: boolean;
     disabledTooltipLabel: null | string;
 } {
@@ -138,9 +138,9 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
             spectator.detectComponentChanges();
 
             const addButton = spectator.query(byTestId('goals-add-button'));
-            const button = addButton.querySelector('button') || addButton;
+            const button = addButton!.querySelector('button')! || addButton;
             // Check the disabled attribute directly
-            expect(button.hasAttribute('disabled')).toBe(true);
+            expect(button.hasAttribute('disabled')!).toBe(true);
             expect(spectator.query(DotExperimentsDetailsTableComponent)).toExist();
         });
 
@@ -149,9 +149,9 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
             spectator.detectComponentChanges();
 
             const addButton = spectator.query(byTestId('goals-add-button'));
-            const button = addButton.querySelector('button') || addButton;
+            const button = addButton!.querySelector('button')! || addButton;
             // Check the disabled attribute directly
-            expect(button.hasAttribute('disabled')).toBe(true);
+            expect(button.hasAttribute('disabled')!).toBe(true);
 
             // Verify the tooltip is enabled to show error message
             const tooltips = spectator.queryAll(Tooltip);
@@ -164,7 +164,7 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
 
             const addButton = spectator.query(byTestId('goals-add-button'));
             // Find the actual button element inside the p-button component
-            const button = addButton.querySelector('button') || addButton;
+            const button = addButton!.querySelector('button')! || addButton;
             spectator.click(button);
 
             expect(store.openSidebar).toHaveBeenCalledWith(ExperimentSteps.GOAL);
@@ -224,7 +224,7 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
             expect(deleteButton).toExist();
 
             // Find the actual button element inside the p-button component
-            const button = deleteButton.querySelector('button') || deleteButton;
+            const button = deleteButton!.querySelector('button')! || deleteButton;
             spectator.click(button);
             spectator.detectComponentChanges();
 

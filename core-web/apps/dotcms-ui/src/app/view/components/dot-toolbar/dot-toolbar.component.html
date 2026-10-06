@@ -6,7 +6,7 @@
         <div class="flex items-center gap-1">
             <div class="px-2">
                 <dot-site
-                    [value]="$currentSite()?.identifier"
+                    [value]="$currentSite()?.identifier ?? null"
                     [placeholder]="'Select a site'"
                     [showSystemHost]="false"
                     class="w-64"

@@ -27,7 +27,7 @@ export class DotMdIconSelectorComponent implements ControlValueAccessor {
     onTouched = () => {
         //
     };
-    onChange = (_) => {
+    onChange = (_: string) => {
         /* */
     };
 
@@ -39,7 +39,7 @@ export class DotMdIconSelectorComponent implements ControlValueAccessor {
         this.onTouched = fn;
     }
 
-    registerOnChange(fn: () => void) {
+    registerOnChange(fn: (value: string) => void) {
         this.onChange = fn;
     }
 
@@ -53,7 +53,7 @@ export class DotMdIconSelectorComponent implements ControlValueAccessor {
      * @param {CustomEvent<string>} e
      * @memberof DotMdIconSelectorComponent
      */
-    onSelect(e: CustomEvent<string>) {
+    onSelect(e: CustomEvent<{ name: string; value: string; colorValue: string }>) {
         this.onChange((e.target as HTMLInputElement).value);
     }
 }

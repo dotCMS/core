@@ -161,12 +161,7 @@ describe('DotThemesService', () => {
             title: 'Test Theme',
             themeThumbnail: '',
             path: '/application/themes/test/',
-            hostId: 'test-host',
-            host: {
-                hostName: 'test-host',
-                inode: 'test-inode',
-                identifier: 'test-id'
-            }
+            hostId: 'test-host'
         };
 
         service.get('test-inode').subscribe((theme: DotTheme) => {

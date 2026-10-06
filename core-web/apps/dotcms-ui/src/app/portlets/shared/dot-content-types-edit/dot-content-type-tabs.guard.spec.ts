@@ -1,4 +1,4 @@
-import { Observable, of } from 'rxjs';
+import { isObservable, Observable, of } from 'rxjs';
 import { vi } from 'vitest';
 
 import { HttpClient } from '@angular/common/http';
@@ -23,6 +23,22 @@ const STYLE_EDITOR_URL = `${BASE_URL}/style-editor`;
 const PERMISSIONS_URL = `${BASE_URL}/permissions`;
 const FIELDS_URL = `${BASE_URL}/fields`;
 
+/**
+ * `CanActivateFn` declares `MaybeAsync<GuardResult>` — the union of a plain value, a promise and an
+ * observable — so the annotation on these guards hides the fact that both always return an
+ * observable, and `.subscribe()` on the result does not type-check.
+ *
+ * `isObservable` is rxjs's own type guard, so this narrows without a cast and fails loudly if either
+ * guard is ever changed to return a plain value.
+ */
+function asObservable<T>(result: T | Observable<T> | Promise<T>): Observable<T> {
+    if (!isObservable(result)) {
+        throw new Error('Expected the guard to return an Observable');
+    }
+
+    return result;
+}
+
 const mockRoute = {} as ActivatedRouteSnapshot;
 
 function mockState(url: string): RouterStateSnapshot {
@@ -31,9 +47,7 @@ function mockState(url: string): RouterStateSnapshot {
 
 // Both guards return an Observable; CanActivateFn only promises the wider MaybeAsync union.
 const runGuard = (guard: CanActivateFn, url: string): Observable<GuardResult> =>
-    TestBed.runInInjectionContext(() =>
-        guard(mockRoute, mockState(url))
-    ) as Observable<GuardResult>;
+    asObservable(TestBed.runInInjectionContext(() => guard(mockRoute, mockState(url))));
 
 describe('styleEditorTabGuard', () => {
     let dotPropertiesService: DotPropertiesService;

@@ -1,7 +1,7 @@
 import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { UntypedFormGroup } from '@angular/forms';
 
-import { DATA_TYPE_PROPERTY_INFO } from '../../../service/data-type-property-info';
+import { DATA_TYPE_PROPERTY_INFO, DataTypeOption } from '../../../service/data-type-property-info';
 import { FieldProperty } from '../field-properties.model';
 
 @Component({
@@ -11,17 +11,17 @@ import { FieldProperty } from '../field-properties.model';
     standalone: false
 })
 export class DataTypePropertyComponent implements OnInit {
-    property: FieldProperty;
-    group: UntypedFormGroup;
-    radioInputs: object;
+    property!: FieldProperty;
+    group!: UntypedFormGroup;
+    radioInputs: DataTypeOption[] = [];
 
     ngOnInit(): void {
-        this.radioInputs = DATA_TYPE_PROPERTY_INFO[this.property.field.clazz];
+        this.radioInputs = DATA_TYPE_PROPERTY_INFO[this.property.field.clazz] ?? [];
 
         /**
          * Workaround because of this bug: https://github.com/primefaces/primeng/issues/9162#issuecomment-686370453
          */
-        const control = this.group.get(this.property.name);
+        const control = this.group.get(this.property.name)!;
         control.valueChanges.subscribe((value: string) => {
             control.setValue(value, {
                 emitEvent: false

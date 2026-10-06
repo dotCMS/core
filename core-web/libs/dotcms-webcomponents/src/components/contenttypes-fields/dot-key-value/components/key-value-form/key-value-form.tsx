@@ -9,7 +9,7 @@ const DEFAULT_VALUE = { key: '', value: '' };
 })
 export class DotKeyValueComponent {
     @Element()
-    el: HTMLElement;
+    el!: HTMLElement;
 
     /** (optional) Disables all form interaction */
     @Prop({ reflect: true })
@@ -59,15 +59,15 @@ export class DotKeyValueComponent {
 
     /** Emit the added value, key/value pair */
     @Event()
-    add: EventEmitter<DotKeyValueField>;
+    add!: EventEmitter<DotKeyValueField>;
 
     /** Emit when key is changed */
     @Event()
-    keyChanged: EventEmitter<string>;
+    keyChanged!: EventEmitter<string>;
 
     /** Emit when any of the input is blur */
     @Event()
-    lostFocus: EventEmitter<FocusEvent>;
+    lostFocus!: EventEmitter<FocusEvent>;
 
     @State()
     inputs: DotKeyValueField = { ...DEFAULT_VALUE };
@@ -80,7 +80,12 @@ export class DotKeyValueComponent {
         /* */
     }
 
-    private whiteListArray = {};
+    /**
+     * Allowed values per key, parsed from the `whiteList` JSON prop. Keys come from that JSON, so a
+     * lookup can miss — `?? []` below renders a free-text input instead of a dropdown, which is the
+     * same branch an empty list already took.
+     */
+    private whiteListArray: Record<string, string[] | undefined> = {};
 
     componentWillLoad(): void {
         this.whiteListArray = this.whiteList.length ? JSON.parse(this.whiteList) : '';
@@ -110,7 +115,7 @@ export class DotKeyValueComponent {
         );
     }
 
-    private getKeyValueForm(buttonDisabled: boolean) {
+    private getKeyValueForm(buttonDisabled: boolean | undefined) {
         return (
             <tr>
                 <td class="key-value-table-form__key">
@@ -147,7 +152,7 @@ export class DotKeyValueComponent {
         );
     }
 
-    private getWhiteListForm(buttonDisabled: boolean) {
+    private getWhiteListForm(buttonDisabled: boolean | undefined) {
         return (
             <tr>
                 <td class="key-value-table-form__key">{this.getWhiteListKeysDropdown()}</td>
@@ -167,7 +172,7 @@ export class DotKeyValueComponent {
     }
 
     private getWhiteListValueControl(): boolean {
-        return this.whiteListArray[this.selectedWhiteListKey].length ? (
+        return this.whiteListArray[this.selectedWhiteListKey]?.length ? (
             this.getWhiteListValuesDropdown()
         ) : (
             <input
@@ -203,7 +208,7 @@ export class DotKeyValueComponent {
                 name="value"
                 onChange={(event: Event) => this.changeWhiteListValue(event)}>
                 <option value="">{this.emptyDropdownOptionLabel}</option>
-                {this.whiteListArray[this.selectedWhiteListKey].map((item: string) => {
+                {(this.whiteListArray[this.selectedWhiteListKey] ?? []).map((item: string) => {
                     return <option value={item}>{item}</option>;
                 })}
             </select>
@@ -223,8 +228,8 @@ export class DotKeyValueComponent {
         this.setValue(event);
     }
 
-    private isButtonDisabled(): boolean {
-        return !this.isFormValid() || this.disabled || null;
+    private isButtonDisabled(): boolean | undefined {
+        return !this.isFormValid() || this.disabled || undefined;
     }
 
     private isFormValid(): boolean {
@@ -262,7 +267,7 @@ export class DotKeyValueComponent {
     }
 
     private focusKeyInputField(): void {
-        const input: HTMLInputElement = this.el.querySelector('[name="key"]');
-        input.focus();
+        // Absent before the first render; nothing to focus then.
+        this.el.querySelector<HTMLInputElement>('[name="key"]')?.focus();
     }
 }

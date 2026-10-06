@@ -31,7 +31,7 @@
         <ng-template pTemplate="header">
             <div
                 class="flex items-center justify-between border-b border-primary-200 bg-primary-50 p-2">
-                @if (actions.includes('add')) {
+                @if (actions().includes('add')) {
                     <p-select
                         (onChange)="onContainerSelect($event)"
                         [showClear]="false"
@@ -59,7 +59,7 @@
                     </p-select>
                 }
                 <div>
-                    @if (actions.includes('edit')) {
+                    @if (actions().includes('edit')) {
                         <p-button
                             (onClick)="editClasses.emit()"
                             data-testId="box-style-class-button"
@@ -69,23 +69,22 @@
                             size="small" />
                     }
 
-                    @if (actions.includes('delete')) {
+                    @if (actions().includes('delete')) {
                         <dotcms-remove-confirm-dialog
                             (deleteConfirmed)="requestColumnDelete()"
                             (deleteRejected)="deleteColumnRejected.emit()"
-                            [skipConfirmation]="items.length === 0"
+                            [skipConfirmation]="items().length === 0"
                             data-testId="btn-delete-column" />
                     }
                 </div>
             </div>
         </ng-template>
         <p-scrollpanel [style]="{ width: '100%', height: '183px' }">
-            @for (item of items; track $index) {
+            @for (item of items(); track $index) {
                 <div
                     class="mx-4 my-2 flex h-10 items-center justify-between pr-2 pl-4 first:mt-3 last:mb-4">
                     <p class="truncate" data-testId="container-title">
-                        @let identifier = item.identifier;
-                        {{ containerMap?.[identifier]?.title || identifier }}
+                        {{ getContainerTitle(item.identifier) }}
                     </p>
                     <dotcms-remove-confirm-dialog
                         (deleteConfirmed)="deleteContainer.emit($index)"
@@ -101,7 +100,7 @@
     <div
         class="template-builder-box--small flex h-full flex-col items-center justify-between rounded-md border border-primary-200 bg-white py-4"
         data-testId="template-builder-box-small">
-        @if (actions.includes('add')) {
+        @if (actions().includes('add')) {
             <p-button
                 (onClick)="dialogVisible = true"
                 icon="pi pi-plus"
@@ -110,7 +109,7 @@
                 size="small"
                 data-testId="btn-plus-small" />
         }
-        @if (actions.includes('edit')) {
+        @if (actions().includes('edit')) {
             <p-button
                 (onClick)="editClasses.emit()"
                 data-testId="box-style-class-button-small"
@@ -119,11 +118,11 @@
                 variant="text"
                 size="small" />
         }
-        @if (actions.includes('delete')) {
+        @if (actions().includes('delete')) {
             <dotcms-remove-confirm-dialog
                 (deleteConfirmed)="deleteColumn.emit()"
                 (deleteRejected)="deleteColumnRejected.emit()"
-                [skipConfirmation]="items.length === 0" />
+                [skipConfirmation]="items().length === 0" />
         }
     </div>
 </ng-template>

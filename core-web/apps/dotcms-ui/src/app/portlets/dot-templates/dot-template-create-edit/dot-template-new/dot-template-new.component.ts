@@ -45,7 +45,7 @@ export class DotTemplateNewComponent implements OnInit {
             contentStyle: { padding: '0px' }
         });
 
-        ref.onClose.pipe(take(1)).subscribe((value) => {
+        ref?.onClose.pipe(take(1)).subscribe((value) => {
             value
                 ? this.dotRouterService.gotoPortlet(`/templates/new/${value}`)
                 : this.dotRouterService.goToURL(`/templates`);

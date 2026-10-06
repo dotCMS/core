@@ -70,6 +70,11 @@ export function withHistory() {
                 // Matches backend Language.getIsoCode(): lowercase `languageCode-countryCode`
                 // (or just `languageCode` when there is no country code).
                 const compareContentlet = store.compareContentlet();
+
+                if (!compareContentlet) {
+                    return null;
+                }
+
                 const locale = store.currentLocale();
                 const language = locale
                     ? (
@@ -81,8 +86,8 @@ export function withHistory() {
                     : DEFAULT_LOCALE_ISO_KEY;
 
                 return {
-                    inode: compareContentlet?.inode,
-                    identifier: compareContentlet?.identifier,
+                    inode: compareContentlet.inode,
+                    identifier: compareContentlet.identifier,
                     language
                 };
             })

@@ -121,7 +121,7 @@ describe('DotExperimentsInlineEditTextComponent', () => {
                 expect(spectator.query(byTestId('inplace-input'))).toExist();
 
                 spectator.dispatchKeyboardEvent(
-                    spectator.query(byTestId('inplace-input')),
+                    spectator.query(byTestId('inplace-input'))!,
                     'keydown',
                     'Escape'
                 );
@@ -159,7 +159,7 @@ describe('DotExperimentsInlineEditTextComponent', () => {
                 expect(saveButton).toExist();
 
                 // Find the actual button element inside PrimeNG component and click it
-                const actualButton = saveButton.querySelector('button') as HTMLButtonElement;
+                const actualButton = saveButton!.querySelector('button')! as HTMLButtonElement;
                 expect(actualButton).toBeTruthy();
                 spectator.click(actualButton);
                 spectator.detectChanges();

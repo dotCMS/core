@@ -54,9 +54,9 @@ export class DotEditRelationshipsComponent implements OnInit {
     @Output()
     switch: EventEmitter<DotRelationshipsPropertyValue> = new EventEmitter();
 
-    currentPage: Observable<{ label: string; relationship: DotRelationship }[]>;
+    currentPage!: Observable<{ label: string; relationship: DotRelationship }[]>;
 
-    private cardinalities: CardinalitySorted;
+    private cardinalities!: CardinalitySorted;
 
     ngOnInit() {
         this.dotPaginatorService.url = 'v1/relationships';
@@ -122,7 +122,7 @@ export class DotEditRelationshipsComponent implements OnInit {
 
         this.currentPage = this.getCardinalities().pipe(
             switchMap((cardinalities: CardinalitySorted) => {
-                return this.dotPaginatorService.getWithOffset(offset).pipe(
+                return this.dotPaginatorService.getWithOffset<DotRelationship[]>(offset).pipe(
                     mergeMap((relationships: DotRelationship[]) => relationships),
                     map((relationship: DotRelationship) => {
                         return {

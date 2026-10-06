@@ -23,8 +23,21 @@ const by = (opt: string) => (source: Observable<any>) => {
 
 const COLUMN_BREAK_FIELD = FieldUtil.createColumnBreak();
 
+/**
+ * The DOM stubs this spec hands to dragula's callbacks. They are duck-typed rather than real
+ * elements, so they are described by shape — the callbacks only ever reach these members.
+ */
+type TargetStub = {
+    parentElement: {
+        querySelectorAll: () => number[];
+        parentElement: { style: Record<string, string> };
+    };
+};
+type ElStub = { dataset: { clazz: string } };
+type AcceptsFunc = (...args: unknown[]) => boolean;
+
 class MockDragulaService {
-    name: string;
+    name!: string;
     options: any;
     mock: Subject<any> = new Subject();
 
@@ -115,7 +128,7 @@ describe('FieldDragDropService', () => {
         });
 
         describe('shouldAccepts', () => {
-            let acceptsFunc;
+            let acceptsFunc: AcceptsFunc;
             beforeEach(() => {
                 fieldDragDropService.setFieldBagOptions();
                 acceptsFunc = dragulaService.options.accepts;
@@ -169,8 +182,8 @@ describe('FieldDragDropService', () => {
             });
 
             describe('style row', () => {
-                let target;
-                let el;
+                let target: TargetStub;
+                let el: ElStub;
 
                 beforeEach(() => {
                     target = {
@@ -208,9 +221,12 @@ describe('FieldDragDropService', () => {
                         }
                     });
 
+                    // `''` rather than `null`: CSSOM coerces null to the empty string for a
+                    // style property, so this is what a browser stored all along — the previous
+                    // assertion pinned jsdom keeping the raw `null` the service used to pass.
                     expect(target.parentElement.parentElement.style).toEqual({
-                        opacity: null,
-                        cursor: null
+                        opacity: '',
+                        cursor: ''
                     });
                 });
 

@@ -80,8 +80,12 @@ export class DotBlockEditorSidebarComponent {
 
     variantName = input<string>(DEFAULT_VARIANT_ID);
 
-    protected readonly contentlet = signal<BlockEditorData>(null);
-    protected readonly value = signal<JSONContent>(null);
+    /**
+     * Both are `| null` because both are null while the sidebar is closed: that is the seed value
+     * here and what `onDrawerHide` sets them back to once the close animation finishes.
+     */
+    protected readonly contentlet = signal<BlockEditorData | null>(null);
+    protected readonly value = signal<JSONContent | null>(null);
     protected readonly loading = signal<boolean>(false);
 
     onSaved = output();
@@ -95,14 +99,26 @@ export class DotBlockEditorSidebarComponent {
      */
     open({ inode, content, language, fieldName, contentType }: DotCMSInlineEditingPayload): void {
         this.#getEditorField({ fieldName, contentType }).subscribe({
-            next: (field) =>
+            next: (field) => {
+                // The lookup misses when the payload names a field the content type does not
+                // have. Opening the sidebar against no field renders an editor with no
+                // configuration, so it is reported the same way as a failed request instead.
+                if (!field) {
+                    console.error(
+                        `Field "${fieldName}" not found on content type "${contentType}"`
+                    );
+
+                    return;
+                }
+
                 this.contentlet.set({
                     inode,
                     field,
                     content,
                     language,
                     fieldName
-                }),
+                });
+            },
             error: (err) => console.error('Error getting contentlet ', err)
         });
     }
@@ -136,7 +152,15 @@ export class DotBlockEditorSidebarComponent {
      * @memberof DotBlockEditorSidebarComponent
      */
     protected saveEditorChanges(): void {
-        const { fieldName, inode } = this.contentlet();
+        const contentlet = this.contentlet();
+
+        // The save button lives in the drawer, which only renders with a contentlet set — but the
+        // signal is null whenever the drawer is closed, so the read has to say so.
+        if (!contentlet) {
+            return;
+        }
+
+        const { fieldName, inode } = contentlet;
         this.loading.set(true);
         this.#dotWorkflowActionsFireService
             .saveContentlet({
@@ -162,7 +186,17 @@ export class DotBlockEditorSidebarComponent {
             });
     }
 
-    #getEditorField({ fieldName, contentType }: DOMStringMap): Observable<DotCMSContentTypeField> {
+    /**
+     * `DOMStringMap` was structurally close enough to compile — two optional string keys — but it
+     * made both values `string | undefined` when the payload declares them as required strings, and
+     * `find` returning `undefined` was never in the signature at all.
+     */
+    #getEditorField({
+        fieldName,
+        contentType
+    }: Pick<DotCMSInlineEditingPayload, 'fieldName' | 'contentType'>): Observable<
+        DotCMSContentTypeField | undefined
+    > {
         return this.#dotContentTypeService
             .getContentType(contentType)
             .pipe(map(({ fields }) => fields.find(({ variable }) => variable === fieldName)));

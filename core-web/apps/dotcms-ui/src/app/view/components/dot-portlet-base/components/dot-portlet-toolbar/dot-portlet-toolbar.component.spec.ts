@@ -17,14 +17,19 @@ import { DotPortletToolbarComponent } from './dot-portlet-toolbar.component';
 @Component({
     selector: 'dot-test-host-component',
     template: `
-        <dot-portlet-toolbar>
+        <dot-portlet-toolbar
+            [actionsButtonLabel]="actionsButtonLabel"
+            [cancelButtonLabel]="cancelButtonLabel">
             <div data-testId="leftExtraContent" left></div>
             <div data-testId="rightExtraContent" right></div>
         </dot-portlet-toolbar>
     `,
     standalone: false
 })
-class TestHostComponent {}
+class TestHostComponent {
+    actionsButtonLabel?: string;
+    cancelButtonLabel?: string;
+}
 
 describe('DotPortletToolbarComponent', () => {
     let component: DotPortletToolbarComponent;
@@ -131,7 +136,7 @@ describe('DotPortletToolbarComponent', () => {
             });
 
             it('should bind input actionsMenuButton', () => {
-                component.actionsButtonLabel = 'Custom Action Label';
+                hostfixture.componentInstance.actionsButtonLabel = 'Custom Action Label';
                 component.actions = {
                     primary: [
                         {
@@ -213,8 +218,8 @@ describe('DotPortletToolbarComponent', () => {
                 const actionsMenuButton = de.query(By.css('[data-testId="actionsMenuButton"]'));
 
                 expect(actionsMenuButton.nativeElement.textContent).toBe('Actions');
-                expect(actionsMenuButton.attributes.icon).toBe('pi pi-chevron-down');
-                expect(actionsMenuButton.attributes.iconPos).toBe('right');
+                expect(actionsMenuButton.attributes['icon']).toBe('pi pi-chevron-down');
+                expect(actionsMenuButton.attributes['iconPos']).toBe('right');
 
                 const actionsMenu = de.query(By.css('[data-testId="actionsMenu"]'));
                 expect(actionsMenu.componentInstance.model).toEqual([
@@ -248,7 +253,7 @@ describe('DotPortletToolbarComponent', () => {
             });
 
             it('should bind input cancelButtonLabel', () => {
-                component.cancelButtonLabel = 'Custom Cancel Label';
+                hostfixture.componentInstance.cancelButtonLabel = 'Custom Cancel Label';
                 component.actions = {
                     primary: null,
                     cancel: () => {

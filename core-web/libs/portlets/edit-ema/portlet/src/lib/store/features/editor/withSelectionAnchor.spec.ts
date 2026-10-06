@@ -1,4 +1,11 @@
-import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
+import {
+    patchState,
+    signalStore,
+    signalStoreFeature,
+    withMethods,
+    withProps,
+    withState
+} from '@ngrx/signals';
 import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -56,29 +63,42 @@ const initialState = {
     editorSelected: null
 } as unknown as UVEState;
 
-const TestStore = signalStore(
-    { protectedState: false },
-    withState(initialState),
-    withComputed(() => ({
-        $iframeLayoutLocked: computed(() => iframeLayoutLockedSignal())
-    })),
-    withMethods((store) => ({
-        setEditorBounds: (bounds: Container[]) => {
-            setEditorBoundsSpy(bounds);
-            patchState(store, { editorBounds: bounds });
-        },
-        setSelected: (selected: SelectedContentlet) => {
-            setSelectedSpy(selected);
-            patchState(store, { editorSelected: selected });
-        },
-        setEditorState: (state: EDITOR_STATE) => {
-            setEditorStateSpy(state);
-            patchState(store, { editorState: state });
-        },
-        getPageSavePayload: getPageSavePayloadSpy
-    })),
-    withSelectionAnchor()
-);
+/**
+ * The state, props and methods `withSelectionAnchor` composes on top of, bundled into one feature.
+ *
+ * Passed as four separate arguments to `signalStore`, ngrx stopped carrying the middle features'
+ * results forward — the accumulated store arrived at `withSelectionAnchor()` as
+ * `InnerSignalStore<UVEState & object, object, MethodsDictionary>`, so the `props:
+ * type<SelectionAnchorDeps>()` constraint could not be met. Composing them with
+ * `signalStoreFeature` first keeps the inference intact.
+ *
+ * `withProps` rather than `withComputed` for the same reason: `props` is where the feature declares
+ * its dependency.
+ */
+const withTestDeps = () =>
+    signalStoreFeature(
+        withState<UVEState>(initialState),
+        withProps(() => ({
+            $iframeLayoutLocked: computed(() => iframeLayoutLockedSignal())
+        })),
+        withMethods((store) => ({
+            setEditorBounds: (bounds: Container[]) => {
+                setEditorBoundsSpy(bounds);
+                patchState(store, { editorBounds: bounds });
+            },
+            setSelected: (selected: SelectedContentlet) => {
+                setSelectedSpy(selected);
+                patchState(store, { editorSelected: selected });
+            },
+            setEditorState: (state: EDITOR_STATE) => {
+                setEditorStateSpy(state);
+                patchState(store, { editorState: state });
+            },
+            getPageSavePayload: getPageSavePayloadSpy
+        }))
+    );
+
+const TestStore = signalStore({ protectedState: false }, withTestDeps(), withSelectionAnchor());
 
 const patchStoreState = (store: unknown, state: Partial<UVEState>) =>
     patchState(store as Parameters<typeof patchState>[0], state);

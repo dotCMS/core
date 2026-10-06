@@ -1,4 +1,11 @@
-export const DATA_TYPE_PROPERTY_INFO = {
+/** One selectable data type: a message key and the value the field stores. */
+export interface DataTypeOption {
+    text: string;
+    value: string;
+}
+
+/** Keyed by a field's `clazz`, which the server supplies, so a lookup can miss. */
+export const DATA_TYPE_PROPERTY_INFO: Record<string, DataTypeOption[]> = {
     // Radio inputs: binary, text, date, longText, bool, float, integer
     'com.dotcms.contenttype.model.field.ImmutableRadioField': [
         {

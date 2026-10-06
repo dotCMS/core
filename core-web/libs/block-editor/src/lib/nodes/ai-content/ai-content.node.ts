@@ -116,12 +116,12 @@ export const AIContentNode = Node.create({
             const dom = document.createElement('div');
             const div = document.createElement('div');
 
-            div.innerHTML = node.attrs.loading
+            div.innerHTML = node.attrs['loading']
                 ? `<span class="pi pi-spin pi-spinner"></span>`
-                : node.attrs.content;
+                : node.attrs['content'];
 
             dom.contentEditable = 'true';
-            dom.className = `ai-content-container ${node.attrs.loading ? AI_LOADING_CLASS : ''}`;
+            dom.className = `ai-content-container ${node.attrs['loading'] ? AI_LOADING_CLASS : ''}`;
 
             dom.append(div);
 

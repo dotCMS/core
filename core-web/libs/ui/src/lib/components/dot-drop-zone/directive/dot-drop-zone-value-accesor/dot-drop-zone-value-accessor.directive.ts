@@ -28,8 +28,8 @@ import { DotDropZoneComponent, DropZoneFileEvent } from '../../dot-drop-zone.com
 export class DotDropZoneValueAccessorDirective implements ControlValueAccessor, Validator, OnInit {
     private _dotDropZone = inject(DotDropZoneComponent, { optional: true, host: true });
 
-    private onChange: (value: File) => void;
-    private onTouched: () => void;
+    private onChange!: (value: File | null) => void;
+    private onTouched!: () => void;
 
     constructor() {
         if (!this._dotDropZone) {
@@ -40,7 +40,7 @@ export class DotDropZoneValueAccessorDirective implements ControlValueAccessor, 
     }
 
     ngOnInit() {
-        this._dotDropZone.fileDropped.subscribe(({ file }: DropZoneFileEvent) => {
+        this._dotDropZone!.fileDropped.subscribe(({ file }: DropZoneFileEvent) => {
             this.onChange(file); // Only File
             this.onTouched();
         });
@@ -61,13 +61,13 @@ export class DotDropZoneValueAccessorDirective implements ControlValueAccessor, 
     }
 
     validate(_control: AbstractControl): ValidationErrors | null {
-        const validity = this._dotDropZone.validity;
+        const validity = this._dotDropZone!.validity;
 
         if (validity.valid) {
             return null;
         }
 
-        const errors = Object.entries(validity).reduce((acc, [key, value]) => {
+        const errors = Object.entries(validity).reduce<ValidationErrors>((acc, [key, value]) => {
             if (value === true) {
                 acc[key] = value;
             }

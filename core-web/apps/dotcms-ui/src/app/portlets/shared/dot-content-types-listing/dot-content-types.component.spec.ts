@@ -78,7 +78,7 @@ class MockDotContentTypeCloneDialogComponent {
     standalone: false
 })
 class MockDotBaseTypeSelectorComponent {
-    @Input() value: SelectItem;
+    @Input() value!: SelectItem;
     @Output() selected = new EventEmitter<string>();
 }
 
@@ -108,7 +108,7 @@ class MockDotContentTypeStore {}
     standalone: false
 })
 class MockDotAddToBundleComponent {
-    @Input() assetIdentifier: string;
+    @Input() assetIdentifier!: string;
     @Output() cancel = new EventEmitter<boolean>();
 }
 
@@ -125,7 +125,7 @@ class MockDotPortletBaseComponent {
     template: ''
 })
 class MockDotAddToMenuComponent {
-    @Input() contentType;
+    @Input() contentType!: DotCMSContentType;
     @Output() cancel = new EventEmitter<boolean>();
 }
 
@@ -288,7 +288,7 @@ describe('DotContentTypesPortletComponent', () => {
 
         const dotDialogService = fixture.debugElement.injector.get(DotAlertConfirmService);
         vi.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
-            conf.accept();
+            conf.accept!();
         });
 
         vi.spyOn(crudService, 'delete').mockReturnValue(of(mockContentType));
@@ -310,7 +310,7 @@ describe('DotContentTypesPortletComponent', () => {
     it('should have remove, push publish, Copy and Add to bundle actions to the list item', () => {
         fixture.detectChanges();
 
-        expect(comp.rowActions.map((action) => action.menuItem.label)).toEqual([
+        expect(comp.rowActions.map((action) => action.menuItem['label'])).toEqual([
             'Push Publish',
             'Add to bundle',
             'Add to Menu',
@@ -326,8 +326,8 @@ describe('DotContentTypesPortletComponent', () => {
         expect(
             comp.rowActions.map((action) => {
                 return {
-                    label: action.menuItem.label,
-                    icon: action.menuItem.icon
+                    label: action.menuItem['label'],
+                    icon: action.menuItem['icon']
                 };
             })
         ).toEqual([
@@ -342,7 +342,7 @@ describe('DotContentTypesPortletComponent', () => {
         vi.spyOn(pushPublishService, 'getEnvironments').mockReturnValue(of([]));
         fixture.detectChanges();
 
-        expect(comp.rowActions.map((action) => action.menuItem.label)).toEqual([
+        expect(comp.rowActions.map((action) => action.menuItem['label'])).toEqual([
             'Add to bundle',
             'Add to Menu',
             'Copy',
@@ -369,7 +369,7 @@ describe('DotContentTypesPortletComponent', () => {
 
         expect(de.query(By.css('p-dialog'))).toBeNull();
 
-        comp.rowActions[0].menuItem.command(mockContentType);
+        comp.rowActions[0].menuItem.command!(mockContentType);
         fixture.detectChanges();
         expect(de.query(By.css('p-dialog'))).toBeDefined();
         expect(dotPushPublishDialogService.open).toHaveBeenCalledWith({
@@ -395,9 +395,9 @@ describe('DotContentTypesPortletComponent', () => {
             owner: '123',
             system: false
         };
-        expect(comp.addToBundleIdentifier).not.toBeDefined();
+        expect(comp.addToBundleIdentifier).toBeNull();
 
-        comp.rowActions[ADD_TO_BUNDLE_MENU_ITEM_INDEX].menuItem.command(mockContentType);
+        comp.rowActions[ADD_TO_BUNDLE_MENU_ITEM_INDEX].menuItem.command!(mockContentType);
 
         // Verify the component state was updated correctly
         expect(comp.addToBundleIdentifier).toEqual(mockContentType.id);
@@ -420,9 +420,9 @@ describe('DotContentTypesPortletComponent', () => {
             owner: '123',
             system: false
         };
-        expect(comp.addToMenuContentType).not.toBeDefined();
+        expect(comp.addToMenuContentType).toBeNull();
 
-        comp.rowActions[ADD_TO_MENU_INDEX].menuItem.command(mockContentType);
+        comp.rowActions[ADD_TO_MENU_INDEX].menuItem.command!(mockContentType);
 
         // Verify the component state was updated correctly
         expect(comp.addToMenuContentType).toEqual(mockContentType);
@@ -431,12 +431,12 @@ describe('DotContentTypesPortletComponent', () => {
     it('should populate the actionHeaderOptions based on a call to dotContentletService', () => {
         fixture.detectChanges();
         expect(dotContentletService.getAllContentTypes).toHaveBeenCalled();
-        expect(comp.actionHeaderOptions.primary.model.length).toEqual(3);
+        expect(comp.actionHeaderOptions.primary!.model!.length).toEqual(3);
     });
 
     it('should not set primary command in the header options', () => {
         fixture.detectChanges();
-        expect(comp.actionHeaderOptions.primary.command).toBe(undefined);
+        expect(comp.actionHeaderOptions.primary!.command).toBe(undefined);
     });
 
     it('should emit changes in base types selector', fakeAsync(() => {
@@ -479,12 +479,12 @@ describe('DotContentTypesPortletComponent', () => {
 
         const dotDialogService = fixture.debugElement.injector.get(DotAlertConfirmService);
         vi.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
-            conf.accept();
+            conf.accept!();
         });
 
         vi.spyOn(dotHttpErrorManagerService, 'handle');
         vi.spyOn(crudService, 'delete').mockReturnValue(observableThrowError(forbiddenError));
-        comp.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command(mockContentType);
+        comp.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command!(mockContentType);
 
         fixture.detectChanges();
 
@@ -494,7 +494,7 @@ describe('DotContentTypesPortletComponent', () => {
     it('should show remove option', () => {
         fixture.detectChanges();
 
-        const shouldShow = comp.rowActions[DELETE_MENU_ITEM_INDEX].shouldShow({
+        const shouldShow = comp.rowActions[DELETE_MENU_ITEM_INDEX].shouldShow!({
             fixed: false,
             defaultType: false
         });
@@ -504,7 +504,7 @@ describe('DotContentTypesPortletComponent', () => {
 
     it('should not show remove option if content type is defaultType', () => {
         fixture.detectChanges();
-        const shouldShow = comp.rowActions[DELETE_MENU_ITEM_INDEX].shouldShow({
+        const shouldShow = comp.rowActions[DELETE_MENU_ITEM_INDEX].shouldShow!({
             fixed: false,
             defaultType: true
         });
@@ -513,7 +513,7 @@ describe('DotContentTypesPortletComponent', () => {
 
     it('should not show Add To Menu option if content type is HOST', () => {
         fixture.detectChanges();
-        const shouldShow = comp.rowActions[ADD_TO_MENU_INDEX].shouldShow({
+        const shouldShow = comp.rowActions[ADD_TO_MENU_INDEX].shouldShow!({
             variable: 'Host'
         });
         expect(shouldShow).toBeFalsy();
@@ -521,7 +521,7 @@ describe('DotContentTypesPortletComponent', () => {
 
     it('should show Add to Menu option', () => {
         fixture.detectChanges();
-        expect(comp.rowActions[ADD_TO_MENU_INDEX].menuItem.label).toBe('Add to Menu');
+        expect(comp.rowActions[ADD_TO_MENU_INDEX].menuItem['label']).toBe('Add to Menu');
     });
 
     describe('filterBy', () => {
@@ -544,9 +544,11 @@ describe('DotContentTypesPortletComponent', () => {
             tick(1);
             fixture.detectChanges();
             expect(comp.filterBy).toBe('Form');
-            expect(comp.$listing().paginatorService.extraParams.get('type')).toBe('Form');
-            expect(comp.actionHeaderOptions.primary.model).toBe(null);
-            expect(comp.actionHeaderOptions.primary.command).toBeDefined();
+            expect(comp.$listing()!.paginatorService.extraParams.get('type')!).toBe('Form');
+            // `undefined`, not `null`: `ActionHeaderOptionsPrimary.model` is optional, and
+            // "no model" is how the absence is spelled.
+            expect(comp.actionHeaderOptions.primary!.model).toBeUndefined();
+            expect(comp.actionHeaderOptions.primary!.command).toBeDefined();
         }));
     });
 });

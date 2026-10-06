@@ -420,7 +420,7 @@ describe('DotEmaDialogComponent', () => {
         it('should trigger editContentlet in the store', () => {
             const editContentletSpy = vi.spyOn(storeSpy, 'editContentlet');
 
-            component.editContentlet(PAYLOAD_MOCK.contentlet);
+            component.editContentlet(PAYLOAD_MOCK.contentlet!);
 
             expect(editContentletSpy).toHaveBeenCalledWith(PAYLOAD_MOCK.contentlet);
         });
@@ -449,8 +449,8 @@ describe('DotEmaDialogComponent', () => {
             );
 
             expect(editContentletSpy).toHaveBeenCalledWith({
-                inode: PAYLOAD_MOCK.contentlet.inode,
-                title: PAYLOAD_MOCK.contentlet.title
+                inode: PAYLOAD_MOCK.contentlet!.inode,
+                title: PAYLOAD_MOCK.contentlet!.title
             });
         });
 
@@ -613,7 +613,7 @@ describe('DotEmaDialogComponent', () => {
 
             renderCompareDialog();
 
-            const compareComponent = spectator.query(DotContentCompareComponent);
+            const compareComponent = spectator.query(DotContentCompareComponent)!;
             expect(compareComponent).toBeDefined();
             compareComponent.letMeBringBack.emit({
                 name: 'getVersionBack',

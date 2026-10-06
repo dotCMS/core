@@ -5,7 +5,7 @@ export interface CustomMenuItem<T = unknown> extends Omit<MenuItem, 'command'> {
 }
 
 export interface DotActionMenuItem<T = unknown> {
-    shouldShow?: (x?: Record<string, unknown>) => boolean;
+    shouldShow?: (x: Record<string, unknown>) => boolean;
     menuItem: CustomMenuItem<T>;
 }
 

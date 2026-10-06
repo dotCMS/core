@@ -162,7 +162,7 @@ export const FormFileEditorStore = signalStore(
 
                     const name =
                         source === 'contentlet'
-                            ? (file.metaData?.name ?? file.title)
+                            ? (file['metaData']?.name ?? file.title)
                             : file.fileName;
                     const extension = extractFileExtension(name);
                     const info = getInfoByLang(extension);

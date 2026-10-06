@@ -25,7 +25,7 @@ import { FieldDragDropService } from '../service';
 
 const mockFieldRow: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(2);
 
-mockFieldRow.columns[0].fields = [
+mockFieldRow.columns![0].fields = [
     {
         ...dotcmsContentTypeFieldBasicMock,
         clazz: DotCMSClazzes.TEXT,
@@ -38,7 +38,7 @@ mockFieldRow.columns[0].fields = [
     }
 ];
 
-mockFieldRow.columns[1].fields = [
+mockFieldRow.columns![1].fields = [
     {
         ...dotcmsContentTypeFieldBasicMock,
         clazz: DotCMSClazzes.TEXT,
@@ -53,7 +53,7 @@ mockFieldRow.columns[1].fields = [
 })
 class TestContentTypeFieldDraggableItemComponent {
     @Input()
-    field: DotCMSContentTypeField;
+    field!: DotCMSContentTypeField;
     @Input()
     isSmall = false;
     @Output()
@@ -68,7 +68,7 @@ class TestContentTypeFieldDraggableItemComponent {
     standalone: false
 })
 class DotTestHostComponent {
-    data: DotCMSContentTypeLayoutRow;
+    data!: DotCMSContentTypeLayoutRow;
 
     setData(data: DotCMSContentTypeLayoutRow): void {
         this.data = data;
@@ -135,7 +135,7 @@ describe('ContentTypeFieldsRowComponent', () => {
                 const draggableItems = col.queryAll(
                     By.css('dot-content-type-field-dragabble-item')
                 );
-                expect(mockFieldRow.columns[index].fields.length).toEqual(draggableItems.length);
+                expect(mockFieldRow.columns![index].fields.length).toEqual(draggableItems.length);
             });
         });
 
@@ -176,7 +176,7 @@ describe('ContentTypeFieldsRowComponent', () => {
                 rowFixture = DOTTestBed.createComponent(DotTestHostComponent);
                 rowHostComp = rowFixture.componentInstance;
                 const mock: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(1);
-                mock.columns[0].fields = [];
+                mock.columns![0].fields = [];
                 rowHostComp.data = mock;
                 rowHostDe = rowFixture.debugElement;
                 rowFixture.detectChanges();
@@ -216,8 +216,8 @@ describe('ContentTypeFieldsRowComponent', () => {
                 colFixture = DOTTestBed.createComponent(DotTestHostComponent);
                 colHostComp = colFixture.componentInstance;
                 const mock: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(2);
-                mock.columns[0].fields = [];
-                mock.columns[1].fields = [];
+                mock.columns![0].fields = [];
+                mock.columns![1].fields = [];
                 colHostComp.data = mock;
                 colHostDe = colFixture.debugElement;
                 colFixture.detectChanges();
@@ -231,7 +231,7 @@ describe('ContentTypeFieldsRowComponent', () => {
             });
 
             it('should emit remove field event when column has id', () => {
-                colComp.fieldRow.columns[0].columnDivider.id = 'test';
+                colComp.fieldRow.columns![0].columnDivider.id = 'test';
 
                 let result;
                 colComp.removeField.subscribe((col: DotCMSContentTypeField) => {
@@ -241,7 +241,7 @@ describe('ContentTypeFieldsRowComponent', () => {
                 const removeButton = colDe.query(By.css('p-button'));
                 removeButton.nativeElement.querySelector('button').click();
 
-                expect(result.clazz).toEqual(
+                expect(result!.clazz).toEqual(
                     'com.dotcms.contenttype.model.field.ImmutableColumnField'
                 );
             });
@@ -252,12 +252,12 @@ describe('ContentTypeFieldsRowComponent', () => {
                     result = col;
                 });
 
-                expect(colComp.fieldRow.columns.length).toBe(2);
+                expect(colComp.fieldRow.columns!.length).toBe(2);
 
                 const removeButton = colDe.query(By.css('p-button'));
                 removeButton.nativeElement.querySelector('button').click();
 
-                expect(colComp.fieldRow.columns.length).toBe(1);
+                expect(colComp.fieldRow.columns!.length).toBe(1);
                 expect(result).toBeUndefined();
             });
         });

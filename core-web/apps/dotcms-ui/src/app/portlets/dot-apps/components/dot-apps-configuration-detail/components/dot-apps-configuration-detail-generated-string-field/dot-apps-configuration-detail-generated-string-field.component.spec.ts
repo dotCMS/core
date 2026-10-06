@@ -41,6 +41,17 @@ describe('DotAppsConfigurationDetailGeneratedStringFieldComponent', () => {
         detectChanges: false
     });
 
+    /**
+     * The generate button, asserted present. Every test that clicks it has already rendered the
+     * component, so a missing button is a spec failure rather than a value each caller re-checks.
+     */
+    const generateButton = (): Element => {
+        const button = spectator.query(byTestId('generate-button'));
+        expect(button).toBeTruthy();
+
+        return button as Element;
+    };
+
     beforeEach(() => {
         spectator = createComponent();
         confirmationService = spectator.inject(ConfirmationService);
@@ -74,7 +85,7 @@ describe('DotAppsConfigurationDetailGeneratedStringFieldComponent', () => {
         spectator.component.$value.set('');
         spectator.detectChanges();
 
-        const button = spectator.query(byTestId('generate-button'));
+        const button = generateButton();
         spectator.click(button);
 
         expect(httpClient.get).toHaveBeenCalledWith(mockField.buttonEndpoint, {
@@ -94,7 +105,7 @@ describe('DotAppsConfigurationDetailGeneratedStringFieldComponent', () => {
             spectator.detectChanges();
             spectator.component.$value.set('existing-value');
 
-            const button = spectator.query(byTestId('generate-button'));
+            const button = generateButton();
 
             // Act - Click the generate button to show dialog
             spectator.click(button);
@@ -110,7 +121,7 @@ describe('DotAppsConfigurationDetailGeneratedStringFieldComponent', () => {
             expect(yesButton).toBeTruthy();
 
             // Real click on the Yes button
-            spectator.click(yesButton);
+            spectator.click(yesButton!);
             spectator.detectChanges();
 
             // Assert
@@ -129,7 +140,7 @@ describe('DotAppsConfigurationDetailGeneratedStringFieldComponent', () => {
             // Create spy for httpClient.get to verify it's not called
             const httpGetSpy = vi.spyOn(httpClient, 'get');
 
-            const button = spectator.query(byTestId('generate-button'));
+            const button = generateButton();
 
             // Act - Click the generate button to show dialog
             spectator.click(button);
@@ -145,7 +156,7 @@ describe('DotAppsConfigurationDetailGeneratedStringFieldComponent', () => {
             expect(noButton).toBeTruthy();
 
             // Real click on the No button
-            spectator.click(noButton);
+            spectator.click(noButton!);
             spectator.detectChanges();
 
             // Assert
@@ -161,7 +172,7 @@ describe('DotAppsConfigurationDetailGeneratedStringFieldComponent', () => {
             spectator.detectChanges();
             spectator.component.$value.set(''); // Empty input
 
-            const button = spectator.query(byTestId('generate-button'));
+            const button = generateButton();
 
             // Act
             spectator.click(button);
@@ -201,7 +212,7 @@ describe('DotAppsConfigurationDetailGeneratedStringFieldComponent', () => {
                 return confirmationService;
             });
 
-            const button = spectator.query(byTestId('generate-button'));
+            const button = generateButton();
 
             // Act
             spectator.click(button);
@@ -233,7 +244,7 @@ describe('DotAppsConfigurationDetailGeneratedStringFieldComponent', () => {
                 return confirmationService;
             });
 
-            const button = spectator.query(byTestId('generate-button'));
+            const button = generateButton();
 
             // Act
             spectator.click(button);
@@ -259,7 +270,7 @@ describe('DotAppsConfigurationDetailGeneratedStringFieldComponent', () => {
             spectator.detectChanges();
             spectator.component.$value.set(''); // Empty input to bypass confirmation
 
-            const button = spectator.query(byTestId('generate-button'));
+            const button = generateButton();
 
             // Act
             spectator.click(button);
@@ -283,7 +294,7 @@ describe('DotAppsConfigurationDetailGeneratedStringFieldComponent', () => {
             spectator.detectChanges();
             spectator.component.$value.set(''); // Empty input to bypass confirmation
 
-            const button = spectator.query(byTestId('generate-button'));
+            const button = generateButton();
 
             // Act
             spectator.click(button);
@@ -352,7 +363,7 @@ describe('DotAppsConfigurationDetailGeneratedStringFieldComponent', () => {
             spectator.detectChanges();
             spectator.component.$value.set(''); // Empty input to bypass confirmation
 
-            const button = spectator.query(byTestId('generate-button'));
+            const button = generateButton();
 
             // Act
             spectator.click(button);

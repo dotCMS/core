@@ -45,7 +45,7 @@ import { getDotAttributesFromElement, setDotAttributesToElement } from '../dot-f
 })
 export class DotBinaryFileComponent {
     @Element()
-    el: HTMLElement;
+    el!: HTMLElement;
 
     /** Name that will be used as ID */
     @Prop({ reflect: true })
@@ -112,17 +112,22 @@ export class DotBinaryFileComponent {
     previewImageUrl = '';
 
     @State()
-    status: DotFieldStatus;
+    status!: DotFieldStatus;
 
     @Event()
-    dotValueChange: EventEmitter<DotFieldValueEvent>;
+    dotValueChange!: EventEmitter<DotFieldValueEvent>;
     @Event()
-    dotStatusChange: EventEmitter<DotFieldStatusEvent>;
+    dotStatusChange!: EventEmitter<DotFieldStatusEvent>;
 
-    private file: string | File = null;
-    private allowedFileTypes = [];
-    private errorType: DotBinaryMessageError;
-    private binaryTextField: DotBinaryTextField;
+    private file: string | File | null = null;
+    private allowedFileTypes: string[] = [];
+    /** Null while the field is valid; `errorMessageMap` has no entry for that. */
+    private errorType: DotBinaryMessageError | null = null;
+    /**
+     * The nested text field, resolved from the DOM after render. Null before `componentDidLoad` and
+     * whenever the field is hidden, which is why `setValue` writes to it inside a `try`.
+     */
+    private binaryTextField: DotBinaryTextField | null = null;
     private errorMessageMap = new Map<DotBinaryMessageError, string>();
 
     /**
@@ -131,7 +136,7 @@ export class DotBinaryFileComponent {
     @Method()
     async reset(): Promise<void> {
         this.file = '';
-        this.binaryTextField.value = '';
+        this.setTextFieldValue('');
         this.errorMessage = '';
         this.clearPreviewData();
         this.status = getOriginalStatus(this.isValid());
@@ -144,7 +149,7 @@ export class DotBinaryFileComponent {
      */
     @Method()
     async clearValue(): Promise<void> {
-        this.binaryTextField.value = '';
+        this.setTextFieldValue('');
         this.errorType = this.required ? DotBinaryMessageError.REQUIRED : null;
         this.setValue();
         this.clearPreviewData();
@@ -193,7 +198,7 @@ export class DotBinaryFileComponent {
 
     @Watch('accept')
     optionsWatch(): void {
-        this.accept = checkProp<DotBinaryFileComponent, string>(this, 'accept');
+        this.accept = checkProp<DotBinaryFileComponent, string>(this, 'accept') ?? '';
 
         let arr;
         if (this.accept) {
@@ -214,7 +219,7 @@ export class DotBinaryFileComponent {
         this.errorType = fileEvent.errorType;
         this.setValue(fileEvent.file);
         if (this.isBinaryUploadButtonEvent(event.target as Element) && fileEvent.file) {
-            this.binaryTextField.value = (fileEvent.file as File).name;
+            this.setTextFieldValue((fileEvent.file as File).name);
         }
     }
 
@@ -241,7 +246,14 @@ export class DotBinaryFileComponent {
         if (!this.disabled && !this.previewImageName) {
             this.el.classList.add('dot-dropped');
             this.errorType = null;
-            const droppedFile: File = evt.dataTransfer.files[0];
+            // Null when the drop carried no transfer at all; `handleDroppedFile` reads `.name` so
+            // there is nothing to validate.
+            const droppedFile = evt.dataTransfer?.files[0];
+
+            if (!droppedFile) {
+                return;
+            }
+
             this.handleDroppedFile(droppedFile);
         }
     }
@@ -329,11 +341,11 @@ export class DotBinaryFileComponent {
     }
 
     private shouldShowErrorMessage(): boolean {
-        return this.getErrorMessage() && !this.status.dotPristine;
+        return !!this.getErrorMessage() && !this.status.dotPristine;
     }
 
-    private getErrorMessage(): string {
-        return this.errorMessageMap.get(this.errorType);
+    private getErrorMessage(): string | undefined {
+        return this.errorType ? this.errorMessageMap.get(this.errorType) : undefined;
     }
 
     private isValid(): boolean {
@@ -347,7 +359,7 @@ export class DotBinaryFileComponent {
         this.fileSizeValidationMessageWatch();
     }
 
-    private setValue(data: File | string = null): void {
+    private setValue(data: File | string | null = null): void {
         try {
             this.file = data;
             this.status = updateStatus(this.status, {
@@ -355,7 +367,11 @@ export class DotBinaryFileComponent {
                 dotPristine: false,
                 dotValid: this.isValid()
             });
-            this.binaryTextField.value = data === null ? '' : this.binaryTextField.value;
+            // Optional chaining rather than the surrounding `try`: the text field is absent before
+            // the first render, and that is the case this catch was silently absorbing.
+            if (this.binaryTextField) {
+                this.binaryTextField.value = data === null ? '' : this.binaryTextField.value;
+            }
         } catch (error) {
             console.warn(error);
         }
@@ -387,7 +403,20 @@ export class DotBinaryFileComponent {
             this.setValue();
         } else {
             this.setValue(file);
-            this.binaryTextField.value = file.name;
+            this.setTextFieldValue(file.name);
+        }
+    }
+
+    /**
+     * Writes to the nested text field when it is present.
+     *
+     * It is resolved from the DOM after render, so it is absent before `componentDidLoad` and while
+     * a preview has replaced it — see the note in `handleDelete`, which re-queries for exactly that
+     * reason. Every one of these writes has always been best-effort.
+     */
+    private setTextFieldValue(value: string): void {
+        if (this.binaryTextField) {
+            this.binaryTextField.value = value;
         }
     }
 

@@ -493,6 +493,8 @@ describe('withPageApi', () => {
 
     describe('editorSave', () => {
         it('should tag pageAssetResponse.source as rest when reloading via REST after save', () => {
+            store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
+
             store.editorSave([]);
             spectator.flushEffects();
 
@@ -501,6 +503,7 @@ describe('withPageApi', () => {
 
         it('should tag pageAssetResponse.source as graphql when reloading via GraphQL after save', () => {
             store.setCustomClient(graphqlRequestWithoutUrl);
+            store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
 
             store.editorSave([]);
             spectator.flushEffects();

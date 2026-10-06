@@ -1,0 +1,102 @@
+{
+  "src/lib/components/add-to-bundle/dot-add-to-bundle.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 1
+    }
+  },
+  "src/lib/components/dot-ai-image-prompt/components/ai-image-prompt-form/ai-image-prompt-form.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 3
+    }
+  },
+  "src/lib/components/dot-ai-image-prompt/components/ai-image-prompt-gallery/ai-image-prompt-gallery.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 4
+    }
+  },
+  "src/lib/components/dot-api-link/dot-api-link.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 1
+    }
+  },
+  "src/lib/components/dot-asset-search/components/dot-asset-card-list/dot-asset-card-list.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 3
+    }
+  },
+  "src/lib/components/dot-drop-zone/dot-drop-zone.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 3
+    }
+  },
+  "src/lib/components/dot-empty-container/dot-empty-container.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 4
+    }
+  },
+  "src/lib/components/dot-field-validation-message/dot-field-validation-message.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 4
+    }
+  },
+  "src/lib/components/dot-form-dialog/dot-form-dialog.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 2
+    }
+  },
+  "src/lib/components/dot-push-publish-env-selector/dot-push-publish-env-selector.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 2
+    }
+  },
+  "src/lib/components/dot-sidebar-header/dot-sidebar-header.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 2
+    }
+  },
+  "src/lib/directives/dot-avatar/dot-avatar.directive.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 1
+    }
+  },
+  "src/lib/directives/dot-dropdown.directive.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 1
+    }
+  },
+  "src/lib/directives/dot-sidebar.directive.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 1
+    }
+  },
+  "src/lib/directives/dot-string-template-outlet.directive.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 1
+    }
+  },
+  "src/lib/dot-field-required/dot-field-required.directive.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 1
+    }
+  },
+  "src/lib/dot-icon/dot-icon.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 2
+    }
+  },
+  "src/lib/dot-site-selector/dot-site-selector.directive.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 4
+    }
+  },
+  "src/lib/dot-spinner/dot-spinner.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 2
+    }
+  },
+  "src/lib/dot-tab-buttons/dot-tab-buttons.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 2
+    }
+  }
+}

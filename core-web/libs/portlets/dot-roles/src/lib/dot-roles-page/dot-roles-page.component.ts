@@ -2,6 +2,7 @@ import { Component, OnInit, computed, inject } from '@angular/core';
 
 import { SplitterModule } from 'primeng/splitter';
 import { TabsModule } from 'primeng/tabs';
+import { SplitterPassThrough } from 'primeng/types/splitter';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotEmptyContainerComponent, DotMessagePipe, PrincipalConfiguration } from '@dotcms/ui';
@@ -41,7 +42,13 @@ export class DotRolesPageComponent implements OnInit {
     // the default `1 1 auto` measures the basis from content, which for
     // roles with many members squeezes the tablist and clips the active-tab
     // underline. See `git log` for the full rationale.
-    protected readonly splitterPt = { root: { class: 'border-0! rounded-none!' } };
+    // `panel` is required by SplitterPassThroughOptions while the rest are optional,
+    // so this looks like an upstream oversight. An empty passthrough satisfies it
+    // and applies nothing.
+    protected readonly splitterPt: SplitterPassThrough = {
+        root: { class: 'border-0! rounded-none!' },
+        panel: {}
+    };
     protected readonly tabsPt = { root: { class: 'flex! flex-col! flex-1! min-h-0!' } };
     protected readonly tabPanelsPt = {
         root: { class: 'block! flex-1! min-h-0! overflow-hidden! p-0!' }
@@ -61,7 +68,11 @@ export class DotRolesPageComponent implements OnInit {
         this.store.loadRootRoles();
     }
 
-    protected onTabChange(tab: string | number): void {
+    protected onTabChange(tab: string | number | undefined): void {
+        if (tab === undefined) {
+            return;
+        }
+
         this.store.setActiveTab(String(tab) as DotRoleTab);
     }
 }

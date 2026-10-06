@@ -253,7 +253,7 @@ describe('TemplateBuilderComponent', () => {
         }));
 
     it('should open a dialog when clicking on row-style-class-button ', () => {
-        const editRowStyleClassesButton = spectator.query(byTestId('row-style-class-button'));
+        const editRowStyleClassesButton = spectator.query(byTestId('row-style-class-button'))!;
 
         spectator.dispatchFakeEvent(editRowStyleClassesButton, 'onClick');
 
@@ -261,7 +261,7 @@ describe('TemplateBuilderComponent', () => {
     });
 
     it('should open a dialog when clicking on box-style-class-button', () => {
-        const editBoxStyleClassesButton = spectator.query(byTestId('box-style-class-button'));
+        const editBoxStyleClassesButton = spectator.query(byTestId('box-style-class-button'))!;
 
         spectator.dispatchFakeEvent(editBoxStyleClassesButton, 'onClick');
 
@@ -269,7 +269,7 @@ describe('TemplateBuilderComponent', () => {
     });
 
     it('should open a panel when clicking on Layout button', () => {
-        const actionsButton = spectator.query(byTestId('btn-select-layout'));
+        const actionsButton = spectator.query(byTestId('btn-select-layout'))!;
 
         spectator.click(actionsButton);
 
@@ -296,7 +296,7 @@ describe('TemplateBuilderComponent', () => {
         );
         const mainDiv = spectator.query(byTestId('template-builder-main'));
 
-        mainDiv.dispatchEvent(new MouseEvent('mousemove'));
+        mainDiv!.dispatchEvent(new MouseEvent('mousemove'));
 
         expect(fixGridStackNodeOptionsMock).toHaveBeenCalled();
     });
@@ -312,12 +312,12 @@ describe('TemplateBuilderComponent', () => {
     it("should trigger deleteSection on header when clicking on 'Delete Section' button", () => {
         const deleteSectionMock = vi.spyOn(spectator.component, 'deleteSection');
         const headerComponent = spectator.query(byTestId('template-builder-header'));
-        const deleteSectionButton = headerComponent.querySelector(
+        const deleteSectionButton = headerComponent!.querySelector(
             '[data-testId="delete-section-button"]'
         );
 
         // `p-button` emits through its internal <button>, clicking the host element won't trigger `(onClick)`
-        spectator.click(deleteSectionButton.querySelector('button'));
+        spectator.click(deleteSectionButton!.querySelector('button')!);
 
         expect(deleteSectionMock).toHaveBeenCalledWith('header');
     });
@@ -325,12 +325,12 @@ describe('TemplateBuilderComponent', () => {
     it("should trigger deleteSection on footer when clicking on 'Delete Section' button", () => {
         const deleteSectionMock = vi.spyOn(spectator.component, 'deleteSection');
         const footerComponent = spectator.query(byTestId('template-builder-footer'));
-        const deleteSectionButton = footerComponent.querySelector(
+        const deleteSectionButton = footerComponent!.querySelector(
             '[data-testId="delete-section-button"]'
         );
 
         // `p-button` emits through its internal <button>, clicking the host element won't trigger `(onClick)`
-        spectator.click(deleteSectionButton.querySelector('button'));
+        spectator.click(deleteSectionButton!.querySelector('button')!);
 
         expect(deleteSectionMock).toHaveBeenCalledWith('footer');
     });

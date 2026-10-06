@@ -7,6 +7,9 @@
     "tags": [],
     "implicitDependencies": ["dotcms-webcomponents"],
     "targets": {
+        "typecheck": {
+            "dependsOn": ["dotcms-webcomponents:build"]
+        },
         "build": {
             "executor": "@angular/build:application",
             "outputs": ["{options.outputPath.base}"],

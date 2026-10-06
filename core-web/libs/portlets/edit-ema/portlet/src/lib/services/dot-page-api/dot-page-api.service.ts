@@ -91,7 +91,10 @@ export class DotPageApiService {
      * @memberof DotPageApiService
      */
     save({ pageContainers, pageId, params }: SavePagePayload): Observable<unknown> {
-        const variantName = params.variantName ?? DEFAULT_VARIANT_ID;
+        // `params` is optional on the payload and its only caller passes `pageParams ?? undefined`,
+        // so this read threw a TypeError whenever the store had no params yet. The
+        // `?? DEFAULT_VARIANT_ID` fallback beside it was already the answer for that case.
+        const variantName = params?.variantName ?? DEFAULT_VARIANT_ID;
 
         return this.http
             .post(`/api/v1/page/${pageId}/content?variantName=${variantName}`, pageContainers)
@@ -176,12 +179,18 @@ export class DotPageApiService {
      * @return {*}  {Observable<T>}
      * @memberof DotPageApiService
      */
+    /**
+     * GraphQL variables for the page request. Values are optional because `mode` and `variantName`
+     * genuinely can be absent, and `JSON.stringify` — which is what `HttpClient` applies to the body —
+     * omits keys whose value is `undefined`. So this is what has always gone over the wire; the old
+     * `Record<string, string>` simply did not say so.
+     */
     getGraphQLPage({
         query,
         variables
     }: {
         query: string;
-        variables: Record<string, string>;
+        variables: Record<string, string | undefined>;
     }): Observable<{
         pageAsset: DotCMSPageAsset;
         content: Record<string, unknown>;
@@ -193,22 +202,41 @@ export class DotPageApiService {
 
         return this.http
             .post<{
-                data: { page: DotCMSGraphQLPage };
+                // `& Record<string, unknown>`: the query asks for the page *and* whatever else the
+                // caller put in it, and the `...content` rest below is exactly that remainder. The
+                // narrower response type made it an empty object, which is not a `Record`.
+                data: { page: DotCMSGraphQLPage } & Record<string, unknown>;
             }>('/api/v1/graphql', { query, variables }, { headers })
             .pipe(
                 map((x) => x?.data),
                 map(({ page, ...content }) => {
-                    const pageEntity = graphqlToPageEntity(page);
+                    const pageAsset = graphqlToPageEntity(page);
+
+                    // `graphqlToPageEntity` returns null when the response carries no page — a URL
+                    // that does not resolve. All four consumers feed this straight into the store as
+                    // the current page, so a null poisoned it silently. They already have
+                    // `catchError` paths for a page that failed to load, and this is one of those.
+                    if (!pageAsset) {
+                        throw new Error(`GraphQL response contained no page`);
+                    }
 
                     return {
-                        pageAsset: pageEntity,
+                        pageAsset,
                         content
                     };
                 })
             );
     }
 
-    private getPersonasURL({ pageId, filter, page, perPage }: GetPersonasParams): string {
+    // `perPage` is required here even though it is optional on `GetPersonasParams`: the only caller
+    // is `getPersonas`, which defaults it to 10 before calling — the parameter type was re-widening
+    // a value that had already been resolved.
+    private getPersonasURL({
+        pageId,
+        filter,
+        page,
+        perPage
+    }: GetPersonasParams & { perPage: number }): string {
         const apiUrl = `/api/v1/page/${pageId}/personas?`;
 
         const queryParams = new URLSearchParams({

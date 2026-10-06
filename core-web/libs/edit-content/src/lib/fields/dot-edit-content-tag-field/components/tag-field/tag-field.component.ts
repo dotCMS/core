@@ -192,7 +192,9 @@ export class DotTagFieldComponent extends BaseControlValueAccessor<string | stri
         this.onChange(autocompleteValue.join(','));
     }
 
-    readonly handleChangeValue = signalMethod<string | string[]>((value) => {
+    // `| null` because this is called with the accessor's `$value`, which is null until the form
+    // writes one. Null matches neither branch below, so it lands on the empty `tagsArray`.
+    readonly handleChangeValue = signalMethod<string | string[] | null>((value) => {
         let tagsArray: string[] = [];
 
         if (typeof value === 'string') {

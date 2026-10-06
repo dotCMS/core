@@ -45,7 +45,7 @@
                     </div>
                 </div>
 
-                @if (isRowExpanded(i) && row.columns?.length) {
+                @if (isRowExpanded(i) && row.columns.length) {
                     <div
                         class="ml-4 border-l border-(--gray-300) px-2 pl-5.5"
                         (mousedown)="$event.stopPropagation()"

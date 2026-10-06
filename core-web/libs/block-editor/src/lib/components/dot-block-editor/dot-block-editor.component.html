@@ -1,6 +1,6 @@
 @if (editor) {
     <div
-        [ngClass]="{
+        [class]="{
             'editor-wrapper--fullscreen': isFullscreen,
             'editor-wrapper--default': !isFullscreen,
             'editor-wrapper--disabled': disabled,
@@ -13,7 +13,7 @@
             (keyup)="subject.next()"
             (ngModelChange)="onBlockEditorChange($event)"
             [editor]="editor"
-            [ngClass]="{ 'overflow-hidden': freezeScroll, 'editor-disabled': disabled }"
+            [class]="{ 'overflow-hidden': freezeScroll, 'editor-disabled': disabled }"
             [ngModel]="content"
             data-testid="tiptap-editor" />
     </div>
@@ -27,7 +27,7 @@
     </div>
 
     @if (showCharData || charLimitError || requiredError) {
-        <div class="flex align-items-center mt-3 gap-2">
+        <div class="align-items-center mt-3 flex gap-2">
             <div class="flex-1">
                 @if (requiredError) {
                     <small class="p-invalid" data-testid="required-error">
@@ -38,7 +38,7 @@
                     <small class="p-invalid" data-testid="char-limit-error">
                         {{
                             'dot.edit.content.form.field.charLimitExceeded'
-                                | dm: [charLimitError.max]
+                                | dm: [charLimitError.max.toString()]
                         }}
                     </small>
                 }

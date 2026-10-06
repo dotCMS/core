@@ -44,7 +44,7 @@
                         <p-image
                             [pt]="imagePt"
                             imageClass="h-full w-full rounded-lg border border-surface-200 object-contain"
-                            [src]="store.imageUrl()"
+                            [src]="store.imageUrl() ?? undefined"
                             [preview]="true"
                             alt="{{ image.originalPrompt }}" />
 

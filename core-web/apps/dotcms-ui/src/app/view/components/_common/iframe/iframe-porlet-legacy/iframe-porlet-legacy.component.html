@@ -2,7 +2,7 @@
     <dot-iframe
         (custom)="onCustomEvent($event)"
         [isLoading]="isLoading()"
-        [src]="url | async"
+        [src]="(url | async) ?? ''"
         #iframe />
 } @else {
     <dot-not-license />

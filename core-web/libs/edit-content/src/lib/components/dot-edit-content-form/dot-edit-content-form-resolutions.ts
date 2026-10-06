@@ -288,7 +288,7 @@ const dateResolutionFn: FnResolutionValue<number | null> = (contentlet, field) =
  */
 const relationshipResolutionFn: FnResolutionValue<string> = (contentlet, field) => {
     const relationship = getRelationshipFromContentlet({
-        contentlet,
+        contentlet: contentlet ?? null,
         variable: field.variable
     });
 

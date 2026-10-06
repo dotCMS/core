@@ -65,7 +65,11 @@ export class DotContentTypeCopyDialogComponent implements OnInit, AfterViewCheck
     private readonly cd = inject(ChangeDetectorRef);
     private readonly destroy$ = new Subject<boolean>();
 
-    dialogActions: DotDialogActions;
+    /**
+     * `accept` is required here even though `DotDialogActions` declares it optional: this component
+     * always builds one with a label, and updates its `disabled` flag by spreading it.
+     */
+    dialogActions!: DotDialogActions & Required<Pick<DotDialogActions, 'accept'>>;
     inputNameWithType = '';
     dialogTitle = '';
     isVisibleDialog = false;

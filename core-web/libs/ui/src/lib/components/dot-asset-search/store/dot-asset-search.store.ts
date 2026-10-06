@@ -12,7 +12,7 @@ import {
     EsQueryParamsSearch,
     DotLanguagesService
 } from '@dotcms/data-access';
-import { DotCMSContentlet, DotLanguage } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotLanguage, ESContent } from '@dotcms/dotcms-models';
 
 export interface DotAssetSearch {
     loading: boolean;
@@ -113,17 +113,17 @@ export class DotAssetSearchStore extends ComponentStore<DotAssetSearch> {
         );
     });
 
-    private searchContentletsRequest(params): Observable<DotCMSContentlet[]> {
+    private searchContentletsRequest(params: DotAssetSeachQuery): Observable<DotCMSContentlet[]> {
         const query = this.queryParams(params);
 
-        return this.dotContentSearchService.get(query).pipe(
+        return this.dotContentSearchService.get<ESContent>(query).pipe(
             map(({ jsonObjectView: { contentlets } }) => {
                 return this.setContentletLanguage(contentlets);
             })
         );
     }
 
-    private queryParams(data): EsQueryParamsSearch {
+    private queryParams(data: DotAssetSeachQuery): EsQueryParamsSearch {
         const { search, assetType, offset = 0, languageId = '' } = data;
         const filter = search.includes('-') ? search : `${search}*`;
 

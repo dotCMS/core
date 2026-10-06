@@ -1,7 +1,7 @@
 <dot-visitors-location-component
     (comparisonChange)="onComparisonChange($event)"
     (areaChange)="onUpdate($event)"
-    [circle]="circle$ | async"
+    [circle]="(circle$ | async) ?? initialCircle"
     [preferredUnit]="preferredUnit"
     [comparisonValue]="comparisonValue"
     [comparisonControl]="comparisonControl"

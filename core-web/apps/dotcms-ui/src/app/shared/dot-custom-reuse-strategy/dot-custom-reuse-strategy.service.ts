@@ -19,7 +19,7 @@ export class DotCustomReuseStrategyService implements RouteReuseStrategy {
         }
 
         // If it's not explicitly set to false, reuse the route
-        return future.data.reuseRoute !== false;
+        return future.data['reuseRoute'] !== false;
     }
 
     store(_route: ActivatedRouteSnapshot, _handle: DetachedRouteHandle | null): void {

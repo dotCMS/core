@@ -78,7 +78,10 @@ export interface WithPageApiDeps {
 
     // Request metadata
     requestMetadata: () => { query: string; variables: Record<string, string> } | null;
-    $requestWithParams: Signal<{ query: string; variables: Record<string, string> } | null>;
+    $requestWithParams: Signal<{
+        query: string;
+        variables: Record<string, string | undefined>;
+    } | null>;
 
     // Page asset management
     setPageAsset: (payload: {
@@ -126,10 +129,13 @@ export function withPageApi(deps: WithPageApiDeps) {
                  * Does not trigger a page load - call pageLoad() or pageReload() after this
                  */
                 pageUpdateParams: (params: Partial<DotPageAssetParams>) => {
-                    const nextPageParams = {
-                        ...store.pageParams(),
-                        ...params
-                    };
+                    // `as` because a first update can arrive before any params are stored, and
+                    // `Partial` cannot tell that case from an update onto existing ones. Read once:
+                    // re-reading `store.pageParams()` after a guard loses the narrowing.
+                    const current = store.pageParams();
+                    const nextPageParams = (
+                        current ? { ...current, ...params } : params
+                    ) as DotPageAssetParams;
 
                     patchState(store, {
                         pageParams: nextPageParams,
@@ -180,6 +186,8 @@ export function withPageApi(deps: WithPageApiDeps) {
                 pageLoad: rxMethod<Partial<DotPageAssetParams>>(
                     pipe(
                         map((params) => {
+                            // Same as `pageUpdateParams`: a first load carries the full set, a
+                            // later one only what changed and merges onto what is stored.
                             const current = store.pageParams();
 
                             if (!current) {
@@ -269,8 +277,14 @@ export function withPageApi(deps: WithPageApiDeps) {
                             // alongside the pageAsset in the final tap below.
                             let graphQLContent: Record<string, unknown> | undefined;
 
-                            const pageAsset$ = deps.requestMetadata()
-                                ? dotPageApiService.getGraphQLPage(deps.$requestWithParams()).pipe(
+                            // Branch on the value that is used, not on `requestMetadata()`:
+                            // `$requestWithParams` returns null exactly when there is no request
+                            // metadata, so this is the same decision, and it is the one the
+                            // compiler can follow. The same four-line ternary appears three more
+                            // times in this file — worth extracting, but not in a typing pass.
+                            const requestWithParams = deps.$requestWithParams();
+                            const pageAsset$ = requestWithParams
+                                ? dotPageApiService.getGraphQLPage(requestWithParams).pipe(
                                       tap((response) => {
                                           graphQLContent = response.content;
                                       }),
@@ -283,8 +297,11 @@ export function withPageApi(deps: WithPageApiDeps) {
                                 switchMap((pageAsset) => {
                                     const { vanityUrl } = pageAsset;
 
-                                    // If there is not vanity and is not a redirect we just return the pageAPI response
-                                    if (isForwardOrPage(vanityUrl)) {
+                                    // If there is not vanity and is not a redirect we just return the pageAPI response.
+                                    // `!vanityUrl` is redundant at runtime — `isForwardOrPage(undefined)`
+                                    // is already true — but it is what lets the compiler know
+                                    // `vanityUrl` exists on the redirect path below.
+                                    if (!vanityUrl || isForwardOrPage(vanityUrl)) {
                                         return of(pageAsset);
                                     }
 
@@ -473,41 +490,51 @@ export function withPageApi(deps: WithPageApiDeps) {
                             });
                         }),
                         switchMap((pageContainers) => {
+                            const pageId = deps.pageAsset()?.page?.identifier;
+                            const pageParams = store.pageParams();
+
+                            if (!pageId) {
+                                // There is no saved page to write these containers to.
+                                return EMPTY;
+                            }
+
                             const payload = {
                                 pageContainers,
-                                pageId: deps.pageAsset()?.page?.identifier,
-                                params: store.pageParams()
+                                pageId,
+                                params: pageParams ?? undefined
                             };
 
                             return dotPageApiService.save(payload).pipe(
                                 switchMap(() => {
-                                    const pageParams = store.pageParams();
-
                                     if (!pageParams) {
+                                        // The containers were saved; there is just nothing to
+                                        // re-fetch the page with.
                                         return EMPTY;
                                     }
 
-                                    const pageRequest = !deps.requestMetadata()
-                                        ? dotPageApiService.get(pageParams).pipe(
-                                              tap((pageAsset) =>
-                                                  deps.setPageAsset({
-                                                      pageAsset,
-                                                      source: 'rest'
-                                                  })
-                                              )
-                                          )
-                                        : dotPageApiService
-                                              .getGraphQLPage(deps.$requestWithParams())
-                                              .pipe(
-                                                  tap((response) =>
+                                    const requestWithParams = deps.$requestWithParams();
+                                    const pageRequest =
+                                        !deps.requestMetadata() || !requestWithParams
+                                            ? dotPageApiService.get(pageParams).pipe(
+                                                  tap((pageAsset) =>
                                                       deps.setPageAsset({
-                                                          pageAsset: response.pageAsset,
-                                                          content: response.content,
-                                                          source: 'graphql'
+                                                          pageAsset,
+                                                          source: 'rest'
                                                       })
-                                                  ),
-                                                  map((response) => response.pageAsset)
-                                              );
+                                                  )
+                                              )
+                                            : dotPageApiService
+                                                  .getGraphQLPage(requestWithParams)
+                                                  .pipe(
+                                                      tap((response) =>
+                                                          deps.setPageAsset({
+                                                              pageAsset: response.pageAsset,
+                                                              content: response.content,
+                                                              source: 'graphql'
+                                                          })
+                                                      ),
+                                                      map((response) => response.pageAsset)
+                                                  );
 
                                     return pageRequest.pipe(
                                         catchError((e) => {
@@ -550,15 +577,21 @@ export function withPageApi(deps: WithPageApiDeps) {
                             });
                         }),
                         switchMap((sortedRows) => {
-                            const page = deps.pageAsset()?.page;
-                            const layoutData = deps.pageAsset()?.layout;
-                            const template = deps.pageAsset()?.template;
-                            if (!layoutData) {
+                            // Read the asset once. `page`, `layout` and `template` are all
+                            // required on `DotCMSPageAsset`, so guarding the asset narrows all
+                            // three — three separate `?.` reads narrow none of them.
+                            //
+                            // Deliberately not guarding on `template.theme`: it is a required
+                            // `string` that is legitimately empty for a page whose template has no
+                            // theme assigned, and this has always sent that empty value through.
+                            const pageAsset = deps.pageAsset();
+                            const layoutData = pageAsset?.layout;
+                            if (!pageAsset || !layoutData) {
                                 return EMPTY;
                             }
 
                             return dotPageLayoutService
-                                .save(page.identifier, {
+                                .save(pageAsset.page.identifier, {
                                     layout: {
                                         ...layoutData,
                                         body: {
@@ -579,7 +612,7 @@ export function withPageApi(deps: WithPageApiDeps) {
                                             })
                                         }
                                     },
-                                    themeId: template?.theme,
+                                    themeId: pageAsset.template.theme,
                                     title: null
                                 })
                                 .pipe(
@@ -596,7 +629,9 @@ export function withPageApi(deps: WithPageApiDeps) {
                                             return EMPTY;
                                         }
 
-                                        return !deps.requestMetadata()
+                                        const requestWithParams = deps.$requestWithParams();
+
+                                        return !deps.requestMetadata() || !requestWithParams
                                             ? dotPageApiService.get(pageParams).pipe(
                                                   tap((pageAsset) =>
                                                       deps.setPageAsset({
@@ -606,7 +641,7 @@ export function withPageApi(deps: WithPageApiDeps) {
                                                   )
                                               )
                                             : dotPageApiService
-                                                  .getGraphQLPage(deps.$requestWithParams())
+                                                  .getGraphQLPage(requestWithParams)
                                                   .pipe(
                                                       tap((response) =>
                                                           deps.setPageAsset({

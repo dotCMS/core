@@ -43,7 +43,7 @@ const mapToKeyValue = ({ label, value }: DotOption) => {
 })
 export class DotKeyValueComponent {
     @Element()
-    el: HTMLElement;
+    el!: HTMLElement;
 
     /** Value of the field */
     @Prop({ reflect: true, mutable: true })
@@ -101,65 +101,65 @@ export class DotKeyValueComponent {
     @Prop({
         reflect: true
     })
-    formKeyPlaceholder: string;
+    formKeyPlaceholder?: string;
 
     /** (optional) Placeholder for the value input text in the key-value-form */
     @Prop({
         reflect: true
     })
-    formValuePlaceholder: string;
+    formValuePlaceholder?: string;
 
     /** (optional) The string to use in the key label in the key-value-form */
     @Prop({
         reflect: true
     })
-    formKeyLabel: string;
+    formKeyLabel?: string;
 
     /** (optional) The string to use in the value label in the key-value-form */
     @Prop({
         reflect: true
     })
-    formValueLabel: string;
+    formValueLabel?: string;
 
     /** (optional) Label for the add button in the key-value-form */
     @Prop({
         reflect: true
     })
-    formAddButtonLabel: string;
+    formAddButtonLabel?: string;
 
     /** (optional) The string to use in the delete button of a key/value item */
     @Prop({
         reflect: true
     })
-    listDeleteLabel: string;
+    listDeleteLabel?: string;
 
     /** (optional) The string to use in the empty option of whitelist dropdown key/value item */
     @Prop({
         reflect: true
     })
-    whiteListEmptyOptionLabel: string;
+    whiteListEmptyOptionLabel?: string;
 
     /** (optional) The string containing the value to be parsed for whitelist key/value */
     @Prop({
         reflect: true
     })
-    whiteList: string;
+    whiteList?: string;
 
     @State()
-    errorExistingKey: boolean;
+    errorExistingKey!: boolean;
     @State()
-    status: DotFieldStatus;
+    status!: DotFieldStatus;
     @State()
     items: DotKeyValueField[] = [];
 
     @Event()
-    dotValueChange: EventEmitter<DotFieldValueEvent>;
+    dotValueChange!: EventEmitter<DotFieldValueEvent>;
     @Event()
-    dotStatusChange: EventEmitter<DotFieldStatusEvent>;
+    dotStatusChange!: EventEmitter<DotFieldStatusEvent>;
 
     @Watch('value')
     valueWatch(): void {
-        this.value = checkProp<DotKeyValueComponent, string>(this, 'value', 'string');
+        this.value = checkProp<DotKeyValueComponent, string>(this, 'value', 'string') ?? '';
 
         let formattedValue = '';
         if (this.value) {
@@ -215,13 +215,16 @@ export class DotKeyValueComponent {
 
         let keyValueRawData = '';
 
+        // `?? ''` on both reads. `Node.textContent` is `string | null`, which the *Stencil* compiler
+        // enforces and the repo's does not: TypeScript 6 re-declared it as an asymmetric accessor
+        // (`get(): string`, `set(value: string | null)`) while Stencil bundles 5.8.3, where it is
+        // still nullable. An empty cell is the case this covers.
+        const escape = (text: string | null): string =>
+            (text ?? '').replace(/,/gi, '&#44;').replace(/[|]/gi, '&#124;');
+
         for (let i = 0, total = keys.length; i < total; i++) {
             // Escaping "Comma" and "Pipe" symbols are needed due to format structure designed to separate values
-            keyValueRawData += `${keys[i].textContent
-                .replace(/,/gi, '&#44;')
-                .replace(/[|]/gi, '&#124;')}|${values[i].textContent
-                .replace(/,/gi, '&#44;')
-                .replace(/[|]/gi, '&#124;')},`;
+            keyValueRawData += `${escape(keys[i].textContent)}|${escape(values[i].textContent)},`;
         }
 
         // Timeout to let the DOM get cleaned and then repopulate with list of keyValues
@@ -275,7 +278,7 @@ export class DotKeyValueComponent {
             <Host class={{ ...classes }}>
                 <dot-label
                     aria-describedby={getHintId(this.hint)}
-                    tabIndex={this.hint ? 0 : null}
+                    tabIndex={this.hint ? 0 : undefined}
                     label={this.label}
                     required={this.required}
                     name={this.name}>
@@ -311,8 +314,8 @@ export class DotKeyValueComponent {
         );
     }
 
-    private isDisabled(): boolean {
-        return this.disabled || null;
+    private isDisabled(): boolean | undefined {
+        return this.disabled || undefined;
     }
 
     private blurHandler(): void {
@@ -337,7 +340,7 @@ export class DotKeyValueComponent {
     }
 
     private showErrorMessage(): boolean {
-        return this.getErrorMessage() && !this.status.dotPristine;
+        return !!this.getErrorMessage() && !this.status.dotPristine;
     }
 
     private getErrorMessage(): string {

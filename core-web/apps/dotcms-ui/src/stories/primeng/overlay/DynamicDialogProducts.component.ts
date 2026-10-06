@@ -40,7 +40,7 @@ export class DynamicDialogProductsComponent implements OnInit {
     ref = inject(DynamicDialogRef);
     config = inject(DynamicDialogConfig);
 
-    products: Product[];
+    products: Product[] = [];
 
     ngOnInit() {
         this.productService.getProductsSmall().then((products) => (this.products = products));

@@ -55,6 +55,8 @@ import { DotEditContentStore } from '../../../../store/edit-content.store';
 import { TableColumn } from '../../models/relationship.models';
 import { RelationshipFieldStore } from '../../store/relationship-field.store';
 
+import type { InferInputSignals } from '@openng/spectator';
+
 // Renders as "English (en)" via LanguagePipe, matching the chip-text assertions.
 const ENGLISH_LANGUAGE = createFakeLanguage({
     id: 1,
@@ -233,16 +235,31 @@ describe('DotRelationshipFieldComponent', () => {
         ]
     });
 
+    /**
+     * What the panel was opened with. The `jest.mock` above swaps the real panel for a stub whose
+     * `data` is a plain `@Input()` rather than a signal input, so the property holds the object
+     * itself; `query` is typed against the real component, hence the cast.
+     */
+    const panelData = () =>
+        spectator.query(DotEditContentSidePanelComponent)?.data as
+            | EditContentDialogData
+            | null
+            | undefined;
+
     const setup = (storeOverrides: Record<string, unknown> = {}) => {
         storeMock = createStoreMock(storeOverrides);
         spectator = createComponent({
             providers: [{ provide: RelationshipFieldStore, useValue: storeMock }],
+            // Keyed by the public aliases, which is what Spectator applies at runtime.
+            // `InferInputSignals<C>` maps over `keyof C` — the declared member names
+            // (`$field`) — so it cannot see an `alias`; renaming the keys type-checks and
+            // then fails at runtime.
             props: {
                 field: FIELD_MOCK,
                 contentlet: buildItem(),
                 hasError: false,
                 isRequired: false
-            }
+            } as unknown as InferInputSignals<DotRelationshipFieldComponent>
         });
         spectator.detectChanges();
     };
@@ -262,7 +279,7 @@ describe('DotRelationshipFieldComponent', () => {
         });
 
         it('should render the Locales header using the table language key', () => {
-            const localeHeader = spectator.query(byTestId('relationship-locale-header'));
+            const localeHeader = spectator.query(byTestId('relationship-locale-header'))!;
             expect(localeHeader).toBeTruthy();
             expect(localeHeader.textContent.trim()).toContain(
                 'dot.file.relationship.field.table.language'
@@ -270,7 +287,7 @@ describe('DotRelationshipFieldComponent', () => {
         });
 
         it('should render the locale value as a p-tag, not plain text', () => {
-            const localeTag = spectator.query(byTestId('relationship-locale-tag'));
+            const localeTag = spectator.query(byTestId('relationship-locale-tag'))!;
             expect(localeTag).toBeTruthy();
             expect(localeTag.textContent).toContain('English');
         });
@@ -296,11 +313,11 @@ describe('DotRelationshipFieldComponent', () => {
         );
 
         it('should render the empty-state message and relate link', () => {
-            const emptyState = spectator.query(byTestId('relationship-field-empty'));
+            const emptyState = spectator.query(byTestId('relationship-field-empty'))!;
             expect(emptyState).toBeTruthy();
             expect(emptyState.textContent).toContain('dot.file.relationship.field.empty.message');
 
-            const relateLink = spectator.query(byTestId('relationship-empty-relate-link'));
+            const relateLink = spectator.query(byTestId('relationship-empty-relate-link'))!;
             expect(relateLink).toBeTruthy();
             expect(relateLink.textContent.trim()).toContain(
                 'dot.file.relationship.field.empty.relate.link'
@@ -388,7 +405,7 @@ describe('DotRelationshipFieldComponent', () => {
                 language: undefined,
                 languageId: 1
             });
-            spectator.query(DotEditContentSidePanelComponent)?.data?.onContentSaved?.(created);
+            panelData()?.onContentSaved?.(created);
 
             expect(storeMock.setData).toHaveBeenCalledWith([
                 expect.objectContaining({
@@ -433,7 +450,7 @@ describe('DotRelationshipFieldComponent', () => {
         });
 
         it('should not render the suffix when disabled, leaving only the base message', () => {
-            const emptyState = spectator.query(byTestId('relationship-field-empty'));
+            const emptyState = spectator.query(byTestId('relationship-field-empty'))!;
             expect(emptyState.textContent).toContain('dot.file.relationship.field.empty.message');
             // The suffix lives inside the same @if(!isDisabled) block as the link,
             // so the disabled state must not render "or click the + button.".
@@ -447,7 +464,7 @@ describe('DotRelationshipFieldComponent', () => {
         beforeEach(() => setup());
 
         it('should render a PrimeNG scrollable table so extra columns are not clipped', () => {
-            const table = spectator.query(byTestId('relationship-field-table'));
+            const table = spectator.query(byTestId('relationship-field-table'))!;
             expect(table).toBeTruthy();
             expect(table.classList).toContain('p-datatable-scrollable');
         });
@@ -753,7 +770,7 @@ describe('DotRelationshipFieldComponent', () => {
                     identifier: 'related-id',
                     title: 'Related content (edited)'
                 });
-                spectator.query(DotEditContentSidePanelComponent)?.data?.onContentSaved?.(saved);
+                panelData()?.onContentSaved?.(saved);
 
                 // Handed to the store's in-place replace — which keeps the current page and does
                 // not dirty the form — rather than setData, which resets pagination to page 1.
@@ -774,7 +791,7 @@ describe('DotRelationshipFieldComponent', () => {
                     language: undefined,
                     languageId: 2
                 });
-                spectator.query(DotEditContentSidePanelComponent)?.data?.onContentSaved?.(saved);
+                panelData()?.onContentSaved?.(saved);
 
                 expect(storeMock.refreshItem).toHaveBeenCalledWith(
                     expect.objectContaining({
@@ -793,7 +810,7 @@ describe('DotRelationshipFieldComponent', () => {
                     language: ENGLISH_LANGUAGE,
                     languageId: 1
                 });
-                spectator.query(DotEditContentSidePanelComponent)?.data?.onContentSaved?.(saved);
+                panelData()?.onContentSaved?.(saved);
 
                 expect(storeMock.refreshItem).toHaveBeenCalledWith(
                     expect.objectContaining({ language: ENGLISH_LANGUAGE })
@@ -809,7 +826,7 @@ describe('DotRelationshipFieldComponent', () => {
                     language: undefined,
                     languageId: 999
                 });
-                spectator.query(DotEditContentSidePanelComponent)?.data?.onContentSaved?.(saved);
+                panelData()?.onContentSaved?.(saved);
 
                 // Blank column beats a wrong locale.
                 expect(storeMock.refreshItem).toHaveBeenCalledWith(
@@ -823,9 +840,7 @@ describe('DotRelationshipFieldComponent', () => {
 
                 // Whether the row exists is the store's call (covered in its own spec); the
                 // component's job is only to resolve the language and hand it over.
-                spectator
-                    .query(DotEditContentSidePanelComponent)
-                    ?.data?.onContentSaved?.(buildItem({ identifier: 'someone-else' }));
+                panelData()?.onContentSaved?.(buildItem({ identifier: 'someone-else' }));
 
                 expect(storeMock.refreshItem).toHaveBeenCalledWith(
                     expect.objectContaining({ identifier: 'someone-else' })

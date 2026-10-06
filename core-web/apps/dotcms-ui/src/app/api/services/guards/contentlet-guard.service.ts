@@ -21,7 +21,7 @@ export class ContentletGuardService implements CanActivateChild {
         route: ActivatedRouteSnapshot,
         _state: RouterStateSnapshot
     ): Observable<boolean> {
-        return this.canAccessContentType(route.params.id);
+        return this.canAccessContentType(route.params['id']);
     }
 
     /**

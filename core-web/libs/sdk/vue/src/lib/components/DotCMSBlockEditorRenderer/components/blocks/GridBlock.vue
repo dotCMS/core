@@ -15,7 +15,7 @@ const props = defineProps<{
 }>();
 
 const cols = computed<number[]>(() => {
-    const raw = props.node.attrs?.columns;
+    const raw = props.node.attrs?.['columns'];
 
     return Array.isArray(raw) &&
         raw.length === 2 &&

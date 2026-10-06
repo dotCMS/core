@@ -177,13 +177,13 @@ describe('DotTemplatePropsComponent', () => {
                 expect(field.classes['field']).toBe(true);
 
                 expect(label.classes['p-label-input-required']).toBe(true);
-                expect(label.attributes.for).toBe('title');
+                expect(label.attributes['for']).toBe('title');
                 expect(label.nativeElement.textContent.trim()).toBe('Title');
 
-                expect(input.attributes.autofocus).toBeDefined();
-                expect(input.attributes.pInputText).toBeDefined();
-                expect(input.attributes.formControlName).toBe('title');
-                expect(input.attributes.id).toBe('title');
+                expect(input.attributes['autofocus']).toBeDefined();
+                expect(input.attributes['pInputText']).toBeDefined();
+                expect(input.attributes['formControlName']).toBe('title');
+                expect(input.attributes['id']).toBe('title');
 
                 expect(message).toBeDefined();
             });
@@ -195,11 +195,11 @@ describe('DotTemplatePropsComponent', () => {
 
                 expect(field.classes['field']).toBe(true);
 
-                expect(label.attributes.for).toBe('theme');
+                expect(label.attributes['for']).toBe('theme');
                 expect(label.nativeElement.textContent).toBe('Theme');
 
-                expect(selector.attributes.formControlName).toBe('theme');
-                expect(selector.attributes.id).toBe('theme');
+                expect(selector.attributes['formControlName']).toBe('theme');
+                expect(selector.attributes['id']).toBe('theme');
             });
 
             it('should setup description', () => {
@@ -209,12 +209,12 @@ describe('DotTemplatePropsComponent', () => {
 
                 expect(field.classes['field']).toBe(true);
 
-                expect(label.attributes.for).toBe('description');
+                expect(label.attributes['for']).toBe('description');
                 expect(label.nativeElement.textContent.trim()).toBe('Description');
 
-                expect(textarea.attributes.pInputTextarea).toBeDefined();
-                expect(textarea.attributes.formControlName).toBe('friendlyName');
-                expect(textarea.attributes.id).toBe('description');
+                expect(textarea.attributes['pInputTextarea']).toBeDefined();
+                expect(textarea.attributes['formControlName']).toBe('friendlyName');
+                expect(textarea.attributes['id']).toBe('description');
             });
 
             it('should setup thumbnail', () => {
@@ -223,7 +223,7 @@ describe('DotTemplatePropsComponent', () => {
 
                 expect(field.classes['field']).toBe(true);
 
-                expect(label.attributes.for).toContain('thumbnail');
+                expect(label.attributes['for']).toContain('thumbnail');
                 expect(label.nativeElement.textContent).toContain('Thumbnail');
 
                 // TODO: here we're using a webcomponent
@@ -246,7 +246,7 @@ describe('DotTemplatePropsComponent', () => {
         });
 
         it('should be valid when required fields are set', () => {
-            component.form.get('title').setValue('Hello World');
+            component.form.get('title')!.setValue('Hello World');
 
             expect(component.form.valid).toBe(true);
             expect(component.form.value).toEqual({
@@ -263,11 +263,11 @@ describe('DotTemplatePropsComponent', () => {
             const saveButton = de.query(By.css('[data-testid="dotFormDialogSave"]'));
             expect(saveButton.componentInstance.disabled).toBe(true);
 
-            component.form.get('title').setValue('Hello World');
+            component.form.get('title')!.setValue('Hello World');
             fixture.detectChanges();
             expect(saveButton.componentInstance.disabled).toBe(false);
 
-            component.form.get('title').setValue(''); // back to original value
+            component.form.get('title')!.setValue(''); // back to original value
             fixture.detectChanges();
             expect(saveButton.componentInstance.disabled).toBe(true);
         });

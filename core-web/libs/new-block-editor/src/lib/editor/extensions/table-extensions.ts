@@ -77,7 +77,7 @@ const DotTable = Table.extend({
 // ── DotTableCell / DotTableHeader (NodeViews with embedded handles) ────────────────
 
 interface CellExtensionOptions {
-    HTMLAttributes: Record<string, unknown>;
+    HTMLAttributes?: Record<string, unknown>;
     /** Injected by the editor component scope so click handlers can open the scoped popovers. */
     popovers: EditorPopoverService | null;
     /** i18n labels for the handle buttons; supplied at extension-construction time. */

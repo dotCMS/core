@@ -97,6 +97,8 @@ describe('DotFieldFilterMenuComponent', () => {
     beforeEach(() => {
         spectator = createComponent();
         filters = spectator.inject(DOT_FILTER_FACADE) as FilterFacadeMock;
+        // `SpyObject<T>` retypes the host's signals as `Mock`s, dropping `WritableSignal`'s
+        // `set`/`update` — so reaching the real signals this mock provides needs the double cast.
         host = spectator.inject(DOT_FIELD_FILTER_HOST) as unknown as Mocked<FieldFilterHostMock>;
         contentTypeService = spectator.inject(DotContentTypeService, true);
     });
