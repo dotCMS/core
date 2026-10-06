@@ -572,6 +572,13 @@
     </portlet>
 
     <portlet>
+        <portlet-name>network-beta</portlet-name>
+        <display-name>Network (Beta)</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+        <portlet-url>/network-beta</portlet-url>
+    </portlet>
+
+    <portlet>
         <portlet-name>dotAuth</portlet-name>
         <display-name>dotAuth</display-name>
         <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
