@@ -55,12 +55,15 @@ export const FOLDER_TREE_HIERARCHY_PAGE_SIZE = 200;
 export const FOLDER_NAME_FILTER_MIN_LENGTH = 2;
 
 /**
- * The search scope a drive starts on. All Fields is the no-regression choice: a user who does
- * nothing keeps exactly the results they got before the control existed, and the narrower, cheaper
- * path is opt-in.
+ * The search scope a drive starts on. Title, from feedback: an author typing into the box is
+ * usually looking for an item by its name, and matching every field buried the item under
+ * everything that mentioned the word. It is also the cheaper search. All Fields stays one click away.
+ *
+ * The server's own default is still All Fields, so the request names the scope whenever there is a
+ * term (see the store's `$request`), rather than leaving Title to be read as "nothing chosen".
  */
 export const DEFAULT_SEARCH_SCOPE: DotContentDriveSearchScope =
-    DOT_CONTENT_DRIVE_SEARCH_SCOPE.ALL_FIELDS;
+    DOT_CONTENT_DRIVE_SEARCH_SCOPE.TITLE;
 
 /** The key the search scope travels under, in the filter state and in the address. */
 export const SEARCH_SCOPE_FILTER_KEY = 'searchScope';
@@ -198,23 +201,28 @@ export const DIALOG_TYPE = {
 } as const;
 
 /**
- * Root styles for the Action Center dialog.
+ * Root sizing for the Action Center dialog, as classes rather than inline styles.
  *
  * Fixed height so the content box has something to flex against — without it the column sizes to
- * content and the body never scrolls. `display: flex` / `flex-direction: column` / `overflow: hidden`
- * are required: the theme gives `.p-dialog-content` `flex-grow: 1` and the header/footer
- * `flex-shrink: 0`, but `.p-dialog` itself is not a flex container — without that, `height: 80vh`
- * does not constrain the content and the whole dialog (footer included) grows past the viewport.
+ * content and the body never scrolls.
+ *
+ * **Classes, not `[style]`, and that is the whole point.** One `p-dialog` serves every dialog type
+ * in this portlet, so whatever styles a type applies have to come back off when the next type opens.
+ * PrimeNG's dialog root carries `[style]="sx('root')"` *and* `[ngStyle]="style"` on the same
+ * element; NgStyle's additions land, but its removals are overwritten by the template's own style
+ * map on the next change detection. The result was that the Action Center's `width`/`height` stayed
+ * on the root for the rest of the session — open the workflow center once and Folder Settings was
+ * sized wrong from then on. `[styleClass]` feeds `[class]`, an ordinary Angular class binding that
+ * reconciles properly. The content box is unaffected: it has `[ngStyle]` alone, nothing competing.
+ *
+ * `display: flex` and `flex-direction: column` are deliberately absent — `sx('root')` already sets
+ * both inline, which no class could override anyway.
+ *
+ * `max-h-[80vh]!` is the one that needs `!`: the theme puts `max-height: 90%` on `.p-dialog`, and
+ * a bare utility only ties with it on specificity.
  */
-export const ACTION_CENTER_DIALOG_STYLE = {
-    width: '42rem',
-    maxWidth: '92vw',
-    height: '80vh',
-    maxHeight: '80vh',
-    display: 'flex',
-    'flex-direction': 'column',
-    overflow: 'hidden'
-} as const;
+export const ACTION_CENTER_DIALOG_CLASS =
+    'w-168 max-w-[92vw] h-[80vh] max-h-[80vh]! overflow-hidden';
 
 /**
  * Content-box styles for the Action Center dialog — the dialog's only scroll container.
@@ -231,27 +239,6 @@ export const ACTION_CENTER_DIALOG_CONTENT_STYLE = {
     'min-height': '0',
     overflow: 'hidden',
     padding: '0'
-} as const;
-
-/**
- * Pass-through styling for the Action Center's "these folders can only be bundled" notice, which
- * spans the dialog edge to edge instead of sitting inset like the sections around it.
- *
- * `-mx-6` cancels the dialog body's `px-6`. Because that inset is *padding*, the notice grows into
- * the container's padding box rather than past its border box, so the body's `overflow-y-auto`
- * does not turn into a horizontal scrollbar. The dialog's own content box is `padding: 0` (see
- * {@link ACTION_CENTER_DIALOG_CONTENT_STYLE}), so `px-6` is the only inset to cancel.
- *
- * Both `!` flags are required rather than defensive. `.p-message` sets `border-radius` and
- * `.p-message-content` sets a `padding` shorthand; PrimeNG injects that stylesheet at runtime, so
- * at equal specificity it lands after Tailwind's and wins.
- *
- * The content keeps 24px of its own horizontal padding so the text stays on the same left edge as
- * the dialog header and the sections below it.
- */
-export const ACTION_CENTER_FOLDER_NOTICE_PT = {
-    root: { class: '-mx-6 rounded-none!' },
-    content: { class: 'px-6!' }
 } as const;
 
 export const DEFAULT_FILE_ASSET_TYPES = [{ id: 'FileAsset', name: 'File' }];
@@ -328,3 +315,27 @@ export const NEW_CONTENT_MARKER = 'new';
  * leaving. Keying them apart is what lets the indicator hand off from one to the other.
  */
 export const UPLOAD_BATCH_OPERATION = 'CONTENT_DRIVE_UPLOAD_BATCH';
+
+/**
+ * How many folder names a line prints before it counts them instead.
+ *
+ * Past this the line leads with the number and names none. Naming the first eight of fifty reads as
+ * "eight folders failed", which is worse than saying nothing.
+ *
+ * **What is lost, stated honestly:** the names past this point are not in the notification. They are
+ * in the run's durable record, which the author reaches by following the count (FR-027a) — so this
+ * is a readability trade, not information the client threw away.
+ */
+export const MAX_FOLDER_NAMES = 8;
+
+/**
+ * The operation keys bulk folder delete and duplicate runs are registered under.
+ *
+ * Paired with the run's targets it forms the repeat guard — *this operation over these folders* —
+ * so a delete running for minutes never blocks an unrelated action, nor a delete of different
+ * folders (FR-018). Kept here rather than imported from the quick-action registry: the store's
+ * guard key is its own concern, and tying it to a UI constant would make a rename of one silently
+ * change the other.
+ */
+export const DELETE_FOLDER_OPERATION = 'DELETE_FOLDER';
+export const DUPLICATE_FOLDER_OPERATION = 'DUPLICATE_FOLDER';

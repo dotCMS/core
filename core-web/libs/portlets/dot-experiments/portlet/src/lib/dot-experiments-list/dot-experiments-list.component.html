@@ -53,21 +53,50 @@
                 }
             </p-iconField>
 
-            <dot-experiment-list-filter
-                [title]="'experiments.list.filter.status' | dm"
-                [emptyLabel]="'experiments.list.filter.all' | dm"
-                [options]="$statusFilterOptions()"
-                [selected]="store.selectedStatuses()"
-                (selectionChange)="onStatusesChange($event)"
-                data-testid="experiments-status-filter" />
+            <dot-filter-bar>
+                <dot-experiment-list-filter
+                    [title]="'experiments.list.filter.status' | dm"
+                    [emptyLabel]="'experiments.list.filter.all' | dm"
+                    [options]="$statusFilterOptions()"
+                    [selected]="store.selectedStatuses()"
+                    (selectionChange)="onStatusesChange($event)"
+                    data-filter-chip="status"
+                    data-testid="experiments-status-filter" />
 
-            <dot-experiment-list-filter
-                [title]="'experiments.list.filter.goal' | dm"
-                [emptyLabel]="'experiments.list.filter.all' | dm"
-                [options]="$goalFilterOptions()"
-                [selected]="store.selectedGoals()"
-                (selectionChange)="onGoalsChange($event)"
-                data-testid="experiments-goal-filter" />
+                <dot-experiment-list-filter
+                    [title]="'experiments.list.filter.goal' | dm"
+                    [emptyLabel]="'experiments.list.filter.all' | dm"
+                    [options]="$goalFilterOptions()"
+                    [selected]="store.selectedGoals()"
+                    (selectionChange)="onGoalsChange($event)"
+                    data-filter-chip="goal"
+                    data-testid="experiments-goal-filter" />
+
+                <dot-experiment-schedule-filter
+                    [from]="store.scheduleFrom()"
+                    [to]="store.scheduleTo()"
+                    (selectionChange)="onScheduleChange($event)"
+                    data-filter-chip="schedule"
+                    data-testid="experiments-schedule-filter" />
+
+                <dot-user-filter
+                    titleKey="experiments.list.filter.created-by"
+                    emptyLabelKey="experiments.list.filter.all"
+                    [selected]="store.selectedCreators()"
+                    (selectionChange)="onCreatorsChange($event)"
+                    (loadFailed)="onDirectoryError($event)"
+                    data-filter-chip="createdBy"
+                    data-testid="experiments-created-by-filter" />
+
+                @if (store.isScheduleRangeUnusable()) {
+                    <small
+                        class="text-red-500"
+                        role="status"
+                        data-testid="experiments-schedule-range-error">
+                        {{ 'experiments.list.filter.schedule.invalid-range' | dm }}
+                    </small>
+                }
+            </dot-filter-bar>
 
             <p-button
                 class="ml-auto"
@@ -97,6 +126,7 @@
                 [lazy]="true"
                 (onLazyLoad)="onLazyLoad($event)"
                 [paginator]="true"
+                [alwaysShowPaginator]="false"
                 [showFirstLastIcon]="false"
                 [showPageLinks]="false"
                 [showCurrentPageReport]="true"
@@ -104,8 +134,10 @@
                 [rows]="store.perPage()"
                 [totalRecords]="store.totalRecords()"
                 [first]="(store.page() - 1) * store.perPage()"
+                [lazyLoadOnInit]="true"
                 dataKey="experiment.id"
-                [rowsPerPageOptions]="$rowsPerPageOptions()"
+                [rowsPerPageOptions]="ROWS_PER_PAGE_OPTIONS"
+                paginatorDropdownAppendTo="body"
                 [rowHover]="true"
                 [scrollable]="true"
                 scrollHeight="flex"
@@ -130,6 +162,11 @@
                         </th>
                         <th class="w-28 text-center! whitespace-nowrap">
                             {{ 'experiments.list.header.variants' | dm }}
+                        </th>
+                        <th
+                            class="w-40 whitespace-nowrap"
+                            data-testid="experiments-header-created-by">
+                            {{ 'experiments.list.header.created-by' | dm }}
                         </th>
                         <th class="w-60 whitespace-nowrap" pSortableColumn="schedule">
                             {{ 'experiments.list.header.schedule' | dm }}
@@ -195,11 +232,19 @@
                             }
                             <td class="whitespace-nowrap" data-testid="experiment-goal">
                                 {{
-                                    row.goalLabelKey ? (row.goalLabelKey | dm) : NO_GOAL_PLACEHOLDER
+                                    row.goalLabelKey
+                                        ? (row.goalLabelKey | dm)
+                                        : EMPTY_CELL_PLACEHOLDER
                                 }}
                             </td>
                             <td class="text-center!" data-testid="experiment-variants">
                                 {{ row.variants }}
+                            </td>
+                            <td
+                                class="max-w-40 truncate"
+                                [attr.title]="row.createdByName"
+                                data-testid="experiment-created-by">
+                                {{ row.createdByName ?? EMPTY_CELL_PLACEHOLDER }}
                             </td>
                             <td class="whitespace-nowrap" data-testid="experiment-schedule">
                                 {{ row.schedule }}

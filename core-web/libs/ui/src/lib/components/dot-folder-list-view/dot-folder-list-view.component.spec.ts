@@ -112,7 +112,8 @@ describe('DotFolderListViewComponent', () => {
                     Archived: 'Archived',
                     Revision: 'Revision',
                     Draft: 'Draft',
-                    New: 'New'
+                    New: 'New',
+                    'content-drive.list-view.edited-by.unknown': 'Unknown user'
                 })
             },
             mockProvider(DotcmsConfigService, new DotcmsConfigServiceMock()),
@@ -334,6 +335,19 @@ describe('DotFolderListViewComponent', () => {
      * Which rows an operation is currently running on. Narrower than `loading`, which says the whole
      * listing is being fetched.
      */
+    describe('edited by', () => {
+        it("should name an unknown editor in the product's words, in the cell and on hover", () => {
+            // Not the English literal: the fallback is user-facing text like any other.
+            spectator.setInput('items', [{ ...mockItems[0], modUserName: undefined }]);
+            spectator.detectChanges();
+
+            const cell = spectator.query(byTestId('item-mod-user-name'));
+
+            expect(cell?.textContent?.trim()).toBe('Unknown user');
+            expect(cell?.getAttribute('title')).toBe('Unknown user');
+        });
+    });
+
     describe('busyRows', () => {
         const busyItem = { ...mockItems[0], inode: 'busy-inode' };
 
@@ -350,6 +364,18 @@ describe('DotFolderListViewComponent', () => {
 
         it('should mark a row whose inode is running', () => {
             spectator.setInput('busyRows', [busyItem.inode]);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('row-busy'))).toBeTruthy();
+        });
+
+        it('should mark a row named by its identifier rather than its inode', () => {
+            // The sidebar tree's `isNodeInFlight` matches on either key, and the two surfaces are
+            // meant to give one answer (FR-014). A run registers both because the search service
+            // only backfills `inode` from `identifier` when the API returned none — so a producer
+            // that sends only the identifier would otherwise mark the folder in the tree and leave
+            // it live here.
+            spectator.setInput('busyRows', [busyItem.identifier]);
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('row-busy'))).toBeTruthy();
@@ -380,6 +406,24 @@ describe('DotFolderListViewComponent', () => {
 
             expect(box).toBeTruthy();
             expect(box?.querySelector('[data-testid="row-busy"]')).toBeTruthy();
+        });
+
+        it('should report a busy row to assistive technology', () => {
+            // #37063 FR-014a. The marking is conveyed by reduced opacity and disabled pointer
+            // events, both of which reach one sense only. For an operation that permanently
+            // destroys things, an author who cannot see the marking must still be told the row is
+            // busy before they act on it.
+            spectator.setInput('busyRows', [busyItem.inode]);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('item-row'))?.getAttribute('aria-busy')).toBe('true');
+        });
+
+        it('should not report an untouched row as busy', () => {
+            spectator.setInput('busyRows', ['some-other-inode']);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('item-row'))?.getAttribute('aria-busy')).toBeNull();
         });
 
         it('should leave rows the operation is not touching alone', () => {
@@ -1461,6 +1505,13 @@ describe('DotFolderListViewComponent', () => {
             const modUserName = 'modUserName' in firstItem ? firstItem.modUserName : 'Unknown';
 
             expect(modUserNameColumn.textContent.trim()).toBe(modUserName);
+        });
+
+        it('should offer the full editor name on hover, since a long one is clipped to the column', () => {
+            const modUserNameColumn = spectator.query(byTestId('item-mod-user-name'));
+            const modUserName = 'modUserName' in firstItem ? firstItem.modUserName : 'Unknown';
+
+            expect(modUserNameColumn?.getAttribute('title')).toBe(modUserName);
         });
 
         it('should have a mod date column', () => {

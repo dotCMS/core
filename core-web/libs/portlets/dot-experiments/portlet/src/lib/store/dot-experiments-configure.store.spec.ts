@@ -93,6 +93,7 @@ const buildGoals = (goal: Partial<Goal> = {}): Goals => ({
 const buildExperiment = (experiment: Partial<DotExperiment> = {}): DotExperiment => ({
     id: EXPERIMENT_ID,
     pageId: PAGE.pageId,
+    createdBy: 'dotcms.org.1',
     name: 'Alpha campaign',
     description: 'Checkout funnel rework',
     status: DotExperimentStatus.DRAFT,
@@ -2419,13 +2420,9 @@ describe('DotExperimentsConfigureStore', () => {
     });
 
     /**
-     * The weights themselves are the form's, not the store's: the Variants card writes them into its
-     * slice — Split Evenly included (AC23) — and they arrive here as `formEdited` like any other
-     * edit. What the store still owns is the *state* they produce.
-     */
-    /**
-     * The weights are a slice of the form, not state the store keeps: the card owns the rows and
-     * the store's only say is whether they are in a state worth sending.
+     * The weights are the form's, not the store's: the Variants card writes them into its slice —
+     * Split Evenly included (AC23) — and they arrive here as `formEdited` like any other edit. What
+     * the store still owns is whether they are in a state worth sending.
      */
     describe('weights (AC25)', () => {
         /** A split as the card reports it: the whole set of rows, not the one that changed. */

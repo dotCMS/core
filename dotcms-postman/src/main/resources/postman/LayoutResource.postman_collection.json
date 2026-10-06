@@ -1,0 +1,976 @@
+{
+ "info": {
+  "_postman_id": "4867f49d-b23c-4a93-8c56-a888d776b2af",
+  "name": "LayoutResource",
+  "description": "Contract tests for /api/v1/layouts (#37353): navigation section read, create, update, delete, reorder and tool-list writes, with the 200/400/401/403/404 status matrix.",
+  "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+ },
+ "auth": {
+  "type": "basic",
+  "basic": [
+   {
+    "key": "password",
+    "value": "admin",
+    "type": "string"
+   },
+   {
+    "key": "username",
+    "value": "admin@dotcms.com",
+    "type": "string"
+   }
+  ]
+ },
+ "event": [
+  {
+   "listen": "prerequest",
+   "script": {
+    "type": "text/javascript",
+    "exec": [
+     "if (!pm.collectionVariables.get('runId')) { pm.collectionVariables.set('runId', Date.now().toString(36)); }"
+    ]
+   }
+  }
+ ],
+ "variable": [
+  {
+   "key": "runId",
+   "value": ""
+  },
+  {
+   "key": "sectionId",
+   "value": ""
+  },
+  {
+   "key": "maxTabOrder",
+   "value": ""
+  },
+  {
+   "key": "currentOrder",
+   "value": ""
+  },
+  {
+   "key": "reversedOrder",
+   "value": ""
+  },
+  {
+   "key": "incompleteOrder",
+   "value": ""
+  }
+ ],
+ "item": [
+  {
+   "name": "Unauthenticated (must run first, before any session cookie exists)",
+   "item": [
+    {
+     "name": "Unauthenticated - list sections - 401",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": {
+       "raw": "{{serverURL}}/api/v1/layouts",
+       "host": [
+        "{{serverURL}}"
+       ],
+       "path": [
+        "api",
+        "v1",
+        "layouts"
+       ]
+      },
+      "auth": {
+       "type": "noauth"
+      }
+     },
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "// Runs before any authenticated request: the runner keeps one cookie jar per collection run,",
+         "// and a session cookie from an earlier admin request would authenticate this call (200).",
+         "pm.test('401', () => pm.response.to.have.status(401));"
+        ]
+       }
+      }
+     ],
+     "response": []
+    },
+    {
+     "name": "Unauthenticated - create section - 401",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": {
+       "raw": "{{serverURL}}/api/v1/layouts",
+       "host": [
+        "{{serverURL}}"
+       ],
+       "path": [
+        "api",
+        "v1",
+        "layouts"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n    \"name\": \"x\",\n    \"icon\": \"\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      },
+      "auth": {
+       "type": "noauth"
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('401', () => pm.response.to.have.status(401));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Unauthenticated - update section - 401",
+     "request": {
+      "method": "PUT",
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": {
+       "raw": "{{serverURL}}/api/v1/layouts/no-such-id",
+       "host": [
+        "{{serverURL}}"
+       ],
+       "path": [
+        "api",
+        "v1",
+        "layouts",
+        "no-such-id"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n    \"name\": \"x\",\n    \"icon\": \"\"\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      },
+      "auth": {
+       "type": "noauth"
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('401', () => pm.response.to.have.status(401));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Unauthenticated - delete section - 401",
+     "request": {
+      "method": "DELETE",
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": {
+       "raw": "{{serverURL}}/api/v1/layouts/no-such-id",
+       "host": [
+        "{{serverURL}}"
+       ],
+       "path": [
+        "api",
+        "v1",
+        "layouts",
+        "no-such-id"
+       ]
+      },
+      "auth": {
+       "type": "noauth"
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('401', () => pm.response.to.have.status(401));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Unauthenticated - reorder - 401",
+     "request": {
+      "method": "PUT",
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": {
+       "raw": "{{serverURL}}/api/v1/layouts/_reorder",
+       "host": [
+        "{{serverURL}}"
+       ],
+       "path": [
+        "api",
+        "v1",
+        "layouts",
+        "_reorder"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n    \"layoutIds\": [\n        \"a\"\n    ]\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      },
+      "auth": {
+       "type": "noauth"
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('401', () => pm.response.to.have.status(401));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Unauthenticated - set tools - 401",
+     "request": {
+      "method": "PUT",
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": {
+       "raw": "{{serverURL}}/api/v1/layouts/no-such-id/portlets",
+       "host": [
+        "{{serverURL}}"
+       ],
+       "path": [
+        "api",
+        "v1",
+        "layouts",
+        "no-such-id",
+        "portlets"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n    \"portletIds\": [\n        \"templates\"\n    ]\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      },
+      "auth": {
+       "type": "noauth"
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('401', () => pm.response.to.have.status(401));"
+        ]
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Layouts",
+   "item": [
+    {
+     "name": "US1 - list sections as admin - 200",
+     "request": {
+      "method": "GET",
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": {
+       "raw": "{{serverURL}}/api/v1/layouts",
+       "host": [
+        "{{serverURL}}"
+       ],
+       "path": [
+        "api",
+        "v1",
+        "layouts"
+       ]
+      }
+     },
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('200', () => pm.response.to.have.status(200));",
+         "const entity = pm.response.json().entity;",
+         "pm.test('entity is a non-empty array', () => { pm.expect(entity).to.be.an('array'); pm.expect(entity.length).to.be.above(0); });",
+         "pm.test('section shape', () => { const s = entity[0]; pm.expect(s).to.have.all.keys('id','name','icon','tabOrder','portletIds','portletTitles'); pm.expect(s.portletIds.length).to.eql(s.portletTitles.length); });",
+         "pm.test('no raw title keys', () => { entity.forEach(s => s.portletTitles.forEach(t => pm.expect(t).to.not.match(/^com\\.dotcms\\.repackage/))); });",
+         "pm.collectionVariables.set('originalOrder', JSON.stringify(entity.map(s => s.id)));",
+         "pm.collectionVariables.set('maxTabOrder', String(Math.max(...entity.map(s => s.tabOrder))));"
+        ]
+       }
+      }
+     ],
+     "response": []
+    },
+    {
+     "name": "US2 - create section - 200",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": {
+       "raw": "{{serverURL}}/api/v1/layouts",
+       "host": [
+        "{{serverURL}}"
+       ],
+       "path": [
+        "api",
+        "v1",
+        "layouts"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\"name\":\"PM Section {{runId}}\",\"icon\":\"bolt\"}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('200', () => pm.response.to.have.status(200));",
+         "const s = pm.response.json().entity;",
+         "pm.test('saved section returned', () => { pm.expect(s.name).to.eql('PM Section ' + pm.collectionVariables.get('runId')); pm.expect(s.icon).to.eql('bolt'); pm.expect(s.portletIds).to.eql([]); });",
+         "pm.test('appended after the last section', () => pm.expect(s.tabOrder).to.be.above(Number(pm.collectionVariables.get('maxTabOrder'))));",
+         "pm.collectionVariables.set('sectionId', s.id);"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "US2 - create duplicate name - 400",
+     "request": {
+      "method": "POST",
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": {
+       "raw": "{{serverURL}}/api/v1/layouts",
+       "host": [
+        "{{serverURL}}"
+       ],
+       "path": [
+        "api",
+        "v1",
+        "layouts"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\"name\":\"PM Section {{runId}}\",\"icon\":\"bolt\"}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('400', () => pm.response.to.have.status(400));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "US2 - update name and icon - 200",
+     "request": {
+      "method": "PUT",
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": {
+       "raw": "{{serverURL}}/api/v1/layouts/{{sectionId}}",
+       "host": [
+        "{{serverURL}}"
+       ],
+       "path": [
+        "api",
+        "v1",
+        "layouts",
+        "{{sectionId}}"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\"name\":\"PM Section {{runId}} renamed\",\"icon\":\"campaign\"}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('200', () => pm.response.to.have.status(200));",
+         "const s = pm.response.json().entity;",
+         "pm.test('name and icon changed', () => { pm.expect(s.name).to.eql('PM Section ' + pm.collectionVariables.get('runId') + ' renamed'); pm.expect(s.icon).to.eql('campaign'); });"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "US2 - update unknown id - 404",
+     "request": {
+      "method": "PUT",
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": {
+       "raw": "{{serverURL}}/api/v1/layouts/no-such-{{runId}}",
+       "host": [
+        "{{serverURL}}"
+       ],
+       "path": [
+        "api",
+        "v1",
+        "layouts",
+        "no-such-{{runId}}"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\"name\":\"x\",\"icon\":\"\"}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('404', () => pm.response.to.have.status(404));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "US3 - set tools in order - 200",
+     "request": {
+      "method": "PUT",
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": {
+       "raw": "{{serverURL}}/api/v1/layouts/{{sectionId}}/portlets",
+       "host": [
+        "{{serverURL}}"
+       ],
+       "path": [
+        "api",
+        "v1",
+        "layouts",
+        "{{sectionId}}",
+        "portlets"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n    \"portletIds\": [\n        \"templates\",\n        \"containers\"\n    ]\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('200', () => pm.response.to.have.status(200));",
+         "const list = pm.response.json().entity; const s = list.find(x => x.id === pm.collectionVariables.get('sectionId'));",
+         "pm.test('tools stored in sent order', () => pm.expect(s.portletIds).to.eql(['templates','containers']));",
+         "pm.test('titles aligned', () => pm.expect(s.portletTitles.length).to.eql(2));",
+         "pm.collectionVariables.set('currentOrder', JSON.stringify(list.map(x => x.id)));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "US3 - set tools unknown id - 400",
+     "request": {
+      "method": "PUT",
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": {
+       "raw": "{{serverURL}}/api/v1/layouts/{{sectionId}}/portlets",
+       "host": [
+        "{{serverURL}}"
+       ],
+       "path": [
+        "api",
+        "v1",
+        "layouts",
+        "{{sectionId}}",
+        "portlets"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n    \"portletIds\": [\n        \"templates\",\n        \"no-such-portlet\"\n    ]\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('400', () => pm.response.to.have.status(400));",
+         "pm.test('message names the id', () => pm.expect(pm.response.text()).to.include('no-such-portlet'));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "US3 - set tools duplicate id - 400",
+     "request": {
+      "method": "PUT",
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": {
+       "raw": "{{serverURL}}/api/v1/layouts/{{sectionId}}/portlets",
+       "host": [
+        "{{serverURL}}"
+       ],
+       "path": [
+        "api",
+        "v1",
+        "layouts",
+        "{{sectionId}}",
+        "portlets"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\n    \"portletIds\": [\n        \"templates\",\n        \"templates\"\n    ]\n}",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('400', () => pm.response.to.have.status(400));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "US4 - reorder reversed - 200",
+     "request": {
+      "method": "PUT",
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": {
+       "raw": "{{serverURL}}/api/v1/layouts/_reorder",
+       "host": [
+        "{{serverURL}}"
+       ],
+       "path": [
+        "api",
+        "v1",
+        "layouts",
+        "_reorder"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\"layoutIds\": {{reversedOrder}} }",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "prerequest",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "const cur = JSON.parse(pm.collectionVariables.get('currentOrder')); pm.collectionVariables.set('reversedOrder', JSON.stringify(cur.slice().reverse()));"
+        ]
+       }
+      },
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('200', () => pm.response.to.have.status(200));",
+         "const sent = JSON.parse(pm.collectionVariables.get('reversedOrder'));",
+         "pm.test('order equals sent', () => pm.expect(pm.response.json().entity.map(x => x.id)).to.eql(sent));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "US4 - reorder with one id missing - 400",
+     "request": {
+      "method": "PUT",
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": {
+       "raw": "{{serverURL}}/api/v1/layouts/_reorder",
+       "host": [
+        "{{serverURL}}"
+       ],
+       "path": [
+        "api",
+        "v1",
+        "layouts",
+        "_reorder"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\"layoutIds\": {{incompleteOrder}} }",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "prerequest",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "const cur = JSON.parse(pm.collectionVariables.get('currentOrder')); pm.collectionVariables.set('incompleteOrder', JSON.stringify(cur.slice(1)));"
+        ]
+       }
+      },
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('400', () => pm.response.to.have.status(400));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "US4 - restore original order - 200",
+     "request": {
+      "method": "PUT",
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": {
+       "raw": "{{serverURL}}/api/v1/layouts/_reorder",
+       "host": [
+        "{{serverURL}}"
+       ],
+       "path": [
+        "api",
+        "v1",
+        "layouts",
+        "_reorder"
+       ]
+      },
+      "body": {
+       "mode": "raw",
+       "raw": "{\"layoutIds\": {{currentOrder}} }",
+       "options": {
+        "raw": {
+         "language": "json"
+        }
+       }
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('200', () => pm.response.to.have.status(200));",
+         "pm.test('order restored', () => pm.expect(pm.response.json().entity.map(x => x.id)).to.eql(JSON.parse(pm.collectionVariables.get('currentOrder'))));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "US2 - delete Getting Started - 400",
+     "request": {
+      "method": "DELETE",
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": {
+       "raw": "{{serverURL}}/api/v1/layouts/2df9f117-b140-44bf-93d7-5b10a36fb7f9",
+       "host": [
+        "{{serverURL}}"
+       ],
+       "path": [
+        "api",
+        "v1",
+        "layouts",
+        "2df9f117-b140-44bf-93d7-5b10a36fb7f9"
+       ]
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('400', () => pm.response.to.have.status(400));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "US2 - delete section - 200",
+     "request": {
+      "method": "DELETE",
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": {
+       "raw": "{{serverURL}}/api/v1/layouts/{{sectionId}}",
+       "host": [
+        "{{serverURL}}"
+       ],
+       "path": [
+        "api",
+        "v1",
+        "layouts",
+        "{{sectionId}}"
+       ]
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('200', () => pm.response.to.have.status(200));",
+         "pm.test('section gone from list', () => pm.expect(pm.response.json().entity.map(x => x.id)).to.not.include(pm.collectionVariables.get('sectionId')));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "US2 - delete unknown id - 404",
+     "request": {
+      "method": "DELETE",
+      "header": [
+       {
+        "key": "Content-Type",
+        "value": "application/json"
+       }
+      ],
+      "url": {
+       "raw": "{{serverURL}}/api/v1/layouts/no-such-{{runId}}",
+       "host": [
+        "{{serverURL}}"
+       ],
+       "path": [
+        "api",
+        "v1",
+        "layouts",
+        "no-such-{{runId}}"
+       ]
+      }
+     },
+     "response": [],
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('404', () => pm.response.to.have.status(404));"
+        ]
+       }
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

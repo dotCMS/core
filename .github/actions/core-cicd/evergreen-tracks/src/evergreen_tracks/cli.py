@@ -6,13 +6,18 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import json
 import logging
 import os
 import sys
 
+import requests
+
 from .calver import age_days, newest, parse_release
 from .executor import delete_tag, hub_login, point_tag
-from .markers import TRACKS, held_tracks, hold_tag, tainted_versions, taint_tag
+from .markers import (
+    TRACKS, held_tracks, hold_tag, tainted_versions, taint_tag, taint_title, untaint_title,
+)
 from .planner import TrackState, plan
 from .registry import list_tags
 
@@ -221,6 +226,65 @@ def cmd_admin(args: argparse.Namespace) -> int:
     return 2
 
 
+class IncompleteStateError(RuntimeError):
+    """A track tag is missing or its digest matches no GA release."""
+
+
+def hub_state(repo: str) -> dict:
+    """Full Hub snapshot: where each track points plus the GA versions tainted. Holds are ignored."""
+    releases, tainted, _held, digests = _state(repo)
+    state: dict = {}
+    for track in TRACKS:
+        version = _current_version(track, digests, releases)
+        if version is None:
+            raise IncompleteStateError(f"cannot resolve track {track!r} to a GA version")
+        state[track] = version
+    state["tainted"] = sorted(
+        (v for v in tainted if parse_release(v)), key=lambda v: parse_release(v).sort_key
+    )
+    return state
+
+
+def as_if(state: dict, action: str, version: str, track: str) -> dict:
+    """The snapshot as it would look after an admin action (dry-run preview). Pure."""
+    out = {**state, "tainted": list(state["tainted"])}
+    if action == "taint" and version not in out["tainted"]:
+        out["tainted"].append(version)
+    elif action == "untaint" and version in out["tainted"]:
+        out["tainted"].remove(version)
+    elif action == "hold":
+        out[track] = version
+    out["tainted"].sort(key=lambda v: parse_release(v).sort_key)
+    return out
+
+
+def cmd_state(args: argparse.Namespace) -> int:
+    action = args.as_if_action
+    # Validate before any Hub read so a usage error costs no calls.
+    if action in ("taint", "untaint", "hold") and not parse_release(args.as_if_version):
+        log.error("--as-if-action %s needs a GA --as-if-version; got %r", action, args.as_if_version)
+        return 2
+    if action in ("hold", "release-hold") and args.as_if_track not in TRACKS:
+        log.error("--as-if-action %s needs --as-if-track in %s", action, ", ".join(TRACKS))
+        return 2
+    try:
+        state = hub_state(args.repo)
+    except (requests.RequestException, RuntimeError) as exc:
+        log.error("hub state read failed: %s", exc)
+        return 1
+    if action:
+        state = as_if(state, action, args.as_if_version, args.as_if_track)
+    with open(args.out, "w", encoding="utf-8") as fh:
+        fh.write(json.dumps(state) + "\n")
+    log.info("hub state: %s", json.dumps(state))
+    return 0
+
+
+def cmd_release_title(args: argparse.Namespace) -> int:
+    print((taint_title if args.action == "taint" else untaint_title)(args.title))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="evergreen-tracks")
     sub = p.add_subparsers(dest="command", required=True)
@@ -244,6 +308,20 @@ def build_parser() -> argparse.ArgumentParser:
     ad.add_argument("--track", default="")
     ad.add_argument("--force", action="store_true")
     ad.set_defaults(func=cmd_admin)
+
+    st = sub.add_parser("state", help="write the Hub track/taint snapshot as JSON (read-only)")
+    st.add_argument("--repo", required=True)
+    st.add_argument("--out", required=True)
+    st.add_argument("--as-if-action", default="",
+                    choices=["", "taint", "untaint", "hold", "release-hold"])
+    st.add_argument("--as-if-version", default="")
+    st.add_argument("--as-if-track", default="")
+    st.set_defaults(func=cmd_state)
+
+    rt = sub.add_parser("release-title", help="print a GitHub Release title with the taint marker added/removed")
+    rt.add_argument("--action", required=True, choices=["taint", "untaint"])
+    rt.add_argument("--title", required=True)
+    rt.set_defaults(func=cmd_release_title)
     return p
 
 

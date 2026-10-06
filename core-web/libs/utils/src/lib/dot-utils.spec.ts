@@ -585,11 +585,24 @@ describe('Dot Utils', () => {
 
     describe('isDotIdentifier', () => {
         const VALID = '65e105ad-4338-45f4-a8ad-1a6a1e325e6e';
+        const LEGACY = '3e1923c63245fbe5fc0e26c8630c9917';
 
         it('accepts a 36-character UUID, in either case', () => {
             expect(isDotIdentifier(VALID)).toBe(true);
             expect(isDotIdentifier(VALID.toUpperCase())).toBe(true);
             expect(isDotIdentifier(`  ${VALID}  `)).toBe(true);
+        });
+
+        /**
+         * The second shape dotCMS actually stores, and the one this check used to reject. Every
+         * identifier the starter carries is 32 hex digits with no dashes — `/members/index` on
+         * demo is `3e1923c6…` — so rejecting it made three of that site's twenty-three pages
+         * report themselves as moved or deleted before a request was ever made.
+         */
+        it('accepts a 32-character identifier with no dashes, in either case', () => {
+            expect(isDotIdentifier(LEGACY)).toBe(true);
+            expect(isDotIdentifier(LEGACY.toUpperCase())).toBe(true);
+            expect(isDotIdentifier(`  ${LEGACY}  `)).toBe(true);
         });
 
         it('rejects an absent value', () => {
@@ -608,6 +621,19 @@ describe('Dot Utils', () => {
             expect(isDotIdentifier('+identifier:x')).toBe(false);
             expect(isDotIdentifier(`${VALID}*`)).toBe(false);
             expect(isDotIdentifier('not-a-uuid')).toBe(false);
+            expect(isDotIdentifier(`${LEGACY} OR +contentType:Host`)).toBe(false);
+            expect(isDotIdentifier(`${LEGACY}*`)).toBe(false);
+        });
+
+        /**
+         * Widening to the dashless shape must not widen it to "any hex-ish string": a length
+         * between the two, or one digit over, is not an identifier and would still be
+         * concatenated into a query.
+         */
+        it('rejects hex of any other length', () => {
+            expect(isDotIdentifier(LEGACY.slice(0, 31))).toBe(false);
+            expect(isDotIdentifier(`${LEGACY}a`)).toBe(false);
+            expect(isDotIdentifier(VALID.replace(/-/g, '').slice(0, 30))).toBe(false);
         });
     });
 });

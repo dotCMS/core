@@ -167,7 +167,8 @@ public class ContentResource {
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .init();
-        final Contentlet contentlet = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(contentId);
+        // Include archived content: it still has a push history and is still editable.
+        final Contentlet contentlet = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(contentId, true);
         if (!UtilMethods.isSet(contentlet)) {
             throw new ResourceNotFoundException(String.format("Content ID '%s' does not exist", contentId));
         }

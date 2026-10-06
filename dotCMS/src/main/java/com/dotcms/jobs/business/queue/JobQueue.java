@@ -284,6 +284,22 @@ public interface JobQueue {
     void updateJobProgress(String jobId, float progress) throws JobQueueDataException;
 
     /**
+     * Refreshes a job's {@code updated_at} timestamp without changing its reported progress.
+     * <p>
+     * Exists for processors whose progress can only be reported at a coarse granularity, so a unit
+     * of work that runs longer than the abandonment threshold without the reported percentage
+     * moving is not mistaken for a dead job — #37063, spec FR-024a. Deliberately a separate
+     * operation from {@link #updateJobProgress(String, float)}: that method's callers rely on its
+     * progress-changed side effects (an event reaching job watchers); this one must have none, or a
+     * client watching progress would see spurious, imprecise updates the server has no real
+     * granularity to back up.
+     *
+     * @param jobId The ID of the job to touch.
+     * @throws JobQueueDataException if there's a data storage error while touching the job
+     */
+    void touchJob(String jobId) throws JobQueueDataException;
+
+    /**
      * Checks if a job has ever been in a specific state.
      *
      * @param jobId The ID of the job to check.

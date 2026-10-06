@@ -1,20 +1,29 @@
 import {
+    ContentTypeColumnField,
+    ContentTypeKeyValueField,
+    ContentTypeRowField,
+    ContentTypeSelectField,
+    ContentTypeTextField,
     DotCMSClazzes,
-    DotCMSContentTypeField,
-    DotCMSContentTypeLayoutRow
+    DotCMSContentTypeLayoutRow,
+    DotCMSDataTypes,
+    DotCMSFieldTypes
 } from '@dotcms/dotcms-models';
 
 import { DotContentletItem } from '../models/dot-contentlet-item.model';
 
-export const basicField: DotCMSContentTypeField = {
-    clazz: DotCMSClazzes.TEXT,
+/**
+ * Properties every field mock shares. The discriminating trio — `clazz`, `dataType` and
+ * `fieldType` — is deliberately left out so each mock below pins its own arm of the
+ * `DotCMSContentTypeField` union.
+ */
+const commonFieldProperties = {
     contentTypeId: '',
-    dataType: '',
     defaultValue: '',
-    fieldType: '',
     fieldTypeLabel: '',
     fieldVariables: [],
     fixed: true,
+    forceIncludeInApi: false,
     hint: '',
     iDate: 100,
     id: '',
@@ -23,7 +32,6 @@ export const basicField: DotCMSContentTypeField = {
     modDate: 100,
     name: '',
     readOnly: true,
-    regexCheck: '',
     required: true,
     searchable: true,
     sortOrder: 100,
@@ -32,63 +40,78 @@ export const basicField: DotCMSContentTypeField = {
     variable: ''
 };
 
+export const basicField: ContentTypeTextField = {
+    ...commonFieldProperties,
+    clazz: DotCMSClazzes.TEXT,
+    dataType: DotCMSDataTypes.TEXT,
+    fieldType: DotCMSFieldTypes.TEXT,
+    regexCheck: ''
+};
+
+const rowDivider: ContentTypeRowField = {
+    ...commonFieldProperties,
+    clazz: DotCMSClazzes.ROW,
+    dataType: DotCMSDataTypes.SYSTEM,
+    fieldType: DotCMSFieldTypes.ROW
+};
+
+const columnDivider: ContentTypeColumnField = {
+    ...commonFieldProperties,
+    clazz: DotCMSClazzes.COLUMN,
+    dataType: DotCMSDataTypes.SYSTEM,
+    fieldType: DotCMSFieldTypes.COLUMN
+};
+
+export const textFieldMock: ContentTypeTextField = {
+    ...basicField,
+    variable: 'textfield1',
+    required: true,
+    name: 'TexField'
+};
+
+export const keyValueFieldMock: ContentTypeKeyValueField = {
+    ...commonFieldProperties,
+    clazz: DotCMSClazzes.KEY_VALUE,
+    dataType: DotCMSDataTypes.LONG_TEXT,
+    fieldType: DotCMSFieldTypes.KEY_VALUE,
+    defaultValue: 'key|value,llave|valor',
+    name: 'Key Value:',
+    required: false,
+    variable: 'keyvalue2'
+};
+
+export const selectFieldMock: ContentTypeSelectField = {
+    ...commonFieldProperties,
+    clazz: DotCMSClazzes.SELECT,
+    dataType: DotCMSDataTypes.TEXT,
+    fieldType: DotCMSFieldTypes.SELECT,
+    defaultValue: '2',
+    name: 'Dropdwon',
+    required: false,
+    values: '|,labelA|1,labelB|2,labelC|3',
+    variable: 'dropdown3'
+};
+
 export const dotFormLayoutMock: DotCMSContentTypeLayoutRow[] = [
     {
-        divider: {
-            ...basicField
-        },
+        divider: { ...rowDivider },
         columns: [
             {
-                columnDivider: {
-                    ...basicField
-                },
-                fields: [
-                    {
-                        ...basicField,
-                        variable: 'textfield1',
-                        required: true,
-                        name: 'TexField',
-                        fieldType: 'Text'
-                    }
-                ]
+                columnDivider: { ...columnDivider },
+                fields: [textFieldMock]
             }
         ]
     },
     {
-        divider: {
-            ...basicField
-        },
+        divider: { ...rowDivider },
         columns: [
             {
-                columnDivider: {
-                    ...basicField
-                },
-                fields: [
-                    {
-                        ...basicField,
-                        defaultValue: 'key|value,llave|valor',
-                        fieldType: 'Key-Value',
-                        name: 'Key Value:',
-                        required: false,
-                        variable: 'keyvalue2'
-                    }
-                ]
+                columnDivider: { ...columnDivider },
+                fields: [keyValueFieldMock]
             },
             {
-                columnDivider: {
-                    ...basicField
-                },
-                fields: [
-                    {
-                        ...basicField,
-                        defaultValue: '2',
-                        fieldType: 'Select',
-                        name: 'Dropdwon',
-                        required: false,
-                        values: '|,labelA|1,labelB|2,labelC|3',
-                        variable: 'dropdown3'
-                    }
-                ]
+                columnDivider: { ...columnDivider },
+                fields: [selectFieldMock]
             }
         ]
     }
@@ -96,24 +119,11 @@ export const dotFormLayoutMock: DotCMSContentTypeLayoutRow[] = [
 
 export const fieldMockNotRequired: DotCMSContentTypeLayoutRow[] = [
     {
-        divider: {
-            ...basicField
-        },
+        divider: { ...rowDivider },
         columns: [
             {
-                columnDivider: {
-                    ...basicField
-                },
-                fields: [
-                    {
-                        ...basicField,
-                        defaultValue: 'key|value,llave|valor',
-                        fieldType: 'Key-Value',
-                        name: 'Key Value:',
-                        required: false,
-                        variable: 'keyvalue2'
-                    }
-                ]
+                columnDivider: { ...columnDivider },
+                fields: [keyValueFieldMock]
             }
         ]
     }

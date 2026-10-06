@@ -1,0 +1,434 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "serialNumber": "urn:uuid:e541e2ad-e548-4222-a8d2-1db366e80eb5",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-09-21T17:09:53.646Z",
+    "lifecycles": [
+      {
+        "phase": "build"
+      }
+    ],
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "pnpm",
+          "version": "12.4.2"
+        }
+      ]
+    },
+    "component": {
+      "type": "library",
+      "name": "dotcms-postman",
+      "version": "1.0.0",
+      "purl": "pkg:npm/dotcms-postman@1.0.0",
+      "bom-ref": "pkg:npm/dotcms-postman@1.0.0",
+      "description": "newman test runner",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    }
+  },
+  "components": [
+    {
+      "type": "library",
+      "name": "xml2js",
+      "version": "0.6.2",
+      "purl": "pkg:npm/xml2js@0.6.2",
+      "bom-ref": "pkg:npm/xml2js@0.6.2",
+      "description": "Simple XML to JavaScript object converter.",
+      "authors": [
+        {
+          "name": "Marek Kubica <marek@xivilization.net> (https://xivilization.net)"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/xml2js/-/xml2js-0.6.2.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "4f8ae2787682d445dc112d0ac718f825681a5101c393eab01dc60e0851df8b02b3eed3953cbabb1e3abd74cd5608c87296a3047cfee131c3880a1be8b6265e80"
+            }
+          ]
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/Leonidas-from-XIV/node-xml2js"
+        },
+        {
+          "type": "vcs",
+          "url": "https://github.com/Leonidas-from-XIV/node-xml2js.git"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "xmlbuilder",
+      "version": "11.0.1",
+      "purl": "pkg:npm/xmlbuilder@11.0.1",
+      "bom-ref": "pkg:npm/xmlbuilder@11.0.1",
+      "description": "An XML builder for node.js",
+      "authors": [
+        {
+          "name": "Ozgur Ozcitak <oozcitak@gmail.com>"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/xmlbuilder/-/xmlbuilder-11.0.1.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "7c396c23f905131ee02ef6de71cd3fa212c6e747ee810a7caf21f3313b96f6f49ad462745d858a9e1b14c7ba227b71bdf3eaf9e9a4d0214078921b78d91dc9bc"
+            }
+          ]
+        },
+        {
+          "type": "website",
+          "url": "http://github.com/oozcitak/xmlbuilder-js"
+        },
+        {
+          "type": "vcs",
+          "url": "git://github.com/oozcitak/xmlbuilder-js.git"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "http://github.com/oozcitak/xmlbuilder-js/issues"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "sax",
+      "version": "1.4.1",
+      "purl": "pkg:npm/sax@1.4.1",
+      "bom-ref": "pkg:npm/sax@1.4.1",
+      "description": "An evented streaming XML parser in JavaScript",
+      "authors": [
+        {
+          "name": "Isaac Z. Schlueter <i@izs.me> (http://blog.izs.me/)"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "ISC"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/sax/-/sax-1.4.1.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "f9a58ecfbc9549c106a0a35de0f035d0b67cb24d00ff3e7e9d7406e608943b9ae9ad7f63818b13768bfda827216623c865ecdb647fa346eb7c9cfa1d1405f826"
+            }
+          ]
+        },
+        {
+          "type": "vcs",
+          "url": "git://github.com/isaacs/sax-js.git"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "newman",
+      "version": "6.2.1",
+      "purl": "pkg:npm/newman@6.2.1",
+      "bom-ref": "pkg:npm/newman@6.2.1",
+      "description": "Command-line companion utility for Postman",
+      "authors": [
+        {
+          "name": "Postman Labs <help@postman.com> (=)"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/newman/-/newman-6.2.1.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "66af12af918517e397b39c886f28252cc28c87558d323615574c99692059f8322040e2167314fc4137dbae5fd8506acbc93e2b8e9bbec99fd9fa4a33c3bf4610"
+            }
+          ]
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/postmanlabs/newman"
+        },
+        {
+          "type": "vcs",
+          "url": "git://github.com/postmanlabs/newman.git"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/postmanlabs/newman/issues"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "word-wrap",
+      "version": "1.2.5",
+      "purl": "pkg:npm/word-wrap@1.2.5",
+      "bom-ref": "pkg:npm/word-wrap@1.2.5",
+      "description": "Wrap words to a specified length.",
+      "authors": [
+        {
+          "name": "Jon Schlinkert (https://github.com/jonschlinkert)"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/word-wrap/-/word-wrap-1.2.5.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "04ddb607979a30c23d50cb63ac677983978260fa423c3532d052576d8b1a4f9cd8c6314e7244b9dd2403137a56915a16a475d56f706b61c10de13c1ae7907970"
+            }
+          ]
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/jonschlinkert/word-wrap"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/jonschlinkert/word-wrap.git"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/jonschlinkert/word-wrap/issues"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "postman-collection-transformer",
+      "version": "4.1.8",
+      "purl": "pkg:npm/postman-collection-transformer@4.1.8",
+      "bom-ref": "pkg:npm/postman-collection-transformer@4.1.8",
+      "description": "Perform rapid conversation and validation of JSON structure between Postman Collection Format v1 and v2",
+      "authors": [
+        {
+          "name": "Postman Inc."
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/postman-collection-transformer/-/postman-collection-transformer-4.1.8.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "b2627a5fb67b91b83a869ec964f162c6b48ddc9dd691079dec3ad6082e6d17b23138ca452ea86d4ed1acb18f270f58a73fcfa625ff8def63dfdadb540078012b"
+            }
+          ]
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/postmanlabs/postman-collection-transformer#readme"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/postmanlabs/postman-collection-transformer.git"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/postmanlabs/postman-collection-transformer/issues"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "commander",
+      "version": "8.3.0",
+      "purl": "pkg:npm/commander@8.3.0",
+      "bom-ref": "pkg:npm/commander@8.3.0",
+      "description": "the complete solution for node.js command-line programs",
+      "authors": [
+        {
+          "name": "TJ Holowaychuk <tj@vision-media.ca>"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/commander/-/commander-8.3.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "3a44cbf6e99ff877b60d9914abc7fc27da1fef22fa449288db875521306635f6419ab8bdcd8650aca92e5e22a1c9f3d2bbcb5486754107588a5debef9e54785b"
+            }
+          ]
+        },
+        {
+          "type": "vcs",
+          "url": "https://github.com/tj/commander.js.git"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "lodash",
+      "version": "4.17.21",
+      "purl": "pkg:npm/lodash@4.17.21",
+      "bom-ref": "pkg:npm/lodash@4.17.21",
+      "description": "Lodash modular utilities.",
+      "authors": [
+        {
+          "name": "John-David Dalton <john.david.dalton@gmail.com>"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/lodash/-/lodash-4.17.21.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "bf690311ee7b95e713ba568322e3533f2dd1cb880b189e99d4edef13592b81764daec43e2c54c61d5c558dc5cfb35ecb85b65519e74026ff17675b6f8f916f4a"
+            }
+          ]
+        },
+        {
+          "type": "website",
+          "url": "https://lodash.com/"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/lodash/lodash.git"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "stack-trace",
+      "version": "0.0.9",
+      "purl": "pkg:npm/stack-trace@0.0.9",
+      "bom-ref": "pkg:npm/stack-trace@0.0.9",
+      "description": "Get v8 stack traces as an array of CallSite objects.",
+      "authors": [
+        {
+          "name": "Felix Geisendörfer <felix@debuggable.com> (http://debuggable.com/)"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/stack-trace/-/stack-trace-0.0.9.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "be351ceac7e0b6063477109d9dce3498ae8e7ed8e8f7ed8af07fcd1bcd5332180bdfdd85b623c0f6d9fd44bc93c579932cf24f8c5dd5cb3169e9bb1614b8ac31"
+            }
+          ]
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/felixge/node-stack-trace"
+        },
+        {
+          "type": "vcs",
+          "url": "git://github.com/felixge/node-stack-trace.git"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "httpntlm",
+      "version": "1.8.13",
+      "purl": "pkg:npm/httpntlm@1.8.13",
+      "bom-ref": "pkg:npm/httpntlm@1.8.13",
+      "description": "httpntlm is a Node.js library to do HTTP NTLM authentication",
+      "authors": [
+        {
+          "name": "Sam Decrock"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/httpntlm/-/httpntlm-1.8.13.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "d85d850cf8964f8adec0fccd320dee3e13643f7344c443655060034540cf42fb9fb6e513196f7c9cb66d19e982216dc6e345615996209080dc40503067799fd9"
+            }
+          ]
+        },
+        {
+          "type": "vcs",
+          "url": "git://github.com/SamDecrock/node-http-ntlm.git"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/SamDecrock/node-http-ntlm/issues"
+        }
+      ]
+    }
+  ]
+}

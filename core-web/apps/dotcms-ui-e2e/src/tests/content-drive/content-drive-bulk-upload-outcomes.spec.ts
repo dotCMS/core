@@ -94,6 +94,32 @@ test.describe('Content Drive bulk upload outcomes', () => {
             await drive.expectHandedToBackground();
         }));
 
+    test('keeps reporting a batch across a reload, until it finishes', ({
+        adminPage,
+        apiHelpers,
+        testSuffix
+    }) =>
+        inSeededFolder(
+            { adminPage, apiHelpers, name: `cd-reload-${testSuffix}` },
+            async (drive) => {
+                // A few files are enough: the page reloads straight after handing the batch off, so
+                // it is still queued or running when the page reads the queue back. More only
+                // lengthens the wait, and CI processes each file in about fifteen seconds.
+                await drive.chooseGeneratedFilesForUpload(8, `reload-${testSuffix}`);
+                await drive.expectHandedToBackground();
+
+                // The status used to go with the page while the batch carried on. It is put
+                // back from the upload queue's active listing, and the completion ends it.
+                await adminPage.reload();
+                // By its own count: every test here uploads as the same admin, and the restore
+                // puts back each of that user's batches, so a sibling's status can be on screen too.
+                // No other test sends eight files.
+                await drive.expectStatusToastContaining('Uploading 8 files in the background');
+                // Longer than any other outcome here: the whole batch has to finish first.
+                await drive.expectStatusToastGoneContaining('Uploading 8 files', 240000);
+            }
+        ));
+
     test('names the file that collided, and still uploads the rest', ({
         adminPage,
         apiHelpers,

@@ -1,11 +1,10 @@
 # Angular SSR with dotCMS Integration
 
 > [!NOTE]
-> This example's `@dotcms/*` dependencies are pinned to `latest`, matching a dotCMS Evergreen
-> instance (always the current release). If your dotCMS instance is **not** on Evergreen — an
-> older self-hosted release, or an LTS server — installing as-is may fail with GraphQL
-> `FieldUndefined` errors. Check your server's version and replace `latest` with that exact
-> version for every `@dotcms/*` entry in `package.json` before installing.
+> This example's `@dotcms/*` dependencies are pinned to `latest`, matching a dotCMS Evergreen instance (always the current release). If your dotCMS instance is **not** on Evergreen — an older self-hosted release, or an LTS server — installing as-is may fail with GraphQL `FieldUndefined` errors. Check your server's version and replace `latest` with that exact version for every `@dotcms/*` entry in `package.json` before installing.
+
+> [!IMPORTANT]
+> **Maintainers:** this example and [`examples/angular`](../angular) must stay on the same Angular version. `@dotcms/angular` is built against the Angular version in `core-web`, so an example left a major behind cannot build against the SDK it exists to demonstrate ([#37681](https://github.com/dotCMS/core/issues/37681)). Upgrade both in the same PR, one major at a time with `ng update`.
 
 This Angular project demonstrates how to implement editable dotCMS pages using Angular Server Side Rendering (SSR). It showcases best practices for integrating dotCMS content management with Angular's hybrid rendering capabilities.
 
@@ -29,6 +28,8 @@ This Angular project demonstrates how to implement editable dotCMS pages using A
 For the official Angular SSR guide, visit: [Angular SSR Documentation](https://angular.dev/guide/ssr)
 
 ## Getting Started
+
+Requires Node.js `^22.22.3`, `^24.15.0` or `>=26` (required by Angular 22) and npm.
 
 ### Setup
 

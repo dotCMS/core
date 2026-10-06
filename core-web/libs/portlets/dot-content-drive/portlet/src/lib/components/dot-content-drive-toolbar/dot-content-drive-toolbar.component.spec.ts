@@ -87,6 +87,9 @@ describe('DotContentDriveToolbarComponent', () => {
     >(undefined);
     const actionExecutionSignal = signal<DotContentDriveActionExecution | undefined>(undefined);
     const activeRunCountSignal = signal<number>(0);
+    // How many of those runs lock the Action Center. Follows the count above unless a test says
+    // otherwise, since only a backgrounded run tells them apart.
+    const blockingRunCountOverride = signal<number | undefined>(undefined);
     // The field-filter chips read these through DOT_FIELD_FILTER_HOST, and the toolbar reads the
     // same pair off the store to render one chip per active field — so both point here.
     const userSearchableFieldsSignal = signal<DotCMSContentTypeField[]>([]);
@@ -151,6 +154,9 @@ describe('DotContentDriveToolbarComponent', () => {
                 // speak for themselves, which today means an upload.
                 toolbarRun: actionExecutionSignal,
                 toolbarRunCount: activeRunCountSignal,
+                toolbarBlockingRunCount: computed(
+                    () => blockingRunCountOverride() ?? activeRunCountSignal()
+                ),
                 siteCanAddChildren: siteCanAddChildrenSignal,
                 $allSiteContentSelected: allSiteContentSelectedSignal,
                 $systemHostSelected: systemHostSelectedSignal,
@@ -250,6 +256,7 @@ describe('DotContentDriveToolbarComponent', () => {
         selectedNodeSignal.set(undefined);
         actionExecutionSignal.set(undefined);
         activeRunCountSignal.set(0);
+        blockingRunCountOverride.set(undefined);
     });
 
     it('should render toolbar container', () => {
@@ -729,6 +736,22 @@ describe('DotContentDriveToolbarComponent', () => {
                 ?.querySelector('button');
 
             expect(button?.disabled).toBe(true);
+        });
+
+        it('should stay available while only a background run is in flight', async () => {
+            // A folder duplicate is reported on the indicator but leaves everything usable, so
+            // the Action Center is not refused while it runs.
+            selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            activeRunCountSignal.set(1);
+            blockingRunCountOverride.set(0);
+            await settleToolbarAnimation(spectator);
+
+            const button = spectator
+                .query(byTestId('action-center-button'))
+                ?.querySelector('button');
+
+            expect(button?.disabled).toBe(false);
+            expect(spectator.component.$actionCenterTooltip()).toBe('');
         });
 
         it('should stay disabled when several actions are running at once', async () => {

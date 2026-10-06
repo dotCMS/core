@@ -26,6 +26,16 @@ public interface SiteSearchAPI {
 	List<String> listIndices();
 
 	/**
+	 * Same as {@link #listIndices()}, but a failure to reach the engine propagates instead of being
+	 * answered with an empty list — for callers that must tell "no site-search indices" from "could
+	 * not ask", such as the migration readiness report (issue #37636). Implementations whose
+	 * {@code listIndices()} already propagates need not override it.
+	 */
+	default List<String> listIndicesOrThrow() {
+		return listIndices();
+	}
+
+	/**
 	 * Whether {@code indexName} exists on every engine that receives writes in the current migration
 	 * phase (Phase&nbsp;0 → ES only; Phases&nbsp;1/2 → ES and OpenSearch; Phase&nbsp;3 → OpenSearch
 	 * only).

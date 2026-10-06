@@ -62,6 +62,32 @@ The workflow branches Slack wording on this contract, so it is fixed here before
 - This is what lets `cicd_comp_changelog-site-publish-phase.yml`'s single Slack notice say
   **FAILED** for a non-zero exit and **SKIPPED** when the marker is present (FR-008, US3).
 
+## Site sync (`sync-site`)
+
+Reconciles the corpsites `EvergreenState` record (latest / standard / trailing / tainted) with a
+Docker Hub snapshot written by `evergreen-tracks state`:
+
+    uv run changelog-publisher sync-site --state-file hub-state.json [--apply]
+
+Dry-run is the default; `--apply` writes, publishes and reads back (3 attempts, 60 s then 180 s
+apart). Needs `DOTCMS_DEVSITE_URL` and `DOTCMS_DEVSITE_RELEASENOTES_TOKEN`.
+
+| Exit | Meaning | stdout marker |
+|------|---------|---------------|
+| `0` | Record already matched | `::evergreen-sync::unchanged` |
+| `0` | Written (`--apply`) | `::evergreen-sync::updated fields=<f1,f2>` |
+| `0` | Dry-run difference | `::evergreen-sync::would-update fields=<f1,f2>` |
+| `1` | Runtime failure after all attempts, or token / URL unset | `::evergreen-sync-error::<reason>` |
+| `2` | Usage / validation error (bad state file), rejected before any network call | *(none)* |
+| `3` | Reconciled, but a track kept its old value because its version has no release row | `::evergreen-sync-missing-row::<track>=<version>` (one per track) |
+
+`fields` order is `latest,standard,trailing,tainted`. Run by the reusable workflow
+`cicd_comp_evergreen-site-sync.yml`, after every registry mutation.
+
+**Prerequisite (FR-044, manual):** the `EvergreenState` content type (`title` + JSON `state`) and
+its single record exist on corpsites-headless; the service-account token has read / edit / publish
+on it; the devsite's GraphQL reader has read access.
+
 ## Manual backfill (explicit, per-version — never automatic)
 
 There is **no automatic backfill** (FR-012): each release publishes only the version that

@@ -57,6 +57,8 @@
       "ApiToken_Resource.postman_collection",
       "BulkRefreshResource.postman_collection",
       "BulkUploadResource.postman_collection",
+      "FolderBulkDeleteResource.postman_collection",
+      "FolderBulkDuplicateResource.postman_collection",
       "ContentImportResource.postman_collection",
       "Manifest_Download_End_Point.postman_collection",
       "Osgi.postman_collection",

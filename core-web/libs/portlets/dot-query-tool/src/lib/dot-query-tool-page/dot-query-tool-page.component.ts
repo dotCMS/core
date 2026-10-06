@@ -51,7 +51,10 @@ import {
     DotClipboardUtil,
     DotEmptyContainerComponent,
     DotMessagePipe,
-    PrincipalConfiguration
+    DotMonacoRunShortcutEditor,
+    getDotMonacoRunShortcutLabel,
+    PrincipalConfiguration,
+    registerDotMonacoRunShortcut
 } from '@dotcms/ui';
 import { buildCurlSnippet, buildFetchSnippet, getDownloadLink } from '@dotcms/utils';
 
@@ -115,6 +118,9 @@ export class DotQueryToolPageComponent implements OnInit {
     readonly #contentSearch = inject(DotContentSearchService);
     readonly #destroyRef = inject(DestroyRef);
     readonly #injector = inject(Injector);
+
+    /** Keyboard shortcut shown in the Run button tooltip (`⌘ + Enter` / `Ctrl + Enter`). */
+    readonly runShortcutLabel = getDotMonacoRunShortcutLabel(this.#document.defaultView?.navigator);
 
     #lastSyncedUrl: string | null = null;
 
@@ -263,12 +269,23 @@ export class DotQueryToolPageComponent implements OnInit {
         const sort = params.get('sort') ?? '';
         const userId = params.get('userId') ?? '';
 
-        this.store.setQuery(query);
+        // Only write `query` when the URL actually carries `q`. The store's `withPersistedQuery`
+        // restored the user's last query in its own onInit, which runs before this — writing the
+        // absent param's '' over it is what made Query Tool lose the query on every return to the
+        // portlet while ES Search and Velocity Playground kept theirs (neither reads URL params).
+        // `has` rather than a truthiness check, so an explicit `?q=` in a shared link still clears
+        // the editor instead of silently resurrecting the previous query.
+        if (params.has('q')) {
+            this.store.setQuery(query);
+        }
+
         this.store.setOffset(offset);
         this.store.setLimit(limit);
         this.store.setSort(sort);
         this.store.setUserId(userId);
 
+        // Auto-run only for a deep link. A restored query is left in the editor unexecuted, as in
+        // the sibling dev tools — returning to the portlet should not fire a search by itself.
         if (query.trim()) {
             this.store.runSearch();
         }
@@ -320,6 +337,20 @@ export class DotQueryToolPageComponent implements OnInit {
         if (!this.store.query().trim()) return;
         this.store.resetOffset();
         this.store.runSearch();
+    }
+
+    /**
+     * Binds `Cmd/Ctrl + Enter` inside the query editor to the same action as the Run button.
+     * The shortcut is ignored while a search is already in flight, where the Run button is
+     * disabled too.
+     *
+     * @param editor the Monaco editor instance emitted by `ngx-monaco-editor`
+     */
+    onQueryEditorInit(editor: DotMonacoRunShortcutEditor): void {
+        registerDotMonacoRunShortcut(editor, () => this.onRun(), {
+            label: this.#messageService.get('queryTool.action.run'),
+            canRun: () => !this.store.isLoading()
+        });
     }
 
     onResultClick(contentlet: DotCMSContentlet, event: MouseEvent): void {

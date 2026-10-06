@@ -4,8 +4,8 @@ import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 import { DatePickerModule } from 'primeng/datepicker';
 
 import {
+    ContentTypeCalendarField,
     DotCMSContentType,
-    DotCMSContentTypeField,
     DotSystemTimezone,
     DotCMSContentlet
 } from '@dotcms/dotcms-models';
@@ -59,12 +59,12 @@ import { BaseWrapperField } from '../shared/base-wrapper-field';
         }
     ]
 })
-export class DotEditContentCalendarFieldComponent extends BaseWrapperField {
+export class DotEditContentCalendarFieldComponent extends BaseWrapperField<ContentTypeCalendarField> {
     /**
      * The field configuration (required).
      * Determines the type of calendar field (date, time, datetime).
      */
-    $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
+    $field = input.required<ContentTypeCalendarField>({ alias: 'field' });
 
     /**
      * The contentlet (optional).

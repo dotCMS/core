@@ -26,6 +26,7 @@ import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.rest.CountView;
 import com.dotcms.rest.ResponseEntityCountView;
+import com.dotcms.rest.ResponseEntityPaginatedDataView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.MultiTree;
@@ -56,6 +57,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+import org.apache.velocity.exception.ResourceNotFoundException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -1023,6 +1025,47 @@ public class ContentResourceIntegrationTest {
         new ContentResource().getAllContentletReferencesCount(
                 createAnonymousRequest(), mock(HttpServletResponse.class),
                 content.getIdentifier());
+    }
+
+    /**
+     * Method to test: {@link ContentResource#getPushHistory}
+     * <p>
+     * Given scenario: a contentlet that has been archived.
+     * <p>
+     * Expected result: the push history is returned (empty, since it was never pushed)
+     * instead of a 404. Archived content still exists and is still editable, so the
+     * New Edit Content sidebar must be able to load its push history (#37719).
+     */
+    @Test
+    public void test_getPushHistory_archivedContent_returnsHistory() throws Exception {
+        final Language english = APILocator.getLanguageAPI().getDefaultLanguage();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Contentlet content = new ContentletDataGen(structure.getInode())
+                .languageId(english.getId()).nextPersisted();
+        ContentletDataGen.archive(content);
+
+        final ResponseEntityPaginatedDataView response = new ContentResource().getPushHistory(
+                createAuthenticatedRequest(), mock(HttpServletResponse.class),
+                content.getIdentifier(), 40, 1);
+
+        assertNotNull(response);
+        assertNotNull(response.getEntity());
+        assertTrue(((List<?>) response.getEntity()).isEmpty());
+    }
+
+    /**
+     * Method to test: {@link ContentResource#getPushHistory}
+     * <p>
+     * Given scenario: an identifier that does not belong to any contentlet.
+     * <p>
+     * Expected result: the endpoint still answers "not found" — including archived content
+     * in the lookup must not make unknown identifiers look valid.
+     */
+    @Test(expected = ResourceNotFoundException.class)
+    public void test_getPushHistory_unknownIdentifier_throwsNotFound() throws Exception {
+        new ContentResource().getPushHistory(
+                createAuthenticatedRequest(), mock(HttpServletResponse.class),
+                UUIDGenerator.generateUuid(), 40, 1);
     }
 
     /**

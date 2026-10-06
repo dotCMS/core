@@ -45,6 +45,7 @@ const OTHER_SITE_ID = 'site-2';
 const buildExperiment = (experiment: Partial<DotExperiment>): DotExperiment => ({
     id: 'exp-id',
     pageId: 'page-1',
+    createdBy: 'dotcms.org.1',
     name: 'Experiment',
     description: 'An experiment',
     status: DotExperimentStatus.DRAFT,
@@ -79,6 +80,7 @@ const EXPERIMENT_DRAFT = buildExperiment({
 const EXPERIMENT_RUNNING = buildExperiment({
     id: 'exp-running',
     pageId: 'page-2',
+    createdBy: 'dotcms.org.2',
     name: 'Beta rollout',
     description: 'Pricing page headline',
     status: DotExperimentStatus.RUNNING,
@@ -131,6 +133,9 @@ const VIEW_STATE_DEFAULTS: DotExperimentsListViewState = {
     filter: '',
     selectedStatuses: DEFAULT_EXPERIMENTS_LIST_STATUSES,
     selectedGoals: DEFAULT_EXPERIMENTS_LIST_GOALS,
+    selectedCreators: [],
+    scheduleFrom: null,
+    scheduleTo: null,
     page: DEFAULT_EXPERIMENTS_LIST_PAGE,
     perPage: DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
     orderBy: DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
@@ -700,11 +705,11 @@ describe('DotExperimentsListStore', () => {
                 expect(store.pageAssetFilteredExperiments()).toEqual([]);
             });
 
-            it('should be dropped by pageNarrowingCleared, revealing the site-wide list', () => {
+            it('should be dropped by filtersCleared, revealing the site-wide list', () => {
                 hydrateWithPath('/asdasd');
                 expect(store.pageAssetFilteredExperiments()).toEqual([]);
 
-                dispatcher.dispatch(dotExperimentsListPageEvents.pageNarrowingCleared());
+                dispatcher.dispatch(dotExperimentsListPageEvents.filtersCleared());
 
                 expect(store.pageAssetFilteredExperiments()).toEqual(store.searchedExperiments());
             });
@@ -1335,6 +1340,471 @@ describe('DotExperimentsListStore', () => {
      * address-bound half of this store goes quiet when it is rendered beside a page it does not
      * own.
      */
+    describe('creator filter (#37307)', () => {
+        it('should show every experiment while no creator is selected', () => {
+            initStore();
+
+            expect(store.selectedCreators()).toEqual([]);
+            expect(store.filteredExperiments().map(({ id }) => id)).toEqual(
+                store.goalFilteredExperiments().map(({ id }) => id)
+            );
+        });
+
+        it('should keep only the experiments created by the selected user', () => {
+            initStore();
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.creatorsChanged(['dotcms.org.1']));
+
+            expect(store.filteredExperiments().map(({ id }) => id)).toEqual(['exp-draft']);
+        });
+
+        it('should widen to either creator when two are selected (OR within the filter)', () => {
+            initStore();
+
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.creatorsChanged(['dotcms.org.1', 'dotcms.org.2'])
+            );
+
+            expect(
+                store
+                    .filteredExperiments()
+                    .map(({ id }) => id)
+                    .sort()
+            ).toEqual(['exp-draft', 'exp-running']);
+        });
+
+        it('should narrow together with the other filters (AND across filters)', () => {
+            initStore();
+
+            // Creator 1 owns the draft; asking for RUNNING as well leaves nothing, which is the
+            // conjunction and not an accident of either filter on its own.
+            dispatcher.dispatch(dotExperimentsListPageEvents.creatorsChanged(['dotcms.org.1']));
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.statusesChanged([DotExperimentStatus.RUNNING])
+            );
+
+            expect(store.filteredExperiments()).toEqual([]);
+        });
+
+        it('should simply not match an experiment whose creator is no longer a user', () => {
+            initStore();
+
+            // A selection nobody in the loaded set was created by. The filter must empty the list
+            // rather than throw or fall back to showing everything.
+            dispatcher.dispatch(dotExperimentsListPageEvents.creatorsChanged(['deleted.user.id']));
+
+            expect(store.filteredExperiments()).toEqual([]);
+            expect(store.totalRecords()).toBe(0);
+        });
+
+        it('should return to the first page when the selection changes', () => {
+            initStore();
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.pageChanged({ page: 2, perPage: 20 }));
+            dispatcher.dispatch(dotExperimentsListPageEvents.creatorsChanged(['dotcms.org.1']));
+
+            expect(store.page()).toBe(DEFAULT_EXPERIMENTS_LIST_PAGE);
+        });
+
+        it('should leave the status and goal counts untouched (FR-050)', () => {
+            initStore();
+
+            const statusCountsBefore = { ...store.statusCounts() };
+            const goalCountsBefore = { ...store.goalCounts() };
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.creatorsChanged(['dotcms.org.1']));
+
+            // The counts describe the set the chips are offered against, which is snapshotted
+            // before any selection narrowing — so picking a creator must not move the numbers
+            // beside the statuses and goals the user has not picked.
+            expect(store.statusCounts()).toEqual(statusCountsBefore);
+            expect(store.goalCounts()).toEqual(goalCountsBefore);
+        });
+    });
+
+    describe('schedule filter (#37307)', () => {
+        /** Epoch of a local calendar day at a given hour, which is what the payload carries. */
+        const instantOn = (year: number, month: number, day: number, hour = 12) =>
+            new Date(year, month - 1, day, hour).getTime();
+
+        const scheduled = (id: string, startDate: number | null): DotExperiment =>
+            buildExperiment({
+                id,
+                pageId: 'page-1',
+                name: id,
+                scheduling: { startDate, endDate: null }
+            });
+
+        /** No `scheduling` object at all: a draft nobody has dated yet. */
+        const NO_SCHEDULE = buildExperiment({
+            id: 'no-schedule',
+            pageId: 'page-1',
+            name: 'no-schedule',
+            scheduling: null
+        });
+
+        /** A `scheduling` object carrying no start: the other shape of "not scheduled" (FR-022). */
+        const NO_START = scheduled('no-start', null);
+
+        const ids = () =>
+            store
+                .filteredExperiments()
+                .map(({ id }) => id)
+                .sort();
+
+        const loadScheduled = (experiments: DotExperiment[]) => {
+            getAllUnfiltered.mockReturnValue(of([...experiments, NO_SCHEDULE, NO_START]));
+            initStore();
+        };
+
+        const pick = (from: string | null, to: string | null) =>
+            dispatcher.dispatch(dotExperimentsListPageEvents.scheduleChanged({ from, to }));
+
+        it('should show every experiment while no period is picked', () => {
+            loadScheduled([scheduled('old', instantOn(2020, 1, 1))]);
+
+            expect(store.scheduleFrom()).toBeNull();
+            expect(store.scheduleTo()).toBeNull();
+            expect(ids()).toEqual(['no-schedule', 'no-start', 'old']);
+        });
+
+        /**
+         * FR-020, FR-021. Both bounds inclusive and covering whole days, which is the difference
+         * between a filter picked as dates and the instants it compares: a start at nine in the
+         * morning on the closing day is inside the period, and midnight on the day after is not.
+         */
+        it('should include an experiment scheduled on either bound', () => {
+            loadScheduled([
+                scheduled('on-from', instantOn(2026, 6, 1, 9)),
+                scheduled('on-to', instantOn(2026, 6, 30, 23)),
+                scheduled('day-before', instantOn(2026, 5, 31, 23)),
+                scheduled('day-after', instantOn(2026, 7, 1, 0))
+            ]);
+
+            pick('2026-06-01', '2026-06-30');
+
+            expect(ids()).toEqual(['on-from', 'on-to']);
+        });
+
+        it('should match a period of a single day at any hour of it', () => {
+            // The case that fails outright if the bounds are taken as midnight-to-midnight.
+            loadScheduled([
+                scheduled('early', instantOn(2026, 6, 15, 0)),
+                scheduled('late', instantOn(2026, 6, 15, 23)),
+                scheduled('next-day', instantOn(2026, 6, 16, 0))
+            ]);
+
+            pick('2026-06-15', '2026-06-15');
+
+            expect(ids()).toEqual(['early', 'late']);
+        });
+
+        /**
+         * FR-020. An open upper bound is what the calendar produces after the first click, and it
+         * is a useful filter on its own — an experiment scheduled but not yet started is the one a
+         * user asking "what is coming" most wants to see.
+         */
+        it('should constrain only one side when a bound is left open', () => {
+            loadScheduled([
+                scheduled('before', instantOn(2026, 5, 1)),
+                scheduled('after', instantOn(2026, 7, 1)),
+                scheduled('far-future', instantOn(2030, 1, 1))
+            ]);
+
+            pick('2026-06-01', null);
+
+            expect(ids()).toEqual(['after', 'far-future']);
+        });
+
+        it('should constrain only the upper side when the lower bound is open', () => {
+            loadScheduled([
+                scheduled('before', instantOn(2026, 5, 1)),
+                scheduled('after', instantOn(2026, 7, 1))
+            ]);
+
+            pick(null, '2026-06-01');
+
+            expect(ids()).toEqual(['before']);
+        });
+
+        it('should exclude both shapes of "not scheduled" while a period is in force', () => {
+            // FR-022, and the two shapes are not interchangeable: `scheduling` may be absent
+            // altogether, or present carrying a null `startDate`. Reading `startDate` off the
+            // first shape throws; treating the second as scheduled lets it through every period.
+            loadScheduled([scheduled('inside', instantOn(2026, 6, 15))]);
+
+            pick('2026-06-01', '2026-06-30');
+
+            expect(ids()).not.toContain('no-schedule');
+            expect(ids()).not.toContain('no-start');
+            expect(ids()).toEqual(['inside']);
+        });
+
+        it('should bring the unscheduled back when the period is cleared', () => {
+            loadScheduled([scheduled('inside', instantOn(2026, 6, 15))]);
+
+            pick('2026-06-01', '2026-06-30');
+            pick(null, null);
+
+            expect(ids()).toEqual(['inside', 'no-schedule', 'no-start']);
+        });
+
+        describe('an inverted range (FR-021a)', () => {
+            it('should report itself as unusable', () => {
+                loadScheduled([scheduled('inside', instantOn(2026, 6, 15))]);
+
+                pick('2026-06-30', '2026-06-01');
+
+                expect(store.isScheduleRangeUnusable()).toBe(true);
+            });
+
+            it('should not be applied, so the table is not silently emptied', () => {
+                // It matches nothing by construction. Applied, the screen would read as a site
+                // with no experiments scheduled then, and the reason would be invisible.
+                loadScheduled([scheduled('inside', instantOn(2026, 6, 15))]);
+
+                pick('2026-06-30', '2026-06-01');
+
+                expect(ids()).toEqual(['inside', 'no-schedule', 'no-start']);
+            });
+
+            it('should report a usable period as usable', () => {
+                loadScheduled([scheduled('inside', instantOn(2026, 6, 15))]);
+
+                pick('2026-06-01', '2026-06-30');
+
+                expect(store.isScheduleRangeUnusable()).toBe(false);
+            });
+
+            it('should not call a single bound inverted', () => {
+                loadScheduled([scheduled('inside', instantOn(2026, 6, 15))]);
+
+                pick('2026-06-30', null);
+
+                expect(store.isScheduleRangeUnusable()).toBe(false);
+            });
+        });
+
+        it('should narrow together with the other filters (AND across filters)', () => {
+            loadScheduled([
+                scheduled('june-draft', instantOn(2026, 6, 15)),
+                {
+                    ...scheduled('june-running', instantOn(2026, 6, 15)),
+                    status: DotExperimentStatus.RUNNING
+                }
+            ]);
+
+            pick('2026-06-01', '2026-06-30');
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.statusesChanged([DotExperimentStatus.RUNNING])
+            );
+
+            expect(ids()).toEqual(['june-running']);
+        });
+
+        it('should leave the status and goal counts untouched (FR-027, FR-050)', () => {
+            loadScheduled([scheduled('old', instantOn(2020, 1, 1))]);
+
+            const statusCountsBefore = { ...store.statusCounts() };
+            const goalCountsBefore = { ...store.goalCounts() };
+
+            pick('2026-06-01', '2026-06-30');
+
+            // The counts describe the set the chips are offered against, snapshotted before any
+            // selection narrowing — so picking a period must not move the numbers beside the
+            // statuses and goals the user has not chosen.
+            expect(store.statusCounts()).toEqual(statusCountsBefore);
+            expect(store.goalCounts()).toEqual(goalCountsBefore);
+        });
+
+        it('should return to the first page when the period changes', () => {
+            loadScheduled([scheduled('inside', instantOn(2026, 6, 15))]);
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.pageChanged({ page: 2, perPage: 20 }));
+            pick('2026-06-01', '2026-06-30');
+
+            expect(store.page()).toBe(DEFAULT_EXPERIMENTS_LIST_PAGE);
+        });
+    });
+
+    describe('clearing every filter at once', () => {
+        /**
+         * The no-results state's way out is one intent, so it is one event. The point of the
+         * single transition is that nothing downstream ever sees a half-cleared view state: the
+         * row set and the address are both derived from state, and four dispatches would derive
+         * them four times from four different partial answers.
+         */
+        it('should widen every narrowing the screen can set', () => {
+            initStore();
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.filterChanged('nothing-matches'));
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.statusesChanged([DotExperimentStatus.SCHEDULED])
+            );
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.goalsChanged([GOAL_TYPES.BOUNCE_RATE])
+            );
+            dispatcher.dispatch(dotExperimentsListPageEvents.creatorsChanged(['dotcms.org.1']));
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.scheduleChanged({
+                    from: '2026-06-01',
+                    to: '2026-06-30'
+                })
+            );
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.filtersCleared());
+
+            expect(store.filter()).toBe('');
+            expect(store.selectedStatuses()).toEqual([]);
+            expect(store.selectedGoals()).toEqual([]);
+            expect(store.selectedCreators()).toEqual([]);
+            expect(store.scheduleFrom()).toBeNull();
+            expect(store.scheduleTo()).toBeNull();
+        });
+
+        it('should return to the first page', () => {
+            initStore();
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.pageChanged({ page: 3, perPage: 20 }));
+            dispatcher.dispatch(dotExperimentsListPageEvents.filtersCleared());
+
+            expect(store.page()).toBe(DEFAULT_EXPERIMENTS_LIST_PAGE);
+        });
+
+        /**
+         * `languageId` exists only to return the editor to the version of the narrowed page they
+         * came from, so it is meaningless once that page is no longer the scope — and leaving it
+         * behind would put a stale language in the address.
+         */
+        it('should drop the page narrowing and its return context', () => {
+            initStore();
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.filtersCleared());
+
+            expect(store.selectedPageId()).toBeNull();
+            expect(store.selectedPageUrl()).toBeNull();
+            expect(store.languageId()).toBeNull();
+        });
+
+        /**
+         * #37307. The panel re-scope resets the view state by naming each field, so a narrowing
+         * added later is only reset if someone remembers to add it — `selectedCreators` was
+         * missed exactly that way. Carrying it across would answer the new page's question with
+         * the creator the user picked on the page they left.
+         */
+        it('should also clear a creator selection when the panel re-scopes', () => {
+            initStore();
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.creatorsChanged(['dotcms.org.1']));
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.scheduleChanged({
+                    from: '2026-06-01',
+                    to: '2026-06-30'
+                })
+            );
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.scopedToPage({ pageId: PANEL_PAGE_ID, languageId: 1 })
+            );
+
+            expect(store.selectedCreators()).toEqual([]);
+            expect(store.scheduleFrom()).toBeNull();
+            expect(store.scheduleTo()).toBeNull();
+        });
+    });
+
+    /**
+     * The filter bar's Clear all is a different button from the empty state's, and it is on
+     * screen while the list is *working*. Sharing `filtersCleared` with the dead-end button
+     * made it widen a page narrowing the user never set and cannot restore.
+     */
+    describe('clearing only what the chips own', () => {
+        it('should widen every narrowing a chip or the search box can set', () => {
+            initStore();
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.filterChanged('nothing-matches'));
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.statusesChanged([DotExperimentStatus.SCHEDULED])
+            );
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.goalsChanged([GOAL_TYPES.BOUNCE_RATE])
+            );
+            dispatcher.dispatch(dotExperimentsListPageEvents.creatorsChanged(['dotcms.org.1']));
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.scheduleChanged({
+                    from: '2026-06-01',
+                    to: '2026-06-30'
+                })
+            );
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.chipFiltersCleared());
+
+            expect(store.filter()).toBe('');
+            expect(store.selectedStatuses()).toEqual([]);
+            expect(store.selectedGoals()).toEqual([]);
+            expect(store.selectedCreators()).toEqual([]);
+            expect(store.scheduleFrom()).toBeNull();
+            expect(store.scheduleTo()).toBeNull();
+        });
+
+        it('should return to the first page', () => {
+            initStore();
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.pageChanged({ page: 3, perPage: 20 }));
+            dispatcher.dispatch(dotExperimentsListPageEvents.chipFiltersCleared());
+
+            expect(store.page()).toBe(DEFAULT_EXPERIMENTS_LIST_PAGE);
+        });
+
+        const hydrateNarrowedPage = () =>
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.hydratedFromUrl({
+                    ...VIEW_STATE_DEFAULTS,
+                    selectedPageId: 'page-1',
+                    selectedPageUrl: '/blog/post',
+                    languageId: 2
+                })
+            );
+
+        /**
+         * The whole reason this event exists. `pageId` is the scope the screen itself hands out
+         * and takes back — `pageFilterParams` writes it on all four ways out of the list and
+         * `listReturnParams` reads it on the way back — so a toolbar button visible whenever any
+         * chip is set must not drop it. Clearing a scope that *matched nothing* is still offered,
+         * by the empty state's own button (`filtersCleared`).
+         */
+        it('should keep the page scope and its return context', () => {
+            initStore();
+
+            hydrateNarrowedPage();
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.statusesChanged([DotExperimentStatus.SCHEDULED])
+            );
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.chipFiltersCleared());
+
+            expect(store.selectedPageId()).toBe('page-1');
+            expect(store.languageId()).toBe(2);
+            expect(store.selectedStatuses()).toEqual([]);
+        });
+
+        /**
+         * The path narrowing is not the same thing, despite sitting beside it in state. Nothing in
+         * the app writes `?url=` — it only ever arrives typed or pasted, and is then echoed back
+         * on every change — so it is a filter the user applied, not a scope handed down. Keeping
+         * it here would leave it unremovable: the empty state's button is the only other way out
+         * and it appears only once the path matches nothing.
+         */
+        it('should widen a page path the address brought', () => {
+            initStore();
+
+            hydrateNarrowedPage();
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.chipFiltersCleared());
+
+            expect(store.selectedPageUrl()).toBeNull();
+        });
+    });
+
     describe('panel mode (#37478)', () => {
         let panelPageId: WritableSignal<string | null>;
         let panelLanguageId: WritableSignal<number | null>;

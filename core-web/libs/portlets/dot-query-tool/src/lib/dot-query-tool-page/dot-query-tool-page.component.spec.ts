@@ -11,13 +11,17 @@ import { Mock, MockInstance, vi } from 'vitest';
 import { Location } from '@angular/common';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
 
+import { MessageService } from 'primeng/api';
+
 import {
+    buildPersistedQueryKey,
     DotContentletEditUrlService,
     DotContentSearchService,
     DotCurrentUserService,
     DotGlobalMessageService,
     DotHttpErrorManagerService,
-    DotMessageService
+    DotMessageService,
+    DotPropertiesService
 } from '@dotcms/data-access';
 import { ComponentStatus, FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotEditContentSidePanelComponent } from '@dotcms/edit-content';
@@ -84,6 +88,25 @@ const buildStoreMock = (overrides: Partial<Record<string, Mock>> = {}) => ({
  * stubs below readable.
  */
 const stubbed = (store: unknown) => store as Record<string, unknown>;
+
+const MONACO_CTRL_CMD = 2048;
+const MONACO_ENTER = 3;
+
+/** Stubs the global Monaco namespace and returns a fake editor that records its actions. */
+const createFakeEditor = () => {
+    vi.stubGlobal('monaco', {
+        ...((globalThis as { monaco?: object }).monaco ?? {}),
+        KeyMod: { CtrlCmd: MONACO_CTRL_CMD },
+        KeyCode: { Enter: MONACO_ENTER }
+    });
+    const addAction = vi.fn();
+
+    return {
+        editor: { addAction },
+        /** Simulates Monaco dispatching the Cmd/Ctrl + Enter keybinding. */
+        pressRunShortcut: () => addAction.mock.calls[0][0].run()
+    };
+};
 
 describe('DotQueryToolPageComponent', () => {
     let spectator: Spectator<DotQueryToolPageComponent>;
@@ -179,6 +202,22 @@ describe('DotQueryToolPageComponent', () => {
             const store = spectator.inject(DotQueryToolStore, true);
             expect(store.runSearch).not.toHaveBeenCalled();
         });
+
+        it('leaves the store query untouched when the URL carries no q', () => {
+            // The store hydrates `query` from localStorage in its own onInit, which runs before
+            // ngOnInit. Writing the (absent) `q` param over it wipes the restored query from the
+            // UI. Storage itself survives — the persistence pipeline's `skip(1)` absorbs the stray
+            // '' — so the damage is confined to the editor the user is looking at.
+            setup({});
+            const store = spectator.inject(DotQueryToolStore, true);
+            expect(store.setQuery).not.toHaveBeenCalled();
+        });
+
+        it('applies an explicitly empty q, so a shared ?q= link still clears the editor', () => {
+            setup({ q: '' });
+            const store = spectator.inject(DotQueryToolStore, true);
+            expect(store.setQuery).toHaveBeenCalledWith('');
+        });
     });
 
     describe('Submit button', () => {
@@ -239,6 +278,65 @@ describe('DotQueryToolPageComponent', () => {
         it('does not sync URL on first mount with no run yet (status INIT)', () => {
             setup();
             expect(locationReplaceStateSpy).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('Run keyboard shortcut', () => {
+        afterEach(() => {
+            vi.unstubAllGlobals();
+        });
+
+        it('binds Cmd/Ctrl + Enter on the query editor', () => {
+            setup();
+            const { editor } = createFakeEditor();
+            spectator.triggerEventHandler(
+                '[data-testid="query-tool-query-editor"]',
+                'init',
+                editor
+            );
+            expect(editor.addAction).toHaveBeenCalledWith(
+                expect.objectContaining({ keybindings: [MONACO_CTRL_CMD | MONACO_ENTER] })
+            );
+        });
+
+        it('runs the query when the shortcut is pressed', () => {
+            const store = setup({}, { query: vi.fn().mockReturnValue('+live:true') });
+            const { editor, pressRunShortcut } = createFakeEditor();
+            spectator.triggerEventHandler(
+                '[data-testid="query-tool-query-editor"]',
+                'init',
+                editor
+            );
+            pressRunShortcut();
+            expect(store.resetOffset).toHaveBeenCalled();
+            expect(store.runSearch).toHaveBeenCalled();
+        });
+
+        it('is a no-op while a search is already in flight', () => {
+            const store = setup(
+                {},
+                {
+                    query: vi.fn().mockReturnValue('+live:true'),
+                    isLoading: vi.fn().mockReturnValue(true)
+                }
+            );
+            const { editor, pressRunShortcut } = createFakeEditor();
+            spectator.triggerEventHandler(
+                '[data-testid="query-tool-query-editor"]',
+                'init',
+                editor
+            );
+            pressRunShortcut();
+            expect(store.runSearch).not.toHaveBeenCalled();
+        });
+
+        it('states the shortcut in the Run button tooltip', () => {
+            setup();
+            const messageService = spectator.inject(DotMessageService);
+            expect(messageService.get).toHaveBeenCalledWith(
+                'queryTool.action.run.tooltip',
+                spectator.component.runShortcutLabel
+            );
         });
     });
 
@@ -635,5 +733,119 @@ describe('DotQueryToolPageComponent (editContent deep link)', () => {
 
         expect(() => (spectator = mount('id-1'))).not.toThrow();
         expect(spectator.component.$editPanelRequest()).toBeNull();
+    });
+});
+
+// Sibling top-level describe with the REAL store (every other describe here mocks it, so the
+// store's own `onInit` never runs and the ngOnInit/hydration ordering can't be observed). This is
+// the QA-reported path: type a query, leave the portlet, come back, query is gone.
+describe('DotQueryToolPageComponent (persisted query, real store)', () => {
+    let spectator: Spectator<DotQueryToolPageComponent>;
+    const persistedKey = buildPersistedQueryKey('query-tool');
+
+    const createComponent = createComponentFactory({
+        component: DotQueryToolPageComponent,
+        overrideComponents: [
+            [
+                DotQueryToolPageComponent,
+                {
+                    remove: { imports: [DotEditContentSidePanelComponent] },
+                    add: { imports: [MockComponent(DotEditContentSidePanelComponent)] }
+                }
+            ]
+        ],
+        providers: [
+            mockProvider(DotMessageService, { get: vi.fn().mockReturnValue('') }),
+            mockProvider(DotHttpErrorManagerService),
+            mockProvider(DotGlobalMessageService, { error: vi.fn() }),
+            mockProvider(DotQueryToolService, {
+                search: vi
+                    .fn()
+                    .mockReturnValue(of({ resultsSize: 0, jsonObjectView: { contentlets: [] } }))
+            }),
+            mockProvider(DotContentletEditUrlService, { resolveEditUrl: vi.fn() }),
+            mockProvider(DotContentSearchService, {
+                get: vi.fn().mockReturnValue(of({ jsonObjectView: { contentlets: [] } }))
+            }),
+            mockProvider(DotPropertiesService, { getFeatureFlags: vi.fn().mockReturnValue(of({})) })
+        ],
+        // Spectator REPLACES the component's own `providers` with this list, so the real store has
+        // to be named here — that is the whole point of this describe.
+        componentProviders: [
+            DotQueryToolStore,
+            mockProvider(DotCurrentUserService, {
+                getCurrentUser: vi.fn().mockReturnValue(of({ admin: true }))
+            }),
+            // The store is built by the component injector, so `withFlags`' DotPropertiesService
+            // has to be reachable from here rather than only at the TestBed root.
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: vi.fn().mockReturnValue(of({}))
+            }),
+            DotClipboardUtil,
+            MessageService
+        ]
+    });
+
+    const mount = (params: Record<string, string> = {}) =>
+        createComponent({
+            providers: [
+                {
+                    provide: ActivatedRoute,
+                    useValue: { snapshot: { queryParamMap: convertToParamMap(params) } }
+                },
+                {
+                    provide: Location,
+                    useValue: {
+                        replaceState: vi.fn(),
+                        go: vi.fn(),
+                        path: vi.fn().mockReturnValue(''),
+                        subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() })
+                    }
+                }
+            ]
+        });
+
+    beforeEach(() => {
+        vi.useFakeTimers();
+        window.localStorage.clear();
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+        window.localStorage.clear();
+    });
+
+    it('restores the persisted query when the portlet is reopened without params', () => {
+        window.localStorage.setItem(persistedKey, JSON.stringify('+contentType:Blog'));
+
+        spectator = mount();
+
+        expect(spectator.component.store.query()).toBe('+contentType:Blog');
+    });
+
+    it('never erases the stored entry on reopen, whatever the restore path does', () => {
+        // NOT a regression test for the ngOnInit guard — this passes with that guard reverted,
+        // because the persistence pipeline's `skip(1)` absorbs the stray '' before it can reach
+        // `removeKey`. It guards the invariant underneath: reopening the portlet is a read, and
+        // must never destroy the saved query. That `skip(1)` is the only thing standing between
+        // a stray write-on-init and silent data loss, so it is worth pinning on its own.
+        window.localStorage.setItem(persistedKey, JSON.stringify('+contentType:Blog'));
+
+        spectator = mount();
+        // flushEffects() pushes the field signal through the rxMethod effect; only then does the
+        // debounce timer exist for the fake clock to advance. Skipping it is what makes fake
+        // timers look like they do not drive this pipeline.
+        spectator.flushEffects();
+        vi.advanceTimersByTime(500);
+
+        expect(window.localStorage.getItem(persistedKey)).toBe(JSON.stringify('+contentType:Blog'));
+    });
+
+    it('lets a ?q= deep link win over the persisted query', () => {
+        window.localStorage.setItem(persistedKey, JSON.stringify('+contentType:Blog'));
+
+        spectator = mount({ q: '+live:true' });
+
+        expect(spectator.component.store.query()).toBe('+live:true');
     });
 });

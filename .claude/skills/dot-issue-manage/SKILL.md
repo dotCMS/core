@@ -9,9 +9,55 @@ description: Create GitHub issues using repository templates. Use when the user 
 
 AI-agent-native skill for managing GitHub issues in `dotCMS/core`. Infers where possible — asks only what's needed.
 
-**Contents:** [Mode Detection](#step-0--mode-detection) · [CREATE](#create-mode) · [UPDATE](#update-mode) · [QUERY](#query-mode) · [FIND](#find-mode) · [Authorization](#authorization)
+**Contents:** [Critical Rules](#critical-rules) · [Mode Detection](#step-0--mode-detection) · [CREATE](#create-mode) · [UPDATE](#update-mode) · [QUERY](#query-mode) · [FIND](#find-mode) · [Authorization](#authorization)
 
 **References:** [feature-labels.md](references/feature-labels.md) · [project-fields.md](references/project-fields.md) · [github-apis.md](references/github-apis.md) · [issue-refinement.md](references/issue-refinement.md)
+
+## Critical Rules
+
+These rules are **NON-SKIPPABLE**. They apply to CREATE, to UPDATE, and to the Step 11 cross-reference comment — including quick-draft. Quick-draft skips only the Issue Refinement loop (Step 7b); the gate and the preview still run.
+
+### Rule 1 — No customer data
+
+`dotCMS/core` is a public repository and GitHub keeps edit history, so scrubbing text later does not remove it. Never put customer data of any kind in anything written to GitHub — title, body, comment or attachment. This includes, and is not limited to:
+
+- Customer names
+- Their site domains and URLs
+- Site-specific identifiers: their content type names, theme CSS classes, CDN or hosting vendor
+- Their content, code, markup, configuration or screenshots
+- Personal data: names, emails, usernames, IP addresses
+- Logs, stack traces or payloads that carry any of the above
+- Credentials, tokens, keys, and contract details
+
+Linking the related support ticket is fine and expected (the defect template asks for it). Refer to "a customer site" instead. When code, markup or logs come from a customer site, reduce them to a generic reproduction before including them. When in doubt, leave it out.
+
+### Rule 2 — Pre-write gate
+
+Run before every `gh issue create`, every `gh issue edit` that changes the title or body, and every `gh issue comment`:
+
+1. **Customer data** — collect every piece of customer data that appeared in the conversation (anything Rule 1 lists) and grep the full draft (title, body, comment) case-insensitively for each term. Also read the draft for customer data the grep cannot catch, such as pasted content, logs or personal data.
+2. **URLs** — extract every URL from the draft and flag any whose host is not one of:
+   - a dotCMS domain: `dotcms.com`, `dotcms.dev`, and their subdomains
+   - the dotCMS support desk: `dotcms.freshdesk.com`
+   - a GitHub domain: `github.com`, `githubusercontent.com`, and their subdomains
+   - `localhost` or `127.0.0.1`
+
+Outcomes:
+
+- **Customer data match** → block. Show the matched terms, rewrite the text to remove them, and re-run the gate.
+- **Flagged URL** → block. Show the URL and continue only after the user removes it or explicitly confirms it is not a customer site.
+- **No match** → pass silently; do not ask an extra question.
+
+### Rule 3 — Preview and confirm
+
+After the gate passes:
+
+- Before `gh issue create` → show everything that will be written after approval, so one approval covers it: title, labels, body, native issue type, Technology, Priority (or "unset"), relationships (parent / blocked-by), and the text of any Step 11 cross-reference comment.
+- Before `gh issue edit` (title or body) or `gh issue comment` → show the new text in full.
+
+Wait for explicit confirmation — `AskUserQuestion` with **Post** / **Revise**, or an explicit yes. Never post on silence, and never reuse an approval given for a different draft. If the user revises, re-run the gate (Rule 2) on the new text.
+
+Label-only and project-field-only edits do not need a preview.
 
 ## Step 0 — Mode Detection
 
@@ -84,6 +130,8 @@ Always read fresh — never assume structure.
 
 Concise, imperative, in English. Translate from Spanish if needed.
 
+Apply [Critical Rules](#critical-rules) Rule 1 — no customer data in the title (the rule covers every text written to GitHub).
+
 ### Step 4 — Select feature label (optional)
 
 Feature labels are optional. Use [references/feature-labels.md](references/feature-labels.md) to match against the issue description.
@@ -128,6 +176,20 @@ Derived automatically from user description — no extra input needed:
 | Marketing / sales / business | `Go-To-Market` |
 
 See [references/project-fields.md](references/project-fields.md) for field and option IDs.
+
+### Step 5b — Priority
+
+**Skip** when the request already states a priority — map it to the matching option below.
+
+Otherwise ask using `AskUserQuestion` with these options, in this order:
+
+1. **None — leave unset**
+2. **Low**
+3. **Medium**
+4. **High**
+5. **Critical**
+
+Never infer the priority from the description. The chosen value is used in Step 8 (body) and Step 10 (Project #7 field).
 
 ### Step 6 — Determine team assignment
 
@@ -196,6 +258,7 @@ Ask only if partially specified (e.g., "it's a sub-issue" but no number given).
 When **quick-draft** is set:
 
 - **Skip Step 7b** (Issue Refinement loop) entirely — do not run Phase 1–6, do not ask clarification questions.
+- **Only** the Issue Refinement loop is skipped — the [Critical Rules](#critical-rules) gate and preview still run before Step 9.
 - In Step 8, for the Acceptance Criteria section use a short placeholder, e.g.:
   - "**Acceptance criteria** — To be refined. (Quick draft; details to be added later.)"
   - Or 1–3 bullet points derived only from the user's raw description, with no ambiguity resolution.
@@ -228,6 +291,13 @@ The checkbox output from Phase 6 becomes the **Acceptance Criteria section** of 
 
 Match the template structure read in Step 2. Populate all fields substantively from the user's description.
 
+Apply [Critical Rules](#critical-rules) Rule 1 — no customer data anywhere in the body (the rule covers every text written to GitHub).
+
+**Priority (from Step 5b):**
+- **Task** type with a chosen value → write the template's `### Priority` section with that value. `Critical` is written too, even though the `task.yaml` dropdown lists only High / Medium / Low.
+- **Other types** → their templates have no Priority section, so the body gets none.
+- **None** → no Priority section for any type.
+
 **When quick-draft was set (Step 7a):** Use a short Acceptance Criteria placeholder (e.g. "To be refined" or 1–3 bullets from the description); do not run or reuse the Issue Refinement loop.
 
 Best-practice patterns:
@@ -239,6 +309,8 @@ Best-practice patterns:
 All content in English (translate Spanish if needed).
 
 ### Step 9 — Create the issue
+
+**CRITICAL**: Run the [Critical Rules](#critical-rules) pre-write gate (Rule 2) and preview (Rule 3) first. Do NOT run `gh issue create` until the user confirms.
 
 **CRITICAL**: Do NOT use `--template` flag — incompatible with `--title`/`--body` in non-interactive mode.
 
@@ -270,12 +342,13 @@ Use the type name from Step 4b: `Bug` | `Task` | `Spike` | `Feature` | `Epic` | 
 
 See [references/github-apis.md](references/github-apis.md) — Section A.
 
-### Step 10 — Set Technology field in Project #7
+### Step 10 — Set Technology and Priority in Project #7
 
-No extra user input needed — derived from Step 5.
+No extra user input needed — derived from Step 5 and Step 5b.
 
-1. Get the project item ID (Section B of [references/github-apis.md](references/github-apis.md))
+1. Get the project item ID (Section B of [references/github-apis.md](references/github-apis.md)). Project #7 auto-adds new issues a few seconds after creation; if the item ID is empty, wait and retry.
 2. Set the Technology single-select field (Section C) using IDs from [references/project-fields.md](references/project-fields.md)
+3. If Step 5b chose a value other than None, set the Priority field (Section C) using IDs from [references/project-fields.md](references/project-fields.md). With None, leave it unset.
 
 Status defaults to "New" automatically — do not set it.
 
@@ -284,6 +357,7 @@ Status defaults to "New" automatically — do not set it.
 - **Parent/sub-issue**: POST to sub-issues REST endpoint — Section E of [references/github-apis.md](references/github-apis.md)
   - Requires the child issue's database ID (Section D), not the display number
 - **Blocked-by/blocking**: Add a cross-reference comment on the related issue
+  - **CRITICAL**: The comment text is subject to [Critical Rules](#critical-rules) Rule 1. The gate (Rule 2) still runs on the comment before `gh issue comment`. A new preview (Rule 3) is needed only if the comment text differs from what was approved in the Step 9 preview.
 
 ### Step 12 — Confirm
 
@@ -294,6 +368,7 @@ Report back:
 - `Type :` label applied (if any)
 - Native type set
 - Technology field set in Project #7
+- Priority field set in Project #7 (or "unset")
 - Any relationships established
 
 **Quick-draft tip (only when Issue Refinement ran):** If the Issue Refinement loop (Step 7b) was executed (i.e., quick-draft was **not** set), append a brief tip after the confirmation:
@@ -333,9 +408,11 @@ Show a validation table to the user, e.g.:
 ✗ Technology        — not set (should be Platform)
 ```
 
-Then propose the changes needed based on the gaps found.
+Then propose the changes needed based on the gaps found. Any title, body or comment text you propose is subject to [Critical Rules](#critical-rules) Rule 1.
 
 **Step 3 — Apply changes** (as specified by user or ask what to change):
+
+**CRITICAL**: Before `gh issue edit` with `--title` or `--body`, and before any `gh issue comment`, run the [Critical Rules](#critical-rules) gate (Rule 2) and preview (Rule 3).
 
 | What to update | Command |
 |---|---|
