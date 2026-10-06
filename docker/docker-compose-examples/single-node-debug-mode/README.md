@@ -21,7 +21,7 @@ A single instance of dotcms running on port 8080. Database: postgres. Debug mode
 3. A custom starter can be set through this line (uncomment and change the starter url accordingly):
 
 ```
-#CUSTOM_STARTER_URL: 'https://dotcms-repo.b-cdn.net/libs-release/com/dotcms/starter/20261006/starter-20261006.zip'
+#CUSTOM_STARTER_URL: 'https://dotcms-repo.b-cdn.net/libs-release/com/dotcms/starter/20260630/starter-20260630.zip'
 ```
 
 #### Run an example:
