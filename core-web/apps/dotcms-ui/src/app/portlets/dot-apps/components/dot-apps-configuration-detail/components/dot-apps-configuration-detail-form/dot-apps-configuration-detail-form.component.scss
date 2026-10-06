@@ -5,10 +5,6 @@
 @use "variables" as *;
 
 :host {
-    form {
-        max-width: 64.25rem;
-    }
-
     textarea {
         font-family: fonts.$font-code;
         max-height: 21.5rem;

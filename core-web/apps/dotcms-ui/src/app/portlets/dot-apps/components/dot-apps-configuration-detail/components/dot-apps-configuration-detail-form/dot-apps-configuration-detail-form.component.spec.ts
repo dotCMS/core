@@ -186,6 +186,7 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.query('form')).not.toHaveClass('mx-auto');
+            expect(spectator.query('form')).toHaveClass('max-w-content');
         });
 
         it('should center the form for apps in the centered list', () => {
