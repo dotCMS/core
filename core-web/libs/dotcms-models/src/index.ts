@@ -53,6 +53,7 @@ export * from './lib/dot-layout.model';
 export * from './lib/dot-license.model';
 export * from './lib/dot-locale-options.model';
 export * from './lib/dot-login.model';
+export * from './lib/dot-material-icons';
 export * from './lib/dot-message-severity.model';
 export * from './lib/dot-message-type.model';
 export * from './lib/dot-message.model';
