@@ -1,6 +1,15 @@
 import { Subject } from 'rxjs';
 
-import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
+import {
+    ChangeDetectorRef,
+    Component,
+    EventEmitter,
+    Input,
+    OnInit,
+    Output,
+    inject,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import {
     FormsModule,
     ReactiveFormsModule,
@@ -45,6 +54,7 @@ interface DotCommentAndAssignValue {
     selector: 'dot-comment-and-assign-form',
     templateUrl: './dot-comment-and-assign-form.component.html',
     styleUrls: ['./dot-comment-and-assign-form.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         FormsModule,
         ReactiveFormsModule,
@@ -59,6 +69,7 @@ export class DotCommentAndAssignFormComponent
     implements OnInit, DotFormModel<DotCommentAndAssignData, DotCommentAndAssignValue>
 {
     private dotRolesService = inject(DotRolesService);
+    private readonly cdr = inject(ChangeDetectorRef);
     fb = inject(UntypedFormBuilder);
 
     @Input() data: DotCommentAndAssignData;
@@ -104,5 +115,8 @@ export class DotCommentAndAssignFormComponent
         });
         this.emitValues();
         this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => this.emitValues());
+        // Dynamically created inside p-dialog (appendTo="body"); async role load must
+        // force CD or the @if (form) template stays empty after Angular 21+/22.
+        this.cdr.detectChanges();
     }
 }

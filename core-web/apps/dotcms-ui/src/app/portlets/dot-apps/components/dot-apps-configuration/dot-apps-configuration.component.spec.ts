@@ -1,7 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { MarkdownModule } from 'ngx-markdown';
 import { Observable, of } from 'rxjs';
+import { MockInstance, vi } from 'vitest';
 
 import { CommonModule } from '@angular/common';
 import { provideHttpClient } from '@angular/common/http';
@@ -22,13 +21,8 @@ import {
     DotRouterService,
     PaginatorService
 } from '@dotcms/data-access';
-import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
-import {
-    CoreWebServiceMock,
-    MockDotMessageService,
-    MockDotRouterService
-} from '@dotcms/utils-testing';
+import { MockDotMessageService, MockDotRouterService } from '@dotcms/utils-testing';
 
 import { DotAppsConfigurationListComponent } from './dot-apps-configuration-list/dot-apps-configuration-list.component';
 import { DotAppsConfigurationComponent } from './dot-apps-configuration.component';
@@ -108,8 +102,8 @@ describe('DotAppsConfigurationComponent', () => {
     const messageServiceMock = new MockDotMessageService(messages);
 
     describe('With integrations count', () => {
-        let setExtraParamsSpy: jest.SpyInstance;
-        let getWithOffsetSpy: jest.SpyInstance;
+        let setExtraParamsSpy: MockInstance;
+        let getWithOffsetSpy: MockInstance;
 
         beforeEach(waitForAsync(() => {
             TestBed.configureTestingModule({
@@ -142,7 +136,6 @@ describe('DotAppsConfigurationComponent', () => {
                         provide: DotRouterService,
                         useClass: MockDotRouterService
                     },
-                    { provide: CoreWebService, useClass: CoreWebServiceMock },
                     DotAppsConfigurationResolver,
                     PaginatorService,
                     DotAlertConfirmService,
@@ -152,8 +145,8 @@ describe('DotAppsConfigurationComponent', () => {
 
             // Inject services and set up spies BEFORE creating component
             paginationService = TestBed.inject(PaginatorService);
-            setExtraParamsSpy = jest.spyOn(paginationService, 'setExtraParams');
-            getWithOffsetSpy = jest
+            setExtraParamsSpy = vi.spyOn(paginationService, 'setExtraParams');
+            getWithOffsetSpy = vi
                 .spyOn(paginationService, 'getWithOffset')
                 .mockReturnValue(of(appData));
 
@@ -246,7 +239,7 @@ describe('DotAppsConfigurationComponent', () => {
         });
 
         it('should open export dialog for all configurations', () => {
-            const openExportSpy = jest.spyOn(dialogStore, 'openExport');
+            const openExportSpy = vi.spyOn(dialogStore, 'openExport');
             const exportAllBtn = fixture.debugElement.query(
                 By.css('.dot-apps-configuration__action_export_button')
             );
@@ -259,11 +252,11 @@ describe('DotAppsConfigurationComponent', () => {
                 By.css('.dot-apps-configuration__action_header button')
             )[1];
 
-            jest.spyOn(dialogService, 'confirm').mockImplementation((conf) => {
+            vi.spyOn(dialogService, 'confirm').mockImplementation((conf) => {
                 conf.accept();
             });
 
-            jest.spyOn(appsServices, 'deleteAllConfigurations').mockReturnValue(of(null));
+            vi.spyOn(appsServices, 'deleteAllConfigurations').mockReturnValue(of(null));
 
             deleteAllBtn.triggerEventHandler('click', null);
             expect(dialogService.confirm).toHaveBeenCalledTimes(1);
@@ -272,7 +265,7 @@ describe('DotAppsConfigurationComponent', () => {
         });
 
         it('should export a specific configuration', () => {
-            const openExportSpy = jest.spyOn(dialogStore, 'openExport');
+            const openExportSpy = vi.spyOn(dialogStore, 'openExport');
             const listComp = fixture.debugElement.query(
                 By.css('dot-apps-configuration-list')
             ).componentInstance;
@@ -281,7 +274,7 @@ describe('DotAppsConfigurationComponent', () => {
         });
 
         it('should delete a specific configuration', () => {
-            jest.spyOn(appsServices, 'deleteConfiguration').mockReturnValue(of(null));
+            vi.spyOn(appsServices, 'deleteConfiguration').mockReturnValue(of(null));
             const listComp = fixture.debugElement.query(
                 By.css('dot-apps-configuration-list')
             ).componentInstance;

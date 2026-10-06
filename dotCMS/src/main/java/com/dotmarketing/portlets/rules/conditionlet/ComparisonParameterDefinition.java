@@ -1,8 +1,8 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
-import com.dotcms.repackage.com.google.common.base.Preconditions;
-import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
-import com.dotcms.repackage.com.google.common.collect.Maps;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotPresentException;
 import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
 import com.dotmarketing.portlets.rules.parameter.comparison.Comparison;

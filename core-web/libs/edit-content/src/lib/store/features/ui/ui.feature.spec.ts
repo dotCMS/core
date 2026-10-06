@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
 import { signalStore, signalStoreFeature, withState } from '@ngrx/signals';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { fakeAsync } from '@angular/core/testing';
 
@@ -10,13 +11,14 @@ import { DotContentletState } from '../../../models/dot-edit-content.model';
 import { getStoredUIState, saveStoreUIState } from '../../../utils/functions.util';
 import { initialRootState } from '../../edit-content.store';
 
-jest.mock('../../../utils/functions.util', () => ({
-    getStoredUIState: jest.fn(() => ({
+vi.mock('../../../utils/functions.util', () => ({
+    getStoredUIState: vi.fn(() => ({
         activeTab: 0,
         isSidebarOpen: true,
-        activeSidebarTab: 0
+        activeSidebarTab: 0,
+        localeSelectorTab: 'all'
     })),
-    saveStoreUIState: jest.fn()
+    saveStoreUIState: vi.fn()
 }));
 
 describe('UIFeature', () => {
@@ -36,7 +38,7 @@ describe('UIFeature', () => {
     });
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         spectator = createStore();
         store = spectator.service;
     });
@@ -47,7 +49,8 @@ describe('UIFeature', () => {
             expect(store.uiState()).toEqual({
                 activeTab: 0,
                 isSidebarOpen: true,
-                activeSidebarTab: 0
+                activeSidebarTab: 0,
+                localeSelectorTab: 'all'
             });
         });
 
@@ -57,7 +60,7 @@ describe('UIFeature', () => {
             expect(saveStoreUIState).toHaveBeenCalledWith(store.uiState());
 
             // Clear mock to test next state change
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             // Make a state change
             store.setActiveTab(2);
@@ -85,6 +88,10 @@ describe('UIFeature', () => {
 
         it('should compute activeSidebarTab', () => {
             expect(store.activeSidebarTab()).toBe(0);
+        });
+
+        it('should compute localeSelectorTab from uiState', () => {
+            expect(store.localeSelectorTab()).toBe('all');
         });
     });
 
@@ -115,6 +122,24 @@ describe('UIFeature', () => {
             it('should update active sidebar tab in state', () => {
                 store.setActiveSidebarTab(1);
                 expect(store.activeSidebarTab()).toBe(1);
+            });
+        });
+
+        describe('setLocaleSelectorTab', () => {
+            it('should update locale selector tab to translated', () => {
+                store.setLocaleSelectorTab('translated');
+                expect(store.localeSelectorTab()).toBe('translated');
+            });
+
+            it('should update locale selector tab to pending', () => {
+                store.setLocaleSelectorTab('pending');
+                expect(store.localeSelectorTab()).toBe('pending');
+            });
+
+            it('should update locale selector tab back to all', () => {
+                store.setLocaleSelectorTab('translated');
+                store.setLocaleSelectorTab('all');
+                expect(store.localeSelectorTab()).toBe('all');
             });
         });
     });

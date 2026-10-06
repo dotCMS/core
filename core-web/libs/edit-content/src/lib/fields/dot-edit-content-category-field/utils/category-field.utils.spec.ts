@@ -8,6 +8,7 @@ import {
     getSelectedFromContentlet,
     removeEmptyArrays,
     removeItemByKey,
+    sameInodes,
     transformCategories,
     updateChecked,
     getMenuItemsFromKeyParentPath
@@ -621,6 +622,18 @@ describe('CategoryFieldUtils', () => {
             expect(result).toEqual([]);
         });
 
+        it('should return an empty array if categories is an empty string (translation scenario)', () => {
+            const contentletWithStringCategories: DotCMSContentlet = {
+                ...CATEGORY_FIELD_CONTENTLET_MOCK,
+                [CATEGORY_FIELD_VARIABLE_NAME]: '' as unknown as DotCategoryFieldKeyValueObj[]
+            };
+            const result = getSelectedFromContentlet(
+                CATEGORY_FIELD_MOCK,
+                contentletWithStringCategories
+            );
+            expect(result).toEqual([]);
+        });
+
         it('should return the same array if there are no empty arrays', () => {
             const array: DotCategory[][] = [
                 [{ key: '1', categoryName: 'Category 1' } as DotCategory],
@@ -634,6 +647,28 @@ describe('CategoryFieldUtils', () => {
             const array: DotCategory[][] = [[], [], []];
             const result = removeEmptyArrays(array);
             expect(result).toEqual([]);
+        });
+    });
+
+    describe('sameInodes', () => {
+        it('should return true for equal arrays in the same order', () => {
+            expect(sameInodes(['a', 'b', 'c'], ['a', 'b', 'c'])).toBe(true);
+        });
+
+        it('should return true for equal arrays in different order', () => {
+            expect(sameInodes(['a', 'b', 'c'], ['c', 'a', 'b'])).toBe(true);
+        });
+
+        it('should return false when arrays differ in length', () => {
+            expect(sameInodes(['a', 'b'], ['a', 'b', 'c'])).toBe(false);
+        });
+
+        it('should return false when arrays have the same length but different members', () => {
+            expect(sameInodes(['a', 'b', 'c'], ['a', 'b', 'd'])).toBe(false);
+        });
+
+        it('should return true for two empty arrays', () => {
+            expect(sameInodes([], [])).toBe(true);
         });
     });
 });

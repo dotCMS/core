@@ -39,14 +39,14 @@
             }
         </p-tabpanel>
         <p-tabpanel [value]="1">
-            <dot-iframe [src]="permissionsUrl" data-testId="permissionsIframe"></dot-iframe>
+            <dot-iframe [src]="permissionsUrl" data-testId="permissionsIframe" />
         </p-tabpanel>
         <p-tabpanel [value]="2">
             <dot-iframe
                 (custom)="custom.emit($event)"
                 [src]="historyUrl"
                 #historyIframe
-                data-testId="historyIframe"></dot-iframe>
+                data-testId="historyIframe" />
         </p-tabpanel>
     </p-tabpanels>
 </p-tabs>

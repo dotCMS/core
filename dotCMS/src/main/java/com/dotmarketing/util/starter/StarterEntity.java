@@ -3,6 +3,8 @@ package com.dotmarketing.util.starter;
 
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
+import com.dotcms.experiments.model.Experiment;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -118,6 +120,11 @@ class StarterEntity {
             StarterEntity.Builder.newInstance().setFileName(Language.class.getCanonicalName() + "_")
                     .setType(new TypeReference<List<Language>>() {
                     }).build(),
+            // Variants have no dependencies and are referenced by later contentlet_version_info /
+            // multi_tree rows, so they must be imported early.
+            StarterEntity.Builder.newInstance().setFileName("Variant.json")
+                    .setType(new TypeReference<List<Variant>>() {
+                    }).build(),
             StarterEntity.Builder.newInstance().setFileName(Identifier.class.getCanonicalName())
                     .setType(new TypeReference<List<Identifier>>() {
                     }).build(),
@@ -213,6 +220,11 @@ class StarterEntity {
                     }).build(),
             StarterEntity.Builder.newInstance().setFileName(TagInode.class.getCanonicalName() + "_")
                     .setType(new TypeReference<List<TagInode>>() {
+                    }).build(),
+            // Experiments reference a page (page_id is a contentlet identifier), so they must be
+            // imported after contentlets.
+            StarterEntity.Builder.newInstance().setFileName("Experiment.json")
+                    .setType(new TypeReference<List<Experiment>>() {
                     }).build()
     );
 }

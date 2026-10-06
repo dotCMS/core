@@ -1,9 +1,14 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { SkeletonModule } from 'primeng/skeleton';
-import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotFormatDateService, DotMessageService } from '@dotcms/data-access';
@@ -12,11 +17,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotEditContentSidebarInformationComponent } from './dot-edit-content-sidebar-information.component';
 
-import { ContentletStatusTagPipe } from '../../../../pipes/contentlet-status-tag.pipe';
-import { DotNameFormatPipe } from '../../../../pipes/name-format.pipe';
-
 const messageServiceMock = new MockDotMessageService({
-    'edit.content.sidebar.information.references-with.pages.not.used': 'No References',
     New: 'New',
     Published: 'Published'
 });
@@ -26,6 +27,8 @@ describe('DotEditContentSidebarInformationComponent', () => {
 
     const mockContentlet = {
         inode: '123',
+        identifier: 'id-123',
+        hasLiveVersion: true,
         live: true,
         working: false,
         archived: false,
@@ -46,11 +49,8 @@ describe('DotEditContentSidebarInformationComponent', () => {
         component: DotEditContentSidebarInformationComponent,
         imports: [
             RouterTestingModule,
-            TagModule,
             SkeletonModule,
             TooltipModule,
-            DotNameFormatPipe,
-            ContentletStatusTagPipe,
             DotRelativeDatePipe,
             DotMessagePipe
         ],
@@ -64,6 +64,7 @@ describe('DotEditContentSidebarInformationComponent', () => {
     });
 
     beforeEach(() => {
+        vi.clearAllMocks();
         spectator = createComponent({ detectChanges: false });
     });
 
@@ -72,15 +73,14 @@ describe('DotEditContentSidebarInformationComponent', () => {
             spectator.setInput('data', {
                 contentlet: mockContentlet,
                 contentType: mockContentType,
-                referencesPageCount: 5,
+                referencesPageCount: '5',
                 loading: false
             });
             spectator.detectChanges();
         });
 
-        it('should show status tag', () => {
-            const tag = spectator.query('p-tag');
-            expect(tag).toBeTruthy();
+        it('should NOT show contentlet status chip', () => {
+            expect(spectator.query('dot-contentlet-status-badge')).toBeFalsy();
         });
 
         it('should show json link', () => {
@@ -94,24 +94,27 @@ describe('DotEditContentSidebarInformationComponent', () => {
             expect(contentTypeLink.textContent).toContain('Blog');
         });
 
-        it('should show created information', () => {
-            const createdDate = spectator.query(byTestId('created-date'));
-            expect(createdDate).toBeTruthy();
-        });
-
         it('should show modified information', () => {
             const modifiedDate = spectator.query(byTestId('modified-date'));
             expect(modifiedDate).toBeTruthy();
         });
 
-        it('should show published information', () => {
-            const publishedDate = spectator.query(byTestId('published-date'));
-            expect(publishedDate).toBeTruthy();
+        it('should show the modified-by row with an initials avatar', () => {
+            const modifiedBy = spectator.query(byTestId('modified-by'));
+            expect(modifiedBy).toBeTruthy();
+            expect(modifiedBy.textContent).toContain('E');
         });
 
-        it('should show references count', () => {
-            const referencesCount = spectator.query(byTestId('references-count'));
-            expect(referencesCount).toBeTruthy();
+        it('should show the copy identifier button in the footer', () => {
+            expect(spectator.query(byTestId('copy-id-button'))).toBeTruthy();
+        });
+
+        it('should show the view-as-json link in the footer', () => {
+            expect(spectator.query(byTestId('json-link'))).toBeTruthy();
+        });
+
+        it('should NOT show a references card', () => {
+            expect(spectator.query(byTestId('references-card'))).toBeFalsy();
         });
     });
 
@@ -126,12 +129,6 @@ describe('DotEditContentSidebarInformationComponent', () => {
             spectator.detectChanges();
         });
 
-        it('should show New status tag for new contentlet', () => {
-            const tag = spectator.query('p-tag');
-            expect(tag).toBeTruthy();
-            expect(tag?.textContent).toContain('New');
-        });
-
         it('should not show json link', () => {
             const jsonLink = spectator.query(byTestId('json-link'));
             expect(jsonLink).toBeFalsy();
@@ -141,28 +138,6 @@ describe('DotEditContentSidebarInformationComponent', () => {
             const contentTypeLink = spectator.query(byTestId('content-type-link'));
             expect(contentTypeLink).toBeTruthy();
             expect(contentTypeLink.textContent).toContain('Blog');
-        });
-
-        it('should show no references message', () => {
-            const referencesCount = spectator.query(byTestId('references-count'));
-            expect(referencesCount).toBeTruthy();
-        });
-    });
-
-    describe('loading state', () => {
-        beforeEach(() => {
-            spectator.setInput('data', {
-                contentlet: null,
-                contentType: null,
-                referencesPageCount: 0,
-                loading: true
-            });
-            spectator.detectChanges();
-        });
-
-        it('should show skeleton loader', () => {
-            const skeleton = spectator.query('p-skeleton');
-            expect(skeleton).toBeTruthy();
         });
     });
 });

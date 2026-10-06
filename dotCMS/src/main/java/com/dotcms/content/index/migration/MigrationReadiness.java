@@ -1,0 +1,75 @@
+package com.dotcms.content.index.migration;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Support-facing ES→OS migration-readiness report (issue #36360): a point-in-time snapshot that a
+ * role-gated support technician reads <em>before</em> changing the migration phase, to see whether it
+ * is safe and, if not, what to do. Read-only and stateless — every field is derived from live index
+ * state at request time, nothing is persisted.
+ *
+ * @param clusterId         the dotCMS cluster id embedded in every physical index name
+ *                          (the {@code <id>} of the {@code cluster_<id>.} prefix); identical for the
+ *                          Elasticsearch and OpenSearch backends
+ * @param phase      the current migration phase and which engine it reads/writes
+ * @param content    the versioned content indices keyed by slot ({@code WORKING} / {@code LIVE}) — a
+ *                   fixed pair, so a keyed object reads naturally
+ * @param siteSearch the Site Search indices as a list — an open set with no natural key, so a list
+ *                   (each entry carries its own {@code indexName})
+ * @param verdict    the overall go/no-go for advancing and rolling back, with reasons
+ * @param unreachableEngines the engines that could not be read while building this report, keyed by
+ *                   engine name ({@code Elasticsearch} / {@code OpenSearch}) with the failure reason.
+ *                   The rows are still reported for the engine that answered; the other engine's side
+ *                   of each row carries the same reason (issue #37636). Omitted from the JSON when
+ *                   both engines were read.
+ */
+public record MigrationReadiness(
+        String clusterId,
+        PhaseInfo phase,
+        Map<String, MirrorStatus> content,
+        List<MirrorStatus> siteSearch,
+        Verdict verdict,
+        @JsonInclude(JsonInclude.Include.NON_EMPTY) Map<String, String> unreachableEngines) {
+
+    /**
+     * @param current      the current phase ordinal (0–3)
+     * @param name         the phase enum name (e.g. {@code PHASE_2_DUAL_WRITE_OS_READS})
+     * @param readEngine   which engine currently serves reads ("Elasticsearch" or "OpenSearch")
+     * @param writeEngines which engines currently receive writes
+     * @param dualWrite    whether this is a dual-write phase (1/2), where both engines are populated so a
+     *                     cross-engine mirror comparison is meaningful as a forward go/no-go; when false
+     *                     (phases 0 and 3) the mirror lists are advisory context, not a forward go/no-go
+     */
+    public record PhaseInfo(
+            int current,
+            String name,
+            String readEngine,
+            List<String> writeEngines,
+            boolean dualWrite) {}
+
+    /**
+     * @param safeToAdvance  whether it is safe to promote toward the OpenSearch-only phase
+     * @param safeToRollback whether it is safe to downgrade — false when any index's Elasticsearch
+     *                       copy is missing, behind its OpenSearch counterpart, or has an unmeasurable
+     *                       count on either engine, because a downgrade routes reads back to Elasticsearch
+     *                       and would silently drop that delta until a reindex. Also false when the
+     *                       mandatory content pair could not be resolved at all: with no rows to compare,
+     *                       "nothing shows Elasticsearch behind" is vacuously true (issue #37635)
+     * @param outOfSyncCount how many indices need attention <em>in the current phase</em> (missing
+     *                       counterpart or count drift). In Phase 0 an OpenSearch counterpart that does not
+     *                       exist yet is the expected state — it is built during dual-write — so it is not
+     *                       counted here. <strong>A 0 here is not on its own an all-clear</strong>: it
+     *                       counts drift among the rows that exist, so read it together with
+     *                       {@code blockers}, which is non-empty when nothing could be measured
+     * @param summary        one human-readable sentence describing the overall state
+     * @param blockers       per-index reasons that make advancing unsafe (empty when safe)
+     */
+    public record Verdict(
+            boolean safeToAdvance,
+            boolean safeToRollback,
+            int outOfSyncCount,
+            String summary,
+            List<String> blockers) {}
+}

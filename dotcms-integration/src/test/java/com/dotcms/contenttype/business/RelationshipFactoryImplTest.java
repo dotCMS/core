@@ -229,6 +229,13 @@ public class RelationshipFactoryImplTest extends ContentTypeBaseTest{
 
         parentContentlet = contentletAPI.checkin(parentContentlet, contentletRelationships, null, null, user, false);
 
+        //Ensure the relationship is fully indexed before the language-variant check-ins below.
+        //A legacy-relationship checkin with no explicit relationships auto-preserves related content
+        //by READING the index; under the OS read path (migration phase 2) that read is not
+        //read-after-write consistent mid-test, so without this an in-flight index dropped one
+        //related version and the DB query returned 3 instead of 4.
+        TestDataUtils.waitForEmptyQueue();
+
         //Adding multilingual versions of the children
         Contentlet childInGerman = contentletAPI.checkout(childInDefaultLanguage.getInode(), user, false);
         Contentlet child2InGerman = contentletAPI.checkout(childInDanish.getInode(), user, false);

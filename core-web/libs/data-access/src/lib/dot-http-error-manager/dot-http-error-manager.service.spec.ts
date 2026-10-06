@@ -1,12 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { describe, expect, it } from '@jest/globals';
+import { describe, expect, it, vi } from 'vitest';
 
 import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { getTestBed, TestBed } from '@angular/core/testing';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { LoginService } from '@dotcms/dotcms-js';
 import {
     DotMessageDisplayServiceMock,
     MockDotMessageService,
@@ -25,7 +24,6 @@ describe('DotHttpErrorManagerService', () => {
     let service: DotHttpErrorManagerService;
     let dotRouterService: DotRouterService;
     let dotDialogService: DotAlertConfirmService;
-    let loginService: LoginService;
     let result: any;
     let injector: TestBed;
 
@@ -39,26 +37,14 @@ describe('DotHttpErrorManagerService', () => {
         'dot.common.http.error.400.header': '400 Header',
         'dot.common.http.error.400.message': '400 Message',
         'dot.common.http.error.204.header': '204 Header',
-        'dot.common.http.error.204.message': '204 Message'
+        'dot.common.http.error.204.message': '204 Message',
+        'dot.common.http.error.409.header': '409 Header',
+        'dot.common.http.error.409.message': '409 Message'
     });
 
     beforeEach(() => {
         TestBed.configureTestingModule({
             providers: [
-                {
-                    provide: LoginService,
-                    useValue: {
-                        auth: {
-                            user: {
-                                emailAddress: 'admin@dotcms.com',
-                                firstName: 'Admin',
-                                lastName: 'Admin',
-                                loggedInDate: 123456789,
-                                userId: '123'
-                            }
-                        }
-                    }
-                },
                 {
                     provide: DotMessageService,
                     useValue: messageServiceMock
@@ -67,7 +53,7 @@ describe('DotHttpErrorManagerService', () => {
                     provide: DotMessageDisplayService,
                     useClass: DotMessageDisplayServiceMock
                 },
-                { provide: DotRouterService, useValue: new MockDotRouterJestService(jest) },
+                { provide: DotRouterService, useValue: new MockDotRouterJestService(vi) },
                 ConfirmationService,
                 DotAlertConfirmService,
                 DotHttpErrorManagerService
@@ -77,32 +63,28 @@ describe('DotHttpErrorManagerService', () => {
         service = injector.inject(DotHttpErrorManagerService);
         dotRouterService = injector.inject(DotRouterService);
         dotDialogService = injector.inject(DotAlertConfirmService);
-        loginService = injector.inject(LoginService);
     });
 
-    it('should handle 401 error when user is login we use 403', () => {
-        jest.spyOn(dotDialogService, 'alert');
+    it('should handle 401 error when user is logged in by redirecting to login', () => {
+        vi.spyOn(dotDialogService, 'alert');
+        vi.spyOn(dotRouterService, 'goToLogin');
 
         service.handle(mockResponseView(401)).subscribe((res) => {
             result = res;
         });
 
         expect(result).toEqual({
-            redirected: false,
+            redirected: true,
             status: 401
         });
 
-        expect(dotDialogService.alert).toHaveBeenCalledWith({
-            footerLabel: { accept: 'dot.common.dialog.accept' },
-            message: '403 Message',
-            header: '403 Header'
-        });
+        expect(dotDialogService.alert).not.toHaveBeenCalled();
+        expect(dotRouterService.goToLogin).toHaveBeenCalledTimes(1);
     });
 
-    it('should handle 401 error when user is logout and redirect to login', () => {
-        loginService.auth.user = undefined as any;
-        jest.spyOn(dotDialogService, 'alert');
-        jest.spyOn(dotRouterService, 'goToLogin');
+    it('should handle 401 error when user is not logged in and redirect to login', () => {
+        vi.spyOn(dotDialogService, 'alert');
+        vi.spyOn(dotRouterService, 'goToLogin');
 
         service.handle(mockResponseView(401)).subscribe((res) => {
             result = res;
@@ -118,7 +100,7 @@ describe('DotHttpErrorManagerService', () => {
     });
 
     it('should handle 403 error', () => {
-        jest.spyOn(dotDialogService, 'alert');
+        vi.spyOn(dotDialogService, 'alert');
 
         service.handle(mockResponseView(403)).subscribe((res) => {
             result = res;
@@ -136,7 +118,7 @@ describe('DotHttpErrorManagerService', () => {
     });
 
     it('should handle 500 error', () => {
-        jest.spyOn(dotDialogService, 'alert');
+        vi.spyOn(dotDialogService, 'alert');
         const headers = new HttpHeaders({
             error: 'error'
         });
@@ -160,7 +142,7 @@ describe('DotHttpErrorManagerService', () => {
     });
 
     it('should handle license error', () => {
-        jest.spyOn(dotDialogService, 'alert');
+        vi.spyOn(dotDialogService, 'alert');
         const headers = new HttpHeaders({
             'error-key': 'dotcms.api.error.license.required'
         });
@@ -183,7 +165,7 @@ describe('DotHttpErrorManagerService', () => {
     });
 
     it('should handle 400 error on message', () => {
-        jest.spyOn(dotDialogService, 'alert');
+        vi.spyOn(dotDialogService, 'alert');
 
         const responseView: HttpErrorResponse = mockResponseView(400, undefined, undefined, {
             message: 'Error'
@@ -205,7 +187,7 @@ describe('DotHttpErrorManagerService', () => {
     });
 
     it('should handle 400 error on error with header defined', () => {
-        jest.spyOn(dotDialogService, 'alert');
+        vi.spyOn(dotDialogService, 'alert');
         const CUSTOM_HEADER = 'Custom Header';
         const SERVER_MESSAGE = 'Server Error';
 
@@ -230,7 +212,7 @@ describe('DotHttpErrorManagerService', () => {
     });
 
     it('should handle 400 error on errors[0]', () => {
-        jest.spyOn(dotDialogService, 'alert');
+        vi.spyOn(dotDialogService, 'alert');
 
         const responseView: HttpErrorResponse = mockResponseView(400, undefined, undefined, [
             { message: 'Server Error' }
@@ -252,7 +234,7 @@ describe('DotHttpErrorManagerService', () => {
     });
 
     it('should handle 400 error on error.errors[0]', () => {
-        jest.spyOn(dotDialogService, 'alert');
+        vi.spyOn(dotDialogService, 'alert');
 
         const responseView: HttpErrorResponse = mockResponseView(400, undefined, undefined, {
             errors: [{ message: 'Server Error' }]
@@ -274,7 +256,7 @@ describe('DotHttpErrorManagerService', () => {
     });
 
     it('should handle 400 error on error.error', () => {
-        jest.spyOn(dotDialogService, 'alert');
+        vi.spyOn(dotDialogService, 'alert');
 
         const responseView: HttpErrorResponse = mockResponseView(400, undefined, undefined, {
             error: 'Server Error'
@@ -296,7 +278,7 @@ describe('DotHttpErrorManagerService', () => {
     });
 
     it('should handle 400 error and show reponse message', () => {
-        jest.spyOn(dotDialogService, 'alert');
+        vi.spyOn(dotDialogService, 'alert');
 
         service.handle(mockResponseView(400)).subscribe((res) => {
             result = res;
@@ -314,7 +296,7 @@ describe('DotHttpErrorManagerService', () => {
     });
 
     it('should handle 204 error', () => {
-        jest.spyOn(dotDialogService, 'alert');
+        vi.spyOn(dotDialogService, 'alert');
 
         service.handle(mockResponseView(204)).subscribe((res) => {
             result = res;
@@ -328,6 +310,49 @@ describe('DotHttpErrorManagerService', () => {
             footerLabel: { accept: 'dot.common.dialog.accept' },
             message: '204 Message',
             header: '204 Header'
+        });
+    });
+
+    it('should handle 409 error and surface the BE message', () => {
+        vi.spyOn(dotDialogService, 'alert');
+
+        const conflict = new HttpErrorResponse({
+            status: 409,
+            error: {
+                message: "Role 'test' has 2 child role(s) and cannot be deleted"
+            }
+        });
+
+        service.handle(conflict).subscribe((res) => {
+            result = res;
+        });
+
+        expect(result).toEqual({
+            redirected: false,
+            status: 409
+        });
+        expect(dotDialogService.alert).toHaveBeenCalledWith({
+            footerLabel: { accept: 'dot.common.dialog.accept' },
+            message: "Role 'test' has 2 child role(s) and cannot be deleted",
+            header: '409 Header'
+        });
+    });
+
+    it('should handle 409 error and fall back to the generic message when the body has none', () => {
+        vi.spyOn(dotDialogService, 'alert');
+
+        service.handle(new HttpErrorResponse({ status: 409, error: null })).subscribe((res) => {
+            result = res;
+        });
+
+        expect(result).toEqual({
+            redirected: false,
+            status: 409
+        });
+        expect(dotDialogService.alert).toHaveBeenCalledWith({
+            footerLabel: { accept: 'dot.common.dialog.accept' },
+            message: '409 Message',
+            header: '409 Header'
         });
     });
 });

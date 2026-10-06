@@ -1,6 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { Subject } from 'rxjs';
+import { vi } from 'vitest';
 
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
@@ -23,7 +22,7 @@ describe('DotTemplateNewComponent', () => {
 
     beforeEach(async () => {
         const mockDialogService = {
-            open: jest.fn().mockReturnValue({
+            open: vi.fn().mockReturnValue({
                 onClose: dialogRefClose
             })
         };
@@ -35,8 +34,8 @@ describe('DotTemplateNewComponent', () => {
                 {
                     provide: DotRouterService,
                     useValue: {
-                        gotoPortlet: jest.fn(),
-                        goToURL: jest.fn()
+                        gotoPortlet: vi.fn(),
+                        goToURL: vi.fn()
                     }
                 },
                 {

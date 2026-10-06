@@ -2,7 +2,7 @@ package com.dotcms.rest.api.v1.authentication;
 
 import com.dotcms.company.CompanyAPI;
 import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;

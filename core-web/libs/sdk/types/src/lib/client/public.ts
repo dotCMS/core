@@ -397,4 +397,12 @@ export interface DotCMSClientConfig {
      * @example `{ httpClient: new AxiosHttpClient() }`
      */
     httpClient?: DotHttpClient;
+
+    /**
+     * Controls the verbosity of error logs from the SDK.
+     * - `'default'`: logs the error message only (default)
+     * - `'verbose'`: also logs the HTTP status, error code, and the GraphQL query and variables
+     * @example `logLevel: 'verbose'`
+     */
+    logLevel?: 'default' | 'verbose';
 }

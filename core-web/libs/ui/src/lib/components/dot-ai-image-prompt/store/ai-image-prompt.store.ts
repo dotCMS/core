@@ -7,11 +7,11 @@ import { computed, inject } from '@angular/core';
 
 import { switchMap, tap } from 'rxjs/operators';
 
-import { DotAiService } from '@dotcms/data-access';
+import { DotAiContentService } from '@dotcms/data-access';
 import {
     AIImagePrompt,
     ComponentStatus,
-    DotAIImageOrientation,
+    DEFAULT_IMAGE_SIZE,
     DotGeneratedAIImage,
     PromptType
 } from '@dotcms/dotcms-models';
@@ -34,7 +34,7 @@ const initialState: AiImagePromptdState = {
     formValue: {
         text: '',
         type: PromptType.INPUT,
-        size: DotAIImageOrientation.HORIZONTAL
+        size: DEFAULT_IMAGE_SIZE
     }
 };
 
@@ -73,7 +73,7 @@ export const DotAiImagePromptStore = signalStore(
         })
     })),
     withMethods((store) => {
-        const dotAiService = inject(DotAiService);
+        const dotAiService = inject(DotAiContentService);
 
         return {
             setGalleryActiveIndex: (galleryActiveIndex: number) => {
@@ -128,9 +128,24 @@ export const DotAiImagePromptStore = signalStore(
                                         });
                                     },
                                     error: (error: string) => {
+                                        const errorImage: DotGeneratedAIImage = {
+                                            request: formValue,
+                                            response: null,
+                                            error: error
+                                        };
+                                        const errorImagesArray = [...imagesArray];
+                                        if (isImageWithError) {
+                                            errorImagesArray[galleryActiveIndex] = errorImage;
+                                        } else {
+                                            errorImagesArray.push(errorImage);
+                                        }
                                         patchState(store, {
                                             status: ComponentStatus.ERROR,
-                                            error: error
+                                            error: error,
+                                            images: errorImagesArray,
+                                            galleryActiveIndex: isImageWithError
+                                                ? galleryActiveIndex
+                                                : errorImagesArray.length - 1
                                         });
                                     }
                                 })

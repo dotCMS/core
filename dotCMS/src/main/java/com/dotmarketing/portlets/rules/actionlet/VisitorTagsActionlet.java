@@ -1,6 +1,6 @@
 package com.dotmarketing.portlets.rules.actionlet;
 
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.exception.InvalidRuleParameterException;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.domain.Visitor;

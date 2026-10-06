@@ -1,9 +1,10 @@
 import { Observable, of as observableOf } from 'rxjs';
+import { vi } from 'vitest';
 
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { Validators } from '@angular/forms';
 
-import { DotPropertiesService } from '@dotcms/data-access';
+import { DotFieldService, DotPropertiesService } from '@dotcms/data-access';
 import {
     DotCMSClazzes,
     DotCMSContentTypeField,
@@ -14,7 +15,6 @@ import {
 } from '@dotcms/dotcms-models';
 
 import { FieldPropertyService } from './field-properties.service';
-import { FieldService } from './field.service';
 import { validateDateDefaultValue } from './validators';
 
 import { FieldType } from '..';
@@ -39,7 +39,7 @@ class TestFieldService {
 }
 
 class TestDotPropertiesService {
-    getKey = jest.fn().mockReturnValue(observableOf(FEATURE_FLAG_NOT_FOUND));
+    getKey = vi.fn().mockReturnValue(observableOf(FEATURE_FLAG_NOT_FOUND));
 }
 
 let fieldPropertiesService: FieldPropertyService;
@@ -52,7 +52,7 @@ describe('FieldPropertyService', () => {
         TestBed.configureTestingModule({
             providers: [
                 FieldPropertyService,
-                { provide: FieldService, useClass: TestFieldService },
+                { provide: DotFieldService, useClass: TestFieldService },
                 { provide: DotPropertiesService, useValue: dotPropertiesService }
             ]
         });
@@ -154,7 +154,7 @@ describe('FieldPropertyService', () => {
     describe('constructor', () => {
         it('should add newRenderMode property to custom fields', fakeAsync(() => {
             const customFieldService = new TestFieldService();
-            customFieldService.loadFieldTypes = jest.fn().mockReturnValue(
+            customFieldService.loadFieldTypes = vi.fn().mockReturnValue(
                 observableOf([
                     {
                         clazz: DotCMSClazzes.CUSTOM_FIELD,
@@ -176,7 +176,7 @@ describe('FieldPropertyService', () => {
             TestBed.resetTestingModule().configureTestingModule({
                 providers: [
                     FieldPropertyService,
-                    { provide: FieldService, useValue: customFieldService },
+                    { provide: DotFieldService, useValue: customFieldService },
                     { provide: DotPropertiesService, useValue: dotPropertiesService }
                 ]
             });
@@ -209,7 +209,7 @@ describe('FieldPropertyService', () => {
             TestBed.resetTestingModule().configureTestingModule({
                 providers: [
                     FieldPropertyService,
-                    { provide: FieldService, useClass: TestFieldService },
+                    { provide: DotFieldService, useClass: TestFieldService },
                     { provide: DotPropertiesService, useValue: dotPropertiesService }
                 ]
             });
@@ -228,7 +228,7 @@ describe('FieldPropertyService', () => {
             TestBed.resetTestingModule().configureTestingModule({
                 providers: [
                     FieldPropertyService,
-                    { provide: FieldService, useClass: TestFieldService },
+                    { provide: DotFieldService, useClass: TestFieldService },
                     { provide: DotPropertiesService, useValue: dotPropertiesService }
                 ]
             });
@@ -247,7 +247,7 @@ describe('FieldPropertyService', () => {
             TestBed.resetTestingModule().configureTestingModule({
                 providers: [
                     FieldPropertyService,
-                    { provide: FieldService, useClass: TestFieldService },
+                    { provide: DotFieldService, useClass: TestFieldService },
                     { provide: DotPropertiesService, useValue: dotPropertiesService }
                 ]
             });
@@ -441,7 +441,7 @@ describe('FieldPropertyService', () => {
             TestBed.resetTestingModule().configureTestingModule({
                 providers: [
                     FieldPropertyService,
-                    { provide: FieldService, useClass: TestFieldService },
+                    { provide: DotFieldService, useClass: TestFieldService },
                     { provide: DotPropertiesService, useValue: dotPropertiesService }
                 ]
             });

@@ -1,0 +1,75 @@
+<div class="form mt-4">
+    <div class="field">
+        <div class="flex flex-col gap-3 rounded-sm border border-gray-300 bg-primary-50 p-4">
+            <div class="flex items-start justify-between gap-4">
+                <div class="flex min-w-0 flex-1 flex-col gap-1">
+                    <span class="font-bold">
+                        {{ 'contenttypes.field.properties.renderOptions.showAsModal.label' | dm }}
+                    </span>
+                    <span class="text-sm">
+                        {{ 'contenttypes.field.properties.renderOptions.showAsModal.helper' | dm }}
+                    </span>
+                </div>
+                <p-toggleswitch
+                    id="showAsModal"
+                    [formField]="formTree.showAsModal"
+                    class="shrink-0"
+                    data-testid="render-options-show-as-modal" />
+            </div>
+            @if ($showAsModal()) {
+                <div class="flex flex-wrap gap-4 border-t border-gray-200 pt-2">
+                    <div class="field min-w-0 flex-1">
+                        <label for="customFieldWidth">
+                            {{ 'contenttypes.field.properties.renderOptions.width' | dm }}
+                        </label>
+                        <div class="flex items-center gap-2">
+                            <input
+                                id="customFieldWidth"
+                                type="number"
+                                min="1"
+                                [formField]="formTree.customFieldWidth"
+                                pInputText
+                                class="flex-1"
+                                data-testid="render-options-width" />
+                            <span class="shrink-0 text-sm">px</span>
+                        </div>
+                        @if (
+                            formTree.customFieldWidth().invalid() &&
+                            formTree.customFieldWidth().touched()
+                        ) {
+                            <small class="p-error" data-testid="render-options-width-error">
+                                {{ 'contenttypes.field.properties.renderOptions.width.error' | dm }}
+                            </small>
+                        }
+                    </div>
+                    <div class="field min-w-0 flex-1">
+                        <label for="customFieldHeight">
+                            {{ 'contenttypes.field.properties.renderOptions.height' | dm }}
+                        </label>
+                        <div class="flex items-center gap-2">
+                            <input
+                                id="customFieldHeight"
+                                type="number"
+                                min="1"
+                                [formField]="formTree.customFieldHeight"
+                                pInputText
+                                class="flex-1"
+                                data-testid="render-options-height" />
+                            <span class="shrink-0 text-sm">px</span>
+                        </div>
+                        @if (
+                            formTree.customFieldHeight().invalid() &&
+                            formTree.customFieldHeight().touched()
+                        ) {
+                            <small class="p-error" data-testid="render-options-height-error">
+                                {{
+                                    'contenttypes.field.properties.renderOptions.height.error' | dm
+                                }}
+                            </small>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>

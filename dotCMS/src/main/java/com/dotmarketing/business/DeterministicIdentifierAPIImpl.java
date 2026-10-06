@@ -5,6 +5,7 @@ import static com.dotmarketing.util.UUIDUtil.isUUID;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -37,6 +38,7 @@ import com.google.common.base.Preconditions;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import java.io.IOException;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -62,6 +64,7 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
 
     static final String NON_DETERMINISTIC_IDENTIFIER = "[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}";
     public static final String S_S = "%s:%s";
+    public static final String S_S_S = "%s:%s:%s";
 
     final IdentifierFactory identifierFactory = FactoryLocator.getIdentifierFactory();
     final Predicate<String> testIdentifier =  identifierFactory::isIdentifier;
@@ -115,7 +118,33 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
             } else {
                 //This should handle cases like a multi-binary contentlets
                 final Optional<String> optional = resolveAssetName(contentlet);
-                seed = optional.orElseGet(contentlet::getTitle);
+                if (optional.isPresent()) {
+                    seed = optional.get();
+                } else {
+                    // For generic contentlets with no binary fields, build the seed from all
+                    // non-system field values sorted by variable name. This prevents two contentlets
+                    // with the same title but different field values from receiving the same identifier.
+                    final String fieldValueSeed = contentlet.getContentType().fields().stream()
+                            .filter(field -> !(field instanceof BinaryField))
+                            .filter(field -> field.dataType() != DataTypes.SYSTEM)
+                            .sorted(Comparator.comparing(Field::variable))
+                            .map(field -> {
+                                final Object value = contentlet.get(field.variable());
+                                if (value == null) {
+                                    return null;
+                                }
+                                // Escape backslash first, then the delimiters, so the seed
+                                // is unambiguous even when a field value contains '|' or '='.
+                                final String escaped = value.toString()
+                                        .replace("\\", "\\\\")
+                                        .replace("|", "\\|")
+                                        .replace("=", "\\=");
+                                return field.variable() + "=" + escaped;
+                            })
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.joining("|"));
+                    seed = UtilMethods.isSet(fieldValueSeed) ? fieldValueSeed : contentlet.getTitle();
+                }
             }
         } else if (asset instanceof WebAsset) {
             seed = ((WebAsset) asset).getTitle();
@@ -201,9 +230,9 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
                 final String deterministicId = formattedString(assetType, parentHost, parentFolder, assetName.get());
 
                 Logger.debug(DeterministicIdentifierAPIImpl.class,
-                        String.format(" assetType: %s, assetName: %s,  deterministicId: %s",
+                        String.format(" assetType: %s, assetNameLength: %s,  deterministicId: %s",
                                 assetType,
-                                assetName,
+                                assetName.map(String::length).orElse(0),
                                 deterministicId));
 
                 return Optional.of(deterministicId);
@@ -321,8 +350,10 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
         if(UtilMethods.isNotSet(name)){
             name = field.variable();
         }
-        //amplify the dispersion of the seed by adding the field type
-        return  String.format(S_S, name, field.typeName());
+        //amplify the dispersion of the seed by adding the field type and data type,
+        //so a field re-created with the same variable but a different data type gets a
+        //different deterministic id
+        return String.format(S_S_S, name, field.typeName(), field.dataType().value);
     }
 
     /**

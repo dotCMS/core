@@ -1,7 +1,6 @@
 {
   "request": {
     "method": "POST",
-    "url": "/c",
     "headers": {
       "Content-Type": {
         "equalTo": "application/json"
@@ -12,9 +11,10 @@
     },
     "bodyPatterns": [
       {
-        "matches": ".*\"content\":\"How does blockchain technology work.*"
+        "matches": ".*\"content\" : \"How does blockchain technology work.*"
       }
-    ]
+    ],
+    "urlPathPattern": "/chat/completions"
   },
   "response": {
     "status": 200,
@@ -25,10 +25,13 @@
       "model": "gpt-3.5-turbo-16k",
       "choices": [
         {
-          "text": "Blockchain technology works as a decentralized ledger that records transactions across many computers. Each block in the chain contains a number of transactions, and once a block is added to the chain, it cannot be altered. This ensures security and transparency, as the entire network verifies and validates transactions, preventing fraud and double-spending.",
           "index": 0,
           "logprobs": null,
-          "finish_reason": "stop"
+          "finish_reason": "stop",
+          "message": {
+            "role": "assistant",
+            "content": "Blockchain technology works as a decentralized ledger that records transactions across many computers. Each block in the chain contains a number of transactions, and once a block is added to the chain, it cannot be altered. This ensures security and transparency, as the entire network verifies and validates transactions, preventing fraud and double-spending."
+          }
         }
       ],
       "usage": {

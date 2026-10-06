@@ -23,6 +23,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
@@ -73,6 +74,9 @@ public class CompletionsAPIImpl implements CompletionsAPI {
         final Model model = config.resolveModelOrThrow(modelIn, AIModelType.TEXT)._2;
         final JSONObject json = new JSONObject();
 
+        if (temperature <= 0) {
+            Logger.warn(this.getClass(), "Temperature is " + temperature + ". Set a positive value in providerConfig if unintended.");
+        }
         json.put(AiKeys.TEMPERATURE, temperature);
         buildMessages(systemPrompt, userPrompt, json);
 
@@ -91,6 +95,10 @@ public class CompletionsAPIImpl implements CompletionsAPI {
         final List<EmbeddingsDTO> localResults = APILocator.getDotAIAPI()
                 .getEmbeddingsAPI()
                 .getEmbeddingResults(searcher);
+
+        if (localResults.isEmpty()) {
+            return new JSONObject(Map.of(AiKeys.ERROR, "no matching content found in the index for your query"));
+        }
 
         // send all this as a json blob to OpenAI
         final JSONObject json = buildRequestJson(summaryRequest, localResults);
@@ -118,6 +126,17 @@ public class CompletionsAPIImpl implements CompletionsAPI {
                 .getEmbeddingsAPI()
                 .getEmbeddingResults(searcher);
 
+        if (localResults.isEmpty()) {
+            Try.run(() -> {
+                output.write(
+                        (new JSONObject(Map.of(AiKeys.ERROR, "no matching content found in the index for your query"))
+                                .toString() + "\n")
+                                .getBytes());
+                output.flush();
+            });
+            return;
+        }
+
         final JSONObject json = buildRequestJson(summaryRequest, localResults);
         json.put(AiKeys.STREAM, true);
         AIProxyClient.get().callToAI(
@@ -130,10 +149,10 @@ public class CompletionsAPIImpl implements CompletionsAPI {
 
     @Override
     public JSONObject raw(final JSONObject json, final String userId) {
-        config.debugLogger(this.getClass(), () -> "OpenAI request:" + json.toString(2));
+        config.debugLogger(this.getClass(), () -> "AI request:" + json.toString(2));
 
         final String response = sendRequest(config, json, userId).getResponse();
-        config.debugLogger(this.getClass(), () -> "OpenAI response:" + response);
+        config.debugLogger(this.getClass(), () -> "AI response:" + response);
 
         return new JSONObject(response);
     }
@@ -226,10 +245,18 @@ public class CompletionsAPIImpl implements CompletionsAPI {
                 .collect(Collectors.toList());
 
         if (UtilMethods.isSet(models)) {
-            final Tuple2<AIModel, Model> modelTuple = config
-                    .resolveModelOrThrow(completionsForm.model, AIModelType.TEXT);
-
-            return new ResolvedModel(modelTuple._2.getName(), modelTuple._1.getMaxTokens());
+            if (UtilMethods.isSet(completionsForm.model)) {
+                final Tuple2<AIModel, Model> modelTuple = config
+                        .resolveModelOrThrow(completionsForm.model, AIModelType.TEXT);
+                final int maxTokens = modelTuple._1.getMaxTokens() > 0
+                        ? modelTuple._1.getMaxTokens()
+                        : DEFAULT_AI_MAX_NUMBER_OF_TOKENS_VALUE.get();
+                return new ResolvedModel(modelTuple._2.getName(), maxTokens);
+            }
+            final int maxTokens = aiModel.getMaxTokens() > 0
+                    ? aiModel.getMaxTokens()
+                    : DEFAULT_AI_MAX_NUMBER_OF_TOKENS_VALUE.get();
+            return new ResolvedModel(aiModel.getCurrentModel(), maxTokens);
         } else if (UtilMethods.isSet(completionsForm.model)) {
             return new ResolvedModel(completionsForm.model, DEFAULT_AI_MAX_NUMBER_OF_TOKENS_VALUE.get());
         } else {
@@ -266,7 +293,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
         return EncodingUtil.get()
                 .getEncoding(config, AIModelType.TEXT)
                 .map(enc -> enc.countTokens(testString))
-                .orElseThrow(() -> new DotRuntimeException("Encoder not found"));
+                .orElseGet(() -> Math.max(1, testString.length() / 4));
     }
 
     /***
@@ -304,12 +331,15 @@ public class CompletionsAPIImpl implements CompletionsAPI {
 
     private JSONObject buildRequestJson(final CompletionsForm form) {
         final AIModel aiModel = config.getModel();
+        final int effectiveMaxTokens = aiModel.getMaxTokens() > 0
+                ? aiModel.getMaxTokens()
+                : DEFAULT_AI_MAX_NUMBER_OF_TOKENS_VALUE.get();
         final int promptTokens = countTokens(form.prompt);
 
         final JSONArray messages = new JSONArray();
         final String textPrompt = reduceStringToTokenSize(
                 form.prompt,
-                aiModel.getMaxTokens() - form.responseLengthTokens - promptTokens);
+                effectiveMaxTokens - form.responseLengthTokens - promptTokens);
 
         messages.add(Map.of(AiKeys.ROLE, AiKeys.USER, AiKeys.CONTENT, textPrompt));
 

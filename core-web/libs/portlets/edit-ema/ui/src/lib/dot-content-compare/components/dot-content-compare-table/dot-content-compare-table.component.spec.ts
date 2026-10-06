@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { createFakeEvent } from '@ngneat/spectator';
+import { createFakeEvent } from '@openng/spectator';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -29,7 +30,7 @@ import { DotContentComparePreviewFieldComponent } from '../fields/dot-content-co
     standalone: false,
     selector: 'dot-test-host-component',
     template:
-        '<dot-content-compare-table [data]="data" (bringBack)="bringBack.emit($event)" (changeDiff)="changeDiff.emit($event)" (changeVersion)="changeVersion.emit($event)" [showDiff]="showDiff"></dot-content-compare-table>'
+        '<dot-content-compare-table [data]="data" (bringBack)="bringBack.emit($event)" (changeDiff)="changeDiff.emit($event)" (changeVersion)="changeVersion.emit($event)" [showDiff]="showDiff" />'
 })
 class TestHostComponent {
     @Input() data: DotContentCompareTableData;
@@ -343,6 +344,10 @@ describe('DotContentCompareTableComponent', () => {
             const dropdown: Select = de.query(By.css('p-select')).componentInstance;
             expect(dropdown.options).toEqual(dotContentCompareTableDataMock.versions);
         });
+        it('should show data.compare as the initially selected version in the dropdown', () => {
+            const dropdown: Select = de.query(By.css('p-select')).componentInstance;
+            expect(dropdown.value).toEqual(dotContentCompareTableDataMock.compare);
+        });
         it('should show selectButton', () => {
             const select: SelectButton = de.query(
                 By.css('[data-testId="show-diff"]')
@@ -480,14 +485,14 @@ describe('DotContentCompareTableComponent', () => {
 
     describe('events', () => {
         it('should emit changeVersion', () => {
-            jest.spyOn(hostComponent.changeVersion, 'emit');
+            vi.spyOn(hostComponent.changeVersion, 'emit');
             const dropdown: Select = de.query(By.css('p-select')).componentInstance;
             dropdown.onChange.emit({ value: 'test', originalEvent: createFakeEvent('click') });
 
             expect(hostComponent.changeVersion.emit).toHaveBeenCalledWith('test');
         });
         it('should emit changeDiff', () => {
-            jest.spyOn(hostComponent.changeDiff, 'emit');
+            vi.spyOn(hostComponent.changeDiff, 'emit');
             const select: SelectButton = de.query(
                 By.css('[data-testId="show-diff"]')
             ).componentInstance;
@@ -497,7 +502,7 @@ describe('DotContentCompareTableComponent', () => {
         });
 
         it('should emit bring back', () => {
-            jest.spyOn(hostComponent.bringBack, 'emit');
+            vi.spyOn(hostComponent.bringBack, 'emit');
             const button = de.query(By.css('[data-testId="table-bring-back"]'));
 
             button.triggerEventHandler('click', '');

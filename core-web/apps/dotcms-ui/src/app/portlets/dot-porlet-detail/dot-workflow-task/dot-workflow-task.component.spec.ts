@@ -1,9 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { mockProvider } from '@ngneat/spectator/jest';
+import { mockProvider } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { DebugElement, Injectable } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -36,11 +38,7 @@ import {
 } from '@dotcms/data-access';
 import {
     ApiRoot,
-    CoreWebService,
     DotcmsConfigService,
-    DotcmsEventsService,
-    DotEventsSocket,
-    DotEventsSocketURL,
     LoggerService,
     LoginService,
     StringUtils,
@@ -48,7 +46,6 @@ import {
 } from '@dotcms/dotcms-js';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
 import {
-    CoreWebServiceMock,
     LoginServiceMock,
     MockDotMessageService,
     MockDotRouterService
@@ -59,7 +56,7 @@ import { DotWorkflowTaskComponent } from './dot-workflow-task.component';
 import { DotCustomEventHandlerService } from '../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotDownloadBundleDialogService } from '../../../api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { DotMenuService } from '../../../api/services/dot-menu.service';
-import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../test/dot-test-bed';
+import { MockDotUiColorsService } from '../../../test/dot-test-bed';
 import { IframeOverlayService } from '../../../view/components/_common/iframe/service/iframe-overlay.service';
 import { DotContentletEditorService } from '../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotWorkflowTaskDetailComponent } from '../../../view/components/dot-workflow-task-detail/dot-workflow-task-detail.component';
@@ -67,7 +64,7 @@ import { DotWorkflowTaskDetailService } from '../../../view/components/dot-workf
 
 @Injectable()
 class MockDotWorkflowTaskDetailService {
-    view = jest.fn();
+    view = vi.fn();
 }
 
 const messageServiceMock = new MockDotMessageService({
@@ -94,7 +91,6 @@ describe('DotWorkflowTaskComponent', () => {
                 DotWorkflowTaskDetailComponent,
                 BrowserAnimationsModule,
                 RouterTestingModule,
-                HttpClientTestingModule,
                 DotWorkflowTaskComponent
             ],
             providers: [
@@ -131,12 +127,10 @@ describe('DotWorkflowTaskComponent', () => {
                 UserModel,
                 LoggerService,
                 StringUtils,
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 DotCurrentUserService,
                 DotMessageDisplayService,
-                DotcmsEventsService,
-                DotEventsSocket,
-                { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 DotcmsConfigService,
                 DotWizardService,
                 DotHttpErrorManagerService,
@@ -176,7 +170,7 @@ describe('DotWorkflowTaskComponent', () => {
         dotRouterService = TestBed.inject(DotRouterService);
         dotIframeService = TestBed.inject(DotIframeService);
         dotCustomEventHandlerService = TestBed.inject(DotCustomEventHandlerService);
-        jest.spyOn(dotIframeService, 'reloadData');
+        vi.spyOn(dotIframeService, 'reloadData');
         fixture.detectChanges();
         taskDetail = de.query(By.css('dot-workflow-task-detail'));
     });
@@ -200,7 +194,7 @@ describe('DotWorkflowTaskComponent', () => {
     });
 
     it('should redirect to /workflow when edit-task-executed-workflow event is triggered', () => {
-        jest.spyOn(component, 'onCloseWorkflowTaskEditor');
+        vi.spyOn(component, 'onCloseWorkflowTaskEditor');
         taskDetail.triggerEventHandler('custom', {
             detail: {
                 name: 'edit-task-executed-workflow'
@@ -222,7 +216,7 @@ describe('DotWorkflowTaskComponent', () => {
     });
 
     it('should call to dotCustomEventHandlerService with the correct callbaack', () => {
-        jest.spyOn(dotCustomEventHandlerService, 'handle');
+        vi.spyOn(dotCustomEventHandlerService, 'handle');
         const mockEvent = {
             detail: {
                 name: 'workflow-wizard',

@@ -1,0 +1,22 @@
+<dot-chip-filter
+    [title]="'users.filter.by' | dm"
+    [selections]="$selections()"
+    (clicked)="popover.toggle($event)"
+    (removed)="onRemove()"
+    data-testid="users-filter-by-chip" />
+
+<p-popover #popover>
+    <p-listbox
+        [(ngModel)]="$selectedValue"
+        [ngModelOptions]="{ standalone: true }"
+        [options]="$options"
+        [multiple]="false"
+        [checkbox]="false"
+        optionLabel="label"
+        optionValue="value"
+        (onChange)="onChange()">
+        <ng-template let-item pTemplate="item">
+            <dot-filter-list-item [label]="item.label" data-testid="users-filter-by-item" />
+        </ng-template>
+    </p-listbox>
+</p-popover>

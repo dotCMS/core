@@ -1,15 +1,7 @@
-export * from "./Activity";
-export * from "./Banner";
-export * from "./BannerCarousel";
-export * from "./CalendarEvent";
-export * from "./CallToAction";
-export * from "./CategoryFilter";
-export * from "./dotComponents";
-export * from "./Empty";
-export * from "./Image";
-export * from "./PageForm";
-export * from "./Product";
-export * from "./SimpleWidget";
-export * from "./StoreProductList";
-export * from "./VtlInclude";
-export * from "./WebPageContent";
+// Only the component map is re-exported.
+//
+// This barrel used to `export *` from every content-type component, which made all of them
+// statically reachable from anything importing it — enough on its own to pull every
+// component into the initial bundle no matter how `dotComponents` loads them. Import a
+// component directly from its own module if you need it somewhere else.
+export { dotComponents } from "./dotComponents";

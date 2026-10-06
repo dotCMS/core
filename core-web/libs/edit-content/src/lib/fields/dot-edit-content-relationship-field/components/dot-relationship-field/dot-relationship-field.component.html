@@ -1,67 +1,75 @@
-@let pagination = store.pagination();
-@let showPagination = store.totalPages() > 1;
-@let data = store.data();
+@let data = store.$visibleItems();
+@let canToggleAll = store.$canToggleAll();
+@let showingAll = store.showingAll();
 @let isDisabled = $isDisabled();
-@let isEmpty = data.length === 0;
-@let field = $field();
-@let hintText = field.hint || null;
-@let hasError = $hasError();
-@let isRequired = $isRequired();
+@let isEmpty = store.data().length === 0;
+@let showThumbnail = store.showThumbnail();
+@let canNavigate = $canNavigate();
 
 <p-table
     [value]="data"
     [columns]="store.columns()"
     data-testid="relationship-field-table"
-    class="dot-relationship-field-table"
+    class="dot-relationship-field-table w-full max-w-full overflow-hidden rounded-lg border border-solid [&_tr:last-child_td]:border-b-0!"
+    [rowHover]="true"
     [paginator]="false"
-    [first]="pagination.offset"
-    [rows]="pagination.rowsPerPage"
     [scrollable]="true"
     [reorderableColumns]="false"
     (onRowReorder)="onRowReorder($event)">
     <ng-template pTemplate="header" let-columns>
         <p-menu #menu [model]="$menuItems()" [popup]="true" appendTo="body" />
 
-        <tr class="font-bold bg-[var(--gray-100)]">
+        <tr class="bg-gray-100 font-bold">
             <th scope="col" class="w-12 min-w-12"></th>
 
             @for (column of columns; track $index) {
                 @switch (column.type) {
                     @case ('title') {
-                        <th scope="col" [class.w-48]="!isEmpty" [class.min-w-48]="!isEmpty">
+                        <th scope="col" class="min-w-0 flex-1" [class.text-right!]="$last">
                             {{ 'dot.file.relationship.field.table.title' | dm }}
                         </th>
                     }
                     @case ('language') {
-                        <th scope="col" [class.min-w-32]="!isEmpty">
+                        <th
+                            scope="col"
+                            class="w-32 max-w-32 min-w-32"
+                            [class.text-right!]="$last"
+                            data-testid="relationship-locale-header">
                             {{ 'dot.file.relationship.field.table.language' | dm }}
                         </th>
                     }
                     @case ('status') {
-                        <th scope="col" [class.min-w-32]="!isEmpty">
+                        <!-- Right-aligned because it is Status, not because it happens to sit
+                             last: `$last` alignment is the table's generic rule and would drop the
+                             alignment the moment a configured column follows this one. -->
+                        <th
+                            scope="col"
+                            class="w-32 max-w-32 min-w-32 text-right!"
+                            data-testid="relationship-status-header">
                             {{ 'dot.file.relationship.field.table.status' | dm }}
                         </th>
                     }
                     @case ('image') {
-                        <th scope="col" [class.w-24]="!isEmpty" [class.min-w-24]="!isEmpty">
+                        <th scope="col" class="w-24 max-w-24 min-w-24" [class.text-right!]="$last">
                             <p class="truncate capitalize">{{ column.header }}</p>
                         </th>
                     }
                     @default {
-                        <th scope="col" [class.min-w-32]="!isEmpty">
+                        <th scope="col" class="w-32 max-w-32 min-w-32" [class.text-right!]="$last">
                             <span class="capitalize">{{ column.header }}</span>
                         </th>
                     }
                 }
             }
 
-            <th scope="col" class="w-16 min-w-16" alignFrozen="right" pFrozenColumn [frozen]="true">
+            <th scope="col" class="w-10 min-w-10" alignFrozen="right" pFrozenColumn [frozen]="true">
                 <p-button
                     (onClick)="menu.toggle($event)"
                     size="small"
                     icon="pi pi-plus"
                     [text]="true"
-                    [disabled]="isDisabled" />
+                    [disabled]="isDisabled"
+                    data-testid="relationship-add-button" />
             </th>
         </tr>
     </ng-template>
@@ -69,11 +77,23 @@
     <ng-template pTemplate="emptymessage">
         <tr>
             <td [colSpan]="$totalColumns()">
-                <div class="flex p-2 gap-2 justify-center items-center">
+                <div
+                    class="flex items-center justify-center gap-2 p-2"
+                    data-testid="relationship-field-empty">
                     <i class="pi pi-folder-open"></i>
-                    <p class="text-[var(--gray-600)]">
+                    <span class="text-gray-600">
                         {{ 'dot.file.relationship.field.empty.message' | dm }}
-                    </p>
+                        @if (!isDisabled) {
+                            <button
+                                type="button"
+                                class="cursor-pointer border-0 bg-transparent p-0 text-blue-600 underline hover:text-blue-800 focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-hidden"
+                                (click)="showExistingContentDialog()"
+                                data-testid="relationship-empty-relate-link">
+                                {{ 'dot.file.relationship.field.empty.relate.link' | dm }}
+                            </button>
+                            {{ 'dot.file.relationship.field.empty.message.suffix' | dm }}
+                        }
+                    </span>
                 </div>
             </td>
         </tr>
@@ -83,48 +103,99 @@
         <tr
             [pReorderableRow]="index"
             [class.opacity-50]="isDisabled"
-            [class.cursor-not-allowed]="isDisabled">
+            [class.cursor-not-allowed]="isDisabled"
+            class="group">
+            <!-- The handle is revealed by hovering or focusing the row, matching the remove button
+                 at the other end of it: a list of ten items should read as content, not as ten sets
+                 of grip dots. `focus-visible` is what keeps the reorder affordance reachable
+                 without a pointer.
+
+                 A disabled field renders no handle at all — not a greyed-out one. There is nothing
+                 to reorder, so an affordance that merely looks unavailable is still one control too
+                 many. -->
             <td class="w-12 min-w-12">
                 @if (!isDisabled) {
-                    <span class="pi pi-bars text-[var(--gray-600)]" pReorderableRowHandle></span>
-                } @else {
-                    <span class="pi pi-bars text-[var(--gray-600)] cursor-not-allowed"></span>
+                    <span
+                        class="flex cursor-grab items-center text-gray-600 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+                        tabindex="0"
+                        pReorderableRowHandle
+                        data-testid="relationship-drag-handle">
+                        <i class="pi pi-ellipsis-v text-[14px]"></i>
+                        <i class="pi pi-ellipsis-v -ml-2 text-[14px]"></i>
+                    </span>
                 }
             </td>
 
             @for (column of columns; track $index) {
                 @switch (column.type) {
                     @case ('title') {
-                        <td class="w-48 min-w-48" [class.cursor-not-allowed]="isDisabled">
-                            <p class="truncate">{{ item.title }}</p>
+                        <td
+                            class="min-w-0 flex-1"
+                            [class.cursor-not-allowed]="isDisabled"
+                            [class.text-right!]="$last">
+                            <div class="flex items-center gap-3">
+                                @if (showThumbnail) {
+                                    <div
+                                        class="h-14 w-20 shrink-0 overflow-hidden rounded-md bg-gray-100">
+                                        <dot-content-thumbnail
+                                            [contentlet]="item"
+                                            iconSize="24px"
+                                            data-testId="contentlet-thumbnail" />
+                                    </div>
+                                }
+                                @if (canNavigate) {
+                                    <button
+                                        type="button"
+                                        class="cursor-pointer truncate border-0 bg-transparent p-0 text-left text-inherit focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-hidden"
+                                        (click)="openRelated(item)"
+                                        data-testid="relationship-navigate-link">
+                                        {{ item.title }}
+                                    </button>
+                                } @else {
+                                    <p class="truncate">{{ item.title }}</p>
+                                }
+                            </div>
                         </td>
                     }
                     @case ('language') {
-                        <td class="min-w-32" [class.cursor-not-allowed]="isDisabled">
-                            {{ item.language | language }}
+                        <td
+                            class="w-32 max-w-32 min-w-32"
+                            [class.cursor-not-allowed]="isDisabled"
+                            [class.text-right!]="$last">
+                            @if (item.language | language; as localeLabel) {
+                                <p-tag
+                                    class="whitespace-nowrap"
+                                    severity="info"
+                                    [value]="localeLabel"
+                                    data-testid="relationship-locale-tag" />
+                            }
                         </td>
                     }
                     @case ('status') {
-                        <td class="min-w-32" [class.cursor-not-allowed]="isDisabled">
-                            @let status = item | contentletStatus;
-                            <p-chip
-                                [class]="'p-chip-sm ' + status.classes"
-                                [label]="status.label" />
+                        <td
+                            class="w-32 max-w-32 min-w-32 text-right!"
+                            [class.cursor-not-allowed]="isDisabled"
+                            data-testid="relationship-status-cell">
+                            <dot-contentlet-status-badge [state]="item" />
                         </td>
                     }
                     @case ('image') {
-                        <td class="w-24 min-w-24" [class.cursor-not-allowed]="isDisabled">
+                        <td
+                            class="w-24 max-w-24 min-w-24"
+                            [class.cursor-not-allowed]="isDisabled"
+                            [class.text-right!]="$last">
                             <div class="flex items-center justify-center">
-                                <dot-contentlet-thumbnail
-                                    [iconSize]="'30px'"
-                                    [contentlet]="item"
-                                    [playableVideo]="false"
-                                    data-testId="contentlet-thumbnail" />
+                                <div class="h-14 w-20 shrink-0 overflow-hidden rounded-md">
+                                    <dot-content-thumbnail
+                                        [contentlet]="item"
+                                        iconSize="30px"
+                                        data-testId="contentlet-thumbnail" />
+                                </div>
                             </div>
                         </td>
                     }
                     @default {
-                        <td class="min-w-32">
+                        <td class="w-32 max-w-32 min-w-32" [class.text-right!]="$last">
                             <p class="truncate">{{ item[column.nameField] }}</p>
                         </td>
                     }
@@ -132,7 +203,7 @@
             }
 
             <td
-                class="w-16 min-w-16"
+                class="w-10 min-w-10"
                 pFrozenColumn
                 alignFrozen="right"
                 [frozen]="true"
@@ -143,40 +214,52 @@
                     severity="secondary"
                     [text]="true"
                     [disabled]="isDisabled"
-                    (onClick)="deleteItem(item.inode)" />
+                    (onClick)="deleteItem(item.inode)"
+                    styleClass="opacity-0 group-hover:opacity-100 transition-opacity"
+                    data-testid="relationship-delete-button" />
             </td>
         </tr>
     </ng-template>
 
-    <ng-template pTemplate="summary">
-        @if (hintText || showPagination || hasError) {
-            <div
-                class="flex items-center pt-2"
-                [class.justify-between]="hintText || hasError"
-                [class.justify-center]="!hintText && !hasError">
-                @if (hasError) {
-                    <div class="text-[var(--color-palette-red)]">
-                        @if (isRequired) {
-                            <small>{{ 'dot.edit.content.form.field.required' | dm }}</small>
+    <!-- No paging control: every related item is in the value, and this table renders a growing
+         prefix of it. That is what lets a drag reach any pair of rows — paging made anything past
+         the first page unreachable from the first.
+
+         A real row rather than the table's `summary` slot, matching the Key/Value field: the
+         control belongs after the last rendered row, inside the same frame. -->
+    <ng-template pTemplate="footer">
+        @if (canToggleAll) {
+            <tr data-testid="relationship-show-all-row">
+                <td
+                    [attr.colspan]="$totalColumns()"
+                    class="border-t border-t-(--p-datatable-border-color) px-4 py-3">
+                    <!-- The count goes on "Show all" only: expanding is the decision that needs a
+                         number, collapsing always returns to the same first page.
+
+                         Icon and label stay plain content. `isIconOnly` is
+                         `iconSignal && !labelSignal`, so marking just one of them with
+                         `pButtonIcon` / `pButtonLabel` collapses the button to 2.75rem. -->
+                    <button
+                        type="button"
+                        [text]="true"
+                        pButton
+                        size="small"
+                        [attr.aria-expanded]="showingAll"
+                        data-testid="relationship-show-all"
+                        (click)="store.toggleShowAll()">
+                        <span class="material-symbols-outlined text-base!" aria-hidden="true">
+                            {{ showingAll ? 'remove_circle' : 'add_circle' }}
+                        </span>
+                        @if (showingAll) {
+                            {{ 'dot.file.relationship.field.table.show.less' | dm }}
+                        } @else {
+                            {{ 'dot.file.relationship.field.table.show.all' | dm }} ({{
+                                store.data().length
+                            }})
                         }
-                    </div>
-                }
-                @if (!hasError && hintText) {
-                    <div class="text-[var(--gray-600)]">
-                        <small [attr.data-testId]="'hint-' + field.variable">
-                            {{ hintText }}
-                        </small>
-                    </div>
-                }
-                @if (showPagination) {
-                    <dot-pagination
-                        [currentPageReportLayout]="'center'"
-                        (nextPage)="store.nextPage()"
-                        (previousPage)="store.previousPage()"
-                        [totalPages]="store.totalPages()"
-                        [currentPage]="pagination.currentPage" />
-                }
-            </div>
+                    </button>
+                </td>
+            </tr>
         }
     </ng-template>
 </p-table>

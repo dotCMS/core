@@ -1,6 +1,6 @@
 import { Subscription } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { KeyValuePipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -23,13 +23,13 @@ import { DotMessagePipe } from '@dotcms/ui';
 @Component({
     selector: 'lib-dot-usage-shell',
     imports: [
-        CommonModule,
         ButtonModule,
         CardModule,
         MessageModule,
         SkeletonModule,
         DotMessagePipe,
-        ToolbarModule
+        ToolbarModule,
+        KeyValuePipe
     ],
     templateUrl: './dot-usage-shell.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush

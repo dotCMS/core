@@ -1,5 +1,6 @@
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { of, Subject, throwError } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -42,14 +43,13 @@ describe('DotUsageShellComponent', () => {
                     displayLabel: 'usage.metric.LANGUAGES_COUNT'
                 }
             }
-        },
-        lastUpdated: '2024-01-15T15:30:00Z'
+        }
     };
 
     const createMockService = () => ({
-        getSummary: jest.fn().mockReturnValue(of(mockSummary)),
-        refresh: jest.fn().mockReturnValue(of(mockSummary)),
-        getErrorMessage: jest.fn().mockReturnValue('usage.dashboard.error.generic')
+        getSummary: vi.fn().mockReturnValue(of(mockSummary)),
+        refresh: vi.fn().mockReturnValue(of(mockSummary)),
+        getErrorMessage: vi.fn().mockReturnValue('usage.dashboard.error.generic')
     });
 
     let mockService: ReturnType<typeof createMockService>;
@@ -70,7 +70,7 @@ describe('DotUsageShellComponent', () => {
         // Create a fresh mock service for each test
         mockService = createMockService();
         // Mock console.error to avoid noise in test output
-        jest.spyOn(console, 'error').mockImplementation(() => {
+        vi.spyOn(console, 'error').mockImplementation(() => {
             // Do nothing
         });
         spectator = createComponent();
@@ -79,7 +79,7 @@ describe('DotUsageShellComponent', () => {
 
     afterEach(() => {
         // Restore console.error after each test
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
     });
 
     it('should create', () => {
@@ -129,23 +129,6 @@ describe('DotUsageShellComponent', () => {
         expect(spectator.query(byTestId('system-LANGUAGES_COUNT-card'))).toBeTruthy();
     });
 
-    it('should handle refresh button click', () => {
-        // Reset call count before test
-        (usageService.getSummary as jest.Mock).mockClear();
-        const refreshButton = spectator.query(byTestId('refresh-button'));
-        expect(refreshButton).toBeTruthy();
-
-        // PrimeNG buttons use onClick event, not native click
-        spectator.triggerEventHandler(
-            '[data-testid="refresh-button"]',
-            'onClick',
-            new MouseEvent('click')
-        );
-        spectator.detectChanges();
-
-        expect(usageService.getSummary).toHaveBeenCalled();
-    });
-
     it('should handle retry button click', () => {
         spectator.component.loading.set(false);
         spectator.component.error.set('Some error');
@@ -157,8 +140,8 @@ describe('DotUsageShellComponent', () => {
 
         // Use a Subject to control when the observable emits
         const summarySubject = new Subject<UsageSummary>();
-        (usageService.getSummary as jest.Mock).mockClear();
-        (usageService.getSummary as jest.Mock).mockReturnValue(summarySubject.asObservable());
+        (usageService.getSummary as Mock).mockClear();
+        (usageService.getSummary as Mock).mockReturnValue(summarySubject.asObservable());
 
         // PrimeNG buttons use onClick event, not native click
         spectator.triggerEventHandler(
@@ -193,19 +176,17 @@ describe('DotUsageShellComponent', () => {
             status: 500,
             statusText: 'Internal Server Error'
         };
-        (usageService.getSummary as jest.Mock).mockReturnValue(throwError(() => httpError));
-        (usageService.getErrorMessage as jest.Mock).mockReturnValue(
-            'usage.dashboard.error.serverError'
-        );
+        (usageService.getSummary as Mock).mockReturnValue(throwError(() => httpError));
+        (usageService.getErrorMessage as Mock).mockReturnValue('usage.dashboard.error.serverError');
 
         // console.error is already mocked in beforeEach, but we can verify it was called
-        const errorCallCount = (console.error as jest.Mock).mock.calls.length;
+        const errorCallCount = (console.error as Mock).mock.calls.length;
 
         spectator.component.loadData();
 
         // Verify console.error was called (the mock from beforeEach should have been called)
         expect(console.error).toHaveBeenCalled();
-        expect((console.error as jest.Mock).mock.calls[errorCallCount][0]).toBe(
+        expect((console.error as Mock).mock.calls[errorCallCount][0]).toBe(
             'Failed to load usage data:'
         );
         expect(spectator.component.error()).toBe('usage.dashboard.error.serverError');
@@ -230,17 +211,6 @@ describe('DotUsageShellComponent', () => {
         spectator.detectChanges();
         expect(spectator.query(byTestId('analytics-message'))).toBeTruthy();
         expect(spectator.query(byTestId('message-content'))).toBeTruthy();
-    });
-
-    it('should display last updated timestamp when data is loaded', () => {
-        spectator.component.loading.set(false);
-        spectator.component.summary.set(mockSummary);
-        spectator.component.lastUpdated.set(new Date('2024-01-15T15:30:00Z'));
-        spectator.detectChanges();
-
-        // Check that last updated is displayed in toolbar
-        const toolbar = spectator.query('p-toolbar');
-        expect(toolbar).toBeTruthy();
     });
 
     it('should format metric value correctly for string values', () => {
@@ -325,41 +295,9 @@ describe('DotUsageShellComponent', () => {
             | { unsubscribe: () => void }
             | undefined;
         if (subscription) {
-            const unsubscribeSpy = jest.spyOn(subscription, 'unsubscribe');
+            const unsubscribeSpy = vi.spyOn(subscription, 'unsubscribe');
             spectator.component.ngOnDestroy();
             expect(unsubscribeSpy).toHaveBeenCalled();
         }
-    });
-
-    it('should handle multiple refresh calls correctly', () => {
-        // Reset call count before test
-        (usageService.getSummary as jest.Mock).mockClear();
-
-        const refreshButton = spectator.query(byTestId('refresh-button'));
-        expect(refreshButton).toBeTruthy();
-
-        // PrimeNG buttons use onClick event, not native click
-        // Click refresh multiple times
-        spectator.triggerEventHandler(
-            '[data-testid="refresh-button"]',
-            'onClick',
-            new MouseEvent('click')
-        );
-        spectator.detectChanges();
-        spectator.triggerEventHandler(
-            '[data-testid="refresh-button"]',
-            'onClick',
-            new MouseEvent('click')
-        );
-        spectator.detectChanges();
-        spectator.triggerEventHandler(
-            '[data-testid="refresh-button"]',
-            'onClick',
-            new MouseEvent('click')
-        );
-        spectator.detectChanges();
-
-        // Should call getSummary for each click
-        expect(usageService.getSummary).toHaveBeenCalledTimes(3);
     });
 });

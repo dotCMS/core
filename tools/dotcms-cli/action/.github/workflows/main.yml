@@ -20,9 +20,9 @@ jobs:
         run: |
           echo "::group::Get dotCLI runner"
           
-          curl -o maven-metadata.xml "https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/dotcms-cli/maven-metadata.xml"
+          curl -o maven-metadata.xml "https://dotcms-repo.b-cdn.net/libs-release/com/dotcms/dotcms-cli/maven-metadata.xml"
           LATEST_VERSION=$(xmllint --xpath "string(//versioning/latest)" maven-metadata.xml)
-          URL="https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/dotcms-cli/${LATEST_VERSION}/dotcms-cli-${LATEST_VERSION}-runner.jar"
+          URL="https://dotcms-repo.b-cdn.net/libs-release/com/dotcms/dotcms-cli/${LATEST_VERSION}/dotcms-cli-${LATEST_VERSION}-runner.jar"
 
           echo "::notice::DOTCLI RUNNER: $URL"
           echo "url=$URL" >> "$GITHUB_OUTPUT"
@@ -63,7 +63,7 @@ jobs:
           # Check if DOT_CLI_VERSION is set (version number only)
           if [ -n "${{ env.DOT_CLI_VERSION }}" ]; then
             VERSION="${{ env.DOT_CLI_VERSION }}"
-            RESOLVED_URL="https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/dotcms-cli/${VERSION}/dotcms-cli-${VERSION}-runner.jar"
+            RESOLVED_URL="https://dotcms-repo.b-cdn.net/libs-release/com/dotcms/dotcms-cli/${VERSION}/dotcms-cli-${VERSION}-runner.jar"
             echo "::notice::Using specified version: $VERSION"
             echo "::notice::Resolved URL: $RESOLVED_URL"
             echo "resolved-url=$RESOLVED_URL" >> "$GITHUB_OUTPUT"

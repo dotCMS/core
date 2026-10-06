@@ -1,6 +1,6 @@
 import { Observable, of, Subject } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import {
     Component,
     EventEmitter,
@@ -8,7 +8,8 @@ import {
     inject,
     Input,
     Output,
-    ViewChild
+    ViewChild,
+    ChangeDetectionStrategy
 } from '@angular/core';
 import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 
@@ -61,13 +62,14 @@ enum SearchType {
         }
     ],
     imports: [
-        CommonModule,
         FormsModule,
         AutoCompleteModule,
         DotDirectivesModule,
         DotFieldHelperComponent,
-        DotMessagePipe
+        DotMessagePipe,
+        AsyncPipe
     ],
+    changeDetection: ChangeDetectionStrategy.Eager,
     host: {
         class: 'relative'
     }

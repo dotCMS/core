@@ -1,0 +1,183 @@
+<!-- Score card -->
+<p-card class="mb-8">
+    <div class="flex items-center gap-6">
+        <!-- Left: doughnut chart with center overlay -->
+        <div class="relative size-40 shrink-0">
+            @if (geoChartData()) {
+                <p-chart
+                    type="doughnut"
+                    [data]="geoChartData()"
+                    [options]="{
+                        cutout: '75%',
+                        plugins: { legend: { display: false } },
+                        animation: false
+                    }" />
+            }
+            <div
+                class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                <span class="text-foreground text-4xl font-bold">
+                    {{ geoData().score }}
+                </span>
+                <span class="font-medium" [class]="scoreLabelClass()">
+                    {{ scoreLabel() }}
+                </span>
+            </div>
+        </div>
+        <!-- Right: heading, description, severity counts -->
+        <div class="space-y-6">
+            <header>
+                <h3 class="m-0 mb-2 text-xl font-bold">
+                    {{ 'page.scanner.geo.score.heading' | dm }}
+                </h3>
+                <p class="m-0 text-gray-600">
+                    {{ 'page.scanner.geo.score.description' | dm }}
+                </p>
+            </header>
+            @if (geoData().topIssues?.length > 0) {
+                <div class="flex gap-6">
+                    @for (severity of ['high', 'medium', 'low']; track severity) {
+                        <div class="flex items-center gap-1">
+                            <span
+                                class="size-2 shrink-0 rounded-full"
+                                [class]="
+                                    severity === 'high'
+                                        ? 'bg-red-500'
+                                        : severity === 'medium'
+                                          ? 'bg-yellow-500'
+                                          : 'bg-blue-400'
+                                "></span>
+                            <span>
+                                <span class="font-semibold">
+                                    {{ severityCounts()[severity] }}
+                                </span>
+                                <span class="capitalize">
+                                    {{ severity }}
+                                </span>
+                            </span>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</p-card>
+
+<!-- Category breakdown -->
+<section class="mb-8">
+    <h3 class="m-0 mb-2 text-xl font-bold">
+        {{ 'page.scanner.geo.category.breakdown' | dm }}
+    </h3>
+    <div class="space-y-4">
+        @for (cat of geoCategories(); track cat.key) {
+            <p-accordion class="block" [multiple]="false">
+                <p-accordion-panel [value]="cat.key">
+                    <p-accordion-header>
+                        <div class="flex w-full items-center justify-between gap-2 pr-4">
+                            <div class="flex items-center gap-4">
+                                <div
+                                    [class]="
+                                        'flex size-14 items-center justify-center rounded-2xl text-center text-xl font-bold ' +
+                                        (cat.score >= 80
+                                            ? 'border-green-200 bg-green-100 text-green-800'
+                                            : cat.score >= 50
+                                              ? 'border-yellow-200 bg-yellow-100 text-yellow-700'
+                                              : 'border-red-200 bg-red-100 text-red-700')
+                                    ">
+                                    {{ cat.score }}
+                                </div>
+
+                                <div class="flex flex-col gap-1">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-lg font-semibold text-gray-900">
+                                            {{ cat.label }}
+                                        </span>
+                                        <p-chip
+                                            [pt]="{
+                                                label: 'text-sm font-normal text-gray-700'
+                                            }"
+                                            [dt]="{
+                                                root: {
+                                                    background: 'var(--p-gray-200)',
+                                                    color: 'var(--p-gray-500)',
+                                                    paddingX: '0.5rem',
+                                                    paddingY: '0.1rem'
+                                                }
+                                            }"
+                                            [label]="
+                                                (cat.weight * 100 | number: '1.0-0') + '% weight'
+                                            " />
+                                    </div>
+                                    <p class="font-normal text-gray-700">
+                                        {{
+                                            'page.scanner.geo.category.' + cat.key + '.description'
+                                                | dm
+                                        }}
+                                    </p>
+                                </div>
+                            </div>
+                            <span class="text-sm font-normal text-gray-700">
+                                {{ cat.passedCount }}/{{ cat.totalCount }}
+                                {{ 'page.scanner.geo.passed' | dm }}
+                            </span>
+                        </div>
+                    </p-accordion-header>
+                    <p-accordion-content>
+                        <div class="space-y-4">
+                            @for (sig of cat.signals; track sig.key) {
+                                <div
+                                    class="flex items-center justify-between border-b border-solid border-gray-100 pb-4">
+                                    <p class="m-0 text-gray-700">{{ sig.message }}</p>
+                                    <span
+                                        class="rounded-sm px-2 py-0.5 text-sm font-semibold"
+                                        [class]="
+                                            sig.score >= 80
+                                                ? 'text-green-800'
+                                                : sig.score >= 50
+                                                  ? 'text-yellow-700'
+                                                  : 'text-red-700'
+                                        ">
+                                        {{ sig.score | number: '1.0-0' }} / 100
+                                    </span>
+                                </div>
+                            }
+                        </div>
+                    </p-accordion-content>
+                </p-accordion-panel>
+            </p-accordion>
+        }
+    </div>
+</section>
+
+<!-- Top Issues card -->
+<section>
+    @if (geoData().topIssues?.length > 0) {
+        <p-card [header]="'page.scanner.geo.top.issues' | dm">
+            <div class="mt-4 space-y-3">
+                @for (issue of geoData().topIssues; track $index) {
+                    <div
+                        class="grid grid-cols-[1fr_auto] items-center gap-4 border-b border-solid border-gray-200 px-2 pb-3 last:border-b-0">
+                        <p class="m-0 truncate text-gray-700">{{ issue.message }}</p>
+                        <p-chip
+                            [label]="issue.severity.toUpperCase()"
+                            [style]="
+                                issue.severity === 'high'
+                                    ? {
+                                          '--p-chip-background': 'var(--p-red-100)',
+                                          '--p-chip-color': 'var(--p-red-700)'
+                                      }
+                                    : issue.severity === 'medium'
+                                      ? {
+                                            '--p-chip-background': 'var(--p-yellow-100)',
+                                            '--p-chip-color': 'var(--p-yellow-700)'
+                                        }
+                                      : {
+                                            '--p-chip-background': 'var(--p-blue-100)',
+                                            '--p-chip-color': 'var(--p-blue-700)'
+                                        }
+                            " />
+                    </div>
+                }
+            </div>
+        </p-card>
+    }
+</section>

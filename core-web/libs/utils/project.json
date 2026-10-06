@@ -5,19 +5,5 @@
     "sourceRoot": "libs/utils/src",
     "prefix": "dotcms",
     "tags": ["skip:test", "skip:lint"],
-    "targets": {
-        "lint": {
-            "executor": "@nx/eslint:lint",
-            "outputs": ["{options.outputFile}"]
-        },
-        "test": {
-            "executor": "@nx/jest:jest",
-            "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
-            "options": {
-                "jestConfig": "libs/utils/jest.config.ts",
-                "verbose": false,
-                "tsConfig": "libs/utils/tsconfig.spec.json"
-            }
-        }
-    }
+    "targets": {}
 }

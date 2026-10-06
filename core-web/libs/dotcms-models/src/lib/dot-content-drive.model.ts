@@ -17,33 +17,144 @@ export interface DotContentDriveLazyLoadEvent {
     forceUpdate?: () => void;
 }
 
-export interface DotContentDriveFolder {
-    __icon__: 'folderIcon';
+/**
+ * The folder fields required to drive the shared folder actions — the context menu's permission
+ * gating and the "Edit folder" dialog's payload.
+ *
+ * Deliberately narrower than {@link DotContentDriveFolder}: the table sources folders from
+ * `POST /api/v1/drive/search` (a full folder row), while the sidebar tree sources them from
+ * `GET /api/v1/folder/search`, which returns only the fields listed here. Rather than fabricate
+ * the table-only fields (`modDate`, `owner`, `iDate`, …) for sidebar folders, both views converge
+ * on this contract, and only consumers that genuinely need the full row ask for
+ * `DotContentDriveFolder`.
+ */
+export interface DotContentDriveActionableFolder {
+    type: 'folder';
+    identifier: string;
+    /**
+     * The row's key in the listing, which the grid marks busy by.
+     *
+     * Optional because the search service only backfills it from `identifier` when the API returned
+     * none, leaving legacy data with whatever it has. A caller registering a run over this folder
+     * should target both, since neither is reliably the key the row carries.
+     */
+    inode?: string;
+    /** The folder's own name (last path segment). */
+    name: string;
+    /** The folder's own full path, e.g. `/application/blog/`. */
+    path: string;
+    title: string;
+    sortOrder: number;
+    showOnMenu: boolean;
+    /** Comma-separated file-name masks allowed in this folder, e.g. `*.jpg,*.png`. */
+    filesMasks: string;
     defaultFileType: string;
+    /**
+     * Folder upload preference: `DOTASSET`/`FILEASSET` forces every upload to that base type,
+     * `null`/`undefined` means "ask each time" (no preference). Backed by #35577.
+     */
+    defaultBaseType?: string | null;
+    /**
+     * Permission types the requesting user holds on this folder.
+     *
+     * Required, and always an array by the time a folder reaches an action: whoever builds this
+     * object resolves the folder's permissions first (or substitutes `[]` when they cannot be
+     * resolved), so gating never runs against `null`/`undefined`. The "not yet resolved" state
+     * lives upstream, on `DotFolder.permissions` / the tree node's data.
+     */
+    permissions: PermissionType[];
+}
+
+export interface DotContentDriveFolder extends DotContentDriveActionableFolder {
+    __icon__: 'folderIcon';
     description: string;
     extension: 'folder';
-    filesMasks: string;
     hasTitleImage: boolean;
     hostId: string;
     iDate: number;
-    identifier: string;
     inode: string;
     mimeType: string;
     modDate: number;
-    name: string;
     owner: string | null;
     parent: string;
-    path: string;
-    permissions: number[];
-    showOnMenu: boolean;
-    sortOrder: number;
-    title: string;
-    type: 'folder';
 }
+
+export const PERMISSIONS_TYPE = {
+    READ: 'READ',
+    EDIT: 'EDIT',
+    PUBLISH: 'PUBLISH',
+    EDIT_PERMISSIONS: 'EDIT_PERMISSIONS',
+    CAN_ADD_CHILDREN: 'CAN_ADD_CHILDREN'
+} as const;
+
+export type PermissionType = (typeof PERMISSIONS_TYPE)[keyof typeof PERMISSIONS_TYPE];
 
 // This will extend the DotCMSContentlet with more properties,
 // but for now we will just use the DotCMSContentlet until we have folders on the request response
+/**
+ * A menu Link listed alongside folders and contentlets.
+ *
+ * A Link is not a contentlet and not a `BaseContentType`, so it is a third variant rather than a
+ * shape either of the other two could carry. The backend stamps `extension: 'link'` on it
+ * (`BrowserAPIImpl`), which is what tells the three apart in a result list.
+ *
+ * Returned only when a caller asks for links, and never together with a mimetype filter — a Link
+ * has no file metadata to match one against.
+ */
+export interface DotContentDriveLink {
+    type: 'link';
+    /** What the backend stamps; the row-kind discriminator in a mixed list. */
+    extension: 'link';
+    identifier: string;
+    inode: string;
+    title: string;
+    /** The link's target — the value a browse selection reports as its URL. */
+    url: string;
+    hostId: string;
+    modDate: number;
+}
+
 export type DotContentDriveItem = DotCMSContentlet | DotContentDriveFolder;
+
+/**
+ * A browse result that may also contain menu Links.
+ *
+ * Deliberately NOT folded into {@link DotContentDriveItem}: Content Drive never asks for links, and
+ * every one of its consumers reads that union as "a folder, or else a contentlet". Widening it
+ * there would force `isFolder`, the action centre, the workflow counters and the drag handling to
+ * reason about a third kind that cannot reach them.
+ *
+ * Only a caller that sends `showLinks: true` — today, the asset picker's browse mode — receives
+ * these, and only that caller uses this type.
+ */
+export type DotContentDriveBrowseItem = DotContentDriveItem | DotContentDriveLink;
+
+/**
+ * Whether a browse row is one the content actions can act on.
+ *
+ * Everything except a menu link: links have no workflow state, no permissions of their own and no
+ * editor to open, so they are displayed and selectable but never actionable.
+ *
+ * Lives with the union rather than beside either consumer, because both the shared listing and the
+ * portlets that bind to it have to narrow the same way. A caller that takes the narrower type
+ * without going through this is asserting something the emitter does not promise.
+ */
+export function isActionableBrowseItem(
+    item: DotContentDriveBrowseItem
+): item is DotContentDriveItem {
+    const row = item as { type?: string; extension?: string };
+
+    return row.type !== 'link' && row.extension !== 'link';
+}
+
+/**
+ * An item the shared folder actions (context menu, Edit-folder dialog) can act on.
+ *
+ * Wider than {@link DotContentDriveItem} on the folder side: the table passes a full
+ * {@link DotContentDriveFolder} and the sidebar tree passes a {@link DotContentDriveActionableFolder},
+ * so one gating implementation serves both. Every `DotContentDriveItem` is assignable to this.
+ */
+export type DotContentDriveActionableItem = DotCMSContentlet | DotContentDriveActionableFolder;
 
 /**
  * Pagination event emitted by the folder list view,
@@ -55,11 +166,12 @@ export type DotContentDrivePaginateEvent = DotContentDriveLazyLoadEvent & { page
  * Interface representing data needed for context menu interactions
  * @interface ContextMenuData
  * @property {Event} event - The DOM event that triggered the context menu
- * @property {DotContentDriveItem} contentlet - The content item associated with the context menu
+ * @property {DotContentDriveActionableItem} contentlet - The item associated with the context menu.
+ * Accepts folders from either the table (full row) or the sidebar tree (search view).
  */
 export interface ContextMenuData {
     event: Event;
-    contentlet: DotContentDriveItem;
+    contentlet: DotContentDriveActionableItem;
 }
 
 /**
@@ -77,7 +189,26 @@ export interface DotContentDriveQueryFilters {
      * Text to search for.
      */
     text: string;
+
+    /**
+     * Which fields {@link text} is matched against.
+     *
+     * Sits here rather than at the top level because it qualifies `text` and means nothing without
+     * it — the same reason {@link filterFolders} lives here. Omit it for the historical behaviour:
+     * an absent scope is processed exactly as it was before the field existed, which is what keeps
+     * the AssetPicker unaffected.
+     *
+     * Not to be confused with a *browse* scope, which says where you are browsing rather than which
+     * fields a search reads.
+     */
+    searchScope?: 'TITLE' | 'ALL_FIELDS';
 }
+
+/**
+ * Which slice of content a Content Drive listing is asked for: the whole current site at any
+ * depth, only what sits at the site root, or System Host alone.
+ */
+export type DotContentDriveBrowseScope = 'ALL' | 'ROOT' | 'SYSTEM_HOST';
 
 /**
  * Request body for the /api/v1/drive/search endpoint.
@@ -114,6 +245,15 @@ export interface DotContentDriveSearchRequest {
      * @default true
      */
     includeSystemHost?: boolean;
+
+    /**
+     * Which slice of content to list. Omitting it means today's behavior, and it carries no
+     * default for that reason: at the site root an omitted scope and `ALL` agree, but inside a
+     * folder they do not, so defaulting it would turn folder requests into listings of every
+     * descendant. Only valid with a site-root `assetPath`; naming one alongside a folder path is
+     * refused by the endpoint.
+     */
+    browseScope?: DotContentDriveBrowseScope;
 
     /**
      * List of language identifiers to include in the search.
@@ -160,6 +300,24 @@ export interface DotContentDriveSearchRequest {
     folderCursor?: number;
 
     /**
+     * Whether to include menu Links in the results.
+     *
+     * Ignored by the endpoint whenever `mimeTypes` is set: a Link carries no file metadata, so it
+     * could never satisfy a mimetype filter.
+     * @default false
+     */
+    showLinks?: boolean;
+
+    /**
+     * Index into the link list to start from — the `nextLinkCursor` of the previous page.
+     *
+     * Links page independently of folders and contentlets, so a page of results is described by
+     * three cursors rather than one.
+     * @default 0
+     */
+    linkCursor?: number;
+
+    /**
      * Maximum number of results to return.
      * @default 2000
      */
@@ -192,7 +350,60 @@ export interface DotContentDriveSearchRequest {
      * @default true
      */
     showFolders?: boolean;
+
+    /**
+     * Workflow filter entries. Each entry is one workflow scheme, optionally pinned to a
+     * single step (omit `step` to match the whole scheme). Entries combine with OR.
+     * @example [{ scheme: "d61a59e1-…", step: "dc3c9cd0-…" }, { scheme: "2a4e1d2e-…" }]
+     */
+    workflow?: { scheme: string; step?: string }[];
+
+    /**
+     * Content states to filter by. Accepted values: `ARCHIVED`, `UNPUBLISHED`, `LOCKED`.
+     * Entries combine with OR — the result is content in any of the selected states, so adding a
+     * status never shrinks the result set. Omitted or empty means no status filtering, which
+     * preserves the default behavior (archived content hidden).
+     *
+     * @example ["UNPUBLISHED", "LOCKED"]
+     */
+    status?: string[];
+
+    /**
+     * Field-based search criteria, keyed by the content-type field variable. Only offered when a
+     * single content type is selected and only for fields flagged User Searchable + System Indexed.
+     * The value shape depends on the field type:
+     * - text/select/radio → a single string (contains / equals)
+     * - multi-select/checkbox → a list of values
+     * - date/time/date-and-time → an inclusive `{ from, to }` ISO range
+     *
+     * @example
+     * {
+     *   title: "product review",
+     *   category: ["news", "press"],
+     *   publishDate: { from: "2024-01-01T00:00:00Z", to: "2024-12-31T23:59:59Z" }
+     * }
+     */
+    userSearchable?: Record<string, DotContentDriveUserSearchableValue>;
 }
+
+/**
+ * Inclusive date range used by date/time field-based search criteria.
+ */
+export interface DotContentDriveDateRange {
+    from: string;
+    to: string;
+}
+
+/**
+ * Value shape for a single {@link DotContentDriveSearchRequest.userSearchable} entry.
+ * String for text/select, string[] for multi-select and multi-option checkbox, a boolean for a
+ * binary checkbox, and a range for date/time fields.
+ */
+export type DotContentDriveUserSearchableValue =
+    | string
+    | string[]
+    | boolean
+    | DotContentDriveDateRange;
 
 /**
  * Response from the /api/v1/drive/search endpoint.
@@ -210,4 +421,148 @@ export interface DotContentDriveSearchResponse {
     hasMoreFolders: boolean;
     nextContentCursor: number;
     nextFolderCursor: number;
+    /**
+     * Whether more menu Links remain beyond this page.
+     *
+     * Optional because only responses to a `showLinks` request carry it. When it comes back
+     * `false`, the next request should set `showLinks: false` to skip the link query entirely.
+     */
+    hasMoreLinks?: boolean;
+    /** Link-list index the next page should start from. Present alongside {@link hasMoreLinks}. */
+    nextLinkCursor?: number;
 }
+
+/**
+ * The `202 Accepted` body of `POST /api/v1/content/_bulkrefresh`.
+ *
+ * Reindexing a selection is job-backed: the submit call only accepts the work, so this carries the
+ * handle to follow it rather than any outcome.
+ */
+export interface DotBulkRefreshSubmitResponse {
+    /** The job's id — the handle for the cancel call. */
+    jobId: string;
+    /**
+     * Inodes accepted, before the server collapses them by identifier. The de-duplicated `total`
+     * arrives with the result and is often smaller, so this is not a count of reindexed items.
+     */
+    submitted: number;
+}
+
+/**
+ * Counters a finished bulk refresh reports.
+ *
+ * `successCount + failedCount + skippedCount === total` in every terminal state, which is what lets a
+ * caller know it can stop waiting and settle every row it asked about.
+ */
+export interface DotBulkRefreshCounts {
+    /** Unique identifiers reindexed, after de-duplication — not the submitted inode count. */
+    total: number;
+    successCount: number;
+    failedCount: number;
+    /** Never attempted, because the run was cancelled before reaching them. */
+    skippedCount: number;
+    /** Index writes across the whole run; higher than `total` when content has several versions. */
+    versionsIndexed: number;
+}
+
+/**
+ * The payload of a `BULK_REFRESH_COMPLETED` system event.
+ *
+ * Pushed over the websocket when a run settles, scoped to whoever submitted it. The counter fields are
+ * all optional: a job that finished without reporting any carries only `state`, and a caller must treat
+ * that as a failure rather than as a clean run over nothing, which is what all-zero counters would look
+ * like.
+ */
+export interface DotBulkRefreshCompletedEvent extends Partial<DotBulkRefreshCounts> {
+    state: string;
+    /**
+     * The run this settles.
+     *
+     * The event is scoped to the submitting user, not to a browser tab, so a client receives runs it
+     * never started — another tab, another window, a Login-As session. Without this a grid reacts to
+     * all of them: it toasts counts for content it never selected and reloads itself for no reason.
+     */
+    jobId?: string;
+}
+
+/**
+ * Why a single file in a bulk upload batch did not make it.
+ *
+ * The closed set fixed by the submission contract
+ * (`specs/37166-bulk-file-upload/contracts/bulk-upload-api.md` §3), carried as `results[].reason`
+ * on a `FAILED` item. Adding a member is a change to both halves of #37166.
+ *
+ * It lives here rather than beside the copy that renders it because it is a **wire** vocabulary:
+ * the service that reads a run's outcome sits in `data-access`, and a service there cannot import
+ * a type out of a portlet. Resolving a reason to product copy is the portlet's business and stays
+ * there.
+ */
+export const DOT_BULK_UPLOAD_FAILURE_REASONS = [
+    'OVER_SIZE_LIMIT',
+    'DISALLOWED_FILE_TYPE',
+    'FOLDER_FILTER_MISMATCH',
+    'NAME_COLLISION',
+    'PERMISSION_DENIED',
+    'STAGED_CONTENT_UNAVAILABLE',
+    'UNCLASSIFIED'
+] as const;
+
+export type DotBulkUploadFailureReason = (typeof DOT_BULK_UPLOAD_FAILURE_REASONS)[number];
+
+/**
+ * Why a folder in a bulk delete could not be removed.
+ *
+ * The closed set fixed by the submission contract
+ * (`specs/37063-bulk-folder-delete-frontend/contracts/client-requirements.md` CR-04), carried as
+ * `results[].reason` on a `FAILED` item. Adding a member is a change to both halves of #37063 —
+ * and to folder copy (#37062) and move (#37165), which read the same outcome shape.
+ *
+ * Four of these are delete's own; `PERMISSION_DENIED` and `UNCLASSIFIED` already existed in the
+ * shared batch vocabulary. `UNCLASSIFIED` is also what an **unrecognised** value renders as: a
+ * reason the client does not know must still name its folder and still report it as failed
+ * (frontend FR-030), never swallow it.
+ *
+ * Here rather than beside the copy that renders it, for the same reason as
+ * {@link DOT_BULK_UPLOAD_FAILURE_REASONS}: this is a **wire** vocabulary read by a `data-access`
+ * service, and a service there cannot import a type out of a portlet. Mapping a reason to product
+ * copy is the portlet's business and stays there.
+ */
+export const DOT_FOLDER_DELETE_FAILURE_REASONS = [
+    /** No rights on the folder, or on something inside it. */
+    'PERMISSION_DENIED',
+    /** The path no longer resolves, or does not name a folder. */
+    'PATH_NOT_FOUND',
+    /** A system folder or site root; refused outright. */
+    'PROTECTED_FOLDER',
+    /** Locked or referenced content inside blocked the delete. */
+    'IN_USE',
+    /** An ancestor in the same submission removed it first — not a failure to be alarmed by. */
+    'COVERED_BY_PARENT',
+    /** Anything else, and the fallback for a value this client does not recognise. */
+    'UNCLASSIFIED'
+] as const;
+
+export type DotFolderDeleteFailureReason = (typeof DOT_FOLDER_DELETE_FAILURE_REASONS)[number];
+
+/**
+ * Why a single folder in a bulk duplication was not duplicated, or why it was skipped.
+ *
+ * The closed set fixed by the submission contract
+ * (`specs/37062-folder-copy-backend/contracts/folder-bulk-duplicate-api.md` §4), carried as
+ * `results[].reason`. Every member but one is a failure reason. `COVERED_BY_PARENT` is a skip
+ * reason: another selected folder contains this one, so duplicating that folder already carries it.
+ * A skip with no reason at all means the run was cancelled before reaching the folder. Adding a
+ * member is a change to both halves of #37062.
+ *
+ * A wire vocabulary, kept here for the same reason as {@link DOT_BULK_UPLOAD_FAILURE_REASONS}.
+ */
+export const DOT_FOLDER_BULK_DUPLICATE_REASONS = [
+    'PERMISSION_DENIED',
+    'PARENT_PERMISSION_DENIED',
+    'PATH_NOT_FOUND',
+    'PROTECTED_FOLDER',
+    'UNCLASSIFIED',
+    'COVERED_BY_PARENT'
+] as const;
+
+export type DotFolderBulkDuplicateReason = (typeof DOT_FOLDER_BULK_DUPLICATE_REASONS)[number];

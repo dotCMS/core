@@ -8,7 +8,7 @@ The dotCMS CLI is a Quarkus-based command-line tool for interacting with dotCMS 
 
 ### Technology Stack
 - **Framework**: Quarkus 3.6.0
-- **Language**: Java 21 (CLI tools exception - uses full Java 21 features)
+- **Language**: Java — compiles to whatever `maven.compiler.release` is set to in `tools/dotcms-cli/pom.xml`, pinned lower than the core modules for portability. Read the property; do not assume a version.
 - **Build Tool**: Maven
 - **CLI Framework**: PicocLI
 - **Native Compilation**: GraalVM Native Image support
@@ -43,49 +43,24 @@ tools/dotcms-cli/
 - **Security**: Password storage, encryption utilities
 - **Common**: Shared utilities, mixins, exception handling
 
-## Java 21 Features (CLI Exception)
+## Java language level (CLI exception)
 
-Unlike the main dotCMS application, the CLI uses **full Java 21 features**:
+The CLI compiles **separately from the core modules** and to a **lower** release, not a higher one. `tools/dotcms-cli/pom.xml` pins `maven.compiler.release`, `maven.compiler.source` and `maven.compiler.target`, with `maven.compiler.enablePreview` set to `false`; the pom's own comment explains why: pinned for portability, and preview features cannot be enabled at that release.
 
-### Modern Java Patterns
-```java
-// Record classes for data transfer
-public record PushContext(
-    String workspace,
-    List<String> patterns,
-    boolean dryRun,
-    boolean interactive
-) {}
+**Read the property before writing code here.** Syntax newer than that release will not compile, and this is the opposite of the constraint in the core modules — see [Java Standards](../backend/JAVA_STANDARDS.md) and root `CLAUDE.md`.
 
-// Text blocks for multi-line strings
-var help = """
-    Usage: dotcli push [OPTIONS] [PATTERNS...]
-    
-    Push content to dotCMS instance
-    
-    Options:
-        --dry-run    Show what would be pushed
-        --interactive    Prompt for confirmation
-    """;
+At the current pinned level there are no records, no text blocks and no switch expressions anywhere in `tools/dotcms-cli` — that is a consequence of the release, not a style choice.
 
-// Pattern matching and switch expressions
-var result = switch (status) {
-    case SUCCESS -> "Operation completed successfully";
-    case FAILED -> "Operation failed: " + error.getMessage();
-    case PENDING -> "Operation is pending";
-    default -> "Unknown status";
-};
-```
+### Quarkus-specific patterns
 
-### Quarkus-Specific Features
 ```java
 // CDI with Quarkus annotations
 @ApplicationScoped
 public class PushServiceImpl implements PushService {
-    
+
     @Inject
     ServiceManager serviceManager;
-    
+
     @ConfigProperty(name = "dotcli.batch.size", defaultValue = "100")
     int batchSize;
 }
@@ -435,7 +410,7 @@ public class HybridServiceManagerImpl implements ServiceManager {
 ## Best Practices
 
 ### ✅ CLI Development Standards
-- Use Java 21 features freely (records, text blocks, pattern matching)
+- Check `maven.compiler.release` in `tools/dotcms-cli/pom.xml` before using any modern syntax — this module is pinned **below** the core modules, so records, text blocks and pattern matching are unavailable at the current level
 - Follow Quarkus patterns for dependency injection
 - Implement proper error handling with exit codes
 - Use PicocLI annotations for command structure

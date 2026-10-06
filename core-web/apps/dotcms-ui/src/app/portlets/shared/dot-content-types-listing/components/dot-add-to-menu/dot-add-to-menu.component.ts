@@ -1,6 +1,6 @@
 import { Observable, Subject } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import {
     Component,
     ElementRef,
@@ -11,7 +11,8 @@ import {
     OnInit,
     output,
     SimpleChanges,
-    viewChild
+    viewChild,
+    ChangeDetectionStrategy
 } from '@angular/core';
 import {
     ReactiveFormsModule,
@@ -46,8 +47,8 @@ import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 @Component({
     selector: 'dot-add-to-menu',
     templateUrl: 'dot-add-to-menu.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
-        CommonModule,
         ReactiveFormsModule,
         DialogModule,
         ButtonModule,
@@ -57,7 +58,8 @@ import { DotMenuService } from '../../../../../api/services/dot-menu.service';
         DotAutofocusDirective,
         DotFieldValidationMessageComponent,
         DotFieldRequiredDirective,
-        DotMessagePipe
+        DotMessagePipe,
+        AsyncPipe
     ]
 })
 export class DotAddToMenuComponent implements OnInit, OnDestroy, OnChanges {
@@ -73,7 +75,7 @@ export class DotAddToMenuComponent implements OnInit, OnDestroy, OnChanges {
     dialogActions: DotDialogActions;
 
     readonly $contentType = input.required<DotCMSContentType>({ alias: 'contentType' });
-    readonly $cancel = output<boolean>();
+    readonly cancel = output<boolean>();
 
     readonly $titleName = viewChild.required<ElementRef>('titleName');
 
@@ -111,7 +113,7 @@ export class DotAddToMenuComponent implements OnInit, OnDestroy, OnChanges {
      * @memberof DotAddToBundleComponent
      */
     close(): void {
-        this.$cancel.emit(true);
+        this.cancel.emit(true);
         this.dialogShow = false;
     }
 

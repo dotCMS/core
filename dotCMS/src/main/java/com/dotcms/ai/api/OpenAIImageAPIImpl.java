@@ -25,8 +25,11 @@ import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.ByteArrayInputStream;
+import java.net.URI;
 import java.net.URL;
 import java.text.SimpleDateFormat;
+import java.util.Base64;
 import java.util.Date;
 
 public class OpenAIImageAPIImpl implements ImageAPI {
@@ -60,11 +63,15 @@ public class OpenAIImageAPIImpl implements ImageAPI {
 
         String responseString = "";
         try {
-            responseString = doRequest(config.getApiImageUrl(), jsonObject);
+            responseString = doRequest(jsonObject);
 
             JSONObject returnObject = new JSONObject(responseString);
             if (returnObject.containsKey(AiKeys.ERROR)) {
-                throw new DotRuntimeException("Error generating image: " + returnObject.get(AiKeys.ERROR));
+                final Object errorVal = returnObject.get(AiKeys.ERROR);
+                final String errorMessage = errorVal instanceof JSONObject
+                        ? ((JSONObject) errorVal).optString("message", errorVal.toString())
+                        : String.valueOf(errorVal);
+                throw new DotRuntimeException(errorMessage);
             } else {
                 returnObject = returnObject.getJSONArray("data").getJSONObject(0);
                 returnObject.put(AiKeys.ORIGINAL_PROMPT, jsonObject.getString(AiKeys.PROMPT));
@@ -99,21 +106,30 @@ public class OpenAIImageAPIImpl implements ImageAPI {
     }
 
     private JSONObject createTempFile(final JSONObject imageResponse) {
-        final String url = imageResponse.optString(AiKeys.URL);
-        if (UtilMethods.isEmpty(() -> url)) {
-            Logger.warn(this.getClass(), "imageResponse does not include URL:" + imageResponse);
-            throw new DotRuntimeException("Image Response does not include URL:" + imageResponse);
-        }
-
         try {
             final String fileName = generateFileName(imageResponse.getString(AiKeys.ORIGINAL_PROMPT));
             imageResponse.put("tempFileName", fileName);
 
-            final DotTempFile file = tempFileApi.createTempFileFromUrl(fileName, getRequest(), new URL(url), 20);
+            final String url = imageResponse.optString(AiKeys.URL);
+            final String b64 = imageResponse.optString(AiKeys.B64_JSON);
+            final DotTempFile file;
+
+            if (!UtilMethods.isEmpty(() -> url)) {
+                file = tempFileApi.createTempFileFromUrl(fileName, getRequest(), URI.create(url).toURL(), 20);
+            } else if (!UtilMethods.isEmpty(() -> b64)) {
+                final byte[] imageBytes = Base64.getDecoder().decode(b64);
+                file = tempFileApi.createTempFile(fileName, getRequest(), new ByteArrayInputStream(imageBytes));
+            } else {
+                Logger.warn(this.getClass(), "imageResponse does not include URL or base64 data:" + imageResponse);
+                throw new DotRuntimeException("Image Response does not include URL or base64 data:" + imageResponse);
+            }
+
             imageResponse.put(AiKeys.RESPONSE, file.id);
             imageResponse.put("tempFile", file.file.getAbsolutePath());
 
             return imageResponse;
+        } catch (DotRuntimeException e) {
+            throw e;
         } catch (Exception e) {
             imageResponse.put(AiKeys.RESPONSE, e.getMessage());
             imageResponse.put(AiKeys.ERROR, e.getMessage());
@@ -173,7 +189,7 @@ public class OpenAIImageAPIImpl implements ImageAPI {
     }
 
     @VisibleForTesting
-    String doRequest(final String urlIn, final JSONObject json) {
+    String doRequest(final JSONObject json) {
         return AIProxyClient.get()
                 .callToAI(JSONObjectAIRequest.quickImage(config, json, UtilMethods.extractUserIdOrNull(user)))
                 .getResponse();

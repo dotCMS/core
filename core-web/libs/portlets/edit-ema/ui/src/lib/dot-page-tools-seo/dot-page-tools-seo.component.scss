@@ -1,90 +1,19 @@
-@use "../../../../../../dotcms-scss/shared/colors";
-@use "../../../../../../dotcms-scss/shared/common";
-@use "../../../../../../dotcms-scss/shared/fonts";
-@use "../../../../../../dotcms-scss/shared/spacing";
-
-@use "variables" as *;
-
-.page-tools {
-    width: 26.3rem;
-}
-
-.page-tools-list {
-    list-style: none;
-    padding: 0;
-    margin-top: spacing.$spacing-0;
-}
-
-.page-tools-list__item {
-    display: flex;
-    flex-direction: row;
-    padding: spacing.$spacing-3;
-    border-radius: common.$border-radius-md;
-
-    &:hover {
-        background-color: colors.$color-palette-primary-100;
-    }
-}
-
-.page-tools-list__content {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding-left: spacing.$spacing-3;
-}
-
-.page-tools-list__title {
-    font-size: fonts.$font-size-md;
-    font-weight: fonts.$font-weight-semi-bold;
-    line-height: $line-height;
-    margin-bottom: spacing.$spacing-1;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.page-tools-list__chips {
-    display: flex;
-    gap: spacing.$spacing-1;
-    margin-top: spacing.$spacing-1;
-}
-
-.page-tools-list__link {
-    color: colors.$black;
-    text-decoration: none;
-    display: flex;
-    align-items: flex-start;
-
-    img {
-        width: 2.625rem;
-        aspect-ratio: 1;
-        object-fit: contain;
-        flex-shrink: 0;
-    }
-}
-
-.page-tools-list__description {
-    margin: 0;
-    line-height: $line-height;
-    word-break: normal;
-}
-
-.page-tools-external-link {
-    color: colors.$color-palette-primary-500;
-}
+$nav-bar-width: 2.25rem;
+$dialog-header-padding: 1rem;
+$dialog-content-padding: 0 0.75rem;
 
 ::ng-deep {
     .page-tools-dialog {
         &.p-dialog-right {
             .p-dialog {
-                margin-right: spacing.$spacing-9;
+                margin-right: $nav-bar-width;
             }
         }
 
         .p-dialog {
             .p-dialog-header {
-                padding: spacing.$spacing-4;
-                border-bottom: 1px solid colors.$color-palette-gray-300;
+                padding: $dialog-header-padding;
+                border-bottom: 1px solid var(--p-gray-300);
 
                 .p-dialog-header-icon {
                     opacity: 0;
@@ -92,7 +21,7 @@
             }
 
             .p-dialog-content {
-                padding: 0 spacing.$spacing-3;
+                padding: $dialog-content-padding;
             }
         }
 

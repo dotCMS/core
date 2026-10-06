@@ -23,12 +23,12 @@ export function DetailPage({
   );
 
   const { pageAsset, content } =
-    useEditableDotCMSPage<DotCMSCustomDetailPageResponse>(pageResponse);
-  const { urlContentMap, layout } = pageAsset;
+    useEditableDotCMSPage<DotCMSCustomDetailPageResponse>(pageResponse) ?? {};
+  const { urlContentMap, layout } = pageAsset ?? {};
   const { blogContent } = urlContentMap || {};
 
-  const showHeader = layout.header && content;
-  const showFooter = layout.footer && content;
+  const showHeader = layout?.header && content;
+  const showFooter = layout?.footer && content;
   const isEditMode = useIsEditMode();
 
   useEffect(() => {
@@ -49,10 +49,10 @@ export function DetailPage({
     <div className="flex flex-col gap-6 min-h-screen bg-slate-50">
       {showHeader && <Header navigation={content?.navigation} />}
       <main className="flex flex-col gap-8 m-auto">
-        {urlContentMap?.image && (
+        {urlContentMap?.image?.identifier && (
           <div className="relative w-full h-80 overflow-hidden">
             <img
-              src={`/dA/${urlContentMap.inode}`}
+              src={`/dA/${urlContentMap.image.identifier}`}
               className="w-full h-full object-cover"
               alt="Activity Image"
             />

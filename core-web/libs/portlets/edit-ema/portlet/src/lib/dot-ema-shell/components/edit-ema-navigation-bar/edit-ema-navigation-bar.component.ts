@@ -1,58 +1,89 @@
-import { CommonModule } from '@angular/common';
-import {
-    ChangeDetectionStrategy,
-    Component,
-    EventEmitter,
-    Input,
-    Output,
-    inject
-} from '@angular/core';
-import { RouterModule } from '@angular/router';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { NavigationEnd, Router } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
+
+import { filter, map } from 'rxjs/operators';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { NavigationBarItem } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
+
 @Component({
     selector: 'dot-edit-ema-navigation-bar',
     templateUrl: './edit-ema-navigation-bar.component.html',
-    styleUrls: ['./edit-ema-navigation-bar.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [CommonModule, RouterModule, DotMessagePipe, TooltipModule, ButtonModule]
+    imports: [ButtonModule, DotMessagePipe, TooltipModule],
+    host: { class: 'flex items-center h-full border-l border-gray-200' }
 })
 export class EditEmaNavigationBarComponent {
-    /**
-     * List of items to display on the navigation bar
-     *
-     * @type {NavigationBarItem[]}
-     * @memberof EditEmaNavigationBarComponent
-     */
-    @Input() items: NavigationBarItem[];
+    items = input<NavigationBarItem[]>([]);
+    action = output<string>();
 
-    /**
-     * Emits the id of the clicked item
-     *
-     * @type {EventEmitter<string>}
-     * @memberof EditEmaNavigationBarComponent
-     */
-    @Output() action: EventEmitter<string> = new EventEmitter();
+    readonly #uveStore = inject(UVEStore);
+    readonly #router = inject(Router);
 
-    uveStore = inject(UVEStore);
+    $params = this.#uveStore.pageParams;
 
-    $editorProps = this.uveStore.$editorProps;
+    // Emits the current URL string on every NavigationEnd — drives OnPush re-evaluation
+    readonly #currentUrl = toSignal(
+        this.#router.events.pipe(
+            filter((e) => e instanceof NavigationEnd),
+            map((e: NavigationEnd) => e.urlAfterRedirects)
+        ),
+        { initialValue: this.#router.url }
+    );
 
-    $params = this.uveStore.pageParams;
+    // Computed set of active hrefs — recalculates whenever the URL signal changes
+    readonly $activeHref = computed<string>(() => {
+        const currentUrl = this.#currentUrl().split('?').shift(); // track the signal
 
-    /**
-     * Handle the click event on the item
-     *
-     * @param {NavigationBarItem} item
-     * @memberof EditEmaNavigationBarComponent
-     */
-    itemAction(item: NavigationBarItem): void {
-        this.action.emit(item.id);
+        for (const item of this.items()) {
+            if (!item.href) continue;
+
+            const url = item.href.split('/').shift();
+
+            if (currentUrl.includes(url)) {
+                return item.href;
+            }
+        }
+
+        return '';
+    });
+
+    navigate(item: NavigationBarItem): void {
+        if (item.isDisabled) return;
+
+        if (!item.href) {
+            this.action.emit(item.id);
+
+            return;
+        }
+
+        // A leading `/` means the destination is outside the editor's route tree, so it must not
+        // be prefixed. Every item that lives under `edit-page` — content, layout, rules/{id},
+        // experiments/{id} — is relative and keeps the prefix, which is what makes the switch-off
+        // destinations byte-identical to before (#37005, FR-016/FR-019).
+        if (item.href.startsWith('/')) {
+            // Passed whole, NOT split on `/`. Splitting `'/experiments'` yields
+            // `['', 'experiments']`, and an empty leading segment does not start with `/`, so the
+            // router treats the whole thing as a RELATIVE navigation and the item silently does
+            // nothing. A single absolute string is the only form that navigates.
+            //
+            // Its own params, replacing the editor's rather than merging: `url`, `language_id` and
+            // the persona key mean nothing outside the editor, and merging them would leave keys
+            // the destination does not recognise sitting in its address.
+            this.#router.navigate([item.href], { queryParams: item.queryParams ?? {} });
+
+            return;
+        }
+
+        this.#router.navigate(['edit-page'].concat(item.href.split('/')), {
+            queryParams: this.$params(),
+            queryParamsHandling: 'merge'
+        });
     }
 }

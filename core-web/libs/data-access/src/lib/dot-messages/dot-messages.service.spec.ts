@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { of } from 'rxjs';
+import { firstValueFrom, of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { HttpClient } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -49,7 +50,7 @@ describe('DotMessageService', () => {
         http = injector.inject(HttpClient);
         dotLocalstorageService = injector.inject(DotLocalstorageService);
 
-        jest.spyOn<any, any>(http, 'get').mockImplementation(() => {
+        vi.spyOn<any, any>(http, 'get').mockImplementation(() => {
             return of({
                 entity: messages
             });
@@ -57,10 +58,10 @@ describe('DotMessageService', () => {
     });
 
     describe('init', () => {
-        it('should call languages endpoint with default language and set them in local storage', () => {
-            jest.spyOn(dotLocalstorageService, 'setItem');
-            jest.spyOn(dotLocalstorageService, 'getItem').mockReturnValue(null);
-            dotMessageService.init();
+        it('should call languages endpoint with default language and set them in local storage', async () => {
+            vi.spyOn(dotLocalstorageService, 'setItem');
+            vi.spyOn(dotLocalstorageService, 'getItem').mockReturnValue(null);
+            await firstValueFrom(dotMessageService.init());
             expect(http.get).toHaveBeenCalledWith('/api/v2/languages/default/keys');
             expect(dotLocalstorageService.setItem).toHaveBeenCalledWith(
                 'dotMessagesKeys',
@@ -69,33 +70,33 @@ describe('DotMessageService', () => {
         });
 
         // TODO: fix the core-web.service mock
-        xit('should try to load messages otherwise get the default one and set them in local storage', () => {
-            jest.spyOn(dotLocalstorageService, 'setItem');
-            jest.spyOn(dotLocalstorageService, 'getItem');
+        it.skip('should try to load messages otherwise get the default one and set them in local storage', () => {
+            vi.spyOn(dotLocalstorageService, 'setItem');
+            vi.spyOn(dotLocalstorageService, 'getItem');
             dotMessageService.init();
             expect(dotLocalstorageService.getItem).toHaveBeenCalledWith('dotMessagesKeys');
             expect(http.get).toHaveBeenCalledWith('/api/v2/languages/default/keys');
         });
 
-        it('should call languages endpoint with passed language', () => {
-            dotMessageService.init({ language: 'en_US' });
+        it('should call languages endpoint with passed language', async () => {
+            await firstValueFrom(dotMessageService.init({ language: 'en_US' }));
             expect(http.get).toHaveBeenCalledWith('/api/v2/languages/en_US/keys');
         });
 
-        it('should read messages from local storage', () => {
-            jest.spyOn(dotLocalstorageService, 'getItem');
+        it('should read messages from local storage', async () => {
+            vi.spyOn(dotLocalstorageService, 'getItem');
             dotLocalstorageService.setItem(MESSAGES_LOCALSTORAGE_KEY, messages);
             dotLocalstorageService.setItem(LANGUAGE_LOCALSTORAGE_KEY, DEFAULT_LANG);
             dotLocalstorageService.setItem(BUILDATE_LOCALSTORAGE_KEY, '2020-01-01');
-            dotMessageService.init();
+            await firstValueFrom(dotMessageService.init());
             expect(dotLocalstorageService.getItem).toHaveBeenCalledWith('dotMessagesKeys');
             expect(http.get).not.toHaveBeenCalled();
         });
     });
 
     describe('get', () => {
-        beforeEach(() => {
-            dotMessageService.init();
+        beforeEach(async () => {
+            await firstValueFrom(dotMessageService.init());
         });
 
         it('should return message', () => {

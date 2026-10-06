@@ -694,4 +694,22 @@ public class UtilMethodsTest extends UnitTestBase {
       final String invalidBase64 = "This is not a valid base64 string!";
       UtilMethods.base64Decode(invalidBase64);
    }
+
+   /**
+    * Method to test: {@link UtilMethods#escapeHTMLCodeFromJSON(String)}
+    * Given Scenario: A contentlet JSON value (e.g. a Story Block field) where {@code $}, {@code :} and
+    *                 {@code ,} have been stored as their decimal HTML numeric entities.
+    * Expected Result: The entities are decoded back to the literal characters so consumers such as the
+    *                  Block Editor display {@code $50} instead of {@code &#36;50} (issue #35782).
+    */
+   @Test
+   public void test_escapeHTMLCodeFromJSON_decodes_dollar_colon_and_comma() {
+      final String encoded = "{\"text\":\"The application fee is &#36;50, see http&#58;//x.com\"}";
+      final String decoded = UtilMethods.escapeHTMLCodeFromJSON(encoded);
+
+      assertEquals("{\"text\":\"The application fee is $50, see http://x.com\"}", decoded);
+      assertFalse(decoded.contains("&#36;"));
+      assertFalse(decoded.contains("&#58;"));
+      assertFalse(decoded.contains("&#44;"));
+   }
 }

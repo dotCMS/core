@@ -423,7 +423,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
 
                                   return {
                                       ...newChild, // We want the data from the backend
-                                      id: oldChild.id, // But We do not want to lose the id, because this is the way GridStack knows that nothing changed
+                                      id: oldChild?.id ?? newChild.id, // But We do not want to lose the id, because this is the way GridStack knows that nothing changed
                                       containers: newChild.containers
                                   };
                               })

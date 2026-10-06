@@ -16,6 +16,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.StalePageSaveException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -735,10 +736,10 @@ public class MultiTreeAPITest extends IntegrationTestBase {
      * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional)} )}
      * When: A Page with content in spanish and english, is trying to add the spanish content again into the same container, but
      * it's editing the english version of the page
-     * Should: Throw an exception saying that the content already exists in that container.
+     * Should: Complete without throwing an exception, the duplicate INSERT is silently skipped.
      */
-    @Test(expected = IllegalArgumentException.class)
-    public void test_overridesMultitreesByPersonalization_AddContentTwiceDiffLangEditing_throwException() throws Exception {
+    @Test
+    public void test_overridesMultitreesByPersonalization_multiLangContent_noFallback_skipsExistingEntries() throws Exception {
         final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
         final Language espLanguage = new LanguageDataGen().country("ESP").languageCode("esp").nextPersisted();
 
@@ -755,11 +756,11 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         final Folder folder = new FolderDataGen().nextPersisted();
         final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
         final Structure structure = new StructureDataGen().nextPersisted();
-        final Container container = new ContainerDataGen().maxContentlets(1).withStructure(structure, "").nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(2).withStructure(structure, "").nextPersisted();
 
         final String uniqueId = UUIDGenerator.shorty();
 
-        final MultiTree multiTreeContentEN =new MultiTreeDataGen()
+        final MultiTree multiTreeContentEN = new MultiTreeDataGen()
                 .setPage(page)
                 .setContainer(container)
                 .setContentlet(enContentlet)
@@ -777,13 +778,305 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                 .setTreeOrder(2)
                 .nextPersisted();
 
+        // With fallback OFF, the language-scoped DELETE only removes the EN contentlet.
+        // The ES contentlet (no EN version) stays in multi_tree, so its INSERT is skipped.
+        // No exception should be thrown — both end up on the page.
+        Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
+        try {
+            APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                    page.getIdentifier(),
+                    DOT_PERSONALIZATION_DEFAULT,
+                    list(multiTreeContentEN, multiTreeContentES),
+                    Optional.of(defaultLanguage.getId())
+            );
+        } finally {
+            Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
+        }
+
+        final List<MultiTree> result = APILocator.getMultiTreeAPI().getMultiTreesByPage(page.getIdentifier());
+        final List<String> resultIds = result.stream().map(MultiTree::getContentlet).collect(Collectors.toList());
+        assertTrue("EN contentlet should be on the page", resultIds.contains(enContentlet.getIdentifier()));
+        assertTrue("ES contentlet should remain on the page (was skipped, not duplicated)", resultIds.contains(espContentlet.getIdentifier()));
+    }
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
+     * When: {@code DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE=true}, the page is edited in the <b>default
+     * language</b> (EN), and the page already has an EN-only entry and an ES-only entry in the DB.
+     * Since the requested language is the default language, a single-language DELETE is performed
+     * (scoped to EN). The client only re-submits the EN contentlet.
+     * Should: Delete only the EN entry (has EN version), preserve the ES entry (has no EN version),
+     * and re-insert the EN entry — leaving exactly 2 entries in the DB.
+     */
+    @Test
+    public void test_overridesMultitrees_withFallback_defaultLangEdit_preservesEsOnlyContent() throws Exception {
+        final boolean originalValue = Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
+
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final Language espLanguage = new LanguageDataGen().country("ESP").languageCode("esp").nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+
+        // EN-only contentlet (no ES version)
+        final Contentlet enContentlet = new ContentletDataGen(contentType.id())
+                .languageId(defaultLanguage.getId())
+                .nextPersisted();
+
+        // ES-only contentlet (no EN version)
+        final Contentlet espContentlet = new ContentletDataGen(contentType.id())
+                .languageId(espLanguage.getId())
+                .nextPersisted();
+
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(2).withStructure(structure, "").nextPersisted();
+
+        final String uniqueId = UUIDGenerator.shorty();
+
+        new MultiTreeDataGen()
+                .setPage(page).setContainer(container).setContentlet(enContentlet)
+                .setInstanceID(uniqueId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(1).nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page).setContainer(container).setContentlet(espContentlet)
+                .setInstanceID(uniqueId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(2).nextPersisted();
+
+        // The render() re-submits only the EN contentlet.
+        final MultiTree multiTreeContentEN = new MultiTree()
+                .setHtmlPage(page.getIdentifier())
+                .setContainer(container.getIdentifier())
+                .setContentlet(enContentlet.getIdentifier())
+                .setInstanceId(uniqueId)
+                .setTreeOrder(1);
+
+        Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", true);
+        try {
+            APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                    page.getIdentifier(),
+                    DOT_PERSONALIZATION_DEFAULT,
+                    list(multiTreeContentEN),
+                    Optional.of(defaultLanguage.getId()),
+                    VariantAPI.DEFAULT_VARIANT.name()
+            );
+        } finally {
+            Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", originalValue);
+        }
+
+        final List<MultiTree> result = APILocator.getMultiTreeAPI().getMultiTreesByPage(page.getIdentifier());
+        assertEquals("EN entry re-inserted + ES entry preserved = 2 entries", 2, result.size());
+
+        final List<String> resultIds = result.stream().map(MultiTree::getContentlet).collect(Collectors.toList());
+        assertTrue("EN contentlet should be on the page", resultIds.contains(enContentlet.getIdentifier()));
+        assertTrue("ES-only contentlet should be preserved", resultIds.contains(espContentlet.getIdentifier()));
+    }
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
+     * When: {@code DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE=true}, the page is edited in a
+     * <b>non-default language</b> (ES), and the page already has three entries: EN-only, ES-only,
+     * and FR-only. {@code render()} in ES mode returns: the EN contentlet (fallback to default
+     * language) and the ES contentlet (direct match); the FR-only contentlet is excluded because it
+     * has no version in either ES or the default language (EN). The client re-submits EN + ES.
+     * Should: Execute a two-language DELETE (ES OR EN), removing the EN-only and ES-only entries
+     * but leaving the FR-only entry untouched. After re-inserting EN + ES the page has 3 entries.
+     */
+    @Test
+    public void test_overridesMultitrees_withFallback_nonDefaultLangEdit_deletesTwoLangs_preservesThirdLang() throws Exception {
+        final boolean originalValue = Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
+
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final Language espLanguage = new LanguageDataGen().country("ESP").languageCode("esp").nextPersisted();
+        final Language frLanguage  = new LanguageDataGen().country("FRA").languageCode("fra").nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+
+        final Contentlet enContentlet  = new ContentletDataGen(contentType.id())
+                .languageId(defaultLanguage.getId()).nextPersisted();
+        final Contentlet espContentlet = new ContentletDataGen(contentType.id())
+                .languageId(espLanguage.getId()).nextPersisted();
+        final Contentlet frContentlet  = new ContentletDataGen(contentType.id())
+                .languageId(frLanguage.getId()).nextPersisted();
+
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(3).withStructure(structure, "").nextPersisted();
+
+        final String uniqueId = UUIDGenerator.shorty();
+
+        new MultiTreeDataGen()
+                .setPage(page).setContainer(container).setContentlet(enContentlet)
+                .setInstanceID(uniqueId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(1).nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page).setContainer(container).setContentlet(espContentlet)
+                .setInstanceID(uniqueId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(2).nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page).setContainer(container).setContentlet(frContentlet)
+                .setInstanceID(uniqueId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(3).nextPersisted();
+
+        // render() in ES returns EN (fallback to default) + ES (direct match).
+        // FR-only is excluded because it has no version in ES or EN.
+        final MultiTree multiTreeEN  = new MultiTree()
+                .setHtmlPage(page.getIdentifier()).setContainer(container.getIdentifier())
+                .setContentlet(enContentlet.getIdentifier()).setInstanceId(uniqueId).setTreeOrder(1);
+        final MultiTree multiTreeES  = new MultiTree()
+                .setHtmlPage(page.getIdentifier()).setContainer(container.getIdentifier())
+                .setContentlet(espContentlet.getIdentifier()).setInstanceId(uniqueId).setTreeOrder(2);
+
+        Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", true);
+        try {
+            APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                    page.getIdentifier(),
+                    DOT_PERSONALIZATION_DEFAULT,
+                    list(multiTreeEN, multiTreeES),
+                    Optional.of(espLanguage.getId()),
+                    VariantAPI.DEFAULT_VARIANT.name()
+            );
+        } finally {
+            Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", originalValue);
+        }
+
+        final List<MultiTree> result = APILocator.getMultiTreeAPI().getMultiTreesByPage(page.getIdentifier());
+        assertEquals("EN + ES re-inserted + FR preserved = 3 entries", 3, result.size());
+
+        final List<String> resultIds = result.stream().map(MultiTree::getContentlet).collect(Collectors.toList());
+        assertTrue("EN contentlet should be on the page", resultIds.contains(enContentlet.getIdentifier()));
+        assertTrue("ES contentlet should be on the page", resultIds.contains(espContentlet.getIdentifier()));
+        assertTrue("FR-only contentlet should be preserved", resultIds.contains(frContentlet.getIdentifier()));
+    }
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
+     * When: {@code DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE=false}, the page is edited in a non-default
+     * language (ES), and the page already has an EN-only entry and an ES-only entry. Without the
+     * fallback flag, {@code render()} in ES mode does not include the EN-only contentlet (no EN
+     * version exists). The client re-submits only the ES contentlet.
+     * Should: Execute a single-language DELETE (ES), removing only the ES entry. The EN-only entry
+     * has no ES version, so it is untouched. After re-inserting the ES entry the page has 2 entries.
+     */
+    @Test
+    public void test_overridesMultitrees_withoutFallback_nonDefaultLangEdit_preservesEnOnlyContent() throws Exception {
+        final boolean originalValue = Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
+
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final Language espLanguage = new LanguageDataGen().country("ESP").languageCode("esp").nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+
+        final Contentlet enContentlet  = new ContentletDataGen(contentType.id())
+                .languageId(defaultLanguage.getId()).nextPersisted();
+        final Contentlet espContentlet = new ContentletDataGen(contentType.id())
+                .languageId(espLanguage.getId()).nextPersisted();
+
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(2).withStructure(structure, "").nextPersisted();
+
+        final String uniqueId = UUIDGenerator.shorty();
+
+        new MultiTreeDataGen()
+                .setPage(page).setContainer(container).setContentlet(enContentlet)
+                .setInstanceID(uniqueId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(1).nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page).setContainer(container).setContentlet(espContentlet)
+                .setInstanceID(uniqueId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(2).nextPersisted();
+
+        // render() in ES without fallback returns only the ES contentlet; EN-only is excluded.
+        final MultiTree multiTreeES = new MultiTree()
+                .setHtmlPage(page.getIdentifier()).setContainer(container.getIdentifier())
+                .setContentlet(espContentlet.getIdentifier()).setInstanceId(uniqueId).setTreeOrder(2);
+
+        Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
+        try {
+            APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                    page.getIdentifier(),
+                    DOT_PERSONALIZATION_DEFAULT,
+                    list(multiTreeES),
+                    Optional.of(espLanguage.getId()),
+                    VariantAPI.DEFAULT_VARIANT.name()
+            );
+        } finally {
+            Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", originalValue);
+        }
+
+        final List<MultiTree> result = APILocator.getMultiTreeAPI().getMultiTreesByPage(page.getIdentifier());
+        assertEquals("EN preserved + ES re-inserted = 2 entries", 2, result.size());
+
+        final List<String> resultIds = result.stream().map(MultiTree::getContentlet).collect(Collectors.toList());
+        assertTrue("EN-only contentlet should be preserved", resultIds.contains(enContentlet.getIdentifier()));
+        assertTrue("ES contentlet should be on the page", resultIds.contains(espContentlet.getIdentifier()));
+    }
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
+     * When: No language context is provided ({@code languageIdOpt} is empty), so the full DELETE
+     * path is taken. The page already has an EN entry and an ES entry, but the client submits only
+     * the EN contentlet.
+     * Should: Delete all existing entries for the page and re-insert only the submitted EN entry,
+     * leaving exactly 1 entry in the DB.
+     */
+    @Test
+    public void test_overridesMultitrees_noLanguage_fullDeleteAndReinsert() throws Exception {
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final Language espLanguage = new LanguageDataGen().country("ESP").languageCode("esp").nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+
+        final Contentlet enContentlet  = new ContentletDataGen(contentType.id())
+                .languageId(defaultLanguage.getId()).nextPersisted();
+        final Contentlet espContentlet = new ContentletDataGen(contentType.id())
+                .languageId(espLanguage.getId()).nextPersisted();
+
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(2).withStructure(structure, "").nextPersisted();
+
+        final String uniqueId = UUIDGenerator.shorty();
+
+        new MultiTreeDataGen()
+                .setPage(page).setContainer(container).setContentlet(enContentlet)
+                .setInstanceID(uniqueId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(1).nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page).setContainer(container).setContentlet(espContentlet)
+                .setInstanceID(uniqueId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(2).nextPersisted();
+
+        // Full-DELETE path: no language is provided, so all existing entries are removed first.
+        final MultiTree multiTreeEN = new MultiTree()
+                .setHtmlPage(page.getIdentifier()).setContainer(container.getIdentifier())
+                .setContentlet(enContentlet.getIdentifier()).setInstanceId(uniqueId).setTreeOrder(1);
 
         APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
                 page.getIdentifier(),
                 DOT_PERSONALIZATION_DEFAULT,
-                list(multiTreeContentEN,multiTreeContentES),
-                Optional.of(defaultLanguage.getId())
+                list(multiTreeEN),
+                Optional.empty(),
+                VariantAPI.DEFAULT_VARIANT.name()
         );
+
+        final List<MultiTree> result = APILocator.getMultiTreeAPI().getMultiTreesByPage(page.getIdentifier());
+        assertEquals("Full DELETE then re-insert: only 1 entry should remain", 1, result.size());
+        assertEquals("EN contentlet should be the sole entry", enContentlet.getIdentifier(),
+                result.get(0).getContentlet());
     }
 
     /**
@@ -4378,6 +4671,1119 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         assertNotNull("Retrieved multiTree should not be null", retrieved);
         assertNull("Style properties should be null", retrieved.getStyleProperties());
     }
+
+    // ── Net-loss threshold guard tests (empty + non-empty) ─────────────────
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
+     * When: {@code MULTITREE_NET_LOSS_THRESHOLD=0}, the page already has contentlets, and
+     * the caller submits an empty list (complete stale-session wipe scenario).
+     * Should: throw {@link StalePageSaveException} — net loss equals all existing rows, exceeding threshold 0.
+     */
+    @Test(expected = StalePageSaveException.class)
+    public void test_overridesMultitrees_threshold0_emptyPayload_throwsStalePageSaveException() throws Exception {
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .languageId(defaultLanguage.getId()).nextPersisted();
+
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(1).withStructure(structure, "").nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page).setContainer(container).setContentlet(contentlet)
+                .setInstanceID(UUIDGenerator.shorty()).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(1).nextPersisted();
+
+        Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", 0);
+        try {
+            APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                    page.getIdentifier(),
+                    DOT_PERSONALIZATION_DEFAULT,
+                    Collections.emptyList(),
+                    Optional.of(defaultLanguage.getId()),
+                    VariantAPI.DEFAULT_VARIANT.name()
+            );
+        } finally {
+            Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", -1);
+        }
+    }
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
+     * When: {@code MULTITREE_NET_LOSS_THRESHOLD=-1} (default, disabled), the page has existing
+     * contentlets, and the caller submits an empty list.
+     * Should: not throw — wipe proceeds normally, leaving 0 rows for the page.
+     */
+    @Test
+    public void test_overridesMultitrees_thresholdDisabled_emptyPayload_wipesExistingRows() throws Exception {
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .languageId(defaultLanguage.getId()).nextPersisted();
+
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(1).withStructure(structure, "").nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page).setContainer(container).setContentlet(contentlet)
+                .setInstanceID(UUIDGenerator.shorty()).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(1).nextPersisted();
+
+        // Default: threshold is -1 (disabled) — no property set needed, but explicit for clarity
+        Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", -1);
+        APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                page.getIdentifier(),
+                DOT_PERSONALIZATION_DEFAULT,
+                Collections.emptyList(),
+                Optional.of(defaultLanguage.getId()),
+                VariantAPI.DEFAULT_VARIANT.name()
+        );
+
+        final List<MultiTree> result = APILocator.getMultiTreeAPI().getMultiTreesByPage(page.getIdentifier());
+        assertTrue("Threshold disabled — empty save should wipe all rows", result.isEmpty());
+    }
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
+     * When: {@code MULTITREE_NET_LOSS_THRESHOLD=0} but the page genuinely has no existing contentlets
+     * (first save on a blank page).
+     * Should: not throw — the guard only fires when there are existing rows to protect.
+     */
+    @Test
+    public void test_overridesMultitrees_threshold0_genuinelyEmptyPage_noException() throws Exception {
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+
+        Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", 0);
+        try {
+            APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                    page.getIdentifier(),
+                    DOT_PERSONALIZATION_DEFAULT,
+                    Collections.emptyList(),
+                    Optional.of(defaultLanguage.getId()),
+                    VariantAPI.DEFAULT_VARIANT.name()
+            );
+        } finally {
+            Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", -1);
+        }
+
+        final List<MultiTree> result = APILocator.getMultiTreeAPI().getMultiTreesByPage(page.getIdentifier());
+        assertTrue("Genuinely empty page — should remain empty after save", result.isEmpty());
+    }
+
+    // ── Net-loss threshold guard tests ─────────────────────────────────────
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
+     * When: {@code MULTITREE_NET_LOSS_THRESHOLD=5} and the save would drop 10 contentlets (20 → 10).
+     * Should: throw {@link StalePageSaveException} — the net loss exceeds the configured threshold.
+     */
+    @Test(expected = StalePageSaveException.class)
+    public void test_overridesMultitrees_netLossThreshold_excessiveDrop_throwsStalePageSaveException() throws Exception {
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(20).withStructure(structure, "").nextPersisted();
+        final String instanceId = UUIDGenerator.shorty();
+
+        // Persist 20 contentlets on the page (simulates what the DB looks like after other users' work)
+        final List<MultiTree> incoming = new ArrayList<>();
+        for (int i = 0; i < 20; i++) {
+            final Contentlet c = new ContentletDataGen(contentType.id()).languageId(defaultLanguage.getId()).nextPersisted();
+            new MultiTreeDataGen()
+                    .setPage(page).setContainer(container).setContentlet(c)
+                    .setInstanceID(instanceId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                    .setTreeOrder(i).nextPersisted();
+            // Stale session only saw the first 10 — re-submit those 10
+            if (i < 10) {
+                incoming.add(new MultiTree()
+                        .setHtmlPage(page.getIdentifier()).setContainer(container.getIdentifier())
+                        .setContentlet(c.getIdentifier()).setInstanceId(instanceId).setTreeOrder(i));
+            }
+        }
+
+        Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", 5);
+        try {
+            // Submitting 10 of 20 contentlets → net loss of 10, which exceeds threshold of 5
+            APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                    page.getIdentifier(),
+                    DOT_PERSONALIZATION_DEFAULT,
+                    incoming,
+                    Optional.of(defaultLanguage.getId()),
+                    VariantAPI.DEFAULT_VARIANT.name()
+            );
+        } finally {
+            Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", -1);
+        }
+    }
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
+     * When: {@code MULTITREE_NET_LOSS_THRESHOLD=5} and the user intentionally removes 2 contentlets
+     * (8 existing → 6 incoming, net loss of 2).
+     * Should: not throw — the net loss is within the configured threshold.
+     */
+    @Test
+    public void test_overridesMultitrees_netLossThreshold_smallDrop_allowsSave() throws Exception {
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(8).withStructure(structure, "").nextPersisted();
+        final String instanceId = UUIDGenerator.shorty();
+
+        // Persist 8 contentlets; user intentionally keeps 6 (removes 2)
+        final List<MultiTree> incoming = new ArrayList<>();
+        for (int i = 0; i < 8; i++) {
+            final Contentlet c = new ContentletDataGen(contentType.id()).languageId(defaultLanguage.getId()).nextPersisted();
+            new MultiTreeDataGen()
+                    .setPage(page).setContainer(container).setContentlet(c)
+                    .setInstanceID(instanceId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                    .setTreeOrder(i).nextPersisted();
+            if (i < 6) {
+                incoming.add(new MultiTree()
+                        .setHtmlPage(page.getIdentifier()).setContainer(container.getIdentifier())
+                        .setContentlet(c.getIdentifier()).setInstanceId(instanceId).setTreeOrder(i));
+            }
+        }
+
+        Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", 5);
+        try {
+            // Net loss of 2 — within threshold of 5, should save cleanly
+            APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                    page.getIdentifier(),
+                    DOT_PERSONALIZATION_DEFAULT,
+                    incoming,
+                    Optional.of(defaultLanguage.getId()),
+                    VariantAPI.DEFAULT_VARIANT.name()
+            );
+        } finally {
+            Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", -1);
+        }
+
+        final List<MultiTree> result = APILocator.getMultiTreeAPI().getMultiTreesByPage(page.getIdentifier());
+        assertEquals("Intentional removal of 2 should leave 6 contentlets", 6, result.size());
+    }
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
+     * When: The default threshold (1) is in effect and the user removes exactly 1 contentlet
+     * (the most a single UVE action can ever remove).
+     * Should: not throw — a net loss of 1 is within the default threshold.
+     */
+    @Test
+    public void test_overridesMultitrees_defaultThreshold_singleRemoval_allowsSave() throws Exception {
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(3).withStructure(structure, "").nextPersisted();
+        final String instanceId = UUIDGenerator.shorty();
+
+        final List<MultiTree> incoming = new ArrayList<>();
+        for (int i = 0; i < 3; i++) {
+            final Contentlet c = new ContentletDataGen(contentType.id()).languageId(defaultLanguage.getId()).nextPersisted();
+            new MultiTreeDataGen()
+                    .setPage(page).setContainer(container).setContentlet(c)
+                    .setInstanceID(instanceId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                    .setTreeOrder(i).nextPersisted();
+            // User intentionally removes the last contentlet; keeps the first two
+            if (i < 2) {
+                incoming.add(new MultiTree()
+                        .setHtmlPage(page.getIdentifier()).setContainer(container.getIdentifier())
+                        .setContentlet(c.getIdentifier()).setInstanceId(instanceId).setTreeOrder(i));
+            }
+        }
+
+        // Threshold of 1 — a loss of exactly 1 should be allowed
+        Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", 1);
+        try {
+            APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                    page.getIdentifier(),
+                    DOT_PERSONALIZATION_DEFAULT,
+                    incoming,
+                    Optional.of(defaultLanguage.getId()),
+                    VariantAPI.DEFAULT_VARIANT.name()
+            );
+        } finally {
+            Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", -1);
+        }
+
+        final List<MultiTree> result = APILocator.getMultiTreeAPI().getMultiTreesByPage(page.getIdentifier());
+        assertEquals("Single intentional removal should leave 2 contentlets", 2, result.size());
+    }
+
+
+    // ── Archived-content / net-loss guard tests (issue #37377) ──────────────
+
+    /**
+     * Creates a contentlet, archives it, and only then inserts its {@code multi_tree} row —
+     * reproducing a stale page reference left behind by an archived contentlet.
+     *
+     * <p>The order matters. Archiving a contentlet now removes it from its container
+     * automatically, so inserting the row first and archiving afterwards would delete the very
+     * row these tests need. Inserting after the archive reproduces the reported data state: a row
+     * that predates that automatic removal.</p>
+     *
+     * @param page        The page the stale row points at.
+     * @param container   The container the stale row points at.
+     * @param instanceId  The container instance (UUID) for the row.
+     * @param contentType The Content Type to build the contentlet from.
+     * @param languageId  The language to create — and archive — the contentlet in.
+     * @param variant     The variant for both the contentlet and the row.
+     * @param treeOrder   The row's tree order.
+     *
+     * @return The archived contentlet whose stale row now exists.
+     */
+    private Contentlet createArchivedContentletWithStaleRow(final HTMLPageAsset page,
+            final Container container, final String instanceId, final ContentType contentType,
+            final long languageId, final Variant variant, final int treeOrder) {
+        final Contentlet archived = new ContentletDataGen(contentType.id())
+                .languageId(languageId)
+                .variant(variant)
+                .nextPersisted();
+        ContentletDataGen.archive(archived);
+
+        new MultiTreeDataGen()
+                .setPage(page).setContainer(container).setContentlet(archived)
+                .setInstanceID(instanceId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setVariant(variant).setTreeOrder(treeOrder).nextPersisted();
+
+        return archived;
+    }
+
+    /**
+     * Creates a live (non-archived) contentlet and its {@code multi_tree} row on the given page,
+     * the ordinary counterpart to {@link #createArchivedContentletWithStaleRow}.
+     *
+     * @param page        The page to add the contentlet to.
+     * @param container   The container to add the contentlet to.
+     * @param instanceId  The container instance (UUID) for the row.
+     * @param contentType The Content Type to build the contentlet from.
+     * @param languageId  The language to create the contentlet in.
+     * @param variant     The variant for both the contentlet and the row.
+     * @param treeOrder   The row's tree order.
+     *
+     * @return The live contentlet that was added to the page.
+     */
+    private Contentlet createLiveContentletOnPage(final HTMLPageAsset page,
+            final Container container, final String instanceId, final ContentType contentType,
+            final long languageId, final Variant variant, final int treeOrder) {
+        final Contentlet live = new ContentletDataGen(contentType.id())
+                .languageId(languageId)
+                .variant(variant)
+                .nextPersisted();
+
+        new MultiTreeDataGen()
+                .setPage(page).setContainer(container).setContentlet(live)
+                .setInstanceID(instanceId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setVariant(variant).setTreeOrder(treeOrder).nextPersisted();
+
+        return live;
+    }
+
+    /**
+     * Builds the save payload a client would submit for the given contentlets, in order.
+     *
+     * @param page       The page being saved.
+     * @param container  The container the contentlets belong to.
+     * @param instanceId The container instance (UUID).
+     * @param contentlets The contentlets the client is submitting, in the order they appear.
+     *
+     * @return The {@link MultiTree} payload for
+     * {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}.
+     */
+    private List<MultiTree> payloadOf(final HTMLPageAsset page, final Container container,
+            final String instanceId, final Contentlet... contentlets) {
+        final List<MultiTree> payload = new ArrayList<>();
+        for (int i = 0; i < contentlets.length; i++) {
+            payload.add(new MultiTree()
+                    .setHtmlPage(page.getIdentifier())
+                    .setContainer(container.getIdentifier())
+                    .setContentlet(contentlets[i].getIdentifier())
+                    .setInstanceId(instanceId)
+                    .setTreeOrder(i));
+        }
+        return payload;
+    }
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
+     * When: The page holds a stale {@code multi_tree} row pointing at an <b>archived</b> contentlet
+     * plus two live contentlets, {@code MULTITREE_NET_LOSS_THRESHOLD=0}, and the client submits the
+     * two live contentlets (the archived one was never visible to it).
+     * Should: Save normally. The real net loss is zero — the archived contentlet is not live content
+     * — so the guard must not count it and must not reject the save.
+     * <p>Reproduces GitHub issue #37377.</p>
+     */
+    @Test
+    public void test_overridesMultitrees_archivedContentlet_notCountedTowardNetLoss() throws Exception {
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(5).withStructure(structure, "").nextPersisted();
+        final String instanceId = UUIDGenerator.shorty();
+
+        final Contentlet live1 = createLiveContentletOnPage(page, container, instanceId, contentType,
+                defaultLanguage.getId(), VariantAPI.DEFAULT_VARIANT, 0);
+        final Contentlet live2 = createLiveContentletOnPage(page, container, instanceId, contentType,
+                defaultLanguage.getId(), VariantAPI.DEFAULT_VARIANT, 1);
+        // The stale reference: archived content still holding a multi_tree row
+        createArchivedContentletWithStaleRow(page, container, instanceId, contentType,
+                defaultLanguage.getId(), VariantAPI.DEFAULT_VARIANT, 2);
+
+        final List<MultiTree> incoming = payloadOf(page, container, instanceId, live1, live2);
+
+        Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", 0);
+        try {
+            // Counting the archived row gives 3 - 2 = net loss 1, which trips a threshold of 0.
+            // Counting only live content gives 2 - 2 = 0, which does not. A threshold of 1 would
+            // let BOTH readings through and prove nothing, so 0 is what makes this discriminate.
+            APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                    page.getIdentifier(),
+                    DOT_PERSONALIZATION_DEFAULT,
+                    incoming,
+                    Optional.of(defaultLanguage.getId()),
+                    VariantAPI.DEFAULT_VARIANT.name()
+            );
+        } finally {
+            Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", -1);
+        }
+
+        final List<MultiTree> result = APILocator.getMultiTreeAPI().getMultiTreesByPage(page.getIdentifier());
+        assertEquals("The two live contentlets should remain on the page", 2, result.size());
+    }
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
+     * When: A contentlet is archived in a <b>non-default</b> language only, and the page is saved in
+     * the default language where that same identifier is still live.
+     * Should: Still count it. Archived is a per-language fact
+     * ({@code contentlet_version_info} is keyed by identifier + language + variant), so content
+     * archived in Spanish is real content in English. Dropping it from the count would weaken the
+     * guard. The save therefore exceeds the threshold and is rejected.
+     */
+    @Test(expected = StalePageSaveException.class)
+    public void test_overridesMultitrees_archivedInOtherLanguage_stillCounted() throws Exception {
+        final boolean originalFallback = Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
+
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final Language espLanguage = new LanguageDataGen().country("ESP").languageCode("esp").nextPersisted();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(5).withStructure(structure, "").nextPersisted();
+        final String instanceId = UUIDGenerator.shorty();
+
+        // Live in the default language — this is what the page save operates on
+        final Contentlet enLive = new ContentletDataGen(contentType.id())
+                .languageId(defaultLanguage.getId()).nextPersisted();
+        // A separate ES version of the SAME identifier, archived. The EN version stays live.
+        final Contentlet esVersion = ContentletDataGen.checkout(enLive);
+        esVersion.setLanguageId(espLanguage.getId());
+        final Contentlet esPersisted = ContentletDataGen.checkin(esVersion);
+        ContentletDataGen.archive(esPersisted);
+
+        new MultiTreeDataGen()
+                .setPage(page).setContainer(container).setContentlet(enLive)
+                .setInstanceID(instanceId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(0).nextPersisted();
+        final Contentlet other = createLiveContentletOnPage(page, container, instanceId, contentType,
+                defaultLanguage.getId(), VariantAPI.DEFAULT_VARIANT, 1);
+
+        // Client submits nothing but `other` — dropping enLive, which IS live in EN
+        final List<MultiTree> incoming = payloadOf(page, container, instanceId, other);
+
+        Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
+        Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", 0);
+        try {
+            APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                    page.getIdentifier(),
+                    DOT_PERSONALIZATION_DEFAULT,
+                    incoming,
+                    Optional.of(defaultLanguage.getId()),
+                    VariantAPI.DEFAULT_VARIANT.name()
+            );
+        } finally {
+            Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", -1);
+            Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", originalFallback);
+        }
+    }
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
+     * When: The page holds a contentlet that has never been published — a working version with no
+     * live version — and the client's payload drops it.
+     * Should: Still count it. Unpublished is not archived; only
+     * {@code contentlet_version_info.deleted} marks archived content. A predicate that tested
+     * {@code live_inode} instead would silently stop counting real content and weaken the guard,
+     * so this save must still be rejected.
+     */
+    @Test(expected = StalePageSaveException.class)
+    public void test_overridesMultitrees_workingOnlyContentlet_stillCounted() throws Exception {
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(5).withStructure(structure, "").nextPersisted();
+        final String instanceId = UUIDGenerator.shorty();
+
+        // Never published: nextPersisted() leaves the contentlet working-only, not archived
+        final Contentlet workingOnly = createLiveContentletOnPage(page, container, instanceId, contentType,
+                defaultLanguage.getId(), VariantAPI.DEFAULT_VARIANT, 0);
+        final Contentlet other = createLiveContentletOnPage(page, container, instanceId, contentType,
+                defaultLanguage.getId(), VariantAPI.DEFAULT_VARIANT, 1);
+        assertFalse("Fixture must be working-only, never archived",
+                APILocator.getVersionableAPI().isDeleted(workingOnly));
+
+        // Client drops workingOnly — a real loss of 1, over a threshold of 0
+        final List<MultiTree> incoming = payloadOf(page, container, instanceId, other);
+
+        Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", 0);
+        try {
+            APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                    page.getIdentifier(),
+                    DOT_PERSONALIZATION_DEFAULT,
+                    incoming,
+                    Optional.of(defaultLanguage.getId()),
+                    VariantAPI.DEFAULT_VARIANT.name()
+            );
+        } finally {
+            Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", -1);
+        }
+    }
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
+     * When: A contentlet is archived in one variant while the same identifier stays live in the
+     * DEFAULT variant, and the page is saved in the DEFAULT variant.
+     * Should: Still count the DEFAULT-variant content. {@code contentlet_version_info} is keyed by
+     * variant as well as language, so archiving in one variant says nothing about another. The save
+     * drops live DEFAULT-variant content and must be rejected.
+     */
+    @Test(expected = StalePageSaveException.class)
+    public void test_overridesMultitrees_archivedInOtherVariant_stillCounted() throws Exception {
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(5).withStructure(structure, "").nextPersisted();
+        final String instanceId = UUIDGenerator.shorty();
+        final Variant otherVariant = new VariantDataGen().nextPersisted();
+
+        // Live in DEFAULT variant, on the page
+        final Contentlet defaultVariantLive = createLiveContentletOnPage(page, container, instanceId,
+                contentType, defaultLanguage.getId(), VariantAPI.DEFAULT_VARIANT, 0);
+        final Contentlet other = createLiveContentletOnPage(page, container, instanceId, contentType,
+                defaultLanguage.getId(), VariantAPI.DEFAULT_VARIANT, 1);
+        // An archived contentlet in a DIFFERENT variant — must not influence the DEFAULT save
+        createArchivedContentletWithStaleRow(page, container, instanceId, contentType,
+                defaultLanguage.getId(), otherVariant, 0);
+
+        // Client drops defaultVariantLive — a real loss of 1 in the DEFAULT variant
+        final List<MultiTree> incoming = payloadOf(page, container, instanceId, other);
+
+        Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", 0);
+        try {
+            APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                    page.getIdentifier(),
+                    DOT_PERSONALIZATION_DEFAULT,
+                    incoming,
+                    Optional.of(defaultLanguage.getId()),
+                    VariantAPI.DEFAULT_VARIANT.name()
+            );
+        } finally {
+            Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", -1);
+        }
+    }
+
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
+     * When: {@code DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE=true} and the page is edited in a
+     * <b>non-default</b> language, so the guard takes its two-language (requested OR default)
+     * counting branch. The page holds two live default-language contentlets — visible to the editor
+     * through language fallback — plus a stale {@code multi_tree} row pointing at an
+     * <b>archived</b> contentlet. {@code MULTITREE_NET_LOSS_THRESHOLD=0} and the client submits the
+     * two live contentlets.
+     * Should: Save normally. The archived contentlet is not live content in either language, so the
+     * real net loss is zero.
+     * <p>This is the two-language counterpart of
+     * {@link #test_overridesMultitrees_archivedContentlet_notCountedTowardNetLoss} — the branch is
+     * the one most easily missed, since it is reached only when fallback is enabled AND the
+     * requested language differs from the site default. Reproduces GitHub issue #37377.</p>
+     */
+    @Test
+    public void test_overridesMultitrees_withFallback_archivedContentlet_notCountedTowardNetLoss() throws Exception {
+        final boolean originalFallback = Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
+
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final Language espLanguage = new LanguageDataGen().country("ESP").languageCode("esp").nextPersisted();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(5).withStructure(structure, "").nextPersisted();
+        final String instanceId = UUIDGenerator.shorty();
+
+        // Two live contentlets in the DEFAULT language — reachable from an ESP edit via fallback,
+        // so the two-language count legitimately includes them
+        final Contentlet live1 = createLiveContentletOnPage(page, container, instanceId, contentType,
+                defaultLanguage.getId(), VariantAPI.DEFAULT_VARIANT, 0);
+        final Contentlet live2 = createLiveContentletOnPage(page, container, instanceId, contentType,
+                defaultLanguage.getId(), VariantAPI.DEFAULT_VARIANT, 1);
+        // The stale reference: archived, yet still holding a multi_tree row
+        createArchivedContentletWithStaleRow(page, container, instanceId, contentType,
+                defaultLanguage.getId(), VariantAPI.DEFAULT_VARIANT, 2);
+
+        final List<MultiTree> incoming = payloadOf(page, container, instanceId, live1, live2);
+
+        Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", true);
+        Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", 0);
+        try {
+            // Editing in ESP (non-default) with fallback on selects the two-language branch.
+            // Guard should count 2 live (not 3) minus 2 incoming = net loss 0, within threshold 0.
+            APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                    page.getIdentifier(),
+                    DOT_PERSONALIZATION_DEFAULT,
+                    incoming,
+                    Optional.of(espLanguage.getId()),
+                    VariantAPI.DEFAULT_VARIANT.name()
+            );
+        } finally {
+            Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", -1);
+            Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", originalFallback);
+        }
+
+        final List<MultiTree> result = APILocator.getMultiTreeAPI().getMultiTreesByPage(page.getIdentifier());
+        assertEquals("The two live contentlets should remain on the page", 2, result.size());
+    }
+
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
+     * When: A contentlet is <b>archived in the DEFAULT variant</b> — the variant being saved — while
+     * a <b>live</b> version of the same identifier exists in another variant. Its
+     * {@code multi_tree} row is in the DEFAULT variant, {@code MULTITREE_NET_LOSS_THRESHOLD=0}, and
+     * the client's payload drops it.
+     * Should: Save normally. {@code contentlet_version_info} is keyed by variant as well as
+     * language, so the only version that matters here is the archived DEFAULT one.
+     * <p>This is the test that actually exercises the variant dimension of the predicate.
+     * {@link #test_overridesMultitrees_archivedInOtherVariant_stillCounted} places the archived row
+     * in a different variant, where {@code multi_tree.variant_id} already filters it out before the
+     * version lookup runs — so it cannot detect a predicate that forgets {@code variant_id}. This
+     * one can: ignoring the variant would find the other variant's live version, count the
+     * contentlet, and trip the guard.</p>
+     */
+    @Test
+    public void test_overridesMultitrees_archivedInSaveVariant_notCountedDespiteLiveOtherVariant() throws Exception {
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(5).withStructure(structure, "").nextPersisted();
+        final String instanceId = UUIDGenerator.shorty();
+        final Variant otherVariant = new VariantDataGen().nextPersisted();
+
+        // Ordinary live DEFAULT-variant content the client keeps
+        final Contentlet other = createLiveContentletOnPage(page, container, instanceId, contentType,
+                defaultLanguage.getId(), VariantAPI.DEFAULT_VARIANT, 0);
+
+        // Same identifier, two variants: live in otherVariant, archived in DEFAULT
+        final Contentlet defaultVariantVersion = new ContentletDataGen(contentType.id())
+                .languageId(defaultLanguage.getId())
+                .nextPersisted();
+        ContentletDataGen.createNewVersion(defaultVariantVersion, otherVariant, Map.of());
+        ContentletDataGen.archive(defaultVariantVersion);
+
+        // Stale row in the DEFAULT variant, inserted after the archive (see helper Javadoc)
+        new MultiTreeDataGen()
+                .setPage(page).setContainer(container).setContentlet(defaultVariantVersion)
+                .setInstanceID(instanceId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setVariant(VariantAPI.DEFAULT_VARIANT).setTreeOrder(1).nextPersisted();
+
+        final List<MultiTree> incoming = payloadOf(page, container, instanceId, other);
+
+        Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", 0);
+        try {
+            // Counting the archived DEFAULT-variant row gives 2 - 1 = net loss 1, tripping the
+            // threshold. Scoping the archived check to the DEFAULT variant gives 1 - 1 = 0.
+            APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                    page.getIdentifier(),
+                    DOT_PERSONALIZATION_DEFAULT,
+                    incoming,
+                    Optional.of(defaultLanguage.getId()),
+                    VariantAPI.DEFAULT_VARIANT.name()
+            );
+        } finally {
+            Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", -1);
+        }
+
+        final List<MultiTree> result = APILocator.getMultiTreeAPI().getMultiTreesByPage(page.getIdentifier());
+        assertEquals("Only the live DEFAULT-variant contentlet should remain", 1, result.size());
+    }
+
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
+     * When: {@code DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE=true}, the page is saved in a non-default
+     * language (ESP), and a Contentlet on it is <b>archived in ESP but still live in the default
+     * language</b>. {@code MULTITREE_NET_LOSS_THRESHOLD=0} and the client's payload drops it.
+     * Should: Still count it, and therefore reject the save. Page rendering falls back to the
+     * default language, so that Contentlet is on the page and dropping it is a real loss.
+     * <p>This guards the <i>positive</i> half of the two-language contract. A predicate that
+     * required the Contentlet to be non-archived in the <b>requested</b> language would exclude it,
+     * under-count the page, and silently weaken the guard.</p>
+     */
+    @Test(expected = StalePageSaveException.class)
+    public void test_overridesMultitrees_withFallback_archivedInRequestedButLiveInDefault_stillCounted() throws Exception {
+        final boolean originalFallback = Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
+
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final Language espLanguage = new LanguageDataGen().country("ESP").languageCode("esp").nextPersisted();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(5).withStructure(structure, "").nextPersisted();
+        final String instanceId = UUIDGenerator.shorty();
+
+        // Live in the default language; a second version in ESP that IS archived
+        final Contentlet enLive = new ContentletDataGen(contentType.id())
+                .languageId(defaultLanguage.getId()).nextPersisted();
+        final Contentlet espVersion = ContentletDataGen.checkout(enLive);
+        espVersion.setLanguageId(espLanguage.getId());
+        ContentletDataGen.archive(ContentletDataGen.checkin(espVersion));
+
+        new MultiTreeDataGen()
+                .setPage(page).setContainer(container).setContentlet(enLive)
+                .setInstanceID(instanceId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(0).nextPersisted();
+        final Contentlet other = createLiveContentletOnPage(page, container, instanceId, contentType,
+                defaultLanguage.getId(), VariantAPI.DEFAULT_VARIANT, 1);
+
+        // Client drops enLive, which is still live in the default language — a real loss of 1
+        final List<MultiTree> incoming = payloadOf(page, container, instanceId, other);
+
+        Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", true);
+        Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", 0);
+        try {
+            APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                    page.getIdentifier(),
+                    DOT_PERSONALIZATION_DEFAULT,
+                    incoming,
+                    Optional.of(espLanguage.getId()),
+                    VariantAPI.DEFAULT_VARIANT.name()
+            );
+        } finally {
+            Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", -1);
+            Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", originalFallback);
+        }
+    }
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
+     * When: {@code DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE=true}, the page is saved in a non-default
+     * language (ESP), and a Contentlet on it is <b>archived in both</b> ESP and the default
+     * language. {@code MULTITREE_NET_LOSS_THRESHOLD=0} and the client's payload drops it.
+     * Should: Not count it, so the save succeeds. With no non-archived version in either language
+     * there is nothing on the page to lose.
+     */
+    @Test
+    public void test_overridesMultitrees_withFallback_archivedInBothLanguages_notCounted() throws Exception {
+        final boolean originalFallback = Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
+
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final Language espLanguage = new LanguageDataGen().country("ESP").languageCode("esp").nextPersisted();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(5).withStructure(structure, "").nextPersisted();
+        final String instanceId = UUIDGenerator.shorty();
+
+        // Same identifier archived in BOTH languages
+        final Contentlet enVersion = new ContentletDataGen(contentType.id())
+                .languageId(defaultLanguage.getId()).nextPersisted();
+        final Contentlet espVersion = ContentletDataGen.checkout(enVersion);
+        espVersion.setLanguageId(espLanguage.getId());
+        ContentletDataGen.archive(ContentletDataGen.checkin(espVersion));
+        ContentletDataGen.archive(enVersion);
+
+        // Stale row inserted after archiving, per createArchivedContentletWithStaleRow's reasoning
+        new MultiTreeDataGen()
+                .setPage(page).setContainer(container).setContentlet(enVersion)
+                .setInstanceID(instanceId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setTreeOrder(0).nextPersisted();
+        final Contentlet other = createLiveContentletOnPage(page, container, instanceId, contentType,
+                defaultLanguage.getId(), VariantAPI.DEFAULT_VARIANT, 1);
+
+        final List<MultiTree> incoming = payloadOf(page, container, instanceId, other);
+
+        Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", true);
+        Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", 0);
+        try {
+            APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                    page.getIdentifier(),
+                    DOT_PERSONALIZATION_DEFAULT,
+                    incoming,
+                    Optional.of(espLanguage.getId()),
+                    VariantAPI.DEFAULT_VARIANT.name()
+            );
+        } finally {
+            Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", -1);
+            Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", originalFallback);
+        }
+
+        final List<MultiTree> result = APILocator.getMultiTreeAPI().getMultiTreesByPage(page.getIdentifier());
+        assertEquals("Only the live contentlet should remain on the page", 1, result.size());
+    }
+
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
+     * When: A save removes the stale {@code multi_tree} row of an <b>archived</b> Contentlet whose
+     * reference count has been cached.
+     * Should: Still invalidate that Contentlet's cached reference count.
+     * <p>This is the regression the whole design hinges on. The cached figure comes from
+     * {@code SELECT COUNT(*) FROM multi_tree WHERE child = ?}, which counts archived rows too, so
+     * the set driving invalidation must keep counting them as well. Had the fix filtered the shared
+     * {@code getOriginalContentlets(...)} helper instead of adding a guard-only count, the archived
+     * identifier would drop out of that set, its cache entry would never be cleared, and the count
+     * would stay stale forever.</p>
+     */
+    @Test
+    public void test_overridesMultitrees_archivedContentlet_referenceCountStillInvalidated() throws Exception {
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(5).withStructure(structure, "").nextPersisted();
+        final String instanceId = UUIDGenerator.shorty();
+
+        final Contentlet live = createLiveContentletOnPage(page, container, instanceId, contentType,
+                defaultLanguage.getId(), VariantAPI.DEFAULT_VARIANT, 0);
+        final Contentlet archived = createArchivedContentletWithStaleRow(page, container, instanceId,
+                contentType, defaultLanguage.getId(), VariantAPI.DEFAULT_VARIANT, 1);
+
+        // Prime the cache for the archived contentlet
+        assertEquals("The archived contentlet is referenced by exactly one page", 1,
+                APILocator.getMultiTreeAPI().getAllContentletReferencesCount(archived.getIdentifier()));
+        assertTrue("Reference count should now be cached",
+                CacheLocator.getMultiTreeCache().getContentletReferenceCount(archived.getIdentifier()).isPresent());
+
+        // Save without the archived contentlet; its stale row is removed by the DELETE
+        final List<MultiTree> incoming = payloadOf(page, container, instanceId, live);
+        APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                page.getIdentifier(),
+                DOT_PERSONALIZATION_DEFAULT,
+                incoming,
+                Optional.of(defaultLanguage.getId()),
+                VariantAPI.DEFAULT_VARIANT.name()
+        );
+
+        assertFalse("The archived contentlet's cached reference count must have been invalidated",
+                CacheLocator.getMultiTreeCache().getContentletReferenceCount(archived.getIdentifier()).isPresent());
+        assertEquals("And it should now report zero references", 0,
+                APILocator.getMultiTreeAPI().getAllContentletReferencesCount(archived.getIdentifier()));
+    }
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#saveMultiTrees(String, String, List)}
+     * When: The page holds archived as well as live content and {@code MULTITREE_NET_LOSS_THRESHOLD}
+     * is set to a value that would reject the equivalent save through
+     * {@code overridesMultitreesByPersonalization}.
+     * Should: Save everything regardless. {@code saveMultiTrees} is a separate entry point that
+     * carries no net-loss guard, and this fix must not have leaked the guard — or the new
+     * non-archived counting — onto it.
+     * <p>{@code saveMultiTrees} shares the 2-argument {@code getOriginalContentlets(...)} overload
+     * built on {@code SELECT_CHILD_BY_PARENT}, the constant the other three are composed from, so it
+     * is the path most exposed to an over-broad edit.</p>
+     */
+    @Test
+    public void test_saveMultiTrees_withArchivedContent_unaffectedByNetLossGuard() throws Exception {
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(5).withStructure(structure, "").nextPersisted();
+        final String instanceId = UUIDGenerator.shorty();
+
+        createLiveContentletOnPage(page, container, instanceId, contentType,
+                defaultLanguage.getId(), VariantAPI.DEFAULT_VARIANT, 0);
+        createLiveContentletOnPage(page, container, instanceId, contentType,
+                defaultLanguage.getId(), VariantAPI.DEFAULT_VARIANT, 1);
+        createArchivedContentletWithStaleRow(page, container, instanceId, contentType,
+                defaultLanguage.getId(), VariantAPI.DEFAULT_VARIANT, 2);
+
+        // A single survivor: through the guarded entry point this would be a rejected bulk removal
+        final Contentlet survivor = new ContentletDataGen(contentType.id())
+                .languageId(defaultLanguage.getId()).nextPersisted();
+        final List<MultiTree> replacement = payloadOf(page, container, instanceId, survivor);
+
+        Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", 0);
+        try {
+            APILocator.getMultiTreeAPI().saveMultiTrees(page.getIdentifier(),
+                    VariantAPI.DEFAULT_VARIANT.name(), replacement);
+        } finally {
+            Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", -1);
+        }
+
+        final List<MultiTree> result = APILocator.getMultiTreeAPI().getMultiTreesByPage(page.getIdentifier());
+        assertEquals("saveMultiTrees carries no guard and should have replaced the page's content",
+                1, result.size());
+    }
+
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
+     * When: A page is saved in a <b>non-default variant</b> whose {@code multi_tree} rows point at
+     * Contentlets that exist only in the DEFAULT variant — the normal shape of a variant page,
+     * since copying a page into a variant copies its rows but not its Contentlets. The client posts
+     * an empty payload with {@code MULTITREE_NET_LOSS_THRESHOLD=0}.
+     * Should: Reject the save. The Contentlets are live content on that page by variant fallback,
+     * so wiping all of them is exactly the loss the guard exists to stop.
+     * <p>Regression test: requiring a version row in the <i>exact</i> save variant made the guard
+     * find nothing, leave {@code existing} empty, and skip the net-loss check entirely — silently
+     * disabling the safeguard on every variant page.</p>
+     */
+    @Test(expected = StalePageSaveException.class)
+    public void test_overridesMultitrees_variantSave_childrenOnlyInDefault_stillCounted() throws Exception {
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(5).withStructure(structure, "").nextPersisted();
+        final String instanceId = UUIDGenerator.shorty();
+
+        // Contentlets exist only in DEFAULT; their multi_tree rows are in the variant
+        for (int i = 0; i < 3; i++) {
+            final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                    .languageId(defaultLanguage.getId()).nextPersisted();
+            new MultiTreeDataGen()
+                    .setPage(page).setContainer(container).setContentlet(contentlet)
+                    .setInstanceID(instanceId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                    .setVariant(variant).setTreeOrder(i).nextPersisted();
+        }
+
+        Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", 0);
+        try {
+            APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                    page.getIdentifier(),
+                    DOT_PERSONALIZATION_DEFAULT,
+                    new ArrayList<>(),
+                    Optional.of(defaultLanguage.getId()),
+                    variant.name()
+            );
+        } finally {
+            Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", -1);
+        }
+    }
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
+     * When: A page is saved in a non-default variant and one Contentlet has version rows in
+     * <b>both</b> that variant (archived) and DEFAULT (live). {@code MULTITREE_NET_LOSS_THRESHOLD=0}
+     * and the payload drops it.
+     * Should: Not count it, so the save succeeds. The save variant's own row wins; DEFAULT is only
+     * a fallback for Contentlets that have no row in the variant at all.
+     * <p>This is what separates the fallback from a plain {@code variant_id IN (?, 'DEFAULT')},
+     * which would see the live DEFAULT row, keep counting the Contentlet, and reject a legitimate
+     * save — reintroducing the issue #37377 bug class through the variant door.</p>
+     */
+    @Test
+    public void test_overridesMultitrees_variantSave_archivedInVariant_notCountedDespiteLiveDefault() throws Exception {
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(5).withStructure(structure, "").nextPersisted();
+        final String instanceId = UUIDGenerator.shorty();
+
+        // Survivor: lives only in DEFAULT, reached from the variant save by fallback
+        final Contentlet survivor = new ContentletDataGen(contentType.id())
+                .languageId(defaultLanguage.getId()).nextPersisted();
+        new MultiTreeDataGen()
+                .setPage(page).setContainer(container).setContentlet(survivor)
+                .setInstanceID(instanceId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setVariant(variant).setTreeOrder(0).nextPersisted();
+
+        // Dropped: live in DEFAULT, but its row in the SAVE variant is archived — the variant wins
+        final Contentlet liveInDefault = new ContentletDataGen(contentType.id())
+                .languageId(defaultLanguage.getId()).nextPersisted();
+        final Contentlet variantVersion = ContentletDataGen.createNewVersion(liveInDefault, variant, Map.of());
+        ContentletDataGen.archive(variantVersion);
+        new MultiTreeDataGen()
+                .setPage(page).setContainer(container).setContentlet(liveInDefault)
+                .setInstanceID(instanceId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setVariant(variant).setTreeOrder(1).nextPersisted();
+
+        final List<MultiTree> incoming = List.of(new MultiTree()
+                .setHtmlPage(page.getIdentifier()).setContainer(container.getIdentifier())
+                .setContentlet(survivor.getIdentifier()).setInstanceId(instanceId)
+                .setVariantId(variant.name()).setTreeOrder(0));
+
+        Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", 0);
+        try {
+            APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                    page.getIdentifier(),
+                    DOT_PERSONALIZATION_DEFAULT,
+                    incoming,
+                    Optional.of(defaultLanguage.getId()),
+                    variant.name()
+            );
+        } finally {
+            Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", -1);
+        }
+
+        final List<MultiTree> result = APILocator.getMultiTreeAPI().getMultiTreesByPage(page.getIdentifier());
+        assertEquals("Only the surviving contentlet should remain on the variant page", 1, result.size());
+    }
+
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
+     * When: A page has <b>no</b> {@code multi_tree} rows in the Variant being saved, but does have
+     * rows in DEFAULT. The editor renders DEFAULT's content through the page-level Variant
+     * fallback, and a stale client posts an empty payload with
+     * {@code MULTITREE_NET_LOSS_THRESHOLD=0}.
+     * Should: Reject the save. Those DEFAULT rows are what the page renders in that Variant, so
+     * replacing them with nothing is real content loss — even though the DELETE itself removes no
+     * row, because writing rows in the Variant stops the fallback and the page then renders empty.
+     */
+    @Test(expected = StalePageSaveException.class)
+    public void test_overridesMultitrees_variantWithNoRows_fallsBackToDefaultRowsForTheCount() throws Exception {
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(5).withStructure(structure, "").nextPersisted();
+        final String instanceId = UUIDGenerator.shorty();
+
+        // Rows exist only in DEFAULT; the variant has none, so the page renders DEFAULT's content
+        for (int i = 0; i < 3; i++) {
+            createLiveContentletOnPage(page, container, instanceId, contentType,
+                    defaultLanguage.getId(), VariantAPI.DEFAULT_VARIANT, i);
+        }
+
+        Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", 0);
+        try {
+            APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                    page.getIdentifier(),
+                    DOT_PERSONALIZATION_DEFAULT,
+                    new ArrayList<>(),
+                    Optional.of(defaultLanguage.getId()),
+                    variant.name()
+            );
+        } finally {
+            Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", -1);
+        }
+    }
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
+     * When: A page has rows in <b>both</b> the Variant being saved (2) and DEFAULT (5).
+     * {@code MULTITREE_NET_LOSS_THRESHOLD=5} and the client drops one of the Variant's two.
+     * Should: Allow the save. The page has its own rows in that Variant, so the page-level fallback
+     * does not apply and the guard counts 2, not 7.
+     * <p>This is the false-rejection guard for the fallback. Counting DEFAULT's rows on top of the
+     * Variant's would make this look like a loss of 6 against a threshold of 5 and reject a
+     * perfectly ordinary edit — reintroducing the issue #37377 bug class from the other side.</p>
+     */
+    @Test
+    public void test_overridesMultitrees_variantWithOwnRows_doesNotAddDefaultRowsToTheCount() throws Exception {
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(10).withStructure(structure, "").nextPersisted();
+        final String instanceId = UUIDGenerator.shorty();
+
+        // 5 rows in DEFAULT — must NOT be counted, because the variant has rows of its own
+        for (int i = 0; i < 5; i++) {
+            createLiveContentletOnPage(page, container, instanceId, contentType,
+                    defaultLanguage.getId(), VariantAPI.DEFAULT_VARIANT, i);
+        }
+        // 2 rows in the variant being saved
+        final Contentlet keep = new ContentletDataGen(contentType.id())
+                .languageId(defaultLanguage.getId()).nextPersisted();
+        final Contentlet drop = new ContentletDataGen(contentType.id())
+                .languageId(defaultLanguage.getId()).nextPersisted();
+        for (final Contentlet contentlet : List.of(keep, drop)) {
+            new MultiTreeDataGen()
+                    .setPage(page).setContainer(container).setContentlet(contentlet)
+                    .setInstanceID(instanceId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                    .setVariant(variant).setTreeOrder(0).nextPersisted();
+        }
+
+        final List<MultiTree> incoming = List.of(new MultiTree()
+                .setHtmlPage(page.getIdentifier()).setContainer(container.getIdentifier())
+                .setContentlet(keep.getIdentifier()).setInstanceId(instanceId)
+                .setVariantId(variant.name()).setTreeOrder(0));
+
+        Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", 5);
+        try {
+            // Correct: 2 - 1 = net loss 1, within 5. Wrong (7 - 1 = 6) would reject.
+            APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                    page.getIdentifier(),
+                    DOT_PERSONALIZATION_DEFAULT,
+                    incoming,
+                    Optional.of(defaultLanguage.getId()),
+                    variant.name()
+            );
+        } finally {
+            Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", -1);
+        }
+    }
+
+    // ── Style-properties tests ──────────────────────────────────────────────
 
     /**
      * Method to test: {@link MultiTreeAPIImpl#saveMultiTree(MultiTree)}

@@ -26,11 +26,14 @@ import {
     createFullURL,
     getDragItemData,
     createReorderMenuURL,
+    getRequestHostName,
     getOrientation,
-    getWrapperMeasures,
     normalizeQueryParams,
     convertUTCToLocalTime,
-    escapeHtmlAttributeValue
+    escapeHtmlAttributeValue,
+    isSamePageNavigation,
+    isAssetPath,
+    scrollIframeToFragment
 } from '.';
 
 import { DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
@@ -1016,32 +1019,38 @@ describe('utils functions', () => {
             expect(result).toBe(true);
         });
 
-        it('should return false when the page can be edited and does have an experiment that is running', () => {
+        // Reversed by #37308: a live experiment no longer blocks editing. The `experiment`
+        // argument is kept precisely so these can prove it is now ignored — this helper has no
+        // production caller, so the change is for consistency with the store computeds that do.
+        it.each([DotExperimentStatus.RUNNING, DotExperimentStatus.SCHEDULED])(
+            'should return true when the page can be edited and its experiment is %s',
+            (status) => {
+                const { page, currentUser } = generatePageAndUser({
+                    locked: false,
+                    lockedBy: '123',
+                    userId: '123'
+                });
+
+                const experiment = { status } as DotExperiment;
+
+                const result = computeCanEditPage(
+                    { ...page, canEdit: true },
+                    currentUser,
+                    experiment
+                );
+
+                expect(result).toBe(true);
+            }
+        );
+
+        it('should still return false for a live experiment on a page locked by another user', () => {
             const { page, currentUser } = generatePageAndUser({
-                locked: false,
+                locked: true,
                 lockedBy: '123',
-                userId: '123'
+                userId: '456'
             });
 
-            const experiment = {
-                status: DotExperimentStatus.RUNNING
-            } as DotExperiment;
-
-            const result = computeCanEditPage({ ...page, canEdit: true }, currentUser, experiment);
-
-            expect(result).toBe(false);
-        });
-
-        it('should return false when the page can be edited and does have an experiment that is scheduled', () => {
-            const { page, currentUser } = generatePageAndUser({
-                locked: false,
-                lockedBy: '123',
-                userId: '123'
-            });
-
-            const experiment = {
-                status: DotExperimentStatus.SCHEDULED
-            } as DotExperiment;
+            const experiment = { status: DotExperimentStatus.RUNNING } as DotExperiment;
 
             const result = computeCanEditPage({ ...page, canEdit: true }, currentUser, experiment);
 
@@ -1171,6 +1180,161 @@ describe('utils functions', () => {
         });
     });
 
+    describe('scrollIframeToFragment', () => {
+        let doc: Document;
+        let win: Window;
+        let scrollTo: ReturnType<typeof vi.fn>;
+
+        const addTarget = (attr: 'id' | 'name', value: string, top: number): HTMLElement => {
+            const el = doc.createElement('a');
+            el.setAttribute(attr, value);
+            el.getBoundingClientRect = () => ({ top }) as DOMRect;
+            doc.body.appendChild(el);
+
+            return el;
+        };
+
+        beforeEach(() => {
+            doc = document.implementation.createHTMLDocument();
+            scrollTo = vi.fn();
+            win = { document: doc, scrollTo, scrollY: 100 } as unknown as Window;
+        });
+
+        it('should scroll to the element with that id, relative to the current scroll', () => {
+            addTarget('id', 'section', 250);
+
+            scrollIframeToFragment(win, '#section');
+
+            expect(scrollTo).toHaveBeenCalledWith({ top: 350, left: 0 });
+        });
+
+        it('should fall back to the first element with that name', () => {
+            addTarget('name', 'legacy', 40);
+
+            scrollIframeToFragment(win, '#legacy');
+
+            expect(scrollTo).toHaveBeenCalledWith({ top: 140, left: 0 });
+        });
+
+        it('should decode the fragment before looking it up', () => {
+            addTarget('id', 'año 2025', 10);
+
+            scrollIframeToFragment(win, '#a%C3%B1o%202025');
+
+            expect(scrollTo).toHaveBeenCalledWith({ top: 110, left: 0 });
+        });
+
+        it('should scroll to the top for "#" and "#top"', () => {
+            scrollIframeToFragment(win, '#');
+            scrollIframeToFragment(win, '#top');
+
+            expect(scrollTo).toHaveBeenNthCalledWith(1, { top: 0, left: 0 });
+            expect(scrollTo).toHaveBeenNthCalledWith(2, { top: 0, left: 0 });
+        });
+
+        it('should prefer an element with id "top" over the top of the page', () => {
+            addTarget('id', 'top', 500);
+
+            scrollIframeToFragment(win, '#top');
+
+            expect(scrollTo).toHaveBeenCalledWith({ top: 600, left: 0 });
+        });
+
+        it('should do nothing for a fragment with no matching element', () => {
+            scrollIframeToFragment(win, '#missing');
+
+            expect(scrollTo).not.toHaveBeenCalled();
+        });
+
+        it('should not throw on a malformed escape or a missing window', () => {
+            expect(() => scrollIframeToFragment(win, '#%E0%A4%A')).not.toThrow();
+            expect(() => scrollIframeToFragment(null, '#section')).not.toThrow();
+        });
+    });
+
+    describe('isSamePageNavigation', () => {
+        describe('same pathname (hash and/or query)', () => {
+            it('should return true for hash-only link on same page', () => {
+                expect(isSamePageNavigation('#sectionA', '/home')).toBe(true);
+            });
+
+            it('should return true for hash-only link matching current path', () => {
+                expect(isSamePageNavigation('/home#faq', '/home')).toBe(true);
+            });
+
+            it('should return true for hash with complex id', () => {
+                expect(isSamePageNavigation('#section-123_complex', '/about')).toBe(true);
+            });
+
+            it('should return true for query-only change on same page', () => {
+                expect(isSamePageNavigation('/home?tab=2', '/home')).toBe(true);
+            });
+
+            it('should return true for multiple query params on same page', () => {
+                expect(
+                    isSamePageNavigation('/search?query=test&sort=date', '/search?query=test')
+                ).toBe(true);
+            });
+
+            it('should return true for query params with special characters', () => {
+                expect(
+                    isSamePageNavigation('/page?filter=%7B%22type%22%3A%22test%22%7D', '/page')
+                ).toBe(true);
+            });
+
+            it('should return true when path matches and only hash vs query differs', () => {
+                expect(isSamePageNavigation('/home#section', '/home?tab=1')).toBe(true);
+            });
+
+            it('should return true when both hash and query are present on the same path', () => {
+                expect(isSamePageNavigation('/home?tab=2#section', '/home')).toBe(true);
+            });
+
+            it('should return true when both hash and query change on the same path', () => {
+                expect(isSamePageNavigation('/page?filter=value#result', '/page')).toBe(true);
+            });
+        });
+
+        describe('different page navigation', () => {
+            it('should return false when navigating to different page', () => {
+                expect(isSamePageNavigation('/other-page', '/home')).toBe(false);
+            });
+
+            it('should return false when navigating to different page with hash', () => {
+                expect(isSamePageNavigation('/other-page#section', '/home')).toBe(false);
+            });
+
+            it('should return false when navigating to different page with query', () => {
+                expect(isSamePageNavigation('/other-page?tab=1', '/home')).toBe(false);
+            });
+
+            it('should return false when navigating to different page with hash and query', () => {
+                expect(isSamePageNavigation('/other-page#section?foo=bar', '/home')).toBe(false);
+            });
+        });
+
+        describe('edge cases', () => {
+            it('should handle root path correctly', () => {
+                expect(isSamePageNavigation('/#top', '/')).toBe(true);
+            });
+
+            it('should handle path without trailing slash vs with trailing slash', () => {
+                expect(isSamePageNavigation('/home#section', '/home/')).toBe(false);
+            });
+
+            it('should handle empty strings gracefully', () => {
+                expect(isSamePageNavigation('', '/home')).toBe(false);
+                expect(isSamePageNavigation('/home', '')).toBe(false);
+            });
+
+            it('should handle undefined-like values', () => {
+                expect(isSamePageNavigation('#section', undefined as unknown as string)).toBe(
+                    false
+                );
+            });
+        });
+    });
+
     describe('createFullURL', () => {
         const expectedURL =
             'http://localhost:4200/page?language_id=1&com.dotmarketing.persona.id=persona&variantName=new&experimentId=1&mode=EDIT_MODE&depth=1';
@@ -1187,6 +1351,16 @@ describe('utils functions', () => {
 
         it('should return the correct url', () => {
             const result = createFullURL(params);
+            expect(result).toBe(expectedURL);
+        });
+
+        it('should leave out params that were cleared to undefined', () => {
+            const result = createFullURL({
+                ...params,
+                anno_pubblicazione: undefined,
+                publishDate: undefined
+            });
+
             expect(result).toBe(expectedURL);
         });
 
@@ -1209,6 +1383,82 @@ describe('utils functions', () => {
                 '123'
             );
             expect(result).toBe(`${expectedURL}${'&host_id=123'}`);
+        });
+    });
+
+    describe('getRequestHostName', () => {
+        it('should return clientHost when it is provided', () => {
+            expect(
+                getRequestHostName({
+                    url: 'test',
+                    language_id: '1',
+                    [PERSONA_KEY]: DEFAULT_PERSONA.keyTag,
+                    clientHost: 'https://headless.example.com'
+                })
+            ).toBe('https://headless.example.com');
+        });
+
+        it('should build the host from page hostname when clientHost is missing', () => {
+            expect(
+                getRequestHostName(
+                    {
+                        url: 'test',
+                        language_id: '1',
+                        [PERSONA_KEY]: DEFAULT_PERSONA.keyTag
+                    },
+                    'siteb.example.com'
+                )
+            ).toBe(`${window.location.protocol}//siteb.example.com`);
+        });
+
+        it('should extract origin when page hostname is a full URL', () => {
+            expect(
+                getRequestHostName(
+                    {
+                        url: 'test',
+                        language_id: '1',
+                        [PERSONA_KEY]: DEFAULT_PERSONA.keyTag
+                    },
+                    'https://siteb.example.com/path'
+                )
+            ).toBe('https://siteb.example.com');
+        });
+
+        it('should strip path and trailing slash from a bare page hostname', () => {
+            expect(
+                getRequestHostName(
+                    {
+                        url: 'test',
+                        language_id: '1',
+                        [PERSONA_KEY]: DEFAULT_PERSONA.keyTag
+                    },
+                    'siteb.example.com/foo/'
+                )
+            ).toBe(`${window.location.protocol}//siteb.example.com`);
+        });
+
+        it('should prioritize clientHost over page hostname', () => {
+            expect(
+                getRequestHostName(
+                    {
+                        url: 'test',
+                        language_id: '1',
+                        [PERSONA_KEY]: DEFAULT_PERSONA.keyTag,
+                        clientHost: 'https://headless.example.com'
+                    },
+                    'siteb.example.com'
+                )
+            ).toBe('https://headless.example.com');
+        });
+
+        it('should fallback to window origin when neither clientHost nor page hostname is provided', () => {
+            expect(
+                getRequestHostName({
+                    url: 'test',
+                    language_id: '1',
+                    [PERSONA_KEY]: DEFAULT_PERSONA.keyTag
+                })
+            ).toBe(window.location.origin);
         });
     });
 
@@ -1299,41 +1549,6 @@ describe('utils functions', () => {
             expect(result).toEqual(
                 'http://localhost/c/portal/layout?p_l_id=2df9f117-b140-44bf-93d7-5b10a36fb7f9&p_p_id=site-browser&p_p_action=1&p_p_state=maximized&_site_browser_struts_action=%2Fext%2Ffolders%2Forder_menu&startLevel=1&depth=1&pagePath=123&hostId=456'
             );
-        });
-    });
-
-    describe('getWrapperMeasures', () => {
-        it('should return correct measures for landscape orientation', () => {
-            const device: DotDevice = {
-                cssHeight: '1200',
-                cssWidth: '800',
-                inode: 'some-inode'
-            } as DotDevice;
-
-            const result = getWrapperMeasures(device, Orientation.LANDSCAPE);
-            expect(result).toEqual({ width: '1200px', height: '800px' });
-        });
-
-        it('should return correct measures for portrait orientation', () => {
-            const device: DotDevice = {
-                cssHeight: '800',
-                cssWidth: '1200',
-                inode: 'some-inode'
-            } as DotDevice;
-
-            const result = getWrapperMeasures(device, Orientation.PORTRAIT);
-            expect(result).toEqual({ width: '800px', height: '1200px' });
-        });
-
-        it('should use percentage unit for default inode', () => {
-            const device: DotDevice = {
-                cssHeight: '100',
-                cssWidth: '100',
-                inode: 'default'
-            } as DotDevice;
-
-            const result = getWrapperMeasures(device);
-            expect(result).toEqual({ width: '100%', height: '100%' });
         });
     });
 
@@ -1522,5 +1737,63 @@ describe('utils functions', () => {
             expect(result.getDate()).toBe(29);
             expect(result.getHours()).toBe(12);
         });
+    });
+
+    describe('isAssetPath', () => {
+        it.each([
+            '/dA/abc123/asset/report.pdf',
+            '/dA/abc123/asset/no-extension',
+            '/dotAsset/abc123',
+            '/contentAsset/raw-data/abc123/asset',
+            '/application/files/report.pdf',
+            '/files/quarterly.docx',
+            '/media/promo.mp4',
+            '/backups/site.tar.gz',
+            '/files/REPORT.PDF',
+            // `htm` is not a dotCMS page extension: VELOCITY_PAGE_EXTENSION is `html`
+            // and `dot` is its legacy fallback, so a `.htm` upload is a file asset.
+            '/uploads/legacy-page.htm',
+            // `dot` is only the fallback VELOCITY_PAGE_EXTENSION for when the
+            // property is unset, which it never is; it is also the Word template
+            // extension, so a `.dot` upload is a file asset.
+            '/templates/letterhead.dot',
+            // Digit-initial extensions are real; only all-digit trailing tokens are slugs.
+            '/backups/archive.7z',
+            '/media/clip.3gp'
+        ])('should treat %s as a file asset', (pathname) => {
+            expect(isAssetPath(pathname)).toBe(true);
+        });
+
+        it.each([
+            '/about-us/index',
+            '/about-us/index.html',
+            '/blog/',
+            '/',
+            '/blog/release-v1.2',
+            '/news/2024.10'
+        ])('should treat %s as a page', (pathname) => {
+            expect(isAssetPath(pathname)).toBe(false);
+        });
+
+        it('should return false for an empty pathname', () => {
+            expect(isAssetPath('')).toBe(false);
+        });
+
+        it('should return false for a nullish pathname', () => {
+            expect(isAssetPath(undefined as unknown as string)).toBe(false);
+        });
+
+        // These pathnames are pages, and the heuristic knowingly reads them as file
+        // assets: a dot plus a short alpha token is indistinguishable from a real
+        // extension without asking the backend. Pinned deliberately, because the
+        // alternative (an extension allowlist) would send uncommon file types to the
+        // Page API instead, which is the failure this whole guard exists to prevent.
+        // Flipping any of these to `false` means that trade was changed, not fixed.
+        it.each(['/store/product.detail', '/pages/about.us', '/docs/getting.started'])(
+            'should knowingly misread the page %s as a file asset',
+            (pathname) => {
+                expect(isAssetPath(pathname)).toBe(true);
+            }
+        );
     });
 });

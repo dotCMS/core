@@ -66,7 +66,8 @@ import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 import java.util.HashSet;
 import java.util.Set;
-import org.elasticsearch.action.search.SearchResponse;
+import com.dotcms.content.index.domain.AggregationBucket;
+import com.dotcms.content.index.domain.ContentSearchResponse;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -282,7 +283,18 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   @WrapInTransaction
   private void internalRelocateThenDispose(final ContentType source, final ContentType target, final boolean asyncDeleteWithJob) {
     try {
-      APILocator.getContentletIndexAPI().removeContentFromIndexByContentType(source);
+      // Removing the content type's documents from the search index is best-effort: the content
+      // type is being deleted regardless. A failure here (e.g. an OpenSearch version conflict or a
+      // missing index) must NOT abort relocation, the DB deletion, or the ContentTypeDeletedEvent
+      // that drives downstream cleanup (e.g. the unique_fields table) — otherwise a transient index
+      // error silently orphans that cleanup and leaves the content type half-deleted.
+      try {
+        APILocator.getContentletIndexAPI().removeContentFromIndexByContentType(source);
+      } catch (final Exception indexEx) {
+        Logger.error(ContentTypeFactoryImpl.class, String.format(
+            "Error removing content from index for ContentType [%s] — continuing with deletion",
+            source.variable()), indexEx);
+      }
       final Integer relocated = APILocator.getContentTypeDestroyAPI().relocateContentletsForDeletion(source, target);
 
       Logger.info(ContentTypeFactoryImpl.class, String.format("::: Relocated %d contentlets for ContentType [%s] to [%s] :::", relocated, source.variable(), target.variable()));
@@ -473,13 +485,19 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     return countForSites(condition, base, UtilMethods.isSet(siteId) ? List.of(siteId) : null);
   }
 
-  @CloseDBIfOpened
   @Override
   public int countForSites(final String condition, final BaseContentType base, final List<String> siteIds) throws DotDataException {
+    return countForSites(condition, base, siteIds, true);
+  }
+
+  @CloseDBIfOpened
+  @Override
+  public int countForSites(final String condition, final BaseContentType base, final List<String> siteIds,
+          final boolean includeSystemTypes) throws DotDataException {
     try {
       final List<String> resolvedSiteIds = HostUtil.resolveSiteIds(siteIds, this.user, this.respectFrontendRoles);
       return this.perms.filterCollection(this.contentTypeFactory.search(resolvedSiteIds,
-              condition, base.getType(), ContentTypeFactory.MOD_DATE_COLUMN, -1, 0),
+              condition, base.getType(), ContentTypeFactory.MOD_DATE_COLUMN, -1, 0, includeSystemTypes),
               PermissionAPI.PERMISSION_READ, this.respectFrontendRoles, this.user).size();
     } catch (final DotSecurityException e) {
       Logger.error(this, String.format("An error occurred when getting the Content Type count for Sites " +
@@ -736,20 +754,14 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     query = query.replace("{2}", String.valueOf(limit));
 
     try {
-      SearchResponse raw = APILocator.getEsSearchAPI().esSearchRaw(query.toLowerCase(), false, user, false);
+      final ContentSearchResponse raw =
+              APILocator.getSearchAPI().searchRaw(query.toLowerCase(), false, user, false);
 
-
-      JSONObject jo = new JSONObject(raw.toString()).getJSONObject("aggregations").getJSONObject("recent-contents");
-      JSONArray ja = jo.getJSONArray("buckets");
-      List<ContentType> ret = new ArrayList<>();
-      for (int i = 0; i < ja.size(); i++) {
-        JSONObject joe = ja.getJSONObject(i);
-        String var = joe.getString("key");
-
-        ret.add(find(var));
+      final List<ContentType> ret = new ArrayList<>();
+      for (final AggregationBucket bucket :
+              raw.aggregations().getOrDefault("recent-contents", List.of())) {
+        ret.add(find(bucket.key()));
       }
-
-
 
       return ImmutableList.copyOf(ret);
     } catch (Exception e) {
@@ -781,21 +793,14 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     String query = queryBuilder.toString();
 
     try {
-      SearchResponse raw = APILocator.getEsSearchAPI().esSearchRaw(query.toLowerCase(), false, user, false);
+      final ContentSearchResponse raw =
+              APILocator.getSearchAPI().searchRaw(query.toLowerCase(), false, user, false);
 
-      JSONObject jo = new JSONObject(raw.toString()).getJSONObject("aggregations").getJSONObject("sterms#entries");
-      JSONArray ja = jo.getJSONArray("buckets");
-
-      Map<String, Long> result = new HashMap<>();
-
-      for (int i = 0; i < ja.size(); i++) {
-        JSONObject jsonObject = ja.getJSONObject(i);
-        String contentTypeName = jsonObject.getString("key");
-        long count = jsonObject.getLong("doc_count");
-
-        result.put(contentTypeName, count);
+      final Map<String, Long> result = new HashMap<>();
+      for (final AggregationBucket bucket :
+              raw.aggregations().getOrDefault("entries", java.util.List.of())) {
+          result.put(bucket.key(), bucket.docCount());
       }
-
       return result;
     } catch (Exception e) {
       throw new DotStateException(e);
@@ -832,11 +837,18 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       return search(sites, condition, base, orderBy, limit, offset, null);
   }
 
-  @CloseDBIfOpened
   @Override
   public List<ContentType> search(final List<String> sites, final String condition,
           final BaseContentType base, final String orderBy, final int limit, final int offset,
           final List<String> requestedContentTypes) throws DotDataException {
+      return search(sites, condition, base, orderBy, limit, offset, requestedContentTypes, true);
+  }
+
+  @CloseDBIfOpened
+  @Override
+  public List<ContentType> search(final List<String> sites, final String condition,
+          final BaseContentType base, final String orderBy, final int limit, final int offset,
+          final List<String> requestedContentTypes, final boolean includeSystemTypes) throws DotDataException {
 
       final List<ContentType> returnTypes = new ArrayList<>();
       final Set<String> includedIds = new HashSet<>();
@@ -845,35 +857,53 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
               this.respectFrontendRoles);
 
       try {
-          // Handle explicitly requested Content Types
+          int adjustedOffset = offset;
+
+          // Handle explicitly requested Content Types (the "ensure" parameter)
           if (requestedContentTypes != null && !requestedContentTypes.isEmpty()) {
+              // Always look up ensure items from offset 0. Using the client offset here
+              // was the root of two bugs: on page 2+ the offset would skip past the single
+              // matching row, leaving includedIds empty and allowing the item to reappear
+              // in the normal paginated query at its natural sort position (duplicate).
               final List<ContentType> includedContentTypes = this.contentTypeFactory.find(
-                      requestedContentTypes, null, offset, limit, orderBy);
+                      requestedContentTypes, null, 0, limit, orderBy);
 
               final List<ContentType> authorizedIncluded = this.perms.filterCollection(
                       includedContentTypes, PermissionAPI.PERMISSION_READ,
                       this.respectFrontendRoles, this.user);
 
+              // Always register ALL found IDs for exclusion — including items the user is
+              // not authorized to see — so they cannot surface via the normal paginated query.
+              for (ContentType contentType : includedContentTypes) {
+                  includedIds.add(contentType.id());
+              }
+
+              // Only surface authorized ensure items in the response on page 1 (offset == 0).
               for (ContentType contentType : authorizedIncluded) {
-                  if (limit < 0 || returnTypes.size() < limit) {
+                  if (offset == 0 && (limit < 0 || returnTypes.size() < limit)) {
                       returnTypes.add(contentType);
-                      includedIds.add(contentType.inode());
-                      includedIds.add(contentType.id());
                   }
               }
 
-              // Early return if limit reached
-              if (limit > 0 && returnTypes.size() >= limit) {
+              // Early return only on page 1 when ensure items already fill the page.
+              if (offset == 0 && limit > 0 && returnTypes.size() >= limit) {
                   return returnTypes;
+              }
+
+              // Pages 2+: shift the offset back by the number of ensure items that were
+              // returned on page 1. Without this, the item immediately following the
+              // displaced slot (e.g. item3 in a 7-item list) would be permanently skipped.
+              if (offset > 0) {
+                  adjustedOffset = Math.max(0, offset - authorizedIncluded.size());
               }
           }
 
           // Calculate remaining limit
           int remainingLimit = (limit < 0) ? -1 : (limit - returnTypes.size());
 
-          // Perform paginated search
+          // Perform paginated search — ensure items excluded via includedIds, offset corrected
           final List<ContentType> searchResults = performSearch(resolvedSiteIds, condition, base,
-                  orderBy, remainingLimit, offset, includedIds);
+                  orderBy, remainingLimit, adjustedOffset, includedIds, includeSystemTypes);
 
           returnTypes.addAll(searchResults);
 
@@ -901,16 +931,30 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
    * {@inheritDoc}
    */
   @Override
-  @WrapInTransaction
   public List<ContentType> searchMultipleTypes(final String condition,
                                                 final java.util.Collection<BaseContentType> types,
                                                 final String orderBy, final int limit, final int offset,
                                                 final String siteId, final List<String> requestedContentTypes)
           throws DotDataException {
+      return searchMultipleTypes(condition, types, orderBy, limit, offset, siteId,
+              requestedContentTypes, true);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  @WrapInTransaction
+  public List<ContentType> searchMultipleTypes(final String condition,
+                                                final java.util.Collection<BaseContentType> types,
+                                                final String orderBy, final int limit, final int offset,
+                                                final String siteId, final List<String> requestedContentTypes,
+                                                final boolean includeSystemTypes)
+          throws DotDataException {
 
       // Delegate directly to the factory method which performs efficient UNION query
       final List<ContentType> allResults = this.contentTypeFactory.searchMultipleTypes(
-              condition, types, orderBy, limit, offset, siteId, requestedContentTypes);
+              condition, types, orderBy, limit, offset, siteId, requestedContentTypes, includeSystemTypes);
 
       // Filter by permissions
       try {
@@ -926,7 +970,8 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
   private List<ContentType> performSearch(final List<String> resolvedSiteIds,
           final String condition, final BaseContentType base, final String orderBy,
-          final int limit, final int offset, final Set<String> includedIds)
+          final int limit, final int offset, final Set<String> includedIds,
+          final boolean includeSystemTypes)
           throws DotDataException {
 
       final List<ContentType> returnTypes = new ArrayList<>();
@@ -937,7 +982,7 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
           int currentLimit = (remainingLimit < 0) ? -1 : remainingLimit;
 
           final List<ContentType> rawContentTypes = this.contentTypeFactory.search(resolvedSiteIds,
-                  condition, base.getType(), orderBy, currentLimit, rollingOffset);
+                  condition, base.getType(), orderBy, currentLimit, rollingOffset, includeSystemTypes);
 
           if (rawContentTypes.isEmpty()) {
               break;
@@ -970,11 +1015,9 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       for (ContentType rawContentType : rawContentTypes) {
           if (this.perms.doesUserHavePermission(rawContentType,
                   PermissionAPI.PERMISSION_READ, this.user, this.respectFrontendRoles)
-                  && !includedIds.contains(rawContentType.inode())
                   && !includedIds.contains(rawContentType.id())) {
 
               filteredContentTypes.add(rawContentType);
-              includedIds.add(rawContentType.inode());
               includedIds.add(rawContentType.id());
           }
       }
@@ -994,8 +1037,17 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
           final String orderBy, final int limit, final int offset, final String siteId,
           final List<String> requestedContentTypes)
           throws DotDataException {
+      return search(condition, base, orderBy, limit, offset, siteId, requestedContentTypes, true);
+  }
+
+  @CloseDBIfOpened
+  @Override
+  public List<ContentType> search(final String condition, final BaseContentType base,
+          final String orderBy, final int limit, final int offset, final String siteId,
+          final List<String> requestedContentTypes, final boolean includeSystemTypes)
+          throws DotDataException {
       return search(UtilMethods.isSet(siteId) ? List.of(siteId) : List.of(), condition, base,
-              orderBy, limit, offset, requestedContentTypes);
+              orderBy, limit, offset, requestedContentTypes, includeSystemTypes);
   }
 
   @CloseDBIfOpened
@@ -1141,10 +1193,20 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     if (newFields != null) {
 
       Map<String, Field> varNamesCantDelete = new HashMap<>();
+      // Holds old fields whose id is absent from the incoming list but whose variable IS present.
+      // This happens in cross-version push-publish when the deterministic seed changed between
+      // builds, giving the same logical field a different id on sender and receiver. We treat it
+      // as an in-place update rather than a delete+insert to avoid triggering
+      // CleanUpFieldReferencesJob on a column the replacement field will immediately reuse.
+      Map<String, Field> varNamesMatchedByVariable = new HashMap<>();
 
       for (Field oldField : oldFields) {
         if (!newFields.stream().anyMatch(f -> oldField.id().equals(f.id()))) {
-          if (!oldField.fixed() && !oldField.readOnly()) {
+          final boolean sameVariableIncoming = newFields.stream()
+              .anyMatch(f -> oldField.variable().equalsIgnoreCase(f.variable()));
+          if (sameVariableIncoming && !oldField.fixed() && !oldField.readOnly()) {
+            varNamesMatchedByVariable.put(oldField.variable(), oldField);
+          } else if (!oldField.fixed() && !oldField.readOnly()) {
             Logger.info(this, "Deleting no longer needed Field: " + oldField.name() + " with ID: " + oldField.id()
                 + ", from Content Type: " + contentTypeToSave.name());
 
@@ -1162,7 +1224,23 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       for (Field field : newFields) {
 
         field = this.checkContentTypeFields(contentTypeToSave, field);
-        if (!varNamesCantDelete.containsKey(field.variable())) {
+        if (varNamesMatchedByVariable.containsKey(field.variable())) {
+          final Field storedField = varNamesMatchedByVariable.get(field.variable());
+          if (storedField.dataType() == field.dataType()) {
+            // Same dataType → same DB column. Preserve the stored id to avoid triggering
+            // CleanUpFieldReferencesJob on a column the replacement will immediately reuse,
+            // which would wipe live content data. All other incoming properties — name,
+            // sortOrder, hint, defaultValue, required, indexed, etc. — are applied normally
+            // by the save below.
+            field = FieldBuilder.builder(field).id(storedField.id()).build();
+            fieldAPI.save(field, APILocator.systemUser(), false);
+          } else {
+            // Different dataType → different DB column. Delete the stale field so
+            // CleanUpFieldReferencesJob cleans the old column, then insert the new one.
+            fieldAPI.delete(storedField);
+            fieldAPI.save(field, APILocator.systemUser(), false);
+          }
+        } else if (!varNamesCantDelete.containsKey(field.variable())) {
           fieldAPI.save(field, APILocator.systemUser(), false);
         } else {
           // We replace the newField-ID with the oldField-ID in order to be able to update the

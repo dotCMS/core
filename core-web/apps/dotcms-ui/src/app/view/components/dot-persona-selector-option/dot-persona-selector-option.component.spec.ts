@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -137,8 +139,8 @@ describe('DotPersonaSelectorOptionComponent', () => {
 
     describe('events', () => {
         beforeEach(() => {
-            jest.spyOn(component.switch, 'emit');
-            jest.spyOn(component.delete, 'emit');
+            vi.spyOn(component.switch, 'emit');
+            vi.spyOn(component.delete, 'emit');
             fixture.detectChanges();
         });
 

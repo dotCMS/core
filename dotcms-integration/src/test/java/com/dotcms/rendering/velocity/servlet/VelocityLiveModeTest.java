@@ -1,6 +1,8 @@
 package com.dotcms.rendering.velocity.servlet;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -18,6 +20,9 @@ import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.mock.request.DotCMSMockRequestWithSession;
 import com.dotcms.security.ContentSecurityPolicyUtil;
+import com.dotcms.vanityurl.model.CachedVanityUrl;
+import com.dotmarketing.business.PageCacheParameters;
+import com.dotmarketing.filters.Constants;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.Clickstream;
@@ -35,6 +40,7 @@ import com.dotmarketing.util.WebKeys;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -45,6 +51,7 @@ import org.junit.runner.RunWith;
 @RunWith(DataProviderRunner.class)
 public class VelocityLiveModeTest {
 
+    @BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
@@ -162,6 +169,167 @@ public class VelocityLiveModeTest {
         } finally {
             Config.setProperty("ContentSecurityPolicy.header", previousValue);
         }
+    }
+
+    /**
+     * Method: {@link VelocityLiveMode#buildCacheParameters(long, IHTMLPage)}
+     * When: Two requests go through the same vanity URL 200-forward to the same page but carry
+     *       different original request URIs in FORWARD_REQUEST_URI
+     * Should: Produce different cache keys so each URL gets its own cache entry, preventing
+     *         the page cache collision bug where one affiliate's content is served to another
+     */
+    @Test
+    public void vanityForwardDifferentOriginalUriProducesDifferentCacheKeys()
+            throws DotDataException, DotSecurityException, WebAssetException {
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().site(host).nextPersisted();
+        TemplateDataGen.publish(template);
+        final HTMLPageAsset detailPage = new HTMLPageDataGen(host, template)
+                .pageURL("detail-page")
+                .cacheTTL(3600)
+                .nextPersisted();
+        HTMLPageDataGen.publish(detailPage);
+
+        // A vanity URL that regex-forwards multiple incoming URLs to the same detail page
+        final CachedVanityUrl vanity = new CachedVanityUrl(
+                "test-vanity-id",
+                "/store/([0-9]+)/.*",
+                1L,
+                host.getIdentifier(),
+                detailPage.getURI(),
+                javax.servlet.http.HttpServletResponse.SC_OK, // 200 = forward
+                1
+        );
+
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        when(response.getStatus()).thenReturn(200);
+        when(response.getHeader("Cache-Control")).thenReturn(null);
+        final HttpSession session = mock(HttpSession.class);
+
+        // Request 1: affiliate 123 hits /store/123/acme/catalog/
+        final DotCMSMockRequestWithSession req1 = new DotCMSMockRequestWithSession(session, false);
+        req1.setRequestURI(detailPage.getURI());
+        req1.setAttribute(Constants.VANITY_URL_OBJECT, vanity);
+        req1.setAttribute(RequestDispatcher.FORWARD_REQUEST_URI, "/store/123/acme/catalog/");
+
+        // Request 2: affiliate 456 hits /store/456/globex/catalog/
+        final DotCMSMockRequestWithSession req2 = new DotCMSMockRequestWithSession(session, false);
+        req2.setRequestURI(detailPage.getURI());
+        req2.setAttribute(Constants.VANITY_URL_OBJECT, vanity);
+        req2.setAttribute(RequestDispatcher.FORWARD_REQUEST_URI, "/store/456/globex/catalog/");
+
+        final VelocityLiveMode handler1 = new VelocityLiveMode(req1, response, detailPage, host);
+        final VelocityLiveMode handler2 = new VelocityLiveMode(req2, response, detailPage, host);
+
+        final PageCacheParameters params1 = handler1.buildCacheParameters(1L, detailPage);
+        final PageCacheParameters params2 = handler2.buildCacheParameters(1L, detailPage);
+
+        assertNotEquals(
+                "Vanity URL forward requests with different original URIs must produce different cache keys",
+                params1.getKey(), params2.getKey());
+        assertTrue("Cache key must include the original request URI for request 1",
+                params1.getKey().contains("originalUri:/store/123/acme/catalog/"));
+        assertTrue("Cache key must include the original request URI for request 2",
+                params2.getKey().contains("originalUri:/store/456/globex/catalog/"));
+    }
+
+    /**
+     * Method: {@link VelocityLiveMode#serve(java.io.OutputStream)}
+     * When: A live page is rendered while {@code ENABLE_CLICKSTREAM_TRACKING} is enabled
+     * Should: Record the visit in the visitor's session clickstream so visit-history rule
+     *         conditions ("Has Visited URL" / "Pages Viewed") can evaluate against it.
+     *         Regression test for #36604 -- the page-cache thundering-herd refactor
+     *         (393d74ff11) dropped the {@code ClickstreamFactory.addRequest} call from the live
+     *         render path, leaving those conditions with an empty clickstream so they never
+     *         matched. The conditionlet unit tests could not catch this because they seed the
+     *         clickstream themselves rather than exercising the render path.
+     */
+    @Test
+    public void renderLivePageRecordsVisitInSessionClickstreamWhenTrackingEnabled() throws Exception {
+        final boolean previous = Config.getBooleanProperty("ENABLE_CLICKSTREAM_TRACKING", false);
+        Config.setProperty("ENABLE_CLICKSTREAM_TRACKING", true);
+        try {
+            final Host host = new SiteDataGen().nextPersisted();
+            final HTMLPageAsset page = createAndPublishRenderablePage(host);
+
+            final Clickstream clickstream = new Clickstream();
+            renderLivePage(host, page, clickstream);
+
+            final String pageUri = page.getURI();
+            assertTrue("Rendering a live page must record the visit in the session clickstream",
+                    clickstream.getClickstreamRequests().stream()
+                            .anyMatch(cr -> pageUri.equals(cr.getRequestURI())));
+        } finally {
+            Config.setProperty("ENABLE_CLICKSTREAM_TRACKING", previous);
+        }
+    }
+
+    /**
+     * Method: {@link VelocityLiveMode#serve(java.io.OutputStream)}
+     * When: A live page is rendered while {@code ENABLE_CLICKSTREAM_TRACKING} is disabled (default)
+     * Should: Not record anything in the session clickstream, preserving the flag-gated behaviour.
+     */
+    @Test
+    public void renderLivePageDoesNotRecordVisitWhenTrackingDisabled() throws Exception {
+        final boolean previous = Config.getBooleanProperty("ENABLE_CLICKSTREAM_TRACKING", false);
+        Config.setProperty("ENABLE_CLICKSTREAM_TRACKING", false);
+        try {
+            final Host host = new SiteDataGen().nextPersisted();
+            final HTMLPageAsset page = createAndPublishRenderablePage(host);
+
+            final Clickstream clickstream = new Clickstream();
+            renderLivePage(host, page, clickstream);
+
+            assertTrue("Clickstream must remain empty when tracking is disabled",
+                    clickstream.getClickstreamRequests().isEmpty());
+        } finally {
+            Config.setProperty("ENABLE_CLICKSTREAM_TRACKING", previous);
+        }
+    }
+
+    /**
+     * Builds and publishes a minimal renderable live page (site content type, published container,
+     * published template and page) so it can be served through the live velocity render path.
+     */
+    private HTMLPageAsset createAndPublishRenderablePage(final Host host)
+            throws DotDataException, DotSecurityException, WebAssetException {
+        final Field field = new FieldDataGen().type(TextField.class).next();
+        final ContentType contentType = new ContentTypeDataGen().field(field).nextPersisted();
+
+        final Container container = new ContainerDataGen()
+                .site(host)
+                .withContentType(contentType, "<h1>$!{test}</h1>")
+                .nextPersisted();
+        ContainerDataGen.publish(container);
+
+        final Template template = new TemplateDataGen()
+                .site(host)
+                .withContainer(container, "1")
+                .nextPersisted();
+        TemplateDataGen.publish(template);
+
+        final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
+        HTMLPageDataGen.publish(page);
+        return page;
+    }
+
+    /**
+     * Renders the given page through the live velocity mode handler using a mocked session that
+     * exposes the supplied clickstream, mirroring the harness used by {@link #contentSecurityPolice}.
+     */
+    private void renderLivePage(final Host host, final HTMLPageAsset page, final Clickstream clickstream)
+            throws DotDataException, DotSecurityException, WebAssetException {
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        final HttpSession session = mock(HttpSession.class);
+        final DotCMSMockRequestWithSession request = new DotCMSMockRequestWithSession(session, false);
+        request.setRequestURI(page.getURI());
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+        when(session.getAttribute("clickstream")).thenReturn(clickstream);
+
+        final VelocityModeHandler handler = VelocityModeHandler.modeHandler(
+                PageMode.LIVE, request, response, page.getURI(), host);
+        handler.eval();
     }
 
     private static class TestCase {

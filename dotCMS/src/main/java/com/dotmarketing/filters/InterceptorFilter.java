@@ -6,6 +6,7 @@ import com.dotcms.ema.EMAWebInterceptor;
 import com.dotcms.filters.interceptor.AbstractWebInterceptorSupportFilter;
 import com.dotcms.filters.interceptor.WebInterceptorDelegate;
 import com.dotcms.filters.interceptor.meta.ResponseMetaDataWebInterceptor;
+import com.dotcms.filters.interceptor.meta.SdkVersionWebInterceptor;
 import com.dotcms.graphql.GraphqlCacheWebInterceptor;
 import com.dotcms.jitsu.EventLogWebInterceptor;
 import com.dotcms.prerender.PreRenderSEOWebInterceptor;
@@ -51,6 +52,11 @@ public class InterceptorFilter extends AbstractWebInterceptorSupportFilter {
         delegate.add(new MultiPartRequestSecurityWebInterceptor());
         delegate.add(new PreRenderSEOWebInterceptor());
         delegate.add(new EMAWebInterceptor());
+        // Must run before GraphqlCacheWebInterceptor: on a GraphQL cache hit that
+        // interceptor writes the response and returns Result.SKIP_NO_CHAIN, breaking the
+        // delegate chain before any later interceptor runs. Registering this one first
+        // means its headers are already on the response by the time that happens.
+        delegate.add(new SdkVersionWebInterceptor());
         delegate.add(new GraphqlCacheWebInterceptor());
         delegate.add(new ResponseMetaDataWebInterceptor());
         delegate.add(new EventLogWebInterceptor());

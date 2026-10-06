@@ -8,6 +8,7 @@ import com.dotcms.experiments.model.Goals;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.vanityurl.model.VanityUrl;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
@@ -301,6 +302,118 @@ public class ExperimentUrlPatternCalculatorIntegrationTest {
         assertTrue(("http://localhost:8080/" + experimentPage.getPageUrl()).matches(regex));
         assertTrue(("http://localhost:8080/testing").matches(regex));
 
+    }
+
+    /**
+     * Method to test: {@link ExperimentUrlPatternCalculator#calculatePageUrlRegexPattern(Experiment)}
+     * When: A Published Vanity Url with URI "/cmsHomePage" and action 200 forwards to
+     * the Experiment's Page. Per the legacy fallback in
+     * {@link com.dotcms.vanityurl.business.VanityUrlAPIImpl#resolveVanityUrl}, a visitor
+     * requesting "/" is transparently forwarded to the target page, so the browser URL
+     * stays "/".
+     * Should: The regex returned by the method should match the Experiment Page URL,
+     * the "/cmsHomePage" URL, and the root URL "/".
+     *
+     * See issue https://github.com/dotCMS/core/issues/34747
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void experimentWithCmsHomePageVanity() throws DotDataException {
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Condition<Object> condition = Condition.builder()
+                .parameter("url")
+                .value("testing")
+                .operator(AbstractCondition.Operator.CONTAINS)
+                .build();
+
+        final Metric metric = Metric.builder()
+                .name("Testing Metric")
+                .type(MetricType.REACH_PAGE)
+                .addConditions(condition).build();
+
+        final Goals goal = Goals.builder().primary(GoalFactory.create(metric)).build();
+        final Experiment experiment = new ExperimentDataGen()
+                .page(experimentPage)
+                .addGoal(goal)
+                .nextPersisted();
+
+        final Contentlet vanityUrl = new VanityUrlDataGen()
+                .uri("/cmsHomePage")
+                .forwardTo(experimentPage.getURI())
+                .action(200)
+                .host(host)
+                .languageId(experimentPage.getLanguageId())
+                .nextPersistedAndPublish();
+
+        final String regex = ExperimentUrlPatternCalculator.INSTANCE.calculatePageUrlRegexPattern(experiment);
+
+        // The SDK lowercases incoming URL paths before matching (see
+        // verifyRegex in parser.ts), and the server lowercases the assembled
+        // regex, so test with lowercased URLs that mirror runtime behavior.
+        assertTrue(("http://localhost:8080/" + experimentPage.getPageUrl()).matches(regex));
+        assertTrue(("http://localhost:8080/cmshomepage").matches(regex));
+        assertTrue(("http://localhost:8080/").matches(regex));
+        assertTrue(("http://localhost:8080").matches(regex));
+    }
+
+    /**
+     * Method to test: {@link ExperimentUrlPatternCalculator#calculatePageUrlRegexPattern(Experiment)}
+     * When: A Published Vanity Url with URI "/cmsHomePage" and action 200 is published
+     * on SYSTEM_HOST (rather than on the experiment page's host) and forwards to the
+     * Experiment's Page. Vanities on SYSTEM_HOST apply site-wide, so the "/" fallback
+     * still applies.
+     * Should: The regex returned by the method should match the Experiment Page URL
+     * and the root URL "/".
+     *
+     * See issue https://github.com/dotCMS/core/issues/34747
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void experimentWithSystemHostCmsHomePageVanity() throws DotDataException {
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Condition<Object> condition = Condition.builder()
+                .parameter("url")
+                .value("testing")
+                .operator(AbstractCondition.Operator.CONTAINS)
+                .build();
+
+        final Metric metric = Metric.builder()
+                .name("Testing Metric")
+                .type(MetricType.REACH_PAGE)
+                .addConditions(condition).build();
+
+        final Goals goal = Goals.builder().primary(GoalFactory.create(metric)).build();
+        final Experiment experiment = new ExperimentDataGen()
+                .page(experimentPage)
+                .addGoal(goal)
+                .nextPersisted();
+
+        final Contentlet vanityUrl = new VanityUrlDataGen()
+                .uri("/cmsHomePage")
+                .forwardTo(experimentPage.getURI())
+                .action(200)
+                .host(APILocator.systemHost())
+                .languageId(experimentPage.getLanguageId())
+                .nextPersistedAndPublish();
+
+        final String regex = ExperimentUrlPatternCalculator.INSTANCE.calculatePageUrlRegexPattern(experiment);
+
+        assertTrue(("http://localhost:8080/" + experimentPage.getPageUrl()).matches(regex));
+        assertTrue(("http://localhost:8080/cmshomepage").matches(regex));
+        assertTrue(("http://localhost:8080/").matches(regex));
+        assertTrue(("http://localhost:8080").matches(regex));
     }
 
     /**

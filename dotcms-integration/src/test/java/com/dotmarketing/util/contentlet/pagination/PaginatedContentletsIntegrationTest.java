@@ -14,6 +14,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.model.ContentletSearch;
+import com.dotmarketing.common.model.ImmutableContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -295,9 +296,9 @@ public class PaginatedContentletsIntegrationTest {
     }
 
     private ContentletSearch createContentletSearch(Contentlet contentlet1) {
-        final ContentletSearch contentletSearch_1 = new ContentletSearch();
-        contentletSearch_1.setInode(contentlet1.getInode());
-        return contentletSearch_1;
+        return ImmutableContentletSearch.builder()
+                .inode(contentlet1.getInode())
+                .build();
     }
 
     @Test

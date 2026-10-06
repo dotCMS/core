@@ -2,7 +2,7 @@
 
 **Feature state**: Prefer NgRx Signal Store; see [STATE_MANAGEMENT.md](./STATE_MANAGEMENT.md). This doc focuses on component structure, file layout, and data flow.
 
-All code examples in this document follow [ANGULAR_STANDARDS.md](./ANGULAR_STANDARDS.md): signals use the `$` prefix (e.g. `$loading`, `$items`), observables use the `$` suffix (e.g. `vm$`), no `standalone: true` in decorators, and `ChangeDetectionStrategy.OnPush` where applicable.
+All code examples in this document follow [ANGULAR_STANDARDS.md](./ANGULAR_STANDARDS.md): signals use the `$` prefix (e.g. `$loading`, `$items`), observables use the `$` suffix (e.g. `vm$`), and no `standalone: true` in decorators.
 
 ## Standalone Component Pattern (Required)
 
@@ -12,8 +12,7 @@ All code examples in this document follow [ANGULAR_STANDARDS.md](./ANGULAR_STAND
   selector: 'dot-my-feature',
   imports: [CommonModule, FormsModule, ReactiveFormsModule],
   templateUrl: './dot-my-feature.component.html',
-  styleUrls: ['./dot-my-feature.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  styleUrls: ['./dot-my-feature.component.scss']
 })
 export class DotMyFeatureComponent {
   private readonly myService = inject(MyService);
@@ -138,8 +137,7 @@ export interface MyItem {
 @Component({
   selector: 'dot-form-component',
   imports: [CommonModule, ReactiveFormsModule],
-  templateUrl: './dot-form-component.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  templateUrl: './dot-form-component.component.html'
 })
 export class DotFormComponent {
   private readonly fb = inject(FormBuilder);
@@ -221,8 +219,15 @@ export class DotFormComponent {
 ```
 
 Template (`dot-form-component.component.html`):
+
+> `class="form"` is not optional decoration. Field layout, label typography and hint/error
+> colour all come from rules in `apps/dotcms-ui/src/style.css` that are scoped to `.form` —
+> without it they match nothing and the form renders unstyled, with no error and no warning.
+> See [Styling Standards → Form Fields](./STYLING_STANDARDS.md#form-fields); the example below
+> focuses on data flow, not on the field markup.
+
 ```html
-<form [formGroup]="formGroup" (ngSubmit)="onSubmit()">
+<form class="form" [formGroup]="formGroup" (ngSubmit)="onSubmit()">
   <dot-input-field
     label="Name"
     formControlName="name"
@@ -322,8 +327,7 @@ export class MyService {
 @Component({
   selector: 'dot-feature-container',
   imports: [CommonModule],
-  templateUrl: './dot-feature-container.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  templateUrl: './dot-feature-container.component.html'
 })
 export class DotFeatureContainerComponent {
   private readonly featureService = inject(FeatureService);
@@ -405,8 +409,7 @@ Template — bind to signals with `$` prefix:
 @Component({
   selector: 'dot-interactive-component',
   imports: [CommonModule],
-  templateUrl: './dot-interactive-component.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  templateUrl: './dot-interactive-component.component.html'
 })
 export class DotInteractiveComponent {
   // Search state ($ prefix)
@@ -514,12 +517,16 @@ Template — bind to signals with `$` prefix:
 
 ## Performance Patterns
 
-### OnPush Change Detection
+### Change Detection
+
+`OnPush` is the Angular framework default as of v22. Do **not** set `changeDetection` on new components. Components explicitly marked `ChangeDetectionStrategy.Eager` (the opt-in eager mode, renamed from `Default` in v22) keep `Eager` — do not convert them when touching a file for unrelated work. See [Angular: `changeDetectionStrategy`](https://angular.dev/guide/components/advanced-configuration#changedetectionstrategy).
+
+Performance now comes from signal-based state, not from the decorator: signal inputs, `signal()`, and `computed()` mark only the components that actually read a changed value. The decorator below — with no `changeDetection` entry — is complete.
+
 ```typescript
 @Component({
   selector: 'dot-optimized-component',
   imports: [CommonModule],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './dot-optimized-component.component.html'
 })
 export class DotOptimizedComponent {
@@ -551,8 +558,7 @@ Template:
 @Component({
   selector: 'dot-lazy-container',
   imports: [CommonModule],
-  templateUrl: './dot-lazy-container.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  templateUrl: './dot-lazy-container.component.html'
 })
 export class DotLazyContainerComponent {
   readonly $activeTab = signal('overview');
@@ -664,8 +670,55 @@ describe('DotMyFeatureComponent', () => {
 });
 ```
 
+## Shared Components Over Different Stores (the filter-facade pattern)
+
+A component in `libs/ui/` that needs state cannot inject a store: each consumer owns a different
+one. Injecting one makes the component that consumer's, and the next surface re-implements it —
+which is how Content Drive's filter chips and the Asset Picker's toolbar drifted apart.
+
+The pattern: the component declares what it needs as an injection token, and each surface provides
+an implementation over its own store.
+
+```ts
+// libs/ui/src/lib/components/dot-filter-bar/filter-facade.token.ts
+export interface DotFilterFacade {
+    getFilterValue(key: string): string | string[] | undefined;
+    patchFilters(patch: Record<string, string | string[]>): void;
+    removeFilter(key: string): void;
+    clearFilters(): void;
+    readonly $hasNonDefaultFilters: Signal<boolean>;
+}
+
+export const DOT_FILTER_FACADE = new InjectionToken<DotFilterFacade>('DOT_FILTER_FACADE');
+```
+
+Each surface provides it **at the component that owns its store**, never in `root` — two open
+pickers each need their own:
+
+```ts
+providers: [DotAssetPickerStore, provideAssetPickerFilterFacade()]
+```
+
+Three rules make it work in practice:
+
+1. **The facade carries values, never caller restrictions.** A restriction (an allowed base type, a
+   pinned version state) is part of what the surface *is*; it reaches a control as an `input()`,
+   so no interaction can widen past it.
+2. **A shared component reports failures; it does not announce them.** `DotHttpErrorManagerService`
+   transitively needs `Router`, which `libs/ui/` cannot assume — it is bundled into a legacy host
+   that has none. So a control that loads options exposes `error = output<...>()` and each surface
+   routes it to whatever channel it has.
+3. **A capability only some surfaces can supply is optional.** Inject it with `{ optional: true }`
+   and degrade the one thing that needs it, saying so — see `DOT_RELATIONSHIP_PICKER`, which
+   Content Drive supplies and the Asset Picker does not.
+
+**Adding a filter chip**, in full: one connected component under `dot-filter-bar/chips/` carrying
+`data-filter-chip="<id>"`, one id in `dot-filter-bar/constants.ts`, and one element in each
+toolbar that opts in. Ordering is asserted per toolbar against `DOT_CANONICAL_FILTER_ORDER` rather
+than enforced by machinery, so a surface may omit a chip but not reorder one.
+
 ## See also
-- [ANGULAR_STANDARDS.md](./ANGULAR_STANDARDS.md) — Syntax, signals, OnPush
+- [ANGULAR_STANDARDS.md](./ANGULAR_STANDARDS.md) — Syntax, signals, change detection defaults
 - [STATE_MANAGEMENT.md](./STATE_MANAGEMENT.md) — NgRx Signal Store for feature state
 - [TESTING_FRONTEND.md](./TESTING_FRONTEND.md) — Spectator, byTestId, setInput
 - [docs/frontend/README.md](./README.md) — Index of all frontend docs

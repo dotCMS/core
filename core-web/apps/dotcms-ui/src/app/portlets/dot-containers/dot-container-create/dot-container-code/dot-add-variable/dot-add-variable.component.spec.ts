@@ -1,8 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import {
     Component,
     CUSTOM_ELEMENTS_SCHEMA,
@@ -30,21 +30,11 @@ import {
     DotSiteBrowserService,
     DotGlobalMessageService
 } from '@dotcms/data-access';
-import {
-    CoreWebService,
-    DotcmsConfigService,
-    DotcmsEventsService,
-    DotEventsSocket,
-    DotEventsSocketURL,
-    LoggerService,
-    LoginService,
-    StringUtils
-} from '@dotcms/dotcms-js';
+import { DotcmsConfigService, LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 import {
     ActivatedRouteMock,
-    CoreWebServiceMock,
     DotMessageDisplayServiceMock,
     MockDotMessageService
 } from '@dotcms/utils-testing';
@@ -52,8 +42,6 @@ import {
 import { DotAddVariableComponent } from './dot-add-variable.component';
 import { FilteredFieldTypes } from './dot-add-variable.models';
 import { DOT_CONTENT_MAP, DotFieldsService } from './services/dot-fields.service';
-
-import { dotEventSocketURLFactory } from '../../../../../test/dot-test-bed';
 
 @Component({
     selector: 'dot-form-dialog',
@@ -202,21 +190,21 @@ describe('DotAddVariableComponent', () => {
                 DotAddVariableComponent,
                 ButtonModule,
                 DataViewModule,
-                HttpClientTestingModule,
                 SharedModule,
                 DotMessagePipe
             ],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 DotFieldsService,
                 {
                     provide: DotMessageService,
                     useValue: messageServiceMock
                 },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 {
                     provide: DynamicDialogRef,
                     useValue: {
-                        close: jest.fn()
+                        close: vi.fn()
                     }
                 },
                 {
@@ -224,17 +212,14 @@ describe('DotAddVariableComponent', () => {
                     useValue: {
                         data: {
                             contentTypeVariable: 'contentType',
-                            onSave: jest.fn()
+                            onSave: vi.fn()
                         }
                     }
                 },
-                { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 StringUtils,
                 DotHttpErrorManagerService,
                 DotAlertConfirmService,
                 ConfirmationService,
-                DotcmsEventsService,
-                DotEventsSocket,
                 DotcmsConfigService,
                 {
                     provide: DotMessageDisplayService,
@@ -245,7 +230,7 @@ describe('DotAddVariableComponent', () => {
                 {
                     provide: DotContentTypeService,
                     useValue: {
-                        getContentType: jest.fn().mockReturnValue(of(mockContentTypes))
+                        getContentType: vi.fn().mockReturnValue(of(mockContentTypes))
                     }
                 },
                 DotAlertConfirmService,

@@ -6,7 +6,7 @@ import com.dotcms.api.system.event.message.builder.SystemMessage;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.business.expiring.ExpiringMap;
 import com.dotcms.business.expiring.ExpiringMapBuilder;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ErrorEntity;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;

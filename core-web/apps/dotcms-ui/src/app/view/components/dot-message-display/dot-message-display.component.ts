@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
@@ -20,6 +20,7 @@ import { DotIconComponent } from '@dotcms/ui';
     selector: 'dot-message-display',
     styleUrls: ['dot-message-display.component.scss'],
     templateUrl: 'dot-message-display.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [ToastModule, DotIconComponent]
 })
 export class DotMessageDisplayComponent implements OnInit, OnDestroy {
@@ -28,10 +29,12 @@ export class DotMessageDisplayComponent implements OnInit, OnDestroy {
 
     ngOnInit() {
         this.dotMessageDisplayService.messages().subscribe((dotMessage: DotMessage) => {
+            const severity = dotMessage.severity.toLowerCase();
             this.messageService.add({
                 life: dotMessage.life,
                 detail: dotMessage.message,
-                severity: dotMessage.severity.toLowerCase()
+                // PrimeNG Toast keys warn styles off 'warn', not 'warning'
+                severity: severity === 'warning' ? 'warn' : severity
             });
         });
     }

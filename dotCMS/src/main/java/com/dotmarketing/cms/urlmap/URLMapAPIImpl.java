@@ -139,9 +139,10 @@ public class URLMapAPIImpl implements URLMapAPI {
             final Identifier myHostIdentifier = this.identifierAPI.find(currentHost, identifier.getPath());
             if (myHostIdentifier == null || !UtilMethods.isSet(myHostIdentifier.getId())) {
                 Logger.info(this.getClass(),
-                        "No valid detail page for Content Type '" + contentType.name()
-                                + "'. Looking for a detail page=" + identifier.getPath() + " on Site " + currentHost.getHostname());
-                return Optional.empty();
+                        "No detail page found at path '" + identifier.getPath()
+                                + "' on Site '" + currentHost.getHostname()
+                                + "'. Using configured detail page for Content Type '" + contentType.name() + "'.");
+                return Optional.of(identifier);
             }
 
             return Optional.of(myHostIdentifier);

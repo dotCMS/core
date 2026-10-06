@@ -15,10 +15,10 @@
                     class="relative mb-2 flex flex-row items-center gap-3 rounded-md p-2 hover:bg-gray-100">
                     @if (!item.hasBeenRead) {
                         <span
-                            class="absolute left-10 top-3 h-2.5 w-2.5 rounded-full bg-fuchsia-600"></span>
+                            class="absolute top-3 left-10 size-2.5 rounded-full bg-fuchsia-600"></span>
                     }
                     <span
-                        class="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-primary-600">
+                        class="flex size-12 items-center justify-center rounded-full bg-gray-100 text-primary-600">
                         <i
                             [class]="typesIcons[item.type | lowercase] || typesIcons['important']"
                             class="pi text-base leading-none"></i>
@@ -66,7 +66,7 @@
                     <a
                         (click)="hideOverlayPanel()"
                         [href]="link.url"
-                        class="rounded p-1 hover:bg-gray-100 no-underline"
+                        class="rounded-sm p-1 no-underline hover:bg-gray-100"
                         data-testId="announcements__about-link"
                         target="_blank"
                         rel="noopener">

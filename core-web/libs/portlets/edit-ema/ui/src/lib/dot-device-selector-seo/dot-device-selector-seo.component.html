@@ -13,7 +13,7 @@
                 <h3 class="dot-device-selector__header-title">
                     {{ 'editpage.device.selector.title' | dm }}
                 </h3>
-                @if (isCMSAdmin$ | async) {
+                @if (isCMSAdmin) {
                     <a
                         [routerLink]="linkToAddDevice"
                         [queryParams]="linkToEditDeviceQueryParams"

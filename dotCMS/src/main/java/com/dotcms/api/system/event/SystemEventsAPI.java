@@ -34,6 +34,40 @@ import com.dotmarketing.exception.DotDataException;
  */
 public interface SystemEventsAPI {
 
+	/*
+	 * DELIVERY CONTRACT - AT-LEAST-ONCE. Read this before writing a subscriber.
+	 *
+	 * Every event committed to the queue is delivered to every running node AT LEAST ONCE. A node may
+	 * observe the same event MORE THAN ONCE, for two reasons that are part of the design rather than
+	 * accidents:
+	 *
+	 *   1. Each poll re-reads a bounded overlap window behind its cursor, so that an event whose
+	 *      transaction commits after its `created` timestamp is still delivered instead of being
+	 *      skipped forever (issue #36827). Everything inside that window is read again.
+	 *   2. After a restart the in-memory de-duplication set is empty, so the window may be delivered
+	 *      again.
+	 *
+	 * CONSUMERS MUST THEREFORE BE IDEMPOTENT: processing the same event twice must have the same
+	 * observable effect as processing it once. Invalidating a cache, or setting a value to what the
+	 * event carries, is naturally idempotent. Incrementing a counter, appending to a list, sending a
+	 * notification, or triggering any non-repeatable side effect is NOT - guard those on the event's
+	 * `identifier`, which is stable across redeliveries.
+	 *
+	 * Not guaranteed: exactly-once; global ordering across polls or nodes (do not derive causality
+	 * from arrival order); delivery of events older than DELETE_EVENTS_OLDER_THAN; delivery from a
+	 * transaction held open longer than SYSTEM_EVENTS_OVERLAP_WINDOW_SECONDS (bounded, configurable,
+	 * and warned about, but still lost).
+	 *
+	 * Publishers: push inside the business transaction so the event is atomic with the change it
+	 * describes, keep payloads small - every node reads them on every poll within the window - and
+	 * ensure the payload type can be DESERIALIZED by the receiving node. `Payload` records the
+	 * concrete class name and the receiver reconstructs into it, so a class with no usable Jackson
+	 * creator can be written but never read back, and takes its whole batch down with it (see #37249).
+	 *
+	 * Full contract, including the agreed loss tolerance and how it was chosen:
+	 * docs/backend/SYSTEM_EVENTS.md
+	 */
+
 	/**
 	 * Pushes a new System Event to the message queue. The {@link SystemEvent}
 	 * is supposed to contain all the information it needs.

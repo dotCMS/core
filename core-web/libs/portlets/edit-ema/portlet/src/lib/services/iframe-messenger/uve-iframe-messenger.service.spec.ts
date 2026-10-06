@@ -1,5 +1,5 @@
-import { describe, expect, it, jest, beforeEach } from '@jest/globals';
-import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 
@@ -20,11 +20,11 @@ describe('UveIframeMessengerService', () => {
 
         // Create a mock iframe window with postMessage spy
         mockIframeWindow = {
-            postMessage: jest.fn()
+            postMessage: vi.fn()
         } as unknown as Window;
 
         // Mock console.warn to avoid noise in tests
-        jest.spyOn(console, 'warn').mockImplementation(jest.fn());
+        vi.spyOn(console, 'warn').mockImplementation(vi.fn());
     });
 
     describe('setIframeWindow and getIframeWindow', () => {
@@ -85,11 +85,24 @@ describe('UveIframeMessengerService', () => {
         });
     });
 
-    describe('requestBounds', () => {
-        it('should send request bounds message to iframe', () => {
+    describe('flushBounds', () => {
+        it('should send flush bounds message to iframe', () => {
             service.setIframeWindow(mockIframeWindow);
 
-            service.requestBounds();
+            service.flushBounds();
+
+            expect(mockIframeWindow.postMessage).toHaveBeenCalledWith(
+                {
+                    name: __DOTCMS_UVE_EVENT__.UVE_FLUSH_BOUNDS
+                },
+                '*'
+            );
+        });
+
+        it('also dual-emits the legacy UVE_REQUEST_BOUNDS for SDK back-compat', () => {
+            service.setIframeWindow(mockIframeWindow);
+
+            service.flushBounds();
 
             expect(mockIframeWindow.postMessage).toHaveBeenCalledWith(
                 {

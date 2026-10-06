@@ -14,7 +14,7 @@ import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.rendering.velocity.directive.ParseContainer;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
-import com.dotcms.repackage.com.google.common.collect.Lists;
+import com.google.common.collect.Lists;
 import com.dotcms.rest.api.v1.page.PageResource;
 import com.dotcms.util.TimeMachineUtil;
 import com.dotcms.variant.VariantAPI;
@@ -296,6 +296,26 @@ public class PageRenderUtil implements Serializable {
                         continue;
                     }
 
+                    // Archived (deleted) content keeps its working version, so a showLive=false
+                    // lookup (EDIT/PREVIEW modes) still resolves it. Skip it in every mode so that
+                    // archived content never renders on the page, consistent with LIVE-mode behavior.
+                    // isArchived() declares DotSecurityException, but VersionableAPI.isDeleted() does
+                    // not throw it via this path (it is declared for forward-compatibility). Should a
+                    // DotSecurityException ever surface, it is a genuine access-control failure and
+                    // must NOT be swallowed as "probably archived" -- so it is intentionally left
+                    // uncaught and propagates to the caller.
+                    try {
+                        if (nonHydratedContentlet.isArchived()) {
+                            Logger.debug(this, () -> "Skipping archived contentlet: "
+                                    + nonHydratedContentlet.getIdentifier());
+                            continue;
+                        }
+                    } catch (final DotStateException | DotDataException e) {
+                        Logger.warn(this, "Could not determine archived state for contentlet '"
+                                + nonHydratedContentlet.getIdentifier() + "'; skipping it", e);
+                        continue;
+                    }
+
                     final DotContentletTransformer transformer = new DotTransformerBuilder()
                             .defaultOptions().content(nonHydratedContentlet).build();
                     final Contentlet contentlet = transformer.hydrate().get(0);
@@ -315,8 +335,16 @@ public class PageRenderUtil implements Serializable {
                     containerUuidPersona.add(container, uniqueUUIDForRender, personalizedContentlet);
 
 
+                    final boolean canEditContentlet =
+                            permissionAPI.doesUserHavePermission(contentlet, PERMISSION_WRITE, user);
                     contextMap.put("EDIT_CONTENT_PERMISSION" + contentlet.getIdentifier(),
-                            permissionAPI.doesUserHavePermission(contentlet, PERMISSION_WRITE, user));
+                            canEditContentlet);
+                    // Surface the same permission on the contentlet map so it reaches the Page API
+                    // JSON response and GraphQL's `_map`. Traditional pages read it from the
+                    // `data-dot-can-edit` attribute in the rendered HTML; headless pages have no
+                    // such markup and need it in the payload to gate the editor's edit affordances.
+                    // Reuses the value already computed above -- no extra permission lookup.
+                    contentlet.getMap().put("canEdit", canEditContentlet);
 
                     this.widgetPreExecute(contentlet);
                     this.addAccrueTags(contentlet);
@@ -647,6 +675,16 @@ public class PageRenderUtil implements Serializable {
                 if(null != contentletMatchingTimeMachineDate){
                     return contentletMatchingTimeMachineDate;
                 }
+                // No version matched the Time Machine date. Falling back to the live version is only correct when
+                // the content has simply not been published *yet*; if it has already expired by the Time Machine
+                // date, the live version must NOT be brought back. This mirrors the expire-date guard that the
+                // traditional VTL path applies in ContainerLoader.
+                if (isExpiredAt(contentletIdentifier, timeMachineDate)) {
+                    Logger.debug(this, () -> String.format(
+                            "Contentlet '%s' has already expired by the Time Machine date. Excluding it",
+                            contentletIdentifier));
+                    return null;
+                }
                 //Now if no contentlet was found using time-machine Date, we'll try to find the latest live contentlet
                 return contentletAPI.findContentletByIdentifier(contentletIdentifier,true, resolveLanguageId, user, mode.respectAnonPerms);
             }
@@ -672,15 +710,47 @@ public class PageRenderUtil implements Serializable {
      * @return {@code true} if the Contentlet has a publish-date set, {@code false} otherwise.
      */
     boolean hasPublishOrExpireDateSet(final String identifier) {
+        return findIdentifier(identifier)
+                .filter(found -> null != found.getSysPublishDate() || null != found.getSysExpireDate())
+                .isPresent();
+    }
+
+    /**
+     * Determines whether the content behind the specified Identifier has already expired at the given
+     * Time Machine date; i.e., its {@code sysExpireDate} (Online To) is strictly before such a date.
+     * <p>Content with no expire date set never expires. The strict comparison keeps this check aligned
+     * with both the Time Machine SQL query -- which admits {@code tmDate <= sysexpire_date} -- and the
+     * VTL guard in {@code ContainerLoader}.</p>
+     *
+     * @param identifier      The Identifier of the Contentlet to check.
+     * @param timeMachineDate The Time Machine date the page is being previewed at.
+     *
+     * @return {@code true} if the content has expired at the specified date, {@code false} otherwise.
+     */
+    boolean isExpiredAt(final String identifier, final Date timeMachineDate) {
+        return findIdentifier(identifier)
+                .map(Identifier::getSysExpireDate)
+                .filter(timeMachineDate::after)
+                .isPresent();
+    }
+
+    /**
+     * Retrieves the {@link Identifier} object for the given Identifier ID, if it exists.
+     *
+     * @param identifier The Identifier ID to look up.
+     *
+     * @return The {@link Identifier}, or an empty Optional if it doesn't exist or cannot be read.
+     */
+    private Optional<Identifier> findIdentifier(final String identifier) {
         try {
-            final Identifier found = identifierAPI.find(identifier);
-            if (found != null && (found.getSysPublishDate() != null || found.getSysExpireDate() != null)) {
-                return true;
-            }
-        } catch (DotDataException e) {
+            final Identifier found = this.identifierAPI.find(identifier);
+            return null != found && UtilMethods.isSet(found.getId())
+                    ? Optional.of(found)
+                    : Optional.empty();
+        } catch (final DotDataException e) {
             Logger.error(this, "Error finding identifier: " + identifier, e);
+            return Optional.empty();
         }
-        return false;
     }
 
     /**
@@ -735,6 +805,15 @@ public class PageRenderUtil implements Serializable {
                 if(contentlet.isPresent()) {
                      return contentlet.get();
                 }
+                // Same reasoning as in getSpecificContentlet: never let the live fallback bring back content
+                // that has already expired by the Time Machine date. Returning null here also prevents the
+                // mode.showLive lookup below from resurrecting it.
+                if (isExpiredAt(contentletIdentifier, timeMachineDate)) {
+                    Logger.debug(this, () -> String.format(
+                            "Contentlet '%s' has already expired by the Time Machine date. Excluding it",
+                            contentletIdentifier));
+                    return null;
+                }
                 final Optional<Contentlet> live = contentletAPI.findContentletByIdentifierOrFallback(
                         contentletIdentifier, true, languageId,
                         user, true);
@@ -747,26 +826,12 @@ public class PageRenderUtil implements Serializable {
                     contentletIdentifier, mode.showLive, languageId,
                     user, true, variantName);
 
-            if (contentletOpt.isPresent()) {
-                return contentletOpt.get();
-            }
-
-            // If not found with language fallback, try to find in any language with the specified variant
-            // This allows pages to show content from other languages when the content type allows fallback
-            // but the content doesn't exist in the page's language or default language
-            try {
-                final Contentlet anyLanguageContentlet = contentletAPI.findContentletByIdentifierAnyLanguage(
-                        contentletIdentifier, variantName);
-
-                // Check if this content type allows language fallback
-                if (anyLanguageContentlet != null && anyLanguageContentlet.getContentType().languageFallback()) {
-                    return anyLanguageContentlet;
-                }
-            } catch (Exception e) {
-                Logger.debug(this, "Could not find contentlet in any language: " + e.getMessage());
-            }
-
-            return null;
+            // When DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE is enabled, the contract is: show the
+            // requested-language version, or fall back to the default language. If the contentlet
+            // has no version in either, it must be excluded from this page render.
+            // This logic covers the scenario presented in the
+            // [DEFECT] Page API not respecting DEFAULT_WIDGET_TO_DEFAULT_LANGUAGE #34290
+            return contentletOpt.orElse(null);
 
         } catch (final DotContentletStateException e) {
             // Expected behavior, DotContentletState Exception is used for flow control

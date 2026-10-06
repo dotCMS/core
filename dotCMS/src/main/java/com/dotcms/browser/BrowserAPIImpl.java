@@ -5,19 +5,32 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.content.business.json.ContentletJsonAPI;
+import com.dotcms.content.elasticsearch.util.ESUtils;
+import com.dotcms.contenttype.model.field.CheckboxField;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.MultiSelectField;
+import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.TagField;
+import com.dotcms.contenttype.model.field.TimeField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.enterprise.ESSeachAPI;
+import com.dotcms.rest.api.v1.content.search.handlers.FieldContext;
+import com.dotcms.rest.api.v1.content.search.handlers.FieldHandlerRegistry;
+import com.dotcms.rest.api.v1.drive.SearchScope;
+import com.dotcms.content.index.SearchAPI;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionAPI.Type;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.comparators.GenericMapFieldComparator;
 import com.dotmarketing.comparators.WebAssetMapComparator;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -32,26 +45,47 @@ import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.portlets.workflows.actionlet.ArchiveContentActionlet;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI.RenderMode;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.LuceneQueryUtils;
 import com.dotmarketing.util.UtilHTML;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
+import com.liferay.portal.ejb.UserLocalManagerUtil;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.jetbrains.annotations.NotNull;
 
+import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.ArrayDeque;
 import java.util.Collections;
+import java.util.Deque;
+import java.util.IdentityHashMap;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -63,7 +97,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.INCLUDE_DOTRAW_METADATA_FIELDS;
 import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.WRITE_METADATA_ON_REINDEX;
@@ -82,6 +118,8 @@ import static com.liferay.util.StringPool.BLANK;
  */
 public class BrowserAPIImpl implements BrowserAPI {
 
+    private static final String LINK_MIME_TYPE = "application/dotlink";
+
     private final UserWebAPI userAPI = WebAPILocator.getUserWebAPI();
     private final FolderAPI folderAPI = APILocator.getFolderAPI();
     private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
@@ -95,18 +133,73 @@ public class BrowserAPIImpl implements BrowserAPI {
             (ContentletJsonAPI.CONTENTLET_AS_JSON).append(", '$.fields.").append("fileName.").append("value')" +
             " ");
 
+    /**
+     * Synthetic MIME Type that dotCMS assigns to HTML Pages at display time. It is never persisted to the
+     * {@code contentlet_as_json} column, so it can only be resolved through the HTMLPAGE base type. Legacy display
+     * code declares its own copies of this value; they are intentionally left alone.
+     */
+    private static final String DOTPAGE_MIME_TYPE = "application/dotpage";
+
+    /**
+     * Matches any file metadata anywhere under {@code fields} whose {@code contentType} contains
+     * the given value. Bound as a parameter, never concatenated into the statement.
+     *
+     * <p>Characters that are regex metacharacters in the value are left as they are rather than
+     * escaped, so the SQL this produces matches exactly what it matched before. Callers do send
+     * wildcard forms such as {@code image/*}, which is why the accepted character set includes
+     * {@code *}.</p>
+     */
+    private static final String MIME_TYPE_JSONPATH =
+            "$.fields.**.metadata ? (@.contentType like_regex \".*%s.*\")";
+
     private static final StringBuilder ASSET_NAME_LIKE = new StringBuilder().append("LOWER(%s) LIKE ? ");
 
     private static final StringBuilder ASSET_NAME_EQ = new StringBuilder().append("LOWER(%s) = ? ");
 
+    // "size" is bound to the candidate-inode count of the query it accompanies: every one of these
+    // queries is scoped with "+inode:(id1 OR id2 ...)", so it can never legitimately return more
+    // hits than the inodes it names. Without an explicit "size", Elasticsearch applies its own
+    // default of 10 hits, silently capping each sub-query at 10 matches regardless of how many
+    // candidates it was given (found in review).
     private static final String ES_QUERY_TEMPLATE =
             "{\n" +
                     "    \"query\": {\n" +
                     "        \"query_string\": {\n" +
                     "            \"query\": \"%s\"\n" +
                     "        }\n" +
-                    "    }\n" +
+                    "    },\n" +
+                    "    \"size\": %d\n" +
             "}";
+
+    // The "+inode:(id1 OR id2 ...)" restriction every ES sub-query is scoped with. Shared by the
+    // query builder (processSingleESQuery) and the batch sizing (partitionInodesForES), so the
+    // length a batch is sized for is exactly the length it is sent with.
+    private static final String INODE_FILTER_PREFIX = " +inode:(";
+    private static final String INODE_FILTER_SEPARATOR = " OR ";
+    private static final String INODE_FILTER_SUFFIX = ") ";
+
+    // A request must leave room for at least this many UUID inodes per ES sub-query, or it is
+    // rejected as bad input (see baseQueryLeavesRoomForInodes). Matches the floor
+    // calculateMaxInodesPerESQuery applies to the clause cap.
+    private static final int MIN_INODES_PER_ES_QUERY = 100;
+    private static final int UUID_LENGTH = 36;
+
+    /**
+     * JSON-escapes a Lucene query string so it can be safely interpolated as the string value in
+     * {@link #ES_QUERY_TEMPLATE}. The shared field strategies emit backslash-escaped Lucene special
+     * characters (e.g. {@code angular\-cms}) and double-quoted phrases; a raw backslash or double
+     * quote is an invalid JSON escape, so without this the Elasticsearch request body is malformed
+     * and the whole search fails (json_parse_exception) — silently returning no results. Backslash
+     * must be escaped before the double quote so the backslash introduced for {@code \"} is not
+     * doubled.
+     *
+     * @param luceneQuery The Lucene query to embed in the JSON request body.
+     * @return The query with {@code \} and {@code "} escaped for JSON.
+     */
+    @VisibleForTesting
+    static String jsonEscape(final String luceneQuery) {
+        return luceneQuery.replace("\\", "\\\\").replace("\"", "\\\"");
+    }
 
 
     /**
@@ -139,10 +232,10 @@ public class BrowserAPIImpl implements BrowserAPI {
     @CloseDBIfOpened
     ContentUnderParent getContentUnderParentFromDB(final BrowserQuery browserQuery, final int maxRows) {
         final SelectQuery sqlQuery = this.selectQuery(browserQuery);
-        final boolean useElasticSearchForTextFiltering = isUseElasticSearchForTextFiltering(browserQuery);
+        final boolean useElasticSearchForFiltering = isUseElasticSearchForFiltering(browserQuery);
 
         try {
-            if (useElasticSearchForTextFiltering) {
+            if (useElasticSearchForFiltering) {
                 // Permission filtering and page slicing happen inside — return directly.
                 return doElasticSearchTextFiltering(browserQuery, maxRows, sqlQuery);
             }
@@ -178,11 +271,42 @@ public class BrowserAPIImpl implements BrowserAPI {
      * Pagination resumes from {@link BrowserQuery#contentCursor}, which is the DB row offset
      * returned by the previous page. On the first page it is 0.
      * </p>
+     * <p>
+     * The scan's cost cap depends on {@code applyESFilter}: when {@code true} (text filtering
+     * through Elasticsearch), it is bounded by elapsed time
+     * ({@code BROWSER_DB_MAX_SCAN_TIME_MILLIS}), so an unfiltered global search keeps scanning
+     * while still affordable instead of giving up at an arbitrary row count and silently
+     * dropping matches that sit later in DB order (see issue #37211), plus a much higher hard
+     * row ceiling ({@code BROWSER_DB_MAX_SCAN_ROWS_ES_HARD_CAP}) as a co-bound so a fast DB/ES
+     * pair -- or many concurrent unfiltered searches -- cannot turn the time budget into
+     * unbounded per-request work (found in review). When {@code false} (permission-only
+     * filtering), it stays bounded by row count ({@code BROWSER_DB_MAX_SCAN_ROWS}), unchanged
+     * from before.
+     * </p>
+     * <p>
+     * <b>Completeness here is best-effort, not a hard guarantee.</b> Because the ES-narrowed
+     * cutoff depends on wall-clock time, a slower or more heavily loaded node can exhaust the
+     * budget before reaching a match that an idle node would find in the same request, so two
+     * otherwise-identical requests against the same data can return different result sets
+     * depending on load (found in review). This trades the old cutoff's determinism for
+     * completeness under normal conditions; it does not eliminate the possibility of a dropped
+     * match under sustained load, only make it far less likely and no longer position-dependent.
+     * </p>
+     * <p>
+     * Chunk size also depends on {@code applyESFilter}. The ES-narrowed scan reads every chunk at
+     * the same size. The permission-only scan reads its first chunk at {@code chunkSize}, then,
+     * while {@code BROWSER_DB_CHUNK_ADAPTIVE} is on, sizes each next chunk from how many of the
+     * rows read so far the user could see (see {@link #nextChunkSize}). Each chunk re-runs the
+     * query at a larger offset, so a user who can see little of a large folder would otherwise pay
+     * for dozens of re-reads of the same leading rows (issue #37665). Paging is unaffected: the
+     * cursor is still a row position, and a page holds the same items either way.
+     * </p>
      *
      * @param browserQuery  query containing search criteria, user context, and the current cursor
      * @param maxRows       maximum number of permission-visible items to return
      * @param sqlQuery      the pre-built SQL select query containing: string query and parameters
-     * @param chunkSize     number of DB rows to fetch per iteration
+     * @param chunkSize     number of DB rows to fetch per iteration; on the permission-only scan,
+     *                      the size of the first chunk and the floor for the rest
      * @param applyESFilter when {@code true}, each chunk is text-filtered through Elasticsearch
      *                      before permission filtering; when {@code false}, only permission
      *                      filtering is applied
@@ -194,25 +318,69 @@ public class BrowserAPIImpl implements BrowserAPI {
             final int maxRows, final SelectQuery sqlQuery, final int chunkSize,
             final boolean applyESFilter) throws DotDataException, DotSecurityException {
 
-        final int scanLimit = Config.getIntProperty(BROWSER_DB_MAX_SCAN_ROWS_KEY, BROWSER_DB_MAX_SCAN_ROWS_DEFAULT);
+        final int scanRowLimit = Config.getIntProperty(BROWSER_DB_MAX_SCAN_ROWS_KEY, BROWSER_DB_MAX_SCAN_ROWS_DEFAULT);
+        // Clamped against the guard rail: BROWSER_DB_MAX_SCAN_ROWS is configurable, and without
+        // this the very first chunk fetch can already overshoot it whenever an operator lowers the
+        // scan limit below the caller's chunk size (e.g. below BROWSER_SINGLE_PASS_CHUNK_SIZE's
+        // 7,000 default) -- the dbOffset >= scanRowLimit check only runs after a chunk is fetched, so
+        // nothing upstream of it would have caught that (found in review, issue #37184).
+        // NOTE: on the ES-narrowed path (applyESFilter=true), BROWSER_DB_MAX_SCAN_ROWS no longer
+        // bounds the *total* rows the scan may read -- BROWSER_DB_MAX_SCAN_ROWS_ES_HARD_CAP does
+        // that instead (see below). This clamp still shapes the ES path's working chunk size for
+        // the same reason it does on the permission-only path (bounding the SQL page size), so it
+        // intentionally stays in effect for both; lowering BROWSER_DB_MAX_SCAN_ROWS therefore
+        // still shrinks ES chunk size (more round trips) without limiting the ES scan itself
+        // (found in review, issue #37211) -- surprising if read as "the" scan limit, so calling
+        // it out explicitly here.
+        final int effectiveChunkSize = Math.min(chunkSize, scanRowLimit);
+        // The ES-narrowed scan (text filter) bounds cost by elapsed time instead of row count --
+        // see BROWSER_DB_MAX_SCAN_TIME_MILLIS_KEY. The permission-only scan keeps the original
+        // row-count cutoff; it has no completeness gap to fix (every candidate row already
+        // matches the query's own SQL criteria).
+        final long scanTimeBudgetMillis = applyESFilter
+                ? Config.getLongProperty(BROWSER_DB_MAX_SCAN_TIME_MILLIS_KEY, BROWSER_DB_MAX_SCAN_TIME_MILLIS_DEFAULT)
+                : -1L;
+        // Co-bound alongside the time budget: without a row ceiling, a fast DB/ES pair (or many
+        // concurrent unfiltered searches sharing the DotSubmitter pool) could scan far more rows
+        // in scanTimeBudgetMillis than the old row-count cutoff ever allowed, multiplying real
+        // cost under load (found in review, issue #37211). Set high enough to comfortably cover
+        // the real-world scale this fix targets (~718,174 contentlets, per the issue) so it does
+        // not reintroduce the original completeness bug at that scale.
+        final int esRowHardCap = applyESFilter
+                ? Config.getIntProperty(BROWSER_DB_MAX_SCAN_ROWS_ES_HARD_CAP_KEY, BROWSER_DB_MAX_SCAN_ROWS_ES_HARD_CAP_DEFAULT)
+                : -1;
+        final long scanStartNanos = System.nanoTime();
+        // Only the permission-only scan grows its chunks (issue #37665). The ES-narrowed scan's
+        // cost is bounded by elapsed time and a row hard cap (#37211); growing its chunks would
+        // change how those bounds behave.
+        final boolean adaptiveChunks = !applyESFilter
+                && Config.getBooleanProperty(BROWSER_DB_CHUNK_ADAPTIVE_KEY, BROWSER_DB_CHUNK_ADAPTIVE_DEFAULT);
+        final int adaptiveCeiling = Config.getIntProperty(BROWSER_DB_CHUNK_ADAPTIVE_MAX_SIZE_KEY,
+                BROWSER_DB_CHUNK_ADAPTIVE_MAX_SIZE_DEFAULT);
+        final int adaptiveMaxGrowth = Config.getIntProperty(BROWSER_DB_CHUNK_ADAPTIVE_MAX_GROWTH_KEY,
+                BROWSER_DB_CHUNK_ADAPTIVE_MAX_GROWTH_DEFAULT);
+        final float adaptiveSafetyFactor = Config.getFloatProperty(BROWSER_DB_CHUNK_ADAPTIVE_SAFETY_FACTOR_KEY,
+                BROWSER_DB_CHUNK_ADAPTIVE_SAFETY_FACTOR_DEFAULT);
 
         final List<Contentlet> accumulatedContent = new ArrayList<>();
         List<String> candidateChunkInodes;
         int dbOffset = browserQuery.contentCursor;
+        int rowsRead = 0;
+        int requestedChunkSize = effectiveChunkSize;
         int chunkCount = 0;
         int nextContentCursor;
         boolean hasMore = false;
 
         Logger.debug(this, String.format(
-                "[Starting content search by chunks]: content required %d, chunk size: %d, user: %s",
-                maxRows, chunkSize, browserQuery.user.getFullName()));
+                "[Starting content search by chunks]: content required %d, chunk size: %d, adaptive: %s, user: %s",
+                maxRows, effectiveChunkSize, adaptiveChunks, browserQuery.user.getFullName()));
 
         while (true) {
             chunkCount++;
-            Logger.debug(this, String.format("#%d Chunk: starting row: %d", chunkCount, dbOffset));
+            Logger.debug(this, String.format("#%d Chunk: starting row: %d, requested size: %d",
+                    chunkCount, dbOffset, requestedChunkSize));
 
-            final DotConnect dcSelectChunk = buildPaginatedDotConnect(sqlQuery, chunkSize, dbOffset);
-            candidateChunkInodes = collectInodesFromDB(dcSelectChunk);
+            candidateChunkInodes = readChunkInodes(sqlQuery, requestedChunkSize, dbOffset);
 
             if (candidateChunkInodes.isEmpty()) {
                 Logger.debug(this, String.format("DB exhausted at offset %d after %d chunks.",
@@ -226,29 +394,71 @@ public class BrowserAPIImpl implements BrowserAPI {
             accumulatedContent.addAll(chunkFiltered);
 
             dbOffset += candidateChunkInodes.size();
+            rowsRead += candidateChunkInodes.size();
 
-            if (dbOffset >= scanLimit) {
-                Logger.warn(BrowserAPIImpl.class, String.format(
-                        "Scan limit reached (%d rows) after %d chunks. Returning %d accumulated items.",
-                        dbOffset, chunkCount, accumulatedContent.size()));
-                nextContentCursor = dbOffset;
-                hasMore = true;
-                break;
-            }
-
+            // A satisfied page wins over the guard rail: when this chunk already produced enough
+            // visible items we must exit through generateNextContentCursor so the next page resumes
+            // right after the last item returned. Checking the scan budget first would exit via the
+            // warn path with a chunk-aligned cursor and silently skip whatever is left over in this
+            // chunk -- reachable whenever a chunk boundary lands exactly on the scan budget.
+            // "Full" and "partial" are judged against what this iteration asked for: once chunks
+            // grow, comparing against the first chunk's size would call a full grown chunk partial
+            // (ending paging early) or a partial one full (issue #37665).
             if (accumulatedContent.size() >= maxRows) {
-                hasMore = (candidateChunkInodes.size() == chunkSize);
+                hasMore = (candidateChunkInodes.size() == requestedChunkSize);
                 nextContentCursor = generateNextContentCursor(accumulatedContent, maxRows,
                         candidateChunkInodes, dbOffset);
                 break;
             }
 
-            if (candidateChunkInodes.size() < chunkSize) {
+            // Natural DB exhaustion also wins over the guard rail, for the same reason: the scan
+            // budget exists to cut off a search that is NOT done, not to relabel a search that
+            // finished on its own. A partial last chunk (fewer rows than chunkSize) means there is
+            // nothing left to scan, regardless of how far dbOffset/elapsed time has climbed --
+            // checking the scan budget first would report hasMore=true for a folder that is
+            // actually fully paged through whenever the last (partial) chunk's ending point happens
+            // to land on or past the budget (found in review, issue #37184).
+            if (candidateChunkInodes.size() < requestedChunkSize) {
                 Logger.debug(this, String.format(
                         "Reached end of results (partial chunk) - DB is exhausted. Total accumulated: %d",
                         accumulatedContent.size()));
                 nextContentCursor = dbOffset;
                 break;
+            }
+
+            // Row-count-only cutoff dropped ES-narrowed matches that sit past it in DB order
+            // without ever sending them to ES (#37211) -- an unfiltered global search's SQL
+            // candidate set is essentially the whole site, so DB position says nothing about
+            // whether a match exists. Bound that scan by elapsed time instead, so it keeps
+            // going while still affordable rather than giving up at an arbitrary row count --
+            // plus a much higher row hard cap as a co-bound, so a fast DB/ES pair (or many
+            // concurrent unfiltered searches) cannot turn the time budget into unbounded
+            // per-request work (found in review). The permission-only scan keeps the original
+            // row-count cutoff -- it has no completeness gap to fix (every candidate row
+            // already matches the query's own SQL criteria).
+            final boolean esTimeBudgetExhausted = applyESFilter
+                    && TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - scanStartNanos) >= scanTimeBudgetMillis;
+            final boolean esRowHardCapExceeded = applyESFilter && dbOffset >= esRowHardCap;
+            final boolean scanBudgetExhausted = applyESFilter
+                    ? (esTimeBudgetExhausted || esRowHardCapExceeded)
+                    : dbOffset >= scanRowLimit;
+
+            if (scanBudgetExhausted) {
+                final String exhaustedBoundDescription = !applyESFilter
+                        ? scanRowLimit + " rows"
+                        : (esRowHardCapExceeded ? esRowHardCap + " rows (hard cap)" : scanTimeBudgetMillis + "ms");
+                Logger.warn(BrowserAPIImpl.class, String.format(
+                        "Scan budget reached (%s) after %d chunks, %d rows scanned. Returning %d accumulated items.",
+                        exhaustedBoundDescription, chunkCount, dbOffset, accumulatedContent.size()));
+                nextContentCursor = dbOffset;
+                hasMore = true;
+                break;
+            }
+
+            if (adaptiveChunks) {
+                requestedChunkSize = nextChunkSize(requestedChunkSize, effectiveChunkSize, rowsRead,
+                        accumulatedContent.size(), maxRows - accumulatedContent.size(), scanRowLimit,
+                        dbOffset, adaptiveCeiling, adaptiveMaxGrowth, adaptiveSafetyFactor);
             }
 
             Logger.debug(this, String.format(
@@ -291,7 +501,20 @@ public class BrowserAPIImpl implements BrowserAPI {
             final Set<String> esFiltered = processESDirectly(
                     browserQuery, new LinkedHashSet<>(candidateChunkInodes));
             if (!esFiltered.isEmpty()) {
-                return getContentFilteredByRole(browserQuery, new LinkedList<>(esFiltered));
+                // Elasticsearch returns matches in relevance/index order. When the chunk is split
+                // into several ES sub-queries, processMultipleESQueries collects those futures in
+                // submission order, so batches themselves follow DB order — the disorder comes from
+                // within each sub-query, where ES returns its own relevance/index order rather than
+                // the order its candidate inodes were given in (found in review). Everything
+                // downstream assumes DB order: findContentletsInParallel preserves the
+                // order it is handed, and generateNextContentCursor locates the last item of the
+                // page by its position inside the DB-ordered chunk. Feeding it ES order would make
+                // the next cursor land on an arbitrary row and skip or repeat items across pages.
+                // Re-projecting onto candidateChunkInodes restores DB order in a single O(n) pass.
+                final List<String> esFilteredInDbOrder = candidateChunkInodes.stream()
+                        .filter(esFiltered::contains)
+                        .collect(Collectors.toList());
+                return getContentFilteredByRole(browserQuery, esFilteredInDbOrder);
             }
         } else {
             return getContentFilteredByRole(browserQuery, candidateChunkInodes);
@@ -336,6 +559,79 @@ public class BrowserAPIImpl implements BrowserAPI {
         return results.stream()
                 .map(m -> m.get("inode"))
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Reads one chunk of the listing: {@code limit} candidate inodes starting at row
+     * {@code offset}, in the query's own order. This is the only place the chunk loop in
+     * {@link #getContentByChunks} touches the database, so tests spy on it to see how many rows
+     * each iteration asked for.
+     *
+     * @param sqlQuery the pre-built SQL select query (must already contain an ORDER BY clause)
+     * @param limit    number of rows requested for this chunk
+     * @param offset   absolute row position the chunk starts at
+     * @return ordered inodes of the chunk; empty when the listing has no rows left
+     * @throws DotDataException if the underlying JDBC call fails
+     */
+    @VisibleForTesting
+    List<String> readChunkInodes(final SelectQuery sqlQuery, final int limit, final int offset)
+            throws DotDataException {
+        return collectInodesFromDB(buildPaginatedDotConnect(sqlQuery, limit, offset));
+    }
+
+    /**
+     * Works out how many rows the next chunk of a permission-only scan should request, from what
+     * the chunks read so far in this request returned (issue #37665).
+     * <p>
+     * When some items were visible, the rows still needed are projected from the visible/read
+     * ratio and padded by {@code safetyFactor}, rounded up to a whole row. When nothing was visible
+     * yet there is no ratio to go on, so the previous request is doubled instead. Either way the
+     * result is then capped by {@code maxGrowth} times the previous request, by {@code ceiling},
+     * and by what is left of the scan budget ({@code scanLimit - dbOffset}); finally it is raised
+     * to {@code floor} if it fell below it. The floor wins every conflict, so a chunk is never
+     * smaller than the fixed chunk this scan would have used without adaptive sizing.
+     * </p>
+     * <p>
+     * A {@code ceiling} of zero or less, a {@code maxGrowth} below one, or a {@code safetyFactor}
+     * that is not a positive finite number falls back to its default.
+     * </p>
+     *
+     * @param previousRequested rows requested for the chunk just read
+     * @param floor             the caller's chunk size; the result is never below it
+     * @param rowsRead          rows read so far in this request
+     * @param visibleSoFar      permission-visible items accumulated so far in this request
+     * @param stillNeeded       items still missing to fill the page
+     * @param scanLimit         the permission-only scan budget ({@code BROWSER_DB_MAX_SCAN_ROWS})
+     * @param dbOffset          absolute row position the next chunk starts at
+     * @param ceiling           largest chunk growth may reach
+     * @param maxGrowth         largest multiple of {@code previousRequested} growth may reach
+     * @param safetyFactor      margin applied to the rows projected from the ratio
+     * @return rows to request for the next chunk
+     */
+    @VisibleForTesting
+    static int nextChunkSize(final int previousRequested, final int floor, final int rowsRead,
+            final int visibleSoFar, final int stillNeeded, final int scanLimit, final int dbOffset,
+            final int ceiling, final int maxGrowth, final float safetyFactor) {
+        final int effectiveCeiling = ceiling > 0 ? ceiling : BROWSER_DB_CHUNK_ADAPTIVE_MAX_SIZE_DEFAULT;
+        final int effectiveMaxGrowth = maxGrowth >= 1 ? maxGrowth : BROWSER_DB_CHUNK_ADAPTIVE_MAX_GROWTH_DEFAULT;
+        final float effectiveSafetyFactor = safetyFactor > 0 && Float.isFinite(safetyFactor)
+                ? safetyFactor : BROWSER_DB_CHUNK_ADAPTIVE_SAFETY_FACTOR_DEFAULT;
+        if (effectiveCeiling != ceiling || effectiveMaxGrowth != maxGrowth
+                || effectiveSafetyFactor != safetyFactor) {
+            Logger.debug(BrowserAPIImpl.class, String.format(
+                    "Invalid adaptive chunk setting (ceiling %d, max growth %d, safety factor %s); "
+                            + "using ceiling %d, max growth %d, safety factor %s",
+                    ceiling, maxGrowth, safetyFactor,
+                    effectiveCeiling, effectiveMaxGrowth, effectiveSafetyFactor));
+        }
+
+        // Kept in double/long until the final clamp: a large safety factor must not overflow int.
+        final double projected = visibleSoFar > 0
+                ? Math.ceil((double) stillNeeded * rowsRead * effectiveSafetyFactor / visibleSoFar)
+                : (double) previousRequested * 2;
+        final double capped = Math.min(Math.min(projected, (double) previousRequested * effectiveMaxGrowth),
+                Math.min(effectiveCeiling, (double) scanLimit - dbOffset));
+        return (int) Math.max(floor, capped);
     }
 
     /**
@@ -438,6 +734,15 @@ public class BrowserAPIImpl implements BrowserAPI {
                     return doHybridSingleChunkedQueryES(browserQuery, maxRows, sqlQuery);
                 case PURE_ES:
                 default:
+                    // PURE_ES bypasses the DB select entirely and doesn't build per-field clauses,
+                    // so it can neither apply DB-routed (Tag) predicates nor index-routed field
+                    // clauses. Rather than silently return unfiltered content, fail loudly. Content
+                    // Drive runs the default HYBRID heuristic, so this only trips on misconfiguration.
+                    if (!browserQuery.getFieldCriteria().isEmpty()) {
+                        throw new DotRuntimeException("Content Drive field filters (userSearchable) "
+                                + "are not supported under the PURE_ES heuristic; use "
+                                + "HYBRID_SINGLE_CHUNKED_QUERY_ES.");
+                    }
                     return doPureESQuery(browserQuery, maxRows);
             }
         } catch (DotSecurityException e) {
@@ -469,9 +774,49 @@ public class BrowserAPIImpl implements BrowserAPI {
     }
 
     /**
+     * True when a request has no criterion left that requires database resolution — every field
+     * criterion routes to the index, and there is no workflow filter and no free-text/fileName
+     * term (issue #37184, FR-002). When eligible, the folder's candidate scan runs in
+     * {@code BROWSER_SINGLE_PASS_CHUNK_SIZE}-sized chunks (default 7,000) instead of the chunked
+     * hybrid loop's default {@code BROWSER_CONTENT_CHUNK_SIZE}-sized iterations (default 900),
+     * cutting DB round trips ~8x on a sparse-match, 20,000-item folder while keeping the ES fan-out
+     * per chunk bounded and the loop stoppable between chunks.
+     *
+     * <p>Takes the raw fields rather than a {@link BrowserQuery} so it stays a pure,
+     * unit-testable predicate — {@code BrowserQuery}'s constructor resolves folder/site/role via
+     * {@code APILocator} and cannot be instantiated outside a full dotCMS context.</p>
+     *
+     * @param fieldCriteria      the request's per-field search criteria
+     * @param workflowSchemeIds  workflow scheme ids the request filters by
+     * @param workflowStepIds    workflow step ids the request filters by
+     * @param filter             the free-text filter term, if any
+     * @param fileName           the fileName filter term, if any
+     * @return true iff the request can be resolved in a single pass
+     */
+    static boolean isSinglePassEligible(final List<FieldSearchCriteria> fieldCriteria,
+            final Set<String> workflowSchemeIds, final Set<String> workflowStepIds,
+            final String filter, final String fileName) {
+        return !fieldCriteria.isEmpty()
+                && fieldCriteria.stream()
+                        .allMatch(criteria -> criteria.getBucket() == FieldSearchCriteria.RoutingBucket.INDEX)
+                && workflowSchemeIds.isEmpty()
+                && workflowStepIds.isEmpty()
+                && !UtilMethods.isSet(filter)
+                && !UtilMethods.isSet(fileName);
+    }
+
+    /**
      * Hybrid Chunked DB + ES: delegates to {@link #getContentByChunks} with
      * {@code applyESFilter=true}, so each DB chunk is text-filtered through Elasticsearch before
-     * permission filtering. Uses a fixed chunk size driven by {@code BROWSER_CONTENT_CHUNK_SIZE}(default 900).
+     * permission filtering. Uses a fixed chunk size driven by {@code BROWSER_CONTENT_CHUNK_SIZE}
+     * (default 900) — unless the request is {@link #isSinglePassEligible}, in which case the chunk
+     * size is widened to {@code BROWSER_SINGLE_PASS_CHUNK_SIZE} (default 7,000) so far fewer DB
+     * round trips are needed to resolve the candidate set (issue #37184, FR-002/SC-001).
+     *
+     * <p>The widened size is a modest multiple of the per-ES-query inode cap rather than the whole
+     * {@code BROWSER_DB_MAX_SCAN_ROWS} guard rail: a chunk that large would fan out into dozens of
+     * concurrent ES sub-queries on the shared submitter pool and would collapse the chunk loop into
+     * a single, non-interruptible iteration. See {@code BROWSER_SINGLE_PASS_CHUNK_SIZE_KEY}.</p>
      *
      * @param browserQuery query containing the text filter, user context, and current cursor
      * @param maxRows      maximum number of permission-visible items to return
@@ -483,9 +828,17 @@ public class BrowserAPIImpl implements BrowserAPI {
     ContentUnderParent doHybridSingleChunkedQueryES(final BrowserQuery browserQuery,
             final int maxRows, final SelectQuery sqlQuery) throws DotDataException, DotSecurityException {
 
-        final int chunkSize = Config.getIntProperty("BROWSER_CONTENT_CHUNK_SIZE", 900);
+        final boolean singlePassEligible = isSinglePassEligible(browserQuery.getFieldCriteria(),
+                browserQuery.workflowSchemeIds, browserQuery.workflowStepIds,
+                browserQuery.filter, browserQuery.fileName);
 
-        Logger.debug(this, "::::: Using Hybrid DB+ES Query Chunked for text filtering ::::");
+        final int chunkSize = singlePassEligible
+                ? Config.getIntProperty(BROWSER_SINGLE_PASS_CHUNK_SIZE_KEY, BROWSER_SINGLE_PASS_CHUNK_SIZE_DEFAULT)
+                : Config.getIntProperty(BROWSER_CONTENT_CHUNK_SIZE_KEY, BROWSER_CONTENT_CHUNK_SIZE_DEFAULT);
+
+        Logger.debug(this, singlePassEligible
+                ? "::::: Using widened-chunk DB+ES query for single-pass-eligible filters (issue #37184) ::::"
+                : "::::: Using Hybrid DB+ES Query Chunked for text filtering ::::");
         return getContentByChunks(browserQuery, maxRows, sqlQuery, chunkSize, true);
     }
 
@@ -548,7 +901,7 @@ public class BrowserAPIImpl implements BrowserAPI {
         query.append("+systemType:false ");
         query.append("-contentType:forms ");
         query.append("-contentType:Host ");
-        query.append("+deleted:false ");
+        appendContentStatusESQuery(query, browserQuery.getContentStatuses());
 
         // Working/live content filter
         if (browserQuery.showWorking) {
@@ -565,10 +918,36 @@ public class BrowserAPIImpl implements BrowserAPI {
             ? browserQuery.site.getIdentifier()
             : browserQuery.folder.getHostId();
 
-        if (browserQuery.forceSystemHost || browserQuery.folder.isSystemFolder()) {
+        // The caller's request decides this, and nothing else. This used to widen the clause
+        // whenever the folder happened to be the system folder — that is, at every site root —
+        // which made this builder answer differently from the SQL one about a structural
+        // criterion. ADR-0018 makes the database authoritative for exactly those criteria and
+        // forbids re-routing them to the index, so the two must name the same hosts for the same
+        // request. The divergence only ever surfaced under the non-default PURE_ES heuristic,
+        // which is why it went unnoticed rather than why it was acceptable.
+        if (SystemHostMode.ONLY == browserQuery.systemHostMode) {
+            query.append("+conhost:SYSTEM_HOST ");
+        } else if (SystemHostMode.INCLUDE == browserQuery.systemHostMode) {
             query.append("+(conhost:").append(hostId).append(" OR conhost:SYSTEM_HOST) ");
         } else {
             query.append("+conhost:").append(hostId).append(" ");
+        }
+
+        // Confine the contentlets to the folder being browsed, mirroring the SQL builder's
+        // `id.parent_path = ?`. Without it this builder emitted no folder criterion at all, so a
+        // request for the site root returned the whole site: `ROOT` and `ALL` produced byte-for-byte
+        // the same query, and the scope existed only on the database path.
+        //
+        // `skipFolder` is the same switch the SQL side reads, so the two agree by construction:
+        // all site content (and a request carrying no scope at the root) deliberately spans every
+        // depth and sets it, while the site root, a folder and System Host each name a place and
+        // do not.
+        //
+        // Only contentlets are at stake. Folders are never indexed and never come from here --
+        // both paths list them from the database through `findSubFoldersByParent` -- so this
+        // changes what content is returned and nothing about the folder rows beside it.
+        if (!browserQuery.skipFolder) {
+            query.append("+conFolder:").append(browserQuery.folder.getInode()).append(" ");
         }
 
         // Content type filters - include specific types if provided
@@ -658,8 +1037,10 @@ public class BrowserAPIImpl implements BrowserAPI {
                 }
             });
 
-    // Multiplier applied to (startRow + maxRows) to determine the DB chunk size for permission-aware pagination.
-    // A factor of 3 means: fetch 3x the needed rows per chunk, expecting ~1/3 may be filtered by permissions.
+    // Multiplier applied to maxRows to determine the DB chunk size for permission-aware pagination.
+    // The default of 10 fetches 10x the needed rows per chunk, expecting most may be filtered out by
+    // permissions. max(maxRows * factor, BROWSER_DB_CHUNK_MIN_SIZE) is the permission-only loop's
+    // first chunk, and the floor adaptive sizing never goes below (issue #37665).
     final Lazy<Integer> BROWSER_DB_CHUNK_FACTOR = Lazy.of(
             () -> Config.getIntProperty("BROWSER_DB_CHUNK_FACTOR", 10));
 
@@ -670,8 +1051,95 @@ public class BrowserAPIImpl implements BrowserAPI {
     // Maximum total DB rows to scan per request across all chunks. Acts as a safety cap to prevent
     // runaway queries when a restricted user has access to a small fraction of site content.
     // Default of 50,000 covers a worst-case ~5% permission pass rate for a full page of 300 items.
+    // Used as-is (row-count cutoff) for the permission-only scan (applyESFilter=false); see
+    // BROWSER_DB_MAX_SCAN_TIME_MILLIS_KEY for the ES-narrowed (text-filter) scan's cost bound.
     static final String BROWSER_DB_MAX_SCAN_ROWS_KEY = "BROWSER_DB_MAX_SCAN_ROWS";
     static final int BROWSER_DB_MAX_SCAN_ROWS_DEFAULT = 50_000;
+
+    // Adaptive chunk sizing for the permission-only scan (applyESFilter=false, issue #37665).
+    // Each chunk re-runs the listing query at a larger OFFSET, so a fixed chunk makes the cost
+    // grow with the square of the chunk count, and the chunk count is driven by how much the
+    // permission filter discards. When on, every chunk after the first is sized from the
+    // visible/read ratio seen so far (doubling when nothing was visible yet), never below the
+    // caller's chunk size. Setting it to false restores the fixed chunk exactly. The ES-narrowed
+    // scan never grows its chunks regardless of this flag.
+    static final String BROWSER_DB_CHUNK_ADAPTIVE_KEY = "BROWSER_DB_CHUNK_ADAPTIVE";
+    static final boolean BROWSER_DB_CHUNK_ADAPTIVE_DEFAULT = true;
+
+    // Largest chunk adaptive sizing may request. Every row of a chunk is loaded as a Contentlet
+    // before the permission filter, so this bounds each request's working set. The benchmark in
+    // the #37665 review showed 7,000 saturating a 2 GB heap with 10 concurrent permission-limited
+    // listings, while 2,000 kept most of the latency gain. Values <= 0 fall back to the default.
+    static final String BROWSER_DB_CHUNK_ADAPTIVE_MAX_SIZE_KEY = "BROWSER_DB_CHUNK_ADAPTIVE_MAX_SIZE";
+    static final int BROWSER_DB_CHUNK_ADAPTIVE_MAX_SIZE_DEFAULT = 2_000;
+
+    // Largest multiple of the previous chunk that the next one may grow to. It bounds the ratio
+    // estimate when visible items are clustered rather than spread evenly: 1 visible item early
+    // on can project a chunk far larger than the page needs, and every row read is loaded and
+    // permission-checked. Doubling (2x) never reaches the default. Values < 1 fall back to the
+    // default.
+    static final String BROWSER_DB_CHUNK_ADAPTIVE_MAX_GROWTH_KEY = "BROWSER_DB_CHUNK_ADAPTIVE_MAX_GROWTH";
+    static final int BROWSER_DB_CHUNK_ADAPTIVE_MAX_GROWTH_DEFAULT = 4;
+
+    // Margin applied to the rows projected from the visible/read ratio, which is only a sample:
+    // the next stretch of the folder may be sparser. Values <= 0 or non-finite fall back to the
+    // default.
+    static final String BROWSER_DB_CHUNK_ADAPTIVE_SAFETY_FACTOR_KEY = "BROWSER_DB_CHUNK_ADAPTIVE_SAFETY_FACTOR";
+    static final float BROWSER_DB_CHUNK_ADAPTIVE_SAFETY_FACTOR_DEFAULT = 1.5f;
+
+    // Maximum wall-clock time to spend scanning DB chunks when text-filtering through ES
+    // (applyESFilter=true). A row-count cutoff here silently drops matches that fall later in
+    // DB order than the cutoff, even though they were never actually sent to ES for narrowing
+    // (issue #37211) -- a global search with no content-type filter has a broad, effectively
+    // unbounded-by-type candidate set, so match position in DB order says nothing about whether
+    // the match exists. Bounding by elapsed time instead lets the scan keep going as long as it
+    // is still affordable, rather than giving up at an arbitrary row count regardless of
+    // coverage.
+    static final String BROWSER_DB_MAX_SCAN_TIME_MILLIS_KEY = "BROWSER_DB_MAX_SCAN_TIME_MILLIS";
+    static final long BROWSER_DB_MAX_SCAN_TIME_MILLIS_DEFAULT = 10_000L;
+
+    // Co-bound alongside BROWSER_DB_MAX_SCAN_TIME_MILLIS for the ES-narrowed scan
+    // (applyESFilter=true): a hard ceiling on total rows read, independent of elapsed time. The
+    // time budget alone does not cap *work* -- a fast DB/ES pair could scan far more rows in
+    // BROWSER_DB_MAX_SCAN_TIME_MILLIS than the old row-count cutoff ever allowed, which under
+    // concurrent unfiltered searches multiplies real cost (found in review, issue #37211). Set
+    // well above the real-world scale this fix targets (~718,174 contentlets, per the issue) so
+    // it does not reintroduce the original completeness bug at that scale; it exists to cap the
+    // pathological case (a much larger site, or many concurrent requests) that the time budget
+    // alone cannot.
+    static final String BROWSER_DB_MAX_SCAN_ROWS_ES_HARD_CAP_KEY = "BROWSER_DB_MAX_SCAN_ROWS_ES_HARD_CAP";
+    static final int BROWSER_DB_MAX_SCAN_ROWS_ES_HARD_CAP_DEFAULT = 1_000_000;
+
+    // Default DB chunk size for the hybrid DB+ES text-filtering loop.
+    static final String BROWSER_CONTENT_CHUNK_SIZE_KEY = "BROWSER_CONTENT_CHUNK_SIZE";
+    static final int BROWSER_CONTENT_CHUNK_SIZE_DEFAULT = 900;
+
+    // DB chunk size used by the single-pass-eligible field-filter path (issue #37184). Deliberately
+    // decoupled from BROWSER_DB_MAX_SCAN_ROWS: that property is the outer guard rail (total rows a
+    // request may scan across all chunks), not a working batch size. The default of 7,000 is a
+    // modest multiple (~9x) of the per-ES-query inode batch computed by partitionInodesForES
+    // (~750 UUIDs for a typical base query, bounded by BROWSER_ES_MAX_QUERY_STRING_LENGTH rather
+    // than by the ~876-inode clause cap; issue #37695), so each chunk fans out to roughly 9-10
+    // concurrent ES sub-queries instead of the ~65 a 50,000-row chunk would submit at once into the
+    // shared DotSubmitter pool.
+    // It still cuts DB round trips ~8x versus the BROWSER_CONTENT_CHUNK_SIZE default of 900, and it
+    // keeps the chunk loop interleaved and stoppable between chunks.
+    static final String BROWSER_SINGLE_PASS_CHUNK_SIZE_KEY = "BROWSER_SINGLE_PASS_CHUNK_SIZE";
+    static final int BROWSER_SINGLE_PASS_CHUNK_SIZE_DEFAULT = 7_000;
+
+    // Longest query_string the index server accepts, mirroring its
+    // search.query.max_query_string_length setting (OpenSearch 2.19.4+/3.3.0+, default 32000).
+    // Every ES sub-query carries "+inode:(id1 OR id2 ...)" for its DB candidates, so batches are
+    // sized against this as well as against the boolean-clause limit; without it a full
+    // clause-sized batch (~876 inodes) is ~35 KB and is rejected (issue #37695). Set it to the
+    // cluster's value if an operator changed that setting. Values <= 0 fall back to the default.
+    // Public so tests outside this package can lower it.
+    public static final String BROWSER_ES_MAX_QUERY_STRING_LENGTH_KEY = "BROWSER_ES_MAX_QUERY_STRING_LENGTH";
+    public static final int BROWSER_ES_MAX_QUERY_STRING_LENGTH_DEFAULT = 32_000;
+
+    // Share of BROWSER_ES_MAX_QUERY_STRING_LENGTH a sub-query may use, leaving room for any
+    // server-side rewriting of the query we cannot see.
+    static final double ES_QUERY_STRING_LENGTH_SAFETY_RATIO = 0.95;
 
     /**
      * Represents content items under a specific parent along with the total count.
@@ -697,15 +1165,26 @@ public class BrowserAPIImpl implements BrowserAPI {
 
 
     /**
-     * Processes inodes directly through Elasticsearch with ES clause limit awareness.
-     * This method is designed to be called from external chunking loops and handles
-     * the ES boolean clause limit (1024) by subdividing large inode sets when necessary.
+     * Narrows a chunk of DB candidate inodes to the ones matching the text search and
+     * index-routed field criteria, through Elasticsearch. Called from the chunking loops.
+     *
+     * <p>Each ES sub-query carries its candidates as {@code +inode:(id1 OR id2 ...)}, so the
+     * chunk is split into batches that respect both the boolean-clause limit and the index
+     * server's maximum query-string length ({@link #BROWSER_ES_MAX_QUERY_STRING_LENGTH_KEY}).
+     * One batch runs directly; several run in parallel.</p>
+     *
+     * <p>Any sub-query that cannot run fails the whole call rather than contributing an empty
+     * set: silently dropping a chunk's matches would return an incomplete page as a successful
+     * response (issue #37488). User input that could break an index query is rejected with
+     * HTTP 400 before this point, so what fails here is the index itself, or a base query too
+     * long to leave room for the inode restriction.</p>
      *
      * @param browserQuery The {@link BrowserQuery} containing search criteria (filter, fileName)
      * @param inodes       The set of inodes to filter through Elasticsearch text search
      * @return A filtered set of inodes that match the text search criteria
+     * @throws DotDataException if a sub-query fails or times out, or no sub-query can be built
      */
-    Set<String> processESDirectly(BrowserQuery browserQuery, Set<String> inodes) {
+    Set<String> processESDirectly(BrowserQuery browserQuery, Set<String> inodes) throws DotDataException {
         if (inodes == null || inodes.isEmpty()) {
             return new LinkedHashSet<>();
         }
@@ -713,25 +1192,189 @@ public class BrowserAPIImpl implements BrowserAPI {
         final int totalInodes = inodes.size();
         final long startTime = System.currentTimeMillis();
 
-        // Calculate the maximum inodes we can handle in a single ES query
-        // considering the ES boolean clause limit and other query conditions
-        final int maxInodesPerESQuery = calculateMaxInodesPerESQuery(browserQuery);
+        final int maxInodesByClauses = calculateMaxInodesPerESQuery(browserQuery);
+        final int baseQueryLength = buildBaseESQuery(browserQuery).length();
+        final int maxQueryLength = getESQueryStringLengthBudget();
+        final List<List<String>> batches = partitionInodesForES(
+                new ArrayList<>(inodes), baseQueryLength, maxQueryLength, maxInodesByClauses);
 
-        Logger.debug(this, String.format("Direct ES processing: %d inodes, max per query: %d",
-            totalInodes, maxInodesPerESQuery));
+        Logger.debug(this, String.format(
+                "Direct ES processing: %d inodes, max per query: %d by clauses, %d characters → %d sub-queries",
+                totalInodes, maxInodesByClauses, maxQueryLength, batches.size()));
 
-        // If we're under the limit, process directly
-        if (totalInodes <= maxInodesPerESQuery) {
-            return processSingleESQuery(browserQuery, inodes, startTime);
-        } else {
-            // Split into multiple ES queries to respect the clause limit
-            return processMultipleESQueries(browserQuery, inodes, maxInodesPerESQuery, startTime);
+        if (batches.isEmpty()) {
+            final String errorMsg = String.format(
+                    "ES filtering cannot run for %d inodes: the base query is %d characters, leaving no "
+                            + "room for the inode restriction within the %d-character budget (%s)",
+                    totalInodes, baseQueryLength, maxQueryLength, BROWSER_ES_MAX_QUERY_STRING_LENGTH_KEY);
+            Logger.error(this, errorMsg);
+            throw new DotDataException(errorMsg);
         }
+        if (batches.size() == 1) {
+            return processSingleESQuery(browserQuery, inodes, startTime);
+        }
+        return processMultipleESQueries(browserQuery, batches, maxQueryLength, startTime);
+    }
+
+    /**
+     * Returns how many characters one ES sub-query's query string may take: the configured
+     * {@link #BROWSER_ES_MAX_QUERY_STRING_LENGTH_KEY} (or its default, when unset or not positive)
+     * times {@link #ES_QUERY_STRING_LENGTH_SAFETY_RATIO}.
+     *
+     * @return The query-string length budget for a sub-query.
+     */
+    private static int getESQueryStringLengthBudget() {
+        int limit = Config.getIntProperty(BROWSER_ES_MAX_QUERY_STRING_LENGTH_KEY,
+                BROWSER_ES_MAX_QUERY_STRING_LENGTH_DEFAULT);
+        if (limit <= 0) {
+            limit = BROWSER_ES_MAX_QUERY_STRING_LENGTH_DEFAULT;
+        }
+        return (int) (limit * ES_QUERY_STRING_LENGTH_SAFETY_RATIO);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p>Only requests that go through the index are checked. The base query is the one every
+     * sub-query of this request would carry.</p>
+     */
+    @Override
+    public boolean esQueryLeavesRoomForInodes(final BrowserQuery browserQuery) {
+        if (!isUseElasticSearchForFiltering(browserQuery)) {
+            return true;
+        }
+        return baseQueryLeavesRoomForInodes(buildBaseESQuery(browserQuery).length(),
+                getESQueryStringLengthBudget());
+    }
+
+    /**
+     * Tells whether a base query leaves room for a useful batch of inodes within the
+     * query-string budget: at least {@link #MIN_INODES_PER_ES_QUERY} UUID inodes, the same floor
+     * {@link #calculateMaxInodesPerESQuery} uses. With less room a request would still run, but
+     * fan out into a large number of tiny sub-queries (issue #37488 review).
+     *
+     * @param baseQueryLength Length of the base query.
+     * @param maxQueryLength  The query-string length budget.
+     * @return {@code true} when the minimum batch fits.
+     */
+    @VisibleForTesting
+    static boolean baseQueryLeavesRoomForInodes(final int baseQueryLength, final int maxQueryLength) {
+        final long minimumBatchLength = INODE_FILTER_PREFIX.length() + INODE_FILTER_SUFFIX.length()
+                + (long) MIN_INODES_PER_ES_QUERY * UUID_LENGTH
+                + (long) (MIN_INODES_PER_ES_QUERY - 1) * INODE_FILTER_SEPARATOR.length();
+        return baseQueryLength + minimumBatchLength <= maxQueryLength;
+    }
+
+    /**
+     * Index error reasons that mean the query built from the user's search term or filter values
+     * was too complex for the index to build: a wildcard it cannot determinize (its effort limit,
+     * or its maximum automaton size), or more boolean clauses than it allows. Matched in lower
+     * case. A generic {@code query_shard_exception} is deliberately not on this list: it is also
+     * how the index reports a mapping that has not caught up, which is not the user's doing
+     * (see {@code OSSearchAPIImpl#searchFailure}).
+     */
+    private static final List<String> QUERY_TOO_COMPLEX_REASONS = List.of(
+            "determinizing automaton", "too_complex_to_determinize", "input automaton is too large",
+            "too_many_clauses", "maxclausecount");
+
+    /**
+     * Tells whether an index failure means the query built from the user's input was too complex
+     * for the index to build ({@link #QUERY_TOO_COMPLEX_REASONS}). The reason is looked for in the
+     * whole chain: the OpenSearch client carries it in a cause's message, the Elasticsearch client
+     * in a suppressed exception holding the response body.
+     *
+     * @param failure The failure raised by the search.
+     * @return {@code true} when the input, not the index, is at fault.
+     */
+    @VisibleForTesting
+    static boolean isQueryTooComplex(final Throwable failure) {
+        final Set<Throwable> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+        final Deque<Throwable> pending = new ArrayDeque<>();
+        if (null != failure) {
+            pending.push(failure);
+        }
+        while (!pending.isEmpty()) {
+            final Throwable current = pending.pop();
+            if (!seen.add(current)) {
+                continue;
+            }
+            final String message = null == current.getMessage() ? "" : current.getMessage().toLowerCase();
+            if (QUERY_TOO_COMPLEX_REASONS.stream().anyMatch(message::contains)) {
+                return true;
+            }
+            if (null != current.getCause()) {
+                pending.push(current.getCause());
+            }
+            for (final Throwable suppressed : current.getSuppressed()) {
+                pending.push(suppressed);
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Splits an ordered list of candidate inodes into the batches that become ES sub-queries.
+     * Each batch is sent as {@code " +inode:(id1 OR id2 ...) " + baseQuery} inside a
+     * {@code query_string}, so a batch must stay within both the boolean-clause cap and the
+     * index server's maximum query-string length.
+     *
+     * <p>The batches are consecutive slices of {@code inodes}: joined back together they give the
+     * input, in the same order. Every batch holds at least one inode, at most
+     * {@code maxInodesByClauses} inodes, and produces a query string of at most
+     * {@code maxQueryLength} characters. If the base query leaves no room for even the longest
+     * inode, no batch can be built and the result is empty.</p>
+     *
+     * <p>Lengths are the inodes' real lengths, not an assumed 36-character UUID, since legacy
+     * installations can hold inodes of other shapes. The length bound always wins over the
+     * clause cap, including over the minimum of 100 that {@link #calculateMaxInodesPerESQuery}
+     * enforces (issue #37695).</p>
+     *
+     * @param inodes             Candidate inodes, in DB order.
+     * @param baseQueryLength    Length of the base query the inode restriction is prepended to.
+     * @param maxQueryLength     Longest query string a sub-query may produce.
+     * @param maxInodesByClauses Most inodes a sub-query may hold under the boolean-clause limit.
+     * @return The batches, in order; empty when {@code inodes} is empty or nothing fits.
+     */
+    @VisibleForTesting
+    static List<List<String>> partitionInodesForES(final List<String> inodes, final int baseQueryLength,
+            final int maxQueryLength, final int maxInodesByClauses) {
+        final List<List<String>> batches = new ArrayList<>();
+        if (inodes.isEmpty()) {
+            return batches;
+        }
+        final int fixedLength = INODE_FILTER_PREFIX.length() + INODE_FILTER_SUFFIX.length() + baseQueryLength;
+        final int longestInode = inodes.stream().mapToInt(String::length).max().orElse(0);
+        if (fixedLength + longestInode > maxQueryLength) {
+            return batches;
+        }
+        final int clauseCap = Math.max(1, maxInodesByClauses);
+
+        int batchStart = 0;
+        int batchLength = fixedLength + inodes.get(0).length();
+        for (int i = 1; i < inodes.size(); i++) {
+            final int withNext = batchLength + INODE_FILTER_SEPARATOR.length() + inodes.get(i).length();
+            if (withNext > maxQueryLength || i - batchStart >= clauseCap) {
+                batches.add(inodes.subList(batchStart, i));
+                batchStart = i;
+                batchLength = fixedLength + inodes.get(i).length();
+            } else {
+                batchLength = withNext;
+            }
+        }
+        batches.add(inodes.subList(batchStart, inodes.size()));
+        return batches;
     }
 
     /**
      * Calculates the maximum number of inodes we can include in a single ES query
      * while staying under the boolean clause limit (1024).
+     *
+     * <p>This is only the clause cap, and it never goes below 100. The query-string length bound
+     * applied by {@link #partitionInodesForES} takes precedence, so a batch may end up smaller
+     * than what this returns (issue #37695).</p>
+     *
+     * @param browserQuery The {@link BrowserQuery} whose base query shares the clause budget.
+     * @return The most inodes a sub-query may hold under the boolean-clause limit.
      */
     private int calculateMaxInodesPerESQuery(BrowserQuery browserQuery) {
         // ES has a limit of 1024 boolean clauses per query
@@ -800,22 +1443,26 @@ public class BrowserAPIImpl implements BrowserAPI {
      * @param startTime    The time when this method was called, for performance analysis purposes.
      *
      * @return A set of Inodes matching the query.
+     * @throws DotDataException if the search fails; see {@link #processESDirectly} for why it is
+     *                          not swallowed.
      */
-    private Set<String> processSingleESQuery(final BrowserQuery browserQuery, final Set<String> inodes, final long startTime) {
+    private Set<String> processSingleESQuery(final BrowserQuery browserQuery, final Set<String> inodes,
+            final long startTime) throws DotDataException {
         final boolean live = !browserQuery.showWorking;
-        final ESSeachAPI esSearchAPI = APILocator.getEsSearchAPI();
+        final SearchAPI searchAPI = APILocator.getSearchAPI();
         final List<String> collectedInodes = new ArrayList<>();
 
         try {
             final String baseQuery = buildBaseESQuery(browserQuery);
             final List<String> inodesList = new ArrayList<>(inodes);
-            final String inodeFilter = String.format(" +inode:(%s) ", String.join(" OR ", inodesList));
+            final String inodeFilter = INODE_FILTER_PREFIX
+                    + String.join(INODE_FILTER_SEPARATOR, inodesList) + INODE_FILTER_SUFFIX;
             final String luceneQuery = inodeFilter + baseQuery;
-            final String esQuery = String.format(ES_QUERY_TEMPLATE, luceneQuery);
+            final String esQuery = String.format(ES_QUERY_TEMPLATE, jsonEscape(luceneQuery), inodes.size());
 
             Logger.debug(this, String.format("Single ES query: %d inodes", inodes.size()));
 
-            esSearchAPI.esSearch(esQuery, live, browserQuery.user, false).forEach(result -> {
+            searchAPI.search(esQuery, live, browserQuery.user, false).forEach(result -> {
                 final Contentlet contentlet = (Contentlet) result;
                 collectedInodes.add(contentlet.getInode());
             });
@@ -825,32 +1472,51 @@ public class BrowserAPIImpl implements BrowserAPI {
                 inodes.size(), collectedInodes.size(), duration));
 
         } catch (final Exception e) {
-            Logger.error(this, String.format("Single ES query failed for %d inodes: %s", inodes.size(), getErrorMessage(e)), e);
+            // Raised, not swallowed (issue #37488). Swallowing it returned whatever had been
+            // collected so far as a successful page, silently missing this sub-query's matches.
+            // That was a deliberate trade-off while user input could break the query and raising
+            // would have turned it into a 500. Input the index cannot use is now told apart: a
+            // non-date range bound is rejected with HTTP 400 by ContentDriveFieldFilterResolver, a
+            // term or values too long for the query budget by ContentDriveHelper before the search
+            // runs, and a query the index finds too complex to build is raised as
+            // ESQueryTooComplexException, which Content Drive also answers with HTTP 400. Anything
+            // else is the index itself and fails the request visibly: the Content Drive shell
+            // shows its error banner for it.
+            if (isQueryTooComplex(e)) {
+                final String warnMsg = String.format("ES query for %d inodes rejected as too complex "
+                        + "to build from the search input: %s", inodes.size(), getErrorMessage(e));
+                Logger.warn(this, warnMsg);
+                throw new ESQueryTooComplexException(warnMsg, e);
+            }
+            final String errorMsg = String.format("Single ES query failed for %d inodes: %s",
+                    inodes.size(), getErrorMessage(e));
+            Logger.error(this, errorMsg, e);
+            throw new DotDataException(errorMsg, e);
         }
 
         return new LinkedHashSet<>(collectedInodes);
     }
 
     /**
-     * Processes multiple ES queries when inode count exceeds the limit.
-     * Uses parallel processing for better performance.
+     * Runs one ES sub-query per batch, in parallel, and merges their matches. Used when a chunk
+     * of candidates does not fit in a single sub-query.
+     *
+     * @param browserQuery   The {@link BrowserQuery} containing the search criteria.
+     * @param subBatches     The candidate inodes, already split by {@link #partitionInodesForES}.
+     * @param maxQueryLength The query-string length budget the batches were sized for (logging only).
+     * @param startTime      When the caller started, for performance logging.
+     * @return The inodes that matched, across all sub-queries.
+     * @throws DotDataException if any sub-query fails or times out, or the overall wait does
      */
-    private Set<String> processMultipleESQueries(BrowserQuery browserQuery, Set<String> inodes,
-                                                 int maxInodesPerQuery, long startTime) {
+    private Set<String> processMultipleESQueries(final BrowserQuery browserQuery,
+            final List<List<String>> subBatches, final int maxQueryLength, final long startTime)
+            throws DotDataException {
         final Set<String> allResults = Collections.synchronizedSet(new LinkedHashSet<>());
-        final List<String> inodesList = new ArrayList<>(inodes);
-        final int totalInodes = inodesList.size();
-
-        // Create sub-batches that respect the ES clause limit
-        final List<List<String>> subBatches = new ArrayList<>();
-        for (int i = 0; i < totalInodes; i += maxInodesPerQuery) {
-            final int endIndex = Math.min(i + maxInodesPerQuery, totalInodes);
-            subBatches.add(inodesList.subList(i, endIndex));
-        }
+        final int totalInodes = subBatches.stream().mapToInt(List::size).sum();
 
         final int batchCount = subBatches.size();
-        Logger.info(this, String.format("ES clause limit handling: splitting %d inodes into %d sub-queries (max %d inodes per query)",
-            totalInodes, batchCount, maxInodesPerQuery));
+        Logger.info(this, String.format("ES sub-query limits: splitting %d inodes into %d sub-queries (max %d characters per query)",
+            totalInodes, batchCount, maxQueryLength));
 
         // Process sub-batches in parallel
         final DotSubmitter submitter = DotConcurrentFactory.getInstance().getSubmitter();
@@ -864,45 +1530,72 @@ public class BrowserAPIImpl implements BrowserAPI {
                 .supplyAsync(() -> {
                     Logger.debug(BrowserAPIImpl.this, String.format("Processing ES sub-query %d/%d: %d inodes",
                         batchIndex, batchCount, batch.size()));
-                    return processSingleESQuery(browserQuery, new LinkedHashSet<>(batch), System.currentTimeMillis());
+                    try {
+                        return processSingleESQuery(browserQuery, new LinkedHashSet<>(batch), System.currentTimeMillis());
+                    } catch (final DotDataException e) {
+                        // Unchecked so it completes the future exceptionally; unwrapped below.
+                        throw new DotRuntimeException(e.getMessage(), e);
+                    }
                 }, submitter)
-                .orTimeout(60, TimeUnit.SECONDS)
-                .exceptionally(throwable -> {
-                    Logger.error(BrowserAPIImpl.this, String.format("ES sub-query %d failed: %s",
-                        batchIndex, throwable.getMessage()), throwable);
-                    return new LinkedHashSet<>();
-                });
+                .orTimeout(60, TimeUnit.SECONDS);
         }
 
-        // Collect results from all sub-queries
+        // Collect results from all sub-queries. A failed or timed-out sub-query fails the whole
+        // call instead of contributing an empty set (issue #37488; see processESDirectly).
         try {
             CompletableFuture<Void> allFutures = CompletableFuture.allOf(futures);
             allFutures.get(120, TimeUnit.SECONDS);
 
             for (CompletableFuture<Set<String>> future : futures) {
-                try {
-                    Set<String> batchResults = future.get();
-                    allResults.addAll(batchResults);
-                } catch (Exception e) {
-                    Logger.warn(this, "Failed to get result from ES sub-query future: " + e.getMessage());
-                    Thread.currentThread().interrupt();
-                }
+                allResults.addAll(future.get());
             }
 
             final long totalDuration = System.currentTimeMillis() - startTime;
             Logger.info(this, String.format("Multiple ES queries completed: %d inodes in %d sub-queries → %d matches in %d ms",
                 totalInodes, batchCount, allResults.size(), totalDuration));
 
-        } catch (InterruptedException e) {
-            Logger.error(this, "Multiple ES queries interrupted: " + e.getMessage(), e);
+        } catch (final InterruptedException e) {
             Thread.currentThread().interrupt();
-        } catch (ExecutionException e) {
-            Logger.error(this, "Multiple ES queries execution error: " + e.getMessage(), e);
-        } catch (TimeoutException e) {
-            Logger.error(this, "Multiple ES queries timed out: " + e.getMessage(), e);
+            cancelOutstanding(futures);
+            final String errorMsg = "Multiple ES queries interrupted: " + e.getMessage();
+            Logger.error(this, errorMsg, e);
+            throw new DotDataException(errorMsg, e);
+        } catch (final ExecutionException e) {
+            cancelOutstanding(futures);
+            final Optional<Throwable> tooComplex = ExceptionUtil.get(e, ESQueryTooComplexException.class);
+            if (tooComplex.isPresent()) {
+                // Already logged by processSingleESQuery; kept as is so the caller can answer 400.
+                throw (ESQueryTooComplexException) tooComplex.get();
+            }
+            final String errorMsg = String.format("ES sub-query failed (%d sub-queries, %d inodes): %s",
+                    batchCount, totalInodes, getErrorMessage(e));
+            Logger.error(this, errorMsg, e);
+            throw new DotDataException(errorMsg, null != e.getCause() ? e.getCause() : e);
+        } catch (final TimeoutException e) {
+            cancelOutstanding(futures);
+            final String errorMsg = String.format("Multiple ES queries timed out (%d sub-queries, %d inodes)",
+                    batchCount, totalInodes);
+            Logger.error(this, errorMsg, e);
+            throw new DotDataException(errorMsg, e);
         }
 
         return allResults;
+    }
+
+    /**
+     * Cancels the sub-queries that have not finished once the call has already failed, so they
+     * give back their place in the submitter's queue instead of running for a result nobody
+     * reads. {@link CompletableFuture#cancel(boolean)} does not interrupt a search already in
+     * flight; it stops the ones that have not started.
+     *
+     * @param futures The sub-query futures.
+     */
+    private static void cancelOutstanding(final CompletableFuture<?>[] futures) {
+        for (final CompletableFuture<?> future : futures) {
+            if (!future.isDone()) {
+                future.cancel(true);
+            }
+        }
     }
 
     /**
@@ -1062,6 +1755,65 @@ public class BrowserAPIImpl implements BrowserAPI {
     }
 
     /**
+     * Collects the distinct set of {@code modUser}/{@code owner} ids a page of listing rows will
+     * need, so {@link #warmUpUserCache(List)} can resolve them once, sequentially, before
+     * {@link #hydrateContentletsInParallel} fans the same rows out into parallel chunks (issue
+     * #37186, FR-001). Pure and side-effect-free: reads fields already present on the
+     * already-loaded {@link Contentlet} objects, no I/O.
+     *
+     * <p>Deliberately does NOT include locked-by ids: resolving one costs a real per-contentlet
+     * {@code versionableAPI.getLockedBy(...)} call, not a free field read, so pulling it into this
+     * sequential warm-up would add new serial work per row instead of per distinct author —
+     * locked-by resolution stays where it already happens today, inside
+     * {@code DefaultTransformStrategy}, per-row, during the parallel phase.</p>
+     *
+     * @param contentlets the page of contentlets about to be hydrated
+     * @return the distinct, non-blank modUser/owner ids referenced by {@code contentlets}
+     */
+    static Set<String> collectWarmUpUserIds(final List<Contentlet> contentlets) {
+        final Set<String> ids = new LinkedHashSet<>();
+        for (final Contentlet contentlet : contentlets) {
+            final String modUser = contentlet.getModUser();
+            if (UtilMethods.isSet(modUser)) {
+                ids.add(modUser);
+            }
+            final String owner = contentlet.getOwner();
+            if (UtilMethods.isSet(owner)) {
+                ids.add(owner);
+            }
+        }
+        return ids;
+    }
+
+    /**
+     * Resolves every id from {@link #collectWarmUpUserIds(List)} once, sequentially, so the
+     * `UserCache` entry for each is already warm by the time {@link #hydrateContentletsInParallel}
+     * starts — this is the fix for the concurrent thundering-herd race on
+     * {@code UserFactoryImpl#loadUserById} (issue #37186, FR-001): without it, two parallel chunks
+     * needing the same not-yet-cached id each miss the cache and query the database independently.
+     * A resolution failure for one id (e.g. an orphaned user) is logged and skipped — it must not
+     * abort the warm-up for the remaining ids, and the per-row fallback (FR-004a) still applies
+     * later during hydration for whichever row referenced it.
+     *
+     * <p>Known residual limitation, flagged in review: {@code loadUserById} does not negative-cache
+     * a miss, so an orphan id stays cold after this warm-up attempt and is looked up again by
+     * every row that references it during hydration — i.e. SC-001's "N distinct authors -> exactly
+     * N DB lookups" costs {@code 1 + rowsReferencingTheOrphan} for that one id, not 1. This is
+     * accepted as-is (negative caching was deliberately not reopened for this fix) rather than
+     * silently unbounded.</p>
+     *
+     * @param contentlets the page of contentlets about to be hydrated
+     */
+    private void warmUpUserCache(final List<Contentlet> contentlets) {
+        for (final String userId : collectWarmUpUserIds(contentlets)) {
+            Try.run(() -> userAPI.loadUserById(userId))
+                    .onFailure(e -> Logger.debug(this, String.format(
+                            "Warm-up: could not resolve user '%s' ahead of parallel hydration: %s",
+                            userId, e.getMessage())));
+        }
+    }
+
+    /**
      * Hydrates contentlets in parallel using chunks for improved performance.
      *
      * @param contentlets List of contentlets to hydrate
@@ -1126,16 +1878,18 @@ public class BrowserAPIImpl implements BrowserAPI {
      * @return The base Elasticsearch query string without inode filtering
      */
     String buildBaseESQuery(final BrowserQuery browserQuery) {
-        final StringBuilder baseQuery = new StringBuilder();
+        final StringBuilder textGroup = new StringBuilder();
 
         if (UtilMethods.isSet(browserQuery.filter)) {
-            final String titleFilters = String.format(
-                    "title:%s* OR title:'%s'^15 OR title_dotraw:*%s*^5 OR +catchall:*%s*^10",
-                    browserQuery.filter,
-                    browserQuery.filter,
-                    browserQuery.filter,
-                    browserQuery.filter);
-            baseQuery.append(titleFilters);
+            if (SearchScope.TITLE == browserQuery.searchScope) {
+                textGroup.append(buildTitleScopedQuery(browserQuery.filter));
+            } else {
+                // All Fields (the default): match the term as literal text against every indexed
+                // field (issue #37532, customer ticket 39185). See buildAllFieldsScopedQuery's
+                // Javadoc for why this is Content Drive's own implementation rather than a call
+                // into the Search portlet's shared GlobalSearchAttributeStrategy.
+                textGroup.append(buildAllFieldsScopedQuery(browserQuery.filter));
+            }
         }
 
         if (UtilMethods.isSet(browserQuery.fileName)) {
@@ -1145,10 +1899,10 @@ public class BrowserAPIImpl implements BrowserAPI {
                         browserQuery.fileName,
                         browserQuery.fileName,
                         browserQuery.fileName);
-                if (baseQuery.length() > 0) {
-                    baseQuery.append(" AND ");
+                if (textGroup.length() > 0) {
+                    textGroup.append(" AND ");
                 }
-                baseQuery.append(metadataFilters);
+                textGroup.append(metadataFilters);
             } else {
                 Logger.warn(BrowserAPIImpl.class,
                         String.format(
@@ -1162,26 +1916,625 @@ public class BrowserAPIImpl implements BrowserAPI {
             }
         }
 
+        final StringBuilder baseQuery = new StringBuilder();
+        if (textGroup.length() > 0) {
+            // Wrap the free-text/fileName portion in a mandatory group for ES query_string syntax
+            baseQuery.append(" +(").append(textGroup).append(')');
+        }
+
+        // Append index-routed per-field clauses (Content Drive). Each clause is already a mandatory
+        // (+) Lucene term produced by the shared field strategies, so it ANDs with the text group
+        // and, downstream, with the DB candidate inode set.
+        final String fieldClauses = buildFieldCriteriaESClauses(browserQuery);
+        if (UtilMethods.isSet(fieldClauses)) {
+            baseQuery.append(' ').append(fieldClauses);
+        }
+
         // Early return if no query was built
         if (baseQuery.length() == 0) {
             return BLANK;
         }
 
-        // Wrap in mandatory group for ES query_string syntax
-        return " +(" + baseQuery + ')';
+        return baseQuery.toString();
+    }
+
+    /** Splits a term into tokens, matching the shared field strategies. */
+    private static final String TITLE_SCOPE_SPLIT_REGEX = "[,|\\s+]";
+
+    /**
+     * The subset of {@link LuceneQueryUtils#LUCENE_SPECIAL_CHARS} that reads as query intent — a
+     * wildcard or an escape — rather than as a word boundary. These are dropped from the token
+     * outright (the historical behavior) instead of splitting it: {@code file*.txt} keeps meaning
+     * the literal {@code file.txt}, rather than becoming two mandatory words, one of which
+     * ({@code .txt}) could never match an analyzed token and would sink the whole search.
+     */
+    private static final String WILDCARD_CHARS = "*?\\";
+
+    /**
+     * Reserved by the {@code query_string} range-query syntax ({@code field:>value},
+     * {@code field:<=value}, …) but absent from {@link LuceneQueryUtils#LUCENE_SPECIAL_CHARS} — that
+     * set is the shared escape/split list every field strategy agrees on, and widening it would also
+     * change escaping for the Search portlet and the Relationships dialog. Kept local to this
+     * Content-Drive-only split instead: without it, a token like {@code >2024} survives untouched and
+     * becomes {@code title:>2024*}, which Elasticsearch parses as a range query rather than the
+     * prefix search intended, so the clause is broad instead of empty and costs precision rather than
+     * failing outright.
+     */
+    private static final String TITLE_SCOPE_EXTRA_SPLIT_CHARS = "<>=";
+
+    /**
+     * The clause for a term whose every token is query syntax ({@code ***}, a lone {@code /}): a
+     * required existence test on {@code title} paired with its own negation — a contradiction no
+     * document can satisfy. {@code field:*} is the established {@code query_string} exists idiom
+     * (see {@code PersonaAPIImpl}'s {@code +languageid:*}); the wrapping group in
+     * {@link #buildBaseESQuery} applies the {@code +} and {@code -} as written.
+     */
+    private static final String MATCH_NOTHING_CLAUSE = "+title:* -title:*";
+
+    /**
+     * Builds the Elasticsearch clause for {@link SearchScope#ALL_FIELDS} — the default search scope
+     * that matches a term as literal text against every indexed field (issue #37532, customer
+     * ticket 39185).
+     *
+     * <p>This used to be a direct call into
+     * {@code com.dotcms.rest.api.v1.content.search.strategies.GlobalSearchAttributeStrategy}, the
+     * same class that builds the Search portlet's and the Relationships dialog's global search
+     * query. It is now Content Drive's own implementation instead: escaping every Lucene reserved
+     * character in every clause below — including the mandatory gate, which is exactly what that
+     * shared class does <b>not</b> do — would have changed the Search portlet's and Relationships
+     * dialog's behavior too (a term like {@code foo*}, today a wildcard search there, would start
+     * matching a literal asterisk). Product asked for the fix to land in Content Drive only, so the
+     * query-building code is forked rather than the shared class being changed underneath its other
+     * callers.</p>
+     *
+     * @param filter The raw, unescaped term the user typed.
+     *
+     * @return The Lucene clause for an all-fields search.
+     */
+    static String buildAllFieldsScopedQuery(final String filter) {
+        final String value = LuceneQueryUtils.escape(filter);
+        final StringBuilder query = new StringBuilder();
+        // Mandatory gate: match either a catchall token PREFIX (fast) OR the title_dotraw raw
+        // value via wildcard. Unlike catchall (which aggregates every field of the document),
+        // title_dotraw is scoped to this one field, so this alternative recovers mid-token and
+        // exact-full-value matches (issue #36791) without reintroducing an unscoped,
+        // whole-document wildcard like the old broad catchall:*value* (issue #36688).
+        query.append("+(catchall:").append(value).append("*^10 OR ")
+                .append("title_dotraw:*").append(value).append("*^2)").append(" ");
+        query.append("title:'").append(value).append("'^15").append(" ");
+
+        // Tokenize the RAW value so the split sees the user's real separators, then escape each
+        // token individually. Empty tokens are dropped: consecutive separators would otherwise
+        // emit a term-less "title:^5" clause that cannot parse.
+        final String[] titleSplit = filter.split(TITLE_SCOPE_SPLIT_REGEX);
+        if (titleSplit.length > 1) {
+            for (final String term : titleSplit) {
+                if (term.isEmpty()) {
+                    continue;
+                }
+                query.append("title:").append(LuceneQueryUtils.escape(term)).append("^5").append(" ");
+            }
+        }
+
+        // The "*" wildcard here is syntax this method adds itself, so it is appended AFTER
+        // escaping and stays live rather than becoming a literal asterisk.
+        query.append("title:").append(value).append("*");
+        return query.toString();
     }
 
     /**
-     * Determines whether Elasticsearch should be used for text-based filtering instead of SQL ILIKE queries.
-     * This optimization is triggered when Elasticsearch filtering is enabled AND there are text search criteria.
+     * Builds the Elasticsearch clause for {@link SearchScope#TITLE} — the search scope that matches
+     * a term against the contentlet title alone (issue #37479).
+     *
+     * <p>This is a <b>sibling</b> of {@link #buildAllFieldsScopedQuery} rather than a branch inside
+     * it, for the same reason that method is a sibling of the Search portlet's shared strategy:
+     * neither the Title scope nor the All Fields scope should have to route through a query shape
+     * another portlet's behavior depends on.</p>
+     *
+     * <p><b>One mandatory clause per token</b>, mirroring {@code TextFieldStrategy}. This is not a
+     * style choice — the first version of this method interpolated the whole term into a single
+     * {@code title:<term>*} clause, and for a multi-word term the {@code title:} prefix binds only
+     * to the first word. Every word after it became a bare term, which Elasticsearch matches
+     * against <b>every</b> field, so "mixed case" in Title scope returned stylesheets whose
+     * <i>body</i> contained "case". Tokenizing also means a term containing {@code OR} or
+     * {@code AND} is matched as a word rather than parsed as a boolean operator.</p>
+     *
+     * <p>Two things this clause must not do, both of which would make the scope a display filter
+     * rather than the cheaper query path it exists to be:</p>
+     *
+     * <ul>
+     *   <li><b>No {@code catchall}.</b> That field aggregates every field of the document, which is
+     *       exactly the breadth the Title scope is meant to avoid.</li>
+     *   <li><b>No leading wildcard.</b> {@code title_dotraw} is a keyword field, so {@code *term*}
+     *       scans every distinct raw title while {@code term*} is a prefix seek. Issue #36688
+     *       removed a leading wildcard for this reason and it must not return.</li>
+     * </ul>
+     *
+     * <p><b>Known trade-offs</b>, both signed off, and both the same consequence of matching by
+     * prefix rather than by substring:</p>
+     *
+     * <ul>
+     *   <li><b>Mid-token.</b> Searching {@code 1004} will not find {@code IMG_1004.jpeg} here. All
+     *       Fields keeps it (issue #36791).</li>
+     *   <li><b>Punctuation mid-title.</b> The punctuation itself is never matchable: a prefix query
+     *       is not analyzed, and the indexed token had it removed — {@code (XETRA:} is indexed as
+     *       {@code xetra}. Reaching the punctuation would need {@code *(XETRA:*}, the leading
+     *       wildcard this method exists to avoid. The words around it stay reachable — a split
+     *       aligns the term with the tokens the analyzer stored — and All Fields, the default,
+     *       matches the punctuated term in full, which is the path the customer case of issue
+     *       #37532 takes.</li>
+     * </ul>
+     *
+     * <p>Restoring either would cost the prefix seek that makes this scope worth having.</p>
+     *
+     * <p>No boost clauses. The all-fields strategy carries several, but Content Drive orders by the
+     * grid's sort — modification date by default — and never by score, so a boost changes nothing a
+     * user can see. Adding one here would only be another place for a term to be interpolated
+     * badly.</p>
+     *
+     * <p><b>{@code title_dotraw} rides only on the first word</b> (issue #37554 review, SC-003
+     * follow-up). It is the whole raw title as one keyword term, so a prefix match against it can
+     * only ever succeed when the fragment is a prefix of the ENTIRE title — true, at best, for the
+     * first word of a multi-word search term, never for the ones after it. Every later word still
+     * gets its {@code title} check alone.</p>
+     *
+     * @param filter The raw, unescaped term the user typed.
+     *
+     * @return The Lucene clause for a title-only search, or {@link #MATCH_NOTHING_CLAUSE} when the
+     *         term carries no usable token at all — matching nothing, never everything.
+     */
+    static String buildTitleScopedQuery(final String filter) {
+        final StringBuilder query = new StringBuilder();
+        boolean firstFragment = true;
+        for (final String token : filter.split(TITLE_SCOPE_SPLIT_REGEX)) {
+            // SPLIT the query-syntax characters that are word separators; DROP the wildcard ones.
+            //
+            // Escaping is the right move for a substring match, and it is what the all-fields
+            // strategy does. It is the wrong move here. A prefix query is NOT analyzed, so the
+            // term is compared against the indexed token as-is — and the analyzer already removed
+            // that punctuation at index time: "(XETRA:" is indexed as "xetra". An escaped
+            // "\(XETRA\:" can therefore never match, and because every token is mandatory, one
+            // such token sinks the whole search. Pasting a punctuated title into Title scope
+            // returned nothing.
+            //
+            // Stripping alone aligns the term with what the analyzer stored, but it also FUSES
+            // the words around the stripped character: title is indexed with the standard
+            // tokenizer, which treats punctuation as word separators — "COVID-19" is stored as
+            // the tokens "covid" and "19", and a stripped token turned the term into "COVID19",
+            // a word no document contains. A hyphenated title findable in All Fields vanished
+            // from Title scope. Splitting on the same separators the analyzer uses keeps every
+            // word reachable by its own prefix; at a token's edges a split and a strip are
+            // equivalent, because the empty side is dropped — which is what the punctuated-paste
+            // cases rely on. Either way, a fragment with no reserved characters left in it
+            // cannot be query syntax.
+            for (final String value : splitQuerySyntax(token)) {
+                if (firstFragment) {
+                    // title_dotraw is the WHOLE raw title as one keyword term (issue #37554
+                    // review, SC-003 performance follow-up), so a prefix match against it can
+                    // only ever succeed for the very first word of the search term — no later
+                    // word can be a prefix of the full title string. Carrying it on every word
+                    // paid for nothing beyond the first: a prefix search against title_dotraw
+                    // walks a keyword dictionary with close to one term per document, against
+                    // title's much smaller per-word vocabulary.
+                    query.append("+(title:").append(value).append("* title_dotraw:")
+                            .append(value).append("*) ");
+                    firstFragment = false;
+                } else {
+                    query.append("+title:").append(value).append("* ");
+                }
+            }
+        }
+
+        if (query.length() == 0) {
+            // Every token was pure query syntax (e.g. "***" or a lone "/"). Returning BLANK here
+            // would drop the text constraint entirely and return the whole folder — the exact
+            // "term silently ignored" failure the injection-shaped test guards against, reached
+            // from the opposite direction, and the opposite of All Fields, which matches nothing
+            // for the same input.
+            return MATCH_NOTHING_CLAUSE;
+        }
+
+        return query.toString().trim();
+    }
+
+    /**
+     * Splits a single token of the user's term on the Lucene reserved characters, so it can be
+     * compared against an analyzed field that never stored those characters.
+     *
+     * <p>Deliberately not {@code LuceneQueryUtils.escape}: escaping preserves the character, which
+     * is correct when the term is matched as a substring of a raw value and wrong when it is
+     * matched as a prefix of an analyzed token. And deliberately a character walk, not a regex,
+     * for the same OpenSearch-migration reasons documented on {@code LuceneQueryUtils.escape}.</p>
+     *
+     * @param token A single token of the user's term (already split on the shared separators).
+     *
+     * @return The word fragments the analyzer would have stored; never empty, never blank.
+     */
+    static List<String> splitQuerySyntax(final String token) {
+        final List<String> segments = new ArrayList<>();
+        final StringBuilder current = new StringBuilder(token.length());
+        for (int i = 0; i < token.length(); i++) {
+            final char c = token.charAt(i);
+            final boolean isReserved = LuceneQueryUtils.LUCENE_SPECIAL_CHARS.indexOf(c) >= 0
+                    || TITLE_SCOPE_EXTRA_SPLIT_CHARS.indexOf(c) >= 0;
+            if (!isReserved) {
+                current.append(c);
+            } else if (WILDCARD_CHARS.indexOf(c) >= 0) {
+                // A wildcard or escape: query intent, dropped rather than treated as a separator
+                // (see WILDCARD_CHARS).
+            } else {
+                // A word separator for the analyzer: flush the fragment accumulated so far.
+                if (current.length() > 0) {
+                    segments.add(current.toString());
+                    current.setLength(0);
+                }
+            }
+        }
+        if (current.length() > 0) {
+            segments.add(current.toString());
+        }
+        return segments;
+    }
+
+    /**
+     * Builds the Elasticsearch clauses for the index-routed per-field criteria carried by the
+     * {@link BrowserQuery} (Content Drive field filters). The field-value → Lucene-clause
+     * translation is delegated to the shared field strategies in
+     * {@code com.dotcms.rest.api.v1.content.search} so the syntax matches the modern content
+     * search. DB-routed criteria (Tag) are skipped here — they are resolved in the SQL path.
+     *
+     * @param browserQuery The {@link BrowserQuery} containing the parsed field criteria.
+     * @return The concatenated, space-separated Lucene clauses, or {@link #BLANK} when there are no
+     *         index-routed criteria.
+     */
+    private String buildFieldCriteriaESClauses(final BrowserQuery browserQuery) {
+        if (browserQuery.getFieldCriteria().isEmpty()) {
+            return BLANK;
+        }
+        final StringBuilder clauses = new StringBuilder();
+        for (final FieldSearchCriteria criteria : browserQuery.getFieldCriteria()) {
+            if (criteria.getBucket() != FieldSearchCriteria.RoutingBucket.INDEX) {
+                continue;
+            }
+            final Field field = criteria.getField();
+            final ContentType contentType = criteria.getContentType();
+            final String luceneFieldName = contentType.variable() + "." + field.variable();
+
+            // Multi-Select/Checkbox "in list" must be OR (match any) to be consistent with Tag and
+            // Category (both OR-in-list) and with the multi-pick UI. The shared TextFieldStrategy
+            // ANDs its tokens, so build the OR group directly for these two field types.
+            if (criteria.getKind() == FieldSearchCriteria.FilterKind.MULTI
+                    && (field instanceof MultiSelectField || field instanceof CheckboxField)) {
+                final String orClause = buildMultiValueOrClause(luceneFieldName, criteria.getValues());
+                if (UtilMethods.isSet(orClause)) {
+                    clauses.append(' ').append(orClause);
+                }
+                continue;
+            }
+
+            // A Checkbox stores the OPTION VALUE it was ticked with -- "yes", "accept", "true" -- and
+            // stores nothing at all when it is not ticked. So a boolean filter on one cannot be
+            // matched literally: asking for the text "true" finds nothing unless the option's value
+            // happens to be that word, and "false" can never match, because an unticked box has no
+            // token to match against. Both halves are resolved from the field's own option value:
+            // ticked means "contains that value", unticked means the negation of the same clause.
+            if (criteria.getKind() == FieldSearchCriteria.FilterKind.BOOLEAN
+                    && field instanceof CheckboxField) {
+                final Optional<String> optionValue = this.firstOptionValue(field);
+                if (optionValue.isPresent()) {
+                    final String clause = this.buildOptionValueClause(luceneFieldName,
+                            optionValue.get(), Boolean.TRUE.equals(criteria.getBooleanValue()));
+                    if (UtilMethods.isSet(clause)) {
+                        clauses.append(' ').append(clause);
+                    }
+                    continue;
+                }
+            }
+
+            // Time fields index the main field as a full datetime with the value's own date, so a
+            // range on it would compare the (meaningless) date component. Match time-of-day instead,
+            // against the _dotraw keyword sub-field (indexed as HH:mm:ss), so the range works
+            // regardless of the date the value was stored with.
+            if (criteria.getKind() == FieldSearchCriteria.FilterKind.RANGE
+                    && field instanceof TimeField) {
+                clauses.append(' ').append(buildTimeOfDayRangeClause(luceneFieldName, criteria));
+                continue;
+            }
+
+            final String luceneValue = fieldCriteriaLuceneValue(criteria);
+            // Passed as the field (not just its type) so a True/False Data Type routes to the exact-term
+            // boolean handler instead of the TEXT handler's wildcard, which a boolean-mapped ES field rejects.
+            final Function<FieldContext, String> handler = FieldHandlerRegistry.getHandler(field);
+            final FieldContext fieldContext = new FieldContext.Builder()
+                    .withContentType(contentType)
+                    .withUser(browserQuery.user)
+                    .withFieldName(luceneFieldName)
+                    .withFieldValue(luceneValue)
+                    .build();
+            final String clause = handler.apply(fieldContext);
+            if (UtilMethods.isSet(clause)) {
+                clauses.append(' ').append(clause.trim());
+            } else if (UtilMethods.isSet(luceneValue)) {
+                // A non-empty value that yields no clause means the field type has no registered
+                // handler (getHandler falls back to a BLANK-producing function). Without this the
+                // criterion would silently drop and the field would return everything unfiltered.
+                Logger.warn(this, String.format(
+                        "No Lucene clause produced for INDEX-routed field '%s' (type %s) with a " +
+                                "non-empty value; the criterion is being ignored. A field strategy " +
+                                "handler is likely missing for this field type.",
+                        luceneFieldName, field.type().getSimpleName()));
+            }
+        }
+        return clauses.length() == 0 ? BLANK : clauses.toString().trim();
+    }
+
+    /**
+     * Formats a {@link FieldSearchCriteria} value into the single value string that the shared
+     * field strategies expect for that field type.
+     * <ul>
+     *   <li>SCALAR → the single value.</li>
+     *   <li>MULTI → values joined by comma (categories are inodes; other multi-value fields are
+     *       tokenized by the strategy).</li>
+     *   <li>BOOLEAN → {@code "true"}/{@code "false"}.</li>
+     *   <li>RANGE → {@code "from TO to"} with {@code *} for open-ended bounds, as expected by
+     *       {@code DateTimeFieldStrategy}.</li>
+     * </ul>
+     *
+     * @param criteria The {@link FieldSearchCriteria} to format.
+     * @return The value string to hand to the field strategy.
+     */
+    private String fieldCriteriaLuceneValue(final FieldSearchCriteria criteria) {
+        switch (criteria.getKind()) {
+            case BOOLEAN:
+                return String.valueOf(criteria.getBooleanValue());
+            case RANGE:
+                final String from = UtilMethods.isSet(criteria.getRangeFrom())
+                        ? normalizeDateBound(criteria.getRangeFrom()) : "*";
+                final String to = UtilMethods.isSet(criteria.getRangeTo())
+                        ? normalizeDateBound(criteria.getRangeTo()) : "*";
+                return from + " TO " + to;
+            case MULTI:
+                return String.join(",", criteria.getValues());
+            case SCALAR:
+            default:
+                return criteria.getValues().isEmpty() ? BLANK : criteria.getValues().get(0);
+        }
+    }
+
+    /**
+     * ES-accepted date pattern that matches how date fields are indexed
+     * ({@code ESMappingAPIImpl.elasticSearchDateTimeFormatPattern}). The literal {@code T} (no
+     * space) is required so the Lucene range {@code [from TO to]} parses — a space inside the bound
+     * would break query_string parsing.
+     */
+    private static final String ES_QUERY_DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ss";
+
+    /** Time-of-day pattern matching the {@code _dotraw} keyword sub-field of a Time field. */
+    private static final String ES_QUERY_TIME_PATTERN = "HH:mm:ss";
+
+    /**
+     * Builds a time-of-day range clause for a Time field against its {@code _dotraw} keyword
+     * sub-field (indexed as {@code HH:mm:ss}). The main field is a full datetime whose date
+     * component is the value's own save date, so ranging on it would (wrongly) require the query's
+     * date to match; the {@code _dotraw} sub-field holds only the time, and a lexicographic range on
+     * zero-padded {@code HH:mm:ss} equals chronological order within a day.
+     *
+     * @param fieldName The Lucene field name ({@code contentTypeVar.fieldVar}).
+     * @param criteria  The RANGE criterion.
+     * @return A clause like {@code +ct.field_dotraw:[14:00:00 TO 15:00:00]}.
+     */
+    private String buildTimeOfDayRangeClause(final String fieldName,
+            final FieldSearchCriteria criteria) {
+        final String from = normalizeTimeBound(criteria.getRangeFrom());
+        final String to = normalizeTimeBound(criteria.getRangeTo());
+        return "+" + fieldName + "_dotraw:[" + from + " TO " + to + "]";
+    }
+
+    /**
+     * Normalizes a range bound to a time-of-day ({@code HH:mm:ss}) in the server timezone, matching
+     * how the Time field's {@code _dotraw} value is indexed. A full date-time contributes its time
+     * of day; a bare time ({@code HH:mm[:ss]}) is taken as is. Open/blank bounds become {@code *};
+     * unparseable values are escaped so a crafted value can't alter the query structure (Content
+     * Drive rejects them with HTTP 400 before they get here).
+     *
+     * @param raw The raw bound value.
+     * @return The {@code HH:mm:ss} bound, {@code *}, or an escaped token.
+     */
+    private String normalizeTimeBound(final String raw) {
+        if (!UtilMethods.isSet(raw) || "*".equals(raw.trim())) {
+            return "*";
+        }
+        final Date parsed = parseFlexibleDate(raw.trim());
+        final LocalTime bareTime = null == parsed ? parseBareTime(raw.trim()) : null;
+        if (null != bareTime) {
+            // Already a time of day (e.g. 14:00 from a direct API client): no date or zone to
+            // convert, only normalize to the indexed HH:mm:ss form.
+            return bareTime.format(java.time.format.DateTimeFormatter.ofPattern(ES_QUERY_TIME_PATTERN));
+        }
+        if (null == parsed) {
+            Logger.warn(this, String.format(
+                    "Unparseable time range bound '%s'; escaping it (the criterion will match "
+                            + "nothing).", raw.trim()));
+            return ESUtils.escape(raw.trim());
+        }
+        return new SimpleDateFormat(ES_QUERY_TIME_PATTERN).format(parsed);
+    }
+
+    /**
+     * Normalizes a date range bound into a format the index accepts. The FE sends ISO-8601 (e.g.
+     * {@code 2011-05-04T13:33:00.000Z}), which is NOT one of the dotCMS ES date formats — the {@code
+     * .SSS} milliseconds and {@code Z} make the range bound unparseable, so the query silently
+     * matches nothing. We parse the value and reformat it to {@link #ES_QUERY_DATE_PATTERN}
+     * ({@code yyyy-MM-dd'T'HH:mm:ss}, literal {@code T} — a space would break Lucene range parsing)
+     * in the server timezone, matching how date fields are indexed ({@code ESMappingAPIImpl}).
+     * A blank bound or {@code *} is an open bound. A value that can't be parsed as a date is
+     * escaped; Content Drive rejects such a value with HTTP 400 before it gets here.
+     *
+     * @param raw The raw bound value.
+     * @return The normalized bound, or the original value if it isn't a recognizable date.
+     */
+    private String normalizeDateBound(final String raw) {
+        final String value = raw.trim();
+        if (value.isEmpty() || "*".equals(value)) {
+            return "*";
+        }
+        final Date parsed = parseFlexibleDate(value);
+        if (null == parsed) {
+            // Content Drive rejects a non-date bound with HTTP 400 before a query is built
+            // (ContentDriveFieldFilterResolver), so this only happens for a BrowserQuery assembled
+            // directly. The value is still escaped so a crafted one cannot alter the query
+            // structure; the index rejects the resulting range and the request fails (#37488).
+            Logger.warn(this, String.format(
+                    "Unparseable date range bound '%s'; escaping it (the index will reject the "
+                            + "range).", value));
+            return ESUtils.escape(value);
+        }
+        final String normalized = new SimpleDateFormat(ES_QUERY_DATE_PATTERN).format(parsed);
+        Logger.debug(this, String.format("Date range bound '%s' normalized to '%s'.", value,
+                normalized));
+        return normalized;
+    }
+
+    /**
+     * Parses a bare time of day ({@code HH:mm} or {@code HH:mm:ss}, ISO-8601), which a Time field's
+     * range may be given as instead of a full date-time. Public so Content Drive's field-filter
+     * resolver accepts exactly what {@link #normalizeTimeBound} can use (issue #37488 review).
+     *
+     * @param value The trimmed bound value.
+     * @return The parsed time, or {@code null} when the value is not a time of day.
+     */
+    public static LocalTime parseBareTime(final String value) {
+        return Try.of(() -> LocalTime.parse(value)).getOrNull();
+    }
+
+    /**
+     * Best-effort parse of a date bound across the ISO-8601 shapes the client sends: instant (with
+     * offset/{@code Z}), offset date-time, local date-time, and date-only. Naive (zone-less) inputs
+     * are resolved in the JVM default zone, the same zone the reformat and indexing use, so the
+     * boundary stays consistent. Returns {@code null} when none match.
+     *
+     * <p>Public so Content Drive's field-filter resolver can reject a non-date bound with HTTP 400
+     * using exactly the rules this class later applies to it (issue #37488).</p>
+     *
+     * @param value The trimmed bound value.
+     * @return The parsed date, or {@code null} when the value is not a recognizable date.
+     */
+    public static Date parseFlexibleDate(final String value) {
+        Date date = Try.of(() -> Date.from(Instant.parse(value))).getOrNull();
+        if (null == date) {
+            date = Try.of(() -> Date.from(OffsetDateTime.parse(value).toInstant())).getOrNull();
+        }
+        if (null == date) {
+            date = Try.of(() -> Date.from(
+                    LocalDateTime.parse(value).atZone(ZoneId.systemDefault()).toInstant())).getOrNull();
+        }
+        if (null == date) {
+            date = Try.of(() -> Date.from(
+                    LocalDate.parse(value).atStartOfDay(ZoneId.systemDefault()).toInstant())).getOrNull();
+        }
+        return date;
+    }
+
+    /**
+     * Builds an OR (match-any) Lucene clause for a multi-value field, mirroring the "contains"
+     * matching style of {@code TextFieldStrategy} (regular + {@code _dotraw}) but combining the
+     * values with OR inside a single mandatory group. Used for Multi-Select/Checkbox so their
+     * "in list" semantics match Tag/Category (both OR-in-list) rather than the AND the shared text
+     * strategy would produce.
+     *
+     * <p>Each value is escaped with {@link LuceneQueryUtils#escape(String)} before the wildcards are
+     * wrapped around it, exactly as {@code TextFieldStrategy} does. Option values routinely contain
+     * {@code query_string} syntax -- {@code Yes/No}, {@code N/A}, {@code Level:1} -- and because these
+     * queries are not lenient, one unescaped character fails the WHOLE query, which surfaces as an
+     * empty result set with no error rather than as a bad request. The {@code *} wildcards are added
+     * after escaping so they are not themselves escaped.</p>
+     *
+     * @param fieldName The Lucene field name ({@code contentTypeVar.fieldVar}).
+     * @param values    The selected values.
+     * @return A clause like {@code +(f:*a* f_dotraw:*a* f:*b* f_dotraw:*b*)}, or {@link #BLANK}.
+     */
+    @VisibleForTesting
+    static String buildMultiValueOrClause(final String fieldName, final List<String> values) {
+        final StringBuilder inner = new StringBuilder();
+        for (final String value : values) {
+            final String token = value.trim();
+            if (token.isEmpty()) {
+                continue;
+            }
+            if (inner.length() > 0) {
+                inner.append(' ');
+            }
+            final String escaped = LuceneQueryUtils.escape(token);
+            inner.append(fieldName).append(":*").append(escaped).append("* ")
+                    .append(fieldName).append("_dotraw:*").append(escaped).append('*');
+        }
+        return inner.length() == 0 ? BLANK : "+(" + inner + ")";
+    }
+
+    /**
+     * Returns the value of a selectable field's first option, i.e. the value a contentlet stores when
+     * that option is picked.
+     * <p>Options are authored one per line as {@code label|value}, where the label may be empty --
+     * {@code |true} is how the classic boolean Checkbox is defined -- or the pipe absent altogether,
+     * in which case the single token is both label and value ({@code yes}).</p>
+     *
+     * @param field The {@link Field} whose first option value will be read.
+     *
+     * @return The first option's value, or empty when the field declares no usable option.
+     */
+    private Optional<String> firstOptionValue(final Field field) {
+        if (!UtilMethods.isSet(field.values())) {
+            return Optional.empty();
+        }
+        return Arrays.stream(field.values().split("\\r\\n|\\n|\\r"))
+                .map(String::trim)
+                .filter(line -> !line.isEmpty())
+                .map(line -> {
+                    final int pipeIndex = line.indexOf('|');
+                    return (pipeIndex >= 0 ? line.substring(pipeIndex + 1) : line).trim();
+                })
+                .filter(value -> !value.isEmpty())
+                .findFirst();
+    }
+
+    /**
+     * Builds the clause matching -- or deliberately NOT matching -- a single option value.
+     *
+     * @param fieldName The Lucene field name, i.e. {@code contentTypeVar.fieldVar}.
+     * @param value     The option value to match.
+     * @param matches   {@code true} for contentlets holding the value; {@code false} for the ones that
+     *                  do not, which is the only way to express "this box is not ticked" -- an unticked
+     *                  Checkbox stores nothing, so there is no value to match positively.
+     *
+     * @return The Lucene clause, or an empty String when no clause could be built.
+     */
+    private String buildOptionValueClause(final String fieldName, final String value,
+                                         final boolean matches) {
+        final String clause = buildMultiValueOrClause(fieldName, List.of(value));
+        if (!UtilMethods.isSet(clause)) {
+            return BLANK;
+        }
+        // buildMultiValueOrClause returns a required group, `+( … )`; the negative case is the same
+        // group as a must-not, `-( … )`.
+        return matches ? clause : "-" + clause.substring(1);
+    }
+
+    /**
+     * Determines whether Elasticsearch should be used for filtering instead of SQL ILIKE queries.
+     * This optimization is triggered when Elasticsearch filtering is enabled AND there is either a
+     * text/fileName criterion OR at least one index-routed per-field criterion (Content Drive field
+     * filters). Tag/Relationship criteria are DB-routed and do not flip this switch on their own.
      *
      * @param browserQuery The {@link BrowserQuery} containing filtering preferences and search criteria
-     * @return {@code true} if ES should be used for text filtering, {@code false} to use SQL filtering
+     * @return {@code true} if ES should be used for filtering, {@code false} to use SQL filtering
      */
-    boolean isUseElasticSearchForTextFiltering(final BrowserQuery browserQuery) {
+    boolean isUseElasticSearchForFiltering(final BrowserQuery browserQuery) {
         final boolean hasTextFilter = UtilMethods.isSet(browserQuery.filter) ||
                 UtilMethods.isSet(browserQuery.fileName);
-        return browserQuery.useElasticsearchFiltering && hasTextFilter;
+        final boolean hasIndexFieldCriteria = browserQuery.getFieldCriteria().stream()
+                .anyMatch(criteria ->
+                        criteria.getBucket() == FieldSearchCriteria.RoutingBucket.INDEX);
+        return browserQuery.useElasticsearchFiltering && (hasTextFilter || hasIndexFieldCriteria);
     }
 
     /**
@@ -1298,10 +2651,13 @@ public class BrowserAPIImpl implements BrowserAPI {
 
         int folderCount = 0;
         int contentCount = 0;
+        int linkCount = 0;
         boolean hasMoreContent = false;
         boolean hasMoreFolders = false;
+        boolean hasMoreLinks = false;
         int nextContentCursor = browserQuery.contentCursor;
         int nextFolderCursor = browserQuery.folderCursor;
+        int nextLinkCursor = browserQuery.linkCursor;
 
         // Folders — cursor-based: slice starting from folderCursor.
         // When hasMoreFolders=false is returned, the caller should set showFolders=false
@@ -1322,6 +2678,28 @@ public class BrowserAPIImpl implements BrowserAPI {
             // else: folderCursor is past the end — all folders already shown, add nothing
         }
 
+        // Menu Links — cursor-based: slice starting from linkCursor, mirroring the folder
+        // slice. Links consume whatever budget folders left over, before contentlets.
+        // When hasMoreLinks=false is returned, the caller should set showLinks=false on the
+        // next request to skip this query entirely.
+        if (browserQuery.showLinks) {
+            final List<Map<String, Object>> allLinks = linksDefaultView(browserQuery, roles);
+            final int totalLinks = allLinks.size();
+            final int linkStart = Math.min(browserQuery.linkCursor, totalLinks);
+
+            if (linkStart < totalLinks) {
+                // When folders exhausted the budget maxResults is exactly 0, so the slice is
+                // empty, the cursor stays put and hasMoreLinks correctly reports the remainder.
+                final int linkEnd = Math.min(linkStart + maxResults, totalLinks);
+                list.addAll(allLinks.subList(linkStart, linkEnd));
+                linkCount = linkEnd - linkStart;
+                maxResults -= linkCount;
+                nextLinkCursor = linkEnd;
+                hasMoreLinks = linkEnd < totalLinks;
+            }
+            // else: linkCursor is past the end — all links already shown, add nothing
+        }
+
         // Contentlets — cursor-based: slice starting from contentCursor.
         if (browserQuery.showContent) {
             if (maxResults > 0) {
@@ -1329,12 +2707,13 @@ public class BrowserAPIImpl implements BrowserAPI {
                 hasMoreContent = fromDB.hasMore;
                 nextContentCursor = fromDB.nextDbCursor;
 
+                warmUpUserCache(fromDB.contentlets);
                 final List<Map<String, Object>> contentlets = hydrateContentletsInParallel(fromDB.contentlets, browserQuery, roles);
                 contentCount = contentlets.size();
                 list.addAll(contentlets);
             } else {
-                // maxResults was exhausted by folders — probe with limit=1 to detect
-                // whether content exists without adding items to this page.
+                // maxResults was exhausted by folders and/or links — probe with limit=1 to
+                // detect whether content exists without adding items to this page.
                 final ContentUnderParent probe = getContentUnderParentFromDB(browserQuery, 1);
                 hasMoreContent = !probe.contentlets.isEmpty();
             }
@@ -1342,8 +2721,8 @@ public class BrowserAPIImpl implements BrowserAPI {
 
         list.sort(new GenericMapFieldComparator(browserQuery.sortBy, browserQuery.sortByDesc));
 
-        return new PaginatedContents(list, folderCount, contentCount, hasMoreContent,
-                nextContentCursor, hasMoreFolders, nextFolderCursor);
+        return new PaginatedContents(list, folderCount, contentCount, linkCount, hasMoreContent,
+                nextContentCursor, hasMoreFolders, nextFolderCursor, hasMoreLinks, nextLinkCursor);
     }
 
     /**
@@ -1354,15 +2733,33 @@ public class BrowserAPIImpl implements BrowserAPI {
      *   <li>Pass {@code nextContentCursor} as {@code contentCursor} on the next request to
      *       continue content scanning from where this page left off.</li>
      *   <li>Pass {@code nextFolderCursor} as {@code folderCursor} on the next request.</li>
-     *   <li>When {@code hasMoreFolders} is {@code false} set {@code showFolders=false} on
-     *       subsequent requests to skip the folder query entirely.</li>
+     *   <li>Pass {@code nextLinkCursor} as {@code linkCursor} on the next request.</li>
+     *   <li>When {@code hasMoreFolders} / {@code hasMoreLinks} is {@code false} set
+     *       {@code showFolders=false} / {@code showLinks=false} on subsequent requests to skip
+     *       that query entirely.</li>
      *   <li>Keep {@code offset} at 0 on every request — only the cursors change between pages.</li>
+     *   <li>A {@code next*Cursor} is only meaningful while its matching {@code hasMore*} is
+     *       {@code true}. Once a source reports {@code hasMore* == false} it is exhausted and its
+     *       cursor should not be interpreted further — a cursor sent past the end of a source is
+     *       echoed back unchanged rather than clamped.</li>
      * </ul>
+     *
+     * <p>Folders, links and contentlets are paged independently: each source has its own
+     * cursor, count and {@code hasMore} flag, and each consumes the page budget in that
+     * order. A source is exhausted when its {@code hasMore} flag is {@code false}.</p>
+     *
+     * <p>Each source also slices its page in its <i>own</i> internal order — folders by name
+     * ascending, links by title ascending, contentlets by {@code mod_date} — which is what keeps
+     * the index-based cursors stable across pages. {@code sortBy} is applied afterwards, to the
+     * merged {@link #list} of this page only: it decides how the page is presented, not which
+     * items the page contains.</p>
      */
     public static class PaginatedContents {
         public final List<Map<String, Object>> list;
         public final int folderCount;
         public final int contentCount;
+        /** Number of menu Links included in this page. */
+        public final int linkCount;
         /** True when there are more content DB rows to scan beyond this page. */
         public final boolean hasMoreContent;
         /**
@@ -1375,20 +2772,33 @@ public class BrowserAPIImpl implements BrowserAPI {
         public final boolean hasMoreFolders;
         /**
          * Folder list index to pass as {@code folderCursor} on the next page request.
-         * Equals the index of the first folder not yet returned.
+         * While {@code hasMoreFolders} is {@code true} this is the index of the first folder not
+         * yet returned; once folders are exhausted it carries the request's cursor unchanged.
          */
         public final int nextFolderCursor;
+        /** True when there are more menu Links to show beyond this page. */
+        public final boolean hasMoreLinks;
+        /**
+         * Link list index to pass as {@code linkCursor} on the next page request.
+         * While {@code hasMoreLinks} is {@code true} this is the index of the first link not yet
+         * returned; once links are exhausted it carries the request's cursor unchanged.
+         */
+        public final int nextLinkCursor;
 
         public PaginatedContents(final List<Map<String, Object>> list, final int folderCount,
-                final int contentCount, final boolean hasMoreContent, final int nextContentCursor,
-                final boolean hasMoreFolders, final int nextFolderCursor) {
+                final int contentCount, final int linkCount, final boolean hasMoreContent,
+                final int nextContentCursor, final boolean hasMoreFolders,
+                final int nextFolderCursor, final boolean hasMoreLinks, final int nextLinkCursor) {
             this.list = list;
             this.folderCount = folderCount;
             this.contentCount = contentCount;
+            this.linkCount = linkCount;
             this.hasMoreContent = hasMoreContent;
             this.nextContentCursor = nextContentCursor;
             this.hasMoreFolders = hasMoreFolders;
             this.nextFolderCursor = nextFolderCursor;
+            this.hasMoreLinks = hasMoreLinks;
+            this.nextLinkCursor = nextLinkCursor;
         }
     }
 
@@ -1548,51 +2958,133 @@ public class BrowserAPIImpl implements BrowserAPI {
         final String workingLiveInode = browserQuery.showWorking || browserQuery.showArchived ?
                 "working_inode" : "live_inode";
 
-        final StringBuilder selectQuery = new StringBuilder(buildSelectBaseQuery(browserQuery, workingLiveInode));
-
         final List<Object> parameters = new ArrayList<>();
+
+        // issue #37229: fold folder (+ per-case host_inode + fileName) scoping into a materialized
+        // CTE, resolved BEFORE this query joins out to contentlet_version_info/structure/
+        // contentlet -- instead of joining the full `identifier` table first and filtering
+        // afterward, which is the source of the unstable-planner behavior on large folders
+        // (FR-002). Scoped ONLY to the folder-scoped case this fix targets: this shared method's
+        // behavior is byte-identical to before for every caller that does not scope by folder
+        // (folder == null, or skipFolder=true) -- forcing materialization of the full identifier
+        // table with no scoping predicate would be a regression, not a fix, for those callers.
+        // NOT validated against EXPLAIN ANALYZE with the real predicate set (FR-010) -- flagged
+        // as an explicit, developer-accepted risk; see PR description.
+        final boolean useFolderCte = browserQuery.folder != null && !browserQuery.skipFolder;
+        // Handle site filtering based on ignoreSiteForFolders flag
+        final boolean shouldApplySiteFiltering = !browserQuery.ignoreSiteForFolders && browserQuery.folder != null;
+        final boolean fileNameHandledByDb = !browserQuery.useElasticsearchFiltering
+                && UtilMethods.isSet(browserQuery.fileName);
+
+        String candidatesCte = BLANK;
+        if (useFolderCte) {
+            final StringBuilder candidatesPredicates = new StringBuilder();
+            appendFolderQuery(candidatesPredicates, browserQuery.folder.getPath(), parameters);
+            if (shouldApplySiteFiltering) {
+                if (browserQuery.site != null) {
+                    appendSiteQuery(candidatesPredicates, browserQuery.site.getIdentifier(),
+                            browserQuery.systemHostMode, parameters);
+                } else if (SystemHostMode.EXCLUDE != browserQuery.systemHostMode) {
+                    appendSystemHostQuery(candidatesPredicates);
+                }
+            }
+            if (fileNameHandledByDb) {
+                appendFileNameQuery(candidatesPredicates, browserQuery.fileName, parameters);
+            }
+            // Only project what the outer query actually reads through the `candidates` alias
+            // (`id.id` and `id.asset_subtype`, verified by grepping every `id.`-qualified
+            // reference outside this CTE) -- `parent_path`, `host_inode` and `asset_name` are
+            // still scanned (they're referenced in the predicates below) but not materialized,
+            // and everything else `identifier` carries (asset_type, owner, create_date,
+            // syspublish_date, sysexpire_date, full_path_lc, ...) is now skipped entirely instead
+            // of being written into the work table for every row in the folder (code review,
+            // PR #37397).
+            candidatesCte = "with candidates as materialized (select id.id, id.asset_subtype "
+                    + "from identifier id where 1=1 "
+                    + candidatesPredicates + ") ";
+        }
+
+        final StringBuilder selectQuery = new StringBuilder(
+                buildSelectBaseQuery(browserQuery, workingLiveInode, candidatesCte));
 
         if (!browserQuery.languageIds.isEmpty()) {
             appendLanguageQuery(selectQuery, browserQuery.languageIds,
                     browserQuery.showDefaultLangItems);
         }
-        // Handle site filtering based on ignoreSiteForFolders flag
-        final boolean shouldApplySiteFiltering = !browserQuery.ignoreSiteForFolders && browserQuery.folder != null;
-
-        if (shouldApplySiteFiltering) {
-            if (browserQuery.site != null) {
-                appendSiteQuery(selectQuery, browserQuery.site.getIdentifier(),
-                        browserQuery.forceSystemHost, parameters);
-            } else {
-                if (browserQuery.forceSystemHost) {
-                    appendSystemHostQuery(selectQuery);
+        if (!useFolderCte) {
+            // Pre-existing shape, unchanged: no folder scopes this request (or skipFolder=true),
+            // so there is nothing for the CTE above to target -- site/host filtering (independent
+            // of skipFolder) still applies directly against `identifier` exactly as before this
+            // fix. (The folder predicate itself is never appended here: useFolderCte's negation
+            // means folder == null || skipFolder, the same condition that gated it originally.)
+            if (shouldApplySiteFiltering) {
+                if (browserQuery.site != null) {
+                    appendSiteQuery(selectQuery, browserQuery.site.getIdentifier(),
+                            browserQuery.systemHostMode, parameters);
+                } else {
+                    // No site to narrow to, so the only host clause worth emitting is the
+                    // System Host one, which both INCLUDE and ONLY want here.
+                    if (SystemHostMode.EXCLUDE != browserQuery.systemHostMode) {
+                        appendSystemHostQuery(selectQuery);
+                    }
                 }
             }
         }
-        //This property allows the exclusion of the folder in the base query
-        if (browserQuery.folder != null && !browserQuery.skipFolder) {
-            appendFolderQuery(selectQuery, browserQuery.folder.getPath(), parameters);
-        }
+        // Detect archive-target steps once per request (cached WorkflowAPI lookups, never per row).
+        // Only step-pinned entries can be archive-target; scheme-only entries always stay live-only.
+        // Skipped when archived rows are already admitted, so the archive-step logic must not run
+        // (it would force cvi.deleted='false' on the live branch and hide the archived content the
+        // caller explicitly asked for). See spec §3.5.
+        //
+        // An explicit ARCHIVED status gets identical treatment to showArchived: without it, the
+        // status group would say cvi.deleted='true' while appendWorkflowQuery's live branch says
+        // 'false', and the two would contradict each other into an empty result.
+        final boolean admitsArchived = browserQuery.showArchived
+                || browserQuery.getContentStatuses().contains(ContentStatus.ARCHIVED);
+        final Set<String> archiveStepIds = admitsArchived
+                ? Set.of()
+                : resolveArchiveTargetSteps(browserQuery.workflowStepIds);
+        appendWorkflowQuery(selectQuery, browserQuery.workflowSchemeIds,
+                browserQuery.workflowStepIds, archiveStepIds, parameters);
+        appendContentStatusQuery(selectQuery, browserQuery.getContentStatuses());
         //We only build the filtering bits of the SQL Query if we're not using ES
         if (!browserQuery.useElasticsearchFiltering) {
             if (UtilMethods.isSet(browserQuery.filter)) {
                 appendFilterQuery(selectQuery, browserQuery.filter, parameters);
             }
-            if (UtilMethods.isSet(browserQuery.fileName)) {
+            // fileNameHandledByDb is true under the exact same condition this block already
+            // guards (isSet(fileName), not using ES) -- when useFolderCte, it was already folded
+            // into the candidates CTE above (resolved scoping decision, research.md); appending
+            // it again here would be redundant, not incorrect, but is skipped for clarity.
+            if (fileNameHandledByDb && !useFolderCte) {
                 appendFileNameQuery(selectQuery, browserQuery.fileName, parameters);
             }
+        }
+        // DB-routed per-field predicates (Content Drive). These are resolved in the DB regardless of
+        // ES filtering to preserve read-your-writes (ADR-0018). Only Tag is supported in v1;
+        // index-routed criteria are handled by the ES path and never leak into the SQL.
+        if (!browserQuery.getFieldCriteria().isEmpty()) {
+            appendFieldCriteriaDBPredicates(selectQuery, browserQuery, workingLiveInode, parameters);
         }
         if (browserQuery.showMenuItemsOnly) {
             appendShowOnMenuQuery(selectQuery);
         }
-        if (!browserQuery.showArchived) {
+        // Suppress the global archived exclusion ONLY when an archive-target step is present; in
+        // that case appendWorkflowQuery owns cvi.deleted per branch. Otherwise (no archive step,
+        // or showArchived) the generated SQL is byte-identical to before.
+        // The status group owns cvi.deleted when ARCHIVED is selected; emitting the baseline too
+        // would AND deleted=false against a group containing deleted=true and return nothing.
+        // Any selection WITHOUT ARCHIVED keeps the baseline, which is what makes UNPUBLISHED and
+        // LOCKED exclude archived content for free.
+        if (!browserQuery.showArchived && archiveStepIds.isEmpty()
+                && !browserQuery.getContentStatuses().contains(ContentStatus.ARCHIVED)) {
             appendExcludeArchivedQuery(selectQuery);
         }
         if (UtilMethods.isSet(browserQuery.mimeTypes)) {
-            appendMIMETypeQuery(selectQuery, browserQuery.mimeTypes);
+            appendMIMETypeQuery(selectQuery, browserQuery.mimeTypes, parameters);
         }
         if (null != browserQuery.sortBy) {
-            appendOrderByQuery(selectQuery, browserQuery.sortByDesc);
+            appendOrderByQuery(selectQuery, browserQuery.sortByDesc, useFolderCte);
         }
 
         Logger.debug(this, "Select Query: " + selectQuery);
@@ -1617,17 +3109,28 @@ public class BrowserAPIImpl implements BrowserAPI {
      *
      * @param browserQuery     The {@link BrowserQuery} object specifying the filtering criteria.
      * @param workingLiveInode The identifier of the working live inode.
+     * @param candidatesCte    Issue #37229: when set, a {@code with candidates as materialized
+     *                         (...)} clause that pre-resolves the folder-scoped candidate set
+     *                         (parent_path, and per-case host_inode/fileName) before this query
+     *                         joins out to {@code contentlet_version_info}/{@code structure}/
+     *                         {@code contentlet} -- see {@link #selectQuery(BrowserQuery)}. When
+     *                         blank, the query joins directly against {@code identifier} exactly
+     *                         as before this fix (every non-folder-scoped caller is unaffected).
      * @return The base SQL SELECT query string.
      */
-    private String buildSelectBaseQuery(final BrowserQuery browserQuery, final String workingLiveInode) {
+    private String buildSelectBaseQuery(final BrowserQuery browserQuery, final String workingLiveInode,
+            final String candidatesCte) {
 
-        final String baseClause = " from contentlet_version_info cvi, identifier id, structure struc, contentlet c "
+        final String identifierSource = UtilMethods.isSet(candidatesCte) ? "candidates" : "identifier";
+
+        final String baseClause = " from contentlet_version_info cvi, " + identifierSource
+                + " id, structure struc, contentlet c "
                 + " where cvi.identifier = id.id and struc.velocity_var_name = id.asset_subtype and  "
                 + " c.inode = cvi." + workingLiveInode + " and cvi.variant_id='"
                 + DEFAULT_VARIANT.name() + "' ";
 
-        final StringBuilder baseQuery = new StringBuilder(
-                "select cvi." + workingLiveInode + " as inode " + baseClause);
+        final StringBuilder baseQuery = new StringBuilder(candidatesCte)
+                .append("select cvi.").append(workingLiveInode).append(" as inode ").append(baseClause);
 
         final boolean showAllBaseTypes = browserQuery.baseTypes.contains(BaseContentType.ANY);
         if (!showAllBaseTypes) {
@@ -1692,9 +3195,14 @@ public class BrowserAPIImpl implements BrowserAPI {
      * @param siteIdentifier The site identifier to filter by.
      * @param parameters     The list of parameters to add the site identifier to.
      */
-    private void appendSiteQuery(StringBuilder sqlQuery, String siteIdentifier, boolean forceSystemHost,
-            List<Object> parameters) {
-        if(forceSystemHost){
+    private void appendSiteQuery(StringBuilder sqlQuery, String siteIdentifier,
+            SystemHostMode systemHostMode, List<Object> parameters) {
+        if (SystemHostMode.ONLY == systemHostMode) {
+            // The site is context rather than a filter here, so nothing is bound.
+            appendSystemHostQuery(sqlQuery);
+            return;
+        }
+        if (SystemHostMode.INCLUDE == systemHostMode) {
             sqlQuery.append(" and (id.host_inode = ? or id.host_inode = 'SYSTEM_HOST') ");
         } else {
             sqlQuery.append(" and (id.host_inode = ?) ");
@@ -1770,6 +3278,287 @@ public class BrowserAPIImpl implements BrowserAPI {
     }
 
     /**
+     * Appends the DB-routed per-field predicates (Content Drive field filters) to the select query.
+     * Per the ADR-0018 routing contract these criteria are resolved in the database to preserve
+     * read-your-writes: Tag (via {@code tag}/{@code tag_inode}) and Relationship (via {@code tree}).
+     * Index-routed criteria are intentionally ignored here — they are handled by the ES path.
+     * <p>
+     * Multiple criteria combine with AND (each adds an {@code and ... in (...)} sub-select), matching
+     * the additive filtering model.
+     *
+     * @param sqlQuery         The StringBuilder representing the SQL query being built.
+     * @param browserQuery     The {@link BrowserQuery} carrying the parsed field criteria.
+     * @param workingLiveInode The inode column selected by the outer query ({@code working_inode} or
+     *                         {@code live_inode}).
+     * @param parameters       The list of SQL parameters to append bind values to.
+     */
+    private void appendFieldCriteriaDBPredicates(final StringBuilder sqlQuery,
+            final BrowserQuery browserQuery, final String workingLiveInode,
+            final List<Object> parameters) {
+
+        for (final FieldSearchCriteria criteria : browserQuery.getFieldCriteria()) {
+            if (criteria.getBucket() != FieldSearchCriteria.RoutingBucket.DB) {
+                continue;
+            }
+            if (criteria.getField() instanceof TagField) {
+                appendTagQuery(sqlQuery, workingLiveInode, criteria.getValues(), parameters);
+            } else if (criteria.getField() instanceof RelationshipField) {
+                appendRelationshipQuery(sqlQuery, browserQuery.user, criteria.getField(),
+                        criteria.getValues(), parameters);
+            }
+        }
+    }
+
+    /**
+     * Appends a Relationship-field predicate resolved against the {@code tree} table (never the
+     * index), so newly related content is filterable immediately (read-your-writes). The values are
+     * the child/parent contentlet <strong>identifiers</strong> selected on the FE.
+     * <p>
+     * The direction is resolved from the field: if it is the parent-side field the browsed content
+     * is the parent and the values are its children ({@code select parent ... where child in (...)});
+     * if it is the child-side field the direction is reversed. Multiple identifiers combine with OR
+     * (related to any); the enclosing sub-select ANDs with the rest of the query. Permission checks
+     * on the related content are intentionally not applied here — the browsed (parent) content still
+     * runs through the permission filter downstream.
+     *
+     * @param sqlQuery    The StringBuilder representing the SQL query being built.
+     * @param user        The {@link User} performing the search (to resolve the relationship).
+     * @param field       The Relationship {@link Field}.
+     * @param identifiers The related contentlet identifiers to match.
+     * @param parameters  The list of SQL parameters to append bind values to.
+     */
+    private void appendRelationshipQuery(final StringBuilder sqlQuery, final User user,
+            final Field field, final List<String> identifiers, final List<Object> parameters) {
+
+        if (identifiers.isEmpty()) {
+            return;
+        }
+        final Relationship relationship = Try.of(
+                        () -> APILocator.getRelationshipAPI().getRelationshipFromField(field, user))
+                .getOrNull();
+        if (null == relationship) {
+            throw new DotRuntimeException(String.format(
+                    "Unable to resolve the relationship for field '%s'.", field.variable()));
+        }
+        // isChildField(rel, field) is true when the field lives on the parent structure and holds
+        // the *children* (dotCMS names a relationship field after its target). In that case the
+        // browsed content is the parent and the FE-sent values are child identifiers, so we select
+        // parents whose tree 'child' column matches. When the field holds parents, reverse it.
+        final boolean fieldHoldsChildren =
+                APILocator.getRelationshipAPI().isChildField(relationship, field);
+        final String selectColumn = fieldHoldsChildren ? "parent" : "child";
+        final String matchColumn = fieldHoldsChildren ? "child" : "parent";
+
+        sqlQuery.append(" and id.id in ( select ").append(selectColumn)
+                .append(" from tree where ").append(matchColumn).append(" in (");
+        for (int i = 0; i < identifiers.size(); i++) {
+            if (i > 0) {
+                sqlQuery.append(", ");
+            }
+            sqlQuery.append("?");
+            parameters.add(identifiers.get(i).trim());
+        }
+        sqlQuery.append(") and relation_type = ? ) ");
+        parameters.add(relationship.getRelationTypeValue());
+    }
+
+    /**
+     * Appends a Tag-field predicate: content whose selected inode is associated (via the
+     * {@code tag}/{@code tag_inode} tables) with any of the given tag names. Tag names within a
+     * single field combine with OR; the enclosing sub-select ANDs with the rest of the query.
+     * Matching is case-insensitive and exact (no wildcards).
+     *
+     * @param sqlQuery         The StringBuilder representing the SQL query being built.
+     * @param workingLiveInode The inode column selected by the outer query.
+     * @param tagNames         The tag names to match.
+     * @param parameters       The list of SQL parameters to append bind values to.
+     */
+    private void appendTagQuery(final StringBuilder sqlQuery, final String workingLiveInode,
+            final List<String> tagNames, final List<Object> parameters) {
+
+        if (tagNames.isEmpty()) {
+            return;
+        }
+        sqlQuery.append(" and cvi.").append(workingLiveInode)
+                .append(" in ( select ti.inode from tag t, tag_inode ti ")
+                .append(" where t.tag_id = ti.tag_id and (");
+        for (int i = 0; i < tagNames.size(); i++) {
+            if (i > 0) {
+                sqlQuery.append(" or ");
+            }
+            sqlQuery.append(" t.tagname ILIKE ? ");
+            parameters.add(tagNames.get(i).trim());
+        }
+        sqlQuery.append(") ) ");
+    }
+
+    /**
+     * Appends a workflow filter to the query. Two independent, OR'd buckets:
+     * <ul>
+     *   <li><b>Scheme-only entries</b> ({@code workflowSchemeIds}) match by content-type
+     *   assignment via {@code workflow_scheme_x_structure}, so content that has never run a
+     *   workflow action — e.g. imported or push-published content with no {@code workflow_task}
+     *   row — still appears under the schemes its type is governed by.</li>
+     *   <li><b>Step-pinned entries</b> ({@code workflowStepIds}) match the contentlet's current
+     *   task via {@code workflow_task.status}.</li>
+     * </ul>
+     * No-ops when both sets are empty. All ids are sanitized via
+     * {@link SQLUtil#sanitizeParameter(String)} and bound as {@code ?} parameters.
+     */
+    private static void appendWorkflowQuery(final StringBuilder sqlQuery,
+            final Set<String> workflowSchemeIds, final Set<String> workflowStepIds,
+            final Set<String> archiveStepIds, final List<Object> parameters) {
+
+        final boolean hasSchemes = UtilMethods.isSet(workflowSchemeIds);
+        final boolean hasSteps = UtilMethods.isSet(workflowStepIds);
+        if (!hasSchemes && !hasSteps) {
+            return;
+        }
+
+        // Byte-identical path: with no archive-target step the global cvi.deleted='false'
+        // (appendExcludeArchivedQuery) still applies, so the workflow clause is emitted verbatim.
+        if (!UtilMethods.isSet(archiveStepIds)) {
+            final List<String> orClauses = new ArrayList<>();
+            if (hasSchemes) {
+                orClauses.add(schemeExistsClause(workflowSchemeIds, parameters));
+            }
+            if (hasSteps) {
+                orClauses.add(stepExistsClause(workflowStepIds, parameters));
+            }
+            sqlQuery.append(" and (").append(String.join(" or ", orClauses)).append(") ");
+            return;
+        }
+
+        // Archive-target step present: own cvi.deleted per branch. The live branch (scheme-only
+        // entries + normal steps) keeps cvi.deleted='false'; the archive branch admits archived
+        // rows. Any empty inner group is omitted. archiveStepIds is a subset of workflowStepIds,
+        // so the archive branch is always present here.
+        final Set<String> normalStepIds = new LinkedHashSet<>(workflowStepIds);
+        normalStepIds.removeAll(archiveStepIds);
+
+        final List<String> liveClauses = new ArrayList<>();
+        if (hasSchemes) {
+            liveClauses.add(schemeExistsClause(workflowSchemeIds, parameters));
+        }
+        if (!normalStepIds.isEmpty()) {
+            liveClauses.add(stepExistsClause(normalStepIds, parameters));
+        }
+
+        final List<String> branches = new ArrayList<>();
+        if (!liveClauses.isEmpty()) {
+            branches.add(" ( cvi.deleted = " + DbConnectionFactory.getDBFalse()
+                    + " and (" + String.join(" or ", liveClauses) + ") ) ");
+        }
+        branches.add(stepExistsClause(archiveStepIds, parameters));
+
+        sqlQuery.append(" and (").append(String.join(" or ", branches)).append(") ");
+    }
+
+    /**
+     * Builds the scheme-only {@code EXISTS} sub-select (match by content-type assignment via
+     * {@code workflow_scheme_x_structure}) and binds the ids as {@code ?} parameters, sanitized via
+     * {@link SQLUtil#sanitizeParameter(String)}. Placeholders and parameters are produced in the
+     * same iteration order.
+     */
+    private static String schemeExistsClause(final Set<String> workflowSchemeIds,
+            final List<Object> parameters) {
+        final String placeholders = workflowSchemeIds.stream()
+                .map(id -> "?").collect(Collectors.joining(","));
+        workflowSchemeIds.forEach(id -> parameters.add(SQLUtil.sanitizeParameter(id)));
+        return " exists (select 1 from workflow_scheme_x_structure wss "
+                + " where wss.structure_id = struc.inode and wss.scheme_id in (" + placeholders
+                + ")) ";
+    }
+
+    /**
+     * Builds the step-pinned {@code EXISTS} sub-select (match the contentlet's current task via
+     * {@code workflow_task.status}, which holds the current STEP ID) and binds the ids as
+     * {@code ?} parameters, sanitized via {@link SQLUtil#sanitizeParameter(String)}. Placeholders
+     * and parameters are produced in the same iteration order.
+     */
+    private static String stepExistsClause(final Set<String> workflowStepIds,
+            final List<Object> parameters) {
+        final String placeholders = workflowStepIds.stream()
+                .map(id -> "?").collect(Collectors.joining(","));
+        // workflow_task.status holds the current STEP ID (FK -> workflow_step.id),
+        // not a step name — so workflowStepIds are matched against it directly.
+        workflowStepIds.forEach(id -> parameters.add(SQLUtil.sanitizeParameter(id)));
+        return " exists (select 1 from workflow_task wt "
+                + " where wt.webasset = cvi.identifier and wt.language_id = cvi.lang "
+                + " and wt.status in (" + placeholders + ")) ";
+    }
+
+    /**
+     * Resolves, once per request, which of the given step-pinned ids are archive-target steps —
+     * a step reached by an action carrying {@link ArchiveContentActionlet}. Only step-pinned
+     * entries qualify; scheme-only entries always stay live-only. Lookups hit the cached
+     * {@link WorkflowAPI} config tables (no per-row work) and are memoized per scheme within the
+     * call. On any failure the step is treated as non-archive, falling back to the current
+     * live-only behavior — never fails the browse.
+     *
+     * @param workflowStepIds the step-pinned ids from the request (may be empty).
+     * @return the subset of {@code workflowStepIds} that are archive-target; never {@code null}.
+     */
+    private Set<String> resolveArchiveTargetSteps(final Set<String> workflowStepIds) {
+        if (!UtilMethods.isSet(workflowStepIds)) {
+            return Set.of();
+        }
+        final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+        final Map<String, Set<String>> archiveTargetsByScheme = new HashMap<>();
+        final Set<String> archiveStepIds = new LinkedHashSet<>();
+        for (final String stepId : workflowStepIds) {
+            final WorkflowStep step = Try.of(() -> workflowAPI.findStep(stepId)).getOrNull();
+            if (step == null || !UtilMethods.isSet(step.getSchemeId())) {
+                continue;
+            }
+            final Set<String> targets = archiveTargetsByScheme.computeIfAbsent(step.getSchemeId(),
+                    schemeId -> archiveTargetStepsForScheme(workflowAPI, schemeId));
+            if (targets.contains(stepId)) {
+                archiveStepIds.add(stepId);
+            }
+        }
+        return archiveStepIds;
+    }
+
+    /**
+     * Returns the set of step ids that a dedicated archive action targets ({@code nextStep}) within
+     * the given scheme. A step qualifies when some action's {@link WorkflowAction#getNextStep()}
+     * points to it and that action carries {@link ArchiveContentActionlet}. Archive-in-place
+     * actions ({@code nextStep == CURRENT_STEP}) are excluded (spec §3.6). Never throws — on failure
+     * an empty set is returned so the browse falls back to live-only behavior.
+     *
+     * <p>Whether a step is archive-target is a property of the scheme's configuration, not of who
+     * is browsing, so actions are resolved with the {@link APILocator#systemUser()} — a user
+     * lacking permission on the archive action must not silently see the step as non-archive.</p>
+     */
+    private Set<String> archiveTargetStepsForScheme(final WorkflowAPI workflowAPI,
+            final String schemeId) {
+        final Set<String> targets = new HashSet<>();
+        try {
+            final WorkflowScheme scheme = workflowAPI.findScheme(schemeId);
+            final List<WorkflowAction> actions = workflowAPI.findActions(scheme,
+                    APILocator.systemUser());
+            final String archiveActionletClass = ArchiveContentActionlet.class.getName();
+            for (final WorkflowAction action : actions) {
+                if (action.isNextStepCurrentStep() || !UtilMethods.isSet(action.getNextStep())) {
+                    continue;
+                }
+                final List<WorkflowActionClass> actionClasses = workflowAPI.findActionClasses(action);
+                final boolean carriesArchive = actionClasses.stream()
+                        .anyMatch(actionClass -> archiveActionletClass.equals(actionClass.getClazz()));
+                if (carriesArchive) {
+                    targets.add(action.getNextStep());
+                }
+            }
+        } catch (final Exception e) {
+            Logger.warn(this, "Unable to resolve archive-target steps for workflow scheme "
+                    + schemeId + "; treating as non-archive. " + e.getMessage());
+            return Set.of();
+        }
+        return targets;
+    }
+
+    /**
      * Appends the query to filter by filename to the given SQL query and adds the filename to the
      * parameters list.
      *
@@ -1798,6 +3587,111 @@ public class BrowserAPIImpl implements BrowserAPI {
     }
 
     /**
+     * Appends the Content Drive status filter: the selected states OR'd together inside <b>one</b>
+     * group.
+     * <p>
+     * They are deliberately not separate {@code and} clauses — that would be AND, and these
+     * combine with OR so that selecting more statuses returns more content, matching the
+     * content-type and language filters. A single selection degenerates to a one-disjunct group,
+     * so {@code [ARCHIVED]} is still exactly {@code cvi.deleted = true}.
+     * <p>
+     * The archived baseline ({@link #appendExcludeArchivedQuery}) stays <b>outside</b> this group
+     * and is AND'd against it; only {@link ContentStatus#ARCHIVED} suppresses it. Folding the
+     * baseline in would make {@code [UNPUBLISHED, LOCKED]} read
+     * {@code (deleted = false or ...)}, which matches essentially every row — a filter that
+     * silently stops filtering.
+     * <p>
+     * <b>No-ops on an empty set</b>, rather than opening a group it has nothing to fill: {@code and
+     * ( )} is a syntax error, and an empty selection must leave the generated SQL byte-identical to
+     * a request that never mentioned status at all. That is the path every pre-existing caller
+     * takes.
+     * <p>
+     * All values come from a closed enum validated upstream, so nothing here is interpolated from
+     * user input.
+     *
+     * @param sqlQuery        The StringBuilder representing the SQL query being built.
+     * @param contentStatuses The states to match; empty means no status filtering.
+     */
+    private void appendContentStatusQuery(final StringBuilder sqlQuery,
+            final Set<ContentStatus> contentStatuses) {
+
+        if (!UtilMethods.isSet(contentStatuses)) {
+            return;
+        }
+
+        final List<String> disjuncts = new ArrayList<>();
+        for (final ContentStatus status : contentStatuses) {
+            switch (status) {
+                case ARCHIVED:
+                    disjuncts.add(" cvi.deleted = " + DbConnectionFactory.getDBTrue() + " ");
+                    break;
+                case UNPUBLISHED:
+                    disjuncts.add(" cvi.live_inode is null ");
+                    break;
+                case LOCKED:
+                    disjuncts.add(" cvi.locked_by is not null ");
+                    break;
+                default:
+                    throw new DotRuntimeException("Unhandled content status: " + status);
+            }
+        }
+
+        sqlQuery.append(" and (").append(String.join(" or ", disjuncts)).append(") ");
+    }
+
+    /**
+     * Appends the status terms for the index-only ({@code PURE_ES}) path, plus the archived
+     * baseline they replace.
+     * <p>
+     * <b>The statuses go in ONE explicit group.</b> In Lucene a leading {@code +} means REQUIRED, so
+     * emitting {@code +deleted:true +live:false} would be an <b>AND</b> — the opposite of this
+     * feature, and a silent one: the query stays valid and simply returns almost nothing. They must
+     * be written as {@code +(deleted:true OR live:false)}. This mirrors the grouping the host filter
+     * in this same method already uses ({@code +(conhost:… OR conhost:SYSTEM_HOST)}).
+     * <p>
+     * The archived baseline stays a separate required clause AND'd against that group, and only
+     * {@link ContentStatus#ARCHIVED} suppresses it — the same shape as the SQL path, so both
+     * heuristics answer identically.
+     * <p>
+     * With no statuses selected this degrades to exactly the previous behaviour, the bare
+     * {@code +deleted:false}.
+     *
+     * @param query           The StringBuilder representing the ES query being built.
+     * @param contentStatuses The states to match; empty means no status filtering.
+     */
+    private void appendContentStatusESQuery(final StringBuilder query,
+            final Set<ContentStatus> contentStatuses) {
+
+        if (!UtilMethods.isSet(contentStatuses)) {
+            query.append("+deleted:false ");
+            return;
+        }
+
+        if (!contentStatuses.contains(ContentStatus.ARCHIVED)) {
+            query.append("+deleted:false ");
+        }
+
+        final List<String> terms = new ArrayList<>();
+        for (final ContentStatus status : contentStatuses) {
+            switch (status) {
+                case ARCHIVED:
+                    terms.add("deleted:true");
+                    break;
+                case UNPUBLISHED:
+                    terms.add("live:false");
+                    break;
+                case LOCKED:
+                    terms.add("locked:true");
+                    break;
+                default:
+                    throw new DotRuntimeException("Unhandled content status: " + status);
+            }
+        }
+
+        query.append("+(").append(String.join(" OR ", terms)).append(") ");
+    }
+
+    /**
      * Appends the query to exclude archived content to the given SQL query.
      *
      * @param sqlQuery The StringBuilder object representing the SQL query to be appended.
@@ -1811,26 +3705,76 @@ public class BrowserAPIImpl implements BrowserAPI {
      * @param sqlQuery
      * @param orderByDesc
      */
-    private void appendOrderByQuery(StringBuilder sqlQuery, boolean orderByDesc) {
+    private void appendOrderByQuery(StringBuilder sqlQuery, boolean orderByDesc, boolean useFolderCte) {
+        // issue #37229 (FR-001): `mod_date` alone has no tiebreaker, so rows sharing the same
+        // mod_date get an unspecified, planner-dependent order today (~1.2% of rows per #37148).
+        // `id.id` (the identifier row's own primary key, already joined/in scope -- no new join)
+        // makes tied-row order -- and the pagination cursor derived from it -- a deterministic,
+        // reproducible-run-to-run guarantee. This is a NEW guarantee, not a reproduction of
+        // whatever arbitrary order those tied rows happened to return before this fix.
+        //
+        // FR-001 scopes this to folder-scoped requests only ("every folder-scoped listing
+        // request"), matching useFolderCte exactly -- every other caller's ORDER BY stays
+        // byte-identical to before (found in review: this was previously unconditional for any
+        // caller with sortBy set, silently changing tie order and pagination cursors for
+        // non-folder-scoped callers too).
+        //
+        // `(mod_date, id.id)` is still not a total order on a multi-language folder: a single
+        // identifier legitimately comes back as several rows, one per language
+        // (appendLanguageQuery's `cvi.lang in (...)`), so id.id is identical across those rows.
+        // When they also share mod_date, nothing is left to break the tie. `cvi.lang` closes it
+        // and is already joined/in scope via contentlet_version_info -- no new join (code
+        // review, PR #37397).
         sqlQuery.append(" order by ");
         if (orderByDesc) {
-            sqlQuery.append(" c.mod_date desc");
+            sqlQuery.append(" c.mod_date desc").append(useFolderCte ? ", id.id desc, cvi.lang desc" : "");
         } else  {
-            sqlQuery.append(" c.mod_date asc");
+            sqlQuery.append(" c.mod_date asc").append(useFolderCte ? ", id.id asc, cvi.lang asc" : "");
         }
     }
 
     /**
-     * Appends the specified MIME Types to the main SQL query.
+     * Appends the specified MIME Types to the main SQL query. Every requested MIME Type is routed to the only
+     * condition that can actually match it, and the resulting conditions are OR'ed together:
+     * <ul>
+     *     <li>{@link #DOTPAGE_MIME_TYPE} resolves to the {@link BaseContentType#HTMLPAGE} base type. That value is
+     *     synthetic: it is stamped onto a Page's view map at display time and is never written to
+     *     {@code contentlet_as_json}, so the asset metadata check below can never match a Page.</li>
+     *     <li>Any other MIME Type keeps the asset metadata {@code contentType} check. Only File Assets and
+     *     dotAssets carry asset metadata, which is precisely the "MIME type(s) (for file assets)" scoping that
+     *     ADR-0018 assigns to this predicate.</li>
+     * </ul>
+     * The match on the synthetic value is exact on purpose. A MIME Type that merely starts with it -- say,
+     * {@code application/dotpage-foo} -- must still go through the metadata check.
+     * <p>The {@code struc} table is already joined by {@link #buildSelectBaseQuery(BrowserQuery, String)}, so the
+     * base type condition needs no extra join and no bound parameter.
      *
      * @param sqlQuery  The main SQL query.
      * @param mimeTypes The list of MIME Types specified by the client.
      */
-    private void appendMIMETypeQuery(final StringBuilder sqlQuery, final List<String> mimeTypes) {
-        final String mimeTypesFilter = String.format(" AND (%s)", mimeTypes.stream()
-                .map(mimeType -> String.format("jsonb_path_exists(c.contentlet_as_json,'$.fields.**.metadata ? (@.contentType like_regex \".*%s.*\")')", mimeType))
-                .collect(Collectors.joining(" OR ")));
-        sqlQuery.append(mimeTypesFilter);
+    private static void appendMIMETypeQuery(final StringBuilder sqlQuery, final List<String> mimeTypes,
+            final List<Object> parameters) {
+
+        final List<String> predicates = new ArrayList<>();
+
+        for (final String mimeType : mimeTypes) {
+
+            if (DOTPAGE_MIME_TYPE.equals(mimeType)) {
+                // Pages are matched by content type rather than by file metadata. The value is an
+                // enum ordinal, not caller input.
+                predicates.add(String.format("struc.structuretype = %d", BaseContentType.HTMLPAGE.getType()));
+                continue;
+            }
+
+            // The MIME type is caller-supplied, so the JSONPath expression is bound as a parameter
+            // rather than concatenated into the statement. BrowserQuery.Builder#showMimeTypes
+            // restricts the value to MIME type characters, which keeps it from altering the
+            // JSONPath expression it sits inside.
+            predicates.add("jsonb_path_exists(c.contentlet_as_json, ?::jsonpath)");
+            parameters.add(String.format(MIME_TYPE_JSONPATH, mimeType));
+        }
+
+        sqlQuery.append(String.format(" AND (%s)", String.join(" OR ", predicates)));
     }
 
     /**
@@ -1882,7 +3826,7 @@ public class BrowserAPIImpl implements BrowserAPI {
 
                 final Map<String, Object> linkMap = link.getMap();
                 linkMap.put("permissions", permissions2);
-                linkMap.put("mimeType", "application/dotlink");
+                linkMap.put("mimeType", LINK_MIME_TYPE);
                 linkMap.put("name", link.getTitle());
                 linkMap.put("title", link.getName());
                 linkMap.put("description", link.getFriendlyName());
@@ -1899,19 +3843,37 @@ public class BrowserAPIImpl implements BrowserAPI {
     } // includeLinks.
 
 
+    /**
+     * Retrieves the menu Links directly under the browser query's parent, honouring
+     * {@code showWorking} and {@code showArchived}.
+     *
+     * <p>{@link FolderAPI} owns the working/live distinction: the live case delegates to
+     * {@code getLiveLinks}, never to {@code getLinks(parent, false, ...)}. The {@code working=false}
+     * form does not mean "live" — it asks for versions that are not the working one — and the
+     * version-table predicate it emits does not correlate on the link, so it returns duplicates.
+     *
+     * <p>{@code getLiveLinks} pins {@code deleted=false}, which is all this path needs:
+     * {@link BrowserQuery} ORs {@code showArchived} into {@code showWorking}, so the live branch is
+     * only ever reached with {@code archived=false}.</p>
+     *
+     * @param browserQuery the query holding the parent and the version flags
+     * @return the links under the parent, already filtered by READ permission by {@link FolderAPI}
+     */
     private List<Link> getLinks(final BrowserQuery browserQuery) throws DotDataException, DotSecurityException {
         if (browserQuery.directParent instanceof Host) {
-            return folderAPI.getLinks((Host) browserQuery.directParent,
-                    browserQuery.showWorking, browserQuery.showArchived, browserQuery.user,
-                    false);
+            final Host host = (Host) browserQuery.directParent;
+            return browserQuery.showWorking
+                    ? folderAPI.getLinks(host, true, browserQuery.showArchived, browserQuery.user, false)
+                    : folderAPI.getLiveLinks(host, browserQuery.user, false);
         }
 
         if (browserQuery.directParent instanceof Folder) {
-            return folderAPI
-                    .getLinks((Folder) browserQuery.directParent, browserQuery.showWorking, browserQuery.showArchived,
-                            browserQuery.user,
-                            false);
+            final Folder folder = (Folder) browserQuery.directParent;
+            return browserQuery.showWorking
+                    ? folderAPI.getLinks(folder, true, browserQuery.showArchived, browserQuery.user, false)
+                    : folderAPI.getLiveLinks(folder, browserQuery.user, false);
         }
+
         return Collections.emptyList();
     }
 
@@ -1957,6 +3919,137 @@ public class BrowserAPIImpl implements BrowserAPI {
     }
 
     /**
+     * Builds the Content Drive view of the menu Links directly under the browser query's parent,
+     * in a stable order so that an index-based {@code linkCursor} can page them safely.
+     *
+     * <p>Links are only ever the <em>direct</em> children of the resolved parent — unlike
+     * contentlets, they are never gathered recursively across subfolders. This mirrors the
+     * behaviour of the legacy {@code /api/v1/browser} endpoint.</p>
+     *
+     * <p>Note that {@link com.dotmarketing.portlets.folders.business.FolderFactoryImpl}'s
+     * convenience overloads cap children at 1000 rows, so a parent holding more links than that
+     * is not fully reachable. The underlying factory already supports offset/limit if that
+     * ceiling ever needs raising.</p>
+     *
+     * @param browserQuery the query holding the parent, filter and version flags
+     * @param roles the roles of the requesting user, used for READ permission filtering
+     * @return the Content Drive map view of every readable link, ordered deterministically
+     */
+    private List<Map<String, Object>> linksDefaultView(final BrowserQuery browserQuery,
+            final Role[] roles) {
+
+        final List<Link> links;
+        try {
+            links = getLinks(browserQuery);
+        } catch (final DotSecurityException e) {
+            // The user cannot read the parent, so they see none of its links.
+            Logger.debug(this, () -> String.format(
+                    "User '%s' cannot read the parent of the requested links: %s",
+                    browserQuery.user.getUserId(), e.getMessage()));
+            return List.of();
+        } catch (final DotDataException e) {
+            Logger.error(this, "Could not load links : ", e);
+            return List.of();
+        }
+
+        // Links are not indexed in Elasticsearch, so the text filter has to be applied here or a
+        // narrowed search would return every link under the parent. Unlike getFolders, this is
+        // not gated behind filterFolderNames: that flag exists so a client can keep folders
+        // navigable while narrowing the results, and a link is a selectable leaf, not something
+        // to navigate into.
+        final Stream<Link> filtered = UtilMethods.isSet(browserQuery.filter)
+                ? links.stream().filter(link -> null != link.getTitle() && link.getTitle()
+                        .toLowerCase().contains(browserQuery.filter.toLowerCase()))
+                : links.stream();
+
+        // A stable order is what makes the index-based linkCursor sound. Titles are not unique
+        // among sibling links, hence the identifier tiebreaker.
+        final List<Link> ordered = filtered
+                .sorted(Comparator.comparing(Link::getTitle,
+                                Comparator.nullsFirst(String::compareTo))
+                        .thenComparing(Link::getIdentifier,
+                                Comparator.nullsFirst(String::compareTo)))
+                .collect(Collectors.toList());
+
+        final List<Map<String, Object>> views = new ArrayList<>(ordered.size());
+        for (final Link link : ordered) {
+            // One unmappable link must not fail the whole page, matching how
+            // DotFolderTransformerImpl logs and skips a folder it cannot transform.
+            try {
+                final List<Integer> permissions =
+                        permissionAPI.getPermissionIdsFromRoles(link, roles, browserQuery.user);
+                if (permissions.contains(PERMISSION_READ)) {
+                    views.add(driveLinkView(link, permissions));
+                }
+            } catch (final Exception e) {
+                Logger.error(this, String.format(
+                        "Error building map view of link with id `%s`", link.getIdentifier()), e);
+            }
+        }
+        return views;
+    }
+
+    /**
+     * Builds the Content Drive map view of a single menu Link, following the same conventions as
+     * {@link com.dotmarketing.portlets.contentlet.transform.DotFolderTransformerImpl}'s folder
+     * view: permissions as role-type names and no {@code inode}.
+     *
+     * @param link the link to transform
+     * @param permissions the permission ids the requesting user holds on the link
+     * @return the map view of the link
+     * @throws DotDataException if the link's map cannot be built
+     * @throws DotSecurityException if the link's map cannot be read by the requesting user
+     */
+    private Map<String, Object> driveLinkView(final Link link, final List<Integer> permissions)
+            throws DotDataException, DotSecurityException {
+        final Map<String, Object> map = new HashMap<>(link.getMap());
+        map.put("permissions", permissionNames(permissions));
+        map.remove("inode");
+        map.put("owner", ownerName(link.getOwner()));
+        // Link.getMap() only carries "title"; Content Drive folders expose both, and
+        // GenericMapFieldComparator falls back between them when sorting.
+        map.put("name", link.getTitle());
+        map.put("description", link.getFriendlyName());
+        map.put("mimeType", LINK_MIME_TYPE);
+        map.put("extension", "link");
+        map.put("__icon__", "linkIcon");
+        map.put("hasLiveVersion",
+                Try.of(() -> APILocator.getVersionableAPI().hasLiveVersion(link)).getOrElse(false));
+        return map;
+    }
+
+    /**
+     * Converts permission ids into their role-type names, the form Content Drive views expose.
+     *
+     * @param permissions permission ids
+     * @return the matching permission type names, skipping any id that cannot be resolved
+     */
+    private static List<String> permissionNames(final List<Integer> permissions) {
+        return permissions.stream()
+                .map(permission -> Try.of(() -> Type.findById(permission).name()).getOrNull())
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Resolves an owner id into a display name, matching the Content Drive folder view.
+     *
+     * @param ownerId the owner user id, may be {@code null}
+     * @return the owner's full name, {@code "System"}, {@code "unknown"}, or {@code null} when no
+     * owner is set
+     */
+    private static String ownerName(final String ownerId) {
+        if (null == ownerId) {
+            return null;
+        }
+        if ("system".equalsIgnoreCase(ownerId)) {
+            return "System";
+        }
+        final User owner = Try.of(() -> UserLocalManagerUtil.getUserById(ownerId)).getOrNull();
+        return null != owner ? owner.getFullName() : "unknown";
+    }
+
+    /**
      * Retrieves the list of subfolders based on the specified browser query parameters.
      *
      * @param browserQuery the query object containing filtering parameters, parent folder information,
@@ -1964,6 +4057,16 @@ public class BrowserAPIImpl implements BrowserAPI {
      * @return a list of folders that match the filtering criteria specified in the browser query
      */
     private List<Folder> getFolders(BrowserQuery browserQuery) {
+        // System Host holds no folders, so a request scoped to it has none to report -- whatever
+        // it asked for. Without this the parent is still the browsed SITE, and asking for folders
+        // in the System Host scope returned that site's folders beside System Host's content: rows
+        // belonging to a host the caller did not ask about. Content Drive never asks, so nothing
+        // showed, but the listing's own contract (FR-010) said one thing and the server did
+        // another, and only the client's good manners hid it.
+        if (SystemHostMode.ONLY == browserQuery.systemHostMode) {
+            return Collections.emptyList();
+        }
+
         List<Folder> folders = Collections.emptyList();
         try {
 
@@ -1998,7 +4101,11 @@ public class BrowserAPIImpl implements BrowserAPI {
     } // dotAssetMap.
 
     private Map<String, Object> dotContentMap(final Contentlet dotAsset) throws DotStateException {
-        return new DotTransformerBuilder().defaultOptions().content(dotAsset).build().toMaps().get(0);
+        // issue #37185: opt-in only at this call site -- never added to defaultOptions -- so no
+        // other consumer of DotTransformerBuilder#defaultOptions() (ContentResource, GraphQL, the
+        // Content Editor, etc.) is affected.
+        return new DotTransformerBuilder().defaultOptions().longTextPreview().content(dotAsset)
+                .build().toMaps().get(0);
     } // dotAssetMap.
 
 

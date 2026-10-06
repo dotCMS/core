@@ -98,7 +98,7 @@ public class AIModel {
     public Model getModel(final String modelName) {
         final String normalized = modelName.trim().toLowerCase();
         return models.stream()
-                .filter(model -> normalized.equals(model.getName()))
+                .filter(model -> normalized.equalsIgnoreCase(model.getName()))
                 .findFirst()
                 .orElseThrow(() -> new DotAIModelNotFoundException(String.format("Model [%s] not found", modelName)));
     }

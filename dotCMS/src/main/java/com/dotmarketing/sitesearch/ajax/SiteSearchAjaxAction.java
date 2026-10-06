@@ -227,9 +227,9 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
         String indexAlias = map.get("indexAlias");
         String indexName = "";
         if(UtilMethods.isSet(indexAlias) && LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level) {
-            String indexName1=APILocator.getESIndexAPI()
-                    .getAliasToIndexMap(APILocator.getSiteSearchAPI().listIndices())
-                    .get(indexAlias);
+            // Site-search .os-aware alias resolution (issue #36360): the content-index router misses
+            // site-search aliases in Phases 2/3 because it queries OpenSearch without the .os tag.
+            String indexName1=APILocator.getSiteSearchAPI().getAliasToIndexMap().get(indexAlias);
             if(UtilMethods.isSet(indexName1))
                 indexName=indexName1;
         }
@@ -265,7 +265,11 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
     	    String indexName = ESIndexHelper.getInstance().getIndexNameOrAlias(map,"indexName",
 					"indexAlias", APILocator.getESIndexAPI());
     	    response.setContentType("text/plain");
-            response.getWriter().println(APILocator.getIndiciesAPI().loadIndicies().getSiteSearch().equals(indexName) ? "default" : "inactive");
+            // Phase-aware default (issue #36983): the legacy IndiciesInfo pointer freezes at the
+            // Elasticsearch-era default from Phase 3 on, where activateIndex fans out to OpenSearch
+            // alone — and dereferencing it NPE'd when no default had ever been set.
+            response.getWriter().println(
+                    APILocator.getSiteSearchAPI().isDefaultIndex(indexName) ? "default" : "inactive");
 	    }
 	    catch(Exception ex) {
 	        throw new RuntimeException(ex);
@@ -275,7 +279,8 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 	@Override
     public void getNotActiveIndexNames(HttpServletRequest request, HttpServletResponse response) throws IOException {
 	    try {
-            String defaultIndex=APILocator.getIndiciesAPI().loadIndicies().getSiteSearch();
+            // Phase-aware default (issue #36983) — see getIndexStatus above.
+            final String defaultIndex = APILocator.getSiteSearchAPI().defaultIndexName().orElse(null);
             List<String> ret=new ArrayList<>();
             for(String ii : APILocator.getSiteSearchAPI().listIndices())
                 if(defaultIndex==null || !defaultIndex.equals(ii))

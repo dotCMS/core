@@ -202,7 +202,6 @@ public class FolderHandler implements IHandler {
         			} catch(DotDataException e) {
         				Logger.debug(getClass(), e.getMessage());
         			}
-
                     //Default structure of the folder
                     boolean defaultStructureExist = true;
                     String currentDefaultType = folder.getDefaultFileType();
@@ -291,6 +290,8 @@ public class FolderHandler implements IHandler {
 					temp.setIDate(folder.getIDate());
 					temp.setFilesMasks(folder.getFilesMasks());
 					temp.setTitle(folder.getTitle());
+					temp.setShowOnMenu(folder.isShowOnMenu());
+					temp.setDefaultBaseType(folder.getDefaultBaseType());
 
 
                 	fAPI.save(temp, systemUser, false);

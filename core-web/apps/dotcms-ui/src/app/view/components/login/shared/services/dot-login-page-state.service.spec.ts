@@ -1,4 +1,5 @@
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { TestBed } from '@angular/core/testing';
 
@@ -23,7 +24,7 @@ describe('DotLoginPageStateServiceService', () => {
 
         dotloginPageStateService = TestBed.inject(DotLoginPageStateService);
         loginService = TestBed.inject(LoginService);
-        jest.spyOn(loginService, 'getLoginFormInfo').mockReturnValue(of(mockLoginFormResponse));
+        vi.spyOn(loginService, 'getLoginFormInfo').mockReturnValue(of(mockLoginFormResponse));
     });
 
     it('should set new value to dotLoginInformation$ and call service correctly', () => {

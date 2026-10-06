@@ -15,13 +15,19 @@ import { RelationshipTypes, TableColumn } from '../models/relationship.models';
 import { RelationshipFieldState } from '../store/relationship-field.store';
 
 /**
- * Get the selection mode by cardinality.
+ * Get the selection mode by cardinality and parent/child role.
  *
- * @param cardinality - The cardinality of the relationship.
+ * Mirrors the backend logic in ContentletRelationshipRecords.doesAllowOnlyOne():
+ *   - Child side (isParentField=false): only MANY_TO_MANY allows multiple
+ *   - Parent side (isParentField=true): only ONE_TO_ONE allows single
+ *
+ * @param cardinality - The cardinality of the relationship (0-3).
+ * @param isParentField - Whether this content type is the parent in the relationship.
  * @returns The selection mode.
  */
 export function getSelectionModeByCardinality(
-    cardinality: number
+    cardinality: number,
+    isParentField?: boolean
 ): RelationshipFieldState['selectionMode'] {
     const relationshipType = RELATIONSHIP_OPTIONS[cardinality];
 
@@ -29,6 +35,12 @@ export function getSelectionModeByCardinality(
         throw new Error(`Invalid relationship type for cardinality: ${cardinality}`);
     }
 
+    if (isParentField === false) {
+        // Child side: only MANY_TO_MANY allows multiple selection
+        return relationshipType === RelationshipTypes.MANY_TO_MANY ? 'multiple' : 'single';
+    }
+
+    // Parent side (or isParentField not provided - backward compatible)
     const isSingleMode =
         relationshipType === RelationshipTypes.ONE_TO_ONE ||
         relationshipType === RelationshipTypes.MANY_TO_ONE;
@@ -36,21 +48,9 @@ export function getSelectionModeByCardinality(
     return isSingleMode ? 'single' : 'multiple';
 }
 
-/**
- * Extracts the content type ID from a relationship field.
- *
- * @param field - The DotCMS content type field object containing the relationship data
- * @returns The content type ID, or null if not found
- */
-export function getContentTypeIdFromRelationship(field: DotCMSContentTypeField): string | null {
-    if (!field?.relationships?.velocityVar) {
-        return null;
-    }
-
-    const [contentTypeId] = field.relationships.velocityVar.split('.');
-
-    return contentTypeId || null;
-}
+// Moved to `@dotcms/ui` alongside the shared field filter, which derives the same id to open a
+// relationship picker. Re-exported so this library's own callers are untouched.
+export { getContentTypeIdFromRelationship } from '@dotcms/ui';
 
 /**
  * Get the header for a field.
@@ -143,3 +143,27 @@ export const isImageField = (clazz: DotCMSClazz): boolean => {
 export const isNewEditorEnabled = (contentType: DotCMSContentType): boolean => {
     return contentType.metadata?.[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] === true;
 };
+
+/**
+ * Determines if the relationship field requires a cardinality constraint check
+ * in the "Select Existing Content" dialog.
+ *
+ * This is needed when the current content is the parent side of a ONE_TO_ONE
+ * or ONE_TO_MANY relationship, because each child can only belong to one parent.
+ *
+ * @param cardinality - The cardinality value of the relationship (0-3).
+ * @param isParentField - Whether the current content type is the parent in the relationship.
+ * @returns True if constraint check is needed, false otherwise.
+ */
+export function needsCardinalityConstraintCheck(
+    cardinality: number,
+    isParentField: boolean
+): boolean {
+    if (!isParentField) {
+        return false;
+    }
+
+    const type = RELATIONSHIP_OPTIONS[cardinality];
+
+    return type === RelationshipTypes.ONE_TO_ONE || type === RelationshipTypes.ONE_TO_MANY;
+}

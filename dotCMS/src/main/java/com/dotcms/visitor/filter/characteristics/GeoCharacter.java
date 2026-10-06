@@ -21,11 +21,13 @@ public class GeoCharacter extends AbstractCharacter {
             try {
                 String ipAddress = visitor.getIpAddress().getHostAddress();
                 GeoIp2CityDbUtil geo = GeoIp2CityDbUtil.getInstance();
+                final String postalCode = geo.getPostalCode(ipAddress);
                 m = new ImmutableMap.Builder<String, String>().put("g.latLong", geo.getLocationAsString(ipAddress))
                     .put("g.countryCode", geo.getCountryIsoCode(ipAddress))
                     .put("g.cityName", geo.getCityName(ipAddress))
                     .put("g.continent", geo.getContinent(ipAddress))
                     .put("g.company", geo.getCompany())
+                    .put("g.postalCode", postalCode != null ? postalCode : "")
                     .build();
             } catch (Exception e) {
                 m = ImmutableMap.of("g.ip", "ukn");

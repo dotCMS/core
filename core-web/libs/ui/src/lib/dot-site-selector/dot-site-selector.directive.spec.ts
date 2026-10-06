@@ -1,16 +1,18 @@
-import { createDirectiveFactory, SpectatorDirective } from '@ngneat/spectator/jest';
+import { createDirectiveFactory, SpectatorDirective } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { fakeAsync } from '@angular/core/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { Select, SelectFilterEvent, SelectModule } from 'primeng/select';
 
 import { DotEventsService, DotSiteService } from '@dotcms/data-access';
-import { CoreWebService, SiteService } from '@dotcms/dotcms-js';
+import { SiteService } from '@dotcms/dotcms-js';
 import { DotPagination, DotSite } from '@dotcms/dotcms-models';
-import { CoreWebServiceMock, SiteServiceMock } from '@dotcms/utils-testing';
+import { SiteServiceMock } from '@dotcms/utils-testing';
 
 import { DotSiteSelectorDirective } from './dot-site-selector.directive';
 
@@ -43,10 +45,11 @@ describe('DotSiteSelectorDirective', () => {
 
     const createDirective = createDirectiveFactory({
         directive: DotSiteSelectorDirective,
-        imports: [HttpClientTestingModule, SelectModule, BrowserAnimationsModule],
+        imports: [SelectModule, BrowserAnimationsModule],
         providers: [
+            provideHttpClient(),
+            provideHttpClientTesting(),
             { provide: SiteService, useClass: SiteServiceMock },
-            { provide: CoreWebService, useClass: CoreWebServiceMock },
             DotEventsService,
             DotSiteService
         ]
@@ -70,7 +73,7 @@ describe('DotSiteSelectorDirective', () => {
         let getSitesSpy;
 
         beforeEach(() => {
-            getSitesSpy = jest
+            getSitesSpy = vi
                 .spyOn(dotSiteService, 'getSites')
                 .mockReturnValue(of({ sites: mockSites, pagination: mockPagination }));
         });
@@ -100,7 +103,7 @@ describe('DotSiteSelectorDirective', () => {
 
     describe('Listen login-as/logout-as events', () => {
         it('should send notification when login-as/logout-as', fakeAsync(() => {
-            const getSitesSpy = jest
+            const getSitesSpy = vi
                 .spyOn(dotSiteService, 'getSites')
                 .mockReturnValue(of({ sites: mockSites, pagination: mockPagination }));
             spectator.detectChanges();

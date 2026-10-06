@@ -1,4 +1,4 @@
-import { Component, HostBinding, inject } from '@angular/core';
+import { Component, HostBinding, inject, ChangeDetectionStrategy } from '@angular/core';
 
 import { DotEventsService, DotRouterService } from '@dotcms/data-access';
 import { DotMenuItem, MenuGroup } from '@dotcms/dotcms-models';
@@ -13,6 +13,7 @@ import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.s
     selector: 'dot-main-nav',
     styleUrls: ['./dot-navigation.component.scss'],
     templateUrl: 'dot-navigation.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [DotNavHeaderComponent, DotNavItemComponent]
 })
 export class DotNavigationComponent {

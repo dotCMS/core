@@ -1,8 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -14,7 +17,6 @@ import {
     DotPushPublishFilter,
     DotPushPublishFiltersService
 } from '@dotcms/data-access';
-import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
 import * as dotUtils from '@dotcms/utils/lib/dot-utils';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -67,8 +69,9 @@ describe('DotDownloadBundleDialogComponent', () => {
         component: DotDownloadBundleDialogComponent,
         imports: [SelectButtonModule, SelectModule, NoopAnimationsModule, DotMessagePipe],
         providers: [
+            provideHttpClient(),
+            provideHttpClientTesting(),
             DotDownloadBundleDialogService,
-            { provide: CoreWebService, useClass: CoreWebServiceMock },
             { provide: DotMessageService, useValue: messageServiceMock }
         ],
         componentProviders: [
@@ -78,7 +81,7 @@ describe('DotDownloadBundleDialogComponent', () => {
     });
 
     beforeEach(() => {
-        jest.spyOn(mockFiltersService, 'get');
+        vi.spyOn(mockFiltersService, 'get');
         spectator = createComponent();
         component = spectator.component;
         dotDownloadBundleDialogService = spectator.inject(DotDownloadBundleDialogService);
@@ -86,7 +89,7 @@ describe('DotDownloadBundleDialogComponent', () => {
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('should hide by default', () => {
@@ -173,12 +176,10 @@ describe('DotDownloadBundleDialogComponent', () => {
                 let anchor: HTMLAnchorElement;
 
                 beforeEach(() => {
-                    (window as any).fetch = jest
-                        .fn()
-                        .mockReturnValue(Promise.resolve(mockResponse));
+                    (window as any).fetch = vi.fn().mockReturnValue(Promise.resolve(mockResponse));
                     anchor = document.createElement('a');
-                    jest.spyOn(anchor, 'click');
-                    jest.spyOn(dotUtils, 'getDownloadLink').mockReturnValue(anchor);
+                    vi.spyOn(anchor, 'click');
+                    vi.spyOn(dotUtils, 'getDownloadLink').mockReturnValue(anchor);
                 });
 
                 it('should disable buttons and change to label to downloading...', () => {
@@ -189,7 +190,7 @@ describe('DotDownloadBundleDialogComponent', () => {
                 });
 
                 it('should fetch to the correct url when publish', fakeAsync(() => {
-                    (dotUtils.getDownloadLink as jest.Mock).mockClear();
+                    (dotUtils.getDownloadLink as Mock).mockClear();
 
                     component.handleSubmit();
                     tick(0);
@@ -225,7 +226,7 @@ describe('DotDownloadBundleDialogComponent', () => {
 
             describe('on error', () => {
                 beforeEach(() => {
-                    (window as any).fetch = jest
+                    (window as any).fetch = vi
                         .fn()
                         .mockReturnValue(Promise.reject(new Error('error')));
                 });

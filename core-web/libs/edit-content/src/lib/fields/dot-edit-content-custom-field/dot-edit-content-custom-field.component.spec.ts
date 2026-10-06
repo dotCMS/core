@@ -1,10 +1,13 @@
-import { createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
+import { createHostFactory, SpectatorHost } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
-import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { signal } from '@angular/core';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { DotRenderModes, NEW_RENDER_MODE_VARIABLE_KEY } from '@dotcms/dotcms-models';
+import { DotMessagePipe as RealDotMessagePipe } from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
-import { createFakeContentlet, createFakeCustomField } from '@dotcms/utils-testing';
+import { createFakeContentlet, createFakeCustomField, DotMessagePipe } from '@dotcms/utils-testing';
 
 import { IframeFieldComponent } from './components/iframe-field/iframe-field.component';
 import { NativeFieldComponent } from './components/native-field/native-field.component';
@@ -17,7 +20,12 @@ import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.componen
 const MOCK_CONTENT_TYPE_NAME = 'test';
 const MOCK_INODE = 'test-inode';
 
+/** Flipped by tests that need the required error to surface (#37464 gates it on save). */
+const submitAttempted = signal(false);
+
 describe('DotEditContentCustomFieldComponent', () => {
+    beforeEach(() => submitAttempted.set(false));
+
     let spectator: SpectatorHost<DotEditContentCustomFieldComponent>;
 
     const FIELD_VARIABLES = {
@@ -48,7 +56,8 @@ describe('DotEditContentCustomFieldComponent', () => {
             {
                 provide: DotEditContentStore,
                 useValue: {
-                    setFieldVisibility: jest.fn()
+                    hasAttemptedSubmit: submitAttempted,
+                    setFieldVisibility: vi.fn()
                 }
             }
         ]
@@ -87,6 +96,33 @@ describe('DotEditContentCustomFieldComponent', () => {
         it('should compute render mode as IFRAME by default', () => {
             expect(spectator.component.$renderMode()).toBe(DotRenderModes.IFRAME);
             expect(spectator.component.$isIframeStrategy()).toBe(true);
+        });
+
+        // The backend reads the variable case-insensitively and trimmed (ContentTypeHelper), and
+        // only renders `rendered` HTML for component mode. Reading it any other way here makes the
+        // two disagree: `IFRAME` would mount the native component with nothing to show.
+        it.each([
+            ['IFRAME', DotRenderModes.IFRAME],
+            [' iframe ', DotRenderModes.IFRAME],
+            ['COMPONENT', DotRenderModes.COMPONENT],
+            [' component ', DotRenderModes.COMPONENT]
+        ])('should read newRenderMode %p as %p', (value, expected) => {
+            const field = createFakeCustomField({
+                fieldVariables: [
+                    {
+                        key: NEW_RENDER_MODE_VARIABLE_KEY,
+                        value,
+                        id: NEW_RENDER_MODE_VARIABLE_KEY,
+                        fieldId: '123',
+                        clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable'
+                    }
+                ]
+            });
+
+            spectator.setHostInput({ field });
+            spectator.detectChanges();
+
+            expect(spectator.component.$renderMode()).toBe(expected);
         });
     });
 
@@ -312,6 +348,110 @@ describe('DotEditContentCustomFieldComponent', () => {
 
             expect(iframeField).toBeFalsy();
             expect(nativeField).toBeTruthy();
+        });
+    });
+
+    describe('Required Validation', () => {
+        // This block uses a separate factory that does NOT mock DotCardFieldComponent
+        // because the inline error message is content-projected through it.
+        const createHostNoMocks = createHostFactory({
+            component: DotEditContentCustomFieldComponent,
+            imports: [ReactiveFormsModule],
+            detectChanges: false,
+            // Replace the real DotMessagePipe with the test pipe that returns the i18n key as-is.
+            overrideComponents: [
+                [
+                    DotEditContentCustomFieldComponent,
+                    {
+                        remove: { imports: [RealDotMessagePipe] },
+                        add: { imports: [DotMessagePipe] }
+                    }
+                ]
+            ],
+            providers: [
+                {
+                    provide: WINDOW,
+                    useValue: window
+                },
+                {
+                    provide: DotEditContentStore,
+                    useValue: {
+                        hasAttemptedSubmit: submitAttempted,
+                        setFieldVisibility: vi.fn()
+                    }
+                }
+            ]
+        });
+
+        const REQUIRED_FIELD = { ...createFakeCustomField(), required: true };
+
+        const renderRequiredField = (initialValue = '') => {
+            const formGroup = new FormGroup({
+                [REQUIRED_FIELD.variable]: new FormControl(initialValue, Validators.required)
+            });
+
+            spectator = createHostNoMocks(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-custom-field
+                        [field]="field"
+                        [contentlet]="contentlet"
+                        [contentType]="contentTypeVariable" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup,
+                        field: REQUIRED_FIELD,
+                        contentlet: createFakeContentlet({
+                            inode: MOCK_INODE,
+                            [REQUIRED_FIELD.variable]: ''
+                        }),
+                        contentTypeVariable: MOCK_CONTENT_TYPE_NAME
+                    }
+                }
+            );
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            return formGroup;
+        };
+
+        it('should not render the inline error before the control is touched', () => {
+            renderRequiredField();
+
+            expect(spectator.query('small.p-field-error')).toBeNull();
+        });
+
+        it('should render the inline error once a save has been attempted (#37464)', () => {
+            const formGroup = renderRequiredField();
+
+            const control = formGroup.get(REQUIRED_FIELD.variable);
+            control.setErrors({ required: true });
+            // Touching no longer surfaces the error: it is gated on a save or publish attempt.
+            control.markAsTouched();
+            submitAttempted.set(true);
+            spectator.detectChanges();
+
+            const errorEl = spectator.query('small.p-field-error');
+            expect(errorEl).toBeTruthy();
+            expect(errorEl.textContent.trim()).toBe('dot.edit.content.form.field.required');
+        });
+
+        it('should remove the inline error after the field receives a valid value', () => {
+            const formGroup = renderRequiredField();
+            submitAttempted.set(true);
+
+            const control = formGroup.get(REQUIRED_FIELD.variable);
+            control.setErrors({ required: true });
+            control.markAsTouched();
+            spectator.detectChanges();
+
+            expect(spectator.query('small.p-field-error')).toBeTruthy();
+
+            control.setValue('something');
+            control.setErrors(null);
+            spectator.detectChanges();
+
+            expect(spectator.query('small.p-field-error')).toBeNull();
         });
     });
 });

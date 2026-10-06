@@ -70,6 +70,11 @@ public interface ContentletFactory {
      * @param variant the variant ID to filter the contentlet from the database results
      * @return an {@code Optional<Contentlet>} containing the contentlet if found, or an empty {@code Optional} if not found
      */
+    // The cache-miss surcharge for the single-contentlet path - reaching this method IS the
+    // miss. Only fires for find(inode, variant); the other paths land on
+    // ESContentFactoryImpl.findInDb(String, boolean), which carries its own copy of both the
+    // SQL and this annotation. (The two differ: this one filters by variantId, that one
+    // honours ignoreStoryBlock, so neither can delegate to the other as written.)
     @RequestCost(Price.CONTENT_FROM_DB)
     default Optional<Contentlet> findInDb(final String inode, final String variant) {
         try {

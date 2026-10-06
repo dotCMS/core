@@ -2,9 +2,16 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-empty-function */
 
+import '@analogjs/vitest-angular/setup-zone';
+import '@angular/compiler';
+import '@analogjs/vitest-angular/setup-snapshots';
+import { setupTestBed } from '@analogjs/vitest-angular/setup-testbed';
 import '@testing-library/jest-dom';
-import { setupZoneTestEnv } from 'jest-preset-angular/setup-env/zone';
-setupZoneTestEnv();
+import { vi } from 'vitest';
+
+import { provideZoneChangeDetection } from '@angular/core';
+
+setupTestBed({ zoneless: false, providers: [provideZoneChangeDetection()] });
 
 // Mock PointerEvent
 class MockPointerEvent implements Partial<PointerEvent> {
@@ -36,8 +43,12 @@ Object.defineProperty(window, 'localStorage', { value: mock() });
 Object.defineProperty(window, 'sessionStorage', { value: mock() });
 Object.defineProperty(window, 'getComputedStyle', {
     value: () => ({
-        getPropertyValue: (prop: string) => '',
-        setProperty: (propertyName: string, value: string) => {}
+        getPropertyValue: () => '',
+        setProperty: () => {},
+        transitionDelay: '0s',
+        transitionDuration: '0s',
+        animationDelay: '0s',
+        animationDuration: '0s'
     })
 });
 
@@ -47,6 +58,11 @@ Object.defineProperty(document.body.style, 'transform', {
         configurable: true
     })
 });
+
+// structuredClone is not exposed by the happy-dom sandbox — polyfill for tests
+if (typeof globalThis.structuredClone === 'undefined') {
+    globalThis.structuredClone = <T>(obj: T): T => JSON.parse(JSON.stringify(obj));
+}
 
 // PrimeNG mocks
 (global as any).ResizeObserver = class ResizeObserver {
@@ -58,15 +74,15 @@ Object.defineProperty(document.body.style, 'transform', {
 // Mock window.matchMedia
 Object.defineProperty(window, 'matchMedia', {
     writable: true,
-    value: jest.fn().mockImplementation((query) => ({
+    value: vi.fn().mockImplementation((query) => ({
         matches: false,
         media: query,
         onchange: null,
-        addListener: jest.fn(),
-        removeListener: jest.fn(),
-        addEventListener: jest.fn(),
-        removeEventListener: jest.fn(),
-        dispatchEvent: jest.fn()
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn()
     }))
 });
 

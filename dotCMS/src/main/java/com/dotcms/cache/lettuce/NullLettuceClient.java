@@ -1,13 +1,20 @@
 package com.dotcms.cache.lettuce;
 
 import io.lettuce.core.api.StatefulConnection;
+import org.apache.commons.lang3.concurrent.ConcurrentUtils;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
 
+/**
+ * Null Object implementation of {@link RedisClient}: every operation is a no-op that returns a safe,
+ * non-null default. Used when Redis is unavailable/disabled so callers never NPE on Futures or collections.
+ */
+@SuppressWarnings("deprecation") // implements deprecated (but retained) RedisClient methods
 public class NullLettuceClient<K, V> implements RedisClient {
 
     @Override
@@ -32,7 +39,7 @@ public class NullLettuceClient<K, V> implements RedisClient {
 
     @Override
     public SetResult set(Object key, Object value) {
-        return null;
+        return SetResult.NO_CONN;
     }
 
     @Override
@@ -42,12 +49,12 @@ public class NullLettuceClient<K, V> implements RedisClient {
 
     @Override
     public Future<String> setAsync(Object key, Object value) {
-        return null;
+        return ConcurrentUtils.constantFuture("ERROR");
     }
 
     @Override
     public Future<String> setAsync(Object key, Object value, long ttlMillis) {
-        return null;
+        return ConcurrentUtils.constantFuture("ERROR");
     }
 
     @Override
@@ -57,12 +64,12 @@ public class NullLettuceClient<K, V> implements RedisClient {
 
     @Override
     public Future<Long> addAsyncMembers(Object key, Object... values) {
-        return null;
+        return ConcurrentUtils.constantFuture(0L);
     }
 
     @Override
     public SetResult setIfAbsent(Object key, Object value) {
-        return null;
+        return SetResult.NO_CONN;
     }
 
     @Override
@@ -77,7 +84,7 @@ public class NullLettuceClient<K, V> implements RedisClient {
 
     @Override
     public Set getMembers(Object key) {
-        return null;
+        return Collections.emptySet();
     }
 
     @Override
@@ -97,7 +104,7 @@ public class NullLettuceClient<K, V> implements RedisClient {
 
     @Override
     public Future<Long> deleteNonBlocking(Object... keys) {
-        return null;
+        return ConcurrentUtils.constantFuture(0L);
     }
 
     @Override
@@ -117,27 +124,27 @@ public class NullLettuceClient<K, V> implements RedisClient {
 
     @Override
     public Map getHash(Object key) {
-        return null;
+        return Collections.emptyMap();
     }
 
     @Override
     public Set fieldsHash(Object key) {
-        return null;
+        return Collections.emptySet();
     }
 
     @Override
     public List<Map.Entry> getHash(Object key, Object... fields) {
-        return null;
+        return Collections.emptyList();
     }
 
     @Override
     public SetResult setHash(Object key, Map map) {
-        return null;
+        return SetResult.NO_CONN;
     }
 
     @Override
     public SetResult setHash(Object key, Object field, Object value) {
-        return null;
+        return SetResult.NO_CONN;
     }
 
     @Override
@@ -157,12 +164,12 @@ public class NullLettuceClient<K, V> implements RedisClient {
 
     @Override
     public Future<Long> incrementOneAsync(Object key) {
-        return null;
+        return ConcurrentUtils.constantFuture(-1L);
     }
 
     @Override
     public Future<Long> incrementAsync(Object key, long amount) {
-        return null;
+        return ConcurrentUtils.constantFuture(-1L);
     }
 
     @Override

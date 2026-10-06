@@ -1,10 +1,10 @@
-import { patchState, signalStore, withHooks, withMethods } from '@ngrx/signals';
+import { patchState, signalStore, withComputed, withHooks, withMethods } from '@ngrx/signals';
 
-import { Location } from '@angular/common';
-import { effect, inject } from '@angular/core';
+import { computed, effect, inject } from '@angular/core';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { ComponentStatus } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
 import { withConversions } from './features/with-conversions.feature';
@@ -12,12 +12,22 @@ import { withEngagement } from './features/with-engagement.feature';
 import { withFilters } from './features/with-filters.feature';
 import { withPageview } from './features/with-pageview.feature';
 
-import { DASHBOARD_TAB_LIST, DASHBOARD_TABS, DashboardTab, TIME_RANGE_OPTIONS } from '../constants';
-import { TimeRangeInput } from '../types';
-import { isValidTab, paramsToTimeRange } from '../utils/filters.utils';
-import { silentNavigate } from '../utils/router.utils';
+import { DASHBOARD_TAB_LIST, DASHBOARD_TABS, TIME_RANGE_OPTIONS } from '../constants';
+import { RequestState, TimeRangeInput } from '../types';
+import { paramsToTimeRange } from '../utils/filters.utils';
 
 const TAB_CONFIG_MAP = new Map(DASHBOARD_TAB_LIST.map((tab) => [tab.id, tab]));
+
+/**
+ * A request is still settling — LOADING only, not INIT. `INIT` also covers "never asked to load"
+ * (e.g. the no-`currentSiteId` branches in `loadAllPageviewData`/`loadConversionsData`/
+ * `loadEngagementData`, which return without firing a request), which has no request in flight to
+ * ever resolve it — treating that as unsettled would leave `$isReportLoading` stuck `true`
+ * forever. A real load transitions LOADING synchronously the instant it starts (before any network
+ * round trip), so restricting to LOADING here doesn't miss the overlay for an actual in-flight load.
+ */
+const isUnsettled = (request: RequestState<unknown>): boolean =>
+    request.status === ComponentStatus.LOADING;
 
 /**
  * Analytics Dashboard Store
@@ -39,77 +49,109 @@ export const DotAnalyticsDashboardStore = signalStore(
     withPageview(),
     withConversions(),
     withEngagement(),
-    // Coordinator methods that work across features
-    withMethods(
-        (
-            store,
-            route = inject(ActivatedRoute),
-            router = inject(Router),
-            location = inject(Location)
-        ) => ({
-            /**
-             * Sets current tab and syncs URL without triggering Angular router navigation.
-             */
-            setCurrentTabAndNavigate(tab: DashboardTab): void {
-                store.setCurrentTab(tab);
-                silentNavigate(router, location, route, { tab });
-            },
-
-            /**
-             * Refreshes all currently loaded data based on the current tab.
-             */
-            refreshAllData(): void {
-                const currentTab = store.currentTab();
-
-                switch (currentTab) {
-                    case DASHBOARD_TABS.pageview:
-                        store.loadAllPageviewData();
-                        break;
-                    case DASHBOARD_TABS.engagement:
-                        store.loadEngagementData();
-                        break;
-                    case DASHBOARD_TABS.conversions:
-                        store.loadConversionsData();
-                        break;
-                }
-            },
-
-            /**
-             * Updates time range and syncs URL with query params.
-             *
-             * Uses `location.replaceState` (same as `setCurrentTabAndNavigate`) to avoid
-             * triggering router events that would reset component state.
-             *
-             * When `timeRange` is the bare `'custom'` string (dropdown selected but no
-             * dates chosen yet), only the URL is updated — store state is left unchanged
-             * so no data reload is triggered until a full date range is confirmed.
-             */
-            updateTimeRange(timeRange: TimeRangeInput): void {
-                const queryParams: Params = {};
-
-                if (Array.isArray(timeRange)) {
-                    // Complete custom date range — update state and URL
-                    store.setTimeRange(timeRange);
-                    queryParams['time_range'] = TIME_RANGE_OPTIONS.custom;
-                    queryParams['from'] = timeRange[0];
-                    queryParams['to'] = timeRange[1];
-                } else {
-                    // Predefined range OR bare 'custom' (no dates yet)
-                    // Only update state for predefined ranges, not for bare 'custom'
-                    if (timeRange !== TIME_RANGE_OPTIONS.custom) {
-                        store.setTimeRange(timeRange);
-                    }
-
-                    queryParams['time_range'] = timeRange;
-                    // Null out from/to to remove them from the URL when switching away from custom
-                    queryParams['from'] = null;
-                    queryParams['to'] = null;
-                }
-
-                silentNavigate(router, location, route, queryParams);
+    withComputed((store) => ({
+        /**
+         * Whether the active tab's data is still loading. `true` from the moment the tab's
+         * loads are kicked off until every one of its slices has reached a final LOADED/ERROR
+         * status — mirrors the edit-content layout's reload-overlay pattern (hold the overlay
+         * until everything has settled, not just the first response back), so the dashboard
+         * shell can show a full-report loading overlay instead of only the per-widget skeletons.
+         */
+        $isReportLoading: computed(() => {
+            switch (store.currentTab()) {
+                case DASHBOARD_TABS.pageview:
+                    return [
+                        store.totalPageViews(),
+                        store.uniqueVisitors(),
+                        store.topPagePerformance(),
+                        store.pageViewTimeLine(),
+                        store.pageViewDeviceBreakdown(),
+                        store.pageViewBrowserBreakdown(),
+                        store.topPagesTable()
+                    ].some(isUnsettled);
+                case DASHBOARD_TABS.conversions:
+                    return [
+                        store.totalConversions(),
+                        store.convertingVisitors(),
+                        store.conversionTrend(),
+                        store.trafficVsConversions(),
+                        store.contentConversions()
+                    ].some(isUnsettled);
+                case DASHBOARD_TABS.engagement:
+                    return [
+                        store.engagementKpis(),
+                        store.engagementSparkline(),
+                        store.engagementBreakdown(),
+                        store.engagementPlatforms()
+                    ].some(isUnsettled);
+                default:
+                    return false;
             }
         })
-    ),
+    })),
+    // Coordinator methods that work across features
+    withMethods((store, route = inject(ActivatedRoute), router = inject(Router)) => ({
+        /**
+         * Refreshes all currently loaded data based on the current tab.
+         */
+        refreshAllData(): void {
+            const currentTab = store.currentTab();
+
+            switch (currentTab) {
+                case DASHBOARD_TABS.pageview:
+                    store.loadAllPageviewData();
+                    break;
+                case DASHBOARD_TABS.engagement:
+                    store.loadEngagementData();
+                    break;
+                case DASHBOARD_TABS.conversions:
+                    store.loadConversionsData();
+                    break;
+            }
+        },
+
+        /**
+         * Updates time range and syncs URL with query params using the Angular Router
+         * so `routerLink` + `queryParamsHandling="preserve"` keeps the current filter
+         * in the URL when switching report tabs.
+         *
+         * Uses `replaceUrl: true` to avoid stacking history entries like the previous
+         * replaceState-only update.
+         *
+         * When `timeRange` is the bare `'custom'` string (dropdown selected but no
+         * dates chosen yet), only the URL is updated — store state is left unchanged
+         * so no data reload is triggered until a full date range is confirmed.
+         */
+        updateTimeRange(timeRange: TimeRangeInput): void {
+            const queryParams: Params = {};
+
+            if (Array.isArray(timeRange)) {
+                // Complete custom date range — update state and URL
+                store.setTimeRange(timeRange);
+                queryParams['time_range'] = TIME_RANGE_OPTIONS.custom;
+                queryParams['from'] = timeRange[0];
+                queryParams['to'] = timeRange[1];
+            } else {
+                // Predefined range OR bare 'custom' (no dates yet)
+                // Only update state for predefined ranges, not for bare 'custom'
+                if (timeRange !== TIME_RANGE_OPTIONS.custom) {
+                    store.setTimeRange(timeRange);
+                }
+
+                queryParams['time_range'] = timeRange;
+                // Null out from/to to remove them from the URL when switching away from custom
+                queryParams['from'] = null;
+                queryParams['to'] = null;
+            }
+
+            void router.navigate([], {
+                relativeTo: route,
+                queryParams,
+                queryParamsHandling: 'merge',
+                replaceUrl: true
+            });
+        }
+    })),
     withHooks({
         onInit(store) {
             const route = inject(ActivatedRoute);
@@ -117,8 +159,8 @@ export const DotAnalyticsDashboardStore = signalStore(
             const messageService = inject(DotMessageService);
             const params = route.snapshot.queryParams;
 
-            // Set initial state from query params
-            patchState(store, setTabFromQueryParams(params), setTimeRangeFromQueryParams(params));
+            // Set initial time range from query params (tab is synced from the route in the shell component)
+            patchState(store, setTimeRangeFromQueryParams(params));
 
             // Update breadcrumb when currentTab changes
             effect(() => {
@@ -170,19 +212,4 @@ const setTimeRangeFromQueryParams = (params: Params) => {
     const timeRange = paramsToTimeRange(params || {});
 
     return { timeRange };
-};
-
-/**
- * Sets the tab from the query params.
- * @param params - The query params.
- * @returns The tab.
- */
-const setTabFromQueryParams = (params: Params) => {
-    const currentTab = params?.['tab'];
-
-    if (currentTab && isValidTab(currentTab)) {
-        return { currentTab };
-    }
-
-    return {};
 };

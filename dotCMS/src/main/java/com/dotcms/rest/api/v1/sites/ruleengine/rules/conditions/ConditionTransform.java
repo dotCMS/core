@@ -1,6 +1,6 @@
 package com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions;
 
-import com.dotcms.repackage.com.google.common.collect.Maps;
+import com.google.common.collect.Maps;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.LogicalOperator;
 import com.dotmarketing.portlets.rules.model.ParameterModel;

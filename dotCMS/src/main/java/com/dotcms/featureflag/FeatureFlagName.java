@@ -9,6 +9,26 @@ public interface FeatureFlagName {
     // Experiments and Analytics
     String FEATURE_FLAG_EXPERIMENTS = "FEATURE_FLAG_EXPERIMENTS";
 
+    /**
+     * Selects which experiments experience the Universal Visual Editor's Experiments navigation
+     * item leads to: the new site-wide Experiments portlet when on, the legacy per-page screens
+     * when off. Off by default ({@code dotmarketing-config.properties} sets
+     * {@code FEATURE_FLAG_EXPERIMENTS_PORTLET=false}) so existing customers keep the flow they
+     * have until they opt in.
+     *
+     * <p><b>Not</b> a kill-switch for experiments. {@link #FEATURE_FLAG_EXPERIMENTS} is that, and
+     * this value has no bearing on whether experiments are served to site visitors, on experiment
+     * JavaScript injection, or on experiment resolution during page render.
+     *
+     * <p>The explicit {@code false} in the properties file is required rather than decorative: the
+     * shared frontend flag readers treat an absent property as <i>enabled</i>, so declaring this
+     * switch without shipping a value would deliver it on.
+     *
+     * <p>Retired by #37008, which removes the legacy per-page screens. Frontend equivalent:
+     * {@code FeaturedFlags.FEATURE_FLAG_EXPERIMENTS_PORTLET}.
+     */
+    String FEATURE_FLAG_EXPERIMENTS_PORTLET = "FEATURE_FLAG_EXPERIMENTS_PORTLET";
+
     String FEATURE_FLAG_TELEMETRY_CORE_ENABLED = "FEATURE_FLAG_TELEMETRY_CORE_ENABLED";
 
     String FEATURE_FLAG_CONTENT_ANALYTICS = "FEATURE_FLAG_CONTENT_ANALYTICS";
@@ -45,7 +65,9 @@ public interface FeatureFlagName {
 
     String FEATURE_FLAG_UVE_STYLE_EDITOR = "FEATURE_FLAG_UVE_STYLE_EDITOR";
 
-    String FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES = "FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES";
+    String FEATURE_FLAG_PAGE_SCANNER = "FEATURE_FLAG_PAGE_SCANNER";
+
+    String FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION = "FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION";
 
     /**
      * Controls the active ES → OpenSearch migration phase (integer ordinal 0–3).
@@ -60,4 +82,69 @@ public interface FeatureFlagName {
      * @see com.dotcms.content.index.IndexConfigHelper.MigrationPhase
      */
     String FEATURE_FLAG_OPEN_SEARCH_PHASE = "FEATURE_FLAG_OPEN_SEARCH_PHASE";
+
+    /**
+     * Escape hatch for Velocity templates that still call the deprecated Elasticsearch-only
+     * {@code $estool.esSearch()} / {@code $estool.esRaw()} once the migration reaches Phase 3.
+     *
+     * <p>In Phase 3 Elasticsearch no longer receives writes, so those calls could only answer from the
+     * index frozen at cutover. By default (off) they fail with a clear error, which fails the page
+     * render. Turning this on makes them return {@code null} instead — the page renders, the block
+     * that used the call shows nothing (or its unresolved {@code $variable}, depending on how the
+     * template references it) — and logs a rate-limited warning naming the migration to do. Neither
+     * mode ever serves frozen Elasticsearch results. Meant to be switched on temporarily by support
+     * while a customer migrates those calls to {@code $estool.search()} / {@code $estool.raw()}; it
+     * has no effect before Phase 3 and does not change the Java API, which always fails in Phase 3.</p>
+     */
+    String FEATURE_FLAG_OPEN_SEARCH_LEGACY_ES_SEARCH_RETURNS_NULL =
+            "FEATURE_FLAG_OPEN_SEARCH_LEGACY_ES_SEARCH_RETURNS_NULL";
+
+    String FEATURE_FLAG_NEW_BLOCK_EDITOR = "FEATURE_FLAG_NEW_BLOCK_EDITOR";
+
+    String FEATURE_FLAG_REPORT_ISSUE_ENABLED = "FEATURE_FLAG_REPORT_ISSUE_ENABLED";
+    /**
+     * Enables the new content editor (Edit Content v2).
+     * Also checked in content-type metadata to opt individual types out.
+     * Frontend equivalent: {@code FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED}.
+     */
+    String FEATURE_FLAG_CONTENT_EDITOR2_ENABLED = "CONTENT_EDITOR2_ENABLED";
+
+    /**
+     * Opens the new content editor (Edit Content v2) in a right slide-in side panel instead of
+     * navigating full-screen (Content Drive) or a centered dialog (UVE). On by default
+     * ({@code dotmarketing-config.properties} sets {@code FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL=true}).
+     * Frontend equivalent: {@code FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL}.
+     */
+    String FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL = "FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL";
+
+    /**
+     * Minifies rendered page HTML (collapses insignificant whitespace and strips comments) before
+     * it is written to the response. Off by default.
+     *
+     * @see com.dotcms.rendering.util.HtmlMinifier
+     */
+    String FEATURE_FLAG_MINIFY_HTML = "FEATURE_FLAG_MINIFY_HTML";
+
+    /**
+     * libvips image-engine toggle (off by default; the legacy Java2D engine is used
+     * otherwise). The new image editor reads this through the configuration endpoint
+     * to gate the libvips-only AVIF output format. Not a UI feature flag — kept here so
+     * {@code ConfigurationResource} can reference it as a constant like the others.
+     */
+    String IMAGE_API_USE_LIBVIPS = "IMAGE_API_USE_LIBVIPS";
+
+    /**
+     * Gates the redesigned dotAI provider configuration page ({@code dot-ai-config-detail}).
+     * Off by default so existing customers keep seeing the restored pre-redesign dotAI config
+     * screen ({@code dot-ai-config-detail-legacy}) until they opt in.
+     * Frontend equivalent: {@code FeaturedFlags.FEATURE_FLAG_DOTAI_CONFIG_UI}.
+     */
+    String FEATURE_FLAG_DOTAI_CONFIG_UI = "FEATURE_FLAG_DOTAI_CONFIG_UI";
+
+    /**
+     * Routes experiment result queries to the CAEM analytics backend instead of CubeJS.
+     * Off by default; enable only after CAEM endpoints (#37223, #37224) are deployed and
+     * customer data has been migrated to CAEM.
+     */
+    String FEATURE_FLAG_CAEM_EXPERIMENT_RESULTS = "FEATURE_FLAG_CAEM_EXPERIMENT_RESULTS";
 }

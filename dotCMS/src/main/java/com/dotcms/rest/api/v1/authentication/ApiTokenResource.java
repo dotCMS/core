@@ -2,7 +2,7 @@ package com.dotcms.rest.api.v1.authentication;
 
 import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotcms.auth.providers.jwt.factories.ApiTokenAPI;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils;
 import com.dotcms.rest.InitDataObject;
@@ -68,6 +68,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -460,7 +461,7 @@ public class ApiTokenResource implements Serializable {
             return ExceptionMapperUtil.createResponse(new DotStateException("No user found"), Response.Status.NOT_FOUND);
         }
 
-        if (requestingUser != forUser && !requestingUser.isAdmin()) {
+        if (!Objects.equals(requestingUser.getUserId(), forUser.getUserId()) && !requestingUser.isAdmin()) {
             throw new DotDataException("Only Admin user can request a token for another user");
         }
 
@@ -493,6 +494,8 @@ public class ApiTokenResource implements Serializable {
 
         token = this.tokenApi.persistApiToken(token, requestingUser);
         final String jwt = this.tokenApi.getJWT(token, requestingUser);
+        SecurityLogger.logInfo(this.getClass(), "API token issued for user: " + forUser.getUserId()
+                + " by: " + requestingUser.getUserId() + " ip: " + request.getRemoteAddr());
         return Response.ok(new ResponseEntityMapView(Map.of("token", token, "jwt", jwt)))
                 .build(); // 200
     }

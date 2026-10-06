@@ -26,4 +26,21 @@ public interface AbstractQueryFilters {
     @JsonProperty("text")
     String text();
 
+    /**
+     * Which fields {@link #text()} is matched against.
+     *
+     * <p>Sits here rather than at the top level of the request because it qualifies {@code text}
+     * and means nothing without it — the same reason {@link #filterFolders()} lives here. A request
+     * carrying a search scope with no text is rejected as the contract error it is, rather than
+     * being silently ignored.</p>
+     *
+     * <p>Defaults to {@link SearchScope#ALL_FIELDS}, so a request that omits this field is
+     * processed exactly as it was before the field existed.</p>
+     *
+     * @return the {@link SearchScope}, never {@code null}
+     */
+    @JsonProperty("searchScope")
+    @Value.Default
+    default SearchScope searchScope() { return SearchScope.ALL_FIELDS; }
+
 }

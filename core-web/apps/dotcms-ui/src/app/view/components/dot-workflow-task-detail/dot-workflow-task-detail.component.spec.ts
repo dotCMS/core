@@ -1,27 +1,19 @@
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { of as observableOf } from 'rxjs';
+import { vi } from 'vitest';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ActivatedRoute } from '@angular/router';
 
 import { DotIframeService, DotRouterService, DotUiColorsService } from '@dotcms/data-access';
-import {
-    CoreWebService,
-    DotcmsConfigService,
-    DotcmsEventsService,
-    DotEventsSocket,
-    DotEventsSocketURL,
-    LoggerService,
-    LoginService,
-    StringUtils
-} from '@dotcms/dotcms-js';
-import { CoreWebServiceMock, LoginServiceMock, MockDotRouterService } from '@dotcms/utils-testing';
+import { DotcmsConfigService, LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
+import { LoginServiceMock, MockDotRouterService } from '@dotcms/utils-testing';
 
 import { DotWorkflowTaskDetailComponent } from './dot-workflow-task-detail.component';
 import { DotWorkflowTaskDetailService } from './services/dot-workflow-task-detail.service';
 
 import { DotMenuService } from '../../../api/services/dot-menu.service';
-import { dotEventSocketURLFactory } from '../../../test/dot-test-bed';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 import { DotIframeDialogComponent } from '../dot-iframe-dialog/dot-iframe-dialog.component';
 
@@ -31,20 +23,18 @@ describe('DotWorkflowTaskDetailComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotWorkflowTaskDetailComponent,
-        imports: [DotIframeDialogComponent, HttpClientTestingModule],
+        imports: [DotIframeDialogComponent],
         providers: [
+            provideHttpClient(),
+            provideHttpClientTesting(),
             DotWorkflowTaskDetailService,
             DotIframeService,
             DotUiColorsService,
             IframeOverlayService,
-            DotcmsEventsService,
-            DotEventsSocket,
             DotcmsConfigService,
             LoggerService,
             StringUtils,
-            { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
             { provide: LoginService, useClass: LoginServiceMock },
-            { provide: CoreWebService, useClass: CoreWebServiceMock },
             { provide: DotRouterService, useClass: MockDotRouterService },
             {
                 provide: ActivatedRoute,
@@ -85,10 +75,10 @@ describe('DotWorkflowTaskDetailComponent', () => {
                 id: '123'
             });
 
-            jest.spyOn(spectator.component, 'onClose');
-            jest.spyOn(dotWorkflowTaskDetailService, 'clear');
-            jest.spyOn(spectator.component.shutdown, 'emit');
-            jest.spyOn(spectator.component.custom, 'emit');
+            vi.spyOn(spectator.component, 'onClose');
+            vi.spyOn(dotWorkflowTaskDetailService, 'clear');
+            vi.spyOn(spectator.component.shutdown, 'emit');
+            vi.spyOn(spectator.component.custom, 'emit');
             spectator.detectChanges();
         });
 

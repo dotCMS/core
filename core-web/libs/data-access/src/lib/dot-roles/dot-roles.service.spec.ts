@@ -1,13 +1,9 @@
-import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotRole } from '@dotcms/dotcms-models';
-import {
-    CoreWebServiceMock,
-    MockDotMessageService,
-    mockProcessedRoles
-} from '@dotcms/utils-testing';
+import { MockDotMessageService, mockProcessedRoles } from '@dotcms/utils-testing';
 
 import { DotRolesService } from './dot-roles.service';
 
@@ -35,10 +31,10 @@ describe('DotRolesService', () => {
         });
 
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 DotRolesService,
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotMessageService, useValue: messageServiceMock }
             ]
         });
@@ -66,6 +62,32 @@ describe('DotRolesService', () => {
         const req = httpMock.expectOne(url);
         expect(req.request.method).toBe('GET');
         req.flush({ entity: JSON.parse(JSON.stringify(mockRoles)) });
+    });
+
+    describe('getUsers', () => {
+        it('should request the direct grants of a role without a filter', () => {
+            dotRolesService.getUsers('r/1').subscribe((users) => {
+                expect(users).toEqual([{ userId: 'u-1' }]);
+            });
+
+            const req = httpMock.expectOne('/api/v1/roles/r%2F1/users?per_page=500');
+            expect(req.request.method).toBe('GET');
+            req.flush({ entity: [{ userId: 'u-1' }] });
+        });
+
+        it('should send a trimmed, encoded filter when one is given', () => {
+            dotRolesService.getUsers('r-1', '  jane & co ').subscribe();
+
+            httpMock
+                .expectOne('/api/v1/roles/r-1/users?per_page=500&filter=jane%20%26%20co')
+                .flush({ entity: [] });
+        });
+
+        it('should omit a blank filter', () => {
+            dotRolesService.getUsers('r-1', '   ').subscribe();
+
+            httpMock.expectOne('/api/v1/roles/r-1/users?per_page=500').flush({ entity: [] });
+        });
     });
 
     afterEach(() => {

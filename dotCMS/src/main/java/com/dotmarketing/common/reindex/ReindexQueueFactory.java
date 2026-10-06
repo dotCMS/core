@@ -3,12 +3,16 @@ package com.dotmarketing.common.reindex;
 import com.dotcms.contenttype.model.type.ContentType;
 import java.math.BigDecimal;
 import java.sql.Connection;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 import org.apache.commons.lang.StringUtils;
@@ -26,6 +30,7 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
+import io.vavr.Lazy;
 import com.google.common.collect.ImmutableList;
 
 
@@ -196,7 +201,7 @@ public class ReindexQueueFactory {
     protected List<ReindexEntry> getFailedReindexRecords() throws DotDataException {
         final DotConnect dc = new DotConnect();
         dc.setSQL(
-                "SELECT id, ident_to_index, priority, index_val, time_entered FROM dist_reindex_journal WHERE priority > ?");
+                "SELECT id, ident_to_index, priority, dist_action, index_val, time_entered FROM dist_reindex_journal WHERE priority > ?");
         dc.addParam(ReindexQueueFactory.Priority.REINDEX.dbValue());
         final List<Map<String, Object>> failedRecords = dc.loadObjectResults();
         final List<ReindexEntry> failed = new ArrayList<>();
@@ -217,21 +222,36 @@ public class ReindexQueueFactory {
                 priority = Integer.parseInt(map.get("priority").toString());
             }
 
-            final ReindexEntry ridx = new ReindexEntry()
-                    .setId(identifier)
-                    .setIdentToIndex((String) map.get("ident_to_index"))
-                    .setPriority(priority)
-                    .setTimeEntered((Date) map.get("time_entered"))
-                    .setLastResult(indexVal);
+            final ReindexEntry ridx = ReindexEntry.builder()
+                    .id(identifier)
+                    .identToIndex((String) map.get("ident_to_index"))
+                    .priority(priority)
+                    // A removal that exhausted its retries is still a removal. Reporting it as a
+                    // reindex sends whoever reads this list looking for content that no longer
+                    // exists, instead of for an index document that should have been removed.
+                    .isDelete(isDeleteAction(map))
+                    .timeEntered((Date) map.get("time_entered"))
+                    .lastResult(indexVal)
+                    .build();
             failed.add(ridx);
         }
         return failed;
     }
 
+    /**
+     * Acknowledges a single processed entry.
+     *
+     * <p>Rows for the same identifier up to and including this one are removed together: they are
+     * earlier statements about the same content, already superseded by the entry just applied.
+     * The {@code id <= ?} bound is what keeps the sweep honest — a row written <em>after</em> this
+     * batch was loaded (a delete queued while the reindex was in flight) describes work nobody has
+     * done yet, and acknowledging it here would drop it silently (#37276).</p>
+     */
     protected void deleteReindexEntry(ReindexEntry iJournal) throws DotDataException {
         DotConnect dc = new DotConnect();
-        dc.setSQL("DELETE FROM dist_reindex_journal where ident_to_index = ? or id= ?");
+        dc.setSQL("DELETE FROM dist_reindex_journal where (ident_to_index = ? and id <= ?) or id = ?");
         dc.addParam(iJournal.getIdentToIndex());
+        dc.addParam(iJournal.getId());
         dc.addParam(iJournal.getId());
         dc.loadResult();
     }
@@ -243,6 +263,13 @@ public class ReindexQueueFactory {
         dc.loadResult();
     }
 
+    /**
+     * Acknowledges a batch of processed entries.
+     *
+     * <p>Bounded by row id for the reason given on {@link #deleteReindexEntry(ReindexEntry)}: the
+     * batch may have been in flight for as long as the bulk write took, and anything queued for
+     * the same identifier in that window has not been applied yet.</p>
+     */
     protected void deleteReindexEntry(final List<ReindexEntry> recordsToDelete)
             throws DotDataException {
         final DotConnect dotConnect = new DotConnect();
@@ -251,14 +278,12 @@ public class ReindexQueueFactory {
         int from = 0;
         while (from <= recordsToDelete.size()) {
             dotConnect.executeBatch(
-                    "DELETE FROM dist_reindex_journal where " + (DbConnectionFactory.isMySql()
-                            ? "id = ?" : "ident_to_index = ?"),
+                    "DELETE FROM dist_reindex_journal where ident_to_index = ? and id <= ?",
                     recordsToDelete
                             .subList(from, Math.min(recordsToDelete.size(), batchSize + from))
-                            .stream().map(entry -> new Params(
-                                    DbConnectionFactory.isMySql() ? entry.getId()
-                                            : entry.getIdentToIndex())).collect(
-                                    Collectors.toList()));
+                            .stream()
+                            .map(entry -> new Params(entry.getIdentToIndex(), entry.getId()))
+                            .collect(Collectors.toList()));
 
             from += batchSize;
         }
@@ -293,7 +318,20 @@ public class ReindexQueueFactory {
         }
 
         for (ReindexEntry entry; (entry = queue.poll()) != null; ) {
-            contentToIndex.put(entry.getIdentToIndex(), entry);
+            // One outcome per identifier per batch, resolved by row id rather than by the order
+            // the entries happened to be polled in. Two entries for the same identifier are
+            // successive statements about what the index should hold, and only the newest is
+            // true: a DELETE written after a REINDEX means the content is gone, so applying the
+            // REINDEX afterwards would re-add a document for content that no longer exists.
+            //
+            // The losing row is discarded rather than retried, and that is deliberate — it has
+            // been superseded, so re-applying it could only undo the outcome just applied. The
+            // ack drops it along with the winner (deleteReindexEntry bounds its sweep by
+            // id <= winner), which is also what stops the ack from reaching a row queued after
+            // this batch was loaded.
+            contentToIndex.merge(entry.getIdentToIndex(), entry,
+                    (existing, candidate) -> candidate.getId() > existing.getId()
+                            ? candidate : existing);
             if (contentToIndex.size() >= recordsToReturn) {
                 while (entry.equals(queue.peek())) {
                     // drain duplicate items
@@ -349,19 +387,151 @@ public class ReindexQueueFactory {
 
         if (queue.isEmpty()) {
             lastIdIndexed = 0;
+            if (reindexingServers.size() > 1) {
+                // A safety net must never break what it protects: a failure here is logged and the
+                // normal path carries on as it did before this check existed.
+                try {
+                    takeOverStarvedSlices(reindexingServers, myIndex, priorityLevel);
+                } catch (final Exception e) {
+                    Logger.warn(this.getClass(), "Could not check the other servers' reindex "
+                            + "shares for stalls: " + e.getMessage(), e);
+                }
+            }
         }
     }
 
-    private ReindexEntry mapToReindexEntry(Map<String, Object> map) {
-        final ReindexEntry entry = new ReindexEntry();
-        entry.setId(((Number) map.get("id")).longValue());
-        String identifier = (String) map.get("ident_to_index");
-        entry.setIdentToIndex(identifier);
-        entry.setPriority(((Number) (map.get("priority"))).intValue());
-        entry.setDelete(
-                ((Number) (map.get("dist_action"))).intValue() == ReindexAction.DELETE.ordinal());
-        return entry;
+    /**
+     * How long another server's share of the journal may sit unchanged before an idle server takes
+     * it over. Read once: it is consulted on every idle poll of the reindex thread.
+     */
+    private static final Lazy<Duration> STARVED_SLICE_THRESHOLD = Lazy.of(() -> Duration.ofSeconds(
+            Config.getIntProperty("REINDEX_STARVED_SLICE_SECONDS", 120)));
 
+    private static StarvedSliceDetector starvedSliceDetector;
+
+    /** Shares whose takeover has already been logged; used only from the reindex thread. */
+    private static final Set<Integer> announcedTakeovers = new HashSet<>();
+
+    private static synchronized StarvedSliceDetector starvedSliceDetector() {
+        if (null == starvedSliceDetector) {
+            starvedSliceDetector = new StarvedSliceDetector(STARVED_SLICE_THRESHOLD.get());
+        }
+        return starvedSliceDetector;
+    }
+
+    /**
+     * Called when this server's own share of the journal is empty: loads the rows of any other
+     * share that has stopped moving.
+     *
+     * <p>The journal is split by {@code MOD(id, servers)} across every server that pinged in the
+     * last few minutes. A server that keeps pinging but does not index leaves its share untouched
+     * for as long as it keeps pinging, and a full reindex then hangs part-way with no error, no
+     * failed entries and nothing in the log (issue #36482). An idle server now picks those rows
+     * up. The worst case is indexing a document twice, which is harmless; the alternative was
+     * content that never got indexed.</p>
+     *
+     * <p>The check costs one grouped count, and only runs while this server has nothing of its own
+     * to do and the journal is split more than one way.</p>
+     */
+    private void takeOverStarvedSlices(final List<String> reindexingServers, final int myIndex,
+            final int priorityLevel) throws DotDataException {
+        final int sliceCount = reindexingServers.size();
+        final Map<Integer, StarvedSliceDetector.SliceSnapshot> snapshot =
+                loadShareSnapshot(sliceCount, priorityLevel);
+
+        final List<Integer> starved = starvedSliceDetector().starvedSlices(snapshot, myIndex,
+                sliceCount, Instant.now());
+        // One WARN per takeover, not one per poll while it lasts.
+        announcedTakeovers.retainAll(starved);
+        for (final int slice : starved) {
+            if (announcedTakeovers.add(slice)) {
+                Logger.warn(this.getClass(), String.format("Reindex share %d of %d, assigned to "
+                                + "server %s, has held %d entries without progress for over %d s. "
+                                + "That server is listed as alive but is not indexing its share; "
+                                + "this server is taking the entries over (issue #36482).", slice,
+                        sliceCount, reindexingServers.get(slice), snapshot.get(slice).count(),
+                        STARVED_SLICE_THRESHOLD.get().getSeconds()));
+            }
+
+            queue.addAll(loadShareEntries(sliceCount, slice, priorityLevel));
+        }
+    }
+
+    /**
+     * Row count and lowest id of every non-empty share of the journal, keyed by slice number.
+     *
+     * @param sliceCount how many ways the journal is split
+     * @param priorityLevel the highest priority still eligible for indexing
+     */
+    @VisibleForTesting
+    @CloseDBIfOpened
+    Map<Integer, StarvedSliceDetector.SliceSnapshot> loadShareSnapshot(final int sliceCount,
+            final int priorityLevel) throws DotDataException {
+        final DotConnect shares = new DotConnect();
+        // Grouped by position: PostgreSQL does not treat two bound MOD(id, ?) expressions as the
+        // same one, so "group by MOD(id, ?)" is rejected.
+        shares.setSQL("select MOD(id, ?) as slice, count(*) as rows_left, min(id) as min_id"
+                + " from dist_reindex_journal where priority <= ? group by 1");
+        shares.addParam(sliceCount);
+        shares.addParam(priorityLevel);
+
+        final Map<Integer, StarvedSliceDetector.SliceSnapshot> snapshot = new HashMap<>();
+        for (final Map<String, Object> row : shares.loadObjectResults()) {
+            snapshot.put(((Number) row.get("slice")).intValue(),
+                    new StarvedSliceDetector.SliceSnapshot(
+                            ((Number) row.get("rows_left")).longValue(),
+                            ((Number) row.get("min_id")).longValue()));
+        }
+        return snapshot;
+    }
+
+    /**
+     * Up to one batch of the entries in one share of the journal, in the order the normal path
+     * reads its own share.
+     *
+     * @param sliceCount how many ways the journal is split
+     * @param slice the share to read
+     * @param priorityLevel the highest priority still eligible for indexing
+     */
+    @VisibleForTesting
+    @CloseDBIfOpened
+    List<ReindexEntry> loadShareEntries(final int sliceCount, final int slice,
+            final int priorityLevel) throws DotDataException {
+        final DotConnect rows = new DotConnect();
+        rows.setSQL("select * from dist_reindex_journal where MOD(id, ?) = ?"
+                + " and priority <= ? ORDER BY priority ASC LIMIT 2000");
+        rows.addParam(sliceCount);
+        rows.addParam(slice);
+        rows.addParam(priorityLevel);
+        return rows.loadObjectResults().stream()
+                .map(this::mapToReindexEntry)
+                .collect(Collectors.toList());
+    }
+
+    private ReindexEntry mapToReindexEntry(final Map<String, Object> map) {
+        return ReindexEntry.builder()
+                .id(((Number) map.get("id")).longValue())
+                .identToIndex((String) map.get("ident_to_index"))
+                .priority(((Number) map.get("priority")).intValue())
+                .isDelete(isDeleteAction(map))
+                .build();
+    }
+
+    /**
+     * Decodes the {@code dist_action} column of a journal row into the delete flag.
+     *
+     * <p>Every read path must go through here: a row whose action is not decoded defaults to
+     * {@link ReindexAction#REINDEX}, which turns a pending removal into a no-op reindex — the
+     * failure mode #37276 is about. A missing value is treated as a reindex on purpose, matching
+     * how rows written before the column carried meaning are interpreted.</p>
+     *
+     * @param map one row of {@code dist_reindex_journal}
+     * @return {@code true} when the row asks for the document to be removed from the index
+     */
+    private static boolean isDeleteAction(final Map<String, Object> map) {
+        final Object action = map.get("dist_action");
+        return action instanceof Number
+                && ((Number) action).intValue() == ReindexAction.DELETE.ordinal();
     }
 
 

@@ -1,10 +1,11 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, input, ChangeDetectionStrategy } from '@angular/core';
 
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 
 @Component({
     selector: 'dot-link',
     imports: [DotMessagePipe],
+    changeDetection: ChangeDetectionStrategy.Eager,
     templateUrl: './dot-link.component.html'
 })
 export class DotLinkComponent {

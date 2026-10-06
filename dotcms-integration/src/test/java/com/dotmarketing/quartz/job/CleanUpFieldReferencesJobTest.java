@@ -6,6 +6,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 
+import com.dotcms.DataProviderWeldRunner;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
@@ -29,13 +30,13 @@ import com.dotmarketing.util.Config;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
-import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.io.Serializable;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import javax.enterprise.context.ApplicationScoped;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -43,7 +44,8 @@ import org.junit.runner.RunWith;
 /**
  * @author nollymar
  */
-@RunWith(DataProviderRunner.class)
+@ApplicationScoped
+@RunWith(DataProviderWeldRunner.class)
 public class CleanUpFieldReferencesJobTest extends IntegrationTestBase {
 
     final CleanUpFieldReferencesJob instance = new CleanUpFieldReferencesJob();
@@ -51,8 +53,8 @@ public class CleanUpFieldReferencesJobTest extends IntegrationTestBase {
     @BeforeClass
     public static void prepare() throws Exception {
         // Setting web app environment
-        APILocator.getContentletIndexAPI().checkAndInitialiazeIndex();
         IntegrationTestInitService.getInstance().init();
+        APILocator.getContentletIndexAPI().checkAndInitializeIndex();
 
     }
 

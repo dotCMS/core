@@ -1,4 +1,4 @@
-import { describe, expect, it } from '@jest/globals';
+import { describe, expect, it, vi } from 'vitest';
 
 import { DotContainer } from '@dotcms/dotcms-models';
 
@@ -10,7 +10,7 @@ import {
 } from './gridstack-utils';
 import { FULL_DATA_MOCK_UNSORTED, MINIMAL_DATA_MOCK, ROWS_MOCK } from './mocks';
 
-global.structuredClone = jest.fn((val) => {
+global.structuredClone = vi.fn((val) => {
     return JSON.parse(JSON.stringify(val));
 });
 
@@ -129,6 +129,31 @@ describe('parseFromDotObjectToGridStack', () => {
         expect(result[0].subGridOpts?.children[0].id).toBeDefined();
     });
 
+    it('should preserve metadata on rows and columns', () => {
+        const data = {
+            rows: [
+                {
+                    columns: [
+                        {
+                            containers: [],
+                            leftOffset: 1,
+                            width: 12,
+                            styleClass: '',
+                            metadata: { name: 'Main column' }
+                        }
+                    ],
+                    styleClass: '',
+                    metadata: { name: 'Hero row' }
+                }
+            ]
+        };
+
+        const result = parseFromDotObjectToGridStack(data);
+
+        expect(result[0].metadata).toEqual({ name: 'Hero row' });
+        expect(result[0].subGridOpts?.children[0].metadata).toEqual({ name: 'Main column' });
+    });
+
     it('should return a row with container using identifier when path is not available', () => {
         const mockContainer = {
             identifier: 'test-container-id',
@@ -183,6 +208,32 @@ describe('parseFromGridStackToDotObject', () => {
         });
 
         expect(sorted).toBeTruthy();
+    });
+
+    it('should preserve metadata on rows and columns through the round-trip', () => {
+        const data = {
+            rows: [
+                {
+                    columns: [
+                        {
+                            containers: [],
+                            leftOffset: 1,
+                            width: 12,
+                            styleClass: '',
+                            metadata: { name: 'Main column' }
+                        }
+                    ],
+                    styleClass: '',
+                    metadata: { name: 'Hero row' }
+                }
+            ]
+        };
+
+        const gridstack = parseFromDotObjectToGridStack(data);
+        const result = parseFromGridStackToDotObject(gridstack);
+
+        expect(result.rows[0].metadata).toEqual({ name: 'Hero row' });
+        expect(result.rows[0].columns[0].metadata).toEqual({ name: 'Main column' });
     });
 
     it('should return an empty DotBodyLayour when no rows are provided', () => {

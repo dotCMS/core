@@ -1,5 +1,7 @@
 package com.dotcms.ai.api;
 
+import com.dotcms.ai.app.AppConfig;
+import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.util.AIUtil;
 import com.dotcms.ai.workflow.OpenAITranslationActionlet;
 import com.dotcms.contenttype.model.field.Field;
@@ -9,6 +11,7 @@ import com.dotcms.translate.AbstractTranslationService;
 import com.dotcms.translate.ServiceParameter;
 import com.dotcms.translate.TranslationException;
 import com.dotcms.translate.TranslationService;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -134,8 +137,12 @@ public class OpenAITranslationService extends AbstractTranslationService {
        // Create AI request
        JSONObject promptJson = buildAIRequest(contentlet, promptData);
 
+       // Resolve host-specific AppConfig so the correct AI provider is used
+       final Host host = Try.of(() -> APILocator.getHostAPI().find(contentlet.getHost(), user, false)).getOrNull();
+       final AppConfig appConfig = ConfigService.INSTANCE.config(host);
+
        // Execute AI call and process response
-       JSONObject aiResponse = executeTranslation(promptJson);
+       JSONObject aiResponse = executeTranslation(promptJson, appConfig);
 
        if (aiResponse.isEmpty()) {
           return null;
@@ -242,11 +249,11 @@ public class OpenAITranslationService extends AbstractTranslationService {
    /**
     * Executes the translation request to the AI API.
     */
-   private JSONObject executeTranslation(JSONObject promptJson) {
+   private JSONObject executeTranslation(final JSONObject promptJson, final AppConfig appConfig) {
       Logger.info(this.getClass(), "promptJson: " + promptJson.toString(2) + "\n\n");
 
       final JSONObject openAIResponse = APILocator.getDotAIAPI()
-                .getCompletionsAPI()
+                .getCompletionsAPI(appConfig)
                 .raw(promptJson, APILocator.systemUser().getUserId());
 
         Logger.info(this.getClass(), "openAIResponse: " + openAIResponse.toString(2) + "\n\n");

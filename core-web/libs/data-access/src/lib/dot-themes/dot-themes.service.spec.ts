@@ -7,52 +7,15 @@ import { DotTheme } from '@dotcms/dotcms-models';
 import { DotThemesService } from './dot-themes.service';
 
 describe('DotThemesService', () => {
-    let dotThemesService: DotThemesService;
+    let service: DotThemesService;
     let httpMock: HttpTestingController;
-
-    const mockThemeEntity = {
-        identifier: '5b347ae0d847b6d0fc7215bf329690d4',
-        inode: '5b347ae0d847b6d0fc7215bf329690d4',
-        path: '/application/themes/test-1/',
-        title: 'Test 1',
-        themeThumbnail: null,
-        name: 'test-1',
-        hostId: '8a7d5e23-da1e-420a-b4f0-471e7da8ea2d'
-    };
-
-    const expectedTheme: DotTheme = {
-        identifier: '5b347ae0d847b6d0fc7215bf329690d4',
-        inode: '5b347ae0d847b6d0fc7215bf329690d4',
-        path: '/application/themes/test-1/',
-        title: 'Test 1',
-        themeThumbnail: null,
-        name: 'test-1',
-        hostId: '8a7d5e23-da1e-420a-b4f0-471e7da8ea2d'
-    };
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            providers: [DotThemesService, provideHttpClient(), provideHttpClientTesting()]
+            providers: [provideHttpClient(), provideHttpClientTesting(), DotThemesService]
         });
-        dotThemesService = TestBed.inject(DotThemesService);
+        service = TestBed.inject(DotThemesService);
         httpMock = TestBed.inject(HttpTestingController);
-    });
-
-    it('should get theme by id', () => {
-        dotThemesService.get('5b347ae0d847b6d0fc7215bf329690d4').subscribe((theme: DotTheme) => {
-            expect(theme).toEqual(expectedTheme);
-        });
-
-        const req = httpMock.expectOne(`/api/v1/themes/id/5b347ae0d847b6d0fc7215bf329690d4`);
-        expect(req.request.method).toBe('GET');
-        req.flush({
-            entity: mockThemeEntity,
-            errors: [],
-            i18nMessagesMap: {},
-            messages: [],
-            pagination: null,
-            permissions: []
-        });
     });
 
     describe('getThemes', () => {
@@ -89,7 +52,7 @@ describe('DotThemesService', () => {
         };
 
         it('should get themes with default parameters', () => {
-            dotThemesService
+            service
                 .getThemes({ hostId: '8a7d5e23-da1e-420a-b4f0-471e7da8ea2d' })
                 .subscribe((result) => {
                     expect(result.themes).toEqual(mockThemesResponse.entity);
@@ -111,7 +74,7 @@ describe('DotThemesService', () => {
         });
 
         it('should get themes with custom pagination parameters', () => {
-            dotThemesService
+            service
                 .getThemes({
                     hostId: '8a7d5e23-da1e-420a-b4f0-471e7da8ea2d',
                     page: 2,
@@ -138,7 +101,7 @@ describe('DotThemesService', () => {
         });
 
         it('should get themes with search parameter', () => {
-            dotThemesService
+            service
                 .getThemes({
                     hostId: '8a7d5e23-da1e-420a-b4f0-471e7da8ea2d',
                     searchParam: 'test'
@@ -165,7 +128,7 @@ describe('DotThemesService', () => {
 
         it('should get themes with custom hostId', () => {
             const customHostId = 'custom-host-id';
-            dotThemesService
+            service
                 .getThemes({
                     hostId: customHostId
                 })
@@ -188,5 +151,30 @@ describe('DotThemesService', () => {
 
     afterEach(() => {
         httpMock.verify();
+    });
+
+    it('should get theme by inode', () => {
+        const mockTheme: DotTheme = {
+            inode: 'test-inode',
+            name: 'Test Theme',
+            identifier: 'test-id',
+            title: 'Test Theme',
+            themeThumbnail: '',
+            path: '/application/themes/test/',
+            hostId: 'test-host',
+            host: {
+                hostName: 'test-host',
+                inode: 'test-inode',
+                identifier: 'test-id'
+            }
+        };
+
+        service.get('test-inode').subscribe((theme: DotTheme) => {
+            expect(theme).toEqual(mockTheme);
+        });
+
+        const req = httpMock.expectOne('/api/v1/themes/id/test-inode');
+        expect(req.request.method).toBe('GET');
+        req.flush({ entity: mockTheme });
     });
 });

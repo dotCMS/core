@@ -37,6 +37,7 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -282,6 +283,99 @@ public class PublisherTest extends IntegrationTestBase {
         } finally {
 
             deleteTestPPData(systemUser, testContentType, ppBean, resultContentlet);
+
+        }
+    }
+
+    /**
+     * Method to test: {@link com.dotcms.content.elasticsearch.business.ESContentletAPIImpl#updateTemplateInAllLanguageVersions(Contentlet, User)}
+     * exercised through push publishing on the receiver.
+     * Given Scenario:
+     * - Create an HTML Page (which has a template field) with two language versions (default + Spanish)
+     * - Archive both language versions
+     * - Push publish the page; the receiver processes each language version sequentially, archiving
+     *   the first before the second is checked in
+     * Should: The bundle is processed successfully (no {@code DotDataException: Contentlet is currently
+     * marked as 'Archived'.}) and both language versions are archived on the receiver. Reproduces #36051.
+     */
+    @Test
+    public void testPushArchivedMultiLanguageHTMLPage() throws Exception {
+
+        final User systemUser = APILocator.getUserAPI().getSystemUser();
+        PPBean ppBean = null;
+        Contentlet resultContentlet = null;
+        Template template = null;
+
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final Language spanishLanguage = TestDataUtils.getSpanishLanguage();
+
+        try {
+
+            final User adminUser = APILocator.getUserAPI().loadByUserByEmail("admin@dotcms.com",
+                    systemUser, false);
+            final Host host = APILocator.getHostAPI().findDefaultHost(systemUser, false);
+
+            ppBean = createPushPublishEnv(adminUser);
+            assertPPBean(ppBean);
+
+            // Create a template + folder + HTML page in the default language
+            template = new Template();
+            template.setTitle("template-36051-" + System.currentTimeMillis());
+            template.setBody("<html><body> I'm mostly empty </body></html>");
+            template = APILocator.getTemplateAPI().saveTemplate(template, host, systemUser, false);
+
+            final Folder folder = PublisherTestUtil.createFolder(
+                    "folder-36051-" + System.currentTimeMillis());
+            final HTMLPageAsset page = new HTMLPageDataGen(folder, template)
+                    .languageId(defaultLanguage.getId()).nextPersisted();
+
+            // Create the Spanish language version of the same page
+            final Contentlet spanishPage = ContentletDataGen.checkout(page);
+            spanishPage.setLanguageId(spanishLanguage.getId());
+            ContentletDataGen.checkin(spanishPage);
+
+            // Archive both language versions
+            ContentletDataGen.archive(page);
+            ContentletDataGen.archive(spanishPage);
+
+            final String pageIdentifier = page.getIdentifier();
+
+            // Generate the bundle from the archived multi-language page
+            final Map<String, Object> bundleData = generateContentBundle(
+                    "archived-multi-language-htmlpage-test-1", adminUser, ppBean, page);
+            assertNotNull(bundleData);
+            assertNotNull(bundleData.get(PublisherTestUtil.FILE));
+
+            // Remove the page so the receiver re-creates every version from the bundle
+            APILocator.getContentletAPI().destroy(page, adminUser, false);
+
+            // Publish the bundle on the receiver - this used to fail with
+            // DotDataException: Contentlet is currently marked as 'Archived'.
+            final PublisherConfig publisherConfig = publishContentBundle(
+                    (File) bundleData.get(PublisherTestUtil.FILE), ppBean.endPoint);
+            assertNotNull(publisherConfig);
+            assertEquals(((File) bundleData.get(PublisherTestUtil.FILE)).getName(),
+                    publisherConfig.getId());
+
+            // Both language versions must exist and be archived on the receiver
+            resultContentlet = APILocator.getContentletAPI()
+                    .findContentletByIdentifier(pageIdentifier, false, defaultLanguage.getId(),
+                            adminUser, false);
+            assertNotNull(resultContentlet);
+            assertTrue(resultContentlet.isArchived());
+
+            final Contentlet spanishResult = APILocator.getContentletAPI()
+                    .findContentletByIdentifier(pageIdentifier, false, spanishLanguage.getId(),
+                            adminUser, false);
+            assertNotNull(spanishResult);
+            assertTrue(spanishResult.isArchived());
+
+        } finally {
+
+            deleteTestPPData(systemUser, null, ppBean, resultContentlet);
+            if (UtilMethods.isSet(template) && UtilMethods.isSet(template.getInode())) {
+                APILocator.getTemplateAPI().delete(template, systemUser, false);
+            }
 
         }
     }

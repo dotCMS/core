@@ -9,9 +9,12 @@
 
 package com.dotcms.enterprise.priv;
 
+import com.dotcms.cost.RequestCost;
+import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.content.elasticsearch.business.IndiciesInfo;
+import com.dotcms.content.index.IndexConfigHelper;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.enterprise.ESSeachAPI;
 import com.dotcms.enterprise.priv.util.SearchSourceBuilderUtil;
@@ -19,6 +22,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.common.model.ContentletSearch;
+import com.dotmarketing.common.model.ImmutableContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -55,6 +59,15 @@ import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATI
  */
 public class ESSearchAPIImpl implements ESSeachAPI {
 
+	/** Why the deprecated Elasticsearch-only path refuses to run in Phase 3, and what to do instead. */
+	static final String PHASE3_UNSUPPORTED_MESSAGE = "The deprecated Elasticsearch-only "
+			+ "esSearch()/esRaw() path is not available once the OpenSearch migration reaches its final "
+			+ "phase: Elasticsearch no longer receives writes, so it could only answer from the index "
+			+ "frozen at cutover. Migrate this call to the vendor-neutral $estool.search()/$estool.raw() "
+			+ "(or SearchAPI), which reads from OpenSearch. While templates are being migrated, setting "
+			+ "FEATURE_FLAG_OPEN_SEARCH_LEGACY_ES_SEARCH_RETURNS_NULL=true makes these calls return null "
+			+ "from Velocity instead of failing the page.";
+
 	@Override
 	public ESSearchResults esSearch(String esQuery, boolean live, User user, boolean respectFrontendRoles)
 			throws DotSecurityException, DotDataException {
@@ -75,9 +88,9 @@ public class ESSearchAPIImpl implements ESSeachAPI {
 		for (SearchHit sh : contents.getHits()) {
 			try {
 				Map<String, Object> sourceMap = sh.getSourceAsMap();
-				ContentletSearch conwrapper = new ContentletSearch();
-				conwrapper.setInode(sourceMap.get("inode").toString());
-				list.add(conwrapper);
+				list.add(ImmutableContentletSearch.builder()
+						.inode(sourceMap.get("inode").toString())
+						.build());
 			} catch (Exception e) {
 				Logger.error(this, e.getMessage(), e);
 			}
@@ -105,6 +118,13 @@ public class ESSearchAPIImpl implements ESSeachAPI {
         if (!UtilMethods.isSet(esQuery)) {
             throw new DotStateException("ES Query is null");
         }
+
+        // Normalize the query the same way esSearch() does, so the raw path resolves mixed-case
+        // field names (e.g. "contentType" -> the physical lower-case index field "contenttype").
+        // Reuses the existing lowercasing helper for parity with esSearch(); idempotent when the
+        // caller already lowercased (esSearch delegates here after lowercasing).
+        esQuery = StringUtils.lowercaseStringExceptMatchingTokens(
+                esQuery, ESContentFactoryImpl.LUCENE_RESERVED_KEYWORDS_REGEX);
 
         JSONObject completeQueryJSON;
 
@@ -195,10 +215,29 @@ public class ESSearchAPIImpl implements ESSeachAPI {
 	 *             perform this action.
 	 * @throws DotDataException
 	 *             An error occurred when retrieving the data.
+	 * @throws DotStateException
+	 *             In Phase 3 of the OpenSearch migration, where Elasticsearch no longer receives
+	 *             writes, or when no Elasticsearch content index is registered.
 	 */
+	@RequestCost(Price.ES_QUERY)
 	private SearchResponse esSearchRaw(JSONObject jsonObject, boolean live, User user,
             boolean respectFrontendRoles, int limit, int offset, String sortBy)
 			throws DotSecurityException, DotDataException {
+
+		// Past the final migration phase Elasticsearch receives no more writes. The switchover keeps
+		// its active pointers, so this path would still resolve an index — the copy frozen at cutover
+		// — and answer with results that look valid but miss everything written since, and still
+		// include everything deleted or unpublished since, with no error anywhere (issue #37635).
+		// Fail instead, and do it on the phase rather than on a missing pointer so the outcome does
+		// not depend on what the index store happens to hold. DotStateException is one of the few
+		// exception types Velocity's method-exception handler rethrows rather than turning into a null, so from
+		// a template the failure surfaces instead of printing unresolved Velocity onto the page.
+		// Templates can soften this to a null while they are migrated — see
+		// FeatureFlagName.FEATURE_FLAG_OPEN_SEARCH_LEGACY_ES_SEARCH_RETURNS_NULL and ESContentTool;
+		// Java callers always get the exception.
+		if (IndexConfigHelper.MigrationPhase.current().isMigrationComplete()) {
+			throw new DotStateException(PHASE3_UNSUPPORTED_MESSAGE);
+		}
 
         String indexToHit;
         IndiciesInfo info;
@@ -212,6 +251,18 @@ public class ESSearchAPIImpl implements ESSeachAPI {
 		} catch (DotDataException ee) {
 			Logger.fatal(this, "Can't get indicies information", ee);
 			return null;
+		}
+
+		// Before Phase 3 the pointers should always be set; if the store holds none, carrying the null
+		// into SearchRequest dies there with a NullPointerException, which Velocity turns into a null
+		// return and the template renders its own unresolved source (issue #37635). Fail clearly.
+		if (!UtilMethods.isSet(indexToHit)) {
+			throw new DotStateException(String.format(
+					"No active Elasticsearch %s content index is registered, so the deprecated "
+							+ "esSearch()/esRaw() path has nothing to query. Reindex, or migrate this "
+							+ "call to the vendor-neutral $estool.search()/$estool.raw() (or SearchAPI), "
+							+ "which resolves the index for the current migration phase.",
+					live ? "live" : "working"));
 		}
 
         List<Role> roles = new ArrayList<>();

@@ -31,7 +31,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.io.Files;
+import java.nio.file.Files;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.tngtech.java.junit.dataprovider.DataProvider;
@@ -275,7 +275,7 @@ public class VTLResourceIntegrationTest {
     }
 
     private void createVTLFile(final File vtlFile, final Folder vtlFolder) throws IOException, DotSecurityException, DotDataException {
-        final File getVTLFile = new File(Files.createTempDir(), "get.vtl");
+        final File getVTLFile = new File(Files.createTempDirectory("dotcms-test").toFile(), "get.vtl");
         FileUtil.copyFile(vtlFile, getVTLFile);
 
         final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(vtlFolder, getVTLFile);

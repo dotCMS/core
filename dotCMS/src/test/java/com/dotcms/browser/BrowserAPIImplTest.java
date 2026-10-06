@@ -1,0 +1,824 @@
+package com.dotcms.browser;
+
+import static com.dotcms.browser.FieldSearchCriteria.RoutingBucket.DB;
+import static com.dotcms.browser.FieldSearchCriteria.RoutingBucket.INDEX;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+
+import org.junit.Test;
+import org.mockito.Mockito;
+
+/**
+ * Unit tests for {@link BrowserAPIImpl#jsonEscape(String)} — the escaping that lets a per-field
+ * strategy's Lucene query be safely embedded as the string value of the ES {@code query_string}
+ * request body (a hand-built JSON template).
+ *
+ * <p>The field strategies escape Lucene special characters with a backslash (e.g. a hyphen becomes
+ * {@code angular\-cms}). A raw backslash — or a double quote from a quoted phrase — is an invalid
+ * JSON escape, so without this step the whole Elasticsearch request body is malformed and the
+ * search silently returns nothing. A clean term (no backslash/quote) must pass through
+ * unchanged.</p>
+ */
+public class BrowserAPIImplTest {
+
+    /** A term without a hyphen produces no backslash, so the JSON escaping is a no-op. */
+    @Test
+    public void jsonEscape_queryWithoutHyphen_isUnchanged() {
+        final String query = "+(SSS.topic:*angular* SSS.topic_dotraw:*angular*)";
+        assertEquals(query, BrowserAPIImpl.jsonEscape(query));
+    }
+
+    /**
+     * A term with a hyphen reaches this method already Lucene-escaped ({@code angular\-cms}); the
+     * single backslash must become a double backslash so the JSON request body is valid and ES
+     * receives the intended {@code \-} literal.
+     */
+    @Test
+    public void jsonEscape_queryWithHyphen_backslashIsDoubled() {
+        final String luceneEscaped = "+(SSS.topic:*angular\\-cms* SSS.topic_dotraw:*angular\\-cms*)";
+        final String expected = "+(SSS.topic:*angular\\\\-cms* SSS.topic_dotraw:*angular\\\\-cms*)";
+        assertEquals(expected, BrowserAPIImpl.jsonEscape(luceneEscaped));
+    }
+
+    /** A double quote (from a quoted-phrase term) must also be JSON-escaped. */
+    @Test
+    public void jsonEscape_quoteIsEscaped() {
+        assertEquals("SSS.topic:\\\"a b\\\"", BrowserAPIImpl.jsonEscape("SSS.topic:\"a b\""));
+    }
+
+    /**
+     * A plain option value needs no escaping, so the clause is the bare wildcard pair. Guards against
+     * an over-eager escape that would corrupt ordinary values.
+     */
+    @Test
+    public void buildMultiValueOrClause_plainValue_isNotEscaped() {
+        assertEquals("+(SSS.sections:*news* SSS.sections_dotraw:*news*)",
+                BrowserAPIImpl.buildMultiValueOrClause("SSS.sections", List.of("news")));
+    }
+
+    /**
+     * An option value carrying {@code query_string} syntax must be Lucene-escaped, or the unescaped
+     * character fails the WHOLE query — these searches are not lenient — and the filter returns an
+     * empty result set with no error at all. {@code Yes/No} is a realistic Multi-Select option: the
+     * {@code /} opens a regex.
+     *
+     * <p>The {@code *} wildcards must stay OUTSIDE the escaped token, otherwise they are escaped
+     * themselves and the contains match becomes a literal search for an asterisk.</p>
+     */
+    @Test
+    public void buildMultiValueOrClause_valueWithLuceneSyntax_isEscaped() {
+        assertEquals("+(SSS.answer:*Yes\\/No* SSS.answer_dotraw:*Yes\\/No*)",
+                BrowserAPIImpl.buildMultiValueOrClause("SSS.answer", List.of("Yes/No")));
+    }
+
+    /** A colon would otherwise re-parse as {@code field:value} and break the clause. */
+    @Test
+    public void buildMultiValueOrClause_valueWithColon_isEscaped() {
+        assertEquals("+(SSS.level:*Level\\:1* SSS.level_dotraw:*Level\\:1*)",
+                BrowserAPIImpl.buildMultiValueOrClause("SSS.level", List.of("Level:1")));
+    }
+
+    /** Several values OR together inside one mandatory group, each escaped independently. */
+    @Test
+    public void buildMultiValueOrClause_multipleValues_eachEscapedAndOred() {
+        assertEquals(
+                "+(SSS.f:*N\\/A* SSS.f_dotraw:*N\\/A* SSS.f:*ok* SSS.f_dotraw:*ok*)",
+                BrowserAPIImpl.buildMultiValueOrClause("SSS.f", List.of("N/A", "ok")));
+    }
+
+    /** Blank and empty values are skipped, and an all-blank list produces no clause at all. */
+    @Test
+    public void buildMultiValueOrClause_blankValues_produceNoClause() {
+        assertEquals("", BrowserAPIImpl.buildMultiValueOrClause("SSS.f", List.of("", "   ")));
+    }
+
+    // --- isSinglePassEligible (issue #37184, FR-002 single-pass eligibility predicate) --------
+    //
+    // Takes the raw fields rather than a BrowserQuery, deliberately: BrowserQuery's constructor
+    // calls APILocator (folder/host/role APIs) directly and cannot be instantiated in a pure
+    // unit test. The real call site passes browserQuery.getFieldCriteria()/workflowSchemeIds/
+    // workflowStepIds/filter/fileName straight through.
+
+    private static FieldSearchCriteria criteriaWithBucket(final FieldSearchCriteria.RoutingBucket bucket) {
+        final FieldSearchCriteria criteria = Mockito.mock(FieldSearchCriteria.class);
+        Mockito.when(criteria.getBucket()).thenReturn(bucket);
+        return criteria;
+    }
+
+    /** All-INDEX field criteria, no workflow, no free-text/fileName: the case FR-002 targets. */
+    @Test
+    public void isSinglePassEligible_allIndexCriteriaNoOtherFilters_isEligible() {
+        assertTrue(BrowserAPIImpl.isSinglePassEligible(
+                List.of(criteriaWithBucket(INDEX), criteriaWithBucket(INDEX)),
+                Set.of(), Set.of(), null, null));
+    }
+
+    /** A single DB-routed criterion (Tag/Relationship) must stay on the existing multi-scan path. */
+    @Test
+    public void isSinglePassEligible_anyDbRoutedCriterion_isIneligible() {
+        assertFalse(BrowserAPIImpl.isSinglePassEligible(
+                List.of(criteriaWithBucket(INDEX), criteriaWithBucket(DB)),
+                Set.of(), Set.of(), null, null));
+    }
+
+    /** A workflow scheme filter must stay database-first even with all-INDEX field criteria. */
+    @Test
+    public void isSinglePassEligible_workflowSchemePresent_isIneligible() {
+        assertFalse(BrowserAPIImpl.isSinglePassEligible(
+                List.of(criteriaWithBucket(INDEX)),
+                Set.of("scheme-1"), Set.of(), null, null));
+    }
+
+    /** A workflow step filter must stay database-first even with all-INDEX field criteria. */
+    @Test
+    public void isSinglePassEligible_workflowStepPresent_isIneligible() {
+        assertFalse(BrowserAPIImpl.isSinglePassEligible(
+                List.of(criteriaWithBucket(INDEX)),
+                Set.of(), Set.of("step-1"), null, null));
+    }
+
+    /** A free-text filter term must stay on the existing (correctly index-aware) text path. */
+    @Test
+    public void isSinglePassEligible_freeTextFilterPresent_isIneligible() {
+        assertFalse(BrowserAPIImpl.isSinglePassEligible(
+                List.of(criteriaWithBucket(INDEX)),
+                Set.of(), Set.of(), "some text", null));
+    }
+
+    /** A fileName term must stay database-first. */
+    @Test
+    public void isSinglePassEligible_fileNamePresent_isIneligible() {
+        assertFalse(BrowserAPIImpl.isSinglePassEligible(
+                List.of(criteriaWithBucket(INDEX)),
+                Set.of(), Set.of(), null, "report.pdf"));
+    }
+
+    /** Zero field criteria means nothing is routed to the index at all — nothing to single-pass. */
+    @Test
+    public void isSinglePassEligible_noFieldCriteriaAtAll_isIneligible() {
+        assertFalse(BrowserAPIImpl.isSinglePassEligible(
+                List.of(), Set.of(), Set.of(), null, null));
+    }
+
+    // --- collectWarmUpUserIds (issue #37186, FR-001 warm-up set) ---------------------------
+    //
+    // These are pure in-memory tests: they build plain Contentlet objects (no DB, no
+    // APILocator) and assert on the distinct id set the warm-up pass would resolve before
+    // hydrateContentletsInParallel runs. They do NOT prove the thundering-herd race is fixed —
+    // that requires a real cache and real concurrency, which is what the dotcms-integration
+    // test (BrowserAPITest) covers.
+
+    private static Contentlet contentletWith(final String modUser, final String owner) {
+        final Contentlet c = new Contentlet();
+        if (modUser != null) {
+            c.setModUser(modUser);
+        }
+        if (owner != null) {
+            c.setOwner(owner);
+        }
+        return c;
+    }
+
+    /** Two rows authored by the same user collapse to one id — this is the whole point of warming up before the parallel fan-out, not once per row. */
+    @Test
+    public void collectWarmUpUserIds_dedupesRepeatedModUser() {
+        final List<Contentlet> page = List.of(
+                contentletWith("user-a", "user-a"),
+                contentletWith("user-a", "user-a"));
+        final Set<String> ids = BrowserAPIImpl.collectWarmUpUserIds(page);
+        assertEquals(Set.of("user-a"), ids);
+    }
+
+    /** modUser and owner are independent fields; both must be collected when they differ. */
+    @Test
+    public void collectWarmUpUserIds_collectsDistinctModUserAndOwner() {
+        final List<Contentlet> page = List.of(contentletWith("author-1", "owner-1"));
+        final Set<String> ids = BrowserAPIImpl.collectWarmUpUserIds(page);
+        assertEquals(Set.of("author-1", "owner-1"), ids);
+    }
+
+    /** A page with N distinct authors across many rows yields exactly N ids — the number SC-001's DB-lookup count must match. */
+    @Test
+    public void collectWarmUpUserIds_manyRowsFewAuthors_yieldsOneIdPerAuthor() {
+        final List<Contentlet> page = List.of(
+                contentletWith("author-1", "author-1"),
+                contentletWith("author-1", "author-1"),
+                contentletWith("author-2", "author-2"),
+                contentletWith("author-1", "author-1"),
+                contentletWith("author-3", "author-3"));
+        final Set<String> ids = BrowserAPIImpl.collectWarmUpUserIds(page);
+        assertEquals(Set.of("author-1", "author-2", "author-3"), ids);
+    }
+
+    /** An empty page needs no warm-up at all. */
+    @Test
+    public void collectWarmUpUserIds_emptyPage_yieldsEmptySet() {
+        assertTrue(BrowserAPIImpl.collectWarmUpUserIds(List.of()).isEmpty());
+    }
+
+    /**
+     * locked-by is deliberately excluded from the warm-up set (plan.md Legacy Impact carry-forward
+     * note 1: resolving it costs a real per-contentlet {@code getLockedBy} call, not a free field
+     * read, so pulling it into the sequential warm-up would add new serial work per row instead of
+     * per distinct author). This test only documents the id sources actually read
+     * ({@code modUser}/{@code owner}); it cannot assert an absence of locked-by handling since
+     * {@code collectWarmUpUserIds} never touches locking at all by construction.
+     */
+    @Test
+    public void collectWarmUpUserIds_ignoresLockStateEntirely() {
+        final Contentlet locked = contentletWith("author-1", "author-1");
+        locked.setInode("some-inode"); // locking is keyed off inode/versionable state, not read here
+        final Set<String> ids = BrowserAPIImpl.collectWarmUpUserIds(List.of(locked));
+        assertEquals(Set.of("author-1"), ids);
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // Title scope query building (issue #37479).
+    //
+    // The title field is indexed with the standard tokenizer, which treats punctuation as word
+    // separators — "COVID-19" is stored as the tokens "covid" and "19" (verified against the
+    // Lucene 8.7.0 StandardAnalyzer this index uses). The expected clauses below are pinned to
+    // that fact.
+    // ---------------------------------------------------------------------------------------
+
+    /**
+     * A hyphenated term must become one mandatory clause per WORD, not one fused word: stripping
+     * the separator turned "COVID-19" into "COVID19" — a word no document contains — so a title
+     * findable in All Fields vanished from Title scope. The analyzer stores "covid" and "19", so
+     * the prefix queries must be split the same way.
+     *
+     * <p>Only the first word carries {@code title_dotraw} — see
+     * {@code buildTitleScopedQuery_multiWordTerm_onlyFirstWordCarriesTitleDotraw}.</p>
+     */
+    @Test
+    public void buildTitleScopedQuery_hyphenatedTerm_splitsIntoMandatoryWordPrefixes() {
+        assertEquals(
+                "+(title:COVID* title_dotraw:COVID*) +title:19*",
+                BrowserAPIImpl.buildTitleScopedQuery("COVID-19"));
+    }
+
+    /** Same mechanism, other analyzer separators: the words on both sides stay reachable. */
+    @Test
+    public void buildTitleScopedQuery_slashedTerm_splitsIntoMandatoryWordPrefixes() {
+        assertEquals(
+                "+(title:input* title_dotraw:input*) +title:output*",
+                BrowserAPIImpl.buildTitleScopedQuery("input/output"));
+    }
+
+    /**
+     * Punctuation at a token's edges splits exactly like it stripped (the empty side is dropped),
+     * so the punctuated-paste cases keep working: "(XETRA:" reaches the analyzer's "xetra" token.
+     */
+    @Test
+    public void buildTitleScopedQuery_punctuatedToken_reachesTheStoredWord() {
+        assertEquals(
+                "+(title:XETRA* title_dotraw:XETRA*)",
+                BrowserAPIImpl.buildTitleScopedQuery("(XETRA:"));
+    }
+
+    /**
+     * Wildcards are query intent, not word separators: dropped, keeping the term as one token.
+     * Splitting them would leave fragments like ".txt" that no analyzed token starts with and
+     * that, being mandatory, would sink the whole search.
+     */
+    @Test
+    public void buildTitleScopedQuery_wildcardsAreDropped_notSplit() {
+        assertEquals(
+                "+(title:file.txt* title_dotraw:file.txt*)",
+                BrowserAPIImpl.buildTitleScopedQuery("file*.txt"));
+    }
+
+    /** Underscore and dot are not query syntax: a dotted file title survives as one token. */
+    @Test
+    public void buildTitleScopedQuery_dottedFileName_staysOneToken() {
+        assertEquals(
+                "+(title:IMG_1004.jpeg* title_dotraw:IMG_1004.jpeg*)",
+                BrowserAPIImpl.buildTitleScopedQuery("IMG_1004.jpeg"));
+    }
+
+    /**
+     * A term that is ONLY query syntax carries no usable word. It must match nothing — returning
+     * no clause at all would drop the text constraint and return the whole folder, the opposite
+     * of All Fields, which matches nothing for the same input.
+     */
+    @Test
+    public void buildTitleScopedQuery_termOfOnlyQuerySyntax_matchesNothing() {
+        assertEquals("+title:* -title:*", BrowserAPIImpl.buildTitleScopedQuery("***"));
+        assertEquals("+title:* -title:*", BrowserAPIImpl.buildTitleScopedQuery("/"));
+    }
+
+    /** A multi-word term keeps one mandatory clause per word — the injection-shaped terms too. */
+    @Test
+    public void buildTitleScopedQuery_multiWordTerm_oneMandatoryClausePerWord() {
+        assertEquals(
+                "+(title:mixed* title_dotraw:mixed*) +title:case*",
+                BrowserAPIImpl.buildTitleScopedQuery("mixed case"));
+    }
+
+    /**
+     * {@code title_dotraw} is the WHOLE raw title as one keyword term, so a prefix match against
+     * it can only ever succeed for the very first word of the search term — no word after it can
+     * be a prefix of the full title string. Carrying it on every word (the pre-#37554-review
+     * shape) paid the cost of a prefix search over a near-one-term-per-document keyword
+     * dictionary on every word, for a clause that could only ever contribute on the first.
+     */
+    @Test
+    public void buildTitleScopedQuery_multiWordTerm_onlyFirstWordCarriesTitleDotraw() {
+        assertEquals(
+                "+(title:three* title_dotraw:three*) +title:word* +title:title*",
+                BrowserAPIImpl.buildTitleScopedQuery("three word title"));
+    }
+
+    /**
+     * Prefix-only is a deliberate, signed-off trade-off (see buildTitleScopedQuery's Javadoc,
+     * "No leading wildcard"), and searching a file EXTENSION is the case where it bites hardest:
+     * "." is not query syntax, so ".css" stays one token, and the clause becomes a mandatory
+     * prefix search for a title token starting with ".css" literally. "plugin.css" is indexed as
+     * ONE token (a single "." between letters does not split under the standard analyzer's
+     * word-break rules), and that token does not start with ".css" — it starts with "plugin". All
+     * Fields still finds it, via {@code title_dotraw:*.css*}, the leading-wildcard substring
+     * clause Title scope exists specifically to avoid paying for.
+     */
+    @Test
+    public void buildTitleScopedQuery_fileExtensionTerm_isPrefixOnly_doesNotSubstringMatch() {
+        assertEquals(
+                "+(title:.css* title_dotraw:.css*)",
+                BrowserAPIImpl.buildTitleScopedQuery(".css"));
+    }
+
+    /**
+     * {@code >}, {@code <} and {@code =} are reserved by the {@code query_string} RANGE syntax
+     * ({@code field:>value}) but are not in {@code LuceneQueryUtils.LUCENE_SPECIAL_CHARS}, so
+     * before this fix they survived a split untouched and {@code title:>2024*} was parsed by
+     * Elasticsearch as a range query instead of the intended prefix search. They must now split
+     * like any other separator rather than fuse onto the adjacent word.
+     */
+    @Test
+    public void buildTitleScopedQuery_rangeOperatorChars_splitAsSeparators() {
+        assertEquals(
+                "+(title:Sales* title_dotraw:Sales*) +title:2024*",
+                BrowserAPIImpl.buildTitleScopedQuery("Sales > 2024"));
+        assertEquals(
+                "+(title:a* title_dotraw:a*) +title:b*",
+                BrowserAPIImpl.buildTitleScopedQuery("a<b"));
+        assertEquals(
+                "+(title:x* title_dotraw:x*) +title:y*",
+                BrowserAPIImpl.buildTitleScopedQuery("x=y"));
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // All Fields scope query building (issue #37532, customer ticket 39185).
+    //
+    // Forked from GlobalSearchAttributeStrategy rather than built on top of it — see
+    // buildAllFieldsScopedQuery's Javadoc — so the Search portlet's and the Relationships
+    // dialog's existing wildcard-aware behavior stays untouched.
+    // GlobalSearchAttributeStrategyBaselineTest pins that unchanged behavior on the other side
+    // of the fork.
+    // ---------------------------------------------------------------------------------------
+
+    /** The Lucene {@code query_string} reserved set, as documented on {@code LuceneQueryUtils}. */
+    private static final char[] RESERVED_LUCENE_CHARS = {
+            '\\', '+', '-', '!', '(', ')', ':', '^', '[', ']', '"', '{', '}', '~', '*', '?', '|',
+            '&', '/'
+    };
+
+    /** The mandatory gate — everything up to the first {@code )} — is where matching is decided. */
+    private static String gateOf(final String query) {
+        return query.substring(0, query.indexOf(')') + 1);
+    }
+
+    /**
+     * The defect in one assertion: the gate must not carry a raw reserved character. This is what
+     * made the ticket 39185 headline unfindable in Content Drive's All Fields scope.
+     */
+    @Test
+    public void buildAllFieldsScopedQuery_mandatoryGate_escapesReservedCharacters() {
+        final String gate = gateOf(BrowserAPIImpl.buildAllFieldsScopedQuery("angular-cms"));
+        assertTrue("The mandatory gate must carry the ESCAPED term, not the raw one: " + gate,
+                gate.contains("angular\\-cms"));
+        assertFalse("The gate must not contain the unescaped hyphen: " + gate,
+                gate.contains("catchall:angular-cms"));
+    }
+
+    /**
+     * Every character of the reserved set must be escaped, in every clause. A single unescaped
+     * occurrence anywhere is enough to break parsing of the whole query.
+     */
+    @Test
+    public void buildAllFieldsScopedQuery_everyReservedCharacter_isEscapedEverywhere() {
+        for (final char c : RESERVED_LUCENE_CHARS) {
+            final String term = "a" + c + "b";
+            final String result = BrowserAPIImpl.buildAllFieldsScopedQuery(term);
+            assertTrue("Reserved character '" + c + "' must be escaped somewhere in: " + result,
+                    result.contains("a\\" + c + "b"));
+            assertFalse("Reserved character '" + c + "' left unescaped in the gate: " + result,
+                    gateOf(result).contains("catchall:" + term));
+        }
+    }
+
+    /**
+     * A forward slash is reserved by the {@code query_string} syntax but is absent from
+     * {@code GlobalSearchAttributeStrategy}'s legacy private escape set — #37532's fifth
+     * acceptance criterion, stated as a test of its own because it is the one character that set
+     * silently omits.
+     */
+    @Test
+    public void buildAllFieldsScopedQuery_forwardSlash_isEscaped() {
+        final String result = BrowserAPIImpl.buildAllFieldsScopedQuery("a/b");
+        assertTrue("A forward slash must be escaped: " + result, result.contains("a\\/b"));
+        assertFalse("A raw forward slash must not survive: " + result, result.contains("a/b"));
+    }
+
+    /**
+     * The {@code *} wildcard this method appends is syntax it adds itself, so it must sit OUTSIDE
+     * the escaped token. Escaping it would turn a prefix search into a literal search for an
+     * asterisk.
+     */
+    @Test
+    public void buildAllFieldsScopedQuery_appendedWildcard_isNotItselfEscaped() {
+        final String result = BrowserAPIImpl.buildAllFieldsScopedQuery("pricing");
+        assertTrue("The catchall prefix wildcard must remain live syntax: " + result,
+                result.contains("catchall:pricing*"));
+        assertFalse("The appended wildcard must not be escaped: " + result,
+                result.contains("pricing\\*"));
+    }
+
+    /** {@code "a  b"} must not produce a term-less {@code title:^5} clause. */
+    @Test
+    public void buildAllFieldsScopedQuery_consecutiveSeparators_emitNoEmptyClause() {
+        final String result = BrowserAPIImpl.buildAllFieldsScopedQuery("a  b");
+        assertFalse("An empty token produced a term-less clause: " + result,
+                result.contains("title:^5"));
+    }
+
+    /** A term made only of separators yields no boost clauses at all rather than empty ones. */
+    @Test
+    public void buildAllFieldsScopedQuery_separatorsOnlyTerm_emitsNoEmptyClause() {
+        final String result = BrowserAPIImpl.buildAllFieldsScopedQuery("  ,  ");
+        assertFalse("A separators-only term produced a term-less clause: " + result,
+                result.contains("title:^5"));
+    }
+
+    /** An ordinary term produces the same shape All Fields search has always used. */
+    @Test
+    public void buildAllFieldsScopedQuery_ordinaryTerm_matchesExpectedShape() {
+        assertEquals(
+                "+(catchall:pricing*^10 OR title_dotraw:*pricing*^2) "
+                        + "title:'pricing'^15 "
+                        + "title:pricing*",
+                BrowserAPIImpl.buildAllFieldsScopedQuery("pricing"));
+    }
+
+    /** Multi-word ordinary terms keep one boost clause per token. */
+    @Test
+    public void buildAllFieldsScopedQuery_ordinaryMultiWordTerm_matchesExpectedShape() {
+        assertEquals(
+                "+(catchall:hello world*^10 OR title_dotraw:*hello world*^2) "
+                        + "title:'hello world'^15 "
+                        + "title:hello^5 title:world^5 "
+                        + "title:hello world*",
+                BrowserAPIImpl.buildAllFieldsScopedQuery("hello world"));
+    }
+
+    // -----------------------------------------------------------------------------------------
+    // partitionInodesForES — issue #37695: ES sub-queries must stay within the index server's
+    // maximum query-string length (search.query.max_query_string_length, 32,000 by default), not
+    // only within the boolean-clause limit.
+    // -----------------------------------------------------------------------------------------
+
+    /** 32,000 × 0.95: the length budget a sub-query gets with the default configuration. */
+    private static final int DEFAULT_BUDGET = 30_400;
+    /** The clause cap calculateMaxInodesPerESQuery gives a typical base query. */
+    private static final int TYPICAL_CLAUSE_CAP = 876;
+
+    private static List<String> uuids(final int count) {
+        final List<String> inodes = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            inodes.add(UUID.randomUUID().toString());
+        }
+        return inodes;
+    }
+
+    /**
+     * Length of the query string a batch produces, built the same way processSingleESQuery builds
+     * it, so the assertion does not depend on the partitioner's own arithmetic.
+     */
+    private static int queryLength(final List<String> batch, final int baseQueryLength) {
+        return (" +inode:(" + String.join(" OR ", batch) + ") ").length() + baseQueryLength;
+    }
+
+    private static void assertEveryBatchWithinLength(final List<List<String>> batches,
+            final int baseQueryLength, final int maxQueryLength) {
+        for (int i = 0; i < batches.size(); i++) {
+            final int length = queryLength(batches.get(i), baseQueryLength);
+            assertTrue(String.format("Batch %d of %d (%d inodes) is %d characters, over the %d limit",
+                            i + 1, batches.size(), batches.get(i).size(), length, maxQueryLength),
+                    length <= maxQueryLength);
+        }
+    }
+
+    private static List<String> concatenate(final List<List<String>> batches) {
+        final List<String> all = new ArrayList<>();
+        batches.forEach(all::addAll);
+        return all;
+    }
+
+    /**
+     * The reported case: ~2,182 candidates. A clause-sized batch of 876 UUIDs is ~35 KB, which the
+     * server rejects; every batch must fit in the length budget instead.
+     */
+    @Test
+    public void partitionInodesForES_largeCandidateSet_everyBatchWithinLength() {
+        final List<String> inodes = uuids(2_182);
+        final List<List<String>> batches =
+                BrowserAPIImpl.partitionInodesForES(inodes, 120, DEFAULT_BUDGET, TYPICAL_CLAUSE_CAP);
+        assertEveryBatchWithinLength(batches, 120, DEFAULT_BUDGET);
+    }
+
+    /** Joined back together, the batches are the input: same order, nothing lost or repeated. */
+    @Test
+    public void partitionInodesForES_isCompleteAndOrderPreserving() {
+        final List<String> inodes = uuids(2_182);
+        final List<List<String>> batches =
+                BrowserAPIImpl.partitionInodesForES(inodes, 120, DEFAULT_BUDGET, TYPICAL_CLAUSE_CAP);
+        assertEquals(inodes, concatenate(batches));
+        assertTrue("Every batch must hold at least one inode",
+                batches.stream().noneMatch(List::isEmpty));
+    }
+
+    /** When length is no constraint, the boolean-clause cap still bounds every batch. */
+    @Test
+    public void partitionInodesForES_clauseCapStillApplies() {
+        final List<String> inodes = uuids(500);
+        final List<List<String>> batches =
+                BrowserAPIImpl.partitionInodesForES(inodes, 120, Integer.MAX_VALUE, 100);
+        assertTrue("A batch exceeded the clause cap of 100",
+                batches.stream().allMatch(batch -> batch.size() <= 100));
+        assertEquals(inodes, concatenate(batches));
+    }
+
+    /**
+     * calculateMaxInodesPerESQuery never returns fewer than 100 inodes. With a long base query that
+     * minimum would overflow the length budget, so the length bound must win.
+     */
+    @Test
+    public void partitionInodesForES_lengthBoundOverridesClauseFloor() {
+        final List<String> inodes = uuids(500);
+        final List<List<String>> batches =
+                BrowserAPIImpl.partitionInodesForES(inodes, 29_000, DEFAULT_BUDGET, 100);
+        assertTrue("Expected batches below the 100-inode minimum",
+                batches.stream().allMatch(batch -> batch.size() < 100));
+        assertEveryBatchWithinLength(batches, 29_000, DEFAULT_BUDGET);
+        assertEquals(inodes, concatenate(batches));
+    }
+
+    /**
+     * Legacy inodes are not always 36-character UUIDs. Batches must be packed by the inodes' real
+     * lengths: each batch stays within the budget, and every batch but the last is full, i.e. the
+     * next inode would not have fitted.
+     */
+    @Test
+    public void partitionInodesForES_variableLengthInodes_usesActualLengths() {
+        final List<String> inodes = new ArrayList<>();
+        for (int i = 0; i < 300; i++) {
+            inodes.add(String.valueOf(10_000 + i));
+            inodes.add(UUID.randomUUID().toString());
+        }
+        final int base = 100;
+        final int max = 2_000;
+        final List<List<String>> batches =
+                BrowserAPIImpl.partitionInodesForES(inodes, base, max, 1_000);
+
+        assertEveryBatchWithinLength(batches, base, max);
+        assertEquals(inodes, concatenate(batches));
+        int consumed = 0;
+        for (int i = 0; i < batches.size() - 1; i++) {
+            final List<String> batch = batches.get(i);
+            consumed += batch.size();
+            final List<String> withNext = new ArrayList<>(batch);
+            withNext.add(inodes.get(consumed));
+            assertTrue(String.format("Batch %d could still take the next inode (%d characters)",
+                            i + 1, queryLength(withNext, base)),
+                    queryLength(withNext, base) > max);
+        }
+    }
+
+    /** A base query that leaves no room for even one inode yields no batches, not an oversized one. */
+    @Test
+    public void partitionInodesForES_noRoomForAnyInode_returnsEmpty() {
+        final List<String> inodes = uuids(10);
+        // " +inode:(" + uuid + ") " is 47 characters; leave room for 46.
+        final int base = DEFAULT_BUDGET - 46;
+        assertTrue(BrowserAPIImpl.partitionInodesForES(inodes, base, DEFAULT_BUDGET, TYPICAL_CLAUSE_CAP)
+                .isEmpty());
+    }
+
+    /**
+     * A base query leaves room for inodes only if a sub-query can still hold a useful batch: at
+     * least 100 UUID inodes, the minimum calculateMaxInodesPerESQuery uses. Below that, a request
+     * would fan out into hundreds of tiny sub-queries, so Content Drive rejects it with HTTP 400
+     * (issue #37488 review). 100 UUIDs take 9 + 100 × 36 + 99 × 4 + 2 = 4,007 characters.
+     */
+    @Test
+    public void baseQueryLeavesRoomForInodes_requiresRoomForOneHundredUuids() {
+        assertTrue(BrowserAPIImpl.baseQueryLeavesRoomForInodes(1_000, DEFAULT_BUDGET));
+        assertTrue(BrowserAPIImpl.baseQueryLeavesRoomForInodes(DEFAULT_BUDGET - 4_007, DEFAULT_BUDGET));
+        assertFalse(BrowserAPIImpl.baseQueryLeavesRoomForInodes(DEFAULT_BUDGET - 4_006, DEFAULT_BUDGET));
+        assertFalse(BrowserAPIImpl.baseQueryLeavesRoomForInodes(29_000, DEFAULT_BUDGET));
+    }
+
+    /**
+     * A query the index could not build because the user's term or values made it too complex is
+     * told apart from any other failure, so Content Drive can answer HTTP 400 for it and keep 500
+     * for the rest (issue #37488 review). The reason can sit in a cause, as the OpenSearch client
+     * reports it, or in a suppressed exception carrying the response body, as the Elasticsearch
+     * client does.
+     */
+    @Test
+    public void isQueryTooComplex_recognisesComplexityRejections() {
+        final Exception esStyle = new Exception("Elasticsearch exception [type=search_phase_execution_exception, reason=all shards failed]");
+        esStyle.addSuppressed(new Exception("{\"error\":{\"root_cause\":[{\"type\":\"query_shard_exception\","
+                + "\"reason\":\"failed to create query: Determinizing automaton with 1004 states and 1005 "
+                + "transitions would require more than 10000 effort.\"}]}}"));
+        assertTrue(BrowserAPIImpl.isQueryTooComplex(new Exception("wrapped", esStyle)));
+
+        assertTrue(BrowserAPIImpl.isQueryTooComplex(new RuntimeException(
+                "OS search failed: HTTP 400 — {\"error\":{\"root_cause\":[{\"type\":\"query_shard_exception\","
+                        + "\"reason\":\"failed to create query: input automaton is too large: 1001\"}]}}")));
+        assertTrue(BrowserAPIImpl.isQueryTooComplex(new Exception(
+                "{\"type\":\"too_complex_to_determinize_exception\"}")));
+        assertTrue(BrowserAPIImpl.isQueryTooComplex(new Exception(
+                "{\"type\":\"too_many_clauses\",\"reason\":\"maxClauseCount is set to 1024\"}")));
+    }
+
+    /**
+     * Everything else stays a server-side failure: a shard failure with no complexity reason, a
+     * mapping that has not caught up (issue #37637 keeps that one on the server side), a timeout.
+     */
+    @Test
+    public void isQueryTooComplex_ignoresOtherFailures() {
+        assertFalse(BrowserAPIImpl.isQueryTooComplex(new Exception(
+                "Elasticsearch exception [type=search_phase_execution_exception, reason=all shards failed]")));
+        assertFalse(BrowserAPIImpl.isQueryTooComplex(new Exception(
+                "{\"type\":\"query_shard_exception\",\"reason\":\"failed to create query: field [x] of type "
+                        + "[text] does not support range queries\"}")));
+        assertFalse(BrowserAPIImpl.isQueryTooComplex(new java.util.concurrent.TimeoutException("timed out")));
+        assertFalse(BrowserAPIImpl.isQueryTooComplex(null));
+    }
+
+    /** One inode is one batch; no inodes is no batches. */
+    @Test
+    public void partitionInodesForES_singleAndEmptyInput() {
+        final List<String> one = uuids(1);
+        assertEquals(List.of(one),
+                BrowserAPIImpl.partitionInodesForES(one, 120, DEFAULT_BUDGET, TYPICAL_CLAUSE_CAP));
+        assertTrue(BrowserAPIImpl.partitionInodesForES(List.of(), 120, DEFAULT_BUDGET, TYPICAL_CLAUSE_CAP)
+                .isEmpty());
+    }
+
+    // ---- nextChunkSize: adaptive chunk sizing for the permission-only scan (issue #37665) ----
+
+    private static final int DEFAULT_FLOOR = 400;
+    private static final int DEFAULT_SCAN_LIMIT = BrowserAPIImpl.BROWSER_DB_MAX_SCAN_ROWS_DEFAULT;
+    private static final int DEFAULT_CEILING = BrowserAPIImpl.BROWSER_DB_CHUNK_ADAPTIVE_MAX_SIZE_DEFAULT;
+    private static final int DEFAULT_MAX_GROWTH = BrowserAPIImpl.BROWSER_DB_CHUNK_ADAPTIVE_MAX_GROWTH_DEFAULT;
+    private static final float DEFAULT_SAFETY_FACTOR = BrowserAPIImpl.BROWSER_DB_CHUNK_ADAPTIVE_SAFETY_FACTOR_DEFAULT;
+
+    /**
+     * Calls {@link BrowserAPIImpl#nextChunkSize} with the floor, scan budget and adaptive settings
+     * at their defaults and the next chunk starting at row 0, so each test states only what the
+     * case is about.
+     */
+    private static int nextChunkSize(final int previousRequested, final int rowsRead,
+            final int visibleSoFar, final int stillNeeded) {
+        return BrowserAPIImpl.nextChunkSize(previousRequested, DEFAULT_FLOOR, rowsRead, visibleSoFar,
+                stillNeeded, DEFAULT_SCAN_LIMIT, 0, DEFAULT_CEILING, DEFAULT_MAX_GROWTH,
+                DEFAULT_SAFETY_FACTOR);
+    }
+
+    /** Nothing visible in the first 400 rows: no ratio to extrapolate from, so the chunk doubles. */
+    @Test
+    public void nextChunkSize_nothingVisible_doublesPreviousRequested() {
+        assertEquals(800, nextChunkSize(400, 400, 0, 40));
+    }
+
+    /** Doubling keeps compounding from whatever was last requested, not from the floor. */
+    @Test
+    public void nextChunkSize_nothingVisible_fromLargerPrevious() {
+        assertEquals(1_600, nextChunkSize(800, 1_200, 0, 40));
+    }
+
+    /** Doubling 1,600 would give 3,200; the ceiling stops it at 2,000. */
+    @Test
+    public void nextChunkSize_nothingVisible_cappedByCeiling() {
+        assertEquals(2_000, nextChunkSize(1_600, 2_800, 0, 40));
+    }
+
+    /**
+     * 13 still needed at 27 visible out of 2,000 read projects 13 x 2,000 x 1.5 / 27 = 1,444.4
+     * rows; the result is rounded up so the chunk never falls a row short.
+     */
+    @Test
+    public void nextChunkSize_ratio_roundsUp() {
+        assertEquals(1_445, nextChunkSize(1_600, 2_000, 27, 13));
+    }
+
+    /** Half the rows visible and half the page missing: 20 x 400 x 1.5 / 20 = 600. */
+    @Test
+    public void nextChunkSize_ratio_halfVisible() {
+        assertEquals(600, nextChunkSize(400, 400, 20, 20));
+    }
+
+    /** A dense folder projects only 16 more rows, but a chunk never shrinks below the floor. */
+    @Test
+    public void nextChunkSize_ratio_belowFloor_returnsFloor() {
+        assertEquals(DEFAULT_FLOOR, nextChunkSize(400, 400, 39, 1));
+    }
+
+    /**
+     * Clustered visibility: 1 visible item in the first 400 rows projects 39 x 400 x 1.5 = 23,400
+     * rows, although the rest of the page may sit in the very next 400. The per-step cap limits
+     * the next chunk to 4 x 400.
+     */
+    @Test
+    public void nextChunkSize_clustered_cappedByMaxGrowth() {
+        assertEquals(1_600, nextChunkSize(400, 400, 1, 39));
+    }
+
+    /** A sparse ratio (5 of 400) projects 4,200 rows; the per-step cap keeps it at 1,600. */
+    @Test
+    public void nextChunkSize_sparse_cappedByMaxGrowth() {
+        assertEquals(1_600, nextChunkSize(400, 400, 5, 35));
+    }
+
+    /**
+     * Only 150 rows of scan budget are left, below the floor of 400. The floor wins, so the loop
+     * reads no further past the budget than the fixed chunk would.
+     */
+    @Test
+    public void nextChunkSize_remainingBudgetBelowFloor_returnsFloor() {
+        assertEquals(DEFAULT_FLOOR, BrowserAPIImpl.nextChunkSize(400, DEFAULT_FLOOR, 49_850, 0, 40,
+                DEFAULT_SCAN_LIMIT, 49_850, DEFAULT_CEILING, DEFAULT_MAX_GROWTH, DEFAULT_SAFETY_FACTOR));
+    }
+
+    /** With 500 rows of budget left, doubling to 800 is cut to 500. */
+    @Test
+    public void nextChunkSize_remainingBudgetCapsGrowth() {
+        assertEquals(500, BrowserAPIImpl.nextChunkSize(400, DEFAULT_FLOOR, 49_500, 0, 40,
+                DEFAULT_SCAN_LIMIT, 49_500, DEFAULT_CEILING, DEFAULT_MAX_GROWTH, DEFAULT_SAFETY_FACTOR));
+    }
+
+    /** A page large enough to push the floor past the ceiling keeps the floor: no growth, no shrink. */
+    @Test
+    public void nextChunkSize_floorAboveCeiling_returnsFloor() {
+        assertEquals(7_500, BrowserAPIImpl.nextChunkSize(7_500, 7_500, 7_500, 0, 750,
+                DEFAULT_SCAN_LIMIT, 0, DEFAULT_CEILING, DEFAULT_MAX_GROWTH, DEFAULT_SAFETY_FACTOR));
+    }
+
+    /** A per-step cap of 1 turns growth off entirely. */
+    @Test
+    public void nextChunkSize_maxGrowthOne_neverGrows() {
+        assertEquals(400, BrowserAPIImpl.nextChunkSize(400, DEFAULT_FLOOR, 400, 0, 40,
+                DEFAULT_SCAN_LIMIT, 0, DEFAULT_CEILING, 1, DEFAULT_SAFETY_FACTOR));
+    }
+
+    /** A ceiling of 0 is a misconfiguration and falls back to the 2,000 default. */
+    @Test
+    public void nextChunkSize_nonPositiveCeiling_usesDefault() {
+        assertEquals(2_000, BrowserAPIImpl.nextChunkSize(1_600, DEFAULT_FLOOR, 2_800, 0, 40,
+                DEFAULT_SCAN_LIMIT, 0, 0, DEFAULT_MAX_GROWTH, DEFAULT_SAFETY_FACTOR));
+    }
+
+    /** A per-step cap of 0 is a misconfiguration and falls back to the default of 4. */
+    @Test
+    public void nextChunkSize_maxGrowthBelowOne_usesDefault() {
+        assertEquals(1_600, BrowserAPIImpl.nextChunkSize(400, DEFAULT_FLOOR, 400, 1, 39,
+                DEFAULT_SCAN_LIMIT, 0, DEFAULT_CEILING, 0, DEFAULT_SAFETY_FACTOR));
+    }
+
+    /** A safety factor of 0 or NaN is a misconfiguration and falls back to the default of 1.5. */
+    @Test
+    public void nextChunkSize_nonPositiveOrNaNSafetyFactor_usesDefault() {
+        assertEquals(600, BrowserAPIImpl.nextChunkSize(400, DEFAULT_FLOOR, 400, 20, 20,
+                DEFAULT_SCAN_LIMIT, 0, DEFAULT_CEILING, DEFAULT_MAX_GROWTH, 0f));
+        assertEquals(600, BrowserAPIImpl.nextChunkSize(400, DEFAULT_FLOOR, 400, 20, 20,
+                DEFAULT_SCAN_LIMIT, 0, DEFAULT_CEILING, DEFAULT_MAX_GROWTH, Float.NaN));
+    }
+
+    /**
+     * An absurd safety factor must not overflow into a negative chunk size. The per-step cap
+     * allows 2,400 here, so the ceiling of 2,000 is what binds.
+     */
+    @Test
+    public void nextChunkSize_hugeInputs_doesNotOverflow() {
+        assertEquals(2_000, BrowserAPIImpl.nextChunkSize(600, DEFAULT_FLOOR, 50_000, 1, 50_000,
+                DEFAULT_SCAN_LIMIT, 0, DEFAULT_CEILING, DEFAULT_MAX_GROWTH, Float.MAX_VALUE));
+    }
+}

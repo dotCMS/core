@@ -1,18 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { of, throwError } from 'rxjs';
+import { MockInstance, vi } from 'vitest';
 
-import { HttpErrorResponse } from '@angular/common/http';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { getTestBed, TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { CoreWebService, HttpCode, LoginService, SiteService } from '@dotcms/dotcms-js';
+import { HttpCode, LoginService, SiteService } from '@dotcms/dotcms-js';
 import { DotPageMode, DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
 import {
-    CoreWebServiceMock,
     DotLicenseServiceMock,
     DotMessageDisplayServiceMock,
     LoginServiceMock,
@@ -40,14 +40,17 @@ import { DotPageStateService } from '../dot-page-state/dot-page-state.service';
 import { DotRouterService } from '../dot-router/dot-router.service';
 import { DotSessionStorageService } from '../dot-session-storage/dot-session-storage.service';
 
-const route: any = jest.spyOn(ActivatedRouteSnapshot, 'toString');
-
-route.queryParams = {};
+// The tests mutate `queryParams` and `children` directly, so the snapshot is a
+// plain stand-in rather than a real ActivatedRouteSnapshot.
+const route: any = {
+    toString: vi.fn(),
+    queryParams: {}
+};
 
 describe('DotEditPageResolver', () => {
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
     let dotPageStateService: DotPageStateService;
-    let dotPageStateServiceRequestPageSpy: jest.SpyInstance;
+    let dotPageStateServiceRequestPageSpy: MockInstance;
     let dotRouterService: DotRouterService;
     let dotSessionStorageService: DotSessionStorageService;
 
@@ -57,10 +60,10 @@ describe('DotEditPageResolver', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 DotSessionStorageService,
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 {
                     provide: DotHttpErrorManagerService,
                     useClass: MockDotHttpErrorManagerService
@@ -75,7 +78,7 @@ describe('DotEditPageResolver', () => {
                 DotFormatDateService,
                 DotESContentService,
                 DotFavoritePageService,
-                { provide: DotRouterService, useValue: new MockDotRouterJestService(jest) },
+                { provide: DotRouterService, useValue: new MockDotRouterJestService(vi) },
                 {
                     provide: DotMessageDisplayService,
                     useClass: DotMessageDisplayServiceMock
@@ -99,12 +102,12 @@ describe('DotEditPageResolver', () => {
         dotEditPageResolver = injector.inject(DotEditPageResolver);
         dotHttpErrorManagerService = injector.inject(DotHttpErrorManagerService);
         dotPageStateService = injector.inject(DotPageStateService);
-        dotPageStateServiceRequestPageSpy = jest.spyOn(dotPageStateService, 'requestPage');
+        dotPageStateServiceRequestPageSpy = vi.spyOn(dotPageStateService, 'requestPage');
         dotRouterService = injector.inject(DotRouterService);
         siteService = injector.inject(SiteService);
         dotSessionStorageService = injector.inject(DotSessionStorageService);
 
-        jest.spyOn(dotHttpErrorManagerService, 'handle').mockReturnValue(of());
+        vi.spyOn(dotHttpErrorManagerService, 'handle').mockReturnValue(of());
     });
 
     beforeEach(() => {
@@ -142,7 +145,7 @@ describe('DotEditPageResolver', () => {
     it('should redirect to site-browser when request fail', () => {
         const fake403Response = mockResponseView(403);
 
-        dotPageStateServiceRequestPageSpy.mockReturnValue(throwError(fake403Response));
+        dotPageStateServiceRequestPageSpy.mockReturnValue(throwError(() => fake403Response));
 
         dotEditPageResolver.resolve(route).subscribe();
         expect(dotRouterService.goToSiteBrowser).toHaveBeenCalledTimes(1);
@@ -162,7 +165,7 @@ describe('DotEditPageResolver', () => {
     describe('Switch Site', () => {
         it('should switch site when host_id is present in queryparams', () => {
             route.queryParams.host_id = '123';
-            jest.spyOn(siteService, 'switchSiteById').mockReturnValue(of());
+            vi.spyOn(siteService, 'switchSiteById').mockReturnValue(of());
             const mock = new DotPageRenderState(
                 mockUser(),
                 new DotPageRender(mockDotRenderedPage())
@@ -174,7 +177,7 @@ describe('DotEditPageResolver', () => {
 
         it('should not switch site when host_id is not present in queryparams', () => {
             route.queryParams = {};
-            jest.spyOn(siteService, 'switchSiteById').mockReturnValue(of());
+            vi.spyOn(siteService, 'switchSiteById').mockReturnValue(of());
             const mock = new DotPageRenderState(
                 mockUser(),
                 new DotPageRender(mockDotRenderedPage())
@@ -186,7 +189,7 @@ describe('DotEditPageResolver', () => {
 
         it('should not switch site when host_id is equal to current site id', () => {
             route.queryParams.host_id = siteService.currentSite.identifier;
-            jest.spyOn(siteService, 'switchSiteById').mockReturnValue(of());
+            vi.spyOn(siteService, 'switchSiteById').mockReturnValue(of());
             const mock = new DotPageRenderState(
                 mockUser(),
                 new DotPageRender(mockDotRenderedPage())
@@ -249,7 +252,7 @@ describe('DotEditPageResolver', () => {
         });
 
         it('should call to `removeVariantId` when handle error and redirect to site-browser ', () => {
-            jest.spyOn(dotSessionStorageService, 'removeVariantId');
+            vi.spyOn(dotSessionStorageService, 'removeVariantId');
 
             const mock = new DotPageRenderState(
                 mockUser(),

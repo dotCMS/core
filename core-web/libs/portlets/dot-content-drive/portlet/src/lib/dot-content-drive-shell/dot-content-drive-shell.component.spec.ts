@@ -1,58 +1,84 @@
-import { beforeEach, describe, expect, it } from '@jest/globals';
-import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngneat/spectator/jest';
-import { of, throwError } from 'rxjs';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator,
+    SpyObject
+} from '@openng/spectator/vitest';
+import { NEVER, of, Subject, throwError } from 'rxjs';
+import { Mock, Mocked, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Location } from '@angular/common';
-import { provideHttpClient } from '@angular/common/http';
-import { signal } from '@angular/core';
+import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { signal, Signal, WritableSignal } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
 import { Dialog } from 'primeng/dialog';
+import { Popover } from 'primeng/popover';
+import { ZIndexUtils } from 'primeng/utils';
 
 import {
     AddToBundleService,
+    DotAlertConfirmService,
     DotContentSearchService,
     DotContentTypeService,
     DotCurrentUserService,
+    DotFolderService,
+    DotHttpErrorManagerService,
+    DotLanguagesService,
+    DotMessageService,
+    DotPropertiesService,
+    DotRouterService,
     DotSiteService,
+    DotFolderBulkDeleteRefusalKind,
     DotSystemConfigService,
+    DotUploadFileService,
     DotWorkflowActionsFireService,
     DotWorkflowEventHandlerService,
     DotWorkflowsActionsService,
-    DotRouterService,
-    DotLanguagesService,
-    DotFolderService,
-    DotUploadFileService,
-    DotLocalstorageService,
-    DotMessageService
+    PushPublishService
 } from '@dotcms/data-access';
-import { LoggerService, StringUtils, CoreWebService } from '@dotcms/dotcms-js';
+import { LoggerService, StringUtils } from '@dotcms/dotcms-js';
 import {
     DotCMSContentlet,
+    DotCMSContentTypeField,
     DotContentDriveFolder,
     DotContentDriveItem
 } from '@dotcms/dotcms-models';
 import {
-    DotFolderListViewComponent,
+    DotEditContentSidePanelComponent,
+    DotSidePanelNavController,
+    EditContentDialogData
+} from '@dotcms/edit-content';
+import {
+    DotFolderTreeNodeData,
     DotFolderTreeNodeItem,
-    DotContentDriveMoveItems,
-    ALL_FOLDER
+    DotContentDriveMoveItems
 } from '@dotcms/portlets/content-drive/ui';
 import { GlobalStore } from '@dotcms/store';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
+import {
+    DotFolderListViewComponent,
+    DotUploadTypeSelectorComponent,
+    STATUS_TOAST_KEY
+} from '@dotcms/ui';
+import { DOT_SYSTEM_CONFIG_SERVICE_MOCK, mockLocales } from '@dotcms/utils-testing';
 
 import { DotContentDriveShellComponent } from './dot-content-drive-shell.component';
 
 import {
+    ACTION_CENTER_DIALOG_CONTENT_STYLE,
+    ACTION_CENTER_DIALOG_CLASS,
     DEFAULT_PAGE,
     DEFAULT_PAGINATION,
     DIALOG_TYPE,
-    HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY,
-    WARNING_MESSAGE_LIFE,
-    SUCCESS_MESSAGE_LIFE,
     ERROR_MESSAGE_LIFE,
+    SUCCESS_MESSAGE_LIFE,
+    SYSTEM_HOST,
+    SYSTEM_HOST_PATH,
+    WARNING_MESSAGE_LIFE,
     MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
 } from '../shared/constants';
 import {
@@ -62,135 +88,324 @@ import {
     MOCK_SITES,
     MOCK_BASE_TYPES
 } from '../shared/mocks';
-import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
+import {
+    DotContentDriveDialog,
+    DotContentDriveActionExecution,
+    DotContentDriveActionExecutionResult,
+    DotContentDriveDialogDrillDown,
+    DotContentDriveSortOrder,
+    DotContentDriveStatus
+} from '../shared/models';
 import { DotContentDriveNavigationService } from '../shared/services';
+import { provideContentDriveFieldFilterHost } from '../store/content-drive-field-filter-host';
+import { provideContentDriveFilterFacade } from '../store/content-drive-filter-facade';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
+
+// Backs the navigation service mock's readonly `$editPanelRequest`. Typed (not cast) so tests get
+// a compile-checked payload; reset in the shared beforeEach for isolation.
+const editPanelRequestSignal: WritableSignal<EditContentDialogData | null> = signal(null);
+// Module scope: both store mocks in this file read it, and they live in describes that do not
+// share a `beforeEach`. Reset per test rather than re-created, so neither mock captures a stale one.
+/** Nothing refused by default; the refusal tests set it. Module-scoped like its siblings,
+ * because the deep-link describe mounts its own shell without the main block's beforeEach. */
+const folderDeleteRefusalSignal: WritableSignal<DotFolderBulkDeleteRefusalKind | undefined> =
+    signal(undefined);
+/** Why a folder duplication never became a run, as the store holds it (#37062). */
+const folderDuplicateRefusalSignal: WritableSignal<string | undefined> = signal(undefined);
+// How many folders one duplicate or delete may carry; `null` is no ceiling advertised.
+const folderDuplicateMaxPathsSignal: WritableSignal<number | null> = signal(null);
+const folderDeleteMaxPathsSignal: WritableSignal<number | null> = signal(null);
+const canAddChildrenSignal: WritableSignal<boolean> = signal(true);
+// The site-level answer the drop guard falls back to at the root. Module scope for the same reason
+// as the one above: two store mocks in this file read it from describes with no shared `beforeEach`.
+const siteCanAddChildrenSignal: WritableSignal<boolean | undefined> = signal(undefined);
+const systemHostCanReadSignal = signal(true);
+const allSiteContentSelectedSignal = signal(false);
 
 describe('DotContentDriveShellComponent', () => {
     let spectator: Spectator<DotContentDriveShellComponent>;
-    let store: jest.Mocked<InstanceType<typeof DotContentDriveStore>>;
+    let store: Mocked<InstanceType<typeof DotContentDriveStore>>;
     let router: SpyObject<Router>;
     let location: SpyObject<Location>;
-    let localStorageService: SpyObject<DotLocalstorageService>;
     let messageService: SpyObject<MessageService>;
     let uploadService: SpyObject<DotUploadFileService>;
     let navigationService: SpyObject<DotContentDriveNavigationService>;
     let filtersSignal: ReturnType<typeof signal>;
     let statusSignal: ReturnType<typeof signal<DotContentDriveStatus>>;
+    // Reactive so the shell's syncDialogEffect reacts (mirrors the real SignalStore signal).
+    let dialogSignal: WritableSignal<DotContentDriveDialog | undefined>;
+    let pageLeaveRequestSubject: Subject<void>;
+    let routerService: SpyObject<DotRouterService>;
+    let dotMessageService: SpyObject<DotMessageService>;
+    let selectedItemsSignal: WritableSignal<DotContentDriveItem[]>;
+    // Header override published by a dialog body that has drilled into a sub-screen.
+    let dialogDrillDownSignal: WritableSignal<DotContentDriveDialogDrillDown | undefined>;
+    // Result of a finished workflow action, which the shell turns into a toast.
+    let actionExecutionResultSignal: WritableSignal<
+        DotContentDriveActionExecutionResult | undefined
+    >;
+    // Reactive so the shell's $extraColumns computed recomputes when the fields change.
+    let showInListFieldsSignal: WritableSignal<DotCMSContentTypeField[]>;
+
+    // The run the toolbar surface speaks for, driven from here so the shell's status-toast effect
+    // can be exercised. Only unmarked runs reach it; the store's own computed does that filtering.
+    const toolbarRunSignal = signal<DotContentDriveActionExecution | undefined>(undefined);
+    const toolbarRunCountSignal = signal(0);
 
     const createComponent = createComponentFactory({
         component: DotContentDriveShellComponent,
         providers: [
             GlobalStore,
             mockProvider(DotSiteService, {
-                getCurrentSite: jest.fn().mockReturnValue(of(MOCK_SITES[0]))
+                getCurrentSite: vi.fn().mockReturnValue(of(MOCK_SITES[0]))
             }),
             mockProvider(DotContentSearchService, {
-                get: jest.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
+                get: vi.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
             }),
             mockProvider(ActivatedRoute, MOCK_ROUTE),
-            mockProvider(DotSystemConfigService),
+            mockProvider(DotSystemConfigService, DOT_SYSTEM_CONFIG_SERVICE_MOCK),
+            // The folder context menu confirms folder deletes through this.
+            mockProvider(DotAlertConfirmService, { confirm: vi.fn() }),
             mockProvider(DotContentTypeService, {
-                getAllContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES)),
-                getContentTypes: jest.fn().mockImplementation(() => of([]))
+                getAllContentTypes: vi.fn().mockReturnValue(of(MOCK_BASE_TYPES)),
+                getContentTypes: vi.fn().mockImplementation(() => of([]))
             }),
             mockProvider(DotLanguagesService, {
-                get: jest.fn().mockReturnValue(of())
+                get: vi.fn().mockReturnValue(of())
             }),
             mockProvider(DotFolderService, {
-                getFolders: jest.fn().mockReturnValue(of([]))
+                getFolders: vi.fn().mockReturnValue(of([]))
             }),
             mockProvider(DotUploadFileService, {
-                uploadDotAsset: jest.fn().mockReturnValue(of({}))
+                uploadFileByBaseType: vi.fn().mockReturnValue(of({})),
+                uploadFilesByBaseType: vi.fn().mockReturnValue(
+                    of({
+                        kind: 'accepted',
+                        handle: { jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' }
+                    })
+                )
             }),
             provideHttpClient(),
+            // The panel is behind `@defer`; once it resolves, it mounts the real editor chain,
+            // which can make HTTP calls no test here mocks explicitly (e.g. languages). Without
+            // this, an unmocked call attempts a real network fetch and fails the test.
+            provideHttpClientTesting(),
+            // The store composes withFlags, which fetches feature flags on init; stub it.
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: vi.fn().mockReturnValue(of({}))
+            }),
             mockProvider(DotMessageService, {
-                get: jest.fn().mockImplementation((key: string) => key)
+                get: vi.fn().mockImplementation((key: string) => key)
             }),
             mockProvider(DotContentDriveNavigationService, {
-                editContent: jest.fn()
+                editContent: vi.fn(),
+                createContent: vi.fn(),
+                closeEditPanel: vi.fn(),
+                openEditByIdentifier: vi.fn(),
+                $editPanelRequest: editPanelRequestSignal
             }),
-            { provide: CoreWebService, useClass: CoreWebServiceMock },
             LoggerService,
             StringUtils,
+            mockProvider(PushPublishService, {
+                // The store resolves this on init, and both the Action Center's Push Publish row and
+                // the folder context menu's Push Publish item gate on the result. An empty answer
+                // disables them, which is all the shell's own tests need.
+                getEnvironments: vi.fn().mockReturnValue(of([]))
+            }),
             mockProvider(AddToBundleService, {
-                getBundles: jest.fn().mockReturnValue(of([])),
-                addToBundle: jest.fn().mockReturnValue(of({}))
+                getBundles: vi.fn().mockReturnValue(of([])),
+                addToBundle: vi.fn().mockReturnValue(of({}))
             }),
             mockProvider(DotCurrentUserService, {
-                getCurrentUser: jest.fn().mockReturnValue(of({}))
+                getCurrentUser: vi.fn().mockReturnValue(of({}))
+            }),
+            mockProvider(DotHttpErrorManagerService),
+            mockProvider(DotSidePanelNavController, {
+                shouldCollapse: vi.fn().mockReturnValue(false),
+                acquire: vi.fn(),
+                release: vi.fn()
             })
         ],
-        componentProviders: [DotContentDriveStore],
+        componentProviders: [
+            DotContentDriveStore,
+            provideContentDriveFilterFacade(),
+            // The toolbar renders for real here, "More" overflow included, so its own seam has to
+            // be provided the same way the shell provides it in production.
+            provideContentDriveFieldFilterHost()
+        ],
         detectChanges: false
     });
 
     beforeEach(() => {
+        canAddChildrenSignal.set(true);
+        siteCanAddChildrenSignal.set(undefined);
+        systemHostCanReadSignal.set(true);
+        allSiteContentSelectedSignal.set(false);
         filtersSignal = signal({});
         statusSignal = signal(DotContentDriveStatus.LOADING);
+        dialogSignal = signal<DotContentDriveDialog | undefined>(undefined);
+        selectedItemsSignal = signal<DotContentDriveItem[]>([]);
+        pageLeaveRequestSubject = new Subject<void>();
+        dialogDrillDownSignal = signal<DotContentDriveDialogDrillDown | undefined>(undefined);
+        folderDeleteRefusalSignal.set(undefined);
+        folderDuplicateRefusalSignal.set(undefined);
+        folderDuplicateMaxPathsSignal.set(null);
+        folderDeleteMaxPathsSignal.set(null);
+        actionExecutionResultSignal = signal<DotContentDriveActionExecutionResult | undefined>(
+            undefined
+        );
+        showInListFieldsSignal = signal<DotCMSContentTypeField[]>([]);
+        editPanelRequestSignal.set(null);
+
+        const currentSiteMock = vi.fn().mockReturnValue(MOCK_SITES[0]);
+        const systemHostSelectedMock = vi.fn().mockReturnValue(false);
 
         spectator = createComponent({
             providers: [
                 mockProvider(DotContentDriveStore, {
-                    initContentDrive: jest.fn(),
-                    currentSite: jest.fn().mockReturnValue(MOCK_SITES[0]),
+                    initContentDrive: vi.fn(),
+                    folderDeleteRefusal: folderDeleteRefusalSignal,
+                    clearFolderDeleteRefusal: vi.fn(),
+                    folderDuplicateRefusal: folderDuplicateRefusalSignal,
+                    folderDuplicateMaxPaths: folderDuplicateMaxPathsSignal,
+                    folderDeleteMaxPaths: folderDeleteMaxPathsSignal,
+                    clearFolderDuplicateRefusal: vi.fn(),
+                    // No advertised ceiling by default, which is the case that leaves the refusing
+                    // to the server. The gate's own tests set one.
+                    uploadCeilings: vi.fn().mockReturnValue(null),
+                    // Read by the toolbar (rendered for real here) and the drop zone: both gate
+                    // their creation affordances on it.
+                    $canAddChildren: canAddChildrenSignal,
+                    // Read by the folder menu the shell renders, to gate Duplicate.
+                    $canDuplicateHere: canAddChildrenSignal,
+                    siteCanAddChildren: siteCanAddChildrenSignal,
+                    // The sidebar this shell renders reads it to decide whether to offer the
+                    // System Host entry at all.
+                    systemHostCanRead: systemHostCanReadSignal,
+                    currentSite: currentSiteMock,
                     // Tree collapsed at start to render the toggle button on toolbar
-                    isTreeExpanded: jest.fn().mockReturnValue(false),
-                    removeFilter: jest.fn(),
-                    getFilterValue: jest.fn(),
-                    $request: jest.fn(),
-                    items: jest.fn().mockReturnValue(MOCK_ITEMS),
-                    pagination: jest.fn().mockReturnValue(DEFAULT_PAGINATION),
-                    setIsTreeExpanded: jest.fn(),
-                    path: jest.fn().mockReturnValue('/test/path'),
+                    isTreeExpanded: vi.fn().mockReturnValue(false),
+                    removeFilter: vi.fn(),
+                    getFilterValue: vi.fn(),
+                    $request: vi.fn(),
+                    items: vi.fn().mockReturnValue(MOCK_ITEMS),
+                    pagination: vi.fn().mockReturnValue(DEFAULT_PAGINATION),
+                    setIsTreeExpanded: vi.fn(),
+                    isTreeVisuallyExpanded: vi.fn().mockReturnValue(false),
+                    isTreeForceCollapsed: vi.fn().mockReturnValue(false),
+                    setTreeForceCollapsed: vi.fn(),
+                    path: vi.fn().mockReturnValue('/test/path'),
                     filters: filtersSignal,
+                    clearFilters: vi.fn(),
                     status: statusSignal,
-                    sort: jest
+                    sort: vi
                         .fn()
                         .mockReturnValue({ field: 'modDate', order: DotContentDriveSortOrder.ASC }),
-                    pages: jest.fn().mockReturnValue([DEFAULT_PAGE]),
-                    setItems: jest.fn(),
-                    setStatus: jest.fn(),
-                    setPagination: jest.fn(),
-                    setSort: jest.fn(),
-                    selectedItems: jest.fn().mockReturnValue([]),
-                    setSelectedItems: jest.fn(),
-                    patchFilters: jest.fn(),
-                    contextMenu: jest.fn().mockReturnValue(null),
-                    dialog: jest.fn().mockReturnValue(undefined),
-                    setDialog: jest.fn(),
-                    loadFolders: jest.fn(),
-                    loadChildFolders: jest.fn(),
-                    updateFolders: jest.fn(),
-                    folders: jest.fn(),
-                    selectedNode: jest.fn(),
-                    setSelectedNode: jest.fn(),
-                    sidebarLoading: jest.fn(),
-                    closeDialog: jest.fn(),
-                    patchContextMenu: jest.fn(),
-                    resetContextMenu: jest.fn(),
-                    setDragItems: jest.fn(),
-                    cleanDragItems: jest.fn(),
-                    dragItems: jest.fn().mockReturnValue({ folders: [], contentlets: [] }),
-                    loadItems: jest.fn(),
-                    setPath: jest.fn(),
-                    setShowAddToBundle: jest.fn()
+                    pages: vi.fn().mockReturnValue([DEFAULT_PAGE]),
+                    setItems: vi.fn(),
+                    setStatus: vi.fn(),
+                    startExternalRun: vi.fn().mockReturnValue('run-1'),
+                    trackUploadJob: vi.fn(),
+                    activeRunCount: signal(0),
+                    toolbarRun: toolbarRunSignal,
+                    toolbarRunCount: toolbarRunCountSignal,
+                    // The Action Center and the toolbar lock only on runs that are not
+                    // backgrounded, and both render inside the shell.
+                    blockingRunCount: signal(0),
+                    toolbarBlockingRunCount: toolbarRunCountSignal,
+                    busyRows: signal<string[]>([]),
+                    allBusyRows: signal<string[]>([]),
+                    endExternalRun: vi.fn(),
+                    setPagination: vi.fn(),
+                    setSort: vi.fn(),
+                    selectedItems: selectedItemsSignal,
+                    setSelectedItems: vi.fn(),
+                    // Read by the Action Center, which the shell renders for real inside the dialog.
+                    currentUserIsAdmin: vi.fn().mockReturnValue(false),
+                    // Resolved on portlet init; `false` disables Push Publish everywhere it
+                    // is gated, which is all the shell's own tests need.
+                    hasPushPublishEnvironments: vi.fn().mockReturnValue(false),
+                    patchFilters: vi.fn(),
+                    contextMenu: vi.fn().mockReturnValue(null),
+                    dialog: dialogSignal,
+                    dialogDrillDown: dialogDrillDownSignal,
+                    // Read by the toolbar, which the shell renders for real.
+                    actionExecution: signal(undefined),
+                    // Read by the Locale chip inside that toolbar: the store resolves the languages
+                    // once and seeds the environment default into the `languageId` filter.
+                    languages: signal(mockLocales),
+                    defaultLanguageId: vi.fn().mockReturnValue(1),
+                    actionExecutionResult: actionExecutionResultSignal,
+                    clearActionExecutionResult: vi.fn(),
+                    setDialog: vi.fn(),
+                    setDialogDrillDown: vi.fn(),
+                    clearDialogDrillDown: vi.fn(),
+                    loadFolders: vi.fn(),
+                    loadChildFolders: vi.fn(),
+                    updateFolders: vi.fn(),
+                    folders: vi.fn(),
+                    selectedNode: vi.fn(),
+                    setSelectedNode: vi.fn(),
+                    // The shell renders the sidebar, which asks the store which entry is selected.
+                    $allSiteContentSelected: allSiteContentSelectedSignal,
+                    $systemHostSelected: systemHostSelectedMock,
+                    // Mirrors the store's own computed rather than hardcoding an answer, so these
+                    // tests keep driving the destination through the signals they already control:
+                    // System Host when that is selected, the current site otherwise.
+                    $newContentHostId: vi.fn(() =>
+                        systemHostSelectedMock() ? 'SYSTEM_HOST' : currentSiteMock()?.identifier
+                    ),
+                    selectAllSiteContent: vi.fn(),
+                    selectSystemHost: vi.fn(),
+                    sidebarLoading: vi.fn(),
+                    closeDialog: vi.fn(),
+                    patchContextMenu: vi.fn(),
+                    resetContextMenu: vi.fn(),
+                    setDragItems: vi.fn(),
+                    cleanDragItems: vi.fn(),
+                    dragItems: vi.fn().mockReturnValue({ folders: [], contentlets: [] }),
+                    loadItems: vi.fn(),
+                    reloadContentDrive: vi.fn(),
+                    setPath: vi.fn(),
+                    setShowAddToBundle: vi.fn(),
+                    userSearchableFields: vi.fn().mockReturnValue([]),
+                    userSearchableActive: vi.fn().mockReturnValue([]),
+                    showInListFields: showInListFieldsSignal,
+                    setUserSearchableFields: vi.fn(),
+                    setShowInListFields: vi.fn(),
+                    addUserSearchableField: vi.fn(),
+                    clearUserSearchableFilters: vi.fn()
                 }),
                 mockProvider(Router, {
-                    createUrlTree: jest.fn(
-                        (_commands: unknown[], opts: { queryParams?: Record<string, string> }) => ({
-                            toString: () =>
-                                '?' + new URLSearchParams(opts?.queryParams ?? {}).toString()
+                    createUrlTree: vi.fn(
+                        (
+                            _commands: unknown[],
+                            opts: { queryParams?: Record<string, string | null> }
+                        ) => ({
+                            toString: () => {
+                                const params = Object.fromEntries(
+                                    Object.entries(opts?.queryParams ?? {}).filter(
+                                        ([, value]) => value != null
+                                    )
+                                ) as Record<string, string>;
+
+                                return '?' + new URLSearchParams(params).toString();
+                            }
                         })
                     )
                 }),
                 mockProvider(Location, {
-                    go: jest.fn()
+                    go: vi.fn(),
+                    replaceState: vi.fn(),
+                    path: vi.fn().mockReturnValue(''),
+                    // Return a real subscription so the shell's popstate listener can be captured
+                    // and torn down without throwing on destroy.
+                    subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() })
                 }),
                 mockProvider(DotContentTypeService, {
-                    getAllContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES)),
-                    getContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES)),
-                    getContentTypesWithPagination: jest.fn().mockReturnValue(
+                    getAllContentTypes: vi.fn().mockReturnValue(of(MOCK_BASE_TYPES)),
+                    getContentTypes: vi.fn().mockReturnValue(of(MOCK_BASE_TYPES)),
+                    getContentTypesWithPagination: vi.fn().mockReturnValue(
                         of({
                             contentTypes: MOCK_BASE_TYPES,
                             pagination: {
@@ -201,9 +416,13 @@ describe('DotContentDriveShellComponent', () => {
                         })
                     )
                 }),
-                mockProvider(DotWorkflowsActionsService),
+                // The Action Center child looks up bulk actions on init, which happens as soon as a
+                // selection is present in these tests.
+                mockProvider(DotWorkflowsActionsService, {
+                    getBulkActions: vi.fn().mockReturnValue(of({ schemes: [] }))
+                }),
                 mockProvider(DotWorkflowActionsFireService, {
-                    bulkFire: jest
+                    bulkFire: vi
                         .fn()
                         .mockReturnValue(of({ successCount: 1, skippedCount: 0, fails: [] }))
                 }),
@@ -212,24 +431,1076 @@ describe('DotContentDriveShellComponent', () => {
                     messageObserver: of({}),
                     clearObserver: of({})
                 }),
-                mockProvider(DotRouterService, { goToEditPage: jest.fn() }),
-                mockProvider(DotLocalstorageService, {
-                    getItem: jest.fn().mockReturnValue(undefined),
-                    setItem: jest.fn()
+                mockProvider(DotRouterService, {
+                    goToEditPage: vi.fn(),
+                    forbidRouteDeactivation: vi.fn(),
+                    allowRouteDeactivation: vi.fn(),
+                    pageLeaveRequest$: pageLeaveRequestSubject
                 })
             ]
         });
         store = spectator.inject(DotContentDriveStore, true);
         router = spectator.inject(Router);
         location = spectator.inject(Location);
-        localStorageService = spectator.inject(DotLocalstorageService);
         messageService = spectator.inject(MessageService);
+
+        // Module-level, so whatever the last test left here is what the next one starts with. The
+        // shell raises the status toast off these, which made an unrelated test see a message it
+        // never asked for.
+        toolbarRunSignal.set(undefined);
+        toolbarRunCountSignal.set(0);
         uploadService = spectator.inject(DotUploadFileService);
+        routerService = spectator.inject(DotRouterService);
+        dotMessageService = spectator.inject(DotMessageService);
         navigationService = spectator.inject(DotContentDriveNavigationService);
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
+    });
+
+    // US5 and US6 (issue #32591). Both claims are made in one batch, so the shell holds a single
+    // withdrawal rather than one per combination.
+    describe('keyboard shortcuts', () => {
+        const press = (init: KeyboardEventInit): KeyboardEvent => {
+            const event = new KeyboardEvent('keydown', {
+                bubbles: true,
+                cancelable: true,
+                ...init
+            });
+            document.dispatchEvent(event);
+
+            return event;
+        };
+
+        const pressEscape = () => press({ key: 'Escape' });
+        const pressModB = () => press({ key: 'b', metaKey: true });
+
+        beforeEach(() => {
+            // `ZIndexUtils` is a module-level singleton shared by the whole file, and a dialog torn
+            // down by an earlier test leaves its entry behind: this suite reads 1102 with nothing
+            // visible. Pinned to an empty stack so each test states its own overlay state.
+            vi.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(0);
+            spectator.detectChanges();
+        });
+
+        afterEach(() => vi.restoreAllMocks());
+
+        describe('Escape', () => {
+            it('should clear the selection and leave the filters alone', () => {
+                selectedItemsSignal.set([MOCK_ITEMS[0], MOCK_ITEMS[1]]);
+                filtersSignal.set({ contentType: 'Blog' });
+                spectator.detectChanges();
+
+                pressEscape();
+
+                expect(store.setSelectedItems).toHaveBeenCalledWith([]);
+                expect(store.clearFilters).not.toHaveBeenCalled();
+            });
+
+            // Escape clears the selection and nothing else. It is a high-frequency "back out" key,
+            // and an active filter set is expensive to rebuild by hand, so a stray press must not be
+            // able to destroy one. Clearing filters stays on the toolbar's "Clear all" control, which
+            // is visible, labelled, and only offered when there is something to clear.
+            it('should never clear filters, even with an active filter and no selection', () => {
+                filtersSignal.set({ contentType: 'Blog' });
+                spectator.detectChanges();
+
+                pressEscape();
+
+                expect(store.clearFilters).not.toHaveBeenCalled();
+                expect(store.setSelectedItems).not.toHaveBeenCalled();
+            });
+
+            it('should do nothing with neither a selection nor an active filter', () => {
+                pressEscape();
+
+                expect(store.clearFilters).not.toHaveBeenCalled();
+                expect(store.setSelectedItems).not.toHaveBeenCalled();
+            });
+
+            it('should leave the browser default alone when it has nothing to do', () => {
+                const event = pressEscape();
+
+                expect(event.defaultPrevented).toBe(false);
+            });
+
+            // Declining rather than swallowing matters here: with a filter set but no selection there
+            // is nothing for the shell to do, so the key has to stay available to whatever else may
+            // claim it.
+            it('should leave the browser default alone when only a filter is active', () => {
+                filtersSignal.set({ contentType: 'Blog' });
+                spectator.detectChanges();
+
+                const event = pressEscape();
+
+                expect(event.defaultPrevented).toBe(false);
+            });
+
+            // Review finding: the shell's own p-dialogs close through PrimeNG's separate document
+            // listener, which never consults `defaultPrevented`. Without declining here, Escape to
+            // dismiss a dialog would also wipe the filters or the selection it was operating on.
+            it('should do nothing while an overlay is above the listing', () => {
+                vi.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1101);
+                selectedItemsSignal.set([MOCK_ITEMS[0]]);
+                filtersSignal.set({ contentType: 'Blog' });
+                spectator.detectChanges();
+
+                pressEscape();
+
+                expect(store.setSelectedItems).not.toHaveBeenCalled();
+                expect(store.clearFilters).not.toHaveBeenCalled();
+            });
+
+            // Deliberately not asserting `defaultPrevented` here. With a dialog open PrimeNG's own
+            // Escape handler runs and prevents the default itself, which is the outcome we want but
+            // makes the flag unable to tell "the shell declined" from "the shell swallowed it". What
+            // matters is that the shell does not act, which the test above covers; that declining
+            // falls through to the next claimant is covered in the registry's own spec.
+            it('should resume clearing once the overlay closes', () => {
+                const stack = vi.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1101);
+                selectedItemsSignal.set([MOCK_ITEMS[0]]);
+                spectator.detectChanges();
+
+                pressEscape();
+
+                stack.mockReturnValue(0);
+                pressEscape();
+
+                expect(store.setSelectedItems).toHaveBeenCalledWith([]);
+            });
+
+            it('should not change the browsed folder', () => {
+                filtersSignal.set({ contentType: 'Blog' });
+                spectator.detectChanges();
+
+                pressEscape();
+
+                expect(store.setPath).not.toHaveBeenCalled();
+            });
+        });
+
+        describe('tree toggle', () => {
+            it('should expand a collapsed tree', () => {
+                store.isTreeExpanded.mockReturnValue(false);
+
+                pressModB();
+
+                expect(store.setIsTreeExpanded).toHaveBeenCalledWith(true);
+            });
+
+            it('should collapse an expanded tree', () => {
+                store.isTreeExpanded.mockReturnValue(true);
+
+                pressModB();
+
+                expect(store.setIsTreeExpanded).toHaveBeenCalledWith(false);
+            });
+
+            // A rich text surface handling the same combination is closer to the event target, runs
+            // first and marks the event handled. The shell must not act on it a second time.
+            it('should ignore a combination a nested handler already consumed', () => {
+                const event = new KeyboardEvent('keydown', {
+                    key: 'b',
+                    metaKey: true,
+                    bubbles: true,
+                    cancelable: true
+                });
+                event.preventDefault();
+                document.dispatchEvent(event);
+
+                expect(store.setIsTreeExpanded).not.toHaveBeenCalled();
+            });
+
+            // Review finding: the same reasoning as Escape. A dialog covers the tree, so toggling it
+            // rearranges a layout the user cannot see and they meet it changed once the dialog
+            // closes. Declining also leaves the combination to whatever is on top, which may want
+            // it — a rich text surface inside a dialog reads Cmd+B as bold.
+            it('should do nothing while an overlay is above the listing', () => {
+                vi.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1101);
+                store.isTreeExpanded.mockReturnValue(true);
+
+                pressModB();
+
+                expect(store.setIsTreeExpanded).not.toHaveBeenCalled();
+            });
+
+            it('should resume toggling once the overlay closes', () => {
+                const stack = vi.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1101);
+                store.isTreeExpanded.mockReturnValue(true);
+
+                pressModB();
+
+                stack.mockReturnValue(0);
+                pressModB();
+
+                expect(store.setIsTreeExpanded).toHaveBeenCalledWith(false);
+            });
+
+            it('should leave the browser default alone when it declines', () => {
+                vi.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1101);
+
+                const event = pressModB();
+
+                expect(event.defaultPrevented).toBe(false);
+            });
+        });
+
+        // The listing is rendered for real here, so this is the only test that exercises the whole
+        // round trip: row keydown -> range -> selectionChange -> store. The component-level tests
+        // stop at the emission.
+        it('should report a keyboard-extended range to the store', () => {
+            // The shared harness starts in LOADING, which renders skeletons instead of rows. This is
+            // the only test in this file that needs real rows on screen.
+            statusSignal.set(DotContentDriveStatus.LOADED);
+            spectator.detectChanges();
+
+            const rows = spectator.queryAll<HTMLTableRowElement>(byTestId('item-row'));
+
+            expect(rows.length).toBeGreaterThan(1);
+
+            rows[0].focus();
+            rows[0].dispatchEvent(
+                new KeyboardEvent('keydown', { code: 'ArrowDown', shiftKey: true, bubbles: true })
+            );
+            spectator.detectChanges();
+
+            expect(store.setSelectedItems).toHaveBeenCalledWith([MOCK_ITEMS[0], MOCK_ITEMS[1]]);
+        });
+
+        it('should release both claims when the shell is destroyed', () => {
+            filtersSignal.set({ contentType: 'Blog' });
+            spectator.detectChanges();
+
+            spectator.fixture.destroy();
+            pressModB();
+            pressEscape();
+
+            expect(store.setIsTreeExpanded).not.toHaveBeenCalled();
+            expect(store.clearFilters).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('workflow action result', () => {
+        // The run outlives the Action Center dialog, so the shell is what reports the outcome — it
+        // owns <p-toast> and is never destroyed while the portlet is open.
+        const settle = (result: DotContentDriveActionExecutionResult) => {
+            actionExecutionResultSignal.set(result);
+            spectator.detectChanges();
+        };
+
+        /**
+         * **FR-041.** The store carries the kind; these tests pin that each one reaches the author
+         * as its own sentence. Before this, every refusal went through `DotHttpErrorManagerService`
+         * and an author who hit a ceiling, selected nothing, or collided with a colleague's delete
+         * all saw the same generic HTTP error.
+         */
+        describe('folder delete refusals', () => {
+            const refuse = (kind: DotFolderBulkDeleteRefusalKind) => {
+                folderDeleteRefusalSignal.set(kind);
+                spectator.detectChanges();
+            };
+
+            it.each([
+                ['EMPTY_SELECTION', 'content-drive.delete.refused.empty-selection'],
+                ['OVER_MAX_PATHS', 'content-drive.delete.refused.over-max-paths'],
+                ['NOT_ENTITLED', 'content-drive.delete.refused.not-entitled'],
+                ['OVERLAPPING_RUN', 'content-drive.delete.refused.overlapping-run'],
+                ['UNCLASSIFIED', 'content-drive.delete.refused.unclassified']
+            ])('should say %s in its own words', (kind, key) => {
+                refuse(kind as DotFolderBulkDeleteRefusalKind);
+
+                expect(messageService.add).toHaveBeenCalledWith(
+                    expect.objectContaining({ severity: 'error', detail: key })
+                );
+            });
+
+            it('should consume the refusal so it is said once', () => {
+                refuse('OVERLAPPING_RUN');
+
+                expect(store.clearFolderDeleteRefusal).toHaveBeenCalled();
+            });
+
+            it('should name the most folders one delete may carry, when the server advertises it', () => {
+                folderDeleteMaxPathsSignal.set(25);
+
+                refuse('OVER_MAX_PATHS');
+
+                expect(dotMessageService.get).toHaveBeenCalledWith(
+                    'content-drive.delete.refused.over-max-paths-limit',
+                    '25'
+                );
+            });
+
+            it('should say nothing while nothing has been refused', () => {
+                spectator.detectChanges();
+
+                expect(messageService.add).not.toHaveBeenCalled();
+            });
+        });
+
+        /**
+         * A duplication refused before any run existed says why in its own words, the way a
+         * delete's refusal does (developer decision, 2026-09-28).
+         */
+        describe('folder duplicate refusals', () => {
+            const refuse = (kind: string) => {
+                folderDuplicateRefusalSignal.set(kind);
+                spectator.detectChanges();
+            };
+
+            it.each([
+                ['EMPTY_SELECTION', 'content-drive.duplicate.refused.empty-selection'],
+                ['OVER_MAX_PATHS', 'content-drive.duplicate.refused.over-max-paths'],
+                ['NOT_ENTITLED', 'content-drive.duplicate.refused.not-entitled'],
+                ['UNCLASSIFIED', 'content-drive.duplicate.refused.unclassified']
+            ])('should say %s in its own words', (kind, key) => {
+                refuse(kind);
+
+                expect(messageService.add).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        severity: 'error',
+                        summary: 'content-drive.duplicate.refused.title',
+                        detail: key
+                    })
+                );
+            });
+
+            it('should consume the refusal so it is said once', () => {
+                refuse('OVER_MAX_PATHS');
+
+                expect(store.clearFolderDuplicateRefusal).toHaveBeenCalled();
+            });
+
+            it('should name the most folders one duplicate may carry, when the server advertises it', () => {
+                folderDuplicateMaxPathsSignal.set(25);
+
+                refuse('OVER_MAX_PATHS');
+
+                expect(dotMessageService.get).toHaveBeenCalledWith(
+                    'content-drive.duplicate.refused.over-max-paths-limit',
+                    '25'
+                );
+            });
+        });
+
+        it('should stay silent on a clean success the listing already shows', () => {
+            // The rule the PM asked for: success is not announced when the author can see it. The
+            // rows published, moved or unlocked in front of them, so a notification saying so
+            // repeats what is already on screen — which is the noise this set out to remove.
+            settle({ actionName: 'Publish', successCount: 3, skippedCount: 0, failedCount: 0 });
+
+            expect(messageService.add).not.toHaveBeenCalled();
+        });
+
+        it('should still refresh and consume a silent success', () => {
+            // Only the notification is dropped. The reload is how the author actually sees it, so
+            // suppressing that too would replace a redundant message with no feedback at all.
+            settle({ actionName: 'Publish', successCount: 3, skippedCount: 0, failedCount: 0 });
+
+            expect(store.loadItems).toHaveBeenCalled();
+            expect(store.clearActionExecutionResult).toHaveBeenCalled();
+        });
+
+        it('should announce a clean success that leaves no visible trace', () => {
+            // Add to Bundle and Push Publish change nothing in the listing, so silence there is the
+            // "non-responding" complaint all over again.
+            settle({
+                actionName: 'Add to Bundle',
+                successCount: 1,
+                skippedCount: 0,
+                failedCount: 0,
+                confirmSuccess: true
+            });
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({ severity: 'success' })
+            );
+        });
+
+        it('should refresh the grid, close the dialog and consume the result', () => {
+            settle({
+                actionName: 'Publish',
+                successCount: 1,
+                skippedCount: 0,
+                failedCount: 0
+            });
+
+            expect(store.loadItems).toHaveBeenCalled();
+            expect(store.closeDialog).toHaveBeenCalled();
+            expect(store.clearActionExecutionResult).toHaveBeenCalled();
+        });
+
+        it('should never close the dialog for a backgrounded outcome', () => {
+            // A reindex reports itself by push, so its result can land minutes after it was fired -
+            // while the user is mid-way through configuring a different action. Closing the dialog
+            // then throws away whatever they had typed.
+            dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
+            spectator.detectChanges();
+
+            settle({
+                actionName: 'Refresh',
+                successCount: 1,
+                skippedCount: 0,
+                failedCount: 0,
+                backgrounded: true
+            });
+
+            expect(store.closeDialog).not.toHaveBeenCalled();
+            // Nor pulled the rows out from under the open form.
+            expect(store.loadItems).not.toHaveBeenCalled();
+            // Still reported, and still consumed.
+            expect(messageService.add).toHaveBeenCalled();
+            expect(store.clearActionExecutionResult).toHaveBeenCalled();
+        });
+
+        it('should still refresh the grid for a backgrounded outcome when no dialog is open', () => {
+            // The common case: the user fired the reindex and carried on browsing. Nothing is at risk,
+            // so the grid picks up the reindexed state.
+            settle({
+                actionName: 'Refresh',
+                successCount: 1,
+                skippedCount: 0,
+                failedCount: 0,
+                backgrounded: true
+            });
+
+            expect(store.loadItems).toHaveBeenCalled();
+            expect(store.closeDialog).not.toHaveBeenCalled();
+        });
+
+        describe('deferring the reload while the author is mid-task (FR-043)', () => {
+            const backgrounded = {
+                actionName: 'Refresh',
+                successCount: 1,
+                skippedCount: 0,
+                failedCount: 0,
+                backgrounded: true
+            };
+
+            it('should run the held reload once the dialog closes', () => {
+                // Skipping it outright leaves the grid stale for as long as the author stays in the
+                // portlet: the run settled, the rows changed, and nothing will fetch them again.
+                dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
+                spectator.detectChanges();
+
+                settle(backgrounded);
+
+                expect(store.loadItems).not.toHaveBeenCalled();
+
+                dialogSignal.set(undefined);
+                spectator.detectChanges();
+
+                expect(store.loadItems).toHaveBeenCalledWith({ quiet: true });
+            });
+
+            it('should hold the reload while rows are selected, and run it when the selection clears', () => {
+                // `loadItems` empties `selectedItems` unconditionally, so reloading here takes the
+                // author's selection away mid-task — exactly what FR-026 forbids.
+                selectedItemsSignal.set([MOCK_ITEMS[0], MOCK_ITEMS[1]]);
+                spectator.detectChanges();
+
+                settle(backgrounded);
+
+                expect(store.loadItems).not.toHaveBeenCalled();
+
+                selectedItemsSignal.set([]);
+                spectator.detectChanges();
+
+                expect(store.loadItems).toHaveBeenCalledWith({ quiet: true });
+            });
+
+            it('should hold the reload while the edit panel is open, and run it when it closes', () => {
+                editPanelRequestSignal.set({} as EditContentDialogData);
+                spectator.detectChanges();
+
+                settle(backgrounded);
+
+                expect(store.loadItems).not.toHaveBeenCalled();
+
+                editPanelRequestSignal.set(null);
+                spectator.detectChanges();
+
+                expect(store.loadItems).toHaveBeenCalledWith({ quiet: true });
+            });
+
+            it('should keep a held reload when a later outcome for another folder arrives', () => {
+                // Both are held while the author is mid-task. The later one replacing the earlier
+                // would leave this folder's reload behind, and its changes would never show.
+                selectedItemsSignal.set([MOCK_ITEMS[0]]);
+                spectator.detectChanges();
+
+                settle({ ...backgrounded, affectedFolders: ['//demo.com/test/path'] });
+                settle({ ...backgrounded, affectedFolders: ['//demo.com/somewhere/else'] });
+
+                selectedItemsSignal.set([]);
+                spectator.detectChanges();
+
+                expect(store.loadItems).toHaveBeenCalledWith({ quiet: true });
+            });
+
+            it('should run a held reload once, not on every later change', () => {
+                // The flush has to consume what it held. Otherwise every subsequent dialog open and
+                // close refetches the grid for a run that settled long ago.
+                dialogSignal.set({ type: DIALOG_TYPE.FOLDER, header: 'Folder' });
+                spectator.detectChanges();
+
+                settle(backgrounded);
+
+                dialogSignal.set(undefined);
+                spectator.detectChanges();
+                dialogSignal.set({ type: DIALOG_TYPE.FOLDER, header: 'Folder' });
+                spectator.detectChanges();
+                dialogSignal.set(undefined);
+                spectator.detectChanges();
+
+                expect(store.loadItems).toHaveBeenCalledTimes(1);
+            });
+
+            it('should not hold a reload the author is waiting on', () => {
+                // Only a backgrounded outcome arrives unprompted. Everything else settles a request
+                // the author just made, so holding it would read as the action having done nothing.
+                dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
+                spectator.detectChanges();
+
+                settle({ ...backgrounded, backgrounded: false });
+
+                expect(store.loadItems).toHaveBeenCalled();
+            });
+        });
+
+        describe('scoping the reload to the folders a run changed (FR-044)', () => {
+            // The store mock browses `//demo.com/test/path`.
+            const moved = (affectedFolders?: string[]) => ({
+                actionName: 'Move',
+                successCount: 1,
+                skippedCount: 0,
+                failedCount: 0,
+                backgrounded: true,
+                affectedFolders
+            });
+
+            it('should not reload a listing that cannot show what the run changed', () => {
+                // Refetching the folder the author wandered off to costs a request and, because
+                // `loadItems` empties `selectedItems`, takes their selection — for a listing that
+                // looks identical afterwards.
+                settle(moved(['//demo.com/somewhere/else']));
+
+                expect(store.loadItems).not.toHaveBeenCalled();
+            });
+
+            it('should still announce a run whose folders it did not reload', () => {
+                // The notification is then the only evidence the run happened, which is why FR-028
+                // has it name the folder.
+                settle(moved(['//demo.com/somewhere/else']));
+
+                expect(messageService.add).toHaveBeenCalled();
+                expect(store.clearActionExecutionResult).toHaveBeenCalled();
+            });
+
+            it('should reload when the author is viewing a folder the run changed', () => {
+                settle(moved(['//demo.com/somewhere/else', '//demo.com/test/path']));
+
+                expect(store.loadItems).toHaveBeenCalledWith({ quiet: true });
+            });
+
+            it('should reload when a run does not say which folders it changed', () => {
+                // Unknown means reload: every synchronous caller acts on rows in front of the
+                // author, so scoping is opt-in and the default stays today's behaviour.
+                settle(moved(undefined));
+
+                expect(store.loadItems).toHaveBeenCalledWith({ quiet: true });
+            });
+
+            it('should ignore case and a trailing slash when comparing folders', () => {
+                // dotCMS resolves asset paths through a lower-cased unique index, so two spellings
+                // of one folder are one folder.
+                settle(moved(['//DEMO.com/Test/Path/']));
+
+                expect(store.loadItems).toHaveBeenCalledWith({ quiet: true });
+            });
+        });
+
+        it('should report the counts and name nothing when an outcome carries no per-file results', () => {
+            // A guard, not a Red gate: `results` is optional on the wire, so a job that reports only
+            // counters is a shape the client must survive. What it must not do is fill the gap —
+            // there is no honest way to name a file the outcome never named, and inventing one
+            // sends the author to look for something that is not there.
+            settle({
+                actionName: 'Upload',
+                successCount: 1,
+                skippedCount: 0,
+                failedCount: 2,
+                backgrounded: true
+            });
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'warn',
+                    detail: 'content-drive.action-center.toast.executed-partial'
+                })
+            );
+        });
+
+        it('should report a recognised retry as already uploaded, not as a failure', () => {
+            // Every file collided, so by the counts this is a total failure. It is not: the batch
+            // had already uploaded, and the author needs to know that rather than be sent to clean
+            // up files that are correctly there.
+            settle({
+                actionName: 'Upload',
+                successCount: 0,
+                skippedCount: 0,
+                failedCount: 3,
+                backgrounded: true,
+                duplicateSubmission: true,
+                failures: [
+                    { key: 'a.png', status: 'FAILED', reason: 'NAME_COLLISION' },
+                    { key: 'b.png', status: 'FAILED', reason: 'NAME_COLLISION' },
+                    { key: 'c.png', status: 'FAILED', reason: 'NAME_COLLISION' }
+                ]
+            });
+
+            expect(dotMessageService.get).toHaveBeenCalledWith(
+                'content-drive.upload.toast.already-uploaded',
+                '3'
+            );
+        });
+
+        it('should say a resubmitted dotAsset batch created a second copy', () => {
+            // FR-040b, added to the contract after manual testing found it: a dotAsset's asset_name
+            // is generated per contentlet, so the unique index the retry guarantee rests on can
+            // never contend for one. The batch runs again and every file is created a second time.
+            // Telling the author "nothing was duplicated" is then the opposite of the truth, and
+            // sends them away from a folder that now holds two of everything.
+            settle({
+                actionName: 'Upload',
+                successCount: 4,
+                skippedCount: 0,
+                failedCount: 0,
+                backgrounded: true,
+                duplicateSubmission: true,
+                baseType: 'DOTASSET'
+            });
+
+            expect(dotMessageService.get).toHaveBeenCalledWith(
+                'content-drive.upload.toast.already-uploaded-again',
+                '4'
+            );
+        });
+
+        it('should keep the collision wording for a resubmitted file batch', () => {
+            // FILEASSET is the case the original copy was written for, and there it is exactly
+            // right: the index refuses the second writer, so nothing was duplicated.
+            settle({
+                actionName: 'Upload',
+                successCount: 0,
+                skippedCount: 0,
+                failedCount: 3,
+                backgrounded: true,
+                duplicateSubmission: true,
+                baseType: 'FILEASSET',
+                failures: [
+                    { key: 'a.png', status: 'FAILED', reason: 'NAME_COLLISION' },
+                    { key: 'b.png', status: 'FAILED', reason: 'NAME_COLLISION' },
+                    { key: 'c.png', status: 'FAILED', reason: 'NAME_COLLISION' }
+                ]
+            });
+
+            expect(dotMessageService.get).toHaveBeenCalledWith(
+                'content-drive.upload.toast.already-uploaded',
+                '3'
+            );
+        });
+
+        it('should not warn about a file batch that was refused a second copy', () => {
+            // The contract sets the level by whether there is anything to do, and here there is
+            // not: the unique index refused the second writer, so the folder holds exactly what
+            // the author wanted. Warning would send them to inspect files that are already right.
+            settle({
+                actionName: 'Upload',
+                successCount: 0,
+                skippedCount: 0,
+                failedCount: 3,
+                backgrounded: true,
+                duplicateSubmission: true,
+                baseType: 'FILEASSET',
+                failures: [
+                    { key: 'a.png', status: 'FAILED', reason: 'NAME_COLLISION' },
+                    { key: 'b.png', status: 'FAILED', reason: 'NAME_COLLISION' },
+                    { key: 'c.png', status: 'FAILED', reason: 'NAME_COLLISION' }
+                ]
+            });
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({ severity: 'info' })
+            );
+        });
+
+        it('should warn about a dotAsset batch that now exists twice', () => {
+            // The other half of the same rule. Here the index can never contend, so the batch ran
+            // again and the folder holds two of everything: there is something to do, and `info`
+            // is the level that says there is not.
+            settle({
+                actionName: 'Upload',
+                successCount: 4,
+                skippedCount: 0,
+                failedCount: 0,
+                backgrounded: true,
+                duplicateSubmission: true,
+                baseType: 'DOTASSET'
+            });
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({ severity: 'warn' })
+            );
+        });
+
+        it('should not list the collisions of a recognised retry as failures', () => {
+            // Naming them would be telling the author to fix files that are correctly there.
+            settle({
+                actionName: 'Upload',
+                successCount: 0,
+                skippedCount: 0,
+                failedCount: 2,
+                backgrounded: true,
+                duplicateSubmission: true,
+                failures: [
+                    { key: 'a.png', status: 'FAILED', reason: 'NAME_COLLISION' },
+                    { key: 'b.png', status: 'FAILED', reason: 'NAME_COLLISION' }
+                ]
+            });
+
+            expect(dotMessageService.get).not.toHaveBeenCalledWith(
+                'content-drive.upload.failure.name-collision',
+                expect.anything()
+            );
+        });
+
+        it('should name the files that failed, and why, in the outcome', () => {
+            // A partial outcome that says only "1 failed" leaves the author to guess which file and
+            // what to do about it. The names and the reason are the actionable part.
+            settle({
+                actionName: 'Upload',
+                successCount: 1,
+                skippedCount: 0,
+                failedCount: 1,
+                backgrounded: true,
+                failures: [
+                    { key: 'a.png', status: 'SUCCESS' },
+                    { key: 'huge.mov', status: 'FAILED', reason: 'OVER_SIZE_LIMIT' }
+                ]
+            });
+
+            // Asserted where the name actually goes: this spec's message mock returns the key and
+            // drops the arguments, so the resolved string never contains it. What matters is that
+            // the reason's copy is asked for *with* the file name.
+            expect(dotMessageService.get).toHaveBeenCalledWith(
+                'content-drive.upload.failure.over-size-limit',
+                'huge.mov'
+            );
+        });
+
+        it('should keep a shortfall on screen longer than a clean success', () => {
+            // FR-023 asks for two things of a partial outcome, and this is the second: the names and
+            // reasons are the part the author has to act on, and a message that leaves at the speed
+            // of a success is one they did not finish reading.
+            settle({
+                actionName: 'Upload',
+                successCount: 1,
+                skippedCount: 0,
+                failedCount: 1,
+                backgrounded: true,
+                failures: [{ key: 'huge.mov', status: 'FAILED', reason: 'OVER_SIZE_LIMIT' }]
+            });
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'warn',
+                    life: WARNING_MESSAGE_LIFE
+                })
+            );
+            expect(WARNING_MESSAGE_LIFE).toBeGreaterThan(SUCCESS_MESSAGE_LIFE);
+        });
+
+        it('should raise one message per severity, with the errors first', () => {
+            // Developer's call, and the reason it is worth the extra notification: a permission the
+            // author does not hold and a name the folder refuses are different kinds of news. One
+            // message carrying both leaves them to work out which half they can act on.
+            settle({
+                actionName: 'Upload',
+                successCount: 1,
+                skippedCount: 0,
+                failedCount: 2,
+                backgrounded: true,
+                failures: [
+                    { key: 'taken.png', status: 'FAILED', reason: 'NAME_COLLISION' },
+                    { key: 'locked.png', status: 'FAILED', reason: 'PERMISSION_DENIED' }
+                ]
+            });
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'error',
+                    summary: 'content-drive.upload.toast.failed'
+                })
+            );
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'warn',
+                    summary: 'content-drive.upload.toast.incomplete'
+                })
+            );
+        });
+
+        it('should state the counts once, in the message read first', () => {
+            // The counts describe the batch, not a severity, so repeating them in both messages
+            // would have the author reading the same numbers twice and wondering which set is which.
+            settle({
+                actionName: 'Upload',
+                successCount: 1,
+                skippedCount: 0,
+                failedCount: 2,
+                backgrounded: true,
+                // What the store actually sends for an upload, so the counts line here is the one
+                // an author would really read.
+                partialDetailKey: 'content-drive.upload.toast.partial',
+                failures: [
+                    { key: 'taken.png', status: 'FAILED', reason: 'NAME_COLLISION' },
+                    { key: 'locked.png', status: 'FAILED', reason: 'PERMISSION_DENIED' }
+                ]
+            });
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'error',
+                    detail: expect.stringContaining('content-drive.upload.toast.partial')
+                })
+            );
+            expect(messageService.add).not.toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'warn',
+                    detail: expect.stringContaining('content-drive.upload.toast.partial')
+                })
+            );
+        });
+
+        it('should stop calling a failed upload an executed action', () => {
+            // The shared workflow summary said "Action executed" over a batch that half failed,
+            // which is the opposite of what happened.
+            settle({
+                actionName: 'Upload',
+                successCount: 0,
+                skippedCount: 0,
+                failedCount: 1,
+                backgrounded: true,
+                failures: [{ key: 'locked.png', status: 'FAILED', reason: 'PERMISSION_DENIED' }]
+            });
+
+            expect(messageService.add).not.toHaveBeenCalledWith(
+                expect.objectContaining({
+                    summary: 'content-drive.action-center.toast.executed'
+                })
+            );
+        });
+
+        it('should not print a failure list for a clean run', () => {
+            settle({
+                actionName: 'Upload',
+                successCount: 2,
+                skippedCount: 0,
+                failedCount: 0,
+                backgrounded: true,
+                failures: [
+                    { key: 'a.png', status: 'SUCCESS' },
+                    { key: 'b.png', status: 'SUCCESS' }
+                ]
+            });
+
+            expect(dotMessageService.get).not.toHaveBeenCalledWith(
+                expect.stringContaining('content-drive.upload.failure.'),
+                expect.anything()
+            );
+        });
+
+        it('should stay silent while no result is published', () => {
+            spectator.detectChanges();
+
+            expect(messageService.add).not.toHaveBeenCalled();
+        });
+
+        /**
+         * A duplication's outcome reads the way a bulk folder delete's does (developer decision,
+         * 2026-09-28): the same toast levels and the same layout, in duplication's own words.
+         */
+        describe('folder duplication outcome', () => {
+            const DIAGNOSTIC = 'java.lang.IllegalStateException: for the log only';
+
+            const duplicated = (
+                overrides: Partial<DotContentDriveActionExecutionResult> = {}
+            ): DotContentDriveActionExecutionResult => ({
+                actionName: 'Duplicate',
+                outcomeKind: 'folderDuplicate',
+                successCount: 3,
+                failedCount: 0,
+                skippedCount: 0,
+                affectedFolders: ['//demo.dotcms.com/blogs'],
+                backgrounded: true,
+                failures: [],
+                ...overrides
+            });
+
+            const refused = {
+                key: '//demo.dotcms.com/blogs/beta/',
+                status: 'FAILED' as const,
+                reason: 'PERMISSION_DENIED' as const,
+                message: DIAGNOSTIC
+            };
+
+            const covered = {
+                key: '//demo.dotcms.com/blogs/alpha/child/',
+                status: 'SKIPPED' as const,
+                reason: 'COVERED_BY_PARENT' as const
+            };
+
+            it('should announce a clean run, since it finished in the background', () => {
+                settle(duplicated());
+
+                expect(messageService.add).toHaveBeenCalledWith(
+                    expect.objectContaining({ severity: 'success' })
+                );
+            });
+
+            it('should say a stopped run was cancelled, even when every folder it reached succeeded', () => {
+                // Matches the bell, which says the duplicate was cancelled whatever the counts
+                // are. A clean-looking green toast would say the author got everything they asked.
+                settle(duplicated({ cancelled: true }));
+
+                expect(messageService.add).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        severity: 'warn',
+                        summary: 'content-drive.duplicate.toast.cancelled',
+                        detail: expect.stringContaining(
+                            'content-drive.duplicate.toast.cancelled-detail'
+                        )
+                    })
+                );
+            });
+
+            it('should count only the folders a cancelled run never reached as not attempted', () => {
+                // A folder its selected parent covered was duplicated inside that parent before
+                // the stop, so it is not one the run left out (FR-021a).
+                settle(
+                    duplicated({
+                        cancelled: true,
+                        successCount: 1,
+                        skippedCount: 2,
+                        failures: [
+                            covered,
+                            { key: '//demo.dotcms.com/blogs/gamma/', status: 'SKIPPED' as const }
+                        ]
+                    })
+                );
+
+                expect(dotMessageService.get).toHaveBeenCalledWith(
+                    'content-drive.duplicate.toast.cancelled-detail',
+                    'Duplicate',
+                    '1',
+                    '0',
+                    '1'
+                );
+            });
+
+            it('should report a run with a refused folder as an error, naming the folder', () => {
+                settle(duplicated({ successCount: 2, failedCount: 1, failures: [refused] }));
+
+                expect(messageService.add).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        severity: 'error',
+                        summary: 'content-drive.duplicate.toast.failed',
+                        detail: expect.stringContaining(
+                            'content-drive.duplicate.failure.permission-denied'
+                        )
+                    })
+                );
+            });
+
+            it('should read a run as clean when its only skips were covered by a selected parent', () => {
+                // The author selected a folder and its child and got the child once, inside the
+                // parent's duplicate. Nothing was left out, so nothing may read as skipped.
+                settle(duplicated({ successCount: 1, skippedCount: 1, failures: [covered] }));
+
+                expect(messageService.add).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        severity: 'success',
+                        summary: 'content-drive.action-center.toast.executed'
+                    })
+                );
+            });
+
+            it('should reload the listing and the sidebar tree when a duplicate completes', () => {
+                (store.loadItems as unknown as Mock).mockClear();
+                (store.loadFolders as unknown as Mock).mockClear();
+
+                // No folders named: the listing reloads whatever folder is on screen.
+                settle(duplicated({ affectedFolders: undefined }));
+
+                expect(store.loadItems).toHaveBeenCalled();
+                expect(store.loadFolders).toHaveBeenCalled();
+            });
+
+            it('should reload the listing in all site content, wherever the duplicate landed', () => {
+                // All site content lists what is inside folders, so a duplicate anywhere on the
+                // site can add to it.
+                allSiteContentSelectedSignal.set(true);
+                (store.loadItems as unknown as Mock).mockClear();
+
+                settle(duplicated({ affectedFolders: ['//demo.dotcms.com/blogs'] }));
+
+                expect(store.loadItems).toHaveBeenCalled();
+            });
+
+            it('should report it in one toast, however many kinds of shortfall it had', () => {
+                settle(
+                    duplicated({
+                        successCount: 1,
+                        failedCount: 1,
+                        skippedCount: 1,
+                        failures: [refused, covered]
+                    })
+                );
+
+                expect(messageService.add).toHaveBeenCalledTimes(1);
+            });
+
+            it("should never show the server's diagnostic text", () => {
+                settle(duplicated({ successCount: 2, failedCount: 1, failures: [refused] }));
+
+                expect(messageService.add).not.toHaveBeenCalledWith(
+                    expect.objectContaining({ detail: expect.stringContaining(DIAGNOSTIC) })
+                );
+            });
+
+            it("should not explain a folder with upload's or delete's copy", () => {
+                settle(
+                    duplicated({
+                        successCount: 1,
+                        failedCount: 1,
+                        skippedCount: 1,
+                        failures: [refused, covered]
+                    })
+                );
+
+                // Every key asked for, whatever its arguments: a matcher with a fixed argument count
+                // would miss the one-argument lookups summaries use.
+                const keysAskedFor = (dotMessageService.get as unknown as Mock).mock.calls.map(
+                    ([key]) => key
+                );
+
+                expect(keysAskedFor).not.toContainEqual(
+                    expect.stringMatching(/^content-drive\.(upload|delete)\./)
+                );
+            });
+        });
     });
 
     describe('Query Params Update Effect', () => {
@@ -244,14 +1515,91 @@ describe('DotContentDriveShellComponent', () => {
                 queryParams: {
                     isTreeExpanded: 'false',
                     path: '/another/path',
-                    filters: 'contentType:Blog;baseType:1,2,3'
+                    filters: 'contentType:Blog;baseType:1,2,3',
+                    editContent: null,
+                    editContentLang: null
                 },
                 queryParamsHandling: 'merge'
             });
 
-            expect(location.go).toHaveBeenCalledWith(
+            // A filter write REPLACES rather than pushes. Only opening the panel pushes (AC8), so
+            // Back always leaves the portlet instead of walking back through filter URLs.
+            expect(location.replaceState).toHaveBeenCalledWith(
                 expect.stringContaining('filters=contentType%3ABlog%3BbaseType%3A1%2C2%2C3')
             );
+            expect(location.go).not.toHaveBeenCalled();
+        });
+
+        // The search scope rides the generic filter machinery rather than a mechanism of its own,
+        // which is what makes it survive reload, Back/Forward and a shared link for free. These pin
+        // that it actually reaches the address, and that the default never does.
+        it('should carry a non-default search scope into the address', () => {
+            store.isTreeExpanded.mockReturnValue(false);
+            store.path.mockReturnValue('/');
+            filtersSignal.set({ title: 'pricing', searchScope: 'TITLE' });
+            spectator.detectChanges();
+
+            expect(location.replaceState).toHaveBeenCalledWith(
+                expect.stringContaining('searchScope%3ATITLE')
+            );
+        });
+
+        it('should keep the default search scope out of the address', () => {
+            store.isTreeExpanded.mockReturnValue(false);
+            store.path.mockReturnValue('/');
+            // The store removes the key rather than storing the default, so the address stays as
+            // clean as it would have been had the control never been touched.
+            filtersSignal.set({ title: 'pricing' });
+            spectator.detectChanges();
+
+            expect(location.replaceState).not.toHaveBeenCalledWith(
+                expect.stringContaining('searchScope')
+            );
+        });
+
+        it('pushes a history entry when the user navigates to a different folder', () => {
+            // Folder navigation is a real user action, so Back must step back up the tree. Only the
+            // automatic filter seed is denied an entry.
+            store.isTreeExpanded.mockReturnValue(false);
+            store.path.mockReturnValue('/first');
+            // `path` is a plain vi.fn, so it is not a tracked dependency. Each phase re-sets the
+            // real `filters` signal (a fresh object reference) to drive the effect, which then reads
+            // the current path.
+            filtersSignal.set({ sharedAssets: 'true' });
+            spectator.detectChanges();
+            spectator.detectChanges();
+
+            (location.go as Mock).mockClear();
+            (location.replaceState as Mock).mockClear();
+
+            store.path.mockReturnValue('/second');
+            filtersSignal.set({ sharedAssets: 'true' });
+            spectator.detectChanges();
+            spectator.detectChanges();
+
+            expect(location.go).toHaveBeenCalledWith(expect.stringContaining('path=%2Fsecond'));
+        });
+
+        it('does not push a history entry when the default filters are seeded', () => {
+            // The seed is not a user action, and it lands twice on a cold load: once for the
+            // sharedAssets default and again when the default language resolves. Pushing either would
+            // bury the entry the user arrived on, so Back would take two or three presses to escape
+            // the portlet instead of leaving it immediately.
+            store.isTreeExpanded.mockReturnValue(false);
+            store.path.mockReturnValue('/');
+            (location.go as Mock).mockClear();
+            (location.replaceState as Mock).mockClear();
+
+            filtersSignal.set({ sharedAssets: 'true' });
+            spectator.detectChanges();
+            spectator.detectChanges();
+
+            filtersSignal.set({ sharedAssets: 'true', languageId: ['1'] });
+            spectator.detectChanges();
+            spectator.detectChanges();
+
+            expect(location.go).not.toHaveBeenCalled();
+            expect(location.replaceState).toHaveBeenCalled();
         });
 
         it('should not include filters in query params when filters are empty', () => {
@@ -259,31 +1607,77 @@ describe('DotContentDriveShellComponent', () => {
             store.path.mockReturnValue('/another/path');
             filtersSignal.set({ contentType: ['Blog'], baseType: ['1', '2', '3'] });
             spectator.detectChanges();
-            spectator.flushEffects();
+            spectator.detectChanges();
 
             expect(router.createUrlTree).toHaveBeenCalledWith([], {
                 queryParams: {
                     isTreeExpanded: 'false',
                     path: '/another/path',
-                    filters: 'contentType:Blog;baseType:1,2,3'
+                    filters: 'contentType:Blog;baseType:1,2,3',
+                    editContent: null,
+                    editContentLang: null
                 },
                 queryParamsHandling: 'merge'
             });
 
-            jest.clearAllMocks(); // Clear previous calls
+            vi.clearAllMocks(); // Clear previous calls
 
             filtersSignal.set({});
             spectator.detectChanges();
-            spectator.flushEffects();
+            spectator.detectChanges();
 
             expect(router.createUrlTree).toHaveBeenCalledWith([], {
                 queryParams: {
                     isTreeExpanded: 'false',
                     path: '/another/path',
-                    filters: null // With merge, null removes the param
+                    filters: null, // With merge, null removes the param
+                    editContent: null,
+                    editContentLang: null
                 },
                 queryParamsHandling: 'merge'
             });
+        });
+    });
+
+    describe('setPathEffect (cold-load selection)', () => {
+        it('should not clear the URL-restored path while the sidebar is still loading', () => {
+            // Cold load: path restored from the URL, but the tree hasn't resolved yet so
+            // selectedNode is still the default root node (empty path). Syncing here would
+            // clobber the restored path back to root.
+            store.sidebarLoading.mockReturnValue(true);
+            store.selectedNode.mockReturnValue({ data: { path: '' } } as DotFolderTreeNodeItem);
+            store.path.mockReturnValue('/about-us/');
+
+            spectator.detectChanges();
+            spectator.detectChanges();
+
+            expect(store.setPath).not.toHaveBeenCalled();
+        });
+
+        it('should sync the path from the resolved node once the sidebar finishes loading', () => {
+            store.sidebarLoading.mockReturnValue(false);
+            store.selectedNode.mockReturnValue({
+                data: { path: '/about-us/' }
+            } as DotFolderTreeNodeItem);
+            store.path.mockReturnValue('');
+
+            spectator.detectChanges();
+            spectator.detectChanges();
+
+            expect(store.setPath).toHaveBeenCalledWith('/about-us/');
+        });
+
+        it('should not sync when the resolved node path already matches the current path', () => {
+            store.sidebarLoading.mockReturnValue(false);
+            store.selectedNode.mockReturnValue({
+                data: { path: '/about-us/' }
+            } as DotFolderTreeNodeItem);
+            store.path.mockReturnValue('/about-us/');
+
+            spectator.detectChanges();
+            spectator.detectChanges();
+
+            expect(store.setPath).not.toHaveBeenCalled();
         });
     });
 
@@ -324,7 +1718,8 @@ describe('DotContentDriveShellComponent', () => {
         });
 
         it('should have a dialog when dialog is set', () => {
-            store.dialog.mockReturnValue({ type: DIALOG_TYPE.FOLDER, header: 'Folder' });
+            dialogSignal.set({ type: DIALOG_TYPE.FOLDER, header: 'Folder' });
+            spectator.detectChanges();
             spectator.detectChanges();
 
             const dialog = spectator.query('[data-testid="dialog"]');
@@ -339,7 +1734,8 @@ describe('DotContentDriveShellComponent', () => {
         });
 
         it('should not have a dialog when dialog is not set', () => {
-            store.dialog.mockReturnValue(undefined);
+            dialogSignal.set(undefined);
+            spectator.detectChanges();
             spectator.detectChanges();
 
             const dialog = spectator.query('[data-testid="dialog"]');
@@ -353,8 +1749,154 @@ describe('DotContentDriveShellComponent', () => {
             expect(dialogComponent.visible).toBe(false);
         });
 
+        it('should render the Action Center inside the shared dialog', () => {
+            dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
+            spectator.detectChanges();
+            spectator.detectChanges();
+
+            const dialogComponent = spectator.debugElement.query(By.css('[data-testid="dialog"]'))
+                ?.componentInstance as Dialog;
+
+            // One dialog, one visibility path — the Action Center is a case in its content switch.
+            expect(dialogComponent.visible).toBe(true);
+            expect(spectator.query('[data-testId="dialog-action-center"]')).toBeTruthy();
+        });
+
+        it('should make the Action Center content box the only scroll container', () => {
+            dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
+            spectator.detectChanges();
+            spectator.detectChanges();
+
+            expect(spectator.component.$dialogContentStyle()).toEqual(
+                ACTION_CENTER_DIALOG_CONTENT_STYLE
+            );
+            expect(spectator.component.$dialogRootClass()).toBe(ACTION_CENTER_DIALOG_CLASS);
+        });
+
+        it('should render a sub-header with the selected contentlet count', () => {
+            selectedItemsSignal.set([MOCK_ITEMS[0], MOCK_ITEMS[1]]);
+            dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
+            spectator.detectChanges();
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testId="dialog-subheader"]')).toBeTruthy();
+            expect(spectator.component.$actionCenterSelectionCount()).toBe(2);
+        });
+
+        it('should count folders in the sub-header, since actions now take them', () => {
+            selectedItemsSignal.set([
+                MOCK_ITEMS[0],
+                { type: 'folder', identifier: 'f1' } as unknown as DotContentDriveItem
+            ]);
+            dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
+            spectator.detectChanges();
+            spectator.detectChanges();
+
+            expect(spectator.component.$actionCenterSelectionCount()).toBe(2);
+        });
+
+        it('should retitle the header to the drilled-into action', () => {
+            // The Action Center body publishes this when it opens an action's preview, so the one
+            // dialog header names the action instead of the body rendering a second header.
+            selectedItemsSignal.set([MOCK_ITEMS[0], MOCK_ITEMS[1]]);
+            dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
+            dialogDrillDownSignal.set({ header: 'Send for Review', itemCount: 1 });
+            spectator.detectChanges();
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testId="dialog-header"]')?.textContent?.trim()).toBe(
+                'Send for Review'
+            );
+            // The count follows the drill-down, not the full selection of 2.
+            expect(spectator.component.$actionCenterCount()).toBe(1);
+        });
+
+        it('should restore the dialog title when the drill-down is cleared', () => {
+            selectedItemsSignal.set([MOCK_ITEMS[0], MOCK_ITEMS[1]]);
+            dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
+            dialogDrillDownSignal.set({ header: 'Send for Review', itemCount: 1 });
+            spectator.detectChanges();
+            spectator.detectChanges();
+
+            dialogDrillDownSignal.set(undefined);
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testId="dialog-header"]')?.textContent?.trim()).toBe(
+                'Workflow Center'
+            );
+            expect(spectator.component.$actionCenterCount()).toBe(2);
+        });
+
+        it('should not render the sub-header for other dialog types', () => {
+            dialogSignal.set({ type: DIALOG_TYPE.FOLDER, header: 'Folder' });
+            spectator.detectChanges();
+            spectator.detectChanges();
+
+            // The header template is shared, so the default branch must still render the plain title.
+            expect(spectator.query('[data-testId="dialog-subheader"]')).toBeNull();
+            expect(spectator.query('.p-dialog-title')?.textContent?.trim()).toBe('Folder');
+        });
+
+        it('should not apply the Action Center sizing to other dialog types', () => {
+            dialogSignal.set({ type: DIALOG_TYPE.FOLDER, header: 'Folder' });
+            spectator.detectChanges();
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testId="dialog-action-center"]')).toBeNull();
+            expect(spectator.component.$dialogRootClass()).toBe('');
+            expect(spectator.component.$dialogContentStyle()).toBeUndefined();
+            expect(spectator.component.$dialogHeaderClass()).toBe('');
+        });
+
+        it('should not leave the Action Center sizing on the next dialog', () => {
+            // One `p-dialog` serves every type, so whatever one type applies has to come back off
+            // when the next opens. The computeds already return the empty value for a folder —
+            // asserted above — so this covers the half those assertions cannot see: what is still
+            // on the element afterwards. Reported as "open the workflow center, close it, then open
+            // Folder Settings and a style is off", and wrong for the rest of the session, because
+            // the element is reused rather than recreated.
+            const rootOf = () => spectator.query('.p-dialog', { root: true }) as HTMLElement | null;
+
+            dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
+            spectator.detectChanges();
+            spectator.detectChanges();
+            expect(rootOf()?.className).toContain('h-[80vh]');
+
+            const dialogComponent = spectator.debugElement.query(By.css('[data-testid="dialog"]'))
+                ?.componentInstance as Dialog;
+            dialogSignal.set(undefined);
+            spectator.detectChanges();
+            dialogComponent.onHide.emit();
+            spectator.detectChanges();
+
+            dialogSignal.set({ type: DIALOG_TYPE.FOLDER, header: 'Folder' });
+            spectator.detectChanges();
+            spectator.detectChanges();
+
+            // Both halves: the class comes off, and — the actual defect — no `height`/`width` is
+            // left behind in the root's inline style, which is where the Action Center used to put
+            // its sizing.
+            expect(rootOf()?.className).not.toContain('h-[80vh]');
+            expect(rootOf()?.getAttribute('style') ?? '').not.toContain('height');
+            expect(rootOf()?.getAttribute('style') ?? '').not.toContain('width');
+        });
+
+        it('should configure the dialog as closable and closeOnEscape', () => {
+            dialogSignal.set({ type: DIALOG_TYPE.FOLDER, header: 'Folder' });
+            spectator.detectChanges();
+            spectator.detectChanges();
+
+            const dialogDebugElement = spectator.debugElement.query(
+                By.css('[data-testid="dialog"]')
+            );
+            const dialogComponent = dialogDebugElement?.componentInstance as Dialog;
+            expect(dialogComponent.closable).toBe(true);
+            expect(dialogComponent.closeOnEscape).toBe(true);
+        });
+
         it('should show dialog-folder component when folder dialog type is set', () => {
-            store.dialog.mockReturnValue({ type: DIALOG_TYPE.FOLDER, header: 'Create Folder' });
+            dialogSignal.set({ type: DIALOG_TYPE.FOLDER, header: 'Create Folder' });
+            spectator.detectChanges();
             spectator.detectChanges();
 
             const dialogFolder = spectator.query('[data-testId="dialog-folder"]');
@@ -366,6 +1908,36 @@ describe('DotContentDriveShellComponent', () => {
 
             const dropzone = spectator.query('[data-testid="dropzone"]');
             expect(dropzone).toBeTruthy();
+        });
+
+        // Dropping a file creates a contentlet in the target folder, which the server refuses
+        // without CAN_ADD_CHILDREN. The zone refuses the upload rather than failing after it has
+        // started, and carries the reason so it does not just read as a broken drop target.
+        it('should disable the dropzone where children cannot be added', () => {
+            canAddChildrenSignal.set(false);
+            spectator.detectChanges();
+
+            const dropzone = spectator.debugElement.query(By.css('[data-testid="dropzone"]'));
+
+            expect(dropzone.componentInstance.$disabled()).toBe(true);
+        });
+
+        it('should tell the dropzone why the upload is refused', () => {
+            canAddChildrenSignal.set(false);
+            spectator.detectChanges();
+
+            const dropzone = spectator.debugElement.query(By.css('[data-testid="dropzone"]'));
+
+            expect(dropzone.componentInstance.$disabledMessage()).toBeTruthy();
+        });
+
+        it('should leave the dropzone enabled where children can be added', () => {
+            canAddChildrenSignal.set(true);
+            spectator.detectChanges();
+
+            const dropzone = spectator.debugElement.query(By.css('[data-testid="dropzone"]'));
+
+            expect(dropzone.componentInstance.$disabled()).toBe(false);
         });
     });
 
@@ -381,24 +1953,94 @@ describe('DotContentDriveShellComponent', () => {
             expect(spectator.component.$totalItems()).toBe(40);
         });
 
-        it('should return exact total when hasMoreContent is false', () => {
+        it('should return exact total when neither content nor folders have more', () => {
             store.pagination.mockReturnValue({ page: 1, limit: 20, offset: 0 });
-            store.pages.mockReturnValue([{ ...DEFAULT_PAGE, hasMoreContent: false }]);
+            store.pages.mockReturnValue([
+                { ...DEFAULT_PAGE, hasMoreContent: false, hasMoreFolders: false }
+            ]);
             store.items.mockReturnValue(MOCK_ITEMS);
             spectator.detectChanges();
 
-            // hasMoreContent = false, page=1, limit=20, items=MOCK_ITEMS.length → 20*(1-1) + MOCK_ITEMS.length
+            // no more of either, page=1, limit=20, items=MOCK_ITEMS.length → 20*(1-1) + MOCK_ITEMS.length
             expect(spectator.component.$totalItems()).toBe(MOCK_ITEMS.length);
         });
 
-        it('should account for previous pages when hasMoreContent is false on page 2', () => {
+        it('should account for previous pages when nothing has more on page 2', () => {
             store.pagination.mockReturnValue({ page: 2, limit: 20, offset: 20 });
-            store.pages.mockReturnValue([{ ...DEFAULT_PAGE, hasMoreContent: false }]);
+            store.pages.mockReturnValue([
+                { ...DEFAULT_PAGE, hasMoreContent: false, hasMoreFolders: false }
+            ]);
             store.items.mockReturnValue(MOCK_ITEMS);
             spectator.detectChanges();
 
-            // hasMoreContent = false, page=2, limit=20, items=MOCK_ITEMS.length → 20*(2-1) + MOCK_ITEMS.length
+            // no more of either, page=2, limit=20, items=MOCK_ITEMS.length → 20*(2-1) + MOCK_ITEMS.length
             expect(spectator.component.$totalItems()).toBe(20 + MOCK_ITEMS.length);
+        });
+
+        it('should offer a next page when only folders have more (hasMoreFolders true, hasMoreContent false)', () => {
+            // A folder holding only sub-folders: no more content, but more folders to page through.
+            store.pagination.mockReturnValue({ page: 1, limit: 20, offset: 0 });
+            store.pages.mockReturnValue([
+                { ...DEFAULT_PAGE, hasMoreContent: false, hasMoreFolders: true }
+            ]);
+            store.items.mockReturnValue(MOCK_ITEMS);
+            spectator.detectChanges();
+
+            // hasMoreFolders = true → one page beyond current: 20 * (1 + 1) = 40
+            expect(spectator.component.$totalItems()).toBe(40);
+        });
+    });
+
+    // A search that failed to run must not be presented as a search that found nothing. The two
+    // were the same empty grid before issue #37532, which is how a customer came to believe content
+    // they were looking at had vanished.
+    //
+    // The status is set per test and restored afterwards: it is shared across this file, and
+    // leaving it on ERROR hides the listing from every test that follows.
+    describe('when a search fails to run', () => {
+        afterEach(() => {
+            statusSignal.set(DotContentDriveStatus.LOADING);
+            spectator.detectChanges();
+        });
+
+        const failSearch = () => {
+            statusSignal.set(DotContentDriveStatus.ERROR);
+            spectator.detectChanges();
+        };
+
+        it('should show an error state instead of the listing', () => {
+            failSearch();
+
+            expect(spectator.query(byTestId('search-error-state'))).toBeTruthy();
+        });
+
+        it('should keep the error visible alongside the listing it explains', () => {
+            failSearch();
+
+            // The banner sits above the grid rather than replacing it, so the user sees WHY the
+            // results are incomplete instead of an unexplained empty table.
+            expect(spectator.query(byTestId('search-error-state'))).toBeTruthy();
+            expect(spectator.query('dot-folder-list-view')).toBeTruthy();
+        });
+
+        it('should announce the failure to assistive technology', () => {
+            failSearch();
+
+            expect(spectator.query(byTestId('search-error-state'))?.getAttribute('role')).toBe(
+                'alert'
+            );
+        });
+
+        it('should re-run the search when the user retries', () => {
+            failSearch();
+
+            spectator.click(
+                spectator
+                    .query(byTestId('search-error-retry'))
+                    ?.querySelector('button') as HTMLElement
+            );
+
+            expect(store.loadItems).toHaveBeenCalled();
         });
     });
 
@@ -486,6 +2128,26 @@ describe('DotContentDriveShellComponent', () => {
         });
     });
 
+    describe('grid selection binding', () => {
+        it('should drive the grid from the store so clearing it unchecks the rows', () => {
+            // The grid is in controlled mode purely so this holds. Left uncontrolled it keeps its own
+            // checked set and only drops it when the items reference changes, which meant a selection
+            // cleared on action hand-off stayed visibly ticked until the next search returned.
+            selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            spectator.detectChanges();
+
+            const listView = spectator.query(DotFolderListViewComponent);
+
+            expect(listView).toBeTruthy();
+            expect(listView.$selection()).toEqual([MOCK_ITEMS[0]]);
+
+            // Not asserting the clear here: `selectedItems` is mocked as a plain vi.fn rather than a
+            // signal, so changing its return value cannot notify change detection. What matters is
+            // that the input is bound to store state at all — the propagation is Angular's, and the
+            // store's own spec covers that loadItems and hand-off empty that state.
+        });
+    });
+
     describe('onSelectItems', () => {
         it('should update selectedItems in store when selectionChange is emitted', () => {
             const folderListView = spectator.debugElement.query(
@@ -497,6 +2159,29 @@ describe('DotContentDriveShellComponent', () => {
             spectator.triggerEventHandler(folderListView, 'selectionChange', selectedItems);
 
             expect(store.setSelectedItems).toHaveBeenCalledWith(selectedItems);
+        });
+
+        it('should not select a menu link, which nothing here can act on', () => {
+            // The table emits `DotContentDriveBrowseItem`, which includes links, so the shared
+            // component can serve the Asset Picker. Content Drive never asks for links, but the
+            // handler took the narrower type and passed everything straight through — so the types
+            // said one thing and the code assumed another, and under strict templates that stops
+            // compiling rather than staying a latent mismatch.
+            const folderListView = spectator.debugElement.query(
+                By.directive(DotFolderListViewComponent)
+            );
+            const link = {
+                type: 'link',
+                extension: 'link',
+                identifier: 'link-1',
+                inode: 'link-inode-1',
+                title: 'A menu link',
+                url: '/somewhere'
+            };
+
+            spectator.triggerEventHandler(folderListView, 'selectionChange', [MOCK_ITEMS[0], link]);
+
+            expect(store.setSelectedItems).toHaveBeenCalledWith([MOCK_ITEMS[0]]);
         });
 
         it('should update store with empty array when selection is cleared', () => {
@@ -532,22 +2217,37 @@ describe('DotContentDriveShellComponent', () => {
         });
     });
 
-    describe('onHideDialog', () => {
-        it('should reset the dialog state', () => {
-            store.dialog.mockReturnValue({ type: DIALOG_TYPE.FOLDER, header: 'Folder' });
+    describe('dialog close', () => {
+        it('should close the dialog in the store on a user-driven close (visibleChange false)', () => {
+            dialogSignal.set({ type: DIALOG_TYPE.FOLDER, header: 'Folder' });
+            spectator.detectChanges();
             spectator.detectComponentChanges();
 
-            const dialog = spectator.query('[data-testid="dialog"]');
-            dialog.dispatchEvent(new Event('visibleChange'));
+            const dialogComponent = spectator.debugElement.query(By.css('[data-testid="dialog"]'))
+                ?.componentInstance as Dialog;
+            dialogComponent.visibleChange.emit(false);
             spectator.detectComponentChanges();
 
             expect(store.closeDialog).toHaveBeenCalled();
+        });
+
+        it('should not close the dialog in the store when it becomes visible', () => {
+            dialogSignal.set({ type: DIALOG_TYPE.FOLDER, header: 'Folder' });
+            spectator.detectChanges();
+            spectator.detectComponentChanges();
+
+            const dialogComponent = spectator.debugElement.query(By.css('[data-testid="dialog"]'))
+                ?.componentInstance as Dialog;
+            dialogComponent.visibleChange.emit(true);
+            spectator.detectComponentChanges();
+
+            expect(store.closeDialog).not.toHaveBeenCalled();
         });
     });
 
     describe('message', () => {
         beforeEach(() => {
-            jest.clearAllMocks();
+            vi.clearAllMocks();
         });
 
         it('should show the message', () => {
@@ -564,14 +2264,11 @@ describe('DotContentDriveShellComponent', () => {
             expect(messageContent).toBeTruthy();
         });
 
-        it('should set $showMessage to false when close button is clicked', () => {
+        it('should always render the banner (no dismiss control)', () => {
             spectator.detectChanges();
 
-            const closeButton = spectator.query('[data-testid="close-message"]');
-            closeButton.dispatchEvent(new Event('click'));
-            spectator.detectChanges();
-
-            expect(spectator.component.$showMessage()).toBe(false);
+            expect(spectator.query('[data-testid="message"]')).toBeTruthy();
+            expect(spectator.query('[data-testid="close-message"]')).toBeNull();
         });
 
         it('should have a learn more link', () => {
@@ -580,148 +2277,1344 @@ describe('DotContentDriveShellComponent', () => {
             const learnMoreLink = spectator.query('[data-testid="learn-more-link"]');
             expect(learnMoreLink).toBeTruthy();
         });
+    });
 
-        it('should return true if the hide message banner key is not set', () => {
-            localStorageService.getItem.mockReturnValue(undefined);
+    const TARGET_FOLDER_DATA = {
+        id: 'folder-123',
+        hostname: 'localhost',
+        path: 'folder-123',
+        type: 'folder'
+    } as DotFolderTreeNodeData;
+
+    // The tree's root row stands for the site, not a folder: `createSiteNode` builds it with the
+    // site's identifier as `id`, an empty `path`, and `type: 'folder'` like any other row.
+    const SITE_ROOT_NODE = {
+        id: MOCK_SITES[0].identifier,
+        hostname: MOCK_SITES[0].hostname,
+        path: '',
+        type: 'folder'
+    } as DotFolderTreeNodeData;
+
+    const createFile = (name = 'test.jpg') =>
+        new File(['test content'], name, { type: 'image/jpeg' });
+
+    const createFileList = (files: File[]): FileList =>
+        ({
+            ...files,
+            length: files.length,
+            item: (index: number) => files[index] ?? null
+        }) as unknown as FileList;
+
+    // Opens the upload menu (via the button flow when no files are given, or the drag-and-drop
+    // flow when they are) and emits the user's choice back to the shell, mirroring the selector's
+    // (selectUploadType) output.
+    const selectUploadType = (selection: {
+        targetFolder?: DotFolderTreeNodeData;
+        baseType: string;
+        files?: FileList;
+    }) => {
+        // Drag-and-drop prompts with a modal; the Upload button uses a popover — both funnel
+        // through the same code path and render the selector under the same testid.
+        if (selection.files) {
+            const dropzone = spectator.debugElement.query(By.css('[data-testid="dropzone"]'));
+            spectator.triggerEventHandler(dropzone, 'uploadFiles', {
+                files: selection.files,
+                targetFolder: selection.targetFolder
+            });
+        } else {
+            store.selectedNode.mockReturnValue({
+                data: selection.targetFolder
+            } as DotFolderTreeNodeItem);
+            const toolbar = spectator.debugElement.query(By.css('[data-testid="toolbar"]'));
+            spectator.triggerEventHandler(toolbar, 'upload', {
+                currentTarget: document.createElement('button'),
+                stopPropagation: vi.fn()
+            });
+        }
+
+        spectator.detectChanges();
+
+        const selector = spectator.debugElement.query(
+            By.css('[data-testId="dialog-upload-selector"]')
+        );
+        spectator.triggerEventHandler(selector, 'selectUploadType', {
+            targetFolder: selection.targetFolder,
+            baseType: selection.baseType,
+            files: selection.files
+        });
+    };
+
+    describe('upload type selector — opening', () => {
+        beforeEach(() => {
             spectator.detectChanges();
-
-            expect(spectator.component.$showMessage()).toBe(true);
         });
 
-        it('should return false if the hide message banner key is set', () => {
-            localStorageService.getItem.mockReturnValue('true');
-            spectator.detectComponentChanges();
+        const openViaButton = (targetFolder?: DotFolderTreeNodeData) => {
+            store.selectedNode.mockReturnValue({ data: targetFolder } as DotFolderTreeNodeItem);
+            const toolbar = spectator.debugElement.query(By.css('[data-testid="toolbar"]'));
+            spectator.triggerEventHandler(toolbar, 'upload', {
+                currentTarget: document.createElement('button'),
+                stopPropagation: vi.fn()
+            });
+            spectator.detectChanges();
+        };
 
-            expect(spectator.component.$showMessage()).toBe(false);
+        it('should leave the upload restricted to nothing', () => {
+            // Content Drive shares the selector and the dropzone with the Asset Picker, which
+            // scopes uploads to the field that opened it (#37365). Content Drive has no such field:
+            // it must keep accepting every file type, with today's wording. An empty
+            // `restrictionLabel` is what keeps the default descriptions rendering.
+            openViaButton(TARGET_FOLDER_DATA);
+
+            expect(spectator.query(DotUploadTypeSelectorComponent).$restrictionLabel()).toBe('');
         });
 
-        it('should call the localStorage service to set the hide message banner key', () => {
+        it('should open the upload menu with the selected folder when the upload button is clicked', () => {
+            openViaButton(TARGET_FOLDER_DATA);
+
+            const selector = spectator.query(DotUploadTypeSelectorComponent);
+            expect(selector).toBeTruthy();
+            expect(selector.$targetFolder()).toEqual(TARGET_FOLDER_DATA);
+            expect(uploadService.uploadFilesByBaseType).not.toHaveBeenCalled();
+        });
+
+        it('should open the upload menu carrying the files when the dropzone emits uploadFiles', () => {
+            const files = createFileList([createFile()]);
+
+            const dropzone = spectator.debugElement.query(By.css('[data-testid="dropzone"]'));
+            spectator.triggerEventHandler(dropzone, 'uploadFiles', {
+                files,
+                targetFolder: TARGET_FOLDER_DATA
+            });
             spectator.detectChanges();
 
-            const closeButton = spectator.query('[data-testid="close-message"]');
-            closeButton.dispatchEvent(new Event('click'));
+            const selector = spectator.query(DotUploadTypeSelectorComponent);
+            expect(selector).toBeTruthy();
+            expect(selector.$files()).toBe(files);
+            expect(selector.$targetFolder()).toEqual(TARGET_FOLDER_DATA);
+            expect(uploadService.uploadFilesByBaseType).not.toHaveBeenCalled();
+        });
+
+        it('should open the upload menu carrying the files when the sidebar emits uploadFiles', () => {
+            const files = createFileList([createFile()]);
+
+            const sidebar = spectator.debugElement.query(By.css('[data-testid="sidebar"]'));
+            spectator.triggerEventHandler(sidebar, 'uploadFiles', {
+                files,
+                targetFolder: TARGET_FOLDER_DATA
+            });
             spectator.detectChanges();
 
-            expect(localStorageService.setItem).toHaveBeenCalledWith(
-                HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY,
-                true
+            const selector = spectator.query(DotUploadTypeSelectorComponent);
+            expect(selector).toBeTruthy();
+            expect(selector?.$files()).toBe(files);
+            expect(uploadService.uploadFilesByBaseType).not.toHaveBeenCalled();
+        });
+
+        it('should render both option menu items when opened', () => {
+            openViaButton(TARGET_FOLDER_DATA);
+
+            // The popover overlay is appended to the document body, so query from the root.
+            expect(
+                spectator.query(byTestId('upload-selector-option-DOTASSET'), { root: true })
+            ).toBeTruthy();
+            expect(
+                spectator.query(byTestId('upload-selector-option-FILEASSET'), { root: true })
+            ).toBeTruthy();
+        });
+
+        it('should clear the selector payload when the popover is dismissed without a selection', () => {
+            openViaButton(TARGET_FOLDER_DATA);
+            expect(spectator.query(DotUploadTypeSelectorComponent)).toBeTruthy();
+
+            const popover = spectator.debugElement.query(
+                By.css('[data-testId="upload-selector-popover"]')
+            );
+            spectator.triggerEventHandler(popover, 'onHide', {});
+            spectator.detectChanges();
+
+            expect(spectator.query(DotUploadTypeSelectorComponent)).toBeFalsy();
+        });
+
+        const dropFiles = () =>
+            spectator.triggerEventHandler(
+                spectator.debugElement.query(By.css('[data-testid="dropzone"]')),
+                'uploadFiles',
+                { files: createFileList([createFile()]), targetFolder: TARGET_FOLDER_DATA }
+            );
+
+        it('should close the drag-and-drop modal when the Upload button opens the popover', () => {
+            dropFiles();
+            spectator.detectChanges();
+            expect(spectator.component.$uploadModalVisible()).toBe(true);
+
+            openViaButton(TARGET_FOLDER_DATA);
+
+            expect(spectator.component.$uploadModalVisible()).toBe(false);
+        });
+
+        it('should hide the button popover when a drag-and-drop opens the modal', () => {
+            openViaButton(TARGET_FOLDER_DATA);
+            // viewChild() is `Popover | undefined`; narrow before spying.
+            const popover = spectator.component.$uploadSelectorPopover();
+            expect(popover).toBeTruthy();
+            const hideSpy = vi.spyOn(popover as Popover, 'hide');
+
+            dropFiles();
+            spectator.detectChanges();
+
+            expect(hideSpy).toHaveBeenCalled();
+            expect(spectator.component.$uploadModalVisible()).toBe(true);
+        });
+
+        it('should keep the shared payload (modal content) when the popover hides during handoff', () => {
+            openViaButton(TARGET_FOLDER_DATA);
+
+            dropFiles();
+            spectator.detectChanges();
+
+            // The popover's onHide must NOT clear the shared payload — the modal just opened with it.
+            spectator.triggerEventHandler(
+                spectator.debugElement.query(By.css('[data-testId="upload-selector-popover"]')),
+                'onHide',
+                {}
+            );
+            spectator.detectChanges();
+
+            expect(spectator.component.$uploadSelectorPayload()).toBeTruthy();
+            expect(spectator.query(DotUploadTypeSelectorComponent)).toBeTruthy();
+        });
+    });
+
+    describe('the scope bar slot', () => {
+        it('should take the bar out of reach while it is closed', () => {
+            // Closed is zero-height and transparent, which hides it from the eye and from nothing
+            // else: the toggle inside stayed tabbable and stayed in the accessibility tree in
+            // every scope that does not show the bar.
+            allSiteContentSelectedSignal.set(false);
+            spectator.detectChanges();
+
+            const slot = spectator.query(byTestId('scope-bar-slot'));
+
+            expect(slot?.hasAttribute('inert')).toBe(true);
+            expect(slot?.getAttribute('aria-hidden')).toBe('true');
+        });
+
+        it('should put it back in reach when all site content is selected', () => {
+            allSiteContentSelectedSignal.set(true);
+            spectator.detectChanges();
+
+            const slot = spectator.query(byTestId('scope-bar-slot'));
+
+            expect(slot?.hasAttribute('inert')).toBe(false);
+            expect(slot?.hasAttribute('aria-hidden')).toBe(false);
+        });
+    });
+
+    describe('reporting a run in flight', () => {
+        // Moved here with the effect itself. The toolbar raised this while it still drew the
+        // indicator in its filter row; now that the status is a toast rendered by the shell, the
+        // shell owns raising it -- it holds the outlet and outlives every dialog the run may have
+        // started from.
+        const statusMessages = () =>
+            (messageService.add as unknown as { mock: { calls: unknown[][] } }).mock.calls
+                .map(([message]) => message as { key?: string; summary?: string })
+                .filter((message) => message.key === STATUS_TOAST_KEY);
+
+        it('should raise nothing while nothing is running', () => {
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            expect(statusMessages()).toHaveLength(0);
+        });
+
+        it('should report a run that brought its own wording', () => {
+            toolbarRunCountSignal.set(1);
+            toolbarRunSignal.set({
+                actionName: 'Upload',
+                total: 3,
+                labelKey: 'content-drive.upload.indicator'
+            } as DotContentDriveActionExecution);
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            expect(statusMessages()).toHaveLength(1);
+        });
+
+        it('should stay silent for a run that brought none', () => {
+            // Only unmarked runs arrive here, and every one of those is an upload, which names
+            // itself. Anything else is a run nobody wrote words for, and inventing "Applying X to
+            // Y" for it is what made an upload read "Applying Upload to demo.dotcms.com".
+            toolbarRunCountSignal.set(1);
+            toolbarRunSignal.set({
+                actionName: 'Publish',
+                total: 3
+            } as DotContentDriveActionExecution);
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            expect(statusMessages()).toHaveLength(0);
+        });
+
+        it('should clear the status once the run settles', () => {
+            toolbarRunCountSignal.set(1);
+            toolbarRunSignal.set({
+                actionName: 'Upload',
+                total: 3,
+                labelKey: 'content-drive.upload.indicator'
+            } as DotContentDriveActionExecution);
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            toolbarRunCountSignal.set(0);
+            toolbarRunSignal.set(undefined);
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            // Sticky on purpose, so nothing times it out mid-upload. That makes ending it the
+            // store's job, which is the half worth pinning.
+            expect(messageService.clear).toHaveBeenCalledWith(STATUS_TOAST_KEY);
+        });
+
+        it('should raise it as something the reader cannot dismiss', () => {
+            toolbarRunCountSignal.set(1);
+            toolbarRunSignal.set({
+                actionName: 'Upload',
+                total: 3,
+                labelKey: 'content-drive.upload.indicator'
+            } as DotContentDriveActionExecution);
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            // PrimeNG reads `closable` off the message, not the outlet, so this is the only place
+            // that can turn the close button off for real.
+            expect(statusMessages()[0]).toEqual(
+                expect.objectContaining({ sticky: true, closable: false })
+            );
+        });
+
+        it('should collapse to a count when several runs are in flight', () => {
+            // With several at once the store leaves the run undefined on purpose: name none of
+            // them and report the number instead.
+            toolbarRunCountSignal.set(3);
+            toolbarRunSignal.set(undefined);
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            expect(statusMessages()).toHaveLength(1);
+        });
+    });
+
+    describe('upload — a batch of files', () => {
+        beforeEach(() => {
+            spectator.detectChanges();
+        });
+
+        it('should submit every chosen file, not just the first', () => {
+            // The reported defect: ten files chosen, one uploaded, nine silently discarded.
+            const chosen = [createFile('a.png'), createFile('b.png'), createFile('c.png')];
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList(chosen),
+                baseType: 'DOTASSET'
+            });
+
+            expect(uploadService.uploadFilesByBaseType).toHaveBeenCalledWith(
+                chosen,
+                expect.objectContaining({ baseType: 'DOTASSET', folderId: TARGET_FOLDER_DATA.id })
+            );
+        });
+
+        it('should submit the batch in one request rather than one per file', () => {
+            // One call, one handle, one run to follow. Per-file requests would leave the author
+            // nothing to follow and no single outcome to report.
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png'), createFile('b.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(uploadService.uploadFilesByBaseType).toHaveBeenCalledTimes(1);
+        });
+
+        it('should stop warning that only one file will be uploaded', () => {
+            // The copy was true and is now false. Left in, it tells the author their files were
+            // discarded while they are in fact being uploaded.
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png'), createFile('b.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(messageService.add).not.toHaveBeenCalledWith(
+                expect.objectContaining({ severity: 'warn' })
+            );
+        });
+
+        it('should target the site when a batch lands on a site root', () => {
+            store.currentSite.mockReturnValue(MOCK_SITES[0]);
+
+            selectUploadType({
+                targetFolder: undefined,
+                files: createFileList([createFile('a.png'), createFile('b.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(uploadService.uploadFilesByBaseType).toHaveBeenCalledWith(
+                expect.anything(),
+                expect.objectContaining({ siteId: MOCK_SITES[0].identifier })
+            );
+        });
+
+        it('should count a single file in the singular', () => {
+            // "Uploading 1 files" is the price of dropping the "(s)" hedge, so the caller picks
+            // the wording -- it is the only place that knows how many were chosen.
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(store.startExternalRun).toHaveBeenCalledWith(
+                expect.objectContaining({ labelKey: 'content-drive.upload.indicator.one' })
+            );
+        });
+
+        it('should describe itself as an upload, not as an action applied to a site', () => {
+            // Without a label of its own the run falls to the workflow sentence, which reads
+            // "Applying Upload to demo.dotcms.com" — phrased for an action applied TO content,
+            // not for files going INTO a place.
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(store.startExternalRun).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    labelKey: expect.stringContaining('content-drive.upload.indicator')
+                })
+            );
+        });
+
+        it('should target System Host when that is where the batch lands, not the switcher site', () => {
+            // The switcher still names a site while System Host is browsed, and that site is
+            // context rather than the destination. Uploading here with the site's identifier
+            // silently lands the files somewhere the author did not choose.
+            store.currentSite.mockReturnValue(MOCK_SITES[0]);
+            store.$systemHostSelected.mockReturnValue(true);
+
+            selectUploadType({
+                targetFolder: undefined,
+                files: createFileList([createFile('a.png'), createFile('b.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(uploadService.uploadFilesByBaseType).toHaveBeenCalledWith(
+                expect.anything(),
+                expect.objectContaining({ siteId: SYSTEM_HOST.identifier })
+            );
+        });
+
+        it('should remember a System Host batch as landing on System Host', () => {
+            // The listing reloads only when the run's folders include the one on screen, and both
+            // sides of that comparison were computed from the switcher's site plus the location.
+            // On System Host that gave `//demo.dotcms.com` for the batch and
+            // `//demo.dotcms.comsystem_host` for the listing — two references to nothing alike, so
+            // an upload finished and the grid it landed in never refreshed.
+            store.currentSite.mockReturnValue(MOCK_SITES[0]);
+            store.$systemHostSelected.mockReturnValue(true);
+            store.path.mockReturnValue(SYSTEM_HOST_PATH);
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({
+                    kind: 'accepted',
+                    handle: { jobId: 'job-sh', statusUrl: '/api/v1/jobs/job-sh/status' }
+                })
+            );
+
+            selectUploadType({
+                targetFolder: undefined,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(store.trackUploadJob).toHaveBeenCalledWith(
+                'job-sh',
+                [`//${SYSTEM_HOST.identifier}`.toLowerCase()],
+                expect.any(String),
+                'DOTASSET'
+            );
+        });
+
+        it('should submit a single file down the same path, as a batch of one', () => {
+            // Not a special case. One path, one set of gates, one method: a lone file is a batch
+            // whose length is one, so nothing forks on count.
+            const only = createFile('a.png');
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([only]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(uploadService.uploadFilesByBaseType).toHaveBeenCalledWith(
+                [only],
+                expect.objectContaining({ baseType: 'DOTASSET', folderId: TARGET_FOLDER_DATA.id })
+            );
+        });
+
+        it('should report the upload on the indicator while the bytes are in flight', () => {
+            // The gap this closes: submitting was silent until the 202, so a thirty-file upload
+            // looked like nothing had happened for as long as it took to send.
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png'), createFile('b.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            // `targets: []` is the contract, not an omission: the indicator speaks only for runs
+            // with nothing to mark, because a run over rows is already reported by those rows
+            // dimming. An upload has no rows — its content does not exist yet — so passing file
+            // names here excludes it from the one surface that can show it.
+            expect(store.startExternalRun).toHaveBeenCalledWith(
+                expect.objectContaining({ total: 2, targets: [] })
+            );
+        });
+
+        it('should key each batch separately so two uploads can run at once', () => {
+            // The run key is `operation:targets`, so with no targets every upload would share one
+            // key: the second would overwrite the first, and the first to finish would deregister
+            // both. Unlike a workflow action there is no repeat-fire hazard to guard — each
+            // submission carries its own freshly chosen files.
+            uploadService.uploadFilesByBaseType.mockReturnValue(NEVER);
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('b.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            const operations = store.startExternalRun.mock.calls.map(
+                ([run]: [{ operation: string }]) => run.operation
+            );
+
+            expect(new Set(operations).size).toBe(2);
+        });
+
+        it('should hand the run off to the server once the batch is accepted', () => {
+            // The upload phase ends at the handle. Leaving its run registered would leave the
+            // indicator spinning for a run that is now the server's to report.
+            //
+            // Set explicitly: `clearAllMocks` clears calls but not return values, so a `NEVER` from
+            // an earlier test would otherwise still be in place and the batch would never settle.
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({
+                    kind: 'accepted',
+                    handle: { jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' }
+                })
+            );
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(store.endExternalRun).toHaveBeenCalled();
+        });
+
+        it('should tell the author the batch is theirs to leave once the handle arrives', () => {
+            // The one moment worth a notification in a flow that otherwise has none: until the
+            // handle exists, leaving loses the batch, and after it leaving costs nothing. The
+            // author cannot see that line being crossed, and the indicator cannot say it — it
+            // reports that work is happening, not that the rules just changed.
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({
+                    kind: 'accepted',
+                    handle: { jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' }
+                })
+            );
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png'), createFile('b.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            // The advisory toast this used to assert is gone: the status it sat beside says
+            // "in the background" itself, and both on screen announced one upload twice.
+            // Matched as a prefix: what this protects is that one file is still announced as
+            // backgrounded, not which noun the sentence uses. The wording does vary by count --
+            // "1 file" against "3 files" -- and pinning the exact key here would fail for the
+            // grammar while the behaviour under test was perfectly intact.
+            expect(store.startExternalRun).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    labelKey: expect.stringContaining('content-drive.upload.indicator.background')
+                })
+            );
+        });
+
+        it('should report the count the server read, not the count the author chose', () => {
+            // The contract names `submitted` the number to display: it equals the `total` the
+            // outcome later reports, so the first screen and the last agree by construction. The
+            // author's own count is not that number. Where parts are lost between the browser and
+            // the server the two diverge, and rendering the local one puts up a figure no later
+            // screen ever confirms.
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({
+                    kind: 'accepted',
+                    handle: {
+                        jobId: 'job-1',
+                        statusUrl: '/api/v1/jobs/job-1/status',
+                        // Deliberately not 3: the server read fewer parts than were chosen.
+                        submitted: 2
+                    }
+                })
+            );
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([
+                    createFile('a.png'),
+                    createFile('b.png'),
+                    createFile('c.png')
+                ]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(store.startExternalRun).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    labelKey: 'content-drive.upload.indicator.background',
+                    total: 2
+                })
+            );
+            expect(store.startExternalRun).not.toHaveBeenCalledWith(
+                expect.objectContaining({
+                    labelKey: 'content-drive.upload.indicator.background',
+                    total: 3
+                })
+            );
+        });
+
+        it('should size the background run by what the server accepted', () => {
+            // Same number, same reason: the indicator and the outcome describe one batch, so a run
+            // sized by the local count would disagree with the completion that ends it.
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({
+                    kind: 'accepted',
+                    handle: {
+                        jobId: 'job-1',
+                        statusUrl: '/api/v1/jobs/job-1/status',
+                        submitted: 2
+                    }
+                })
+            );
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([
+                    createFile('a.png'),
+                    createFile('b.png'),
+                    createFile('c.png')
+                ]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(store.startExternalRun).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    labelKey: 'content-drive.upload.indicator.background',
+                    total: 2
+                })
+            );
+        });
+
+        it('should fall back to the local count when the server states no total', () => {
+            // An instance that predates the field answers without it. Reporting nothing there
+            // would be worse than reporting the author's own count, which is right whenever no
+            // parts were lost — and no parts being lost is the ordinary case.
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({
+                    kind: 'accepted',
+                    handle: { jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' }
+                })
+            );
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png'), createFile('b.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(store.startExternalRun).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    labelKey: 'content-drive.upload.indicator.background',
+                    total: 2
+                })
+            );
+        });
+
+        it('should keep reporting the batch after the handle, so the indicator does not go dark', () => {
+            // Two phases, two runs: the upload phase ends at the handle, but the batch has not
+            // finished — dotCMS is still creating and publishing the files. Ending the first run
+            // and starting nothing left the indicator dark for the longer half of the wait, which
+            // reads as "it stopped".
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({
+                    kind: 'accepted',
+                    handle: { jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' }
+                })
+            );
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            // The run that carries the server phase is handed to the store with the job, so the
+            // completion that settles the batch settles the indicator with it.
+            expect(store.trackUploadJob).toHaveBeenCalledWith(
+                'job-1',
+                expect.any(Array),
+                expect.any(String),
+                expect.any(String)
+            );
+        });
+
+        it('should stop reporting the upload when the submission is refused', () => {
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                throwError(() => new HttpErrorResponse({ status: 413 }))
+            );
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(store.endExternalRun).toHaveBeenCalled();
+        });
+
+        it('should say the batch was too large when the submission is refused for its size', () => {
+            // The two ceilings have different fixes, and the server distinguishes them by status
+            // alone: its own message names byte counts at the author, which is a developer's
+            // sentence, not copy. So the status picks the copy and the body is not read for it.
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                throwError(() => new HttpErrorResponse({ status: 413 }))
+            );
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'error',
+                    detail: 'content-drive.upload.refused.too-large'
+                })
+            );
+        });
+
+        it('should not blame the file count for a 400 it cannot attribute', () => {
+            // Raised in review, and correct: the ceiling mapper is not the only source of a 400
+            // from this endpoint. The resource rejects a bad referer with one, and a malformed
+            // `form` part produces one from Jackson before any of this feature's code runs. The
+            // status alone therefore does not identify the cause, and naming the wrong one sends
+            // the author to remove files from a batch whose size was never the problem.
+            //
+            // It is the *likely* case, not the edge case: the client now refuses an over-ceiling
+            // batch in the chooser, so a count refusal rarely reaches the server at all.
+            store.uploadCeilings.mockReturnValue({ maxFiles: 100, maxTotalBytes: 0 });
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                throwError(() => new HttpErrorResponse({ status: 400 }))
+            );
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'error',
+                    detail: 'content-drive.add-dotasset-error-detail'
+                })
+            );
+        });
+
+        it('should still blame the count when nothing else could have refused it', () => {
+            // The one case where the status is enough: no ceiling was advertised, so the client
+            // could not check up front, and a count refusal is the only 400 this endpoint documents
+            // as a refusal. Better than the generic copy, which names no cause at all.
+            store.uploadCeilings.mockReturnValue(null);
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                throwError(() => new HttpErrorResponse({ status: 400 }))
+            );
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'error',
+                    detail: 'content-drive.upload.refused.too-many-files'
+                })
+            );
+        });
+
+        it('should refuse a batch over the advertised file ceiling without uploading it', () => {
+            // The point of reading the ceiling: the refusal arrives in the chooser, not after the
+            // author has waited out the upload of a batch that was never going to be accepted.
+            store.uploadCeilings.mockReturnValue({ maxFiles: 1, maxTotalBytes: 0 });
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png'), createFile('b.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(uploadService.uploadFilesByBaseType).not.toHaveBeenCalled();
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'error',
+                    detail: 'content-drive.upload.refused.too-many-files-named'
+                })
+            );
+        });
+
+        it('should not register a run for a batch it refuses itself', () => {
+            // Nothing was submitted, so nothing is in flight. Starting a run here would leave the
+            // indicator lit and the route guarded for an upload that never happened.
+            store.uploadCeilings.mockReturnValue({ maxFiles: 1, maxTotalBytes: 0 });
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png'), createFile('b.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(store.startExternalRun).not.toHaveBeenCalled();
+        });
+
+        it('should leave the refusing to the server when no ceiling is advertised', () => {
+            // An instance older than the configuration field, or a configuration request that never
+            // landed. Refusing on a guessed default would refuse batches the server accepts.
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png'), createFile('b.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(uploadService.uploadFilesByBaseType).toHaveBeenCalled();
+        });
+
+        it('should not offer an unqualified retry for an asset batch it cannot account for', () => {
+            // FR-037a: the retry guarantee is FILEASSET-only. A dotAsset resubmission creates a
+            // second copy of everything and reports clean success, so "try again later" over a
+            // submission whose fate is unknown can leave the folder holding two of each. The folder
+            // is the thing to check, and this is the one case that overrides FR-037's "never asks
+            // them to check the folder first".
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                throwError(() => new HttpErrorResponse({ status: 0 }))
+            );
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'error',
+                    detail: 'content-drive.add-dotasset-error-detail-check-folder'
+                })
+            );
+        });
+
+        it('should still offer a plain retry for a file batch, where it is safe', () => {
+            // The unique index refuses the second copy, so retrying costs nothing and asking the
+            // author to go and look would be busywork.
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                throwError(() => new HttpErrorResponse({ status: 0 }))
+            );
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'FILEASSET'
+            });
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'error',
+                    detail: 'content-drive.add-dotasset-error-detail'
+                })
+            );
+        });
+
+        it('should keep the server sentence out of the author-visible copy', () => {
+            // FR-030 draws the line here: resolved product copy in front of the author, the raw
+            // detail in the log. This branch already removed the same pattern from the folder
+            // dialogs; the upload path had kept it, and reading a second body shape would have
+            // spread it rather than closed it.
+            const log = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                throwError(
+                    () =>
+                        new HttpErrorResponse({
+                            status: 500,
+                            error: { message: 'Staging directory is not writable' }
+                        })
+                )
+            );
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            // The check-folder variant, because a 500 leaves the batch's fate unknown and this is a
+            // dotAsset (FR-037a). Still resolved product copy rather than the server's sentence,
+            // which is what this test is about.
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'error',
+                    detail: 'content-drive.add-dotasset-error-detail-check-folder'
+                })
+            );
+            // The other half of the requirement: shown copy is not the same as lost detail.
+            expect(log).toHaveBeenCalledWith(
+                expect.stringContaining('status 500'),
+                expect.objectContaining({ status: 500 })
+            );
+
+            log.mockRestore();
+        });
+
+        it('should warn before the page unloads while an upload is in flight', () => {
+            // The only moment the interface can intervene: while the bytes are still going the
+            // request dies with the page and nothing is recorded, so there is no run to resume
+            // and nobody is notified.
+            uploadService.uploadFilesByBaseType.mockReturnValue(NEVER);
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            const event = new Event('beforeunload', { cancelable: true });
+            window.dispatchEvent(event);
+
+            expect(event.defaultPrevented).toBe(true);
+        });
+
+        it('should refuse to leave the route while the bytes are in flight', () => {
+            // In-app navigation does not kill the request, but it destroys this shell — and with it
+            // the store the settle path writes to and the indicator that was reporting the run. So
+            // the route is refused for the same window the page is.
+            uploadService.uploadFilesByBaseType.mockReturnValue(NEVER);
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(spectator.component.canLeaveRoute()).toBe(false);
+        });
+
+        it('should say why, rather than refusing silently like a broken link', () => {
+            uploadService.uploadFilesByBaseType.mockReturnValue(NEVER);
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            spectator.component.canLeaveRoute();
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({ severity: 'warn' })
+            );
+        });
+
+        it('should cancel the navigation it refused, not hold it for later', () => {
+            // The point of answering `false` instead of holding the route through the shared lock.
+            // That lock is a subject the guard filters on: refusing leaves the navigation *pending*,
+            // and releasing the lock at the handle lets that same pending navigation complete — so
+            // an author who clicked a link, was told to wait, and stayed put would be thrown out of
+            // the portlet minutes later, at a moment they did not choose.
+            //
+            // Nothing touches the shared lock any more, which is what makes that impossible.
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({
+                    kind: 'accepted',
+                    handle: { jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' }
+                })
+            );
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(routerService.forbidRouteDeactivation).not.toHaveBeenCalled();
+            expect(routerService.allowRouteDeactivation).not.toHaveBeenCalled();
+        });
+
+        it('should let the author leave once the batch is the server to finish', () => {
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({
+                    kind: 'accepted',
+                    handle: { jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' }
+                })
+            );
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(spectator.component.canLeaveRoute()).toBe(true);
+            expect(messageService.add).not.toHaveBeenCalledWith(
+                expect.objectContaining({ severity: 'warn' })
+            );
+        });
+
+        it('should warn before the page unloads while an upload is in flight', () => {
+            // The only moment the interface can intervene: while the bytes are still going the
+            // request dies with the page and nothing is recorded, so there is no run to resume
+            // and nobody is notified.
+            uploadService.uploadFilesByBaseType.mockReturnValue(NEVER);
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            const event = new Event('beforeunload', { cancelable: true });
+            window.dispatchEvent(event);
+
+            expect(event.defaultPrevented).toBe(true);
+        });
+
+        it('should stop warning once the batch has been accepted', () => {
+            // Past the handle the run is the server's and leaving is safe, so prompting would be
+            // a lie — and the feature explicitly promises the author can walk away.
+            //
+            // Set explicitly: `clearAllMocks` between tests clears calls but not return values, so
+            // the `NEVER` above would otherwise still be in place and the batch would never settle.
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({
+                    kind: 'accepted',
+                    handle: { jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' }
+                })
+            );
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            const event = new Event('beforeunload', { cancelable: true });
+            window.dispatchEvent(event);
+
+            expect(event.defaultPrevented).toBe(false);
+        });
+
+        it('should target the site, not a folder, when uploading at the root', () => {
+            // The root row carries the *site* identifier in `id`, so treating "has an id" as "is a
+            // folder" sends a site id as `folderId` and the server answers 404 — the folder really
+            // does not exist. An empty `path` is what marks the row as the site itself.
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({
+                    kind: 'accepted',
+                    handle: { jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' }
+                })
+            );
+
+            selectUploadType({
+                targetFolder: SITE_ROOT_NODE,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(uploadService.uploadFilesByBaseType).toHaveBeenCalledWith(expect.anything(), {
+                baseType: 'DOTASSET',
+                siteId: MOCK_SITES[0].identifier
+            });
+        });
+
+        it('should not claim a position for an upload', () => {
+            // The app runs on Angular's fetch backend, which never emits upload progress, and the
+            // XHR backend that would is deprecated. So the indicator reports the upload as activity
+            // without a position (FR-041a), and nothing here invents one. Asserted against a
+            // progress event on purpose: it is the shape that used to be turned into a percentage,
+            // so this is what would catch the plumbing coming back without a backend to feed it.
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({ kind: 'progress', loaded: 40, total: 80 })
+            );
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            // Where a position would go: the run registered for the batch carries no count of
+            // what is done. (The store no longer has a way to update one at all.)
+            expect(store.startExternalRun).toHaveBeenCalledWith(
+                expect.not.objectContaining({ processed: expect.anything() })
+            );
+        });
+
+        it('should remember the accepted batch, with where it landed', () => {
+            // The completion event arrives minutes later and is scoped to the user, not the tab, so
+            // the handle is the only way to tell this batch's outcome from another window's. The
+            // folder travels with it because by then the author may be looking somewhere else.
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({
+                    kind: 'accepted',
+                    handle: { jobId: 'job-9', statusUrl: '/api/v1/jobs/job-9/status' }
+                })
+            );
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(store.trackUploadJob).toHaveBeenCalledWith(
+                'job-9',
+                [`//${TARGET_FOLDER_DATA.hostname}${TARGET_FOLDER_DATA.path}`.toLowerCase()],
+                // And the run still reporting it, which only this event can end.
+                expect.any(String),
+                // And the base type, without which the outcome cannot say whether a resubmission
+                // left a second copy (FR-040b).
+                'DOTASSET'
+            );
+        });
+
+        it('should not reload the listing when the batch is only accepted', () => {
+            // The `202` means queued, not created. Reloading here refetches a folder whose files
+            // do not exist yet, so the author watches the listing refresh to show nothing — the
+            // reload belongs to the completion event, which carries the outcome with it.
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png'), createFile('b.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(store.loadItems).not.toHaveBeenCalled();
+        });
+
+        it('should not announce a single file any differently than a batch', () => {
+            // What "unchanged" protects is that nothing forks on the number of files, which is the
+            // defect this feature exists to remove. It does not protect silence: the handle
+            // releases the author from a batch of one exactly as it releases them from thirty, and
+            // suppressing that for one file would be a count branch by another name.
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({
+                    kind: 'accepted',
+                    handle: { jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' }
+                })
+            );
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(store.startExternalRun).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    labelKey: expect.stringContaining('content-drive.upload.indicator.background')
+                })
+            );
+            // Still nothing that names it a success: the files do not exist yet.
+            expect(messageService.add).not.toHaveBeenCalledWith(
+                expect.objectContaining({ severity: 'success' })
             );
         });
     });
 
-    describe('file upload integration', () => {
-        let mockFile: File;
-
+    describe('upload — drag-and-drop flow (files already chosen)', () => {
         beforeEach(() => {
-            mockFile = new File(['test content'], 'test.jpg', { type: 'image/jpeg' });
             spectator.detectChanges();
         });
 
-        it('should upload file when file input changes', () => {
-            uploadService.uploadDotAsset.mockReturnValue(of({} as DotCMSContentlet));
+        it('should upload the file as dotAsset when Asset is selected', () => {
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({
+                    kind: 'accepted',
+                    handle: { jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' }
+                })
+            );
+            const file = createFile();
 
-            const addSpy = jest.spyOn(messageService, 'add');
-
-            const mockNode: DotFolderTreeNodeItem = {
-                data: {
-                    id: 'folder-123',
-                    hostname: 'localhost',
-                    path: 'folder-123',
-                    type: 'folder'
-                },
-                key: 'folder-123',
-                label: 'folder-123'
-            };
-            store.selectedNode.mockReturnValue(mockNode as DotFolderTreeNodeItem);
-
-            const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
-            Object.defineProperty(fileInput, 'files', {
-                value: [mockFile],
-                writable: false
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([file]),
+                baseType: 'DOTASSET'
             });
 
-            spectator.triggerEventHandler('input[type="file"]', 'change', { target: fileInput });
-
-            expect(addSpy).toHaveBeenCalledWith({
-                severity: 'info',
-                summary: expect.any(String),
-                detail: expect.any(String)
-            });
-            expect(uploadService.uploadDotAsset).toHaveBeenCalledWith(mockFile, {
-                baseType: 'dotAsset',
-                hostFolder: 'folder-123',
-                indexPolicy: 'WAIT_FOR'
+            expect(uploadService.uploadFilesByBaseType).toHaveBeenCalledWith([file], {
+                baseType: 'DOTASSET',
+                folderId: TARGET_FOLDER_DATA.id
             });
         });
 
-        it('should sent the current site identifier when the selected node is the all folder', () => {
-            store.selectedNode.mockReturnValue({
-                ...ALL_FOLDER,
-                data: {
-                    hostname: MOCK_SITES[0].hostname,
-                    path: '',
-                    type: 'folder',
-                    id: MOCK_SITES[0].identifier
-                }
+        it('should upload the file as FileAsset when File is selected', () => {
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({
+                    kind: 'accepted',
+                    handle: { jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' }
+                })
+            );
+            const file = createFile();
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([file]),
+                baseType: 'FILEASSET'
             });
+
+            expect(uploadService.uploadFilesByBaseType).toHaveBeenCalledWith([file], {
+                baseType: 'FILEASSET',
+                folderId: TARGET_FOLDER_DATA.id
+            });
+        });
+
+        it('should upload to the current site root when no folder is selected', () => {
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({
+                    kind: 'accepted',
+                    handle: { jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' }
+                })
+            );
             store.currentSite.mockReturnValue(MOCK_SITES[0]);
-            spectator.detectChanges();
+            const file = createFile();
 
-            const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
-            Object.defineProperty(fileInput, 'files', {
-                value: [mockFile],
-                writable: false
+            selectUploadType({
+                targetFolder: undefined,
+                files: createFileList([file]),
+                baseType: 'DOTASSET'
             });
 
-            spectator.triggerEventHandler('input[type="file"]', 'change', { target: fileInput });
-
-            expect(uploadService.uploadDotAsset).toHaveBeenCalledWith(mockFile, {
-                baseType: 'dotAsset',
-                hostFolder: MOCK_SITES[0].identifier,
-                indexPolicy: 'WAIT_FOR'
+            expect(uploadService.uploadFilesByBaseType).toHaveBeenCalledWith([file], {
+                baseType: 'DOTASSET',
+                siteId: MOCK_SITES[0].identifier
             });
         });
 
-        it('should show info message when upload starts', () => {
-            uploadService.uploadDotAsset.mockReturnValue(of({} as DotCMSContentlet));
-            const addSpy = jest.spyOn(messageService, 'add');
+        it('should fall back to empty hostFolder when no folder and no current site', () => {
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({
+                    kind: 'accepted',
+                    handle: { jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' }
+                })
+            );
+            store.currentSite.mockReturnValue(undefined);
+            const file = createFile();
 
-            const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
-            Object.defineProperty(fileInput, 'files', {
-                value: [mockFile],
-                writable: false
+            selectUploadType({
+                targetFolder: undefined,
+                files: createFileList([file]),
+                baseType: 'FILEASSET'
             });
 
-            spectator.triggerEventHandler('input[type="file"]', 'change', { target: fileInput });
-
-            expect(addSpy).toHaveBeenCalledWith({
-                severity: 'info',
-                summary: expect.any(String),
-                detail: expect.any(String)
+            expect(uploadService.uploadFilesByBaseType).toHaveBeenCalledWith([file], {
+                baseType: 'FILEASSET',
+                siteId: ''
             });
         });
 
-        it('should show error message on upload failure', () => {
-            const error = new Error('Upload failed');
-            uploadService.uploadDotAsset.mockReturnValue(throwError(() => error));
-            store.selectedNode.mockReturnValue({
-                ...ALL_FOLDER,
-                data: {
-                    hostname: MOCK_SITES[0].hostname,
-                    path: '',
-                    type: 'folder',
-                    id: MOCK_SITES[0].identifier
-                }
-            });
-            const addSpy = jest.spyOn(messageService, 'add');
+        it('should raise nothing but the handoff advisory while the upload is in flight', () => {
+            // FR-008 keeps in-flight state on the toolbar indicator rather than in a toast: one
+            // that says only "this has begun" competes with the outcome that follows it and tells
+            // the author nothing they cannot already see. The handoff is the single exception
+            // (FR-008a) — it reports that leaving is now safe, which is a fact about the author's
+            // obligation rather than about the run, and which the indicator cannot express.
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({
+                    kind: 'accepted',
+                    handle: { jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' }
+                })
+            );
+            const addSpy = vi.spyOn(messageService, 'add');
 
-            const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
-            Object.defineProperty(fileInput, 'files', {
-                value: [mockFile],
-                writable: false
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile()]),
+                baseType: 'DOTASSET'
             });
 
-            spectator.triggerEventHandler('input[type="file"]', 'change', { target: fileInput });
+            // Nothing on the wide outlet. The handoff advisory this used to assert was removed
+            // because the status toast beside it already said the upload was in the background,
+            // and one upload announcing itself twice is the noise this replaced.
+            //
+            // Keyed rather than absolute: the status toast is raised by this same service, and it
+            // is the one thing that SHOULD appear while a run is in flight.
+            const wideOutletMessages = addSpy.mock.calls
+                .map(([message]) => message as { key?: string })
+                .filter((message) => message.key !== STATUS_TOAST_KEY);
+
+            expect(wideOutletMessages).toEqual([]);
+        });
+
+        it('should not announce an upload the listing now shows', () => {
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({
+                    kind: 'accepted',
+                    handle: { jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' }
+                })
+            );
+            const addSpy = vi.spyOn(messageService, 'add');
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile()]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(addSpy).not.toHaveBeenCalledWith(
+                expect.objectContaining({ severity: 'success' })
+            );
+        });
+
+        it('should show an error message on upload failure', () => {
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                throwError(() => new Error('Upload failed'))
+            );
+            const addSpy = vi.spyOn(messageService, 'add');
+
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile()]),
+                baseType: 'DOTASSET'
+            });
 
             expect(addSpy).toHaveBeenCalledWith({
                 severity: 'error',
@@ -731,361 +3624,194 @@ describe('DotContentDriveShellComponent', () => {
             });
         });
 
-        it('should show error message on upload failure with errors', () => {
-            const error = {
-                error: {
-                    errors: [{ message: 'Upload failed' }]
-                }
-            };
-            uploadService.uploadDotAsset.mockReturnValue(throwError(() => error));
-            store.selectedNode.mockReturnValue({
-                ...ALL_FOLDER,
-                data: {
-                    hostname: MOCK_SITES[0].hostname,
-                    path: '',
-                    type: 'folder',
-                    id: MOCK_SITES[0].identifier
-                }
-            });
-            const addSpy = jest.spyOn(messageService, 'add');
+        it('should not show the server error message from an errors payload either', () => {
+            // Was asserting the opposite, and inherited from the path this feature replaced. FR-030
+            // is the rule for every outcome in this portlet: the author reads product copy and the
+            // log keeps the detail. The `errors[]` shape is the workflow endpoints' one, so it is
+            // covered separately from the refusal mapper's `{ message }`.
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                throwError(() => ({ error: { errors: [{ message: 'Upload failed' }] } }))
+            );
+            const addSpy = vi.spyOn(messageService, 'add');
 
-            const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
-            Object.defineProperty(fileInput, 'files', {
-                value: [mockFile],
-                writable: false
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile()]),
+                baseType: 'DOTASSET'
             });
 
-            spectator.triggerEventHandler('input[type="file"]', 'change', { target: fileInput });
-
-            expect(addSpy).toHaveBeenCalledTimes(2);
-            expect(addSpy).toHaveBeenNthCalledWith(1, {
-                severity: 'info',
-                summary: 'content-drive.file-upload-in-progress',
-                detail: 'content-drive.file-upload-in-progress-detail'
-            });
-            expect(addSpy).toHaveBeenNthCalledWith(2, {
+            // No status at all, so the outcome is unknown and this dotAsset batch gets the
+            // check-folder copy (FR-037a). The point stands: it is ours, not the server's.
+            expect(addSpy).toHaveBeenCalledWith({
                 severity: 'error',
                 summary: 'content-drive.add-dotasset-error',
-                detail: 'content-drive.add-dotasset-error-detail',
+                detail: 'content-drive.add-dotasset-error-detail-check-folder',
                 life: ERROR_MESSAGE_LIFE
             });
         });
 
-        it('should not upload when no files are selected', () => {
+        it('should open the file picker after a type is chosen, then upload with that type', () => {
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({
+                    kind: 'accepted',
+                    handle: { jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' }
+                })
+            );
+            const file = createFile();
+
             const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
+            const clickSpy = vi.spyOn(fileInput, 'click');
+
+            // Button flow: dialog opens with NO files in the payload.
+            selectUploadType({ targetFolder: TARGET_FOLDER_DATA, baseType: 'FILEASSET' });
+
+            expect(clickSpy).toHaveBeenCalled();
+            expect(uploadService.uploadFilesByBaseType).not.toHaveBeenCalled();
+
+            Object.defineProperty(fileInput, 'files', {
+                value: [file],
+                writable: true,
+                configurable: true
+            });
+            spectator.triggerEventHandler('input[type="file"]', 'change', { target: fileInput });
+
+            expect(uploadService.uploadFilesByBaseType).toHaveBeenCalledWith([file], {
+                baseType: 'FILEASSET',
+                folderId: TARGET_FOLDER_DATA.id
+            });
+        });
+
+        it('should consume the file before resetting the input (live FileList)', () => {
+            // Regression: `input.files` is a LIVE FileList, so clearing `input.value` empties it.
+            // The component must consume the files BEFORE resetting the input; resetting first
+            // drops the selection and the upload silently no-ops (the real Chrome bug).
+            // jsdom doesn't model this, so we mock it faithfully: `.files` is one stable object
+            // that is emptied when `.value` is cleared.
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({
+                    kind: 'accepted',
+                    handle: { jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' }
+                })
+            );
+            const file = createFile();
+            const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
+
+            const liveFiles: File[] = [file];
+            Object.defineProperty(fileInput, 'files', {
+                get: () => liveFiles as unknown as FileList,
+                configurable: true
+            });
+            Object.defineProperty(fileInput, 'value', {
+                get: () => (liveFiles.length ? 'C:\\fakepath\\test.png' : ''),
+                set: () => {
+                    liveFiles.length = 0; // clearing the input empties the live FileList
+                },
+                configurable: true
+            });
+
+            selectUploadType({ targetFolder: TARGET_FOLDER_DATA, baseType: 'FILEASSET' });
+            spectator.triggerEventHandler('input[type="file"]', 'change', { target: fileInput });
+
+            expect(uploadService.uploadFilesByBaseType).toHaveBeenCalledWith([file], {
+                baseType: 'FILEASSET',
+                folderId: TARGET_FOLDER_DATA.id
+            });
+            expect(fileInput.value).toBe(''); // still reset afterwards
+        });
+
+        it('should not upload when the file picker is dismissed without files', () => {
+            const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
+
+            selectUploadType({ targetFolder: TARGET_FOLDER_DATA, baseType: 'DOTASSET' });
+
             Object.defineProperty(fileInput, 'files', {
                 value: [],
-                writable: false
+                writable: true,
+                configurable: true
             });
-
             spectator.triggerEventHandler('input[type="file"]', 'change', { target: fileInput });
 
-            expect(uploadService.uploadDotAsset).not.toHaveBeenCalled();
-            expect(store.setStatus).not.toHaveBeenCalled();
+            expect(uploadService.uploadFilesByBaseType).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('upload — folder default preference (prompt skipped)', () => {
+        beforeEach(() => {
+            spectator.detectChanges();
         });
 
-        it('should show warning message when multiple files are selected and upload only the first file', () => {
-            uploadService.uploadDotAsset.mockReturnValue(of({} as DotCMSContentlet));
-            const addSpy = jest.spyOn(messageService, 'add');
+        const upload = () =>
+            spectator.triggerEventHandler(
+                spectator.debugElement.query(By.css('[data-testid="toolbar"]')),
+                'upload',
+                { currentTarget: document.createElement('button'), stopPropagation: vi.fn() }
+            );
 
-            const mockFile1 = new File(['test content 1'], 'test1.jpg', { type: 'image/jpeg' });
-            const mockFile2 = new File(['test content 2'], 'test2.jpg', { type: 'image/jpeg' });
-            const mockFile3 = new File(['test content 3'], 'test3.jpg', { type: 'image/jpeg' });
-
-            const mockNode: DotFolderTreeNodeItem = {
-                data: {
-                    id: 'folder-123',
-                    hostname: 'localhost',
-                    path: 'folder-123',
-                    type: 'folder'
-                },
-                key: 'folder-123',
-                label: 'folder-123'
-            };
-            store.selectedNode.mockReturnValue(mockNode);
-
+        it('should skip the prompt and open the file picker when the folder pins a base type', () => {
+            store.selectedNode.mockReturnValue({
+                data: { ...TARGET_FOLDER_DATA, defaultBaseType: 'DOTASSET' }
+            } as DotFolderTreeNodeItem);
             const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
-            Object.defineProperty(fileInput, 'files', {
-                value: [mockFile1, mockFile2, mockFile3],
-                writable: false
-            });
+            const clickSpy = vi.spyOn(fileInput, 'click');
 
+            upload();
+            spectator.detectChanges();
+
+            expect(clickSpy).toHaveBeenCalled();
+            expect(spectator.query(DotUploadTypeSelectorComponent)).toBeFalsy();
+        });
+
+        it('should upload with the folder base type after the picker returns (button flow)', () => {
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({
+                    kind: 'accepted',
+                    handle: { jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' }
+                })
+            );
+            store.selectedNode.mockReturnValue({
+                data: { ...TARGET_FOLDER_DATA, defaultBaseType: 'DOTASSET' }
+            } as DotFolderTreeNodeItem);
+            const file = createFile();
+            const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
+
+            upload();
+            Object.defineProperty(fileInput, 'files', {
+                value: [file],
+                writable: true,
+                configurable: true
+            });
             spectator.triggerEventHandler('input[type="file"]', 'change', { target: fileInput });
 
-            // Should show warning message
-            expect(addSpy).toHaveBeenCalledWith({
-                severity: 'warn',
-                summary: expect.any(String),
-                detail: expect.any(String),
-                life: WARNING_MESSAGE_LIFE
-            });
-
-            // Should upload only the first file
-            expect(uploadService.uploadDotAsset).toHaveBeenCalledTimes(1);
-            expect(uploadService.uploadDotAsset).toHaveBeenCalledWith(mockFile1, {
-                baseType: 'dotAsset',
-                hostFolder: 'folder-123',
-                indexPolicy: 'WAIT_FOR'
-            });
-        });
-    });
-
-    describe('sidebar file upload', () => {
-        beforeEach(() => {
-            spectator.detectChanges();
-        });
-
-        it('should trigger resolveFilesUpload when sidebar emits uploadFiles event with single file', () => {
-            const mockNode: DotFolderTreeNodeItem = {
-                data: {
-                    id: 'folder-123',
-                    hostname: 'localhost',
-                    path: 'folder-123',
-                    type: 'folder'
-                },
-                key: 'folder-123',
-                label: 'folder-123'
-            };
-            uploadService.uploadDotAsset.mockReturnValue(of({} as DotCMSContentlet));
-
-            const mockFile = new File(['test content'], 'test.jpg', { type: 'image/jpeg' });
-            const mockFileList = {
-                0: mockFile,
-                length: 1,
-                item: (index: number) => (index === 0 ? mockFile : null)
-            } as unknown as FileList;
-
-            const sidebar = spectator.debugElement.query(By.css('[data-testid="sidebar"]'));
-            spectator.triggerEventHandler(sidebar, 'uploadFiles', {
-                files: mockFileList,
-                targetFolder: mockNode.data
-            });
-
-            expect(uploadService.uploadDotAsset).toHaveBeenCalledWith(mockFile, {
-                baseType: 'dotAsset',
-                hostFolder: mockNode.data.id,
-                indexPolicy: 'WAIT_FOR'
+            expect(uploadService.uploadFilesByBaseType).toHaveBeenCalledWith([file], {
+                baseType: 'DOTASSET',
+                folderId: TARGET_FOLDER_DATA.id
             });
         });
 
-        it('should trigger resolveFilesUpload when sidebar emits uploadFiles event with multiple files', () => {
-            uploadService.uploadDotAsset.mockReturnValue(of({} as DotCMSContentlet));
-            const addSpy = jest.spyOn(messageService, 'add');
+        it('should upload dropped files directly when the folder pins a base type (drag-and-drop)', () => {
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({
+                    kind: 'accepted',
+                    handle: { jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status' }
+                })
+            );
+            const file = createFile();
 
-            const mockFile1 = new File(['test content 1'], 'test1.jpg', { type: 'image/jpeg' });
-            const mockFile2 = new File(['test content 2'], 'test2.jpg', { type: 'image/jpeg' });
-            const mockFileList = {
-                0: mockFile1,
-                1: mockFile2,
-                length: 2,
-                item: (index: number) => {
-                    if (index === 0) return mockFile1;
-                    if (index === 1) return mockFile2;
-
-                    return null;
+            spectator.triggerEventHandler(
+                spectator.debugElement.query(By.css('[data-testid="dropzone"]')),
+                'uploadFiles',
+                {
+                    files: createFileList([file]),
+                    targetFolder: { ...TARGET_FOLDER_DATA, defaultBaseType: 'FILEASSET' }
                 }
-            } as unknown as FileList;
-
-            const mockNode: DotFolderTreeNodeItem = {
-                data: {
-                    id: 'folder-456',
-                    hostname: 'localhost',
-                    path: 'folder-456',
-                    type: 'folder'
-                },
-                key: 'folder-456',
-                label: 'folder-456'
-            };
-
-            const sidebar = spectator.debugElement.query(By.css('[data-testid="sidebar"]'));
-            spectator.triggerEventHandler(sidebar, 'uploadFiles', {
-                files: mockFileList,
-                targetFolder: mockNode.data
-            });
-
-            // Should show warning message for multiple files
-            expect(addSpy).toHaveBeenCalledWith({
-                severity: 'warn',
-                summary: expect.any(String),
-                detail: expect.any(String),
-                life: WARNING_MESSAGE_LIFE
-            });
-
-            // Should upload only the first file
-            expect(uploadService.uploadDotAsset).toHaveBeenCalledTimes(1);
-            expect(uploadService.uploadDotAsset).toHaveBeenCalledWith(mockFile1, {
-                baseType: 'dotAsset',
-                hostFolder: 'folder-456',
-                indexPolicy: 'WAIT_FOR'
-            });
-        });
-
-        it('should show success message after successful upload from sidebar', () => {
-            const mockNode: DotFolderTreeNodeItem = {
-                data: {
-                    id: 'folder-123',
-                    hostname: 'localhost',
-                    path: 'folder-123',
-                    type: 'folder'
-                },
-                key: 'folder-123',
-                label: 'folder-123'
-            };
-
-            const mockContentlet = {
-                title: 'test.jpg',
-                contentType: 'image/jpeg'
-            } as DotCMSContentlet;
-            uploadService.uploadDotAsset.mockReturnValue(of(mockContentlet));
-            const addSpy = jest.spyOn(messageService, 'add');
-
-            const mockFile = new File(['test content'], 'test.jpg', { type: 'image/jpeg' });
-            const mockFileList = {
-                0: mockFile,
-                length: 1,
-                item: (index: number) => (index === 0 ? mockFile : null)
-            } as unknown as FileList;
-
-            const sidebar = spectator.debugElement.query(By.css('[data-testid="sidebar"]'));
-            spectator.triggerEventHandler(sidebar, 'uploadFiles', {
-                files: mockFileList,
-                targetFolder: mockNode.data
-            });
-
-            expect(addSpy).toHaveBeenCalledWith({
-                severity: 'success',
-                summary: expect.any(String),
-                detail: expect.any(String),
-                life: SUCCESS_MESSAGE_LIFE
-            });
-        });
-
-        it('should show error message after failed upload from sidebar', () => {
-            const mockNode: DotFolderTreeNodeItem = {
-                data: {
-                    id: 'folder-123',
-                    hostname: 'localhost',
-                    path: 'folder-123',
-                    type: 'folder'
-                },
-                key: 'folder-123',
-                label: 'folder-123'
-            };
-            const error = new Error('Upload failed');
-            uploadService.uploadDotAsset.mockReturnValue(throwError(() => error));
-
-            const addSpy = jest.spyOn(messageService, 'add');
-
-            const mockFile = new File(['test content'], 'test.jpg', { type: 'image/jpeg' });
-            const mockFileList = {
-                0: mockFile,
-                length: 1,
-                item: (index: number) => (index === 0 ? mockFile : null)
-            } as unknown as FileList;
-
-            const sidebar = spectator.debugElement.query(By.css('[data-testid="sidebar"]'));
-            spectator.triggerEventHandler(sidebar, 'uploadFiles', {
-                files: mockFileList,
-                targetFolder: mockNode.data
-            });
-
-            expect(addSpy).toHaveBeenCalledWith({
-                severity: 'error',
-                summary: expect.any(String),
-                detail: expect.any(String),
-                life: ERROR_MESSAGE_LIFE
-            });
-        });
-    });
-
-    describe('dropzone file upload', () => {
-        beforeEach(() => {
+            );
             spectator.detectChanges();
-        });
 
-        it('should trigger resolveFilesUpload when dropzone emits uploadFiles event with single file', () => {
-            uploadService.uploadDotAsset.mockReturnValue(of({} as DotCMSContentlet));
-            const mockFile = new File(['test content'], 'test.jpg', { type: 'image/jpeg' });
-            const mockFileList = {
-                0: mockFile,
-                length: 1,
-                item: (index: number) => (index === 0 ? mockFile : null)
-            } as unknown as FileList;
-
-            const mockNode: DotFolderTreeNodeItem = {
-                data: {
-                    id: 'folder-123',
-                    hostname: 'localhost',
-                    path: 'folder-123',
-                    type: 'folder'
-                },
-                key: 'folder-123',
-                label: 'folder-123'
-            };
-
-            const dropzone = spectator.debugElement.query(By.css('[data-testid="dropzone"]'));
-            spectator.triggerEventHandler(dropzone, 'uploadFiles', {
-                files: mockFileList,
-                targetFolder: mockNode.data
+            expect(uploadService.uploadFilesByBaseType).toHaveBeenCalledWith([file], {
+                baseType: 'FILEASSET',
+                folderId: TARGET_FOLDER_DATA.id
             });
-
-            expect(uploadService.uploadDotAsset).toHaveBeenCalledWith(mockFile, {
-                baseType: 'dotAsset',
-                hostFolder: mockNode.data.id,
-                indexPolicy: 'WAIT_FOR'
-            });
-        });
-
-        it('should trigger resolveFilesUpload when dropzone emits uploadFiles event with multiple files', () => {
-            uploadService.uploadDotAsset.mockReturnValue(of({} as DotCMSContentlet));
-            const addSpy = jest.spyOn(messageService, 'add');
-
-            const mockFile1 = new File(['test content 1'], 'test1.jpg', { type: 'image/jpeg' });
-            const mockFile2 = new File(['test content 2'], 'test2.jpg', { type: 'image/jpeg' });
-            const mockFileList = {
-                0: mockFile1,
-                1: mockFile2,
-                length: 2,
-                item: (index: number) => {
-                    if (index === 0) return mockFile1;
-                    if (index === 1) return mockFile2;
-
-                    return null;
-                }
-            } as unknown as FileList;
-
-            const mockNode: DotFolderTreeNodeItem = {
-                data: {
-                    id: 'folder-123',
-                    hostname: 'localhost',
-                    path: 'folder-123',
-                    type: 'folder'
-                },
-                key: 'folder-123',
-                label: 'folder-123'
-            };
-
-            const dropzone = spectator.debugElement.query(By.css('[data-testid="dropzone"]'));
-            spectator.triggerEventHandler(dropzone, 'uploadFiles', {
-                files: mockFileList,
-                targetFolder: mockNode.data
-            });
-
-            // Should show warning message for multiple files
-            expect(addSpy).toHaveBeenCalledWith({
-                severity: 'warn',
-                summary: expect.any(String),
-                detail: expect.any(String),
-                life: WARNING_MESSAGE_LIFE
-            });
-
-            // Should upload only the first file
-            expect(uploadService.uploadDotAsset).toHaveBeenCalledTimes(1);
-            expect(uploadService.uploadDotAsset).toHaveBeenCalledWith(mockFile1, {
-                baseType: 'dotAsset',
-                hostFolder: 'folder-123',
-                indexPolicy: 'WAIT_FOR'
-            });
+            expect(spectator.query(DotUploadTypeSelectorComponent)).toBeFalsy();
         });
     });
 
@@ -1162,6 +3888,118 @@ describe('DotContentDriveShellComponent', () => {
             messageService.add.mockClear();
         });
 
+        // Dropping onto a tree folder is a third route into that folder, alongside the New menu and
+        // the grid drop zone. Creating a folder and moving a contentlet are both refused server-side
+        // without this permission (`FolderAPIImpl:673`, `ESContentletAPIImpl:607`), so an ungated
+        // drop hands the user a failure they had no way to predict — and the upload path, which the
+        // server does *not* refuse, would otherwise quietly allow what the other two forbid.
+        describe('dropping on a folder that refuses content', () => {
+            // `defaultBaseType` matters: without it an upload opens the type selector instead of
+            // uploading, so an assertion that no upload fired would pass with or without the gate.
+            const deniedFolder = {
+                id: 'folder-1',
+                hostname: 'demo.dotcms.com',
+                path: '/documents/',
+                type: 'folder',
+                defaultBaseType: 'FILEASSET',
+                permissions: ['READ', 'EDIT']
+            } as unknown as DotFolderTreeNodeData;
+
+            const allowedFolder = {
+                ...deniedFolder,
+                permissions: ['READ', 'EDIT', 'CAN_ADD_CHILDREN']
+            } as unknown as DotFolderTreeNodeData;
+
+            const dropFiles = (targetFolder: DotFolderTreeNodeData) => {
+                const sidebar = spectator.debugElement.query(By.css('[data-testid="sidebar"]'));
+                spectator.triggerEventHandler(sidebar, 'uploadFiles', {
+                    files: [new File([''], 'a.png')] as unknown as FileList,
+                    targetFolder
+                });
+            };
+
+            const dropItems = (targetFolder: DotFolderTreeNodeData) => {
+                store.dragItems.mockReturnValue({
+                    folders: [],
+                    contentlets: [MOCK_ITEMS[0] as DotCMSContentlet]
+                });
+                const sidebar = spectator.debugElement.query(By.css('[data-testid="sidebar"]'));
+                spectator.triggerEventHandler(sidebar, 'moveItems', { targetFolder });
+            };
+
+            it('should refuse a move onto it', () => {
+                dropItems(deniedFolder);
+
+                expect(workflowService.bulkFire).not.toHaveBeenCalled();
+            });
+
+            it('should say why the move was refused', () => {
+                dropItems(deniedFolder);
+
+                expect(messageService.add).toHaveBeenCalledWith(
+                    expect.objectContaining({ severity: 'error' })
+                );
+            });
+
+            it('should refuse an upload onto it', () => {
+                dropFiles(deniedFolder);
+
+                expect(uploadService.uploadFilesByBaseType).not.toHaveBeenCalled();
+            });
+
+            it('should upload onto a folder that accepts content', () => {
+                dropFiles({
+                    ...allowedFolder,
+                    defaultBaseType: 'FILEASSET'
+                } as unknown as DotFolderTreeNodeData);
+
+                expect(uploadService.uploadFilesByBaseType).toHaveBeenCalled();
+            });
+
+            it('should still allow a move onto a folder that accepts content', () => {
+                workflowService.bulkFire.mockReturnValue(
+                    of({ successCount: 1, skippedCount: 0, fails: [] })
+                );
+
+                dropItems(allowedFolder);
+
+                expect(workflowService.bulkFire).toHaveBeenCalled();
+            });
+
+            // In System Host and all site content there is no selected folder at all, so the
+            // target arrives undefined and the folder-level check has nothing to answer about.
+            // The store's gate already knows which scope is open and whose permission applies;
+            // without deferring to it, a drop here is waved through on the site's answer while
+            // the Upload button beside it is correctly disabled.
+            it('should refuse a drop with no target when the scope refuses content', () => {
+                canAddChildrenSignal.set(false);
+
+                store.dragItems.mockReturnValue({
+                    folders: [],
+                    contentlets: [MOCK_ITEMS[0] as DotCMSContentlet]
+                });
+                const sidebar = spectator.debugElement.query(By.css('[data-testid="sidebar"]'));
+                spectator.triggerEventHandler(sidebar, 'moveItems', { targetFolder: undefined });
+
+                expect(workflowService.bulkFire).not.toHaveBeenCalled();
+            });
+
+            // The site root carries no permissions of its own, so the store's site-level answer is
+            // what decides there.
+            it('should refuse a move onto the site root when the site refuses content', () => {
+                siteCanAddChildrenSignal.set(false);
+
+                dropItems({
+                    id: 'site-1',
+                    hostname: 'demo.dotcms.com',
+                    path: '',
+                    type: 'folder'
+                } as unknown as DotFolderTreeNodeData);
+
+                expect(workflowService.bulkFire).not.toHaveBeenCalled();
+            });
+        });
+
         describe('onMoveItems', () => {
             it('should handle move with single item', () => {
                 const mockDragItems = {
@@ -1185,11 +4023,13 @@ describe('DotContentDriveShellComponent', () => {
                 const sidebar = spectator.debugElement.query(By.css('[data-testid="sidebar"]'));
                 spectator.triggerEventHandler(sidebar, 'moveItems', mockMoveEvent);
 
-                expect(messageService.add).toHaveBeenCalledWith({
-                    severity: 'info',
-                    summary: expect.any(String),
-                    detail: expect.any(String)
-                });
+                // The move's "moving …" notification is gone; the indicator carries it (FR-007).
+                expect(messageService.add).not.toHaveBeenCalledWith(
+                    expect.objectContaining({ severity: 'info' })
+                );
+                expect(store.startExternalRun).toHaveBeenCalledWith(
+                    expect.objectContaining({ total: expect.any(Number) })
+                );
 
                 expect(workflowService.bulkFire).toHaveBeenCalledWith({
                     additionalParams: {
@@ -1251,7 +4091,7 @@ describe('DotContentDriveShellComponent', () => {
                 });
             });
 
-            it('should show success message after successful move', () => {
+            it('should not announce a move the listing already shows', () => {
                 const mockDragItems = {
                     folders: [],
                     contentlets: [MOCK_ITEMS[0] as DotCMSContentlet]
@@ -1273,12 +4113,9 @@ describe('DotContentDriveShellComponent', () => {
                 const sidebar = spectator.debugElement.query(By.css('[data-testid="sidebar"]'));
                 spectator.triggerEventHandler(sidebar, 'moveItems', mockMoveEvent);
 
-                expect(messageService.add).toHaveBeenCalledWith({
-                    severity: 'success',
-                    summary: expect.any(String),
-                    detail: expect.any(String),
-                    life: SUCCESS_MESSAGE_LIFE
-                });
+                expect(messageService.add).not.toHaveBeenCalledWith(
+                    expect.objectContaining({ severity: 'success' })
+                );
             });
 
             it('should show message with folders when dragging folders and contentlets', () => {
@@ -1328,11 +4165,13 @@ describe('DotContentDriveShellComponent', () => {
                 spectator.triggerEventHandler(sidebar, 'moveItems', mockMoveEvent);
 
                 // Should show the message with folders (different message when folders are included)
-                expect(messageService.add).toHaveBeenCalledWith({
-                    severity: 'info',
-                    summary: 'content-drive.move-to-folder-in-progress-with-folders',
-                    detail: expect.any(String)
-                });
+                // The move reports on the toolbar indicator now, not as a notification (FR-007).
+                expect(messageService.add).not.toHaveBeenCalledWith(
+                    expect.objectContaining({ severity: 'info' })
+                );
+                expect(store.startExternalRun).toHaveBeenCalledWith(
+                    expect.objectContaining({ total: expect.any(Number) })
+                );
 
                 // Should still call workflow service with contentlet inodes (not folders)
                 expect(workflowService.bulkFire).toHaveBeenCalledWith({
@@ -1543,7 +4382,10 @@ describe('DotContentDriveShellComponent', () => {
                     (call) => call[0].severity === 'error'
                 );
 
-                expect(successCalls).toHaveLength(1);
+                // A partial move: the successes are silent (the rows left the folder in front of
+                // the author) but each failure still speaks, because a row that *stayed* is
+                // indistinguishable from one nobody tried to move.
+                expect(successCalls).toHaveLength(0);
                 expect(errorCalls).toHaveLength(1);
                 expect(store.loadItems).toHaveBeenCalled();
                 expect(store.cleanDragItems).toHaveBeenCalled();
@@ -1621,11 +4463,12 @@ describe('DotContentDriveShellComponent', () => {
             spectator.triggerEventHandler(folderListView, 'drop', folderItem);
 
             // Should show info message
-            expect(messageService.add).toHaveBeenCalledWith({
-                severity: 'info',
-                summary: expect.any(String),
-                detail: expect.any(String)
-            });
+            expect(messageService.add).not.toHaveBeenCalledWith(
+                expect.objectContaining({ severity: 'info' })
+            );
+            expect(store.startExternalRun).toHaveBeenCalledWith(
+                expect.objectContaining({ total: expect.any(Number) })
+            );
 
             // Should call workflow service with correct parameters
             expect(workflowService.bulkFire).toHaveBeenCalledWith({
@@ -1687,12 +4530,9 @@ describe('DotContentDriveShellComponent', () => {
             spectator.triggerEventHandler(folderListView, 'drop', folderItem);
 
             // Should show success message after successful move
-            expect(messageService.add).toHaveBeenCalledWith({
-                severity: 'success',
-                summary: expect.any(String),
-                detail: expect.any(String),
-                life: SUCCESS_MESSAGE_LIFE
-            });
+            expect(messageService.add).not.toHaveBeenCalledWith(
+                expect.objectContaining({ severity: 'success' })
+            );
 
             // Should clean drag items and reload items
             expect(store.cleanDragItems).toHaveBeenCalled();
@@ -1824,11 +4664,12 @@ describe('DotContentDriveShellComponent', () => {
             spectator.triggerEventHandler(folderListView, 'drop', folderItem);
 
             // Should show the message with folders (different message when folders are included)
-            expect(messageService.add).toHaveBeenCalledWith({
-                severity: 'info',
-                summary: 'content-drive.move-to-folder-in-progress-with-folders',
-                detail: expect.any(String)
-            });
+            expect(messageService.add).not.toHaveBeenCalledWith(
+                expect.objectContaining({ severity: 'info' })
+            );
+            expect(store.startExternalRun).toHaveBeenCalledWith(
+                expect.objectContaining({ total: expect.any(Number) })
+            );
 
             // Should still call workflow service with contentlet inodes (not folders)
             expect(workflowService.bulkFire).toHaveBeenCalledWith({
@@ -1866,9 +4707,36 @@ describe('DotContentDriveShellComponent', () => {
             store.setPath.mockClear();
 
             spectator.detectChanges();
-            spectator.flushEffects();
+            spectator.detectChanges();
 
             expect(store.setPath).toHaveBeenCalledWith('/documents/');
+        });
+
+        it('should read the site row as the site root, not as no location at all', () => {
+            // The tree tells its site row apart from a folder by carrying an empty path. As a
+            // *location* that means the site root, which is a different thing from all site
+            // content — and all site content is what an absent location means. Without this
+            // translation the two collapse into each other and choosing the site row silently
+            // lands on the flat whole-site view.
+            const siteRow: DotFolderTreeNodeItem = {
+                key: 'site',
+                label: 'demo.dotcms.com',
+                data: {
+                    id: 'site-123',
+                    hostname: 'demo.dotcms.com',
+                    path: '',
+                    type: 'site'
+                },
+                leaf: false
+            };
+
+            store.selectedNode.mockReturnValue(siteRow);
+            store.setPath.mockClear();
+
+            spectator.detectChanges();
+            spectator.detectChanges();
+
+            expect(store.setPath).toHaveBeenCalledWith('/');
         });
 
         it('should not set path when selectedNode is null', () => {
@@ -1876,7 +4744,7 @@ describe('DotContentDriveShellComponent', () => {
             store.setPath.mockClear();
 
             spectator.detectChanges();
-            spectator.flushEffects();
+            spectator.detectChanges();
 
             expect(store.setPath).not.toHaveBeenCalled();
         });
@@ -1890,7 +4758,8 @@ describe('DotContentDriveShellComponent', () => {
                 ...MOCK_ITEMS[0],
                 type: 'folder',
                 path: '/documents/',
-                identifier: 'folder-123'
+                identifier: 'folder-123',
+                inode: 'folder-inode-123'
             };
 
             store.currentSite.mockReturnValue(MOCK_SITES[0]);
@@ -1908,12 +4777,41 @@ describe('DotContentDriveShellComponent', () => {
                     path: '/documents/',
                     hostname: MOCK_SITES[0].hostname,
                     id: 'folder-123',
+                    inode: 'folder-inode-123',
                     fromTable: true
                 },
                 key: 'folder-123',
                 label: '/documents/',
                 leaf: false
             });
+        });
+
+        it('should carry the folder defaultBaseType into the selected node', () => {
+            spectator.detectChanges();
+
+            const folderItem = {
+                ...MOCK_ITEMS[0],
+                type: 'folder',
+                path: '/app/',
+                identifier: 'app',
+                inode: 'app-inode',
+                defaultBaseType: 'DOTASSET'
+            };
+
+            store.currentSite.mockReturnValue(MOCK_SITES[0]);
+            store.setSelectedNode.mockClear();
+
+            const folderListView = spectator.debugElement.query(
+                By.directive(DotFolderListViewComponent)
+            );
+
+            spectator.triggerEventHandler(folderListView, 'doubleClick', folderItem);
+
+            expect(store.setSelectedNode).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    data: expect.objectContaining({ defaultBaseType: 'DOTASSET' })
+                })
+            );
         });
 
         it('should call navigationService.editContent when double clicking a content item', () => {
@@ -1923,7 +4821,7 @@ describe('DotContentDriveShellComponent', () => {
                 ...MOCK_ITEMS[0],
                 type: 'content',
                 identifier: 'content-123'
-            };
+            } as DotCMSContentlet;
 
             navigationService.editContent.mockClear();
 
@@ -1943,7 +4841,7 @@ describe('DotContentDriveShellComponent', () => {
             spectator.detectChanges();
 
             const mockEvent = {
-                preventDefault: jest.fn()
+                preventDefault: vi.fn()
             } as unknown as MouseEvent;
             const contentlet = MOCK_ITEMS[0];
 
@@ -1990,18 +4888,23 @@ describe('DotContentDriveShellComponent', () => {
         });
     });
 
-    describe('onAddNewDotAsset', () => {
-        it('should trigger file input click', () => {
+    describe('onUpload', () => {
+        it('should open the upload menu instead of the file picker directly', () => {
             spectator.detectChanges();
 
             const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
-            const clickSpy = jest.spyOn(fileInput, 'click');
+            const clickSpy = vi.spyOn(fileInput, 'click');
 
             const toolbar = spectator.debugElement.query(By.css('[data-testid="toolbar"]'));
 
-            spectator.triggerEventHandler(toolbar, 'addNewDotAsset', undefined);
+            spectator.triggerEventHandler(toolbar, 'upload', {
+                currentTarget: document.createElement('button'),
+                stopPropagation: vi.fn()
+            });
+            spectator.detectChanges();
 
-            expect(clickSpy).toHaveBeenCalled();
+            expect(spectator.query(DotUploadTypeSelectorComponent)).toBeTruthy();
+            expect(clickSpy).not.toHaveBeenCalled();
         });
     });
 
@@ -2019,5 +4922,658 @@ describe('DotContentDriveShellComponent', () => {
 
             expect(store.resetContextMenu).toHaveBeenCalled();
         });
+    });
+
+    describe('Edit Content side panel', () => {
+        let sidePanelNav: SpyObject<DotSidePanelNavController>;
+
+        // Drives the module-scope signal backing the nav service mock's readonly `$editPanelRequest`.
+        // Typed at declaration, so no cast is needed and payloads are compile-checked.
+        const setPanelRequest = (value: EditContentDialogData | null) =>
+            editPanelRequestSignal.set(value);
+
+        const EDIT_REQUEST: EditContentDialogData = {
+            mode: 'edit',
+            contentletInode: 'inode-1',
+            identifier: 'id-1',
+            title: 'My content'
+        };
+
+        beforeEach(() => {
+            sidePanelNav = spectator.inject(DotSidePanelNavController);
+        });
+
+        it('delegates the panel `closed` output to the navigation service', async () => {
+            setPanelRequest(EDIT_REQUEST);
+            spectator.detectChanges();
+            // The panel is behind `@defer`; its dynamic import resolves as a microtask, so the
+            // element isn't in the DOM until the fixture settles.
+            await spectator.fixture.whenStable();
+            spectator.detectChanges();
+
+            // Drive the real template binding `(closed)="onEditPanelClosed()"`, not the handler
+            // directly — so a removed/renamed binding would fail the test.
+            spectator.triggerEventHandler('dot-edit-content-side-panel', 'closed', undefined);
+
+            expect(navigationService.closeEditPanel).toHaveBeenCalledTimes(1);
+        });
+
+        it('reloads the list when the panel `saved` output fires', async () => {
+            setPanelRequest(EDIT_REQUEST);
+            spectator.detectChanges();
+            await spectator.fixture.whenStable();
+            spectator.detectChanges();
+
+            spectator.triggerEventHandler('dot-edit-content-side-panel', 'saved', undefined);
+
+            expect(store.reloadContentDrive).toHaveBeenCalledTimes(1);
+        });
+
+        it('reflects an open edit panel as an editContent identifier in the URL', () => {
+            setPanelRequest(EDIT_REQUEST);
+            spectator.detectChanges();
+
+            expect(router.createUrlTree).toHaveBeenCalledWith(
+                [],
+                expect.objectContaining({
+                    queryParams: expect.objectContaining({ editContent: 'id-1' })
+                })
+            );
+        });
+
+        it('reflects an open new-mode panel as editContent=new (push), so Back has an entry to pop (AC8)', () => {
+            setPanelRequest({ mode: 'new', contentTypeId: 'ct-1', title: 'New content' });
+            spectator.detectChanges();
+
+            expect(router.createUrlTree).toHaveBeenCalledWith(
+                [],
+                expect.objectContaining({
+                    queryParams: expect.objectContaining({ editContent: 'new' })
+                })
+            );
+            expect(location.go).toHaveBeenCalled();
+        });
+
+        it('uses replaceState (not go) when the panel closes, so Back cannot resurrect the removed param', () => {
+            setPanelRequest(EDIT_REQUEST);
+            spectator.detectChanges();
+            (location.go as Mock).mockClear();
+            (location.replaceState as Mock).mockClear();
+
+            setPanelRequest(null);
+            spectator.detectChanges();
+
+            expect(location.replaceState).toHaveBeenCalledTimes(1);
+            expect(location.go).not.toHaveBeenCalled();
+        });
+
+        describe('browser Back (popstate)', () => {
+            const getPopstateHandler = () =>
+                (location.subscribe as Mock).mock.calls[0][0] as (event: { url: string }) => void;
+
+            // The panel lives behind `@defer`, so the view child is not resolved synchronously —
+            // the tests stub the signal instead. `$sidePanel` is protected, so it is absent from
+            // the public type `vi.spyOn` infers its keys from; cast to the shape being stubbed.
+            const stubSidePanel = () => {
+                const requestClose = vi.fn();
+
+                vi.spyOn(
+                    spectator.component as unknown as {
+                        $sidePanel: Signal<DotEditContentSidePanelComponent | undefined>;
+                    },
+                    '$sidePanel'
+                ).mockReturnValue({
+                    requestClose
+                } as unknown as DotEditContentSidePanelComponent);
+
+                return requestClose;
+            };
+
+            it('routes Back through the panel close guard (does not discard silently)', () => {
+                const requestClose = stubSidePanel();
+                setPanelRequest(EDIT_REQUEST);
+
+                getPopstateHandler()({ url: '/c/content-drive?path=/foo' });
+
+                // Routes through the guard instead of tearing the panel down directly.
+                expect(requestClose).toHaveBeenCalledTimes(1);
+                expect(navigationService.closeEditPanel).not.toHaveBeenCalled();
+                // Restores the param so the URL matches the still-open panel while the guard decides.
+                expect(location.replaceState).toHaveBeenCalledTimes(1);
+            });
+
+            it('keeps the panel open when Back preserves the same editContent param', () => {
+                const requestClose = stubSidePanel();
+                setPanelRequest(EDIT_REQUEST);
+
+                getPopstateHandler()({ url: '/c/content-drive?editContent=id-1' });
+
+                expect(requestClose).not.toHaveBeenCalled();
+                expect(navigationService.closeEditPanel).not.toHaveBeenCalled();
+            });
+
+            it('routes Back through the guard for an open new-mode panel too (AC8)', () => {
+                const requestClose = stubSidePanel();
+                setPanelRequest({ mode: 'new', contentTypeId: 'ct-1', title: 'New content' });
+
+                // Back removed the `new` marker entirely — the popstate handler must still close
+                // the create panel through the guard, not leave it open with a stale URL.
+                getPopstateHandler()({ url: '/c/content-drive?path=/foo' });
+
+                expect(requestClose).toHaveBeenCalledTimes(1);
+                expect(navigationService.closeEditPanel).not.toHaveBeenCalled();
+                expect(location.replaceState).toHaveBeenCalledTimes(1);
+            });
+
+            it('keeps a new-mode panel open when Back preserves the editContent=new marker', () => {
+                const requestClose = stubSidePanel();
+                setPanelRequest({ mode: 'new', contentTypeId: 'ct-1', title: 'New content' });
+
+                getPopstateHandler()({ url: '/c/content-drive?editContent=new' });
+
+                expect(requestClose).not.toHaveBeenCalled();
+                expect(navigationService.closeEditPanel).not.toHaveBeenCalled();
+            });
+        });
+
+        describe('folder tree force-collapse (transient, decoupled from the real preference)', () => {
+            it('forces the tree visually collapsed while the panel is open on narrow viewports, and clears the override on close', () => {
+                sidePanelNav.shouldCollapse.mockReturnValue(true);
+                spectator.detectChanges();
+
+                setPanelRequest(EDIT_REQUEST);
+                spectator.detectChanges();
+                expect(store.setTreeForceCollapsed).toHaveBeenCalledWith(true);
+
+                setPanelRequest(null);
+                spectator.detectChanges();
+                expect(store.setTreeForceCollapsed).toHaveBeenCalledWith(false);
+            });
+
+            it('does not force a collapse on wide viewports', () => {
+                sidePanelNav.shouldCollapse.mockReturnValue(false);
+                spectator.detectChanges();
+
+                setPanelRequest(EDIT_REQUEST);
+                spectator.detectChanges();
+
+                expect(store.setTreeForceCollapsed).toHaveBeenCalledWith(false);
+            });
+
+            // The whole point of the fix (issue: a panel-forced collapse used to leak into the
+            // real, shareable `isTreeExpanded` preference — see AC on the tree-collapse bug):
+            // the force-collapse override no longer reads `isTreeExpanded()` at all, so it behaves
+            // identically regardless of the user's real preference.
+            it('is independent of the real tree expanded/collapsed preference', () => {
+                store.isTreeExpanded.mockReturnValue(false);
+                sidePanelNav.shouldCollapse.mockReturnValue(true);
+                spectator.detectChanges();
+
+                setPanelRequest(EDIT_REQUEST);
+                spectator.detectChanges();
+                expect(store.setTreeForceCollapsed).toHaveBeenCalledWith(true);
+
+                setPanelRequest(null);
+                spectator.detectChanges();
+                expect(store.setTreeForceCollapsed).toHaveBeenCalledWith(false);
+
+                // Never touches the real preference.
+                expect(store.setIsTreeExpanded).not.toHaveBeenCalled();
+            });
+        });
+    });
+
+    describe('extra columns (Show In List)', () => {
+        beforeEach(() => spectator.detectChanges());
+
+        it('should map Show In List fields to typed table columns by data/field type', () => {
+            showInListFieldsSignal.set([
+                { variable: 'summary', name: 'Summary', dataType: 'TEXT', fieldType: 'Text' },
+                { variable: 'count', name: 'Count', dataType: 'INTEGER', fieldType: 'Text' },
+                { variable: 'active', name: 'Active', dataType: 'BOOL', fieldType: 'Checkbox' },
+                { variable: 'pub', name: 'Published', dataType: 'DATE', fieldType: 'Date' },
+                { variable: 'evt', name: 'Event', dataType: 'DATE', fieldType: 'Date-and-Time' },
+                { variable: 'clock', name: 'Clock', dataType: 'DATE', fieldType: 'Time' }
+            ] as DotCMSContentTypeField[]);
+            spectator.detectChanges();
+
+            expect(spectator.component.$extraColumns()).toEqual([
+                expect.objectContaining({ field: 'summary', header: 'Summary', type: 'text' }),
+                expect.objectContaining({ field: 'count', type: 'number' }),
+                expect.objectContaining({ field: 'active', type: 'boolean' }),
+                expect.objectContaining({ field: 'pub', type: 'date' }),
+                expect.objectContaining({ field: 'evt', type: 'datetime' }),
+                expect.objectContaining({ field: 'clock', type: 'time' })
+            ]);
+        });
+
+        it('should type a True/False Radio or Select field as a boolean column', () => {
+            // The reported case: dotCMS's own Radio help text tells users to author a True/False
+            // field as `True|1` / `False|0`, and the product ships `Host.runDashboard` in exactly
+            // that shape. Only Checkbox was covered before, which is why the boolean column's
+            // rendering shipped untested for these two.
+            showInListFieldsSignal.set([
+                { variable: 'boolRadio', name: 'Bool Radio', dataType: 'BOOL', fieldType: 'Radio' },
+                {
+                    variable: 'boolSelect',
+                    name: 'Bool Select',
+                    dataType: 'BOOL',
+                    fieldType: 'Select'
+                }
+            ] as DotCMSContentTypeField[]);
+            spectator.detectChanges();
+
+            expect(spectator.component.$extraColumns()).toEqual([
+                expect.objectContaining({ field: 'boolRadio', type: 'boolean' }),
+                expect.objectContaining({ field: 'boolSelect', type: 'boolean' })
+            ]);
+        });
+
+        it('should keep a non-boolean Radio or Select field a text column', () => {
+            showInListFieldsSignal.set([
+                { variable: 'size', name: 'Size', dataType: 'TEXT', fieldType: 'Radio' },
+                { variable: 'colour', name: 'Colour', dataType: 'TEXT', fieldType: 'Select' }
+            ] as DotCMSContentTypeField[]);
+            spectator.detectChanges();
+
+            expect(spectator.component.$extraColumns()).toEqual([
+                expect.objectContaining({ field: 'size', type: 'text' }),
+                expect.objectContaining({ field: 'colour', type: 'text' })
+            ]);
+        });
+
+        it('should expose no extra columns when there are no Show In List fields', () => {
+            showInListFieldsSignal.set([]);
+            spectator.detectChanges();
+
+            expect(spectator.component.$extraColumns()).toEqual([]);
+        });
+
+        it('should mark a column sortable only when the field is indexed', () => {
+            showInListFieldsSignal.set([
+                {
+                    variable: 'idx',
+                    name: 'Indexed',
+                    dataType: 'TEXT',
+                    fieldType: 'Text',
+                    indexed: true
+                },
+                {
+                    variable: 'noidx',
+                    name: 'Not indexed',
+                    dataType: 'TEXT',
+                    fieldType: 'Text',
+                    indexed: false
+                }
+            ] as DotCMSContentTypeField[]);
+            spectator.detectChanges();
+
+            expect(spectator.component.$extraColumns()).toEqual([
+                expect.objectContaining({ field: 'idx', sortable: true }),
+                expect.objectContaining({ field: 'noidx', sortable: false })
+            ]);
+        });
+
+        it('should map Image/Binary/File fields to the image (thumbnail) column type', () => {
+            showInListFieldsSignal.set([
+                { variable: 'photo', name: 'Photo', dataType: 'SYSTEM', fieldType: 'Image' },
+                { variable: 'doc', name: 'Doc', dataType: 'SYSTEM', fieldType: 'Binary' },
+                { variable: 'attach', name: 'Attach', dataType: 'SYSTEM', fieldType: 'File' }
+            ] as DotCMSContentTypeField[]);
+            spectator.detectChanges();
+
+            expect(spectator.component.$extraColumns()).toEqual([
+                expect.objectContaining({ field: 'photo', type: 'image' }),
+                expect.objectContaining({ field: 'doc', type: 'image' }),
+                expect.objectContaining({ field: 'attach', type: 'image' })
+            ]);
+        });
+    });
+
+    /**
+     * Both surfaces agree once a delete ends (#37063 US6).
+     *
+     * The listing and the sidebar tree load separately, so refreshing one is not refreshing the
+     * other. A tree still offering a folder the listing has already dropped is how an author
+     * navigates into nothing.
+     */
+    describe('folder delete completion (#37063)', () => {
+        const deleteOutcome = (overrides = {}) => ({
+            actionName: 'Delete',
+            outcomeKind: 'folderDelete',
+            successCount: 1,
+            failedCount: 0,
+            skippedCount: 0,
+            backgrounded: true,
+            ...overrides
+        });
+
+        it('should say a stopped delete was cancelled, even when every folder it reached went', () => {
+            // As the bell says it: a cancelled run must not read as a clean one.
+            actionExecutionResultSignal.set(deleteOutcome({ cancelled: true }) as never);
+            spectator.detectChanges();
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'warn',
+                    summary: 'content-drive.delete.toast.cancelled',
+                    detail: expect.stringContaining('content-drive.delete.toast.cancelled-detail')
+                })
+            );
+        });
+
+        it('should read a delete as clean when its only skips went with a selected parent', () => {
+            actionExecutionResultSignal.set(
+                deleteOutcome({
+                    skippedCount: 1,
+                    failures: [
+                        {
+                            key: '//demo.dotcms.com/blogs/alpha/child/',
+                            status: 'SKIPPED',
+                            reason: 'COVERED_BY_PARENT'
+                        }
+                    ]
+                }) as never
+            );
+            spectator.detectChanges();
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'success',
+                    summary: 'content-drive.action-center.toast.executed'
+                })
+            );
+        });
+
+        it('should refresh the listing when a delete completes', () => {
+            (store.loadItems as unknown as Mock).mockClear();
+
+            actionExecutionResultSignal.set(deleteOutcome() as never);
+            spectator.detectChanges();
+
+            expect(store.loadItems).toHaveBeenCalled();
+        });
+
+        it('should refresh the sidebar tree when a delete completes', () => {
+            // The listing and the tree load separately, so refreshing one is not refreshing the
+            // other — and a tree still offering a folder the listing has dropped is how an author
+            // navigates into nothing (FR-036).
+            (store.loadFolders as unknown as Mock).mockClear();
+
+            actionExecutionResultSignal.set(deleteOutcome() as never);
+            spectator.detectChanges();
+
+            expect(store.loadFolders).toHaveBeenCalled();
+        });
+
+        /*
+         * NOT asserted here, deliberately: that an *upload* outcome leaves the tree alone.
+         *
+         * The sidebar is rendered inside this component and owns its own effect that reloads the
+         * tree, so `loadFolders` has a caller in this harness with nothing to do with the outcome.
+         * Every form of "was not called" therefore passes or fails on that caller's timing rather
+         * than on the behaviour under test — which is worse than not asserting it, because it reads
+         * as coverage. The guard itself is a single `if (isFolderDelete)` in the shell, visible at
+         * the call site; isolating it would mean a harness that renders the shell without its
+         * sidebar, which is a bigger change than the assertion is worth.
+         */
+    });
+});
+
+/**
+ * Construction-time `?editContent=` deep-link. Own describe + factory so the route param is present
+ * BEFORE the component is constructed — the main describe's shared beforeEach always builds against
+ * {@link MOCK_ROUTE} (no `editContent`), so it cannot express this path.
+ */
+describe('DotContentDriveShellComponent — editContent deep link', () => {
+    // Mutable so both the identifier and the `new` marker cases share one factory.
+    const deepLinkQueryParams: Record<string, string> = {
+        path: '/test/path',
+        filters: 'contentType:Blog;status:published',
+        editContent: 'id-1'
+    };
+    // Held at describe scope so we can clear it before each mount (mockProvider reuses the same fn).
+    const openEditByIdentifier = vi.fn();
+
+    const createComponent = createComponentFactory({
+        component: DotContentDriveShellComponent,
+        providers: [
+            GlobalStore,
+            mockProvider(DotSiteService, {
+                getCurrentSite: vi.fn().mockReturnValue(of(MOCK_SITES[0]))
+            }),
+            mockProvider(DotContentSearchService, {
+                get: vi.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
+            }),
+            mockProvider(ActivatedRoute, {
+                snapshot: { queryParams: deepLinkQueryParams }
+            }),
+            mockProvider(DotSystemConfigService, DOT_SYSTEM_CONFIG_SERVICE_MOCK),
+            // The folder context menu confirms folder deletes through this.
+            mockProvider(DotAlertConfirmService, { confirm: vi.fn() }),
+            mockProvider(DotContentTypeService, {
+                getAllContentTypes: vi.fn().mockReturnValue(of(MOCK_BASE_TYPES)),
+                getContentTypes: vi.fn().mockImplementation(() => of([]))
+            }),
+            mockProvider(DotLanguagesService, { get: vi.fn().mockReturnValue(of()) }),
+            mockProvider(DotFolderService, { getFolders: vi.fn().mockReturnValue(of([])) }),
+            mockProvider(DotUploadFileService, {
+                uploadFileByBaseType: vi.fn().mockReturnValue(of({}))
+            }),
+            provideHttpClient(),
+            // The panel is behind `@defer`; once it resolves, it mounts the real editor chain,
+            // which can make HTTP calls no test here mocks explicitly (e.g. languages). Without
+            // this, an unmocked call attempts a real network fetch and fails the test.
+            provideHttpClientTesting(),
+            // The store composes withFlags, which fetches feature flags on init; stub it.
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: vi.fn().mockReturnValue(of({}))
+            }),
+            mockProvider(DotMessageService, {
+                get: vi.fn().mockImplementation((key: string) => key)
+            }),
+            mockProvider(DotContentDriveNavigationService, {
+                editContent: vi.fn(),
+                createContent: vi.fn(),
+                closeEditPanel: vi.fn(),
+                openEditByIdentifier,
+                $editPanelRequest: signal(null)
+            }),
+            LoggerService,
+            StringUtils,
+            mockProvider(PushPublishService, {
+                // The store resolves this on init, and both the Action Center's Push Publish row and
+                // the folder context menu's Push Publish item gate on the result. An empty answer
+                // disables them, which is all the shell's own tests need.
+                getEnvironments: vi.fn().mockReturnValue(of([]))
+            }),
+            mockProvider(AddToBundleService, {
+                getBundles: vi.fn().mockReturnValue(of([])),
+                addToBundle: vi.fn().mockReturnValue(of({}))
+            }),
+            mockProvider(DotCurrentUserService, {
+                getCurrentUser: vi.fn().mockReturnValue(of({}))
+            }),
+            mockProvider(DotHttpErrorManagerService),
+            mockProvider(DotSidePanelNavController, {
+                shouldCollapse: vi.fn().mockReturnValue(false),
+                acquire: vi.fn(),
+                release: vi.fn()
+            })
+        ],
+        componentProviders: [
+            DotContentDriveStore,
+            provideContentDriveFilterFacade(),
+            // The toolbar renders for real here, "More" overflow included, so its own seam has to
+            // be provided the same way the shell provides it in production.
+            provideContentDriveFieldFilterHost()
+        ],
+        detectChanges: false
+    });
+
+    beforeEach(() => {
+        openEditByIdentifier.mockClear();
+        // The params object is shared by the factory, so a language set by one test would otherwise
+        // leak into the next.
+        delete deepLinkQueryParams['editContentLang'];
+    });
+
+    /** Mounts with the deps the constructor needs; does not run change detection. */
+    const mountShell = () =>
+        createComponent({
+            providers: [
+                mockProvider(DotContentDriveStore, {
+                    initContentDrive: vi.fn(),
+                    folderDeleteRefusal: folderDeleteRefusalSignal,
+                    clearFolderDeleteRefusal: vi.fn(),
+                    folderDuplicateRefusal: folderDuplicateRefusalSignal,
+                    folderDuplicateMaxPaths: folderDuplicateMaxPathsSignal,
+                    folderDeleteMaxPaths: folderDeleteMaxPathsSignal,
+                    clearFolderDuplicateRefusal: vi.fn(),
+                    // No advertised ceiling by default, which is the case that leaves the refusing
+                    // to the server. The gate's own tests set one.
+                    uploadCeilings: vi.fn().mockReturnValue(null),
+                    // Read by the toolbar (rendered for real here) and the drop zone: both gate
+                    // their creation affordances on it.
+                    $canAddChildren: canAddChildrenSignal,
+                    siteCanAddChildren: siteCanAddChildrenSignal,
+                    // The sidebar this shell renders reads it to decide whether to offer the
+                    // System Host entry at all.
+                    systemHostCanRead: systemHostCanReadSignal,
+                    currentSite: vi.fn().mockReturnValue(MOCK_SITES[0]),
+                    isTreeExpanded: vi.fn().mockReturnValue(false),
+                    items: vi.fn().mockReturnValue(MOCK_ITEMS),
+                    pagination: vi.fn().mockReturnValue(DEFAULT_PAGINATION),
+                    path: vi.fn().mockReturnValue('/test/path'),
+                    filters: signal({}),
+                    status: signal(DotContentDriveStatus.LOADING),
+                    sort: vi
+                        .fn()
+                        .mockReturnValue({ field: 'modDate', order: DotContentDriveSortOrder.ASC }),
+                    pages: vi.fn().mockReturnValue([DEFAULT_PAGE]),
+                    selectedItems: vi.fn().mockReturnValue([]),
+                    contextMenu: vi.fn().mockReturnValue(null),
+                    dialog: signal(undefined),
+                    dragItems: vi.fn().mockReturnValue({ folders: [], contentlets: [] }),
+                    userSearchableFields: vi.fn().mockReturnValue([]),
+                    userSearchableActive: vi.fn().mockReturnValue([]),
+                    showInListFields: signal([]),
+                    languages: signal(mockLocales),
+                    defaultLanguageId: vi.fn().mockReturnValue(1),
+                    setIsTreeExpanded: vi.fn(),
+                    isTreeVisuallyExpanded: vi.fn().mockReturnValue(false),
+                    isTreeForceCollapsed: vi.fn().mockReturnValue(false),
+                    setTreeForceCollapsed: vi.fn(),
+                    removeFilter: vi.fn(),
+                    getFilterValue: vi.fn(),
+                    $request: vi.fn(),
+                    setItems: vi.fn(),
+                    setStatus: vi.fn(),
+                    startExternalRun: vi.fn().mockReturnValue('run-1'),
+                    activeRunCount: signal(0),
+                    toolbarRun: signal(undefined),
+                    toolbarRunCount: signal(0),
+                    busyRows: signal<string[]>([]),
+                    allBusyRows: signal<string[]>([]),
+                    endExternalRun: vi.fn(),
+                    setPagination: vi.fn(),
+                    setSort: vi.fn(),
+                    setSelectedItems: vi.fn(),
+                    patchFilters: vi.fn(),
+                    setDialog: vi.fn(),
+                    loadFolders: vi.fn(),
+                    loadChildFolders: vi.fn(),
+                    updateFolders: vi.fn(),
+                    folders: vi.fn(),
+                    selectedNode: vi.fn(),
+                    setSelectedNode: vi.fn(),
+                    sidebarLoading: vi.fn(),
+                    closeDialog: vi.fn(),
+                    patchContextMenu: vi.fn(),
+                    resetContextMenu: vi.fn(),
+                    setDragItems: vi.fn(),
+                    cleanDragItems: vi.fn(),
+                    loadItems: vi.fn(),
+                    reloadContentDrive: vi.fn(),
+                    setPath: vi.fn(),
+                    setShowAddToBundle: vi.fn(),
+                    setUserSearchableFields: vi.fn(),
+                    setShowInListFields: vi.fn(),
+                    addUserSearchableField: vi.fn(),
+                    clearUserSearchableFilters: vi.fn()
+                }),
+                mockProvider(Router, {
+                    createUrlTree: vi.fn().mockReturnValue({ toString: () => '' })
+                }),
+                mockProvider(Location, {
+                    go: vi.fn(),
+                    replaceState: vi.fn(),
+                    path: vi.fn().mockReturnValue(''),
+                    subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() })
+                }),
+                mockProvider(DotContentTypeService, {
+                    getAllContentTypes: vi.fn().mockReturnValue(of(MOCK_BASE_TYPES)),
+                    getContentTypes: vi.fn().mockReturnValue(of(MOCK_BASE_TYPES)),
+                    getContentTypesWithPagination: vi.fn().mockReturnValue(
+                        of({
+                            contentTypes: MOCK_BASE_TYPES,
+                            pagination: {
+                                currentPage: MOCK_BASE_TYPES.length,
+                                totalEntries: MOCK_BASE_TYPES.length * 2,
+                                totalPages: 1
+                            }
+                        })
+                    )
+                }),
+                mockProvider(DotWorkflowsActionsService),
+                mockProvider(DotWorkflowActionsFireService, {
+                    bulkFire: vi
+                        .fn()
+                        .mockReturnValue(of({ successCount: 1, skippedCount: 0, fails: [] }))
+                }),
+                mockProvider(DotWorkflowEventHandlerService),
+                mockProvider(MessageService, {
+                    messageObserver: of({}),
+                    clearObserver: of({})
+                }),
+                mockProvider(DotRouterService, {
+                    goToEditPage: vi.fn(),
+                    forbidRouteDeactivation: vi.fn(),
+                    allowRouteDeactivation: vi.fn(),
+                    pageLeaveRequest$: NEVER
+                })
+            ]
+        });
+
+    it('opens the panel by identifier from a shared ?editContent= link on construction', () => {
+        deepLinkQueryParams.editContent = 'id-1';
+        mountShell();
+
+        expect(openEditByIdentifier).toHaveBeenCalledWith('id-1', undefined);
+    });
+
+    it('forwards the language from the link so the exact version reopens', () => {
+        // An identifier has one version per language, so without this the resolver can only guess —
+        // and it runs before the store's languages request has resolved.
+        deepLinkQueryParams.editContent = 'id-1';
+        deepLinkQueryParams.editContentLang = '2';
+        mountShell();
+
+        expect(openEditByIdentifier).toHaveBeenCalledWith('id-1', 2);
+    });
+
+    it('ignores a non-numeric language on the link', () => {
+        deepLinkQueryParams.editContent = 'id-1';
+        deepLinkQueryParams.editContentLang = 'nope';
+        mountShell();
+
+        expect(openEditByIdentifier).toHaveBeenCalledWith('id-1', undefined);
+    });
+
+    it('ignores the non-shareable `new` marker on construction', () => {
+        deepLinkQueryParams.editContent = 'new';
+        mountShell();
+
+        expect(openEditByIdentifier).not.toHaveBeenCalled();
     });
 });

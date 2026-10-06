@@ -1,22 +1,38 @@
 @if (app(); as app) {
-    <p-avatar
+    <div
         (click)="goToApps(app.key)"
-        [image]="app.iconUrl"
-        [label]="app.name"
-        size="xlarge"
-        dotAvatar />
+        class="flex size-12 shrink-0 cursor-pointer items-center justify-center"
+        data-testid="app-icon">
+        @if (app.iconUrl) {
+            <p-avatar
+                class="rounded-full shadow-lg"
+                [image]="app.iconUrl"
+                [label]="app.name"
+                size="large"
+                dotAvatar />
+        } @else if (app.icon) {
+            <dot-color-icon [color]="app.color ?? 'surface'" size="sm" variant="light">
+                <span class="material-symbols-outlined">{{ app.icon }}</span>
+            </dot-color-icon>
+        } @else {
+            <p-avatar class="rounded-full shadow-lg" [label]="app.name" size="large" dotAvatar />
+        }
+    </div>
 
-    <div class="dot-apps-configuration__data">
-        <header>
-            <h3 (click)="goToApps(app.key)" class="dot-apps-configuration__service-name">
+    <div class="">
+        <header class="flex flex-wrap items-baseline gap-4">
+            <h3
+                (click)="goToApps(app.key)"
+                class="dot-apps-configuration__service-name m-0 cursor-pointer text-xl font-bold">
                 {{ app.name }}
             </h3>
-            <div class="dot-apps-configuration__service-key">
-                {{ 'apps.key' | dm }}
+            <div
+                class="dot-apps-configuration__service-key flex items-center gap-2 text-base text-gray-700">
+                <span>{{ 'apps.key' | dm }}</span>
                 <dot-copy-link [copy]="app.key" [label]="app.key" />
             </div>
         </header>
-        <span class="dot-apps-configuration__configurations">
+        <span class="dot-apps-configuration__configurations text-gray-700">
             {{
                 app.configurationsCount
                     ? app.configurationsCount + ' ' + ('apps.configurations' | dm)
@@ -24,15 +40,13 @@
             }}
         </span>
         <div
-            [ngClass]="{
-                'dot-apps-configuration__description__show-more': showMore()
-            }"
-            class="dot-apps-configuration__description">
+            class="dot-apps-configuration__description relative mt-2 max-w-4xl"
+            [class.dot-apps-configuration__description__show-more]="showMore()">
             <markdown>{{ app.description }}</markdown>
             @if (app.description.length > 270) {
                 <a
                     (click)="toggleShowMore()"
-                    class="dot-apps-configuration__description__link_show-more">
+                    class="dot-apps-configuration__description__link_show-more absolute right-0 bottom-0 z-10 cursor-pointer bg-white pl-1 text-base">
                     {{
                         showMore()
                             ? ('apps.confirmation.description.show.less' | dm)

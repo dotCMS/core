@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { renderHook } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { UVE_MODE } from '@dotcms/types';
 import { getUVEState } from '@dotcms/uve';
@@ -9,20 +9,20 @@ import { useContentAnalytics } from './useContentAnalytics';
 import { initializeAnalytics } from '../internal';
 
 // Mock dependencies
-jest.mock('@dotcms/uve', () => ({
-    getUVEState: jest.fn()
+vi.mock('@dotcms/uve', () => ({
+    getUVEState: vi.fn()
 }));
 
-jest.mock('../internal', () => ({
-    initializeAnalytics: jest.fn()
+vi.mock('../internal', () => ({
+    initializeAnalytics: vi.fn()
 }));
 
 // Setup mocks
-const mockGetUVEState = jest.mocked(getUVEState);
-const mockInitializeAnalytics = jest.mocked(initializeAnalytics);
-const mockTrack = jest.fn();
-const mockPageView = jest.fn();
-const mockConversion = jest.fn();
+const mockGetUVEState = vi.mocked(getUVEState);
+const mockInitializeAnalytics = vi.mocked(initializeAnalytics);
+const mockTrack = vi.fn();
+const mockPageView = vi.fn();
+const mockConversion = vi.fn();
 
 const mockConfig = {
     server: 'https://example.com',
@@ -32,7 +32,7 @@ const mockConfig = {
 
 describe('useContentAnalytics', () => {
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         mockInitializeAnalytics.mockReturnValue({
             track: mockTrack,
             pageView: mockPageView,
@@ -58,7 +58,7 @@ describe('useContentAnalytics', () => {
     });
 
     it('returns no-op functions and warns when inside UVE editor', () => {
-        const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+        const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
         mockInitializeAnalytics.mockReturnValue(null);
         mockGetUVEState.mockReturnValue({
             mode: UVE_MODE.EDIT,
@@ -89,7 +89,7 @@ describe('useContentAnalytics', () => {
     });
 
     it('logs error when analytics fails to initialize outside UVE', () => {
-        const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+        const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
         mockInitializeAnalytics.mockReturnValue(null);
         mockGetUVEState.mockReturnValue(undefined);
 

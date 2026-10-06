@@ -1,0 +1,74 @@
+<form class="form" (ngSubmit)="submit()">
+    <!-- The three things the old delete mode never said, and which decide whether the query
+         someone is about to run does what they think it does. -->
+    <p-message class="block" severity="secondary" data-testid="dotai-index-remove-explainer">
+        {{ 'dotai.embeddings.remove-content.explainer' | dm }}
+    </p-message>
+
+    <div class="field mt-4">
+        <label class="p-label-input-required" for="dotai-index-remove-index">
+            {{ 'dotai.embeddings.remove-content.index' | dm }}
+        </label>
+        <!-- Picked, never typed: as a free-text field this silently removed nothing on a typo
+             and hit a different index on a near-miss. -->
+        <p-select
+            inputId="dotai-index-remove-index"
+            [options]="$indexOptions()"
+            [ngModel]="$indexName()"
+            [ngModelOptions]="{ standalone: true }"
+            (ngModelChange)="$indexName.set($event)"
+            [placeholder]="'dotai.embeddings.remove-content.index.placeholder' | dm"
+            data-testid="dotai-index-remove-index" />
+    </div>
+
+    <div class="field">
+        <label class="p-label-input-required" for="dotai-index-remove-query">
+            {{ 'dotai.embeddings.remove-content.query' | dm }}
+        </label>
+        <textarea
+            pTextarea
+            id="dotai-index-remove-query"
+            rows="3"
+            [ngModel]="$query()"
+            [ngModelOptions]="{ standalone: true }"
+            (ngModelChange)="$query.set($event)"
+            [placeholder]="'dotai.index.create.query.placeholder' | dm"
+            data-testid="dotai-index-remove-query"></textarea>
+        <small class="p-field-hint">
+            {{ 'dotai.embeddings.remove-content.query.hint' | dm }}
+        </small>
+    </div>
+
+    @if ($notice(); as notice) {
+        <p-message
+            class="mt-4 block"
+            [severity]="notice.outcome === 'empty' ? 'warn' : 'error'"
+            data-testid="dotai-index-remove-notice">
+            @if (notice.outcome === 'empty') {
+                {{ 'dotai.embeddings.remove-content.empty' | dm: [notice.indexName] }}
+            } @else {
+                {{
+                    'dotai.embeddings.remove-content.failed'
+                        | dm: [notice.indexName, notice.detail ?? '']
+                }}
+            }
+        </p-message>
+    }
+
+    <div class="mt-4 flex justify-end gap-2">
+        <p-button
+            severity="secondary"
+            [text]="true"
+            [label]="'dotai.index.create.cancel' | dm"
+            [disabled]="$submitting()"
+            (onClick)="cancel()"
+            data-testid="dotai-index-remove-cancel" />
+        <p-button
+            type="submit"
+            severity="danger"
+            [disabled]="!$canSubmit()"
+            [loading]="$submitting()"
+            [label]="'dotai.embeddings.remove-content.submit' | dm"
+            data-testid="dotai-index-remove-submit" />
+    </div>
+</form>

@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { NgClass, NgStyle } from '@angular/common';
 import {
     Component,
     ElementRef,
@@ -6,11 +6,11 @@ import {
     ViewChild,
     inject,
     input,
-    output
+    output,
+    ChangeDetectionStrategy
 } from '@angular/core';
 
 import { DotMenuItem, MenuGroup } from '@dotcms/dotcms-models';
-import { GlobalStore } from '@dotcms/store';
 
 import {
     LABEL_IMPORTANT_ICON,
@@ -23,7 +23,8 @@ import { DotSubNavComponent } from '../dot-sub-nav/dot-sub-nav.component';
     selector: 'dot-nav-item',
     templateUrl: './dot-nav-item.component.html',
     styleUrls: ['./dot-nav-item.component.scss'],
-    imports: [CommonModule, DotSubNavComponent, DotNavIconComponent, DotRandomIconPipe],
+    imports: [DotSubNavComponent, DotNavIconComponent, DotRandomIconPipe, NgClass, NgStyle],
+    changeDetection: ChangeDetectionStrategy.Eager,
     host: {
         '[class.dot-nav-item__collapsed]': '$collapsed()'
     }
@@ -32,8 +33,6 @@ export class DotNavItemComponent {
     private hostElRef = inject(ElementRef);
 
     @ViewChild('subnav', { static: true }) subnav: DotSubNavComponent;
-
-    readonly #globalStore = inject(GlobalStore);
 
     $data = input.required<MenuGroup>({ alias: 'data' });
 

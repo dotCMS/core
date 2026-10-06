@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { beforeEach, describe, expect, it } from '@jest/globals';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
     defaultRedirectFn,
@@ -25,8 +25,8 @@ describe('Analytics Utils', () => {
     let mockLocation: Location;
 
     beforeAll(() => {
-        jest.useFakeTimers({ doNotFake: [] });
-        jest.setSystemTime(new Date('2024-01-01T00:00:00Z'));
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date('2024-01-01T00:00:00Z'));
     });
 
     beforeEach(() => {
@@ -153,7 +153,7 @@ describe('Analytics Utils', () => {
             expect(result).toEqual({
                 server: 'https://analytics.dotcms.com',
                 debug: false,
-                autoPageView: false,
+                autoPageView: true,
                 siteAuth: 'test-key'
             });
         });
@@ -167,7 +167,7 @@ describe('Analytics Utils', () => {
             expect(result).toEqual({
                 server: 'https://analytics.dotcms.com',
                 debug: true,
-                autoPageView: false,
+                autoPageView: true,
                 siteAuth: 'test-key'
             });
         });
@@ -217,7 +217,7 @@ describe('Analytics Utils', () => {
             expect(result).toEqual({
                 server: window.location.origin,
                 debug: false,
-                autoPageView: false,
+                autoPageView: true,
                 siteAuth: 'test-key'
             });
         });
@@ -231,7 +231,7 @@ describe('Analytics Utils', () => {
             expect(result).toEqual({
                 server: window.location.origin,
                 debug: false,
-                autoPageView: false,
+                autoPageView: true,
                 siteAuth: ''
             });
         });
@@ -252,12 +252,12 @@ describe('Analytics Utils', () => {
             expect(result).toEqual({
                 server: window.location.origin,
                 debug: false,
-                autoPageView: false,
+                autoPageView: true,
                 siteAuth: ''
             });
         });
 
-        it('should handle debug and autoPageView with non-true values', () => {
+        it('should disable autoPageView when attribute is "false" and keep debug false for non-true', () => {
             const script = document.querySelector('script[data-analytics-auth]');
             script?.setAttribute('data-analytics-debug', 'false');
             script?.setAttribute('data-analytics-auto-page-view', 'false');
@@ -269,6 +269,97 @@ describe('Analytics Utils', () => {
                 debug: false,
                 autoPageView: false,
                 siteAuth: 'test-key'
+            });
+        });
+
+        describe('autoPageView opt-out semantics', () => {
+            it('should default autoPageView to true when the attribute is missing', () => {
+                const result = getAnalyticsConfig();
+
+                expect(result.autoPageView).toBe(true);
+            });
+
+            it('should enable autoPageView when the attribute is an empty string', () => {
+                const script = document.querySelector('script[data-analytics-auth]');
+                script?.setAttribute('data-analytics-auto-page-view', '');
+
+                const result = getAnalyticsConfig();
+
+                expect(result.autoPageView).toBe(true);
+            });
+
+            it('should disable autoPageView only when the attribute is the literal string "false"', () => {
+                const script = document.querySelector('script[data-analytics-auth]');
+                script?.setAttribute('data-analytics-auto-page-view', 'false');
+
+                const result = getAnalyticsConfig();
+
+                expect(result.autoPageView).toBe(false);
+            });
+
+            it('should enable autoPageView when the attribute is "true"', () => {
+                const script = document.querySelector('script[data-analytics-auth]');
+                script?.setAttribute('data-analytics-auto-page-view', 'true');
+
+                const result = getAnalyticsConfig();
+
+                expect(result.autoPageView).toBe(true);
+            });
+
+            it('should enable autoPageView when the attribute is "0"', () => {
+                const script = document.querySelector('script[data-analytics-auth]');
+                script?.setAttribute('data-analytics-auto-page-view', '0');
+
+                const result = getAnalyticsConfig();
+
+                expect(result.autoPageView).toBe(true);
+            });
+
+            it('should enable autoPageView when the attribute is "no"', () => {
+                const script = document.querySelector('script[data-analytics-auth]');
+                script?.setAttribute('data-analytics-auto-page-view', 'no');
+
+                const result = getAnalyticsConfig();
+
+                expect(result.autoPageView).toBe(true);
+            });
+
+            it('should respect autoPageView false from JSON config when no attribute is present', () => {
+                const script = document.querySelector('script[data-analytics-auth]');
+                script?.setAttribute(
+                    'data-analytics-config',
+                    JSON.stringify({ autoPageView: false })
+                );
+
+                const result = getAnalyticsConfig();
+
+                expect(result.autoPageView).toBe(false);
+            });
+
+            it('should let attribute "false" override JSON config autoPageView true', () => {
+                const script = document.querySelector('script[data-analytics-auth]');
+                script?.setAttribute('data-analytics-auto-page-view', 'false');
+                script?.setAttribute(
+                    'data-analytics-config',
+                    JSON.stringify({ autoPageView: true })
+                );
+
+                const result = getAnalyticsConfig();
+
+                expect(result.autoPageView).toBe(false);
+            });
+
+            it('should let attribute presence (empty string) override JSON config autoPageView false', () => {
+                const script = document.querySelector('script[data-analytics-auth]');
+                script?.setAttribute('data-analytics-auto-page-view', '');
+                script?.setAttribute(
+                    'data-analytics-config',
+                    JSON.stringify({ autoPageView: false })
+                );
+
+                const result = getAnalyticsConfig();
+
+                expect(result.autoPageView).toBe(true);
             });
         });
 
@@ -286,7 +377,7 @@ describe('Analytics Utils', () => {
             expect(result).toEqual({
                 server: 'https://analytics.dotcms.com',
                 debug: false,
-                autoPageView: false,
+                autoPageView: true,
                 siteAuth: 'test-key',
                 queue: {
                     eventBatchSize: 5
@@ -308,7 +399,7 @@ describe('Analytics Utils', () => {
             expect(result).toEqual({
                 server: 'https://analytics.dotcms.com',
                 debug: false,
-                autoPageView: false,
+                autoPageView: true,
                 siteAuth: 'test-key',
                 queue: {
                     flushInterval: 2000
@@ -333,7 +424,7 @@ describe('Analytics Utils', () => {
             expect(result).toEqual({
                 server: 'https://analytics.dotcms.com',
                 debug: false,
-                autoPageView: false,
+                autoPageView: true,
                 siteAuth: 'test-key',
                 queue: {
                     eventBatchSize: 3,
@@ -357,7 +448,7 @@ describe('Analytics Utils', () => {
             expect(result).toEqual({
                 server: 'https://analytics.dotcms.com',
                 debug: false,
-                autoPageView: false,
+                autoPageView: true,
                 siteAuth: 'test-key'
             });
         });
@@ -376,7 +467,7 @@ describe('Analytics Utils', () => {
             expect(result).toEqual({
                 server: 'https://analytics.dotcms.com',
                 debug: false,
-                autoPageView: false,
+                autoPageView: true,
                 siteAuth: 'test-key'
             });
         });
@@ -398,7 +489,7 @@ describe('Analytics Utils', () => {
             expect(result).toEqual({
                 server: 'https://analytics.dotcms.com',
                 debug: false,
-                autoPageView: false,
+                autoPageView: true,
                 siteAuth: 'test-key',
                 queue: {
                     eventBatchSize: 10
@@ -676,7 +767,7 @@ describe('Analytics Utils', () => {
         });
 
         it('should include timestamp in generated ID', () => {
-            jest.setSystemTime(new Date('2024-01-01T12:00:00Z'));
+            vi.setSystemTime(new Date('2024-01-01T12:00:00Z'));
             const id = generateSecureId('test');
 
             expect(id).toContain('1704110400000'); // timestamp
@@ -685,8 +776,8 @@ describe('Analytics Utils', () => {
 
     describe('getUserId', () => {
         const mockLocalStorage = {
-            getItem: jest.fn(),
-            setItem: jest.fn()
+            getItem: vi.fn(),
+            setItem: vi.fn()
         };
 
         beforeEach(() => {
@@ -720,8 +811,8 @@ describe('Analytics Utils', () => {
 
     describe('getSessionId', () => {
         const mockSessionStorage = {
-            getItem: jest.fn(),
-            setItem: jest.fn()
+            getItem: vi.fn(),
+            setItem: vi.fn()
         };
 
         beforeEach(() => {
@@ -796,7 +887,7 @@ describe('Analytics Utils', () => {
 
         it('should return correct offset for UTC timezone', () => {
             const originalGetTimezoneOffset = Date.prototype.getTimezoneOffset;
-            Date.prototype.getTimezoneOffset = jest.fn().mockReturnValue(0);
+            Date.prototype.getTimezoneOffset = vi.fn().mockReturnValue(0);
 
             const result = getLocalTime();
 
@@ -808,7 +899,7 @@ describe('Analytics Utils', () => {
 
         it('should return correct offset for different timezones', () => {
             const originalGetTimezoneOffset = Date.prototype.getTimezoneOffset;
-            Date.prototype.getTimezoneOffset = jest.fn().mockReturnValue(300); // UTC-5
+            Date.prototype.getTimezoneOffset = vi.fn().mockReturnValue(300); // UTC-5
 
             const result = getLocalTime();
 
@@ -820,7 +911,7 @@ describe('Analytics Utils', () => {
 
         it('should return correct offset for positive timezone', () => {
             const originalGetTimezoneOffset = Date.prototype.getTimezoneOffset;
-            Date.prototype.getTimezoneOffset = jest.fn().mockReturnValue(-120); // UTC+2
+            Date.prototype.getTimezoneOffset = vi.fn().mockReturnValue(-120); // UTC+2
 
             const result = getLocalTime();
 
@@ -938,13 +1029,13 @@ describe('Analytics Utils', () => {
 
     describe('getAnalyticsContext', () => {
         const mockLocalStorage = {
-            getItem: jest.fn(),
-            setItem: jest.fn()
+            getItem: vi.fn(),
+            setItem: vi.fn()
         };
 
         const mockSessionStorage = {
-            getItem: jest.fn(),
-            setItem: jest.fn()
+            getItem: vi.fn(),
+            setItem: vi.fn()
         };
 
         beforeEach(() => {
@@ -1000,9 +1091,9 @@ describe('Analytics Utils', () => {
             search: '?utm_source=google',
             origin: 'https://example.com',
             port: '',
-            assign: jest.fn(),
-            replace: jest.fn(),
-            reload: jest.fn(),
+            assign: vi.fn(),
+            replace: vi.fn(),
+            reload: vi.fn(),
             toString: () => 'https://example.com/page',
             ancestorOrigins: {} as DOMStringList
         };

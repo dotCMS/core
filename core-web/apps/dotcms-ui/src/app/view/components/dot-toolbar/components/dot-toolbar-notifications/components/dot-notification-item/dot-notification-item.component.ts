@@ -1,5 +1,5 @@
 import { LowerCasePipe } from '@angular/common';
-import { Component, computed, input, output } from '@angular/core';
+import { Component, computed, input, output, ChangeDetectionStrategy } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 
@@ -34,6 +34,7 @@ const notificationIcons: NotificationIcons = {
     selector: 'dot-notification-item',
     imports: [ButtonModule, CustomTimeComponent, LowerCasePipe, DotMessagePipe],
     styleUrls: ['./dot-notification-item.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     templateUrl: 'dot-notification-item.component.html'
 })
 export class DotNotificationItemComponent {

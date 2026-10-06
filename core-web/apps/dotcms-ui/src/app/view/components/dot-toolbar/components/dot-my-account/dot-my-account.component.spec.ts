@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { fakeAsync, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -42,7 +43,7 @@ describe('DotMyAccountComponent', () => {
         component: DotMyAccountComponent,
         providers: [
             mockProvider(DotAccountService, {
-                updateUser: () => of({ entity: { user: mockUser, reauthenticate: false } }) as any,
+                updateUser: () => of({ user: mockUser, reauthenticate: false }) as any,
                 addStarterPage: () => of('') as any,
                 removeStarterPage: () => of('') as any
             }),
@@ -108,7 +109,7 @@ describe('DotMyAccountComponent', () => {
         });
 
         it('should emit shutdown when dialog is closed', () => {
-            jest.spyOn(component.shutdown, 'emit');
+            vi.spyOn(component.shutdown, 'emit');
             component.visible.set(true);
             spectator.detectChanges();
 
@@ -282,7 +283,7 @@ describe('DotMyAccountComponent', () => {
 
         it('should call addStarterPage when checkbox is checked', () => {
             const accountService = spectator.inject(DotAccountService);
-            jest.spyOn(accountService, 'addStarterPage').mockReturnValue(of('') as any);
+            vi.spyOn(accountService, 'addStarterPage').mockReturnValue(of('') as any);
 
             // First set showStarter to false
             component.showStarter.set(false);
@@ -298,7 +299,7 @@ describe('DotMyAccountComponent', () => {
 
         it('should call removeStarterPage when checkbox is unchecked', () => {
             const accountService = spectator.inject(DotAccountService);
-            jest.spyOn(accountService, 'removeStarterPage').mockReturnValue(of('') as any);
+            vi.spyOn(accountService, 'removeStarterPage').mockReturnValue(of('') as any);
 
             // First set showStarter to true
             component.showStarter.set(true);
@@ -325,10 +326,10 @@ describe('DotMyAccountComponent', () => {
             const loginService = spectator.inject(LoginService);
 
             // Spy on updateUser and setAuth methods
-            const updateUserSpy = jest
+            const updateUserSpy = vi
                 .spyOn(accountService, 'updateUser')
-                .mockReturnValue(of({ entity: { user: mockUser, reauthenticate: false } }) as any);
-            const setAuthSpy = jest.spyOn(loginService, 'setAuth');
+                .mockReturnValue(of({ user: mockUser, reauthenticate: false }) as any);
+            const setAuthSpy = vi.spyOn(loginService, 'setAuth');
 
             // Fill form with valid data
             component.form.patchValue({
@@ -379,8 +380,8 @@ describe('DotMyAccountComponent', () => {
 
         it('should handle current password error', fakeAsync(() => {
             const accountService = spectator.inject(DotAccountService);
-            jest.spyOn(accountService, 'updateUser').mockReturnValue(
-                throwError({
+            vi.spyOn(accountService, 'updateUser').mockReturnValue(
+                throwError(() => ({
                     status: 400,
                     error: {
                         errors: [
@@ -390,7 +391,7 @@ describe('DotMyAccountComponent', () => {
                             }
                         ]
                     }
-                })
+                }))
             );
 
             // Fill form with valid data
@@ -433,8 +434,8 @@ describe('DotMyAccountComponent', () => {
 
         it('should handle new password error', fakeAsync(() => {
             const accountService = spectator.inject(DotAccountService);
-            jest.spyOn(accountService, 'updateUser').mockReturnValue(
-                throwError({
+            vi.spyOn(accountService, 'updateUser').mockReturnValue(
+                throwError(() => ({
                     status: 400,
                     error: {
                         errors: [
@@ -444,7 +445,7 @@ describe('DotMyAccountComponent', () => {
                             }
                         ]
                     }
-                })
+                }))
             );
 
             // Enable password change
@@ -494,8 +495,8 @@ describe('DotMyAccountComponent', () => {
         it('should handle generic error', fakeAsync(() => {
             const accountService = spectator.inject(DotAccountService);
             const errorService = spectator.inject(DotHttpErrorManagerService);
-            jest.spyOn(accountService, 'updateUser').mockReturnValue(
-                throwError({
+            vi.spyOn(accountService, 'updateUser').mockReturnValue(
+                throwError(() => ({
                     status: 500,
                     error: {
                         errors: [
@@ -505,9 +506,9 @@ describe('DotMyAccountComponent', () => {
                             }
                         ]
                     }
-                })
+                }))
             );
-            jest.spyOn(errorService, 'handle').mockReturnValue(
+            vi.spyOn(errorService, 'handle').mockReturnValue(
                 of({ redirected: false, status: 500 }) as any
             );
 
@@ -544,10 +545,10 @@ describe('DotMyAccountComponent', () => {
         it('should handle reauthentication requirement', fakeAsync(() => {
             const accountService = spectator.inject(DotAccountService);
             const routerService = spectator.inject(DotRouterService);
-            jest.spyOn(accountService, 'updateUser').mockReturnValue(
-                of({ entity: { user: mockUser, reauthenticate: true } })
+            vi.spyOn(accountService, 'updateUser').mockReturnValue(
+                of({ user: mockUser, reauthenticate: true }) as any
             );
-            jest.spyOn(routerService, 'doLogOut');
+            vi.spyOn(routerService, 'doLogOut');
 
             // Fill form with valid data
             component.form.patchValue({

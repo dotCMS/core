@@ -1,8 +1,9 @@
-import { describe, it } from '@jest/globals';
-import { Spectator, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
+import { Spectator, createComponentFactory, mockProvider } from '@openng/spectator/vitest';
 import { Subject, of } from 'rxjs';
+import { describe, it, vi } from 'vitest';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
@@ -22,7 +23,7 @@ import {
     DotWorkflowEventHandlerService,
     PushPublishService
 } from '@dotcms/data-access';
-import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
+import { LoginService } from '@dotcms/dotcms-js';
 import { DotProcessedWorkflowPayload, DotWorkflowPayload } from '@dotcms/dotcms-models';
 import { DotWorkflowActionsComponent } from '@dotcms/ui';
 import {
@@ -38,18 +39,19 @@ import { MOCK_RESPONSE_VTL } from '../../../../../shared/mocks';
 // Mock window.matchMedia for PrimeNG components
 Object.defineProperty(window, 'matchMedia', {
     writable: true,
-    value: jest.fn().mockImplementation((query: string) => ({
+    value: vi.fn().mockImplementation((query: string) => ({
         matches: false,
         media: query,
         onchange: null,
-        addListener: jest.fn(),
-        removeListener: jest.fn(),
-        addEventListener: jest.fn(),
-        removeEventListener: jest.fn(),
-        dispatchEvent: jest.fn()
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn()
     }))
 });
 import { UVEStore } from '../../../../../store/dot-uve.store';
+import { WithPageApiMethods } from '../../../../../store/features/page-api/withPageApi';
 
 const DOT_WORKFLOW_PAYLOAD_MOCK: DotWorkflowPayload = {
     assign: '654b0931-1027-41f7-ad4d-173115ed8ec1',
@@ -80,7 +82,7 @@ const workflowActionMock = {
     actionInputs: [
         {
             id: '1232',
-            body: []
+            body: {}
         }
     ]
 };
@@ -100,15 +102,22 @@ const pageParams = {
     language_id: '1'
 };
 
+const canEditPageContentSignal = signal(true);
+
+const pageSnapshotSignal = signal({
+    ...MOCK_RESPONSE_VTL,
+    clientResponse: MOCK_RESPONSE_VTL
+});
+
 const uveStoreMock = {
-    pageAPIResponse: signal(MOCK_RESPONSE_VTL),
+    pageAsset: pageSnapshotSignal,
     workflowActions: signal([]),
-    workflowLoading: signal(false),
-    $canEditPage: signal(true),
+    workflowIsLoading: signal(false),
+    editorCanEditContent: () => canEditPageContentSignal(),
     pageParams: signal(pageParams),
-    loadPageAsset: jest.fn(),
-    reloadCurrentPage: jest.fn(),
-    setWorkflowActionLoading: jest.fn()
+    pageLoad: vi.fn(),
+    pageReload: vi.fn(),
+    setWorkflowActionLoading: vi.fn()
 };
 
 describe('DotUveWorkflowActionsComponent', () => {
@@ -120,9 +129,14 @@ describe('DotUveWorkflowActionsComponent', () => {
 
     let store: InstanceType<typeof UVEStore>;
 
+    // `withPageApi`'s methods reach the UVEStore type through an index signature, so
+    // a plain `vi.spyOn(store, ...)` cannot see them. Spying through the feature's own
+    // interface keeps the call typed and still installs the spy on the real store.
+    const pageApi = () => store as unknown as WithPageApiMethods;
+
     const createComponent = createComponentFactory({
         component: DotUveWorkflowActionsComponent,
-        imports: [HttpClientTestingModule],
+        providers: [provideHttpClient(), provideHttpClientTesting()],
         componentProviders: [
             DotWizardService,
             DotWorkflowEventHandlerService,
@@ -136,7 +150,6 @@ describe('DotUveWorkflowActionsComponent', () => {
             mockProvider(PushPublishService),
             mockProvider(DotCurrentUserService),
             mockProvider(DotFormatDateService),
-            mockProvider(CoreWebService),
             mockProvider(DotIframeService),
             mockProvider(DotGlobalMessageService),
             {
@@ -161,7 +174,7 @@ describe('DotUveWorkflowActionsComponent', () => {
 
     describe('Without Workflow Actions', () => {
         it('should set action as an empty array and loading to true', () => {
-            uveStoreMock.workflowLoading.set(true);
+            uveStoreMock.workflowIsLoading.set(true);
             spectator.detectChanges();
 
             const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
@@ -171,7 +184,7 @@ describe('DotUveWorkflowActionsComponent', () => {
         });
 
         it("should be disabled if user can't edit", () => {
-            uveStoreMock.$canEditPage.set(false);
+            canEditPageContentSignal.set(false);
             spectator.detectChanges();
 
             const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
@@ -181,8 +194,8 @@ describe('DotUveWorkflowActionsComponent', () => {
 
     describe('With Workflow Actions', () => {
         beforeEach(() => {
-            uveStoreMock.workflowLoading.set(false);
-            uveStoreMock.$canEditPage.set(true);
+            uveStoreMock.workflowIsLoading.set(false);
+            canEditPageContentSignal.set(true);
             uveStoreMock.workflowActions.set(mockWorkflowsActions);
             spectator.detectChanges();
         });
@@ -190,19 +203,19 @@ describe('DotUveWorkflowActionsComponent', () => {
         it('should load workflow actions', () => {
             const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
 
-            expect(dotWorkflowActionsComponent.actions()).toEqual(mockWorkflowsActions);
-            expect(dotWorkflowActionsComponent.loading()).toBeFalsy();
-            expect(dotWorkflowActionsComponent.disabled()).toBeFalsy();
+            expect(dotWorkflowActionsComponent!.actions()).toEqual(mockWorkflowsActions);
+            expect(dotWorkflowActionsComponent!.loading()).toBeFalsy();
+            expect(dotWorkflowActionsComponent!.disabled()).toBeFalsy();
         });
 
-        it('should fire workflow actions and loadPageAssets', () => {
-            const spySetWorkflowActionLoading = jest.spyOn(store, 'setWorkflowActionLoading');
-            const spyLoadPageAsset = jest.spyOn(store, 'loadPageAsset');
+        it('should fire workflow actions and pageLoads', () => {
+            const spySetWorkflowActionLoading = vi.spyOn(store, 'setWorkflowActionLoading');
+            const spyLoadPageAsset = vi.spyOn(pageApi(), 'pageLoad');
             const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
-            const spy = jest
+            const spy = vi
                 .spyOn(dotWorkflowActionsFireService, 'fireTo')
                 .mockReturnValue(of(dotcmsContentletMock));
-            const spyMessage = jest.spyOn(messageService, 'add');
+            const spyMessage = vi.spyOn(messageService, 'add');
 
             dotWorkflowActionsComponent.actionFired.emit({
                 ...mockWorkflowsActions[0],
@@ -239,10 +252,10 @@ describe('DotUveWorkflowActionsComponent', () => {
         });
 
         it('should fire workflow actions and reloadPage', () => {
-            const spySetWorkflowActionLoading = jest.spyOn(store, 'setWorkflowActionLoading');
-            const spyReloadCurrentPage = jest.spyOn(store, 'reloadCurrentPage');
+            const spySetWorkflowActionLoading = vi.spyOn(store, 'setWorkflowActionLoading');
+            const spyReloadCurrentPage = vi.spyOn(pageApi(), 'pageReload');
             const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
-            const spy = jest
+            const spy = vi
                 .spyOn(dotWorkflowActionsFireService, 'fireTo')
                 .mockReturnValue(of({ ...dotcmsContentletMock, ...pageParams }));
 
@@ -269,16 +282,16 @@ describe('DotUveWorkflowActionsComponent', () => {
                 title: 'title'
             };
 
-            jest.spyOn(dotWorkflowEventHandlerService, 'setWizardInput').mockReturnValue(
+            vi.spyOn(dotWorkflowEventHandlerService, 'setWizardInput').mockReturnValue(
                 wizardInputMock
             );
-            const spyProcessWorkflowPayload = jest
+            const spyProcessWorkflowPayload = vi
                 .spyOn(dotWorkflowEventHandlerService, 'processWorkflowPayload')
                 .mockReturnValue(DOT_PROCESSED_WORKFLOW_PAYLOAD_MOCK);
-            const spyWizard = jest.spyOn(dotWizardService, 'open').mockImplementation(() => {
+            const spyWizard = vi.spyOn(dotWizardService, 'open').mockImplementation(() => {
                 return output$.asObservable();
             });
-            const spyFireTo = jest
+            const spyFireTo = vi
                 .spyOn(dotWorkflowActionsFireService, 'fireTo')
                 .mockReturnValue(of(dotcmsContentletMock));
 
@@ -302,26 +315,26 @@ describe('DotUveWorkflowActionsComponent', () => {
         });
 
         it('should check Publish Environments and open wizard component if it has Enviroments ', () => {
-            jest.spyOn(dotWorkflowEventHandlerService, 'containsPushPublish').mockReturnValue(true);
-            const spyCheckPublishEnvironments = jest
+            vi.spyOn(dotWorkflowEventHandlerService, 'containsPushPublish').mockReturnValue(true);
+            const spyCheckPublishEnvironments = vi
                 .spyOn(dotWorkflowEventHandlerService, 'checkPublishEnvironments')
                 .mockReturnValue(of(true));
-            const spyWizard = jest.spyOn(dotWizardService, 'open');
+            const spyWizard = vi.spyOn(dotWizardService, 'open');
 
             const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
 
-            dotWorkflowActionsComponent.actionFired.emit(workflowActionMock);
+            dotWorkflowActionsComponent!.actionFired.emit(workflowActionMock);
 
             expect(spyCheckPublishEnvironments).toHaveBeenCalled();
             expect(spyWizard).toHaveBeenCalled();
         });
 
         it('should check Publish Environments and do not open wizard component if it do not has Enviroments ', () => {
-            jest.spyOn(dotWorkflowEventHandlerService, 'containsPushPublish').mockReturnValue(true);
-            const spyCheckPublishEnvironments = jest
+            vi.spyOn(dotWorkflowEventHandlerService, 'containsPushPublish').mockReturnValue(true);
+            const spyCheckPublishEnvironments = vi
                 .spyOn(dotWorkflowEventHandlerService, 'checkPublishEnvironments')
                 .mockReturnValue(of(false));
-            const spyWizard = jest.spyOn(dotWizardService, 'open');
+            const spyWizard = vi.spyOn(dotWizardService, 'open');
 
             const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
 

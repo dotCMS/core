@@ -1,12 +1,16 @@
 package com.dotcms.rest.api.v1.system.monitor;
 
-import com.dotmarketing.util.Config;
+import com.dotmarketing.util.WebKeys;
 import org.junit.Before;
 import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -233,8 +237,8 @@ public class MonitorHelperTest {
     public void test_isLocalhostAddress_invalid_ip() {
         when(request.getRemoteAddr()).thenReturn("127.0.0.1");
         final MonitorHelper helper = new MonitorHelper(request, false);
-        
-        assertFalse("Invalid IP should not be recognized as localhost", 
+
+        assertFalse("Invalid IP should not be recognized as localhost",
                     helper.isLocalhostAddress("not.an.ip.address"));
     }
 
@@ -245,12 +249,104 @@ public class MonitorHelperTest {
     public void test_isLocalhostAddress_ipv4_loopback_range() {
         when(request.getRemoteAddr()).thenReturn("127.0.0.1");
         final MonitorHelper helper = new MonitorHelper(request, false);
-        
-        assertTrue("127.0.0.2 should be recognized as localhost (loopback range)", 
+
+        assertTrue("127.0.0.2 should be recognized as localhost (loopback range)",
                    helper.isLocalhostAddress("127.0.0.2"));
-        assertTrue("127.1.1.1 should be recognized as localhost (loopback range)", 
+        assertTrue("127.1.1.1 should be recognized as localhost (loopback range)",
                    helper.isLocalhostAddress("127.1.1.1"));
-        assertTrue("127.255.255.255 should be recognized as localhost (loopback range)", 
+        assertTrue("127.255.255.255 should be recognized as localhost (loopback range)",
                    helper.isLocalhostAddress("127.255.255.255"));
+    }
+
+    // -------------------------------------------------------------------------
+    // isStartedUp
+    // -------------------------------------------------------------------------
+
+    /**
+     * isStartedUp() must return false when the {@code dotcms.started.up} system property
+     * has not been set.
+     */
+    @Test
+    public void test_isStartedUp_false_when_property_absent() {
+        System.clearProperty(WebKeys.DOTCMS_STARTED_UP);
+        when(request.getRemoteAddr()).thenReturn("127.0.0.1");
+
+        assertFalse(new MonitorHelper(request, false).isStartedUp());
+    }
+
+    /**
+     * isStartedUp() must return true as long as the {@code dotcms.started.up} system property
+     * is present, regardless of its value.
+     */
+    @Test
+    public void test_isStartedUp_true_when_property_present() {
+        System.setProperty(WebKeys.DOTCMS_STARTED_UP, "true");
+        when(request.getRemoteAddr()).thenReturn("127.0.0.1");
+        try {
+            assertTrue(new MonitorHelper(request, false).isStartedUp());
+        } finally {
+            System.clearProperty(WebKeys.DOTCMS_STARTED_UP);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // FileSystemTest inner class
+    // -------------------------------------------------------------------------
+
+    /**
+     * FileSystemTest must return true when given a writable temporary directory.
+     */
+    @Test
+    public void test_fileSystemTest_returns_true_for_writable_path() throws Exception {
+        final Path tempDir = Files.createTempDirectory("monitor-test-");
+        try {
+            assertTrue(new MonitorHelper.FileSystemTest(tempDir.toString()).call());
+        } finally {
+            deleteRecursively(tempDir.toFile());
+        }
+    }
+
+    /**
+     * FileSystemTest must handle a base path that already ends with the file separator
+     * without producing a double-separator in the internal path.
+     */
+    @Test
+    public void test_fileSystemTest_handles_trailing_separator() throws Exception {
+        final Path tempDir = Files.createTempDirectory("monitor-test-");
+        try {
+            assertTrue(new MonitorHelper.FileSystemTest(tempDir + File.separator).call());
+        } finally {
+            deleteRecursively(tempDir.toFile());
+        }
+    }
+
+    /**
+     * FileSystemTest must return false when the base path is an existing regular file
+     * (not a directory), making mkdirs() impossible.
+     */
+    @Test
+    public void test_fileSystemTest_returns_false_when_base_path_is_a_file() throws Exception {
+        final File tempFile = File.createTempFile("monitor-test-", ".tmp");
+        try {
+            assertFalse(new MonitorHelper.FileSystemTest(tempFile.getAbsolutePath()).call());
+        } finally {
+            tempFile.delete();
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Helpers
+    // -------------------------------------------------------------------------
+
+    private static void deleteRecursively(final File f) {
+        if (f.isDirectory()) {
+            final File[] children = f.listFiles();
+            if (children != null) {
+                for (final File child : children) {
+                    deleteRecursively(child);
+                }
+            }
+        }
+        f.delete();
     }
 }

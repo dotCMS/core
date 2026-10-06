@@ -7,7 +7,8 @@ import {
     computed,
     inject,
     input,
-    OnDestroy
+    OnDestroy,
+    signal
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
@@ -26,6 +27,7 @@ import { DotWysiwygPluginService } from '../../dot-wysiwyg-plugin/dot-wysiwyg-pl
     selector: 'dot-wysiwyg-tinymce',
     imports: [EditorComponent, ReactiveFormsModule],
     templateUrl: './dot-wysiwyg-tinymce.component.html',
+    styleUrl: './dot-wysiwyg-tinymce.component.scss',
     viewProviders: [
         {
             provide: ControlContainer,
@@ -52,6 +54,13 @@ export class DotWysiwygTinymceComponent implements OnDestroy {
      * Whether the field has an error.
      */
     $hasError = input.required<boolean>({ alias: 'hasError' });
+
+    /**
+     * Whether the TinyMCE editor iframe currently has focus.
+     * Tracked via TinyMCE's focus/blur events because `:focus-within`
+     * does not propagate from iframes in Chrome.
+     */
+    $isFocused = signal(false);
 
     /**
      * A computed property that retrieves and parses custom TinyMCE properties that comes from
@@ -81,6 +90,15 @@ export class DotWysiwygTinymceComponent implements OnDestroy {
             ...DEFAULT_TINYMCE_CONFIG,
             ...(this.$wideConfig() || {}),
             ...this.$customPropsContentField(),
+            // TinyMCE renders into an iframe, which no label outside can name. Two surfaces need
+            // the field's name: `iframe_aria_text` labels the body inside the iframe, which is what
+            // a screen reader announces once inside the editing area, and `iframe_attrs.title`
+            // names the frame itself, which it announces on the way in. TinyMCE hardcodes that
+            // title to "Rich Text Area" otherwise — identical for every rich-text field on the
+            // form. Set after the spreads so a system-wide or per-field config cannot leave the
+            // editor unnamed.
+            iframe_aria_text: this.$field()?.name,
+            iframe_attrs: { title: this.$field()?.name },
             setup: (editor) => {
                 this.#dotWysiwygPluginService.initializePlugins(editor);
             }
@@ -110,6 +128,8 @@ export class DotWysiwygTinymceComponent implements OnDestroy {
      */
     handleEditorInit(event: { editor: Editor }): void {
         this.#editor = event.editor;
+        this.#editor.on('focus', () => this.$isFocused.set(true));
+        this.#editor.on('blur', () => this.$isFocused.set(false));
     }
 
     ngOnDestroy(): void {

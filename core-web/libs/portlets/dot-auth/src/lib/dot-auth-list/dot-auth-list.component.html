@@ -1,0 +1,356 @@
+<p-toast />
+<p-confirmDialog [draggable]="false" [style]="{ width: '500px' }" />
+
+<div class="list-page">
+    @if (
+        store.status() === 'loaded' &&
+        !store.system().configured &&
+        !store.system().headlessConfigured
+    ) {
+        <!-- Empty state: no provider configured yet -->
+        <section class="empty-state-card" data-testid="dotauth-empty-state">
+            <div class="empty-state-icon">
+                <i class="pi pi-shield text-3xl"></i>
+            </div>
+            <h3 class="m-0 text-[1.0625rem] font-semibold">
+                {{ 'dotauth.empty.identity.title' | dm }}
+            </h3>
+            <p class="m-0 max-w-[440px] text-center text-sm/relaxed text-(--text-color-secondary)">
+                {{ 'dotauth.empty.identity.description' | dm }}
+            </p>
+            <div class="flex gap-2">
+                <p-button
+                    icon="pi pi-shield"
+                    [label]="'dotauth.action.configure-sso' | dm"
+                    (onClick)="openSystemConfig()"
+                    data-testid="dotauth-empty-configure-sso" />
+                <p-button
+                    icon="pi pi-code"
+                    [label]="'dotauth.action.configure-headless' | dm"
+                    [outlined]="true"
+                    (onClick)="openHeadlessConfig()"
+                    data-testid="dotauth-empty-configure-headless" />
+            </div>
+        </section>
+    } @else if (store.status() === 'loaded') {
+        <!-- System hero card -->
+        <section class="system-hero" data-testid="dotauth-system-card">
+            <div class="flex min-w-0 flex-1 flex-col">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <i class="pi pi-shield text-(--primary-500)" aria-hidden="true"></i>
+                        <h2 class="m-0 text-base font-semibold">
+                            {{ 'dotauth.system.hero.title' | dm }}
+                        </h2>
+                        <p-tag
+                            [value]="$systemStatusTag().labelKey | dm"
+                            [severity]="$systemStatusTag().severity"
+                            data-testid="dotauth-system-status" />
+                        @if (store.system().headlessConfigured) {
+                            <p-tag
+                                [value]="'dotauth.status.headless-enabled' | dm"
+                                severity="info" />
+                        }
+                    </div>
+                    <p class="m-0 mt-1 text-[0.8125rem] text-(--text-color-secondary)">
+                        {{ 'dotauth.system.hero.subtitle' | dm }}
+                    </p>
+                </div>
+            </div>
+
+            <div class="hero-actions">
+                <span class="protocol-pill">
+                    <span
+                        class="inline-block size-2 rounded-full"
+                        [style.background]="protocolColor(store.system().protocol)"></span>
+                    @if (protocolLabelKey(store.system().protocol); as protocolKey) {
+                        <span data-testid="dotauth-system-protocol">{{ protocolKey | dm }}</span>
+                    } @else {
+                        <span>{{ 'dotauth.protocol.none' | dm }}</span>
+                    }
+                </span>
+                <div class="flex gap-2">
+                    @if (store.system().protocol === 'SAML') {
+                        <p-button
+                            icon="pi pi-file-export"
+                            [outlined]="true"
+                            [pTooltip]="'dotauth.action.download-sp-metadata' | dm"
+                            tooltipPosition="top"
+                            (onClick)="downloadSamlMetadata(SYSTEM_HOST)"
+                            data-testid="dotauth-system-download-metadata" />
+                    }
+                    <p-button
+                        [label]="'dotauth.action.configure-sso' | dm"
+                        icon="pi pi-shield"
+                        (onClick)="openSystemConfig()"
+                        data-testid="dotauth-system-sso-btn" />
+                    <p-button
+                        [label]="'dotauth.action.configure-headless' | dm"
+                        icon="pi pi-code"
+                        [outlined]="true"
+                        (onClick)="openHeadlessConfig()"
+                        data-testid="dotauth-system-headless-btn" />
+                </div>
+            </div>
+        </section>
+    }
+
+    <!-- Sites table -->
+    <section class="table-card">
+        <p-toolbar>
+            <div class="flex w-full items-center gap-2">
+                <p-iconField iconPosition="left">
+                    <p-inputIcon styleClass="pi pi-search" />
+                    <input
+                        pInputText
+                        type="text"
+                        [ngModel]="store.query()"
+                        (ngModelChange)="onSearch($event)"
+                        [placeholder]="'dotauth.search.placeholder' | dm"
+                        [attr.aria-label]="'dotauth.search.placeholder' | dm"
+                        data-testid="dotauth-search-input"
+                        class="w-[260px]" />
+                </p-iconField>
+                <p-selectButton
+                    [options]="filterOptions()"
+                    [ngModel]="store.filter()"
+                    (ngModelChange)="store.setFilter($event)"
+                    optionLabel="label"
+                    optionValue="value" />
+                <div class="ml-auto flex gap-2">
+                    <p-button
+                        [label]="'dotauth.action.import' | dm"
+                        icon="pi pi-upload"
+                        severity="secondary"
+                        [outlined]="true"
+                        size="small"
+                        (onClick)="openImportDialog()" />
+                    <p-button
+                        [label]="'dotauth.action.export' | dm"
+                        icon="pi pi-download"
+                        severity="secondary"
+                        [outlined]="true"
+                        size="small"
+                        (onClick)="openExportDialog()" />
+                    <p-button
+                        [label]="'dotauth.action.add-site-override' | dm"
+                        icon="pi pi-plus"
+                        size="small"
+                        (onClick)="openSystemConfig()" />
+                </div>
+            </div>
+        </p-toolbar>
+
+        <p-table
+            [value]="store.filteredSites()"
+            [scrollable]="true"
+            scrollHeight="flex"
+            [rowHover]="true"
+            dataKey="hostId"
+            data-testid="dotauth-sites-table">
+            <ng-template pTemplate="header">
+                <tr>
+                    <th style="width: 40%">{{ 'dotauth.table.header.site' | dm }}</th>
+                    <th>{{ 'dotauth.column.protocol' | dm }}</th>
+                    <th>{{ 'dotauth.column.sso' | dm }}</th>
+                    <th>{{ 'dotauth.column.headless' | dm }}</th>
+                    <th style="width: 1px"></th>
+                </tr>
+            </ng-template>
+
+            <ng-template pTemplate="body" let-row>
+                @if (store.status() === 'loading') {
+                    <tr data-testid="dotauth-loading-row" class="h-14 cursor-default">
+                        <td><p-skeleton height="1.25rem" width="100%" /></td>
+                        <td><p-skeleton height="1.25rem" width="5rem" /></td>
+                        <td><p-skeleton height="1.25rem" width="6rem" /></td>
+                        <td><p-skeleton height="1.25rem" width="6rem" /></td>
+                        <td><p-skeleton height="1.25rem" width="2rem" /></td>
+                    </tr>
+                } @else {
+                    <tr
+                        class="cursor-pointer"
+                        data-testid="dotauth-site-row"
+                        (click)="openSiteConfig(row.hostId)">
+                        <td>
+                            <div class="flex items-center gap-3">
+                                <div class="site-avatar">
+                                    {{ row.hostName.slice(0, 2).toUpperCase() }}
+                                </div>
+                                <div>
+                                    <div class="font-medium" data-testid="dotauth-site-name">
+                                        {{ row.hostName }}
+                                    </div>
+                                    <div class="font-mono text-xs text-(--text-color-tertiary)">
+                                        {{ row.hostId }}
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            @if (
+                                row.status === 'SITE_OVERRIDE' || row.status === 'NOT_CONFIGURED'
+                            ) {
+                                @if (protocolLabelKey(row.protocol); as protocolKey) {
+                                    <span
+                                        class="status-tag info"
+                                        data-testid="dotauth-protocol-cell">
+                                        <span class="status-dot"></span>
+                                        {{ protocolKey | dm }}
+                                    </span>
+                                } @else {
+                                    <span class="text-(--text-color-secondary)">&mdash;</span>
+                                }
+                            } @else {
+                                <span class="inherit-chip">
+                                    <i class="pi pi-arrow-right" style="font-size: 0.6875rem"></i>
+                                    {{ 'dotauth.status.inherits' | dm }}
+                                </span>
+                            }
+                        </td>
+                        <td>
+                            <ng-container
+                                [ngTemplateOutlet]="statusCell"
+                                [ngTemplateOutletContext]="{ status: row.ssoStatus }" />
+                        </td>
+                        <td>
+                            <ng-container
+                                [ngTemplateOutlet]="statusCell"
+                                [ngTemplateOutletContext]="{ status: row.headlessStatus }" />
+                        </td>
+                        <td>
+                            <div class="flex items-center gap-1">
+                                @if (row.protocol === 'SAML') {
+                                    <p-button
+                                        icon="pi pi-file-export"
+                                        [text]="true"
+                                        size="small"
+                                        [pTooltip]="'dotauth.action.download-sp-metadata' | dm"
+                                        tooltipPosition="top"
+                                        data-testid="dotauth-download-metadata"
+                                        (onClick)="
+                                            downloadSamlMetadata(row.hostId);
+                                            $event.stopPropagation()
+                                        " />
+                                }
+                                <p-button
+                                    icon="pi pi-chevron-right"
+                                    [text]="true"
+                                    size="small"
+                                    (onClick)="
+                                        openSiteConfig(row.hostId); $event.stopPropagation()
+                                    " />
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </ng-template>
+
+            <ng-template pTemplate="emptymessage">
+                <tr class="hover:bg-transparent!">
+                    <td colspan="5" class="p-8 text-center text-sm text-(--text-color-secondary)">
+                        {{ 'dotauth.empty.state.description' | dm }}
+                    </td>
+                </tr>
+            </ng-template>
+        </p-table>
+    </section>
+</div>
+
+<!-- Status cell: dot-tags for enabled/override/disabled, inherit-chip for inherits -->
+<ng-template #statusCell let-status="status">
+    @switch (status) {
+        @case ('enabled') {
+            <span class="status-tag success">
+                <span class="status-dot"></span>
+                {{ 'dotauth.status.enabled' | dm }}
+            </span>
+        }
+        @case ('override') {
+            <span class="status-tag info">
+                <span class="status-dot"></span>
+                {{ 'dotauth.status.overridden' | dm }}
+            </span>
+        }
+        @case ('inherits') {
+            <span class="inherit-chip">
+                <i class="pi pi-arrow-right" style="font-size: 0.6875rem"></i>
+                {{ 'dotauth.status.inherits' | dm }}
+            </span>
+        }
+        @default {
+            <span class="status-tag muted">
+                <span class="status-dot"></span>
+                {{ 'dotauth.status.disabled' | dm }}
+            </span>
+        }
+    }
+</ng-template>
+
+<p-dialog
+    [header]="'dotauth.export.title' | dm"
+    [modal]="true"
+    [style]="{ width: '420px' }"
+    [visible]="exportDialogOpen()"
+    (visibleChange)="exportDialogOpen.set($event)">
+    <div class="dialog-form">
+        <p class="dialog-help">{{ 'dotauth.export.description' | dm }}</p>
+        <div class="field">
+            <label>{{ 'dotauth.export.password' | dm }}</label>
+            <input
+                pInputText
+                type="password"
+                [ngModel]="exportPassword()"
+                (ngModelChange)="exportPassword.set($event)"
+                autocomplete="new-password" />
+            <small class="text-(--text-color-secondary)">
+                {{ 'dotauth.export.password.help' | dm }}
+            </small>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button [label]="'Cancel' | dm" [text]="true" (onClick)="exportDialogOpen.set(false)" />
+        <p-button
+            [label]="'dotauth.action.export' | dm"
+            icon="pi pi-download"
+            [loading]="transferBusy()"
+            [disabled]="!exportPasswordValid()"
+            (onClick)="exportBundle()" />
+    </ng-template>
+</p-dialog>
+
+<p-dialog
+    [header]="'dotauth.import.title' | dm"
+    [modal]="true"
+    [style]="{ width: '420px' }"
+    [visible]="importDialogOpen()"
+    (visibleChange)="importDialogOpen.set($event)">
+    <div class="dialog-form">
+        <p class="dialog-help">{{ 'dotauth.import.description' | dm }}</p>
+        <div class="field">
+            <label>{{ 'dotauth.import.file' | dm }}</label>
+            <input type="file" accept=".export" (change)="onImportFileChange($event)" />
+        </div>
+        <div class="field">
+            <label>{{ 'dotauth.export.password' | dm }}</label>
+            <input
+                pInputText
+                type="password"
+                [ngModel]="importPassword()"
+                (ngModelChange)="importPassword.set($event)"
+                autocomplete="new-password" />
+            <small class="text-(--text-color-secondary)">
+                {{ 'dotauth.import.password.help' | dm }}
+            </small>
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button [label]="'Cancel' | dm" [text]="true" (onClick)="importDialogOpen.set(false)" />
+        <p-button
+            [label]="'dotauth.action.import' | dm"
+            icon="pi pi-upload"
+            [loading]="transferBusy()"
+            [disabled]="!importFormValid()"
+            (onClick)="importBundle()" />
+    </ng-template>
+</p-dialog>

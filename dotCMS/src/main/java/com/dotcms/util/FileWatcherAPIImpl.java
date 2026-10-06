@@ -1,6 +1,6 @@
 package com.dotcms.util;
 
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.util.Logger;
 
 import java.io.Closeable;

@@ -9,10 +9,10 @@
 
 package com.dotcms.enterprise.rules;
 
-import com.dotcms.repackage.com.google.common.base.Strings;
-import com.dotcms.repackage.com.google.common.collect.Lists;
-import com.dotcms.repackage.com.google.common.collect.Maps;
-import com.dotcms.repackage.com.google.common.collect.Sets;
+import com.google.common.base.Strings;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.Ruleable;
 import com.dotmarketing.common.db.DotConnect;

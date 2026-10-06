@@ -94,7 +94,7 @@ export class AIImagePromptView {
             this.#dialogRef.onClose
                 .pipe(takeUntil(this.destroy$))
                 .subscribe((selectedImage: DotGeneratedAIImage) => {
-                    if (selectedImage) {
+                    if (selectedImage?.response) {
                         this.editor.chain().insertImage(selectedImage.response.contentlet).run();
                     }
 

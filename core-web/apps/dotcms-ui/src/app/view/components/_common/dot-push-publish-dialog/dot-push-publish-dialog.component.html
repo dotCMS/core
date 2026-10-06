@@ -1,9 +1,13 @@
 <p-dialog
-    [(visible)]="dialogShow"
+    [visible]="dialogShow"
     [header]="eventData?.title"
     [modal]="true"
+    [draggable]="false"
+    [closable]="true"
+    [closeOnEscape]="true"
     [style]="{ width: '35rem' }"
-    (visibleChange)="close()">
+    appendTo="body"
+    (visibleChange)="onVisibleChange($event)">
     @if (eventData) {
         <dot-push-publish-form
             (value)="formData = $event"
@@ -20,7 +24,7 @@
                 [disabled]="dialogActions.cancel.disabled"
                 severity="secondary"
                 (click)="dialogActions.cancel.action()"
-                data-testId="dotDialogCancelAction"></p-button>
+                data-testId="dotDialogCancelAction" />
         }
         @if (dialogActions?.accept && !eventData?.customCode) {
             <p-button
@@ -28,7 +32,7 @@
                 [disabled]="dialogActions.accept.disabled"
                 [loading]="isSaving"
                 (click)="dialogActions.accept.action()"
-                data-testId="dotDialogAcceptAction"></p-button>
+                data-testId="dotDialogAcceptAction" />
         }
     </ng-template>
 </p-dialog>

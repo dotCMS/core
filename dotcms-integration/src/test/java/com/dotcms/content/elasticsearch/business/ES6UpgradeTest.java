@@ -18,6 +18,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.DateUtil;
+import com.dotcms.content.index.domain.ContentSearchResults;
 import com.dotmarketing.util.Logger;
 import com.google.common.base.CaseFormat;
 import com.liferay.portal.model.User;
@@ -93,8 +94,8 @@ public class ES6UpgradeTest extends IntegrationTestBase {
             json = json.replaceAll(TO_REPLACE_HOST_ID,
                     site.getIdentifier());
             Logger.info(this, json);
-            final ESSearchResults results = APILocator.getContentletAPI()
-                    .esSearch(json, false, systemUser, false);
+            final ContentSearchResults<Contentlet> results = APILocator.getContentletAPI()
+                    .search(json, false, systemUser, false);
 
             Assert.assertNotNull(results);
 
@@ -103,7 +104,7 @@ public class ES6UpgradeTest extends IntegrationTestBase {
 
             if (json.contains("agg")) {
                 //This is an aggregation
-                Assert.assertFalse(results.getAggregations().asList().isEmpty());
+                Assert.assertFalse(results.getAggregations().isEmpty());
             } else {
                 //Contentlets
                 Assert.assertFalse(results.isEmpty());

@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
+import { MockInstance, vi } from 'vitest';
 
 import { CommonModule } from '@angular/common';
 import { provideHttpClient } from '@angular/common/http';
@@ -26,15 +27,7 @@ import {
     DotWizardService,
     PushPublishService
 } from '@dotcms/data-access';
-import {
-    CoreWebService,
-    CoreWebServiceMock,
-    DotcmsConfigService,
-    DotcmsEventsService,
-    LoggerService,
-    LoginService,
-    StringUtils
-} from '@dotcms/dotcms-js';
+import { DotcmsConfigService, LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
 import { DotPushPublishDialogData, DotWizardInput, DotWizardStep } from '@dotcms/dotcms-models';
 import { LoginServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -131,7 +124,6 @@ describe('DotWizardComponent', () => {
             StringUtils,
             mockProvider(DotHttpErrorManagerService),
             { provide: DotMessageService, useValue: messageServiceMock },
-            { provide: CoreWebService, useClass: CoreWebServiceMock },
             { provide: PushPublishService, useClass: PushPublishServiceMock },
             { provide: LoginService, useClass: LoginServiceMock },
             {
@@ -151,7 +143,6 @@ describe('DotWizardComponent', () => {
             DotPushPublishFiltersService,
             DotParseHtmlService,
             DotcmsConfigService,
-            DotcmsEventsService,
             DotWizardService
         ]
     });
@@ -159,11 +150,11 @@ describe('DotWizardComponent', () => {
     describe('multiple steps', () => {
         let form1: FormOneComponent;
         let form2: FormTwoComponent;
-        let formOneFirstFocusSpy: jest.SpyInstance;
+        let formOneFirstFocusSpy: MockInstance;
 
         beforeEach(fakeAsync(() => {
             spectator = createComponent();
-            jest.spyOn(spectator.component, 'getWizardComponent').mockImplementation(
+            vi.spyOn(spectator.component, 'getWizardComponent').mockImplementation(
                 (type: string) => {
                     return MOCK_WIZARD_COMPONENT_MAP[type] as any;
                 }
@@ -177,7 +168,7 @@ describe('DotWizardComponent', () => {
 
             const formOneFirst = spectator.debugElement.query(By.css('.formOneFirst'));
             if (formOneFirst?.nativeElement) {
-                formOneFirstFocusSpy = jest.spyOn(formOneFirst.nativeElement, 'focus');
+                formOneFirstFocusSpy = vi.spyOn(formOneFirst.nativeElement, 'focus');
             }
             tick(700);
             spectator.detectChanges();
@@ -222,9 +213,9 @@ describe('DotWizardComponent', () => {
 
         it('should focus next/send action after tab in the last item of the form', () => {
             const acceptButton = getAcceptButton();
-            const focusSpy = jest.spyOn(acceptButton!, 'focus');
-            const preventDefaultSpy = jest.fn();
-            const stopPropagationSpy = jest.fn();
+            const focusSpy = vi.spyOn(acceptButton!, 'focus');
+            const preventDefaultSpy = vi.fn();
+            const stopPropagationSpy = vi.fn();
             const mockEvent = {
                 target: 'match',
                 composedPath: () => [
@@ -260,7 +251,7 @@ describe('DotWizardComponent', () => {
         }));
 
         it('should consolidate forms values and send them on send', fakeAsync(() => {
-            jest.spyOn(dotWizardService, 'output$');
+            vi.spyOn(dotWizardService, 'output$');
             const commentAndAssignFormValue = {
                 assign: 'Jose',
                 comments: 'This is a comment',
@@ -303,6 +294,13 @@ describe('DotWizardComponent', () => {
             const transform =
                 containerDe?.nativeElement?.style?.transform ?? containerEl?.style?.transform;
             expect(transform).toEqual('translateX(-400px)');
+        }));
+
+        it('should notify the service on dismiss so leaked subscriptions unsubscribe', fakeAsync(() => {
+            const cancelSpy = vi.spyOn(dotWizardService, 'cancel');
+            spectator.component.close();
+            tick(0);
+            expect(cancelSpy).toHaveBeenCalledTimes(1);
         }));
 
         it('should update transform property on previous', fakeAsync(() => {

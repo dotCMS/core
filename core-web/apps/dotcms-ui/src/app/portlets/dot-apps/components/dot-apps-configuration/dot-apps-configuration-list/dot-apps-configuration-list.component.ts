@@ -1,5 +1,11 @@
-import { NgClass } from '@angular/common';
-import { Component, ElementRef, input, output, viewChild } from '@angular/core';
+import {
+    Component,
+    ElementRef,
+    input,
+    output,
+    viewChild,
+    ChangeDetectionStrategy
+} from '@angular/core';
 
 import { LazyLoadEvent } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -13,7 +19,8 @@ import { DotAppsConfigurationItemComponent } from './dot-apps-configuration-item
     selector: 'dot-apps-configuration-list',
     templateUrl: './dot-apps-configuration-list.component.html',
     styleUrls: ['./dot-apps-configuration-list.component.scss'],
-    imports: [NgClass, ButtonModule, DotAppsConfigurationItemComponent, DotMessagePipe]
+    changeDetection: ChangeDetectionStrategy.Eager,
+    imports: [ButtonModule, DotAppsConfigurationItemComponent, DotMessagePipe]
 })
 export class DotAppsConfigurationListComponent {
     searchInput = viewChild<ElementRef>('searchInput');

@@ -75,27 +75,48 @@ class SystemTableImpl implements SystemTable {
         Try.run(()-> this.systemTableFactory.saveOrUpdate(key, value))
                 .getOrElseThrow((e)-> new DotRuntimeException(e.getMessage(), e));
 
-        Try.run(()->HibernateUtil.addCommitListener(()->
-                APILocator.getLocalSystemEventsAPI().asyncNotify(new SystemTableUpdatedKeyEvent(key))));
+        this.notifyKeyUpdatedOnCommit(key);
     }
 
     @Override
     @WrapInTransaction
-    public void delete(String key) {
+    public void delete(final String key) {
 
         SecurityLogger.logInfo(this.getClass(), "Deleting system table key:" + key );
         Try.run(()-> this.systemTableFactory.delete(key))
                 .getOrElseThrow((e)-> new DotRuntimeException(e.getMessage(), e));
 
-        Try.run(()->HibernateUtil.addCommitListener(()-> {
+        this.notifyKeyUpdatedOnCommit(key);
+    }
 
-                    final SystemTableUpdatedKeyEvent systemTableUpdatedKeyEvent = new SystemTableUpdatedKeyEvent(key);
-                    // first notify the local system events
-                    APILocator.getLocalSystemEventsAPI().asyncNotify(systemTableUpdatedKeyEvent);
-                    // then notify the cluster wide events
-                    Try.run(()->APILocator.getSystemEventsAPI()					    // CLUSTER WIDE
-                            .push(SystemEventType.CLUSTER_WIDE_EVENT, new Payload(systemTableUpdatedKeyEvent)))
-                    .onFailure(e -> Logger.error(SystemTableImpl.class, e.getMessage()));
-                }));
+    /**
+     * Notifies, once the current transaction commits, that the value bound to {@code key} has changed.
+     * The notification is sent twice on purpose:
+     * <ul>
+     *     <li>Locally, so subscribers on this node re-resolve the key right away.</li>
+     *     <li>Cluster wide, so every other node re-resolves it too. Subscribers latch the resolved
+     *     value in memory, so a node that never receives the event keeps the stale value for the
+     *     lifetime of its JVM.</li>
+     * </ul>
+     * Both {@link #set(String, String)} and {@link #delete(String)} route through here; keeping a
+     * single path is what prevents the two operations from drifting apart again.
+     *
+     * @param key The system table key whose value changed.
+     */
+    private void notifyKeyUpdatedOnCommit(final String key) {
+
+        HibernateUtil.addCommitListenerNoThrow(()-> {
+
+            final SystemTableUpdatedKeyEvent systemTableUpdatedKeyEvent = new SystemTableUpdatedKeyEvent(key);
+            // first notify the local system events
+            APILocator.getLocalSystemEventsAPI().asyncNotify(systemTableUpdatedKeyEvent);
+            // then notify the cluster wide events
+            Try.run(()->APILocator.getSystemEventsAPI()                     // CLUSTER WIDE
+                    .push(SystemEventType.CLUSTER_WIDE_EVENT, new Payload(systemTableUpdatedKeyEvent)))
+                    .onFailure(e -> Logger.error(SystemTableImpl.class,
+                            "Could not publish the cluster wide event for the system table key: [" + key
+                                    + "]. Other nodes will keep their previous value until restarted. "
+                                    + e.getMessage(), e));
+        });
     }
 }

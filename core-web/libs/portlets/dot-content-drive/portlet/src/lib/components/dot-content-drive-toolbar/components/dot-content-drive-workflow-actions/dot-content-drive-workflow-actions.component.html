@@ -1,12 +1,10 @@
-<div class="flex gap-2 justify-end">
+<div class="flex justify-end gap-2">
     @for (action of DEFAULT_WORKFLOW_ACTIONS; track action.id) {
         <p-button
             styleClass="p-button-outlined bg-white"
             [attr.data-testid]="'workflow-action-' + action.id"
-            [ngStyle]="{ display: shouldShowAction(action) ? 'block' : 'none' }"
+            [style.display]="shouldShowAction(action) ? 'block' : 'none'"
             [label]="action.name | dm"
             (click)="onExecuteAction(action)" />
     }
 </div>
-
-<p-confirmDialog />

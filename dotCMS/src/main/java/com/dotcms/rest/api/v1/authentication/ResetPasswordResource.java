@@ -6,7 +6,7 @@ import java.util.Locale;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;

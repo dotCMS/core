@@ -1,6 +1,5 @@
 import { Subject } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
 import {
     Component,
     ElementRef,
@@ -9,7 +8,8 @@ import {
     inject,
     input,
     output,
-    viewChild
+    viewChild,
+    ChangeDetectionStrategy
 } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
@@ -33,7 +33,8 @@ import { DotMessagePipe } from '@dotcms/ui';
     selector: 'dot-add-rows',
     styleUrls: ['./content-type-fields-add-row.component.scss'],
     templateUrl: './content-type-fields-add-row.component.html',
-    imports: [CommonModule, ButtonModule, TooltipModule, SplitButtonModule, DotMessagePipe]
+    changeDetection: ChangeDetectionStrategy.Eager,
+    imports: [ButtonModule, TooltipModule, SplitButtonModule, DotMessagePipe]
 })
 export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
     private dotEventsService = inject(DotEventsService);

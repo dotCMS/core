@@ -1,0 +1,32 @@
+<p-popover (onHide)="onHide()">
+    <!-- The popover supplies the panel chrome (border, radius, shadow), so the listbox inside
+         it does not restate it — same shape as every other filter panel. -->
+    <p-listbox
+        optionLabel="name"
+        dataKey="id"
+        [filterPlaceHolder]="'uve.palette.favorite.search.placeholder' | dm"
+        [options]="$contenttypes()"
+        [ngModel]="$selectedContentTypes()"
+        (onChange)="onSelectionChange($event)"
+        (onFilter)="onFilter($event)"
+        [multiple]="true"
+        [checkbox]="true"
+        [filter]="true"
+        [metaKeySelection]="false"
+        [listStyle]="{ 'max-height': '400px' }"
+        [style]="{ width: '100%' }">
+        <ng-template pTemplate="empty">
+            @if (!$fetchingItems()) {
+                <div class="empty-message">No results found</div>
+            }
+        </ng-template>
+        <ng-template pTemplate="footer">
+            @if ($fetchingItems()) {
+                <div class="text-color-secondary flex items-center gap-2 px-1 py-4">
+                    <i class="pi pi-spin pi-spinner"></i>
+                    <span>{{ 'uve.palette.favorite.search.state.label' | dm }}</span>
+                </div>
+            }
+        </ng-template>
+    </p-listbox>
+</p-popover>

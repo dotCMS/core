@@ -1,7 +1,7 @@
 package com.dotmarketing.portlets.rules.actionlet;
 
 import com.dotcms.UnitTestBase;
-import com.dotcms.repackage.com.google.common.collect.Maps;
+import com.google.common.collect.Maps;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.business.UserAPI;

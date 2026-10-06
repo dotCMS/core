@@ -14,19 +14,28 @@
     <properties>
         <maven.deploy.skip>false</maven.deploy.skip>
         <flatten.mode>bom</flatten.mode>
-        <aws-java-sdk.version>1.12.488</aws-java-sdk.version>
+        <aws-java-sdk.version>1.12.797</aws-java-sdk.version>
+        <aws-java-sdk-v2.version>2.41.34</aws-java-sdk-v2.version>
         <twelvemonkeys.version>3.13.1-fixed</twelvemonkeys.version>
+        <vips-ffm.version>1.9.8</vips-ffm.version>
         <swagger.version>2.2.34</swagger.version>
         <bytebuddy.version>1.18.1</bytebuddy.version>
         <batik.version>1.17</batik.version>
-        <bouncy-castle.version>1.70</bouncy-castle.version>
+        <bouncy-castle.version>1.85</bouncy-castle.version>
         <awaitility.version>4.0.0</awaitility.version>
         <shedlock.version>4.33.0</shedlock.version>
-        <jackson.version>2.17.2</jackson.version>
+        <jackson.version>2.18.11</jackson.version>
         <jersey.version>2.47</jersey.version>
         <graalvm.polyglot.version>25.0.1</graalvm.polyglot.version>
-        <micrometer.version>1.13.10</micrometer.version>
+        <micrometer.version>1.15.12</micrometer.version>
+        <opentelemetry-javaagent.version>2.31.1</opentelemetry-javaagent.version>
+        <pyroscope-agent.version>2.9.2</pyroscope-agent.version>
         <opensearch.version>3.3.0</opensearch.version>
+        <langchain4j.version>1.15.1</langchain4j.version>
+        <grpc.version>1.75.0</grpc.version>
+        <netty.version>4.1.138.Final</netty.version>
+        <commonmark.version>0.22.0</commonmark.version>
+        <jsoup.version>1.21.1</jsoup.version>
     </properties>
     <dependencyManagement>
 
@@ -70,13 +79,54 @@
                 <scope>import</scope>
             </dependency>
 
+            <!-- grpc: imported before langchain4j-bom so every io.grpc artifact (grpc-netty-shaded
+                 arrives transitively via langchain4j-vertex-ai-gemini) resolves to one version.
+                 Stay on 1.75.x: 1.76+ expects guava 33.4+, and guava is pinned to 32.0.1-jre below. -->
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-bom</artifactId>
+                <version>${grpc.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
 
-            <!-- Asynchronous NIO client server framework for the jvm -->
-            <!-- <dependency>
+            <dependency>
+                <groupId>dev.langchain4j</groupId>
+                <artifactId>langchain4j-bom</artifactId>
+                <version>${langchain4j.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
 
-                 <groupId>io.netty</groupId>
-                 <artifactId>netty-all</artifactId>
-             </dependency>-->
+
+            <!-- google-http-client: pin to 1.45.0 to resolve conflict between existing deps (1.19.0)
+                 and langchain4j-vertex-ai-gemini (1.45+). Required for PercentEscaper(String). -->
+            <dependency>
+                <groupId>com.google.http-client</groupId>
+                <artifactId>google-http-client</artifactId>
+                <version>1.45.0</version>
+            </dependency>
+
+            <!-- reactor-core: pin to 3.4.41 to resolve conflict between existing deps (3.3.16)
+                 and langchain4j-azure-open-ai (3.4+). Required for ContextView. -->
+            <dependency>
+                <groupId>io.projectreactor</groupId>
+                <artifactId>reactor-core</artifactId>
+                <version>3.4.41</version>
+            </dependency>
+
+            <!-- Netty: import the 4.1.x BOM so every Netty module resolves to a single version.
+                 Left to transitive resolution the trees disagree - azure-core-http-netty brings
+                 4.1.118, reactor-netty brings 4.1.112, netty-codec-http2 brings 4.1.132 and the
+                 awssdk netty-nio-client brings 4.1.130 - which fails at runtime with
+                 NoSuchMethodError, most visibly in DefaultHeaders$ValueValidator. -->
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-bom</artifactId>
+                <version>${netty.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
 
 
             <!--
@@ -152,11 +202,6 @@
             </dependency>
             <dependency>
                 <groupId>com.dotcms.lib</groupId>
-                <artifactId>dot.commons-io</artifactId>
-                <version>2.0.1_2</version>
-            </dependency>
-            <dependency>
-                <groupId>com.dotcms.lib</groupId>
                 <artifactId>dot.commons-jci-core</artifactId>
                 <version>1.0.406301_2</version>
             </dependency>
@@ -219,11 +264,6 @@
                 <groupId>com.dotcms.lib</groupId>
                 <artifactId>dot.google</artifactId>
                 <version>ukv_2</version>
-            </dependency>
-            <dependency>
-                <groupId>com.dotcms.lib</groupId>
-                <artifactId>dot.guava</artifactId>
-                <version>11.0.1_2</version>
             </dependency>
             <dependency>
                 <groupId>com.dotcms.lib</groupId>
@@ -436,6 +476,26 @@
                 <version>0.14-SNAPSHOT_1</version>
             </dependency>
             <dependency>
+                <groupId>org.commonmark</groupId>
+                <artifactId>commonmark</artifactId>
+                <version>${commonmark.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.commonmark</groupId>
+                <artifactId>commonmark-ext-gfm-tables</artifactId>
+                <version>${commonmark.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.commonmark</groupId>
+                <artifactId>commonmark-ext-gfm-strikethrough</artifactId>
+                <version>${commonmark.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jsoup</groupId>
+                <artifactId>jsoup</artifactId>
+                <version>${jsoup.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.dotcms.lib</groupId>
                 <artifactId>dot.util-taglib</artifactId>
                 <version>ukv_2</version>
@@ -570,7 +630,14 @@
                 <!-- Google Guava: Google Core Libraries -->
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>27.0.1-android</version>
+                <version>32.0.1-jre</version>
+                <exclusions>
+                    <!-- checker-qual is a banned dependency in this project -->
+                    <exclusion>
+                        <groupId>org.checkerframework</groupId>
+                        <artifactId>checker-qual</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <dependency>
@@ -602,7 +669,7 @@
             <dependency>
                 <groupId>commons-beanutils</groupId>
                 <artifactId>commons-beanutils</artifactId>
-                <version>1.9.4</version>
+                <version>1.11.0</version>
             </dependency>
             <dependency>
                 <groupId>commons-collections</groupId>
@@ -622,12 +689,12 @@
             <dependency>
                 <groupId>commons-fileupload</groupId>
                 <artifactId>commons-fileupload</artifactId>
-                <version>1.5</version>
+                <version>1.6.0</version>
             </dependency>
             <dependency>
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
-                <version>2.11.0</version>
+                <version>2.14.0</version>
             </dependency>
             <dependency>
                 <groupId>commons-lang</groupId>
@@ -648,7 +715,7 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
-                <version>3.12.0</version>
+                <version>3.18.0</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -752,7 +819,7 @@
             <dependency>
                 <groupId>org.postgresql</groupId>
                 <artifactId>postgresql</artifactId>
-                <version>42.7.2</version>
+                <version>42.7.13</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.checkerframework</groupId>
@@ -775,12 +842,6 @@
             </dependency>
 
 
-            <dependency>
-                <groupId>com.impossibl.pgjdbc-ng</groupId>
-                <artifactId>pgjdbc-ng</artifactId>
-                <version>0.8.9</version>
-            </dependency>
-
             <!--
              *****************************
                Cluster Support
@@ -789,7 +850,7 @@
            <dependency>
                 <groupId>dnsjava</groupId>
                 <artifactId>dnsjava</artifactId>
-                <version>3.5.3</version>
+                <version>3.6.5</version>
             </dependency>
 
             <dependency>
@@ -823,6 +884,14 @@
                 <groupId>com.amazonaws</groupId>
                 <artifactId>aws-java-sdk-bom</artifactId>
                 <version>${aws-java-sdk.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>bom</artifactId>
+                <version>${aws-java-sdk-v2.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -866,13 +935,13 @@
             <dependency>
                 <groupId>org.apache.httpcomponents.core5</groupId>
                 <artifactId>httpcore5</artifactId>
-                <version>5.3.4</version>
+                <version>5.4.3</version>
             </dependency>
 
             <dependency>
                 <groupId>org.apache.httpcomponents.core5</groupId>
                 <artifactId>httpcore5-h2</artifactId>
-                <version>5.3.4</version>
+                <version>5.4.3</version>
             </dependency>
 
             <dependency>
@@ -949,7 +1018,7 @@
             <dependency>
                 <groupId>com.thoughtworks.xstream</groupId>
                 <artifactId>xstream</artifactId>
-                <version>1.4.20</version>
+                <version>1.4.21</version>
                 <exclusions>
                     <exclusion>
                         <groupId>xpp3</groupId>
@@ -1039,6 +1108,12 @@
                 <groupId>com.github.gotson</groupId>
                 <artifactId>webp-imageio</artifactId>
                 <version>0.2.2</version>
+            </dependency>
+            <!-- libvips bindings (FFM, JDK 23+) — alternative image engine, requires native libvips on host -->
+            <dependency>
+                <groupId>app.photofox.vips-ffm</groupId>
+                <artifactId>vips-ffm-core</artifactId>
+                <version>${vips-ffm.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.twelvemonkeys.imageio</groupId>
@@ -1146,19 +1221,33 @@
 
             <!-- Security -->
             <dependency>
+                <groupId>org.owasp.encoder</groupId>
+                <artifactId>encoder</artifactId>
+                <version>1.3.1</version>
+            </dependency>
+
+            <dependency>
                 <groupId>io.jsonwebtoken</groupId>
                 <artifactId>jjwt</artifactId>
                 <version>0.9.1</version>
             </dependency>
 
+            <!-- Nimbus JOSE+JWT: id_token JWKS signature verification for the OIDC flow. -->
+            <!-- jjwt 0.9.x only handles HMAC; nimbus adds RS256/ES256 + RemoteJWKSet. -->
+            <dependency>
+                <groupId>com.nimbusds</groupId>
+                <artifactId>nimbus-jose-jwt</artifactId>
+                <version>9.37.4</version>
+            </dependency>
+
             <dependency>
                 <groupId>org.bouncycastle</groupId>
-                <artifactId>bcpkix-jdk15on</artifactId>
+                <artifactId>bcpkix-jdk18on</artifactId>
                 <version>${bouncy-castle.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
-                <artifactId>bcprov-jdk15on</artifactId>
+                <artifactId>bcprov-jdk18on</artifactId>
                 <version>${bouncy-castle.version}</version>
             </dependency>
 
@@ -1531,7 +1620,7 @@
             <dependency>
                 <groupId>com.dotcms</groupId>
                 <artifactId>tomcat-redis-session-manager</artifactId>
-                <version>1.5</version>
+                <version>2.0</version>
                 <scope>provided</scope>
             </dependency>
 
@@ -1557,6 +1646,19 @@
                 <version>${glowroot.version}</version>
                 <classifier>dist</classifier>
                 <type>zip</type>
+            </dependency>
+
+            <!-- JVM agents copied into the Tomcat dist and attached by setenv.sh when
+                 OTEL_JAVAAGENT_ENABLED / PYROSCOPE_AGENT_ENABLED is "true" -->
+            <dependency>
+                <groupId>io.opentelemetry.javaagent</groupId>
+                <artifactId>opentelemetry-javaagent</artifactId>
+                <version>${opentelemetry-javaagent.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.pyroscope</groupId>
+                <artifactId>agent</artifactId>
+                <version>${pyroscope-agent.version}</version>
             </dependency>
 
             <!--

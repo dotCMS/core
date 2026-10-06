@@ -1,4 +1,10 @@
-import { InjectionToken, Provider } from '@angular/core';
+import {
+    EnvironmentProviders,
+    inject,
+    InjectionToken,
+    Provider,
+    provideAppInitializer
+} from '@angular/core';
 import { TitleStrategy } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
@@ -36,11 +42,7 @@ import {
 import {
     ApiRoot,
     BrowserUtil,
-    CoreWebService,
     DotcmsConfigService,
-    DotcmsEventsService,
-    DotEventsSocket,
-    DotEventsSocketURL,
     DotPushPublishDialogService,
     LoggerService,
     LoginService,
@@ -50,9 +52,11 @@ import {
 import { GlobalStore } from '@dotcms/store';
 
 import { DotAccountService } from './api/services/dot-account-service';
+import { DotAppLifecycleEffect } from './api/services/dot-app-lifecycle/dot-app-lifecycle.effect';
 import { DotDownloadBundleDialogService } from './api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { DotMenuService } from './api/services/dot-menu.service';
 import { DotParseHtmlService } from './api/services/dot-parse-html/dot-parse-html.service';
+import { DotReportIssueService } from './api/services/dot-report-issue.service';
 import { AuthGuardService } from './api/services/guards/auth-guard.service';
 import { ContentletGuardService } from './api/services/guards/contentlet-guard.service';
 import { DefaultGuardService } from './api/services/guards/default-guard.service';
@@ -66,20 +70,14 @@ import { DotSaveOnDeactivateService } from './shared/dot-save-on-deactivate-serv
 import { DotTitleStrategy } from './shared/services/dot-title-strategy.service';
 import { DotIframePortletLegacyResolver } from './view/components/_common/iframe/service/dot-iframe-porlet-legacy-resolver.service';
 import { IframeOverlayService } from './view/components/_common/iframe/service/iframe-overlay.service';
+import { DotCreateContentletResolver } from './view/components/dot-contentlet-editor/components/dot-create-contentlet/dot-create-contentlet.resolver.service';
 import { DotNavigationService } from './view/components/dot-navigation/services/dot-navigation.service';
 import { DotLoginPageResolver } from './view/components/login/dot-login-page-resolver.service';
 import { DotLoginPageStateService } from './view/components/login/shared/services/dot-login-page-state.service';
 
 export const LOCATION_TOKEN = new InjectionToken<Location>('Window location object');
 
-const dotEventSocketURLFactory = () => {
-    return new DotEventsSocketURL(
-        `${window.location.hostname}:${window.location.port}/api/ws/v1/system/events`,
-        window.location.protocol === 'https:'
-    );
-};
-
-const PROVIDERS: Provider[] = [
+const PROVIDERS: (Provider | EnvironmentProviders)[] = [
     { provide: LOCATION_TOKEN, useValue: window.location },
     EmaAppConfigurationService,
     DotAccountService,
@@ -101,6 +99,7 @@ const PROVIDERS: Provider[] = [
     DotMessageService,
     DotParseHtmlService,
     DotPushPublishFiltersService,
+    DotReportIssueService,
     DotRolesService,
     DotRouterService,
     DotSaveOnDeactivateService,
@@ -109,6 +108,9 @@ const PROVIDERS: Provider[] = [
     DotGenerateSecurePasswordService,
     IframeOverlayService,
     DotIframePortletLegacyResolver,
+    // App-wide so the legacy create route (/c/content/new/:contentType) resolves from any
+    // entry point (e.g. Content Drive), mirroring DotIframePortletLegacyResolver above.
+    DotCreateContentletResolver,
     MenuGuardService,
     NotificationsService,
     PaginatorService,
@@ -121,15 +123,11 @@ const PROVIDERS: Provider[] = [
     // Infrastructure services from SharedModule.forRoot()
     ApiRoot,
     BrowserUtil,
-    CoreWebService,
     DotEventsService,
     DotNavigationService,
     DotcmsConfigService,
-    DotcmsEventsService,
     LoggerService,
     LoginService,
-    { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
-    DotEventsSocket,
     StringUtils,
     UserModel,
     // Data-access services
@@ -147,7 +145,9 @@ const PROVIDERS: Provider[] = [
         useClass: DotTitleStrategy
     },
     GlobalStore,
-    DotSystemConfigService
+    DotSystemConfigService,
+    DotAppLifecycleEffect,
+    provideAppInitializer(() => void inject(DotAppLifecycleEffect))
 ];
 
 export const ENV_PROVIDERS = [...PROVIDERS];

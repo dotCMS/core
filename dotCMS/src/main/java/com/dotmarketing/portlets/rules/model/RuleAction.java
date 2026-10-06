@@ -2,7 +2,7 @@ package com.dotmarketing.portlets.rules.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.dotcms.repackage.com.google.common.collect.Maps;
+import com.google.common.collect.Maps;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.rules.RuleComponentInstance;
 import com.dotmarketing.portlets.rules.RuleComponentModel;

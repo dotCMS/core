@@ -1,34 +1,55 @@
 @let app = $app();
 
-<p-card
+@let disabled = !app.configurationsCount;
+
+<article
     (click)="actionFired.emit(app.key)"
-    class="h-full"
-    [ngClass]="{
-        'dot-apps-card__disabled': !app.configurationsCount
-    }">
-    <ng-template #header>
-        <div class="dot-apps-card__header-container">
-            <p-avatar [image]="app.iconUrl" [label]="app.name" size="large" dotAvatar />
-            <div class="dot-apps-card__label-container">
-                <span class="dot-apps-card__name">{{ app.name }}</span>
-                <span class="dot-apps-card__configurations">
-                    {{
-                        app.configurationsCount
-                            ? app.configurationsCount + ' ' + ('apps.configurations' | dm)
-                            : ('apps.no.configurations' | dm)
-                    }}
-                </span>
-                @if (app.sitesWithWarnings) {
-                    <i
-                        class="pi pi-exclamation-triangle text-lg"
-                        [pTooltip]="
-                            app.sitesWithWarnings + ' ' + ('apps.invalid.configurations' | dm)
-                        "></i>
-                }
-            </div>
+    class="flex h-full cursor-pointer flex-col gap-4 rounded-sm bg-white p-6 shadow-sm transition hover:shadow-lg"
+    [class.grayscale]="disabled"
+    [class.opacity-60]="disabled"
+    [class.dot-apps-card__disabled]="disabled">
+    <header class="flex items-center gap-4">
+        <div class="flex size-12 shrink-0 items-center justify-center">
+            @if (app.iconUrl) {
+                <p-avatar
+                    class="rounded-full shadow-lg"
+                    [image]="app.iconUrl"
+                    [label]="app.name"
+                    size="large"
+                    dotAvatar />
+            } @else if (app.icon) {
+                <dot-color-icon [color]="app.color ?? 'surface'" size="sm" variant="light">
+                    <span class="material-symbols-outlined">{{ app.icon }}</span>
+                </dot-color-icon>
+            } @else {
+                <p-avatar
+                    class="rounded-full shadow-lg"
+                    [label]="app.name"
+                    size="large"
+                    dotAvatar />
+            }
         </div>
-    </ng-template>
-    <p>
+        <div class="flex min-w-0 flex-1 flex-col gap-1">
+            <h3 class="m-0 truncate text-base font-bold text-black">
+                {{ app.name }}
+            </h3>
+            <span class="dot-apps-card__configurations leading-4 text-gray-700">
+                {{
+                    app.configurationsCount
+                        ? app.configurationsCount + ' ' + ('apps.configurations' | dm)
+                        : ('apps.no.configurations' | dm)
+                }}
+            </span>
+            @if (app.sitesWithWarnings) {
+                <i
+                    class="pi pi-exclamation-triangle text-lg"
+                    [pTooltip]="
+                        app.sitesWithWarnings + ' ' + ('apps.invalid.configurations' | dm)
+                    "></i>
+            }
+        </div>
+    </header>
+    <div class="dot-apps-card__description line-clamp-3 text-gray-700">
         <markdown>{{ app.description }}</markdown>
-    </p>
-</p-card>
+    </div>
+</article>

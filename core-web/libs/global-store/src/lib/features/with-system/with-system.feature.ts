@@ -134,6 +134,31 @@ export function withSystem() {
             systemReleaseInfo: computed(() => systemConfig()?.releaseInfo ?? null),
 
             /**
+             * Computed signal that returns the bulk-upload ceilings the server advertises.
+             *
+             * Null both when the configuration has not loaded and when the instance is older than
+             * the field, which callers must treat the same way: no readable ceiling, so leave the
+             * refusing to the server.
+             *
+             * @returns The ceilings or null if not available
+             */
+            systemBulkUpload: computed(() => systemConfig()?.bulkUpload ?? null),
+
+            /**
+             * The bulk folder delete ceiling the server advertises, or null when it advertises none.
+             *
+             * Null for the same two reasons as {@link systemBulkUpload}, treated the same way: no
+             * readable ceiling, so leave the refusing to the server.
+             */
+            systemFolderBulkDelete: computed(() => systemConfig()?.folderBulkDelete ?? null),
+
+            /**
+             * The bulk folder duplicate ceiling the server advertises, or null when it advertises
+             * none. Same reading as {@link systemFolderBulkDelete}.
+             */
+            systemFolderBulkDuplicate: computed(() => systemConfig()?.folderBulkDuplicate ?? null),
+
+            /**
              * Computed signal that returns the system timezone configuration.
              *
              * @returns The system timezone or null if not loaded

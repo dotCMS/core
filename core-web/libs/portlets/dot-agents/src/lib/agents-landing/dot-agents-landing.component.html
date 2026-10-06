@@ -1,0 +1,65 @@
+<div class="mx-auto w-full max-w-5xl px-6 py-10">
+    <header class="mb-8">
+        <h1 class="m-0 text-2xl font-bold text-color">{{ 'agents.landing.title' | dm }}</h1>
+        <p class="m-0 mt-2 text-muted-color">{{ 'agents.landing.subtitle' | dm }}</p>
+    </header>
+
+    <ul
+        class="m-0 grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-2 lg:grid-cols-3"
+        data-testid="agents-grid">
+        @for (agent of agents; track agent.id) {
+            @let available = agent.status === 'available';
+
+            <li class="contents">
+                @if (available) {
+                    <!-- `no-underline` on the anchor alone isn't enough: the global
+                         `a` rule sets `underline` + `text-primary-500`, and both are
+                         inherited by the card's heading/description. Reset them for
+                         the whole subtree so only the card's own colors apply. -->
+                    <a
+                        class="text-color! no-underline **:no-underline"
+                        [routerLink]="[agent.id]"
+                        [attr.data-testid]="'agent-card-' + agent.id"
+                        [attr.aria-label]="agent.labelKey | dm">
+                        <ng-container
+                            [ngTemplateOutlet]="card"
+                            [ngTemplateOutletContext]="{ $implicit: agent, available: true }" />
+                    </a>
+                } @else {
+                    <div [attr.data-testid]="'agent-card-' + agent.id" [attr.aria-disabled]="true">
+                        <ng-container
+                            [ngTemplateOutlet]="card"
+                            [ngTemplateOutletContext]="{ $implicit: agent, available: false }" />
+                    </div>
+                }
+            </li>
+        }
+    </ul>
+</div>
+
+<ng-template #card let-agent let-available="available">
+    <p-card
+        styleClass="h-full transition-all duration-150"
+        [class.cursor-pointer]="available"
+        [class.hover:shadow-lg]="available"
+        [class.opacity-60]="!available">
+        <div class="flex items-start gap-4">
+            <dot-color-icon size="sm" [color]="agent.iconColor">
+                <i class="material-symbols-outlined" aria-hidden="true">{{ agent.icon }}</i>
+            </dot-color-icon>
+            <div class="min-w-0">
+                <div class="flex flex-wrap items-center gap-2">
+                    <h2 class="m-0 text-base font-semibold text-color">
+                        {{ agent.labelKey | dm }}
+                    </h2>
+                    @if (!available) {
+                        <p-tag severity="secondary" [value]="'agents.status.coming-soon' | dm" />
+                    }
+                </div>
+                <p class="m-0 mt-1 text-sm text-muted-color">
+                    {{ agent.descriptionKey | dm }}
+                </p>
+            </div>
+        </div>
+    </p-card>
+</ng-template>

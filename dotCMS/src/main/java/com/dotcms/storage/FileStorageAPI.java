@@ -7,6 +7,7 @@ import com.dotmarketing.util.Config;
 import java.io.File;
 import java.io.Serializable;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * This Storage API is in charge of generating, removing and storing file metadata in dotCMS using
@@ -58,6 +59,22 @@ public interface FileStorageAPI {
      */
     Map<String, Serializable> generateMetaData(final File binary, final GenerateMetadataConfig configuration)
             throws DotDataException;
+
+    /**
+     * Same as {@link #generateMetaData(File, GenerateMetadataConfig)} but the binary is resolved
+     * lazily — it is only touched when the metadata actually has to be (re)generated. Prefer this
+     * overload when the metadata most likely already exists: resolving the binary can require
+     * filesystem stats that are expensive (or can hang) on network-backed storage such as
+     * NFS/EFS/S3 mounts (see issue #36498).
+     *
+     * @param binary        supplies the binary {@link File} on demand; may supply {@code null}
+     * @param configuration {@link GenerateMetadataConfig}
+     * @return Map with the metadata
+     */
+    default Map<String, Serializable> generateMetaData(final Supplier<File> binary,
+            final GenerateMetadataConfig configuration) throws DotDataException {
+        return generateMetaData(binary.get(), configuration);
+    }
 
     /**
      * Retrieves the metadata object from the configured Storage Provider. There are a couple of

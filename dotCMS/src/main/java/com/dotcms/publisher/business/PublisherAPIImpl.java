@@ -18,6 +18,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.Params;
+import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -637,6 +638,121 @@ public class PublisherAPIImpl extends PublisherAPI{
 		}
 	}
 
+	/**
+	 * Shared FROM/WHERE that defines the "scheduled" tier surfaced by the v1 publishing API:
+	 * bundles pushed with a future publish date that {@link PublisherQueueJob} has not picked up
+	 * yet. They exist in {@code publishing_queue} (non-null {@code publish_date}) but have NO row
+	 * in {@code publishing_queue_audit}. The {@code publish_date IS NOT NULL} guard intentionally
+	 * excludes unpushed/draft bundles (which also lack an audit row) — same criterion the legacy
+	 * Queue tab used via {@link #getQueueBundleIds(int, int)}.
+	 */
+	private static final String SCHEDULED_BUNDLES_FROM_WHERE =
+			"FROM publishing_queue pq " +
+			"JOIN publishing_bundle pb ON pq.bundle_id = pb.id " +
+			"WHERE pq.publish_date IS NOT NULL " +
+			"AND NOT EXISTS (SELECT 1 FROM publishing_queue_audit a WHERE a.bundle_id = pq.bundle_id) ";
+
+	private static final String SCHEDULED_BUNDLES_FILTER =
+			"AND (LOWER(pq.bundle_id) LIKE ? OR LOWER(pb.name) LIKE ?) ";
+
+	/** Queue-only bundles whose publish date is already reached (the job picks these up next). */
+	private static final String SCHEDULED_BUNDLES_DUE = "AND pq.publish_date <= ? ";
+
+	/** Queue-only bundles whose publish date is still ahead. */
+	private static final String SCHEDULED_BUNDLES_FUTURE = "AND pq.publish_date > ? ";
+
+	/**
+	 * Appends the {@link QueuedTier} predicate for the scheduled-tier queries. The comparison value
+	 * is the JVM's current time, the same clock {@link #getQueueBundleIdsToProcess()} binds, so the
+	 * v1 API and the publisher job agree on what is due.
+	 */
+	private static void appendTierPredicate(final StringBuilder sql, final QueuedTier tier) {
+		if (tier == QueuedTier.DUE) {
+			sql.append(SCHEDULED_BUNDLES_DUE);
+		} else if (tier == QueuedTier.FUTURE) {
+			sql.append(SCHEDULED_BUNDLES_FUTURE);
+		}
+	}
+
+	private static void addTierParam(final DotConnect dc, final QueuedTier tier) {
+		if (tier == QueuedTier.DUE || tier == QueuedTier.FUTURE) {
+			dc.addParam(new Date());
+		}
+	}
+
+	@CloseDBIfOpened
+	@Override
+	public Integer countScheduledBundleIds(final String filter, final QueuedTier tier) throws DotPublisherException {
+		try {
+			final boolean hasFilter = UtilMethods.isSet(filter);
+			final StringBuilder sql = new StringBuilder(
+					"SELECT COUNT(*) AS bundle_count FROM (SELECT pq.bundle_id ")
+					.append(SCHEDULED_BUNDLES_FROM_WHERE);
+			appendTierPredicate(sql, tier);
+			if (hasFilter) {
+				sql.append(SCHEDULED_BUNDLES_FILTER);
+			}
+			sql.append("GROUP BY pq.bundle_id) scheduled");
+
+			final DotConnect dc = new DotConnect();
+			dc.setSQL(sql.toString());
+			addTierParam(dc, tier);
+			if (hasFilter) {
+				final String likeParam = "%" + SQLUtil.sanitizeParameter(filter).toLowerCase() + "%";
+				dc.addParam(likeParam);
+				dc.addParam(likeParam);
+			}
+			return Integer.parseInt(dc.loadObjectResults().get(0).get("bundle_count").toString());
+		} catch (Exception e) {
+			Logger.error(PublisherAPIImpl.class, e.getMessage(), e);
+			throw new DotPublisherException("Unable to count scheduled bundles: " + e.getMessage(), e);
+		}
+	}
+
+	@CloseDBIfOpened
+	@Override
+	public List<Map<String, Object>> getScheduledBundleIds(final int limit, final int offset,
+			final String filter, final QueuedTier tier) throws DotPublisherException {
+		try {
+			final boolean hasFilter = UtilMethods.isSet(filter);
+			// One row per bundle. asset_count = queue rows (one per asset); environment_count is a
+			// correlated subquery, NOT a join, so it does not multiply the asset count.
+			final StringBuilder sql = new StringBuilder(
+					"SELECT pq.bundle_id AS bundle_id, " +
+					"MAX(pb.name) AS bundle_name, " +
+					"MAX(pb.filter_key) AS filter_key, " +
+					// publishing_queue.publish_date is the authoritative scheduled time: it is what
+					// publishBundleAssets() sets and what PublisherQueueJob reads. publishing_bundle's
+					// publish_date can be stale/null, so the queue value must win.
+					"COALESCE(MAX(pq.publish_date), MAX(pb.publish_date)) AS publish_date, " +
+					"COALESCE(MAX(pq.entered_date), MAX(pq.publish_date), MAX(pb.publish_date)) AS entered_date, " +
+					"COUNT(*) AS asset_count, " +
+					"(SELECT COUNT(*) FROM publishing_bundle_environment e WHERE e.bundle_id = pq.bundle_id) " +
+					"AS environment_count ")
+					.append(SCHEDULED_BUNDLES_FROM_WHERE);
+			appendTierPredicate(sql, tier);
+			if (hasFilter) {
+				sql.append(SCHEDULED_BUNDLES_FILTER);
+			}
+			sql.append("GROUP BY pq.bundle_id ORDER BY publish_date ASC");
+
+			final DotConnect dc = new DotConnect();
+			dc.setSQL(sql.toString());
+			addTierParam(dc, tier);
+			if (hasFilter) {
+				final String likeParam = "%" + SQLUtil.sanitizeParameter(filter).toLowerCase() + "%";
+				dc.addParam(likeParam);
+				dc.addParam(likeParam);
+			}
+			dc.setMaxRows(limit);
+			dc.setStartRow(offset);
+			return dc.loadObjectResults();
+		} catch (Exception e) {
+			Logger.error(PublisherAPIImpl.class, e.getMessage(), e);
+			throw new DotPublisherException("Unable to get scheduled bundles: " + e.getMessage(), e);
+		}
+	}
+
 	private String SQLGETBUNDLESTOPROCESS =
 			"select distinct(p.bundle_id) as bundle_id, " +
 			"publish_date, operation, a.status "+
@@ -755,12 +871,19 @@ public class PublisherAPIImpl extends PublisherAPI{
 
 	private static final String DELETE_ELEMENT_IN_LANGUAGE_FROM_QUEUE = "DELETE FROM publishing_queue WHERE asset = ? AND language_id = ?";
 
+	/**
+	 * Bundle-scoped delete. The {@code bundle_id} predicate is what keeps the same asset queued in
+	 * other bundles intact - see issue #36861.
+	 */
+	private static final String DELETE_ELEMENT_FROM_BUNDLE_QUEUE = "DELETE FROM publishing_queue WHERE asset = ? AND bundle_id = ?";
+
 	@Override
 	public void deleteElementFromPublishQueueTable(final String identifier) throws DotPublisherException{
 		deleteElementFromPublishQueueTable(identifier, 0);
 	}
 
 	@Override
+	@Deprecated(since = "Sep 10th, 26", forRemoval = true)
 	public void deleteElementFromPublishQueueTableAndAuditStatus(final String identifier) throws DotPublisherException{
 		final List<PublishQueueElement> queueElements = getQueueElementsByAsset(identifier);
 		String bundleId = Try.of(()->queueElements.get(0).getBundleId()).getOrNull();
@@ -771,6 +894,41 @@ public class PublisherAPIImpl extends PublisherAPI{
 				.getQueueElementsByBundleId(bundleId)).getOrElse(Collections::emptyList);
 
 		if(queueElementsAfterDelete.isEmpty()) {
+			APILocator.getPublishAuditAPI().deletePublishAuditStatus(bundleId);
+		}
+	}
+
+	@WrapInTransaction
+	@Override
+	public void deleteElementFromPublishQueueTableAndAuditStatus(final String identifier,
+			final String bundleId) throws DotPublisherException {
+
+		if (!UtilMethods.isSet(bundleId)) {
+			// Never fall back to the bundle-agnostic DELETE: that would clear the asset from every
+			// bundle holding it, which is the behaviour this overload exists to prevent.
+			throw new IllegalArgumentException(
+					"A bundle id is required to delete asset " + identifier + " from a single bundle");
+		}
+
+		try {
+			final DotConnect dc = new DotConnect();
+			dc.setSQL(DELETE_ELEMENT_FROM_BUNDLE_QUEUE);
+			dc.addParam(identifier);
+			dc.addParam(bundleId);
+			dc.loadResult();
+		} catch (final Exception e) {
+			Logger.error(PublisherUtil.class, e.getMessage(), e);
+			throw new DotPublisherException("Unable to delete element " + identifier
+					+ " from bundle " + bundleId + " :" + e.getMessage(), e);
+		}
+
+		// Deliberately NOT wrapped in Try: an empty result and a failed lookup are not the same
+		// thing, and treating them alike would delete the audit status of a bundle that still has
+		// queued assets. bundleId is validated above, so there is nothing benign left to swallow -
+		// let the exception propagate and @WrapInTransaction roll the delete back with it.
+		final List<PublishQueueElement> remaining = getQueueElementsByBundleId(bundleId);
+
+		if (remaining.isEmpty()) {
 			APILocator.getPublishAuditAPI().deletePublishAuditStatus(bundleId);
 		}
 	}

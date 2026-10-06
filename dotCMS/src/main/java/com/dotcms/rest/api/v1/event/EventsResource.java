@@ -2,7 +2,7 @@ package com.dotcms.rest.api.v1.event;
 
 import com.dotcms.api.system.event.SystemEvent;
 import com.dotcms.api.web.WebSessionContext;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;

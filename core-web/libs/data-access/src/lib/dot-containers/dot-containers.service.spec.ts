@@ -1,5 +1,6 @@
-import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator/jest';
+import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { DotContainer, DotConfigurationVariables, CONTAINER_SOURCE } from '@dotcms/dotcms-models';
 
@@ -42,7 +43,7 @@ describe('DotContainersService', () => {
             {
                 provide: DotPropertiesService,
                 useValue: {
-                    getKey: jest.fn().mockReturnValue(of('null'))
+                    getKey: vi.fn().mockReturnValue(of('null'))
                 }
             }
         ]
@@ -52,11 +53,11 @@ describe('DotContainersService', () => {
         spectator = createHttp();
         dotPropertiesService = spectator.inject(DotPropertiesService);
         // Reset the mock to return null by default
-        jest.spyOn(dotPropertiesService, 'getKey').mockReturnValue(of('null'));
+        vi.spyOn(dotPropertiesService, 'getKey').mockReturnValue(of('null'));
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     describe('Constructor and Initialization', () => {
@@ -79,7 +80,7 @@ describe('DotContainersService', () => {
         });
 
         it('should filter out initial values', () => {
-            const spy = jest.fn();
+            const spy = vi.fn();
             spectator.service.defaultContainer$.subscribe(spy);
 
             // The observable filters out the initial state (initialized: false)
@@ -99,7 +100,7 @@ describe('DotContainersService', () => {
             });
 
             const req = spectator.expectOne(
-                `${EXPECTED_CONTAINER_API_URL}?filter=${filter}&perPage=${perPage}&system=false`,
+                `${EXPECTED_CONTAINER_API_URL}?filter=${filter}&per_page=${perPage}&system=false`,
                 HttpMethod.GET
             );
             expect(req.request.method).toBe('GET');
@@ -118,7 +119,7 @@ describe('DotContainersService', () => {
                 });
 
             const req = spectator.expectOne(
-                `${EXPECTED_CONTAINER_API_URL}?filter=${filter}&perPage=${perPage}&system=true`,
+                `${EXPECTED_CONTAINER_API_URL}?filter=${filter}&per_page=${perPage}&system=true`,
                 HttpMethod.GET
             );
             expect(req.request.method).toBe('GET');
@@ -134,7 +135,7 @@ describe('DotContainersService', () => {
             });
 
             const req = spectator.expectOne(
-                `${EXPECTED_CONTAINER_API_URL}?filter=${filter}&perPage=${perPage}&system=false`,
+                `${EXPECTED_CONTAINER_API_URL}?filter=${filter}&per_page=${perPage}&system=false`,
                 HttpMethod.GET
             );
             req.flush({ entity: mockContainers });
@@ -149,7 +150,7 @@ describe('DotContainersService', () => {
             });
 
             const req = spectator.expectOne(
-                `${EXPECTED_CONTAINER_API_URL}?filter=${filter}&perPage=${perPage}&system=false`,
+                `${EXPECTED_CONTAINER_API_URL}?filter=${filter}&per_page=${perPage}&system=false`,
                 HttpMethod.GET
             );
             req.flush({ entity: mockContainers });
@@ -165,7 +166,7 @@ describe('DotContainersService', () => {
             });
 
             const req = spectator.expectOne(
-                `${EXPECTED_CONTAINER_API_URL}?filter=${title}&perPage=1&system=false`,
+                `${EXPECTED_CONTAINER_API_URL}?filter=${title}&per_page=1&system=false`,
                 HttpMethod.GET
             );
             expect(req.request.method).toBe('GET');
@@ -181,7 +182,7 @@ describe('DotContainersService', () => {
             });
 
             const req = spectator.expectOne(
-                `${EXPECTED_CONTAINER_API_URL}?filter=${title}&perPage=1&system=true`,
+                `${EXPECTED_CONTAINER_API_URL}?filter=${title}&per_page=1&system=true`,
                 HttpMethod.GET
             );
             expect(req.request.method).toBe('GET');
@@ -197,21 +198,21 @@ describe('DotContainersService', () => {
             });
 
             const req = spectator.expectOne(
-                `${EXPECTED_CONTAINER_API_URL}?filter=${title}&perPage=1&system=false`,
+                `${EXPECTED_CONTAINER_API_URL}?filter=${title}&per_page=1&system=false`,
                 HttpMethod.GET
             );
             req.flush({ entity: multipleContainers });
         });
 
-        it('should return undefined when no containers are found', () => {
+        it('should return null when no containers are found', () => {
             const title = 'Non-existent Container';
 
             spectator.service.getContainerByTitle(title).subscribe((container) => {
-                expect(container).toBeUndefined();
+                expect(container).toBeNull();
             });
 
             const req = spectator.expectOne(
-                `${EXPECTED_CONTAINER_API_URL}?filter=${title}&perPage=1&system=false`,
+                `${EXPECTED_CONTAINER_API_URL}?filter=${title}&per_page=1&system=false`,
                 HttpMethod.GET
             );
             req.flush({ entity: [] });
@@ -221,11 +222,11 @@ describe('DotContainersService', () => {
             const title = '';
 
             spectator.service.getContainerByTitle(title).subscribe((container) => {
-                expect(container).toBeUndefined();
+                expect(container).toBeNull();
             });
 
             const req = spectator.expectOne(
-                `${EXPECTED_CONTAINER_API_URL}?filter=${title}&perPage=1&system=false`,
+                `${EXPECTED_CONTAINER_API_URL}?filter=${title}&per_page=1&system=false`,
                 HttpMethod.GET
             );
             req.flush({ entity: [] });
@@ -239,14 +240,14 @@ describe('DotContainersService', () => {
             const errorResponse = { status: 500, statusText: 'Internal Server Error' };
 
             spectator.service.getFiltered(filter, perPage).subscribe({
-                next: () => fail('Should have failed'),
+                next: () => expect.fail('Should have failed'),
                 error: (error) => {
                     expect(error.status).toBe(500);
                 }
             });
 
             const req = spectator.expectOne(
-                `${EXPECTED_CONTAINER_API_URL}?filter=${filter}&perPage=${perPage}&system=false`,
+                `${EXPECTED_CONTAINER_API_URL}?filter=${filter}&per_page=${perPage}&system=false`,
                 HttpMethod.GET
             );
             req.flush('Server Error', errorResponse);
@@ -257,14 +258,14 @@ describe('DotContainersService', () => {
             const errorResponse = { status: 404, statusText: 'Not Found' };
 
             spectator.service.getContainerByTitle(title).subscribe({
-                next: () => fail('Should have failed'),
+                next: () => expect.fail('Should have failed'),
                 error: (error) => {
                     expect(error.status).toBe(404);
                 }
             });
 
             const req = spectator.expectOne(
-                `${EXPECTED_CONTAINER_API_URL}?filter=${title}&perPage=1&system=false`,
+                `${EXPECTED_CONTAINER_API_URL}?filter=${title}&per_page=1&system=false`,
                 HttpMethod.GET
             );
             req.flush('Not Found', errorResponse);

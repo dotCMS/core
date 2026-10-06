@@ -3,6 +3,8 @@ package com.dotcms.util;
 import java.net.URL;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -11,10 +13,16 @@ import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestUnitTest;
 import com.dotcms.mock.request.MockSessionRequest;
+import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.ImmutableList;
+import com.liferay.portal.model.User;
 
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class SecurityUtilsTest {
 
@@ -104,6 +112,92 @@ public class SecurityUtilsTest {
 
 
     return new MockHeaderRequest(new MockAttributeRequest(new MockSessionRequest(new MockHttpRequestUnitTest(host, uri).request()).request()).request(), "referer", referer);
+  }
+
+  /**
+   * Method to test: {@link SecurityUtils#sendPermissionDenied(User, String, HttpServletRequest, HttpServletResponse)}
+   * Given Scenario: An authenticated (non-anonymous) user lacks permission on a resource.
+   * Expected Result: A clean 403 is sent, the REDIRECT_AFTER_LOGIN intent is cleared, and it is
+   * never set (so the container error page does not bounce the user back through the SSO flow).
+   */
+  @Test
+  public void test_sendPermissionDenied_authenticatedUser_returns403_andClearsRedirect() throws Exception {
+
+    final User authenticated = mock(User.class);
+    when(authenticated.isAnonymousUser()).thenReturn(false);
+
+    final HttpSession session = mock(HttpSession.class);
+    final HttpServletRequest request = mock(HttpServletRequest.class);
+    final HttpServletResponse response = mock(HttpServletResponse.class);
+    when(response.isCommitted()).thenReturn(false);
+    when(request.getSession(false)).thenReturn(session);
+
+    SecurityUtils.sendPermissionDenied(authenticated, "/protected/file.pdf", request, response);
+
+    verify(response).sendError(HttpServletResponse.SC_FORBIDDEN);
+    verify(session).removeAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
+    verify(session, never()).setAttribute(Mockito.eq(WebKeys.REDIRECT_AFTER_LOGIN), Mockito.any());
+  }
+
+  /**
+   * Method to test: {@link SecurityUtils#sendPermissionDenied(User, String, HttpServletRequest, HttpServletResponse)}
+   * Given Scenario: The anonymous user requests a protected resource.
+   * Expected Result: A 401 is sent and REDIRECT_AFTER_LOGIN is set so login can return the user.
+   */
+  @Test
+  public void test_sendPermissionDenied_anonymousUser_returns401_andSetsRedirect() throws Exception {
+
+    final User anonymous = mock(User.class);
+    when(anonymous.isAnonymousUser()).thenReturn(true);
+
+    final HttpSession session = mock(HttpSession.class);
+    final HttpServletRequest request = mock(HttpServletRequest.class);
+    final HttpServletResponse response = mock(HttpServletResponse.class);
+    when(response.isCommitted()).thenReturn(false);
+    when(request.getSession()).thenReturn(session);
+
+    SecurityUtils.sendPermissionDenied(anonymous, "/protected/file.pdf", request, response);
+
+    verify(response).sendError(HttpServletResponse.SC_UNAUTHORIZED);
+    verify(session).setAttribute(WebKeys.REDIRECT_AFTER_LOGIN, "/protected/file.pdf");
+  }
+
+  /**
+   * Method to test: {@link SecurityUtils#sendPermissionDenied(User, String, HttpServletRequest, HttpServletResponse)}
+   * Given Scenario: A null user (not resolved / not logged in) requests a protected resource.
+   * Expected Result: Treated as anonymous -> 401 with the redirect intent set.
+   */
+  @Test
+  public void test_sendPermissionDenied_nullUser_returns401() throws Exception {
+
+    final HttpSession session = mock(HttpSession.class);
+    final HttpServletRequest request = mock(HttpServletRequest.class);
+    final HttpServletResponse response = mock(HttpServletResponse.class);
+    when(response.isCommitted()).thenReturn(false);
+    when(request.getSession()).thenReturn(session);
+
+    SecurityUtils.sendPermissionDenied(null, "/protected/file.pdf", request, response);
+
+    verify(response).sendError(HttpServletResponse.SC_UNAUTHORIZED);
+    verify(session).setAttribute(WebKeys.REDIRECT_AFTER_LOGIN, "/protected/file.pdf");
+  }
+
+  /**
+   * Method to test: {@link SecurityUtils#sendPermissionDenied(User, String, HttpServletRequest, HttpServletResponse)}
+   * Given Scenario: The response has already been committed.
+   * Expected Result: No error is written (avoids IllegalStateException / double response).
+   */
+  @Test
+  public void test_sendPermissionDenied_committedResponse_isNoOp() throws Exception {
+
+    final User authenticated = mock(User.class);
+    final HttpServletRequest request = mock(HttpServletRequest.class);
+    final HttpServletResponse response = mock(HttpServletResponse.class);
+    when(response.isCommitted()).thenReturn(true);
+
+    SecurityUtils.sendPermissionDenied(authenticated, "/protected/file.pdf", request, response);
+
+    verify(response, never()).sendError(Mockito.anyInt());
   }
 
   /**

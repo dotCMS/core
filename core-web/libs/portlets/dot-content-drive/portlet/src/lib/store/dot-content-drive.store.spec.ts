@@ -1,31 +1,86 @@
-import { describe, expect } from '@jest/globals';
-import { createServiceFactory, SpectatorService, mockProvider } from '@ngneat/spectator/jest';
-import { of, throwError } from 'rxjs';
+import {
+    createServiceFactory,
+    SpectatorService,
+    mockProvider,
+    SpyObject
+} from '@openng/spectator/vitest';
+import { NEVER, Observable, of, Subject, throwError } from 'rxjs';
+import { Mock, Mocked, describe, expect, vi } from 'vitest';
 
-import { provideHttpClient } from '@angular/common/http';
+import { Location } from '@angular/common';
+import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { fakeAsync, tick } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 
-import { DotContentDriveService, DotFolderService } from '@dotcms/data-access';
-import { DotContentDriveItem, DotSite } from '@dotcms/dotcms-models';
-import { QueryBuilder } from '@dotcms/query-builder';
+import {
+    AddToBundleService,
+    DotBulkRefreshService,
+    DotFolderBulkDeleteService,
+    DotFolderBulkDuplicateService,
+    DotEventsSocket,
+    DotMessageService,
+    PushPublishService,
+    DotContentDriveService,
+    DotLanguagesService,
+    DotCurrentUserService,
+    DotFolderService,
+    DotHttpErrorManagerService,
+    DotPropertiesService,
+    DotUploadFileService,
+    DotWorkflowActionsFireService
+} from '@dotcms/data-access';
+import {
+    DotAjaxActionResponseView,
+    DotBulkRefreshCompletedEvent,
+    DotBulkUploadCompletedEvent,
+    DotContentDriveItem,
+    DotContentDriveSearchResponse,
+    DotCurrentUser,
+    DotFireDefaultActionResult,
+    DotFolderDeleteActiveRun,
+    DotLanguage,
+    DotSite,
+    DotWorkflowPushPublishValue
+} from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
+import { createFakeTagField, createFakeTextField, mockLocales } from '@dotcms/utils-testing';
 
 import { DotContentDriveStore } from './dot-content-drive.store';
 
 import {
-    BASE_QUERY,
     DEFAULT_PAGINATION,
     DEFAULT_PATH,
     DEFAULT_SORT,
+    ROOT_PATH,
     DEFAULT_TREE_EXPANDED,
+    SHARED_ASSETS_DISABLED_VALUE,
+    SHARED_ASSETS_ENABLED_VALUE,
+    SHARED_ASSETS_FILTER_KEY,
     SYSTEM_HOST
 } from '../shared/constants';
 import { MOCK_ITEMS, MOCK_SEARCH_RESPONSE, MOCK_SITES } from '../shared/mocks';
-import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
+import {
+    DotContentDriveFilters,
+    DotContentDriveSortOrder,
+    DotContentDriveStatus
+} from '../shared/models';
+
+/**
+ * Expected filters, with the shared-assets default the store seeds on every path that builds a
+ * filter set. Spelled out here rather than assumed so a test that cares about the toggle can pass
+ * its own value and still read as one object.
+ */
+const withSeeded = (filters: DotContentDriveFilters = {}): DotContentDriveFilters => ({
+    [SHARED_ASSETS_FILTER_KEY]: SHARED_ASSETS_ENABLED_VALUE,
+    ...filters
+});
 
 describe('DotContentDriveStore', () => {
     let spectator: SpectatorService<InstanceType<typeof DotContentDriveStore>>;
     let store: InstanceType<typeof DotContentDriveStore>;
+    /** Feeds the store's one-shot current-user fetch; re-created per test so emissions don't leak. */
+    let currentUser$: Subject<DotCurrentUser>;
 
     const createService = createServiceFactory({
         service: DotContentDriveStore,
@@ -36,17 +91,64 @@ describe('DotContentDriveStore', () => {
                 }
             }),
             mockProvider(GlobalStore, {
-                siteDetails: jest.fn().mockReturnValue(SYSTEM_HOST)
+                siteDetails: vi.fn().mockReturnValue(SYSTEM_HOST),
+                // Nothing advertised by default, which is what an instance older than the field
+                // reports and what a configuration still in flight reads as.
+                systemBulkUpload: vi.fn().mockReturnValue(null),
+                systemFolderBulkDelete: vi.fn().mockReturnValue(null),
+                systemFolderBulkDuplicate: vi.fn().mockReturnValue(null)
             }),
             mockProvider(DotContentDriveService),
-            mockProvider(DotFolderService, {
-                getFolders: jest.fn().mockReturnValue(of([]))
+            // Fetched once on init to resolve the CMS Administrator role. Answers through a subject
+            // rather than a fixed `of(...)` so a test can control *when* — the store subscribes
+            // during construction, and "hasn't answered yet" is a case the flag has to get right.
+            mockProvider(DotCurrentUserService, {
+                getCurrentUser: vi.fn(() => currentUser$)
             }),
-            provideHttpClient()
+            mockProvider(DotFolderService, {
+                getFolders: vi.fn().mockReturnValue(of([]))
+            }),
+            // Required by `withActionExecution`, which fires workflow actions from the store.
+            mockProvider(DotWorkflowActionsFireService),
+            // Also required by `withActionExecution`, which fires Add to Bundle from the store.
+            mockProvider(AddToBundleService),
+            // Stubbed rather than bare: `withPushPublishEnvironments` looks the environments up on
+            // init, and an unstubbed `mockProvider` returns undefined for the observable.
+            mockProvider(PushPublishService, { getEnvironments: vi.fn(() => of([])) }),
+            mockProvider(DotBulkRefreshService),
+            // Registered on the store, so it is read on init. Answering `[]` keeps every spec here
+            // about what it is actually testing rather than about folders nobody is deleting.
+            mockProvider(DotFolderBulkDeleteService, {
+                readActiveRuns: vi.fn(() => of([]))
+            }),
+            mockProvider(DotHttpErrorManagerService),
+            // The store subscribes to Location (popstate re-hydration); capture the handler here.
+            mockProvider(Location, {
+                subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() })
+            }),
+            // withFlags fetches feature flags on init; stub so no real HTTP fires.
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: vi.fn().mockReturnValue(of({}))
+            }),
+            // The store resolves the environment's default language on init and seeds it into the
+            // `languageId` filter. Answering synchronously keeps every pre-existing test realistic:
+            // the seed is already in place by the time they assert. Blocks that need to control the
+            // timing override this provider with a Subject.
+            mockProvider(DotLanguagesService, {
+                get: vi.fn().mockReturnValue(of(mockLocales))
+            }),
+            // Paired with the testing backend: a real HttpClient in jsdom dials
+            // localhost for every relative URL and the request dies with
+            // "socket hang up", asynchronously — Jest dropped that, Vitest counts it.
+            // Nothing asserts on these requests; they just must not leave the process.
+            provideHttpClient(),
+            provideHttpClientTesting()
         ]
     });
 
     beforeEach(() => {
+        // Assigned before the store is built: `onInit` subscribes straight away.
+        currentUser$ = new Subject<DotCurrentUser>();
         spectator = createService();
         store = spectator.service;
     });
@@ -55,7 +157,9 @@ describe('DotContentDriveStore', () => {
         it('should have the correct initial state', () => {
             expect(store.currentSite()).toEqual(undefined);
             expect(store.path()).toBe(DEFAULT_PATH);
-            expect(store.filters()).toEqual({});
+            // The default language is seeded during onInit — "no language selected" is never a
+            // state the portlet sits in.
+            expect(store.filters()).toEqual(withSeeded({ languageId: ['1'] }));
             expect(store.items()).toEqual([]);
             expect(store.selectedItems()).toEqual([]);
             expect(store.status()).toBe(DotContentDriveStatus.LOADING);
@@ -64,126 +168,194 @@ describe('DotContentDriveStore', () => {
         });
     });
 
-    describe('Computed Properties', () => {
-        describe('$query', () => {
-            it('should build base query when no path or filters are provided', () => {
-                const baseQuery = new QueryBuilder()
-                    .raw('+systemType:false -contentType:forms -contentType:Host +deleted:false')
-                    .raw(`+conhost:${SYSTEM_HOST.identifier} +working:true +variant:default`)
-                    .build();
+    describe('uploadCeilings', () => {
+        it('should pass through the ceilings the server advertises', () => {
+            const globalStore = spectator.inject(GlobalStore);
 
-                expect(store.$query()).toEqual(baseQuery);
+            (globalStore.systemBulkUpload as unknown as Mock).mockReturnValue({
+                maxFiles: 100,
+                maxTotalBytes: 1073741824
             });
 
-            it('should include path in query when provided', () => {
-                const testPath = '/test/path/';
-                store.initContentDrive({
-                    currentSite: SYSTEM_HOST,
-                    path: testPath,
-                    filters: {},
-                    isTreeExpanded: false
-                });
-
-                const expectedQuery = new QueryBuilder()
-                    .raw(BASE_QUERY)
-                    .field('parentPath')
-                    .equals(testPath)
-                    .raw(`+conhost:${SYSTEM_HOST.identifier} +working:true +variant:default`)
-                    .build();
-
-                expect(store.$query()).toEqual(expectedQuery);
-            });
-
-            it('should include custom site in query when provided', () => {
-                const customSite = MOCK_SITES[0] as DotSite;
-
-                store.initContentDrive({
-                    currentSite: customSite,
-                    path: DEFAULT_PATH,
-                    filters: {},
-                    isTreeExpanded: false
-                });
-
-                const expectedQuery = new QueryBuilder()
-                    .raw(BASE_QUERY)
-                    .raw(
-                        `+(conhost:${customSite.identifier} OR conhost:${SYSTEM_HOST.identifier}) +working:true +variant:default`
-                    )
-                    .build();
-
-                expect(store.$query()).toEqual(expectedQuery);
-            });
-
-            it('should include filters in query when provided', () => {
-                const filters = {
-                    contentType: ['Blog'],
-                    status: 'published'
-                };
-
-                store.initContentDrive({
-                    currentSite: SYSTEM_HOST,
-                    path: DEFAULT_PATH,
-                    filters,
-                    isTreeExpanded: false
-                });
-
-                const expectedQuery = new QueryBuilder()
-                    .raw(BASE_QUERY)
-                    .raw(`+conhost:${SYSTEM_HOST.identifier} +working:true +variant:default`)
-                    .field('contentType')
-                    .equals('Blog')
-                    .field('status')
-                    .equals('published')
-                    .build();
-
-                expect(store.$query()).toEqual(expectedQuery);
-            });
-
-            it('should include title filter in query when provided', () => {
-                const filters = {
-                    title: 'Blog'
-                };
-
-                store.initContentDrive({
-                    currentSite: SYSTEM_HOST,
-                    path: DEFAULT_PATH,
-                    filters,
-                    isTreeExpanded: false
-                });
-
-                const expectedQuery = new QueryBuilder()
-                    .raw(BASE_QUERY)
-                    .raw(`+conhost:${SYSTEM_HOST.identifier} +working:true +variant:default`)
-                    .raw(`+catchall:*Blog* title_dotraw:*Blog*^5 title:'Blog'^15 title:Blog^5`)
-                    .build();
-
-                expect(store.$query()).toEqual(expectedQuery);
-            });
-
-            it('should include title filter in query when provided with multiple words', () => {
-                const filters = {
-                    title: 'Blog Post'
-                };
-
-                store.initContentDrive({
-                    currentSite: SYSTEM_HOST,
-                    path: DEFAULT_PATH,
-                    filters,
-                    isTreeExpanded: false
-                });
-
-                const expectedQuery = new QueryBuilder()
-                    .raw(BASE_QUERY)
-                    .raw(`+conhost:${SYSTEM_HOST.identifier} +working:true +variant:default`)
-                    .raw(
-                        `+catchall:*Blog Post* title_dotraw:*Blog Post*^5 title:'Blog Post'^15 title:Blog^5 title:Post^5`
-                    )
-                    .build();
-
-                expect(store.$query()).toEqual(expectedQuery);
-            });
+            expect(store.uploadCeilings()).toEqual({ maxFiles: 100, maxTotalBytes: 1073741824 });
         });
 
+        it('should read as no ceiling when the server advertises none', () => {
+            // Set here rather than left to the provider's default: that mock is built once for the
+            // factory, so the test above it would decide what this one sees.
+            const globalStore = spectator.inject(GlobalStore);
+
+            (globalStore.systemBulkUpload as unknown as Mock).mockReturnValue(null);
+
+            // The two cases callers must not tell apart: a configuration still loading, and an
+            // instance too old to carry the field. Both mean the server does the refusing.
+            expect(store.uploadCeilings()).toBeNull();
+        });
+    });
+
+    /**
+     * How many folders one duplicate or delete may carry, as the server advertises it (#37062), so
+     * the Action Center can cap the run, and its row's count, at the ceiling.
+     */
+    describe('folder ceilings', () => {
+        it.each([
+            ['folderDuplicateMaxPaths', 'systemFolderBulkDuplicate'],
+            ['folderDeleteMaxPaths', 'systemFolderBulkDelete']
+        ] as const)('%s should read the maximum the server advertises', (signal, source) => {
+            const globalStore = spectator.inject(GlobalStore);
+
+            (globalStore[source] as unknown as Mock).mockReturnValue({ maxPaths: 25 });
+
+            expect(store[signal]()).toBe(25);
+        });
+
+        it.each([
+            ['folderDuplicateMaxPaths', 'systemFolderBulkDuplicate'],
+            ['folderDeleteMaxPaths', 'systemFolderBulkDelete']
+        ] as const)(
+            '%s should read as no ceiling when the server advertises none',
+            (signal, source) => {
+                // A configuration still loading, or an instance too old to carry the field: either
+                // way the server does the refusing.
+                const globalStore = spectator.inject(GlobalStore);
+
+                (globalStore[source] as unknown as Mock).mockReturnValue(null);
+
+                expect(store[signal]()).toBeNull();
+            }
+        );
+    });
+
+    describe('currentUserIsAdmin', () => {
+        it('should start false, before the request has answered', () => {
+            // The unresolved case. Nothing waits on the flag, so consumers read this default — the
+            // non-admin behaviour, i.e. the Unlock row keeps warning. Over-warning is the safe way
+            // to fail here; the copy already says a foreign lock *may* be refused.
+            expect(store.currentUserIsAdmin()).toBe(false);
+        });
+
+        it('should resolve to true for a CMS Administrator', () => {
+            currentUser$.next({ admin: true } as DotCurrentUser);
+
+            expect(store.currentUserIsAdmin()).toBe(true);
+        });
+
+        it('should resolve to false for a non-administrator', () => {
+            currentUser$.next({ admin: false } as DotCurrentUser);
+
+            expect(store.currentUserIsAdmin()).toBe(false);
+        });
+
+        it('should stay false when the response carries no body', () => {
+            // `catchError` sits upstream of `subscribe`, so it only covers observable errors.
+            // Destructuring the response inside the subscriber would throw on a 204, a proxy that
+            // strips the body, or a session-expired gateway returning no JSON — an unhandled error
+            // during store init, for a flag that is explicitly non-essential.
+            expect(() => currentUser$.next(null as unknown as DotCurrentUser)).not.toThrow();
+            expect(store.currentUserIsAdmin()).toBe(false);
+        });
+
+        it('should stay false when the request fails', () => {
+            // A portlet that cannot answer "is this an admin?" should still work: the role only
+            // softens a warning, so a failure is swallowed rather than surfaced.
+            currentUser$.error(new HttpErrorResponse({ status: 500 }));
+
+            expect(store.currentUserIsAdmin()).toBe(false);
+        });
+
+        it('should not re-fetch the current user as the store changes', () => {
+            // The role is fixed for the session, so state changes that re-run the store's effects
+            // must not re-request it. Measured as a delta rather than an absolute count: the spy is
+            // shared by the factory, so it carries calls from earlier tests.
+            const { getCurrentUser } = spectator.inject(DotCurrentUserService, true);
+            const callsAfterInit = getCurrentUser.mock.calls.length;
+
+            store.initContentDrive({
+                currentSite: SYSTEM_HOST,
+                path: DEFAULT_PATH,
+                filters: {},
+                isTreeExpanded: false
+            });
+            store.setPath('/some/other/path/');
+
+            expect(getCurrentUser.mock.calls.length).toBe(callsAfterInit);
+        });
+    });
+
+    describe('default language', () => {
+        // `mockLocales` marks English (id 1) as the default and Spanish (id 2) as non-default, so
+        // these assertions prove the seed reads the `defaultLanguage` flag rather than picking the
+        // first entry or hardcoding id 1.
+        it('should resolve the environment default language on init', () => {
+            expect(store.defaultLanguageId()).toBe(1);
+            expect(store.defaultLanguageLoaded()).toBe(true);
+        });
+
+        it('should seed the default language when the URL carries none', () => {
+            store.initContentDrive({
+                currentSite: SYSTEM_HOST,
+                path: DEFAULT_PATH,
+                filters: {},
+                isTreeExpanded: false
+            });
+
+            expect(store.filters()).toEqual(withSeeded({ languageId: ['1'] }));
+        });
+
+        it('should leave a language restored from the URL untouched', () => {
+            store.initContentDrive({
+                currentSite: SYSTEM_HOST,
+                path: DEFAULT_PATH,
+                filters: { languageId: ['2'] },
+                isTreeExpanded: false
+            });
+
+            expect(store.filters()).toEqual(withSeeded({ languageId: ['2'] }));
+        });
+
+        it('should re-seed the default language when every filter is cleared', () => {
+            store.patchFilters({ languageId: ['2'], title: 'Blog' });
+
+            store.clearFilters();
+
+            expect(store.filters()).toEqual(withSeeded({ languageId: ['1'] }));
+        });
+
+        it('should re-seed the default language when the language filter is removed', () => {
+            // "Nothing selected" is never a valid state: the backend omits the language term and
+            // returns every language version as its own row.
+            store.patchFilters({ languageId: ['2'] });
+
+            store.removeFilter('languageId');
+
+            expect(store.filters()).toEqual(withSeeded({ languageId: ['1'] }));
+        });
+
+        it('should keep other filters when re-seeding after a language removal', () => {
+            store.patchFilters({ languageId: ['2'], title: 'Blog' });
+
+            store.removeFilter('languageId');
+
+            expect(store.filters()).toEqual(withSeeded({ title: 'Blog', languageId: ['1'] }));
+        });
+
+        it('should still show folders when a language is selected', () => {
+            // Folders have no language, so a locale filter — which selects a *version* of content —
+            // must not tear down the structure being navigated. Asserted at the site root, which is
+            // where structure exists: all site content asks for no folders by design, so testing it
+            // there would prove nothing about the language filter.
+            store.initContentDrive({
+                currentSite: SYSTEM_HOST,
+                path: ROOT_PATH,
+                filters: { languageId: ['1', '2'] },
+                isTreeExpanded: false
+            });
+
+            expect(store.$request().showFolders).toBe(true);
+        });
+    });
+
+    describe('Computed Properties', () => {
         describe('$request', () => {
             it('should build request with default values when no path or filters are provided', () => {
                 store.initContentDrive({
@@ -201,15 +373,79 @@ describe('DotContentDriveStore', () => {
                     text: '',
                     filterFolders: true
                 });
-                expect(request.language).toBeUndefined();
+                expect(request.language).toEqual(['1']);
                 expect(request.contentTypes).toBeUndefined();
                 expect(request.baseTypes).toBeUndefined();
                 expect(request.contentCursor).toBe(0);
                 expect(request.folderCursor).toBe(0);
                 expect(request.maxResults).toBe(DEFAULT_PAGINATION.limit);
                 expect(request.sortBy).toBe(`${DEFAULT_SORT.field}:${DEFAULT_SORT.order}`);
-                expect(request.archived).toBe(false);
-                expect(request.showFolders).toBe(true);
+                // `archived` is deliberately NOT sent any more (FR-019). The endpoint already
+                // defaults it to false, and pinning it here would contradict an Archived status
+                // selection. Its absence is what keeps the status filter authoritative.
+                expect(request.archived).toBeUndefined();
+                // Likewise `status`: omitted entirely when nothing is selected, so an unfiltered
+                // request stays byte-identical to one that never knew about the filter (FR-002).
+                expect(request.status).toBeUndefined();
+                // No location means all site content, which spans every folder in the site and so
+                // lists none of them; the tree is still there to navigate. Browsing the site root
+                // instead is what asks for the top-level folders.
+                expect(request.showFolders).toBe(false);
+            });
+
+            describe('includeSystemHost', () => {
+                it('should stay on when the shared-assets filter carries its seeded default', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: DEFAULT_PATH,
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+
+                    expect(store.filters()[SHARED_ASSETS_FILTER_KEY]).toBe(
+                        SHARED_ASSETS_ENABLED_VALUE
+                    );
+                    expect(store.$request().includeSystemHost).toBe(true);
+                });
+
+                it('should turn off when the shared-assets filter is disabled', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: DEFAULT_PATH,
+                        filters: { [SHARED_ASSETS_FILTER_KEY]: SHARED_ASSETS_DISABLED_VALUE },
+                        isTreeExpanded: false
+                    });
+
+                    expect(store.$request().includeSystemHost).toBe(false);
+                });
+
+                it('should follow the filter when it is toggled after init', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: DEFAULT_PATH,
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+
+                    store.patchFilters({
+                        [SHARED_ASSETS_FILTER_KEY]: SHARED_ASSETS_DISABLED_VALUE
+                    });
+
+                    expect(store.$request().includeSystemHost).toBe(false);
+                });
+
+                it('should come back on when "Clear all" drops every filter', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: DEFAULT_PATH,
+                        filters: { [SHARED_ASSETS_FILTER_KEY]: SHARED_ASSETS_DISABLED_VALUE },
+                        isTreeExpanded: false
+                    });
+
+                    store.clearFilters();
+
+                    expect(store.$request().includeSystemHost).toBe(true);
+                });
             });
 
             it('should include path in assetPath when provided', () => {
@@ -238,6 +474,199 @@ describe('DotContentDriveStore', () => {
                 const request = store.$request();
 
                 expect(request.assetPath).toBe(`//${customSite.hostname}/`);
+            });
+
+            describe('browse scope', () => {
+                // The wire values are written out rather than imported: this is the one place the
+                // client's idea of a location turns into what the endpoint is asked for, so the
+                // assertions should fail if that mapping drifts, not follow it.
+
+                it('should ask for all site content when the URL carries no location', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: DEFAULT_PATH,
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+
+                    const request = store.$request();
+
+                    expect(request.browseScope).toBe('ALL');
+                    expect(request.assetPath).toBe(`//${SYSTEM_HOST.hostname}/`);
+                });
+
+                // An empty path reaches the same branch as an absent one today, because
+                // toRequestLocation asks `!path?.length`. Both forms occur — the URL yields
+                // undefined, a cleared location yields '' — so the equivalence is pinned rather
+                // than assumed. Narrowing that check to one of the two would fail here.
+                it('should treat an empty location the same as an absent one', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: DEFAULT_PATH,
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+                    const absent = store.$request();
+
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: '',
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+                    const empty = store.$request();
+
+                    expect(empty.browseScope).toBe(absent.browseScope);
+                    expect(empty.assetPath).toBe(absent.assetPath);
+                    expect(empty.showFolders).toBe(absent.showFolders);
+                });
+
+                it('should ask for the site root when the location is the root itself', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: '/',
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+
+                    const request = store.$request();
+
+                    expect(request.browseScope).toBe('ROOT');
+                    expect(request.assetPath).toBe(`//${SYSTEM_HOST.hostname}/`);
+                });
+
+                it('should name no scope when the location is a folder', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: '/documents/',
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+
+                    const request = store.$request();
+
+                    // A folder is addressed by its path alone. Naming a scope as well would be
+                    // refused by the endpoint, and it is what would turn this into a listing of
+                    // every descendant.
+                    expect(request.browseScope).toBeUndefined();
+                    expect(request.assetPath).toBe(`//${SYSTEM_HOST.hostname}/documents/`);
+                });
+
+                it('should ask for System Host without pasting the reserved word onto the site', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: 'SYSTEM_HOST',
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+
+                    const request = store.$request();
+
+                    expect(request.browseScope).toBe('SYSTEM_HOST');
+                    // The bug this exists to catch: interpolating the location straight into the
+                    // path produces `//demo.dotcms.comSYSTEM_HOST`, which resolves to nothing.
+                    expect(request.assetPath).toBe(`//${SYSTEM_HOST.hostname}/`);
+                });
+
+                it('should keep System Host selected when the site is switched', () => {
+                    // **Characterization test: green the day it is written**, like the host-clause
+                    // guard on the backend. System Host belongs to no site, so switching sites does
+                    // not change what it lists, and the selection already survives because it is
+                    // derived from the location while a switch changes the site.
+                    //
+                    // Written precisely because nothing would notice if that stopped being true. A
+                    // later change that reset the path on a site switch would drift the highlight
+                    // onto the new site's root, and the sidebar would claim the user is in two
+                    // places at once — with every other test still passing.
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: 'SYSTEM_HOST',
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+                    expect(store.$systemHostSelected()).toBe(true);
+
+                    // A site switch reaches the store as a re-init carrying the new site and the
+                    // location the route still holds — which is how the switch can change the
+                    // site without disturbing where the drive is browsing.
+                    store.initContentDrive({
+                        currentSite: MOCK_SITES[0],
+                        path: 'SYSTEM_HOST',
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+
+                    expect(store.$systemHostSelected()).toBe(true);
+                    expect(store.$allSiteContentSelected()).toBe(false);
+                    // The hierarchy below re-renders for the newly chosen site, so the switch
+                    // visibly does something rather than appearing to fail.
+                    expect(store.currentSite()).toEqual(MOCK_SITES[0]);
+                    // And the request still asks for System Host, not for the new site's content.
+                    expect(store.$request().browseScope).toBe('SYSTEM_HOST');
+                });
+
+                it('should not ask for folders in all site content', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: DEFAULT_PATH,
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+
+                    // Folders are not results in a flat listing that spans the whole site, and the
+                    // tree is still there to navigate them.
+                    expect(store.$request().showFolders).toBe(false);
+                });
+
+                // Searching all site content asks for them again: a term matches names rather
+                // than browsing a place, and a folder should be found wherever it lives
+                // (#37479 FR-011). Suppressing them for the whole scope broke that feature's
+                // e2e at the default view, which is the only place the two rules meet.
+                it('should ask for folders when all site content is searched', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: DEFAULT_PATH,
+                        filters: { title: 'report' },
+                        isTreeExpanded: false
+                    });
+
+                    expect(store.$request().showFolders).toBe(true);
+                });
+
+                // System Host has none either way, so a term changes nothing there.
+                it('should still ask for no folders when System Host is searched', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: 'SYSTEM_HOST',
+                        filters: { title: 'report' },
+                        isTreeExpanded: false
+                    });
+
+                    expect(store.$request().showFolders).toBe(false);
+                });
+
+                it('should not ask for folders in System Host, which has none', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: 'SYSTEM_HOST',
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+
+                    expect(store.$request().showFolders).toBe(false);
+                });
+
+                it('should still ask for folders at the site root', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: '/',
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+
+                    // The top-level folders sit at the root, so they are part of what is there.
+                    expect(store.$request().showFolders).toBe(true);
+                });
             });
 
             it('should include title filter in request when provided', () => {
@@ -308,7 +737,36 @@ describe('DotContentDriveStore', () => {
                 const request = store.$request();
 
                 expect(request.language).toEqual(['en']);
-                expect(request.showFolders).toBe(false);
+            });
+
+            it('should map the workflow filter tokens into request.workflow entries', () => {
+                const filters = {
+                    workflow: ['a:a2', 'b']
+                };
+
+                store.initContentDrive({
+                    currentSite: SYSTEM_HOST,
+                    path: DEFAULT_PATH,
+                    filters,
+                    isTreeExpanded: false
+                });
+
+                const request = store.$request();
+
+                expect(request.workflow).toEqual([{ scheme: 'a', step: 'a2' }, { scheme: 'b' }]);
+            });
+
+            it('should leave request.workflow undefined when no workflow filter is provided', () => {
+                store.initContentDrive({
+                    currentSite: SYSTEM_HOST,
+                    path: DEFAULT_PATH,
+                    filters: {},
+                    isTreeExpanded: false
+                });
+
+                const request = store.$request();
+
+                expect(request.workflow).toBeUndefined();
             });
 
             it('should include pagination in request', () => {
@@ -373,9 +831,78 @@ describe('DotContentDriveStore', () => {
                 expect(request.showFolders).toBe(false);
             });
 
-            it('should set showFolders to false when languageId filter is provided', () => {
+            it('should KEEP showFolders true when a languageId filter is provided', () => {
+                // Folders have no language, so a locale filter — which picks a *version* of content
+                // — must not tear down the structure being navigated. At the site root for the same
+                // reason as the sibling test above.
                 const filters = {
                     languageId: ['en']
+                };
+
+                store.initContentDrive({
+                    currentSite: SYSTEM_HOST,
+                    path: ROOT_PATH,
+                    filters,
+                    isTreeExpanded: false
+                });
+
+                const request = store.$request();
+
+                expect(request.showFolders).toBe(true);
+            });
+
+            it('should send the status filter and hide folders when a status is selected', () => {
+                store.initContentDrive({
+                    currentSite: SYSTEM_HOST,
+                    path: DEFAULT_PATH,
+                    filters: { status: ['UNPUBLISHED', 'LOCKED'] },
+                    isTreeExpanded: false
+                });
+
+                const request = store.$request();
+
+                expect(request.status).toEqual(['UNPUBLISHED', 'LOCKED']);
+                // Folders carry no status, so any selection drops them (FR-015).
+                expect(request.showFolders).toBe(false);
+                // Still absent — the status selection owns the archived decision now (FR-019).
+                expect(request.archived).toBeUndefined();
+            });
+
+            it('should keep the status selection when navigating to another folder', () => {
+                store.initContentDrive({
+                    currentSite: SYSTEM_HOST,
+                    path: DEFAULT_PATH,
+                    filters: { status: ['ARCHIVED'] },
+                    isTreeExpanded: false
+                });
+
+                store.setPath('/some/other/folder');
+
+                // Parity with every other filter: browsing does not clear the filter bag, which is
+                // what makes the selection survive folder navigation (FR-016).
+                expect(store.$request().status).toEqual(['ARCHIVED']);
+            });
+
+            it('should drop the status filter when filters are cleared', () => {
+                store.initContentDrive({
+                    currentSite: SYSTEM_HOST,
+                    path: ROOT_PATH,
+                    filters: { status: ['ARCHIVED'] },
+                    isTreeExpanded: false
+                });
+
+                store.clearFilters();
+
+                const request = store.$request();
+
+                expect(request.status).toBeUndefined();
+                // Folders come back once nothing is narrowing the results (FR-017).
+                expect(request.showFolders).toBe(true);
+            });
+
+            it('should set showFolders to false when workflow filter is provided', () => {
+                const filters = {
+                    workflow: ['a']
                 };
 
                 store.initContentDrive({
@@ -390,10 +917,27 @@ describe('DotContentDriveStore', () => {
                 expect(request.showFolders).toBe(false);
             });
 
-            it('should set showFolders to true when no filters are provided', () => {
+            it('should set showFolders to false when a field filter is active', () => {
                 store.initContentDrive({
                     currentSite: SYSTEM_HOST,
                     path: DEFAULT_PATH,
+                    filters: { 'us.body': 'hello' },
+                    isTreeExpanded: false
+                });
+                store.setUserSearchableFields([createFakeTextField({ variable: 'body' })]);
+
+                const request = store.$request();
+
+                expect(request.userSearchable).toEqual({ body: 'hello' });
+                expect(request.showFolders).toBe(false);
+            });
+
+            it('should set showFolders to true when no filters are provided', () => {
+                // At the site root: with no location at all this is now all site content, which
+                // asks for no folders whatever the filters say.
+                store.initContentDrive({
+                    currentSite: SYSTEM_HOST,
+                    path: ROOT_PATH,
                     filters: {},
                     isTreeExpanded: false
                 });
@@ -450,7 +994,7 @@ describe('DotContentDriveStore', () => {
 
                 expect(store.currentSite()).toEqual(testSite);
                 expect(store.path()).toBe(testPath);
-                expect(store.filters()).toEqual(testFilters);
+                expect(store.filters()).toEqual(withSeeded({ ...testFilters, languageId: ['1'] }));
                 expect(store.status()).toBe(DotContentDriveStatus.LOADING);
                 expect(store.isTreeExpanded()).toBe(true);
             });
@@ -498,15 +1042,58 @@ describe('DotContentDriveStore', () => {
         describe('setGlobalSearch', () => {
             it('should update filters with title search value', () => {
                 store.setGlobalSearch('test search');
-                expect(store.filters()).toEqual({ title: 'test search' });
+                expect(store.filters()).toEqual(
+                    withSeeded({ languageId: ['1'], title: 'test search' })
+                );
             });
 
-            it('should clear filters when search is empty', () => {
+            it('should preserve other filters when setting a search value', () => {
+                store.patchFilters({ contentType: ['Blog'], baseType: ['1'] });
+
+                store.setGlobalSearch('test search');
+
+                expect(store.filters()).toEqual(
+                    withSeeded({
+                        languageId: ['1'],
+                        contentType: ['Blog'],
+                        baseType: ['1'],
+                        title: 'test search'
+                    })
+                );
+            });
+
+            it('should preserve other filters when search is empty', () => {
                 store.patchFilters({ contentType: ['Blog'] });
-                expect(store.filters()).toEqual({ contentType: ['Blog'] });
+                expect(store.filters()).toEqual(
+                    withSeeded({ languageId: ['1'], contentType: ['Blog'] })
+                );
 
                 store.setGlobalSearch('');
-                expect(store.filters()).toEqual({});
+                expect(store.filters()).toEqual(
+                    withSeeded({ languageId: ['1'], contentType: ['Blog'] })
+                );
+            });
+
+            it('should drop the search scope when the term is cleared', () => {
+                store.setGlobalSearch('pricing');
+                store.setSearchScope('ALL_FIELDS');
+                expect(store.filters()['searchScope']).toBe('ALL_FIELDS');
+
+                store.setGlobalSearch('');
+
+                // The scope qualifies the term; with the term gone it is nonsense in the state —
+                // and a leftover scope would keep "Clear all" lit with nothing filtered (FR-020).
+                expect(Object.hasOwn(store.filters(), 'searchScope')).toBe(false);
+            });
+
+            it('should keep the scope when the term is replaced, not cleared', () => {
+                store.setGlobalSearch('pricing');
+                store.setSearchScope('ALL_FIELDS');
+
+                store.setGlobalSearch('contracts');
+
+                expect(store.filters()['searchScope']).toBe('ALL_FIELDS');
+                expect(store.filters()['title']).toBe('contracts');
             });
 
             it('should reset pagination offset when setting global search', () => {
@@ -526,13 +1113,109 @@ describe('DotContentDriveStore', () => {
             });
         });
 
+        describe('setSearchScope', () => {
+            it('should record a non-default scope as filter state', () => {
+                store.setSearchScope('ALL_FIELDS');
+
+                expect(store.filters()).toEqual(
+                    withSeeded({ languageId: ['1'], searchScope: 'ALL_FIELDS' })
+                );
+            });
+
+            it('should remove the key when the scope returns to the default', () => {
+                store.setSearchScope('ALL_FIELDS');
+
+                store.setSearchScope('TITLE');
+
+                // Removed, not set to 'TITLE'. A present key counts as a non-default filter,
+                // so storing the default would offer "Clear all" on an unfiltered drive.
+                expect(store.filters()).toEqual(withSeeded({ languageId: ['1'] }));
+            });
+
+            it('should never store the default, even when set first', () => {
+                store.setSearchScope('TITLE');
+
+                expect(Object.hasOwn(store.filters(), 'searchScope')).toBe(false);
+            });
+
+            it('should preserve the search term and other filters', () => {
+                store.setGlobalSearch('pricing');
+                store.patchFilters({ contentType: ['Blog'] });
+
+                store.setSearchScope('ALL_FIELDS');
+
+                expect(store.filters()).toEqual(
+                    withSeeded({
+                        languageId: ['1'],
+                        contentType: ['Blog'],
+                        title: 'pricing',
+                        searchScope: 'ALL_FIELDS'
+                    })
+                );
+            });
+
+            it('should keep the scope and the term under separate keys', () => {
+                store.setGlobalSearch('pricing');
+                store.setSearchScope('ALL_FIELDS');
+
+                // `title` holds the TERM; `searchScope` holds the mode. Title is the default and is
+                // never stored, so only All fields ever sits beside the term.
+                expect(store.filters()['title']).toBe('pricing');
+                expect(store.filters()['searchScope']).toBe('ALL_FIELDS');
+            });
+
+            it('should reset pagination so the widened results start at page 1', () => {
+                store.setPagination({ offset: 40, limit: 20, page: 3 });
+
+                store.setSearchScope('ALL_FIELDS');
+
+                expect(store.pagination().page).toBe(1);
+                expect(store.pagination().offset).toBe(0);
+            });
+
+            it('should drop the scope when all filters are cleared', () => {
+                store.setSearchScope('ALL_FIELDS');
+
+                store.clearFilters();
+
+                expect(Object.hasOwn(store.filters(), 'searchScope')).toBe(false);
+            });
+        });
+
+        describe('clearFilters', () => {
+            it('should remove every filter', () => {
+                store.patchFilters({ contentType: ['Blog'], baseType: ['1'] });
+                store.setGlobalSearch('hello');
+
+                store.clearFilters();
+
+                // Clearing everything still leaves the default language: an empty language filter
+                // is not a neutral state.
+                expect(store.filters()).toEqual(withSeeded({ languageId: ['1'] }));
+            });
+
+            it('should reset pagination when clearing filters', () => {
+                store.setPagination({ limit: 20, page: 3, offset: 40 });
+
+                store.clearFilters();
+
+                expect(store.pagination()).toEqual({ limit: 20, page: 1, offset: 0 });
+            });
+        });
+
         describe('removeFilter', () => {
             it('should remove the specified filter', () => {
                 store.patchFilters({ contentType: ['Blog'], baseType: ['1'] });
-                expect(store.filters()).toEqual({ contentType: ['Blog'], baseType: ['1'] });
+                expect(store.filters()).toEqual(
+                    withSeeded({
+                        languageId: ['1'],
+                        contentType: ['Blog'],
+                        baseType: ['1']
+                    })
+                );
 
                 store.removeFilter('contentType');
-                expect(store.filters()).toEqual({ baseType: ['1'] });
+                expect(store.filters()).toEqual(withSeeded({ languageId: ['1'], baseType: ['1'] }));
             });
 
             it('should reset pagination offset when removing filter', () => {
@@ -551,7 +1234,9 @@ describe('DotContentDriveStore', () => {
 
                 store.removeFilter('nonExistentFilter');
 
-                expect(store.filters()).toEqual(initialFilters);
+                expect(store.filters()).toEqual(
+                    withSeeded({ ...initialFilters, languageId: ['1'] })
+                );
                 expect(store.pagination()).toEqual({ limit: 20, page: 2, offset: 20 });
             });
         });
@@ -559,15 +1244,19 @@ describe('DotContentDriveStore', () => {
         describe('patchFilters', () => {
             it('should update filters with provided values', () => {
                 store.patchFilters({ contentType: ['Blog'] });
-                expect(store.filters()).toEqual({ contentType: ['Blog'] });
+                expect(store.filters()).toEqual(
+                    withSeeded({ languageId: ['1'], contentType: ['Blog'] })
+                );
             });
 
             it('should remove filter if value is undefined', () => {
                 store.patchFilters({ contentType: ['Blog'] });
-                expect(store.filters()).toEqual({ contentType: ['Blog'] });
+                expect(store.filters()).toEqual(
+                    withSeeded({ languageId: ['1'], contentType: ['Blog'] })
+                );
 
                 store.patchFilters({ contentType: undefined });
-                expect(store.filters()).toEqual({});
+                expect(store.filters()).toEqual(withSeeded({ languageId: ['1'] }));
             });
 
             it('should update filters and reset pagination offset', () => {
@@ -576,7 +1265,9 @@ describe('DotContentDriveStore', () => {
 
                 store.patchFilters({ contentType: ['Blog'] });
                 expect(store.pagination()).toEqual({ limit: 20, page: 1, offset: 0 });
-                expect(store.filters()).toEqual({ contentType: ['Blog'] });
+                expect(store.filters()).toEqual(
+                    withSeeded({ languageId: ['1'], contentType: ['Blog'] })
+                );
             });
         });
 
@@ -672,6 +1363,34 @@ describe('DotContentDriveStore', () => {
 
                 expect(store.path()).toBe('/new/path/');
             });
+
+            it('should not touch filters when changing path', () => {
+                store.patchFilters({ contentType: ['Blog'] });
+                store.setGlobalSearch('hello');
+                expect(store.filters()).toEqual(
+                    withSeeded({
+                        languageId: ['1'],
+                        contentType: ['Blog'],
+                        title: 'hello'
+                    })
+                );
+
+                store.setPath('/documents/');
+
+                expect(store.filters()).toEqual(
+                    withSeeded({
+                        languageId: ['1'],
+                        contentType: ['Blog'],
+                        title: 'hello'
+                    })
+                );
+            });
+
+            it('should leave filters at just the default language when entering a folder', () => {
+                store.setPath('/some/folder/');
+
+                expect(store.filters()).toEqual(withSeeded({ languageId: ['1'] }));
+            });
         });
     });
 });
@@ -692,13 +1411,46 @@ describe('DotContentDriveStore - onInit', () => {
                 }
             }),
             mockProvider(GlobalStore, {
-                siteDetails: jest.fn().mockReturnValue(MOCK_SITES[2])
+                siteDetails: vi.fn().mockReturnValue(MOCK_SITES[2])
+            }),
+            // The store resolves the CMS Administrator role on init; stub it so no real HTTP fires.
+            mockProvider(DotCurrentUserService, {
+                getCurrentUser: vi.fn().mockReturnValue(of({ admin: false } as DotCurrentUser))
             }),
             mockProvider(DotContentDriveService, {
-                search: jest.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
+                search: vi.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
             }),
             mockProvider(DotFolderService, {
-                getFolders: jest.fn().mockReturnValue(of([]))
+                getFolders: vi.fn().mockReturnValue(of([]))
+            }),
+            // Required by `withActionExecution`, which fires workflow actions from the store.
+            mockProvider(DotWorkflowActionsFireService),
+            // Also required by `withActionExecution`, which fires Add to Bundle from the store.
+            mockProvider(AddToBundleService),
+            // Stubbed rather than bare: `withPushPublishEnvironments` looks the environments up on
+            // init, and an unstubbed `mockProvider` returns undefined for the observable.
+            mockProvider(PushPublishService, { getEnvironments: vi.fn(() => of([])) }),
+            mockProvider(DotBulkRefreshService),
+            // Registered on the store, so it is read on init. Answering `[]` keeps every spec here
+            // about what it is actually testing rather than about folders nobody is deleting.
+            mockProvider(DotFolderBulkDeleteService, {
+                readActiveRuns: vi.fn(() => of([]))
+            }),
+            mockProvider(DotHttpErrorManagerService),
+            // The store subscribes to Location (popstate re-hydration); capture the handler here.
+            mockProvider(Location, {
+                subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() })
+            }),
+            // withFlags fetches feature flags on init; stub so no real HTTP fires.
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: vi.fn().mockReturnValue(of({}))
+            }),
+            // The store resolves the environment's default language on init and seeds it into the
+            // `languageId` filter. Answering synchronously keeps every pre-existing test realistic:
+            // the seed is already in place by the time they assert. Blocks that need to control the
+            // timing override this provider with a Subject.
+            mockProvider(DotLanguagesService, {
+                get: vi.fn().mockReturnValue(of(mockLocales))
             }),
             provideHttpClient()
         ]
@@ -713,18 +1465,434 @@ describe('DotContentDriveStore - onInit', () => {
         spectator.flushEffects();
 
         expect(store.path()).toBe('/initial/test/path');
-        expect(store.filters()).toEqual({
-            contentType: ['InitialTestContentType']
-        });
+        expect(store.filters()).toEqual(
+            withSeeded({
+                contentType: ['InitialTestContentType'],
+                languageId: ['1']
+            })
+        );
         expect(store.isTreeExpanded()).toBe(true);
         expect(store.currentSite()).toBe(MOCK_SITES[2]);
+    });
+});
+
+/**
+ * Runs still going when Content Drive opens (developer decision, 2026-09-28: FR-015 amended). One
+ * read of every queue's active listing, routed to whichever part of the store owns each: delete
+ * marks the folders it covers, duplicate and upload put their status back.
+ */
+describe('DotContentDriveStore - runs in progress on load', () => {
+    let spectator: SpectatorService<InstanceType<typeof DotContentDriveStore>>;
+    let store: InstanceType<typeof DotContentDriveStore>;
+    let currentUser$: Observable<DotCurrentUser>;
+    let activeDeletes$: Observable<DotFolderDeleteActiveRun[]>;
+
+    const createService = createServiceFactory({
+        service: DotContentDriveStore,
+        providers: [
+            mockProvider(ActivatedRoute, {
+                snapshot: {
+                    queryParams: {
+                        path: '/initial/test/path',
+                        filters: 'contentType:InitialTestContentType',
+                        isTreeExpanded: 'true'
+                    }
+                }
+            }),
+            mockProvider(GlobalStore, {
+                siteDetails: vi.fn().mockReturnValue(MOCK_SITES[2])
+            }),
+            // The store resolves the CMS Administrator role on init; stub it so no real HTTP fires.
+            mockProvider(DotCurrentUserService, {
+                getCurrentUser: vi.fn(() => currentUser$)
+            }),
+            mockProvider(DotContentDriveService, {
+                search: vi.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
+            }),
+            mockProvider(DotFolderService, {
+                getFolders: vi.fn().mockReturnValue(of([]))
+            }),
+            // Required by `withActionExecution`, which fires workflow actions from the store.
+            mockProvider(DotWorkflowActionsFireService),
+            // Also required by `withActionExecution`, which fires Add to Bundle from the store.
+            mockProvider(AddToBundleService),
+            // Stubbed rather than bare: `withPushPublishEnvironments` looks the environments up on
+            // init, and an unstubbed `mockProvider` returns undefined for the observable.
+            mockProvider(PushPublishService, { getEnvironments: vi.fn(() => of([])) }),
+            mockProvider(DotBulkRefreshService),
+            // Registered on the store, so it is read on init. Answering `[]` keeps every spec here
+            // about what it is actually testing rather than about folders nobody is deleting.
+            mockProvider(DotFolderBulkDeleteService, {
+                readActiveRuns: vi.fn(() => activeDeletes$)
+            }),
+            mockProvider(DotFolderBulkDuplicateService, {
+                readActiveRuns: vi.fn(() =>
+                    of([
+                        { id: 'mine', userId: 'me', assetPaths: ['//demo.com/a/'] },
+                        { id: 'theirs', userId: 'someone-else', assetPaths: ['//demo.com/b/'] }
+                    ])
+                )
+            }),
+            mockProvider(DotUploadFileService, {
+                readActiveUploads: vi.fn(() =>
+                    of([
+                        { id: 'upload-mine', userId: 'me', fileCount: 2 },
+                        { id: 'upload-theirs', userId: 'someone-else', fileCount: 1 }
+                    ])
+                )
+            }),
+            mockProvider(DotHttpErrorManagerService),
+            // The store subscribes to Location (popstate re-hydration); capture the handler here.
+            mockProvider(Location, {
+                subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() })
+            }),
+            // withFlags fetches feature flags on init; stub so no real HTTP fires.
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: vi.fn().mockReturnValue(of({}))
+            }),
+            // The store resolves the environment's default language on init and seeds it into the
+            // `languageId` filter. Answering synchronously keeps every pre-existing test realistic:
+            // the seed is already in place by the time they assert. Blocks that need to control the
+            // timing override this provider with a Subject.
+            mockProvider(DotLanguagesService, {
+                get: vi.fn().mockReturnValue(of(mockLocales))
+            }),
+            provideHttpClient()
+        ]
+    });
+
+    const build = () => {
+        spectator = createService();
+        store = spectator.service;
+        spectator.flushEffects();
+    };
+
+    beforeEach(() => {
+        currentUser$ = of({ userId: 'me', admin: false } as DotCurrentUser);
+        activeDeletes$ = of([{ id: 'delete-1', state: 'RUNNING', paths: ['//demo.com/gone/'] }]);
+    });
+
+    it("should restore the author's own duplicates and uploads, and no one else's", () => {
+        // The listings are not scoped to the reader, and only the submitter is sent the completion
+        // that ends a run: another author's restored status would never go away.
+        build();
+
+        expect(Object.keys(store.duplicateJobs())).toEqual(['mine']);
+        expect(Object.keys(store.uploadJobs())).toEqual(['upload-mine']);
+        expect(store.toolbarRunCount()).toBe(2);
+    });
+
+    it('should mark the folders a delete is working on from the same read', () => {
+        // Unlike the others, delete marks every author's runs: the folders are in use either way.
+        build();
+
+        expect(Object.keys(store.folderDeleteRuns())).toEqual(['delete-1']);
+    });
+
+    it('should still restore the other runs when one read throws', () => {
+        // Each read answers `[]` on failure, but one that throws anyway, from a mapping bug say,
+        // must cost only its own runs: the reads are joined, and a join fails as a whole.
+        activeDeletes$ = throwError(() => new Error('boom'));
+        build();
+
+        expect(Object.keys(store.folderDeleteRuns())).toEqual([]);
+        expect(Object.keys(store.duplicateJobs())).toEqual(['mine']);
+        expect(Object.keys(store.uploadJobs())).toEqual(['upload-mine']);
+    });
+
+    it("should mark a delete's folders without waiting for the other reads", () => {
+        // A folder the delete leaves while a slower read is still out is announced then; marked
+        // only after every read answered, it would be marked again and stay busy until reload.
+        currentUser$ = NEVER;
+        build();
+
+        expect(Object.keys(store.folderDeleteRuns())).toEqual(['delete-1']);
+    });
+
+    it('should restore no status when it cannot tell who the author is', () => {
+        currentUser$ = throwError(() => new Error('boom'));
+        build();
+
+        expect(store.toolbarRunCount()).toBe(0);
+        expect(Object.keys(store.folderDeleteRuns())).toEqual(['delete-1']);
+    });
+
+    it('should hold no upload completion for a restore that cannot happen without an author', () => {
+        // With no author nothing is ever restored to claim a held completion, so holding one would
+        // keep it for the portlet's lifetime.
+        currentUser$ = throwError(() => new Error('boom'));
+        build();
+
+        store.reportUploadCompleted('Upload', {
+            jobId: 'other-tab',
+            state: 'SUCCESS',
+            total: 1,
+            processed: 1,
+            successCount: 1,
+            failedCount: 0,
+            skippedCount: 0
+        } as DotBulkUploadCompletedEvent);
+
+        expect(store.unclaimedUploadCompletions()).toEqual({});
+    });
+});
+
+describe('DotContentDriveStore - Browser Back/Forward (popstate) re-hydration', () => {
+    let spectator: SpectatorService<InstanceType<typeof DotContentDriveStore>>;
+    let store: InstanceType<typeof DotContentDriveStore>;
+
+    const createService = createServiceFactory({
+        service: DotContentDriveStore,
+        providers: [
+            mockProvider(ActivatedRoute, { snapshot: { queryParams: {} } }),
+            mockProvider(GlobalStore, {
+                siteDetails: vi.fn().mockReturnValue(MOCK_SITES[0])
+            }),
+            // The store resolves the CMS Administrator role on init; stub it so no real HTTP fires.
+            mockProvider(DotCurrentUserService, {
+                getCurrentUser: vi.fn().mockReturnValue(of({ admin: false } as DotCurrentUser))
+            }),
+            mockProvider(DotContentDriveService, {
+                search: vi.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
+            }),
+            mockProvider(DotFolderService, {
+                getFolders: vi.fn().mockReturnValue(of([]))
+            }),
+            mockProvider(Location, {
+                subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() })
+            }),
+            // Required by `withActionExecution`, which fires workflow actions from the store.
+            mockProvider(DotWorkflowActionsFireService),
+            // Also required by `withActionExecution`, which fires Add to Bundle from the store.
+            mockProvider(AddToBundleService),
+            // Stubbed rather than bare: `withPushPublishEnvironments` looks the environments up on
+            // init, and an unstubbed `mockProvider` returns undefined for the observable.
+            mockProvider(PushPublishService, { getEnvironments: vi.fn(() => of([])) }),
+            mockProvider(DotBulkRefreshService),
+            // Registered on the store, so it is read on init. Answering `[]` keeps every spec here
+            // about what it is actually testing rather than about folders nobody is deleting.
+            mockProvider(DotFolderBulkDeleteService, {
+                readActiveRuns: vi.fn(() => of([]))
+            }),
+            mockProvider(DotHttpErrorManagerService),
+            // withFlags fetches feature flags on init; stub so no real HTTP fires.
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: vi.fn().mockReturnValue(of({}))
+            }),
+            // The store resolves the environment's default language on init and seeds it into the
+            // `languageId` filter. Answering synchronously keeps every pre-existing test realistic:
+            // the seed is already in place by the time they assert. Blocks that need to control the
+            // timing override this provider with a Subject.
+            mockProvider(DotLanguagesService, {
+                get: vi.fn().mockReturnValue(of(mockLocales))
+            }),
+            provideHttpClient()
+        ]
+    });
+
+    /** Invokes the popstate handler the store registered in onInit with the given restored URL. */
+    const popstate = (url: string) => {
+        const subscribe = spectator.inject(Location).subscribe as Mock;
+        const handler = subscribe.mock.lastCall?.[0] as (event: { url: string }) => void;
+        handler({ url });
+    };
+
+    beforeEach(() => {
+        spectator = createService();
+        store = spectator.service;
+        spectator.flushEffects();
+    });
+
+    it('re-hydrates the store when Back changes the filters param (fixes the stale-list bug)', () => {
+        popstate('/c/content-drive?filters=contentType:Blog');
+
+        expect(store.filters()).toEqual(withSeeded({ contentType: ['Blog'], languageId: ['1'] }));
+        // Reset to LOADING is what the search effect turns into a fresh load.
+        expect(store.status()).toBe(DotContentDriveStatus.LOADING);
+    });
+
+    it('re-hydrates the store when Back changes the path param', () => {
+        popstate('/c/content-drive?path=/foo/bar');
+
+        expect(store.path()).toBe('/foo/bar');
+    });
+
+    it('re-hydrates the tree-expanded preference from the URL on Back', () => {
+        store.initContentDrive({
+            currentSite: MOCK_SITES[0],
+            path: DEFAULT_PATH,
+            filters: {},
+            isTreeExpanded: true
+        });
+
+        popstate('/c/content-drive?isTreeExpanded=false');
+
+        expect(store.isTreeExpanded()).toBe(false);
+    });
+
+    it('does NOT re-hydrate when only the editContent param changed (closing the panel via Back)', () => {
+        store.initContentDrive({
+            currentSite: MOCK_SITES[0],
+            path: '/keep',
+            filters: { contentType: ['Blog'] },
+            isTreeExpanded: true
+        });
+        const initSpy = vi.spyOn(store, 'initContentDrive');
+
+        // Same browsing params — only editContent differs (here, absent). Must be a no-op so the
+        // list isn't reset/reloaded just because the side panel closed.
+        popstate('/c/content-drive?path=/keep&filters=contentType:Blog&isTreeExpanded=true');
+
+        expect(initSpy).not.toHaveBeenCalled();
+        expect(store.path()).toBe('/keep');
+        expect(store.filters()).toEqual(withSeeded({ contentType: ['Blog'], languageId: ['1'] }));
+    });
+
+    it('does NOT re-hydrate when Back returns to a URL with no filters while the default is seeded', () => {
+        // The seeded default is written to the URL, which pushes a history entry. Without a
+        // seed-aware guard, Back lands on the language-less URL, re-hydrates, re-seeds, and the
+        // write-back pushes the same entry again — the user can never Back out of the portlet.
+        store.initContentDrive({
+            currentSite: MOCK_SITES[0],
+            path: '/keep',
+            filters: {},
+            isTreeExpanded: true
+        });
+        const initSpy = vi.spyOn(store, 'initContentDrive');
+
+        popstate('/c/content-drive?path=/keep&isTreeExpanded=true');
+
+        expect(initSpy).not.toHaveBeenCalled();
+        expect(store.filters()).toEqual(withSeeded({ languageId: ['1'] }));
+    });
+
+    it('does NOT re-hydrate when the restored filters differ only in key order', () => {
+        // The guard compares encoded strings, and the seed appends `languageId` last — so a URL
+        // written with the keys in another order must still read as unchanged.
+        store.initContentDrive({
+            currentSite: MOCK_SITES[0],
+            path: '/keep',
+            filters: { title: 'Blog', languageId: ['2'] },
+            isTreeExpanded: true
+        });
+        const initSpy = vi.spyOn(store, 'initContentDrive');
+
+        popstate('/c/content-drive?path=/keep&filters=languageId:2;title:Blog&isTreeExpanded=true');
+
+        expect(initSpy).not.toHaveBeenCalled();
+    });
+});
+
+describe('DotContentDriveStore - default language resolution', () => {
+    let spectator: SpectatorService<InstanceType<typeof DotContentDriveStore>>;
+    let store: InstanceType<typeof DotContentDriveStore>;
+    let contentDriveService: SpyObject<DotContentDriveService>;
+    /**
+     * Feeds the store's one-shot languages fetch. A subject rather than a fixed `of(...)` so these
+     * tests control *when* the default lands relative to the first search — the whole point of the
+     * gate in `loadItems`.
+     */
+    let languages$: Subject<DotLanguage[]>;
+
+    const createService = createServiceFactory({
+        service: DotContentDriveStore,
+        providers: [
+            mockProvider(ActivatedRoute, { snapshot: { queryParams: {} } }),
+            mockProvider(GlobalStore, {
+                siteDetails: vi.fn().mockReturnValue(MOCK_SITES[0])
+            }),
+            mockProvider(DotCurrentUserService, {
+                getCurrentUser: vi.fn().mockReturnValue(of({ admin: false } as DotCurrentUser))
+            }),
+            mockProvider(DotContentDriveService, {
+                search: vi.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
+            }),
+            mockProvider(DotFolderService, {
+                getFolders: vi.fn().mockReturnValue(of([]))
+            }),
+            mockProvider(Location, {
+                subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() })
+            }),
+            mockProvider(DotWorkflowActionsFireService),
+            mockProvider(AddToBundleService),
+            mockProvider(PushPublishService, { getEnvironments: vi.fn(() => of([])) }),
+            mockProvider(DotHttpErrorManagerService),
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: vi.fn().mockReturnValue(of({}))
+            }),
+            mockProvider(DotLanguagesService, {
+                get: vi.fn(() => languages$)
+            }),
+            provideHttpClient()
+        ]
+    });
+
+    beforeEach(() => {
+        // Assigned before the store is built: `onInit` subscribes straight away.
+        languages$ = new Subject<DotLanguage[]>();
+        spectator = createService();
+        store = spectator.service;
+        contentDriveService = spectator.inject(DotContentDriveService);
+        // The factory's spies are shared across the tests in this block, so call counts would
+        // otherwise carry over. Cleared after construction but before any effect is flushed, so no
+        // search has been recorded yet. (Clear, not reset: the mock implementations must survive.)
+        vi.clearAllMocks();
+    });
+
+    it('should hold the first search until the default language resolves', () => {
+        // Searching before the seed lands would fire once with no language — briefly showing every
+        // language version of every row — and again with it.
+        spectator.flushEffects();
+
+        expect(contentDriveService.search).not.toHaveBeenCalled();
+        expect(store.status()).toBe(DotContentDriveStatus.LOADING);
+
+        languages$.next(mockLocales);
+        spectator.flushEffects();
+
+        expect(contentDriveService.search).toHaveBeenCalledTimes(1);
+        expect(contentDriveService.search).toHaveBeenCalledWith(
+            expect.objectContaining({ language: ['1'] })
+        );
+    });
+
+    it('should search unseeded when the languages request fails', () => {
+        // A portlet that cannot resolve the default must still work: it degrades to exactly the
+        // behaviour it had before the seed existed rather than hanging in LOADING.
+        spectator.flushEffects();
+
+        languages$.error(new HttpErrorResponse({ status: 500 }));
+        spectator.flushEffects();
+
+        expect(store.defaultLanguageLoaded()).toBe(true);
+        expect(contentDriveService.search).toHaveBeenCalledTimes(1);
+        expect(store.filters()).toEqual(withSeeded({}));
+        expect(store.status()).toBe(DotContentDriveStatus.LOADED);
+    });
+
+    it('should search unseeded when the environment declares no default language', () => {
+        spectator.flushEffects();
+
+        languages$.next([]);
+        spectator.flushEffects();
+
+        expect(store.defaultLanguageId()).toBeUndefined();
+        expect(store.filters()).toEqual(withSeeded({}));
+        expect(contentDriveService.search).toHaveBeenCalledTimes(1);
+    });
+
+    it('should expose the environment languages for the Locale filter to render', () => {
+        spectator.flushEffects();
+        languages$.next(mockLocales);
+
+        expect(store.languages()).toEqual(mockLocales);
     });
 });
 
 describe('DotContentDriveStore - Content Loading Effect', () => {
     let spectator: SpectatorService<InstanceType<typeof DotContentDriveStore>>;
     let store: InstanceType<typeof DotContentDriveStore>;
-    let contentDriveService: jest.Mocked<DotContentDriveService>;
+    let contentDriveService: Mocked<DotContentDriveService>;
 
     const createService = createServiceFactory({
         service: DotContentDriveStore,
@@ -735,13 +1903,46 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
                 }
             }),
             mockProvider(GlobalStore, {
-                siteDetails: jest.fn().mockReturnValue(MOCK_SITES[0])
+                siteDetails: vi.fn().mockReturnValue(MOCK_SITES[0])
+            }),
+            // The store resolves the CMS Administrator role on init; stub it so no real HTTP fires.
+            mockProvider(DotCurrentUserService, {
+                getCurrentUser: vi.fn().mockReturnValue(of({ admin: false } as DotCurrentUser))
             }),
             mockProvider(DotContentDriveService, {
-                search: jest.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
+                search: vi.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
             }),
             mockProvider(DotFolderService, {
-                getFolders: jest.fn().mockReturnValue(of([]))
+                getFolders: vi.fn().mockReturnValue(of([]))
+            }),
+            // Required by `withActionExecution`, which fires workflow actions from the store.
+            mockProvider(DotWorkflowActionsFireService),
+            // Also required by `withActionExecution`, which fires Add to Bundle from the store.
+            mockProvider(AddToBundleService),
+            // Stubbed rather than bare: `withPushPublishEnvironments` looks the environments up on
+            // init, and an unstubbed `mockProvider` returns undefined for the observable.
+            mockProvider(PushPublishService, { getEnvironments: vi.fn(() => of([])) }),
+            mockProvider(DotBulkRefreshService),
+            // Registered on the store, so it is read on init. Answering `[]` keeps every spec here
+            // about what it is actually testing rather than about folders nobody is deleting.
+            mockProvider(DotFolderBulkDeleteService, {
+                readActiveRuns: vi.fn(() => of([]))
+            }),
+            mockProvider(DotHttpErrorManagerService),
+            // The store subscribes to Location (popstate re-hydration); capture the handler here.
+            mockProvider(Location, {
+                subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() })
+            }),
+            // withFlags fetches feature flags on init; stub so no real HTTP fires.
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: vi.fn().mockReturnValue(of({}))
+            }),
+            // The store resolves the environment's default language on init and seeds it into the
+            // `languageId` filter. Answering synchronously keeps every pre-existing test realistic:
+            // the seed is already in place by the time they assert. Blocks that need to control the
+            // timing override this provider with a Subject.
+            mockProvider(DotLanguagesService, {
+                get: vi.fn().mockReturnValue(of(mockLocales))
             }),
             provideHttpClient()
         ]
@@ -751,10 +1952,15 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
         spectator = createService();
         store = spectator.service;
         contentDriveService = spectator.inject(DotContentDriveService);
+        // Reset the shared ActivatedRoute mock so a test that seeds queryParams doesn't leak
+        // into the next (the mock's snapshot object is created once by the factory).
+        (
+            spectator.inject(ActivatedRoute).snapshot as { queryParams: Record<string, string> }
+        ).queryParams = {};
     });
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('should fetch content when store has a non-SYSTEM_HOST site', () => {
@@ -763,6 +1969,57 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
         expect(contentDriveService.search).toHaveBeenCalled();
         expect(store.items()).toEqual(MOCK_ITEMS);
         expect(store.status()).toBe(DotContentDriveStatus.LOADED);
+    });
+
+    it('should defer the search while a restored us.* filter has no field metadata yet', () => {
+        // Cold URL restore: a us.* value is present but the field metadata hasn't loaded.
+        // Drive loadItems() directly (the init effect would overwrite state from empty queryParams).
+        store.initContentDrive({
+            currentSite: MOCK_SITES[0],
+            path: DEFAULT_PATH,
+            filters: { 'us.body': 'hello' },
+            isTreeExpanded: false
+        });
+
+        store.loadItems();
+
+        // No search yet — searching now would drop the us.* value from the payload.
+        expect(contentDriveService.search).not.toHaveBeenCalled();
+
+        // Once the field metadata arrives, the search fires with the value shaped in.
+        store.setUserSearchableFields([createFakeTextField({ variable: 'body' })]);
+        store.loadItems();
+
+        expect(contentDriveService.search).toHaveBeenCalledWith(
+            expect.objectContaining({ userSearchable: { body: 'hello' } })
+        );
+    });
+
+    it('should release the deferred search once field metadata loads even when the request is unchanged', () => {
+        // Cold restore of a us.* key whose field is NOT among the type's searchable fields
+        // (removed / flag turned off / tampered URL). The payload builder drops it, so the
+        // request is structurally identical before and after the metadata loads. Without a
+        // tracked release, the $request dedupe guard would suppress the effect re-run and the
+        // portlet would stay stuck in LOADING forever. The search must still fire.
+        const route = spectator.inject(ActivatedRoute);
+        (route.snapshot as { queryParams: Record<string, string> }).queryParams = {
+            filters: 'us.ghost:x'
+        };
+
+        // First cycle: init restores the ghost chip, the search is deferred (no metadata yet).
+        spectator.flushEffects();
+        expect(store.userSearchableActive()).toEqual(['ghost']);
+        expect(contentDriveService.search).not.toHaveBeenCalled();
+
+        // Metadata loads but does NOT include 'ghost' → payload stays undefined (request unchanged).
+        store.setUserSearchableFields([createFakeTextField({ variable: 'body' })]);
+        spectator.flushEffects();
+
+        // The search fires anyway; the ineligible us.* value is simply not sent.
+        expect(contentDriveService.search).toHaveBeenCalledTimes(1);
+        expect(contentDriveService.search).toHaveBeenCalledWith(
+            expect.not.objectContaining({ userSearchable: expect.anything() })
+        );
     });
 
     it('should clear selected items when loading items', () => {
@@ -802,6 +2059,60 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
         );
     });
 
+    describe('quiet reload', () => {
+        beforeEach(() => {
+            // Held in flight on purpose: this is about what the listing looks like *while* the
+            // request is out. Letting it resolve would settle the status and hide the difference.
+            contentDriveService.search.mockReturnValue(NEVER);
+        });
+
+        it('should blank the listing for an ordinary search', () => {
+            // The skeleton is the only signal an author has that a search is running. It stays.
+            store.setStatus(DotContentDriveStatus.LOADED);
+
+            spectator.service.loadItems();
+
+            expect(store.status()).toBe(DotContentDriveStatus.LOADING);
+        });
+
+        it('should leave the listing rendered on a quiet reload', () => {
+            // Redundant exactly when the affected rows are already marked busy: the author has
+            // already been told which rows are working, so blanking everything to swap them reads
+            // as a second load and a jump.
+            store.setStatus(DotContentDriveStatus.LOADED);
+
+            spectator.service.loadItems({ quiet: true });
+
+            expect(store.status()).toBe(DotContentDriveStatus.LOADED);
+        });
+
+        it('should still refetch when quiet, so the result stays filter-correct', () => {
+            // The point of refetching rather than patching rows in place: an archived or unpublished
+            // row simply is not in the new result. The client cannot work that out for itself.
+            contentDriveService.search.mockClear();
+
+            spectator.service.loadItems({ quiet: true });
+
+            expect(contentDriveService.search).toHaveBeenCalled();
+        });
+
+        it('should keep the skeleton for a reload that marked no rows', () => {
+            store.setStatus(DotContentDriveStatus.LOADED);
+
+            store.reloadContentDrive();
+
+            expect(store.status()).toBe(DotContentDriveStatus.LOADING);
+        });
+
+        it('should skip the skeleton for a reload whose caller marked rows', () => {
+            store.setStatus(DotContentDriveStatus.LOADED);
+
+            store.reloadContentDrive({ quiet: true });
+
+            expect(store.status()).toBe(DotContentDriveStatus.LOADED);
+        });
+    });
+
     it('should handle title filter in request', () => {
         // Set title filter
         store.patchFilters({ title: 'test' });
@@ -817,6 +2128,48 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
         );
     });
 
+    /**
+     * The request always names the scope when there is a term (search box cleanup on #37062). The
+     * server's own default is All fields, so leaving Title out of the request would search every
+     * field while the box says Title.
+     */
+    describe('search scope in the request', () => {
+        it('should send Title when a term is present and no scope is stored', () => {
+            store.patchFilters({ title: 'test' });
+
+            spectator.service.loadItems();
+
+            expect(contentDriveService.search).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    filters: expect.objectContaining({ text: 'test', searchScope: 'TITLE' })
+                })
+            );
+        });
+
+        it('should send All fields when that is the stored scope', () => {
+            store.patchFilters({ title: 'test' });
+            store.setSearchScope('ALL_FIELDS');
+
+            spectator.service.loadItems();
+
+            expect(contentDriveService.search).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    filters: expect.objectContaining({ text: 'test', searchScope: 'ALL_FIELDS' })
+                })
+            );
+        });
+
+        it('should send no scope without a term, which the server would reject', () => {
+            spectator.service.loadItems();
+
+            expect(contentDriveService.search).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    filters: expect.not.objectContaining({ searchScope: expect.anything() })
+                })
+            );
+        });
+    });
+
     it('should handle pagination', () => {
         // Set pagination in store
         store.setPagination({ limit: 10, page: 1, offset: 0 });
@@ -828,5 +2181,1022 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
                 maxResults: 10
             })
         );
+    });
+
+    it('should refresh hasMore flags from an empty result that matches an existing page', () => {
+        // An empty result returns cursors 0,0 — which match DEFAULT_PAGE (the initial page,
+        // optimistically hasMoreContent: true). The matched page's flags must be refreshed
+        // from the response so the paginator does not offer a next page on zero items.
+        contentDriveService.search.mockReturnValue(
+            of({
+                list: [],
+                contentTotalCount: 0,
+                folderCount: 0,
+                contentCount: 0,
+                hasMoreContent: false,
+                hasMoreFolders: false,
+                nextContentCursor: 0,
+                nextFolderCursor: 0
+            } as unknown as DotContentDriveSearchResponse)
+        );
+
+        spectator.service.loadItems();
+
+        expect(store.items()).toEqual([]);
+        expect(store.pages()).toHaveLength(1);
+        const lastPage = store.pages().at(-1);
+        expect(lastPage?.hasMoreContent).toBe(false);
+        expect(lastPage?.hasMoreFolders).toBe(false);
+    });
+
+    describe('User-searchable field filters', () => {
+        it('should add a chip to the active list without touching the filter bag', () => {
+            store.addUserSearchableField('title');
+
+            expect(store.userSearchableActive()).toEqual(['title']);
+            // No us.* entry until it has a value — so the search request is unchanged.
+            expect(store.filters()['us.title']).toBeUndefined();
+        });
+
+        it('should not add the same field twice', () => {
+            store.addUserSearchableField('title');
+            store.addUserSearchableField('title');
+
+            expect(store.userSearchableActive()).toEqual(['title']);
+        });
+
+        it('should clear all field filters, the active list and the cached fields', () => {
+            store.setUserSearchableFields([createFakeTextField({ variable: 'title' })]);
+            store.addUserSearchableField('title');
+            store.patchFilters({ 'us.title': 'review', baseType: ['1'] });
+
+            store.clearUserSearchableFilters();
+
+            expect(store.userSearchableActive()).toEqual([]);
+            expect(store.userSearchableFields()).toEqual([]);
+            expect(store.filters()['us.title']).toBeUndefined();
+            // Non us.* filters are preserved.
+            expect(store.filters()['baseType']).toEqual(['1']);
+        });
+
+        it('should reshape us.* values into the userSearchable payload by field type', () => {
+            store.initContentDrive({
+                currentSite: MOCK_SITES[0],
+                path: DEFAULT_PATH,
+                filters: {},
+                isTreeExpanded: false
+            });
+            store.setUserSearchableFields([
+                createFakeTextField({ variable: 'title' }),
+                createFakeTagField({ variable: 'tags' })
+            ]);
+            store.patchFilters({ 'us.title': 'review', 'us.tags': 'angular,cms' });
+
+            expect(store.$request().userSearchable).toEqual({
+                title: 'review',
+                tags: ['angular', 'cms']
+            });
+        });
+
+        it('should restore the active list from us.* keys in the URL filters on init', () => {
+            store.initContentDrive({
+                currentSite: MOCK_SITES[0],
+                path: DEFAULT_PATH,
+                filters: { 'us.title': 'review', 'us.tags': 'angular', contentType: ['Blog'] },
+                isTreeExpanded: false
+            });
+
+            expect(store.userSearchableActive()).toEqual(['title', 'tags']);
+        });
+    });
+
+    describe('Show In List fields', () => {
+        it('should set and expose the Show In List fields', () => {
+            const fields = [createFakeTextField({ variable: 'summary' })];
+
+            store.setShowInListFields(fields);
+
+            expect(store.showInListFields()).toEqual(fields);
+        });
+
+        it('should clear the Show In List fields when field filters are cleared', () => {
+            store.setShowInListFields([createFakeTextField({ variable: 'summary' })]);
+
+            store.clearUserSearchableFilters();
+
+            expect(store.showInListFields()).toEqual([]);
+        });
+    });
+});
+
+describe('DotContentDriveStore - withActionExecution', () => {
+    let spectator: SpectatorService<InstanceType<typeof DotContentDriveStore>>;
+    let store: InstanceType<typeof DotContentDriveStore>;
+    let fireService: Mocked<DotWorkflowActionsFireService>;
+    let httpErrorManager: Mocked<DotHttpErrorManagerService>;
+    let bulkRefreshService: Mocked<DotBulkRefreshService>;
+    /** Declared outside the factory so a test can push into the hook's subscription. */
+    const bulkRefreshEvents$ = new Subject<DotBulkRefreshCompletedEvent>();
+
+    const createService = createServiceFactory({
+        service: DotContentDriveStore,
+        providers: [
+            mockProvider(ActivatedRoute, { snapshot: { queryParams: {} } }),
+            mockProvider(GlobalStore, {
+                siteDetails: vi.fn().mockReturnValue(MOCK_SITES[0])
+            }),
+            // The store resolves the CMS Administrator role on init; stub it so no real HTTP fires.
+            mockProvider(DotCurrentUserService, {
+                getCurrentUser: vi.fn().mockReturnValue(of({ admin: false } as DotCurrentUser))
+            }),
+            mockProvider(DotContentDriveService, {
+                search: vi.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
+            }),
+            mockProvider(DotFolderService, {
+                getFolders: vi.fn().mockReturnValue(of([]))
+            }),
+            mockProvider(DotWorkflowActionsFireService, {
+                fireDefaultAction: vi.fn(),
+                bulkFire: vi.fn()
+            }),
+            // Add to Bundle leaves the workflow path entirely and posts to the legacy bundle servlet.
+            mockProvider(AddToBundleService, { addToBundle: vi.fn() }),
+            // `getEnvironments` on top of main's stub: `withPushPublishEnvironments` looks the
+            // environments up on init, so an unstubbed one returns undefined for the observable.
+            mockProvider(PushPublishService, {
+                pushPublishAssets: vi.fn(),
+                getEnvironments: vi.fn(() => of([]))
+            }),
+            // Refresh is the one quick action that is job-backed: the service submits and returns, so
+            // the store only ever sees a single-emission observable.
+            mockProvider(DotBulkRefreshService, { refresh: vi.fn() }),
+            // The completion event is pushed, so the socket is the seam the run settles through.
+            // A Subject lets the tests below emit one without a server.
+            mockProvider(DotEventsSocket, { on: vi.fn(() => bulkRefreshEvents$) }),
+            mockProvider(DotMessageService, { get: vi.fn((key: string) => key) }),
+            mockProvider(DotHttpErrorManagerService, { handle: vi.fn() }),
+            // The store subscribes to Location (popstate re-hydration); stub so it is inert here.
+            mockProvider(Location, {
+                subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() })
+            }),
+            // withFlags fetches feature flags on init; stub so no real HTTP fires.
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: vi.fn().mockReturnValue(of({}))
+            }),
+            // The store resolves the environment's default language on init and seeds it into the
+            // `languageId` filter. Answering synchronously keeps every pre-existing test realistic:
+            // the seed is already in place by the time they assert. Blocks that need to control the
+            // timing override this provider with a Subject.
+            mockProvider(DotLanguagesService, {
+                get: vi.fn().mockReturnValue(of(mockLocales))
+            }),
+            provideHttpClient()
+        ]
+    });
+
+    beforeEach(() => {
+        // The provider mocks live in the factory closure, so call counts would otherwise accumulate
+        // across tests in this block.
+        vi.clearAllMocks();
+
+        spectator = createService();
+        store = spectator.service;
+        fireService = spectator.inject(
+            DotWorkflowActionsFireService
+        ) as Mocked<DotWorkflowActionsFireService>;
+        httpErrorManager = spectator.inject(
+            DotHttpErrorManagerService
+        ) as Mocked<DotHttpErrorManagerService>;
+
+        fireService.fireDefaultAction.mockReturnValue(
+            of({ results: [], summary: { affected: 2, successCount: 2, failCount: 0, time: 1 } })
+        );
+        fireService.bulkFire.mockReturnValue(of({ successCount: 2, skippedCount: 0, fails: [] }));
+
+        bulkRefreshService = spectator.inject(
+            DotBulkRefreshService
+        ) as Mocked<DotBulkRefreshService>;
+        bulkRefreshService.refresh.mockReturnValue(of({ jobId: 'job-1', submitted: 1 }));
+    });
+
+    describe('executeRefresh', () => {
+        it('should not publish a running action, because the reindex is backgrounded', () => {
+            // actionExecution drives the toolbar's "Applying ... to N item(s)" indicator and locks the
+            // Action Center. A reindex reports itself by toast at trigger and again by push at the end,
+            // so an indicator it cannot update, and a lock lasting minutes, are both wrong for it.
+            store.executeRefresh('Refresh', ['inode-1', 'inode-2']);
+
+            expect(store.actionExecution()).toBeUndefined();
+        });
+
+        it('should let a second reindex be fired', () => {
+            // No in-flight guard: the only thing it could protect against is a double-fire, and firing
+            // clears the selection, so a second run takes a deliberate re-selection. Guarding it needed
+            // a timeout to un-wedge the flag when a completion event went missing, and that timeout was
+            // the larger cost - a 504 minutes later, about a job that had most likely succeeded, with
+            // nothing on screen waiting for it.
+            store.executeRefresh('Refresh', ['inode-1']);
+            store.executeRefresh('Refresh', ['inode-2']);
+
+            expect(bulkRefreshService.refresh).toHaveBeenCalledTimes(2);
+        });
+
+        it('should not block the other actions while a reindex runs', () => {
+            // The whole point of backgrounding it: a reindex takes minutes and shares nothing with
+            // these, so locking them out for its duration was the bug.
+            store.executeRefresh('Refresh', ['inode-1']);
+
+            store.executeQuickAction('LOCK', 'Lock', ['inode-2']);
+            expect(fireService.fireDefaultAction).toHaveBeenCalled();
+
+            store.executeWorkflowAction('wf-1', 'Publish', ['inode-3']);
+            expect(fireService.bulkFire).toHaveBeenCalled();
+        });
+
+        it('should send the inodes to the bulk refresh service', () => {
+            store.executeRefresh('Refresh', ['inode-1', 'inode-2']);
+
+            expect(bulkRefreshService.refresh).toHaveBeenCalledWith(['inode-1', 'inode-2']);
+        });
+
+        it('should not settle on the submit response', () => {
+            // The 202 says accepted, not done. Settling here is what would produce the misleading
+            // success this endpoint exists to remove.
+            store.executeRefresh('Refresh', ['inode-1']);
+
+            expect(store.actionExecutionResult()).toBeUndefined();
+        });
+
+        it('should not fire when there are no inodes', () => {
+            store.executeRefresh('Refresh', []);
+
+            expect(bulkRefreshService.refresh).not.toHaveBeenCalled();
+        });
+
+        it('should report a submit that fails outright', () => {
+            // The one failure a client can see directly: no job was created, so no completion event is
+            // ever coming and the error toast is the only report the user gets.
+            bulkRefreshService.refresh.mockReturnValue(
+                throwError(() => new HttpErrorResponse({ status: 403 }))
+            );
+
+            store.executeRefresh('Refresh', ['inode-1']);
+
+            expect(httpErrorManager.handle).toHaveBeenCalled();
+            expect(store.actionExecutionResult()).toBeUndefined();
+        });
+
+        it('should leave nothing waiting on a timer', fakeAsync(() => {
+            // There is no completion deadline. A reindex is reported by push, and by a notification the
+            // server writes whether or not the socket delivered - so a client-side deadline could only
+            // ever invent a failure for a run it has no information about.
+            store.executeRefresh('Refresh', ['inode-1']);
+
+            tick(60 * 60 * 1000);
+
+            expect(httpErrorManager.handle).not.toHaveBeenCalled();
+            expect(store.actionExecutionResult()).toBeUndefined();
+        }));
+    });
+
+    describe('bulk refresh completion push', () => {
+        it('should settle the run when the completion event arrives on the socket', () => {
+            // Proves the wiring, not just the reporter: without the hook subscribing, a finished run
+            // would leave the reindex marked in flight forever and never toast.
+            store.executeRefresh('Refresh', ['inode-1']);
+
+            bulkRefreshEvents$.next({
+                jobId: 'job-1',
+                state: 'SUCCESS',
+                total: 1,
+                successCount: 1,
+                failedCount: 0,
+                skippedCount: 0,
+                versionsIndexed: 1
+            });
+
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Refresh',
+                    successCount: 1,
+                    skippedCount: 0,
+                    failedCount: 0,
+                    partialDetailKey: 'content-drive.action-center.toast.refreshed-partial',
+                    backgrounded: true
+                })
+            );
+        });
+    });
+
+    describe('reportRefreshCompleted', () => {
+        it('should ignore a run this store never submitted', () => {
+            // The event is scoped to the user, not the tab. Without correlating on jobId a reindex
+            // fired in another tab, another window or a Login-As session toasts counts here for
+            // content this grid never selected, and reloads it for no reason.
+            store.reportRefreshCompleted('Refresh', {
+                jobId: 'somebody-elses-job',
+                state: 'SUCCESS',
+                total: 1,
+                successCount: 1,
+                failedCount: 0,
+                skippedCount: 0,
+                versionsIndexed: 1
+            });
+
+            expect(store.actionExecutionResult()).toBeUndefined();
+        });
+
+        it('should not clear an unrelated action that is still in flight on the success path', () => {
+            // The early-return branches were careful not to touch actionExecution; the settle path was
+            // not, because it shares onSettled with the synchronous actions. Firing Lock after a
+            // backgrounded reindex and letting the reindex land wiped Lock's indicator and reopened
+            // the replay guard, so Lock could be fired again over rows already being changed.
+            fireService.fireDefaultAction.mockReturnValue(NEVER);
+            store.executeRefresh('Refresh', ['inode-1']);
+            store.executeQuickAction('LOCK', 'Lock', ['inode-2']);
+
+            const lockInFlight = store.actionExecution();
+            expect(lockInFlight).toEqual(expect.objectContaining({ operation: 'LOCK', total: 1 }));
+
+            store.reportRefreshCompleted('Refresh', {
+                jobId: 'job-1',
+                state: 'SUCCESS',
+                total: 1,
+                successCount: 1,
+                failedCount: 0,
+                skippedCount: 0,
+                versionsIndexed: 1
+            });
+
+            expect(store.actionExecution()).toEqual(lockInFlight);
+            expect(store.actionExecutionResult()).toBeDefined();
+        });
+
+        it('should mark the outcome as backgrounded', () => {
+            // How the shell knows this one arrived unprompted and must not close a dialog the user is
+            // working in.
+            store.executeRefresh('Refresh', ['inode-1']);
+            store.reportRefreshCompleted('Refresh', {
+                jobId: 'job-1',
+                state: 'SUCCESS',
+                total: 1,
+                successCount: 1,
+                failedCount: 0,
+                skippedCount: 0,
+                versionsIndexed: 1
+            });
+
+            expect(store.actionExecutionResult()?.backgrounded).toBe(true);
+        });
+
+        it('should settle a given run only once', () => {
+            store.executeRefresh('Refresh', ['inode-1']);
+            const event = {
+                jobId: 'job-1',
+                state: 'SUCCESS',
+                total: 1,
+                successCount: 1,
+                failedCount: 0,
+                skippedCount: 0,
+                versionsIndexed: 1
+            };
+            store.reportRefreshCompleted('Refresh', event);
+            store.clearActionExecutionResult();
+
+            store.reportRefreshCompleted('Refresh', event);
+
+            expect(store.actionExecutionResult()).toBeUndefined();
+        });
+
+        it('should not clear an unrelated action that is still in flight', () => {
+            // Now that a reindex no longer locks the dialog, another action can genuinely be running
+            // when the reindex event lands. Blanket-clearing actionExecution here would un-gate that
+            // action early and let a second one fire over the same rows.
+            fireService.fireDefaultAction.mockReturnValue(NEVER);
+            store.executeRefresh('Refresh', ['inode-1']);
+            store.executeQuickAction('LOCK', 'Lock', ['inode-2']);
+
+            const lockInFlight = store.actionExecution();
+            expect(lockInFlight).toEqual(expect.objectContaining({ operation: 'LOCK', total: 1 }));
+
+            store.reportRefreshCompleted('Refresh', {
+                jobId: 'job-1',
+                state: 'FAILED_PERMANENTLY',
+                total: 0,
+                successCount: 0,
+                failedCount: 0,
+                skippedCount: 0,
+                versionsIndexed: 0
+            });
+
+            expect(store.actionExecution()).toEqual(lockInFlight);
+        });
+
+        it('should report an unusable outcome rather than settling on it', () => {
+            store.executeRefresh('Refresh', ['inode-1']);
+
+            store.reportRefreshCompleted('Refresh', { jobId: 'job-1', state: 'SUCCESS' });
+
+            expect(httpErrorManager.handle).toHaveBeenCalled();
+            expect(store.actionExecutionResult()).toBeUndefined();
+        });
+
+        it('should settle with the pushed counters and its own partial copy', () => {
+            store.executeRefresh('Refresh', ['inode-1']);
+            store.reportRefreshCompleted('Refresh', {
+                jobId: 'job-1',
+                state: 'SUCCESS',
+                total: 4,
+                successCount: 2,
+                failedCount: 1,
+                skippedCount: 1,
+                versionsIndexed: 3
+            });
+
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Refresh',
+                    successCount: 2,
+                    skippedCount: 1,
+                    failedCount: 1,
+                    partialDetailKey: 'content-drive.action-center.toast.refreshed-partial',
+                    backgrounded: true
+                })
+            );
+        });
+
+        it('should still report a cancelled run, whose counters do account for every item', () => {
+            store.executeRefresh('Refresh', ['inode-1']);
+            store.reportRefreshCompleted('Refresh', {
+                jobId: 'job-1',
+                state: 'CANCELED',
+                total: 4,
+                successCount: 1,
+                failedCount: 0,
+                skippedCount: 3,
+                versionsIndexed: 1
+            });
+
+            expect(httpErrorManager.handle).not.toHaveBeenCalled();
+            expect(store.actionExecutionResult()?.skippedCount).toBe(3);
+        });
+
+        it('should report an error, not a success toast, when the job failed', () => {
+            // A job that died mid-run still carries the counters it had reached, so an all-zero result
+            // from FAILED_PERMANENTLY is indistinguishable from a clean run over nothing unless the
+            // state is checked.
+            store.executeRefresh('Refresh', ['inode-1']);
+            store.reportRefreshCompleted('Refresh', {
+                jobId: 'job-1',
+                state: 'FAILED_PERMANENTLY',
+                total: 0,
+                successCount: 0,
+                failedCount: 0,
+                skippedCount: 0,
+                versionsIndexed: 0
+            });
+
+            expect(httpErrorManager.handle).toHaveBeenCalled();
+            expect(store.actionExecutionResult()).toBeUndefined();
+        });
+
+        it('should report an error when the counters do not account for every item', () => {
+            // A run that stopped after 3 of 10 reports successCount 3 with nothing failed or skipped.
+            // Settling on that would silently drop the 7 never attempted.
+            store.executeRefresh('Refresh', ['inode-1']);
+            store.reportRefreshCompleted('Refresh', {
+                jobId: 'job-1',
+                state: 'SUCCESS',
+                total: 10,
+                successCount: 3,
+                failedCount: 0,
+                skippedCount: 0,
+                versionsIndexed: 3
+            });
+
+            expect(httpErrorManager.handle).toHaveBeenCalled();
+            expect(store.actionExecutionResult()).toBeUndefined();
+        });
+
+        it('should report an error when the event carried no counters at all', () => {
+            store.executeRefresh('Refresh', ['inode-1']);
+            store.reportRefreshCompleted('Refresh', { jobId: 'job-1', state: 'SUCCESS' });
+
+            expect(httpErrorManager.handle).toHaveBeenCalled();
+            expect(store.actionExecutionResult()).toBeUndefined();
+        });
+    });
+
+    describe('executeQuickAction', () => {
+        it('should publish the running action so the toolbar can report it', () => {
+            // Lock, not Publish: Publish is no longer a quick action — it belongs to the
+            // Workflow Actions section, where it resolves through the scheme's mapping.
+            // Never settles, so the in-flight state is observable.
+            fireService.fireDefaultAction.mockReturnValue(NEVER);
+
+            store.executeQuickAction('LOCK', 'Lock', ['inode-1', 'inode-2']);
+
+            expect(store.actionExecution()).toEqual(
+                expect.objectContaining({ operation: 'LOCK', total: 2 })
+            );
+        });
+
+        it('should fire the default action with the given inodes', () => {
+            store.executeQuickAction('LOCK', 'Lock', ['inode-1']);
+
+            expect(fireService.fireDefaultAction).toHaveBeenCalledWith({
+                action: 'LOCK',
+                inodes: ['inode-1']
+            });
+        });
+
+        it('should report the counts the endpoint returned, not the number of inodes sent', () => {
+            // Per-item failures are an expected outcome (a lock held by another user, a permission
+            // the row state cannot see), so the result has to reflect what the server actually did.
+            fireService.fireDefaultAction.mockReturnValue(
+                of({
+                    results: [],
+                    summary: { affected: 2, successCount: 1, failCount: 1, time: 1 }
+                })
+            );
+
+            store.executeQuickAction('LOCK', 'Lock', ['inode-1', 'inode-2']);
+
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Lock',
+                    successCount: 1,
+                    skippedCount: 0,
+                    failedCount: 1
+                })
+            );
+        });
+
+        it('should clear the running action once settled', () => {
+            store.executeQuickAction('LOCK', 'Lock', ['inode-1']);
+
+            expect(store.actionExecution()).toBeUndefined();
+            expect(store.actionExecutionResult()).toBeDefined();
+        });
+
+        it('should not fire when there are no inodes', () => {
+            store.executeQuickAction('LOCK', 'Lock', []);
+
+            expect(fireService.fireDefaultAction).not.toHaveBeenCalled();
+            expect(store.actionExecution()).toBeUndefined();
+        });
+
+        it('should refuse to start a second run while one is in flight', () => {
+            // Guards the double-fire the old component-owned flag allowed: closing and reopening the
+            // dialog used to reset it, letting the same rows be fired twice.
+            fireService.fireDefaultAction.mockReturnValue(NEVER);
+
+            store.executeQuickAction('LOCK', 'Lock', ['inode-1']);
+            store.executeQuickAction('LOCK', 'Lock', ['inode-1']);
+
+            expect(fireService.fireDefaultAction).toHaveBeenCalledTimes(1);
+        });
+
+        it('should hand errors to the error manager and clear the running action', () => {
+            const error = new HttpErrorResponse({ status: 403 });
+            fireService.fireDefaultAction.mockReturnValue(throwError(() => error));
+
+            store.executeQuickAction('LOCK', 'Lock', ['inode-1']);
+
+            expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
+            expect(store.actionExecution()).toBeUndefined();
+            expect(store.actionExecutionResult()).toBeUndefined();
+        });
+
+        it('should not report a success when the response arrives without a summary', () => {
+            // The endpoint streams `results` then `summary`, and the writer swallows an IOException
+            // mid-stream — so a 200 with no summary is reachable. Counting the inodes sent would
+            // report every one of them as succeeded, which is the most reassuring possible message
+            // for the case where nothing is known to have succeeded.
+            fireService.fireDefaultAction.mockReturnValue(
+                of({ results: [] } as unknown as DotFireDefaultActionResult)
+            );
+
+            store.executeQuickAction('LOCK', 'Lock', ['inode-1', 'inode-2']);
+
+            expect(store.actionExecutionResult()).toBeUndefined();
+            expect(store.actionExecution()).toBeUndefined();
+            expect(httpErrorManager.handle).toHaveBeenCalled();
+        });
+
+        it('should still report a zeroed summary the endpoint actually sent', () => {
+            // A real `successCount: 0` is a fact, not a missing field, so it goes to the toast.
+            fireService.fireDefaultAction.mockReturnValue(
+                of({
+                    results: [],
+                    summary: { affected: 2, successCount: 0, failCount: 2, time: 1 }
+                })
+            );
+
+            store.executeQuickAction('LOCK', 'Lock', ['inode-1', 'inode-2']);
+
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Lock',
+                    successCount: 0,
+                    skippedCount: 0,
+                    failedCount: 2
+                })
+            );
+            expect(httpErrorManager.handle).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('executeWorkflowAction', () => {
+        it('should fire the bulk request with the given contentlet ids', () => {
+            store.executeWorkflowAction('action-review', 'Send for Review', ['inode-1', 'inode-2']);
+
+            expect(fireService.bulkFire).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    workflowActionId: 'action-review',
+                    contentletIds: ['inode-1', 'inode-2']
+                })
+            );
+        });
+
+        it('should carry skipped items through to the result', () => {
+            // A mixed-type selection partially skips by design: contentlets whose scheme does not own
+            // the action are skipped server-side.
+            fireService.bulkFire.mockReturnValue(
+                of({ successCount: 1, skippedCount: 1, fails: [] })
+            );
+
+            store.executeWorkflowAction('action-review', 'Send for Review', ['inode-1', 'inode-2']);
+
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Send for Review',
+                    successCount: 1,
+                    skippedCount: 1,
+                    failedCount: 0
+                })
+            );
+        });
+
+        it('should count per-item failures from the fails list', () => {
+            fireService.bulkFire.mockReturnValue(
+                of({
+                    successCount: 1,
+                    skippedCount: 0,
+                    fails: [{ inode: 'inode-2', errorMessage: 'locked' }]
+                })
+            );
+
+            store.executeWorkflowAction('action-review', 'Send for Review', ['inode-1', 'inode-2']);
+
+            expect(store.actionExecutionResult()?.failedCount).toBe(1);
+        });
+
+        it('should hand errors to the error manager and clear the running action', () => {
+            fireService.bulkFire.mockReturnValue(
+                throwError(() => new HttpErrorResponse({ status: 500 }))
+            );
+
+            store.executeWorkflowAction('action-review', 'Send for Review', ['inode-1']);
+
+            expect(httpErrorManager.handle).toHaveBeenCalled();
+            expect(store.actionExecution()).toBeUndefined();
+        });
+    });
+
+    describe('executeAddToBundle', () => {
+        const BUNDLE = { id: 'bundle-1', name: 'Release 1' };
+        let addToBundleService: SpyObject<AddToBundleService>;
+
+        beforeEach(() => {
+            addToBundleService = spectator.inject(AddToBundleService);
+            addToBundleService.addToBundle.mockReturnValue(
+                of({ total: 2, errors: 0, errorMessages: [], bundleId: 'bundle-1' })
+            );
+        });
+
+        it('should post the identifiers comma-joined', () => {
+            // The servlet splits `assetIdentifier` on "," and has always accepted several ids that
+            // way, which is why bulk needs no new endpoint.
+            store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1', 'id-2']);
+
+            expect(addToBundleService.addToBundle).toHaveBeenCalledWith('id-1,id-2', BUNDLE);
+        });
+
+        it('should mark the rows it is acting on, not the assets it is sending', () => {
+            // The request takes identifiers, because a bundle holds one entry per asset and the
+            // language versions of a contentlet are one entry. The *rows* are keyed by inode, so a
+            // run whose targets were identifiers marked nothing: the listing dimmed no row while
+            // the action ran, and a workflow run over the same rows was not refused, because the
+            // overlap check compares two vocabularies that never intersect.
+            addToBundleService.addToBundle.mockReturnValue(NEVER);
+
+            store.executeAddToBundle(
+                'Add to Bundle',
+                BUNDLE,
+                ['id-1', 'id-2'],
+                ['inode-1', 'inode-2']
+            );
+
+            expect(store.busyRows()).toEqual(['inode-1', 'inode-2']);
+        });
+
+        it('should report the server count of assets queued, not the number sent', () => {
+            // The server dedupes by identifier and drops anything already in the bundle, so `total`
+            // can be lower than what was posted. Reporting the input would overstate the result.
+            addToBundleService.addToBundle.mockReturnValue(
+                of({ total: 1, errors: 0, errorMessages: [], bundleId: 'bundle-1' })
+            );
+
+            store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1', 'id-2']);
+
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Add to Bundle',
+                    successCount: 1,
+                    skippedCount: 0,
+                    failedCount: 0
+                })
+            );
+        });
+
+        it('should split failures out of the total', () => {
+            addToBundleService.addToBundle.mockReturnValue(
+                of({ total: 3, errors: 1, errorMessages: ['nope'], bundleId: 'bundle-1' })
+            );
+
+            store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1', 'id-2', 'id-3']);
+
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Add to Bundle',
+                    successCount: 2,
+                    skippedCount: 0,
+                    failedCount: 1
+                })
+            );
+        });
+
+        // Folder ids reach here as plain strings, so this asserts the same arithmetic as the case
+        // above. It earns its place by pinning the AC end of it: a folder the user lacks PUBLISH on
+        // comes back from `PublisherAPIImpl` as a counted per-asset error rather than an exception,
+        // and the requirement is that it is *reported as a failure*, not silently dropped. Written
+        // with a folder identifier so that requirement is traceable to a test instead of inferred
+        // from two on either side of the boundary.
+        it('should report a denied folder as a failure rather than dropping it', () => {
+            addToBundleService.addToBundle.mockReturnValue(
+                of({
+                    total: 2,
+                    errors: 1,
+                    errorMessages: ['User does not have permission to publish folder'],
+                    bundleId: 'bundle-1'
+                })
+            );
+
+            store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1', 'folder-1']);
+
+            expect(addToBundleService.addToBundle).toHaveBeenCalledWith('id-1,folder-1', BUNDLE);
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Add to Bundle',
+                    successCount: 1,
+                    skippedCount: 0,
+                    failedCount: 1
+                })
+            );
+        });
+
+        it('should never report a negative success count', () => {
+            // Defends the subtraction: `errors` exceeding `total` would otherwise read as "-1 added".
+            addToBundleService.addToBundle.mockReturnValue(
+                of({ total: 1, errors: 3, errorMessages: [], bundleId: 'bundle-1' })
+            );
+
+            store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1']);
+
+            expect(store.actionExecutionResult()?.successCount).toBe(0);
+        });
+
+        it('should mark the run in progress while it is in flight', () => {
+            addToBundleService.addToBundle.mockReturnValue(NEVER);
+
+            store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1', 'id-2']);
+
+            expect(store.actionExecution()).toEqual(
+                expect.objectContaining({ operation: 'Add to Bundle', total: 2 })
+            );
+        });
+
+        it('should refuse the same items being queued again while in flight', () => {
+            addToBundleService.addToBundle.mockReturnValue(NEVER);
+            store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1']);
+
+            store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1']);
+
+            expect(addToBundleService.addToBundle).toHaveBeenCalledTimes(1);
+        });
+
+        it('should allow different items to be queued while one run is in flight', () => {
+            // **Deliberate change.** The guard is now scoped to this operation over *these* items
+            // (FR-016), so bundling one asset no longer blocks bundling a different one.
+            addToBundleService.addToBundle.mockReturnValue(NEVER);
+            store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1']);
+
+            store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-2']);
+
+            expect(addToBundleService.addToBundle).toHaveBeenCalledTimes(2);
+        });
+
+        it('should hand errors to the error manager and clear the running action', () => {
+            addToBundleService.addToBundle.mockReturnValue(
+                throwError(() => new HttpErrorResponse({ status: 500 }))
+            );
+
+            store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1']);
+
+            expect(httpErrorManager.handle).toHaveBeenCalled();
+            expect(store.actionExecution()).toBeUndefined();
+        });
+    });
+
+    describe('executePushPublish', () => {
+        /** In the shape `DotWorkflowPushPublishComponent` emits — already split for the servlet. */
+        const SETTINGS: DotWorkflowPushPublishValue = {
+            whereToSend: 'env-1,env-2',
+            iWantTo: 'publish',
+            publishDate: '2026-09-01',
+            publishTime: '10-00',
+            expireDate: '2026-10-01',
+            expireTime: '23-59',
+            filterKey: 'default',
+            timezoneId: 'America/Costa_Rica'
+        };
+        let pushPublishService: SpyObject<PushPublishService>;
+
+        beforeEach(() => {
+            pushPublishService = spectator.inject(PushPublishService);
+            pushPublishService.pushPublishAssets.mockReturnValue(
+                of({ total: 2, errors: 0, errorMessages: [], bundleId: 'bundle-1' })
+            );
+        });
+
+        it('should post the identifiers comma-joined', () => {
+            // `RemotePublishAjaxAction` splits `assetIdentifier` on "," — bulk needs no new endpoint.
+            store.executePushPublish('Push Publish', ['id-1', 'id-2'], SETTINGS);
+
+            expect(pushPublishService.pushPublishAssets).toHaveBeenCalledWith(
+                'id-1,id-2',
+                SETTINGS
+            );
+        });
+
+        it('should report the server count, not the number sent', () => {
+            pushPublishService.pushPublishAssets.mockReturnValue(
+                of({ total: 1, errors: 0, errorMessages: [], bundleId: 'bundle-1' })
+            );
+
+            store.executePushPublish('Push Publish', ['id-1', 'id-2'], SETTINGS);
+
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Push Publish',
+                    successCount: 1,
+                    skippedCount: 0,
+                    failedCount: 0
+                })
+            );
+        });
+
+        it('should split failures out of the total', () => {
+            pushPublishService.pushPublishAssets.mockReturnValue(
+                of({ total: 3, errors: 1, errorMessages: ['nope'], bundleId: 'bundle-1' })
+            );
+
+            store.executePushPublish('Push Publish', ['id-1', 'id-2', 'id-3'], SETTINGS);
+
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Push Publish',
+                    successCount: 2,
+                    skippedCount: 0,
+                    failedCount: 1
+                })
+            );
+        });
+
+        // Folder ids reach here as plain strings, so this asserts the same arithmetic as the case
+        // above. It earns its place by pinning the AC end of it: a folder the user lacks PUBLISH on
+        // comes back from `PublisherAPIImpl` as a counted per-asset error rather than an exception,
+        // and the requirement is that it is *reported as a failure*, not silently dropped. Written
+        // with a folder identifier so that requirement is traceable to a test instead of inferred
+        // from two on either side of the boundary.
+        it('should report a denied folder as a failure rather than dropping it', () => {
+            pushPublishService.pushPublishAssets.mockReturnValue(
+                of({
+                    total: 2,
+                    errors: 1,
+                    errorMessages: ['User does not have permission to publish folder'],
+                    bundleId: 'bundle-1'
+                })
+            );
+
+            store.executePushPublish('Push Publish', ['id-1', 'folder-1'], SETTINGS);
+
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Push Publish',
+                    successCount: 1,
+                    skippedCount: 0,
+                    failedCount: 1
+                })
+            );
+        });
+
+        it('should never report a negative success count', () => {
+            // Defends the subtraction: `errors` exceeding `total` would read as "-2 pushed".
+            pushPublishService.pushPublishAssets.mockReturnValue(
+                of({ total: 1, errors: 3, errorMessages: [], bundleId: 'bundle-1' })
+            );
+
+            store.executePushPublish('Push Publish', ['id-1'], SETTINGS);
+
+            expect(store.actionExecutionResult()?.successCount).toBe(0);
+        });
+
+        it('should treat a string `errors` as a failure, not a success', () => {
+            // The servlet answers 200 for its own failures, writing `{"errors": "<message>"}` with no
+            // `total`. Reported as a result it would produce `NaN` successes on a push that never
+            // happened. This guard is the reason the push cannot reuse `bulkFire`.
+            pushPublishService.pushPublishAssets.mockReturnValue(
+                of({ errors: 'Publisher unreachable' } as unknown as DotAjaxActionResponseView)
+            );
+
+            store.executePushPublish('Push Publish', ['id-1'], SETTINGS);
+
+            expect(httpErrorManager.handle).toHaveBeenCalled();
+            expect(store.actionExecutionResult()).toBeUndefined();
+            expect(store.actionExecution()).toBeUndefined();
+        });
+
+        it('should treat a missing `errors` as a failure, not a success', () => {
+            // The other shape the servlet can produce: no body at all when the publisher returns
+            // nothing. Zero of everything on a push that may well have worked is not a result.
+            pushPublishService.pushPublishAssets.mockReturnValue(
+                of(undefined as unknown as DotAjaxActionResponseView)
+            );
+
+            store.executePushPublish('Push Publish', ['id-1'], SETTINGS);
+
+            expect(httpErrorManager.handle).toHaveBeenCalled();
+            expect(store.actionExecutionResult()).toBeUndefined();
+        });
+
+        it('should mark the run in progress while it is in flight', () => {
+            pushPublishService.pushPublishAssets.mockReturnValue(NEVER);
+
+            store.executePushPublish('Push Publish', ['id-1', 'id-2'], SETTINGS);
+
+            expect(store.actionExecution()).toEqual(
+                expect.objectContaining({ operation: 'Push Publish', total: 2 })
+            );
+        });
+
+        it('should refuse the same items being pushed again while in flight', () => {
+            pushPublishService.pushPublishAssets.mockReturnValue(NEVER);
+            store.executePushPublish('Push Publish', ['id-1'], SETTINGS);
+
+            store.executePushPublish('Push Publish', ['id-1'], SETTINGS);
+
+            expect(pushPublishService.pushPublishAssets).toHaveBeenCalledTimes(1);
+        });
+
+        it('should do nothing without identifiers', () => {
+            store.executePushPublish('Push Publish', [], SETTINGS);
+
+            expect(pushPublishService.pushPublishAssets).not.toHaveBeenCalled();
+            expect(store.actionExecution()).toBeUndefined();
+        });
+
+        it('should hand transport errors to the error manager and clear the running action', () => {
+            pushPublishService.pushPublishAssets.mockReturnValue(
+                throwError(() => new HttpErrorResponse({ status: 500 }))
+            );
+
+            store.executePushPublish('Push Publish', ['id-1'], SETTINGS);
+
+            expect(httpErrorManager.handle).toHaveBeenCalled();
+            expect(store.actionExecution()).toBeUndefined();
+        });
+    });
+
+    describe('clearActionExecutionResult', () => {
+        it('should drop the result once it has been presented', () => {
+            store.executeQuickAction('LOCK', 'Lock', ['inode-1']);
+            expect(store.actionExecutionResult()).toBeDefined();
+
+            store.clearActionExecutionResult();
+
+            expect(store.actionExecutionResult()).toBeUndefined();
+        });
     });
 });

@@ -24,8 +24,8 @@ export interface DotPageState {
     locked?: boolean;
     lockedByAnotherUser?: boolean;
     mode: DotPageMode;
-    runningExperiment: DotExperiment;
-    seoMedia: string;
+    runningExperiment?: DotExperiment;
+    seoMedia: string | null;
 }
 
 export class DotPageRenderState extends DotPageRender {
@@ -59,15 +59,15 @@ export class DotPageRenderState extends DotPageRender {
         return this.dotRenderedPage.canCreateTemplate;
     }
 
-    override get containers(): DotPageContainerStructure {
+    override get containers(): DotPageContainerStructure | undefined {
         return this.dotRenderedPage.containers;
     }
 
-    get html(): string {
+    get html(): string | undefined {
         return this.dotRenderedPage.page.rendered;
     }
 
-    override get layout(): DotLayout {
+    override get layout(): DotLayout | undefined {
         return this.dotRenderedPage.layout;
     }
 
@@ -75,7 +75,7 @@ export class DotPageRenderState extends DotPageRender {
         return this.dotRenderedPage.page;
     }
 
-    override get template(): DotTemplate {
+    override get template(): DotTemplate | undefined {
         return this.dotRenderedPage.template;
     }
 
@@ -87,11 +87,11 @@ export class DotPageRenderState extends DotPageRender {
         return this._user;
     }
 
-    get favoritePage(): DotCMSContentlet {
+    get favoritePage(): DotCMSContentlet | undefined {
         return this._state.favoritePage;
     }
 
-    set favoritePage(favoritePage: DotCMSContentlet) {
+    set favoritePage(favoritePage: DotCMSContentlet | undefined) {
         this._state.favoritePage = favoritePage;
     }
 
@@ -99,15 +99,15 @@ export class DotPageRenderState extends DotPageRender {
         this.dotRenderedPage = dotRenderedPageState;
     }
 
-    set runningExperiment(runningExperiment: DotExperiment) {
+    set runningExperiment(runningExperiment: DotExperiment | undefined) {
         this._state.runningExperiment = runningExperiment;
     }
 
-    get seoMedia(): string {
+    get seoMedia(): string | null {
         return this._state.seoMedia;
     }
 
-    set seoMedia(seoMedia: string) {
+    set seoMedia(seoMedia: string | null) {
         this._state.seoMedia = seoMedia;
     }
 }

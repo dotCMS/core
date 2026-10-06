@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+import { vi } from 'vitest';
 
 import {
     calculateElementVisibilityRatio,
@@ -11,7 +11,7 @@ describe('Impression Tracking Utils', () => {
     // Helper function to create mock element with getBoundingClientRect
     const createMockElement = (rect: Partial<DOMRect>, dataset: Record<string, string> = {}) => {
         const element = {
-            getBoundingClientRect: jest.fn(() => ({
+            getBoundingClientRect: vi.fn(() => ({
                 top: 0,
                 left: 0,
                 bottom: 0,

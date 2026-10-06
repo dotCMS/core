@@ -29,7 +29,8 @@ import {
     DotFieldRequiredDirective,
     DotMessagePipe,
     DotSpinnerComponent,
-    DotContentletStatusChipComponent
+    DotContentletStatusBadgeComponent,
+    DotContentThumbnailComponent
 } from '@dotcms/ui';
 
 //Editor
@@ -78,7 +79,8 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         DragHandleDirective,
         DotContextMenuComponent,
         DotAddButtonComponent,
-        DotContentletStatusChipComponent
+        DotContentletStatusBadgeComponent,
+        DotContentThumbnailComponent
     ],
     declarations: [
         EditorDirective,

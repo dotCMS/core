@@ -1,9 +1,12 @@
 <p-dialog
-    [(visible)]="showDialog"
+    [visible]="showDialog"
     [header]="'download.bundle.header' | dm"
     [modal]="true"
+    [closable]="true"
+    [closeOnEscape]="true"
     [style]="{ width: '30rem' }"
-    (visibleChange)="close()">
+    appendTo="body"
+    (visibleChange)="onVisibleChange($event)">
     @if (showDialog) {
         <form
             (ngSubmit)="handleSubmit()"
@@ -26,7 +29,7 @@
                     [options]="filterOptions"
                     id="filterKey"
                     formControlName="filterKey"
-                    appendTo="body"></p-select>
+                    appendTo="body" />
             </div>
         </form>
     }
@@ -40,14 +43,14 @@
                 [disabled]="dialogActions.cancel.disabled"
                 severity="secondary"
                 (click)="dialogActions.cancel.action()"
-                data-testId="dotDialogCancelAction"></p-button>
+                data-testId="dotDialogCancelAction" />
         }
         @if (dialogActions?.accept) {
             <p-button
                 [label]="dialogActions.accept.label"
                 [disabled]="dialogActions.accept.disabled"
                 (click)="dialogActions.accept.action()"
-                data-testId="dotDialogAcceptAction"></p-button>
+                data-testId="dotDialogAcceptAction" />
         }
     </ng-template>
 </p-dialog>

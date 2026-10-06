@@ -47,10 +47,11 @@ import com.dotcms.publishing.output.BundleOutput;
 import com.dotcms.publishing.output.TarGzipBundleOutput;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.rest.ResourceResponse;
-import com.dotcms.rest.RestClientBuilder;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.type.pushpublish.AllPushPublishEndpointsFailureEvent;
 import com.dotcms.system.event.local.type.pushpublish.AllPushPublishEndpointsSuccessEvent;
+import com.dotcms.system.event.local.type.pushpublish.EndpointFailureDetail;
+import com.dotcms.system.event.local.type.pushpublish.FailureCategory;
 import com.dotcms.system.event.local.type.pushpublish.SinglePushPublishEndpointFailureEvent;
 import com.dotcms.util.CloseUtils;
 import com.dotcms.util.EnterpriseFeature;
@@ -183,6 +184,7 @@ public class PushPublisher extends Publisher {
 			// Counters for determining the publishing status
 			int errorCounter = 0;
 			int totalEndpoints = 0;
+			final List<EndpointFailureDetail> failureDetails = new ArrayList<>();
 			for (Environment environment : environments) {
 				List<PublishingEndPoint> allEndpoints = this.publishingEndPointAPI.findSendingEndPointsByEnvironment(environment.getId());
 				List<PublishingEndPoint> endpoints = new ArrayList<>();
@@ -251,10 +253,14 @@ public class PushPublisher extends Publisher {
 								handleInvalidTokenResponse(environment, endpoint, detail, response);
 								failedEnvironment = true;
 								errorCounter++;
+								failureDetails.add(buildFailureDetail(environment, endpoint, detail,
+										response.getStatus(), null));
 							} else if (response.getStatus() == HttpStatus.SC_FORBIDDEN){
 								markAsLicenseRequired(environment, endpoint, detail);
 								failedEnvironment = true;
 								errorCounter++;
+								failureDetails.add(buildFailureDetail(environment, endpoint, detail,
+										response.getStatus(), null));
 							} else {
 
 								PushPublishLogger.log(this.getClass(), "Status Update: Failed to send bundle.");
@@ -267,11 +273,14 @@ public class PushPublisher extends Publisher {
 												"for the endpoint " + endpoint.getServerName() + " with address " + endpoint
 												.getAddress() + getFormattedPort(endpoint.getPort()));
 								failedEnvironment = true;
+								failureDetails.add(buildFailureDetail(environment, endpoint, detail,
+										response.getStatus(), null));
 							}
 						} else {
 							markAsInValidToken(environment, endpoint, detail, AuthCredentialPushPublishUtil.INVALID_TOKEN_ERROR_KEY);
 							failedEnvironment = true;
 							errorCounter++;
+							failureDetails.add(buildFailureDetail(environment, endpoint, detail, null, null));
 						}
 					} catch(Exception e){
 						// if the bundle can't be sent after the total num of tries, delete the pushed assets for this bundle
@@ -290,6 +299,7 @@ public class PushPublisher extends Publisher {
 						Logger.error(this.getClass(), error, e);
 
 						PushPublishLogger.log(this.getClass(), "Status Update: Failed to send bundle. Exception: " + e.getMessage());
+						failureDetails.add(buildFailureDetail(environment, endpoint, detail, null, e));
 					} finally{
 						CloseUtils.closeQuietly(bundleStream);
 						ThreadContext.remove(ENDPOINT_NAME);
@@ -324,13 +334,15 @@ public class PushPublisher extends Publisher {
 							PublishAuditStatus.Status.FAILED_TO_SEND_TO_ALL_GROUPS, currentStatusHistory);
 
 					//Triggering event listener when all endpoints failed during the process
-					localSystemEventsAPI.asyncNotify(new AllPushPublishEndpointsFailureEvent(config.getAssets()));
+					localSystemEventsAPI.asyncNotify(new AllPushPublishEndpointsFailureEvent(
+							config.getAssets(), failureDetails));
 				} else {
 					pubAuditAPI.updatePublishAuditStatus(this.config.getId(),
 							PublishAuditStatus.Status.FAILED_TO_SEND_TO_SOME_GROUPS, currentStatusHistory);
 
 					//Triggering event listener when at least one endpoint is successfully sent but others failed
-					localSystemEventsAPI.asyncNotify(new SinglePushPublishEndpointFailureEvent(config.getAssets()));
+					localSystemEventsAPI.asyncNotify(new SinglePushPublishEndpointFailureEvent(
+							config.getAssets(), failureDetails));
 				}
 			}
 			return this.config;
@@ -384,6 +396,32 @@ public class PushPublisher extends Publisher {
 
 		final PublishAuditStatus.Status licenseRequired = PublishAuditStatus.Status.LICENSE_REQUIRED;
 		updatingPublishingDetailStatus(environment, endpoint, detail, null, licenseRequired, message);
+	}
+
+	private EndpointFailureDetail buildFailureDetail(
+			final Environment environment,
+			final PublishingEndPoint endpoint,
+			final EndpointDetail detail,
+			final Integer httpStatusCode,
+			final Throwable throwable) {
+
+		final PublishAuditStatus.Status auditStatus =
+				PublishAuditStatus.getStatusObjectByCode(detail.getStatus());
+		final FailureCategory category = FailureCategory.from(httpStatusCode, auditStatus, throwable);
+		return EndpointFailureDetail.builder()
+				.endpointId(endpoint.getId())
+				.endpointName(endpoint.getServerName() != null
+						? endpoint.getServerName().toString()
+						: null)
+				.address(endpoint.getAddress() + getFormattedPort(endpoint.getPort()))
+				.environmentId(environment.getId())
+				.environmentName(environment.getName())
+				.failureCategory(category)
+				.auditStatus(auditStatus)
+				.httpStatusCode(httpStatusCode)
+				.message(detail.getInfo())
+				.exceptionClass(throwable != null ? throwable.getClass().getName() : null)
+				.build();
 	}
 
 	private void updatingPublishingDetailStatus(
@@ -542,13 +580,14 @@ public class PushPublisher extends Publisher {
 	}
 
 	/**
-	 * Returns an instance of the REST {@link Client} used to access Push Publishing end-points and
-	 * retrieve their information.
+	 * Returns an instance of the REST {@link Client} used to send bundles to Push Publishing
+	 * end-points. Built by {@link PushPublishClientFactory}, so connection attempts are bounded by
+	 * the configured connect timeout instead of waiting for the operating system to give up.
 	 *
 	 * @return The REST {@link Client}.
 	 */
 	private Client getRestClient() {
-		return RestClientBuilder.newClient();
+		return PushPublishClientFactory.newClient();
 	}
 
 	/**

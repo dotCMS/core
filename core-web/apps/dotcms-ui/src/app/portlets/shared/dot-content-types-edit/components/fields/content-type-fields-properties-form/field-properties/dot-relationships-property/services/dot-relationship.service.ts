@@ -1,10 +1,11 @@
 import { Observable } from 'rxjs';
 
+import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { pluck, take } from 'rxjs/operators';
+import { map, take } from 'rxjs/operators';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
+import { DotCMSResponse } from '@dotcms/dotcms-models';
 
 import { DotRelationshipCardinality } from '../model/dot-relationship-cardinality.model';
 
@@ -16,7 +17,7 @@ import { DotRelationshipCardinality } from '../model/dot-relationship-cardinalit
  */
 @Injectable()
 export class DotRelationshipService {
-    private coreWebService = inject(CoreWebService);
+    private http = inject(HttpClient);
 
     /**
      *Return all the cardinalities options allow
@@ -25,10 +26,13 @@ export class DotRelationshipService {
      * @memberof DotRelationshipService
      */
     loadCardinalities(): Observable<DotRelationshipCardinality[]> {
-        return this.coreWebService
-            .requestView({
-                url: 'v1/relationships/cardinalities'
-            })
-            .pipe(take(1), pluck('entity'));
+        return this.http
+            .get<
+                DotCMSResponse<DotRelationshipCardinality[]>
+            >('/api/v1/relationships/cardinalities')
+            .pipe(
+                take(1),
+                map((response) => response.entity)
+            );
     }
 }

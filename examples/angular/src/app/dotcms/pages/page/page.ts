@@ -1,11 +1,12 @@
 import { filter, from, map, startWith, switchMap } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+
 import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
   inject,
+  isDevMode,
   OnInit,
   signal,
 } from '@angular/core';
@@ -18,10 +19,13 @@ import {
   DotCMSLayoutBodyComponent,
   DynamicComponentEntity,
 } from '@dotcms/angular';
-import { DotCMSComposedPageResponse, DotCMSPageAsset } from '@dotcms/types';
-import { registerStyleEditorSchemas } from '@dotcms/uve';
+import { DotCMSComposedPageResponse, DotCMSPageAsset, DotErrorPage } from '@dotcms/types';
+import {
+  DEV_ERROR_COPY,
+  ERROR_COPY,
+  ErrorComponent,
+} from '../../../components/error/error.component';
 import { LoadingComponent } from '../../../components/loading/loading.component';
-import { ACTIVITY_SCHEMA, BANNER_SCHEMA } from '../../style-editor-schemas/schemas';
 
 
 const DYNAMIC_COMPONENTS: { [key: string]: DynamicComponentEntity } = {
@@ -54,9 +58,17 @@ const DYNAMIC_COMPONENTS: { [key: string]: DynamicComponentEntity } = {
 
 type PageResponse = { pageAsset: DotCMSPageAsset };
 
+interface ErrorState {
+  status: number;
+  heading: string;
+  body: string;
+  /** Only set in development; production keeps the generic copy. */
+  message?: string;
+}
+
 @Component({
   selector: 'app-page',
-  imports: [CommonModule, DotCMSLayoutBodyComponent, LoadingComponent],
+  imports: [DotCMSLayoutBodyComponent, LoadingComponent, ErrorComponent],
   providers: [DotCMSEditablePageService],
   templateUrl: './page.html',
   styleUrl: './page.css',
@@ -71,13 +83,13 @@ export class PageComponent implements OnInit {
 
   pageAsset = signal<DotCMSPageAsset | null>(null);
 
+  error = signal<ErrorState | null>(null);
+
   components = signal<{ [key: string]: DynamicComponentEntity }>(DYNAMIC_COMPONENTS);
 
   private readonly client = inject(DotCMSClient);
 
   ngOnInit() {
-    this.#defineStyleEditorSchemas();
-
     const route = this.router.url.split('?')[0] || '/';
 
     // Convert promise to observable and merge with editable page service
@@ -97,13 +109,20 @@ export class PageComponent implements OnInit {
         next: (response: DotCMSComposedPageResponse<PageResponse>) => {
           this.pageAsset.set(response?.pageAsset);
         },
-        error: (error) => {
-          console.error('Error in page data stream:', error);
+        error: (err) => {
+          // The message names the actual cause (a redirect away from `dotcmsUrl`, a non-JSON
+          // response, ...). It can include URLs and server details, so production never gets it.
+          const message = isDevMode() && err instanceof Error ? err.message : undefined;
+          const defaultCopy = message ? DEV_ERROR_COPY : ERROR_COPY['default'];
+
+          if (err instanceof DotErrorPage) {
+            const status = err.status ?? 500;
+            const copy = ERROR_COPY[status as keyof typeof ERROR_COPY] ?? defaultCopy;
+            this.error.set({ status, ...copy, message });
+          } else {
+            this.error.set({ status: 500, ...defaultCopy, message });
+          }
         },
       });
-  }
-
-  #defineStyleEditorSchemas() {
-    registerStyleEditorSchemas([ACTIVITY_SCHEMA, BANNER_SCHEMA])
   }
 }

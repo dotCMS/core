@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
+import { vi } from 'vitest';
 
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -93,7 +93,7 @@ describe('DotMessageDisplayComponent', () => {
 
     it('should add a new message', () => {
         const messageService = fixture.componentRef.injector.get(MessageService);
-        jest.spyOn(messageService, 'add');
+        vi.spyOn(messageService, 'add');
 
         dotMessageDisplayServiceMock.messages$.next({
             life: 300,
@@ -110,8 +110,40 @@ describe('DotMessageDisplayComponent', () => {
         });
     });
 
+    it('should map WARNING severity to PrimeNG "warn"', () => {
+        const messageService = fixture.componentRef.injector.get(MessageService);
+        vi.spyOn(messageService, 'add');
+
+        dotMessageDisplayServiceMock.messages$.next({
+            life: 300,
+            message: 'message',
+            portletIdList: [],
+            severity: DotMessageSeverity.WARNING,
+            type: DotMessageType.SIMPLE_MESSAGE
+        });
+
+        expect(messageService.add).toHaveBeenCalledWith({
+            life: 300,
+            detail: 'message',
+            severity: 'warn'
+        });
+    });
+
+    it('should render warning icon for WARNING severity', () => {
+        dotMessageDisplayServiceMock.messages$.next({
+            life: 300,
+            message: 'message',
+            portletIdList: [],
+            severity: DotMessageSeverity.WARNING,
+            type: DotMessageType.SIMPLE_MESSAGE
+        });
+        fixture.detectChanges();
+        const icon = fixture.debugElement.query(By.css('dot-icon')).componentInstance;
+        expect(icon.name).toEqual('warning');
+    });
+
     it('should unsubscribe', () => {
-        jest.spyOn(dotMessageDisplayServiceMock, 'unsubscribe');
+        vi.spyOn(dotMessageDisplayServiceMock, 'unsubscribe');
         component.ngOnDestroy();
         expect(dotMessageDisplayServiceMock.unsubscribe).toHaveBeenCalled();
     });

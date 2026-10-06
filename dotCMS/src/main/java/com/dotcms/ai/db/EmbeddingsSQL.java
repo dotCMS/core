@@ -125,6 +125,9 @@ class EmbeddingsSQL {
         "       index_name  " +
         ")  data;";
 
+    static final String INDEX_EXISTS =
+            "SELECT 1 FROM dot_embeddings WHERE index_name = ? LIMIT 1";
+
     private EmbeddingsSQL() {
     }
 

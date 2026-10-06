@@ -1,4 +1,5 @@
-import { EMPTY, of } from 'rxjs';
+import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -9,7 +10,6 @@ import { By } from '@angular/platform-browser';
 import { provideAnimations } from '@angular/platform-browser/animations';
 
 import { DotMessageService, DotSiteService } from '@dotcms/data-access';
-import { DotcmsEventsService } from '@dotcms/dotcms-js';
 import { DotFieldValidationMessageComponent, DotMessagePipe, DotSiteComponent } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -65,12 +65,8 @@ describe('DotContentTypeCopyDialogComponent', () => {
                 {
                     provide: DotSiteService,
                     useValue: {
-                        getSites: jest.fn().mockReturnValue(of({}))
+                        getSites: vi.fn().mockReturnValue(of({}))
                     }
-                },
-                {
-                    provide: DotcmsEventsService,
-                    useValue: { subscribeToEvents: jest.fn().mockReturnValue(EMPTY) }
                 },
                 provideHttpClient(),
                 provideHttpClientTesting(),
@@ -109,7 +105,7 @@ describe('DotContentTypeCopyDialogComponent', () => {
         fixture.detectChanges();
 
         expect(component.form.valid).toEqual(true);
-        jest.spyOn(component, 'submitForm');
+        vi.spyOn(component, 'submitForm');
 
         acceptButton.nativeElement.click();
 
@@ -125,7 +121,7 @@ describe('DotContentTypeCopyDialogComponent', () => {
         fixture.detectChanges();
 
         expect(component.form.valid).toEqual(true);
-        jest.spyOn(component.$validFormFields, 'emit');
+        vi.spyOn(component.$validFormFields, 'emit');
 
         acceptButton.nativeElement.click();
 
@@ -139,8 +135,8 @@ describe('DotContentTypeCopyDialogComponent', () => {
         );
 
         expect(cancelButton).toBeDefined();
-        jest.spyOn(component, 'closeDialog');
-        jest.spyOn(component.$cancelBtn, 'emit');
+        vi.spyOn(component, 'closeDialog');
+        vi.spyOn(component.$cancelBtn, 'emit');
 
         cancelButton.nativeElement.click();
 
@@ -161,7 +157,7 @@ describe('DotContentTypeCopyDialogComponent', () => {
         const buttonComponent = copyButton.componentInstance;
         expect(buttonComponent.disabled).toBe(true);
 
-        jest.spyOn(component.$validFormFields, 'emit');
+        vi.spyOn(component.$validFormFields, 'emit');
 
         fixture.detectChanges();
 

@@ -1,9 +1,49 @@
 import { Subscription } from 'rxjs';
 
 /**
- * Valid types for form field values.
+ * Values a form field can hold.
+ *
+ * Most fields hold a string, but not all: checkbox, multi-select, tag and category fields hold a
+ * `string[]`, the Block Editor holds its JSON document as an object, and date fields hold a
+ * timestamp. `setValue` does not convert, so pass the shape the target field already holds.
+ *
+ * In the legacy editor every field is an `<input>` / `<textarea>` and holds a string: an array is
+ * stored comma-separated, an object as JSON, and both read back as that string.
  */
-export type FormFieldValue = string | number | boolean | null;
+export type FormFieldValue = string | number | boolean | null | string[] | Record<string, unknown>;
+
+/**
+ * Options for `setValue` / `set`.
+ */
+export interface FormFieldSetOptions {
+    /**
+     * Whether the change counts as an edit. Defaults to `true`, which marks the field touched and
+     * dirty. Pass `false` for a value the template derives rather than one the user entered — a
+     * computed index, a slug suggestion, a default — so opening content does not flag it as edited.
+     */
+    markDirty?: boolean;
+}
+
+/**
+ * Validation state of a form field, mirroring Angular's AbstractControl state.
+ * Custom field implementations (VTL or native) can read this to apply their
+ * own visual feedback (red border, error icon, etc).
+ */
+export interface FieldValidationState {
+    /** True when the field passes all validators. */
+    valid: boolean;
+    /** True when the field fails at least one validator. */
+    invalid: boolean;
+    /** True after the user has interacted with the field (blurred at least once, or marked touched on save). */
+    touched: boolean;
+    /** True when the user has changed the field value. */
+    dirty: boolean;
+    /**
+     * Validation errors keyed by validator name (e.g. `{ required: true }`).
+     * Null when the field is valid.
+     */
+    errors: Record<string, unknown> | null;
+}
 
 /**
  * Interface for a form field API that provides methods to interact with a specific field.
@@ -18,8 +58,9 @@ export interface FormFieldAPI {
     /**
      * Sets the value of the field.
      * @param value - The value to set for the field
+     * @param options - `markDirty: false` sets the value without marking the field touched or dirty
      */
-    setValue(value: FormFieldValue): void;
+    setValue(value: FormFieldValue, options?: FormFieldSetOptions): void;
 
     /**
      * Subscribes to changes of the field.
@@ -27,6 +68,19 @@ export interface FormFieldAPI {
      * @returns A function to unsubscribe this specific callback
      */
     onChange(callback: (value: FormFieldValue) => void): () => void;
+
+    /**
+     * Returns the current validation state of the field.
+     */
+    getValidationState(): FieldValidationState;
+
+    /**
+     * Subscribes to validation state changes. Fires whenever the field's value,
+     * status, errors, touched, or dirty state changes.
+     * @param callback - Function to execute with the new validation state
+     * @returns A function to unsubscribe this specific callback
+     */
+    onValidationChange(callback: (state: FieldValidationState) => void): () => void;
 
     /**
      * Enables the field, allowing user interaction.

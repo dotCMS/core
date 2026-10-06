@@ -1,11 +1,16 @@
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { pluck, switchMap, take } from 'rxjs/operators';
+import { map, switchMap, take } from 'rxjs/operators';
 
-import { DotCMSWorkflow, DotCMSWorkflowStatus } from '@dotcms/dotcms-models';
+import {
+    ContentTypeWorkflowSchemesView,
+    DotCMSWorkflow,
+    DotCMSWorkflowStatus,
+    WorkflowStep
+} from '@dotcms/dotcms-models';
 
 /**
  * Provide util methods to get Workflows.
@@ -24,7 +29,9 @@ export class DotWorkflowService {
      * @memberof DotWorkflowService
      */
     get(): Observable<DotCMSWorkflow[]> {
-        return this.httpClient.get(`${this.WORKFLOW_URL}/schemes`).pipe(pluck('entity'));
+        return this.httpClient
+            .get<{ entity: DotCMSWorkflow[] }>(`${this.WORKFLOW_URL}/schemes`)
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -54,8 +61,59 @@ export class DotWorkflowService {
         schemes: DotCMSWorkflow[];
     }> {
         return this.httpClient
-            .get(`${this.WORKFLOW_URL}/schemes/schemescontenttypes/${contentTypeId}`)
-            .pipe(pluck('entity'));
+            .get<{
+                entity: {
+                    contentTypeSchemes: DotCMSWorkflow[];
+                    schemes: DotCMSWorkflow[];
+                };
+            }>(`${this.WORKFLOW_URL}/schemes/schemescontenttypes/${contentTypeId}`)
+            .pipe(map((x) => x?.entity));
+    }
+
+    /**
+     * Get the workflow schemes assigned to the given content types, deduped by id.
+     *
+     * @param {string[]} contentTypeIds
+     * @return {*}  {Observable<DotCMSWorkflow[]>}
+     * @memberof DotWorkflowService
+     */
+    getSchemesByContentTypes(contentTypeIds: string[]): Observable<DotCMSWorkflow[]> {
+        if (!contentTypeIds.length) {
+            return of([]);
+        }
+
+        const params = contentTypeIds.reduce(
+            (acc, id) => acc.append('contentTypeIds', id),
+            new HttpParams()
+        );
+
+        return this.httpClient
+            .get<{
+                entity: ContentTypeWorkflowSchemesView[];
+            }>(`${this.WORKFLOW_URL}/contenttypes/schemes`, { params })
+            .pipe(
+                map((response) => {
+                    const schemesById = new Map<string, DotCMSWorkflow>();
+                    (response?.entity ?? []).forEach((view) =>
+                        view.schemes?.forEach((scheme) => schemesById.set(scheme.id, scheme))
+                    );
+
+                    return Array.from(schemesById.values());
+                })
+            );
+    }
+
+    /**
+     * Get the steps that belong to a workflow scheme.
+     *
+     * @param {string} schemeId
+     * @return {*}  {Observable<WorkflowStep[]>}
+     * @memberof DotWorkflowService
+     */
+    getSteps(schemeId: string): Observable<WorkflowStep[]> {
+        return this.httpClient
+            .get<{ entity: WorkflowStep[] }>(`${this.WORKFLOW_URL}/schemes/${schemeId}/steps`)
+            .pipe(map((x) => x?.entity ?? []));
     }
 
     /**
@@ -66,6 +124,8 @@ export class DotWorkflowService {
      * @memberof DotWorkflowService
      */
     getWorkflowStatus(inode: string): Observable<DotCMSWorkflowStatus> {
-        return this.httpClient.get(`${this.WORKFLOW_URL}/status/${inode}`).pipe(pluck('entity'));
+        return this.httpClient
+            .get<{ entity: DotCMSWorkflowStatus }>(`${this.WORKFLOW_URL}/status/${inode}`)
+            .pipe(map((x) => x?.entity));
     }
 }

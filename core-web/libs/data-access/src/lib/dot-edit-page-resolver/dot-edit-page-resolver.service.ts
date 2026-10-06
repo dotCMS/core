@@ -47,20 +47,22 @@ export class DotEditPageResolver implements Resolve<DotPageRenderState | null> {
     ): Observable<DotPageRenderState> {
         if (!dotRenderedPageState.page.canEdit) {
             return throwError(
-                new HttpErrorResponse({
-                    status: HttpCode.FORBIDDEN,
-                    url: ''
-                })
+                () =>
+                    new HttpErrorResponse({
+                        status: HttpCode.FORBIDDEN,
+                        url: ''
+                    })
             );
         } else if (!dotRenderedPageState.layout) {
             return throwError(
-                new HttpErrorResponse({
-                    status: HttpCode.FORBIDDEN,
-                    headers: new HttpHeaders({
-                        'error-key': 'dotcms.api.error.license.required'
-                    }),
-                    url: ''
-                })
+                () =>
+                    new HttpErrorResponse({
+                        status: HttpCode.FORBIDDEN,
+                        headers: new HttpHeaders({
+                            'error-key': 'dotcms.api.error.license.required'
+                        }),
+                        url: ''
+                    })
             );
         } else {
             return of(dotRenderedPageState);

@@ -4,8 +4,7 @@ import {
     DotCMSContentlet,
     DotContainerMap,
     DotDevice,
-    DotExperiment,
-    DotExperimentStatus
+    DotExperiment
 } from '@dotcms/dotcms-models';
 import {
     DotCMSPage,
@@ -16,14 +15,9 @@ import {
 } from '@dotcms/types';
 
 import { EmaDragItem } from '../edit-ema-editor/components/ema-page-dropzone/types';
-import { DotPageApiParams } from '../services/dot-page-api.service';
-import {
-    BASE_IFRAME_MEASURE_UNIT,
-    COMMON_ERRORS,
-    DEFAULT_PERSONA,
-    PERSONA_KEY
-} from '../shared/consts';
-import { CONTAINER_INSERT_ERROR, EDITOR_STATE } from '../shared/enums';
+import { DotPageApiParams } from '../services/dot-page-api/dot-page-api.service';
+import { COMMON_ERRORS, DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
+import { CONTAINER_INSERT_ERROR } from '../shared/enums';
 import {
     ActionPayload,
     ContainerPayload,
@@ -33,7 +27,7 @@ import {
     DragDatasetItem,
     PageContainer
 } from '../shared/models';
-import { Orientation } from '../store/models';
+import { IframeAccessMode, Orientation } from '../store/models';
 
 /**
  * Builds a `<base>` href from a page URI.
@@ -66,6 +60,23 @@ export function getBaseHrefFromPageURI(pageURI: string, origin: string): string 
         } catch {
             return '/';
         }
+    }
+}
+
+export function getIframeAccessMode(
+    clientHost?: string,
+    currentOrigin = window.location.origin
+): IframeAccessMode {
+    if (!clientHost) {
+        return IframeAccessMode.LOCAL;
+    }
+
+    try {
+        return new URL(clientHost, currentOrigin).origin === new URL(currentOrigin).origin
+            ? IframeAccessMode.LOCAL
+            : IframeAccessMode.CROSS_ORIGIN;
+    } catch {
+        return IframeAccessMode.CROSS_ORIGIN;
     }
 }
 
@@ -609,6 +620,12 @@ export function createFullURL(params: DotPageApiParams, siteId?: string): string
     delete paramsCopy?.clientHost;
     delete paramsCopy?.url;
 
+    // A param set to `undefined` has been cleared (a removed filter, a reset
+    // publish date). URLSearchParams would print it as "key=undefined".
+    Object.keys(paramsCopy).forEach(
+        (key) => paramsCopy[key] === undefined && delete paramsCopy[key]
+    );
+
     const searchParams = new URLSearchParams(paramsCopy);
 
     const pureURL = new URL(`${url}?${searchParams.toString()}`, clientHost);
@@ -649,7 +666,9 @@ export function computeIsPageLocked(page: DotCMSPage, currentUser: CurrentUser):
  * Editing is allowed when ALL of the following are true:
  * - User has edit permission on the page
  * - Page is not locked (or locked by current user with feature flag enabled)
- * - No experiment is running or scheduled
+ *
+ * A running or scheduled experiment no longer blocks editing (#37308). The `experiment` argument
+ * is kept so callers and tests can show it is ignored.
  *
  * @param {DotCMSPage} page - The page to check
  * @param {CurrentUser} currentUser - The current user
@@ -665,12 +684,7 @@ export function computeCanEditPage(
 ): boolean {
     const hasEditPermission = !!page?.canEdit;
 
-    const isBlockedByExperiment = [
-        DotExperimentStatus.RUNNING,
-        DotExperimentStatus.SCHEDULED
-    ].includes(experiment?.status);
-
-    if (!hasEditPermission || isBlockedByExperiment) {
+    if (!hasEditPermission) {
         return false;
     }
 
@@ -775,15 +789,38 @@ export const mapContainerStructureToArrayOfContainers = (containers: DotCMSPageA
 };
 
 /**
- * Get the host name for the request
+ * Resolve the host that scanner/SEO requests should target.
+ *
+ * Order: explicit `clientHost` (headless), then the page's own site hostname
+ * (traditional pages), falling back to the admin origin.
  *
  * @export
- * @param {boolean} isTraditionalPage
- * @param {DotPageApiParams} params
+ * @param {DotPageApiParams} params       page API params (may carry `clientHost` for headless)
+ * @param {string} [pageHostname]         site hostname from the page asset
+ *                                        (e.g. "siteb.example.com" or "https://siteb.example.com")
  * @return {*}  {string}
  */
-export const getRequestHostName = (params: DotPageApiParams) => {
-    return params?.clientHost || window.location.origin;
+export const getRequestHostName = (params: DotPageApiParams, pageHostname?: string) => {
+    if (params?.clientHost) {
+        return params.clientHost;
+    }
+
+    if (pageHostname) {
+        try {
+            return new URL(pageHostname).origin;
+        } catch {
+            // Hostname can be provided without scheme (e.g. "siteb.example.com").
+            // Drop anything after the host (path/trailing slash) so the result stays
+            // a clean origin — it is later concatenated with the page path.
+            // Protocol is assumed from the admin origin; an HTTP-only content site
+            // reached from an HTTPS admin would still be requested over HTTPS.
+            const host = pageHostname.split('/')[0];
+
+            return `${window.location.protocol}//${host}`;
+        }
+    }
+
+    return window.location.origin;
 };
 
 /**
@@ -798,17 +835,6 @@ export const getErrorPayload = (errorCode: number) =>
               pageInfo: COMMON_ERRORS[errorCode?.toString()] ?? null
           }
         : null;
-
-/**
- * Get the editor states
- * @param state
- * @returns {{isDragging: boolean; dragIsActive: boolean; isScrolling: boolean}}
- */
-export const getEditorStates = (state: EDITOR_STATE) => ({
-    isDragging: state === EDITOR_STATE.DRAGGING,
-    dragIsActive: state === EDITOR_STATE.DRAGGING || state === EDITOR_STATE.SCROLL_DRAG,
-    isScrolling: state === EDITOR_STATE.SCROLL_DRAG || state === EDITOR_STATE.SCROLLING
-});
 
 /**
  * Compare two URL paths
@@ -987,21 +1013,25 @@ export const getOrientation = (device: DotDevice): Orientation => {
         : Orientation.LANDSCAPE;
 };
 
-export const getWrapperMeasures = (
-    device: DotDevice,
-    orientation?: Orientation
-): { width: string; height: string } => {
-    const unit = device?.inode !== 'default' ? BASE_IFRAME_MEASURE_UNIT : '%';
+/**
+ * Measure the canvas viewport's content area (excluding its CSS padding and
+ * the row's left/right gutter elements). The result is what fits the iframe
+ * in responsive mode: the on-screen budget the user's iframe is clamped to.
+ *
+ * Returns null when the element is detached or measures zero in either axis,
+ * so callers can early-return before pushing a degenerate size to the store.
+ */
+export const measureCanvasAvailableSize = (
+    el: HTMLElement
+): { width: number; height: number } | null => {
+    const styles = getComputedStyle(el);
+    const padX = parseFloat(styles.paddingLeft) + parseFloat(styles.paddingRight);
+    const padY = parseFloat(styles.paddingTop) + parseFloat(styles.paddingBottom);
 
-    return orientation === Orientation.LANDSCAPE
-        ? {
-              width: `${Math.max(Number(device?.cssHeight), Number(device?.cssWidth))}${unit}`,
-              height: `${Math.min(Number(device?.cssHeight), Number(device?.cssWidth))}${unit}`
-          }
-        : {
-              width: `${Math.min(Number(device?.cssHeight), Number(device?.cssWidth))}${unit}`,
-              height: `${Math.max(Number(device?.cssHeight), Number(device?.cssWidth))}${unit}`
-          };
+    const width = el.clientWidth - padX;
+    const height = el.clientHeight - padY;
+
+    return width > 0 && height > 0 ? { width, height } : null;
 };
 
 /**
@@ -1026,23 +1056,32 @@ export const cleanPageURL = (url: string) => {
  * @returns {string} String in ISO 8601 format with the date in UTC
  */
 export const convertLocalTimeToUTC = (date: Date, includeMilliseconds = false) => {
-    // Validate parameters
-    if (!(date instanceof Date)) {
+    // Normalize to a Date (handles date-like objects from other realms, e.g. in tests)
+    let normalizedDate: Date;
+    if (date instanceof Date) {
+        normalizedDate = date;
+    } else if (date != null && typeof (date as { getTime?: () => number }).getTime === 'function') {
+        const time = (date as { getTime: () => number }).getTime();
+        normalizedDate = Number.isFinite(time) ? new Date(time) : new Date();
+    } else {
         throw new Error('Parameter must be a Date object');
+    }
+    if (Number.isNaN(normalizedDate.getTime())) {
+        normalizedDate = new Date();
     }
 
     // Extract local time from the date
-    const hours = date.getHours();
-    const minutes = date.getMinutes();
-    const seconds = date.getSeconds();
-    const milliseconds = date.getMilliseconds();
+    const hours = normalizedDate.getHours();
+    const minutes = normalizedDate.getMinutes();
+    const seconds = normalizedDate.getSeconds();
+    const milliseconds = normalizedDate.getMilliseconds();
 
     // Create new UTC date with the same local date and time
     const utcDate = new Date(
         Date.UTC(
-            date.getFullYear(),
-            date.getMonth(),
-            date.getDate(),
+            normalizedDate.getFullYear(),
+            normalizedDate.getMonth(),
+            normalizedDate.getDate(),
             hours,
             minutes,
             seconds,
@@ -1103,4 +1142,157 @@ export const convertClientParamsToPageParams = (params) => {
     };
 
     return removeUndefinedValues(pageParams);
+};
+
+/**
+ * Checks if a URL targets the same pathname as the current page (any hash or query change).
+ *
+ * These navigations should be handled by the browser/client naturally and should not
+ * trigger a full page reload in the editor.
+ *
+ * @param {string} incomingUrl - The URL to check (e.g., '#section', '/page?tab=2', '/other-page')
+ * @param {string} currentUrl - The current page URL for comparison
+ * @returns {boolean} True when resolved `URL.pathname` values are equal
+ *
+ * @example
+ * isSamePageNavigation('#faq', '/home') // true - same path, hash change
+ * isSamePageNavigation('/home?tab=2', '/home') // true - same path, query change
+ * isSamePageNavigation('/home#section', '/home?tab=1') // true - same path, hash and/or query differ
+ * isSamePageNavigation('/other-page', '/home') // false - different path
+ */
+export const isSamePageNavigation = (incomingUrl: string, currentUrl: string): boolean => {
+    if (!incomingUrl || !currentUrl) return false;
+
+    const current = new URL(currentUrl, window.origin);
+    // Resolve incomingUrl relative to the current page URL so bare hashes like
+    // '#section' become '<current-path>#section' instead of resolving to the origin root.
+    const target = new URL(incomingUrl, current.href);
+
+    return target.pathname === current.pathname;
+};
+
+/**
+ * Scrolls a traditional page's iframe to the element a URL fragment points at.
+ *
+ * Traditional pages render through `srcdoc`, whose base URL is the admin's, so a
+ * browser-handled `#section` link resolves to the admin URL and loads the admin
+ * inside the canvas instead of scrolling. Callers cancel the click and scroll
+ * here instead. The target follows the HTML rules: the element with that id,
+ * else the first element with that name, and the top of the page for `#` or
+ * `#top`. An unknown fragment does nothing, as in a browser.
+ *
+ * Scrolls the iframe's own window rather than calling `scrollIntoView`, which
+ * would also scroll the editor's canvas around the iframe.
+ *
+ * @param {Window | null} win - The iframe's window
+ * @param {string} hash - The fragment, with or without the leading `#`
+ */
+export function scrollIframeToFragment(win: Window | null, hash: string): void {
+    if (!win) {
+        return;
+    }
+
+    const fragment = hash.replace(/^#/, '');
+    let id = fragment;
+
+    try {
+        id = decodeURIComponent(fragment);
+    } catch {
+        // A malformed escape is looked up as written.
+    }
+
+    const doc = win.document;
+    const target = id ? (doc.getElementById(id) ?? doc.getElementsByName(id)[0]) : undefined;
+
+    if (target) {
+        win.scrollTo({ top: target.getBoundingClientRect().top + (win.scrollY || 0), left: 0 });
+
+        return;
+    }
+
+    if (!id || id.toLowerCase() === 'top') {
+        win.scrollTo({ top: 0, left: 0 });
+    }
+}
+
+/** dotCMS path prefixes that stream a binary asset instead of rendering a page. */
+const ASSET_PATH_PREFIXES = ['/dA/', '/dotAsset/', '/contentAsset/'];
+
+/**
+ * Extensions that still resolve to an HTMLPage. Only `html`, the shipped
+ * `VELOCITY_PAGE_EXTENSION` (`dotmarketing-config.properties:91`).
+ *
+ * Deliberately excludes two extensions that look like candidates. `htm` is an
+ * ordinary file asset in dotCMS, never a page. `dot` is only the fallback
+ * `Config.getStringProperty("VELOCITY_PAGE_EXTENSION", "dot")` reaches for when
+ * the property is absent, which it never is in a standard install, and it is a
+ * real upload type (the Word 97-2003 template), so listing it would send those
+ * files to the Page API.
+ *
+ * `VELOCITY_PAGE_EXTENSION` is configurable and its value is not exposed to the
+ * client, so a site that overrides it sees its page links open in a new tab.
+ * That is the mild failure of the two, consistent with the bias documented on
+ * `isAssetPath`.
+ */
+const PAGE_PATH_EXTENSIONS = new Set(['html']);
+
+/**
+ * Matches a plausible file extension: 1-8 alphanumerics containing at least one
+ * letter. The letter requirement is what guards URL-map slugs such as
+ * `/blog/release-v1.2` and `/news/2024.10`, whose all-digit trailing token must
+ * not be mistaken for a file extension. Digit-initial extensions such as `7z`
+ * and `3gp` are real and must still match.
+ */
+const FILE_EXTENSION_PATTERN = /^(?=.*[a-z])[a-z0-9]{1,8}$/;
+
+/**
+ * Checks whether a pathname targets a file asset rather than an HTMLPage.
+ *
+ * No extension (or the page extension) means a page; any other real extension
+ * means a file. This is a client-side approximation: the backend resolves the
+ * two by identifier lookup (`CMSUrlUtil#resolveResourceType`), not by
+ * extension, so an authoritative answer would cost a round-trip per link click.
+ *
+ * Known limitation: a page whose last segment carries a dot followed by a short
+ * alpha token is read as a file, so `/store/product.detail` opens in a new tab
+ * instead of navigating. Reachable through author-controlled slugs, since the
+ * page `url` is a plain text field (`HTMLPageAssetAPIImpl`).
+ *
+ * That direction is deliberate. Reading a page as a file opens it in a new tab,
+ * which is visible and recoverable; reading a file as a page hands it to the
+ * Page API and strands the editor on "Page not found", the defect this guards
+ * against. So the extension test stays permissive rather than matching against
+ * a known-extension allowlist, which would invert the bias and make every
+ * uncommon file type fail the worse way.
+ *
+ * @param {string} pathname - The pathname to check (query and hash excluded)
+ * @returns {boolean} True when the pathname points at a file asset
+ *
+ * @example
+ * isAssetPath('/application/files/doc.pdf')  // true
+ * isAssetPath('/dA/abc123/asset/doc.pdf')    // true
+ * isAssetPath('/backups/archive.7z')         // true
+ * isAssetPath('/about-us/index')             // false
+ * isAssetPath('/about-us/index.html')        // false
+ * isAssetPath('/blog/release-v1.2')          // false
+ */
+export const isAssetPath = (pathname: string): boolean => {
+    if (!pathname) {
+        return false;
+    }
+
+    if (ASSET_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
+        return true;
+    }
+
+    const lastSegment = pathname.slice(pathname.lastIndexOf('/') + 1);
+    const dotIndex = lastSegment.lastIndexOf('.');
+
+    if (dotIndex === -1) {
+        return false;
+    }
+
+    const extension = lastSegment.slice(dotIndex + 1).toLowerCase();
+
+    return FILE_EXTENSION_PATTERN.test(extension) && !PAGE_PATH_EXTENSIONS.has(extension);
 };

@@ -1,6 +1,5 @@
 import { signalState, patchState } from '@ngrx/signals';
 
-import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -66,14 +65,7 @@ interface DotContentTypeState {
 
 @Component({
     selector: 'dot-content-type',
-    imports: [
-        CommonModule,
-        FormsModule,
-        SelectModule,
-        IconFieldModule,
-        InputIconModule,
-        InputTextModule
-    ],
+    imports: [FormsModule, SelectModule, IconFieldModule, InputIconModule, InputTextModule],
     templateUrl: './dot-content-type.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [

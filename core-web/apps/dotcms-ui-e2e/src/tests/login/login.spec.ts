@@ -1,7 +1,8 @@
-import { BreadcrumbComponent } from '@components/breadcrumb.component';
 import { LoginPage } from '@pages';
 import { expect, test } from '@playwright/test';
-import { admin1, wrong1, wrong2 } from './credentialsData';
+import { admin1, wrong1, wrong2 } from '@utils/credentials';
+
+import { BreadcrumbComponent } from '@components/breadcrumb.component';
 
 const validCredentials = [
     { username: admin1.username, password: admin1.password } // admin user

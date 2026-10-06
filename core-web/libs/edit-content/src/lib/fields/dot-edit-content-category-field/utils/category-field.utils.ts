@@ -27,7 +27,11 @@ export const getSelectedFromContentlet = (
         return [];
     }
 
-    const selectedCategories = contentlet[variable] || [];
+    const selectedCategories = contentlet[variable];
+
+    if (!Array.isArray(selectedCategories)) {
+        return [];
+    }
 
     return selectedCategories.map((obj: DotCategoryFieldKeyValueObj) => {
         const key = Object.keys(obj)[0];
@@ -288,4 +292,26 @@ export const getMenuItemsFromKeyParentPath = (
  */
 export const removeEmptyArrays = (array: DotCategory[][]): DotCategory[][] => {
     return array.filter((item) => item.length > 0);
+};
+
+/**
+ * Shallowly compares two arrays of inode strings, ignoring order.
+ *
+ * Used by the category field's `ControlValueAccessor` to short-circuit
+ * `writeValue` when the value the form is writing already matches the
+ * inodes the store has selected, avoiding spurious `onChange` emissions
+ * after a form rebuild (e.g. workflow action).
+ *
+ * @param value - Inodes coming from the form (`writeValue` argument).
+ * @param inodes - Inodes currently selected in the store.
+ * @returns `true` when both arrays contain the same inodes, regardless of order.
+ */
+export const sameInodes = (value: string[], inodes: string[]): boolean => {
+    if (value.length !== inodes.length) {
+        return false;
+    }
+
+    const set = new Set(value);
+
+    return inodes.every((inode) => set.has(inode));
 };

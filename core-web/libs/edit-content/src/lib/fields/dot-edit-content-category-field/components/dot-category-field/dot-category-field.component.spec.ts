@@ -4,12 +4,13 @@ import {
     mockProvider,
     SpectatorHost,
     SpyObject
-} from '@ngneat/spectator/jest';
+} from '@openng/spectator/vitest';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { Component } from '@angular/core';
-import { fakeAsync } from '@angular/core/testing';
+import { fakeAsync, tick } from '@angular/core/testing';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
@@ -56,7 +57,7 @@ describe('DotCategoryFieldComponent', () => {
         componentViewProviders: [
             CategoryFieldStore,
             mockProvider(CategoriesService, {
-                getSelectedHierarchy: jest.fn().mockReturnValue(of(CATEGORY_HIERARCHY_MOCK))
+                getSelectedHierarchy: vi.fn().mockReturnValue(of(CATEGORY_HIERARCHY_MOCK))
             })
         ],
         detectChanges: false
@@ -85,6 +86,24 @@ describe('DotCategoryFieldComponent', () => {
                 service = spectator.inject(CategoriesService, true);
             });
 
+            /**
+             * AC-209 — this widget's value is a collection, so there is no single control for
+             * `<label for>` to reach. The widget itself is the named thing, via aria-labelledby
+             * pointing at the field label. No aria-required: ARIA defines it on radiogroup, not on
+             * a plain group.
+             */
+            it('should expose itself as a group named by the field label', () => {
+                // `role` is a static host attribute, applied at creation; aria-labelledby is a
+                // binding and needs a change-detection pass, which this suite's setup does not run.
+                spectator.detectChanges();
+
+                expect(spectator.element.getAttribute('role')).toBe('group');
+                expect(spectator.element.getAttribute('aria-labelledby')).toBe(
+                    'label-' + CATEGORY_FIELD_MOCK.variable
+                );
+                expect(spectator.element.getAttribute('aria-required')).toBeNull();
+            });
+
             it('should render a button for selecting categories', () => {
                 spectator.detectChanges();
                 expect(spectator.query(byTestId('show-dialog-btn'))).not.toBeNull();
@@ -95,6 +114,67 @@ describe('DotCategoryFieldComponent', () => {
                 const selectBtn = spectator.query<HTMLButtonElement>(byTestId('show-dialog-btn'));
                 expect(selectBtn.type).toBe('button');
             });
+
+            it('should render the `Select` button as primary', () => {
+                spectator.detectChanges();
+                const selectBtn = spectator.query<HTMLButtonElement>(byTestId('show-dialog-btn'));
+                expect(selectBtn.classList).not.toContain('p-button-secondary');
+                expect(selectBtn.classList).not.toContain('p-button-text');
+            });
+
+            it('should render a `Clear all` button when there are selected categories', () => {
+                spectator.detectChanges();
+                expect(spectator.query(byTestId('clear-all-btn'))).not.toBeNull();
+            });
+
+            it('should invoke `clearAllSelected` method when the `Clear all` button is clicked', () => {
+                spectator.detectChanges();
+                const clearAllBtn = spectator.query(byTestId('clear-all-btn'));
+                const clearAllSelectedSpy = vi.spyOn(spectator.component, 'clearAllSelected');
+                expect(clearAllBtn).not.toBeNull();
+
+                spectator.click(clearAllBtn);
+
+                expect(clearAllSelectedSpy).toHaveBeenCalled();
+            });
+
+            it('should clear the store selection and emit an empty value when `Clear all` is clicked', fakeAsync(() => {
+                spectator.detectChanges();
+                spectator.component.ngOnInit();
+                spectator.detectChanges();
+                expect(spectator.component.store.selected().length).toBe(2);
+
+                // `onChange` is the ControlValueAccessor callback the effect() in
+                // ngOnInit calls whenever `store.selected()` changes; spying on it
+                // directly is more reliable in this test harness than reading the
+                // value back off the shared host FormGroup (see the disabled tests
+                // at the bottom of this file for the same limitation).
+                const onChangeSpy = vi.spyOn(
+                    spectator.component as unknown as { onChange: (value: unknown) => void },
+                    'onChange'
+                );
+
+                const clearAllBtn = spectator.query(byTestId('clear-all-btn'));
+                spectator.click(clearAllBtn);
+                spectator.detectChanges();
+                spectator.flushEffects();
+                tick();
+
+                expect(spectator.component.store.selected().length).toBe(0);
+                expect(onChangeSpy).toHaveBeenCalledWith([]);
+            }));
+
+            it('should not render the `Clear all` button after clearing all selected categories', fakeAsync(() => {
+                spectator.detectChanges();
+                spectator.component.ngOnInit();
+                spectator.detectChanges();
+                const clearAllBtn = spectator.query(byTestId('clear-all-btn'));
+                spectator.click(clearAllBtn);
+                spectator.detectChanges();
+                tick();
+
+                expect(spectator.query(byTestId('clear-all-btn'))).toBeNull();
+            }));
 
             it('should display the category list with chips when there are categories', async () => {
                 spectator.detectChanges();
@@ -145,6 +225,32 @@ describe('DotCategoryFieldComponent', () => {
 
             expect(spectator.query(byTestId('category-chip-list'))).toBeNull();
         });
+
+        it('should not render the `Clear all` button when there are no categories', () => {
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-category-field [field]="field" [contentlet]="contentlet" formControlName="categorias" [hasError]="hasError" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: FAKE_FORM_GROUP,
+                        field: CATEGORY_FIELD_MOCK,
+                        contentlet: {
+                            ...CATEGORY_FIELD_CONTENTLET_MOCK,
+                            [CATEGORY_FIELD_MOCK.variable]: []
+                        },
+                        hasError: false
+                    }
+                }
+            );
+
+            service = spectator.inject(CategoriesService, true);
+            service.getSelectedHierarchy.mockReturnValue(of([]));
+
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('clear-all-btn'))).toBeNull();
+        });
     });
 
     describe('Interactions', () => {
@@ -173,7 +279,7 @@ describe('DotCategoryFieldComponent', () => {
         it('should invoke `showCategoriesDialog` method when the select button is clicked', () => {
             spectator.detectChanges();
             const selectBtn = spectator.query(byTestId('show-dialog-btn'));
-            const showCategoriesDialogSpy = jest.spyOn(spectator.component, 'openCategoriesDialog');
+            const showCategoriesDialogSpy = vi.spyOn(spectator.component, 'openCategoriesDialog');
             expect(selectBtn).not.toBeNull();
 
             spectator.click(selectBtn);
@@ -205,7 +311,7 @@ describe('DotCategoryFieldComponent', () => {
             expect(spectator.query(DotCategoryFieldDialogComponent)).not.toBeNull();
         });
 
-        xit('should remove DotCategoryFieldDialogComponent when `closedDialog` emit', fakeAsync(async () => {
+        it.skip('should remove DotCategoryFieldDialogComponent when `closedDialog` emit', fakeAsync(async () => {
             spectator.detectChanges();
             spectator.component.ngOnInit();
             spectator.detectChanges();

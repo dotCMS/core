@@ -1,9 +1,10 @@
-import { SpectatorService, createServiceFactory, mockProvider } from '@ngneat/spectator/jest';
+import { SpectatorService, createServiceFactory, mockProvider } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { Injectable } from '@angular/core';
 
-import { CoreWebService, DotEventsSocketURL, LoginService } from '@dotcms/dotcms-js';
+import { LoginService } from '@dotcms/dotcms-js';
 import {
     DotActionBulkRequestOptions,
     DotActionBulkResult,
@@ -17,7 +18,6 @@ import {
     DotWorkflowPayload
 } from '@dotcms/dotcms-models';
 import {
-    CoreWebServiceMock,
     DotFormatDateServiceMock,
     DotMessageDisplayServiceMock,
     LoginServiceMock,
@@ -37,13 +37,6 @@ import { DotMessageService } from '../dot-messages/dot-messages.service';
 import { DotWizardService } from '../dot-wizard/dot-wizard.service';
 import { DotWorkflowActionsFireService } from '../dot-workflow-actions-fire/dot-workflow-actions-fire.service';
 import { PushPublishService } from '../push-publish/push-publish.service';
-
-const dotEventSocketURLFactory = () => {
-    return new DotEventsSocketURL(
-        `${window.location.hostname}:${window.location.port}/api/ws/v1/system/events`,
-        window.location.protocol === 'https:'
-    );
-};
 
 @Injectable()
 export class MockPushPublishService {
@@ -156,8 +149,6 @@ describe('DotWorkflowEventHandlerService', () => {
                 provide: LoginService,
                 useClass: LoginServiceMock
             },
-            { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
-            { provide: CoreWebService, useClass: CoreWebServiceMock },
             { provide: DotFormatDateService, useClass: DotFormatDateServiceMock }
         ]
     });
@@ -210,18 +201,18 @@ describe('DotWorkflowEventHandlerService', () => {
 
     describe('wizard', () => {
         it('should open with the correct data', () => {
-            jest.spyOn(dotWizardService, 'open');
+            vi.spyOn(dotWizardService, 'open');
             spectator.service.open({ ...mockWAEvent });
             expect(dotWizardService.open).toHaveBeenCalledWith(mockWizardInput);
         });
 
         it('should fire the workflow action with the correct data, execute the callback and send a message on output', () => {
-            jest.spyOn(dotWorkflowActionsFireService, 'fireTo').mockReturnValue(
+            vi.spyOn(dotWorkflowActionsFireService, 'fireTo').mockReturnValue(
                 of(dotcmsContentletMock)
             );
 
-            jest.spyOn(dotGlobalMessageService, 'display');
-            jest.spyOn(dotIframeService, 'run');
+            vi.spyOn(dotGlobalMessageService, 'display');
+            vi.spyOn(dotIframeService, 'run');
 
             spectator.service.open({ ...mockWAEvent });
             dotWizardService.output$({ ...mockWizardOutputData });
@@ -241,7 +232,7 @@ describe('DotWorkflowEventHandlerService', () => {
         });
 
         it('should run iframe function for legacy call', () => {
-            jest.spyOn(dotIframeService, 'run');
+            vi.spyOn(dotIframeService, 'run');
             spectator.service.open({
                 ...mockWAEvent,
                 callback: 'saveAssignCallBackAngular'
@@ -285,12 +276,12 @@ describe('DotWorkflowEventHandlerService', () => {
                 query: 'query'
             };
 
-            jest.spyOn(dotWorkflowActionsFireService, 'bulkFire').mockReturnValue(
+            vi.spyOn(dotWorkflowActionsFireService, 'bulkFire').mockReturnValue(
                 of(mockBulkResponse)
             );
 
-            jest.spyOn(dotGlobalMessageService, 'display');
-            jest.spyOn(dotIframeService, 'run');
+            vi.spyOn(dotGlobalMessageService, 'display');
+            vi.spyOn(dotIframeService, 'run');
             spectator.service.open({
                 ...mockWAEvent,
                 selectedInodes: 'query'
@@ -317,8 +308,8 @@ describe('DotWorkflowEventHandlerService', () => {
             });
         });
         it('should return false and display a notification is there are no environments ', () => {
-            jest.spyOn(pushPublishService, 'getEnvironments').mockReturnValue(of([]));
-            jest.spyOn(dotMessageDisplayService, 'push');
+            vi.spyOn(pushPublishService, 'getEnvironments').mockReturnValue(of([]));
+            vi.spyOn(dotMessageDisplayService, 'push');
 
             spectator.service.checkPublishEnvironments().subscribe((flag: boolean) => {
                 expect(flag).toEqual(false);

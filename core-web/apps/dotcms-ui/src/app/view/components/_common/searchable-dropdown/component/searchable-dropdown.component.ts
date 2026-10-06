@@ -1,6 +1,6 @@
 import { fromEvent } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import {
     AfterContentInit,
     AfterViewInit,
@@ -18,7 +18,8 @@ import {
     SimpleChanges,
     TemplateRef,
     ViewChild,
-    inject
+    inject,
+    ChangeDetectionStrategy
 } from '@angular/core';
 import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 
@@ -49,15 +50,16 @@ import { DotIconComponent, DotMessagePipe } from '@dotcms/ui';
     selector: 'dot-searchable-dropdown',
     styleUrls: ['./searchable-dropdown.component.scss'],
     templateUrl: './searchable-dropdown.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
-        CommonModule,
         FormsModule,
         ButtonModule,
         DataViewModule,
         InputTextModule,
         PopoverModule,
         DotIconComponent,
-        DotMessagePipe
+        DotMessagePipe,
+        NgTemplateOutlet
     ]
 })
 export class SearchableDropdownComponent

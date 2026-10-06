@@ -1,4 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
+
+import { DotColorIconComponent } from '@dotcms/ui';
 
 import { DotOnboardingAuthorComponent } from './components/onboarding-author/onboarding-author.component';
 import { DotOnboardingDevComponent } from './components/onboarding-dev/onboarding-dev.component';
@@ -8,7 +10,8 @@ export type UserProfile = 'developer' | 'marketer';
 @Component({
     selector: 'dot-starter',
     templateUrl: './dot-starter.component.html',
-    imports: [DotOnboardingDevComponent, DotOnboardingAuthorComponent]
+    changeDetection: ChangeDetectionStrategy.Eager,
+    imports: [DotColorIconComponent, DotOnboardingDevComponent, DotOnboardingAuthorComponent]
 })
 export class DotStarterComponent implements OnInit {
     public profile: UserProfile = localStorage.getItem('user_profile') as UserProfile;

@@ -1,10 +1,10 @@
-import { FolderNamePipe } from './dot-folder-name.pipe';
+import { DotFolderNamePipe } from './dot-folder-name.pipe';
 
-describe('FolderNamePipe', () => {
-    let pipe: FolderNamePipe;
+describe('DotFolderNamePipe', () => {
+    let pipe: DotFolderNamePipe;
 
     beforeEach(() => {
-        pipe = new FolderNamePipe();
+        pipe = new DotFolderNamePipe();
     });
 
     describe('transform', () => {
@@ -45,6 +45,16 @@ describe('FolderNamePipe', () => {
 
         it('should return empty string for empty path', () => {
             const result = pipe.transform('');
+            expect(result).toBe('');
+        });
+
+        it('should return empty string for null', () => {
+            const result = pipe.transform(null);
+            expect(result).toBe('');
+        });
+
+        it('should return empty string for undefined', () => {
+            const result = pipe.transform(undefined);
             expect(result).toBe('');
         });
 

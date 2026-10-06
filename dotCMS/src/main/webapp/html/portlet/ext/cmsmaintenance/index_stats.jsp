@@ -14,6 +14,7 @@
 <%@page import="org.apache.commons.lang.StringUtils"%>
 <%@page import="com.dotcms.cluster.ClusterUtils"%>
 <%@ page import="com.dotcms.content.index.domain.IndexStats" %>
+<%@ page import="com.dotcms.content.index.MigrationIndexVisibility" %>
 <%
 
 List<Structure> structs = StructureFactory.getStructures();
@@ -44,8 +45,11 @@ try {
 List<String> currentIdx =idxApi.getCurrentIndex();
 List<String> newIdx =idxApi.getNewIndex();
 
-List<String> indices=idxApi.listDotCMSIndices();
-List<String> closedIndices=idxApi.listDotCMSClosedIndices();
+// Hide OS-tagged (.os) migration indices outside Phase 3 (phase-based, for everyone). Only this
+// display sink filters; operational paths keep the full set. Support/QA see migration detail via the
+// role-gated readiness endpoint, not this portlet (issue #36360).
+List<String> indices=MigrationIndexVisibility.filter(idxApi.listDotCMSIndices());
+List<String> closedIndices=MigrationIndexVisibility.filter(idxApi.listDotCMSClosedIndices());
 Map<String, IndexStats> indexInfo = esapi.getIndicesStats();
 
 SimpleDateFormat dater = new SimpleDateFormat("yyyyMMddHHmmss");

@@ -1,11 +1,14 @@
 package com.dotcms.util;
 
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import com.dotcms.security.multipart.IllegalFileExtensionsValidator;
 import com.dotcms.security.multipart.IllegalTraversalFilePathValidator;
@@ -16,8 +19,10 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
+import com.liferay.portal.model.User;
 import com.liferay.util.Xss;
 
 import io.vavr.control.Try;
@@ -81,6 +86,56 @@ public class SecurityUtils {
       ref = "/";
 
     return ref;
+  }
+
+  /**
+   * Centralizes the front-end "permission denied" HTTP response so authentication and
+   * authorization are cleanly separated across every servlet/filter that handles a
+   * {@code DotSecurityException}. This mirrors the Spring Security split between an
+   * {@code AuthenticationEntryPoint} (401, "who are you?") and an {@code AccessDeniedHandler}
+   * (403, "I know who you are, but you cannot have this"):
+   * <ul>
+   *   <li><b>Authenticated (non-anonymous) user</b> &rarr; {@code 403 Forbidden}. The
+   *   {@link WebKeys#REDIRECT_AFTER_LOGIN} intent is cleared so the container error page does
+   *   <b>not</b> bounce the browser back through the login/SSO flow &mdash; re-authenticating
+   *   can never grant a missing permission, which is exactly what produces the infinite SAML
+   *   redirect loop (see issue #36541).</li>
+   *   <li><b>Anonymous / not-logged-in user</b> &rarr; {@code 401 Unauthorized} and
+   *   {@link WebKeys#REDIRECT_AFTER_LOGIN} is set to {@code originalUri} so the legitimate
+   *   login flow can return the user to the resource afterwards.</li>
+   * </ul>
+   * The user is considered anonymous when it is {@code null} or {@link User#isAnonymousUser()}
+   * is {@code true}.
+   *
+   * @param user        the resolved user (may be {@code null} or the anonymous user)
+   * @param originalUri  the URI to return to after login (used only for the anonymous 401 path)
+   * @param request     the current request
+   * @param response    the current response
+   * @throws IOException if the error response cannot be written
+   */
+  public static void sendPermissionDenied(final User user, final String originalUri,
+      final HttpServletRequest request, final HttpServletResponse response) throws IOException {
+
+    if (response.isCommitted()) {
+      return;
+    }
+
+    if (user != null && !user.isAnonymousUser()) {
+      // Authenticated but not authorized: clean 403, never re-trigger authentication.
+      final HttpSession session = request.getSession(false);
+      if (session != null) {
+        session.removeAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
+      }
+      response.sendError(HttpServletResponse.SC_FORBIDDEN);
+    } else {
+      // Anonymous: remember where the user was headed and require login.
+      final HttpSession session = request.getSession();
+      if (session != null && UtilMethods.isSet(originalUri)) {
+        Logger.debug(SecurityUtils.class, () -> "Setting redirect after login to requested uri: " + originalUri);
+        session.setAttribute(WebKeys.REDIRECT_AFTER_LOGIN, originalUri);
+      }
+      response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+    }
   }
 
   /**

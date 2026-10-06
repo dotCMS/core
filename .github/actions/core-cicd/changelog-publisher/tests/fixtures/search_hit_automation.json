@@ -1,0 +1,28 @@
+{
+  "entity": {
+    "contentTook": 1,
+    "jsonObjectView": {
+      "contentlets": [
+        {
+          "contentType": "Dotcmsbuilds",
+          "minor": "26.07.10-01",
+          "identifier": "aaaa1111-bbbb-2222-cccc-333344445555",
+          "inode": "eeee9999-ffff-8888-dddd-777766665555",
+          "modUserName": "dotCMS Release Automation",
+          "modUser": "user-devbot-0000",
+          "dockerImage": "dotcms/dotcms:26.07.10-01_old1234",
+          "releasedDate": "2026-07-10 00:00:00.0",
+          "showInChangeLog": true,
+          "lts": 3,
+          "released": true,
+          "download": 1
+        }
+      ]
+    },
+    "queryTook": 1,
+    "resultsSize": 1
+  },
+  "errors": [],
+  "messages": [],
+  "pagination": null
+}

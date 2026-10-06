@@ -21,20 +21,20 @@ export enum SEO_RULES_ICONS {
     EXCLAMATION_CIRCLE = 'pi-exclamation-circle'
 }
 
-export enum SEO_LIMITS {
-    MIN_OG_TITLE_LENGTH = 30,
-    MAX_OG_TITLE_LENGTH = 60,
-    MIN_OG_DESCRIPTION_LENGTH = 55,
-    MAX_OG_DESCRIPTION_LENGTH = 150,
-    MAX_FAVICONS = 1,
-    MAX_TITLES = 1,
-    MAX_IMAGE_BYTES = 8000000,
-    MAX_TWITTER_IMAGE_BYTES = 5000000,
-    MAX_TWITTER_DESCRIPTION_LENGTH = 200,
-    MIN_TWITTER_DESCRIPTION_LENGTH = 30,
-    MIN_TWITTER_TITLE_LENGTH = 30,
-    MAX_TWITTER_TITLE_LENGTH = 70
-}
+export const SEO_LIMITS = {
+    MIN_OG_TITLE_LENGTH: 30,
+    MAX_OG_TITLE_LENGTH: 60,
+    MIN_OG_DESCRIPTION_LENGTH: 55,
+    MAX_OG_DESCRIPTION_LENGTH: 150,
+    MAX_FAVICONS: 1,
+    MAX_TITLES: 1,
+    MAX_IMAGE_BYTES: 8000000,
+    MAX_TWITTER_IMAGE_BYTES: 5000000,
+    MAX_TWITTER_DESCRIPTION_LENGTH: 200,
+    MIN_TWITTER_DESCRIPTION_LENGTH: 30,
+    MIN_TWITTER_TITLE_LENGTH: 30,
+    MAX_TWITTER_TITLE_LENGTH: 70
+} as const;
 
 export enum SEO_RULES_COLORS {
     DONE = 'results-seo-tool__result-icon--alert-green',
@@ -85,7 +85,9 @@ export interface SeoMetaTags {
     twitterImageElements?: NodeListOf<Element>;
 }
 
-export const SeoMediaKeys = {
+export type SEO_FOR_SOCIAL_MEDIA = 'facebook' | 'google' | 'twitter' | 'linkedin' | 'all';
+
+export const SeoMediaKeys: Record<SEO_FOR_SOCIAL_MEDIA, Array<string>> = {
     facebook: [SEO_OPTIONS.OG_DESCRIPTION, SEO_OPTIONS.OG_IMAGE, SEO_OPTIONS.OG_TITLE],
     google: [SEO_OPTIONS.DESCRIPTION, SEO_OPTIONS.FAVICON, SEO_OPTIONS.TITLE],
     twitter: [

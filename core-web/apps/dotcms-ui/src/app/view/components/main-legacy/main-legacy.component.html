@@ -2,9 +2,9 @@
 <dot-create-contentlet (custom)="onCustomEvent($event)" />
 <dot-message-display />
 
-<div class="grid grid-cols-[auto_1fr] grid-rows-[auto_1fr] h-full w-full">
+<div class="grid size-full grid-cols-[auto_1fr] grid-rows-[auto_1fr]">
     <aside
-        class="col-span-1 row-span-2 bg-[var(--color-palette-primary-800)]"
+        class="col-span-1 row-span-2 bg-primary-900"
         data-testid="navigation-sidebar"
         role="navigation"
         aria-label="Main navigation">
@@ -24,7 +24,9 @@
 
 <!-- After the router-outlet to make sure always shows up on top of any other dialog in the system -->
 <dot-large-message-display />
-<dot-alert-confirm />
+<!-- No <dot-alert-confirm /> here: app.component.html already renders one at the root,
+     covering every route. Two hosts both subscribe to DotAlertConfirmService, so every
+     alert and confirm in the admin was rendering twice. -->
 <dot-push-publish-dialog />
 <dot-download-bundle-dialog />
 <dot-wizard />

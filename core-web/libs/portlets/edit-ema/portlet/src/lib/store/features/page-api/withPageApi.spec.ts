@@ -1,0 +1,745 @@
+import {
+    patchState,
+    signalStore,
+    withFeature,
+    withState,
+    WritableStateSource
+} from '@ngrx/signals';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
+import { of, Subject, throwError } from 'rxjs';
+import { describe, expect, it, vi } from 'vitest';
+
+import { ActivatedRoute, Router } from '@angular/router';
+
+import {
+    DotExperimentsService,
+    DotLanguagesService,
+    DotPageLayoutService,
+    DotPropertiesService,
+    DotWorkflowActionsFireService
+} from '@dotcms/data-access';
+import { DEFAULT_VARIANT_ID, DotLanguage, EXPERIMENT_RETURN_PARAM } from '@dotcms/dotcms-models';
+import { withFlags } from '@dotcms/store';
+import { DotPageAssetLayoutRow, UVE_MODE } from '@dotcms/types';
+import { WINDOW } from '@dotcms/utils';
+
+import { withPageApi } from './withPageApi';
+
+import {
+    DotPageApiParams,
+    DotPageApiService
+} from '../../../services/dot-page-api/dot-page-api.service';
+import { UveIframeMessengerService } from '../../../services/iframe-messenger/uve-iframe-messenger.service';
+import { PERSONA_KEY } from '../../../shared/consts';
+import { UVE_STATUS } from '../../../shared/enums';
+import { MOCK_RESPONSE_HEADLESS, ACTION_PAYLOAD_MOCK } from '../../../shared/mocks';
+import { SaveStylePropertiesPayload } from '../../../shared/models';
+import { IframeAccessMode, UVEState } from '../../models';
+import { createInitialUVEState } from '../../testing/mocks';
+import { withPage } from '../page/withPage';
+
+const pageParamsBase = {
+    url: 'test-url',
+    language_id: '1',
+    [PERSONA_KEY]: 'dot:persona',
+    mode: UVE_MODE.EDIT
+};
+
+// Deliberately omits a `url` variable: exercises the legacy-client branch where
+// pageLoad assumes the stored request belongs to the page currently loaded
+// (falls back to comparing against the previous pageParams.url).
+const graphqlRequestWithoutUrl = {
+    query: '{ page { url } }',
+    variables: { depth: '1', language_id: '1' }
+};
+
+function buildTestStore() {
+    return signalStore(
+        { protectedState: false },
+        withState<UVEState>(createInitialUVEState({ pageParams: pageParamsBase })),
+        withFlags([]),
+        withPage(),
+        withFeature((store) =>
+            withPageApi({
+                resetClientConfiguration: () => store.resetClientConfiguration(),
+                markPageLoading: () => store.markPageLoading(),
+                resetRequestMetadata: () => store.resetRequestMetadata(),
+                requestMetadata: () => store.requestMetadata(),
+                $requestWithParams: store.$requestWithParams,
+                setPageAsset: (payload) => store.setPageAsset(payload),
+                rollbackPageAssetResponse: () => store.rollbackPageAssetResponse(),
+                addHistory: (response) => store.addToHistory(response),
+                resetHistoryToCurrent: () => store.resetHistoryToCurrent(),
+                pageAsset: () => store.pageAsset()
+            })
+        )
+    );
+}
+
+describe('withPageApi', () => {
+    let spectator: SpectatorService<InstanceType<ReturnType<typeof buildTestStore>>>;
+    let store: InstanceType<ReturnType<typeof buildTestStore>>;
+
+    const getSpy = vi.fn((_params?: unknown) => of(MOCK_RESPONSE_HEADLESS));
+    const getGraphQLPageSpy = vi.fn((_params?: unknown) =>
+        of({
+            pageAsset: MOCK_RESPONSE_HEADLESS,
+            content: { source: 'graphql' }
+        })
+    );
+
+    const createService = createServiceFactory({
+        service: buildTestStore(),
+        providers: [
+            mockProvider(Router),
+            mockProvider(ActivatedRoute),
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: vi.fn().mockReturnValue(of({}))
+            }),
+            mockProvider(DotExperimentsService, {
+                getById: vi.fn().mockReturnValue(of(null))
+            }),
+            mockProvider(DotLanguagesService, {
+                getLanguagesUsedPage: vi.fn().mockReturnValue(of([]))
+            }),
+            mockProvider(DotPageLayoutService, {
+                save: vi.fn().mockReturnValue(of({}))
+            }),
+            mockProvider(UveIframeMessengerService, {
+                sendPageData: vi.fn(),
+                reloadPage: vi.fn()
+            }),
+            {
+                provide: WINDOW,
+                useValue: {
+                    location: {
+                        origin: 'https://editor.dotcms.com'
+                    }
+                }
+            },
+            mockProvider(DotWorkflowActionsFireService, {
+                saveContentlet: vi.fn().mockReturnValue(of({}))
+            }),
+            {
+                provide: DotPageApiService,
+                useValue: {
+                    get: getSpy,
+                    getGraphQLPage: getGraphQLPageSpy,
+                    save: vi.fn().mockReturnValue(of({})),
+                    saveStyleProperties: vi.fn().mockReturnValue(of({}))
+                }
+            }
+        ]
+    });
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        spectator = createService();
+        store = spectator.service;
+        spectator.flushEffects();
+    });
+
+    /**
+     * The merge is what makes this editor feel like one screen: language, persona and mode follow
+     * the editor from page to page. The experiment params are not the editor's, they are the
+     * page's, and they were following too.
+     */
+    describe('pageLoad – what a different page keeps', () => {
+        const onAVariant = () =>
+            patchState(store as unknown as WritableStateSource<UVEState>, {
+                pageParams: {
+                    ...pageParamsBase,
+                    variantName: 'variant-b',
+                    experimentId: 'exp-1',
+                    [EXPERIMENT_RETURN_PARAM]: 'portlet'
+                }
+            });
+
+        /** What the Page API was actually asked for, typed so the assertions can read it. */
+        const askedFor = () => getSpy.mock.calls.at(-1)?.[0] as DotPageApiParams;
+
+        it('should drop the experiment params when the page changes', () => {
+            onAVariant();
+
+            store.pageLoad({ url: 'another-page' });
+            spectator.flushEffects();
+
+            const asked = askedFor();
+            expect(asked['url']).toBe('another-page');
+            expect(asked['variantName']).toBeUndefined();
+            expect(asked['experimentId']).toBeUndefined();
+            expect(asked[EXPERIMENT_RETURN_PARAM]).toBeUndefined();
+        });
+
+        /**
+         * The variant round trip reloads the *same* page to take the variant off, and the panel's
+         * own screens reload it to change language. Dropping on every load would make the editor
+         * unable to stay on a variant at all.
+         */
+        it('should keep them when the same page is loaded again', () => {
+            onAVariant();
+
+            store.pageLoad({ language_id: '2' });
+            spectator.flushEffects();
+
+            const asked = askedFor();
+            expect(asked['variantName']).toBe('variant-b');
+            expect(asked['experimentId']).toBe('exp-1');
+        });
+
+        it("should still carry the editor's own params to the new page", () => {
+            onAVariant();
+
+            store.pageLoad({ url: 'another-page' });
+            spectator.flushEffects();
+
+            const asked = askedFor();
+            expect(asked['language_id']).toBe('1');
+            expect(asked['mode']).toBe(UVE_MODE.EDIT);
+        });
+    });
+
+    describe('pageLoad – fetch vs GraphQL', () => {
+        it('should use the injected window origin when computing iframe access mode in pageUpdateParams', () => {
+            store.pageUpdateParams({
+                clientHost: 'https://editor.dotcms.com/headless'
+            });
+
+            expect(store.iframeAccessMode()).toBe(IframeAccessMode.LOCAL);
+        });
+
+        it('should use regular get(pageParams) when requestMetadata is null', () => {
+            expect(store.requestMetadata()).toBeNull();
+
+            store.pageLoad({ language_id: '1' });
+            spectator.flushEffects();
+
+            expect(getSpy).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    ...pageParamsBase,
+                    language_id: '1'
+                })
+            );
+            expect(getGraphQLPageSpy).not.toHaveBeenCalled();
+            expect(store.uveStatus()).toBe(UVE_STATUS.LOADED);
+        });
+
+        it('should use getGraphQLPage when requestMetadata is set', () => {
+            store.setCustomClient(graphqlRequestWithoutUrl);
+            expect(store.requestMetadata()).toEqual(graphqlRequestWithoutUrl);
+
+            store.pageLoad({ language_id: '2' });
+            spectator.flushEffects();
+
+            expect(getGraphQLPageSpy).toHaveBeenCalled();
+            expect(getSpy).not.toHaveBeenCalled();
+            expect(store.uveStatus()).toBe(UVE_STATUS.LOADED);
+        });
+
+        it('should pass merged params to getGraphQLPage via $requestWithParams', () => {
+            store.setCustomClient({ query: 'query', variables: { depth: '1' } });
+            store.pageUpdateParams({ language_id: '3' });
+
+            store.pageLoad({});
+            spectator.flushEffects();
+
+            expect(getGraphQLPageSpy).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    query: 'query',
+                    variables: expect.objectContaining({
+                        depth: '1',
+                        // $requestWithParams merges pageParams into variables (friendly keys)
+                        languageId: '3',
+                        url: 'test-url'
+                    })
+                })
+            );
+        });
+
+        it('should set page asset with content when GraphQL response includes content', () => {
+            store.setCustomClient(graphqlRequestWithoutUrl);
+
+            store.pageLoad({});
+            spectator.flushEffects();
+
+            const response = store.pageAssetResponse();
+            expect(response?.pageAsset).toEqual(MOCK_RESPONSE_HEADLESS);
+            expect(response?.content).toEqual({ source: 'graphql' });
+        });
+
+        it('should drop the stored client request and use get() when navigating to a different page', () => {
+            // Page One's CLIENT_READY installed its GraphQL request
+            store.setCustomClient(graphqlRequestWithoutUrl);
+            expect(store.requestMetadata()).toEqual(graphqlRequestWithoutUrl);
+
+            // The stored request belongs to the current page ('test-url'):
+            // navigating to another page must NOT reuse its query/variables
+            store.pageLoad({ url: 'another-page' });
+            spectator.flushEffects();
+
+            expect(store.requestMetadata()).toBeNull();
+            expect(getGraphQLPageSpy).not.toHaveBeenCalled();
+            expect(getSpy).toHaveBeenCalledWith(expect.objectContaining({ url: 'another-page' }));
+            expect(store.uveStatus()).toBe(UVE_STATUS.LOADED);
+        });
+
+        it('should drop a stored request explicitly captured for another page (NAVIGATION_UPDATE before CLIENT_READY)', () => {
+            // The stored request declares the page it belongs to via its own
+            // url variable (current page, '/test-url'). If NAVIGATION_UPDATE
+            // arrives before the new page's CLIENT_READY, pageLoad must not
+            // reuse it — it falls back to the standard Page API (first-load flow)
+            store.setCustomClient({
+                query: 'query',
+                variables: { url: '/test-url', depth: '1' }
+            });
+
+            store.pageLoad({ url: 'another-page' });
+            spectator.flushEffects();
+
+            expect(store.requestMetadata()).toBeNull();
+            expect(getGraphQLPageSpy).not.toHaveBeenCalled();
+            expect(getSpy).toHaveBeenCalledWith(expect.objectContaining({ url: 'another-page' }));
+            expect(store.uveStatus()).toBe(UVE_STATUS.LOADED);
+        });
+
+        it('should keep the stored client request when it was captured for the target page', () => {
+            // Client-side navigation: the new page's CLIENT_READY already
+            // installed its own request (variables.url points to the target)
+            store.setCustomClient({
+                query: 'query',
+                variables: { url: '/another-page', depth: '1' }
+            });
+
+            store.pageLoad({ url: 'another-page' });
+            spectator.flushEffects();
+
+            expect(store.requestMetadata()).not.toBeNull();
+            expect(getGraphQLPageSpy).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    variables: expect.objectContaining({ url: 'another-page' })
+                })
+            );
+            expect(getSpy).not.toHaveBeenCalled();
+            expect(store.uveStatus()).toBe(UVE_STATUS.LOADED);
+        });
+
+        it('should keep the stored client request when navigating to the same page (other params)', () => {
+            store.setCustomClient(graphqlRequestWithoutUrl);
+
+            // Same pathname, leading-slash variant — still the same page
+            store.pageLoad({ url: '/test-url', language_id: '2' });
+            spectator.flushEffects();
+
+            expect(store.requestMetadata()).toEqual(graphqlRequestWithoutUrl);
+            expect(getGraphQLPageSpy).toHaveBeenCalled();
+            expect(getSpy).not.toHaveBeenCalled();
+        });
+
+        it('should drop the stored client request when there are no previous pageParams', () => {
+            patchState(store, { pageParams: null });
+            store.setCustomClient(graphqlRequestWithoutUrl);
+
+            // Fresh load (e.g. shell re-created after leaving the portlet):
+            // stale metadata from a previous visit must not leak into the new page
+            store.pageLoad({ ...pageParamsBase, url: 'fresh-page' });
+            spectator.flushEffects();
+
+            expect(store.requestMetadata()).toBeNull();
+            expect(getGraphQLPageSpy).not.toHaveBeenCalled();
+            expect(getSpy).toHaveBeenCalled();
+        });
+
+        it('should tag pageAssetResponse.source as rest when using get()', () => {
+            store.pageLoad({ language_id: '1' });
+            spectator.flushEffects();
+
+            expect(store.pageAssetResponse()?.source).toBe('rest');
+        });
+
+        it('should tag pageAssetResponse.source as graphql when using getGraphQLPage()', () => {
+            store.setCustomClient(graphqlRequestWithoutUrl);
+
+            store.pageLoad({});
+            spectator.flushEffects();
+
+            expect(store.pageAssetResponse()?.source).toBe('graphql');
+        });
+
+        it('should reset editorSelected when loading a new page', () => {
+            patchState(store, {
+                editorSelected: {
+                    bounds: { x: 0, y: 0, width: 0, height: 0 },
+                    payload: ACTION_PAYLOAD_MOCK
+                }
+            });
+            expect(store.editorSelected()).not.toBeNull();
+
+            store.pageLoad({ language_id: '1' });
+
+            expect(store.editorSelected()).toBeNull();
+        });
+    });
+
+    describe('updateRows', () => {
+        const MOCK_ROWS: DotPageAssetLayoutRow[] = [
+            {
+                identifier: 1,
+                styleClass: 'row-class',
+                metadata: { name: 'Hero Section' },
+                columns: [
+                    {
+                        preview: false,
+                        containers: [{ identifier: 'container-1', uuid: '1', historyUUIDs: [] }],
+                        widthPercent: 100,
+                        width: 12,
+                        leftOffset: 1,
+                        left: 0,
+                        styleClass: 'col-class',
+                        metadata: { name: 'Main Column' }
+                    }
+                ]
+            }
+        ];
+
+        it('should include column metadata in the save payload', () => {
+            store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
+            const layoutService = spectator.inject(DotPageLayoutService);
+
+            store.updateRows(MOCK_ROWS);
+            spectator.flushEffects();
+
+            expect(layoutService.save).toHaveBeenCalledWith(
+                expect.any(String),
+                expect.objectContaining({
+                    layout: expect.objectContaining({
+                        body: expect.objectContaining({
+                            rows: expect.arrayContaining([
+                                expect.objectContaining({
+                                    columns: expect.arrayContaining([
+                                        expect.objectContaining({
+                                            metadata: { name: 'Main Column' }
+                                        })
+                                    ])
+                                })
+                            ])
+                        })
+                    })
+                })
+            );
+        });
+
+        it('should handle columns without metadata', () => {
+            store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
+            const layoutService = spectator.inject(DotPageLayoutService);
+
+            const rowsWithoutMetadata: DotPageAssetLayoutRow[] = [
+                {
+                    identifier: 1,
+                    columns: [
+                        {
+                            preview: false,
+                            containers: [],
+                            widthPercent: 100,
+                            width: 12,
+                            leftOffset: 1,
+                            left: 0
+                        }
+                    ]
+                }
+            ];
+
+            store.updateRows(rowsWithoutMetadata);
+            spectator.flushEffects();
+
+            expect(layoutService.save).toHaveBeenCalledWith(
+                expect.any(String),
+                expect.objectContaining({
+                    layout: expect.objectContaining({
+                        body: expect.objectContaining({
+                            rows: expect.arrayContaining([
+                                expect.objectContaining({
+                                    columns: expect.arrayContaining([
+                                        expect.objectContaining({
+                                            metadata: undefined
+                                        })
+                                    ])
+                                })
+                            ])
+                        })
+                    })
+                })
+            );
+        });
+
+        it('should tag pageAssetResponse.source as rest when reloading via REST after layout save', () => {
+            store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
+
+            store.updateRows(MOCK_ROWS);
+            spectator.flushEffects();
+
+            expect(store.pageAssetResponse()?.source).toBe('rest');
+        });
+
+        it('should tag pageAssetResponse.source as graphql when reloading via GraphQL after layout save', () => {
+            store.setCustomClient(graphqlRequestWithoutUrl);
+            store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
+
+            store.updateRows(MOCK_ROWS);
+            spectator.flushEffects();
+
+            expect(store.pageAssetResponse()?.source).toBe('graphql');
+        });
+    });
+
+    describe('editorSave', () => {
+        it('should tag pageAssetResponse.source as rest when reloading via REST after save', () => {
+            store.editorSave([]);
+            spectator.flushEffects();
+
+            expect(store.pageAssetResponse()?.source).toBe('rest');
+        });
+
+        it('should tag pageAssetResponse.source as graphql when reloading via GraphQL after save', () => {
+            store.setCustomClient(graphqlRequestWithoutUrl);
+
+            store.editorSave([]);
+            spectator.flushEffects();
+
+            expect(store.pageAssetResponse()?.source).toBe('graphql');
+        });
+    });
+
+    describe('saveStyleEditor — rollback provenance gate (#37097)', () => {
+        // The rollback path bypasses $handleReloadContentEffect entirely, calling
+        // iframeMessenger.sendPageData directly — it needs its own source check.
+        const setupHistory = (sourceOfPreviousSnapshot: 'rest' | 'graphql') => {
+            store.setPageAsset({
+                pageAsset: MOCK_RESPONSE_HEADLESS,
+                source: sourceOfPreviousSnapshot
+            });
+            // undo() requires historyPointer > 0, i.e. at least two entries — one to land on,
+            // one to move back from — so the "previous" snapshot must be pushed BEFORE the
+            // optimistic update, not just once overall.
+            store.addCurrentPageToHistory();
+            // Simulate the optimistic update that preceded the save attempt
+            store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
+            store.addCurrentPageToHistory();
+        };
+
+        it('should not push (send UVE_RELOAD_PAGE instead) when the rolled-back asset is REST-sourced', () => {
+            setupHistory('rest');
+            vi.spyOn(spectator.inject(DotPageApiService), 'saveStyleProperties').mockReturnValue(
+                throwError(() => new Error('save failed'))
+            );
+            const iframeMessenger = spectator.inject(UveIframeMessengerService);
+
+            store
+                .saveStyleEditor({} as SaveStylePropertiesPayload)
+                .subscribe({ error: () => undefined });
+
+            expect(iframeMessenger.sendPageData).not.toHaveBeenCalled();
+            expect(iframeMessenger.reloadPage).toHaveBeenCalled();
+        });
+
+        it('should push the rolled-back asset when it is GraphQL-sourced', () => {
+            setupHistory('graphql');
+            vi.spyOn(spectator.inject(DotPageApiService), 'saveStyleProperties').mockReturnValue(
+                throwError(() => new Error('save failed'))
+            );
+            const iframeMessenger = spectator.inject(UveIframeMessengerService);
+
+            store
+                .saveStyleEditor({} as SaveStylePropertiesPayload)
+                .subscribe({ error: () => undefined });
+
+            expect(iframeMessenger.sendPageData).toHaveBeenCalled();
+            expect(iframeMessenger.reloadPage).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('saveQuickEditFields', () => {
+        it('should include DEFAULT variantName when pageParams has no variantName', () => {
+            const saveContentletSpy = vi.spyOn(
+                spectator.inject(DotWorkflowActionsFireService),
+                'saveContentlet'
+            );
+
+            store.saveQuickEditFields({ inode: 'test-inode', title: 'New Title' });
+
+            expect(saveContentletSpy).toHaveBeenCalledWith(
+                expect.objectContaining({ variantName: DEFAULT_VARIANT_ID })
+            );
+        });
+
+        it('should include the active variantName from pageParams when set', () => {
+            const saveContentletSpy = vi.spyOn(
+                spectator.inject(DotWorkflowActionsFireService),
+                'saveContentlet'
+            );
+            store.pageUpdateParams({ variantName: 'my-experiment-variant' });
+
+            store.saveQuickEditFields({ inode: 'test-inode', title: 'New Title' });
+
+            expect(saveContentletSpy).toHaveBeenCalledWith(
+                expect.objectContaining({ variantName: 'my-experiment-variant' })
+            );
+        });
+
+        describe('rollback provenance gate (#37097)', () => {
+            const setupHistory = (sourceOfPreviousSnapshot: 'rest' | 'graphql') => {
+                store.setPageAsset({
+                    pageAsset: MOCK_RESPONSE_HEADLESS,
+                    source: sourceOfPreviousSnapshot
+                });
+                store.addCurrentPageToHistory();
+                store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
+                store.addCurrentPageToHistory();
+            };
+
+            it('should not push (send UVE_RELOAD_PAGE instead) when the rolled-back asset is REST-sourced', () => {
+                setupHistory('rest');
+                vi.spyOn(
+                    spectator.inject(DotWorkflowActionsFireService),
+                    'saveContentlet'
+                ).mockReturnValue(throwError(() => new Error('save failed')));
+                const iframeMessenger = spectator.inject(UveIframeMessengerService);
+
+                store
+                    .saveQuickEditFields({ inode: 'test-inode' })
+                    .subscribe({ error: () => undefined });
+
+                expect(iframeMessenger.sendPageData).not.toHaveBeenCalled();
+                expect(iframeMessenger.reloadPage).toHaveBeenCalled();
+            });
+
+            it('should push the rolled-back asset when it is GraphQL-sourced', () => {
+                setupHistory('graphql');
+                vi.spyOn(
+                    spectator.inject(DotWorkflowActionsFireService),
+                    'saveContentlet'
+                ).mockReturnValue(throwError(() => new Error('save failed')));
+                const iframeMessenger = spectator.inject(UveIframeMessengerService);
+
+                store
+                    .saveQuickEditFields({ inode: 'test-inode' })
+                    .subscribe({ error: () => undefined });
+
+                expect(iframeMessenger.sendPageData).toHaveBeenCalled();
+                expect(iframeMessenger.reloadPage).not.toHaveBeenCalled();
+            });
+        });
+    });
+
+    describe('pageReload – fetch vs GraphQL', () => {
+        it('should call get when reloading without GraphQL metadata', () => {
+            store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
+            vi.clearAllMocks();
+
+            store.pageReload();
+            spectator.flushEffects();
+
+            expect(getSpy).toHaveBeenCalled();
+            expect(getGraphQLPageSpy).not.toHaveBeenCalled();
+            expect(store.uveStatus()).toBe(UVE_STATUS.LOADED);
+        });
+
+        it('should call getGraphQLPage when reloading with GraphQL metadata', () => {
+            store.setCustomClient(graphqlRequestWithoutUrl);
+            store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
+            vi.clearAllMocks();
+
+            store.pageReload();
+            spectator.flushEffects();
+
+            expect(getGraphQLPageSpy).toHaveBeenCalled();
+            expect(getSpy).not.toHaveBeenCalled();
+            expect(store.uveStatus()).toBe(UVE_STATUS.LOADED);
+        });
+
+        it('should have pageLanguages already updated when setPageAsset is called during reload', () => {
+            // Regression test for #35647. The pre-fix code called setPageAsset BEFORE
+            // getLanguagesUsedPage responded, so pageTranslateProps (which reacts to
+            // pageAsset but reads pageLanguages via untracked()) saw stale data.
+            // We verify atomicity by holding getLanguagesUsedPage open with a Subject:
+            // the page asset must NOT be updated until the Subject emits, proving both
+            // writes happen in the same tap (after languages resolve).
+            const freshPage = {
+                ...MOCK_RESPONSE_HEADLESS,
+                page: { ...MOCK_RESPONSE_HEADLESS.page, title: 'Reloaded' }
+            };
+            const languagesSubject = new Subject<DotLanguage[]>();
+
+            getSpy.mockReturnValueOnce(of(freshPage));
+            vi.spyOn(spectator.inject(DotLanguagesService), 'getLanguagesUsedPage').mockReturnValue(
+                languagesSubject
+            );
+
+            store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
+
+            store.pageReload();
+            spectator.flushEffects();
+
+            // Languages haven't resolved yet — page asset must still show the original title.
+            // Pre-fix code would have already swapped to 'Reloaded' here.
+            expect(store.pageAssetResponse()?.pageAsset.page.title).toBe('Test Page');
+
+            languagesSubject.next([
+                { id: 1, language: 'English', languageCode: 'en', translated: true }
+            ]);
+            languagesSubject.complete();
+            spectator.flushEffects();
+
+            // After languages resolve, both pageAsset and pageLanguages are updated atomically.
+            expect(store.pageAssetResponse()?.pageAsset.page.title).toBe('Reloaded');
+            expect(store.pageLanguages()[0].translated).toBe(true);
+        });
+
+        it('should apply the page asset and set status to LOADED when getLanguagesUsedPage fails', () => {
+            store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
+
+            vi.spyOn(spectator.inject(DotLanguagesService), 'getLanguagesUsedPage').mockReturnValue(
+                throwError(() => ({ status: 500 }))
+            );
+
+            store.pageReload();
+            spectator.flushEffects();
+
+            expect(store.uveStatus()).toBe(UVE_STATUS.LOADED);
+            expect(store.pageAssetResponse()?.pageAsset).toEqual(MOCK_RESPONSE_HEADLESS);
+        });
+
+        it('should tag pageAssetResponse.source as rest when reloading without GraphQL metadata', () => {
+            store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
+            vi.clearAllMocks();
+
+            store.pageReload();
+            spectator.flushEffects();
+
+            expect(store.pageAssetResponse()?.source).toBe('rest');
+        });
+
+        it('should tag pageAssetResponse.source as graphql when reloading with GraphQL metadata', () => {
+            store.setCustomClient(graphqlRequestWithoutUrl);
+            store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
+            vi.clearAllMocks();
+
+            store.pageReload();
+            spectator.flushEffects();
+
+            expect(store.pageAssetResponse()?.source).toBe('graphql');
+        });
+
+        it('should still tag pageAssetResponse.source as rest when getLanguagesUsedPage fails on a REST reload', () => {
+            store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
+
+            vi.spyOn(spectator.inject(DotLanguagesService), 'getLanguagesUsedPage').mockReturnValue(
+                throwError(() => ({ status: 500 }))
+            );
+
+            store.pageReload();
+            spectator.flushEffects();
+
+            expect(store.pageAssetResponse()?.source).toBe('rest');
+        });
+    });
+});

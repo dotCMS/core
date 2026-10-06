@@ -1,0 +1,7 @@
+<p-menu #menu [model]="$model()" [popup]="true" appendTo="body" [pt]="menuPt" />
+<p-button
+    (onClick)="menu.toggle($event)"
+    [rounded]="true"
+    [outlined]="true"
+    icon="pi pi-ellipsis-v"
+    data-testId="command-bar-actions-button" />

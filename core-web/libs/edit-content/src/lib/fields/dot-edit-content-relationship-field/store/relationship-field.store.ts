@@ -1,56 +1,89 @@
 import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { pipe } from 'rxjs';
+import { forkJoin, of, pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
 
-import { switchMap, tap } from 'rxjs/operators';
+import { catchError, map, switchMap, tap } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import {
     ComponentStatus,
     DotCMSContentlet,
     DotCMSContentType,
-    DotCMSContentTypeField
+    ContentTypeRelationshipField,
+    DotLanguage,
+    FeaturedFlags
 } from '@dotcms/dotcms-models';
+import { withFlags } from '@dotcms/store';
 
 import { RelationshipFieldService } from './relationship-field.service';
 
+import { DotEditContentService } from '../../../services/dot-edit-content.service';
 import { STATIC_COLUMNS } from '../dot-edit-content-relationship-field.constants';
-import { SelectionMode, TableColumn } from '../models/relationship.models';
+import { RelationshipDescriptor, SelectionMode, TableColumn } from '../models/relationship.models';
+
+/**
+ * Rows revealed per step.
+ *
+ * Matches the Key/Value field and the site/folder selector, which is where this pattern already
+ * lives in the product — one page size across the three, so an editor learns the affordance once.
+ */
+export const RELATED_PAGE_SIZE = 40;
 
 export interface RelationshipFieldState {
     data: DotCMSContentlet[];
     status: ComponentStatus;
-    field: DotCMSContentTypeField | null;
+    field: ContentTypeRelationshipField | null;
+    /**
+     * The validated relationship settings, published by `RelationshipFieldService.prepareField`.
+     * Null until the field loads; read this rather than `field.relationships`, which is raw
+     * server JSON that nothing has checked yet.
+     */
+    relationships: RelationshipDescriptor | null;
     selectionMode: SelectionMode | null;
     contentType: DotCMSContentType | null;
     isNewEditorEnabled: boolean;
     staticColumns: number;
     columns: TableColumn[];
-    pagination: {
-        offset: number;
-        currentPage: number;
-        rowsPerPage: number;
-    };
+    /**
+     * Whether the list is showing every related item or only the first {@link RELATED_PAGE_SIZE}.
+     *
+     * A flag rather than a count: the control is a two-state toggle — "Show all (N)" and
+     * "Show less" — not an incremental reveal, so there is no intermediate amount to track.
+     *
+     * **Deliberately state, not derived from `data`.** `DotKeyValueComponent` learned this the hard
+     * way and records it: derive what is rendered from the list and the table collapses back to the
+     * first page the moment anything is added, edited, removed or reordered. A field opened afresh
+     * still starts collapsed, because a new field component is built for it.
+     */
+    showingAll: boolean;
+    /**
+     * Origin of the current `data`:
+     * - `'load'`: populated programmatically (initial load / locale re-init). The
+     *   field must sync the value to the form control WITHOUT marking it dirty,
+     *   otherwise the async load re-dirties the form after the pristine window and
+     *   the unsaved-changes guard fires on a content the user never touched.
+     * - `'user'`: changed by an explicit user action (relate/unrelate/reorder).
+     *   The field marks the control dirty so the guard correctly protects the edit.
+     */
+    lastChangeSource: 'load' | 'user';
 }
 
 const initialState: RelationshipFieldState = {
     data: [],
     status: ComponentStatus.INIT,
     field: null,
+    relationships: null,
     columns: [],
     selectionMode: null,
     contentType: null,
     isNewEditorEnabled: false,
     staticColumns: STATIC_COLUMNS,
-    pagination: {
-        offset: 0,
-        currentPage: 1,
-        rowsPerPage: 6
-    }
+    showingAll: false,
+    lastChangeSource: 'load'
 };
 
 /**
@@ -59,12 +92,25 @@ const initialState: RelationshipFieldState = {
  */
 export const RelationshipFieldStore = signalStore(
     withState(initialState),
+    // Side-panel feature flag, batch-fetched once on init and exposed as `flags()`. The component
+    // reads it when creating related content to choose the slide-in panel vs. the centered dialog.
+    withFlags([FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL] as const),
     withComputed((state) => ({
         /**
-         * Computes the total number of pages based on the number of items and the rows per page.
-         * @returns {number} The total number of pages.
+         * The rows to render — a prefix of `data`, never a page of it.
+         *
+         * There is no paging here any more: every related item is in `data`, and this only decides
+         * how much of it reaches the DOM. That is what lets a drag move any item next to any other,
+         * which paging made impossible for anything past the first six rows.
          */
-        totalPages: computed(() => Math.ceil(state.data().length / state.pagination().rowsPerPage)),
+        $visibleItems: computed(() =>
+            state.showingAll() ? state.data() : state.data().slice(0, RELATED_PAGE_SIZE)
+        ),
+        /**
+         * Whether the toggle row is worth rendering at all: only once the list outgrows one page.
+         * Below that there is nothing to expand and nothing to collapse.
+         */
+        $canToggleAll: computed(() => state.data().length > RELATED_PAGE_SIZE),
         /**
          * Checks if the create new content button is disabled based on the selection mode and the number of items.
          * @returns {boolean} True if the button is disabled, false otherwise.
@@ -88,20 +134,29 @@ export const RelationshipFieldStore = signalStore(
             const identifiers = data.map((item) => item.identifier).join(',');
 
             return `${identifiers}`;
-        })
+        }),
+        showThumbnail: computed(() =>
+            state
+                .data()
+                .some(
+                    (item) =>
+                        item.hasTitleImage === true || (item.hasTitleImage as unknown) === 'true'
+                )
+        )
     })),
     withMethods(
         (
             store,
             relationshipFieldService = inject(RelationshipFieldService),
-            dotHttpErrorManagerService = inject(DotHttpErrorManagerService)
+            dotHttpErrorManagerService = inject(DotHttpErrorManagerService),
+            dotEditContentService = inject(DotEditContentService)
         ) => ({
             /**
              * Sets the data in the state.
              * @param {RelationshipFieldItem[]} data - The data to be set.
              */
             setData(data: DotCMSContentlet[]) {
-                patchState(store, { data: [...data] });
+                patchState(store, { data: [...data], lastChangeSource: 'user' });
             },
             /**
              * Initializes the relationship field with the provided parameters.
@@ -112,70 +167,157 @@ export const RelationshipFieldStore = signalStore(
              * @param {string} params.contentTypeId - The ID of the content type to load.
              */
             initialize: rxMethod<{
-                field: DotCMSContentTypeField;
+                field: ContentTypeRelationshipField;
                 contentlet: DotCMSContentlet;
+                targetLanguageId?: number;
+                targetLanguage?: DotLanguage;
             }>(
                 pipe(
+                    // Capture existing items before the reset so manual-translation mode can reuse them.
+                    // contentlet is null in manual translation, so prepareField returns [] — without this
+                    // capture there would be nothing to resolve against the target language.
+                    map((params) => ({ ...params, existingData: store.data() })),
                     tap(() => patchState(store, initialState)),
-                    switchMap(({ field, contentlet }) => {
-                        return relationshipFieldService.prepareField({ field, contentlet }).pipe(
-                            tapResponse({
-                                next: (newState) => {
-                                    patchState(store, {
-                                        status: ComponentStatus.LOADED,
-                                        contentType: newState.contentType,
-                                        isNewEditorEnabled: newState.isNewEditorEnabled,
-                                        selectionMode: newState.selectionMode,
-                                        columns: newState.columns,
-                                        data: newState.data,
-                                        field
-                                    });
-                                },
-                                error: (error) => {
-                                    if (error instanceof HttpErrorResponse) {
-                                        dotHttpErrorManagerService.handle(error);
-                                    }
-                                    patchState(store, {
-                                        status: ComponentStatus.ERROR
-                                    });
-                                }
-                            })
-                        );
-                    })
+                    switchMap(
+                        ({ field, contentlet, targetLanguageId, targetLanguage, existingData }) => {
+                            return relationshipFieldService
+                                .prepareField({ field, contentlet })
+                                .pipe(
+                                    switchMap((newState) => {
+                                        // When contentlet is null (manual translation) prepareField returns [].
+                                        // Fall back to the pre-reset data so items are not lost.
+                                        const dataToProcess =
+                                            contentlet != null ? newState.data : existingData;
+
+                                        if (!targetLanguageId || !dataToProcess.length) {
+                                            return of({ ...newState, data: dataToProcess });
+                                        }
+
+                                        // For each related item, try to find the version in the target
+                                        // language. Falls back to the original item if not available.
+                                        // Patch `language` to the full DotLanguage object so the
+                                        // LanguagePipe (which expects DotLanguage, not a string) renders
+                                        // the column correctly.
+                                        return forkJoin(
+                                            dataToProcess.map((item) =>
+                                                dotEditContentService
+                                                    .getContentById({
+                                                        id: item.identifier,
+                                                        languageId: targetLanguageId
+                                                    })
+                                                    .pipe(
+                                                        map((fetched) =>
+                                                            targetLanguage
+                                                                ? {
+                                                                      ...fetched,
+                                                                      language: targetLanguage
+                                                                  }
+                                                                : fetched
+                                                        ),
+                                                        // Intentional: fallback keeps the original item whose
+                                                        // `language` is a plain string from the API. The language
+                                                        // column will be blank for unresolvable items — acceptable
+                                                        // since it means no translation exists for that item.
+                                                        catchError(() => of(item))
+                                                    )
+                                            )
+                                        ).pipe(
+                                            map((resolvedItems) => ({
+                                                ...newState,
+                                                data: resolvedItems
+                                            }))
+                                        );
+                                    }),
+                                    tapResponse({
+                                        next: (newState) => {
+                                            patchState(store, {
+                                                status: ComponentStatus.LOADED,
+                                                contentType: newState.contentType,
+                                                isNewEditorEnabled: newState.isNewEditorEnabled,
+                                                relationships: newState.relationships,
+                                                selectionMode: newState.selectionMode,
+                                                columns: newState.columns,
+                                                data: newState.data,
+                                                field,
+                                                // Programmatic population — must not dirty the form.
+                                                lastChangeSource: 'load'
+                                            });
+                                        },
+                                        error: (error) => {
+                                            if (error instanceof HttpErrorResponse) {
+                                                dotHttpErrorManagerService.handle(error);
+                                            }
+                                            patchState(store, {
+                                                status: ComponentStatus.ERROR
+                                            });
+                                        }
+                                    })
+                                );
+                        }
+                    )
                 )
             ),
             /**
-             * Deletes an item from the store at the specified index.
-             * @param index - The index of the item to delete.
+             * Deletes an item from the store by inode.
+             * If the current page offset exceeds the new data length, pagination resets to the last valid page.
+             * @param inode - The inode of the item to delete.
              */
             deleteItem(inode: string) {
+                // Just a filter now. The branch this replaces existed only to keep the current page
+                // valid when a removal emptied it — with no pages, there is nothing to clamp, and
+                // `showingAll` is deliberately left alone so an expanded list stays expanded.
                 patchState(store, {
-                    data: store.data().filter((item) => item.inode !== inode)
+                    data: store.data().filter((item) => item.inode !== inode),
+                    lastChangeSource: 'user'
+                });
+            },
+
+            /**
+             * Replaces one item in place, matched by identifier — identifiers are stable across
+             * saves, so this finds the row even though a save mints a new inode. Used when a
+             * related content is edited elsewhere (e.g. in a side panel) and comes back saved, so
+             * its row shows the new title and status.
+             *
+             * Deliberately not `setData`, for two reasons:
+             * - it keeps the current page, like {@link reorderData}: the user is looking at the row
+             *   that changed, and snapping back to page 1 would lose their place;
+             * - it marks the change as `'load'`, because the relationship itself did not change —
+             *   only the version of one entry — so this must never dirty the form.
+             *
+             * A no-op when the identifier is not in the list.
+             *
+             * @param {DotCMSContentlet} contentlet - The saved contentlet to put in place of its row.
+             */
+            refreshItem(contentlet: DotCMSContentlet) {
+                const data = store.data();
+                const index = data.findIndex((item) => item.identifier === contentlet.identifier);
+
+                if (index === -1) {
+                    return;
+                }
+
+                patchState(store, {
+                    data: data.map((item, i) => (i === index ? contentlet : item)),
+                    lastChangeSource: 'load'
                 });
             },
             /**
-             * Advances the pagination to the next page and updates the state accordingly.
+             * Reorders the data without resetting the current pagination.
+             * Used after drag-and-drop row reorder to preserve the current page.
+             * @param {DotCMSContentlet[]} data - The reordered data array.
              */
-            nextPage: () => {
-                patchState(store, {
-                    pagination: {
-                        ...store.pagination(),
-                        offset: store.pagination().offset + store.pagination().rowsPerPage,
-                        currentPage: store.pagination().currentPage + 1
-                    }
-                });
+            reorderData(data: DotCMSContentlet[]) {
+                patchState(store, { data: [...data], lastChangeSource: 'user' });
             },
             /**
-             * Moves the pagination to the previous page and updates the state accordingly.
+             * Reveals the next page of rows.
+             *
+             * Purely a rendering limit: the whole list is already in memory, so unlike the
+             * site/folder selector this fetches nothing. Rows are withheld from the DOM, never from
+             * the data — every operation on the value still sees all of them.
              */
-            previousPage: () => {
-                patchState(store, {
-                    pagination: {
-                        ...store.pagination(),
-                        offset: store.pagination().offset - store.pagination().rowsPerPage,
-                        currentPage: store.pagination().currentPage - 1
-                    }
-                });
+            toggleShowAll() {
+                patchState(store, { showingAll: !store.showingAll() });
             }
         })
     )

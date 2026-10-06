@@ -1,6 +1,6 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.maxmind.geoip2.exception.GeoIp2Exception;
 import com.dotcms.util.GeoIp2CityDbUtil;
 import com.dotcms.util.HttpRequestDataUtil;
@@ -26,7 +26,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Map;
 
-import static com.dotcms.repackage.com.google.common.base.Preconditions.checkState;
+import static com.google.common.base.Preconditions.checkState;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.*;
 
 /**

@@ -1,7 +1,7 @@
 package com.dotmarketing.portlets.rules.parameter.type;
 
-import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
-import com.dotcms.repackage.com.google.common.collect.Maps;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import com.dotmarketing.portlets.rules.parameter.type.constraint.TypeConstraint;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonCreator;

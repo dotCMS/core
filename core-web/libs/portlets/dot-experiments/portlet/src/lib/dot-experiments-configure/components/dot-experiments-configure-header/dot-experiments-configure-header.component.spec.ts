@@ -1,0 +1,585 @@
+import { Dispatcher } from '@ngrx/signals/events';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
+import { Mock, MockInstance, vi } from 'vitest';
+
+import { provideLocationMocks } from '@angular/common/testing';
+import { Component, input } from '@angular/core';
+import { ActivatedRoute, Params, provideRouter, Router } from '@angular/router';
+
+import { Confirmation, ConfirmationService, ConfirmEventType, MenuItem } from 'primeng/api';
+
+import { DotMessageService } from '@dotcms/data-access';
+import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
+import {
+    CONFIGURATION_CONFIRM_DIALOG_KEY,
+    DotExperiment,
+    DotExperimentStatus
+} from '@dotcms/dotcms-models';
+import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
+import { DotAddToBundleComponent } from '@dotcms/ui';
+import { getExperimentMock, MockDotMessageService } from '@dotcms/utils-testing';
+
+import { DotExperimentsConfigureHeaderComponent } from './dot-experiments-configure-header.component';
+
+import { DotExperimentsRouter } from '../../../services/dot-experiments-router.service';
+import { STATUS_LABEL_KEYS } from '../../../shared/constants';
+import { DotExperimentConfigurePage, ExperimentListAction } from '../../../shared/models';
+import { dotExperimentsConfigurePageEvents } from '../../../store/dot-experiments-configure-page.events';
+import { DotExperimentsConfigureStore } from '../../../store/dot-experiments-configure.store';
+import { isAllowed } from '../../../util/dot-experiments-list.util';
+
+/** Stand-in for the bundle dialog: rendering the real one would need its own HTTP stack. */
+@Component({
+    selector: 'dot-add-to-bundle',
+    template: ''
+})
+class MockAddToBundleComponent {
+    readonly assetIdentifier = input<string>();
+}
+
+const EXPERIMENT: DotExperiment = getExperimentMock(0);
+
+const SELECTED_PAGE: DotExperimentConfigurePage = {
+    pageId: EXPERIMENT.pageId,
+    title: 'Blog',
+    path: '/blog/index',
+    languageId: 1
+};
+
+const NEW_EXPERIMENT_TITLE = 'New Experiment';
+const NO_PAGE_COPY = 'No Page selected';
+const COMING_SOON_COPY = 'Coming soon';
+
+/** Kebab item ids, as declared by the component. */
+const MENU_ITEM = {
+    end: 'experiments-configure-end',
+    abort: 'experiments-configure-abort',
+    cancelSchedule: 'experiments-configure-cancel-schedule',
+    pushPublish: 'experiments-configure-push-publish',
+    addToBundle: 'experiments-configure-add-to-bundle'
+} as const;
+
+const messageServiceMock = new MockDotMessageService({
+    'experiments.configure.header.new-experiment': NEW_EXPERIMENT_TITLE,
+    'experiments.configure.header.no-page': NO_PAGE_COPY,
+    'experiments.list.action.coming-soon': COMING_SOON_COPY,
+    'experiments.action.view.results': 'View Results',
+    'experiments.action.stop-experiment': 'Stop Experiment',
+    'experiments.action.end-experiment': 'End Experiment',
+    'experiments.action.abort.experiment': 'Abort Experiment',
+    'experiments.configure.scheduling.cancel': 'Cancel Schedule',
+    'contenttypes.content.push_publish': 'Push Publish',
+    'contenttypes.content.add_to_bundle': 'Add to Bundle',
+    draft: 'Draft',
+    running: 'Running',
+    scheduled: 'Scheduled',
+    ended: 'Ended',
+    archived: 'Archived'
+});
+
+/** Gating is `AllowedActionsByExperimentStatus` — the same map the store reads. */
+const allowedActionsFor = (status: DotExperimentStatus): Record<ExperimentListAction, boolean> =>
+    (
+        [
+            'delete',
+            'abort',
+            'results',
+            'configuration',
+            'archive',
+            'end',
+            'addToBundle',
+            'pushPublish',
+            'cancelSchedule'
+        ] as ExperimentListAction[]
+    ).reduce(
+        (allowed, action) => ({ ...allowed, [action]: isAllowed(action, status) }),
+        {} as Record<ExperimentListAction, boolean>
+    );
+
+const createStoreMock = () => ({
+    experiment: vi.fn().mockReturnValue(EXPERIMENT),
+    draftName: vi.fn().mockReturnValue(EXPERIMENT.name),
+    selectedPage: vi.fn().mockReturnValue(SELECTED_PAGE),
+    $status: vi.fn().mockReturnValue(DotExperimentStatus.DRAFT),
+    $allowedActions: vi.fn().mockReturnValue(allowedActionsFor(DotExperimentStatus.DRAFT)),
+    $hasUnsavedChanges: vi.fn().mockReturnValue(false)
+});
+
+describe('DotExperimentsConfigureHeaderComponent', () => {
+    let spectator: Spectator<DotExperimentsConfigureHeaderComponent>;
+    let storeMock: ReturnType<typeof createStoreMock>;
+    /** Panel mode is the presence of this store; `null` is the portlet. */
+    let panelStore: { backToList: Mock; showResults: Mock } | null;
+    /** The address the screen arrived on, as `ActivatedRoute` reports it. */
+    let routeQueryParams: Params;
+    let dispatch: MockInstance;
+    let confirm: MockInstance;
+
+    const createComponent = createComponentFactory({
+        component: DotExperimentsConfigureHeaderComponent,
+        componentImports: [[DotAddToBundleComponent, MockAddToBundleComponent]],
+        // Component-level: the module injector is built once per test file, so a module provider
+        // would freeze `panelStore` at whatever the first `createComponent` saw.
+        componentProviders: [
+            // Real: these tests assert where a door leads, and this is what decides.
+            DotExperimentsRouter,
+            { provide: DotExperimentsPanelStore, useFactory: () => panelStore }
+        ],
+        providers: [
+            provideRouter([{ path: 'experiments', children: [] }]),
+            provideLocationMocks(),
+            // Overrides the one `provideRouter` installs: the back button reads the address it
+            // arrived on, and these tests set it directly rather than driving a navigation.
+            {
+                provide: ActivatedRoute,
+                useValue: {
+                    snapshot: {
+                        get queryParams() {
+                            return routeQueryParams;
+                        }
+                    }
+                }
+            },
+            { provide: DotExperimentsConfigureStore, useFactory: () => storeMock },
+            { provide: DotMessageService, useValue: messageServiceMock },
+            mockProvider(DotPushPublishDialogService),
+            ConfirmationService
+        ],
+        detectChanges: false
+    });
+
+    /** `injectDispatch` appends a scope argument, so only the event itself is compared. */
+    const dispatchedEvents = () => dispatch.mock.calls.map(([event]) => event);
+
+    /** Renders the header for a status and returns nothing: every assertion reads the DOM. */
+    const renderWith = (status: DotExperimentStatus) => {
+        storeMock.$status.mockReturnValue(status);
+        storeMock.$allowedActions.mockReturnValue(allowedActionsFor(status));
+        storeMock.experiment.mockReturnValue({ ...EXPERIMENT, status });
+        spectator.detectChanges();
+    };
+
+    const clickButton = (testId: string) => {
+        const host = spectator.query(byTestId(testId));
+        spectator.click(host?.querySelector('button') as HTMLElement);
+        spectator.detectChanges();
+    };
+
+    const visibleMenuItemIds = (): string[] =>
+        spectator.component
+            .$menuItems()
+            .filter(({ visible }) => visible)
+            .map(({ id }) => id as string);
+
+    const runMenuItem = (itemId: string) => {
+        const item = spectator.component.$menuItems().find(({ id }) => id === itemId) as MenuItem;
+        item.command?.({ originalEvent: new MouseEvent('click'), item });
+        spectator.detectChanges();
+    };
+
+    /** Accepts the confirmation opened by the last action and returns it. */
+    const acceptConfirmation = (): Confirmation => {
+        const confirmation = confirm.mock.calls[0][0] as Confirmation;
+        confirmation.accept?.();
+
+        return confirmation;
+    };
+
+    beforeEach(() => {
+        storeMock = createStoreMock();
+        panelStore = null;
+        routeQueryParams = {};
+        spectator = createComponent();
+        dispatch = vi.spyOn(spectator.inject(Dispatcher), 'dispatch');
+        const confirmationService = spectator.inject(ConfirmationService, true);
+        confirm = vi
+            .spyOn(confirmationService, 'confirm')
+            .mockReturnValue(confirmationService) as MockInstance;
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    describe('title', () => {
+        it('should render the name as typed, without waiting for the autosave', () => {
+            storeMock.draftName.mockReturnValue('Summer landing test');
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('experiments-configure-title'))?.textContent).toContain(
+                'Summer landing test'
+            );
+        });
+
+        it('should fall back to New Experiment while the draft has no name', () => {
+            storeMock.draftName.mockReturnValue('   ');
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('experiments-configure-title'))?.textContent).toContain(
+                NEW_EXPERIMENT_TITLE
+            );
+        });
+    });
+
+    describe('status tag', () => {
+        it.each([
+            [DotExperimentStatus.RUNNING, 'success'],
+            [DotExperimentStatus.SCHEDULED, 'info'],
+            [DotExperimentStatus.DRAFT, 'warn'],
+            [DotExperimentStatus.ENDED, 'info'],
+            [DotExperimentStatus.ARCHIVED, 'secondary']
+        ])('should render %s as a %s tag', (status, severity) => {
+            renderWith(status);
+
+            const tag = spectator.query(byTestId('experiments-configure-status-tag'));
+
+            expect(tag?.className).toContain(`p-tag-${severity}`);
+            expect(tag?.textContent).toContain(
+                messageServiceMock.get(STATUS_LABEL_KEYS.get(status) as string)
+            );
+        });
+    });
+
+    describe('subline', () => {
+        it('should name the page the experiment runs on', () => {
+            spectator.detectChanges();
+
+            expect(
+                spectator.query(byTestId('experiments-configure-subline'))?.textContent
+            ).toContain(`${SELECTED_PAGE.title} · ${SELECTED_PAGE.path}`);
+        });
+
+        it('should say no page is selected while none is', () => {
+            storeMock.selectedPage.mockReturnValue(null);
+            spectator.detectChanges();
+
+            expect(
+                spectator.query(byTestId('experiments-configure-subline'))?.textContent
+            ).toContain(NO_PAGE_COPY);
+        });
+    });
+
+    describe('view results', () => {
+        it.each([DotExperimentStatus.RUNNING, DotExperimentStatus.ENDED])(
+            'should open the results screen for %s',
+            (status) => {
+                const navigate = vi.spyOn(spectator.inject(Router), 'navigate');
+                renderWith(status);
+
+                const button = spectator
+                    .query(byTestId('experiments-configure-results-btn'))
+                    ?.querySelector('button') as HTMLButtonElement;
+
+                expect(button).not.toBeNull();
+                expect(button.disabled).toBe(false);
+
+                clickButton('experiments-configure-results-btn');
+
+                expect(navigate).toHaveBeenCalledWith(['/experiments', EXPERIMENT.id, 'results'], {
+                    queryParams: {}
+                });
+            }
+        );
+
+        /**
+         * #37005. Results has a back button of its own, reading the same address. Arriving there
+         * without `pageId` sent it to the site-wide list — so a trip out to Results and back
+         * widened a narrowing the editor never cleared.
+         */
+        it('should carry the page narrowing across to Results', () => {
+            routeQueryParams = { pageId: 'page-1', language_id: '2' };
+            const navigate = vi.spyOn(spectator.inject(Router), 'navigate');
+            renderWith(DotExperimentStatus.RUNNING);
+
+            clickButton('experiments-configure-results-btn');
+
+            expect(navigate).toHaveBeenCalledWith(['/experiments', EXPERIMENT.id, 'results'], {
+                queryParams: { pageId: 'page-1', language_id: '2' }
+            });
+        });
+
+        it.each([
+            DotExperimentStatus.DRAFT,
+            DotExperimentStatus.SCHEDULED,
+            DotExperimentStatus.ARCHIVED
+        ])('should not offer results for %s', (status) => {
+            renderWith(status);
+
+            expect(spectator.query(byTestId('experiments-configure-results-btn'))).toBeNull();
+        });
+    });
+
+    describe('stop', () => {
+        it('should offer Stop while the experiment is running', () => {
+            renderWith(DotExperimentStatus.RUNNING);
+
+            expect(spectator.query(byTestId('experiments-configure-stop-btn'))).not.toBeNull();
+        });
+
+        // One status per test: the store mock's signals are plain `vi.fn()`s, so a second
+        // `renderWith` in the same test would not recompute what the header derives from them.
+        it.each([
+            DotExperimentStatus.DRAFT,
+            DotExperimentStatus.SCHEDULED,
+            DotExperimentStatus.ENDED,
+            DotExperimentStatus.ARCHIVED
+        ])('should not offer Stop for %s', (status) => {
+            renderWith(status);
+
+            expect(spectator.query(byTestId('experiments-configure-stop-btn'))).toBeNull();
+        });
+
+        it('should confirm on the shell dialog before dispatching stopRequested', () => {
+            renderWith(DotExperimentStatus.RUNNING);
+
+            clickButton('experiments-configure-stop-btn');
+
+            expect(confirm).toHaveBeenCalledTimes(1);
+            expect(confirm.mock.calls[0][0].key).toBe(CONFIGURATION_CONFIRM_DIALOG_KEY);
+            expect(dispatchedEvents()).not.toContainEqual(
+                dotExperimentsConfigurePageEvents.stopRequested()
+            );
+
+            acceptConfirmation();
+
+            expect(dispatchedEvents()).toContainEqual(
+                dotExperimentsConfigurePageEvents.stopRequested()
+            );
+        });
+    });
+
+    describe('kebab', () => {
+        it('should stay hidden until the experiment has been created', () => {
+            storeMock.experiment.mockReturnValue(null);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('experiments-configure-actions-btn'))).toBeNull();
+            expect(spectator.component.$menuItems()).toEqual([]);
+        });
+
+        it.each([
+            [DotExperimentStatus.DRAFT, [MENU_ITEM.pushPublish, MENU_ITEM.addToBundle]],
+            [
+                DotExperimentStatus.RUNNING,
+                [MENU_ITEM.end, MENU_ITEM.abort, MENU_ITEM.pushPublish, MENU_ITEM.addToBundle]
+            ],
+            [
+                DotExperimentStatus.SCHEDULED,
+                [MENU_ITEM.cancelSchedule, MENU_ITEM.pushPublish, MENU_ITEM.addToBundle]
+            ],
+            [DotExperimentStatus.ENDED, [MENU_ITEM.pushPublish, MENU_ITEM.addToBundle]],
+            // An archived experiment can still be shipped to another environment, nothing else.
+            [DotExperimentStatus.ARCHIVED, [MENU_ITEM.pushPublish, MENU_ITEM.addToBundle]]
+        ])('should only offer the actions allowed for %s', (status, expectedItemIds) => {
+            renderWith(status);
+
+            expect(spectator.query(byTestId('experiments-configure-actions-btn'))).not.toBeNull();
+            expect(visibleMenuItemIds().sort()).toEqual([...expectedItemIds].sort());
+        });
+    });
+
+    describe('kebab actions', () => {
+        it.each([
+            [
+                DotExperimentStatus.RUNNING,
+                MENU_ITEM.end,
+                dotExperimentsConfigurePageEvents.stopRequested()
+            ],
+            [
+                DotExperimentStatus.RUNNING,
+                MENU_ITEM.abort,
+                dotExperimentsConfigurePageEvents.abortRequested()
+            ],
+            [
+                DotExperimentStatus.SCHEDULED,
+                MENU_ITEM.cancelSchedule,
+                dotExperimentsConfigurePageEvents.cancelScheduleRequested()
+            ]
+        ])('should confirm %s / %s before dispatching', (status, itemId, expectedEvent) => {
+            renderWith(status);
+
+            runMenuItem(itemId);
+
+            expect(confirm).toHaveBeenCalledTimes(1);
+            expect(dispatchedEvents()).not.toContainEqual(expectedEvent);
+
+            acceptConfirmation();
+
+            expect(dispatchedEvents()).toContainEqual(expectedEvent);
+        });
+
+        it('should open the push publish dialog without a confirmation', () => {
+            renderWith(DotExperimentStatus.DRAFT);
+            const pushPublishDialogService = spectator.inject(DotPushPublishDialogService, true);
+
+            runMenuItem(MENU_ITEM.pushPublish);
+
+            expect(confirm).not.toHaveBeenCalled();
+            expect(pushPublishDialogService.open).toHaveBeenCalledWith(
+                expect.objectContaining({ assetIdentifier: EXPERIMENT.id })
+            );
+        });
+
+        it('should open the add to bundle dialog on the experiment', () => {
+            renderWith(DotExperimentStatus.DRAFT);
+
+            runMenuItem(MENU_ITEM.addToBundle);
+
+            expect(spectator.component.$addToBundleAssetId()).toBe(EXPERIMENT.id);
+            expect(spectator.query('dot-add-to-bundle')).not.toBeNull();
+        });
+
+        it('should not render the add to bundle dialog until it is asked for', () => {
+            renderWith(DotExperimentStatus.DRAFT);
+
+            expect(spectator.query('dot-add-to-bundle')).toBeNull();
+        });
+    });
+
+    describe('back', () => {
+        it('should leave for the experiments list', () => {
+            const navigate = vi.spyOn(spectator.inject(Router), 'navigate');
+            spectator.detectChanges();
+
+            clickButton('experiments-configure-back-btn');
+
+            expect(navigate).toHaveBeenCalledWith(['/experiments'], { queryParams: {} });
+        });
+
+        /**
+         * Back returns to the list the screen was opened from, narrowing included (#37005).
+         *
+         * Arriving from UVE the list is already narrowed to one page, and New carries that
+         * narrowing on to this screen. Leaving by the back arrow dropped it, so the editor landed
+         * on every experiment on the site — a list they had not asked for and, on a busy site, one
+         * where the page they came from is nowhere in sight.
+         */
+        it('should return to the list still narrowed to the page it arrived with', () => {
+            routeQueryParams = { pageId: 'page-1', language_id: '2' };
+            const navigate = vi.spyOn(spectator.inject(Router), 'navigate');
+            spectator.detectChanges();
+
+            clickButton('experiments-configure-back-btn');
+
+            expect(navigate).toHaveBeenCalledWith(['/experiments'], {
+                queryParams: { pageId: 'page-1', language_id: '2' }
+            });
+        });
+
+        it('should carry no language when the address brought none', () => {
+            routeQueryParams = { pageId: 'page-1' };
+            const navigate = vi.spyOn(spectator.inject(Router), 'navigate');
+            spectator.detectChanges();
+
+            clickButton('experiments-configure-back-btn');
+
+            expect(navigate).toHaveBeenCalledWith(['/experiments'], {
+                queryParams: { pageId: 'page-1' }
+            });
+        });
+
+        it('should ignore params the list does not read', () => {
+            // `url` and `section` are this screen's own arrival hints; echoing them would put
+            // dead params on the list's address, which it then writes back on every filter change.
+            routeQueryParams = { pageId: 'page-1', url: '/index', section: 'variants' };
+            const navigate = vi.spyOn(spectator.inject(Router), 'navigate');
+            spectator.detectChanges();
+
+            clickButton('experiments-configure-back-btn');
+
+            expect(navigate).toHaveBeenCalledWith(['/experiments'], {
+                queryParams: { pageId: 'page-1' }
+            });
+        });
+    });
+    /**
+     * The header's two doors inside the UVE panel (#37478). Both stay where they lead; neither
+     * costs the editor the page any more (FR-008, FR-013, FR-025b).
+     */
+    describe('panel mode (#37478)', () => {
+        const inPanel = () => {
+            panelStore = { backToList: vi.fn(), showResults: vi.fn() };
+            spectator = createComponent();
+            spectator.detectChanges();
+        };
+
+        it('should return to the list as a view, not a navigation', async () => {
+            inPanel();
+            const navigate = vi.spyOn(spectator.inject(Router), 'navigate').mockResolvedValue(true);
+
+            await spectator.component.onBackToList();
+
+            expect(panelStore?.backToList).toHaveBeenCalledTimes(1);
+            expect(navigate).not.toHaveBeenCalled();
+        });
+
+        /**
+         * FR-019. Back in the panel is not a navigation, so `experimentsUnsavedChangesGuard` never
+         * fires on it — the prompt has to be raised here or the editor loses everything typed
+         * since the last Save Draft to a stray click on an arrow.
+         */
+        it('should ask before leaving unsaved work, and stay put when the answer is no', async () => {
+            inPanel();
+            storeMock.$hasUnsavedChanges.mockReturnValue(true);
+            // "Keep Editing" — the primary action, which cancels the departure.
+            confirm.mockImplementation((options: Confirmation) => options.accept?.());
+
+            await spectator.component.onBackToList();
+
+            expect(confirm).toHaveBeenCalledTimes(1);
+            expect(panelStore?.backToList).not.toHaveBeenCalled();
+        });
+
+        it('should leave once the editor chooses to discard', async () => {
+            inPanel();
+            storeMock.$hasUnsavedChanges.mockReturnValue(true);
+            confirm.mockImplementation((options: Confirmation) =>
+                options.reject?.(ConfirmEventType.REJECT)
+            );
+
+            await spectator.component.onBackToList();
+
+            expect(panelStore?.backToList).toHaveBeenCalledTimes(1);
+        });
+
+        /**
+         * A dismissal is not an answer. PrimeNG funnels the X, ESC and a mask click through the
+         * same `reject` callback as the secondary button, and reading them alike would throw the
+         * work away on a mis-click.
+         */
+        it('should treat a dismissal as staying, not as discarding', async () => {
+            inPanel();
+            storeMock.$hasUnsavedChanges.mockReturnValue(true);
+            confirm.mockImplementation((options: Confirmation) =>
+                options.reject?.(ConfirmEventType.CANCEL)
+            );
+
+            await spectator.component.onBackToList();
+
+            expect(panelStore?.backToList).not.toHaveBeenCalled();
+        });
+
+        /** In the portlet the router navigation raises the guard; asking twice is the bug. */
+        it('should not ask in the portlet, where the guard already does', async () => {
+            storeMock.$hasUnsavedChanges.mockReturnValue(true);
+            await spectator.component.onBackToList();
+
+            expect(confirm).not.toHaveBeenCalled();
+        });
+
+        it('should open results in the panel', () => {
+            inPanel();
+            const navigate = vi.spyOn(spectator.inject(Router), 'navigate').mockResolvedValue(true);
+
+            spectator.component.onViewResults();
+
+            expect(panelStore?.showResults).toHaveBeenCalledWith(storeMock.experiment().id);
+            expect(navigate).not.toHaveBeenCalled();
+        });
+    });
+});

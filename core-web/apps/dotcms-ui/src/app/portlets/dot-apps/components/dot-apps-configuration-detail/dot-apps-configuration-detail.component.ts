@@ -1,9 +1,9 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
 
-import { pluck, take } from 'rxjs/operators';
+import { map, take } from 'rxjs/operators';
 
 import { DotAppsService, DotRouterService } from '@dotcms/data-access';
 import { DotApp, DotAppsSaveData, DotAppsSecret } from '@dotcms/dotcms-models';
@@ -18,6 +18,7 @@ import { DotKeyValue } from '../../../../shared/models/dot-key-value-ng/dot-key-
     selector: 'dot-apps-configuration-detail',
     templateUrl: './dot-apps-configuration-detail.component.html',
     styleUrls: ['./dot-apps-configuration-detail.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         ButtonModule,
         DotKeyValueComponent,
@@ -39,13 +40,18 @@ export class DotAppsConfigurationDetailComponent implements OnInit {
     formValid = false;
 
     ngOnInit() {
-        this.route.data.pipe(pluck('data'), take(1)).subscribe((app: DotApp) => {
-            this.apps = app;
-            this.formFields = this.getSecrets(app.sites[0].secrets);
-            this.dynamicVariables = this.transformSecretsToKeyValue(
-                this.getSecrets(app.sites[0].secrets, true)
-            );
-        });
+        this.route.data
+            .pipe(
+                map((x) => x?.data),
+                take(1)
+            )
+            .subscribe((app: DotApp) => {
+                this.apps = app;
+                this.formFields = this.getSecrets(app.sites[0].secrets);
+                this.dynamicVariables = this.transformSecretsToKeyValue(
+                    this.getSecrets(app.sites[0].secrets, true)
+                );
+            });
     }
 
     /**

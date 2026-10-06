@@ -1,27 +1,27 @@
-import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { renderHook } from '@testing-library/react';
 import { usePathname, useSearchParams } from 'next/navigation';
+import { Mock, Mocked, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useRouterTracker } from './useRouterTracker';
 
 import { DotCMSAnalytics } from '../../core/shared/models';
 
 // Mock Next.js hooks
-jest.mock('next/navigation', () => ({
-    usePathname: jest.fn(),
-    useSearchParams: jest.fn(() => null)
+vi.mock('next/navigation', () => ({
+    usePathname: vi.fn(),
+    useSearchParams: vi.fn(() => null)
 }));
 
 describe('useRouterTracker', () => {
-    let mockAnalytics: jest.Mocked<DotCMSAnalytics>;
-    const mockUsePathname = usePathname as jest.Mock;
-    const mockUseSearchParams = useSearchParams as jest.Mock;
+    let mockAnalytics: Mocked<DotCMSAnalytics>;
+    const mockUsePathname = usePathname as Mock;
+    const mockUseSearchParams = useSearchParams as Mock;
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         mockAnalytics = {
-            pageView: jest.fn()
-        } as unknown as jest.Mocked<DotCMSAnalytics>;
+            pageView: vi.fn()
+        } as unknown as Mocked<DotCMSAnalytics>;
 
         // Reset pathname to initial value
         mockUsePathname.mockReturnValue('/initial-path');
@@ -75,5 +75,41 @@ describe('useRouterTracker', () => {
         // Simulate path change after unmount
         mockUsePathname.mockReturnValue('/new-path');
         expect(mockAnalytics.pageView).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not track when enabled is false, even after a route change', () => {
+        const { rerender } = renderHook(() => useRouterTracker(mockAnalytics, false, false));
+        expect(mockAnalytics.pageView).not.toHaveBeenCalled();
+
+        // Simulate path change
+        mockUsePathname.mockReturnValue('/new-path');
+        rerender();
+
+        expect(mockAnalytics.pageView).not.toHaveBeenCalled();
+    });
+
+    it('should track on render and unique route changes when enabled is explicitly true', () => {
+        const { rerender } = renderHook(() => useRouterTracker(mockAnalytics, false, true));
+        expect(mockAnalytics.pageView).toHaveBeenCalledTimes(1);
+
+        // Unique route change
+        mockUsePathname.mockReturnValue('/new-path');
+        rerender();
+        expect(mockAnalytics.pageView).toHaveBeenCalledTimes(2);
+
+        // Same route, no additional pageView
+        mockUsePathname.mockReturnValue('/new-path');
+        rerender();
+        expect(mockAnalytics.pageView).toHaveBeenCalledTimes(2);
+    });
+
+    it('should not crash and not track when enabled is false and analytics is null', () => {
+        const { rerender } = renderHook(() => useRouterTracker(null, false, false));
+        expect(mockAnalytics.pageView).not.toHaveBeenCalled();
+
+        mockUsePathname.mockReturnValue('/new-path');
+        rerender();
+
+        expect(mockAnalytics.pageView).not.toHaveBeenCalled();
     });
 });

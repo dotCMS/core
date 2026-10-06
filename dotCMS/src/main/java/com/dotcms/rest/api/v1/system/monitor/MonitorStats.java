@@ -59,8 +59,10 @@ public class MonitorStats {
     }
 
     /**
-     * Return the content analytics status: see {@link com.dotcms.experiments.business.ExperimentsAPI.Health}
-     * @return String
+     * Returns the Content Analytics health status as the name of a {@link Health} constant:
+     * {@code OK}, {@code NOT_CONFIGURED}, or {@code CONFIGURATION_ERROR}.
+     *
+     * @return the {@link Health} name for the Content Analytics subsystem
      */
     public String getContentAnalytics() {
         return contentAnalytics;

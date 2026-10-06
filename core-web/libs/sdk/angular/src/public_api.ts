@@ -11,6 +11,8 @@ export { DotCMSEditableTextComponent } from './lib/components/dotcms-editable-te
 
 export { DotCMSBlockEditorRendererComponent } from './lib/components/dotcms-block-editor-renderer/dotcms-block-editor-renderer.component';
 
+export { DotCMSBlockEditorRendererNativeComponent } from './lib/components/dotcms-block-editor-renderer-semantic/dotcms-block-editor-renderer-native.component';
+
 export { DotCMSLayoutBodyComponent } from './lib/components/dotcms-layout-body/dotcms-layout-body.component';
 
 export { DotCMSEditablePageService } from './lib/services/dotcms-editable-page.service';

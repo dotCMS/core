@@ -9,7 +9,10 @@ import {
 } from '@angular/core';
 
 import { Tabs } from 'primeng/tabs';
-
+/**
+ * Directive to insert content into the tab view.
+ * @deprecated Use the new Tabs API instead.
+ */
 @Directive({
     selector: '[dotTabViewAppend]'
 })

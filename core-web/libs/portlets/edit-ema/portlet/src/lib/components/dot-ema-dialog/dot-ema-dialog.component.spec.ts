@@ -1,15 +1,15 @@
-import { describe, expect, it } from '@jest/globals';
 import {
     byTestId,
     createComponentFactory,
     mockProvider,
     Spectator,
     SpyObject
-} from '@ngneat/spectator/jest';
-import { of } from 'rxjs';
+} from '@openng/spectator/vitest';
+import { EMPTY, of } from 'rxjs';
+import { describe, expect, it, vi } from 'vitest';
 
-import { HttpClient } from '@angular/common/http';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
 
@@ -27,15 +27,11 @@ import {
     DotWorkflowActionsFireService,
     PushPublishService
 } from '@dotcms/data-access';
-import { CoreWebService, DotcmsConfigService, DotcmsEventsService } from '@dotcms/dotcms-js';
-import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
+import { DotcmsConfigService } from '@dotcms/dotcms-js';
+import { DotCMSBaseTypesContentTypes, DotCMSWorkflowActionEvent } from '@dotcms/dotcms-models';
 import { DotContentCompareComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotCMSPage, DotCMSURLContentMap, DotCMSUVEAction } from '@dotcms/types';
-import {
-    DotcmsConfigServiceMock,
-    DotcmsEventsServiceMock,
-    MockDotMessageService
-} from '@dotcms/utils-testing';
+import { DotcmsConfigServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotEmaDialogComponent } from './dot-ema-dialog.component';
 import { DotEmaDialogStore } from './store/dot-ema-dialog.store';
@@ -82,28 +78,22 @@ describe('DotEmaDialogComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotEmaDialogComponent,
-        imports: [HttpClientTestingModule],
         providers: [
+            provideHttpClient(),
+            provideHttpClientTesting(),
             DotEmaDialogStore,
-            HttpClient,
             DotWorkflowActionsFireService,
             MessageService,
             {
                 provide: UVEStore,
                 useValue: {
-                    pageParams: signal({
-                        variantName: 'DEFAULT' // Is the only thing we need to test the component
-                    }),
-                    $variantId: signal('DEFAULT')
+                    pageVariantId: signal('DEFAULT'),
+                    pageAsset: signal({ site: { identifier: 'test-site-id' } })
                 }
             },
             {
                 provide: DotcmsConfigService,
                 useValue: new DotcmsConfigServiceMock()
-            },
-            {
-                provide: DotcmsEventsService,
-                useValue: new DotcmsEventsServiceMock()
             },
             {
                 provide: PushPublishService,
@@ -125,15 +115,9 @@ describe('DotEmaDialogComponent', () => {
             {
                 provide: DotActionUrlService,
                 useValue: {
-                    getCreateContentletUrl: jest
+                    getCreateContentletUrl: vi
                         .fn()
                         .mockReturnValue(of('https://demo.dotcms.com/jsp.jsp'))
-                }
-            },
-            {
-                provide: CoreWebService,
-                useValue: {
-                    requestView: jest.fn().mockReturnValue(of({}))
                 }
             },
             {
@@ -141,7 +125,13 @@ describe('DotEmaDialogComponent', () => {
                 useValue: new MockDotMessageService({})
             },
             mockProvider(DotContentTypeService),
-            mockProvider(DotContentletService),
+            // The content-compare store pipes getContentletVersions() from its loadData
+            // effect; a bare mockProvider returns undefined and it dereferences nothing,
+            // asynchronously — which Jest dropped and Vitest counts as an unhandled
+            // error. Nothing in this spec asserts on the versions.
+            mockProvider(DotContentletService, {
+                getContentletVersions: vi.fn(() => EMPTY)
+            }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotAlertConfirmService),
             mockProvider(DotIframeService),
@@ -155,7 +145,7 @@ describe('DotEmaDialogComponent', () => {
         storeSpy = spectator.inject(DotEmaDialogStore, true);
         workflowActionEventHandler = spectator.inject(DotEmaWorkflowActionsService, true);
 
-        jest.spyOn(workflowActionEventHandler, 'handleWorkflowAction').mockImplementation(() =>
+        vi.spyOn(workflowActionEventHandler, 'handleWorkflowAction').mockImplementation(() =>
             of({})
         );
     });
@@ -184,7 +174,7 @@ describe('DotEmaDialogComponent', () => {
 
     describe('outputs', () => {
         it('should dispatch custom events', () => {
-            const customEventSpy = jest.spyOn(component.action, 'emit');
+            const customEventSpy = vi.spyOn(component.action, 'emit');
 
             component.addContentlet(PAYLOAD_MOCK); // This is to make the dialog open
             spectator.detectChanges();
@@ -205,7 +195,7 @@ describe('DotEmaDialogComponent', () => {
         });
 
         it('should dispatch onHide when p-dialog hide', () => {
-            const actionSpy = jest.spyOn(component.action, 'emit');
+            const actionSpy = vi.spyOn(component.action, 'emit');
 
             component.addContentlet(PAYLOAD_MOCK); // This is to make the dialog open
             spectator.detectChanges();
@@ -230,7 +220,7 @@ describe('DotEmaDialogComponent', () => {
 
     describe('component methods', () => {
         it("should trigger handleWorkflowEvent when the iframe's custom event is 'workflow-wizard'", () => {
-            const handleWorkflowEventSpy = jest.spyOn(component, 'handleWorkflowEvent');
+            const handleWorkflowEventSpy = vi.spyOn(component, 'handleWorkflowEvent');
 
             component.addContentlet(PAYLOAD_MOCK); // This is to make the dialog open
             spectator.detectChanges();
@@ -246,8 +236,22 @@ describe('DotEmaDialogComponent', () => {
             expect(handleWorkflowEventSpy).toHaveBeenCalledWith({});
         });
 
+        it('should emit reloadFromDialog after a successful workflow action', () => {
+            const reloadFromDialogSpy = vi.spyOn(component.reloadFromDialog, 'emit');
+
+            component.addContentlet(PAYLOAD_MOCK);
+            spectator.detectChanges();
+
+            // dialog appends to body so @ViewChild('iframe') is not populated; stub it out
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            component.iframe = { nativeElement: { contentWindow: null } } as any;
+            component.handleWorkflowEvent({} as DotCMSWorkflowActionEvent);
+
+            expect(reloadFromDialogSpy).toHaveBeenCalled();
+        });
+
         it("should trigger setDirty in the store when the iframe's custom event is 'edit-contentlet-data-updated' and is not a translation", () => {
-            const setDirtySpy = jest.spyOn(storeSpy, 'setDirty');
+            const setDirtySpy = vi.spyOn(storeSpy, 'setDirty');
 
             component.addContentlet(PAYLOAD_MOCK); // This is to make the dialog open
             spectator.detectChanges();
@@ -264,7 +268,7 @@ describe('DotEmaDialogComponent', () => {
         });
 
         it("should trigger setSaved in the store when the iframe's custom event is 'edit-contentlet-data-updated' and is a translation", () => {
-            const setSavedSpy = jest.spyOn(storeSpy, 'setSaved');
+            const setSavedSpy = vi.spyOn(storeSpy, 'setSaved');
 
             component.translatePage({
                 page: MOCK_RESPONSE_HEADLESS.page,
@@ -283,8 +287,28 @@ describe('DotEmaDialogComponent', () => {
             expect(setSavedSpy).toHaveBeenCalled();
         });
 
+        it("should NOT emit reloadFromDialog when the iframe's custom event is 'edit-contentlet-data-updated' and is a translation", () => {
+            const reloadFromDialogSpy = vi.spyOn(component.reloadFromDialog, 'emit');
+
+            component.translatePage({
+                page: MOCK_RESPONSE_HEADLESS.page,
+                newLanguage: '3'
+            });
+            spectator.detectChanges();
+
+            triggerIframeCustomEvent({
+                detail: {
+                    name: NG_CUSTOM_EVENTS.EDIT_CONTENTLET_UPDATED,
+                    data: {},
+                    payload: {}
+                }
+            });
+
+            expect(reloadFromDialogSpy).not.toHaveBeenCalled();
+        });
+
         it("should trigger setSaved in the store when the iframe's custom event is 'edit-contentlet-data-updated', is a translation and payload is move action", () => {
-            const reloadIframeSpy = jest.spyOn(component, 'reloadIframe');
+            const reloadIframeSpy = vi.spyOn(component, 'reloadIframe');
 
             component.translatePage({
                 page: MOCK_RESPONSE_HEADLESS.page,
@@ -306,7 +330,7 @@ describe('DotEmaDialogComponent', () => {
         });
 
         it("should trigger setSaved when the iframe's custom event is 'save-page'", () => {
-            const setSavedSpy = jest.spyOn(storeSpy, 'setSaved');
+            const setSavedSpy = vi.spyOn(storeSpy, 'setSaved');
 
             component.addContentlet(PAYLOAD_MOCK); // This is to make the dialog open
             spectator.detectChanges();
@@ -324,7 +348,7 @@ describe('DotEmaDialogComponent', () => {
         });
 
         it("should reload the iframe when the iframe's custom event is 'save-page' and the payload is a move action", () => {
-            const reloadIframeSpy = jest.spyOn(component, 'reloadIframe');
+            const reloadIframeSpy = vi.spyOn(component, 'reloadIframe');
 
             component.addContentlet(PAYLOAD_MOCK); // This is to make the dialog open
             spectator.detectChanges();
@@ -342,7 +366,7 @@ describe('DotEmaDialogComponent', () => {
         });
 
         it('should trigger addContentlet in the store', () => {
-            const addContentletSpy = jest.spyOn(storeSpy, 'addContentlet');
+            const addContentletSpy = vi.spyOn(storeSpy, 'addContentlet');
 
             component.addContentlet(PAYLOAD_MOCK);
 
@@ -355,7 +379,7 @@ describe('DotEmaDialogComponent', () => {
         });
 
         it('should trigger addFormContentlet in the store', () => {
-            const addFormContentletSpy = jest.spyOn(storeSpy, 'addFormContentlet');
+            const addFormContentletSpy = vi.spyOn(storeSpy, 'addFormContentlet');
 
             component.addForm(PAYLOAD_MOCK);
 
@@ -363,7 +387,7 @@ describe('DotEmaDialogComponent', () => {
         });
 
         it('should trigger addContentletSpy in the store for widget', () => {
-            const addContentletSpy = jest.spyOn(storeSpy, 'addContentlet');
+            const addContentletSpy = vi.spyOn(storeSpy, 'addContentlet');
 
             component.addWidget(PAYLOAD_MOCK);
 
@@ -376,7 +400,7 @@ describe('DotEmaDialogComponent', () => {
         });
 
         it('should trigger translatePage from the store', () => {
-            const translatePageSpy = jest.spyOn(storeSpy, 'translatePage');
+            const translatePageSpy = vi.spyOn(storeSpy, 'translatePage');
 
             component.translatePage({
                 page: {
@@ -394,7 +418,7 @@ describe('DotEmaDialogComponent', () => {
         });
 
         it('should trigger editContentlet in the store', () => {
-            const editContentletSpy = jest.spyOn(storeSpy, 'editContentlet');
+            const editContentletSpy = vi.spyOn(storeSpy, 'editContentlet');
 
             component.editContentlet(PAYLOAD_MOCK.contentlet);
 
@@ -402,7 +426,7 @@ describe('DotEmaDialogComponent', () => {
         });
 
         it('should trigger editVTLContentlet in the store', () => {
-            const editVTLContentletSpy = jest.spyOn(storeSpy, 'editContentlet');
+            const editVTLContentletSpy = vi.spyOn(storeSpy, 'editContentlet');
 
             const vtlFile = {
                 inode: '123',
@@ -418,7 +442,7 @@ describe('DotEmaDialogComponent', () => {
         });
 
         it('should trigger editContentlet in the store for url Map', () => {
-            const editContentletSpy = jest.spyOn(storeSpy, 'editUrlContentMapContentlet');
+            const editContentletSpy = vi.spyOn(storeSpy, 'editUrlContentMapContentlet');
 
             component.editUrlContentMapContentlet(
                 PAYLOAD_MOCK.contentlet as unknown as DotCMSURLContentMap
@@ -431,7 +455,7 @@ describe('DotEmaDialogComponent', () => {
         });
 
         it('should trigger createContentlet in the store', () => {
-            const createContentletSpy = jest.spyOn(storeSpy, 'createContentlet');
+            const createContentletSpy = vi.spyOn(storeSpy, 'createContentlet');
 
             component.createContentlet({
                 url: 'https://demo.dotcms.com/jsp.jsp',
@@ -447,10 +471,7 @@ describe('DotEmaDialogComponent', () => {
         });
 
         it('should trigger createContentletFromPalette in the store', () => {
-            const createContentletFromPalletSpy = jest.spyOn(
-                storeSpy,
-                'createContentletFromPalette'
-            );
+            const createContentletFromPalletSpy = vi.spyOn(storeSpy, 'createContentletFromPalette');
 
             component.createContentletFromPalette({
                 variable: 'test',
@@ -466,7 +487,7 @@ describe('DotEmaDialogComponent', () => {
         });
 
         it('should trigger a reset in the store', () => {
-            const resetSpy = jest.spyOn(storeSpy, 'resetDialog');
+            const resetSpy = vi.spyOn(storeSpy, 'resetDialog');
 
             component.resetDialog();
 
@@ -474,7 +495,7 @@ describe('DotEmaDialogComponent', () => {
         });
 
         it('should trigger a loading iframe in the store', () => {
-            const resetSpy = jest.spyOn(storeSpy, 'loadingIframe');
+            const resetSpy = vi.spyOn(storeSpy, 'loadingIframe');
 
             component.showLoadingIframe();
 
@@ -482,7 +503,7 @@ describe('DotEmaDialogComponent', () => {
         });
 
         it("should trigger openDialogOnURL in the store when it's a URL", () => {
-            const openDialogOnURLSpy = jest.spyOn(storeSpy, 'openDialogOnURL');
+            const openDialogOnURLSpy = vi.spyOn(storeSpy, 'openDialogOnURL');
 
             component.openDialogOnUrl('https://demo.dotcms.com/jsp.jsp', 'test');
 
@@ -493,7 +514,7 @@ describe('DotEmaDialogComponent', () => {
         });
 
         it('should trigger resetActionPayload in the store', () => {
-            const resetActionPayloadSpy = jest.spyOn(storeSpy, 'resetActionPayload');
+            const resetActionPayloadSpy = vi.spyOn(storeSpy, 'resetActionPayload');
 
             component.resetActionPayload();
 
@@ -502,7 +523,7 @@ describe('DotEmaDialogComponent', () => {
 
         it('should inject CSS variables to iframe when loaded', () => {
             const dotUiColorsService = spectator.inject(DotUiColorsService);
-            const setColorsSpy = jest.spyOn(dotUiColorsService, 'setColors');
+            const setColorsSpy = vi.spyOn(dotUiColorsService, 'setColors');
 
             component.addContentlet(PAYLOAD_MOCK); // This opens the dialog
             spectator.detectChanges();
@@ -520,7 +541,7 @@ describe('DotEmaDialogComponent', () => {
             component['onIframeLoad']();
 
             // Verify setColors was called with the html element from the iframe
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
             expect(setColorsSpy).toHaveBeenCalledWith(iframe.contentDocument!.documentElement);
 
             // Clean up
@@ -529,7 +550,7 @@ describe('DotEmaDialogComponent', () => {
 
         it('should not inject CSS variables when iframe has no document', () => {
             const dotUiColorsService = spectator.inject(DotUiColorsService);
-            const setColorsSpy = jest.spyOn(dotUiColorsService, 'setColors');
+            const setColorsSpy = vi.spyOn(dotUiColorsService, 'setColors');
 
             component.addContentlet(PAYLOAD_MOCK); // This opens the dialog
             spectator.detectChanges();
@@ -588,7 +609,7 @@ describe('DotEmaDialogComponent', () => {
         });
 
         it('should trigger a bring back action', () => {
-            const bringBackSpy = jest.spyOn(component, 'bringBack');
+            const bringBackSpy = vi.spyOn(component, 'bringBack');
 
             renderCompareDialog();
 

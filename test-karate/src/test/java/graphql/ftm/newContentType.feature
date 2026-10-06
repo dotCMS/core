@@ -91,6 +91,26 @@ Feature: Create a Content Type
             "sortOrder":5,
             "unique":false,
             "variable":"tags"
+          },
+          {
+            "clazz":"com.dotcms.contenttype.model.field.ImmutableHostFolderField",
+            "dataType":"SYSTEM",
+            "fieldType":"Host-Folder",
+            "fieldTypeLabel":"Site or Folder",
+            "fieldVariables":[
+
+            ],
+            "fixed":false,
+            "forceIncludeInApi":false,
+            "indexed":true,
+            "listed":false,
+            "name":"Site or Folder",
+            "readOnly":false,
+            "required":false,
+            "searchable":false,
+            "sortOrder":6,
+            "unique":false,
+            "variable":"hostFolder"
           }
         ],
         "fixed":false,

@@ -5,7 +5,7 @@ import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.RoleNameException;
@@ -20,7 +20,9 @@ import com.liferay.util.GetterUtil;
 import com.liferay.util.SystemProperties;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -386,6 +388,12 @@ public class RoleAPIImpl implements RoleAPI {
 	@Override
 	public List<String> findUserIdsForRole(final Role role) throws DotDataException {
 		return roleFactory.findUserIdsForRole(role);
+	}
+
+	@CloseDBIfOpened
+	@Override
+	public Map<String, Integer> countUsersByRoleIds(final Collection<String> roleIds) throws DotDataException {
+		return roleFactory.countUsersByRoleIds(roleIds);
 	}
 
 	@Override

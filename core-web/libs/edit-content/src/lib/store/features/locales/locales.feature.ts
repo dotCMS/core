@@ -12,7 +12,6 @@ import { forkJoin, of, pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, effect, inject, untracked } from '@angular/core';
-import { Router } from '@angular/router';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
@@ -26,9 +25,14 @@ import {
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { ComponentStatus, DotCMSContentlet, DotLanguage } from '@dotcms/dotcms-models';
+import {
+    BINARY_OPTION,
+    BinaryOptionDialogData,
+    DotBinaryOptionSelectorComponent
+} from '@dotcms/ui';
 
-import { DotEditContentSidebarUntranslatedLocaleComponent } from '../../../components/dot-edit-content-sidebar/components/dot-edit-content-sidebar-untranslated-locale/dot-edit-content-sidebar-untranslated-locale.component';
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
+import { EDIT_CONTENT_HOST } from '../../../services/host/edit-content-host.model';
 import {
     prepareContentletForCopy,
     sortLocalesTranslatedFirst
@@ -38,7 +42,9 @@ import { EditContentState } from '../../edit-content.store';
 
 export function withLocales() {
     return signalStoreFeature(
-        { state: type<EditContentState>() },
+        {
+            state: type<EditContentState>()
+        },
         withComputed((store) => ({
             /**
              * Computed property that indicates whether the locales are currently being loaded.
@@ -61,7 +67,7 @@ export function withLocales() {
                 dotHttpErrorManagerService = inject(DotHttpErrorManagerService),
                 dotMessageService = inject(DotMessageService),
                 dialogService = inject(DialogService),
-                router = inject(Router),
+                host = inject(EDIT_CONTENT_HOST),
                 workflowActionService = inject(DotWorkflowsActionsService)
             ) => ({
                 /**
@@ -166,7 +172,7 @@ export function withLocales() {
                         switchMap((locale: DotLanguage) => {
                             /**
                              * Checks if the locale is translated. If it is, retrieves the content
-                             * by its identifier and locale id and navigates to the content page by inode.
+                             * by its identifier and locale id and reloads the editor for that inode.
                              */
                             if (locale.translated) {
                                 return dotEditContentService
@@ -177,10 +183,12 @@ export function withLocales() {
                                     .pipe(
                                         tapResponse({
                                             next: (contentlet) => {
-                                                router.navigate(['/content', contentlet.inode], {
-                                                    replaceUrl: true,
-                                                    queryParamsHandling: 'preserve'
-                                                });
+                                                patchState(store, { isManualTranslation: false });
+
+                                                // The host reloads the editor: a route change in
+                                                // full-screen (guard handles the dirty check) or an
+                                                // in-place reload in the dialog (layout handles it).
+                                                host.reloadContent(contentlet.inode);
                                             },
                                             error: (error: HttpErrorResponse) => {
                                                 dotHttpErrorManagerService.handle(error);
@@ -194,19 +202,53 @@ export function withLocales() {
                                         })
                                     );
                             } else {
-                                const ref = dialogService.open(
-                                    DotEditContentSidebarUntranslatedLocaleComponent,
-                                    {
-                                        header: dotMessageService.get(
-                                            'edit.content.sidebar.locales.untranslated.locale'
+                                const currentLocale = store.currentLocale();
+                                if (!currentLocale) return of(null);
+
+                                const languageLabel = currentLocale.countryCode
+                                    ? `${currentLocale.language} (${currentLocale.countryCode})`
+                                    : currentLocale.language;
+
+                                const options: BINARY_OPTION = {
+                                    option1: {
+                                        value: 'populate',
+                                        label: dotMessageService.get(
+                                            'edit.content.sidebar.locales.untranslated.populate',
+                                            languageLabel
                                         ),
-                                        width: '35rem',
-                                        data: {
-                                            currentLocale: store.currentLocale()
-                                        },
-                                        modal: true
+                                        message: dotMessageService.get(
+                                            'edit.content.sidebar.locales.untranslated.populate.message',
+                                            languageLabel
+                                        ),
+                                        buttonLabel: 'edit.content.sidebar.locales.continue'
+                                    },
+                                    option2: {
+                                        value: 'manual',
+                                        label: dotMessageService.get(
+                                            'edit.content.sidebar.locales.untranslated.manually'
+                                        ),
+                                        message: dotMessageService.get(
+                                            'edit.content.sidebar.locales.untranslated.manually.message'
+                                        ),
+                                        buttonLabel: 'edit.content.sidebar.locales.continue'
                                     }
-                                );
+                                };
+
+                                const ref = dialogService.open(DotBinaryOptionSelectorComponent, {
+                                    header: dotMessageService.get(
+                                        'edit.content.sidebar.locales.untranslated.locale'
+                                    ),
+                                    width: '35rem',
+                                    contentStyle: { padding: '0' },
+                                    closable: true,
+                                    closeOnEscape: true,
+                                    modal: true,
+                                    data: {
+                                        options,
+                                        description:
+                                            'edit.content.sidebar.locales.untranslated.text'
+                                    } satisfies BinaryOptionDialogData
+                                });
 
                                 ref.onClose
                                     .pipe(
@@ -229,18 +271,30 @@ export function withLocales() {
                                         const parsedCurrentActions = parseCurrentActions(
                                             parsedSchemes[defaultSchemeId]?.actions || []
                                         );
+                                        // Remember the version we came from: the new translation has
+                                        // no inode yet, so related-content navigation uses this as
+                                        // the trail origin (see openRelated in the relationship field).
+                                        const translationSourceInode =
+                                            store.contentlet()?.inode ?? null;
                                         patchState(store, {
                                             currentLocale: locale,
                                             schemes: parsedSchemes,
                                             currentSchemeId: defaultSchemeId,
                                             currentContentActions: parsedCurrentActions,
+                                            currentStep: null,
+                                            lastTask: null,
                                             state: ComponentStatus.LOADED,
                                             initialContentletState: 'copy',
+                                            isManualTranslation: copyType === 'manual',
                                             error: null,
                                             formValues: null,
+                                            translationSourceInode,
                                             contentlet:
                                                 copyType === 'populate'
-                                                    ? prepareContentletForCopy(store.contentlet())
+                                                    ? prepareContentletForCopy(
+                                                          store.contentlet(),
+                                                          store.contentType()?.fields
+                                                      )
                                                     : null
                                         });
                                     });

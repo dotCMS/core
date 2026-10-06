@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import {
     AfterViewInit,
     ChangeDetectorRef,
@@ -15,7 +15,8 @@ import {
     QueryList,
     signal,
     TemplateRef,
-    ViewChild
+    ViewChild,
+    ChangeDetectionStrategy
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -64,9 +65,9 @@ function tableFactory(dotListingDataTableComponent: DotListingDataTableComponent
     selector: 'dot-listing-data-table',
     styleUrls: ['./dot-listing-data-table.component.scss'],
     templateUrl: 'dot-listing-data-table.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         ActionHeaderComponent,
-        CommonModule,
         FormsModule,
         RouterModule,
         TableModule,
@@ -77,7 +78,8 @@ function tableFactory(dotListingDataTableComponent: DotListingDataTableComponent
         DotIconComponent,
         DotMessagePipe,
         DotRelativeDatePipe,
-        DotStringFormatPipe
+        DotStringFormatPipe,
+        NgTemplateOutlet
     ]
 })
 export class DotListingDataTableComponent implements OnInit, AfterViewInit {

@@ -1,19 +1,15 @@
 import { of, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
-import { HttpErrorResponse } from '@angular/common/http';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { DotContentTypeService, DotHttpErrorManagerService } from '@dotcms/data-access';
-import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCopyContentTypeDialogFormFields } from '@dotcms/dotcms-models';
-import {
-    CoreWebServiceMock,
-    dotcmsContentTypeBasicMock,
-    mockResponseView
-} from '@dotcms/utils-testing';
+import { dotcmsContentTypeBasicMock, mockResponseView } from '@dotcms/utils-testing';
 
 import { DotContentTypeStore } from './dot-content-type.store';
 
@@ -25,15 +21,16 @@ describe('DotContentTypeComponentStore', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule, RouterTestingModule],
+            imports: [RouterTestingModule],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 DotContentTypeService,
                 DotContentTypeStore,
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 {
                     provide: DotHttpErrorManagerService,
                     useValue: {
-                        handle: jest.fn().mockReturnValue(of({}))
+                        handle: vi.fn().mockReturnValue(of({}))
                     }
                 }
             ]
@@ -62,7 +59,7 @@ describe('DotContentTypeComponentStore', () => {
 
     describe('effects', () => {
         it('should save Content Type Copy values', () => {
-            jest.spyOn(dotContentTypeService, 'saveCopyContentType').mockReturnValue(
+            vi.spyOn(dotContentTypeService, 'saveCopyContentType').mockReturnValue(
                 of({
                     ...dotcmsContentTypeBasicMock,
                     id: '1234567890',
@@ -72,7 +69,7 @@ describe('DotContentTypeComponentStore', () => {
                 })
             );
 
-            jest.spyOn(router, 'navigate');
+            vi.spyOn(router, 'navigate');
 
             store.setAssetSelected('content-type-id');
 
@@ -103,27 +100,28 @@ describe('DotContentTypeComponentStore', () => {
             ]);
         });
 
-        it('should handler error on update template', (done) => {
-            const error = new HttpErrorResponse(mockResponseView(400));
-            jest.spyOn(dotContentTypeService, 'saveCopyContentType').mockReturnValue(
-                throwError(error)
-            );
+        it('should handler error on update template', () =>
+            new Promise<void>((done) => {
+                const error = mockResponseView(400);
+                vi.spyOn(dotContentTypeService, 'saveCopyContentType').mockReturnValue(
+                    throwError(() => error)
+                );
 
-            store.saveCopyDialog({
-                name: 'new-name',
-                host: 'host',
-                icon: 'icon',
-                folder: 'folder',
-                variable: 'validVariableName'
-            });
+                store.saveCopyDialog({
+                    name: 'new-name',
+                    host: 'host',
+                    icon: 'icon',
+                    folder: 'folder',
+                    variable: 'validVariableName'
+                });
 
-            expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(error);
-            expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
+                expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(error);
+                expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
 
-            store.isSaving$.subscribe((resp) => {
-                expect(resp).toBe(false);
-                done();
-            });
-        });
+                store.isSaving$.subscribe((resp) => {
+                    expect(resp).toBe(false);
+                    done();
+                });
+            }));
     });
 });

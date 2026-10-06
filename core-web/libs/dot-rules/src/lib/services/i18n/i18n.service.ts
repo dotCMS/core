@@ -1,11 +1,11 @@
 import { defer as observableDefer, Observer, Observable } from 'rxjs';
 
-import { HttpResponse } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { catchError, map } from 'rxjs/operators';
+import { catchError } from 'rxjs/operators';
 
-import { ApiRoot, LoggerService, CoreWebService, HttpCode } from '@dotcms/dotcms-js';
+import { ApiRoot, LoggerService, HttpCode } from '@dotcms/dotcms-js';
 
 import { Verify } from '../utils/verify.util';
 
@@ -94,7 +94,7 @@ export class TreeNode {
 
 @Injectable()
 export class I18nService {
-    private coreWebService = inject(CoreWebService);
+    private http = inject(HttpClient);
     private loggerService = inject(LoggerService);
 
     root: TreeNode;
@@ -109,16 +109,8 @@ export class I18nService {
         this.root = new TreeNode(null, 'root');
     }
 
-    makeRequest<T>(url: string): Observable<HttpResponse<T>> {
-        return this.coreWebService
-            .request({
-                url: this._baseUrl + '/' + url
-            })
-            .pipe(
-                map((res: HttpResponse<T>) => {
-                    return res;
-                })
-            );
+    makeRequest<T>(url: string): Observable<T> {
+        return this.http.get<T>(`${this._baseUrl}/${url}`);
     }
 
     get(msgKey: string, defaultValue = '-error loading resource-'): Observable<string> {

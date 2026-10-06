@@ -1,6 +1,6 @@
-import { describe, expect, beforeEach } from '@jest/globals';
-import { Spectator, createComponentFactory } from '@ngneat/spectator/jest';
+import { Spectator, createComponentFactory } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { describe, expect, beforeEach } from 'vitest';
 
 import { HttpClient } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -33,7 +33,7 @@ describe('DotPageToolsSeoComponent', () => {
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({
-                    'editpage.toolbar.nav.page.tools': 'Page Tools'
+                    'editpage.toolbar.nav.page.tools': 'Page Health'
                 })
             },
             DotMessagePipe

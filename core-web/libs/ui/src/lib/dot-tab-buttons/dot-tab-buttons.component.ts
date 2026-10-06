@@ -1,5 +1,12 @@
-import { NgClass } from '@angular/common';
-import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
+import {
+    Component,
+    EventEmitter,
+    Input,
+    OnChanges,
+    Output,
+    SimpleChanges,
+    ChangeDetectionStrategy
+} from '@angular/core';
 
 import { SelectItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -23,8 +30,9 @@ interface TabButtonOptions {
  */
 @Component({
     selector: 'dot-tab-buttons',
-    imports: [ButtonModule, NgClass, TooltipModule, DotMessagePipe],
+    imports: [ButtonModule, TooltipModule, DotMessagePipe],
     templateUrl: './dot-tab-buttons.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./dot-tab-buttons.component.scss']
 })
 export class DotTabButtonsComponent implements OnChanges {

@@ -2,11 +2,17 @@ package com.dotcms.system.event.local.business;
 
 import com.dotcms.ai.listener.AIAppListener;
 import com.dotcms.analytics.listener.AnalyticsAppListener;
+import com.dotcms.analytics.listener.ContentAnalyticsAppListener;
 import com.dotcms.config.DotInitializer;
 import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.graphql.listener.ContentTypeAndFieldsModsListeners;
+import com.dotcms.jobs.business.api.events.JobCompletedEvent;
 import com.dotcms.publishing.listener.PushPublishKeyResetEventListener;
 import com.dotcms.rendering.velocity.services.MacroCacheRefresherJob;
+import com.dotcms.rest.api.v1.asset.bulkdelete.FolderBulkDeleteCompletionListener;
+import com.dotcms.rest.api.v1.asset.bulkduplicate.FolderBulkDuplicateCompletionListener;
+import com.dotcms.rest.api.v1.asset.bulkupload.BulkUploadCompletionListener;
+import com.dotcms.rest.api.v1.content.bulkrefresh.BulkRefreshCompletionListener;
 import com.dotcms.rest.api.v1.system.logger.ChangeLoggerLevelEvent;
 import com.dotcms.security.apps.AppSecretSavedEvent;
 import com.dotcms.security.apps.AppsKeyResetEventListener;
@@ -71,6 +77,28 @@ public class LocalSystemEventSubscribersInitializer implements DotInitializer {
 
         APILocator.getLocalSystemEventsAPI().subscribe(AppSecretSavedEvent.class, AnalyticsAppListener.Instance.get());
         APILocator.getLocalSystemEventsAPI().subscribe(AppSecretSavedEvent.class, AIAppListener.Instance.get());
+        APILocator.getLocalSystemEventsAPI().subscribe(AppSecretSavedEvent.class, ContentAnalyticsAppListener.Instance.get());
+
+        // Tells whoever submitted a bulk content reindex that it finished. Registered here rather than
+        // self-subscribing from a CDI @PostConstruct: nothing injects that class, and CDI beans are lazy,
+        // so it would never have been constructed and completion would never have been reported.
+        APILocator.getLocalSystemEventsAPI().subscribe(JobCompletedEvent.class,
+                new BulkRefreshCompletionListener());
+
+        // Same registration for the same reason: nothing injects this listener, so as a CDI bean it
+        // would never be constructed and a finished bulk upload would tell nobody — silently.
+        APILocator.getLocalSystemEventsAPI().subscribe(JobCompletedEvent.class,
+                new BulkUploadCompletionListener());
+
+        // Same registration, same reason (#37063): nothing injects this listener, so as a CDI
+        // bean it would never be constructed and a finished bulk folder delete would tell nobody.
+        APILocator.getLocalSystemEventsAPI().subscribe(JobCompletedEvent.class,
+                new FolderBulkDeleteCompletionListener());
+
+        // The same for a bulk folder duplication (#37062): registered here, not as a CDI bean,
+        // for the same reason as the delete listener above.
+        APILocator.getLocalSystemEventsAPI().subscribe(JobCompletedEvent.class,
+                new FolderBulkDuplicateCompletionListener());
 
         this.initDotVelocityMacrosVtlFiles();
     }

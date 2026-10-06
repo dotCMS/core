@@ -18,6 +18,7 @@ import { DialogModule } from 'primeng/dialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 
+import { DotSiteService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { createFormBridge, FormBridge } from '@dotcms/edit-content-bridge';
 import { SafeUrlPipe } from '@dotcms/ui';
@@ -53,6 +54,10 @@ import { INPUT_TEXT_OPTIONS } from '../../../dot-edit-content-text-field/utils';
         DialogService
     ],
     host: {
+        // A Custom Field renders its Velocity inside an iframe, and ARIA cannot cross a document
+        // boundary — nothing in there can be named from out here. The region is named instead.
+        role: 'group',
+        '[attr.aria-labelledby]': "$field() ? 'label-' + $field().variable : null",
         '[class.no-label]': '!$showLabel()'
     }
 })
@@ -176,6 +181,9 @@ export class IframeFieldComponent implements OnDestroy {
      * It is used to manage dialog interactions within the component.
      */
     readonly #dialogService = inject(DialogService);
+
+    /** Resolves the site `openBrowserModal` browses; see `createFormBridge`. */
+    readonly #siteService = inject(DotSiteService);
     /**
      * The form to get the form.
      */
@@ -303,7 +311,9 @@ export class IframeFieldComponent implements OnDestroy {
             type: 'angular',
             form,
             zone: this.#zone,
-            dialogService: this.#dialogService
+            dialogService: this.#dialogService,
+            // The bridge has no injector of its own, so the site lookup is handed to it.
+            resolveSite: () => this.#siteService.getCurrentSite()
         });
     }
 

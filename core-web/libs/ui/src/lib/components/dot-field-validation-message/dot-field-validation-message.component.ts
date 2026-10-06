@@ -1,7 +1,6 @@
 /*
 - TODO: maybe crawl the html to find the form parent and save one @Input
 */
-/* eslint-disable @stylistic/padding-line-between-statements */
 
 import { Subject } from 'rxjs';
 
@@ -33,6 +32,11 @@ const NG_DEFAULT_VALIDATORS_ERRORS_MSG: Record<DefaultsNGValidatorsTypes, string
 @Component({
     selector: 'dot-field-validation-message',
     templateUrl: './dot-field-validation-message.component.html',
+    // The host must not be a box of its own: inside a `.field` (flex column, gap-1) an empty host
+    // still takes a flex slot, so a field that merely *can* show an error sat 3.5px lower than one
+    // that cannot. `contents` makes the `<small>` the flex item and leaves nothing behind when
+    // there is no error to show.
+    styles: ':host { display: contents; }',
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [DotMessagePipe]
 })
@@ -42,6 +46,13 @@ export class DotFieldValidationMessageComponent implements OnDestroy {
 
     @Input()
     patternErrorMessage: string;
+
+    /**
+     * Overrides the copy shown for a `required` error, without affecting
+     * any other validator's message on the same field.
+     */
+    @Input()
+    requiredErrorMessage: string;
 
     defaultMessage: string;
     errorMsg = '';
@@ -122,7 +133,7 @@ export class DotFieldValidationMessageComponent implements OnDestroy {
 
                     case 'required':
                         errorTranslated = this.dotMessageService.get(
-                            NG_DEFAULT_VALIDATORS_ERRORS_MSG[key]
+                            this.requiredErrorMessage || NG_DEFAULT_VALIDATORS_ERRORS_MSG[key]
                         );
                         break;
 

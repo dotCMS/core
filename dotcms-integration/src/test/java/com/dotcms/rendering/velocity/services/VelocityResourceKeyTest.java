@@ -104,4 +104,25 @@ public class VelocityResourceKeyTest {
         Assert.assertEquals("/PREVIEW_MODE/5a125bb6-4950-429a-9cfc-f1a9c8d90aa8_2.contentlet", velocityResourceKey.cacheKey);
     }
 
+    /**
+     * A page key whose variant name itself contains underscores must still split the
+     * path correctly and re-join the variant. This locks in the behavior of the
+     * precompiled {@code [/.]} path split and the underscore-based variant join.
+     */
+    @Test
+    public void velocityResourceKey_constructor_page_variant_with_underscores_test() throws DotDataException {
+
+        final String path = VelocityResourceKey.getHTMLPageFilePath(
+                "abc-123", PageMode.LIVE, 1, "my_variant_name");
+        final VelocityResourceKey velocityResourceKey = new VelocityResourceKey(path);
+
+        Assert.assertEquals("abc-123", velocityResourceKey.id1);
+        Assert.assertEquals("1", velocityResourceKey.language);
+        Assert.assertEquals("my_variant_name", velocityResourceKey.variant);
+        Assert.assertNull(velocityResourceKey.id2);
+        Assert.assertEquals(PageMode.LIVE, velocityResourceKey.mode);
+        Assert.assertEquals(VelocityType.HTMLPAGE, velocityResourceKey.type);
+        Assert.assertEquals(path, velocityResourceKey.cacheKey);
+    }
+
 }

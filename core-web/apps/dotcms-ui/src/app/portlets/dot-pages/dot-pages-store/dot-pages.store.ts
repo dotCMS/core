@@ -23,7 +23,6 @@ import {
     DotMessageService,
     DotPageTypesService,
     DotPageWorkflowsActionsService,
-    DotPropertiesService,
     DotRenderMode,
     DotRouterService,
     DotWorkflowActionsFireService,
@@ -45,7 +44,6 @@ import {
     DotLanguage,
     DotPermissionsType,
     ESContent,
-    FeaturedFlags,
     PermissionsType,
     UserPermissions
 } from '@dotcms/dotcms-models';
@@ -154,7 +152,6 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
     private siteService = inject(SiteService);
     private dotFavoritePageService = inject(DotFavoritePageService);
     private dotLocalstorageService = inject(DotLocalstorageService);
-    private dotPropertiesService = inject(DotPropertiesService);
 
     readonly getStatus$ = this.select((state) => state?.pages?.status || ComponentStatus.INIT);
 
@@ -508,13 +505,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                 .getEnvironments()
                 .pipe(map((environments: DotEnvironment[]) => !!environments.length)),
             this.getSessionStorageFilterParams(),
-            this.getLocalStorageFavoritePanelParams(),
-            this.dotPropertiesService.getFeatureFlag(
-                FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED
-            ),
-            this.dotPropertiesService
-                .getKey(FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_CONTENT_TYPE)
-                .pipe(map((contentTypes) => contentTypes.split(',')))
+            this.getLocalStorageFavoritePanelParams()
         ])
             .pipe(
                 take(1),

@@ -16,13 +16,13 @@ public class Task00004LoadStarter implements StartupTask {
 		DotCMSInitDb.InitializeDb();
 	}
 
+	@Override
 	public boolean forceRun() {
 
-		DotConnect db = new DotConnect();
-		db.setSQL("select count(*) as test from inode");
+		final DotConnect db = new DotConnect();
+		db.setSQL(DotCMSInitDb.INODE_EXISTS_SQL);
 
-		int test = db.getInt("test");
-		return (test < 1);
+		return db.getInt("test") < 1;
 	}
 
 }

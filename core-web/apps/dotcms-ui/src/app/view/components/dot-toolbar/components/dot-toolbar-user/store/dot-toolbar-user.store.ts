@@ -132,7 +132,12 @@ export class DotToolbarUserStore extends ComponentStore<DotToolbarUserState> {
                 visible: !auth.isLoginAs,
                 command: () => this.showLoginAs(true)
             },
-            { separator: true, visible: !auth.isLoginAs },
+            {
+                id: 'dot-toolbar-user-link-report-issue',
+                label: this.#dotMessageService.get('report-an-issue'),
+                icon: 'pi pi-wrench'
+            },
+            { separator: true },
             {
                 id: 'dot-toolbar-user-link-logout',
                 label: this.#dotMessageService.get('Logout'),

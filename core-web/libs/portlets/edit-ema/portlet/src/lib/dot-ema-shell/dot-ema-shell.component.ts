@@ -1,89 +1,119 @@
-import { Location } from '@angular/common';
+import { patchState, signalMethod } from '@ngrx/signals';
+
+import { Location, NgComponentOutlet } from '@angular/common';
 import {
+    ChangeDetectionStrategy,
     Component,
+    computed,
     DestroyRef,
     effect,
     inject,
+    OnDestroy,
     OnInit,
     signal,
+    Type,
     untracked,
     ViewChild
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Params, Router, RouterModule } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { DialogService } from 'primeng/dynamicdialog';
 import { MessageModule } from 'primeng/message';
 import { ToastModule } from 'primeng/toast';
 
-import {
-    DotAnalyticsTrackerService,
-    DotContentletService,
-    DotESContentService,
-    DotExperimentsService,
-    DotFavoritePageService,
-    DotLanguagesService,
-    DotPageLayoutService,
-    DotPageRenderService,
-    DotSeoMetaTagsService,
-    DotSeoMetaTagsUtilService,
-    DotWorkflowsActionsService
-} from '@dotcms/data-access';
+import { filter } from 'rxjs/operators';
+
+import { DotMessageService } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
-import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
+import {
+    DEFAULT_VARIANT_ID,
+    DotCMSContentlet,
+    DotExperimentStatus,
+    DotPageToolUrlParams,
+    FeaturedFlags
+} from '@dotcms/dotcms-models';
+import {
+    DotPageScannerReportComponent,
+    DotPageToolsSeoComponent,
+    PageScannerToolType
+} from '@dotcms/portlets/dot-ema/ui';
+import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
 import { GlobalStore } from '@dotcms/store';
-import { UVE_MODE } from '@dotcms/types';
-import { DotInfoPageComponent, DotMessagePipe, DotNotLicenseComponent } from '@dotcms/ui';
-import { WINDOW } from '@dotcms/utils';
+import { DotCMSPage, UVE_MODE } from '@dotcms/types';
+import { DotInfoPageComponent, DotMessagePipe, DotNotLicenseComponent, InfoPage } from '@dotcms/ui';
 
 import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
 
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
-import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
-import { DotPageApiService } from '../services/dot-page-api.service';
-import { PERSONA_KEY } from '../shared/consts';
-import { NG_CUSTOM_EVENTS } from '../shared/enums';
-import { DialogAction, DotPageAssetParams } from '../shared/models';
+import { DotPageAssetKeys } from '../services/dot-page-api/dot-page-api.service';
+import { DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
+import { NG_CUSTOM_EVENTS, UVE_STATUS } from '../shared/enums';
+import { DialogAction, DotPageAssetParams, NavigationBarItem } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
 import { DotUveViewParams } from '../store/models';
 import {
     checkClientHostAccess,
+    getErrorPayload,
+    getRequestHostName,
     getTargetUrl,
     normalizeQueryParams,
     sanitizeURL,
     shouldNavigate
 } from '../utils';
+import { readExperimentsPortletSwitch } from '../utils/experiments-portlet-switch.util';
+import { leaveTheVariant } from '../utils/leave-the-variant.util';
+
+/**
+ * Query params for the breadcrumb's address — the same page, spelled the way `editEmaGuard` wants
+ * to read it.
+ *
+ * The address bar and the crumb are two different consumers. `normalizeQueryParams` shortens the
+ * address for humans, and part of that is dropping the persona when it is the default one. But
+ * `editEmaGuard` treats a missing persona as an incomplete URL and **redirects** to complete it,
+ * so a crumb built from the shortened form points at an address nobody ever lands on: the router
+ * reports the redirected URL, which no longer equals any crumb in the trail.
+ *
+ * That comparison is what `processSpecialRoute` uses to decide whether a navigation is a step
+ * *back* into the trail (truncate it) or a step forward (append). With the crumb never matching,
+ * returning to the editor from a deeper screen appended a second copy of the page instead of
+ * rewinding — leaving the screen you just left sitting in the trail behind you.
+ *
+ * So the crumb states the persona explicitly, under the key the guard looks for.
+ */
+function crumbQueryParams(cleanedParams: Params, pageParams: Params | null): Params {
+    const { personaId, ...rest } = cleanedParams;
+
+    return {
+        ...rest,
+        [PERSONA_KEY]: personaId ?? pageParams?.[PERSONA_KEY] ?? DEFAULT_PERSONA.identifier
+    };
+}
+
+/** Structural shape of `EditEmaEditorComponent.openContentForEdit` (the 'content' child route). */
+interface RouteWithOpenContentForEdit {
+    openContentForEdit(contentlet: DotCMSContentlet): void;
+}
+
+/**
+ * Duck-typed guard instead of `instanceof EditEmaEditorComponent`: that class is lazy-loaded via
+ * `loadComponent` in `lib.routes.ts`, and a value import here (required by `instanceof`) would pull
+ * it into this shell's eager chunk, defeating the code-split.
+ */
+function hasOpenContentForEdit(component: unknown): component is RouteWithOpenContentForEdit {
+    return (
+        !!component &&
+        typeof (component as RouteWithOpenContentForEdit).openContentForEdit === 'function'
+    );
+}
 
 @Component({
     selector: 'dot-ema-shell',
-    providers: [
-        UVEStore,
-        DotPageApiService,
-        DotActionUrlService,
-        DotLanguagesService,
-        MessageService,
-        DotPageLayoutService,
-        ConfirmationService,
-        DotFavoritePageService,
-        DotESContentService,
-        DialogService,
-        DotPageRenderService,
-        DotSeoMetaTagsService,
-        DotSeoMetaTagsUtilService,
-        DotWorkflowsActionsService,
-        DotContentletService,
-        {
-            provide: WINDOW,
-            useValue: window
-        },
-        DotExperimentsService,
-        DotAnalyticsTrackerService
-    ],
     templateUrl: './dot-ema-shell.component.html',
     styleUrls: ['./dot-ema-shell.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
         ButtonModule,
         ConfirmDialogModule,
@@ -91,16 +121,40 @@ import {
         EditEmaNavigationBarComponent,
         RouterModule,
         DotPageToolsSeoComponent,
+        DotPageScannerReportComponent,
         DotEmaDialogComponent,
         DotInfoPageComponent,
         DotNotLicenseComponent,
         MessageModule,
-        DotMessagePipe
-    ]
+        DotMessagePipe,
+        NgComponentOutlet
+    ],
+    /**
+     * `DotExperimentsPanelStore` is **not** here: it is provided by the route, beside `UVEStore`
+     * (#37478).
+     *
+     * It lived here first, on the assumption that leaving for a variant only changes query params
+     * and so this component is never re-created. Measured in a running editor, that is false — the
+     * shell is destroyed and rebuilt on that navigation, and a component-provided store went with
+     * it, taking the panel's memory of which experiment and which screen the editor had open. The
+     * return then had nothing to return to.
+     *
+     * The route's injector outlives the component, which is the same reason `UVEStore` is there
+     * and the same trap #37005 fell into.
+     */
+    providers: [ConfirmationService]
 })
-export class DotEmaShellComponent implements OnInit {
+export class DotEmaShellComponent implements OnInit, OnDestroy {
     @ViewChild('dialog') dialog!: DotEmaDialogComponent;
     @ViewChild('pageTools') pageTools!: DotPageToolsSeoComponent;
+    @ViewChild('pageScanner') pageScanner!: DotPageScannerReportComponent;
+
+    /**
+     * The active child route's component, when it's the 'content' route (`EditEmaEditorComponent`)
+     * — captured via the router-outlet `(activate)`/`(deactivate)` below. `null` while on a sibling
+     * route ('layout', 'rules', 'experiments') that doesn't expose `openContentForEdit`.
+     */
+    #activeEditor: RouteWithOpenContentForEdit | null = null;
 
     readonly uveStore = inject(UVEStore);
     readonly destroyRef = inject(DestroyRef);
@@ -109,10 +163,291 @@ export class DotEmaShellComponent implements OnInit {
     readonly #siteService = inject(SiteService);
     readonly #location = inject(Location);
     readonly #globalStore = inject(GlobalStore);
-    protected readonly $shellProps = this.uveStore.$shellProps;
-    protected readonly $toggleLockOptions = this.uveStore.$toggleLockOptions;
+    protected readonly experimentsPanel = inject(DotExperimentsPanelStore);
+
+    /**
+     * Opens the panel where the editor already is, rather than always at the list.
+     *
+     * The entry point is one gesture with three honest answers. A panel the editor left to go and
+     * see a variant is *resumed*, which gives back the exact screen and card they were on. Failing
+     * that, a page whose address names an experiment opens on that experiment's Variants card —
+     * standing on a variant and asking for the panel means asking for *that* experiment, not for a
+     * list to search through it. Only a page with nothing to say opens on the list.
+     *
+     * All three take the editor off the variant on the way, which is the same thing the banner's
+     * own back arrow does — the two doors out of an experiment have to agree, or the banner
+     * survives one of them and goes on announcing a variant the editor has left.
+     */
+    #openExperimentsPanel(): void {
+        if (this.experimentsPanel.suspendedForVariant()) {
+            leaveTheVariant(this.uveStore);
+            this.experimentsPanel.resumeFromVariant();
+
+            return;
+        }
+
+        const experimentId = this.uveStore.pageParams()?.['experimentId'];
+
+        if (experimentId) {
+            leaveTheVariant(this.uveStore);
+            this.experimentsPanel.openVariants(experimentId);
+
+            return;
+        }
+
+        this.experimentsPanel.open();
+    }
+
+    /** Provided by the `/edit-page` route, beside `ConfirmationService`. */
+    readonly #messageService = inject(MessageService);
+
+    /**
+     * The page in hand, as the Experiments panel's scope (#37478).
+     *
+     * A signal rather than a value: the panel re-scopes when the editor navigates to another
+     * page without closing it, and it must never be able to describe a page other than the one
+     * on the canvas (FR-034).
+     */
+    protected readonly $experimentsPanelPageId = computed<string | null>(
+        () => this.uveStore.pageAsset()?.page?.identifier ?? null
+    );
+
+    /**
+     * The Experiments panel's component class, once its chunk has landed (#37478).
+     *
+     * Null until the editor first opens the panel. The template renders it through
+     * `NgComponentOutlet`, so this signal is the whole of the panel's mounting contract: the
+     * effect below resolves the class, the template decides whether it is on screen.
+     */
+    protected readonly $experimentsPanelComponent = signal<Type<unknown> | null>(null);
+
+    /**
+     * Loads the Experiments panel's chunk the first time the editor opens it (#37478).
+     *
+     * **A dynamic `import()` rather than `@defer`, and that is forced twice over.** The experiments
+     * portlet lib is reached only through dynamic imports — `app.routes.ts` and this lib's own
+     * `lib.routes.ts` both `import()` it — so Nx marks it lazy-loaded and
+     * `@nx/enforce-module-boundaries` rejects any static import of it, which is what a `@defer`
+     * block still needs in `imports:`. And even past that rule there would be no chunk: `@defer`
+     * would reach the component through the lib's barrel, and a bundler keeps a barrel's exports
+     * together, so the whole lib would land in this one's bundle anyway.
+     *
+     * The split is the point: three screens, four stores and chart.js stay out of what the editor
+     * loads until the panel is first opened (FR-037, SC-006).
+     *
+     * Once loaded the class is kept, and `@if` in the template mounts and destroys the panel from
+     * there — so closing still leaves nothing of it running (FR-039) without re-fetching the chunk
+     * on the next open. Nothing here has to survive the `await`: if the editor dismissed the panel
+     * while it was in flight, the template simply never renders it.
+     */
+    readonly $experimentsPanelLoader = effect(() => {
+        if (!this.experimentsPanel.isOpen() || this.$experimentsPanelComponent()) {
+            return;
+        }
+
+        untracked(async () => {
+            try {
+                const { DotExperimentsPanelComponent } =
+                    await import('@dotcms/portlets/dot-experiments/portlet');
+
+                this.$experimentsPanelComponent.set(DotExperimentsPanelComponent);
+            } catch (error) {
+                /**
+                 * A chunk that never arrives is the one failure this panel can have before it
+                 * exists, and it is silent unless it is said out loud: the class stays null, the
+                 * `@if` renders nothing, and the editor is left on a page where the Experiments
+                 * item does nothing at all. A deploy pointing at a hash the CDN has already
+                 * dropped is the ordinary way to get here.
+                 *
+                 * Closing is part of the report, not tidying up. The store still says the panel is
+                 * open, and the effect above only fires on that transition — so a panel left open
+                 * with nothing in it would swallow the next attempt and the editor could not even
+                 * retry.
+                 */
+                console.error('[UVE] The Experiments panel chunk failed to load', error);
+
+                this.#messageService.add({
+                    severity: 'error',
+                    summary: this.#dotMessageService.get('experiments.panel.error.load.title'),
+                    detail: this.#dotMessageService.get('experiments.panel.error.load.message')
+                });
+
+                this.experimentsPanel.close();
+            }
+        });
+    });
+
+    readonly #dotMessageService = inject(DotMessageService);
+    protected readonly $lockOptions = this.uveStore.$lockOptions;
+    protected readonly $workflowLockIsLoading = this.uveStore.workflowLockIsLoading;
+    protected readonly $lockedByDisplay = computed(
+        () =>
+            this.$lockOptions()?.lockedBy ??
+            this.#dotMessageService.get('uve.shell.page.locked.unknown.user')
+    );
+    protected readonly $showLockBanner = computed(() => {
+        const lockOptions = this.$lockOptions();
+        return !!lockOptions?.isLocked && !lockOptions.isLockedByCurrentUser;
+    });
 
     protected readonly $showBanner = signal<boolean>(true);
+
+    /**
+     * Whether this page's experiment is live (#37308).
+     *
+     * A live experiment no longer stops the page being edited, so the fact has to stay on screen
+     * for as long as it holds. Deliberately narrower than it looks: it is not gated on edit
+     * permission, on view mode, on the page lock, or on `$showBanner` — the dismissal state the
+     * lock banner uses. A confirmation is answered once; this condition outlives any click, so
+     * there is nothing a close button could truthfully mean.
+     *
+     * Empty when the page has no experiment *and* when the lookup failed, which are
+     * indistinguishable here by design: the shell must not invent a warning it cannot justify.
+     */
+    protected readonly $showExperimentBanner = computed<boolean>(() => {
+        const status = this.uveStore.pageExperiment()?.status;
+
+        return status === DotExperimentStatus.RUNNING || status === DotExperimentStatus.SCHEDULED;
+    });
+
+    /**
+     * Which warning the live experiment earns.
+     *
+     * Two messages, never one shared string. A running experiment is already measuring, so the
+     * cost is that its results will combine data from before and after the edit. A scheduled one
+     * has collected nothing yet, so the same edit is simply part of what it will measure — a fact,
+     * not a caution.
+     */
+    protected readonly $experimentWarningKey = computed<string>(() =>
+        this.uveStore.pageExperiment()?.status === DotExperimentStatus.RUNNING
+            ? 'uve.shell.experiment.running.edit.warning'
+            : 'uve.shell.experiment.scheduled.edit.warning'
+    );
+
+    protected readonly $showPageScanner = computed<boolean>(
+        () => this.uveStore.flags()[FeaturedFlags.FEATURE_FLAG_PAGE_SCANNER] === true
+    );
+
+    /**
+     * The UVE Experiments entry-point switch (#37005), read once per shell construction.
+     *
+     * Read into a signal rather than at the click, unlike the toolbar's return leg: the item's
+     * `href` is *rendered*, and `$activeHref` highlights against it, so the value has to be known
+     * synchronously when the menu is built. An action can afford an async read; a rendered
+     * destination cannot.
+     *
+     * Once per shell is what the spec sanctions — "the switch is read once per full application
+     * load … a stale value until the next reload is acceptable" — and `getFreshFeatureFlag` is
+     * uncached, so each construction really re-fetches rather than reusing a value cached for the
+     * SPA session. An operator flips it and reloads the editor: SC-002's under a minute, no
+     * restart.
+     *
+     * A failed read resolves to `false` inside {@link readExperimentsPortletSwitch}, so the item
+     * falls back to the legacy destination rather than going inert (FR-015).
+     */
+    protected readonly $experimentsPortletEnabled = toSignal(readExperimentsPortletSwitch(), {
+        initialValue: false
+    });
+
+    // Component builds its own menu items locally
+    protected readonly $menuItems = computed<NavigationBarItem[]>(() => {
+        const page = this.uveStore.pageAsset()?.page;
+        const template = this.uveStore.pageAsset()?.template;
+        const isLoading = this.uveStore.uveStatus() === UVE_STATUS.LOADING;
+        const templateDrawed = template?.drawed;
+        const isLayoutDisabled = !this.uveStore.editorCanEditLayout();
+        const canSeeRulesExists = page && 'canSeeRules' in page;
+        const experimentsPortletEnabled = this.$experimentsPortletEnabled();
+
+        return [
+            {
+                materialIcon: 'description',
+                label: 'editema.editor.navbar.content',
+                href: 'content',
+                id: 'content'
+            },
+            {
+                materialIcon: 'space_dashboard',
+                label: 'editema.editor.navbar.layout',
+                href: 'layout',
+                id: 'layout',
+                isDisabled: isLayoutDisabled,
+                tooltip: templateDrawed
+                    ? null
+                    : 'editema.editor.navbar.layout.tooltip.cannot.edit.advanced.template'
+            },
+            {
+                materialIcon: 'fork_left',
+                label: 'editema.editor.navbar.rules',
+                id: 'rules',
+                href: `rules/${page?.identifier}`,
+                isDisabled: (canSeeRulesExists && !page.canSeeRules) || !page?.canEdit
+            },
+            {
+                materialIcon: 'science',
+                label: 'editema.editor.navbar.experiments',
+                /**
+                 * With the switch on the item carries **no `href`**, and that absence is the
+                 * mechanism rather than an omission: `EditEmaNavigationBarComponent.navigate`
+                 * emits `action` for an item without one, so the gesture opens the panel beside
+                 * the canvas instead of navigating away from the page (#37478, FR-001, FR-002).
+                 *
+                 * `$activeHref` skips items with no `href`, so the item also stops being
+                 * highlighted as a destination — which is the cost D1 accepts, and it needs no
+                 * code of its own.
+                 *
+                 * The switch selects the behaviour and nothing else: `isDisabled` is the same
+                 * rule on both sides, so an editor who cannot see experiments for this page does
+                 * not gain access through the new one (FR-004).
+                 */
+                ...(experimentsPortletEnabled ? {} : { href: `experiments/${page?.identifier}` }),
+                id: 'experiments',
+                isDisabled: !page?.canEdit
+            },
+            {
+                materialIcon: 'health_and_safety',
+                label: 'editema.editor.navbar.page-tools',
+                id: 'page-tools'
+            },
+            {
+                materialIcon: 'settings',
+                label: 'editema.editor.navbar.properties',
+                id: 'properties',
+                isDisabled: isLoading
+            }
+        ];
+    });
+
+    // Component builds SEO params locally
+    protected readonly $seoParams = computed<DotPageToolUrlParams>(() => {
+        const url = sanitizeURL(this.uveStore.pageAsset()?.page?.pageURI);
+        const currentUrl = url.startsWith('/') ? url : '/' + url;
+        const requestHostName = getRequestHostName(
+            this.uveStore.pageParams(),
+            this.uveStore.pageAsset()?.site?.hostname
+        );
+
+        return {
+            siteId: this.uveStore.pageAsset()?.site?.identifier,
+            languageId: this.uveStore.pageAsset()?.viewAs?.language?.id,
+            currentUrl,
+            requestHostName
+        };
+    });
+
+    // Component builds error display locally
+    protected readonly $errorDisplay = computed<{ code: number; pageInfo: InfoPage } | null>(() => {
+        const errorCode = this.uveStore.pageErrorCode();
+        if (!errorCode) return null;
+
+        return getErrorPayload(errorCode);
+    });
+
+    // Component determines read permissions locally
+    protected readonly $canRead = computed<boolean>(() => {
+        // Removed pageAPIResponse - use normalized accessors
+        return this.uveStore.pageAsset()?.page?.canRead ?? false;
+    });
 
     /**
      * Handle the update of the page params
@@ -121,7 +456,7 @@ export class DotEmaShellComponent implements OnInit {
      * @memberof DotEmaShellComponent
      */
     readonly $updateQueryParamsEffect = effect(() => {
-        const params = this.uveStore.$friendlyParams();
+        const params = this.uveStore.pageFriendlyParams();
 
         const { data } = this.#activatedRoute.snapshot;
 
@@ -132,52 +467,105 @@ export class DotEmaShellComponent implements OnInit {
         this.#updateLocation(cleanedParams);
     });
 
-    readonly $updateBreadcrumbEffect = effect(() => {
-        const pageAPIResponse = this.uveStore.pageAPIResponse();
+    readonly $breadcrumbPage = computed<DotCMSPage | null>(() => {
+        const page = this.uveStore.pageAsset()?.page;
 
-        const params = untracked(() => this.uveStore.$friendlyParams());
+        const status = this.uveStore.uveStatus();
 
-        const { data } = this.#activatedRoute.snapshot;
-
-        const baseClientHost = data?.uveConfig?.url;
-
-        const cleanedParams = normalizeQueryParams(params, baseClientHost);
-
-        const paramsString = new URLSearchParams(cleanedParams).toString();
-
-        const newURL = `#/edit-page/content?${paramsString}`;
-
-        if (pageAPIResponse) {
-            this.#globalStore.addNewBreadcrumb({
-                label: pageAPIResponse.page?.title,
-                url: newURL,
-                id: `${pageAPIResponse.page?.identifier}`
-            });
-        }
+        return page && status === UVE_STATUS.LOADED ? page : null;
     });
+
+    readonly $updateBreadcrumb = signalMethod<DotCMSPage | null>((page) => {
+        if (!page || !this.uveStore.pageParams()) return;
+
+        const params = this.uveStore.pageFriendlyParams();
+        const baseClientHost = this.#activatedRoute.snapshot.data?.uveConfig?.url;
+        const cleanedParams = normalizeQueryParams(params, baseClientHost);
+        const urlTree = this.#router.createUrlTree([], {
+            queryParams: crumbQueryParams(cleanedParams, this.uveStore.pageParams())
+        });
+        const urlContentMap = this.uveStore.pageAsset()?.urlContentMap;
+        const label = urlContentMap?.title ?? page.title;
+        const identifier = urlContentMap?.identifier ?? page.identifier;
+
+        this.#globalStore.addNewBreadcrumb({
+            label,
+            // Required, not decorative: PrimeNG's breadcrumb binds `[attr.target]="item.target"`,
+            // so an item without one renders `target="undefined"` — a *named browsing context*.
+            // The crumb then opened the editor in a new window instead of navigating, which read
+            // as the link doing nothing. Every other crumb author in the app passes `_self`.
+            target: '_self',
+            url: `/dotAdmin/#${urlTree.toString()}`,
+            id: `${identifier}`
+        });
+    });
+
+    constructor() {
+        this.$updateBreadcrumb(this.$breadcrumbPage);
+
+        // Signals, not values: the panel reads the page and the language at the moment it uses
+        // them, so neither goes stale against the canvas. The language is return context only —
+        // it never narrows the panel, because an experiment belongs to a page and not to one of
+        // its language versions (#37478, D10).
+        this.experimentsPanel.setContext({
+            pageId: this.$experimentsPanelPageId,
+            languageId: this.uveStore.pageLanguageId
+        });
+    }
 
     ngOnInit(): void {
         const params = this.#getPageParams();
         const viewParams = this.#getViewParams(params.mode);
 
-        this.uveStore.patchViewParams(viewParams);
-        this.uveStore.loadPageAsset(params);
+        // Initialize view viewParams from query parameters
+        patchState(this.uveStore, { viewParams });
+
+        // Check if we already have page data loaded with matching params
+        const currentPageParams = this.uveStore.pageParams();
+
+        const hasPageData = !!this.uveStore.pageAsset()?.page;
+        const paramsMatch =
+            currentPageParams &&
+            currentPageParams.url === params.url &&
+            currentPageParams.language_id === params.language_id &&
+            currentPageParams.mode === params.mode &&
+            currentPageParams.variantName === params.variantName &&
+            currentPageParams[PERSONA_KEY] === params.personaId;
+
+        if (!hasPageData || !paramsMatch) {
+            this.uveStore.pageLoad(params);
+        }
 
         this.#siteService.switchSite$
-            .pipe(takeUntilDestroyed(this.destroyRef))
+            .pipe(
+                filter((site) => site?.identifier !== this.uveStore.pageAsset()?.site?.identifier),
+                takeUntilDestroyed(this.destroyRef)
+            )
             .subscribe(() => this.#router.navigate(['/pages']));
+    }
+
+    ngOnDestroy(): void {
+        this.uveStore.resetPageParams();
     }
 
     handleNgEvent({ event }: DialogAction) {
         switch (event.detail.name) {
             case NG_CUSTOM_EVENTS.UPDATE_WORKFLOW_ACTION: {
-                const pageAPIResponse = this.uveStore.pageAPIResponse();
-                this.uveStore.getWorkflowActions(pageAPIResponse.page.inode);
+                this.uveStore.workflowFetch(this.uveStore.pageAsset()?.page?.inode);
                 break;
             }
 
             case NG_CUSTOM_EVENTS.SAVE_PAGE: {
                 this.handleSavePageEvent(event);
+                break;
+            }
+
+            case NG_CUSTOM_EVENTS.LANGUAGE_IS_CHANGED: {
+                // Fired by the edit content portlet when a page is saved in a new language
+                // (workingContentletInode is empty for a new version, so SAVE_PAGE is not
+                // emitted). Reload to refresh pageLanguages so the UVE toolbar language
+                // dropdown reflects the newly created version.
+                this.uveStore.pageReload();
                 break;
             }
         }
@@ -191,17 +579,38 @@ export class DotEmaShellComponent implements OnInit {
      */
     private handleSavePageEvent(event: CustomEvent): void {
         const htmlPageReferer = event.detail.payload?.htmlPageReferer;
-        const url = new URL(htmlPageReferer, window.location.origin); // Add base for relative URLs
-        const targetUrl = getTargetUrl(url.pathname, this.uveStore.pageAPIResponse().urlContentMap);
 
-        if (shouldNavigate(targetUrl, this.uveStore.pageParams().url)) {
-            // Navigate to the new URL if it's different from the current one
-            this.uveStore.loadPageAsset({ url: targetUrl });
+        if (!htmlPageReferer) {
+            this.uveStore.pageReload();
 
             return;
         }
 
-        this.uveStore.reloadCurrentPage();
+        const url = new URL(htmlPageReferer, window.location.origin); // Add base for relative URLs
+        const targetUrl = getTargetUrl(url.pathname, this.uveStore.pageAsset()?.urlContentMap);
+
+        if (shouldNavigate(targetUrl, this.uveStore.pageParams().url)) {
+            // Navigate to the new URL if it's different from the current one
+            this.uveStore.pageLoad({ url: targetUrl });
+
+            return;
+        }
+
+        this.uveStore.pageReload();
+    }
+
+    /**
+     * Tracks the active child route's component (bound to the `router-outlet` in the template) so
+     * "Properties" can route through the new editor's side panel when it's mounted (the 'content'
+     * route). See {@link RouteWithOpenContentForEdit} for why this isn't `instanceof`-based.
+     */
+    onRouteActivate(component: unknown): void {
+        this.#activeEditor = hasOpenContentForEdit(component) ? component : null;
+    }
+
+    /** Clears the active-editor reference so a sibling route (layout/rules/experiments) falls back. */
+    onRouteDeactivate(): void {
+        this.#activeEditor = null;
     }
 
     /**
@@ -211,10 +620,27 @@ export class DotEmaShellComponent implements OnInit {
      * @memberof DotEmaShellComponent
      */
     handleItemAction(itemId: string) {
-        if (itemId === 'page-tools') {
+        if (itemId === 'experiments') {
+            // Only reachable with the switch on: with it off the item carries an `href` and the
+            // navigation bar navigates instead of emitting (#37478, FR-001).
+            this.#openExperimentsPanel();
+        } else if (itemId === 'page-tools') {
             this.pageTools.toggleDialog();
         } else if (itemId === 'properties') {
-            const page = this.uveStore.pageAPIResponse().page;
+            const page = this.uveStore.pageAsset()?.page;
+            if (!page) {
+                return;
+            }
+
+            // Editing the page's own properties is editing its contentlet — route it through the
+            // same feature-flag-aware entry point as every other edit flow (new editor/side panel
+            // when enabled for the page's content type, legacy dialog otherwise). Only available
+            // while the 'content' child route is mounted; on 'layout'/'rules'/'experiments' fall
+            // back to this shell's own legacy dialog (previous, route-independent behavior).
+            if (this.#activeEditor) {
+                this.#activeEditor.openContentForEdit(page as unknown as DotCMSContentlet);
+                return;
+            }
 
             this.dialog.editContentlet({
                 inode: page.inode,
@@ -227,10 +653,112 @@ export class DotEmaShellComponent implements OnInit {
     }
 
     /**
+     * Handle scanner tool click from the page tools panel.
+     * Opens the page scanner report dialog with the selected tool type.
+     *
+     * The scanner is an external service that fetches the URL over the public
+     * internet, so the URL must point at this authoring instance
+     * (`window.location.origin`) — never the page's content-site hostname or a
+     * headless `clientHost`, which may not be publicly reachable.
+     *
+     * To re-render the exact page the user is looking at, every page-resolving
+     * param the editor is using is forwarded onto the scanned URL:
+     * - `host_id` — disambiguates the site for multisite pages sharing a path
+     *   (e.g. `/index`); dotCMS resolves it for the backend user regardless of host.
+     * - `language_id`, `personaId`, `variantName`, `mode` and `publishDate`
+     *   (time machine) — taken from the current page params so the scanner sees
+     *   the same language, persona, variant, mode and point-in-time as the editor.
+     *
+     * @param {PageScannerToolType} type
+     * @memberof DotEmaShellComponent
+     */
+    handleScannerToolClick(type: PageScannerToolType): void {
+        const { currentUrl, siteId } = this.$seoParams();
+        const url = new URL(currentUrl ?? '/', window.location.origin);
+
+        if (siteId) {
+            url.searchParams.set('host_id', siteId);
+        }
+
+        for (const [key, value] of Object.entries(this.#getScannerPageParams())) {
+            url.searchParams.set(key, value);
+        }
+
+        this.pageScanner.open(type, url.toString());
+    }
+
+    /**
+     * Build the page-resolving query params forwarded to the scanner from the
+     * params the editor is currently rendering with.
+     *
+     * Only the params that change which page dotCMS resolves are kept
+     * (`language_id`, persona, `variantName`, `mode`, `publishDate`). The page
+     * path, `clientHost` and `depth` are excluded: the path is already the URL
+     * itself, and `clientHost`/`depth` are editor-fetch concerns the public
+     * scanner must not inherit.
+     *
+     * Unlike SPA navigation, this URL is fetched and rendered by the dotCMS
+     * backend, so the persona must use the backend request param key
+     * (`com.dotmarketing.persona.id`, `WebKeys.CMS_PERSONA_PARAMETER`) — NOT the
+     * SPA-friendly `personaId`. Sending `personaId` would be silently ignored and
+     * the page would render with no persona. The default persona and default
+     * variant are dropped so the scanner falls back to the same implicit defaults
+     * as the editor.
+     *
+     * @return {Record<string, string>}
+     * @memberof DotEmaShellComponent
+     */
+    #getScannerPageParams(): Record<string, string> {
+        const params = this.uveStore.pageParams() ?? ({} as DotPageAssetParams);
+
+        const forwarded: Record<string, unknown> = {
+            [DotPageAssetKeys.LANGUAGE_ID]: params.language_id,
+            [DotPageAssetKeys.MODE]: params.mode,
+            [DotPageAssetKeys.PUBLISH_DATE]: params.publishDate
+        };
+
+        // Persona keeps the backend request param key — the scanner is a backend
+        // page render, not SPA navigation. Drop the default persona (implicit).
+        const persona = params[PERSONA_KEY];
+        if (persona && persona !== DEFAULT_PERSONA.identifier) {
+            forwarded[PERSONA_KEY] = persona;
+        }
+
+        // The default variant is implicit — omit it to keep the URL clean.
+        if (params.variantName && params.variantName !== DEFAULT_VARIANT_ID) {
+            forwarded[DotPageAssetKeys.VARIANT_NAME] = params.variantName;
+        }
+
+        return Object.fromEntries(
+            Object.entries(forwarded)
+                .filter(([, value]) => value !== undefined && value !== null && value !== '')
+                .map(([key, value]) => [key, String(value)])
+        );
+    }
+
+    /**
      * Reloads the component from the dialog.
      */
     reloadFromDialog() {
-        this.uveStore.reloadCurrentPage();
+        this.uveStore.pageReload();
+    }
+
+    /**
+     * Opens the running experiment beside the page, rather than going to look at it (#37308).
+     *
+     * Unconditional, and that is the point. The panel's other entry point — the nav bar's
+     * Experiments item — only reaches it when `FEATURE_FLAG_EXPERIMENTS_PORTLET` is on, and that
+     * property ships off. The panel store itself never reads the flag, so calling it directly is
+     * what makes this work on a stock build. The alternative, a link to the full-screen reports
+     * screen, would eject the editor from the page they are in the middle of editing — which is
+     * the one thing this banner must not do.
+     */
+    onExperimentBannerLink(): void {
+        const experimentId = this.uveStore.pageExperiment()?.id;
+
+        if (experimentId) {
+            this.experimentsPanel.openResults(experimentId);
+        }
     }
 
     /**
@@ -242,11 +770,11 @@ export class DotEmaShellComponent implements OnInit {
 
     /**
      * Toggles the lock state of the current page
-     * Gets lock options from toggleLockOptions signal and calls store method to handle the lock/unlock
+     * Gets lock options from $lockOptions signal and calls store method to handle the lock/unlock
      */
     toggleLock() {
-        const { inode, isLocked, isLockedByCurrentUser } = this.$toggleLockOptions();
-        this.uveStore.toggleLock(inode, isLocked, isLockedByCurrentUser);
+        const { inode, isLocked, isLockedByCurrentUser, lockedBy } = this.$lockOptions();
+        this.uveStore.workflowToggleLock(inode, isLocked, isLockedByCurrentUser, lockedBy);
     }
 
     /**

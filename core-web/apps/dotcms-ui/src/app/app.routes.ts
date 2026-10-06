@@ -31,10 +31,11 @@ const PORTLETS_ANGULAR: Route[] = [
     },
     {
         path: 'categories',
+        canActivate: [MenuGuardService],
+        canActivateChild: [MenuGuardService],
+        data: { reuseRoute: false },
         loadChildren: () =>
-            import('@portlets/dot-categories/dot-categories.routes').then(
-                (m) => m.dotCategoriesRoutes
-            )
+            import('@dotcms/portlets/dot-categories/portlet').then((m) => m.dotCategoriesRoutes)
     },
     {
         path: 'templates',
@@ -47,9 +48,6 @@ const PORTLETS_ANGULAR: Route[] = [
         path: 'content-types-angular',
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
-        data: {
-            reuseRoute: false
-        },
         loadChildren: () =>
             import('@portlets/dot-content-types/dot-content-types.routes').then(
                 (m) => m.dotContentTypesRoutes
@@ -131,9 +129,14 @@ const PORTLETS_ANGULAR: Route[] = [
     {
         canActivate: [editContentGuard],
         path: 'content',
-        data: {
-            reuseRoute: false
-        },
+        // No `reuseRoute: false` here: the editor REUSES its component subtree across
+        // `content/:id → content/:id` navigations (breadcrumb, locale switch, version
+        // restore, related content) so the previous content stays on screen until the
+        // new one loads instead of blanking. `shouldReuseRoute` is evaluated per level,
+        // and route `data` is inherited by children, so this flag on the parent would
+        // otherwise force the whole subtree (shell + :id + store) to be recreated —
+        // overriding the child route's own setting. Leaving the /content portlet (a
+        // different route config) is still not reused, so `canDeactivate` fires on exit.
         loadChildren: () => import('@dotcms/edit-content').then((m) => m.dotEditContentRoutes)
     },
     {
@@ -156,9 +159,131 @@ const PORTLETS_ANGULAR: Route[] = [
         loadChildren: () => import('@dotcms/portlets/dot-usage').then((m) => m.dotUsageRoutes)
     },
     {
+        path: 'es-search',
+        canActivate: [MenuGuardService],
+        canActivateChild: [MenuGuardService],
+        providers: [DotEnterpriseLicenseResolver],
+        resolve: { isEnterprise: DotEnterpriseLicenseResolver },
+        data: { reuseRoute: false },
+        loadChildren: () =>
+            import('@dotcms/portlets/dot-es-search/portlet').then((m) => m.dotEsSearchRoutes)
+    },
+    {
+        path: 'dotAuth',
+        canActivate: [MenuGuardService],
+        canActivateChild: [MenuGuardService],
+        data: { reuseRoute: false },
+        loadChildren: () => import('@dotcms/portlets/dot-auth/portlet').then((m) => m.dotAuthRoutes)
+    },
+    {
+        // Must stay literally `dotai`: DotRouterService.getPortletId takes the first URL
+        // segment (after filtering '', '#' and 'c') and matches it against /api/v1/menu,
+        // where the portlet id is `dotai`. Renaming the path breaks MenuGuardService.
+        //
+        // No DotEnterpriseLicenseResolver, unlike es-search and velocity-playground:
+        // nothing in com.dotcms.ai.rest checks license level. Access is gated on
+        // configuration and role, in the store, so Config Values stays reachable while
+        // unconfigured — which is exactly when it is needed.
+        //
+        // Deliberately NO `data: { reuseRoute: false }`. Route data is inherited, and
+        // DotCustomReuseStrategyService reuses a route only when `data.reuseRoute !== false`,
+        // so that flag would tear down the shell — and the store hung off it — on every tab
+        // change. Measured with it set: three tab switches fired three config requests and
+        // the chat draft did not survive a round trip.
+        path: 'dotai',
+        canActivate: [MenuGuardService],
+        canActivateChild: [MenuGuardService],
+        loadChildren: () => import('@dotcms/portlets/dot-ai/portlet').then((m) => m.dotAiRoutes)
+    },
+    {
+        path: 'experiments',
+        // No `MenuGuardService`, deliberately — same as `/analytics` above.
+        //
+        // The guard validates the first URL segment against `/api/v1/menu`, and the Experiments
+        // portlet is opt-in: it is declared in `portlet.xml` but no UpgradeTask adds it to a
+        // layout, so an operator who wants it registers it themselves. With the guard in place,
+        // every instance that has not registered it answered the UVE Experiments entry point by
+        // ejecting the editor out of UVE to the first portlet in the menu (#37005) — a switch that
+        // is on but unusable, with nothing on screen to explain it.
+        //
+        // No `reuseRoute: false` here, same reasoning as `/content` above: the Configure screen
+        // REUSES its component across the `experiments/new → experiments/:id/configuration` swap
+        // that follows creation, so the in-flight autosaves and the just-created experiment
+        // survive it. `shouldReuseRoute` is evaluated per level and route `data` is inherited, so
+        // this flag on the parent would recreate the whole subtree regardless of what the child
+        // route asks for. Moving between the list and Configure is still not reused — they are
+        // different route configs.
+        loadChildren: () =>
+            import('@dotcms/portlets/dot-experiments/portlet').then(
+                (m) => m.dotExperimentsPortletRoutes
+            )
+    },
+    {
         path: 'tags',
+        canActivate: [MenuGuardService],
+        canActivateChild: [MenuGuardService],
         data: { reuseRoute: false },
         loadChildren: () => import('@dotcms/portlets/dot-tags/portlet').then((m) => m.dotTagsRoutes)
+    },
+    {
+        path: 'publishing-queue-beta',
+        canActivate: [MenuGuardService],
+        canActivateChild: [MenuGuardService],
+        data: { reuseRoute: false },
+        loadChildren: () =>
+            import('@dotcms/portlets/dot-publishing-queue/portlet').then(
+                (m) => m.dotPublishingQueueRoutes
+            )
+    },
+    {
+        path: 'agents',
+        data: { reuseRoute: false },
+        loadChildren: () =>
+            import('@dotcms/portlets/dot-agents/portlet').then((m) => m.dotAgentsRoutes)
+    },
+    {
+        path: 'users-beta',
+        canActivate: [MenuGuardService],
+        canActivateChild: [MenuGuardService],
+        data: { reuseRoute: false },
+        loadChildren: () =>
+            import('@dotcms/portlets/dot-users/portlet').then((m) => m.dotUsersRoutes)
+    },
+    {
+        path: 'roles-beta',
+        canActivate: [MenuGuardService],
+        canActivateChild: [MenuGuardService],
+        data: { reuseRoute: false },
+        loadChildren: () =>
+            import('@dotcms/portlets/dot-roles/portlet').then((m) => m.dotRolesRoutes)
+    },
+    {
+        path: 'query-tool',
+        canActivate: [MenuGuardService],
+        canActivateChild: [MenuGuardService],
+        data: { reuseRoute: false },
+        loadChildren: () =>
+            import('@dotcms/portlets/dot-query-tool/portlet').then((m) => m.dotQueryToolRoutes)
+    },
+    {
+        path: 'velocity-playground',
+        canActivate: [MenuGuardService],
+        canActivateChild: [MenuGuardService],
+        providers: [DotEnterpriseLicenseResolver],
+        resolve: { isEnterprise: DotEnterpriseLicenseResolver },
+        data: { reuseRoute: false },
+        loadChildren: () =>
+            import('@dotcms/portlets/dot-velocity-playground/portlet').then(
+                (m) => m.dotVelocityPlaygroundRoutes
+            )
+    },
+    {
+        path: 'plugins',
+        canActivate: [MenuGuardService],
+        canActivateChild: [MenuGuardService],
+        data: { reuseRoute: false },
+        loadChildren: () =>
+            import('@dotcms/portlets/dot-plugins/portlet').then((m) => m.dotPluginsRoutes)
     },
     {
         path: '',

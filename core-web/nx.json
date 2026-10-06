@@ -1,27 +1,19 @@
 {
-    "tasksRunnerOptions": {
-        "default": {
-            "runner": "nx/tasks-runners/default",
-            "options": {
-                "cacheableOperations": ["build", "lint", "test", "e2e", "build-storybook"],
-                "parallel": 3
-            }
-        }
-    },
     "cli": {
-        "packageManager": "yarn"
+        "packageManager": "pnpm"
     },
+    "parallel": 3,
     "defaultProject": "dotcms-ui",
     "generators": {
         "@nx/angular:application": {
             "e2eTestRunner": "playwright",
             "linter": "eslint",
             "style": "scss",
-            "unitTestRunner": "jest"
+            "unitTestRunner": "vitest-analog"
         },
         "@nx/angular:library": {
             "linter": "eslint",
-            "unitTestRunner": "jest"
+            "unitTestRunner": "vitest-analog"
         },
         "@nx/angular:component": {
             "style": "scss",
@@ -33,9 +25,6 @@
                 "linter": "eslint"
             },
             "library": {
-                "linter": "eslint"
-            },
-            "storybook-configuration": {
                 "linter": "eslint"
             },
             "directive": {
@@ -68,7 +57,7 @@
         },
         "@nx/react": {
             "library": {
-                "unitTestRunner": "jest"
+                "unitTestRunner": "vitest"
             }
         },
         "@schematics/angular:component": {
@@ -99,6 +88,7 @@
     "$schema": "./node_modules/nx/schemas/nx-schema.json",
     "targetDefaults": {
         "build": {
+            "cache": true,
             "dependsOn": ["^build"],
             "inputs": ["production", "^production"]
         },
@@ -106,38 +96,23 @@
             "dependsOn": []
         },
         "test": {
-            "inputs": ["default", "^production", "{workspaceRoot}/karma.conf.js"]
+            "cache": true,
+            "inputs": ["default", "^production", { "externalDependencies": ["vitest"] }],
+            "outputs": [
+                "{workspaceRoot}/target/core-web-reports/{projectName}.xml",
+                "{workspaceRoot}/coverage/{projectRoot}"
+            ]
         },
         "e2e": {
+            "cache": true,
             "inputs": ["default", "^production"]
         },
         "lint": {
-            "inputs": ["default", "{workspaceRoot}/.eslintrc.json"]
-        },
-        "build-storybook": {
-            "inputs": [
-                "default",
-                "^production",
-                "{workspaceRoot}/.storybook/**/*",
-                "{projectRoot}/.storybook/**/*",
-                "{projectRoot}/tsconfig.storybook.json"
-            ]
-        },
-        "@nx/jest:jest": {
-            "inputs": ["default", "^production", "{workspaceRoot}/karma.conf.js"],
             "cache": true,
-            "options": {
-                "passWithNoTests": true
-            },
-            "configurations": {
-                "ci": {
-                    "ci": true,
-                    "codeCoverage": true
-                }
-            }
+            "inputs": ["default", "{workspaceRoot}/eslint.config.mjs"]
         },
         "@nx/eslint:lint": {
-            "inputs": ["default", "{workspaceRoot}/.eslintrc.json"],
+            "inputs": ["default", "{workspaceRoot}/eslint.config.mjs"],
             "cache": true
         },
         "@nx/rollup:rollup": {
@@ -189,10 +164,7 @@
             "!{projectRoot}/karma.conf.js",
             "!{projectRoot}/**/?(*.)+(spec|test).[jt]s?(x)?(.snap)",
             "!{projectRoot}/jest.config.[jt]s",
-            "!{projectRoot}/.eslintrc.json",
-            "!{projectRoot}/.storybook/**/*",
-            "!{projectRoot}/**/*.stories.@(js|jsx|ts|tsx|mdx)",
-            "!{projectRoot}/tsconfig.storybook.json",
+            "!{projectRoot}/eslint.config.mjs",
             "!{projectRoot}/src/test-setup.[jt]s"
         ]
     },
@@ -201,7 +173,8 @@
             "plugin": "@nx/eslint/plugin",
             "options": {
                 "targetName": "lint"
-            }
+            },
+            "exclude": ["libs/sdk/angular/toolchain/**"]
         },
         {
             "plugin": "@nx/vite/plugin",
@@ -229,6 +202,64 @@
             "options": {
                 "testTargetName": "test"
             }
+        },
+        {
+            "plugin": "@nx/playwright/plugin",
+            "options": {
+                "targetName": "e2e:dev:headless",
+                "ciTargetName": "e2e-ci"
+            }
+        },
+        {
+            "plugin": "@nx/vite/plugin",
+            "options": {
+                "buildTargetName": "build",
+                "serveTargetName": "serve",
+                "previewTargetName": "preview",
+                "serveStaticTargetName": "serve-static",
+                "devTargetName": "dev",
+                "typecheckTargetName": "typecheck"
+            },
+            "include": ["libs/edit-content-bridge/**/*"]
+        },
+        {
+            "plugin": "@nx/vite/plugin",
+            "options": {
+                "buildTargetName": "build:standalone",
+                "serveTargetName": "serve",
+                "previewTargetName": "preview",
+                "serveStaticTargetName": "serve-static",
+                "devTargetName": "dev",
+                "typecheckTargetName": "typecheck"
+            },
+            "include": ["libs/sdk/analytics/**/*"]
+        },
+        {
+            "plugin": "@nx/vite/plugin",
+            "options": {
+                "buildTargetName": "build:iife",
+                "serveTargetName": "serve",
+                "previewTargetName": "preview",
+                "serveStaticTargetName": "serve-static",
+                "devTargetName": "dev",
+                "typecheckTargetName": "typecheck"
+            },
+            "include": ["libs/sdk/experiments/**/*"]
+        },
+        {
+            "plugin": "@nx/rollup/plugin",
+            "options": {
+                "buildTargetName": "build"
+            },
+            "include": [
+                "libs/sdk/ai/**/*",
+                "libs/sdk/client/**/*",
+                "libs/sdk/events/**/*",
+                "libs/sdk/experiments/**/*",
+                "libs/sdk/react/**/*",
+                "libs/sdk/types/**/*",
+                "libs/sdk/uve/**/*"
+            ]
         }
     ],
     "defaultBase": "main",
@@ -239,10 +270,11 @@
     ],
     "release": {
         "version": {
-            "preVersionCommand": "yarn nx run-many -t build"
+            "preVersionCommand": "pnpm nx run-many -t build"
         }
     },
     "serve": {
         "dependsOn": []
-    }
+    },
+    "analytics": true
 }

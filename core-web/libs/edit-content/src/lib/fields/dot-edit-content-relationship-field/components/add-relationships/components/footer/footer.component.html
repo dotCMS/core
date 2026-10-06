@@ -1,0 +1,15 @@
+<p-button
+    data-testid="add-relationships-cancel"
+    [label]="'dot.common.dialog.reject' | dm"
+    [text]="true"
+    severity="primary"
+    (onClick)="cancel.emit()" />
+
+<!-- No `disabled` binding, deliberately. Unchecking a row unrelates it, so unchecking the last one
+     cannot be the single case where confirming does nothing. An empty selection is a real result:
+     it empties the relationship. -->
+<p-button
+    data-testid="add-relationships-confirm"
+    [label]="$confirmLabel() | dm"
+    severity="primary"
+    (onClick)="confirm.emit()" />

@@ -19,7 +19,10 @@ public class MyResource {
         @PathParam("id") String id
     ) {
         // ALWAYS initialize request context
-        InitDataObject initData = webResource.init(request, response, true);
+        InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
         User user = initData.getUser();
         
         try {
@@ -52,7 +55,10 @@ public class MyResource {
         @Context HttpServletResponse response,
         MyEntityForm form
     ) {
-        InitDataObject initData = webResource.init(request, response, true);
+        InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
         User user = initData.getUser();
         
         try {
@@ -78,23 +84,40 @@ public class MyResource {
 ```
 
 ### Required Patterns
-- **WebResource.init()**: ALWAYS initialize request context
+- **WebResource.InitBuilder**: ALWAYS initialize request context
 - **User context**: Extract user from InitDataObject
 - **Input validation**: Validate all parameters
 - **APILocator**: Access services via APILocator
 - **Exception handling**: Use ResponseUtil.mapExceptionResponse()
 - **Logging**: Use Logger with proper context
 
+## URL Versioning
+- All new endpoints must use `/v1/` prefix
+- Existing endpoints maintain current paths for backwards compatibility
+- Version bumps only for breaking changes
+
+## Required Annotations
+- `@NoCache` - Prevents caching of responses
+- `@ApplicationScoped` - CDI scope for resource classes
+- `@Produces(MediaType.APPLICATION_JSON)` - JSON response format
+- `@Consumes(MediaType.APPLICATION_JSON)` - JSON request format (for POST/PUT)
+
 ## Request/Response Patterns
 
 ### Request Context Initialization
 ```java
 // For authenticated endpoints
-InitDataObject initData = webResource.init(request, response, true);
+InitDataObject initData = new WebResource.InitBuilder(webResource)
+        .requestAndResponse(request, response)
+        .rejectWhenNoUser(true)
+        .init();
 User user = initData.getUser();
 
 // For public endpoints
-InitDataObject initData = webResource.init(request, response, false);
+InitDataObject initData = new WebResource.InitBuilder(webResource)
+        .requestAndResponse(request, response)
+        .rejectWhenNoUser(false)
+        .init();
 ```
 
 ### Input Validation Pattern
@@ -114,7 +137,7 @@ if (!form.isValid()) {
 }
 
 // Business rule validation
-if (!securityAPI.hasPermission(user, entity, PermissionLevel.READ)) {
+if (!permissionAPI.doesUserHavePermission(entity, PermissionAPI.PERMISSION_READ, user)) {
     return ResponseUtil.mapExceptionResponse(
         new DotSecurityException("Access denied")
     );
@@ -140,6 +163,10 @@ return Response.status(Response.Status.CREATED)
 ```
 
 ## Form Object Pattern
+
+> Forms are **inbound request-binding beans**, not immutable value objects. They stay as mutable
+> classes (Jackson binds them, then the resource validates and consumes them) — they do **not** use
+> records or the Immutables library, so the record migration below does not apply to them.
 
 ### Form Validation
 ```java
@@ -177,12 +204,105 @@ public class MyEntityForm {
 }
 ```
 
+## View Object Pattern (Java Records)
+
+REST view objects are **Java records** — not the Immutables `@Value.Immutable` `Abstract*` interface
+style, and not the `Immutable*`-prefix class style from
+[JAVA_STANDARDS.md](JAVA_STANDARDS.md#immutable-objects-critical-pattern). The record *is* the public
+type: there is no generated `Abstract*`/`Immutable*` indirection, no `@Value.Style`, and no
+`passAnnotations`. Records are implicitly `final` and their components are `final`, so immutability
+comes for free.
+
+Key points when migrating a view object off Immutables:
+
+- **The record is the type.** Drop `@Value.Immutable`, `@Value.Style`, the `Abstract*` interface, and
+  the `@JsonDeserialize(as = …)` redirect. Reference the record directly everywhere.
+- **`@Schema` goes straight on the record and its components.** Because the record is a concrete,
+  directly-annotated type, the class-level `@Schema(description=…)` is emitted into `openapi.yaml`
+  without the `passAnnotations` workaround Immutables required. Component-level `@Schema` carries over
+  the same way it did on interface accessors.
+- **Jackson uses native record support (Jackson 2.12+).** Deserialization runs through the canonical
+  constructor — no `@JsonCreator` needed. **Gotcha:** Jackson needs the constructor parameter names,
+  so the module must be compiled with `-parameters` (preferred); otherwise fall back to
+  `@JsonProperty` on each component.
+- **Builder is hand-written for now.** Records don't generate a builder, and many view objects have
+  enough fields that positional construction is error-prone. Provide a small static nested `Builder`.
+  *Going forward,* prefer the [`@RecordBuilder`](https://github.com/Randgalt/record-builder)
+  annotation processor to generate the builder instead of maintaining it by hand — the call site
+  (`FileAssetView.builder()…build()`) stays identical, so the swap is non-breaking.
+
+```java
+@Schema(description = "File asset view returned after a save")
+public record FileAssetView(
+        @Schema(description = "Asset identifier") String identifier,
+        @Schema(description = "File size in bytes") long fileSize
+) {
+    // Hand-written builder for now; replace with @RecordBuilder on the record going forward.
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static final class Builder {
+        private String identifier;
+        private long fileSize;
+
+        public Builder identifier(String identifier) {
+            this.identifier = identifier;
+            return this;
+        }
+
+        public Builder fileSize(long fileSize) {
+            this.fileSize = fileSize;
+            return this;
+        }
+
+        public FileAssetView build() {
+            return new FileAssetView(identifier, fileSize);
+        }
+    }
+}
+// FileAssetView.builder().identifier(id).fileSize(size).build();
+```
+
+The same record + hand-written-builder approach applies to **immutable query / parameter objects**
+(e.g. `MyEntityQuery` used in pagination below). These are the other place the Immutables builder
+was pulling its weight, and records cover them cleanly — set the builder defaults to match the
+endpoint's `@DefaultValue`s:
+
+```java
+public record MyEntityQuery(int page, int perPage, String filter, String orderBy) {
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static final class Builder {
+        private int page = 1;       // matches @DefaultValue("1")
+        private int perPage = 20;   // matches @DefaultValue("20")
+        private String filter;
+        private String orderBy;
+
+        public Builder page(int page) { this.page = page; return this; }
+        public Builder perPage(int perPage) { this.perPage = perPage; return this; }
+        public Builder filter(String filter) { this.filter = filter; return this; }
+        public Builder orderBy(String orderBy) { this.orderBy = orderBy; return this; }
+
+        public MyEntityQuery build() {
+            return new MyEntityQuery(page, perPage, filter, orderBy);
+        }
+    }
+}
+// MyEntityQuery.builder().page(page).perPage(perPage).filter(filter).orderBy(orderBy).build();
+```
+
+After changes, run `./mvnw compile -pl :dotcms-core --am -DskipTests`, then confirm
+`git diff .../openapi/openapi.yaml` is empty (or contains only the intended schema changes).
+
 ## Security Patterns
 
 ### Authentication Check
 ```java
-// Ensure user is authenticated
-if (user == null || !user.isLoggedIn()) {
+// Ensure user is authenticated (not anonymous)
+if (user == null || user.isAnonymousUser()) {
     return ResponseUtil.mapExceptionResponse(
         new DotSecurityException("Authentication required")
     );
@@ -192,7 +312,7 @@ if (user == null || !user.isLoggedIn()) {
 ### Permission Validation
 ```java
 // Check specific permissions
-if (!securityAPI.hasPermission(user, entity, PermissionLevel.READ)) {
+if (!permissionAPI.doesUserHavePermission(entity, PermissionAPI.PERMISSION_READ, user)) {
     return ResponseUtil.mapExceptionResponse(
         new DotSecurityException("Read permission required")
     );
@@ -209,7 +329,7 @@ if (!user.isAdmin()) {
 ### Input Sanitization
 ```java
 // Sanitize user input
-String sanitizedInput = HTMLUtils.htmlEscape(userInput);
+String sanitizedInput = Xss.encodeForHTML(userInput);
 
 // Validate against patterns
 if (!userInput.matches("^[a-zA-Z0-9\\s\\-_\\.]+$")) {
@@ -259,66 +379,91 @@ return Response.status(Response.Status.NOT_FOUND)
 ## OpenAPI Integration
 
 ### Automatic Documentation
-- **OpenAPI spec**: Auto-generated at `/WEB-INF/openapi/openapi.yaml`
-- **Pre-commit hook**: Regenerates spec on REST API changes
-- **Merge strategy**: Uses "ours" strategy for merge conflicts
+- **OpenAPI spec**: Auto-generated at `/WEB-INF/openapi/openapi.yaml` by `swagger-maven-plugin` at Maven's compile phase (not a git hook) — CI verifies the committed file matches what the build produces
+- **Merge strategy**: Uses "ours" strategy for merge conflicts (`.gitattributes`)
+- **Record view objects**: `@Schema` annotations on the record type and its components are picked up
+  directly — no `passAnnotations` configuration is needed since records are concrete annotated types.
 
 ### Annotation Examples
+`@Tag` goes at the class level to group the resource's endpoints under one heading in the
+generated docs; `@RequestBody` documents a POST/PUT payload the same way `@Parameter` documents a
+path/query param:
+
 ```java
-@Operation(summary = "Get entity by ID", description = "Retrieves a specific entity")
-@ApiResponses(value = {
-    @ApiResponse(responseCode = "200", description = "Success"),
-    @ApiResponse(responseCode = "404", description = "Entity not found"),
-    @ApiResponse(responseCode = "403", description = "Access denied")
-})
-@GET
-@Path("/{id}")
-public Response getById(@Parameter(description = "Entity ID") @PathParam("id") String id) {
-    // Implementation
+@Path("/v1/myresource")
+@Tag(name = "My Resource", description = "Manage my entities")
+public class MyResource {
+
+    @Operation(summary = "Get entity by ID", description = "Retrieves a specific entity")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Success"),
+        @ApiResponse(responseCode = "404", description = "Entity not found"),
+        @ApiResponse(responseCode = "403", description = "Access denied")
+    })
+    @GET
+    @Path("/{id}")
+    public Response getById(@Parameter(description = "Entity ID") @PathParam("id") String id) {
+        // Implementation
+    }
+
+    @Operation(summary = "Create an entity")
+    @POST
+    public Response create(
+            @RequestBody(
+                    description = "The entity to create",
+                    required = true,
+                    content = @Content(schema = @Schema(implementation = MyEntityForm.class))
+            )
+            MyEntityForm form
+    ) {
+        // Implementation
+    }
 }
 ```
 
 ## Testing Patterns
 
 ### Integration Test Structure
+REST resource integration tests call the resource class directly — they don't go over real HTTP
+(there's no `io.restassured`-style `given()...when()...get(...)` client in this codebase). This is
+the real pattern, confirmed against `TagResourceIntegrationTest.java`:
+
 ```java
 @RunWith(DataProviderRunner.class)
-public class MyResourceIntegrationTest {
-    
+public class MyResourceIntegrationTest extends IntegrationTestBase {
+
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
     }
-    
+
     @Test
     public void testGetById_Success() throws Exception {
         // Arrange
         User user = new UserDataGen().nextPersisted();
         MyEntity entity = new MyEntityDataGen().nextPersisted();
-        
-        // Act
-        Response response = given()
-            .auth().basic(user.getEmailAddress(), "admin")
-            .when()
-            .get("/api/v1/myresource/" + entity.getId())
-            .then()
-            .statusCode(HttpStatus.SC_OK)
-            .extract().response();
-        
+        HttpServletRequest request = new MockAttributeRequest(
+                new MockHttpRequestIntegrationTest("localhost", "/api/v1/myresource").request());
+        HttpServletResponse response = new MockHttpResponse().response();
+
+        // Act — call the resource method directly
+        MyResource resource = new MyResource();
+        Response httpResponse = resource.getById(request, response, entity.getId());
+
         // Assert
-        MyEntity result = response.jsonPath().getObject("entity", MyEntity.class);
-        assertEquals(entity.getId(), result.getId());
+        assertEquals(200, httpResponse.getStatus());
     }
-    
+
     @Test
     public void testGetById_NotFound() throws Exception {
-        // Test not found scenario
-        given()
-            .auth().basic("admin@dotcms.com", "admin")
-            .when()
-            .get("/api/v1/myresource/nonexistent")
-            .then()
-            .statusCode(HttpStatus.SC_NOT_FOUND);
+        HttpServletRequest request = new MockAttributeRequest(
+                new MockHttpRequestIntegrationTest("localhost", "/api/v1/myresource").request());
+        HttpServletResponse response = new MockHttpResponse().response();
+
+        MyResource resource = new MyResource();
+        Response httpResponse = resource.getById(request, response, "nonexistent");
+
+        assertEquals(404, httpResponse.getStatus());
     }
 }
 ```
@@ -334,8 +479,15 @@ public Response list(
     @QueryParam("per_page") @DefaultValue("20") int perPage,
     @QueryParam("filter") String filter,
     @QueryParam("orderBy") String orderBy,
-    @Context HttpServletRequest request
+    @Context HttpServletRequest request,
+    @Context HttpServletResponse response
 ) {
+    InitDataObject initData = new WebResource.InitBuilder(webResource)
+            .requestAndResponse(request, response)
+            .rejectWhenNoUser(true)
+            .init();
+    User user = initData.getUser();
+
     // Validate pagination parameters
     if (page < 1 || perPage < 1 || perPage > 100) {
         return ResponseUtil.mapExceptionResponse(
@@ -343,7 +495,7 @@ public Response list(
         );
     }
     
-    // Build query
+    // Build query (MyEntityQuery is now a record with a hand-written builder)
     MyEntityQuery query = MyEntityQuery.builder()
         .page(page)
         .perPage(perPage)
@@ -352,6 +504,7 @@ public Response list(
         .build();
     
     // Execute query
+    MyService service = APILocator.getMyService();
     PaginationResult<MyEntity> result = service.findPaginated(query, user);
     
     return Response.ok(new ResponseEntityView<>(result)).build();
@@ -364,9 +517,13 @@ public Response list(
 @Path("/bulk")
 public Response bulkOperation(
     @Context HttpServletRequest request,
+    @Context HttpServletResponse response,
     BulkOperationForm form
 ) {
-    InitDataObject initData = webResource.init(request, response, true);
+    InitDataObject initData = new WebResource.InitBuilder(webResource)
+            .requestAndResponse(request, response)
+            .rejectWhenNoUser(true)
+            .init();
     User user = initData.getUser();
     
     // Validate bulk operation
@@ -377,6 +534,7 @@ public Response bulkOperation(
     }
     
     // Process in transaction
+    MyService service = APILocator.getMyService();
     return LocalTransaction.wrapReturn(() -> {
         List<MyEntity> results = new ArrayList<>();
         
@@ -391,8 +549,9 @@ public Response bulkOperation(
 ```
 
 ## Location Information
-- **REST endpoints**: Located in `com.dotcms.rest.*` packages
+- **REST endpoints**: Located in `com.dotcms.rest.*` packages but the ones under `com.dotcms.rest.api.v*` are considered the new endpoints, the ones directly under `com.dotcms.rest` are considered legacy endpoints. For example: `com.dotcms.rest.ContentResource` is the legacy one and `com.dotcms.rest.api.v1.content.ContentResource` is the new one.
 - **WebResource**: Found in `com.dotcms.rest.WebResource`
-- **ResponseUtil**: Located in `com.dotcms.rest.ResponseUtil`
+- **ResponseUtil**: Located in `com.dotcms.rest.api.v1.authentication.ResponseUtil`
 - **Forms**: Typically in same package as resource or `*.form` subpackage
+- **View / query records**: Same package as the resource or a `*.view` / `*.query` subpackage
 - **Integration tests**: Located in `dotcms-integration` module

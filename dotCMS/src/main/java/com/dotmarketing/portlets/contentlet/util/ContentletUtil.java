@@ -1,7 +1,7 @@
 package com.dotmarketing.portlets.contentlet.util;
 
 import com.dotcms.business.Unexportable;
-import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSet;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;

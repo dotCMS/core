@@ -1,6 +1,6 @@
 package com.dotcms.util.pagination;
 
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.api.v1.categories.CategoryListDTO;
 import com.dotcms.util.PaginationUtil;

@@ -67,23 +67,3 @@ distributions:
         platform: 'linux-x86_64'
         extraProperties:
           optional: 'true'
-
-upload:
-  artifactory:
-    dotcms-cli:
-      active: ALWAYS
-      authorization: BASIC
-      host: 'https://repo.dotcms.com/artifactory'
-      repositories:
-        - path: 'libs-snapshot-local/com/dotcms/{{projectName}}/{{projectVersion}}/{{artifactFile}}'
-          active: SNAPSHOT
-          fileTypes:
-            - JAR
-            - ZIP
-            - TAR_GZ
-        - path: 'libs-release-local/com/dotcms/{{projectName}}/{{projectVersion}}/{{artifactFile}}'
-          active: RELEASE
-          fileTypes:
-            - JAR
-            - ZIP
-            - TAR_GZ

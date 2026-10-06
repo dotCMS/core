@@ -1,0 +1,30 @@
+:host {
+    .dot-wysiwyg-tinymce__container ::ng-deep .tox-tinymce {
+        border: 1px solid var(--p-inputtext-border-color);
+        border-radius: var(--p-inputtext-border-radius);
+        transition:
+            border-color var(--p-inputtext-transition-duration),
+            box-shadow var(--p-inputtext-transition-duration);
+    }
+
+    .dot-wysiwyg-tinymce__container:not(.dot-wysiwyg-tinymce__container--error)
+        ::ng-deep
+        .tox-tinymce:hover {
+        border-color: var(--p-inputtext-hover-border-color);
+    }
+
+    .dot-wysiwyg-tinymce__container--focused:not(.dot-wysiwyg-tinymce__container--error)
+        ::ng-deep
+        .tox-tinymce {
+        border-color: var(--p-inputtext-focus-border-color);
+        box-shadow: var(--p-focus-ring-shadow);
+    }
+
+    .dot-wysiwyg-tinymce__container--error ::ng-deep .tox-tinymce {
+        border-color: var(--p-inputtext-invalid-border-color);
+    }
+
+    .dot-wysiwyg-tinymce__container ::ng-deep .tox-statusbar__branding {
+        display: none;
+    }
+}

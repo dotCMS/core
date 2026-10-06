@@ -1,29 +1,42 @@
+import { patchState } from '@ngrx/signals';
+import { unprotected } from '@ngrx/signals/testing';
 import {
     createServiceFactory,
     SpectatorService,
     mockProvider,
     SpyObject
-} from '@ngneat/spectator/jest';
-import { patchState } from '@ngrx/signals';
-import { unprotected } from '@ngrx/signals/testing';
+} from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { fakeAsync, tick } from '@angular/core/testing';
 
 import { delay } from 'rxjs/operators';
 
+import { DotUploadFileService } from '@dotcms/data-access';
 import {
     ComponentStatus,
     ContentByFolderParams,
+    DOT_FOLDER_TREE_PAGE_SIZE,
+    LOAD_MORE_NODE_TYPE,
     TreeNodeItem,
-    TreeNodeSelectItem,
-    DotFolder
+    TreeNodeSelectItem
 } from '@dotcms/dotcms-models';
 import { createFakeContentlet, createFakeEvent } from '@dotcms/utils-testing';
 
-import { DotBrowserSelectorStore, SYSTEM_HOST_ID } from './browser.store';
+import { DotBrowserSelectorStore, SITE_PAGE_LIMIT, SYSTEM_HOST_ID } from './browser.store';
 
 import { DotBrowsingService } from '../../../services/dot-browsing/dot-browsing.service';
+
+const sitesPage = (sites: TreeNodeItem[], totalEntries = sites.length) =>
+    of({
+        sites,
+        pagination: {
+            currentPage: 1,
+            perPage: SITE_PAGE_LIMIT,
+            totalEntries
+        }
+    });
 
 const TREE_SELECT_SITES_MOCK: TreeNodeItem[] = [
     {
@@ -35,8 +48,7 @@ const TREE_SELECT_SITES_MOCK: TreeNodeItem[] = [
             path: '',
             type: 'site'
         },
-        expandedIcon: 'pi pi-folder-open',
-        collapsedIcon: 'pi pi-folder'
+        icon: 'pi pi-globe'
     },
     {
         key: 'nico.dotcms.com',
@@ -47,8 +59,7 @@ const TREE_SELECT_SITES_MOCK: TreeNodeItem[] = [
             path: '',
             type: 'site'
         },
-        expandedIcon: 'pi pi-folder-open',
-        collapsedIcon: 'pi pi-folder'
+        icon: 'pi pi-globe'
     },
     {
         key: 'System Host',
@@ -59,8 +70,7 @@ const TREE_SELECT_SITES_MOCK: TreeNodeItem[] = [
             path: '',
             type: 'site'
         },
-        expandedIcon: 'pi pi-folder-open',
-        collapsedIcon: 'pi pi-folder'
+        icon: 'pi pi-globe'
     }
 ];
 
@@ -74,8 +84,7 @@ const TREE_SELECT_MOCK: TreeNodeItem[] = [
             path: '',
             type: 'site'
         },
-        expandedIcon: 'pi pi-folder-open',
-        collapsedIcon: 'pi pi-folder',
+        icon: 'pi pi-globe',
         children: [
             {
                 key: 'demo.dotcms.comlevel1',
@@ -86,8 +95,6 @@ const TREE_SELECT_MOCK: TreeNodeItem[] = [
                     path: '/level1/',
                     type: 'folder'
                 },
-                expandedIcon: 'pi pi-folder-open',
-                collapsedIcon: 'pi pi-folder',
                 children: [
                     {
                         key: 'demo.dotcms.comlevel1child1',
@@ -97,9 +104,7 @@ const TREE_SELECT_MOCK: TreeNodeItem[] = [
                             hostname: 'demo.dotcms.com',
                             path: '/level1/child1/',
                             type: 'folder'
-                        },
-                        expandedIcon: 'pi pi-folder-open',
-                        collapsedIcon: 'pi pi-folder'
+                        }
                     }
                 ]
             },
@@ -111,9 +116,7 @@ const TREE_SELECT_MOCK: TreeNodeItem[] = [
                     hostname: 'demo.dotcms.com',
                     path: '/level2/',
                     type: 'folder'
-                },
-                expandedIcon: 'pi pi-folder-open',
-                collapsedIcon: 'pi pi-folder'
+                }
             }
         ]
     },
@@ -126,8 +129,7 @@ const TREE_SELECT_MOCK: TreeNodeItem[] = [
             path: '',
             type: 'site'
         },
-        expandedIcon: 'pi pi-folder-open',
-        collapsedIcon: 'pi pi-folder'
+        icon: 'pi pi-globe'
     }
 ];
 
@@ -135,24 +137,27 @@ describe('DotBrowserSelectorStore', () => {
     let spectator: SpectatorService<InstanceType<typeof DotBrowserSelectorStore>>;
     let store: InstanceType<typeof DotBrowserSelectorStore>;
     let dotBrowsingService: SpyObject<DotBrowsingService>;
+    let dotUploadFileService: SpyObject<DotUploadFileService>;
 
     const createService = createServiceFactory({
         service: DotBrowserSelectorStore,
         providers: [
             mockProvider(DotBrowsingService, {
-                getSitesTreePath: jest.fn().mockReturnValue(of(TREE_SELECT_SITES_MOCK)),
-                getContentByFolder: jest.fn().mockReturnValue(of([])),
-                getFoldersTreeNode: jest.fn().mockReturnValue(
+                getSitesPage: vi.fn().mockReturnValue(sitesPage(TREE_SELECT_SITES_MOCK)),
+                getContentByFolder: vi.fn().mockReturnValue(of([])),
+                searchFolders: vi.fn().mockReturnValue(
                     of({
-                        parent: {
-                            id: '',
-                            hostName: '',
-                            path: '',
-                            addChildrenAllowed: false
-                        } as DotFolder,
-                        folders: []
+                        folders: [],
+                        pagination: {
+                            currentPage: 1,
+                            perPage: DOT_FOLDER_TREE_PAGE_SIZE,
+                            totalEntries: 0
+                        }
                     })
                 )
+            }),
+            mockProvider(DotUploadFileService, {
+                uploadDotAsset: vi.fn().mockReturnValue(of({}))
             })
         ]
     });
@@ -161,7 +166,22 @@ describe('DotBrowserSelectorStore', () => {
         spectator = createService();
         store = spectator.service;
         dotBrowsingService = spectator.inject(DotBrowsingService);
-        // Wait for onInit to complete (it calls loadFolders)
+        dotUploadFileService = spectator.inject(DotUploadFileService);
+
+        // Restore default implementations (prior tests may have overridden return values).
+        dotBrowsingService.getSitesPage.mockReturnValue(sitesPage(TREE_SELECT_SITES_MOCK));
+        dotBrowsingService.searchFolders.mockReturnValue(
+            of({
+                folders: [],
+                pagination: {
+                    currentPage: 1,
+                    perPage: DOT_FOLDER_TREE_PAGE_SIZE,
+                    totalEntries: 0
+                }
+            })
+        );
+        dotBrowsingService.getContentByFolder.mockReturnValue(of([]));
+        store.loadFolders();
         tick(50);
     }));
 
@@ -174,7 +194,6 @@ describe('DotBrowserSelectorStore', () => {
             // After onInit (which runs in beforeEach), folders should be loaded
             expect(store.folders().data).toEqual(TREE_SELECT_SITES_MOCK);
             expect(store.folders().status).toBe(ComponentStatus.LOADED);
-            expect(store.folders().nodeExpaned).toBeNull();
             expect(store.content().data).toEqual([]);
             expect(store.content().status).toBe(ComponentStatus.INIT);
             expect(store.content().error).toBeNull();
@@ -251,8 +270,8 @@ describe('DotBrowserSelectorStore', () => {
     describe('Method: loadFolders', () => {
         it('should set folders status to LOADING and then to LOADED with data', fakeAsync(() => {
             // Use timer to make the observable async so we can verify LOADING state
-            dotBrowsingService.getSitesTreePath.mockReturnValue(
-                of(TREE_SELECT_SITES_MOCK).pipe(delay(1))
+            dotBrowsingService.getSitesPage.mockReturnValue(
+                sitesPage(TREE_SELECT_SITES_MOCK).pipe(delay(1))
             );
 
             store.loadFolders();
@@ -262,37 +281,48 @@ describe('DotBrowserSelectorStore', () => {
 
             expect(store.folders().status).toBe(ComponentStatus.LOADED);
             expect(store.folders().data).toEqual(TREE_SELECT_SITES_MOCK);
-            expect(store.folders().nodeExpaned).toBeNull();
-            expect(dotBrowsingService.getSitesTreePath).toHaveBeenCalledWith({
-                perPage: 1000,
-                filter: '*'
+            expect(dotBrowsingService.getSitesPage).toHaveBeenCalledWith({
+                perPage: SITE_PAGE_LIMIT,
+                filter: '*',
+                page: 1
             });
         }));
 
-        it('should set folders status to ERROR on service error', fakeAsync(() => {
-            dotBrowsingService.getSitesTreePath.mockReturnValue(
-                throwError(() => new Error('error'))
+        it('should append a load-more sentinel when more sites remain', fakeAsync(() => {
+            dotBrowsingService.getSitesPage.mockClear();
+            dotBrowsingService.searchFolders.mockClear();
+            dotBrowsingService.getContentByFolder.mockClear();
+            dotBrowsingService.getSitesPage.mockReturnValue(
+                sitesPage(TREE_SELECT_SITES_MOCK, SITE_PAGE_LIMIT + 10)
             );
+
+            store.loadFolders();
+            tick(50);
+
+            const data = store.folders().data;
+            const loadMoreNode = data[data.length - 1];
+
+            expect(data).toHaveLength(TREE_SELECT_SITES_MOCK.length + 1);
+            expect(loadMoreNode.type).toBe(LOAD_MORE_NODE_TYPE);
+            expect(loadMoreNode.data?.type).toBe(LOAD_MORE_NODE_TYPE);
+            expect(loadMoreNode.data).toEqual(
+                expect.objectContaining({
+                    nextPage: 2
+                })
+            );
+        }));
+
+        it('should set folders status to ERROR on service error', fakeAsync(() => {
+            dotBrowsingService.getSitesPage.mockReturnValue(throwError(() => new Error('error')));
 
             store.loadFolders();
             tick(50);
 
             expect(store.folders().status).toBe(ComponentStatus.ERROR);
             expect(store.folders().data).toEqual([]);
-            expect(store.folders().nodeExpaned).toBeNull();
-        }));
 
-        it('should reset nodeExpaned when folders are loaded', fakeAsync(() => {
-            const expandedNode = TREE_SELECT_MOCK[0];
-            patchState(unprotected(store), {
-                folders: { ...store.folders(), nodeExpaned: expandedNode }
-            });
-
-            dotBrowsingService.getSitesTreePath.mockReturnValue(of(TREE_SELECT_SITES_MOCK));
-            store.loadFolders();
-            tick(50);
-
-            expect(store.folders().nodeExpaned).toBeNull();
+            // Reset to default so subsequent tests that rely on onInit → loadFolders are not affected
+            dotBrowsingService.getSitesPage.mockReturnValue(sitesPage(TREE_SELECT_SITES_MOCK));
         }));
     });
 
@@ -416,24 +446,24 @@ describe('DotBrowserSelectorStore', () => {
     });
 
     describe('Method: loadChildren', () => {
-        it('should load children for a node', fakeAsync(() => {
-            // Clear previous mock calls
-            jest.clearAllMocks();
+        it('should load children for a site node via paginated searchFolders', fakeAsync(() => {
+            dotBrowsingService.getSitesPage.mockClear();
+            dotBrowsingService.searchFolders.mockClear();
+            dotBrowsingService.getContentByFolder.mockClear();
 
-            const mockChildren = {
-                parent: {
-                    id: 'demo.dotcms.com',
-                    hostName: 'demo.dotcms.com',
-                    path: '',
-                    type: 'site',
-                    addChildrenAllowed: true
-                },
-                folders: [...TREE_SELECT_SITES_MOCK]
-            };
+            const folders = TREE_SELECT_MOCK[0].children ?? [];
+            dotBrowsingService.searchFolders.mockReturnValue(
+                of({
+                    folders,
+                    pagination: {
+                        currentPage: 1,
+                        perPage: DOT_FOLDER_TREE_PAGE_SIZE,
+                        totalEntries: folders.length
+                    }
+                })
+            );
 
-            dotBrowsingService.getFoldersTreeNode.mockReturnValue(of(mockChildren));
-
-            const node = { ...TREE_SELECT_MOCK[0] };
+            const node = { ...TREE_SELECT_MOCK[0], children: undefined, leaf: false };
             const mockItem: TreeNodeSelectItem = {
                 originalEvent: createFakeEvent('click'),
                 node
@@ -442,24 +472,59 @@ describe('DotBrowserSelectorStore', () => {
             store.loadChildren(mockItem);
             tick(50);
 
-            expect(node.children).toEqual(mockChildren.folders);
+            expect(node.children).toEqual(folders);
             expect(node.loading).toBe(false);
-            expect(node.leaf).toBe(true);
-            expect(node.icon).toBe('pi pi-folder-open');
-            expect(store.folders().nodeExpaned).toBe(node);
-            expect(dotBrowsingService.getFoldersTreeNode).toHaveBeenCalledTimes(1);
-            expect(dotBrowsingService.getFoldersTreeNode).toHaveBeenCalledWith('demo.dotcms.com/');
+            expect(node.leaf).toBe(false);
+            expect(node.expanded).toBe(true);
+            expect(dotBrowsingService.searchFolders).toHaveBeenCalledTimes(1);
+            expect(dotBrowsingService.searchFolders).toHaveBeenCalledWith(
+                {
+                    siteId: 'demo.dotcms.com',
+                    path: '/',
+                    recursive: false,
+                    page: 1,
+                    per_page: DOT_FOLDER_TREE_PAGE_SIZE
+                },
+                'demo.dotcms.com'
+            );
+        }));
+
+        it('should append load-more when more child folders remain', fakeAsync(() => {
+            dotBrowsingService.getSitesPage.mockClear();
+            dotBrowsingService.searchFolders.mockClear();
+            dotBrowsingService.getContentByFolder.mockClear();
+
+            const folders = TREE_SELECT_MOCK[0].children ?? [];
+            dotBrowsingService.searchFolders.mockReturnValue(
+                of({
+                    folders,
+                    pagination: {
+                        currentPage: 1,
+                        perPage: DOT_FOLDER_TREE_PAGE_SIZE,
+                        totalEntries: DOT_FOLDER_TREE_PAGE_SIZE + 5
+                    }
+                })
+            );
+
+            const node = { ...TREE_SELECT_MOCK[0], children: undefined, leaf: false };
+            store.loadChildren({
+                originalEvent: createFakeEvent('click'),
+                node
+            });
+            tick(50);
+
+            expect(node.children).toHaveLength(folders.length + 1);
+            expect(node.children?.[node.children.length - 1].type).toBe(LOAD_MORE_NODE_TYPE);
         }));
 
         it('should handle error when loading children', fakeAsync(() => {
-            // Clear previous mock calls
-            jest.clearAllMocks();
+            dotBrowsingService.getSitesPage.mockClear();
+            dotBrowsingService.searchFolders.mockClear();
+            dotBrowsingService.getContentByFolder.mockClear();
 
-            dotBrowsingService.getFoldersTreeNode.mockReturnValue(
-                throwError(() => new Error('error'))
-            );
+            dotBrowsingService.searchFolders.mockReturnValue(throwError(() => new Error('error')));
 
-            const node = { ...TREE_SELECT_MOCK[0], children: [] };
+            const node = { ...TREE_SELECT_MOCK[0], children: undefined, leaf: false };
             const mockItem: TreeNodeSelectItem = {
                 originalEvent: createFakeEvent('click'),
                 node
@@ -468,26 +533,33 @@ describe('DotBrowserSelectorStore', () => {
             store.loadChildren(mockItem);
             tick(50);
 
-            expect(node.children).toEqual([]);
+            expect(node.children).toBeUndefined();
             expect(node.loading).toBe(false);
         }));
 
-        it('should build correct path from hostname and path', fakeAsync(() => {
-            // Clear previous mock calls
-            jest.clearAllMocks();
+        it('should resolve folder path and siteId for nested folders', fakeAsync(() => {
+            dotBrowsingService.getSitesPage.mockClear();
+            dotBrowsingService.searchFolders.mockClear();
+            dotBrowsingService.getContentByFolder.mockClear();
 
-            const mockChildren = {
-                parent: {
-                    id: 'folder-1',
-                    hostName: 'demo.dotcms.com',
-                    path: '/level1/',
-                    type: 'folder',
-                    addChildrenAllowed: true
-                },
-                folders: []
-            };
+            // Ensure site roots are present so findSiteIdByHostname works
+            patchState(unprotected(store), {
+                folders: {
+                    data: TREE_SELECT_SITES_MOCK,
+                    status: ComponentStatus.LOADED
+                }
+            });
 
-            dotBrowsingService.getFoldersTreeNode.mockReturnValue(of(mockChildren));
+            dotBrowsingService.searchFolders.mockReturnValue(
+                of({
+                    folders: [],
+                    pagination: {
+                        currentPage: 1,
+                        perPage: DOT_FOLDER_TREE_PAGE_SIZE,
+                        totalEntries: 0
+                    }
+                })
+            );
 
             const childNode = TREE_SELECT_MOCK[0].children?.[0];
             if (!childNode) {
@@ -495,22 +567,150 @@ describe('DotBrowserSelectorStore', () => {
             }
 
             const node: TreeNodeItem = {
-                ...childNode
+                ...childNode,
+                children: undefined,
+                leaf: false
             };
 
-            const mockItem: TreeNodeSelectItem = {
+            store.loadChildren({
                 originalEvent: createFakeEvent('click'),
                 node
-            };
-
-            store.loadChildren(mockItem);
+            });
             tick(50);
 
-            // The implementation creates path as `${hostname}/${path}` where path starts with `/`
-            // So it becomes `demo.dotcms.com//level1/` (double slash)
-            expect(dotBrowsingService.getFoldersTreeNode).toHaveBeenCalledTimes(1);
-            expect(dotBrowsingService.getFoldersTreeNode).toHaveBeenCalledWith(
-                'demo.dotcms.com//level1/'
+            expect(dotBrowsingService.searchFolders).toHaveBeenCalledTimes(1);
+            expect(dotBrowsingService.searchFolders).toHaveBeenCalledWith(
+                {
+                    siteId: 'demo.dotcms.com',
+                    path: '/level1/',
+                    recursive: false,
+                    page: 1,
+                    per_page: DOT_FOLDER_TREE_PAGE_SIZE
+                },
+                'demo.dotcms.com'
+            );
+            expect(node.leaf).toBe(true);
+        }));
+    });
+
+    describe('Method: loadMore', () => {
+        it('should load the next page of sites', fakeAsync(() => {
+            dotBrowsingService.getSitesPage.mockClear();
+            dotBrowsingService.searchFolders.mockClear();
+            dotBrowsingService.getContentByFolder.mockClear();
+
+            const pageOne = TREE_SELECT_SITES_MOCK.slice(0, 2);
+            const pageTwo = [TREE_SELECT_SITES_MOCK[2]];
+
+            patchState(unprotected(store), {
+                folders: {
+                    data: [
+                        ...pageOne,
+                        {
+                            key: 'load-more:sites',
+                            type: LOAD_MORE_NODE_TYPE,
+                            selectable: false,
+                            leaf: true,
+                            data: {
+                                type: LOAD_MORE_NODE_TYPE,
+                                id: 'load-more:sites',
+                                nextPage: 2,
+                                path: '',
+                                hostname: ''
+                            }
+                        }
+                    ],
+                    status: ComponentStatus.LOADED
+                }
+            });
+
+            dotBrowsingService.getSitesPage.mockReturnValue(
+                of({
+                    sites: pageTwo,
+                    pagination: {
+                        currentPage: 2,
+                        perPage: SITE_PAGE_LIMIT,
+                        totalEntries: 3
+                    }
+                })
+            );
+
+            const loadMoreNode = store.folders().data[store.folders().data.length - 1];
+            store.loadMore(loadMoreNode);
+            tick(50);
+
+            expect(dotBrowsingService.getSitesPage).toHaveBeenCalledWith({
+                filter: '*',
+                perPage: SITE_PAGE_LIMIT,
+                page: 2
+            });
+            expect(store.folders().data.map((node) => node.key)).toEqual(
+                TREE_SELECT_SITES_MOCK.map((node) => node.key)
+            );
+        }));
+
+        it('should append the next folder page under the parent site', fakeAsync(() => {
+            dotBrowsingService.getSitesPage.mockClear();
+            dotBrowsingService.searchFolders.mockClear();
+            dotBrowsingService.getContentByFolder.mockClear();
+
+            const site = {
+                ...TREE_SELECT_MOCK[0],
+                children: [
+                    ...(TREE_SELECT_MOCK[0].children ?? []).slice(0, 1),
+                    {
+                        key: 'load-more:demo.dotcms.com',
+                        type: LOAD_MORE_NODE_TYPE,
+                        selectable: false,
+                        leaf: true,
+                        data: {
+                            type: LOAD_MORE_NODE_TYPE,
+                            id: 'load-more:demo.dotcms.com',
+                            nextPage: 2,
+                            path: '/',
+                            hostname: 'demo.dotcms.com'
+                        }
+                    }
+                ]
+            };
+
+            patchState(unprotected(store), {
+                folders: {
+                    data: [site, TREE_SELECT_SITES_MOCK[1]],
+                    status: ComponentStatus.LOADED
+                }
+            });
+
+            const nextFolders = (TREE_SELECT_MOCK[0].children ?? []).slice(1);
+            dotBrowsingService.searchFolders.mockReturnValue(
+                of({
+                    folders: nextFolders,
+                    pagination: {
+                        currentPage: 2,
+                        perPage: DOT_FOLDER_TREE_PAGE_SIZE,
+                        totalEntries: 2
+                    }
+                })
+            );
+
+            const loadMoreNode = site.children?.[site.children.length - 1] as TreeNodeItem;
+            store.loadMore(loadMoreNode);
+            tick(50);
+
+            expect(dotBrowsingService.searchFolders).toHaveBeenCalledWith(
+                {
+                    siteId: 'demo.dotcms.com',
+                    path: '/',
+                    recursive: false,
+                    page: 2,
+                    per_page: DOT_FOLDER_TREE_PAGE_SIZE
+                },
+                'demo.dotcms.com'
+            );
+
+            const updatedSite = store.folders().data[0];
+            expect(updatedSite.children?.map((child) => child.key)).toEqual(
+                (TREE_SELECT_MOCK[0].children ?? []).map((child) => child.key)
             );
         }));
     });
@@ -519,12 +719,134 @@ describe('DotBrowserSelectorStore', () => {
         it('should call loadFolders on initialization', () => {
             // Store is created in beforeEach, which triggers onInit
             // onInit completes in beforeEach via fakeAsync/tick
-            expect(dotBrowsingService.getSitesTreePath).toHaveBeenCalledWith({
-                perPage: 1000,
-                filter: '*'
+            expect(dotBrowsingService.getSitesPage).toHaveBeenCalledWith({
+                perPage: SITE_PAGE_LIMIT,
+                filter: '*',
+                page: 1
             });
             expect(store.folders().status).toBe(ComponentStatus.LOADED);
             expect(store.folders().data).toEqual(TREE_SELECT_SITES_MOCK);
         });
+    });
+
+    describe('Method: uploadFile', () => {
+        const folderParams: ContentByFolderParams = {
+            hostFolderId: 'demo.dotcms.com',
+            mimeTypes: ['image/jpeg', 'image/png']
+        };
+
+        it('should set content status to LOADING when upload starts', fakeAsync(() => {
+            const mockFile = new File(['content'], 'photo.png', { type: 'image/png' });
+            dotUploadFileService.uploadDotAsset.mockReturnValue(
+                of(createFakeContentlet()).pipe(delay(1))
+            );
+
+            store.uploadFile({ file: mockFile, folderParams });
+            expect(store.content().status).toBe(ComponentStatus.LOADING);
+
+            tick(50);
+        }));
+
+        it('should call uploadDotAsset with the file and hostFolder', fakeAsync(() => {
+            const mockFile = new File(['content'], 'photo.png', { type: 'image/png' });
+            dotUploadFileService.uploadDotAsset.mockReturnValue(of(createFakeContentlet()));
+
+            store.uploadFile({ file: mockFile, folderParams });
+            tick(50);
+
+            expect(dotUploadFileService.uploadDotAsset).toHaveBeenCalledWith(mockFile, {
+                hostFolder: folderParams.hostFolderId
+            });
+        }));
+
+        it('should reload content after a successful upload', fakeAsync(() => {
+            const mockFile = new File(['content'], 'photo.png', { type: 'image/png' });
+            const uploadedContentlet = createFakeContentlet({ title: 'Uploaded' });
+            const refreshedContentlets = [uploadedContentlet];
+
+            dotUploadFileService.uploadDotAsset.mockReturnValue(of(uploadedContentlet));
+            dotBrowsingService.getContentByFolder.mockReturnValue(of(refreshedContentlets));
+
+            store.uploadFile({ file: mockFile, folderParams });
+            tick(50);
+
+            expect(dotBrowsingService.getContentByFolder).toHaveBeenCalledWith(folderParams);
+            expect(store.content().data).toEqual(refreshedContentlets);
+            expect(store.content().status).toBe(ComponentStatus.LOADED);
+        }));
+
+        it('should auto-select the uploaded contentlet on success', fakeAsync(() => {
+            const mockFile = new File(['content'], 'photo.png', { type: 'image/png' });
+            const uploadedContentlet = createFakeContentlet({ title: 'Uploaded' });
+
+            dotUploadFileService.uploadDotAsset.mockReturnValue(of(uploadedContentlet));
+            dotBrowsingService.getContentByFolder.mockReturnValue(of([uploadedContentlet]));
+
+            store.uploadFile({ file: mockFile, folderParams });
+            tick(50);
+
+            expect(store.selectedContent()).toEqual(uploadedContentlet);
+        }));
+
+        it('should not auto-select anything when upload fails', fakeAsync(() => {
+            const mockFile = new File(['content'], 'photo.png', { type: 'image/png' });
+
+            dotUploadFileService.uploadDotAsset.mockReturnValue(
+                throwError({ status: 500, message: 'Server error' })
+            );
+
+            store.uploadFile({ file: mockFile, folderParams });
+            tick(50);
+
+            expect(store.selectedContent()).toBeNull();
+        }));
+
+        it('should preserve existing content and show generic error when upload fails', fakeAsync(() => {
+            const existingContentlets = [createFakeContentlet({ title: 'Existing' })];
+            patchState(unprotected(store), {
+                content: {
+                    data: existingContentlets,
+                    status: ComponentStatus.LOADED,
+                    error: null
+                }
+            });
+
+            const mockFile = new File(['content'], 'photo.png', { type: 'image/png' });
+            dotUploadFileService.uploadDotAsset.mockReturnValue(
+                throwError({ status: 500, message: 'Server error' })
+            );
+
+            store.uploadFile({ file: mockFile, folderParams });
+            tick(50);
+
+            expect(store.content().status).toBe(ComponentStatus.LOADED);
+            expect(store.content().error).toBe('dot.file.field.dialog.upload.file.error');
+            expect(store.content().data).toEqual(existingContentlets);
+        }));
+
+        it('should preserve existing content and show permissions error on 403', fakeAsync(() => {
+            const existingContentlets = [createFakeContentlet({ title: 'Existing' })];
+            patchState(unprotected(store), {
+                content: {
+                    data: existingContentlets,
+                    status: ComponentStatus.LOADED,
+                    error: null
+                }
+            });
+
+            const mockFile = new File(['content'], 'photo.png', { type: 'image/png' });
+            dotUploadFileService.uploadDotAsset.mockReturnValue(
+                throwError({ status: 403, message: 'Forbidden' })
+            );
+
+            store.uploadFile({ file: mockFile, folderParams });
+            tick(50);
+
+            expect(store.content().status).toBe(ComponentStatus.LOADED);
+            expect(store.content().error).toBe(
+                'dot.file.field.dialog.upload.file.error.permissions'
+            );
+            expect(store.content().data).toEqual(existingContentlets);
+        }));
     });
 });

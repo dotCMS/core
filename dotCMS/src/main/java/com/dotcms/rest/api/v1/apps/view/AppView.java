@@ -33,6 +33,12 @@ public class AppView {
 
     private final String iconUrl;
 
+    @JsonInclude(Include.NON_NULL)
+    private final String icon;
+
+    @JsonInclude(Include.NON_NULL)
+    private final String color;
+
     private final boolean allowExtraParams;
 
     @JsonInclude(Include.NON_NULL)
@@ -50,6 +56,8 @@ public class AppView {
         this.name = appDescriptor.getName();
         this.description = appDescriptor.getDescription();
         this.iconUrl = appDescriptor.getIconUrl();
+        this.icon = appDescriptor.getIcon();
+        this.color = appDescriptor.getColor();
         this.allowExtraParams = appDescriptor.isAllowExtraParameters();
         this.configurationsCount = configurationsCount;
         this.sitesWithWarnings = sitesWithWarnings == 0 ? null : sitesWithWarnings;
@@ -65,6 +73,8 @@ public class AppView {
         this.name = appDescriptor.getName();
         this.description = appDescriptor.getDescription();
         this.iconUrl = appDescriptor.getIconUrl();
+        this.icon = appDescriptor.getIcon();
+        this.color = appDescriptor.getColor();
         this.allowExtraParams = appDescriptor.isAllowExtraParameters();
         this.configurationsCount = configurationsCount;
         this.sites = sites;
@@ -107,6 +117,20 @@ public class AppView {
     }
 
     /**
+     * Material icon name used when no {@link #iconUrl} is set.
+     */
+    public String getIcon() {
+        return icon;
+    }
+
+    /**
+     * Hex color (e.g. {@code #3b82f6}) or PrimeNG token (e.g. {@code blue}) used to tint the icon.
+     */
+    public String getColor() {
+        return color;
+    }
+
+    /**
      * Whether or not extra params are supported
      */
     public boolean isAllowExtraParams() {
@@ -142,6 +166,12 @@ public class AppView {
             map.put("name", appView.name);
             map.put("description", appView.description);
             map.put("iconUrl", appView.iconUrl);
+            if (null != appView.icon) {
+                map.put("icon", appView.icon);
+            }
+            if (null != appView.color) {
+                map.put("color", appView.color);
+            }
             map.put("allowExtraParams", appView.allowExtraParams);
             map.put("configurationsCount", appView.configurationsCount);
 

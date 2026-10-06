@@ -1,8 +1,57 @@
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
 
 import { getFileMetadata, getFileVersion, cleanMimeTypes, checkMimeType } from './contentlet.utils';
 
-import { NEW_FILE_MOCK, TEMP_FILE_MOCK } from '../../../utils/mocks';
+const NEW_FILE_MOCK: { entity: DotCMSContentlet } = {
+    entity: {
+        assetMetaData: {
+            contentType: 'image/jpeg',
+            editableAsText: false,
+            fileSize: 3878653,
+            height: 1536,
+            isImage: true,
+            length: 3878653,
+            modDate: 1727377876393,
+            name: 'image 2.jpg',
+            sha256: '132597a99d807d12d0b13d9bf3149c6644d9f252e33896d95fc9fd177320da62',
+            title: 'image 2.jpg',
+            version: 20220201,
+            width: 2688
+        },
+        baseType: 'DOTASSET',
+        contentType: 'dotAsset',
+        identifier: 'a991ddc5-39dc-4782-bc04-f4c4fa0ccff6',
+        inode: 'fe160e65-5cf4-4ef6-9b1d-47c5326fec30',
+        languageId: 1,
+        live: true,
+        title: 'image 2.jpg',
+        working: true
+    } as unknown as DotCMSContentlet
+};
+
+const TEMP_FILE_MOCK: DotCMSTempFile = {
+    fileName: 'enterprise-angular.pdf',
+    folder: '',
+    id: 'temp_1e8021f973',
+    image: false,
+    length: 13909932,
+    metadata: {
+        contentType: 'application/pdf',
+        editableAsText: false,
+        fileSize: 13909932,
+        isImage: false,
+        length: 13909932,
+        modDate: 1727375044693,
+        name: 'enterprise-angular.pdf',
+        sha256: '7f8bc1f6485876ca6d49be77917bd35ae3de99f9a56ff94a42df3217419b30cd',
+        title: 'enterprise-angular.pdf',
+        version: 20220201
+    },
+    mimeType: 'application/pdf',
+    referenceUrl: '/dA/temp_1e8021f973/tmp/enterprise-angular.pdf',
+    thumbnailUrl:
+        '/contentAsset/image/temp_1e8021f973/tmp/filter/Thumbnail/thumbnail_w/250/thumbnail_h/250/enterprise-angular.pdf'
+};
 
 describe('utils', () => {
     describe('getFileMetadata', () => {

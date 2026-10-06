@@ -476,5 +476,9 @@ const PORTLET_ID_RESOLVERS: Record<string, (urlSegments: string[]) => string> = 
     },
     'edit-page': () => {
         return 'site-browser';
+    },
+    // URL is kebab-case; backend portlet-name stays snake_case for DB compat (#35809).
+    'velocity-playground': () => {
+        return 'velocity_playground';
     }
 };

@@ -2,11 +2,21 @@ name: PR opened
 
 on:
   pull_request:
-    types: [opened]
+    types: [opened, edited, synchronize, reopened]
+
+# Serialize per-PR so concurrent events (synchronize + the edited fired by our own
+# Link PR to issue body PATCH) don't race on the PATCH and on comment writes.
+# cancel-in-progress is false so each event settles before the next runs — we want
+# the final state of every event, not the latest one only.
+concurrency:
+  group: link-issue-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
 
 jobs:
   add-issue-to-pr:
     name: Add Issue to PR
+    # Skip fork PRs — pull_request token is read-only for forks, so PATCH/POST/DELETE calls would 403.
+    if: github.event.pull_request.head.repo.full_name == github.repository
     uses: ./.github/workflows/issue_comp_link-issue-to-pr.yml
     with:
       pr_branch: ${{ github.head_ref }}

@@ -3,7 +3,8 @@ import {
     mockProvider,
     SpectatorDirective,
     SpyObject
-} from '@ngneat/spectator/jest';
+} from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { Component, ViewContainerRef } from '@angular/core';
 import { UntypedFormGroup } from '@angular/forms';
@@ -66,8 +67,8 @@ describe('Directive: DynamicFieldPropertyDirective', () => {
         host: CustomHostComponent,
         providers: [
             mockProvider(FieldPropertyService, {
-                getComponent: jest.fn().mockReturnValue(DynamicComponent),
-                getFieldType: jest.fn().mockReturnValue({
+                getComponent: vi.fn().mockReturnValue(DynamicComponent),
+                getFieldType: vi.fn().mockReturnValue({
                     helpText: 'helpText'
                 })
             }),
@@ -102,5 +103,51 @@ describe('Directive: DynamicFieldPropertyDirective', () => {
         });
         expect(testComponent.group).toEqual(hostSpectator.hostComponent.group);
         expect(testComponent.helpText).toEqual('helpText');
+    });
+
+    describe('shouldRecreate — field reference identity', () => {
+        const buildNewField = (overrides: Partial<DotCMSContentTypeField> = {}) =>
+            ({
+                ...hostSpectator.hostComponent.field,
+                id: null,
+                ...overrides
+            }) as DotCMSContentTypeField;
+
+        beforeEach(() => {
+            fieldPropertyService.getComponent.mockClear();
+        });
+
+        it('recreates the component when switching between two new fields with null id but different references', () => {
+            hostSpectator.hostComponent.field = buildNewField({ variable: 'first' });
+            hostSpectator.detectChanges();
+            const callsAfterFirst = fieldPropertyService.getComponent.mock.calls.length;
+
+            hostSpectator.hostComponent.field = buildNewField({ variable: 'second' });
+            hostSpectator.detectChanges();
+
+            expect(fieldPropertyService.getComponent.mock.calls.length).toBe(callsAfterFirst + 1);
+        });
+
+        it('does not recreate the component when the same field reference is passed again', () => {
+            const sameField = buildNewField({ variable: 'stable' });
+            hostSpectator.hostComponent.field = sameField;
+            hostSpectator.detectChanges();
+            const callsAfterFirst = fieldPropertyService.getComponent.mock.calls.length;
+
+            hostSpectator.hostComponent.field = sameField;
+            hostSpectator.detectChanges();
+
+            expect(fieldPropertyService.getComponent.mock.calls.length).toBe(callsAfterFirst);
+        });
+
+        it('recreates the component when switching from a saved field to a new null-id field', () => {
+            hostSpectator.detectChanges();
+            const callsAfterSaved = fieldPropertyService.getComponent.mock.calls.length;
+
+            hostSpectator.hostComponent.field = buildNewField({ variable: 'brand-new' });
+            hostSpectator.detectChanges();
+
+            expect(fieldPropertyService.getComponent.mock.calls.length).toBe(callsAfterSaved + 1);
+        });
     });
 });

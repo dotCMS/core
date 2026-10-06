@@ -65,9 +65,18 @@ export class UveIframeMessengerService {
     }
 
     /**
-     * Convenience method to request bounds from the iframe.
+     * Tell the SDK to emit page bounds NOW, bypassing the auto-bounds
+     * debounce. Use only for cases where the editor needs a synchronous
+     * snapshot before the user moves another pixel (drag/drop dropzone);
+     * everything else should rely on the auto-bounds push channel.
      */
-    requestBounds(): void {
+    flushBounds(): void {
+        this.sendPostMessage({
+            name: __DOTCMS_UVE_EVENT__.UVE_FLUSH_BOUNDS
+        });
+        // Dual-emit the legacy event name for one release so SDKs in the
+        // wild that still listen for `uve-request-bounds` keep receiving
+        // flushes. Drop after the next minor release of @dotcms/uve.
         this.sendPostMessage({
             name: __DOTCMS_UVE_EVENT__.UVE_REQUEST_BOUNDS
         });
@@ -103,6 +112,17 @@ export class UveIframeMessengerService {
         this.sendPostMessage({
             name: __DOTCMS_UVE_EVENT__.UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS,
             payload
+        });
+    }
+
+    /**
+     * Notify the iframe that the editor cleared its contentlet selection.
+     * The SDK uses this to reset the per-click "last selected" tracker so a
+     * subsequent click on the same contentlet re-emits CONTENTLET_CLICKED.
+     */
+    selectionCleared(): void {
+        this.sendPostMessage({
+            name: __DOTCMS_UVE_EVENT__.UVE_SELECTION_CLEARED
         });
     }
 }

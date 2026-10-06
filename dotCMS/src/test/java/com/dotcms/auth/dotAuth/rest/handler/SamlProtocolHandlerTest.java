@@ -1,0 +1,245 @@
+package com.dotcms.auth.dotAuth.rest.handler;
+
+import com.dotcms.auth.dotAuth.rest.DotAuthProtocol;
+import com.dotcms.saml.DotSamlProxyFactory;
+import com.dotcms.security.apps.AppSecrets;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+public class SamlProtocolHandlerTest {
+
+    private final SamlProtocolHandler handler = new SamlProtocolHandler();
+
+    @Test
+    public void protocol_is_SAML() {
+        assertEquals(DotAuthProtocol.SAML, handler.protocol());
+    }
+
+    @Test
+    public void appKey_matches_DotSamlProxyFactory_constant() {
+        assertEquals(DotSamlProxyFactory.SAML_APP_CONFIG_KEY, handler.appKey());
+    }
+
+    @Test
+    public void secretKeys_match_dotsaml_config_yml_params() {
+        assertEquals(
+                List.of("enable", "idpName", "sPIssuerURL", "sPEndpointHostname",
+                        "signatureValidationType", "idPMetadataFile", "publicCert",
+                        "privateKey", "buttonParam"),
+                handler.secretKeys());
+    }
+
+    @Test
+    public void privateKey_is_hidden() {
+        assertTrue(handler.hiddenKeys().contains("privateKey"));
+    }
+
+    @Test
+    public void enable_is_boolean() {
+        assertTrue(handler.booleanKeys().contains("enable"));
+    }
+
+    @Test
+    public void maskedValues_replaces_privateKey_with_mask_and_unboxes_enable() {
+        final AppSecrets secrets = AppSecrets.builder()
+                .withKey(DotSamlProxyFactory.SAML_APP_CONFIG_KEY)
+                .withHiddenSecret("privateKey", "PEM-content")
+                .withSecret("enable", true)
+                .withSecret("idpName", "Okta")
+                .build();
+
+        final Map<String, Object> out = handler.maskedValues(secrets);
+
+        assertEquals("****", out.get("privateKey"));
+        assertEquals(Boolean.TRUE, out.get("enable"));
+        assertEquals("Okta", out.get("idpName"));
+    }
+
+    @Test
+    public void buildSecrets_preserves_stored_privateKey_when_mask_posted_back() {
+        final AppSecrets existing = AppSecrets.builder()
+                .withKey(DotSamlProxyFactory.SAML_APP_CONFIG_KEY)
+                .withHiddenSecret("privateKey", "stored-PEM")
+                .withSecret("publicCert", "stored-CERT")
+                .build();
+
+        final AppSecrets result = handler.buildSecrets(
+                Map.of("privateKey", "****", "publicCert", "stored-CERT", "idpName", "Okta"),
+                Optional.of(existing));
+
+        assertEquals("stored-PEM", result.getSecrets().get("privateKey").getString());
+        assertEquals("Okta", result.getSecrets().get("idpName").getString());
+    }
+
+    @Test
+    public void buildSecrets_rejects_cert_without_key() {
+        assertThrows(javax.ws.rs.BadRequestException.class, () -> handler.buildSecrets(
+                Map.of("publicCert", "a-CERT", "privateKey", "", "idpName", "Okta"),
+                Optional.empty()));
+    }
+
+    @Test
+    public void buildSecrets_rejects_key_without_cert() {
+        assertThrows(javax.ws.rs.BadRequestException.class, () -> handler.buildSecrets(
+                Map.of("privateKey", "a-PEM", "publicCert", "", "idpName", "Okta"),
+                Optional.empty()));
+    }
+
+    @Test
+    public void buildSecrets_rejects_masked_key_when_cert_not_resent() {
+        // The mask resolves to the stored key, but declared non-hidden keys are
+        // client-authoritative — omitting publicCert would store key-without-cert.
+        final AppSecrets existing = AppSecrets.builder()
+                .withKey(DotSamlProxyFactory.SAML_APP_CONFIG_KEY)
+                .withHiddenSecret("privateKey", "stored-PEM")
+                .withSecret("publicCert", "stored-CERT")
+                .build();
+
+        assertThrows(javax.ws.rs.BadRequestException.class, () -> handler.buildSecrets(
+                Map.of("privateKey", "****", "idpName", "Okta"),
+                Optional.of(existing)));
+    }
+
+    @Test
+    public void buildSecrets_generates_keypair_when_both_halves_empty() {
+        final AppSecrets result = handler.buildSecrets(
+                Map.of("idpName", "Okta", "sPEndpointHostname", "sp.example.com"),
+                Optional.empty());
+
+        assertTrue(result.getSecrets().get("publicCert").getString().contains("BEGIN CERTIFICATE"));
+        assertTrue(result.getSecrets().get("privateKey").getString().contains("BEGIN PRIVATE KEY"));
+    }
+
+    @Test
+    public void buildSecrets_rejects_silent_regeneration_when_keypair_already_stored() {
+        // Clearing both fields on an existing config used to mint a new keypair and
+        // return 200, leaving the IdP with a stale SP certificate.
+        final AppSecrets existing = AppSecrets.builder()
+                .withKey(DotSamlProxyFactory.SAML_APP_CONFIG_KEY)
+                .withHiddenSecret("privateKey", "stored-PEM")
+                .withSecret("publicCert", "stored-CERT")
+                .build();
+
+        assertThrows(javax.ws.rs.BadRequestException.class, () -> handler.buildSecrets(
+                Map.of("idpName", "Okta"),
+                Optional.of(existing)));
+    }
+
+    @Test
+    public void buildSecrets_regenerates_keypair_when_flag_set_and_does_not_store_flag() {
+        final AppSecrets existing = AppSecrets.builder()
+                .withKey(DotSamlProxyFactory.SAML_APP_CONFIG_KEY)
+                .withHiddenSecret("privateKey", "stored-PEM")
+                .withSecret("publicCert", "stored-CERT")
+                .build();
+
+        final AppSecrets result = handler.buildSecrets(
+                Map.of("idpName", "Okta", SamlProtocolHandler.REGENERATE_KEYPAIR_KEY, true),
+                Optional.of(existing));
+
+        assertTrue(result.getSecrets().get("publicCert").getString().contains("BEGIN CERTIFICATE"));
+        assertNotEquals("stored-PEM", result.getSecrets().get("privateKey").getString());
+        assertFalse(result.getSecrets().containsKey(SamlProtocolHandler.REGENERATE_KEYPAIR_KEY));
+    }
+
+    @Test
+    public void buildSecrets_generates_keypair_when_existing_config_has_none() {
+        final AppSecrets existing = AppSecrets.builder()
+                .withKey(DotSamlProxyFactory.SAML_APP_CONFIG_KEY)
+                .withSecret("idpName", "Okta")
+                .build();
+
+        final AppSecrets result = handler.buildSecrets(
+                Map.of("idpName", "Okta"),
+                Optional.of(existing));
+
+        assertTrue(result.getSecrets().get("publicCert").getString().contains("BEGIN CERTIFICATE"));
+    }
+
+    @Test
+    public void maskedValues_passes_through_undeclared_keys_as_strings() {
+        final AppSecrets secrets = AppSecrets.builder()
+                .withKey(DotSamlProxyFactory.SAML_APP_CONFIG_KEY)
+                .withSecret("enable", true)
+                .withSecret("emailAttribute", "emailAddress")
+                .withSecret("rolesAttribute", "groups")
+                .build();
+
+        final Map<String, Object> out = handler.maskedValues(secrets);
+
+        assertEquals("emailAddress", out.get("emailAttribute"));
+        assertEquals("groups", out.get("rolesAttribute"));
+    }
+
+    @Test
+    public void buildSecrets_writes_undeclared_keys_as_strings() {
+        final AppSecrets result = handler.buildSecrets(
+                Map.of(
+                        "idpName", "Okta",
+                        "emailAttribute", "emailAddress",
+                        "autoCreateUsers", "true"),
+                Optional.empty());
+
+        assertEquals("emailAddress", result.getSecrets().get("emailAttribute").getString());
+        assertEquals("true", result.getSecrets().get("autoCreateUsers").getString());
+    }
+
+    @Test
+    public void buildSecrets_drops_undeclared_keys_with_empty_value() {
+        final AppSecrets result = handler.buildSecrets(
+                Map.of("idpName", "Okta", "emailAttribute", ""),
+                Optional.empty());
+
+        assertFalse(result.getSecrets().containsKey("emailAttribute"));
+    }
+
+    @Test
+    public void buildSecrets_omits_previously_stored_undeclared_keys_not_resent() {
+        // Client is authoritative: if it doesn't send a previously-stored
+        // extra, we drop it. Matches how admins remove rows through the UI.
+        final AppSecrets existing = AppSecrets.builder()
+                .withKey(DotSamlProxyFactory.SAML_APP_CONFIG_KEY)
+                .withSecret("emailAttribute", "emailAddress")
+                .build();
+
+        final AppSecrets result = handler.buildSecrets(
+                Map.of("idpName", "Okta"),
+                Optional.of(existing));
+
+        assertFalse(result.getSecrets().containsKey("emailAttribute"));
+    }
+
+    @Test
+    public void buildSecrets_rejects_signature_validation_type_none() {
+        assertThrows(javax.ws.rs.BadRequestException.class, () -> handler.buildSecrets(
+                Map.of("privateKey", "****", "publicCert", "stored-CERT", "signatureValidationType", "none"),
+                Optional.of(existingKeypair())));
+    }
+
+    @Test
+    public void buildSecrets_rejects_unknown_signature_validation_type() {
+        assertThrows(javax.ws.rs.BadRequestException.class, () -> handler.buildSecrets(
+                Map.of("privateKey", "****", "publicCert", "stored-CERT", "signatureValidationType", "signature"),
+                Optional.of(existingKeypair())));
+    }
+
+    @Test
+    public void buildSecrets_stores_supported_signature_validation_type_normalized() {
+        final AppSecrets result = handler.buildSecrets(
+                Map.of("privateKey", "****", "publicCert", "stored-CERT", "signatureValidationType", " Assertion "),
+                Optional.of(existingKeypair()));
+
+        assertEquals("assertion", result.getSecrets().get("signatureValidationType").getString());
+    }
+
+    private static AppSecrets existingKeypair() {
+        return AppSecrets.builder()
+                .withKey(DotSamlProxyFactory.SAML_APP_CONFIG_KEY)
+                .withHiddenSecret("privateKey", "stored-PEM")
+                .withSecret("publicCert", "stored-CERT")
+                .build();
+    }
+}

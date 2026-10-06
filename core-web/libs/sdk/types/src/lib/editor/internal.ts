@@ -110,5 +110,31 @@ export interface DotContentletAttributes {
     'data-dot-type': string;
     'data-dot-container': string;
     'data-dot-on-number-of-pages': string;
+    /**
+     * Whether the current user may edit this contentlet instance. Stringified
+     * boolean, mirroring what the Velocity container renderer emits on
+     * traditional pages so the editor reads one attribute on both surfaces.
+     */
+    'data-dot-can-edit': string;
     'data-dot-style-properties'?: string;
 }
+
+/**
+ *
+ * Minimal subset of contentlet data attributes required by DotCMS Analytics
+ * (impression & click tracking) to identify contentlets in live mode.
+ *
+ * In live mode the SDKs strip editor-only metadata, but Analytics still needs
+ * these attributes to resolve the contentlet behind an impression/click.
+ *
+ * @see DotContentletAttributes
+ * @interface DotAnalyticsContentletAttributes
+ */
+export type DotAnalyticsContentletAttributes = Pick<
+    DotContentletAttributes,
+    | 'data-dot-identifier'
+    | 'data-dot-inode'
+    | 'data-dot-title'
+    | 'data-dot-type'
+    | 'data-dot-basetype'
+>;

@@ -1,4 +1,5 @@
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 
@@ -75,7 +76,7 @@ describe('DotAiImagePromptGalleryComponent', () => {
     });
 
     it('should emit activeIndexChange event when galleria active index changes', () => {
-        const emitterSpy = jest.spyOn(spectator.component.activeIndexChange, 'emit');
+        const emitterSpy = vi.spyOn(spectator.component.activeIndexChange, 'emit');
 
         spectator.setInput({
             isLoading: false,
@@ -89,7 +90,7 @@ describe('DotAiImagePromptGalleryComponent', () => {
     });
 
     it('should emit regenerate event when regenerate button is clicked', () => {
-        const emitterSpy = jest.spyOn(spectator.component.regenerate, 'emit');
+        const emitterSpy = vi.spyOn(spectator.component.regenerate, 'emit');
 
         spectator.setInput({
             isLoading: false,
@@ -111,5 +112,23 @@ describe('DotAiImagePromptGalleryComponent', () => {
 
         const errorContainer = spectator.query(DotEmptyContainerComponent);
         expect(errorContainer.configuration.title).toEqual(errorImagesMock[0].error);
+    });
+
+    it('should reset error message to default when current image has no error', () => {
+        spectator.setInput({
+            isLoading: false,
+            images: errorImagesMock
+        });
+        spectator.detectChanges();
+
+        spectator.setInput({
+            images: imagesMock,
+            activeImageIndex: 0
+        });
+        spectator.detectChanges();
+
+        expect(spectator.component.emptyConfiguration.title).toEqual(
+            'block-editor.extension.ai-image.error'
+        );
     });
 });

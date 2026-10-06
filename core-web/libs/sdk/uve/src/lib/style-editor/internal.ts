@@ -1,13 +1,16 @@
-import {
+import { DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
+import type {
     StyleEditorCheckboxOption,
-    StyleEditorField,
     StyleEditorFieldInputType,
     StyleEditorFieldSchema,
-    StyleEditorForm,
     StyleEditorFormSchema,
-    StyleEditorSection,
     StyleEditorSectionSchema
-} from './types';
+} from '@dotcms/types/internal';
+
+import { StyleEditorField, StyleEditorForm, StyleEditorSection } from './types';
+
+import { getUVEState } from '../core/core.utils';
+import { sendMessageToUVE } from '../editor/public';
 
 /**
  * Normalizes a field definition into the schema format expected by UVE.
@@ -223,4 +226,47 @@ export function normalizeForm(form: StyleEditorForm): StyleEditorFormSchema {
         contentType: form.contentType,
         sections: form.sections.map(normalizeSection)
     };
+}
+
+/**
+ * Normalizes and validates a style editor form definition into the schema format
+ * expected by UVE. Used internally by the schema builder.
+ *
+ * @internal
+ */
+export function defineStyleEditorSchema(form: StyleEditorForm): StyleEditorFormSchema {
+    return normalizeForm(form);
+}
+
+/**
+ * Registers style editor form schemas with the UVE editor.
+ *
+ * Sends normalized style editor schemas to UVE for registration.
+ * Only registers schemas when UVE is in EDIT mode.
+ *
+ * @internal — called automatically by useEditableDotCMSPage and DotCMSEditablePageService
+ */
+export function registerStyleEditorSchemas(schemas: StyleEditorFormSchema[]): void {
+    const { mode } = getUVEState() || {};
+
+    if (!mode || mode !== UVE_MODE.EDIT) {
+        return;
+    }
+
+    const validatedSchemas = schemas.filter((schema, index) => {
+        if (!schema.contentType) {
+            console.warn(
+                `[registerStyleEditorSchemas] Skipping schema with index [${index}] for not having a contentType`
+            );
+            return false;
+        }
+        return true;
+    });
+
+    sendMessageToUVE({
+        action: DotCMSUVEAction.REGISTER_STYLE_SCHEMAS,
+        payload: {
+            schemas: validatedSchemas
+        }
+    });
 }

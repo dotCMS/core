@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 
+import { MockInstance, vi } from 'vitest';
+
 import { DojoFormBridge } from './dojo-form-bridge';
 
 describe('DojoFormBridge', () => {
@@ -21,6 +23,7 @@ describe('DojoFormBridge', () => {
         document.body.removeChild(inputElement);
         document.body.removeChild(textareaElement);
         bridge.destroy();
+        vi.restoreAllMocks();
     });
 
     describe('get', () => {
@@ -47,9 +50,9 @@ describe('DojoFormBridge', () => {
         });
 
         it('should handle errors gracefully', () => {
-            const consoleSpy = jest.spyOn(console, 'warn');
+            const consoleSpy = vi.spyOn(console, 'warn');
             // Simulate an error by removing the element during get
-            const getSpy = jest.spyOn(document, 'getElementById').mockImplementation(() => {
+            const getSpy = vi.spyOn(document, 'getElementById').mockImplementation(() => {
                 throw new Error('Test error');
             });
 
@@ -80,8 +83,18 @@ describe('DojoFormBridge', () => {
             expect(inputElement.value).toBe('');
         });
 
+        it('should store an array the way the legacy checkbox field does, comma-separated', () => {
+            bridge.set('testInput', ['a', 'b']);
+            expect(inputElement.value).toBe('a,b');
+        });
+
+        it('should store an object as JSON', () => {
+            bridge.set('testTextarea', { type: 'doc', content: [] });
+            expect(textareaElement.value).toBe('{"type":"doc","content":[]}');
+        });
+
         it('should dispatch change event after setting value', () => {
-            const changeSpy = jest.fn();
+            const changeSpy = vi.fn();
             inputElement.addEventListener('change', changeSpy);
 
             bridge.set('testInput', 'new value');
@@ -90,9 +103,9 @@ describe('DojoFormBridge', () => {
         });
 
         it('should handle errors gracefully', () => {
-            const consoleSpy = jest.spyOn(console, 'warn');
+            const consoleSpy = vi.spyOn(console, 'warn');
             // Simulate an error by removing the element during set
-            const getSpy = jest.spyOn(document, 'getElementById').mockImplementation(() => {
+            const getSpy = vi.spyOn(document, 'getElementById').mockImplementation(() => {
                 throw new Error('Test error');
             });
 
@@ -109,7 +122,7 @@ describe('DojoFormBridge', () => {
 
     describe('onChangeField', () => {
         it('should watch input changes', () => {
-            const callback = jest.fn();
+            const callback = vi.fn();
             bridge.onChangeField('testInput', callback);
 
             inputElement.value = 'changed value';
@@ -119,7 +132,7 @@ describe('DojoFormBridge', () => {
         });
 
         it('should watch textarea changes', () => {
-            const callback = jest.fn();
+            const callback = vi.fn();
             bridge.onChangeField('testTextarea', callback);
 
             textareaElement.value = 'changed value';
@@ -129,8 +142,8 @@ describe('DojoFormBridge', () => {
         });
 
         it('should support multiple callbacks for same field', () => {
-            const callback1 = jest.fn();
-            const callback2 = jest.fn();
+            const callback1 = vi.fn();
+            const callback2 = vi.fn();
 
             bridge.onChangeField('testInput', callback1);
             bridge.onChangeField('testInput', callback2);
@@ -143,7 +156,7 @@ describe('DojoFormBridge', () => {
         });
 
         it('should handle both keyup and change events', () => {
-            const callback = jest.fn();
+            const callback = vi.fn();
             bridge.onChangeField('testInput', callback);
 
             inputElement.value = 'keyup value';
@@ -174,9 +187,9 @@ describe('DojoFormBridge', () => {
         });
 
         it('should handle errors gracefully', () => {
-            const consoleSpy = jest.spyOn(console, 'warn');
+            const consoleSpy = vi.spyOn(console, 'warn');
             // Simulate an error during onChangeField
-            const getSpy = jest.spyOn(document, 'getElementById').mockImplementation(() => {
+            const getSpy = vi.spyOn(document, 'getElementById').mockImplementation(() => {
                 throw new Error('Test error');
             });
 
@@ -191,8 +204,8 @@ describe('DojoFormBridge', () => {
 
     describe('unsubscribe', () => {
         it('should remove specific callback and keep others', () => {
-            const callback1 = jest.fn();
-            const callback2 = jest.fn();
+            const callback1 = vi.fn();
+            const callback2 = vi.fn();
 
             const unsubscribe1 = bridge.onChangeField('testInput', callback1);
             bridge.onChangeField('testInput', callback2);
@@ -207,7 +220,7 @@ describe('DojoFormBridge', () => {
         });
 
         it('should cleanup event listeners when last callback is removed', () => {
-            const callback = jest.fn();
+            const callback = vi.fn();
             const unsubscribe = bridge.onChangeField('testInput', callback);
 
             unsubscribe();
@@ -221,8 +234,8 @@ describe('DojoFormBridge', () => {
 
     describe('destroy', () => {
         it('should cleanup all event listeners on destroy', () => {
-            const callback1 = jest.fn();
-            const callback2 = jest.fn();
+            const callback1 = vi.fn();
+            const callback2 = vi.fn();
 
             bridge.onChangeField('testInput', callback1);
             bridge.onChangeField('testTextarea', callback2);
@@ -239,7 +252,8 @@ describe('DojoFormBridge', () => {
         });
 
         it('should cleanup load handler on destroy', () => {
-            const callback = jest.fn();
+            vi.spyOn(document, 'readyState', 'get').mockReturnValue('loading');
+            const callback = vi.fn();
             bridge.ready(callback);
 
             bridge.destroy();
@@ -305,8 +319,8 @@ describe('DojoFormBridge', () => {
         });
 
         it('should handle errors gracefully in hide', () => {
-            const consoleSpy = jest.spyOn(console, 'warn');
-            const getSpy = jest.spyOn(document, 'getElementById').mockImplementation(() => {
+            const consoleSpy = vi.spyOn(console, 'warn');
+            const getSpy = vi.spyOn(document, 'getElementById').mockImplementation(() => {
                 throw new Error('Test error');
             });
 
@@ -320,8 +334,8 @@ describe('DojoFormBridge', () => {
         });
 
         it('should handle errors gracefully in show', () => {
-            const consoleSpy = jest.spyOn(console, 'warn');
-            const getSpy = jest.spyOn(document, 'getElementById').mockImplementation(() => {
+            const consoleSpy = vi.spyOn(console, 'warn');
+            const getSpy = vi.spyOn(document, 'getElementById').mockImplementation(() => {
                 throw new Error('Test error');
             });
 
@@ -335,24 +349,157 @@ describe('DojoFormBridge', () => {
         });
     });
 
-    describe('ready', () => {
-        it('should execute callback when loaded', (done) => {
-            bridge.ready((api) => {
-                expect(api).toBeDefined();
-                done();
-            });
+    describe('getField validation state', () => {
+        it('should return a neutral validation state', () => {
+            const state = bridge.getField('anyField').getValidationState();
 
-            window.dispatchEvent(new Event('load'));
+            expect(state).toEqual({
+                valid: true,
+                invalid: false,
+                touched: false,
+                dirty: false,
+                errors: null
+            });
         });
 
+        it('should return a no-op unsubscribe from onValidationChange', () => {
+            const unsubscribe = bridge.getField('anyField').onValidationChange(vi.fn());
+
+            expect(typeof unsubscribe).toBe('function');
+            expect(() => unsubscribe()).not.toThrow();
+        });
+    });
+
+    describe('ready', () => {
+        describe('while the page is still loading', () => {
+            beforeEach(() => {
+                vi.spyOn(document, 'readyState', 'get').mockReturnValue('loading');
+            });
+
+            it('should wait for the load event before calling back', () => {
+                const callback = vi.fn();
+                bridge.ready(callback);
+
+                expect(callback).not.toHaveBeenCalled();
+
+                window.dispatchEvent(new Event('load'));
+
+                expect(callback).toHaveBeenCalledWith(bridge);
+            });
+
+            it('should call back every template that asked, not only the last one', () => {
+                const first = vi.fn();
+                const second = vi.fn();
+                bridge.ready(first);
+                bridge.ready(second);
+
+                window.dispatchEvent(new Event('load'));
+
+                expect(first).toHaveBeenCalledTimes(1);
+                expect(second).toHaveBeenCalledTimes(1);
+            });
+
+            it('should not call back any template once the bridge is destroyed', () => {
+                const first = vi.fn();
+                const second = vi.fn();
+                bridge.ready(first);
+                bridge.ready(second);
+
+                bridge.destroy();
+                window.dispatchEvent(new Event('load'));
+
+                expect(first).not.toHaveBeenCalled();
+                expect(second).not.toHaveBeenCalled();
+            });
+        });
+
+        it('should call back right away when the page has already loaded', () => {
+            vi.spyOn(document, 'readyState', 'get').mockReturnValue('complete');
+            const callback = vi.fn();
+
+            bridge.ready(callback);
+
+            expect(callback).toHaveBeenCalledWith(bridge);
+        });
+
+        it('should not call back once the bridge is destroyed, even after the page loaded', () => {
+            vi.spyOn(document, 'readyState', 'get').mockReturnValue('complete');
+            const callback = vi.fn();
+
+            bridge.destroy();
+            bridge.ready(callback);
+
+            expect(callback).not.toHaveBeenCalled();
+        });
+
+        it('should execute callback when loaded', () =>
+            new Promise<void>((done) => {
+                vi.spyOn(document, 'readyState', 'get').mockReturnValue('loading');
+                bridge.ready((api) => {
+                    expect(api).toBeDefined();
+                    done();
+                });
+
+                window.dispatchEvent(new Event('load'));
+            }));
+
         it('should not execute callback if bridge is destroyed', () => {
-            const callback = jest.fn();
+            vi.spyOn(document, 'readyState', 'get').mockReturnValue('loading');
+            const callback = vi.fn();
             bridge.ready(callback);
 
             bridge.destroy();
             window.dispatchEvent(new Event('load'));
 
             expect(callback).not.toHaveBeenCalled();
+        });
+    });
+
+    /**
+     * The legacy Dojo editor has never had a browse modal — the method has always been a stub.
+     * That stays true; what changes is that it says so. A stub that silently resolves `null` is
+     * indistinguishable from the user pressing Cancel, so a template author debugging "why does
+     * nothing happen" has nothing to go on.
+     */
+    describe('openBrowserModal', () => {
+        let warn: MockInstance;
+
+        beforeEach(() => {
+            warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        });
+
+        afterEach(() => warn.mockRestore());
+
+        it('should return a controller', () => {
+            const controller = bridge.openBrowserModal({ kinds: ['file'] });
+
+            expect(typeof controller.close).toBe('function');
+        });
+
+        it('should report null because it opens nothing', () => {
+            const onClose = vi.fn();
+
+            bridge.openBrowserModal({ kinds: ['file'], onClose });
+
+            expect(onClose).toHaveBeenCalledWith(null);
+        });
+
+        it('should warn that the legacy editor does not support it', () => {
+            bridge.openBrowserModal({ kinds: ['file'] });
+
+            expect(warn).toHaveBeenCalled();
+        });
+
+        it('should tolerate close() being called', () => {
+            // Nothing is open, so this must be a no-op rather than a throw — a caller cannot know
+            // which host it landed in.
+            const controller = bridge.openBrowserModal({ kinds: ['file'] });
+
+            expect(() => controller.close()).not.toThrow();
+        });
+
+        it('should work with no options at all', () => {
+            expect(() => bridge.openBrowserModal()).not.toThrow();
         });
     });
 });

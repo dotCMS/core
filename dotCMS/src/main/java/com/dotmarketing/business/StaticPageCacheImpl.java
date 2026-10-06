@@ -75,7 +75,7 @@ public class StaticPageCacheImpl extends StaticPageCache {
 
         long ttl = page.getCacheTTL() > 0 ? page.getCacheTTL() * 1000 : 60 * 60 * 24 * 7 * 1000; // 1 week
 
-        Logger.info(this.getClass(), () -> "PageCache Put: ttl:" + ttl + " key:" + cacheKey);
+        Logger.debug(this.getClass(), () -> "PageCache Put: ttl:" + ttl + " key:" + cacheKey);
 
         this.cache.put(cacheKey, new CacheValueImpl(pageContent, ttl), PRIMARY_GROUP);
 

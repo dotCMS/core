@@ -1,24 +1,36 @@
 package com.dotcms.rest.api.v1.workflow;
 
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.LanguageDataGen;
+import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.mock.response.MockAsyncResponse;
 import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.MultiPartUtils;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.variant.VariantAPI;
 import com.dotcms.workflow.form.*;
 import com.dotcms.workflow.helper.WorkflowHelper;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowComment;
+import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowState;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
@@ -33,12 +45,17 @@ import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.*;
 import static com.dotmarketing.business.Role.ADMINISTRATOR;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.mock;
@@ -90,6 +107,7 @@ public class WorkflowResourceResponseCodeIntegrationTest {
         when(webResource
                 .init(nullable(String.class), any(HttpServletRequest.class), any(HttpServletResponse.class), anyBoolean(),
                         nullable(String.class))).thenReturn(dataObject);
+        when(webResource.init(any(WebResource.InitBuilder.class))).thenReturn(dataObject);
 
         workflowResource = new WorkflowResource(workflowHelper, contentHelper, workflowAPI,
                 contentletAPI, responseUtil, permissionAPI, workflowImportExportUtil,new MultiPartUtils(), webResource,
@@ -440,6 +458,343 @@ public class WorkflowResourceResponseCodeIntegrationTest {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final Response findSchemeByActionResponse = workflowResource.findActionsByScheme(request, new EmptyHttpResponse(),"LOL");
         assertEquals(Status.NOT_FOUND.getStatusCode(), findSchemeByActionResponse.getStatus());
+    }
+
+    // ── findAllSchemesByContentTypeList ────────────────────────────────────────
+
+    @Test
+    public void Find_Schemes_By_Content_Type_List_Null_Ids_Expect_BadRequest() {
+        // F-1: omitting the parameter entirely must be rejected — the endpoint requires
+        // at least one explicit content type identifier (null arrives when the query
+        // param is absent from the request)
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final Response response = workflowResource.findAllSchemesByContentTypeList(
+                request, new EmptyHttpResponse(), null);
+        assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+    }
+
+    @Test
+    public void Find_Schemes_By_Content_Type_List_Empty_List_Expect_BadRequest() {
+        // F-1: a blank token (empty string) must be filtered out and, once all tokens
+        // are removed, the endpoint must return 400 rather than an empty 200
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final Response response = workflowResource.findAllSchemesByContentTypeList(
+                request, new EmptyHttpResponse(), List.of(""));
+        assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+    }
+
+    @Test
+    public void Find_Schemes_By_Content_Type_List_Whitespace_Only_Expect_BadRequest() {
+        // F-1: tokens that consist solely of whitespace or commas must be filtered out;
+        // the resulting empty list must produce a 400
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final Response response = workflowResource.findAllSchemesByContentTypeList(
+                request, new EmptyHttpResponse(), List.of("  ,  ,  "));
+        assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+    }
+
+    @Test
+    public void Find_Schemes_By_Content_Type_List_Unknown_Id_Reported_In_Errors() {
+        // F-3: an identifier that does not match any content type must NOT fail the
+        // whole request; instead it must appear in the response errors array with
+        // errorCode CONTENT_TYPE_NOT_FOUND and fieldName equal to the original input
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final Response response = workflowResource.findAllSchemesByContentTypeList(
+                request, new EmptyHttpResponse(), List.of("invalid-ct-id"));
+        assertEquals(Status.OK.getStatusCode(), response.getStatus());
+        final ResponseEntityView<?> body = ResponseEntityView.class.cast(response.getEntity());
+        assertTrue("entity should be empty for an all-unknown input",
+                ((List<?>) body.getEntity()).isEmpty());
+        assertFalse("errors should contain the unresolvable ID", body.getErrors().isEmpty());
+        assertEquals("CONTENT_TYPE_NOT_FOUND", body.getErrors().get(0).getErrorCode());
+        assertEquals("invalid-ct-id", body.getErrors().get(0).getFieldName());
+    }
+
+    @Test
+    public void Find_Schemes_By_Content_Type_List_Ids_With_Surrounding_Whitespace() throws Exception {
+        // Spaces around a valid ID must be trimmed so the lookup succeeds
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        try {
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+            final Response response = workflowResource.findAllSchemesByContentTypeList(
+                    request, new EmptyHttpResponse(), List.of(" " + contentType.id() + " "));
+            assertEquals(Status.OK.getStatusCode(), response.getStatus());
+            @SuppressWarnings("unchecked")
+            final List<ContentTypeWorkflowSchemesView> result =
+                    (List<ContentTypeWorkflowSchemesView>) ResponseEntityView.class.cast(response.getEntity()).getEntity();
+            assertEquals(1, result.size());
+            assertEquals(contentType.id(), result.get(0).contentTypeId());
+        } finally {
+            APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType);
+        }
+    }
+
+    @Test
+    public void Find_Schemes_By_Content_Type_List_Happy_Path_Comma_Separated() throws Exception {
+        // Comma-separated values in a single param: ?contentTypeIds=id1,id2
+        final ContentType contentType1 = new ContentTypeDataGen().nextPersisted();
+        final ContentType contentType2 = new ContentTypeDataGen().nextPersisted();
+        try {
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+            final Response response = workflowResource.findAllSchemesByContentTypeList(
+                    request, new EmptyHttpResponse(),
+                    List.of(contentType1.id() + "," + contentType2.id()));
+            assertEquals(Status.OK.getStatusCode(), response.getStatus());
+            @SuppressWarnings("unchecked")
+            final List<ContentTypeWorkflowSchemesView> result =
+                    (List<ContentTypeWorkflowSchemesView>) ResponseEntityView.class.cast(response.getEntity()).getEntity();
+            assertEquals(2, result.size());
+            assertTrue(result.stream().anyMatch(v -> v.contentTypeId().equals(contentType1.id())));
+            assertTrue(result.stream().anyMatch(v -> v.contentTypeId().equals(contentType2.id())));
+            result.forEach(v -> assertFalse(
+                    "Expected at least one scheme for contentType " + v.contentTypeId(),
+                    v.schemes().isEmpty()));
+        } finally {
+            APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType1);
+            APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType2);
+        }
+    }
+
+    @Test
+    public void Find_Schemes_By_Content_Type_List_Repeated_Param_Format_Captures_All_Ids() throws Exception {
+        // Repeated params (?contentTypeIds=a&contentTypeIds=b) arrive as separate list elements;
+        // both must be resolved and returned
+        final ContentType contentType1 = new ContentTypeDataGen().nextPersisted();
+        final ContentType contentType2 = new ContentTypeDataGen().nextPersisted();
+        try {
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+            final Response response = workflowResource.findAllSchemesByContentTypeList(
+                    request, new EmptyHttpResponse(),
+                    List.of(contentType1.id(), contentType2.id()));
+            assertEquals(Status.OK.getStatusCode(), response.getStatus());
+            @SuppressWarnings("unchecked")
+            final List<ContentTypeWorkflowSchemesView> result =
+                    (List<ContentTypeWorkflowSchemesView>) ResponseEntityView.class.cast(response.getEntity()).getEntity();
+            assertEquals(2, result.size());
+            assertTrue(result.stream().anyMatch(v -> v.contentTypeId().equals(contentType1.id())));
+            assertTrue(result.stream().anyMatch(v -> v.contentTypeId().equals(contentType2.id())));
+        } finally {
+            APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType1);
+            APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType2);
+        }
+    }
+
+    @Test
+    public void Find_Schemes_By_Content_Type_List_Deduplicates_Input_Ids() throws Exception {
+        // Duplicate IDs must produce a single lookup and a single entry in the response
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        try {
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+            final Response response = workflowResource.findAllSchemesByContentTypeList(
+                    request, new EmptyHttpResponse(),
+                    List.of(contentType.id(), contentType.id(), contentType.id()));
+            assertEquals(Status.OK.getStatusCode(), response.getStatus());
+            @SuppressWarnings("unchecked")
+            final List<ContentTypeWorkflowSchemesView> result =
+                    (List<ContentTypeWorkflowSchemesView>) ResponseEntityView.class.cast(response.getEntity()).getEntity();
+            assertEquals("Duplicate IDs should be deduplicated to a single entry", 1, result.size());
+        } finally {
+            APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType);
+        }
+    }
+
+    @Test
+    public void Find_Schemes_By_Content_Type_List_Deduplicates_UUID_And_Variable_Name() throws Exception {
+        // F-2: passing both the UUID and variable name of the same content type must
+        // produce a single entry in the response, not two separate entries
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        try {
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+            final Response response = workflowResource.findAllSchemesByContentTypeList(
+                    request, new EmptyHttpResponse(),
+                    List.of(contentType.id(), contentType.variable()));
+            assertEquals(Status.OK.getStatusCode(), response.getStatus());
+            @SuppressWarnings("unchecked")
+            final List<ContentTypeWorkflowSchemesView> result =
+                    (List<ContentTypeWorkflowSchemesView>) ResponseEntityView.class.cast(response.getEntity()).getEntity();
+            assertEquals("UUID and variable name for the same CT should deduplicate to one entry", 1, result.size());
+            assertEquals(contentType.id(), result.get(0).contentTypeId());
+            assertEquals(contentType.variable(), result.get(0).contentTypeVariable());
+        } finally {
+            APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType);
+        }
+    }
+
+    @Test
+    public void Find_Schemes_By_Content_Type_List_Exceeds_Max_Size_Expect_BadRequest() {
+        final List<String> tooManyIds = new java.util.ArrayList<>();
+        for (int i = 0; i <= 100; i++) {
+            tooManyIds.add("ct-id-" + i);
+        }
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final Response response = workflowResource.findAllSchemesByContentTypeList(
+                request, new EmptyHttpResponse(), tooManyIds);
+        assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+    }
+
+    /**
+     * Creates a persisted contentlet of a simple type, for the workflow-timeline tests below.
+     */
+    private Contentlet newContentlet(final String titlePrefix) throws Exception {
+        final ContentType contentType = TestDataUtils.getRichTextLikeContentType();
+        return new ContentletDataGen(contentType.id())
+                .languageId(APILocator.getLanguageAPI().getDefaultLanguage().getId())
+                .host(APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false))
+                .setProperty("title", titlePrefix + System.currentTimeMillis())
+                .setProperty("body", "Fixture for #37584")
+                .nextPersisted();
+    }
+
+    /**
+     * Given Scenario: The workflow comment timeline is requested for a contentlet with no
+     * {@code workflow_task} row.
+     * <p>
+     * Expected Result: an empty timeline, not an exception.
+     * {@code WorkFlowFactoryImpl.findTaskByContentlet} returns {@code null} in that case, and
+     * before the fix for <a href="https://github.com/dotCMS/core/issues/37584">#37584</a> that
+     * null went straight into {@code getCommentsAndChangeHistory}, which dereferenced it —
+     * surfacing as an HTTP 500 and a blocking "Unknown Error" modal in the new Edit Content editor.
+     */
+    @Test
+    public void History_Comments_Without_Workflow_Task_Returns_Empty_Timeline() throws Exception {
+
+        final User systemUser = APILocator.systemUser();
+        final Contentlet contentlet = newContentlet("no-workflow-task-");
+
+        // Persisting a contentlet creates a task for it, so remove it to reach the null branch.
+        workflowAPI.deleteWorkflowTaskByContentletIdAnyLanguage(contentlet, systemUser);
+        assertNull("This fixture is only meaningful without a workflow task",
+                workflowAPI.findTaskByContentlet(contentlet));
+
+        final ResponseEntityWorkflowHistoryCommentsView view =
+                workflowResource.getWorkflowTasksHistoryComments(mock(HttpServletRequest.class),
+                        new EmptyHttpResponse(), contentlet.getIdentifier(), "-1");
+
+        assertNotNull(view);
+        assertTrue("A contentlet with no workflow task must yield an empty timeline",
+                view.getEntity().isEmpty());
+    }
+
+    /**
+     * Given Scenario: The same endpoint is asked for a Site.
+     * <p>
+     * Expected Result: an empty timeline. This is the path actually reported in #37584 — a Site can
+     * never acquire a workflow task, because workflow actions are prohibited on the Host Content
+     * Type, so for Sites the null branch is guaranteed rather than incidental.
+     */
+    @Test
+    public void History_Comments_For_A_Site_Returns_Empty_Timeline() throws Exception {
+
+        final User systemUser = APILocator.systemUser();
+        final Host site = APILocator.getHostAPI().findDefaultHost(systemUser, false);
+
+        assertNull("A Site can never have a workflow task",
+                workflowAPI.findTaskByContentlet(site));
+
+        final ResponseEntityWorkflowHistoryCommentsView view =
+                workflowResource.getWorkflowTasksHistoryComments(mock(HttpServletRequest.class),
+                        new EmptyHttpResponse(), site.getIdentifier(), "-1");
+
+        assertNotNull(view);
+        assertTrue("A Site must yield an empty timeline, not an error",
+                view.getEntity().isEmpty());
+    }
+
+    /**
+     * Given Scenario: The same endpoint is asked for a contentlet that DOES have a workflow task
+     * carrying a comment.
+     * <p>
+     * Expected Result: the timeline comes back populated, exactly as before. This is the regression
+     * guard for #37584 — the null check must not short-circuit the happy path.
+     */
+    @Test
+    public void History_Comments_With_Workflow_Task_Returns_Its_Timeline() throws Exception {
+
+        final User systemUser = APILocator.systemUser();
+        final Contentlet contentlet = newContentlet("with-workflow-task-");
+
+        final WorkflowTask task = workflowAPI.findTaskByContentlet(contentlet);
+        assertNotNull("Persisting a contentlet is expected to create its workflow task", task);
+
+        final WorkflowComment comment = new WorkflowComment();
+        comment.setComment("A comment that must still come back");
+        comment.setCreationDate(new Date());
+        comment.setPostedBy(systemUser.getUserId());
+        comment.setWorkflowtaskId(task.getId());
+        workflowAPI.saveComment(comment);
+
+        final ResponseEntityWorkflowHistoryCommentsView view =
+                workflowResource.getWorkflowTasksHistoryComments(mock(HttpServletRequest.class),
+                        new EmptyHttpResponse(), contentlet.getIdentifier(), "-1");
+
+        assertNotNull(view);
+        assertFalse("A contentlet with a workflow task must still return its timeline",
+                view.getEntity().isEmpty());
+    }
+
+    /**
+     * Given Scenario: A Contentlet has a Workflow task, carrying a comment, in one language only,
+     * and the timeline is requested for a different language.
+     * <p>
+     * Expected Result: an empty timeline for the language with no task, and the populated one for
+     * the language that has it. A Workflow task is per language — {@code findTaskByContentlet}
+     * keys on identifier <i>and</i> languageId — so the timeline belongs to the language version
+     * being viewed rather than to the identifier as a whole.
+     * <p>
+     * Pins the behavior raised in review on
+     * <a href="https://github.com/dotCMS/core/pull/37589">#37589</a>: before the #37584 fix this
+     * path threw an NPE (HTTP 500) for any language with no task; it must now be an empty timeline,
+     * and it must not leak another language's history.
+     */
+    @Test
+    public void History_Comments_Are_Scoped_To_The_Requested_Language() throws Exception {
+
+        final User systemUser = APILocator.systemUser();
+        final long defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        final Language otherLanguage = new LanguageDataGen().nextPersisted();
+
+        // Both versions must be live: a mocked request carries no back-end user, so
+        // PageMode.get() resolves to LIVE and the endpoint only finds published versions.
+        final Contentlet contentlet = ContentletDataGen.publish(newContentlet("language-scoped-task-"));
+        assertEquals(defaultLanguage, contentlet.getLanguageId());
+
+        final WorkflowTask task = workflowAPI.findTaskByContentlet(contentlet);
+        assertNotNull("The fixture needs a task in the default language", task);
+
+        final WorkflowComment comment = new WorkflowComment();
+        comment.setComment("Only in the default language");
+        comment.setCreationDate(new Date());
+        comment.setPostedBy(systemUser.getUserId());
+        comment.setWorkflowtaskId(task.getId());
+        workflowAPI.saveComment(comment);
+
+        // The other language needs a version of its own: without one the endpoint throws
+        // DoesNotExistException while resolving the Contentlet, and never reaches the task lookup
+        // this test is about. Persisting that version also creates a task for it, so remove it —
+        // "exists in this language, has no task of its own" is the case under test.
+        final Contentlet otherVersion = ContentletDataGen.publish(ContentletDataGen.createNewVersion(
+                contentlet, VariantAPI.DEFAULT_VARIANT, otherLanguage, null));
+        workflowAPI.deleteWorkflowTaskByContentlet(otherVersion, otherLanguage.getId(), systemUser);
+        assertNull("The other language must have no task of its own for this test to mean anything",
+                workflowAPI.findTaskByContentlet(otherVersion));
+
+        // The language that owns the task still returns its history.
+        final ResponseEntityWorkflowHistoryCommentsView owning = workflowResource
+                .getWorkflowTasksHistoryComments(mock(HttpServletRequest.class),
+                        new EmptyHttpResponse(), contentlet.getIdentifier(),
+                        String.valueOf(defaultLanguage));
+        assertFalse("The language owning the task must return its timeline",
+                owning.getEntity().isEmpty());
+
+        // A language with no task of its own returns empty rather than throwing, and must not
+        // borrow the other language's comments.
+        final ResponseEntityWorkflowHistoryCommentsView other = workflowResource
+                .getWorkflowTasksHistoryComments(mock(HttpServletRequest.class),
+                        new EmptyHttpResponse(), contentlet.getIdentifier(),
+                        String.valueOf(otherLanguage.getId()));
+        assertNotNull(other);
+        assertTrue("A language with no task of its own must yield an empty timeline",
+                other.getEntity().isEmpty());
     }
 
 }

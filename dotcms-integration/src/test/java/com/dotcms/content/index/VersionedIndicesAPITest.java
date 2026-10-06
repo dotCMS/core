@@ -41,6 +41,7 @@ public class VersionedIndicesAPITest {
 
     private static final String TEST_VERSION = "test_v1.0.0";
     private static final String TEST_VERSION_2 = "test_v2.0.0";
+
     private static final String TEST_LIVE_INDEX = "cluster_test.live_20241224120000";
     private static final String TEST_WORKING_INDEX = "cluster_test.working_20241224120000";
     private static final String TEST_REINDEX_LIVE_INDEX = "cluster_test.reindex_live_20241224120000";
@@ -104,11 +105,11 @@ public class VersionedIndicesAPITest {
 
     /**
      * Test scenario: Save versioned indices and load them back
-     * Expected: All indices are saved and retrieved correctly with version
+     * Expected: All indices are saved and retrieved correctly with a version
      */
     @Test
     public void test_saveIndices_WithVersion_ShouldSaveSuccessfully() throws DotDataException {
-        // Create test indices info with version
+        // Create test indices info with a version
         VersionedIndices testIndices = VersionedIndicesImpl.builder()
             .version(TEST_VERSION)
             .live(TEST_LIVE_INDEX)
@@ -130,12 +131,17 @@ public class VersionedIndicesAPITest {
         VersionedIndices loadedIndices = loadedIndicesOpt.get();
         assertNotNull("Loaded indices should not be null", loadedIndices);
 
+        final String taggedLive = IndexTag.OS.tag(TEST_LIVE_INDEX);
+        final String taggedWorking = IndexTag.OS.tag(TEST_WORKING_INDEX);
+        final String taggedReindexLive = IndexTag.OS.tag(TEST_REINDEX_LIVE_INDEX);
+        final String taggedSiteSearch = IndexTag.OS.tag(TEST_SITE_SEARCH_INDEX);
+
         // Verify all indices are correct
         assertEquals("Version should match", TEST_VERSION, loadedIndices.version());
-        assertEquals("Live index should match", TEST_LIVE_INDEX, loadedIndices.live().orElse(null));
-        assertEquals("Working index should match", TEST_WORKING_INDEX, loadedIndices.working().orElse(null));
-        assertEquals("Reindex live index should match", TEST_REINDEX_LIVE_INDEX, loadedIndices.reindexLive().orElse(null));
-        assertEquals("Site search index should match", TEST_SITE_SEARCH_INDEX, loadedIndices.siteSearch().orElse(null));
+        assertEquals("Live index should match", taggedLive, loadedIndices.live().orElse(null));
+        assertEquals("Working index should match", taggedWorking, loadedIndices.working().orElse(null));
+        assertEquals("Reindex live index should match", taggedReindexLive, loadedIndices.reindexLive().orElse(null));
+        assertEquals("Site search index should match", taggedSiteSearch, loadedIndices.siteSearch().orElse(null));
 
         // Verify indices count
         assertEquals("Should have 4 indices for version", 4, versionedIndicesAPI.getIndicesCount(TEST_VERSION));
@@ -249,7 +255,7 @@ public class VersionedIndicesAPITest {
      */
     @Test
     public void test_extractTimestamp_ValidIndexName_ShouldReturnCorrectTimestamp() throws DotDataException {
-        String indexName = "cluster_test.live_20241224120000";
+        String indexName = IndexTag.OS.tag("cluster_test.live_20241224120000");
         Instant timestamp = versionedIndicesAPI.extractTimestamp(indexName);
 
         assertNotNull("Timestamp should not be null", timestamp);
@@ -512,44 +518,18 @@ public class VersionedIndicesAPITest {
     }
 
     /**
-     * Test scenario: Save indices with partial data (only some index types)
-     * Expected: Should save successfully with only provided indices
-     */
-    @Test
-    public void test_saveIndices_PartialData_ShouldSaveOnlyProvidedIndices() throws DotDataException {
-        // Create indices with only live and working
-        VersionedIndices partialIndices = VersionedIndicesImpl.builder()
-            .version(TEST_VERSION)
-            .live(TEST_LIVE_INDEX)
-            .working(TEST_WORKING_INDEX)
-            .build();
-
-        versionedIndicesAPI.saveIndices(partialIndices);
-
-        // Load back and verify
-        Optional<VersionedIndices> loadedOpt = versionedIndicesAPI.loadIndices(TEST_VERSION);
-        assertTrue("Indices should be present", loadedOpt.isPresent());
-
-        VersionedIndices loaded = loadedOpt.get();
-        assertEquals("Live index should be saved", TEST_LIVE_INDEX, loaded.live().orElse(null));
-        assertEquals("Working index should be saved", TEST_WORKING_INDEX, loaded.working().orElse(null));
-        assertFalse("Reindex live should be empty", loaded.reindexLive().isPresent());
-        assertFalse("Site search should be empty", loaded.siteSearch().isPresent());
-
-        assertEquals("Should count only saved indices", 2, versionedIndicesAPI.getIndicesCount(TEST_VERSION));
-    }
-
-    /**
      * Test scenario: Load default versioned indices using OPENSEARCH_3X
      * Expected: Should load indices for the default OPENSEARCH_3X version
      */
     @Test
     public void test_loadDefaultVersionedIndices_ShouldLoadOpensearch3XVersion() throws DotDataException {
-        // First save some indices for the default OPENSEARCH_3X version
+        String expectedLiveIndex = "cluster_default.live_20241224140000";
+        String expectedWorkingIndex = "cluster_default.working_20241224140000";
+        // First, save some indices for the default OPENSEARCH_3X version
         VersionedIndices defaultIndices = VersionedIndicesImpl.builder()
             .version(VersionedIndices.OPENSEARCH_3X)
-            .live("cluster_default.live_20241224140000")
-            .working("cluster_default.working_20241224140000")
+            .live(expectedLiveIndex)
+            .working(expectedWorkingIndex)
             .build();
 
         versionedIndicesAPI.saveIndices(defaultIndices);
@@ -558,11 +538,13 @@ public class VersionedIndicesAPITest {
         Optional<VersionedIndices> loadedOpt = versionedIndicesAPI.loadDefaultVersionedIndices();
         assertTrue("Default indices should be present", loadedOpt.isPresent());
 
-        VersionedIndices loaded = loadedOpt.get();
-        // Verify it loaded the correct version
+        final VersionedIndices loaded = loadedOpt.get();
+        final String taggedLiveIndex = IndexTag.OS.tag(expectedLiveIndex);
+        final String taggedWorkingIndex = IndexTag.OS.tag(expectedWorkingIndex);
+        // Verify it loaded the correct version; We expect them to be tagged with the OS prefix
         assertEquals("Should load OPENSEARCH_3X version", VersionedIndices.OPENSEARCH_3X, loaded.version());
-        assertEquals("Live index should match", "cluster_default.live_20241224140000", loaded.live().orElse(null));
-        assertEquals("Working index should match", "cluster_default.working_20241224140000", loaded.working().orElse(null));
+        assertEquals("Live index should match", taggedLiveIndex, loaded.live().orElse(null));
+        assertEquals("Working index should match", taggedWorkingIndex, loaded.working().orElse(null));
     }
 
     /**

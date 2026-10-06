@@ -445,6 +445,85 @@ public class OSClientProviderIntegrationTest extends IntegrationTestBase {
     }
 
     /**
+     * Given scenario: a malformed endpoint ({@code invalid-url-format}, scheme-less so
+     *                 {@code URI.toURL()} throws "URI is not absolute") is supplied to the provider.
+     * Expected: the failure surfaces as a {@link DotRuntimeException} whose cause chain carries the
+     *           clear, actionable "Invalid OS_ENDPOINTS URL: '...'" message (issue #35636, Change 2)
+     *           — not a raw {@code IllegalArgumentException}.
+     */
+    @Test
+    public void test_createProvider_withInvalidEndpoint_throwsClearMessage() {
+        final OSClientConfig config = OSClientConfig.builder()
+                .addEndpoints("invalid-url-format")
+                .build();
+        try {
+            new ConfigurableOpenSearchProvider(config);
+            fail("Expected DotRuntimeException for a malformed endpoint URL");
+        } catch (final DotRuntimeException e) {
+            assertTrue("Cause chain must name the offending OS_ENDPOINTS value; got: "
+                            + describeChain(e),
+                    causeChainContains(e, "Invalid OS_ENDPOINTS URL")
+                            && causeChainContains(e, "invalid-url-format"));
+        }
+    }
+
+    /**
+     * Regression for issue #35636 (TC-006): a malformed {@code OS_ENDPOINTS} must NOT crash during
+     * construction of the default (CDI no-arg) provider. The build — and any malformed-URL failure —
+     * is deferred to the first {@link OSDefaultClientProvider#getClient()} call, so the phase-aware
+     * {@code IndexStartupValidator} can catch it and fall back to ES instead of aborting startup.
+     *
+     * Given scenario: {@code OS_ENDPOINTS} is set to a malformed value, then a default provider is
+     *                 constructed (the no-arg path Weld uses).
+     * Expected: construction does NOT throw; the failure appears only on {@code getClient()} and
+     *           {@code shutdown()} is a safe no-op when nothing was built.
+     */
+    @Test
+    public void test_defaultProvider_malformedEndpoints_isLazy_failsOnlyOnGetClient() {
+        final String key = "OS_ENDPOINTS";
+        final String original = Config.getStringProperty(key, null);
+        try {
+            Config.setProperty(key, "invalid-url-format");
+
+            // No-arg construction must be lazy — it must NOT build the client (or throw) here.
+            final OSDefaultClientProvider provider = new OSDefaultClientProvider();
+
+            // The build, and the malformed-URL failure, is deferred to the first getClient().
+            try {
+                provider.getClient();
+                fail("Expected DotRuntimeException when building the client from a malformed OS_ENDPOINTS");
+            } catch (final DotRuntimeException expected) {
+                assertTrue("Cause chain must name the invalid OS_ENDPOINTS value; got: "
+                                + describeChain(expected),
+                        causeChainContains(expected, "Invalid OS_ENDPOINTS URL"));
+            }
+
+            // shutdown() must be a no-op when the client was never built successfully.
+            provider.shutdown();
+        } finally {
+            resetProperty(key, original);
+        }
+    }
+
+    private static boolean causeChainContains(final Throwable t, final String needle) {
+        for (Throwable cur = t; cur != null; cur = cur.getCause()) {
+            if (cur.getMessage() != null && cur.getMessage().contains(needle)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static String describeChain(final Throwable t) {
+        final StringBuilder sb = new StringBuilder();
+        for (Throwable cur = t; cur != null; cur = cur.getCause()) {
+            sb.append("[").append(cur.getClass().getSimpleName()).append(": ")
+              .append(cur.getMessage()).append("] ");
+        }
+        return sb.toString();
+    }
+
+    /**
      * Helper method to close provider safely
      */
     private void closeProvider(ConfigurableOpenSearchProvider provider) {

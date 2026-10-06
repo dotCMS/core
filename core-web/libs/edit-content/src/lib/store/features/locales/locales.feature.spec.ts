@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { createServiceFactory, SpectatorService, SpyObject } from '@ngneat/spectator/jest';
 import { patchState, signalStore, signalStoreFeature, withMethods, withState } from '@ngrx/signals';
+import { createServiceFactory, SpectatorService, SpyObject } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { fakeAsync, tick } from '@angular/core/testing';
-import { Router } from '@angular/router';
 
 import { DialogService, DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
@@ -21,6 +21,7 @@ import { MOCK_SINGLE_WORKFLOW_ACTIONS } from '@dotcms/utils-testing';
 import { withLocales } from './locales.feature';
 
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
+import { EDIT_CONTENT_HOST } from '../../../services/host/edit-content-host.model';
 import { initialRootState } from '../../edit-content.store';
 
 const MOCK_LANGUAGES = [
@@ -57,8 +58,19 @@ describe('LocalesFeature', () => {
     let dotContentletService: SpyObject<DotContentletService>;
     let dotEditContentService: SpyObject<DotEditContentService>;
     let dialogService: SpyObject<DialogService>;
-    let router: SpyObject<Router>;
     let workflowActionService: SpyObject<DotWorkflowsActionsService>;
+
+    // Locale reloads are delegated to the host (router vs in-place is its call).
+    const mockHost = {
+        reloadContent: vi.fn(),
+        resolveIdentity: vi.fn().mockReturnValue({}),
+        reportSaved: vi.fn(),
+        setContentTitle: vi.fn(),
+        addBreadcrumb: vi.fn(),
+        goToSavedContent: vi.fn(),
+        leaveDeletedContent: vi.fn(),
+        goToRestoredVersion: vi.fn()
+    };
 
     const createStore = createServiceFactory({
         service: Store,
@@ -71,19 +83,19 @@ describe('LocalesFeature', () => {
             DialogService,
             DynamicDialogConfig,
             DynamicDialogRef,
-            Router,
             DotWorkflowsActionsService
-        ]
+        ],
+        providers: [{ provide: EDIT_CONTENT_HOST, useValue: mockHost }]
     });
 
     beforeEach(() => {
+        Object.values(mockHost).forEach((fn) => fn.mockClear());
         spectator = createStore();
         store = spectator.service;
         dotLanguagesService = spectator.inject(DotLanguagesService);
         dotContentletService = spectator.inject(DotContentletService);
         dotEditContentService = spectator.inject(DotEditContentService);
         dialogService = spectator.inject(DialogService);
-        router = spectator.inject(Router);
         workflowActionService = spectator.inject(DotWorkflowsActionsService);
 
         workflowActionService.getDefaultActions.mockReturnValue(of(MOCK_SINGLE_WORKFLOW_ACTIONS));
@@ -127,7 +139,7 @@ describe('LocalesFeature', () => {
             store.updateContent({ identifier: '123', languageId: 1 } as DotCMSContentlet);
         });
 
-        it('should switch to a translated locale', fakeAsync(() => {
+        it('should delegate a translated-locale switch to the host', fakeAsync(() => {
             spectator.flushEffects();
             store.switchLocale(MOCK_LANGUAGES[1]);
             spectator.flushEffects();
@@ -137,18 +149,17 @@ describe('LocalesFeature', () => {
                 languageId: 2
             });
 
-            expect(router.navigate).toHaveBeenCalledWith(['/content', '456'], {
-                replaceUrl: true,
-                queryParamsHandling: 'preserve'
-            });
+            // The host decides router vs in-place reload; the feature just states
+            // the intent with the resolved inode.
+            expect(mockHost.reloadContent).toHaveBeenCalledWith('456');
         }));
 
         it('should open dialog and update state for untranslated locale doing populate copy', fakeAsync(() => {
-            jest.spyOn(dialogService, 'open').mockReturnValue({
+            vi.spyOn(dialogService, 'open').mockReturnValue({
                 onClose: of('populate')
             } as DynamicDialogRef);
 
-            tick();
+            spectator.flushEffects();
             store.switchLocale(MOCK_LANGUAGES[2]);
 
             tick();
@@ -158,6 +169,7 @@ describe('LocalesFeature', () => {
             const expectedContentlet = {
                 identifier: '123',
                 languageId: 1,
+                inode: undefined,
                 locked: false,
                 lockedBy: undefined
             } as DotCMSContentlet;
@@ -166,14 +178,16 @@ describe('LocalesFeature', () => {
             expect(store.initialContentletState()).toEqual('copy');
             expect(store.contentlet()).toEqual(expectedContentlet);
             expect(store.formValues()).toEqual(null);
+            expect(store.lastTask()).toEqual(null);
+            expect(store.isManualTranslation()).toBe(false);
         }));
 
         it('should open dialog, update state for untranslated locale doing manual copy', fakeAsync(() => {
-            jest.spyOn(dialogService, 'open').mockReturnValue({
+            vi.spyOn(dialogService, 'open').mockReturnValue({
                 onClose: of('manual')
             } as DynamicDialogRef);
 
-            tick();
+            spectator.flushEffects();
             store.switchLocale(MOCK_LANGUAGES[2]);
 
             tick();
@@ -181,6 +195,24 @@ describe('LocalesFeature', () => {
             expect(dialogService.open).toHaveBeenCalledTimes(1);
 
             expect(store.contentlet()).toEqual(null);
+            expect(store.isManualTranslation()).toBe(true);
+        }));
+
+        it('should reset isManualTranslation to false when switching to a translated locale', fakeAsync(() => {
+            vi.spyOn(dialogService, 'open').mockReturnValue({
+                onClose: of('manual')
+            } as DynamicDialogRef);
+
+            spectator.flushEffects();
+            store.switchLocale(MOCK_LANGUAGES[2]);
+            tick();
+
+            expect(store.isManualTranslation()).toBe(true);
+
+            store.switchLocale(MOCK_LANGUAGES[1]);
+            tick();
+
+            expect(store.isManualTranslation()).toBe(false);
         }));
     });
 });

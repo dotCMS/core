@@ -1,0 +1,19 @@
+<div
+    class="flex items-center justify-between gap-4 border-b border-gray-200 px-4 py-2 text-xs text-gray-700"
+    data-testid="scope-bar">
+    <span class="flex min-w-0 items-center gap-2">
+        <i class="pi pi-info-circle shrink-0 text-[14px]" [attr.aria-hidden]="true"></i>
+        <span class="truncate" data-testid="scope-bar-summary">{{ $summaryKey() | dm }}</span>
+    </span>
+
+    <!-- No On/Off text beside the switch: the switch shows its own state, and the sentence on the
+         left already says which way it is set. A third telling of the same thing is what made this
+         bar read as busy. -->
+    <label class="flex shrink-0 items-center gap-2">
+        <span>{{ 'content-drive.scope-bar.include-system-host' | dm }}</span>
+        <p-toggleswitch
+            [ngModel]="$includesSystemHost()"
+            data-testid="scope-bar-toggle"
+            (ngModelChange)="onToggle()" />
+    </label>
+</div>

@@ -1,7 +1,15 @@
-import { expect, it } from '@jest/globals';
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { expect, it, vi } from 'vitest';
 
+import { By } from '@angular/platform-browser';
+
+import { Button } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
 
 import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
@@ -27,7 +35,7 @@ describe('DotCategoryFieldDialogComponent', () => {
         spectator = createComponent({
             providers: [
                 mockProvider(CategoriesService, {
-                    getChildren: jest.fn().mockReturnValue(of(CATEGORY_LIST_MOCK))
+                    getChildren: vi.fn().mockReturnValue(of(CATEGORY_LIST_MOCK))
                 }),
                 mockProvider(DotHttpErrorManagerService)
             ]
@@ -40,7 +48,7 @@ describe('DotCategoryFieldDialogComponent', () => {
     });
 
     afterEach(() => {
-        jest.resetAllMocks();
+        vi.resetAllMocks();
     });
 
     it('should have `visible` property set to `true` by default', () => {
@@ -63,7 +71,7 @@ describe('DotCategoryFieldDialogComponent', () => {
     });
 
     it('should have the correct configuration for the dialog.', () => {
-        const closedDialogSpy = jest.spyOn(spectator.component.closedDialog, 'emit');
+        const closedDialogSpy = vi.spyOn(spectator.component.closedDialog, 'emit');
         const dialog = spectator.query(Dialog);
 
         expect(dialog.draggable).toBe(false);
@@ -77,21 +85,36 @@ describe('DotCategoryFieldDialogComponent', () => {
     });
 
     it('should close the dialog when the close button is clicked', () => {
-        const closedDialogSpy = jest.spyOn(spectator.component.closedDialog, 'emit');
+        const closedDialogSpy = vi.spyOn(spectator.component.closedDialog, 'emit');
         spectator.click(byTestId('dialog-cancel'));
 
         expect(closedDialogSpy).toHaveBeenCalled();
     });
 
     it('should save the changes and apply the categories when the apply button is clicked', () => {
-        const closedDialogSpy = jest.spyOn(spectator.component.closedDialog, 'emit');
-        const addConfirmedCategoriesSky = jest.spyOn(store, 'applyDialogSelection');
+        const closedDialogSpy = vi.spyOn(spectator.component.closedDialog, 'emit');
+        const addConfirmedCategoriesSky = vi.spyOn(store, 'applyDialogSelection');
         spectator.detectChanges();
 
         spectator.click(byTestId('dialog-apply'));
 
         expect(closedDialogSpy).toHaveBeenCalled();
         expect(addConfirmedCategoriesSky).toHaveBeenCalled();
+    });
+
+    it('should render `Cancel` as tertiary (text + secondary) and `Apply` as primary', () => {
+        const cancelButton = spectator.fixture.debugElement
+            .query(By.css('[data-testId="dialog-cancel"]'))
+            .injector.get(Button);
+        const applyButton = spectator.fixture.debugElement
+            .query(By.css('[data-testId="dialog-apply"]'))
+            .injector.get(Button);
+
+        expect(cancelButton.text).toBe(true);
+        expect(cancelButton.severity).toBe('secondary');
+
+        expect(applyButton.text).toBeFalsy();
+        expect(applyButton.severity).toBeFalsy();
     });
 
     it('should render the CategoryFieldCategoryList component', () => {

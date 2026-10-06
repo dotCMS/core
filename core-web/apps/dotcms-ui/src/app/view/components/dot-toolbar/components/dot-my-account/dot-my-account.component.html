@@ -68,14 +68,14 @@
         </div>
 
         <div class="field">
-            <div class="checkbox">
+            <div class="form-checkbox">
                 <p-checkbox
                     [ngModel]="showStarter()"
                     (ngModelChange)="showStarter.set($event); setShowStarter()"
                     [ngModelOptions]="{ standalone: true }"
                     data-testid="dot-my-account-show-starter-checkbox"
                     binary="true"
-                    [inputId]="'show-starter'"></p-checkbox>
+                    [inputId]="'show-starter'" />
                 <label [for]="'show-starter'">
                     {{ 'starter.show.getting.started' | dm }}
                 </label>
@@ -101,7 +101,7 @@
             }
         </div>
         <div class="field">
-            <div class="checkbox">
+            <div class="form-checkbox">
                 <p-checkbox
                     [ngModel]="changePasswordOption()"
                     (ngModelChange)="toggleChangePasswordOption()"
@@ -109,7 +109,7 @@
                     id="dot-my-account-change-password-option"
                     data-testid="dot-my-account-change-password-checkbox"
                     binary="true"
-                    [inputId]="'change-password-option'"></p-checkbox>
+                    [inputId]="'change-password-option'" />
                 <label [for]="'change-password-option'">
                     {{ 'change-password' | dm }}
                 </label>

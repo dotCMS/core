@@ -1,40 +1,42 @@
-import { describe, it, expect } from '@jest/globals';
-import { createServiceFactory, SpectatorService, mockProvider } from '@ngneat/spectator/jest';
-import { signalStore, withState } from '@ngrx/signals';
-import { of } from 'rxjs';
+import { patchState, signalStore, withState } from '@ngrx/signals';
+import { unprotected } from '@ngrx/signals/testing';
+import { createServiceFactory, SpectatorService, mockProvider } from '@openng/spectator/vitest';
+import { NEVER, of, Subject } from 'rxjs';
+import { Mocked, describe, expect, it, vi } from 'vitest';
 
 import { DotFolderService } from '@dotcms/data-access';
-import { ALL_FOLDER, DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
-import { createFakeFolder, createFakeSite } from '@dotcms/utils-testing';
+import { DotPagination, FolderSearchView } from '@dotcms/dotcms-models';
+import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
+import { createFakeFolderSearchView, createFakeSite } from '@dotcms/utils-testing';
 
 import { withSidebar } from './withSidebar';
 
-import { SYSTEM_HOST } from '../../../shared/constants';
+import { ROOT_PATH, SYSTEM_HOST, SYSTEM_HOST_PATH } from '../../../shared/constants';
 import {
     DotContentDriveSortOrder,
     DotContentDriveState,
     DotContentDriveStatus
 } from '../../../shared/models';
+import { createSiteNode, findNodeByPath } from '../../../utils/tree-folder.utils';
 
 const mockSite = createFakeSite();
 
-const mockFolders = [
-    createFakeFolder({
-        id: 'parent-folder',
-        path: '/documents/',
-        hostName: 'demo.dotcms.com',
-        addChildrenAllowed: true
-    }),
-    createFakeFolder({
+const EMPTY_PAGINATION = {} as DotPagination;
+
+const searchResult = (folders: FolderSearchView[]) => of({ folders, pagination: EMPTY_PAGINATION });
+
+// Direct children of /documents/ as returned by the search endpoint (parent path + own name).
+const mockChildViews: FolderSearchView[] = [
+    createFakeFolderSearchView({
         id: 'child-folder-1',
-        path: '/documents/images/',
-        hostName: 'demo.dotcms.com',
+        name: 'images',
+        path: '/documents/',
         addChildrenAllowed: true
     }),
-    createFakeFolder({
+    createFakeFolderSearchView({
         id: 'child-folder-2',
-        path: '/documents/videos/',
-        hostName: 'demo.dotcms.com',
+        name: 'videos',
+        path: '/documents/',
         addChildrenAllowed: true
     })
 ];
@@ -85,23 +87,28 @@ export const sidebarStoreMock = signalStore(
 describe('withSidebar', () => {
     let spectator: SpectatorService<InstanceType<typeof sidebarStoreMock>>;
     let store: InstanceType<typeof sidebarStoreMock>;
-    let folderService: jest.Mocked<DotFolderService>;
+    let folderService: Mocked<DotFolderService>;
 
-    const realAllFolder: DotFolderTreeNodeItem = {
-        ...ALL_FOLDER,
-        data: {
-            hostname: mockSite.hostname,
-            path: '',
-            type: 'folder',
-            id: mockSite.identifier
-        }
-    };
+    // What `createSiteNode` produces for the mocked site: the row that stands for the site.
+    const siteNode: DotFolderTreeNodeItem = createSiteNode(mockSite);
+
+    /**
+     * The site node as the tree holds it: the site's folders are its children, so its chevron
+     * collapses the site. `searchFolders` is mocked empty unless a test says otherwise, hence the
+     * default.
+     */
+    const siteNodeWithChildren = (
+        children: DotFolderTreeNodeItem[] = []
+    ): DotFolderTreeNodeItem => ({
+        ...siteNode,
+        children
+    });
 
     const createService = createServiceFactory({
         service: sidebarStoreMock,
         providers: [
             mockProvider(DotFolderService, {
-                getFolders: jest.fn().mockReturnValueOnce(of([])).mockReturnValue(of(mockFolders))
+                searchFolders: vi.fn().mockReturnValue(searchResult([]))
             })
         ]
     });
@@ -115,71 +122,207 @@ describe('withSidebar', () => {
     describe('initial state', () => {
         it('should set initial after loading folders', () => {
             expect(store.sidebarLoading()).toBe(false);
-            expect(store.folders()).toEqual([realAllFolder]);
-            expect(store.selectedNode()).toEqual({
-                ...realAllFolder
-            });
+            expect(store.folders()).toEqual([siteNodeWithChildren()]);
+            expect(store.selectedNode()).toEqual(siteNode);
+        });
+    });
+
+    describe('the site node', () => {
+        const rootViews: FolderSearchView[] = [
+            createFakeFolderSearchView({ id: 'a', name: 'activities', path: '/' }),
+            createFakeFolderSearchView({ id: 'b', name: 'blog', path: '/' })
+        ];
+
+        // A returned promise, not a `done` parameter: Vitest rejects the callback style
+        // outright with "done() callback is deprecated, use promise instead", and the
+        // hook then never completed — every test in this describe timed out.
+        beforeEach(
+            () =>
+                new Promise<void>((done) => {
+                    folderService.searchFolders.mockReturnValue(searchResult(rootViews));
+                    store.loadFolders();
+                    setTimeout(done, 0);
+                })
+        );
+
+        afterEach(() => {
+            // The mock is created once with the factory, so a return value set here would otherwise
+            // stand for every later test in the file.
+            folderService.searchFolders.mockReturnValue(searchResult([]));
+        });
+
+        it('should be the only top-level node', () => {
+            expect(store.folders()).toHaveLength(1);
+            expect(store.folders()[0].key).toBe(mockSite.identifier);
+        });
+
+        it('should own the site folders as its children, so its chevron collapses the site', () => {
+            // As siblings they sat level with the site while its chevron controlled nothing, and
+            // expanding it fetched them again, rendering every root folder twice.
+            const children = store.folders()[0].children as DotFolderTreeNodeItem[];
+
+            expect(children.map((child) => child.data.path)).toEqual(['/activities/', '/blog/']);
+        });
+
+        it('should be labelled with the hostname and carry the site identifier', () => {
+            expect(store.folders()[0].label).toBe(mockSite.hostname);
+            expect(store.folders()[0].data.id).toBe(mockSite.identifier);
+        });
+
+        it('should start expanded, since the site opens showing its folders', () => {
+            expect(store.folders()[0].expanded).toBe(true);
         });
     });
 
     describe('methods', () => {
         describe('loadFolders', () => {
-            it('should load folders for current site and path', (done) => {
+            it('should load folders for current site and path', () =>
+                new Promise<void>((done) => {
+                    store.loadFolders();
+
+                    // Wait for async operations to complete
+                    setTimeout(() => {
+                        expect(folderService.searchFolders).toHaveBeenCalledWith(
+                            expect.objectContaining({ siteId: mockSite.identifier })
+                        );
+                        expect(store.sidebarLoading()).toBe(false);
+                        expect(store.folders()).toContainEqual(siteNodeWithChildren());
+                        done();
+                    }, 0);
+                }));
+
+            it('should flag loading while a reload is in flight', () => {
+                // Only the initial state used to set this, so a site change left the previous
+                // site's tree on screen with no indication anything was happening — and gave
+                // consumers no loaded edge to reveal the opened folder on. That it clears again is
+                // covered by the cases above.
+                folderService.searchFolders.mockReturnValue(NEVER);
+
                 store.loadFolders();
 
-                // Wait for async operations to complete
-                setTimeout(() => {
-                    expect(folderService.getFolders).toHaveBeenCalled();
-                    expect(store.sidebarLoading()).toBe(false);
-                    expect(store.folders()).toContainEqual({
-                        ...realAllFolder
-                    });
-                    done();
-                }, 0);
+                expect(store.sidebarLoading()).toBe(true);
             });
 
-            it('should handle empty folder response', (done) => {
-                folderService.getFolders.mockReturnValue(of([]));
+            it('should handle empty folder response', () =>
+                new Promise<void>((done) => {
+                    folderService.searchFolders.mockReturnValue(searchResult([]));
 
-                store.loadFolders();
+                    store.loadFolders();
 
-                setTimeout(() => {
-                    expect(store.sidebarLoading()).toBe(false);
-                    expect(store.folders()).toContainEqual({
-                        ...realAllFolder
+                    setTimeout(() => {
+                        expect(store.sidebarLoading()).toBe(false);
+                        expect(store.folders()).toContainEqual(siteNodeWithChildren());
+                        done();
+                    }, 0);
+                }));
+
+            // Two triggers can call this concurrently on a cold load: the feature's own `onInit`
+            // and the sidebar component's `currentSite` effect. Without cancellation both writes
+            // land and the one that *resolves* last wins, so a slower earlier request overwrites a
+            // newer complete one — the tree shows the wrong folders until the next reload.
+            describe('when a second load starts before the first resolves', () => {
+                const viewNamed = (name: string) =>
+                    createFakeFolderSearchView({
+                        id: `folder-${name}`,
+                        name,
+                        path: '/',
+                        addChildrenAllowed: true
                     });
-                    done();
-                }, 0);
+
+                const labelsInTree = () =>
+                    (store.folders()[0]?.children ?? []).map((child) => child.label);
+
+                it('should keep the newer result when the older one resolves last', () =>
+                    new Promise<void>((done) => {
+                        const stale = new Subject<{
+                            folders: FolderSearchView[];
+                            pagination: DotPagination;
+                        }>();
+
+                        folderService.searchFolders.mockReturnValue(stale);
+                        store.loadFolders();
+
+                        folderService.searchFolders.mockReturnValue(
+                            searchResult([viewNamed('fresh')])
+                        );
+                        store.loadFolders();
+
+                        // The first request answers only now, after the second already has.
+                        stale.next({ folders: [viewNamed('stale')], pagination: EMPTY_PAGINATION });
+                        stale.complete();
+
+                        setTimeout(() => {
+                            expect(labelsInTree()).toEqual(['/fresh/']);
+                            done();
+                        }, 0);
+                    }));
+
+                it('should settle loading once, on the newer result', () =>
+                    new Promise<void>((done) => {
+                        folderService.searchFolders.mockReturnValue(NEVER);
+                        store.loadFolders();
+
+                        folderService.searchFolders.mockReturnValue(
+                            searchResult([viewNamed('fresh')])
+                        );
+                        store.loadFolders();
+
+                        setTimeout(() => {
+                            expect(store.sidebarLoading()).toBe(false);
+                            done();
+                        }, 0);
+                    }));
             });
         });
 
         describe('loadChildFolders', () => {
-            it('should load child folders for a specific path', (done) => {
-                const testPath = '/documents/images/';
-                const host = 'demo.dotcms.com';
+            it('should load child folders for a specific path', () =>
+                new Promise<void>((done) => {
+                    const testPath = '/documents/images/';
+                    const host = 'demo.dotcms.com';
 
-                folderService.getFolders.mockReturnValue(of(mockFolders));
+                    folderService.searchFolders.mockReturnValue(searchResult(mockChildViews));
 
-                store.loadChildFolders(testPath, host).subscribe((result) => {
-                    expect(result.parent).toEqual(mockFolders[0]);
-                    expect(result.folders).toHaveLength(2);
-                    expect(folderService.getFolders).toHaveBeenCalledWith(`${host}${testPath}`);
-                    done();
-                });
-            });
+                    store.loadChildFolders(testPath, host).subscribe((result) => {
+                        expect(result.folders).toHaveLength(2);
+                        expect(folderService.searchFolders).toHaveBeenCalledWith(
+                            expect.objectContaining({
+                                siteId: mockSite.identifier,
+                                path: testPath,
+                                recursive: false
+                            })
+                        );
+                        done();
+                    });
+                }));
 
-            it('should transform folders into tree nodes correctly', (done) => {
-                const testPath = '/documents/';
+            it('should transform folders into tree nodes correctly', () =>
+                new Promise<void>((done) => {
+                    const testPath = '/documents/';
 
-                store.loadChildFolders(testPath).subscribe((result) => {
-                    expect(result.folders).toHaveLength(2);
-                    expect(result.folders[0]).toHaveProperty('key');
-                    expect(result.folders[0]).toHaveProperty('label');
-                    expect(result.folders[0]).toHaveProperty('data');
-                    expect(result.folders[0].data.type).toBe('folder');
-                    done();
-                });
-            });
+                    folderService.searchFolders.mockReturnValue(searchResult(mockChildViews));
+
+                    store.loadChildFolders(testPath).subscribe((result) => {
+                        expect(result.folders).toHaveLength(2);
+                        expect(result.folders[0]).toHaveProperty('key');
+                        expect(result.folders[0]).toHaveProperty('label');
+                        expect(result.folders[0]).toHaveProperty('data');
+                        expect(result.folders[0].data!.type).toBe('folder');
+                        done();
+                    });
+                }));
+
+            it('should thread the requested page through to the search endpoint', () =>
+                new Promise<void>((done) => {
+                    folderService.searchFolders.mockReturnValue(searchResult(mockChildViews));
+
+                    store.loadChildFolders('/documents/', 'demo.dotcms.com', 3).subscribe(() => {
+                        expect(folderService.searchFolders).toHaveBeenCalledWith(
+                            expect.objectContaining({ path: '/documents/', page: 3 })
+                        );
+                        done();
+                    });
+                }));
 
             it('should not need to call loadChildFolders when node already has children', () => {
                 // Create a node that already has children
@@ -198,7 +341,7 @@ describe('withSidebar', () => {
                 };
 
                 // Reset the mock to count calls
-                folderService.getFolders.mockClear();
+                folderService.searchFolders.mockClear();
 
                 // Simulate component logic: check if node has children before calling loadChildFolders
                 const shouldLoadChildren =
@@ -207,14 +350,14 @@ describe('withSidebar', () => {
                 if (!shouldLoadChildren) {
                     // Don't call loadChildFolders if node already has children
                     expect(nodeWithChildren.children.length).toBeGreaterThan(0);
-                    expect(folderService.getFolders).not.toHaveBeenCalled();
+                    expect(folderService.searchFolders).not.toHaveBeenCalled();
                 } else {
                     // Only call loadChildFolders if node doesn't have children
                     store.loadChildFolders(nodeWithChildren.data.path);
                 }
 
                 // Verify the service was not called since node has children
-                expect(folderService.getFolders).not.toHaveBeenCalled();
+                expect(folderService.searchFolders).not.toHaveBeenCalled();
             });
         });
 
@@ -241,7 +384,7 @@ describe('withSidebar', () => {
 
         describe('updateFolders', () => {
             it('should update the folders array', () => {
-                const newFolders = [realAllFolder, ...mockTreeNodes];
+                const newFolders = [siteNode, ...mockTreeNodes];
 
                 store.updateFolders(newFolders);
 
@@ -250,7 +393,7 @@ describe('withSidebar', () => {
 
             it('should create a new array reference', () => {
                 const originalFolders = store.folders();
-                const newFolders = [realAllFolder, ...mockTreeNodes];
+                const newFolders = [siteNode, ...mockTreeNodes];
 
                 store.updateFolders(newFolders);
 
@@ -263,10 +406,10 @@ describe('withSidebar', () => {
     describe('integration scenarios', () => {
         it('should handle child folder expansion workflow', () => {
             // Reset mock for this specific test with proper folder hierarchy
-            folderService.getFolders.mockReturnValue(of(mockFolders));
+            folderService.searchFolders.mockReturnValue(searchResult(mockChildViews));
 
             const parentPath = '/documents/';
-            let loadedResult: { parent: unknown; folders: DotFolderTreeNodeItem[] } | null = null;
+            let loadedResult: { folders: DotFolderTreeNodeItem[] } | null = null;
 
             // Load child folders synchronously since of() emits synchronously
             store.loadChildFolders(parentPath).subscribe((result) => {
@@ -293,7 +436,7 @@ describe('withSidebar', () => {
 describe('withSidebar - null site scenarios', () => {
     let spectator: SpectatorService<InstanceType<typeof sidebarStoreMock>>;
     let store: InstanceType<typeof sidebarStoreMock>;
-    let folderService: jest.Mocked<DotFolderService>;
+    let folderService: Mocked<DotFolderService>;
 
     const nullSiteStoreMock = signalStore(
         withState<DotContentDriveState>({
@@ -308,7 +451,7 @@ describe('withSidebar - null site scenarios', () => {
         service: nullSiteStoreMock,
         providers: [
             mockProvider(DotFolderService, {
-                getFolders: jest.fn().mockReturnValue(of(mockFolders))
+                searchFolders: vi.fn().mockReturnValue(searchResult(mockChildViews))
             })
         ]
     });
@@ -323,14 +466,14 @@ describe('withSidebar - null site scenarios', () => {
         it('should not load folders when currentSite is null', () => {
             store.loadFolders();
 
-            expect(folderService.getFolders).not.toHaveBeenCalled();
+            expect(folderService.searchFolders).not.toHaveBeenCalled();
         });
     });
 });
 describe('withSidebar - system host scenarios', () => {
     let spectator: SpectatorService<InstanceType<typeof sidebarStoreMock>>;
     let store: InstanceType<typeof sidebarStoreMock>;
-    let folderService: jest.Mocked<DotFolderService>;
+    let folderService: Mocked<DotFolderService>;
 
     const systemHostStoreMock = signalStore(
         withState<DotContentDriveState>({
@@ -345,7 +488,7 @@ describe('withSidebar - system host scenarios', () => {
         service: systemHostStoreMock,
         providers: [
             mockProvider(DotFolderService, {
-                getFolders: jest.fn().mockReturnValue(of(mockFolders))
+                searchFolders: vi.fn().mockReturnValue(searchResult(mockChildViews))
             })
         ]
     });
@@ -360,7 +503,7 @@ describe('withSidebar - system host scenarios', () => {
         it('should not load folders when currentSite is null', () => {
             store.loadFolders();
 
-            expect(folderService.getFolders).not.toHaveBeenCalled();
+            expect(folderService.searchFolders).not.toHaveBeenCalled();
         });
     });
 });
@@ -368,7 +511,7 @@ describe('withSidebar - system host scenarios', () => {
 describe('withSidebar - undefined path scenarios', () => {
     let spectator: SpectatorService<InstanceType<typeof sidebarStoreMock>>;
     let store: InstanceType<typeof sidebarStoreMock>;
-    let folderService: jest.Mocked<DotFolderService>;
+    let folderService: Mocked<DotFolderService>;
 
     const undefinedPathStoreMock = signalStore(
         withState<DotContentDriveState>({
@@ -382,7 +525,7 @@ describe('withSidebar - undefined path scenarios', () => {
         service: undefinedPathStoreMock,
         providers: [
             mockProvider(DotFolderService, {
-                getFolders: jest.fn().mockReturnValue(of(mockFolders))
+                searchFolders: vi.fn().mockReturnValue(searchResult(mockChildViews))
             })
         ]
     });
@@ -394,14 +537,286 @@ describe('withSidebar - undefined path scenarios', () => {
     });
 
     describe('loadFolders with undefined path', () => {
-        it('should handle undefined path correctly', (done) => {
-            store.loadFolders();
+        it('should handle undefined path correctly', () =>
+            new Promise<void>((done) => {
+                store.loadFolders();
 
-            setTimeout(() => {
-                expect(folderService.getFolders).toHaveBeenCalled();
-                expect(store.sidebarLoading()).toBe(false);
-                done();
-            }, 0);
-        });
+                setTimeout(() => {
+                    expect(folderService.searchFolders).toHaveBeenCalled();
+                    expect(store.sidebarLoading()).toBe(false);
+                    done();
+                }, 0);
+            }));
+    });
+});
+
+describe('withSidebar - a location that is not a folder', () => {
+    let spectator: SpectatorService<InstanceType<typeof sidebarStoreMock>>;
+    let store: InstanceType<typeof sidebarStoreMock>;
+    let folderService: Mocked<DotFolderService>;
+
+    // System Host belongs to no site, so it is nowhere in this site's hierarchy. It reaches the
+    // sidebar as a location like any other, which is what made it look like a folder path.
+    const systemHostLocationStoreMock = signalStore(
+        withState<DotContentDriveState>({
+            ...initialState,
+            path: SYSTEM_HOST_PATH
+        }),
+        withSidebar()
+    );
+
+    const createService = createServiceFactory({
+        service: systemHostLocationStoreMock,
+        providers: [
+            mockProvider(DotFolderService, {
+                searchFolders: vi.fn().mockReturnValue(searchResult([]))
+            })
+        ]
+    });
+
+    beforeEach(() => {
+        spectator = createService();
+        store = spectator.service;
+        folderService = spectator.inject(DotFolderService);
+    });
+
+    it('should not go looking for it among the site folders', () => {
+        // The site's own root level is still fetched — the tree shows this site's folders whatever
+        // location is open. What must not happen is resolving the location itself as a folder: it
+        // was turned into `/SYSTEM_HOST/` and queried, a folder nobody has, so the request could
+        // only ever come back empty.
+        expect(folderService.searchFolders).not.toHaveBeenCalledWith(
+            expect.objectContaining({ path: '/SYSTEM_HOST/' })
+        );
+    });
+
+    it('should leave the tree with nothing selected', () => {
+        // The failing behaviour, and the one the user sees: the hierarchy load fell back to the
+        // site row, so the site root and System Host both looked selected at once. Worse, the
+        // shell syncs the location from the selected node, so that row then rewrote the location
+        // to the site root and bounced the user straight back out of System Host.
+        expect(store.selectedNode()).toBeUndefined();
+    });
+});
+
+describe('withSidebar - the site root as a location', () => {
+    let spectator: SpectatorService<InstanceType<typeof sidebarStoreMock>>;
+    let store: InstanceType<typeof sidebarStoreMock>;
+
+    const rootPathStoreMock = signalStore(
+        withState<DotContentDriveState>({
+            ...initialState,
+            path: ROOT_PATH
+        }),
+        withSidebar()
+    );
+
+    const createService = createServiceFactory({
+        service: rootPathStoreMock,
+        providers: [
+            mockProvider(DotFolderService, {
+                searchFolders: vi.fn().mockReturnValue(searchResult([]))
+            })
+        ]
+    });
+
+    beforeEach(() => {
+        spectator = createService();
+        store = spectator.service;
+    });
+
+    it('should keep the site row selected once the location settles', () => {
+        // The tree marks its site row with an empty path, while the site root as a *location* is
+        // `/`. Looking the location up literally finds no node, so the sync that keeps the tree in
+        // step with the location read that as "nothing here" and cleared the selection every time
+        // the user was at the site root.
+        spectator.flushEffects();
+
+        expect(store.selectedNode()?.data?.id).toBe(mockSite.identifier);
+    });
+});
+
+/**
+ * A folder opened from the table, or reached with Back, whose node the tree has not loaded yet.
+ *
+ * The listing follows the location, but the tree only holds what it has fetched. The selection
+ * sync used to find no node for such a location and clear the selection, so the sidebar showed
+ * nothing and never loaded the branch. Opening a nested folder from All site content hit it every
+ * time: its ancestors had never been expanded.
+ */
+describe('withSidebar - a location the tree has not loaded', () => {
+    let spectator: SpectatorService<InstanceType<typeof sidebarStoreMock>>;
+    let store: InstanceType<typeof sidebarStoreMock>;
+    let folderService: Mocked<DotFolderService>;
+
+    /** Children by parent path, as the search endpoint answers one level at a time. */
+    const levels: Record<string, FolderSearchView[]> = {
+        '/': [
+            createFakeFolderSearchView({
+                id: 'documents',
+                name: 'documents',
+                path: '/',
+                addChildrenAllowed: true
+            })
+        ],
+        '/documents/': [
+            createFakeFolderSearchView({
+                id: 'images',
+                name: 'images',
+                path: '/documents/',
+                addChildrenAllowed: true
+            })
+        ],
+        '/documents/images/': [
+            createFakeFolderSearchView({
+                id: 'deep',
+                name: 'deep',
+                path: '/documents/images/',
+                addChildrenAllowed: true
+            })
+        ]
+    };
+
+    const rootPathStoreMock = signalStore(
+        withState<DotContentDriveState>({ ...initialState, path: ROOT_PATH }),
+        withSidebar()
+    );
+
+    const createService = createServiceFactory({
+        service: rootPathStoreMock,
+        providers: [
+            mockProvider(DotFolderService, {
+                searchFolders: vi.fn(({ path }: { path?: string }) =>
+                    searchResult(levels[path ?? ''] ?? [])
+                )
+            })
+        ]
+    });
+
+    beforeEach(() => {
+        spectator = createService();
+        store = spectator.service;
+        folderService = spectator.inject(DotFolderService);
+        spectator.flushEffects();
+    });
+
+    // Re-armed after each test rather than before: `mockProvider` builds this `vi.fn` once for the
+    // whole file, and the next test's store loads its tree as it is created, before a `beforeEach`
+    // could step in. A test that makes it hang would otherwise leave that tree never loading.
+    afterEach(() => {
+        folderService.searchFolders.mockImplementation(({ path }: { path?: string }) =>
+            searchResult(levels[path ?? ''] ?? [])
+        );
+    });
+
+    it('should load the branch down to it and select it', () => {
+        // Only the root level is loaded: `documents` has never been expanded.
+        patchState(unprotected(store), { path: '/documents/images/' });
+        spectator.flushEffects();
+
+        expect(store.selectedNode()?.data?.path).toBe('/documents/images/');
+    });
+
+    it('should keep the branches that were already open', () => {
+        // Rebuilding the whole tree to show one branch collapsed every other one the author had
+        // open, and swapped the tree out while it did, which read as the sidebar blinking.
+        const folders = structuredClone(store.folders());
+        const documents = findNodeByPath(folders, '/documents/') as DotFolderTreeNodeItem;
+        documents.expanded = true;
+        documents.children = [
+            {
+                key: 'drafts',
+                label: '/documents/drafts/',
+                data: {
+                    id: 'drafts',
+                    hostname: mockSite.hostname,
+                    path: '/documents/drafts/',
+                    type: 'folder'
+                },
+                leaf: true
+            }
+        ];
+        store.updateFolders(folders);
+
+        patchState(unprotected(store), { path: '/documents/images/deep/' });
+        spectator.flushEffects();
+
+        expect(findNodeByPath(store.folders(), '/documents/drafts/')).toBeDefined();
+    });
+
+    it('should show the level it is loading as loading, on that node', () => {
+        // The branch loads one level at a time, like expanding a node, so a slow level says where
+        // the work is instead of the tree going quiet.
+        folderService.searchFolders.mockReturnValue(NEVER);
+
+        patchState(unprotected(store), { path: '/documents/images/' });
+        spectator.flushEffects();
+
+        expect(findNodeByPath(store.folders(), '/documents/')?.loading).toBe(true);
+    });
+
+    it('should stop showing a level as loading when another folder is opened first', () => {
+        // Opening a second folder cancels the first reveal before its level answers. The node it
+        // was loading is expanded and on screen, so it must not go on spinning.
+        folderService.searchFolders.mockReturnValue(NEVER);
+        patchState(unprotected(store), { path: '/documents/images/' });
+        spectator.flushEffects();
+
+        folderService.searchFolders.mockImplementation(({ path }: { path?: string }) =>
+            searchResult(levels[path ?? ''] ?? [])
+        );
+        patchState(unprotected(store), { path: '/elsewhere/' });
+        spectator.flushEffects();
+
+        expect(findNodeByPath(store.folders(), '/documents/')?.loading).toBe(false);
+    });
+
+    /** What the table selects when a folder is double-clicked: a node the tree does not own. */
+    const standIn = (path: string): DotFolderTreeNodeItem => ({
+        key: `table-${path}`,
+        label: path,
+        data: {
+            id: `table-${path}`,
+            hostname: mockSite.hostname,
+            path,
+            type: 'folder',
+            fromTable: true
+        },
+        leaf: false
+    });
+
+    it('should leave the selection a folder opened from the table made in place', () => {
+        // The sidebar reacts to that selection to expand and scroll to the folder. Swapping it for
+        // the tree's own node as soon as it arrived hid it from the sidebar, which then did
+        // neither; the tree shows the stand-in selected by its key anyway.
+        const opened = standIn('/documents/');
+        store.setSelectedNode(opened);
+        patchState(unprotected(store), { path: '/documents/' });
+        spectator.flushEffects();
+
+        expect(store.selectedNode()).toBe(opened);
+    });
+
+    it('should clear the selection when the folder opened from the table cannot be found', () => {
+        // Kept while its branch loads, but a folder that turned out not to exist must not stay
+        // looking selected.
+        store.setSelectedNode(standIn('/gone/'));
+        patchState(unprotected(store), { path: '/gone/' });
+        spectator.flushEffects();
+
+        expect(store.selectedNode()).toBeUndefined();
+    });
+
+    it('should not keep reloading for a folder that does not exist', () => {
+        // The reload finds nothing either, and the tree changing must not start another one.
+        patchState(unprotected(store), { path: '/gone/' });
+        spectator.flushEffects();
+        const callsAfterFirstAttempt = folderService.searchFolders.mock.calls.length;
+
+        spectator.flushEffects();
+        spectator.flushEffects();
+
+        expect(folderService.searchFolders).toHaveBeenCalledTimes(callsAfterFirstAttempt);
+        expect(store.selectedNode()).toBeUndefined();
     });
 });

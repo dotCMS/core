@@ -105,6 +105,19 @@ public interface AbstractAssetPermissionsView {
     boolean canEdit();
 
     /**
+     * Indicates if the requesting user can add children to this asset.
+     *
+     * @return true if user has CAN_ADD_CHILDREN permission
+     */
+    @JsonProperty("canAddChildren")
+    @Schema(
+        description = "Whether the requesting user can add children to this asset",
+        example = "true",
+        requiredMode = Schema.RequiredMode.REQUIRED
+    )
+    boolean canAddChildren();
+
+    /**
      * Gets the parent asset identifier if one exists.
      *
      * @return Parent asset ID, or null if no parent

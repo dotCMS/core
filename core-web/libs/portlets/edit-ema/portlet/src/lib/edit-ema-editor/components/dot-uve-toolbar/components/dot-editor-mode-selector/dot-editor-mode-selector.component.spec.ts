@@ -1,4 +1,5 @@
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { Mock, vi } from 'vitest';
 
 import { signal } from '@angular/core';
 
@@ -13,12 +14,12 @@ describe('DotEditorModeSelectorComponent', () => {
     let spectator: Spectator<DotEditorModeSelectorComponent>;
 
     let store: {
-        $hasAccessToEditMode: ReturnType<typeof signal<boolean>>;
-        $isLockFeatureEnabled: ReturnType<typeof signal<boolean>>;
+        editorHasAccessToEditMode: ReturnType<typeof signal<boolean>>;
+        $lockFeatureEnabled: ReturnType<typeof signal<boolean>>;
         pageParams: ReturnType<typeof signal<{ mode: UVE_MODE }>>;
-        clearDeviceAndSocialMedia: jest.Mock;
-        loadPageAsset: jest.Mock;
-        trackUVEModeChange: jest.Mock;
+        viewClearDeviceAndSocialMedia: Mock;
+        pageLoad: Mock;
+        trackUVEModeChange: Mock;
     };
 
     const createComponent = createComponentFactory({
@@ -42,27 +43,27 @@ describe('DotEditorModeSelectorComponent', () => {
         // PrimeNG overlays rely on matchMedia; JSDOM doesn't provide it by default.
         Object.defineProperty(window, 'matchMedia', {
             writable: true,
-            value: jest.fn().mockImplementation((query: string) => ({
+            value: vi.fn().mockImplementation((query: string) => ({
                 matches: false,
                 media: query,
                 onchange: null,
-                addListener: jest.fn(), // deprecated
-                removeListener: jest.fn(), // deprecated
-                addEventListener: jest.fn(),
-                removeEventListener: jest.fn(),
-                dispatchEvent: jest.fn()
+                addListener: vi.fn(), // deprecated
+                removeListener: vi.fn(), // deprecated
+                addEventListener: vi.fn(),
+                removeEventListener: vi.fn(),
+                dispatchEvent: vi.fn()
             }))
         });
     });
 
     beforeEach(() => {
         store = {
-            $hasAccessToEditMode: signal(true),
-            $isLockFeatureEnabled: signal(false),
+            editorHasAccessToEditMode: signal(true),
+            $lockFeatureEnabled: signal(false),
             pageParams: signal({ mode: UVE_MODE.EDIT }),
-            clearDeviceAndSocialMedia: jest.fn(),
-            loadPageAsset: jest.fn(),
-            trackUVEModeChange: jest.fn()
+            viewClearDeviceAndSocialMedia: vi.fn(),
+            pageLoad: vi.fn(),
+            trackUVEModeChange: vi.fn()
         };
 
         spectator = createComponent({
@@ -76,7 +77,7 @@ describe('DotEditorModeSelectorComponent', () => {
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('should create', () => {
@@ -91,8 +92,8 @@ describe('DotEditorModeSelectorComponent', () => {
 
     describe('menu items visibility', () => {
         it('should show all 3 modes when lock feature is disabled and user can edit', () => {
-            store.$isLockFeatureEnabled.set(false);
-            store.$hasAccessToEditMode.set(true);
+            store.$lockFeatureEnabled.set(false);
+            store.editorHasAccessToEditMode.set(true);
             spectator.detectChanges();
 
             openSelectOverlay();
@@ -109,8 +110,8 @@ describe('DotEditorModeSelectorComponent', () => {
         });
 
         it('should hide draft (EDIT) when lock feature is disabled and user cannot edit', () => {
-            store.$isLockFeatureEnabled.set(false);
-            store.$hasAccessToEditMode.set(false);
+            store.$lockFeatureEnabled.set(false);
+            store.editorHasAccessToEditMode.set(false);
             spectator.detectChanges();
 
             openSelectOverlay();
@@ -125,8 +126,8 @@ describe('DotEditorModeSelectorComponent', () => {
         });
 
         it('should show draft (EDIT) even when user cannot edit if lock feature is enabled', () => {
-            store.$isLockFeatureEnabled.set(true);
-            store.$hasAccessToEditMode.set(false);
+            store.$lockFeatureEnabled.set(true);
+            store.editorHasAccessToEditMode.set(false);
             spectator.detectChanges();
 
             openSelectOverlay();
@@ -156,14 +157,13 @@ describe('DotEditorModeSelectorComponent', () => {
                 fromMode: UVE_MODE.EDIT,
                 toMode: UVE_MODE.PREVIEW
             });
-            expect(store.loadPageAsset).toHaveBeenCalledWith({
+            expect(store.pageLoad).toHaveBeenCalledWith({
                 mode: UVE_MODE.PREVIEW,
                 publishDate: undefined
             });
         });
 
         it('should clear device and social media when switching to EDIT mode', () => {
-            // Start in PREVIEW mode
             store.pageParams.set({ mode: UVE_MODE.PREVIEW });
             spectator.detectChanges();
 
@@ -176,12 +176,12 @@ describe('DotEditorModeSelectorComponent', () => {
             spectator.triggerEventHandler('p-select', 'onChange', { value: editOption });
             spectator.detectChanges();
 
-            expect(store.clearDeviceAndSocialMedia).toHaveBeenCalledTimes(1);
+            expect(store.viewClearDeviceAndSocialMedia).toHaveBeenCalledTimes(1);
             expect(store.trackUVEModeChange).toHaveBeenCalledWith({
                 fromMode: UVE_MODE.PREVIEW,
                 toMode: UVE_MODE.EDIT
             });
-            expect(store.loadPageAsset).toHaveBeenCalledWith({
+            expect(store.pageLoad).toHaveBeenCalledWith({
                 mode: UVE_MODE.EDIT,
                 publishDate: undefined
             });
@@ -200,15 +200,15 @@ describe('DotEditorModeSelectorComponent', () => {
             spectator.detectChanges();
 
             expect(store.trackUVEModeChange).not.toHaveBeenCalled();
-            expect(store.loadPageAsset).not.toHaveBeenCalled();
-            expect(store.clearDeviceAndSocialMedia).not.toHaveBeenCalled();
+            expect(store.pageLoad).not.toHaveBeenCalled();
+            expect(store.viewClearDeviceAndSocialMedia).not.toHaveBeenCalled();
         });
     });
 
     describe('mode guard effect (legacy behavior)', () => {
         it('should switch to PREVIEW when in EDIT without edit permission and lock feature is disabled', () => {
-            store.$isLockFeatureEnabled.set(false);
-            store.$hasAccessToEditMode.set(false);
+            store.$lockFeatureEnabled.set(false);
+            store.editorHasAccessToEditMode.set(false);
             store.pageParams.set({ mode: UVE_MODE.EDIT });
             spectator.detectChanges();
 
@@ -216,20 +216,35 @@ describe('DotEditorModeSelectorComponent', () => {
                 fromMode: UVE_MODE.EDIT,
                 toMode: UVE_MODE.PREVIEW
             });
-            expect(store.loadPageAsset).toHaveBeenCalledWith({
+            expect(store.pageLoad).toHaveBeenCalledWith({
                 mode: UVE_MODE.PREVIEW,
                 publishDate: undefined
             });
         });
 
         it('should do nothing when lock feature is enabled', () => {
-            store.$isLockFeatureEnabled.set(true);
-            store.$hasAccessToEditMode.set(false);
+            store.$lockFeatureEnabled.set(true);
+            store.editorHasAccessToEditMode.set(false);
             store.pageParams.set({ mode: UVE_MODE.EDIT });
             spectator.detectChanges();
 
             expect(store.trackUVEModeChange).not.toHaveBeenCalled();
-            expect(store.loadPageAsset).not.toHaveBeenCalled();
+            expect(store.pageLoad).not.toHaveBeenCalled();
         });
+    });
+
+    /**
+     * The mode can change without this component being rebuilt — the way back from a variant does
+     * exactly that, through `pageLoad` on a toolbar that stays mounted. Seeded once in `ngOnInit`,
+     * the select went on naming the mode the editor had left while the address and the store had
+     * already moved on.
+     */
+    it('should follow a mode change that does not rebuild it', () => {
+        expect(spectator.component.selectedModeModel()?.id).toBe(UVE_MODE.EDIT);
+
+        store.pageParams.set({ mode: UVE_MODE.PREVIEW });
+        spectator.detectChanges();
+
+        expect(spectator.component.selectedModeModel()?.id).toBe(UVE_MODE.PREVIEW);
     });
 });

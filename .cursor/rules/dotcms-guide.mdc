@@ -17,8 +17,12 @@ core/
 ├── core-web/                  # Frontend (Angular/Nx monorepo)
 │   ├── apps/dotcms-ui/       # Main admin UI
 │   └── libs/                 # Shared libraries and SDKs
-├── dotcms-integration/        # Integration tests
+├── dotcms-integration/        # Integration tests (JUnit, CI suites)
 ├── dotcms-postman/            # Postman API tests
+├── test-karate/               # Karate API tests
+├── test-jmeter/               # JMeter performance tests
+├── docs/                      # Full patterns by domain
+├── tools/dotcms-cli/          # CLI (compiles to its own maven.compiler.release)
 ├── bom/application/pom.xml   # Dependency versions (ADD versions here)
 ├── parent/pom.xml            # Plugin management
 └── .github/workflows/        # CI/CD pipelines
@@ -29,9 +33,12 @@ core/
 - **Frontend / core-web (Nx)**: `frontend-context.mdc` – Angular, SDK, Nx commands, links to docs/frontend
 - **Tests (*.spec.ts, *Test.java)**: `test-context.mdc` – Spectator, data-testid
 - **Docs (docs/, *.md)**: `doc-updates.mdc` – where to update, DRY
+- **E2E specs (dotcms-ui-e2e)**: `e2e-rules.mdc` – Page Object Model conventions
 
 ## Critical Reminders
 - **Java**: Config/Logger only; never System.out or System.getProperty
+- **Java version**: never assume one — see `.sdkmanrc` and `dotcms.core.compiler.release` in `parent/pom.xml`
+- **Integration tests**: a new test class not registered in a CI suite compiles and is silently never run. See `@docs/testing/INTEGRATION_TESTS.md`
 - **Maven**: Versions only in `bom/application/pom.xml`
 - **Angular**: @if/@for, input()/output(), spectator.setInput(), data-testid
 - **Security**: No secrets in code; validate input

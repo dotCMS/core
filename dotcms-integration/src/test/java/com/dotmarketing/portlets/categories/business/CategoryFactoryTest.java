@@ -1580,4 +1580,37 @@ public class CategoryFactoryTest extends IntegrationTestBase {
             }
         }
     }
+
+    /**
+     * Method to test: {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)}
+     * Given Scenario: A category hierarchy where the parent category name contains an apostrophe
+     * (e.g. "Frais d'installation professionnelle"), and findAll is called with parentList=true
+     * and the parent's inode as rootInode.
+     * When: {@link CategorySearchCriteria} has parentList=true and rootInode set to the parent category
+     * Should: Return the child categories without throwing an SQL error — regression test for #34361
+     */
+    @Test
+    public void findAll_withApostropheInParentCategoryName_shouldNotThrowSQLError()
+            throws DotDataException, DotSecurityException {
+
+        final Category parentCategory = new CategoryDataGen()
+                .setCategoryName("Frais d'installation professionnelle")
+                .nextPersisted();
+
+        final Category childCategory = new CategoryDataGen()
+                .setCategoryName("Child of apostrophe category")
+                .parent(parentCategory)
+                .nextPersisted();
+
+        final List<HierarchedCategory> results = FactoryLocator.getCategoryFactory().findAll(
+                new CategorySearchCriteria.Builder()
+                        .searchAllLevels(true)
+                        .parentList(true)
+                        .rootInode(parentCategory.getInode())
+                        .build());
+
+        assertFalse("Expected at least one child category result", results.isEmpty());
+        assertTrue("Expected child category in results",
+                results.stream().anyMatch(c -> c.getInode().equals(childCategory.getInode())));
+    }
 }

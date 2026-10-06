@@ -1,10 +1,11 @@
+import { of, Subject } from 'rxjs';
+import { Mock, MockInstance, vi } from 'vitest';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-console */
 
-import { of, Subject } from 'rxjs';
-
 import { CommonModule } from '@angular/common';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { CUSTOM_ELEMENTS_SCHEMA, DebugElement } from '@angular/core';
 import { ComponentFixture, fakeAsync, flush, TestBed, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -28,11 +29,7 @@ import {
     PushPublishService
 } from '@dotcms/data-access';
 import {
-    CoreWebService,
     DotcmsConfigService,
-    DotcmsEventsService,
-    DotEventsSocket,
-    DotEventsSocketURL,
     DotPushPublishDialogService,
     LoggerService,
     LoginService,
@@ -44,17 +41,18 @@ import {
     DotContentState,
     DotMessageSeverity,
     DotMessageType,
+    DotSite,
     DotTemplate
 } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import {
     DotActionMenuButtonComponent,
     DotAddToBundleComponent,
-    DotContentletStatusChipComponent,
+    DotContentletStatusBadgeComponent,
     DotMessagePipe,
     DotRelativeDatePipe
 } from '@dotcms/ui';
 import {
-    CoreWebServiceMock,
     createFakeEvent,
     DotFormatDateServiceMock,
     MockDotMessageService,
@@ -67,15 +65,15 @@ import { DotTemplateListComponent } from './dot-template-list.component';
 // Mock window.matchMedia (required by PrimeNG ContextMenu)
 Object.defineProperty(window, 'matchMedia', {
     writable: true,
-    value: jest.fn().mockImplementation((query: string) => ({
+    value: vi.fn().mockImplementation((query: string) => ({
         matches: false,
         media: query,
         onchange: null,
-        addListener: jest.fn(),
-        removeListener: jest.fn(),
-        addEventListener: jest.fn(),
-        removeEventListener: jest.fn(),
-        dispatchEvent: jest.fn()
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn()
     }))
 });
 
@@ -86,10 +84,10 @@ const originalConsoleWarn = console.warn;
 const originalConsoleError = console.error;
 
 beforeAll(() => {
-    console.info = jest.fn();
-    console.debug = jest.fn();
-    console.warn = jest.fn();
-    console.error = jest.fn();
+    console.info = vi.fn();
+    console.debug = vi.fn();
+    console.warn = vi.fn();
+    console.error = vi.fn();
 });
 
 afterAll(() => {
@@ -100,7 +98,6 @@ afterAll(() => {
 });
 
 import { DotTemplatesService } from '../../../api/services/dot-templates/dot-templates.service';
-import { dotEventSocketURLFactory } from '../../../test/dot-test-bed';
 import { DotActionButtonComponent } from '../../../view/components/_common/dot-action-button/dot-action-button.component';
 import { DotBulkInformationComponent } from '../../../view/components/_common/dot-bulk-information/dot-bulk-information.component';
 
@@ -432,7 +429,7 @@ type DotTemplatesServiceSpy = {
     [K in keyof Pick<
         DotTemplatesService,
         'archive' | 'unArchive' | 'publish' | 'unPublish' | 'copy' | 'delete' | 'getFiltered'
-    >]: jest.Mock;
+    >]: Mock;
 };
 
 describe('DotTemplateListComponent', () => {
@@ -446,49 +443,53 @@ describe('DotTemplateListComponent', () => {
     let comp: DotTemplateListComponent;
     let dotAlertConfirmService: DotAlertConfirmService;
     let dotSiteBrowserService: DotSiteBrowserService;
-    let mockGoToFolder: jest.SpyInstance;
+    let mockGoToFolder: MockInstance;
 
     const messageServiceMock = new MockDotMessageService(messages);
 
     const dialogRefClose = new Subject();
     const siteServiceMock = new SiteServiceMock();
+    const switchSiteSubject = new Subject<DotSite>();
+    const globalStoreMock = {
+        switchSiteEvent$: () => switchSiteSubject.asObservable()
+    };
 
     beforeEach(async () => {
         // Create spies for services that will be injected
         const dotTemplatesServiceSpy = {
-            archive: jest.fn(),
-            unArchive: jest.fn(),
-            publish: jest.fn(),
-            unPublish: jest.fn(),
-            copy: jest.fn(),
-            delete: jest.fn(),
-            getFiltered: jest
+            archive: vi.fn(),
+            unArchive: vi.fn(),
+            publish: vi.fn(),
+            unPublish: vi.fn(),
+            copy: vi.fn(),
+            delete: vi.fn(),
+            getFiltered: vi
                 .fn()
                 .mockReturnValue(
                     of({ templates: templatesMock, totalRecords: templatesMock.length })
                 )
         };
         const dotSiteBrowserServiceSpy = {
-            setSelectedFolder: jest.fn().mockReturnValue(of(null))
+            setSelectedFolder: vi.fn().mockReturnValue(of(null))
         };
         const dotRouterServiceSpy = {
-            gotoPortlet: jest.fn(),
-            goToEditTemplate: jest.fn(),
-            goToSiteBrowser: jest.fn()
+            gotoPortlet: vi.fn(),
+            goToEditTemplate: vi.fn(),
+            goToSiteBrowser: vi.fn()
         };
         const dialogServiceSpy = {
-            open: jest.fn()
+            open: vi.fn()
         };
 
         await TestBed.configureTestingModule({
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 { provide: DotMessageService, useValue: messageServiceMock },
                 {
                     provide: ActivatedRoute,
                     useClass: ActivatedRouteMock
                 },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 {
                     provide: DotRouterService,
                     useValue: dotRouterServiceSpy
@@ -501,8 +502,6 @@ describe('DotTemplateListComponent', () => {
                 DotHttpErrorManagerService,
                 DotAlertConfirmService,
                 ConfirmationService,
-                DotcmsEventsService,
-                DotEventsSocket,
                 DotcmsConfigService,
                 DotMessageDisplayService,
                 { provide: DialogService, useValue: dialogServiceSpy },
@@ -515,8 +514,9 @@ describe('DotTemplateListComponent', () => {
                 DotPushPublishDialogService,
                 {
                     provide: PushPublishService,
-                    useValue: { getEnvironments: jest.fn().mockReturnValue(of([])) }
-                }
+                    useValue: { getEnvironments: vi.fn().mockReturnValue(of([])) }
+                },
+                { provide: GlobalStore, useValue: globalStoreMock }
             ],
             imports: [
                 DotTemplateListComponent,
@@ -530,8 +530,7 @@ describe('DotTemplateListComponent', () => {
                 DotActionButtonComponent,
                 DotActionMenuButtonComponent,
                 DotAddToBundleComponent,
-                DotContentletStatusChipComponent,
-                HttpClientTestingModule,
+                DotContentletStatusBadgeComponent,
                 DynamicDialogModule,
                 BrowserAnimationsModule
             ],
@@ -558,7 +557,6 @@ describe('DotTemplateListComponent', () => {
         dotRouterService = dotRouterServiceSpy;
         dialogService = dialogServiceSpy;
         dotAlertConfirmService = TestBed.inject(DotAlertConfirmService);
-        void TestBed.inject(CoreWebService);
         dotSiteBrowserService = dotSiteBrowserServiceSpy;
     });
 
@@ -577,13 +575,13 @@ describe('DotTemplateListComponent', () => {
             fixture.detectChanges();
             tick(1);
             fixture.detectChanges();
-            jest.spyOn(dotPushPublishDialogService, 'open');
+            vi.spyOn(dotPushPublishDialogService, 'open');
 
-            jest.spyOn(dialogService, 'open').mockReturnValue({
+            vi.spyOn(dialogService, 'open').mockReturnValue({
                 onClose: dialogRefClose
             } as any);
 
-            mockGoToFolder = jest.spyOn(comp, 'goToFolder');
+            mockGoToFolder = vi.spyOn(comp, 'goToFolder');
         }));
 
         // Helper: ensure getFiltered and loadEnvironments have completed; table has data. Call only from within fakeAsync().
@@ -603,9 +601,8 @@ describe('DotTemplateListComponent', () => {
 
         it('should reload portlet only when the site change', () => {
             fixture.detectChanges(); // Initialize component and subscriptions
-            siteServiceMock.setFakeCurrentSite(mockSites[1]); // switching the site
+            switchSiteSubject.next(mockSites[1] as unknown as DotSite); // switching the site
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('templates');
-            expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
         });
 
@@ -717,13 +714,15 @@ describe('DotTemplateListComponent', () => {
                 hasLiveVersion: true
             };
 
-            const statusChips = fixture.debugElement.queryAll(By.css('dot-contentlet-status-chip'));
+            const statusChips = fixture.debugElement.queryAll(
+                By.css('dot-contentlet-status-badge')
+            );
             expect(statusChips.length).toBeGreaterThan(0);
             const chipForLocked = statusChips[1];
             expect(chipForLocked).toBeTruthy();
 
             const chipComponent =
-                chipForLocked.componentInstance as DotContentletStatusChipComponent;
+                chipForLocked.componentInstance as DotContentletStatusBadgeComponent;
             expect(chipComponent.state()).toEqual(state);
         }));
 
@@ -833,8 +832,8 @@ describe('DotTemplateListComponent', () => {
         describe('row actions command', () => {
             beforeEach(fakeAsync(() => {
                 loadTableData();
-                jest.spyOn(dotMessageDisplayService, 'push');
-                jest.spyOn(comp, 'loadCurrentPage');
+                vi.spyOn(dotMessageDisplayService, 'push');
+                vi.spyOn(comp, 'loadCurrentPage');
             }));
 
             const getActionIndex = (labels: string[], label: string) =>
@@ -947,7 +946,7 @@ describe('DotTemplateListComponent', () => {
             });
             it('should call delete api, send notification and reload current page', () => {
                 dotTemplatesService.delete.mockReturnValue(of(mockBulkResponseSuccess));
-                jest.spyOn(dotAlertConfirmService, 'confirm').mockImplementation((conf) => {
+                vi.spyOn(dotAlertConfirmService, 'confirm').mockImplementation((conf) => {
                     conf.accept();
                 });
                 openRowContextMenu('123Archived');
@@ -965,7 +964,7 @@ describe('DotTemplateListComponent', () => {
 
             it('should handle error request', () => {
                 dotTemplatesService.delete.mockReturnValue(of(mockSingleResponseFail));
-                jest.spyOn(dotAlertConfirmService, 'confirm').mockImplementation((conf) => {
+                vi.spyOn(dotAlertConfirmService, 'confirm').mockImplementation((conf) => {
                     conf.accept();
                 });
                 openRowContextMenu('123Archived');
@@ -1007,8 +1006,8 @@ describe('DotTemplateListComponent', () => {
                 comp.selectedTemplates = [templatesMock[0], templatesMock[1]];
                 comp.onSelectionChange();
                 fixture.detectChanges();
-                jest.spyOn(dotMessageDisplayService, 'push');
-                jest.spyOn(comp, 'loadCurrentPage');
+                vi.spyOn(dotMessageDisplayService, 'push');
+                vi.spyOn(comp, 'loadCurrentPage');
             }));
 
             const bulkActionIndex = (label: string) =>
@@ -1093,7 +1092,7 @@ describe('DotTemplateListComponent', () => {
             });
             it('should execute Delete action', () => {
                 dotTemplatesService.delete.mockReturnValue(of(mockBulkResponseSuccess));
-                jest.spyOn(dotAlertConfirmService, 'confirm').mockImplementation((conf) => {
+                vi.spyOn(dotAlertConfirmService, 'confirm').mockImplementation((conf) => {
                     conf.accept();
                 });
                 getBulkActions()[bulkActionIndex('Delete')].command!({
@@ -1150,7 +1149,7 @@ describe('DotTemplateListComponent', () => {
                 });
                 it('should fire exception on delete', () => {
                     dotTemplatesService.delete.mockReturnValue(of(mockBulkResponseFail));
-                    jest.spyOn(dotAlertConfirmService, 'confirm').mockImplementation((conf) => {
+                    vi.spyOn(dotAlertConfirmService, 'confirm').mockImplementation((conf) => {
                         conf.accept();
                     });
                     getBulkActions()[bulkActionIndex('Delete')].command!({

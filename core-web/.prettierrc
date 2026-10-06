@@ -7,6 +7,8 @@
     "arrowParens": "always",
     "bracketSameLine": true,
     "htmlWhitespaceSensitivity": "ignore",
+    "plugins": ["prettier-plugin-tailwindcss"],
+    "tailwindStylesheet": "./apps/dotcms-ui/src/style.css",
     "overrides": [
         {
             "files": "*.scss",

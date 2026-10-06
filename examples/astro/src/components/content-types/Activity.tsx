@@ -18,7 +18,8 @@ function Activity({
 }: ActivityProps) {
   // Extract style properties with defaults
   const titleSize = dotStyleProperties?.["title-size"] || "text-xl";
-  const descriptionSize = dotStyleProperties?.["description-size"] || "text-base";
+  const descriptionSize =
+    dotStyleProperties?.["description-size"] || "text-base";
   const titleStyle = dotStyleProperties?.["title-style"] || {};
   const layout = dotStyleProperties?.layout || "left";
   const imageHeight = dotStyleProperties?.["image-height"] || "h-56";
@@ -36,7 +37,9 @@ function Activity({
     titleStyle.bold ? "font-bold" : "font-normal",
     titleStyle.italic ? "italic" : "",
     titleStyle.underline ? "underline" : "",
-  ].filter(Boolean).join(" ");
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   // Get layout classes
   const getLayoutClasses = () => {
@@ -181,10 +184,12 @@ function Activity({
     <article className={articleClasses}>
       {image && (
         <div className={getImageContainerClasses()}>
-          <div className={`relative w-full overflow-hidden ${layout === "overlap" ? "h-full" : imageHeight}`}>
+          <div
+            className={`relative w-full overflow-hidden ${layout === "overlap" ? "h-full" : imageHeight}`}
+          >
             <img
               className="w-full h-full object-cover"
-              src={`/dA/${inode}`}
+              src={`/dA/${image.identifier}`}
               alt="Activity Image"
             />
           </div>
@@ -194,10 +199,7 @@ function Activity({
         <p className={titleClasses}>{title}</p>
         <p className={`${descriptionSize} line-clamp-3 mb-4`}>{description}</p>
         <div className={layout === "center" ? "flex justify-center" : ""}>
-          <a
-            href={`/activities/${urlTitle || "#"}`}
-            className={buttonClasses}
-          >
+          <a href={`/activities/${urlTitle || "#"}`} className={buttonClasses}>
             Link to detail →
           </a>
         </div>

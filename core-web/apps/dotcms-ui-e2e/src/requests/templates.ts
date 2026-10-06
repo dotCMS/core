@@ -1,6 +1,7 @@
 import { APIRequestContext, expect } from '@playwright/test';
-import { admin1 } from '../tests/login/credentialsData';
+import { admin1 } from '@utils/credentials';
 import { generateBase64Credentials } from '@utils/generateBase64Credential';
+
 import { Template } from '@models/template.model';
 
 type CreateTemplate = Omit<Template, 'identifier'>;
@@ -21,7 +22,11 @@ export async function createTemplate(request: APIRequestContext, data: CreateTem
 }
 
 export async function getTemplate(request: APIRequestContext, identifier: string) {
-    const endpoint = `/api/v1/templates/${identifier}`;
+    // TemplateResource only exposes /{id}/live and /{id}/working — there's no bare
+    // /{id} route. A layout save (TemplateAPIImpl.saveTemplate) only calls
+    // VersionableAPI.setWorking, never publishes, so the saved layout lives on the
+    // WORKING version, not LIVE.
+    const endpoint = `/api/v1/templates/${identifier}/working`;
     const response = await request.get(endpoint, {
         headers: {
             Authorization: generateBase64Credentials(admin1.username, admin1.password)

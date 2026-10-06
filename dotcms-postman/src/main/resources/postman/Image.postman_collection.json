@@ -219,7 +219,11 @@
 								"exec": [
 									"pm.test(\"Image should have proper dimentions\", function () {",
 									"    pm.response.to.be.header(\"Content-Type\", \"image/png\")",
-									"    pm.response.to.be.header(\"Content-Length\", \"980852\")",
+									"    // Read width/height from the PNG IHDR chunk. Byte-exact Content-Length is",
+									"    // engine-specific (Java2D and libvips use different resamplers).",
+									"    const b = pm.response.stream, u32 = o => ((b[o] << 24 | b[o + 1] << 16 | b[o + 2] << 8 | b[o + 3]) >>> 0);",
+									"    pm.expect(u32(16)).to.eql(900);",
+									"    pm.expect(u32(20)).to.eql(500);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -245,7 +249,7 @@
 								"500"
 							]
 						},
-						"description": "**Description**: Retrieves an image with a width of 900 pixels and a height of 500 pixels.\n\n**Tests**: Verifies that the image has the correct content type and length."
+						"description": "**Description**: Retrieves an image with a width of 900 pixels and a height of 500 pixels.\n\n**Tests**: Verifies that the image has the correct content type and pixel dimensions."
 					},
 					"response": []
 				},
@@ -258,7 +262,11 @@
 								"exec": [
 									"pm.test(\"Image should have proper dimentions\", function () {",
 									"    pm.response.to.be.header(\"Content-Type\", \"image/png\")",
-									"    pm.response.to.be.header(\"Content-Length\", \"355062\")",
+									"    // Read width/height from the PNG IHDR chunk. Byte-exact Content-Length is",
+									"    // engine-specific (Java2D and libvips use different resamplers).",
+									"    const b = pm.response.stream, u32 = o => ((b[o] << 24 | b[o + 1] << 16 | b[o + 2] << 8 | b[o + 3]) >>> 0);",
+									"    pm.expect(u32(16)).to.eql(500);",
+									"    pm.expect(u32(20)).to.eql(300);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -284,12 +292,12 @@
 								"300"
 							]
 						},
-						"description": "**Description**: Retrieves an image with a width of 500 pixels and a height of 300 pixels.\n\n**Tests**: Verifies that the image has the correct content type and length."
+						"description": "**Description**: Retrieves an image with a width of 500 pixels and a height of 300 pixels.\n\n**Tests**: Verifies that the image has the correct content type and pixel dimensions."
 					},
 					"response": []
 				}
 			],
-			"description": "**Description**: Retrieves an image with a width of 900 pixels and a height of 500 pixels.\n\n**Tests**: Verifies that the image has the correct content type and length.\n\n**Description**: Retrieves an image with a width of 500 pixels and a height of 300 pixels.\n\n**Tests**: Verifies that the image has the correct content type and length.",
+			"description": "**Description**: Retrieves an image with a width of 900 pixels and a height of 500 pixels.\n\n**Tests**: Verifies that the image has the correct content type and pixel dimensions.\n\n**Description**: Retrieves an image with a width of 500 pixels and a height of 300 pixels.\n\n**Tests**: Verifies that the image has the correct content type and pixel dimensions.",
 			"event": [
 				{
 					"listen": "prerequest",

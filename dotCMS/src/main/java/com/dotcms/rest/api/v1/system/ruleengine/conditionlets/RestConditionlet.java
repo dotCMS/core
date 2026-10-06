@@ -1,6 +1,6 @@
 package com.dotcms.rest.api.v1.system.ruleengine.conditionlets;
 
-import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMap;
 import com.dotcms.rest.api.Validated;
 import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;

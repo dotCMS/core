@@ -1,4 +1,5 @@
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { ButtonDirective, ButtonModule } from 'primeng/button';
 import { Chip, ChipModule } from 'primeng/chip';
@@ -34,6 +35,13 @@ describe('DotCategoryFieldChipsComponent', () => {
     it('should be created', () => {
         spectator.detectChanges();
         expect(spectator.component).toBeTruthy();
+    });
+
+    it('should left-align the chips list container', () => {
+        spectator.detectChanges();
+        const container = spectator.query(byTestId('category-list'));
+        expect(container.classList).toContain('justify-start');
+        expect(container.classList).not.toContain('justify-center');
     });
 
     it('should the max input be equal to constant by default', () => {
@@ -103,7 +111,7 @@ describe('DotCategoryFieldChipsComponent', () => {
 
     describe('onRemove', () => {
         it('should call the output', () => {
-            const removeSpy = jest.spyOn(spectator.component.remove, 'emit');
+            const removeSpy = vi.spyOn(spectator.component.remove, 'emit');
             spectator.setInput('max', 2);
             spectator.component.$showAll.set(true);
             spectator.detectChanges();

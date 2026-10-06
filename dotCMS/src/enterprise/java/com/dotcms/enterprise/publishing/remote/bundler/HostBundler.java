@@ -318,6 +318,11 @@ public class HostBundler implements IBundler {
 		if (Host.SYSTEM_HOST.equalsIgnoreCase(hostContentlet.getIdentifier())) {
 			return;
 		}
+		if (!hostContentlet.isHost() && !APILocator.getFileAssetAPI().isFileAsset(hostContentlet)) {
+			Logger.debug(this, "Skipping non-Host, non-FileAsset contentlet '" + hostContentlet.getIdentifier() +
+					"' in HostBundler. Only Host and FileAsset content types are written as .host.xml files.");
+			return;
+		}
 
 		Calendar cal = Calendar.getInstance();
 

@@ -1,6 +1,6 @@
 /**
  * Creates a fake event for testing purposes.
- * This is a Jest-compatible replacement for @ngneat/spectator's createFakeEvent.
+ * This is a Jest-compatible replacement for @openng/spectator's createFakeEvent.
  *
  * @param eventType - The type of event to create (e.g., 'click', 'input', 'change')
  * @param eventInit - Optional event initialization properties

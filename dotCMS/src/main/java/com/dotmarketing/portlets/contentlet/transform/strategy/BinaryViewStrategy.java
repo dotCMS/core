@@ -59,7 +59,10 @@ public class BinaryViewStrategy extends AbstractTransformStrategy<Contentlet> {
                     final String sufix = options.contains(AVOID_MAP_SUFFIX_FOR_VIEWS)
                             ? "" : "Map";
 
-                    map.put(field.variable() + sufix, transform(field, contentlet));
+                    final Map<String, Object> binaryMap = transform(field, contentlet);
+                    if (!binaryMap.isEmpty()) {
+                        map.put(field.variable() + sufix, binaryMap);
+                    }
                     final Metadata metadata = contentlet.getBinaryMetadata(field.variable());
                     if (!options.contains(AVOID_MAP_SUFFIX_FOR_VIEWS) && metadata != null) {
                         //This clearly replaces the binary by a string which is the expected output on BinaryToMapTransformer.

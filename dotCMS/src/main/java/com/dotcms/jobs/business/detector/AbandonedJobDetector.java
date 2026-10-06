@@ -103,8 +103,10 @@ public class AbandonedJobDetector implements AutoCloseable {
      *   <li>Put back in queue for retry</li>
      *   <li>Generate a JobAbandonedEvent</li>
      * </ol>
+     * Public so callers (e.g. integration tests) can trigger an immediate scan instead of
+     * waiting for the next scheduled tick; the scheduled executor uses this same method.
      */
-    private void detectAbandonedJobs() {
+    public void detectAbandonedJobs() {
 
         try {
 

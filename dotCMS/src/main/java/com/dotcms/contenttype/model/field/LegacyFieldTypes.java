@@ -106,9 +106,36 @@ public enum LegacyFieldTypes {
 	}
 
 	/**
+	 * Resolves an ergonomic short field-type name to its concrete {@link Field} implementation
+	 * class, so callers (e.g. AI agents) don't have to know the fully-qualified {@code Immutable*}
+	 * class name. Two case-insensitive forms are accepted:
+	 * <ul>
+	 *   <li>the enum name — {@code "TEXT"}, {@code "STORY_BLOCK_FIELD"}, {@code "CHECKBOX"}</li>
+	 *   <li>the legacy value — {@code "text"}, {@code "story_block_field"}, {@code "checkbox"}</li>
+	 * </ul>
+	 *
+	 * @param name The short field-type name.
+	 * @return The matching field implementation class, or {@code null} if {@code name} is not a
+	 *         known short field-type name.
+	 */
+	public static Class<? extends Field> implClassForName(final String name) {
+		if (name == null) {
+			return null;
+		}
+		final String trimmed = name.trim();
+		for (final LegacyFieldTypes fieldType : LegacyFieldTypes.values()) {
+			if (fieldType.name().equalsIgnoreCase(trimmed)
+					|| fieldType.legacyValue.equalsIgnoreCase(trimmed)) {
+				return fieldType.implClass;
+			}
+		}
+		return null;
+	}
+
+	/**
 	 * Returns the new field class associated to the specified legacy field
 	 * type.
-	 * 
+	 *
 	 * @param legacyValue
 	 *            - The legacy field type.
 	 * @return The class of the new field.

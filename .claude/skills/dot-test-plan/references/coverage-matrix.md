@@ -1,0 +1,122 @@
+# Coverage matrix
+
+Ten coverage axes. For **each**, decide **In scope** (≥1 manual case) or **Out of scope**.
+The plan publishes no out-of-scope list, so this walk is invisible in the output — which is exactly
+why it must be deliberate. A forgotten axis and a consciously excluded one produce an identical
+plan, and only one of them is right.
+
+Walk the matrix **once** over the union of everything the PR set changed — not once per PR, and not
+once per issue.
+
+| Axis | What to vary | In scope when |
+|---|---|---|
+| **Permissions** | anonymous, back-end user, front-end user, CMS Anonymous role, CMS Owner, individual vs. inherited, role revocation | the diff touches `Permission*`, `Role*`, a REST endpoint, or any `checkPermission` path |
+| **Sites / hosts** | `SYSTEM_HOST`, default host, secondary host, cross-host references | the diff touches `Host*`, `Identifier*`, multi-tenant content, or host-scoped queries |
+| **Languages** | default language, non-default language, `DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE` on/off, missing translation | the diff touches `Contentlet`, `Language*`, search, rendering, or anything taking a `languageId` |
+| **Content version state** | working only, live, archived, multiple versions, working ≠ live | the diff touches `Versionable`, publish/unpublish, or workflow |
+| **Cache layers** | cold cache, warm cache, **invalidation after mutation**, **cross-node invalidation** | any mutation of cached state |
+| **Workflow** | default scheme, non-default scheme, required action, mandatory step | the diff touches `Workflow*` or content state transitions |
+| **Push Publish** | bundle generation, receiver replay, integrity checks | the diff touches publishable entities (content, templates, containers, content types, workflows, categories) |
+| **Persistence** | **PostgreSQL only** — CI does not run H2 | any DB-touching code |
+| **UI / UX** | see the checklist below | any of the triggers below |
+| **Form & state semantics** | see the checklist below | the diff adds or changes a form, a multi-step editor, or any save / discard / leave gesture |
+
+### UI / UX triggers
+
+The axis is in scope if **any one** of these holds:
+
+- the diff touches `core-web/`
+- the diff includes `*.html`, `*.scss`, `*.component.ts`
+- an issue or acceptance criterion names a user-visible surface (screen, dialog, button, form,
+  selector, drawer — "Content Drive", "Site Browser", "Host Folder Field", "Page Editor", …)
+- the diff changes a REST endpoint that `core-web/` consumes
+- an issue carries a UI-area label
+- screenshots, Figma links, or video are attached
+
+**A backend-only diff does not exempt this axis** when an acceptance criterion names a user-visible
+surface. If the change is reachable from a screen, a human has to look at that screen.
+
+### UI / UX checklist
+
+When the axis is in scope, cover each sub-aspect that genuinely applies. These are all things a
+person checks by hand:
+
+- **Visual rendering** — correct content on the happy path and in each non-default state (empty,
+  loading, error, disabled)
+- **Keyboard navigation** — logical tab order, every interactive element reachable, `Escape` closes
+  modals and menus, `Enter` / `Space` activate buttons
+- **Focus management** — opening a dialog moves focus into it; closing returns focus to the trigger;
+  route changes move focus to the main heading
+- **Screen reader** — interactive elements have accessible names; dynamic changes are announced
+- **Error / loading / empty states** — correct copy, and recoverable (the retry actually works, an
+  error doesn't strand the user)
+- **Responsive layout** — usable at mobile, tablet, and desktop widths; no overflow, overlap, or
+  unreachable actions
+- **i18n** — copy resolves for the default language and one non-default language; long translations
+  don't break the layout
+- **Contrast** — text stays legible against its background, including disabled, error and selected
+  states. **Not** light/dark mode — see below.
+- **Copy** — labels, buttons, errors, and tooltips match the spec or the acceptance criteria
+
+
+### Form & state semantics checklist
+
+In scope whenever the change touches a form or an editor. These are behavioural rather than
+presentational — the UI / UX checklist asks whether a control *looks* right, this one asks whether
+the *data* survives:
+
+- **Bounded choices** — exercise every option of a select, radio group or status enum, not only the
+  default. A five-value enum with one value tested is one case, not five.
+- **Numeric boundaries** — min, max, min−1, max+1, zero, empty. Ranges and durations especially.
+- **Derived or recomputed fields** — a counter, a summary line, a total: change an input and confirm
+  the derived value follows, including back to zero.
+- **Child-entity CRUD inside a parent form** — add, rename, reorder and delete a child while the
+  parent is unsaved, then confirm what actually persisted.
+- **Optional configuration** — set versus deliberately left unset. "Not configured" is a state, and
+  it is the one nobody tests.
+- **Which gesture persists what** — when more than one thing saves (autosave, an explicit Save, a
+  status transition), exercise each separately and state which persisted what. Do not assume one
+  gesture covers another.
+- **Leaving with unsaved work** — navigate away, reload, and use the browser Back button with changes
+  pending. Confirm the guard fires, and that discarding actually discards.
+- **Locked / read-only states** — a status that disables the form must disable *all* of it, not the
+  obvious controls only.
+
+
+### Does not exist in dotCMS — never write a case for it
+
+A generic web-app checklist suggests these; dotCMS has none of them, and a case for one is a
+hallucination the reviewer then has to catch.
+
+- **Light/dark mode.** There is no theme switcher and no user theme preference. The shared theme
+  provider pins PrimeNG's `darkModeSelector` to `false` (`core-web/libs/ui/src/lib/theme/providers.ts`),
+  nothing in the product reads `prefers-color-scheme`, and no element carries a `data-theme`
+  attribute. The single `.dark` selector in the repo belongs to the standalone block-editor app
+  config and has nothing to switch it on. Test contrast; never "toggle dark mode and confirm…".
+
+If a change genuinely introduces one of these, the diff will show it — and then it is in scope like
+any other new behaviour. Absent that, it is not.
+
+---
+
+## Mandatory cases
+
+Include these whenever the trigger applies. All are `Manual`, like every other case.
+
+**One per issue, always** — `Verify: #<issue>`: the original bug no longer reproduces on the
+post-merge build. Run the issue's own reproduction steps against the build under test and confirm
+the fixed behavior. Spell out environment, user, site, screen, and click sequence.
+
+| Trigger in the diff | Case |
+|---|---|
+| Mutates cached state | **Cache invalidation** — mutate, re-read, confirm the new value. `High`. |
+| Touches a `*Cache*` layer or the cache transport | **Cross-node invalidation** — mutate on node A, read from node B, confirm B returns the new value. dotCMS runs clustered; an entry that evicts in-process can stay stale on a peer. `High`. |
+| Touches `com.dotcms.rest.*` | **401 unauthenticated** — give the exact `curl`. `High`. |
+| Touches `com.dotcms.rest.*` | **403 authenticated but unauthorized**. `High`. |
+| Touches `com.dotcms.rest.*` | **Response contract** — response JSON matches the declared `@Schema`. `Medium`. |
+| Adds or changes a startup/upgrade task, or any DDL | **Upgrade on a populated DB** — restore a pre-fix snapshot, deploy, confirm the task runs once cleanly and the schema matches, then restart and confirm it does not re-run. Cross-reference `docs/core/ROLLBACK_UNSAFE_CATEGORIES.md`. `High`. |
+
+An axis or mandatory case already covered by a test one of the PRs itself added gets **no manual
+case** — CI checks it on every build. Drop it silently; the plan does not enumerate what was skipped.
+This holds only when that test exercises the same path a person would: a spec that mocks the store or
+builds a fake component does not retire the case (SKILL.md §5).

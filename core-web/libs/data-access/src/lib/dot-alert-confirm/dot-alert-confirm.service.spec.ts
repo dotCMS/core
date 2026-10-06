@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import { fakeAsync, tick, TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 
@@ -43,8 +45,8 @@ describe('DotAlertConfirmService', () => {
         mockData = {
             header: 'Header',
             message: 'Message',
-            accept: jest.fn(),
-            reject: jest.fn(),
+            accept: vi.fn(),
+            reject: vi.fn(),
             footerLabel: {
                 accept: 'Delete',
                 reject: 'Reject'
@@ -57,13 +59,13 @@ describe('DotAlertConfirmService', () => {
 
     describe('confirmation', () => {
         it('should set model and call confirm method in primeng service', fakeAsync(() => {
-            jest.spyOn(confirmationService, 'confirm');
+            vi.spyOn(confirmationService, 'confirm');
             service.confirmDialogOpened$.pipe(take(1)).subscribe((response: boolean) => {
                 expect(response).toBe(true);
             });
             service.confirm(mockData);
             tick();
-            expect(service.confirmModel).toEqual(mockData);
+            expect(service.confirmModel()).toEqual(mockData);
             expect(confirmationService.confirm).toHaveBeenCalledWith(mockData);
         }));
 
@@ -72,7 +74,7 @@ describe('DotAlertConfirmService', () => {
                 header: 'Header',
                 message: 'Message'
             });
-            expect(service.confirmModel).toEqual({
+            expect(service.confirmModel()).toEqual({
                 header: 'Header',
                 message: 'Message',
                 footerLabel: {
@@ -85,14 +87,14 @@ describe('DotAlertConfirmService', () => {
         it('should clear model', () => {
             service.confirm(mockData);
             service.clearConfirm();
-            expect(service.confirmModel).toEqual(null);
+            expect(service.confirmModel()).toEqual(null);
         });
     });
 
     describe('alert', () => {
         it('should set model', fakeAsync(() => {
             service.alert(mockData);
-            expect(service.alertModel).toEqual(mockData);
+            expect(service.alertModel()).toEqual(mockData);
             tick();
             service.confirmDialogOpened$.pipe(take(1)).subscribe((response: boolean) => {
                 expect(response).toBe(true);
@@ -104,7 +106,7 @@ describe('DotAlertConfirmService', () => {
                 header: 'Header',
                 message: 'Message'
             });
-            expect(service.alertModel).toEqual({
+            expect(service.alertModel()).toEqual({
                 header: 'Header',
                 message: 'Message',
                 footerLabel: {
@@ -117,14 +119,14 @@ describe('DotAlertConfirmService', () => {
             service.alert(mockData);
             service.alertAccept(new MouseEvent('click'));
             expect(mockData.accept).toHaveBeenCalledTimes(1);
-            expect(service.alertModel).toEqual(null);
+            expect(service.alertModel()).toEqual(null);
         });
 
         it('should exec reject function and clear model', () => {
             service.alert(mockData);
             service.alertReject(new MouseEvent('click'));
             expect(mockData.reject).toHaveBeenCalledTimes(1);
-            expect(service.alertModel).toEqual(null);
+            expect(service.alertModel()).toEqual(null);
         });
     });
 });

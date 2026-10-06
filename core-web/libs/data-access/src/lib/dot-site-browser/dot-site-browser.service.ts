@@ -1,10 +1,11 @@
 import { Observable } from 'rxjs';
 
+import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
 import { take } from 'rxjs/operators';
 
-import { CoreWebService, ResponseView } from '@dotcms/dotcms-js';
+import { DotCMSResponse } from '@dotcms/dotcms-models';
 
 /**
  * Provide util methods of backend Site Browser.
@@ -13,21 +14,17 @@ import { CoreWebService, ResponseView } from '@dotcms/dotcms-js';
  */
 @Injectable()
 export class DotSiteBrowserService {
-    private coreWebService = inject(CoreWebService);
+    private http = inject(HttpClient);
 
     /**
      * Set the selected folder in the Site Browser portlet.
-     * @returns Observable<{}>
+     * @returns Observable<DotCMSResponse<Record<string, unknown>>>
      * @memberof DotSiteBrowserService
      */
-    setSelectedFolder(path: string): Observable<ResponseView<Record<string, unknown>>> {
-        return this.coreWebService
-            .requestView<Record<string, unknown>>({
-                body: {
-                    path: path
-                },
-                method: 'PUT',
-                url: '/api/v1/browser/selectedfolder'
+    setSelectedFolder(path: string): Observable<DotCMSResponse<Record<string, unknown>>> {
+        return this.http
+            .put<DotCMSResponse<Record<string, unknown>>>('/api/v1/browser/selectedfolder', {
+                path
             })
             .pipe(take(1));
     }

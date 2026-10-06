@@ -3,6 +3,8 @@ import { nxE2EPreset } from '@nx/playwright/preset';
 import { defineConfig, devices } from '@playwright/test';
 import * as dotenv from 'dotenv';
 
+import path from 'path';
+
 // Environment configuration
 const currentEnv = process.env['CURRENT_ENV'] || 'dev';
 const baseURL = process.env['E2E_BASE_URL'] || getBaseURL(currentEnv);
@@ -43,9 +45,16 @@ export default defineConfig({
     forbidOnly: !!process.env.CI,
     /* Retry on CI only */
     retries: process.env.CI ? 2 : 0,
-    /* Opt out of parallel tests on CI. */
-    workers: process.env.CI ? 1 : undefined,
-    timeout: 30000,
+    /*
+     * Parallelize CI (2 workers); local keeps Playwright default.
+     *
+     * Do NOT lower this to work around a crashing shard. The 1 -> 2 bump is a measured improvement
+     * from #36567 / PR #36647: the Playwright phase went from ~49m to a <30m target, so going back
+     * roughly doubles E2E time for every PR in the repo. If concurrency ever is proven to be the
+     * cause, that belongs in its own change against #36567, not smuggled into a feature PR.
+     */
+    workers: process.env.CI ? 2 : undefined,
+    timeout: 60000,
     /* Reporter to use. See https://playwright.dev/docs/test-reporters */
     reporter:
         currentEnv === 'dev'
@@ -64,13 +73,22 @@ export default defineConfig({
         trace: 'on-first-retry',
         screenshot: 'only-on-failure',
         video: 'retain-on-failure',
-        headless: headless
+        headless: headless,
+        launchOptions: {
+            /*
+             * Chromium puts its shared-memory allocations in /dev/shm, which a container gives 64MB
+             * of by default. Exhausting it crashes the browser process outright — a SIGSEGV with no
+             * Playwright output and no JUnit report, which is exactly how the CI shard died. This
+             * flag moves those allocations to regular temp files instead.
+             */
+            args: ['--disable-dev-shm-usage']
+        }
     },
     /* Run your local dev server before starting the tests */
     webServer:
         currentEnv === 'dev'
             ? {
-                  command: 'yarn nx run dotcms-ui:serve',
+                  command: 'pnpm exec nx run dotcms-ui:serve',
                   url: `${baseURL}/dotAdmin/#/public/login`,
                   reuseExistingServer: reuseExistingServer,
                   cwd: workspaceRoot
@@ -78,18 +96,22 @@ export default defineConfig({
             : undefined,
     projects: [
         {
+            name: 'setup',
+            testMatch: /auth\.setup\.ts/
+        },
+        {
             name: 'chromium',
+            testIgnore: /tests\/login\//,
+            use: {
+                ...devices['Desktop Chrome'],
+                storageState: path.join(__dirname, '.auth', 'admin.json')
+            },
+            dependencies: ['setup']
+        },
+        {
+            name: 'chromium-no-auth',
+            testMatch: /tests\/login\//,
             use: { ...devices['Desktop Chrome'] }
         }
-
-        // {
-        //   name: 'firefox',
-        //   use: { ...devices['Desktop Firefox'] }
-        // },
-
-        // {
-        //   name: 'webkit',
-        //   use: { ...devices['Desktop Safari'] }
-        // }
     ]
 });

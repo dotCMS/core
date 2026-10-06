@@ -15,6 +15,8 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.contentlet.action.ImportAuditUtil.ImportAuditResults;
 import com.dotmarketing.portlets.contentlet.business.ContentletCache;
@@ -207,6 +209,10 @@ public class ImportContentletsAction extends DotPortletAction {
 				final HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
 				final HttpSession httpSession = httpReq.getSession();
 				final long importId = ImportAuditUtil.createAuditRecord(user.getUserId(), (String)httpSession.getAttribute("fileName"));
+				// Snapshot the request attributes/headers/session now, while the request is still alive.
+				// The Tomcat RequestFacade will be recycled before the background thread finishes for large imports.
+				final HttpServletRequest safeHttpReq = new MockHeaderRequest(
+						new MockSessionRequest(new MockAttributeRequest(httpReq)));
 
 
 				Runnable runnable = new Runnable() {
@@ -215,6 +221,8 @@ public class ImportContentletsAction extends DotPortletAction {
 					@CloseDBIfOpened
 					public void run() {
 
+						boolean importFailed = false;
+						String importErrorMessage = null;
 						ImportContentletsForm importContentletsForm = (ImportContentletsForm) form;
 						File fileToImport = (File) httpSession.getAttribute("file_to_import");
 						Charset charset = importContentletsForm.getLanguage() == -1
@@ -257,7 +265,7 @@ public class ImportContentletsAction extends DotPortletAction {
 								httpSession.removeAttribute("importSession");
 								importresults = _processFile(importId, httpSession, user,
 										csvHeaders, csvreader, languageCodeHeaderColumn,
-										countryCodeHeaderColumn, reader,req);
+										countryCodeHeaderColumn, reader, safeHttpReq);
 							}
 
 							final List<String> counters= importresults.get("counters");
@@ -279,14 +287,27 @@ public class ImportContentletsAction extends DotPortletAction {
 
 
 						} catch (Exception ae) {
-							_handleException(ae, req);
+							Logger.error(this, "Error importing contentlets for import ID: " + importId, ae);
+							try {
+								HibernateUtil.rollbackTransaction();
+							} catch (DotHibernateException e1) {
+								Logger.error(this, "Error rolling back transaction for import ID: " + importId, e1);
+							}
+							importFailed = true;
+							importErrorMessage = ae.getMessage() != null
+									? ae.getMessage() : ae.getClass().getSimpleName();
 
 						} finally{
 
-							if(!ImportAuditUtil.cancelledImports.containsKey(importId)){
-								ImportAuditUtil.setAuditRecordCompleted(importId);
-							}else{
+							try {
 								ImportAuditUtil.cancelledImports.remove(importId);
+								if(importFailed){
+									ImportAuditUtil.setAuditRecordAsFailed(importId, importErrorMessage);
+								} else {
+									ImportAuditUtil.setAuditRecordCompleted(importId);
+								}
+							} catch (Exception e) {
+								Logger.error(this, "Error updating audit record for import ID: " + importId, e);
 							}
 						}
 					}
@@ -356,13 +377,29 @@ public class ImportContentletsAction extends DotPortletAction {
 		ActionResponseImpl resImpl = (ActionResponseImpl)res;
 		HttpServletResponse httpRes = resImpl.getHttpServletResponse();
 
+		ImportContentletsForm importForm = (ImportContentletsForm) form;
+		if (!UtilMethods.isSet(importForm.getStructure())) {
+			SessionMessages.add(req, ERROR, "structure-type-is-required");
+			setForward(req, PORTLET_EXT_CONTENTLET_IMPORT_CONTENTLETS);
+			return;
+		}
+
+		// The fields must be resolved before any download header is committed, otherwise a
+		// failed lookup leaves the response flagged as an attachment with an empty error body
+		final List<Field> fields;
+		try {
+			fields = FieldsCache.getFieldsByStructureInode(importForm.getStructure());
+		} catch (final DotStateException e) {
+			Logger.warn(this, "Unable to generate CSV template: selected Content Type does not exist", e);
+			SessionMessages.add(req, ERROR, "Workflow-does-not-exists-content-type");
+			setForward(req, PORTLET_EXT_CONTENTLET_IMPORT_CONTENTLETS);
+			return;
+		}
+
 		httpRes.setContentType("application/octet-stream");
 		httpRes.setHeader("Content-Disposition", "attachment; filename=\"CSV_Template.csv\"");
 
 		ServletOutputStream out = httpRes.getOutputStream();
-		ImportContentletsForm importForm = (ImportContentletsForm) form;
-
-		List<Field> fields = FieldsCache.getFieldsByStructureInode(importForm.getStructure());
 		for(int i = 0; i < fields.size(); i++) {
 			Field field = fields.get(i);
 			if (ImportUtil.isImportableField(field)) {
@@ -486,12 +523,9 @@ public class ImportContentletsAction extends DotPortletAction {
 	 */
 	private HashMap<String, List<String>> _processFile(final long importId, final HttpSession session,
 			final User user, final String[] csvHeaders, final CsvReader csvreader,
-			final int languageCodeHeaderColumn, final int countryCodeHeaderColumn, final Reader reader, final ActionRequest req)
+			final int languageCodeHeaderColumn, final int countryCodeHeaderColumn, final Reader reader,
+			final HttpServletRequest httpReq)
 			throws Exception {
-		final ActionRequestImpl reqImpl = (ActionRequestImpl) req;
-		//This needs to be done since this is running in a thread and the request expires before ending
-		//and we need the headers and some attributes to download the file
-		final HttpServletRequest httpReq = new MockHeaderRequest(new MockSessionRequest(new MockAttributeRequest(reqImpl.getHttpServletRequest())));
 		final ImportContentletsForm importForm = (ImportContentletsForm) session
 				.getAttribute("form_to_import");
 		final String currentSiteId = (String) session

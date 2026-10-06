@@ -35,8 +35,12 @@ export interface EngagementKPIs {
 
 export interface EngagementPlatformMetrics {
     name: string;
+    /** Engaged sessions (group-by API: `engagedSessions`). Pageview bar breakdown uses metric value here. */
     views: number;
+    /** Engagement rate percentage (rounded) from API or share of breakdown total for pageviews. */
     percentage: number;
+    /** Total sessions for the bucket (group-by API); pageview breakdown uses breakdown total per row for consistent typing. */
+    totalSessions: number;
     time: string;
 }
 

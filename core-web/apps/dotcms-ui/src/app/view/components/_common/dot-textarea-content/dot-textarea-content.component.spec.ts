@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { CommonModule } from '@angular/common';
 import { Component, DebugElement, forwardRef, Input } from '@angular/core';
@@ -191,7 +191,7 @@ describe('DotTextareaContentComponent', () => {
     });
 
     it('should not propagate enter keyboard event', async () => {
-        const spy = jest.fn();
+        const spy = vi.fn();
         spectator.setInput('show', ['plain', 'code']);
         spectator.detectChanges();
         component.selected = 'plain';
@@ -211,10 +211,35 @@ describe('DotTextareaContentComponent', () => {
         expect(spy).toHaveBeenCalledTimes(2);
     });
 
+    describe('writeValue', () => {
+        it('should set value when a string is written', () => {
+            component.writeValue('hello');
+            expect(component.value).toBe('hello');
+        });
+
+        it('should clear value when an empty string is written', () => {
+            component.value = 'stale';
+            component.writeValue('');
+            expect(component.value).toBe('');
+        });
+
+        it('should clear value when null is written', () => {
+            component.value = 'stale';
+            component.writeValue(null as unknown as string);
+            expect(component.value).toBe('');
+        });
+
+        it('should clear value when undefined is written', () => {
+            component.value = 'stale';
+            component.writeValue(undefined as unknown as string);
+            expect(component.value).toBe('');
+        });
+    });
+
     it('should init editor with the correct value', () => {
         const mockEditor = { test: 'editor' };
         spectator.setInput('editorName', 'testName');
-        jest.spyOn(component.monacoInit, 'emit');
+        vi.spyOn(component.monacoInit, 'emit');
         spectator.detectChanges();
         component.onInit(mockEditor);
         expect(component.monacoInit.emit).toHaveBeenCalledWith({

@@ -1,7 +1,7 @@
 import { signalState, patchState } from '@ngrx/signals';
 import { Subject } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -52,7 +52,6 @@ interface DotThemeState {
 @Component({
     selector: 'dot-theme',
     imports: [
-        CommonModule,
         FormsModule,
         DataViewModule,
         RadioButtonModule,
@@ -62,7 +61,8 @@ interface DotThemeState {
         DotSiteComponent,
         ButtonModule,
         PopoverModule,
-        CardModule
+        CardModule,
+        NgTemplateOutlet
     ],
     host: {
         class: 'block'

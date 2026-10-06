@@ -1,12 +1,10 @@
-<div class="dot-apps-configuration-list__results">
+<div class="space-y-3">
     @for (site of siteConfigurations(); track site; let i = $index) {
         <dot-apps-configuration-item
             (edit)="edit.emit($event)"
             (export)="export.emit($event)"
             (delete)="delete.emit($event)"
-            [ngClass]="{
-                'dot-apps-configuration-item__not-configured': !site.configured
-            }"
+            [class.dot-apps-configuration-item__not-configured]="!site.configured"
             [site]="site" />
     }
 </div>

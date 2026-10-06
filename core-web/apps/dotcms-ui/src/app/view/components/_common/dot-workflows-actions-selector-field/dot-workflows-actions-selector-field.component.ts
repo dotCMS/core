@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import {
     Component,
     forwardRef,
@@ -9,7 +9,8 @@ import {
     OnInit,
     SimpleChanges,
     ViewChild,
-    inject
+    inject,
+    ChangeDetectionStrategy
 } from '@angular/core';
 import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 
@@ -34,7 +35,8 @@ import { DotWorkflowsActionsSelectorFieldService } from './services/dot-workflow
             useExisting: forwardRef(() => DotWorkflowsActionsSelectorFieldComponent)
         }
     ],
-    imports: [CommonModule, FormsModule, SelectModule, DotMessagePipe]
+    changeDetection: ChangeDetectionStrategy.Eager,
+    imports: [FormsModule, SelectModule, DotMessagePipe, AsyncPipe]
 })
 export class DotWorkflowsActionsSelectorFieldComponent
     implements ControlValueAccessor, OnChanges, OnInit

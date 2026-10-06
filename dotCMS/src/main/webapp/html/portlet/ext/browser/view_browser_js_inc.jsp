@@ -1531,6 +1531,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
     }
 
     function showFileAssetPopUp(folderMap, fileAssetTypeMap, isMultiple){
+        currentFileAssetFolderMap = folderMap;
         hidePopUp('context_menu_popup_'+folderMap.inode);
         var faDialog = dijit.byId("addFileAssetDialog");
         if (faDialog) {
@@ -1562,7 +1563,11 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
             "</div>";
     }
 
+    var currentPageAssetFolderMap = null;
+    var currentFileAssetFolderMap = null;
+
     function showPageAssetPopUp(folderMap){
+        currentPageAssetFolderMap = folderMap;
         hidePopUp('context_menu_popup_'+folderMap.inode);
         var faDialog = dijit.byId("addPageAssetDialog");
         if (faDialog) {
@@ -1600,15 +1605,19 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
             "</div>";
     }
 
-    function createContentlet(url, contentType) {
+    function createContentlet(url, contentType, folderPath) {
         url = url + "&lang=" + selectedLang;
+        var eventData = {
+            url: url,
+            contentType: contentType
+        };
+        if (folderPath) {
+            eventData.folderPath = folderPath;
+        }
         var customEvent = document.createEvent("CustomEvent");
         customEvent.initCustomEvent("ng-event", false, false,  {
             name: "create-contentlet",
-            data: {
-                url,
-                contentType
-            }
+            data: eventData
         });
         document.dispatchEvent(customEvent);
         var dialog = dijit.byId("addPageAssetDialog") || dijit.byId("addFileAssetDialog");
@@ -1623,10 +1632,19 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
 
         if(!selected){
             showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Please-select-a-valid-htmlpage-asset-type")) %>');
+            return;
+        }
+
+        var folderPath = '';
+        if (currentPageAssetFolderMap && currentPageAssetFolderMap.fullPath) {
+            var hostName = currentPageAssetFolderMap.fullPath.split(':')[0];
+            var cmsFolderPath = currentPageAssetFolderMap.folderPath || '/';
+            folderPath = cmsFolderPath === '/' ? hostName : hostName + cmsFolderPath;
         }
 
         var loc='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="new" /></portlet:actionURL>&selectedStructure=' + selected +'&folder='+folderInode+'&referer=' + escape(refererVar);
-        createContentlet(loc, selected.item.velocityVarName);
+
+        createContentlet(loc, selected.item.velocityVarName, folderPath);
     }
 
 
@@ -1640,7 +1658,13 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
 
         if(!isMultiple){
             var loc='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="new" /></portlet:actionURL>&selectedStructure=' + selected +'&folder='+folderInode+'&referer=' + escape(refererVar);
-            createContentlet(loc, selected.item.velocityVarName);
+            var folderPath = '';
+            if (currentFileAssetFolderMap && currentFileAssetFolderMap.fullPath) {
+                var hostName = currentFileAssetFolderMap.fullPath.split(':')[0];
+                var cmsFolderPath = currentFileAssetFolderMap.folderPath || '/';
+                folderPath = cmsFolderPath === '/' ? hostName : hostName + cmsFolderPath;
+            }
+            createContentlet(loc, selected.item.velocityVarName, folderPath);
         } else {
             addMultipleFile(folderInode, selected, escape(refererVar));
         }

@@ -3,7 +3,7 @@ package com.dotcms.api.system.event.verifier;
 
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.PayloadVerifier;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.api.v1.system.websocket.WebSocketUserSessionData;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.RoleAPI;

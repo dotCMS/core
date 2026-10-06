@@ -1,9 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
@@ -12,9 +12,8 @@ import { SelectModule } from 'primeng/select';
 import { TextareaModule } from 'primeng/textarea';
 
 import { DotFormatDateService, DotRolesService } from '@dotcms/data-access';
-import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
-import { CoreWebServiceMock, mockProcessedRoles } from '@dotcms/utils-testing';
+import { mockProcessedRoles } from '@dotcms/utils-testing';
 
 import { DotCommentAndAssignFormComponent } from './dot-comment-and-assign-form.component';
 
@@ -24,17 +23,11 @@ describe('DotAssigneeFormComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotCommentAndAssignFormComponent,
-        imports: [
-            HttpClientTestingModule,
-            FormsModule,
-            ReactiveFormsModule,
-            TextareaModule,
-            SelectModule,
-            DotMessagePipe
-        ],
+        imports: [FormsModule, ReactiveFormsModule, TextareaModule, SelectModule, DotMessagePipe],
         providers: [
+            provideHttpClient(),
+            provideHttpClientTesting(),
             DotRolesService,
-            { provide: CoreWebService, useClass: CoreWebServiceMock },
             DotFormatDateService
         ]
     });
@@ -42,7 +35,7 @@ describe('DotAssigneeFormComponent', () => {
     beforeEach(() => {
         spectator = createComponent({ detectChanges: false });
         dotRolesService = spectator.inject(DotRolesService);
-        jest.spyOn(dotRolesService, 'get').mockReturnValue(of(mockProcessedRoles));
+        vi.spyOn(dotRolesService, 'get').mockReturnValue(of(mockProcessedRoles));
     });
 
     it('should show only commentable field', () => {
@@ -114,8 +107,8 @@ describe('DotAssigneeFormComponent', () => {
         });
 
         it('should emit value and valid on form change', () => {
-            jest.spyOn(spectator.component.valid, 'emit');
-            jest.spyOn(spectator.component.value, 'emit');
+            vi.spyOn(spectator.component.valid, 'emit');
+            vi.spyOn(spectator.component.value, 'emit');
 
             const mockFormValue = {
                 assign: mockProcessedRoles[0].id,

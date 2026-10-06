@@ -33,7 +33,6 @@
                     <h5>{{ 'apps.custom.properties' | dm }}</h5>
                     <dot-key-value-ng
                         (updatedList)="updateVariables($event)"
-                        [autoFocus]="false"
                         [showHiddenField]="true"
                         [variables]="dynamicVariables" />
                 </div>

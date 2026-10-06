@@ -1,4 +1,4 @@
-import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator';
+import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator';
 
 import { ActivatedRouteSnapshot } from '@angular/router';
 

@@ -1,12 +1,14 @@
+import { patchState, WritableStateSource } from '@ngrx/signals';
 import {
     byTestId,
     createComponentFactory,
     mockProvider,
     Spectator,
     SpyObject
-} from '@ngneat/spectator/jest';
+} from '@openng/spectator/vitest';
 import { MockComponent } from 'ng-mocks';
-import { of } from 'rxjs';
+import { NEVER, of, Subject } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -31,19 +33,31 @@ import {
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
-import { DotContentletCanLock, DotContentletDepths } from '@dotcms/dotcms-models';
-import { createFakeContentlet, MOCK_SINGLE_WORKFLOW_ACTIONS } from '@dotcms/utils-testing';
+import {
+    DotCMSWorkflowAction,
+    DotContentletCanLock,
+    DotContentletDepths
+} from '@dotcms/dotcms-models';
+import { DotWorkflowActionsComponent } from '@dotcms/ui';
+import {
+    createFakeContentlet,
+    createFakeLanguage,
+    DOT_SYSTEM_CONFIG_SERVICE_MOCK,
+    MOCK_SINGLE_WORKFLOW_ACTIONS,
+    mockWorkflowsActions
+} from '@dotcms/utils-testing';
 
 import { DotEditContentSidebarActivitiesComponent } from './components/dot-edit-content-sidebar-activities/dot-edit-content-sidebar-activities.component';
 import { DotEditContentSidebarHistoryComponent } from './components/dot-edit-content-sidebar-history/dot-edit-content-sidebar-history.component';
 import { DotEditContentSidebarInformationComponent } from './components/dot-edit-content-sidebar-information/dot-edit-content-sidebar-information.component';
-import { DotEditContentSidebarLocalesComponent } from './components/dot-edit-content-sidebar-locales/dot-edit-content-sidebar-locales.component';
-import { DotEditContentSidebarPermissionsComponent } from './components/dot-edit-content-sidebar-permissions/dot-edit-content-sidebar-permissions.component';
+import { DotEditContentSidebarLocalesSelectorComponent } from './components/dot-edit-content-sidebar-locales/dot-edit-content-sidebar-locales-selector/dot-edit-content-sidebar-locales-selector.component';
+import { DotEditContentSidebarSectionComponent } from './components/dot-edit-content-sidebar-section/dot-edit-content-sidebar-section.component';
 import { DotEditContentSidebarWorkflowComponent } from './components/dot-edit-content-sidebar-workflow/dot-edit-content-sidebar-workflow.component';
 import { DotEditContentSidebarComponent } from './dot-edit-content-sidebar.component';
 
 import { Activity } from '../../models/dot-edit-content.model';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
+import { EDIT_CONTENT_HOST } from '../../services/host/edit-content-host.model';
 import { DotEditContentStore } from '../../store/edit-content.store';
 import { MOCK_WORKFLOW_STATUS } from '../../utils/edit-content.mock';
 import * as utils from '../../utils/functions.util';
@@ -65,8 +79,7 @@ describe('DotEditContentSidebarComponent', () => {
         imports: [
             TabsModule,
             DotEditContentSidebarActivitiesComponent,
-            DotEditContentSidebarHistoryComponent,
-            DotEditContentSidebarPermissionsComponent
+            DotEditContentSidebarHistoryComponent
         ], // I need the real components to be rendered in the p-template="content"
         providers: [
             DotEditContentStore,
@@ -77,7 +90,7 @@ describe('DotEditContentSidebarComponent', () => {
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotMessageService),
             mockProvider(Router, {
-                navigate: jest.fn().mockReturnValue(Promise.resolve(true)),
+                navigate: vi.fn().mockReturnValue(Promise.resolve(true)),
                 url: '/test-url',
                 events: of()
             }),
@@ -88,13 +101,13 @@ describe('DotEditContentSidebarComponent', () => {
             mockProvider(DotLanguagesService),
             mockProvider(DotVersionableService),
             mockProvider(DotSiteService),
-            mockProvider(DotSystemConfigService),
+            mockProvider(DotSystemConfigService, DOT_SYSTEM_CONFIG_SERVICE_MOCK),
             {
                 provide: DialogService,
                 useValue: {
-                    open: jest.fn().mockReturnValue({
-                        onClose: { subscribe: jest.fn() },
-                        close: jest.fn()
+                    open: vi.fn().mockReturnValue({
+                        onClose: new Subject<void>(),
+                        close: vi.fn()
                     })
                 }
             },
@@ -107,7 +120,8 @@ describe('DotEditContentSidebarComponent', () => {
                         of({
                             userId: '123',
                             userName: 'John Doe'
-                        })
+                        }),
+                    isPortletInMenu: vi.fn().mockReturnValue(of(false))
                 }
             },
             {
@@ -116,6 +130,16 @@ describe('DotEditContentSidebarComponent', () => {
                     get snapshot() {
                         return { params: { id: undefined, contentType: undefined } };
                     }
+                }
+            },
+            {
+                provide: EDIT_CONTENT_HOST,
+                useValue: {
+                    setContentTitle: vi.fn(),
+                    addBreadcrumb: vi.fn(),
+                    goToSavedContent: vi.fn(),
+                    leaveDeletedContent: vi.fn(),
+                    goToRestoredVersion: vi.fn()
                 }
             }
         ]
@@ -130,12 +154,13 @@ describe('DotEditContentSidebarComponent', () => {
         dotContentletService = spectator.inject(DotContentletService);
 
         // Mock the initial UI state
-        jest.spyOn(utils, 'getStoredUIState').mockReturnValue({
+        vi.spyOn(utils, 'getStoredUIState').mockReturnValue({
             view: 'form',
             activeTab: 0,
             isSidebarOpen: true,
             activeSidebarTab: 0,
-            isBetaMessageVisible: true
+            isBetaMessageVisible: true,
+            localeSelectorTab: 'all'
         });
 
         dotEditContentService.getReferencePages.mockReturnValue(of(1));
@@ -202,8 +227,17 @@ describe('DotEditContentSidebarComponent', () => {
                 expect(workflowComponent).toBeTruthy();
             });
 
-            it('should render DotEditContentSidebarLocalesComponent', () => {
-                const localesComponent = spectator.query(DotEditContentSidebarLocalesComponent);
+            it('should render DotEditContentSidebarLocalesSelectorComponent when locale data is available', () => {
+                const mockLocale = createFakeLanguage();
+                patchState(store as unknown as WritableStateSource<object>, {
+                    locales: [mockLocale],
+                    systemDefaultLocale: mockLocale,
+                    currentLocale: mockLocale
+                });
+                spectator.detectChanges();
+                const localesComponent = spectator.query(
+                    DotEditContentSidebarLocalesSelectorComponent
+                );
                 expect(localesComponent).toBeTruthy();
             });
 
@@ -240,10 +274,6 @@ describe('DotEditContentSidebarComponent', () => {
             expect(spectator.query(byTestId('sidebar-tabs'))).toBeTruthy();
         });
 
-        it('should have toggle-button element', () => {
-            expect(spectator.query(byTestId('toggle-button'))).toBeTruthy();
-        });
-
         it('should render information section with data-testId when on info tab', () => {
             expect(store.activeSidebarTab()).toBe(0);
             const informationElement = spectator.query(byTestId('information'));
@@ -255,213 +285,178 @@ describe('DotEditContentSidebarComponent', () => {
             expect(workflowElement).toBeTruthy();
         });
 
-        it('should render locales section with data-testId when on info tab', () => {
-            const localesElement = spectator.query(byTestId('locales'));
+        it('should render locales section with data-testId when on info tab and locale data is available', () => {
+            const mockLocale = createFakeLanguage();
+            patchState(store as unknown as WritableStateSource<object>, {
+                locales: [mockLocale],
+                systemDefaultLocale: mockLocale,
+                currentLocale: mockLocale
+            });
+            spectator.detectChanges();
+            const localesElement = spectator.query(byTestId('locales-selector'));
             expect(localesElement).toBeTruthy();
         });
     });
 
-    describe('Permissions Tab Visibility', () => {
-        describe('when content is new (isNew = true)', () => {
-            it('should NOT render the permissions tab', () => {
-                expect(store.isNew()).toBe(true);
-                const permissionsElement = spectator.query(byTestId('permissions'));
-                expect(permissionsElement).toBeFalsy();
-            });
+    describe('Tabs', () => {
+        it('should render the first tab as the Actions tab with the bolt icon', () => {
+            const messageService = spectator.inject(DotMessageService);
+            const getSpy = vi.spyOn(messageService, 'get');
 
-            it('should NOT include permissions tab in the tab list', () => {
-                const tabView = spectator.query(byTestId('sidebar-tabs'));
-                const tabs = tabView.querySelectorAll('[role="tab"]');
-                expect(tabs.length).toBe(3);
-            });
+            const tabView = spectator.query(byTestId('sidebar-tabs'));
+            const tabs = tabView.querySelectorAll('[role="tab"]');
 
-            it('should NOT render DotEditContentSidebarPermissionsComponent', () => {
-                const permissionsComponent = spectator.query(
-                    DotEditContentSidebarPermissionsComponent
-                );
-                expect(permissionsComponent).toBeFalsy();
-            });
+            // Only the three remaining tabs (actions, history, comments)
+            expect(tabs.length).toBe(3);
+
+            // The first tab swapped the old info-circle icon for the new bolt icon
+            expect(tabs[0].querySelector('i.pi.pi-bolt')).toBeTruthy();
+            expect(tabs[0].querySelector('i.pi.pi-info-circle')).toBeFalsy();
+
+            // The old "information" tooltip key is no longer requested
+            expect(getSpy).not.toHaveBeenCalledWith('edit.content.sidebar.tab.information');
         });
 
-        describe('when content is in edit mode (isNew = false)', () => {
-            beforeEach(fakeAsync(() => {
-                const dotContentTypeService = spectator.inject(DotContentTypeService);
-                const workflowActionsService = spectator.inject(DotWorkflowsActionsService);
-                const dotWorkflowService = spectator.inject(DotWorkflowService);
-                const dotEditContentService = spectator.inject(DotEditContentService);
-
-                const mockContentlet = createFakeContentlet({
-                    inode: '123',
-                    contentType: 'testContentType',
-                    identifier: '123-456',
-                    title: 'Test Content'
-                });
-
-                dotEditContentService.getContentById.mockReturnValue(of(mockContentlet));
-                dotContentTypeService.getContentTypeWithRender.mockReturnValue(
-                    of(CONTENT_TYPE_MOCK)
-                );
-                workflowActionsService.getByInode.mockReturnValue(of([]));
-                workflowActionsService.getWorkFlowActions.mockReturnValue(
-                    of(MOCK_SINGLE_WORKFLOW_ACTIONS)
-                );
-                dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
-                dotContentletService.canLock.mockReturnValue(
-                    of({ locked: false, canLock: true } as DotContentletCanLock)
-                );
-
-                store.initializeExistingContent({
-                    inode: '123',
-                    depth: DotContentletDepths.TWO
-                });
-                tick();
-                spectator.detectChanges();
-            }));
-
-            it('should render the permissions tab', fakeAsync(() => {
-                expect(store.isNew()).toBe(false);
-                store.setActiveSidebarTab(3);
-                tick();
-                spectator.detectChanges();
-                const permissionsElement = spectator.query(byTestId('permissions'));
-                expect(permissionsElement).toBeTruthy();
-            }));
-
-            it('should include permissions tab in the tab list', () => {
-                const tabView = spectator.query(byTestId('sidebar-tabs'));
-                const tabs = tabView.querySelectorAll('[role="tab"]');
-                expect(tabs.length).toBe(4);
-            });
-
-            it('should render DotEditContentSidebarPermissionsComponent when permissions tab is active', fakeAsync(() => {
-                store.setActiveSidebarTab(3);
-                tick();
-                spectator.detectChanges();
-                const permissionsComponent = spectator.query(
-                    DotEditContentSidebarPermissionsComponent
-                );
-                expect(permissionsComponent).toBeTruthy();
-            }));
-
-            it('should find permissions element by data-testId when permissions tab is active', fakeAsync(() => {
-                store.setActiveSidebarTab(3);
-                tick();
-                spectator.detectChanges();
-                const permissionsElement = spectator.query(byTestId('permissions'));
-                expect(permissionsElement).toBeTruthy();
-            }));
+        it('should NOT render a Settings tab', () => {
+            const tabView = spectator.query(byTestId('sidebar-tabs'));
+            const tabs = tabView.querySelectorAll('[role="tab"]');
+            expect(tabs.length).toBe(3);
+            expect(tabs[0].querySelector('i.pi.pi-cog')).toBeFalsy();
         });
 
-        describe('Edge Cases', () => {
-            it('should NOT render permissions when initialContentletState is new', () => {
-                expect(store.initialContentletState()).toBe('new');
-                expect(spectator.query(byTestId('permissions'))).toBeFalsy();
-            });
-
-            it('should render permissions when initialContentletState is existing', fakeAsync(() => {
-                const dotContentTypeService = spectator.inject(DotContentTypeService);
-                const workflowActionsService = spectator.inject(DotWorkflowsActionsService);
-                const dotWorkflowService = spectator.inject(DotWorkflowService);
-                const dotEditContentService = spectator.inject(DotEditContentService);
-
-                const mockContentlet = createFakeContentlet({
-                    inode: '456',
-                    contentType: 'testContentType',
-                    identifier: '456-789',
-                    title: 'Existing Content'
-                });
-
-                dotEditContentService.getContentById.mockReturnValue(of(mockContentlet));
-                dotContentTypeService.getContentTypeWithRender.mockReturnValue(
-                    of(CONTENT_TYPE_MOCK)
-                );
-                workflowActionsService.getByInode.mockReturnValue(of([]));
-                workflowActionsService.getWorkFlowActions.mockReturnValue(
-                    of(MOCK_SINGLE_WORKFLOW_ACTIONS)
-                );
-                dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
-                dotContentletService.canLock.mockReturnValue(
-                    of({ locked: false, canLock: true } as DotContentletCanLock)
-                );
-
-                store.initializeExistingContent({
-                    inode: '456',
-                    depth: DotContentletDepths.TWO
-                });
-                tick();
-                spectator.detectChanges();
-
-                expect(store.initialContentletState()).not.toBe('new');
-                store.setActiveSidebarTab(3);
-                tick();
-                spectator.detectChanges();
-                expect(spectator.query(byTestId('permissions'))).toBeTruthy();
-            }));
-
-            it('should render permissions when initialContentletState is reset (no workflow)', fakeAsync(() => {
-                const dotContentTypeService = spectator.inject(DotContentTypeService);
-                const workflowActionsService = spectator.inject(DotWorkflowsActionsService);
-                const dotWorkflowService = spectator.inject(DotWorkflowService);
-                const dotEditContentService = spectator.inject(DotEditContentService);
-
-                const mockContentlet = createFakeContentlet({
-                    inode: '789',
-                    contentType: 'testContentType',
-                    identifier: '789-012',
-                    title: 'Reset Content'
-                });
-
-                dotEditContentService.getContentById.mockReturnValue(of(mockContentlet));
-                dotContentTypeService.getContentTypeWithRender.mockReturnValue(
-                    of(CONTENT_TYPE_MOCK)
-                );
-                workflowActionsService.getByInode.mockReturnValue(of([]));
-                workflowActionsService.getWorkFlowActions.mockReturnValue(
-                    of(MOCK_SINGLE_WORKFLOW_ACTIONS)
-                );
-                dotWorkflowService.getWorkflowStatus.mockReturnValue(
-                    of({ scheme: null, step: null, task: null, firstStep: null })
-                );
-                dotContentletService.canLock.mockReturnValue(
-                    of({ locked: false, canLock: true } as DotContentletCanLock)
-                );
-
-                store.initializeExistingContent({
-                    inode: '789',
-                    depth: DotContentletDepths.TWO
-                });
-                tick();
-                spectator.detectChanges();
-
-                expect(store.initialContentletState()).toBe('reset');
-                expect(store.isNew()).toBe(false);
-                store.setActiveSidebarTab(3);
-                tick();
-                spectator.detectChanges();
-                expect(spectator.query(byTestId('permissions'))).toBeTruthy();
-            }));
+        it('should NOT render the permissions or rules components', () => {
+            expect(spectator.query(byTestId('permissions'))).toBeFalsy();
+            expect(spectator.query(byTestId('rules'))).toBeFalsy();
         });
     });
 
-    describe('Sidebar Controls', () => {
-        it('should render toggle button', () => {
-            const toggleButton = spectator.query(byTestId('toggle-button'));
-            expect(toggleButton).toBeTruthy();
+    describe('Actions tab content', () => {
+        beforeEach(fakeAsync(() => {
+            const dotContentTypeService = spectator.inject(DotContentTypeService);
+            const workflowActionsService = spectator.inject(DotWorkflowsActionsService);
+            const dotWorkflowService = spectator.inject(DotWorkflowService);
+            const dotEditContentService = spectator.inject(DotEditContentService);
+
+            const mockContentlet = createFakeContentlet({
+                inode: '123',
+                contentType: 'testContentType',
+                identifier: '123-456',
+                title: 'Test Content'
+            });
+
+            dotEditContentService.getContentById.mockReturnValue(of(mockContentlet));
+            dotContentTypeService.getContentTypeWithRender.mockReturnValue(of(CONTENT_TYPE_MOCK));
+            // Flat actions for this inode keyed under the single scheme so that
+            // showWorkflowActions/getActions resolve to a non-empty list.
+            workflowActionsService.getByInode.mockReturnValue(of(mockWorkflowsActions));
+            workflowActionsService.getWorkFlowActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
+            dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
+            dotContentletService.canLock.mockReturnValue(
+                of({ locked: false, canLock: true } as DotContentletCanLock)
+            );
+
+            store.initializeExistingContent({
+                inode: '123',
+                depth: DotContentletDepths.TWO
+            });
+            tick();
+            spectator.detectChanges();
+        }));
+
+        describe('lock button', () => {
+            it('should render the lock button when the content can be locked', () => {
+                expect(store.canLock()).toBe(true);
+                expect(spectator.query(byTestId('sidebar-lock-button'))).toBeTruthy();
+            });
+
+            it('should call store.lockContent when clicking the button on unlocked content', () => {
+                const lockSpy = vi.spyOn(store, 'lockContent').mockImplementation(() => undefined);
+                vi.spyOn(store, 'isContentLocked').mockReturnValue(false);
+                spectator.detectChanges();
+
+                spectator.click(byTestId('sidebar-lock-button'));
+
+                expect(lockSpy).toHaveBeenCalled();
+            });
+
+            it('should call store.unlockContent when clicking the button on locked content', () => {
+                const unlockSpy = vi
+                    .spyOn(store, 'unlockContent')
+                    .mockImplementation(() => undefined);
+                vi.spyOn(store, 'isContentLocked').mockReturnValue(true);
+                spectator.detectChanges();
+
+                spectator.click(byTestId('sidebar-lock-button'));
+
+                expect(unlockSpy).toHaveBeenCalled();
+            });
+
+            it('should put the store in a loading state when the lock button is clicked', () => {
+                // Use a request that never resolves so the store stays in the loading
+                // state after the click; let the real lockContent method run (no spy).
+                vi.spyOn(store, 'isContentLocked').mockReturnValue(false);
+                dotContentletService.lockContent.mockReturnValue(NEVER);
+                spectator.detectChanges();
+
+                expect(store.isLocking()).toBe(false);
+
+                spectator.click(byTestId('sidebar-lock-button'));
+
+                expect(store.isLocking()).toBe(true);
+            });
+
+            it('should confirm before releasing a lock held by another user', () => {
+                const confirmationService = spectator.inject(ConfirmationService, true);
+                const confirmSpy = vi.spyOn(confirmationService, 'confirm');
+                const unlockSpy = vi
+                    .spyOn(store, 'unlockContent')
+                    .mockImplementation(() => undefined);
+                vi.spyOn(store, 'isLockedByAnotherUser').mockReturnValue(true);
+                vi.spyOn(store, 'lockedByName').mockReturnValue('Anna García');
+                spectator.detectChanges();
+
+                spectator.click(byTestId('sidebar-lock-button'));
+
+                // A confirmation is requested and the lock is NOT released yet.
+                expect(confirmSpy).toHaveBeenCalled();
+                expect(unlockSpy).not.toHaveBeenCalled();
+
+                // Accepting the confirmation releases (steals) the lock.
+                confirmSpy.mock.calls[0][0].accept?.();
+                expect(unlockSpy).toHaveBeenCalled();
+            });
         });
 
-        it('should render append content in Tabs', () => {
-            const appendContent = spectator.query(byTestId('tabview-append-content'));
-            expect(appendContent).toBeTruthy();
+        describe('workflow actions', () => {
+            it('should render the dot-workflow-actions component when there are actions', () => {
+                expect(store.showWorkflowActions()).toBe(true);
+                expect(spectator.query(byTestId('sidebar-workflow-actions'))).toBeTruthy();
+            });
+
+            it('should emit workflowActionFired when the actions component fires an action', () => {
+                const emitSpy = vi.spyOn(spectator.component.workflowActionFired, 'emit');
+                const actionsComponent = spectator.query(DotWorkflowActionsComponent);
+                const action = { id: 'action-1' } as DotCMSWorkflowAction;
+
+                actionsComponent.actionFired.emit(action);
+
+                expect(emitSpy).toHaveBeenCalledWith(action);
+            });
         });
 
-        it('should call toggleSidebar when toggle button is clicked', () => {
-            spectator.detectChanges();
-            const storeSpy = jest.spyOn(store, 'toggleSidebar');
-            const toggleButton = spectator.query(byTestId('toggle-button'));
-            const innerButton = toggleButton?.querySelector('button') as HTMLButtonElement;
-            spectator.click(innerButton ?? (toggleButton as HTMLElement));
-            spectator.detectChanges();
-            expect(storeSpy).toHaveBeenCalled();
+        describe('sections', () => {
+            it('should carry the expected persistence keys on the three sections, in display order', () => {
+                const sections = spectator.queryAll(DotEditContentSidebarSectionComponent);
+                // The History tab also renders sidebar-sections (history.*); scope to the Actions ones.
+                const keys = sections
+                    .map((section) => section.key())
+                    .filter((key) => key.startsWith('actions.'));
+
+                // queryAll returns DOM order, so this also pins the section order in the tab.
+                expect(keys).toEqual(['actions.details', 'actions.locales', 'actions.workflow']);
+            });
         });
     });
 
@@ -527,7 +522,7 @@ describe('DotEditContentSidebarComponent', () => {
                 expect(activitiesTabLink).toBeTruthy();
 
                 // Verify store update
-                const storeSpy = jest.spyOn(store, 'setActiveSidebarTab');
+                const storeSpy = vi.spyOn(store, 'setActiveSidebarTab');
                 spectator.click(activitiesTabLink);
                 tick();
 
@@ -539,56 +534,6 @@ describe('DotEditContentSidebarComponent', () => {
                     DotEditContentSidebarActivitiesComponent
                 );
                 expect(activitiesComponent).toBeTruthy();
-            }));
-
-            it('should switch to permissions tab and render permissions content when clicking permissions tab', fakeAsync(() => {
-                spectator.detectChanges();
-                tick();
-
-                const tabView = spectator.query(byTestId('sidebar-tabs'));
-                expect(tabView).toBeTruthy();
-
-                const tabs = tabView.querySelectorAll('[role="tab"]');
-                expect(tabs.length).toBeGreaterThan(3);
-
-                const permissionsTabLink = tabs[3]; // Permissions is the fourth tab
-                expect(permissionsTabLink).toBeTruthy();
-
-                const storeSpy = jest.spyOn(store, 'setActiveSidebarTab');
-
-                // Start on info tab (0), then click permissions tab
-                expect(store.activeSidebarTab()).toBe(0);
-                spectator.click(permissionsTabLink);
-                tick();
-                spectator.detectChanges();
-
-                expect(storeSpy).toHaveBeenCalledWith(3);
-                expect(store.activeSidebarTab()).toBe(3);
-
-                const permissionsComponent = spectator.query(
-                    DotEditContentSidebarPermissionsComponent
-                );
-                expect(permissionsComponent).toBeTruthy();
-            }));
-
-            it('should open permissions dialog when clicking permissions card in permissions tab', fakeAsync(() => {
-                spectator.detectChanges();
-                tick();
-
-                // Switch to permissions tab first
-                store.setActiveSidebarTab(3);
-                tick();
-                spectator.detectChanges();
-
-                const dialogService = spectator.inject(DialogService);
-                const openSpy = jest.spyOn(dialogService, 'open');
-
-                const permissionsCard = spectator.query(byTestId('permissions-card'));
-                expect(permissionsCard).toBeTruthy();
-                spectator.click(permissionsCard);
-                tick();
-
-                expect(openSpy).toHaveBeenCalled();
             }));
 
             it('should update store and render content when clicking history tab', fakeAsync(() => {
@@ -606,7 +551,7 @@ describe('DotEditContentSidebarComponent', () => {
                 expect(historyTabLink).toBeTruthy();
 
                 // Verify store update
-                const storeSpy = jest.spyOn(store, 'setActiveSidebarTab');
+                const storeSpy = vi.spyOn(store, 'setActiveSidebarTab');
                 spectator.click(historyTabLink);
                 tick();
 
@@ -626,12 +571,12 @@ describe('DotEditContentSidebarComponent', () => {
                 tick();
                 spectator.detectChanges();
 
-                const storeSpy = jest.spyOn(store, 'loadVersions');
+                const storeSpy = vi.spyOn(store, 'loadVersions');
                 const component = spectator.component;
 
                 // Mock the identifier signal to return a test value
                 Object.defineProperty(component, '$identifier', {
-                    value: jest.fn().mockReturnValue('test-identifier'),
+                    value: vi.fn().mockReturnValue('test-identifier'),
                     writable: true
                 });
 
@@ -649,12 +594,12 @@ describe('DotEditContentSidebarComponent', () => {
                 tick();
                 spectator.detectChanges();
 
-                const storeSpy = jest.spyOn(store, 'loadPushPublishHistory');
+                const storeSpy = vi.spyOn(store, 'loadPushPublishHistory');
                 const component = spectator.component;
 
                 // Mock the identifier signal to return a test value
                 Object.defineProperty(component, '$identifier', {
-                    value: jest.fn().mockReturnValue('test-identifier'),
+                    value: vi.fn().mockReturnValue('test-identifier'),
                     writable: true
                 });
 
@@ -670,12 +615,12 @@ describe('DotEditContentSidebarComponent', () => {
                 tick();
                 spectator.detectChanges();
 
-                const storeSpy = jest.spyOn(store, 'deletePushPublishHistory');
+                const storeSpy = vi.spyOn(store, 'deletePushPublishHistory');
                 const component = spectator.component;
 
                 // Mock the identifier signal to return a test value
                 Object.defineProperty(component, '$identifier', {
-                    value: jest.fn().mockReturnValue('test-identifier'),
+                    value: vi.fn().mockReturnValue('test-identifier'),
                     writable: true
                 });
 
@@ -699,19 +644,19 @@ describe('DotEditContentSidebarComponent', () => {
             it('should call setActiveSidebarTab with index 0 when first tab is selected', fakeAsync(() => {
                 store.setActiveSidebarTab(1);
                 tick();
-                const storeSpy = jest.spyOn(store, 'setActiveSidebarTab');
+                const storeSpy = vi.spyOn(store, 'setActiveSidebarTab');
                 spectator.component.onActiveIndexChange(0);
                 expect(storeSpy).toHaveBeenCalledWith(0);
             }));
 
-            it('should call setActiveSidebarTab with index 3 when permissions tab is selected', fakeAsync(() => {
-                const storeSpy = jest.spyOn(store, 'setActiveSidebarTab');
-                spectator.component.onActiveIndexChange(3);
-                expect(storeSpy).toHaveBeenCalledWith(3);
+            it('should call setActiveSidebarTab with index 1 when history tab is selected', fakeAsync(() => {
+                const storeSpy = vi.spyOn(store, 'setActiveSidebarTab');
+                spectator.component.onActiveIndexChange(1);
+                expect(storeSpy).toHaveBeenCalledWith(1);
             }));
 
             it('should call setActiveSidebarTab with the exact index from the event', fakeAsync(() => {
-                const storeSpy = jest.spyOn(store, 'setActiveSidebarTab');
+                const storeSpy = vi.spyOn(store, 'setActiveSidebarTab');
                 spectator.component.onActiveIndexChange(2);
                 expect(storeSpy).toHaveBeenCalledWith(2);
             }));
@@ -719,10 +664,10 @@ describe('DotEditContentSidebarComponent', () => {
 
         describe('Event Handlers - Success', () => {
             it('should call store.addComment when onCommentSubmitted is called with a comment', fakeAsync(() => {
-                const storeSpy = jest.spyOn(store, 'addComment');
+                const storeSpy = vi.spyOn(store, 'addComment');
                 const component = spectator.component;
                 Object.defineProperty(component, '$identifier', {
-                    value: jest.fn().mockReturnValue('test-identifier'),
+                    value: vi.fn().mockReturnValue('test-identifier'),
                     writable: true
                 });
                 component.onCommentSubmitted('My comment');
@@ -731,14 +676,26 @@ describe('DotEditContentSidebarComponent', () => {
                     identifier: 'test-identifier'
                 });
             }));
+
+            it('should call store.fireWorkflowAction when fireResetWorkflowAction (reset path) is invoked', fakeAsync(() => {
+                const storeSpy = vi
+                    .spyOn(store, 'fireWorkflowAction')
+                    .mockImplementation(() => undefined);
+
+                spectator.component.fireResetWorkflowAction('reset-action-id');
+
+                expect(storeSpy).toHaveBeenCalledWith(
+                    expect.objectContaining({ actionId: 'reset-action-id' })
+                );
+            }));
         });
 
         describe('Event Handlers - Failure and Edge Cases', () => {
             it('should NOT call loadVersions when onVersionsPageChange is called and identifier is undefined', fakeAsync(() => {
-                const storeSpy = jest.spyOn(store, 'loadVersions');
+                const storeSpy = vi.spyOn(store, 'loadVersions');
                 const component = spectator.component;
                 Object.defineProperty(component, '$identifier', {
-                    value: jest.fn().mockReturnValue(undefined),
+                    value: vi.fn().mockReturnValue(undefined),
                     writable: true
                 });
                 component.onVersionsPageChange(1);
@@ -746,10 +703,10 @@ describe('DotEditContentSidebarComponent', () => {
             }));
 
             it('should NOT call loadVersions when onVersionsPageChange is called and identifier is empty string', fakeAsync(() => {
-                const storeSpy = jest.spyOn(store, 'loadVersions');
+                const storeSpy = vi.spyOn(store, 'loadVersions');
                 const component = spectator.component;
                 Object.defineProperty(component, '$identifier', {
-                    value: jest.fn().mockReturnValue(''),
+                    value: vi.fn().mockReturnValue(''),
                     writable: true
                 });
                 component.onVersionsPageChange(1);
@@ -757,10 +714,10 @@ describe('DotEditContentSidebarComponent', () => {
             }));
 
             it('should NOT call loadPushPublishHistory when onPushPublishPageChange is called and identifier is undefined', fakeAsync(() => {
-                const storeSpy = jest.spyOn(store, 'loadPushPublishHistory');
+                const storeSpy = vi.spyOn(store, 'loadPushPublishHistory');
                 const component = spectator.component;
                 Object.defineProperty(component, '$identifier', {
-                    value: jest.fn().mockReturnValue(undefined),
+                    value: vi.fn().mockReturnValue(undefined),
                     writable: true
                 });
                 component.onPushPublishPageChange(2);
@@ -768,10 +725,10 @@ describe('DotEditContentSidebarComponent', () => {
             }));
 
             it('should NOT call deletePushPublishHistory when onDeletePushPublishHistory is called and identifier is undefined', fakeAsync(() => {
-                const storeSpy = jest.spyOn(store, 'deletePushPublishHistory');
+                const storeSpy = vi.spyOn(store, 'deletePushPublishHistory');
                 const component = spectator.component;
                 Object.defineProperty(component, '$identifier', {
-                    value: jest.fn().mockReturnValue(undefined),
+                    value: vi.fn().mockReturnValue(undefined),
                     writable: true
                 });
                 component.onDeletePushPublishHistory();
@@ -779,10 +736,10 @@ describe('DotEditContentSidebarComponent', () => {
             }));
 
             it('should NOT call deletePushPublishHistory when onDeletePushPublishHistory is called and identifier is null', fakeAsync(() => {
-                const storeSpy = jest.spyOn(store, 'deletePushPublishHistory');
+                const storeSpy = vi.spyOn(store, 'deletePushPublishHistory');
                 const component = spectator.component;
                 Object.defineProperty(component, '$identifier', {
-                    value: jest.fn().mockReturnValue(null),
+                    value: vi.fn().mockReturnValue(null),
                     writable: true
                 });
                 component.onDeletePushPublishHistory();
@@ -790,10 +747,10 @@ describe('DotEditContentSidebarComponent', () => {
             }));
 
             it('should still call addComment when onCommentSubmitted is called even if identifier is undefined', fakeAsync(() => {
-                const storeSpy = jest.spyOn(store, 'addComment');
+                const storeSpy = vi.spyOn(store, 'addComment');
                 const component = spectator.component;
                 Object.defineProperty(component, '$identifier', {
-                    value: jest.fn().mockReturnValue(undefined),
+                    value: vi.fn().mockReturnValue(undefined),
                     writable: true
                 });
                 component.onCommentSubmitted('Comment with no identifier');
@@ -813,14 +770,6 @@ describe('DotEditContentSidebarComponent', () => {
                 expect(informationElement).toBeTruthy();
             }));
 
-            it('should render permissions-card only when permissions tab (tab 3) is active', fakeAsync(() => {
-                store.setActiveSidebarTab(3);
-                tick();
-                spectator.detectChanges();
-                const permissionsCard = spectator.query(byTestId('permissions-card'));
-                expect(permissionsCard).toBeTruthy();
-            }));
-
             it('should render history section with data-testId when history tab is active', fakeAsync(() => {
                 store.setActiveSidebarTab(1);
                 tick();
@@ -835,6 +784,140 @@ describe('DotEditContentSidebarComponent', () => {
                 spectator.detectChanges();
                 const activitiesElement = spectator.query(byTestId('activities'));
                 expect(activitiesElement).toBeTruthy();
+            }));
+        });
+
+        describe('Historical Version Banner', () => {
+            const mockHistoricalContentlet = createFakeContentlet({
+                inode: 'historical-inode',
+                contentType: 'testContentType',
+                identifier: '123-456',
+                title: 'Historical Version'
+            });
+
+            it('should not show the banner when not viewing a historical version', fakeAsync(() => {
+                spectator.detectChanges();
+                expect(spectator.query(byTestId('historical-version-banner'))).toBeFalsy();
+            }));
+
+            it('should show the banner when viewing a historical version', fakeAsync(() => {
+                dotContentletService.getContentletByInode.mockReturnValue(
+                    of(mockHistoricalContentlet)
+                );
+                store.loadVersionContent('historical-inode');
+                tick();
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('historical-version-banner'))).toBeTruthy();
+            }));
+
+            it('should call exitHistoricalView when the Close button is clicked', fakeAsync(() => {
+                dotContentletService.getContentletByInode.mockReturnValue(
+                    of(mockHistoricalContentlet)
+                );
+                const exitSpy = vi.spyOn(store, 'exitHistoricalView');
+
+                store.loadVersionContent('historical-inode');
+                tick();
+                spectator.detectChanges();
+
+                spectator.click(byTestId('close-historical-version-button'));
+                expect(exitSpy).toHaveBeenCalled();
+            }));
+
+            it('should call restoreCurrentHistoricalVersion when the Restore button is clicked', fakeAsync(() => {
+                dotContentletService.getContentletByInode.mockReturnValue(
+                    of(mockHistoricalContentlet)
+                );
+                const restoreSpy = vi.spyOn(store, 'restoreCurrentHistoricalVersion');
+
+                store.loadVersionContent('historical-inode');
+                tick();
+                spectator.detectChanges();
+
+                spectator.click(byTestId('restore-historical-version-button'));
+                expect(restoreSpy).toHaveBeenCalled();
+            }));
+
+            it('should hide the banner after exitHistoricalView is called', fakeAsync(() => {
+                dotContentletService.getContentletByInode.mockReturnValue(
+                    of(mockHistoricalContentlet)
+                );
+                store.loadVersionContent('historical-inode');
+                tick();
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('historical-version-banner'))).toBeTruthy();
+
+                store.exitHistoricalView();
+                tick();
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('historical-version-banner'))).toBeFalsy();
+            }));
+        });
+
+        describe('Compare Version Banner', () => {
+            const mockCompareContentlet = createFakeContentlet({
+                inode: 'compare-inode',
+                contentType: 'testContentType',
+                identifier: '123-456',
+                title: 'Compare Version'
+            });
+
+            it('should not show the banner when not comparing a version', fakeAsync(() => {
+                spectator.detectChanges();
+                expect(spectator.query(byTestId('compare-version-banner'))).toBeFalsy();
+            }));
+
+            it('should show the banner when comparing a version', fakeAsync(() => {
+                patchState(store as unknown as WritableStateSource<object>, {
+                    compareContentlet: mockCompareContentlet
+                });
+                tick();
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('compare-version-banner'))).toBeTruthy();
+            }));
+
+            it('should call exitCompareView when the Close button is clicked', fakeAsync(() => {
+                patchState(store as unknown as WritableStateSource<object>, {
+                    compareContentlet: mockCompareContentlet
+                });
+                tick();
+                spectator.detectChanges();
+
+                const exitSpy = vi.spyOn(store, 'exitCompareView');
+                spectator.click(byTestId('close-compare-button'));
+                expect(exitSpy).toHaveBeenCalled();
+            }));
+
+            it('should call restoreCurrentHistoricalVersion when the Restore button is clicked', fakeAsync(() => {
+                patchState(store as unknown as WritableStateSource<object>, {
+                    compareContentlet: mockCompareContentlet
+                });
+                tick();
+                spectator.detectChanges();
+
+                const restoreSpy = vi.spyOn(store, 'restoreCurrentHistoricalVersion');
+                spectator.click(byTestId('restore-compare-version-button'));
+                expect(restoreSpy).toHaveBeenCalled();
+            }));
+
+            it('should hide the banner after exitCompareView is called', fakeAsync(() => {
+                patchState(store as unknown as WritableStateSource<object>, {
+                    compareContentlet: mockCompareContentlet
+                });
+                tick();
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('compare-version-banner'))).toBeTruthy();
+
+                store.exitCompareView();
+                tick();
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('compare-version-banner'))).toBeFalsy();
             }));
         });
     });

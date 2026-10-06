@@ -1,0 +1,9 @@
+{
+    "name": "new-block-editor",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "projectType": "library",
+    "sourceRoot": "libs/new-block-editor/src",
+    "prefix": "dotcms",
+    "tags": ["type:feature", "scope:new-block-editor"],
+    "targets": {}
+}

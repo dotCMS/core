@@ -1,14 +1,13 @@
-import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
 import {
     DotCurrentUser,
     DotPermissionsType,
     UserPermissions,
     PermissionsType
 } from '@dotcms/dotcms-models';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
 
 import { DotCurrentUserService } from './dot-current-user.service';
 
@@ -18,11 +17,7 @@ describe('DotCurrentUserService', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
-            providers: [
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                DotCurrentUserService
-            ]
+            providers: [provideHttpClient(), provideHttpClientTesting(), DotCurrentUserService]
         });
         dotCurrentUserService = TestBed.inject(DotCurrentUserService);
         httpMock = TestBed.inject(HttpTestingController);
@@ -43,6 +38,37 @@ describe('DotCurrentUserService', () => {
         const req = httpMock.expectOne('/api/v1/users/current/');
         expect(req.request.method).toBe('GET');
         req.flush(mockCurrentUserResponse);
+    });
+
+    it('should return true when portlet is found in the user menu', () => {
+        const mockMenuResponse = {
+            entity: [
+                { menuItems: [{ id: 'sites' }, { id: 'locales' }] },
+                { menuItems: [{ id: 'content' }] }
+            ]
+        };
+
+        dotCurrentUserService.isPortletInMenu('locales').subscribe((result) => {
+            expect(result).toBe(true);
+        });
+
+        const req = httpMock.expectOne('/api/v1/menu');
+        expect(req.request.method).toBe('GET');
+        req.flush(mockMenuResponse);
+    });
+
+    it('should return false when portlet is not found in the user menu', () => {
+        const mockMenuResponse = {
+            entity: [{ menuItems: [{ id: 'sites' }, { id: 'content' }] }]
+        };
+
+        dotCurrentUserService.isPortletInMenu('locales').subscribe((result) => {
+            expect(result).toBe(false);
+        });
+
+        const req = httpMock.expectOne('/api/v1/menu');
+        expect(req.request.method).toBe('GET');
+        req.flush(mockMenuResponse);
     });
 
     it('should get user has access to specific Portlet', () => {
@@ -91,7 +117,7 @@ describe('DotCurrentUserService', () => {
             `/api/v1/permissions/_bypermissiontype?userid=${userId}&permission=${UserPermissions.WRITE}&permissiontype=${PermissionsType.HTMLPAGES}`
         );
         expect(req.request.method).toBe('GET');
-        req.flush({});
+        req.flush({ entity: {} });
     });
 
     afterEach(() => {

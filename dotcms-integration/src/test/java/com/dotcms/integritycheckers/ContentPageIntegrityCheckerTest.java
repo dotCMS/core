@@ -100,6 +100,49 @@ public class ContentPageIntegrityCheckerTest extends IntegrationTestBase impleme
     }
 
     /**
+     * Given scenario: A conflicted page whose content fields contain single-quote characters (apostrophes),
+     * e.g. "It's dotCMS's page".
+     * Expected result: The Fixer should solve the conflict. This is a regression test for the bug where the
+     * contentlet JSON was inlined into the INSERT statement: any apostrophe inside the content broke the
+     * generated SQL with an "Unterminated identifier" error (PostgreSQL). The JSON must be bound as a JDBC
+     * parameter, and the stored contentlet_as_json must keep the apostrophes intact.
+     * @throws Exception
+     */
+    @Test
+    public void TestFixConflictWhenContentContainsSingleQuotes() throws Exception {
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).languageId(1)
+                .title("It's dotCMS's \"conflicted\" page")
+                .friendlyName("dotCMS's conflicted page")
+                .seoDescription("This page's description contains the user's apostrophes")
+                .nextPersisted();
+
+        final ContentPageIntegrityChecker integrityChecker = new ContentPageIntegrityChecker();
+        final Tuple2<String, String> remoteIdentifierAndInode = introduceConflict(page, endpointId.get());
+
+        final String remoteIdentifier = remoteIdentifierAndInode._1();
+
+        integrityChecker.executeFix(endpointId.get());
+        Assert.assertTrue(validateFix(remoteIdentifier));
+
+        // The generated contentlet_as_json must survive the trip with the apostrophes intact
+        final DotConnect dotConnect = new DotConnect();
+        dotConnect.setSQL(
+                "SELECT contentlet_as_json FROM contentlet c WHERE c.identifier = ? AND c.contentlet_as_json is not null");
+        dotConnect.addParam(remoteIdentifier);
+        final List<Map<String, Object>> results = dotConnect.loadObjectResults();
+        Assert.assertFalse("No contentlet_as_json was generated for the fixed page", results.isEmpty());
+        Assert.assertTrue("The stored contentlet_as_json does not contain the page title with the apostrophe",
+                results.get(0).get("contentlet_as_json").toString().contains("It's dotCMS's"));
+
+        APILocator.getHostAPI().archive(host,APILocator.systemUser(),false);
+        APILocator.getHostAPI().delete(host,APILocator.systemUser(),false);
+    }
+
+    /**
      * Method to test: {@link ContentPageIntegrityChecker#executeFix(String)}
      * When: Tests that after conflicts are detected a fix is applied in favor of remote Page.
      * Should: Columns Asset_subtype, owner and create_date should be populated

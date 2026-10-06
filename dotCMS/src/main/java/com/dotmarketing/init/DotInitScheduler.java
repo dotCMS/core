@@ -16,6 +16,7 @@ import com.dotmarketing.quartz.job.CleanUnDeletedUsersJob;
 import com.dotmarketing.quartz.job.DeleteInactiveLiveWorkingIndicesJob;
 import com.dotmarketing.quartz.job.DeleteSiteSearchIndicesJob;
 import com.dotmarketing.quartz.job.DropOldContentVersionsJob;
+import com.dotmarketing.quartz.job.EncryptPlainPasswordsJob;
 import com.dotmarketing.quartz.job.FreeServerFromClusterJob;
 import com.dotmarketing.quartz.job.PruneTimeMachineBackupJob;
 import com.dotmarketing.quartz.job.ServerHeartbeatJob;
@@ -301,6 +302,50 @@ public class DotInitScheduler {
                 }
             }
 
+            //Schedule EncryptPlainPasswordsJob
+            final String EPPjobName = "EncryptPlainPasswordsJob";
+            final String EPPjobGroup = DOTCMS_JOB_GROUP_NAME;
+            final String EPPtriggerName = "trigger27";
+            final String EPPtriggerGroup = "group27";
+
+            if (EncryptPlainPasswordsJob.isEnabled()) {
+                try {
+                    isNew = false;
+
+                    try {
+                        if ((job = sched.getJobDetail(EPPjobName, EPPjobGroup)) == null) {
+                            job = new JobDetail(EPPjobName, EPPjobGroup, EncryptPlainPasswordsJob.class);
+                            isNew = true;
+                        }
+                    } catch (SchedulerException se) {
+                        sched.deleteJob(EPPjobName, EPPjobGroup);
+                        job = new JobDetail(EPPjobName, EPPjobGroup, EncryptPlainPasswordsJob.class);
+                        isNew = true;
+                    }
+                    calendar = Calendar.getInstance();
+                    calendar.add(Calendar.MINUTE, 1);
+                    // By default, the job runs every minute
+                    trigger = new CronTrigger(EPPtriggerName, EPPtriggerGroup, EPPjobName, EPPjobGroup,
+                            calendar.getTime(), null,
+                            Config.getStringProperty(EncryptPlainPasswordsJob.CRON_PROPERTY,
+                                    EncryptPlainPasswordsJob.DEFAULT_CRON_EXPRESSION));
+                    trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_DO_NOTHING);
+                    sched.addJob(job, true);
+
+                    if (isNew) {
+                        sched.scheduleJob(trigger);
+                    } else {
+                        sched.rescheduleJob(EPPtriggerName, EPPtriggerGroup, trigger);
+                    }
+                } catch (Exception e) {
+                    Logger.error(DotInitScheduler.class, e.getMessage(), e);
+                }
+            } else {
+                if ((sched.getJobDetail(EPPjobName, EPPjobGroup)) != null) {
+                    sched.deleteJob(EPPjobName, EPPjobGroup);
+                }
+            }
+
 			addDropOldContentVersionsJob();
 			if ( !Config.getBooleanProperty(DOTCMS_DISABLE_WEBSOCKET_PROTOCOL, false) ) {
 				// Enabling the System Events Job
@@ -536,8 +581,11 @@ private static void addDeleteOldSiteSearchIndicesJob (final Scheduler scheduler)
    private static void addServerHeartbeatJob () {
 
        final int initialDelay = Config.getIntProperty("SERVER_HEARTBEAT_INITIAL_DELAY_SECONDS", 60);
-       final int delaySeconds = Config.getIntProperty("SERVER_HEARTBEAT_RUN_EVERY_SECONDS", 60); // runs every 5 seconds.
-       
+       // Both default to one minute, matching the HEARTBEAT_CRON_EXPRESSION (0 0/1 * * * ?) this
+       // replaced when the schedulers were unified. The cadence bounds how quickly a node notices
+       // a cluster membership change or retries a failed cache-transport rewire.
+       final int delaySeconds = Config.getIntProperty("SERVER_HEARTBEAT_RUN_EVERY_SECONDS", 60);
+
        DotConcurrentFactory.getScheduledThreadPoolExecutor().scheduleAtFixedRate(() -> {
            Try.run(() -> new ServerHeartbeatJob().execute(null)).onFailure(e->Logger.warnAndDebug(DotInitScheduler.class, e));
        }, initialDelay, delaySeconds, TimeUnit.SECONDS);

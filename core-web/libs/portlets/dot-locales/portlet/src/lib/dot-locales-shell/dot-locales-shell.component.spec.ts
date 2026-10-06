@@ -1,4 +1,4 @@
-import { Spectator, createComponentFactory } from '@ngneat/spectator';
+import { Spectator, createComponentFactory } from '@openng/spectator';
 
 import { RouterOutlet } from '@angular/router';
 

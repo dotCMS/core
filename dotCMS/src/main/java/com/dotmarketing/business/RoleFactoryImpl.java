@@ -16,6 +16,8 @@ import com.liferay.portal.model.User;
 import java.lang.reflect.InvocationTargetException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -23,6 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.commons.beanutils.BeanUtils;
 
 /**
@@ -73,7 +76,7 @@ public class RoleFactoryImpl extends RoleFactory {
 				if(r != null && InodeUtils.isSet(r.getId())){
 					List<Role> roles = new ArrayList<>();
 					roles.add(r);
-					populatChildrenForRoles(roles);
+					populateChildrenForRoles(roles);
 					if(translateFQN) {
 						for (Role role : roles) {
 							translateFQNFromDB(role);
@@ -178,7 +181,7 @@ public class RoleFactoryImpl extends RoleFactory {
 		hu.setMaxResults(limit);
 		List<Role> roles = (List<Role>)hu.list();
 		try {
-			populatChildrenForRoles(roles);
+			populateChildrenForRoles(roles);
 			for (Role role : roles) {
 				HibernateUtil.evict(role);
 				translateFQNFromDB(role);
@@ -207,7 +210,7 @@ public class RoleFactoryImpl extends RoleFactory {
 		hu.setMaxResults(limit);
 		List<Role> roles = (List<Role>)hu.list();
 		try {
-			populatChildrenForRoles(roles);
+			populateChildrenForRoles(roles);
 			for (Role role : roles) {
 				HibernateUtil.evict(role);
 				translateFQNFromDB(role);
@@ -245,7 +248,7 @@ public class RoleFactoryImpl extends RoleFactory {
 		final List<Role> roles = (List<Role>)hu.list();
 		try {
 
-			populatChildrenForRoles(roles);
+			populateChildrenForRoles(roles);
 			for (final Role role : roles) {
 				translateFQNFromDB(role);
 			}
@@ -283,6 +286,7 @@ public class RoleFactoryImpl extends RoleFactory {
   		ur.setUserId(user.getUserId());
   		HibernateUtil.save(ur);
   		rc.remove(user.getUserId());
+		flushPermissionShortTermCacheOnCommit();
 
 	}
 
@@ -294,6 +298,19 @@ public class RoleFactoryImpl extends RoleFactory {
 		dc.addParam(role.getId());
 		dc.loadResult();
 		rc.remove(user.getUserId());
+		flushPermissionShortTermCacheOnCommit();
+	}
+
+	/**
+	 * Queues a post-commit flush of PermissionCache.shortLivedGroup so that
+	 * cached doesUserHavePermission() decisions are re-evaluated after a
+	 * role<->user mutation. The tag collapses bulk operations (e.g. delete
+	 * role that touches N users) to a single flush per transaction.
+	 */
+	private void flushPermissionShortTermCacheOnCommit() {
+		HibernateUtil.addCommitListener(
+				"role-mutation-flush-permission-shortterm",
+				() -> CacheLocator.getPermissionCache().flushShortTermCache());
 	}
 
 	@Override
@@ -354,7 +371,7 @@ public class RoleFactoryImpl extends RoleFactory {
 			List<Role> toPopulate = new ArrayList<>();
 			toPopulate.add(parentRole);
 			try {
-				populatChildrenForRoles(toPopulate);
+				populateChildrenForRoles(toPopulate);
 			} catch (Exception e) {
 				throw new DotDataException(e.getMessage(), e);
 			}
@@ -378,7 +395,7 @@ public class RoleFactoryImpl extends RoleFactory {
 		List<Role> singleRole = new ArrayList<>();
 		singleRole.add(r);
 		try {
-			populatChildrenForRoles(singleRole);
+			populateChildrenForRoles(singleRole);
 		} catch (Exception e) {
 			Logger.error(this, "Error populating role children", e);
 			throw new DotDataException("Error populating role children", e);
@@ -436,7 +453,7 @@ public class RoleFactoryImpl extends RoleFactory {
 			hu.setQuery("from " + Role.class.getName() + " where parent = id and (role_key = '' or role_key is null or role_key <> '" + RoleAPI.USERS_ROOT_ROLE_KEY + "') order by role_name");
 			roles = (List<Role>)hu.list();
 			try {
-				populatChildrenForRoles(roles);
+				populateChildrenForRoles(roles);
 				for (Role role : roles) {
 					translateFQNFromDB(role);
 				}
@@ -557,6 +574,46 @@ public class RoleFactoryImpl extends RoleFactory {
 
         return result;
     }
+
+	@Override
+	protected Map<String, Integer> countUsersByRoleIds(final Collection<String> roleIds) throws DotDataException {
+
+		final Map<String, Integer> counts = new HashMap<>();
+		if (roleIds == null || roleIds.isEmpty()) {
+			return counts;
+		}
+
+		// Chunked like findUserIdsForRole above, to keep IN lists bounded
+		final List<String> ids = new ArrayList<>(roleIds);
+		final int chunkSize = 100;
+		for (int from = 0; from < ids.size(); from += chunkSize) {
+
+			final List<String> chunk = ids.subList(from, Math.min(from + chunkSize, ids.size()));
+			final String placeholders = chunk.stream().map(id -> "?")
+					.collect(Collectors.joining(","));
+
+			final DotConnect dc = new DotConnect();
+			// Mirrors the visibility rules of UserFactoryImpl.getUsersByName (system, anonymous,
+			// default and delete-in-progress users excluded) so the count always matches the
+			// totals returned by the users listing
+			dc.setSQL("select ur.role_id, count(distinct ur.user_id) as user_count"
+					+ " from users_cms_roles ur join user_ u on u.userid = ur.user_id"
+					+ " where ur.role_id in (" + placeholders + ")"
+					+ " and u.userid <> 'system' and u.userid <> 'anonymous'"
+					+ " and u.companyid <> ? and u.delete_in_progress = "
+					+ DbConnectionFactory.getDBFalse()
+					+ " group by ur.role_id");
+			chunk.forEach(dc::addParam);
+			dc.addParam(User.DEFAULT);
+
+			for (final Map<String, Object> row : dc.loadObjectResults()) {
+				counts.put(row.get("role_id").toString(),
+						Integer.valueOf(row.get("user_count").toString()));
+			}
+		}
+
+		return counts;
+	}
 
     @Override
 	protected List<String> findUserIdsForRole(Role role) throws DotDataException {
@@ -747,7 +804,7 @@ public class RoleFactoryImpl extends RoleFactory {
 				if(r != null && InodeUtils.isSet(r.getId())){
 					List<Role> roles = new ArrayList<>();
 					roles.add(r);
-					populatChildrenForRoles(roles);
+					populateChildrenForRoles(roles);
 					for (Role role : roles) {
 						translateFQNFromDB(role);
 					}
@@ -765,7 +822,18 @@ public class RoleFactoryImpl extends RoleFactory {
 		return r;
 	}
 
-	private void populatChildrenForRoles(List<Role> roles) throws Exception{
+	private void populateChildrenForRoles(final List<Role> roles) throws Exception{
+
+		// replace, never accumulate: an instance that arrives already populated (e.g. within
+		// save()) must end up with exactly what the query below derives, or repeated
+		// population duplicates every child (#37303). Reset here, not in the helper — the
+		// helper accumulates across the 200-role chunks of a single population.
+		for (final Role role : roles) {
+			if (role != null) {
+				role.setRoleChildren(null);
+			}
+		}
+
 		Map<String,Role> roleMap = UtilMethods.convertListToHashMap(roles, "getId", String.class);
 
 		String sql = "select cr1.id as childId, cr1.role_name as roleName, cr2.id as parentId  from cms_role cr1, cms_role cr2 where cr1.parent in (:param1) and cr1.parent = cr2.id " +
@@ -780,7 +848,7 @@ public class RoleFactoryImpl extends RoleFactory {
 			if(count > 200){
 				dc.setSQL(sql.replace(":param1", ids));
 				sqlResults = dc.loadResults();
-				populatChildrenForRolesHelper(roleMap,sqlResults);
+				populateChildrenForRolesHelper(roleMap,sqlResults);
 				count = 0;
 				ids = "";
 			}
@@ -794,12 +862,12 @@ public class RoleFactoryImpl extends RoleFactory {
 		if(ids.length() > 0){
 			dc.setSQL(sql.replace(":param1", ids));
 			sqlResults = dc.loadResults();
-			populatChildrenForRolesHelper(roleMap,sqlResults);
+			populateChildrenForRolesHelper(roleMap,sqlResults);
 		}
 
 	}
 
-	private void populatChildrenForRolesHelper(Map<String,Role> roleMap, List<Map<String,String>> sqlResults){
+	private void populateChildrenForRolesHelper(Map<String,Role> roleMap, List<Map<String,String>> sqlResults){
 		for (Map<String, String> row : sqlResults) {
 			List<String> childrenList = roleMap.get(row.get("parentid")) != null?
 					roleMap.get(row.get("parentid")).getRoleChildren(): null;

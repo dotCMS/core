@@ -25,7 +25,8 @@ interface UploadNode {
 
 const assetsNameMap = {
     video: 'dotVideo',
-    image: 'dotImage'
+    image: 'dotImage',
+    audio: 'dotAudio'
 };
 
 interface PlaceHolderProps {

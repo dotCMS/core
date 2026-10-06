@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { describe, expect, it } from '@jest/globals';
+import { describe, expect, it, vi } from 'vitest';
 
 import { CommonModule } from '@angular/common';
 import { Component, DebugElement } from '@angular/core';
@@ -21,7 +21,7 @@ import { DotLayoutPropertiesItemComponent } from './dot-layout-properties-item.c
     standalone: false,
     template: `
         <form [formGroup]="group">
-            <dot-layout-properties-item formControlName="header"></dot-layout-properties-item>
+            <dot-layout-properties-item formControlName="header" />
         </form>
     `
 })
@@ -63,7 +63,7 @@ describe('DotLayoutPropertiesItemComponent', () => {
         comp.value = false;
         expect(comp.value).toEqual(false);
 
-        jest.spyOn(comp, 'propagateChange');
+        vi.spyOn(comp, 'propagateChange');
         de.nativeElement.click();
 
         expect(comp.value).toEqual(true);
@@ -94,7 +94,7 @@ describe('DotLayoutPropertiesItemComponent', () => {
         const component: DotLayoutPropertiesItemComponent = de.componentInstance;
         comp.value = false;
 
-        jest.spyOn(component, 'writeValue');
+        vi.spyOn(component, 'writeValue');
         fixture.debugElement.nativeElement.click();
         hostComponentfixture.detectChanges();
 

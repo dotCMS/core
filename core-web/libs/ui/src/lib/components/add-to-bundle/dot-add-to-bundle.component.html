@@ -2,6 +2,7 @@
     [(visible)]="dialogShow"
     [header]="'contenttypes.content.add_to_bundle' | dm"
     [modal]="true"
+    [draggable]="false"
     [style]="{ width: '25rem' }"
     (visibleChange)="close()">
     <form
@@ -21,7 +22,7 @@
                 editable="true"
                 formControlName="addBundle"
                 class="my-1"
-                optionLabel="name"></p-select>
+                optionLabel="name" />
             <dot-field-validation-message
                 [field]="form.get('addBundle')"
                 message="{{ 'contenttypes.content.add_to_bundle.errormsg' | dm }}" />
@@ -35,14 +36,14 @@
                     [disabled]="dialogActions.cancel.disabled"
                     severity="secondary"
                     (click)="dialogActions.cancel.action()"
-                    data-testId="dotDialogCancelAction"></p-button>
+                    data-testId="dotDialogCancelAction" />
             }
             @if (dialogActions.accept) {
                 <p-button
                     [label]="dialogActions.accept.label"
                     [disabled]="dialogActions.accept.disabled"
                     (click)="dialogActions.accept.action()"
-                    data-testId="dotDialogAcceptAction"></p-button>
+                    data-testId="dotDialogAcceptAction" />
             }
         </ng-template>
     }

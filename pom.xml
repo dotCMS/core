@@ -28,7 +28,6 @@
         <module>dotcms-integration</module>
         <module>dotcms-postman</module>
         <module>reports</module>
-        <module>e2e/dotcms-e2e-java</module>
         <module>core-web/apps/dotcms-ui-e2e</module>
         <module>test-karate</module>
     </modules>
@@ -41,7 +40,7 @@
                 <enabled>false</enabled>
             </snapshots>
             <id>dotcms-libs</id>
-            <url>https://repo.dotcms.com/artifactory/libs-release</url>
+            <url>https://dotcms-repo.b-cdn.net/libs-release</url>
         </repository>
     </repositories>
     <distributionManagement>
@@ -49,16 +48,11 @@
             <id>local-site-deployment</id>
             <url>file://${project.build.directory}/staging</url>
         </site>
-        <repository>
-            <id>dotcms-libs-local</id>
-            <name>DotCMS libs Release</name>
-            <url>https://repo.dotcms.com/artifactory/libs-release-local</url>
-        </repository>
-        <snapshotRepository>
-            <id>dotcms-libs-snapshot-local</id>
-            <name>DotCMS libs Snapshots</name>
-            <url>https://repo.dotcms.com/artifactory/libs-snapshot-local</url>
-        </snapshotRepository>
+        <!--
+            Publishing to the S3-compatible repository is handled by
+            .github/scripts/publish-to-s3/publish.sh (see the release phase),
+            so there is no Artifactory distribution target here anymore.
+        -->
     </distributionManagement>
 
     <reporting>

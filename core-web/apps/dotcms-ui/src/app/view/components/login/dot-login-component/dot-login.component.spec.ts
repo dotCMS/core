@@ -1,8 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { BehaviorSubject, of, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Injectable } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
@@ -12,11 +15,10 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { delay } from 'rxjs/operators';
 
 import { DotFormatDateService, DotMessageService, DotRouterService } from '@dotcms/data-access';
-import { CoreWebService, LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
+import { LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
 import { DotLoginInformation } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import {
-    CoreWebServiceMock,
     DotFormatDateServiceMock,
     LoginServiceMock,
     mockLoginFormResponse,
@@ -42,8 +44,8 @@ const queryParamsSubject = new BehaviorSubject<Params>({});
 
 @Injectable()
 class MockDotLoginPageStateService {
-    update = jest.fn();
-    set = jest.fn().mockReturnValue(of(mockLoginInfo));
+    update = vi.fn();
+    set = vi.fn().mockReturnValue(of(mockLoginInfo));
     get = () => loginInfoSubject.asObservable();
 }
 
@@ -74,10 +76,14 @@ describe('DotLoginComponent', () => {
         providers: [
             { provide: LoginService, useClass: LoginServiceMock },
             { provide: DotLoginPageStateService, useClass: MockDotLoginPageStateService },
-            { provide: CoreWebService, useClass: CoreWebServiceMock },
             { provide: ActivatedRoute, useClass: ActivatedRouteMock },
             { provide: DotFormatDateService, useClass: DotFormatDateServiceMock },
             DotMessageService,
+            // The real DotMessageService fetches /api/v2/languages/<lang>/keys as soon
+            // as init() runs, and in jsdom that XHR fails with status 0. The testing
+            // backend parks the request instead; nothing here asserts on it.
+            provideHttpClient(),
+            provideHttpClientTesting(),
             DotLoadingIndicatorService,
             DotRouterService,
             LoggerService,
@@ -98,7 +104,7 @@ describe('DotLoginComponent', () => {
         ) as unknown as MockDotLoginPageStateService;
         dotMessageService = spectator.inject(DotMessageService);
         dotFormatDateService = spectator.inject(DotFormatDateService);
-        jest.spyOn(dotMessageService, 'init');
+        vi.spyOn(dotMessageService, 'init');
         spectator.detectChanges();
     });
 
@@ -108,7 +114,7 @@ describe('DotLoginComponent', () => {
             const emailLabel = spectator.query(byTestId('emailLabel'));
             const passwordLabel = spectator.query(byTestId('passwordLabel'));
             const recoverPasswordLink = spectator.query(byTestId('actionLink'));
-            const checkboxContainer = spectator.query('.checkbox');
+            const checkboxContainer = spectator.query('.form-checkbox');
             const submitButton = spectator.query(byTestId('submitButton'));
             const serverInformation = spectator.query(byTestId('server'));
             const versionInformation = spectator.query(byTestId('version'));
@@ -155,9 +161,9 @@ describe('DotLoginComponent', () => {
 
         it('should make a login request correctly and redirect after login', () => {
             component.loginForm.setValue(credentials);
-            jest.spyOn(dotFormatDateService, 'setLang');
-            jest.spyOn(dotRouterService, 'goToMain');
-            jest.spyOn(loginService as any, 'loginUser').mockReturnValue(
+            vi.spyOn(dotFormatDateService, 'setLang');
+            vi.spyOn(dotRouterService, 'goToMain');
+            vi.spyOn(loginService as any, 'loginUser').mockReturnValue(
                 of({
                     ...mockUser(),
                     editModeUrl: 'redirect/to'
@@ -178,8 +184,8 @@ describe('DotLoginComponent', () => {
 
         it('should set loading while waiting login response', fakeAsync(() => {
             component.loginForm.setValue(credentials);
-            jest.spyOn(dotRouterService, 'goToMain').mockResolvedValue(true);
-            jest.spyOn(loginService as any, 'loginUser').mockReturnValue(
+            vi.spyOn(dotRouterService, 'goToMain').mockResolvedValue(true);
+            vi.spyOn(loginService as any, 'loginUser').mockReturnValue(
                 of({
                     ...mockUser(),
                     editModeUrl: 'redirect/to'
@@ -212,17 +218,17 @@ describe('DotLoginComponent', () => {
 
             spectator.detectChanges();
 
-            const errorsMessages = spectator.queryAll('.p-invalid');
+            const errorsMessages = spectator.queryAll('[data-testId="error-msg"]');
             expect(errorsMessages.length).toBe(2);
         });
 
         it('should show error messages if error comes from the server', () => {
             component.loginForm.setValue(credentials);
-            jest.spyOn(loginService as any, 'loginUser').mockReturnValue(
-                throwError({
+            vi.spyOn(loginService as any, 'loginUser').mockReturnValue(
+                throwError(() => ({
                     status: 400,
                     error: { errors: [{ message: 'error message' }] }
-                })
+                }))
             );
             component.logInUser();
             spectator.detectChanges();

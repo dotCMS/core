@@ -33,11 +33,9 @@ type DialogData = {
         InputTextModule
     ],
     templateUrl: './dot-form-import-url.component.html',
+    styleUrl: './dot-form-import-url.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    providers: [FormImportUrlStore],
-    host: {
-        class: 'block w-[32rem]'
-    }
+    providers: [FormImportUrlStore]
 })
 export class DotFormImportUrlComponent implements OnInit {
     readonly store = inject(FormImportUrlStore);

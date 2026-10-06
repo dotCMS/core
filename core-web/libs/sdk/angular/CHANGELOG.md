@@ -5,6 +5,30 @@ All notable changes to the DotCMS Angular SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Fixed
+
+- **Fixed**: `@dotcms/angular` is now built with Angular 21.2 instead of 22.1, and supports Angular 21.2 and newer. Every release from 26.8.7-1 on was built with Angular 22.1 while still declaring `@angular/*` `>=17.0.0`, so only Angular 22 was supported. (#37680)
+
+### Changed
+
+- **Changed**: The `@angular/core`, `@angular/common` and `@angular/router` peer ranges are now `>=21.2.0`. Angular 21.1 and older can't read `ChangeDetectionStrategy.Eager`, which every release since 26.8.7-1 uses, so they haven't worked since then; the peer range now says so. npm 7+ refuses the install with a peer-dependency error, and package managers that don't enforce peer dependencies only warn. If your app is on Angular 21.0 or 21.1, update it to 21.2, a minor update within Angular 21. 26.8.3-1 was the last release built with an older Angular (21.2.4).
+
+## v1.5.4
+
+### Added
+
+#### Accessible Block Editor Renderer (`DotCMSBlockEditorRendererNativeComponent`)
+
+- **Added**: `DotCMSBlockEditorRendererNativeComponent` (`<dotcms-block-editor-renderer-native>`), a semantic-DOM renderer for Block Editor content.
+  - Emits clean semantic HTML (`<ul><li><p>…</p></li></ul>`) with no custom wrapper elements between semantic tags, preserving the `list → listitem` relationship required by the HTML spec and assistive technology.
+  - Exposes the **identical** public input API (`blocks`, `customRenderers`, `class`, `style`) and the same `customRenderers` contract as the original renderer — migration is a one-line swap of the tag and import.
+
+### Deprecated
+
+- **Deprecated**: `DotCMSBlockEditorRendererComponent` (`<dotcms-block-editor-renderer>`). Its DOM output is unchanged for backward compatibility, but it wraps semantic tags in custom elements that break list accessibility. Use `DotCMSBlockEditorRendererNativeComponent` instead. It will be removed in a future major version.
+
 ## v1.2.0
 
 ### Fixed

@@ -1,21 +1,16 @@
+import { Params } from '@angular/router';
+
 import { DotCMSBaseTypesContentTypes, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotCMSUVEAction, StyleEditorProperties } from '@dotcms/types';
 import { InfoPage } from '@dotcms/ui';
 
 import { CommonErrors, DialogStatus, FormStatus } from './enums';
 
-import { DotPageApiParams } from '../services/dot-page-api.service';
+import { DotPageApiParams } from '../services/dot-page-api/dot-page-api.service';
 
 export interface MessagePipeOptions {
     message: string;
     args: string[];
-}
-
-export interface UnlockOptions {
-    inode: string;
-    loading: boolean;
-    info: MessagePipeOptions;
-    disabled: boolean;
 }
 
 export interface InfoOptions {
@@ -57,6 +52,21 @@ export interface StyleEditorContentletPayload extends ActionPayload {
     contentlet: ContentletPayload;
 }
 
+/**
+ * The currently-selected contentlet in the editor: bounds + payload.
+ * Bounds drive the floating overlay; payload feeds the side panel /
+ * style editor / pencil dialog. Both travel together because every
+ * selection arrives with bounds (you got there by clicking somewhere).
+ *
+ * Replaces the historical split between `editorSelectedContentletArea`
+ * (had bounds) and `editorActiveContentlet` (had payload). They were
+ * always set/cleared in lockstep; the split was vestigial.
+ */
+export interface SelectedContentlet {
+    bounds: { x: number; y: number; width: number; height: number };
+    payload: ActionPayload;
+}
+
 export interface PageContainer {
     personaTag?: string;
     identifier: string;
@@ -82,6 +92,13 @@ export interface ContentletPayload {
     contentType: string;
     baseType?: string;
     onNumberOfPages?: number;
+    /**
+     * Whether the current user holds EDIT permission on this contentlet
+     * instance, read from the `data-dot-can-edit` attribute the container
+     * renderer emits. Optional and fail-open: `undefined` means allowed,
+     * because headless pages never carry the attribute.
+     */
+    canEdit?: boolean;
     dotStyleProperties?: StyleEditorProperties;
 }
 
@@ -102,16 +119,24 @@ export interface SaveStylePropertiesPayload {
     containerIdentifier: string;
     contentletIdentifier: string;
     styleProperties: StyleEditorProperties;
+    personaTag?: string;
 }
 
 export interface NavigationBarItem {
-    icon?: string;
-    iconURL?: string;
+    materialIcon: string;
     label: string;
     href?: string;
     id: string;
     isDisabled?: boolean;
     tooltip?: string;
+    /**
+     * Query params for this destination, replacing the editor's own rather than merging with them.
+     *
+     * Only set by items that leave the editor's route tree (#37005's Experiments entry point when
+     * the portlet switch is on). Items inside `edit-page` omit it and keep inheriting the page
+     * params, which is what an editor navigating between Content, Layout and Rules needs.
+     */
+    queryParams?: Params;
 }
 
 export interface MessageInfo {
@@ -277,16 +302,6 @@ export interface ReorderMenuPayload {
 }
 
 export type DotPageAssetParams = DotPageApiParams;
-
-export interface ToggleLockOptions {
-    inode: string;
-    isLocked: boolean;
-    lockedBy: string;
-    canLock: boolean;
-    isLockedByCurrentUser: boolean;
-    showBanner: boolean;
-    showOverlay: boolean;
-}
 
 export type DotUVEPaletteListType =
     | DotCMSBaseTypesContentTypes.CONTENT

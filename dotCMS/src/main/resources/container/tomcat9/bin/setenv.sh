@@ -3,12 +3,58 @@
 # Set default environment variables
 export LANG=${LANG:-"C.UTF-8"}
 
-export JAVA_OPTS_BASE=${JAVA_OPTS_BASE:-"-Djava.awt.headless=true -Dfile.encoding=UTF8 -server -Dpdfbox.fontcache=/data/local/dotsecure -Dlog4j2.formatMsgNoLookups=true -Djava.library.path=/usr/lib/$( uname -m )-linux-gnu/ -XX:+UnlockExperimentalVMOptions -XX:+UseZGC -XX:+ZGenerational "}
+# java.library.path must include the bundled tcnative dir (see java-base image):
+# -Djava.library.path overrides LD_LIBRARY_PATH, so without it Tomcat's
+# AprLifecycleListener cannot find libtcnative-1 and silently falls back to JSSE.
+export JAVA_OPTS_BASE=${JAVA_OPTS_BASE:-"-Djava.awt.headless=true -Djava.library.path=/usr/local/tomcat-native/lib:/usr/lib/$( uname -m )-linux-gnu/ -XX:+UseCompactObjectHeaders --enable-preview "}
 
-export JAVA_OPTS_MEMORY=${JAVA_OPTS_MEMORY:-"-Xmx1G"}
+# Auto-tune GC algorithm based on available vCPUs:
+#   1-3 cores → G1GC (default) + G1PeriodicGCInterval to return memory to OS on idle
+#   4+        → ZGC  (Java 25 uses GenerationalZGC by default; sub-ms pauses, scales with cores)
+# Override by setting JAVA_OPTS_MEMORY before this script runs.
+if [ -z "${JAVA_OPTS_MEMORY+set}" ]; then
+  _cpus=$(nproc 2>/dev/null || grep -c '^processor' /proc/cpuinfo 2>/dev/null || echo 2)
+  _mem_base="-XX:MaxRAMPercentage=72.0 -XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=50 -Djdk.nio.maxCachedBufferSize=262144"
+
+  if [ "$_cpus" -le 3 ]; then
+    _gc="-XX:G1PeriodicGCInterval=10000"
+  else
+    _gc="-XX:+UseZGC"
+  fi
+
+  export JAVA_OPTS_MEMORY="$_mem_base $_gc"
+  echo "setenv: auto-GC: ${_gc} (${_cpus} vCPU; override via JAVA_OPTS_MEMORY)"
+fi
+
+# Calculate direct (off-heap) buffer memory based on container memory to prevent unbound growth 
+# can't use a percentage here so we have to calc it ourselves
+if [ -z "${JAVA_OPTS_DIRECT+set}" ]; then
+  _cg_limit=""
+  if [ -r /sys/fs/cgroup/memory.max ]; then
+    _cg_limit=$(cat /sys/fs/cgroup/memory.max 2>/dev/null)                   # cgroup v2
+  elif [ -r /sys/fs/cgroup/memory/memory.limit_in_bytes ]; then
+    _cg_limit=$(cat /sys/fs/cgroup/memory/memory.limit_in_bytes 2>/dev/null) # cgroup v1
+  fi
+  # Treat missing / "max" / non-numeric / > 256GB (i.e. no real limit) as unbounded.
+  if [ -z "$_cg_limit" ] || [ "$_cg_limit" = "max" ] \
+     || [ -n "$(printf '%s' "$_cg_limit" | tr -d '0-9')" ] \
+     || { [ "$_cg_limit" -gt 274877906944 ] 2>/dev/null; }; then
+    JAVA_OPTS_DIRECT=""
+  else
+    _pct=${DOT_DIRECT_MEM_PCT:-20}
+    _min=${DOT_DIRECT_MEM_MIN_MB:-128}
+    _max=${DOT_DIRECT_MEM_MAX_MB:-4096}
+    _mb=$(( _cg_limit / 1048576 * _pct / 100 ))
+    [ "$_mb" -lt "$_min" ] && _mb=$_min
+    [ "$_mb" -gt "$_max" ] && _mb=$_max
+    JAVA_OPTS_DIRECT="-XX:MaxDirectMemorySize=${_mb}m"
+    echo "setenv: ${JAVA_OPTS_DIRECT} (${_pct}% of $(( _cg_limit / 1048576 ))MB cgroup limit; override via DOT_DIRECT_MEM_PCT / DOT_DIRECT_MEM_MIN_MB / DOT_DIRECT_MEM_MAX_MB / JAVA_OPTS_DIRECT)"
+  fi
+  export JAVA_OPTS_DIRECT
+fi
 
 # $CMS_JAVA_OPTS is last so it trumps them all
-export JAVA_OPTS=${JAVA_OPTS:-"$JAVA_OPTS_BASE $JAVA_OPTS_AGENT $JAVA_OPTS_MEMORY $CMS_JAVA_OPTS"}
+export JAVA_OPTS=${JAVA_OPTS:-"$JAVA_OPTS_BASE $JAVA_OPTS_AGENT $JAVA_OPTS_MEMORY $JAVA_OPTS_DIRECT $CMS_JAVA_OPTS"}
 
 # Asset and Internal Paths
 export DOT_ASSET_REAL_PATH=${DOT_ASSET_REAL_PATH:-"/data/shared/assets"}
@@ -66,6 +112,9 @@ export CMS_CONNECTOR_THREADS=${CMS_CONNECTOR_THREADS:-"600"}
 export CMS_COMPRESSION=${CMS_COMPRESSION:-"on"}
 export CMS_NOCOMPRESSIONSTRONGETAG=${CMS_NOCOMPRESSIONSTRONGETAG:-"false"}
 export CMS_COMPRESSIBLEMIMETYPE=${CMS_COMPRESSIBLEMIMETYPE:-"text/html,text/xml,text/csv,text/css,text/javascript,text/json,application/javascript,application/json,application/xml,application/x-javascript,font/eot,font/otf,font/ttf,image/svg+xml"}
+# Allow specific non-RFC characters in query strings (e.g. CMS_RELAXED_QUERY_CHARS="|" to allow pipe).
+# Security warning: only enable for chars you explicitly need; see Tomcat relaxedQueryChars docs.
+export CMS_RELAXED_QUERY_CHARS=${CMS_RELAXED_QUERY_CHARS:-""}
 
 # Redis Session Configuration
 if [ "${TOMCAT_REDIS_SESSION_ENABLED}" = 'true' ]; then
@@ -96,7 +145,7 @@ export CMS_ACCESSLOG_ROTATABLE=${CMS_ACCESSLOG_ROTATABLE:-"true"}
 
 # Remote IP Valve settings
 export CMS_REMOTEIP_REMOTEIPHEADER=${CMS_REMOTEIP_REMOTEIPHEADER:-"x-forwarded-for"}
-export CMS_REMOTEIP_INTERNALPROXIES=${CMS_REMOTEIP_INTERNALPROXIES:-"10\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|192\\.168\\.\\d{1,3}\\.\\d{1,3}|169\\.254\\.\\d{1,3}\\.\\d{1,3}|127\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|172\\.1[6-9]{1}\\.\\d{1,3}\\.\\d{1,3}|172\\.2[0-9]{1}\\.\\d{1,3}\\.\\d{1,3}|172\\.3[0-1]{1}\\.\\d{1,3}\\.\\d{1,3}|0:0:0:0:0:0:0:1"}
+export CMS_REMOTEIP_INTERNALPROXIES=${CMS_REMOTEIP_INTERNALPROXIES:-"(10|127)\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|169\.254\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.\d{1,3}\.\d{1,3}|0:0:0:0:0:0:0:1|::1"}
 # Cookie settings
 export DOT_SAMESITE_COOKIES=${DOT_SAMESITE_COOKIES:-"lax"}
 
@@ -104,13 +153,19 @@ export DOT_SAMESITE_COOKIES=${DOT_SAMESITE_COOKIES:-"lax"}
 export DOT_MAIL_SMTP_HOST=${DOT_MAIL_SMTP_HOST:-"smtp.dotcms.site"}
 export DOT_MAIL_SMTP_SSL_PROTOCOLS=${DOT_MAIL_SMTP_SSL_PROTOCOLS:-"TLSv1.2"}
 
-# Set environment variable for mimalloc
-export LD_PRELOAD=${LD_PRELOAD:-"/usr/lib/`uname -m`-linux-gnu/libmimalloc.so.2"}
+# Preload jemalloc as the default allocator (mimalloc is also installed in the image;
+# override LD_PRELOAD at runtime to switch, e.g. .../libmimalloc.so.2)
+export LD_PRELOAD=${LD_PRELOAD:-"/usr/lib/`uname -m`-linux-gnu/libjemalloc.so.2"}
+
+# Use Azure Command Launcher for Java (jaz) as the JVM launcher when installed.
+# Set JAZ_IGNORE_USER_TUNING=1 to use jaz.
+if [ -n "$JAZ_IGNORE_USER_TUNING" ] && command -v jaz >/dev/null 2>&1; then
+  export _RUNJAVA="$(command -v jaz)"
+fi
 
 # This needs to be set in order for catalina to read environmental properties
 export CATALINA_OPTS="$CATALINA_OPTS -Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
-
-export CATALINA_OPTS="$CATALINA_OPTS -Dfile.encoding=UTF8"
+export CATALINA_OPTS="$CATALINA_OPTS -Dfile.encoding=UTF8 --enable-native-access=ALL-UNNAMED "
 export CATALINA_OPTS="$CATALINA_OPTS --add-opens java.base/java.lang=ALL-UNNAMED"
 export CATALINA_OPTS="$CATALINA_OPTS --add-opens java.base/java.io=ALL-UNNAMED"
 export CATALINA_OPTS="$CATALINA_OPTS --add-opens java.rmi/sun.rmi.transport=ALL-UNNAMED"
@@ -132,7 +187,6 @@ export CATALINA_OPTS="$CATALINA_OPTS --add-opens java.base/sun.nio.cs=ALL-UNNAME
 export CATALINA_OPTS="$CATALINA_OPTS --add-opens java.base/sun.util.calendar=ALL-UNNAMED"
 export CATALINA_OPTS="$CATALINA_OPTS --add-opens java.base/sun.util.locale=ALL-UNNAMED"
 export CATALINA_OPTS="$CATALINA_OPTS --add-opens java.base/jdk.internal.misc=ALL-UNNAMED"
-
 export CATALINA_OPTS="$CATALINA_OPTS -Djavax.xml.transform.TransformerFactory=com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl"
 export CATALINA_OPTS="$CATALINA_OPTS -Djavax.xml.parsers.DocumentBuilderFactory=com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl"
 export CATALINA_OPTS="$CATALINA_OPTS -Djavax.xml.parsers.SAXParserFactory=com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl"
@@ -178,6 +232,10 @@ fi
 # GLOWROOT_DATA_DIR: Directory for Glowroot data files. Defaults to $GLOWROOT_SHARED_FOLDER/data if not set.
 # GLOWROOT_AGENT_ID: If set, specifies the agent ID for Glowroot and enables multi-directory mode.
 # GLOWROOT_COLLECTOR_ADDRESS: If set, specifies the collector address for Glowroot.
+# OTEL_JAVAAGENT_ENABLED: If set to "true", the bundled OpenTelemetry Java agent is added to CATALINA_OPTS.
+#   Configure it with the standard OTEL_* variables (e.g. OTEL_EXPORTER_OTLP_ENDPOINT); see add_otel_agent for defaults.
+# PYROSCOPE_AGENT_ENABLED: If set to "true", the bundled Pyroscope profiling agent is added to CATALINA_OPTS.
+#   Configure it with the standard PYROSCOPE_* variables (e.g. PYROSCOPE_SERVER_ADDRESS); see add_pyroscope_agent for defaults.
 
 if [ -z "$CATALINA_TMPDIR" ]; then
       CATALINA_TMPDIR="$CATALINA_HOME/temp"
@@ -196,9 +254,44 @@ if [ "${DOTCMS_DISABLE_TEMP_CLEANUP}" != "true" ]; then
   fi
 fi
 
+add_bytebuddy_agent() {
+    # Pre-load byte-buddy-agent at JVM start so ByteBuddyFactory can call
+    # ByteBuddyAgent.getInstrumentation() instead of ByteBuddyAgent.install().
+    # The install() path falls back to an external child-JVM attach which hangs
+    # on Java 21+/25 in container environments without the JDK attach binaries.
+    #
+    # Always set allowAttachSelf=true as defense-in-depth: if classloader isolation
+    # causes ByteBuddyFactory's webapp-loaded ByteBuddyAgent class to see a null
+    # Instrumentation field (despite -javaagent pre-load on the system classloader),
+    # the install() fallback will use in-process self-attach instead of the hanging
+    # external attach path.
+    export CATALINA_OPTS="$CATALINA_OPTS -Djdk.attach.allowAttachSelf=true"
+
+    if echo "$CATALINA_OPTS" | grep -q '\-javaagent:.*byte-buddy-agent'; then
+        echo "byte-buddy-agent already configured in CATALINA_OPTS"
+        return
+    fi
+    # Requires an exploded ROOT/ webapp directory (dotCMS's Docker image ships one).
+    # If a deployment switches to ROOT.war, this lookup will silently miss and
+    # ByteBuddyFactory will fall back to runtime self-attach.
+    # Use shell globbing + version sort so the highest-version jar wins if multiple
+    # byte-buddy-agent jars ever land in WEB-INF/lib.
+    BB_AGENT_JAR=$(ls "$CATALINA_HOME"/webapps/ROOT/WEB-INF/lib/byte-buddy-agent-*.jar 2>/dev/null | sort -V | tail -1)
+    if [ -n "$BB_AGENT_JAR" ] && [ -r "$BB_AGENT_JAR" ]; then
+        echo "Adding byte-buddy-agent: $BB_AGENT_JAR"
+        export CATALINA_OPTS="$CATALINA_OPTS -javaagent:$BB_AGENT_JAR"
+    else
+        echo "WARNING: byte-buddy-agent jar not found under WEB-INF/lib; ByteBuddyFactory will fall back to runtime self-attach"
+    fi
+}
+
 add_glowroot_agent() {
     if ! echo "$CATALINA_OPTS" | grep -q '\-javaagent:.*glowroot\.jar'; then
-        if [ "$GLOWROOT_ENABLED" = "true" ]; then
+        # A -javaagent pointing at a missing jar aborts JVM startup, so an image built without
+        # Glowroot must ignore a leftover GLOWROOT_ENABLED=true rather than fail to boot
+        if [ "$GLOWROOT_ENABLED" = "true" ] && [ ! -r "$CATALINA_HOME/glowroot/glowroot.jar" ]; then
+          echo "WARNING: GLOWROOT_ENABLED=true but $CATALINA_HOME/glowroot/glowroot.jar is not in this image; starting without Glowroot"
+        elif [ "$GLOWROOT_ENABLED" = "true" ]; then
           echo "Adding Glowroot agent to CATALINA_OPTS"
           export CATALINA_OPTS="$CATALINA_OPTS -javaagent:$CATALINA_HOME/glowroot/glowroot.jar"
 
@@ -224,7 +317,47 @@ add_glowroot_agent() {
     fi
 }
 
+# Both toggles are also read by the agents themselves, where "true" is already their default.
+# Defaults below are exported as env vars (not -D flags) so values containing ';' or '[ ]'
+# survive, and only apply when the operator has not set them.
+add_otel_agent() {
+    [ "$OTEL_JAVAAGENT_ENABLED" = "true" ] || return 0
+    echo "Adding OpenTelemetry agent to CATALINA_OPTS"
+    export CATALINA_OPTS="$CATALINA_OPTS -javaagent:$CATALINA_HOME/otel/opentelemetry-javaagent.jar"
+    # OTEL_SERVICE_NAME wins over service.name in OTEL_RESOURCE_ATTRIBUTES, so only default it when neither is set
+    case "$OTEL_RESOURCE_ATTRIBUTES" in
+        *service.name=*) ;;
+        *) export OTEL_SERVICE_NAME=${OTEL_SERVICE_NAME:-"dotcms"} ;;
+    esac
+    # Traces only: metrics stay on Micrometer (/dotmgt/metrics) and logs are shipped from stdout
+    export OTEL_METRICS_EXPORTER=${OTEL_METRICS_EXPORTER:-"none"}
+    export OTEL_LOGS_EXPORTER=${OTEL_LOGS_EXPORTER:-"none"}
+    # Keep 10% of new traces, and follow the caller's decision when a trace is propagated in
+    export OTEL_TRACES_SAMPLER=${OTEL_TRACES_SAMPLER:-"parentbased_traceidratio"}
+    export OTEL_TRACES_SAMPLER_ARG=${OTEL_TRACES_SAMPLER_ARG:-"0.1"}
+}
+
+add_pyroscope_agent() {
+    [ "$PYROSCOPE_AGENT_ENABLED" = "true" ] || return 0
+    echo "Adding Pyroscope agent to CATALINA_OPTS"
+    export CATALINA_OPTS="$CATALINA_OPTS -javaagent:$CATALINA_HOME/pyroscope/pyroscope.jar"
+    export PYROSCOPE_APPLICATION_NAME=${PYROSCOPE_APPLICATION_NAME:-"dotcms"}
+    export PYROSCOPE_FORMAT=${PYROSCOPE_FORMAT:-"jfr"}
+    # itimer samples CPU without perf_events access, which most containers don't grant
+    export PYROSCOPE_PROFILER_EVENT=${PYROSCOPE_PROFILER_EVENT:-"itimer"}
+    export PYROSCOPE_PROFILER_ALLOC=${PYROSCOPE_PROFILER_ALLOC:-"512k"}
+    export PYROSCOPE_PROFILER_LOCK=${PYROSCOPE_PROFILER_LOCK:-"10ms"}
+}
+
+# Pre-load byte-buddy-agent so ByteBuddyFactory uses the supplied Instrumentation
+# rather than ByteBuddyAgent.install()'s external-attach path.
+add_bytebuddy_agent
+
 # Run the function to add Glowroot agent settings to CATALINA_OPTS if enabled
 add_glowroot_agent
+
+# Opt-in observability agents; each is independent of Glowroot and of each other
+add_otel_agent
+add_pyroscope_agent
 export CATALINA_OPTS
 export CLASSPATH

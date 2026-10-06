@@ -5,6 +5,7 @@ import {
     DotCMSContentTypeFieldVariable,
     DotCMSContentTypeLayoutRow,
     DotCMSContentTypeLayoutTab,
+    DotCMSFieldTypes,
     DotLanguage,
     UI_STORAGE_KEY
 } from '@dotcms/dotcms-models';
@@ -13,150 +14,19 @@ import { UVE_MODE } from '@dotcms/types';
 import { CustomFieldConfig } from '../models/dot-edit-content-custom-field.interface';
 import {
     CALENDAR_FIELD_TYPES,
-    CALENDAR_FIELD_TYPES_WITH_TIME,
     DEFAULT_CUSTOM_FIELD_CONFIG,
     FLATTENED_FIELD_TYPES,
-    TAB_FIELD_CLAZZ,
-    UNCASTED_FIELD_TYPES
+    TAB_FIELD_CLAZZ
 } from '../models/dot-edit-content-field.constant';
-import {
-    DotEditContentFieldSingleSelectableDataType,
-    FIELD_TYPES
-} from '../models/dot-edit-content-field.enum';
-import { DotEditContentFieldSingleSelectableDataTypes } from '../models/dot-edit-content-field.type';
 import { NON_FORM_CONTROL_FIELD_TYPES } from '../models/dot-edit-content-form.enum';
 import { Tab } from '../models/dot-edit-content-form.interface';
 import { UIState } from '../models/dot-edit-content.model';
 
-// This function is used to cast the value to a correct type for the Angular Form if the field is a single selectable field
-export const castSingleSelectableValue = (
-    value: unknown,
-    type: string
-): DotEditContentFieldSingleSelectableDataTypes | null => {
-    // Early return for null/undefined/empty values
-    if (value === null || value === undefined || value === '') {
-        return null;
-    }
-
-    switch (type) {
-        case DotEditContentFieldSingleSelectableDataType.BOOL: {
-            // For boolean type, handle both boolean and string values
-            return typeof value === 'boolean'
-                ? value
-                : String(value).toLowerCase().trim() === 'true';
-        }
-
-        case DotEditContentFieldSingleSelectableDataType.INTEGER:
-
-        // fallthrough
-        case DotEditContentFieldSingleSelectableDataType.FLOAT: {
-            const num = Number(value);
-
-            return isNaN(num) ? null : num;
-        }
-
-        default: {
-            return String(value);
-        }
-    }
-};
-
-/**
- * Parses field options for single selectable fields (Checkbox, Radio, Select).
- *
- * The function handles the following formats:
- *
- * 1. Multi-line pipe format (standard format):
- *    ```
- *    label1|value1
- *    label2|value2
- *    ```
- *    Each line represents a separate option with label and value separated by pipe.
- *
- * 2. Special case for checkboxes:
- *    ```
- *    |true
- *    ```
- *    Creates a checkbox without label, using the value after the pipe.
- *
- * 3. Simple value format:
- *    ```
- *    value1,value2,value3
- *    ```
- *    When no pipes are present, each comma-separated value is used as both label and value.
- *
- * Note: If the input contains line breaks, it will be treated as a single option,
- * preserving the line breaks as part of the option text.
- *
- * @param options - The string containing the options to parse
- * @param dataType - The data type of the field
- * @returns Array of parsed options with label and value
- */
-export const getSingleSelectableFieldOptions = (
-    options: string,
-    dataType: string
-): { label: string; value: DotEditContentFieldSingleSelectableDataTypes }[] => {
-    if (!options?.trim()) return [];
-
-    const LINE_BREAKS_REGEX = /\r\n|\n|\r/;
-    const PIPE_REGEX = /\|/;
-    const hasLineBreaks = LINE_BREAKS_REGEX.test(options);
-    const hasPipes = PIPE_REGEX.test(options);
-
-    let items: string[] = [];
-    let isPipeFormat = false;
-
-    if (hasPipes && hasLineBreaks) {
-        // Multi-line pipe format (standard dotCMS format)
-        items = options.split(LINE_BREAKS_REGEX).filter((line) => line.trim());
-        isPipeFormat = true;
-    } else if (hasPipes && !hasLineBreaks && options.trim().startsWith('|')) {
-        // Special case: "|true" (checkbox without label)
-        items = [options.trim()];
-        isPipeFormat = true;
-    } else {
-        // Simple comma format or single-line with pipes treated as comma format
-        items = options
-            .split(',')
-            .map((v) => v.trim())
-            .filter(Boolean);
-    }
-
-    // Handle nested line breaks in single items
-    if (items.length === 1 && LINE_BREAKS_REGEX.test(items[0])) {
-        items = items[0].split(LINE_BREAKS_REGEX).filter((line) => line.trim());
-    }
-
-    return items
-        .map((item) => {
-            let label: string;
-            let value: string;
-
-            if (isPipeFormat) {
-                const parts = item.split('|');
-                // Si hay pipe, el label es la primera parte y el value es la segunda
-                // Si no hay segunda parte, el value es igual al label
-                label = (parts[0] || '').trim();
-                value = parts[1]?.trim() || label;
-            } else {
-                // Si no hay pipe, tanto label como value son el mismo valor
-                label = item;
-                value = item;
-            }
-
-            if (!value) return null;
-
-            const castedValue = castSingleSelectableValue(value, dataType);
-
-            return castedValue !== null ? { label, value: castedValue } : null;
-        })
-        .filter(
-            (
-                item
-            ): item is { label: string; value: DotEditContentFieldSingleSelectableDataTypes } =>
-                item !== null
-        );
-};
+// Moved to `@dotcms/ui` so the shared field-filter chip can parse a Select/Radio/Checkbox field's
+// options without importing this library — that dependency runs the other way, in ~98 files, and
+// `@dotcms/ui` is bundled into a legacy host that must not pull `edit-content` in. Pure functions
+// with no Angular surface, re-exported here so every caller in this library is untouched.
+export { castSingleSelectableValue, getSingleSelectableFieldOptions } from '@dotcms/ui';
 
 /**
  * This function is used to cast the value to a correct type for the Angular Form
@@ -165,29 +35,6 @@ export const getSingleSelectableFieldOptions = (
  * @param field
  * @returns
  */
-export const getFinalCastedValue = (
-    value: object | string | number | undefined,
-    field: DotCMSContentTypeField
-) => {
-    if (CALENDAR_FIELD_TYPES_WITH_TIME.includes(field.fieldType as FIELD_TYPES)) {
-        return value;
-    }
-
-    if (FLATTENED_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES)) {
-        return (value as string)?.split(',').map((value) => value.trim());
-    }
-
-    if (value === undefined || UNCASTED_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES)) {
-        return value;
-    }
-
-    if (field.fieldType === FIELD_TYPES.JSON) {
-        return JSON.stringify(value, null, 2); // This is a workaround to avoid the Monaco Editor to show the value as a string and keep the formatting
-    }
-
-    return castSingleSelectableValue(value, field.dataType);
-};
-
 export const transformLayoutToTabs = (
     firstTabTitle: string,
     layout: DotCMSContentTypeLayoutRow[]
@@ -236,6 +83,61 @@ export const isValidJson = (value: string): boolean => {
 
         return false;
     }
+};
+
+/**
+ * Escapes HTML special characters so an API-provided value (e.g. a user display name) can be
+ * safely interpolated into a string that is rendered via `[innerHTML]`. Angular already
+ * sanitizes `[innerHTML]`, but escaping at the source neutralizes the markup entirely and
+ * keeps the value rendering as plain text.
+ *
+ * @param {string} value - The raw value to escape.
+ * @returns {string} - The value with `& < > " '` replaced by their HTML entities.
+ */
+export const escapeHtml = (value: string): string =>
+    value.replace(/[&<>"']/g, (char) => {
+        switch (char) {
+            case '&':
+                return '&amp;';
+            case '<':
+                return '&lt;';
+            case '>':
+                return '&gt;';
+            case '"':
+                return '&quot;';
+            default:
+                return '&#39;';
+        }
+    });
+
+/**
+ * Resolves the user that holds the lock on a contentlet.
+ *
+ * The `lockedBy` field has two shapes depending on the API endpoint: a plain string (userId)
+ * with the display name in `lockedByName`, or a `{ userId, firstName, lastName }` object.
+ * TODO: remove this branching once the backend normalizes the shape across content types.
+ *
+ * @param {DotCMSContentlet | null | undefined} contentlet - The contentlet to inspect.
+ * @returns `{ userId, displayName }`, or null when the content is not locked.
+ */
+export const resolveLocker = (
+    contentlet: DotCMSContentlet | null | undefined
+): { userId: string; displayName: string } | null => {
+    const lockedBy = contentlet?.lockedBy;
+
+    if (!lockedBy) {
+        return null;
+    }
+
+    const isLockedByString = typeof lockedBy === 'string';
+    const userId = isLockedByString ? lockedBy : lockedBy.userId;
+    const displayName = (
+        isLockedByString
+            ? (contentlet?.lockedByName ?? '')
+            : [lockedBy.firstName, lockedBy.lastName].filter(Boolean).join(' ')
+    ).trim();
+
+    return { userId, displayName };
 };
 
 /**
@@ -295,10 +197,20 @@ export const stringToJson = (value: string) => {
  */
 
 export const isFilteredType = (field: DotCMSContentTypeField): boolean => {
-    return Object.values(NON_FORM_CONTROL_FIELD_TYPES).includes(
-        field.fieldType as NON_FORM_CONTROL_FIELD_TYPES
-    );
+    return NON_FORM_CONTROL_FIELD_TYPES.includes(field.fieldType);
 };
+
+/**
+ * Determines whether a tab's layout is single-column, i.e. every row has exactly one column.
+ * Used to pick the form's max-width: single-column tabs cap at 720px, multi-column tabs cap
+ * at 1000px. An empty layout (e.g. an empty tab) is treated as multi-column since `every`
+ * would otherwise be vacuously true and there's nothing to render anyway.
+ *
+ * @param {Tab['layout']} layout - The layout rows of a tab.
+ * @returns {boolean} True when every row has exactly one column.
+ */
+export const isSingleColumnLayout = (layout: Tab['layout']): boolean =>
+    layout.length > 0 && layout.every((row) => row.columns.length === 1);
 
 /**
  * Transforms the form data by filtering out specific field types and organizing the content into tabs.
@@ -315,7 +227,9 @@ export const transformFormDataFn = (contentType: DotCMSContentType): Tab[] => {
 
     const renderedMap = new Map<string, string>();
     contentType.fields.forEach((field) => {
-        if (field.rendered) {
+        // `rendered` belongs to the Custom field arm alone — it is the server-rendered markup a
+        // custom field ships with. `in` narrows to it without a cast.
+        if ('rendered' in field && field.rendered) {
             renderedMap.set(field.id, field.rendered);
         }
     });
@@ -383,26 +297,52 @@ export const generatePreviewUrl = (contentlet: DotCMSContentlet): string => {
 };
 
 /**
+ * Generates an edit-page URL for a given page contentlet.
+ *
+ * @param {DotCMSContentlet} contentlet - The contentlet object containing the necessary data.
+ * @returns {string} The generated edit-page URL.
+ */
+export const generatePageEditUrl = (contentlet: DotCMSContentlet): string => {
+    if (!contentlet.url || !contentlet.host || contentlet.languageId === undefined) {
+        console.warn('Missing required contentlet attributes to generate edit page URL');
+
+        return '';
+    }
+
+    const baseUrl = `${window.location.origin}/dotAdmin/#/edit-page/content`;
+    const params = new URLSearchParams();
+
+    params.set('url', `${contentlet.url}?host_id=${contentlet.host}`);
+    params.set('language_id', contentlet.languageId.toString());
+    params.set('com.dotmarketing.persona.id', 'modes.persona.no.persona');
+    params.set('mode', UVE_MODE.EDIT);
+
+    return `${baseUrl}?${params.toString()}`;
+};
+
+/**
  * Gets the UI state from sessionStorage or returns the initial state if not found
  */
 export const getStoredUIState = (): UIState => {
+    const defaults: UIState = {
+        view: 'form',
+        activeTab: 0,
+        isSidebarOpen: true,
+        activeSidebarTab: 0,
+        isBetaMessageVisible: true,
+        localeSelectorTab: 'all'
+    };
+
     try {
         const storedState = sessionStorage.getItem(UI_STORAGE_KEY);
         if (storedState) {
-            return JSON.parse(storedState);
+            return { ...defaults, ...JSON.parse(storedState) };
         }
     } catch (e) {
         console.warn('Error reading UI state from sessionStorage:', e);
     }
 
-    // Default values
-    return {
-        view: 'form',
-        activeTab: 0,
-        isSidebarOpen: true,
-        activeSidebarTab: 0,
-        isBetaMessageVisible: true
-    };
+    return defaults;
 };
 
 /**
@@ -417,16 +357,29 @@ export const saveStoreUIState = (state: UIState): void => {
 };
 
 /**
- * Prepares a contentlet for copying by ensuring it's not locked and removing any previous lock owner.
+ * Prepares a contentlet for copying by ensuring it's not locked and clearing binary fields.
+ * Binary assets live on the filesystem and must be re-uploaded per locale, so they are nulled out.
  *
  * @param contentlet - The original contentlet to be copied
- * @returns The contentlet with locked=false and no lockedBy property
+ * @param fields - The content type fields used to identify binary fields to clear
+ * @returns The contentlet ready to populate a new locale version
  */
-export const prepareContentletForCopy = (contentlet: DotCMSContentlet): DotCMSContentlet => ({
-    ...contentlet,
-    locked: false,
-    lockedBy: undefined
-});
+export const prepareContentletForCopy = (
+    contentlet: DotCMSContentlet,
+    fields?: DotCMSContentTypeField[]
+): DotCMSContentlet => {
+    const clearedBinaryFields = (fields ?? [])
+        .filter((f) => f.fieldType === DotCMSFieldTypes.BINARY)
+        .reduce((acc, f) => ({ ...acc, [f.variable]: null }), {});
+
+    return {
+        ...contentlet,
+        inode: undefined,
+        locked: false,
+        lockedBy: undefined,
+        ...clearedBinaryFields
+    };
+};
 
 /**
  * Extracts and parses custom field options from field variables.
@@ -505,12 +458,10 @@ export const createCustomFieldConfig = (
  * @returns True if the field should be flattened
  */
 export const isFlattenedField = (
-    fieldValue: string | string[] | Date | number | null | undefined,
+    fieldValue: unknown,
     field: DotCMSContentTypeField
 ): fieldValue is string[] => {
-    return (
-        Array.isArray(fieldValue) && FLATTENED_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES)
-    );
+    return Array.isArray(fieldValue) && FLATTENED_FIELD_TYPES.includes(field.fieldType);
 };
 
 /**
@@ -521,7 +472,54 @@ export const isFlattenedField = (
  * @returns True if the field is a calendar field
  */
 export const isCalendarField = (field: DotCMSContentTypeField): boolean => {
-    return CALENDAR_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES);
+    return CALENDAR_FIELD_TYPES.includes(field.fieldType);
+};
+
+/**
+ * Parses a calendar value from the backend or form into a numeric UTC timestamp.
+ * Accepts numbers, numeric strings, ISO/formatted date strings, and Date objects.
+ *
+ * @param value - Raw calendar field value
+ * @returns Numeric timestamp, null for empty/invalid, or undefined when value is undefined
+ */
+export const parseCalendarTimestamp = (value: unknown): number | null | undefined => {
+    if (value === null || value === undefined) {
+        return value as null | undefined;
+    }
+
+    if (value === '') {
+        return null;
+    }
+
+    if (typeof value === 'number') {
+        return isNaN(value) || !isFinite(value) ? null : value;
+    }
+
+    if (value instanceof Date) {
+        const timestamp = value.getTime();
+
+        return isNaN(timestamp) ? null : timestamp;
+    }
+
+    if (typeof value === 'string') {
+        const trimmedValue = value.trim();
+
+        if (trimmedValue === '') {
+            return null;
+        }
+
+        const numericValue = Number(trimmedValue);
+
+        if (!isNaN(numericValue) && isFinite(numericValue)) {
+            return numericValue;
+        }
+
+        const parsed = Date.parse(trimmedValue);
+
+        return isNaN(parsed) ? null : parsed;
+    }
+
+    return null;
 };
 
 /**
@@ -533,63 +531,23 @@ export const isCalendarField = (field: DotCMSContentTypeField): boolean => {
  * @returns Numeric timestamp or null/undefined
  */
 export const processCalendarFieldValue = (
-    fieldValue: string | string[] | Date | number | null | undefined,
+    fieldValue: unknown,
     fieldName: string
 ): number | null | undefined => {
-    // Handle null/undefined values
-    if (fieldValue === null || fieldValue === undefined) {
-        return fieldValue as null | undefined;
-    }
+    const parsed = parseCalendarTimestamp(fieldValue);
 
-    // Handle empty strings
-    if (fieldValue === '') {
-        return null;
-    }
-
-    // Convert Date objects to timestamps (normal case from calendar component)
-    if (fieldValue instanceof Date) {
-        return fieldValue.getTime();
-    }
-
-    // Keep numeric values as-is (already correct timestamps)
-    if (typeof fieldValue === 'number') {
-        return fieldValue;
-    }
-
-    // Convert string timestamps to numbers (edge case - from form state)
-    if (typeof fieldValue === 'string') {
-        const trimmedValue = fieldValue.trim();
-
-        // Handle empty string after trim
-        if (trimmedValue === '') {
-            return null;
-        }
-
-        const numericValue = Number(trimmedValue);
-
-        if (isNaN(numericValue)) {
+    if (parsed === null && fieldValue !== null && fieldValue !== undefined && fieldValue !== '') {
+        if (typeof fieldValue === 'string') {
             console.warn(`Calendar field ${fieldName} has invalid timestamp string:`, fieldValue);
-            return null;
+        } else if (typeof fieldValue !== 'number' && !(fieldValue instanceof Date)) {
+            console.error(`Calendar field ${fieldName} received unexpected value:`, {
+                value: fieldValue,
+                type: typeof fieldValue
+            });
         }
-
-        console.warn(
-            `Calendar field ${fieldName} received string timestamp, converted to number:`,
-            {
-                original: fieldValue,
-                converted: numericValue
-            }
-        );
-
-        return numericValue;
     }
 
-    // Handle unexpected cases (arrays, objects, etc.)
-    console.error(`Calendar field ${fieldName} received unexpected value:`, {
-        value: fieldValue,
-        type: typeof fieldValue
-    });
-
-    return null;
+    return parsed;
 };
 
 /**
@@ -597,6 +555,7 @@ export const processCalendarFieldValue = (
  * Applies appropriate transformations for different field types:
  * - Flattened fields: Joins arrays with commas
  * - Calendar fields: Converts to numeric timestamps
+ * - Block Editor: Stringifies object values (see details below)
  * - Other fields: Returns as-is
  *
  * @param fieldValue - The raw field value
@@ -604,17 +563,35 @@ export const processCalendarFieldValue = (
  * @returns The processed field value
  */
 export const processFieldValue = (
-    fieldValue: string | string[] | Date | number | null | undefined,
+    fieldValue: string | string[] | Date | number | Record<string, unknown> | null | undefined,
     field: DotCMSContentTypeField
 ): string | number | null | undefined => {
     // Handle flattened fields (multi-select, etc.)
     if (isFlattenedField(fieldValue, field)) {
-        return (fieldValue as string[]).join(',');
+        return fieldValue.join(',');
+    }
+
+    // Handle category fields: join inode array into comma-separated string for the API
+    if (field.fieldType === DotCMSFieldTypes.CATEGORY && Array.isArray(fieldValue)) {
+        return fieldValue.join(',');
     }
 
     // Handle calendar fields (date, datetime, time)
     if (isCalendarField(field)) {
         return processCalendarFieldValue(fieldValue, field.variable);
+    }
+
+    // Handle Block Editor: the FormControl may hold an object when the form is
+    // initialized from a translated contentlet (blockEditorResolutionFn parses
+    // the JSON string to an object so the editor can render it). The backend
+    // expects a JSON string — sending an object causes it to be stored as
+    // Map.toString(), corrupting the field on save.
+    if (
+        field.fieldType === DotCMSFieldTypes.BLOCK_EDITOR &&
+        fieldValue &&
+        typeof fieldValue === 'object'
+    ) {
+        return JSON.stringify(fieldValue);
     }
 
     // For all other fields, return as-is

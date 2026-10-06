@@ -3,6 +3,7 @@
 ASSETS_BACKUP_FILE=/data/assets.zip
 DB_BACKUP_FILE=/data/dotcms_db.sql.gz
 STARTER_ZIP=/data/starter.zip
+
 export JAVA_HOME=/java
 export ES_JAVA_OPTS=${ES_JAVA_OPTS:-"-Xmx512m"}
 export DOTCMS_CLONE_TYPE=${DOTCMS_CLONE_TYPE:-"dump"}
@@ -10,6 +11,7 @@ export ALL_ASSETS=${ALL_ASSETS:-"false"}
 export MAX_ASSET_SIZE=${MAX_ASSET_SIZE:-"100mb"}
 export PG_VERSION=${PG_VERSION:-"18"}
 export PATH=$PATH:$JAVA_HOME/bin:/usr/local/pgsql/bin:/usr/lib/postgresql/$PG_VERSION/bin/
+
 
 
 
@@ -49,7 +51,6 @@ setup_postgres () {
 
 setup_opensearch () {
 
-
     if [ ! -d "/data/opensearch" ]; then
         mv /usr/share/opensearch/data /data/opensearch
         chown dotcms.dotcms /data/opensearch
@@ -62,7 +63,7 @@ setup_opensearch () {
     echo "Starting OPENSEARCH"
     # Start up Elasticsearch
     #su -c "/usr/share/opensearch/bin/opensearch 1> /dev/null" dotcms &
-    su -c "OPENSEARCH_JAVA_HOME=/usr /usr/share/opensearch/bin/opensearch " dotcms &
+    su -c "OPENSEARCH_JAVA_HOME=/usr/share/opensearch/jdk /usr/share/opensearch/bin/opensearch " dotcms &
 }
 
 

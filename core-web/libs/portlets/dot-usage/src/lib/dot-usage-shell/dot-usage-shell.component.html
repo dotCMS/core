@@ -1,8 +1,8 @@
 <p-message severity="info" data-testid="analytics-message" [pt]="{ text: { class: 'w-full' } }">
-    <div class="flex items-center justify-between gap-2 w-full">
+    <div class="flex w-full items-center justify-between gap-2">
         <div class="flex items-center gap-2">
-            <i class="text-gray-900 pi pi-info-circle"></i>
-            <span data-testid="message-content" class="text-gray-900 text-sm">
+            <i class="pi pi-info-circle text-gray-900"></i>
+            <span data-testid="message-content" class="text-sm text-gray-900">
                 {{ 'analytics.feature.state' | dm }}
                 <b>{{ 'development' | dm }}</b>
             </span>
@@ -10,7 +10,7 @@
     </div>
 </p-message>
 
-<p-toolbar class="block mb-6">
+<p-toolbar class="mb-6 block">
     <div class="p-toolbar-group-start text-sm">
         <span class="text-gray-600">
             {{ 'usage.dashboard.cacheInfo' | dm }}
@@ -18,7 +18,7 @@
     </div>
 </p-toolbar>
 
-<div class="mx-auto max-w-[50rem]">
+<div class="mx-auto max-w-200">
     <!-- Loading State -->
     @if (loading()) {
         <div
@@ -31,8 +31,8 @@
             </span>
             <!-- Site Metrics: 3 cards -->
             <div>
-                <h2 class="mb-3 text-xl text-gray-900 font-bold tracking-tight leading-tight">
-                    <p-skeleton class="block" width="10rem" height="1.5rem"></p-skeleton>
+                <h2 class="mb-3 text-xl leading-tight font-bold tracking-tight text-gray-900">
+                    <p-skeleton class="block" width="10rem" height="1.5rem" />
                 </h2>
                 <div class="flex gap-3">
                     @for (i of [1, 2, 3]; track i) {
@@ -43,16 +43,13 @@
                             }">
                             <ng-template pTemplate="header">
                                 <h3
-                                    class="text-xs text-gray-600 uppercase font-normal tracking-wider m-0 leading-4">
-                                    <p-skeleton class="block" width="60%"></p-skeleton>
+                                    class="m-0 text-xs leading-4 font-normal tracking-wider text-gray-600 uppercase">
+                                    <p-skeleton class="block" width="60%" />
                                 </h3>
                             </ng-template>
                             <ng-template pTemplate="body">
                                 <p class="m-0">
-                                    <p-skeleton
-                                        class="block"
-                                        width="80%"
-                                        height="3rem"></p-skeleton>
+                                    <p-skeleton class="block" width="80%" height="3rem" />
                                 </p>
                             </ng-template>
                         </p-card>
@@ -62,8 +59,8 @@
 
             <!-- System Configuration: 3 cards -->
             <div>
-                <h2 class="mb-3 text-xl text-gray-900 font-bold tracking-tight leading-tight">
-                    <p-skeleton class="block" width="12rem" height="1.5rem"></p-skeleton>
+                <h2 class="mb-3 text-xl leading-tight font-bold tracking-tight text-gray-900">
+                    <p-skeleton class="block" width="12rem" height="1.5rem" />
                 </h2>
                 <div class="flex gap-3">
                     @for (i of [1, 2, 3]; track i) {
@@ -74,16 +71,13 @@
                             }">
                             <ng-template pTemplate="header">
                                 <h3
-                                    class="text-xs text-gray-600 uppercase font-normal tracking-wider m-0 leading-4">
-                                    <p-skeleton class="block" width="60%"></p-skeleton>
+                                    class="m-0 text-xs leading-4 font-normal tracking-wider text-gray-600 uppercase">
+                                    <p-skeleton class="block" width="60%" />
                                 </h3>
                             </ng-template>
                             <ng-template pTemplate="body">
                                 <p class="m-0">
-                                    <p-skeleton
-                                        class="block"
-                                        width="80%"
-                                        height="3rem"></p-skeleton>
+                                    <p-skeleton class="block" width="80%" height="3rem" />
                                 </p>
                             </ng-template>
                         </p-card>
@@ -93,8 +87,8 @@
 
             <!-- User Activity: 2 cards -->
             <div>
-                <h2 class="mb-3 text-xl text-gray-900 font-bold tracking-tight leading-tight">
-                    <p-skeleton class="block" width="10rem" height="1.5rem"></p-skeleton>
+                <h2 class="mb-3 text-xl leading-tight font-bold tracking-tight text-gray-900">
+                    <p-skeleton class="block" width="10rem" height="1.5rem" />
                 </h2>
                 <div class="flex gap-3">
                     @for (i of [1, 2]; track i) {
@@ -105,16 +99,13 @@
                             }">
                             <ng-template pTemplate="header">
                                 <h3
-                                    class="text-xs text-gray-600 uppercase font-normal tracking-wider m-0 leading-4">
-                                    <p-skeleton class="block" width="60%"></p-skeleton>
+                                    class="m-0 text-xs leading-4 font-normal tracking-wider text-gray-600 uppercase">
+                                    <p-skeleton class="block" width="60%" />
                                 </h3>
                             </ng-template>
                             <ng-template pTemplate="body">
                                 <p class="m-0">
-                                    <p-skeleton
-                                        class="block"
-                                        width="80%"
-                                        height="3rem"></p-skeleton>
+                                    <p-skeleton class="block" width="80%" height="3rem" />
                                 </p>
                             </ng-template>
                         </p-card>
@@ -133,7 +124,7 @@
             }">
             <ng-template pTemplate="header">
                 <h3
-                    class="flex items-center gap-2 text-xs text-gray-600 uppercase font-normal tracking-wider m-0 leading-4">
+                    class="m-0 flex items-center gap-2 text-xs leading-4 font-normal tracking-wider text-gray-600 uppercase">
                     <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
                     <strong>{{ 'usage.dashboard.error.title' | dm }}</strong>
                 </h3>
@@ -153,7 +144,7 @@
                     severity="secondary"
                     size="small"
                     (onClick)="onRetry()"
-                    data-testid="retry-button"></p-button>
+                    data-testid="retry-button" />
             </ng-template>
         </p-card>
     }
@@ -165,7 +156,7 @@
                 @if (getCategoryMetrics(category); as categoryMetrics) {
                     <div>
                         <h2
-                            class="mb-3 text-xl text-gray-900 font-bold tracking-tight leading-tight">
+                            class="mb-3 text-xl leading-tight font-bold tracking-tight text-gray-900">
                             {{ getCategoryTitleKey(category) | dm }}
                         </h2>
                         <div class="flex gap-3">
@@ -186,13 +177,13 @@
                                         }">
                                         <ng-template pTemplate="header">
                                             <h3
-                                                class="text-xs text-gray-600 uppercase font-normal tracking-wider m-0 leading-4">
+                                                class="m-0 text-xs leading-4 font-normal tracking-wider text-gray-600 uppercase">
                                                 {{ metricData.displayLabel | dm }}
                                             </h3>
                                         </ng-template>
                                         <ng-template pTemplate="body">
                                             <p
-                                                class="m-0 text-4xl text-center"
+                                                class="m-0 text-center text-4xl"
                                                 [class.metric-value--text]="
                                                     isStringValue(metricData.value)
                                                 ">

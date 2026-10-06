@@ -1,0 +1,135 @@
+// Shared helpers for skill governance tooling (catalog generator, linter, scaffolder).
+// Dependency-free: Node built-ins only. Node 22+.
+import { readFileSync, readdirSync, lstatSync, existsSync } from 'node:fs';
+import { join, dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+export const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
+export const SKILLS_DIR = join(REPO_ROOT, '.claude', 'skills');
+export const CONFIG_PATH = join(SKILLS_DIR, 'skills.config.json');
+export const CATALOG_PATH = join(SKILLS_DIR, 'CATALOG.md');
+
+export function loadConfig() {
+  return JSON.parse(readFileSync(CONFIG_PATH, 'utf8'));
+}
+
+// Minimal YAML-frontmatter parser: handles `key: value`, quoted scalars,
+// folded/literal block scalars (`>` `|`), and inline arrays `[a, b]`.
+// Sufficient for skill frontmatter — not a general YAML implementation.
+export function parseFrontmatter(text) {
+  const m = text.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  if (!m) return {};
+  const lines = m[1].split(/\r?\n/);
+  const out = {};
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const kv = line.match(/^([A-Za-z_][\w-]*):\s*(.*)$/);
+    if (!kv) continue;
+    const key = kv[1];
+    // Trim so aligned/extra-spaced values (`related:  [a, b]`) still hit the
+    // array/block-scalar branches instead of being misread as scalar strings.
+    let val = kv[2].trim();
+
+    if (val === '>' || val === '|' || val === '>-' || val === '|-') {
+      // Block scalar: consume following more-indented lines.
+      const block = [];
+      const baseIndent = (lines[i + 1]?.match(/^(\s*)/)?.[1].length) ?? 0;
+      while (i + 1 < lines.length && (lines[i + 1].trim() === '' || /^\s/.test(lines[i + 1]))) {
+        const next = lines[++i];
+        // Clamp the strip to each line's own leading whitespace, so a
+        // continuation line indented less than the first never loses real
+        // characters (block indentation is assumed but not required to match).
+        block.push(next.replace(new RegExp(`^\\s{0,${baseIndent}}`), ''));
+      }
+      out[key] = block.join(val.startsWith('|') ? '\n' : ' ').trim();
+    } else if (val.startsWith('[')) {
+      out[key] = val.replace(/^\[|\]$/g, '').split(',').map((s) => s.trim().replace(/^['"]|['"]$/g, '')).filter(Boolean);
+    } else {
+      out[key] = val.trim().replace(/^['"]|['"]$/g, '');
+    }
+  }
+  return out;
+}
+
+// Discover skills. Returns objects for every entry under .claude/skills/,
+// flagging symlinks (external, not governed here) vs real first-party dirs.
+export function listSkills() {
+  const entries = readdirSync(SKILLS_DIR, { withFileTypes: true });
+  const skills = [];
+  for (const e of entries) {
+    const full = join(SKILLS_DIR, e.name);
+    const isSymlink = lstatSync(full).isSymbolicLink();
+    if (!isSymlink && !lstatSync(full).isDirectory()) continue; // skip plain files (CATALOG.md, config, etc.)
+    const skillMd = join(full, 'SKILL.md');
+    const hasMd = existsSync(skillMd);
+    // A real dir without a SKILL.md isn't a skill. Symlinks are always included
+    // even when their target isn't checked out, so external rows stay present
+    // (keyed by dir name) and the catalog is deterministic regardless of whether
+    // .agents/skills is materialized.
+    if (!isSymlink && !hasMd) continue;
+    const fm = hasMd ? parseFrontmatter(readFileSync(skillMd, 'utf8')) : {};
+    skills.push({ dir: e.name, path: skillMd, isSymlink, firstParty: !isSymlink, fm });
+  }
+  return skills.sort((a, b) => a.dir.localeCompare(b.dir));
+}
+
+export function isGrandfathered(cfg, name) {
+  return cfg.grandfathered.includes(name);
+}
+
+// The one true skill-naming pattern: dot-<approved-domain>-<action>[-target],
+// where each segment after the domain is lowercase alphanumerics joined by
+// single hyphens (no leading/trailing/double hyphen). Shared by skill-lint (the
+// gate) and new-skill (the scaffolder) so they can never disagree.
+export function skillNameRegex(cfg) {
+  return new RegExp(`^${cfg.vendorPrefix}(${cfg.approvedDomains.join('|')})-[a-z0-9]+(-[a-z0-9]+)*$`);
+}
+
+// Build the CATALOG.md contents as a string. Pure — no filesystem writes — so
+// both the generator (which writes it) and the linter (which diffs against the
+// committed file) can share one source of truth without side effects.
+export function buildCatalog() {
+  const cfg = loadConfig();
+  const skills = listSkills();
+  const trunc = (s, n = 160) => {
+    const t = (s || '').replace(/\s+/g, ' ').trim();
+    return t.length > n ? t.slice(0, n - 1) + '…' : t;
+  };
+  const firstParty = skills.filter((s) => s.firstParty);
+  const external = skills.filter((s) => s.isSymlink);
+  const row = (s) => {
+    const fm = s.fm;
+    const status = fm.status || (cfg.grandfathered.includes(s.dir) ? '_legacy_' : '—');
+    const owner = fm.owner || '—';
+    const links = [
+      fm.supersedes ? `supersedes \`${fm.supersedes}\`` : null,
+      Array.isArray(fm.related) && fm.related.length ? `related: ${fm.related.map((r) => `\`${r}\``).join(', ')}` : null,
+      fm['superseded-by'] ? `superseded-by \`${fm['superseded-by']}\`` : null,
+    ].filter(Boolean).join('; ') || '—';
+    return `| \`${fm.name || s.dir}\` | ${status} | ${owner} | ${trunc(fm.description)} | ${links} |`;
+  };
+  const lines = [
+    '<!-- GENERATED by .claude/tools/gen-skills-catalog.mjs — DO NOT EDIT BY HAND. Run `just skills-catalog`. -->',
+    '# Skills Catalog',
+    '',
+    'Auto-generated inventory of dotCMS skills. **Check here before creating a new skill** — if something close exists, extend it or mark yours `related`, don\'t fork. See [CONTRIBUTING.md](CONTRIBUTING.md).',
+    '',
+    `_${firstParty.length} first-party · ${external.length} external (symlinked)._`,
+    '',
+    '## First-party skills (`dot-*`)',
+    '',
+    '| Name | Status | Owner | Description | Links |',
+    '| --- | --- | --- | --- | --- |',
+    ...firstParty.map(row),
+    '',
+    '## External skills (symlinked, not governed here)',
+    '',
+    '| Name | Source |',
+    '| --- | --- |',
+    // Keyed on dir (not fm.name) so the row never depends on reading through the
+    // symlink — the catalog stays byte-identical whether or not the target is checked out.
+    ...external.map((s) => `| \`${s.dir}\` | \`.agents/skills/${s.dir}\` |`),
+    '',
+  ];
+  return { content: lines.join('\n'), firstPartyCount: firstParty.length, externalCount: external.length };
+}

@@ -14,6 +14,25 @@ import { DotCMSPageRequestParams, DotErrorPage } from '@dotcms/types';
 // Load environment variables from .env file
 config();
 
+/**
+ * Angular 20.3+ SSR validates the incoming `host` header against an allowlist
+ * (SSRF protection). Allow `localhost` (for `serve:ssr`) and the `*.vercel.app`
+ * wildcard, which covers Vercel's generated production, preview and branch
+ * domains. On Vercel the proxy host is normalized into `host` by `api/index.js`
+ * before this engine sees the request. Add a custom production domain via the
+ * `NG_ALLOWED_HOSTS` env var. The engine reads this var when constructed below.
+ *
+ * `NG_ALLOWED_HOSTS` is an official Angular alternative to the `angular.json`
+ * `security.allowedHosts` option; we use it here so deployers can add domains
+ * without rebuilding. Allowlisting the deployment host is the app's
+ * responsibility by design — Angular declined to auto-handle proxied hosts
+ * (angular/angular-cli#32616), so this is the sanctioned pattern, not a hack.
+ * @see https://angular.dev/best-practices/security#preventing-server-side-request-forgery-ssrf
+ */
+process.env['NG_ALLOWED_HOSTS'] = ['localhost', '*.vercel.app', process.env['NG_ALLOWED_HOSTS']]
+  .filter(Boolean)
+  .join(',');
+
 const getClient = () => {
   const authToken = process.env['DOTCMS_AUTH_TOKEN'];
   if (!authToken) {
@@ -24,6 +43,7 @@ const getClient = () => {
     dotcmsUrl: process.env['DOTCMS_URL'] || 'https://demo.dotcms.com',
     authToken,
     siteId: process.env['DOTCMS_SITE_ID'] || 'YOUR_SITE_ID',
+    logLevel: process.env['NODE_ENV'] === 'production' ? 'default' : 'verbose',
   });
 };
 
@@ -79,10 +99,18 @@ app.use(
 
 /**
  * Handle all other requests by rendering the Angular application.
+ *
+ * The Express `app` is passed through as the SSR request context so that, while
+ * rendering on the server, the app's relative API calls (e.g. `/data/page`) can
+ * be dispatched back through this same Express instance in-process instead of
+ * over the network. This avoids the SSR self-fetch round-tripping through the
+ * public (proxy) host — which is unreachable on Vercel, where the function is
+ * invoked directly and never calls `app.listen()`. The dotCMS auth token stays
+ * server-side: only the `/data/page` handler ever reads it.
  */
 app.use((req, res, next) => {
   angularApp
-    .handle(req)
+    .handle(req, { app })
     .then((response) => (response ? writeResponseToNodeResponse(response, res) : next()))
     .catch(next);
 });

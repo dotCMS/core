@@ -1,9 +1,9 @@
 import { ComponentStore } from '@ngrx/component-store';
 import { tapResponse } from '@ngrx/operators';
+import { Observable } from 'rxjs';
 
 import { Injectable, inject } from '@angular/core';
 
-import { Observable } from 'rxjs/internal/Observable';
 import { map, switchMap, tap } from 'rxjs/operators';
 
 import {

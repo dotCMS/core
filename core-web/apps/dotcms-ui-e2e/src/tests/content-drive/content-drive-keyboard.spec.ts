@@ -1,0 +1,441 @@
+import { ContentDrivePage } from '@pages';
+import { type Page } from '@playwright/test';
+
+import { ContentDriveKeyboard } from './helpers/content-drive-keyboard';
+import { ContentDriveTree } from './helpers/content-drive-tree';
+
+import { type ContentDriveApiHelpers, expect, test } from '../../fixtures/content-drive.fixture';
+
+/**
+ * Journey: Content Drive keybindings (#32591)
+ *
+ * These are here because the unit suite cannot see the bugs this feature actually shipped. Three of
+ * them got past a green Jest run and were found by hand in the browser: a synthesised `MouseEvent`
+ * defaults to `cancelable: false`, so `preventDefault()` was a no-op; a `click` dispatched without
+ * its `mousedown` carried no modifier; and holding Shift fires its own `keydown` before the arrow,
+ * which reset the range base so shrinking could never deselect. Every one of those is a difference
+ * between a constructed event and a real one, which is exactly the gap a browser test closes.
+ *
+ * Two of the assertions are also **regressions that predate the feature**: rows were a full-page tab
+ * trap on load, and the listing was keyboard-unreachable entirely after a column sort.
+ */
+
+/** Rows the listing is seeded with. Three is the minimum that lets a range both grow and shrink. */
+const ROW_COUNT = 3;
+
+/** The one folder each seeding test creates. Derived from the suffix so teardown can find it. */
+const seededFolder = (testSuffix: string) => `cd-keys-${testSuffix}`;
+
+test.describe('Content Drive Keyboard', () => {
+    // Keyed off the per-test suffix rather than a describe-level variable, so this stays correct
+    // under `fullyParallel`. The two tests that seed nothing simply ask for a folder that was never
+    // created, which `deleteFolders` is already best-effort about.
+    test.afterEach(async ({ apiHelpers, testSuffix }) => {
+        const site = await apiHelpers.getDefaultSite();
+        await apiHelpers.deleteFolders(site.hostname, [`/${seededFolder(testSuffix)}`]);
+    });
+
+    /**
+     * Seeds a folder with `ROW_COUNT` children and browses into it, so the listing holds a known
+     * number of rows rather than whatever content the install happens to carry.
+     */
+    async function openSeededListing(
+        adminPage: Page,
+        apiHelpers: ContentDriveApiHelpers,
+        testSuffix: string
+    ) {
+        const site = await apiHelpers.getDefaultSite();
+        const parentName = seededFolder(testSuffix);
+        await apiHelpers.createFolders(
+            site.hostname,
+            ['a', 'b', 'c'].map((child) => `/${parentName}/${child}-${testSuffix}`)
+        );
+
+        const drive = new ContentDrivePage(adminPage);
+        const tree = new ContentDriveTree(adminPage);
+        const keyboard = new ContentDriveKeyboard(adminPage);
+
+        await drive.goTo();
+        await tree.expectFolderVisible(parentName);
+        await tree.selectFolder(parentName);
+        await keyboard.expectRowCount(ROW_COUNT);
+
+        return { drive, keyboard };
+    }
+
+    test('focuses the search box with the search shortcut @critical', async ({ adminPage }) => {
+        const drive = new ContentDrivePage(adminPage);
+
+        await drive.goTo();
+        await expect(drive.searchField).not.toBeFocused();
+
+        await adminPage.keyboard.press('/');
+
+        await expect(drive.searchField).toBeFocused();
+    });
+
+    /**
+     * The browser default has to be suppressed or a quick-find bar opens on this key and steals both
+     * the keystroke and the focus the shortcut just placed. Asserted by typing after the shortcut:
+     * if a find bar had taken the key, the characters would land there instead of in the search box.
+     */
+    test('does not let the browser act on the search shortcut @critical', async ({ adminPage }) => {
+        const drive = new ContentDrivePage(adminPage);
+
+        await drive.goTo();
+        await adminPage.keyboard.press('/');
+        await adminPage.keyboard.type('blog');
+
+        await expect(drive.searchField).toBeFocused();
+        await expect(drive.searchField).toHaveValue('blog');
+    });
+
+    /**
+     * The reason a bare printable key needs the registry's typing rule. A synthesised event cannot
+     * show this at all: only a real browser turns the keypress into a character in the field.
+     */
+    test('types a slash into the search box instead of re-firing @critical', async ({
+        adminPage
+    }) => {
+        const drive = new ContentDrivePage(adminPage);
+
+        await drive.goTo();
+        await adminPage.keyboard.press('/');
+        await expect(drive.searchField).toBeFocused();
+
+        await adminPage.keyboard.type('a/b');
+
+        await expect(drive.searchField).toHaveValue('a/b');
+    });
+
+    /**
+     * Ticking a row leaves focus on its checkbox, which is an `<input>`. A blanket "any input is
+     * typing" rule swallowed the search key there, and since the checkboxes are the primary way to
+     * select rows, "tick a few, then search" is an ordinary sequence that did nothing at all.
+     *
+     * The focus assertion before the keypress is load-bearing: without it the test would pass
+     * vacuously if the click left focus somewhere else.
+     */
+    test('reaches the search shortcut from a row checkbox @critical', async ({
+        adminPage,
+        apiHelpers,
+        testSuffix
+    }) => {
+        const { drive, keyboard } = await openSeededListing(adminPage, apiHelpers, testSuffix);
+
+        const checkbox = keyboard.row(0).getByTestId('item-checkbox').locator('input');
+        await checkbox.click();
+        await keyboard.expectSelectedCount(1);
+        await expect(checkbox).toBeFocused();
+
+        await adminPage.keyboard.press('/');
+
+        await expect(drive.searchField).toBeFocused();
+    });
+
+    /**
+     * A toast is a notification, not a modal, so it must not take the shortcut away.
+     *
+     * The status toast stays up for as long as a batch runs, and the page also restores every
+     * running batch the user has, including ones started from another tab. Toasts join the same
+     * z-index stack as dialogs, so the shortcut read this toast as a dialog and stood down for the
+     * whole run (#37884). In CI, where every test uploads as the same admin, that left the search
+     * key dead on any page loaded while a sibling test's upload was running.
+     *
+     * Driven through the restore rather than the upload itself: choosing the files closes the
+     * upload-type popover, which is a real overlay until its leave animation ends, and a keypress
+     * racing it would test the popover instead of the toast. After a reload the toast is the only
+     * thing stacked, which is also the shape the CI failure had.
+     *
+     * The toast is asserted on both sides of the keypress, so the test cannot pass because the
+     * batch finished before the key arrived. Six files, because the outcomes spec counts on being
+     * the only one that sends eight.
+     */
+    test('reaches the search shortcut while an upload status is showing @critical', async ({
+        adminPage,
+        apiHelpers,
+        testSuffix
+    }) => {
+        const { drive } = await openSeededListing(adminPage, apiHelpers, testSuffix);
+
+        await drive.chooseGeneratedFilesForUpload(6, `keys-${testSuffix}`);
+        await drive.expectHandedToBackground();
+
+        await adminPage.reload();
+        await drive.expectStatusToastContaining('Uploading 6 files');
+
+        await adminPage.keyboard.press('/');
+
+        await expect(drive.searchField).toBeFocused();
+        await drive.expectStatusToastContaining('Uploading 6 files');
+    });
+
+    /**
+     * The search key is not on its own key everywhere. `/` is `Shift+7` on German QWERTZ and
+     * Spanish, `Shift+:` on French AZERTY, so the browser reports the character *and* the Shift that
+     * produced it. Folding that modifier into the lookup left the shortcut dead for those users
+     * while looking perfectly fine on a US machine.
+     *
+     * Driven through CDP rather than `keyboard.press`, which maps keys through a US layout and
+     * cannot express "the `/` character, with Shift held". This is still a real browser input event,
+     * not a constructed DOM one — it goes through the same path a physical keypress does.
+     */
+    test('reaches the search shortcut on a layout that needs shift for the slash @critical', async ({
+        adminPage
+    }) => {
+        const drive = new ContentDrivePage(adminPage);
+
+        await drive.goTo();
+        await expect(drive.searchField).not.toBeFocused();
+
+        const cdp = await adminPage.context().newCDPSession(adminPage);
+        await cdp.send('Input.dispatchKeyEvent', {
+            type: 'keyDown',
+            key: '/',
+            code: 'Digit7',
+            text: '/',
+            modifiers: 8 // Shift
+        });
+
+        await expect(drive.searchField).toBeFocused();
+    });
+
+    /**
+     * The other half of the layout rule, and the half that bites in the opposite direction.
+     *
+     * Because a layout can need Alt to produce a character, an Alt-typed `/` reaches the bare `/`
+     * claim. That must not mean it gets stolen out of a field the user is typing in: the typing rule
+     * and the layout rule have to agree about Alt, or a character on those layouts becomes
+     * untypeable in the search box itself.
+     */
+    test('types an alt-produced slash into the search box rather than re-firing @critical', async ({
+        adminPage
+    }) => {
+        const drive = new ContentDrivePage(adminPage);
+
+        await drive.goTo();
+        await adminPage.keyboard.press('/');
+        await expect(drive.searchField).toBeFocused();
+        await adminPage.keyboard.type('a');
+
+        const cdp = await adminPage.context().newCDPSession(adminPage);
+        await cdp.send('Input.dispatchKeyEvent', {
+            type: 'keyDown',
+            key: '/',
+            code: 'Slash',
+            text: '/',
+            modifiers: 1 // Alt
+        });
+        await cdp.send('Input.dispatchKeyEvent', {
+            type: 'keyUp',
+            key: '/',
+            code: 'Slash',
+            modifiers: 1
+        });
+
+        await expect(drive.searchField).toHaveValue('a/');
+    });
+
+    test('focuses the search box with the alias too', async ({ adminPage }) => {
+        const drive = new ContentDrivePage(adminPage);
+        const keyboard = new ContentDriveKeyboard(adminPage);
+
+        await drive.goTo();
+        await expect(drive.searchField).not.toBeFocused();
+
+        await keyboard.pressShortcut('k');
+
+        await expect(drive.searchField).toBeFocused();
+    });
+
+    test('toggles the folder tree with the tree shortcut', async ({ adminPage }) => {
+        const drive = new ContentDrivePage(adminPage);
+        const keyboard = new ContentDriveKeyboard(adminPage);
+
+        await drive.goTo();
+        await drive.expectTreeExpanded();
+
+        await keyboard.pressShortcut('b');
+        await drive.expectTreeCollapsed();
+
+        await keyboard.pressShortcut('b');
+        await drive.expectTreeExpanded();
+    });
+
+    test('leaves exactly one row in the tab order @critical', async ({
+        adminPage,
+        apiHelpers,
+        testSuffix
+    }) => {
+        // Pre-existing defect, not one this feature introduced: with no row index bound the tab-stop
+        // comparison was `undefined === undefined`, so every row was a tab stop and getting past the
+        // listing took one press of Tab per row.
+        const { keyboard } = await openSeededListing(adminPage, apiHelpers, testSuffix);
+
+        await keyboard.expectSingleTabStop(ROW_COUNT);
+    });
+
+    test('keeps the listing reachable after a column sort @critical', async ({
+        adminPage,
+        apiHelpers,
+        testSuffix
+    }) => {
+        // The other half of the same defect, and the reason the tab stop is written after every
+        // render rather than bound: the table clears its own anchor at the end of a sort, and the
+        // comparison became `null === undefined`, leaving *no* row reachable at all.
+        const { drive, keyboard } = await openSeededListing(adminPage, apiHelpers, testSuffix);
+
+        await drive.sortByFirstColumn();
+        await keyboard.expectRowCount(ROW_COUNT);
+
+        await keyboard.expectSingleTabStop(ROW_COUNT);
+    });
+
+    test('moves focus through the listing with the arrow keys @critical', async ({
+        adminPage,
+        apiHelpers,
+        testSuffix
+    }) => {
+        const { keyboard } = await openSeededListing(adminPage, apiHelpers, testSuffix);
+
+        await keyboard.clickRow(0);
+        await keyboard.expectRowFocused(0);
+
+        await adminPage.keyboard.press('ArrowDown');
+        await keyboard.expectRowFocused(1);
+
+        await adminPage.keyboard.press('ArrowUp');
+        await keyboard.expectRowFocused(0);
+    });
+
+    test('grows and shrinks a range with shift and the arrow keys @critical', async ({
+        adminPage,
+        apiHelpers,
+        testSuffix
+    }) => {
+        const { keyboard } = await openSeededListing(adminPage, apiHelpers, testSuffix);
+
+        await keyboard.clickRow(0);
+        await keyboard.expectSelectedCount(1);
+
+        await adminPage.keyboard.press('Shift+ArrowDown');
+        await keyboard.expectSelectedCount(2);
+
+        await adminPage.keyboard.press('Shift+ArrowDown');
+        await keyboard.expectSelectedCount(ROW_COUNT);
+
+        // The shrink is the half a synthesised sequence could not catch: without Shift's own keydown
+        // the range base was recaptured every step, so coming back toward the anchor deselected
+        // nothing and the selection stayed at three.
+        await adminPage.keyboard.press('Shift+ArrowUp');
+        await keyboard.expectSelectedCount(2);
+    });
+
+    test('selects a range with shift and a click', async ({
+        adminPage,
+        apiHelpers,
+        testSuffix
+    }) => {
+        const { keyboard } = await openSeededListing(adminPage, apiHelpers, testSuffix);
+
+        await keyboard.clickRow(0);
+        await keyboard.expectSelectedCount(1);
+
+        await keyboard.shiftClickRow(ROW_COUNT - 1);
+
+        await keyboard.expectSelectedCount(ROW_COUNT);
+    });
+
+    /**
+     * Shift belongs to the selection, so no gesture carrying it opens anything.
+     *
+     * Found by QA on the shipped feature: a second click landing inside a Shift range, or a stray
+     * double, opened the item and navigated out of the listing — taking the half-built selection
+     * with it. The unit suite can assert the guard, but only a browser proves the modifier survives
+     * a real `dblclick`, which is the same class of gap the rest of this file exists for.
+     */
+    test('keeps a shift range instead of opening the row it lands on @critical', async ({
+        adminPage,
+        apiHelpers,
+        testSuffix
+    }) => {
+        const { keyboard } = await openSeededListing(adminPage, apiHelpers, testSuffix);
+        const listingUrl = adminPage.url();
+
+        await keyboard.clickRow(0);
+        await keyboard.expectSelectedCount(1);
+
+        await keyboard.shiftDoubleClickRow(ROW_COUNT - 1);
+
+        // Still in the listing: opening an item navigates away, so the URL is the assertion that
+        // catches the actual reported symptom rather than a proxy for it.
+        expect(adminPage.url()).toBe(listingUrl);
+        // And the range it was building survived, which is what the author loses when it opens.
+        await keyboard.expectSelectedCount(ROW_COUNT);
+    });
+
+    /**
+     * The title is the open affordance, so it swallows its click to stop the row selecting on the
+     * way out. A Shift click does not open, which leaves nothing for the swallow to protect — and
+     * running it anyway made the title a dead spot where the gesture neither opened the item nor
+     * extended the selection it belongs to. Caught in review on the first fix.
+     */
+    test('extends a range from the row title, which does not open under shift', async ({
+        adminPage,
+        apiHelpers,
+        testSuffix
+    }) => {
+        const { keyboard } = await openSeededListing(adminPage, apiHelpers, testSuffix);
+        const listingUrl = adminPage.url();
+
+        await keyboard.clickRow(0);
+        await keyboard.expectSelectedCount(1);
+
+        await keyboard.shiftClickRowTitle(ROW_COUNT - 1);
+
+        expect(adminPage.url()).toBe(listingUrl);
+        await keyboard.expectSelectedCount(ROW_COUNT);
+    });
+
+    test('clears the selection with escape @critical', async ({
+        adminPage,
+        apiHelpers,
+        testSuffix
+    }) => {
+        const { keyboard } = await openSeededListing(adminPage, apiHelpers, testSuffix);
+
+        await keyboard.clickRow(0);
+        await keyboard.expectSelectedCount(1);
+
+        await adminPage.keyboard.press('Escape');
+
+        await keyboard.expectSelectedCount(0);
+    });
+
+    /**
+     * Escape clears the selection and stops there. It used to clear every active filter once the
+     * selection was gone, which put a destructive, hard-to-undo action behind a stray press of the
+     * most-reached-for key on the keyboard. Clearing filters is the "Clear all" control's job.
+     */
+    test('leaves the search term alone when escape clears the selection @critical', async ({
+        adminPage,
+        apiHelpers,
+        testSuffix
+    }) => {
+        const { drive, keyboard } = await openSeededListing(adminPage, apiHelpers, testSuffix);
+
+        await drive.searchField.fill('keep-me');
+        await keyboard.clickRow(0);
+        await keyboard.expectSelectedCount(1);
+
+        await adminPage.keyboard.press('Escape');
+        await keyboard.expectSelectedCount(0);
+
+        await expect(drive.searchField).toHaveValue('keep-me');
+
+        // And a second press, with nothing selected, still must not touch it.
+        await adminPage.keyboard.press('Escape');
+
+        await expect(drive.searchField).toHaveValue('keep-me');
+    });
+});

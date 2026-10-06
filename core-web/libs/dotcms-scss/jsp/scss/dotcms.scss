@@ -1,4 +1,5 @@
 // Font-icons
+@use "../../shared/material-symbols-outlined";
 @import "font-awesome-4.7.0/mixins";
 @import "font-awesome-4.7.0/variables";
 @import "font-awesome-4.7.0/path";
@@ -32,14 +33,6 @@
 @include assistant-font-face(400, "Regular");
 @include assistant-font-face(500, "SemiBold");
 @include assistant-font-face(700, "Bold");
-
-@font-face {
-    font-family: "Material Icons";
-    font-style: normal;
-    font-weight: 400;
-    font-display: swap;
-    src: url("/dotAdmin/assets/MaterialIcons-Regular.ttf") format("truetype");
-}
 
 #structure_inode_popup .dijitMenuItem .label {
     display: flex;
@@ -85,21 +78,23 @@ td {
     font-size: $font-size-md;
 }
 
-.material-icons {
-    font-family: "Material Icons", sans-serif;
-    font-weight: normal;
-    font-style: normal;
-    font-size: 24px; /* Preferred icon size */
-    display: inline-block;
-    line-height: 1;
-    text-transform: none;
-    letter-spacing: normal;
-    word-wrap: normal;
-    white-space: nowrap;
-    direction: ltr;
-    -webkit-font-smoothing: antialiased;
-    text-rendering: optimizeLegibility;
-    -moz-osx-font-smoothing: grayscale;
+// Native HTML <dialog> opened via showModal() — explicit centering and
+// PrimeNG-compatible styling. :modal targets only showModal() dialogs,
+// not inline <dialog open> elements.
+dialog:modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    margin: 0;
+    border: none;
+    border-radius: $border-radius-md;
+    box-shadow: 0px 10px 18px 0px hsla(230deg, 13%, 9%, 0.1);
+    padding: $spacing-4;
+
+    &::backdrop {
+        background-color: rgba(0, 0, 0, 0.4);
+    }
 }
 
 .edit-content-full-screen {

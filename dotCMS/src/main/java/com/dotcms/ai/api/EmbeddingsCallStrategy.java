@@ -17,7 +17,7 @@ import java.util.List;
  */
 public interface EmbeddingsCallStrategy {
 
-    String OPEN_AI_THREAD_POOL_KEY = "OpenAIThreadPool";
+    String AI_THREAD_POOL_KEY = "AIThreadPool";
     /**
      * Embeds contentlets based on the provided inodes and form data.
      *

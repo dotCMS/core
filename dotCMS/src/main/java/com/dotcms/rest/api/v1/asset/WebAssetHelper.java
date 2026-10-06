@@ -226,6 +226,7 @@ public class WebAssetHelper {
                     .sortOrder(folder.getSortOrder())
                     .filesMasks(folder.getFilesMasks())
                     .defaultFileType(folder.getDefaultFileType())
+                    .defaultBaseType(folder.getDefaultBaseType())
                     .host(folder.getHost().getHostname())
                     .path(folder.getPath())
                     .name(folder.getName())
@@ -368,6 +369,7 @@ public class WebAssetHelper {
                 .host(folder.getHost().getHostname())
                 .filesMasks(folder.getFilesMasks())
                 .defaultFileType(folder.getDefaultFileType())
+                .defaultBaseType(folder.getDefaultBaseType())
                 .showOnMenu(folder.isShowOnMenu())
                 .modDate(folder.getModDate().toInstant())
                 .identifier(folder.getIdentifier())
@@ -857,6 +859,25 @@ public class WebAssetHelper {
                 folder.setDefaultFileType(contentType.id());
             }
 
+            // Content Drive upload-mode preference (orthogonal to defaultAssetType/defaultFileType).
+            // A present value is validated against the DOTASSET/FILEASSET base types and stored as the
+            // canonical uppercase enum name. A null/absent value clears the preference ("ask each
+            // time"); Jackson can't distinguish an omitted field from an explicit null here, and the
+            // client always sends this field, so treat both as "clear."
+            final String defaultBaseType = meta.defaultBaseType();
+            if (UtilMethods.isSet(defaultBaseType)) {
+                final BaseContentType baseType = BaseContentType.getBaseContentType(defaultBaseType);
+                if (baseType != BaseContentType.DOTASSET && baseType != BaseContentType.FILEASSET) {
+                    throw new IllegalArgumentException(
+                            "The specified defaultBaseType [" + defaultBaseType
+                                    + "] must be one of DOTASSET or FILEASSET."
+                    );
+                }
+                folder.setDefaultBaseType(baseType.name());
+            } else {
+                folder.setDefaultBaseType(null);
+            }
+
             if (UtilMethods.isSet(meta.fileMasks())) {
                 folder.setFilesMasks(String.join(",", Objects.requireNonNull(meta.fileMasks())));
             }
@@ -911,7 +932,7 @@ public class WebAssetHelper {
      * @param defaultLangFallback if true, it will return the default language if the language param is not found
      * @return
      */
-    Optional<Language> parseLang(final String language, final boolean defaultLangFallback) {
+    public Optional<Language> parseLang(final String language, final boolean defaultLangFallback) {
         Language resolvedLang = Try.of(() -> {
                     //Typically locales are separated by a dash, but our Language API uses an underscore in the toString method,
                     //So here I'm preparing for both cases

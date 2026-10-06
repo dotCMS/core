@@ -1,4 +1,3 @@
-import { NgClass } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -21,7 +20,7 @@ import { Menu, MenuModule } from 'primeng/menu';
 @Component({
     selector: 'dot-action-button',
     templateUrl: 'dot-action-button.component.html',
-    imports: [ButtonModule, MenuModule, NgClass],
+    imports: [ButtonModule, MenuModule],
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
         '[class.action-button--no-label]': '$isNotLabeled()',

@@ -20,12 +20,16 @@ import org.apache.velocity.runtime.resource.ResourceManager;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 public class VelocityResourceKey implements Serializable {
 
     private static final char RESOURCE_TEMPLATE = ResourceManager.RESOURCE_TEMPLATE + '0';
     private static final String HOST_INDICATOR = "///";
     private static final long serialVersionUID = 1L;
+    // Compiled once: String.split("[/\\.]") would compile this character-class regex on every
+    // construction, and a VelocityResourceKey is built on every Velocity cache get (per render).
+    private static final Pattern PATH_SPLIT = Pattern.compile("[/.]");
 
     public final String path, language, id1, id2, cacheKey, variant;
     public final VelocityType type;
@@ -76,7 +80,7 @@ public class VelocityResourceKey implements Serializable {
 
         path = cleanKey(filePath);
 
-        final String[] pathArry = path.split("[/\\.]", 0);
+        final String[] pathArry = PATH_SPLIT.split(path, 0);
 
         this.mode = PageMode.get(pathArry[1]);
 

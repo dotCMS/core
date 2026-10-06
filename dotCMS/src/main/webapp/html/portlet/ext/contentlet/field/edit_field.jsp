@@ -244,6 +244,9 @@
 
             List<FieldVariable> acceptTypes = APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, false);
             String fieldVariablesContent = StringEscapeUtils.escapeJavaScript(mapper.writeValueAsString(acceptTypes));
+            String blockEditorTag = ConfigUtils.isFeatureFlagOn("FEATURE_FLAG_NEW_BLOCK_EDITOR")
+                    ? "dotcms-block-editor"
+                    : "dotcms-old-block-editor";
 
             %>
             <script src="/html/showdown.min.js"></script>
@@ -258,25 +261,38 @@
                     function autoexecute() {
                         const blockEditorContainer = document.querySelector('#block-editor-<%=field.getVelocityVarName()%>-container');
                         const field = document.querySelector('#editor-input-value-<%=field.getVelocityVarName()%>');
-                        const blockEditor = document.createElement('dotcms-block-editor');
+                        const blockEditor = document.createElement('<%=blockEditorTag%>');
                         const proseMirror = blockEditor.querySelector('.ProseMirror');
                         blockEditor.id = "block-editor-<%=field.getVelocityVarName()%>";
 
-                        const editorValue = <%=safeTextValue%> || null;
+                        // Decode the template-literal-safety encoding applied server-side above
+                        // (`$` -> &#36;, backtick -> &#96;) so the runtime value is restored on BOTH
+                        // the JSON (Block Editor) and markdown-fallback paths. Without this, valid
+                        // Block Editor JSON parses successfully, the catch never runs, and &#36; leaks
+                        // into ProseMirror (and can be re-persisted via JSON.stringify below).
+                        const editorValue = (<%=safeTextValue%> || '')
+                            .replace(/&#96;/g, '`').replace(/&#36;/g, '$') || null;
                         let content;
 
                         try {
                             content = JSON.parse(editorValue);
                         } catch (e) {
                             // If it can't be parsed as a JSON, then it means that the value is a string
-                              const text = editorValue.replace(/&#96;/g, '`').replace(/&#36;/g, '$');
                             const converter = new showdown.Converter({ tables: true });
-                            content = converter.makeHtml(text || '');
+                            content = converter.makeHtml(editorValue || '');
                         }
 
 
-                        // Set current value in the hidden field
-                        field.value = content || '';
+                        // Set current value in the hidden field.
+                        // When the stored value is JSON, `content` is a parsed object — assigning
+                        // it directly would coerce via toString() and write "[object Object]" into
+                        // the input. The form submits the input verbatim, so without the explicit
+                        // JSON.stringify the field is corrupted on save whenever the user edits
+                        // another field without touching the Block Editor (the `valueChange`
+                        // listener below only fires on user input).
+                        field.value = (content && typeof content === 'object')
+                            ? JSON.stringify(content)
+                            : (content || '');
 
                         const contentlet =  (<%=contentletObj%>);
                         const fieldData = {
@@ -786,14 +802,34 @@
                      * This is a workaround to get the contentlet from the API
                      * because there is no way to get the same contentlet the AP retreive from the dwr call.
                      */
-                    fetch('/api/v1/content/<%=inode%>', {
-                        method: 'GET',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        }
-                    })
-                    .then(response => response.json())
-                    .then(({ entity: contentlet }) => {
+                    const inode = "<%=inode%>";
+
+                    /*
+                     * When creating content there is no inode yet, and '/api/v1/content/' matches no
+                     * route, so the request can only ever 404. Skip it entirely rather than handle the
+                     * failure: the body of that 404 is not reliably JSON (it varies with page mode and
+                     * the SIMPLE_ERROR_PAGES_FOR_BACKEND setting), so parsing it is what used to leave
+                     * the field spinning forever.
+                     */
+                    const contentletPromise = inode
+                        ? fetch('/api/v1/content/' + inode, {
+                              method: 'GET',
+                              headers: {
+                                  'Content-Type': 'application/json'
+                              }
+                          })
+                          .then(response => {
+                              if (!response.ok) {
+                                  throw new Error('HTTP ' + response.status);
+                              }
+
+                              return response.json();
+                          })
+                          .then(({ entity }) => entity)
+                        : Promise.resolve({});
+
+                    contentletPromise
+                    .then((contentlet) => {
                         const field = document.querySelector('#binary-field-input-<%=field.getFieldContentlet()%>ValueField');
                         const variable = "<%=field.getVelocityVarName()%>";
 
@@ -870,8 +906,11 @@
                             imageEditor.execute();
                         });
                     })
-                    .catch(() => {
-                        binaryFieldContainer.innerHTMl = '<div class="callOutBox">Error loading the binary field</div>';
+                    .catch((error) => {
+                        // Logged on purpose: this field failing silently is what made the
+                        // original defect so expensive to diagnose on customer environments.
+                        console.error('Error loading the binary field', error);
+                        binaryFieldContainer.innerHTML = '<div class="callOutBox">Error loading the binary field</div>';
                     })
                 })();
             </script>
@@ -1484,13 +1523,13 @@
         while (iterator.hasNext()) {
             final String key = iterator.next();
             final Object object = keyValueMap.get(key);
-            if(null != object) {
-                keyValueDataRaw.append(key.replaceAll(":", "&#58;").replaceAll(",", "&#44;").replaceAll("<", "&lt;")).append(":").append(object.toString().replaceAll(":", "&#58;").replaceAll(",", "&#44;").replaceAll("<", "&lt;"));
-                dotKeyValueDataRaw.append("&#x22;" + key.replaceAll(":", "&#58;").replaceAll(",", "&#44;").replaceAll("<", "&lt;") + "&#x22;").append(":").append("&#x22;" + object.toString().replaceAll(":", "&#58;").replaceAll(",", "&#44;").replaceAll("<", "&lt;") + "&#x22;");
-                if (iterator.hasNext()) {
-                    keyValueDataRaw.append(',');
-                    dotKeyValueDataRaw.append(',');
-                }
+            final String encodedKey = key.replaceAll(":", "&#58;").replaceAll(",", "&#44;").replaceAll("<", "&lt;");
+            final String encodedValue = null != object ? object.toString().replaceAll(":", "&#58;").replaceAll(",", "&#44;").replaceAll("<", "&lt;") : "null";
+            keyValueDataRaw.append(encodedKey).append(":").append(encodedValue);
+            dotKeyValueDataRaw.append("&#x22;" + encodedKey + "&#x22;").append(":").append("&#x22;" + encodedValue + "&#x22;");
+            if (iterator.hasNext()) {
+                keyValueDataRaw.append(',');
+                dotKeyValueDataRaw.append(',');
             }
         }
         keyValueDataRaw.append("}");

@@ -1,5 +1,6 @@
 import {
   ApplicationConfig,
+  isDevMode,
   provideBrowserGlobalErrorListeners,
   provideZoneChangeDetection,
 } from '@angular/core';
@@ -10,6 +11,7 @@ import {
   provideClientHydration,
   withEventReplay,
   withHttpTransferCacheOptions,
+  withNoIncrementalHydration
 } from '@angular/platform-browser';
 import { provideDotCMSClient, provideDotCMSImageLoader } from '@dotcms/angular';
 import { provideHttpClient, withFetch } from '@angular/common/http';
@@ -22,6 +24,7 @@ export const appConfig: ApplicationConfig = {
       dotcmsUrl: environment.dotcmsUrl,
       authToken: environment.authToken,
       siteId: environment.siteId,
+      logLevel: isDevMode() ? 'verbose' : 'default',
     }),
     provideBrowserGlobalErrorListeners(),
     provideZoneChangeDetection({ eventCoalescing: true }),
@@ -32,7 +35,7 @@ export const appConfig: ApplicationConfig = {
       withHttpTransferCacheOptions({
         includePostRequests: true,
         includeRequestsWithAuthHeaders: true,
-      })
+      }), withNoIncrementalHydration()
     )
   ],
 };

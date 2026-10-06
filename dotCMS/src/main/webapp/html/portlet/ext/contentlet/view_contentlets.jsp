@@ -247,7 +247,7 @@
                         continue;
                     }
 
-                    String labelAndIcon = "<i class='material-icons'>" + contentType.getIcon() +"</i>";
+                    String labelAndIcon = "<i class='material-symbols-outlined'>" + contentType.getIcon() +"</i>";
 
                     String contentTypeName = UtilMethods.javaScriptify(contentType.getName());
                     labelAndIcon+= contentTypeName;

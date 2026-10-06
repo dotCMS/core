@@ -24,38 +24,22 @@
         z-index: 1;
         visibility: visible;
     }
-    ::ng-deep {
-        .p-button-raised {
-            background-color: colors.$white;
-            color: colors.$black;
-            box-shadow: shadows.$shadow-s;
-            transition: all 0.15s ease-in-out;
-
-            &:disabled {
-                pointer-events: auto;
-            }
-
-            &:hover:enabled,
-            &:focus:enabled {
-                background-color: colors.$color-palette-primary-100;
-                color: colors.$color-palette-primary-500;
-                box-shadow: shadows.$shadow-s;
-                transform: scale(1.1);
-            }
-        }
-
-        .delete {
-            color: colors.$color-palette-gray-500;
-        }
-    }
 }
 
 .bounds {
     position: absolute;
     pointer-events: none;
-    outline: solid 2px colors.$color-palette-primary-500;
     background-color: transparent;
     container-type: inline-size;
+    // The outer edge is anchored at 1px outside the bounds box for BOTH
+    // states; selection thickens the line by adding an *inset* shadow
+    // (--bounds-inset) so the extra thickness grows inward instead of
+    // outward. This keeps the contentlet's outer rect — and the
+    // top-left label — visually fixed across hover→selected transitions.
+    --bounds-inset: 0px;
+    box-shadow:
+        0 0 0 1px colors.$color-palette-primary-500,
+        inset 0 0 0 var(--bounds-inset) colors.$color-palette-primary-500;
 
     .add-button-top,
     .add-button-bottom {
@@ -84,16 +68,86 @@
         z-index: 1;
     }
 
-    @container (max-width: 400px) {
-        .add-button-top {
-            left: 0;
-            transform: translate(0, -50%);
+    // Drag button sits on the left-center of the border, mirroring the
+    // top/bottom add buttons. Stays visible at every container size —
+    // dragging has no menu equivalent.
+    .drag-button {
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 1;
+        pointer-events: all;
+    }
+
+    // Action toolbar variants: the full row is shown by default; the
+    // collapsed (ellipsis) variant takes over when the contentlet is
+    // narrower than 600px. Both render in the DOM so the swap is
+    // CSS-only — no Angular state, no flicker.
+    .actions-collapsed {
+        display: none;
+    }
+    @container (max-width: 600px) {
+        .actions-full {
+            display: none;
+        }
+        .actions-collapsed {
+            display: flex;
         }
     }
-}
 
-.actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: spacing.$spacing-0;
+    // Content-type label sits in the top-left corner of the outline.
+    // Aligned to the fixed 1px outer edge — shared between hover and
+    // selected since the outer edge no longer moves between states.
+    .hover-label {
+        position: absolute;
+        top: 0;
+        left: -1px;
+        transform: translateY(-100%);
+        padding: 2px spacing.$spacing-1;
+        background-color: colors.$color-palette-primary-500;
+        color: colors.$white;
+        font-size: 0.75rem;
+        font-weight: 500;
+        line-height: 1;
+        white-space: nowrap;
+        border-radius: 2px 2px 0 0;
+        text-transform: capitalize;
+    }
+
+    // Hover state: just the 1px outer line (no inset). The bounds box
+    // stays pointer-events: none so wheel/clicks pass through to the
+    // iframe (the SDK's CONTENTLET_CLICKED event handles selection); the
+    // toolbar and add buttons opt back in via `.add-button-*` and
+    // `.actions` rules above.
+    &.hover {
+        pointer-events: none;
+        background-color: transparent;
+
+        // Tools remain interactive on hover, mirroring `.selected`.
+        .add-button-top,
+        .add-button-bottom,
+        .drag-button,
+        .actions {
+            pointer-events: all;
+        }
+    }
+
+    // Selected state: same 1px outer edge plus a 1px inset shadow, so
+    // the visible line reads as 2px thick without expanding the
+    // outer rect. Outer position stays fixed across hover↔selected
+    // transitions; only the inner edge shifts.
+    &.selected {
+        --bounds-inset: 1px;
+        pointer-events: none;
+        background-color: transparent;
+
+        // Buttons and actions remain interactive
+        .add-button-top,
+        .add-button-bottom,
+        .drag-button,
+        .actions {
+            pointer-events: all;
+        }
+    }
 }

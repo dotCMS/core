@@ -10,6 +10,7 @@
 package com.dotcms.enterprise.publishing.remote.handler;
 
 import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.STYLE_PROPERTIES_KEY;
 
 import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.beans.Host;
@@ -33,6 +34,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -133,6 +135,14 @@ public class HandlerUtil {
             multiTree.setVariantId( (String) multiTreeData.get( "variantId" ) );
             if(multiTreeData.containsKey("personalization")) {
               multiTree.setPersonalization((String) multiTreeData.get( "personalization" ) );
+            }
+            final Object rawStyleProps = multiTreeData.get(STYLE_PROPERTIES_KEY);
+            if (rawStyleProps instanceof Map) {
+                multiTree = multiTree.setStyleProperties(new HashMap<>((Map<String, Object>) rawStyleProps));
+            } else if (rawStyleProps != null) {
+                Logger.warn(HandlerUtil.class, "dotStyleProperties is not a Map for child '"
+                        + multiTreeData.get("child") + "', skipping. Type: "
+                        + rawStyleProps.getClass().getName());
             }
             APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
 

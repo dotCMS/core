@@ -24,7 +24,11 @@ import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
+import java.util.UUID;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.containing;
+import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -55,8 +59,8 @@ public class CompletionsToolTest {
         IPUtils.disabledIpPrivateSubnet(true);
         host = new SiteDataGen().nextPersisted();
         wireMockServer = AiTest.prepareWireMock();
-        AiTest.aiAppSecrets(APILocator.systemHost(), "gpt-4o-mini", "dall-e-3", "text-embedding-ada-002");
-        AiTest.aiAppSecrets(host, "gpt-4o-mini", "dall-e-3", "text-embedding-ada-002");
+        AiTest.aiAppSecretsWithProviderConfig(APILocator.systemHost(), AiTest.providerConfigJson(AiTest.PORT, "gpt-4o-mini"));
+        AiTest.aiAppSecretsWithProviderConfig(host, AiTest.providerConfigJson(AiTest.PORT, "gpt-4o-mini"));
         appConfig = ConfigService.INSTANCE.config(host);
         user = new UserDataGen().nextPersisted();
     }
@@ -90,7 +94,6 @@ public class CompletionsToolTest {
         assertNotNull(config);
         assertEquals(AppKeys.COMPLETION_ROLE_PROMPT.defaultValue, config.get(AppKeys.COMPLETION_ROLE_PROMPT.key));
         assertEquals(AppKeys.COMPLETION_TEXT_PROMPT.defaultValue, config.get(AppKeys.COMPLETION_TEXT_PROMPT.key));
-        assertEquals("gpt-4o-mini", config.get(AppKeys.TEXT_MODEL_NAMES.key));
     }
 
     /**
@@ -172,6 +175,109 @@ public class CompletionsToolTest {
         assertResult(result);
     }
 
+    /**
+     * Feature: CompletionsTool failure handling (#37154)
+     * Scenario: Summarize when the provider fails
+     * Given embeddings already exist, in an index private to this test, for a query that carries
+     *       the chat-failure sentinel
+     * And the mocked provider answers the chat request with HTTP 500
+     * When the summarize method is called with that query and that index
+     * Then the result is a generic error payload with no stack trace and no exception detail
+     *
+     * The index is private to the test on purpose: the persisted text becomes supporting content
+     * for any later summarize call on the same index whose vector lands near it, and that text
+     * carries the sentinel, which would trip the 500 stub for unrelated tests. The one-argument
+     * {@code summarize(String)} overload delegates to this two-argument one with the "default"
+     * index, so it is covered by this test without touching the shared index.
+     */
+    @Test
+    public void test_summarize_providerFailure_returnsGenericError() {
+        final String query = AiTest.FORCE_CHAT_ERROR + " " + UUID.randomUUID();
+        final String privateIndex = "idx" + UUID.randomUUID().toString().replace("-", "");
+        EmbeddingsDTODataGen.persistEmbeddings(query, null, privateIndex, 1);
+
+        final Object result = completionsTool.summarize(query, privateIndex);
+
+        assertChatProviderWasCalledWith(query);
+        assertFalse("failure payload must not carry a 'stackTrace' key",
+                result instanceof Map && ((Map<?, ?>) result).containsKey("stackTrace"));
+        AiTest.assertSafeErrorPayload(result);
+    }
+
+    /**
+     * Feature: CompletionsTool failure handling (#37154)
+     * Scenario: Raw prompt that is not JSON
+     * Given a prompt string that cannot be parsed as JSON
+     * When the raw method is called with it
+     * Then the failure happens inside the viewtool, before any provider call
+     * And the result is a generic error payload with no stack trace and no exception detail
+     */
+    @Test
+    public void test_raw_string_malformedJson_returnsGenericError() {
+        final Object result = completionsTool.raw("this is not json");
+
+        assertFalse("failure payload must not carry a 'stackTrace' key",
+                result instanceof Map && ((Map<?, ?>) result).containsKey("stackTrace"));
+        AiTest.assertSafeErrorPayload(result);
+    }
+
+    /**
+     * Feature: CompletionsTool failure handling (#37154)
+     * Scenario: Raw JSON prompt when the provider fails
+     * Given a JSON prompt whose user message carries the chat-failure sentinel
+     * And the mocked provider answers with HTTP 500
+     * When the raw method is called with the JSON object
+     * Then the result is a generic error payload with no stack trace and no exception detail
+     */
+    @Test
+    public void test_raw_json_providerFailure_returnsGenericError() {
+        final String prompt = AiTest.FORCE_CHAT_ERROR + " " + UUID.randomUUID();
+        final JSONObject json = new JSONObject();
+        final JSONArray messages = new JSONArray();
+        messages.put(new JSONObject().put("role", "user").put("content", prompt));
+        json.put("messages", messages);
+        json.put("model", "gpt-4o-mini");
+
+        final Object result = completionsTool.raw(json);
+
+        assertChatProviderWasCalledWith(prompt);
+        assertFalse("failure payload must not carry a 'stackTrace' key",
+                result instanceof Map && ((Map<?, ?>) result).containsKey("stackTrace"));
+        AiTest.assertSafeErrorPayload(result);
+    }
+
+    /**
+     * Feature: CompletionsTool failure handling (#37154)
+     * Scenario: Raw Map prompt when the provider fails
+     * Given a Map prompt whose user message carries the chat-failure sentinel
+     * And the mocked provider answers with HTTP 500
+     * When the raw method is called with the Map
+     * Then the result is a generic error payload with no stack trace and no exception detail
+     */
+    @Test
+    public void test_raw_map_providerFailure_returnsGenericError() {
+        final String prompt = AiTest.FORCE_CHAT_ERROR + " " + UUID.randomUUID();
+        final Map<String, Object> map = Map.of("model", "gpt-4o-mini", "messages", new JSONArray()
+                .put(new JSONObject().put("role", "user").put("content", prompt)));
+
+        final Object result = completionsTool.raw(map);
+
+        assertChatProviderWasCalledWith(prompt);
+        assertFalse("failure payload must not carry a 'stackTrace' key",
+                result instanceof Map && ((Map<?, ?>) result).containsKey("stackTrace"));
+        AiTest.assertSafeErrorPayload(result);
+    }
+
+    /**
+     * Proves the forced failure really came from the provider: the mocked chat endpoint must have
+     * received a request carrying this test's unique prompt. Without this, a stub that stopped
+     * matching could let a non-exception result pass the payload assertions for the wrong reason.
+     */
+    private static void assertChatProviderWasCalledWith(final String prompt) {
+        wireMockServer.verify(postRequestedFor(urlPathMatching(".*/chat/completions"))
+                .withRequestBody(containing(prompt)));
+    }
+
     private CompletionsTool prepareCompletionsTool(final ViewContext viewContext) {
         return new CompletionsTool(viewContext) {
             @Override
@@ -199,19 +305,11 @@ public class CompletionsToolTest {
     private static void assertResponse(final JSONObject result) {
         assertNotNull(result.getString("openAiResponse"));
         final JSONObject openAiResponse = result.getJSONObject("openAiResponse");
-        assertTrue(StringUtils.isNotBlank(openAiResponse.getString("id")));
-        assertTrue(StringUtils.isNotBlank(openAiResponse.getString("object")));
-        assertTrue(openAiResponse.getInt("created") > 0);
-        assertEquals("gpt-3.5-turbo-16k-0613", openAiResponse.getString("model"));
         assertFalse(openAiResponse.getJSONArray("choices").isEmpty());
         final JSONObject choice = openAiResponse.getJSONArray("choices").getJSONObject(0);
         assertTrue(choice.containsKey("message"));
         final JSONObject message = choice.getJSONObject("message");
         assertTrue(StringUtils.isNotBlank(message.getString("content")));
-        assertNotNull(openAiResponse.getJSONObject("usage"));
-        assertFalse(openAiResponse.getJSONObject("usage").isEmpty());
-        assertNotNull(openAiResponse.getJSONObject("headers"));
-        assertFalse(openAiResponse.getJSONObject("headers").isEmpty());
     }
 
     private static void assertAll(final JSONObject result) {

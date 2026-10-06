@@ -1,13 +1,16 @@
 'use client';
 
-import { useContext, useMemo, useRef } from 'react';
+import { Suspense, useContext, useMemo, useRef } from 'react';
 
 import { DotCMSBasicContentlet } from '@dotcms/types';
-import { CUSTOM_NO_COMPONENT, getDotContentletAttributes } from '@dotcms/uve/internal';
+import {
+    CUSTOM_NO_COMPONENT,
+    getAnalyticsContentletAttributes,
+    getDotContentletAttributes
+} from '@dotcms/uve/internal';
 
 import { DotCMSPageContext } from '../../contexts/DotCMSPageContext';
 import { useCheckVisibleContent } from '../../hooks/useCheckVisibleContent';
-import { useIsDevMode } from '../../hooks/useIsDevMode';
 import { FallbackComponent } from '../FallbackComponent/FallbackComponent';
 
 /**
@@ -56,28 +59,44 @@ interface CustomComponentProps {
  */
 export function Contentlet({ contentlet, container }: DotCMSContentletRendererProps) {
     const ref = useRef<HTMLDivElement | null>(null);
-    const isDevMode = useIsDevMode();
-    const haveContent = useCheckVisibleContent(ref);
+    // Both flags are resolved once per layout tree by DotCMSPageProvider. Reading them from
+    // context keeps this component free of its own UVE lookup and analytics listener, which
+    // previously ran once per contentlet on the page.
+    const { isDevMode, isAnalyticsActive } = useContext(DotCMSPageContext);
+    // The measurement only feeds the editor's empty-contentlet placeholder, so skip the
+    // forced layout entirely outside development mode.
+    const haveContent = useCheckVisibleContent(ref, isDevMode);
 
     const style = useMemo(
         () => (isDevMode ? { minHeight: haveContent ? undefined : '4rem' } : {}),
         [isDevMode, haveContent]
     );
 
-    // UVE attributes - always applied
-    const dotAttributes = useMemo(
-        () => getDotContentletAttributes(contentlet, container),
-        [contentlet, container]
-    );
+    // In edit mode we emit the full set of editor metadata. In live mode we
+    // strip it to avoid leaking internal identifiers, keeping only the minimal
+    // set Analytics needs (and only while Analytics is active).
+    const dotAttributes = useMemo(() => {
+        if (isDevMode) {
+            return {
+                ...getDotContentletAttributes(contentlet, container),
+                'data-dot-object': 'contentlet'
+            };
+        }
+
+        if (isAnalyticsActive) {
+            return getAnalyticsContentletAttributes(contentlet);
+        }
+
+        return {};
+    }, [isDevMode, isAnalyticsActive, contentlet, container]);
 
     return (
-        <div
-            {...dotAttributes}
-            data-dot-object="contentlet"
-            className={CONTENTLET_CLASS}
-            ref={ref}
-            style={style}>
-            <CustomComponent contentlet={contentlet} />
+        <div {...dotAttributes} className={CONTENTLET_CLASS} ref={ref} style={style}>
+            {/* Lets a consumer map a content type to a lazily-loaded component
+                (`React.lazy`, `next/dynamic`) without providing its own boundary. */}
+            <Suspense fallback={null}>
+                <CustomComponent contentlet={contentlet} />
+            </Suspense>
         </div>
     );
 }

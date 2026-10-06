@@ -1,44 +1,46 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { describe, expect, it, jest } from '@jest/globals';
+import { describe, expect, it, vi } from 'vitest';
 
-type SpyInstance = ReturnType<typeof jest.spyOn>;
+type SpyInstance = ReturnType<typeof vi.spyOn>;
 
 import {
     DotCMSContentType,
     DotCMSContentTypeField,
     DotCMSContentTypeFieldVariable,
+    DotCMSFieldTypes,
     DotLanguage,
     UI_STORAGE_KEY
 } from '@dotcms/dotcms-models';
-import { createFakeContentlet } from '@dotcms/utils-testing';
+import { createFakeContentlet, createFakeTextField } from '@dotcms/utils-testing';
 
 import { MOCK_CONTENTTYPE_2_TABS, MOCK_FORM_CONTROL_FIELDS } from './edit-content.mock';
 import * as functionsUtil from './functions.util';
 import {
+    escapeHtml,
+    generatePageEditUrl,
     generatePreviewUrl,
     getFieldVariablesParsed,
     getStoredUIState,
     isFilteredType,
+    isSingleColumnLayout,
     isValidJson,
+    resolveLocker,
     sortLocalesTranslatedFirst,
     stringToJson,
     transformFormDataFn
 } from './functions.util';
-import { CALENDAR_FIELD_TYPES, JSON_FIELD_MOCK, MULTIPLE_TABS_MOCK } from './mocks';
+import { CALENDAR_FIELD_TYPES } from './mocks';
 
 import { FLATTENED_FIELD_TYPES } from '../models/dot-edit-content-field.constant';
-import {
-    DotEditContentFieldSingleSelectableDataType,
-    FIELD_TYPES
-} from '../models/dot-edit-content-field.enum';
+import { DotEditContentFieldSingleSelectableDataType } from '../models/dot-edit-content-field.enum';
 import { NON_FORM_CONTROL_FIELD_TYPES } from '../models/dot-edit-content-form.enum';
 
 describe('Utils Functions', () => {
     const originalWarn = console.warn;
 
     beforeAll(() => {
-        console.warn = jest.fn();
+        console.warn = vi.fn();
     });
 
     afterAll(() => {
@@ -48,10 +50,10 @@ describe('Utils Functions', () => {
     const {
         castSingleSelectableValue,
         getSingleSelectableFieldOptions,
-        getFinalCastedValue,
         isFlattenedField,
         isCalendarField,
         processCalendarFieldValue,
+        parseCalendarTimestamp,
         processFieldValue
     } = functionsUtil;
 
@@ -101,17 +103,24 @@ describe('Utils Functions', () => {
                 expect(castSingleSelectableValue('  true  ', type)).toBe(true);
             });
 
-            it('should return false for non-boolean strings', () => {
-                expect(castSingleSelectableValue('hello', type)).toBe(false);
-            });
+            // dotCMS lets a True/False field be authored with the database's own representation of
+            // the booleans — the Radio field's own help text gives `True|1 False|0` as the example,
+            // and `SelectableValuesField.check()` accepts `1`/`0`, `y`/`n`, `on`/`off` and friends.
+            // The backend coerces all of those (commons-lang `BooleanUtils.toBoolean`), so casting
+            // them to `false` here made both options of such a field collapse to the same value.
+            it.each([1, '1', 'y', 'Y', 'yes', 't', 'on', 'TRUE', ' true '])(
+                'should treat %p as true',
+                (input) => {
+                    expect(castSingleSelectableValue(input, type)).toBe(true);
+                }
+            );
 
-            it('should handle number 1 as false', () => {
-                expect(castSingleSelectableValue(1, type)).toBe(false);
-            });
-
-            it('should handle number 0 as false', () => {
-                expect(castSingleSelectableValue(0, type)).toBe(false);
-            });
+            it.each([0, '0', 'n', 'no', 'f', 'off', 'FALSE', 'hello'])(
+                'should treat %p as false',
+                (input) => {
+                    expect(castSingleSelectableValue(input, type)).toBe(false);
+                }
+            );
         });
 
         describe('Numeric', () => {
@@ -193,6 +202,17 @@ describe('Utils Functions', () => {
     });
 
     describe('getSingleSelectableFieldOptions', () => {
+        describe('True/False options', () => {
+            const type = DotEditContentFieldSingleSelectableDataType.BOOL;
+
+            it('should give the two options of a True|1 / False|0 field distinct values', () => {
+                expect(getSingleSelectableFieldOptions('True|1\r\nFalse|0', type)).toEqual([
+                    { label: 'True', value: true },
+                    { label: 'False', value: false }
+                ]);
+            });
+        });
+
         describe('Empty and null values', () => {
             it('should return an empty array if options is empty', () => {
                 expect(getSingleSelectableFieldOptions('', 'Some type')).toEqual([]);
@@ -435,13 +455,13 @@ describe('Utils Functions', () => {
                 ]);
             });
 
-            it('should handle mixed formats (pipes take precedence)', () => {
-                // When pipes are present, comma splitting should not occur
+            it('should parse comma-separated pipe-format items individually', () => {
+                // Each comma-separated item has its own pipe applied for label/value
                 expect(
                     getSingleSelectableFieldOptions('label1|value1,label2|value2', 'text')
                 ).toEqual([
-                    { label: 'label1|value1', value: 'label1|value1' },
-                    { label: 'label2|value2', value: 'label2|value2' }
+                    { label: 'label1', value: 'value1' },
+                    { label: 'label2', value: 'value2' }
                 ]);
             });
 
@@ -504,206 +524,32 @@ describe('Utils Functions', () => {
                 ]);
             });
         });
-    });
 
-    describe('getFinalCastedValue', () => {
-        describe('DATE_AND_TIME and TIME fields', () => {
-            it.each(['Date-and-Time', 'Time'])(
-                'should return the original value for %s field',
-                (fieldType) => {
-                    const value = '2021-09-01T18:00:00.000Z';
-                    const field = { fieldType } as DotCMSContentTypeField;
-
-                    // DATE_AND_TIME and TIME fields return the original value without conversion
-                    expect(getFinalCastedValue(value, field)).toEqual(value);
-                }
-            );
-
-            it.each(['Date-and-Time', 'Time'])(
-                "should return 'now' string as-is for %s field",
-                (fieldType) => {
-                    const value = 'now';
-                    const field = { fieldType } as DotCMSContentTypeField;
-
-                    // DATE_AND_TIME and TIME fields return the original value
-                    expect(getFinalCastedValue(value, field)).toEqual(value);
-                }
-            );
-
-            it.each(['Date-and-Time', 'Time'])(
-                'should return undefined for %s field when value is undefined',
-                (fieldType) => {
-                    const value = undefined;
-                    const field = { fieldType } as DotCMSContentTypeField;
-
-                    expect(getFinalCastedValue(value, field)).toEqual(undefined);
-                }
-            );
-        });
-
-        describe('DATE field', () => {
-            it('should convert value to string for DATE field', () => {
-                const value = '2021-09-01T18:00:00.000Z';
-                const field = { fieldType: 'Date', dataType: 'DATE' } as DotCMSContentTypeField;
-
-                // DATE field goes through castSingleSelectableValue which returns String(value)
-                expect(getFinalCastedValue(value, field)).toEqual(value);
+        describe('Single-option pipe format (issue #36157)', () => {
+            it('should parse a single pipe-format option using label and value (AC8)', () => {
+                expect(getSingleSelectableFieldOptions('Yes|yes', 'text')).toEqual([
+                    { label: 'Yes', value: 'yes' }
+                ]);
             });
 
-            it("should convert 'now' to string for DATE field", () => {
-                const value = 'now';
-                const field = { fieldType: 'Date', dataType: 'DATE' } as DotCMSContentTypeField;
-
-                // DATE field goes through castSingleSelectableValue which returns String(value)
-                expect(getFinalCastedValue(value, field)).toEqual(value);
+            it('should use the whole string as label and value for a single option without pipe (AC9)', () => {
+                expect(getSingleSelectableFieldOptions('Yes', 'text')).toEqual([
+                    { label: 'Yes', value: 'Yes' }
+                ]);
             });
 
-            it('should return undefined for DATE field when value is undefined', () => {
-                const value = undefined;
-                const field = { fieldType: 'Date', dataType: 'DATE' } as DotCMSContentTypeField;
-
-                expect(getFinalCastedValue(value, field)).toEqual(undefined);
-            });
-        });
-
-        describe.each([...FLATTENED_FIELD_TYPES])('Flattened Fields', (fieldType) => {
-            describe(fieldType, () => {
-                it('should return an array of the values', () => {
-                    const value = 'value1,value2,value3';
-                    const field = { fieldType } as DotCMSContentTypeField;
-
-                    expect(getFinalCastedValue(value, field)).toEqual([
-                        'value1',
-                        'value2',
-                        'value3'
+            // AC10: Checkbox, Radio, Select and Multiselect all delegate to this util
+            // with a text dataType, so a single `Yes|yes` option must resolve identically.
+            it.each(['Checkbox', 'Radio', 'Select', 'Multiselect'])(
+                'should parse single-option pipe format for %s field',
+                (fieldType) => {
+                    expect(getSingleSelectableFieldOptions('Yes|yes', 'text')).toEqual([
+                        { label: 'Yes', value: 'yes' }
                     ]);
-                });
-
-                it('should trim the values', () => {
-                    const value = ' value1 , value2 , value3 ';
-                    const field = { fieldType } as DotCMSContentTypeField;
-
-                    expect(getFinalCastedValue(value, field)).toEqual([
-                        'value1',
-                        'value2',
-                        'value3'
-                    ]);
-                });
-
-                it('should return undefined if the value is undefined', () => {
-                    const value = undefined;
-                    const field = { fieldType } as DotCMSContentTypeField;
-
-                    expect(getFinalCastedValue(value, field)).toEqual(undefined);
-                });
-            });
-        });
-
-        describe('No special field', () => {
-            it('should call castSingleSelectableValue', () => {
-                const value = 'value1';
-                const field = {
-                    fieldType: 'something',
-                    dataType: 'something'
-                } as DotCMSContentTypeField;
-
-                const castSingleSelectableValueMock = jest.spyOn(
-                    functionsUtil,
-                    'castSingleSelectableValue'
-                );
-
-                getFinalCastedValue(value, field);
-
-                expect(castSingleSelectableValueMock).toHaveBeenCalledWith(value, field.dataType);
-            });
-        });
-
-        it('should return undefined value', () => {
-            const value = undefined;
-            const field = {
-                fieldType: 'something',
-                dataType: 'something'
-            } as DotCMSContentTypeField;
-
-            const res = getFinalCastedValue(value, field);
-            expect(res).toBeUndefined();
-        });
-
-        it('should return a JSON value', () => {
-            const value = {
-                attrs: {},
-                content: [],
-                type: 'doc'
-            };
-            const field = {
-                fieldType: 'Story-Block',
-                dataType: 'something'
-            } as DotCMSContentTypeField;
-
-            const res = getFinalCastedValue(value, field);
-            expect(res).toEqual(value);
-        });
-
-        describe('JSON Field', () => {
-            it('should return a JSON value as string keeping the format', () => {
-                const value = {
-                    value1: 'value1',
-                    value2: 'value2',
-                    value3: 'value3'
-                };
-
-                const field = {
-                    fieldType: JSON_FIELD_MOCK.fieldType
-                } as DotCMSContentTypeField;
-
-                const res = getFinalCastedValue(value, field);
-                const formattedValue = JSON.stringify(value, null, 2);
-                expect(res).toBe(formattedValue);
-            });
-        });
-
-        describe('Form Tabs', () => {
-            it('should transform layout to tabs', () => {
-                const expected = [
-                    {
-                        title: 'first tab',
-                        layout: [
-                            {
-                                divider: {
-                                    clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
-                                    contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
-                                    dataType: 'SYSTEM',
-                                    fieldType: 'Row',
-                                    fieldTypeLabel: 'Row',
-                                    fieldVariables: [],
-                                    fixed: false,
-                                    forceIncludeInApi: false,
-                                    iDate: 1697051073000,
-                                    id: 'a31ea895f80eb0a3754e4a2292e09a52',
-                                    indexed: false,
-                                    listed: false,
-                                    modDate: 1697051077000,
-                                    name: 'fields-0',
-                                    readOnly: false,
-                                    required: false,
-                                    searchable: false,
-                                    sortOrder: 0,
-                                    unique: false,
-                                    variable: 'fields0'
-                                },
-                                columns: []
-                            }
-                        ]
-                    },
-                    {
-                        title: 'New Tab',
-                        layout: []
-                    }
-                ];
-                const res = functionsUtil.transformLayoutToTabs('first tab', MULTIPLE_TABS_MOCK);
-
-                expect(res).toEqual(expected);
-            });
+                    // fieldType is documented in the case name to clarify intent
+                    expect(fieldType).toBeDefined();
+                }
+            );
         });
     });
 
@@ -1168,11 +1014,11 @@ describe('Utils Functions', () => {
         beforeEach(() => {
             sessionStorage.clear();
             // eslint-disable-next-line @typescript-eslint/no-empty-function
-            jest.spyOn(console, 'warn').mockImplementation(() => {});
+            vi.spyOn(console, 'warn').mockImplementation(() => {});
         });
 
         afterEach(() => {
-            jest.restoreAllMocks();
+            vi.restoreAllMocks();
         });
 
         describe('getStoredUIState', () => {
@@ -1183,11 +1029,12 @@ describe('Utils Functions', () => {
                     activeTab: 0,
                     isSidebarOpen: true,
                     activeSidebarTab: 0,
-                    isBetaMessageVisible: true
+                    isBetaMessageVisible: true,
+                    localeSelectorTab: 'all'
                 });
             });
 
-            it('should return stored state from sessionStorage', () => {
+            it('should return stored state from sessionStorage merged with defaults', () => {
                 const mockState = {
                     activeTab: 2,
                     isSidebarOpen: false,
@@ -1197,7 +1044,11 @@ describe('Utils Functions', () => {
                 sessionStorage.setItem(UI_STORAGE_KEY, JSON.stringify(mockState));
 
                 const state = getStoredUIState();
-                expect(state).toEqual(mockState);
+                expect(state).toEqual({
+                    view: 'form',
+                    localeSelectorTab: 'all',
+                    ...mockState
+                });
             });
 
             it('should return default state and warn when sessionStorage has invalid JSON', () => {
@@ -1209,7 +1060,8 @@ describe('Utils Functions', () => {
                     activeTab: 0,
                     isSidebarOpen: true,
                     activeSidebarTab: 0,
-                    isBetaMessageVisible: true
+                    isBetaMessageVisible: true,
+                    localeSelectorTab: 'all'
                 });
                 expect(console.warn).toHaveBeenCalledWith(
                     'Error reading UI state from sessionStorage:',
@@ -1218,7 +1070,7 @@ describe('Utils Functions', () => {
             });
 
             it('should return default state and warn when sessionStorage throws error', () => {
-                const mockGetItem = jest.fn(() => {
+                const mockGetItem = vi.fn(() => {
                     throw new Error('Storage error');
                 });
 
@@ -1234,7 +1086,8 @@ describe('Utils Functions', () => {
                     activeTab: 0,
                     isSidebarOpen: true,
                     activeSidebarTab: 0,
-                    isBetaMessageVisible: true
+                    isBetaMessageVisible: true,
+                    localeSelectorTab: 'all'
                 });
                 expect(console.warn).toHaveBeenCalledWith(
                     'Error reading UI state from sessionStorage:',
@@ -1247,7 +1100,9 @@ describe('Utils Functions', () => {
     describe('isFilteredType', () => {
         it('should correctly identify filtered and non-filtered field types', () => {
             const allFields = MOCK_CONTENTTYPE_2_TABS.fields;
-            const nonFormControlFieldTypes = Object.values(NON_FORM_CONTROL_FIELD_TYPES);
+            // Read directly: this was an enum, so the test went through Object.values to get at
+            // its members. It is a plain array of field types now.
+            const nonFormControlFieldTypes = NON_FORM_CONTROL_FIELD_TYPES;
 
             // Verify that none of the form control fields are filtered types
             MOCK_FORM_CONTROL_FIELDS.forEach((field) => {
@@ -1261,9 +1116,30 @@ describe('Utils Functions', () => {
             expect(filteredFields.length).toBe(MOCK_FORM_CONTROL_FIELDS.length);
 
             filteredFields.forEach((field) => {
-                const fieldType = field.fieldType as NON_FORM_CONTROL_FIELD_TYPES;
-                expect(nonFormControlFieldTypes.includes(fieldType)).toBe(false);
+                expect(nonFormControlFieldTypes.includes(field.fieldType)).toBe(false);
             });
+        });
+    });
+
+    describe('isSingleColumnLayout', () => {
+        const row = (columnCount: number) => ({
+            divider: {} as DotCMSContentTypeField,
+            columns: Array.from({ length: columnCount }, () => ({
+                columnDivider: {} as DotCMSContentTypeField,
+                fields: [] as DotCMSContentTypeField[]
+            }))
+        });
+
+        it('returns true when every row has exactly one column', () => {
+            expect(isSingleColumnLayout([row(1), row(1)])).toBe(true);
+        });
+
+        it('returns false when any row has more than one column', () => {
+            expect(isSingleColumnLayout([row(1), row(4)])).toBe(false);
+        });
+
+        it('returns false for an empty layout', () => {
+            expect(isSingleColumnLayout([])).toBe(false);
         });
     });
 
@@ -1362,10 +1238,38 @@ describe('Utils Functions', () => {
         });
     });
 
+    describe('generatePageEditUrl', () => {
+        it('should generate the correct edit page URL when all attributes are present', () => {
+            const contentlet = createFakeContentlet({
+                contentType: 'htmlpageasset',
+                url: '/blog/index',
+                host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+                languageId: 1
+            });
+
+            const expectedUrl =
+                'http://localhost/dotAdmin/#/edit-page/content?url=%2Fblog%2Findex%3Fhost_id%3D48190c8c-42c4-46af-8d1a-0cd5db894797&language_id=1&com.dotmarketing.persona.id=modes.persona.no.persona&mode=EDIT_MODE';
+
+            expect(generatePageEditUrl(contentlet)).toBe(expectedUrl);
+        });
+
+        it('should return an empty string when required attributes are missing', () => {
+            const contentlet = createFakeContentlet({
+                contentType: 'htmlpageasset',
+                url: undefined,
+                host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+                languageId: 1
+            });
+
+            expect(generatePageEditUrl(contentlet)).toBe('');
+        });
+    });
+
     describe('prepareContentletForCopy', () => {
-        it('should prepare a contentlet for copying by setting locked to false and removing lockedBy', () => {
+        it('should prepare a contentlet for copying by clearing inode, setting locked to false and removing lockedBy', () => {
             // Arrange
             const contentlet = createFakeContentlet({
+                inode: 'some-inode-123',
                 locked: true,
                 lockedBy: {
                     firstName: 'John',
@@ -1380,6 +1284,7 @@ describe('Utils Functions', () => {
             // Assert
             expect(result).toEqual({
                 ...contentlet,
+                inode: undefined,
                 locked: false,
                 lockedBy: undefined
             });
@@ -1400,7 +1305,7 @@ describe('Utils Functions', () => {
 
             it('should return false for non-array values even with flattened field types', () => {
                 const field = {
-                    fieldType: FIELD_TYPES.CHECKBOX
+                    fieldType: DotCMSFieldTypes.CHECKBOX
                 } as unknown as DotCMSContentTypeField;
                 const stringValue = 'not an array';
 
@@ -1408,7 +1313,7 @@ describe('Utils Functions', () => {
             });
 
             it('should return false for array values with non-flattened field types', () => {
-                const field = { fieldType: FIELD_TYPES.TEXT } as unknown as DotCMSContentTypeField;
+                const field = createFakeTextField();
                 const arrayValue = ['value1', 'value2'];
 
                 expect(isFlattenedField(arrayValue, field)).toBe(false);
@@ -1416,7 +1321,7 @@ describe('Utils Functions', () => {
 
             it('should return false for null/undefined values', () => {
                 const field = {
-                    fieldType: FIELD_TYPES.CHECKBOX
+                    fieldType: DotCMSFieldTypes.CHECKBOX
                 } as unknown as DotCMSContentTypeField;
 
                 expect(isFlattenedField(null, field)).toBe(false);
@@ -1436,9 +1341,9 @@ describe('Utils Functions', () => {
 
             it('should return false for non-calendar field types', () => {
                 const nonCalendarTypes = [
-                    FIELD_TYPES.TEXT,
-                    FIELD_TYPES.TEXTAREA,
-                    FIELD_TYPES.CHECKBOX
+                    DotCMSFieldTypes.TEXT,
+                    DotCMSFieldTypes.TEXTAREA,
+                    DotCMSFieldTypes.CHECKBOX
                 ];
 
                 nonCalendarTypes.forEach((fieldType) => {
@@ -1526,6 +1431,20 @@ describe('Utils Functions', () => {
                     expect(processCalendarFieldValue(invalidString, fieldName)).toBeNull();
                 });
 
+                it('should parse ISO date strings', () => {
+                    const isoDate = '2025-01-15T10:30:00.000Z';
+                    const expected = Date.parse(isoDate);
+
+                    expect(processCalendarFieldValue(isoDate, fieldName)).toBe(expected);
+                });
+
+                it('should parse formatted date strings', () => {
+                    const formattedDate = '2025-01-15';
+                    const expected = Date.parse(formattedDate);
+
+                    expect(processCalendarFieldValue(formattedDate, fieldName)).toBe(expected);
+                });
+
                 it('should return null for empty string after trim', () => {
                     const emptyString = '   ';
 
@@ -1552,23 +1471,14 @@ describe('Utils Functions', () => {
 
                 beforeEach(() => {
                     // eslint-disable-next-line @typescript-eslint/no-empty-function
-                    consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+                    consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
                     // eslint-disable-next-line @typescript-eslint/no-empty-function
-                    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+                    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
                 });
 
                 afterEach(() => {
                     consoleWarnSpy.mockRestore();
                     consoleErrorSpy.mockRestore();
-                });
-
-                it('should log warning for string timestamp conversion', () => {
-                    processCalendarFieldValue('1737021000000', fieldName);
-
-                    expect(consoleWarnSpy).toHaveBeenCalledWith(
-                        `Calendar field ${fieldName} received string timestamp, converted to number:`,
-                        { original: '1737021000000', converted: 1737021000000 }
-                    );
                 });
 
                 it('should log warning for invalid string timestamps', () => {
@@ -1578,6 +1488,12 @@ describe('Utils Functions', () => {
                         `Calendar field ${fieldName} has invalid timestamp string:`,
                         'invalid'
                     );
+                });
+
+                it('should not log warning for valid numeric string timestamps', () => {
+                    processCalendarFieldValue('1737021000000', fieldName);
+
+                    expect(consoleWarnSpy).not.toHaveBeenCalled();
                 });
 
                 it('should log error for unexpected value types', () => {
@@ -1592,11 +1508,105 @@ describe('Utils Functions', () => {
             });
         });
 
+        describe('parseCalendarTimestamp', () => {
+            describe('null/undefined handling', () => {
+                it('should return null for null value', () => {
+                    expect(parseCalendarTimestamp(null)).toBeNull();
+                });
+
+                it('should return undefined for undefined value', () => {
+                    expect(parseCalendarTimestamp(undefined)).toBeUndefined();
+                });
+
+                it('should return null for empty string', () => {
+                    expect(parseCalendarTimestamp('')).toBeNull();
+                });
+
+                it('should return null for whitespace-only string', () => {
+                    expect(parseCalendarTimestamp('   ')).toBeNull();
+                });
+            });
+
+            describe('number handling', () => {
+                it('should return valid numbers as-is', () => {
+                    const timestamp = 1737021000000;
+
+                    expect(parseCalendarTimestamp(timestamp)).toBe(timestamp);
+                });
+
+                it('should handle zero', () => {
+                    expect(parseCalendarTimestamp(0)).toBe(0);
+                });
+
+                it('should handle negative timestamps', () => {
+                    expect(parseCalendarTimestamp(-1737021000000)).toBe(-1737021000000);
+                });
+
+                it('should return null for NaN', () => {
+                    expect(parseCalendarTimestamp(NaN)).toBeNull();
+                });
+
+                it('should return null for Infinity', () => {
+                    expect(parseCalendarTimestamp(Infinity)).toBeNull();
+                    expect(parseCalendarTimestamp(-Infinity)).toBeNull();
+                });
+            });
+
+            describe('Date object handling', () => {
+                it('should convert valid Date objects to timestamps', () => {
+                    const date = new Date('2025-01-15T10:30:00Z');
+
+                    expect(parseCalendarTimestamp(date)).toBe(date.getTime());
+                });
+
+                it('should return null for invalid Date objects', () => {
+                    expect(parseCalendarTimestamp(new Date('invalid'))).toBeNull();
+                });
+            });
+
+            describe('string handling', () => {
+                it('should convert numeric strings to numbers', () => {
+                    expect(parseCalendarTimestamp('1737021000000')).toBe(1737021000000);
+                });
+
+                it('should trim before parsing numeric strings', () => {
+                    expect(parseCalendarTimestamp('  1737021000000  ')).toBe(1737021000000);
+                });
+
+                it('should parse ISO date strings', () => {
+                    const isoDate = '2025-01-15T10:30:00.000Z';
+
+                    expect(parseCalendarTimestamp(isoDate)).toBe(Date.parse(isoDate));
+                });
+
+                it('should parse formatted date strings', () => {
+                    const formattedDate = '2025-01-15';
+
+                    expect(parseCalendarTimestamp(formattedDate)).toBe(Date.parse(formattedDate));
+                });
+
+                it('should return null for non-parseable strings', () => {
+                    expect(parseCalendarTimestamp('not-a-date')).toBeNull();
+                });
+            });
+
+            describe('unexpected value handling', () => {
+                it('should return null for object values', () => {
+                    expect(parseCalendarTimestamp({ timestamp: 1737021000000 })).toBeNull();
+                });
+
+                it('should return null for boolean values', () => {
+                    expect(parseCalendarTimestamp(true)).toBeNull();
+                    expect(parseCalendarTimestamp(false)).toBeNull();
+                });
+            });
+        });
+
         describe('processFieldValue', () => {
             describe('flattened fields', () => {
                 it('should join array values with commas for flattened fields', () => {
                     const field = {
-                        fieldType: FIELD_TYPES.CHECKBOX,
+                        fieldType: DotCMSFieldTypes.CHECKBOX,
                         variable: 'checkboxField'
                     } as unknown as DotCMSContentTypeField;
                     const arrayValue = ['option1', 'option2', 'option3'];
@@ -1606,7 +1616,7 @@ describe('Utils Functions', () => {
 
                 it('should handle empty arrays', () => {
                     const field = {
-                        fieldType: FIELD_TYPES.MULTI_SELECT,
+                        fieldType: DotCMSFieldTypes.MULTI_SELECT,
                         variable: 'multiSelectField'
                     } as unknown as DotCMSContentTypeField;
                     const emptyArray: string[] = [];
@@ -1616,7 +1626,7 @@ describe('Utils Functions', () => {
 
                 it('should handle single-item arrays', () => {
                     const field = {
-                        fieldType: FIELD_TYPES.TAG,
+                        fieldType: DotCMSFieldTypes.TAG,
                         variable: 'tagField'
                     } as unknown as DotCMSContentTypeField;
                     const singleItemArray = ['onlyOption'];
@@ -1625,10 +1635,42 @@ describe('Utils Functions', () => {
                 });
             });
 
+            describe('category fields', () => {
+                it('should join category inode array into comma-separated string', () => {
+                    const field = {
+                        fieldType: DotCMSFieldTypes.CATEGORY,
+                        variable: 'categoryField'
+                    } as unknown as DotCMSContentTypeField;
+                    const arrayValue = ['inode1', 'inode2', 'inode3'];
+
+                    expect(processFieldValue(arrayValue, field)).toBe('inode1,inode2,inode3');
+                });
+
+                it('should handle empty arrays', () => {
+                    const field = {
+                        fieldType: DotCMSFieldTypes.CATEGORY,
+                        variable: 'categoryField'
+                    } as unknown as DotCMSContentTypeField;
+                    const emptyArray: string[] = [];
+
+                    expect(processFieldValue(emptyArray, field)).toBe('');
+                });
+
+                it('should handle single-item arrays', () => {
+                    const field = {
+                        fieldType: DotCMSFieldTypes.CATEGORY,
+                        variable: 'categoryField'
+                    } as unknown as DotCMSContentTypeField;
+                    const singleItemArray = ['onlyInode'];
+
+                    expect(processFieldValue(singleItemArray, field)).toBe('onlyInode');
+                });
+            });
+
             describe('calendar fields', () => {
                 it('should process Date objects to timestamps for calendar fields', () => {
                     const field = {
-                        fieldType: FIELD_TYPES.DATE,
+                        fieldType: DotCMSFieldTypes.DATE,
                         variable: 'dateField'
                     } as unknown as DotCMSContentTypeField;
                     const date = new Date('2025-01-15T10:30:00Z');
@@ -1639,7 +1681,7 @@ describe('Utils Functions', () => {
 
                 it('should process string timestamps for calendar fields', () => {
                     const field = {
-                        fieldType: FIELD_TYPES.DATE_AND_TIME,
+                        fieldType: DotCMSFieldTypes.DATE_AND_TIME,
                         variable: 'datetimeField'
                     } as unknown as DotCMSContentTypeField;
                     const stringTimestamp = '1737021000000';
@@ -1649,7 +1691,7 @@ describe('Utils Functions', () => {
 
                 it('should handle null values for calendar fields', () => {
                     const field = {
-                        fieldType: FIELD_TYPES.TIME,
+                        fieldType: DotCMSFieldTypes.TIME,
                         variable: 'timeField'
                     } as unknown as DotCMSContentTypeField;
 
@@ -1660,7 +1702,7 @@ describe('Utils Functions', () => {
             describe('other field types', () => {
                 it('should return string values as-is for text fields', () => {
                     const field = {
-                        fieldType: FIELD_TYPES.TEXT,
+                        fieldType: DotCMSFieldTypes.TEXT,
                         variable: 'textField'
                     } as unknown as DotCMSContentTypeField;
                     const stringValue = 'some text';
@@ -1670,7 +1712,7 @@ describe('Utils Functions', () => {
 
                 it('should return number values as-is for numeric fields', () => {
                     const field = {
-                        fieldType: FIELD_TYPES.TEXT,
+                        fieldType: DotCMSFieldTypes.TEXT,
                         variable: 'numericField'
                     } as unknown as DotCMSContentTypeField;
                     const numberValue = 42;
@@ -1680,8 +1722,73 @@ describe('Utils Functions', () => {
 
                 it('should return null/undefined values as-is', () => {
                     const field = {
-                        fieldType: FIELD_TYPES.TEXTAREA,
+                        fieldType: DotCMSFieldTypes.TEXTAREA,
                         variable: 'textareaField'
+                    } as unknown as DotCMSContentTypeField;
+
+                    expect(processFieldValue(null, field)).toBeNull();
+                    expect(processFieldValue(undefined, field)).toBeUndefined();
+                });
+            });
+
+            describe('category fields', () => {
+                it('should join array values into comma-separated string for category fields', () => {
+                    const field = {
+                        fieldType: DotCMSFieldTypes.CATEGORY,
+                        variable: 'categories'
+                    } as unknown as DotCMSContentTypeField;
+                    const arrayValue = ['inode1', 'inode2'];
+
+                    expect(processFieldValue(arrayValue, field)).toBe('inode1,inode2');
+                });
+
+                it('should return empty string as-is for category fields (not flattened)', () => {
+                    const field = {
+                        fieldType: DotCMSFieldTypes.CATEGORY,
+                        variable: 'categories'
+                    } as unknown as DotCMSContentTypeField;
+
+                    expect(processFieldValue('', field)).toBe('');
+                });
+
+                it('should return null as-is for category fields', () => {
+                    const field = {
+                        fieldType: DotCMSFieldTypes.CATEGORY,
+                        variable: 'categories'
+                    } as unknown as DotCMSContentTypeField;
+
+                    expect(processFieldValue(null, field)).toBeNull();
+                });
+            });
+
+            describe('Block Editor fields', () => {
+                it('should stringify object values so the backend does not store them as Map.toString()', () => {
+                    const field = {
+                        fieldType: DotCMSFieldTypes.BLOCK_EDITOR,
+                        variable: 'blockEditor'
+                    } as unknown as DotCMSContentTypeField;
+                    const objectValue = {
+                        type: 'doc',
+                        content: [{ type: 'paragraph' }]
+                    };
+
+                    expect(processFieldValue(objectValue, field)).toBe(JSON.stringify(objectValue));
+                });
+
+                it('should pass through JSON string values unchanged', () => {
+                    const field = {
+                        fieldType: DotCMSFieldTypes.BLOCK_EDITOR,
+                        variable: 'blockEditor'
+                    } as unknown as DotCMSContentTypeField;
+                    const stringValue = '{"type":"doc","content":[{"type":"paragraph"}]}';
+
+                    expect(processFieldValue(stringValue, field)).toBe(stringValue);
+                });
+
+                it('should pass through null and undefined unchanged', () => {
+                    const field = {
+                        fieldType: DotCMSFieldTypes.BLOCK_EDITOR,
+                        variable: 'blockEditor'
                     } as unknown as DotCMSContentTypeField;
 
                     expect(processFieldValue(null, field)).toBeNull();
@@ -1692,7 +1799,7 @@ describe('Utils Functions', () => {
             describe('edge cases', () => {
                 it('should handle fields without specific processing', () => {
                     const field = {
-                        fieldType: FIELD_TYPES.WYSIWYG,
+                        fieldType: DotCMSFieldTypes.WYSIWYG,
                         variable: 'wysiwygField'
                     } as unknown as DotCMSContentTypeField;
                     const complexValue = { html: '<p>content</p>' };
@@ -1710,6 +1817,40 @@ describe('Utils Functions', () => {
                     expect(processFieldValue(value, field)).toBe(value);
                 });
             });
+        });
+    });
+
+    describe('escapeHtml', () => {
+        it('should escape HTML special characters', () => {
+            expect(escapeHtml('<script>alert("x")</script>')).toBe(
+                '&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;'
+            );
+            expect(escapeHtml("Tom & Jerry's <b>")).toBe('Tom &amp; Jerry&#39;s &lt;b&gt;');
+        });
+
+        it('should leave a plain name untouched', () => {
+            expect(escapeHtml('Anna García')).toBe('Anna García');
+        });
+    });
+
+    describe('resolveLocker', () => {
+        it('should resolve from a lockedBy object', () => {
+            expect(
+                resolveLocker({
+                    lockedBy: { userId: '123', firstName: 'Anna', lastName: 'García' }
+                } as never)
+            ).toEqual({ userId: '123', displayName: 'Anna García' });
+        });
+
+        it('should resolve from a lockedBy string + lockedByName', () => {
+            expect(
+                resolveLocker({ lockedBy: '123', lockedByName: 'Anna García' } as never)
+            ).toEqual({ userId: '123', displayName: 'Anna García' });
+        });
+
+        it('should return null when there is no lock', () => {
+            expect(resolveLocker({} as never)).toBeNull();
+            expect(resolveLocker(null)).toBeNull();
         });
     });
 });

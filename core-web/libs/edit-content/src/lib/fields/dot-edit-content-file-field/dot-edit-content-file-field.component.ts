@@ -1,9 +1,15 @@
-import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { DotCMSContentTypeField, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotWorkflowActionsFireService } from '@dotcms/data-access';
+import {
+    ContentTypeBinaryField,
+    ContentTypeFileField,
+    ContentTypeImageField,
+    DotCMSContentlet
+} from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotFileFieldComponent } from './components/dot-file-field/dot-file-field.component';
@@ -28,7 +34,12 @@ import { BaseWrapperField } from '../shared/base-wrapper-field';
         DotMessagePipe,
         ReactiveFormsModule
     ],
-    providers: [DotFileFieldUploadService, FileFieldStore, DialogService],
+    providers: [
+        DotFileFieldUploadService,
+        FileFieldStore,
+        DialogService,
+        DotWorkflowActionsFireService
+    ],
     templateUrl: './dot-edit-content-file-field.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     viewProviders: [
@@ -38,17 +49,49 @@ import { BaseWrapperField } from '../shared/base-wrapper-field';
         }
     ]
 })
-export class DotEditContentFileFieldComponent extends BaseWrapperField {
+export class DotEditContentFileFieldComponent extends BaseWrapperField<
+    ContentTypeBinaryField | ContentTypeFileField | ContentTypeImageField
+> {
     /**
      * DotCMS Content Type Field
      *
      * @memberof DotEditContentFileFieldComponent
      */
-    $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
+    $field = input.required<ContentTypeBinaryField | ContentTypeFileField | ContentTypeImageField>({
+        alias: 'field'
+    });
     /**
      * DotCMS Contentlet
      *
      * @memberof DotEditContentFileFieldComponent
      */
     $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
+    /**
+     * Emits when the field value changes due to a user action. Bubbled from the
+     * inner file field so the parent can sync FileAsset title/fileName.
+     */
+    valueUpdated = output<{ value: string; fileName: string }>();
+
+    /**
+     * Intercepts `valueUpdated` from the inner `dot-file-field` and patches the
+     * FormControl directly.
+     *
+     * When this wrapper is rendered inside an `@defer` block the `formControlName`
+     * on `dot-file-field` cannot reach the parent `ControlContainer` through the
+     * deferred view's injector chain, so `registerOnChange` / `writeValue` are
+     * never called and the CVA contract is silently broken.  The inner component
+     * still knows its value (store) and emits `valueUpdated` for every user-driven
+     * change (upload, remove, image edit, import).  Patching `formControl` here
+     * ensures the reactive-form value stays in sync regardless of the CVA state.
+     */
+    onInnerValueUpdated(event: { value: string; fileName: string }): void {
+        const control = this.formControl;
+
+        if (control) {
+            control.setValue(event.value, { emitEvent: true });
+            control.markAsTouched();
+        }
+
+        this.valueUpdated.emit(event);
+    }
 }

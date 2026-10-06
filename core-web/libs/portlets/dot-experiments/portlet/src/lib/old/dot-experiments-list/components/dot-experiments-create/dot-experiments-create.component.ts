@@ -1,0 +1,111 @@
+import { Observable } from 'rxjs';
+
+import { AsyncPipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+
+import { ButtonModule } from 'primeng/button';
+import { DrawerModule } from 'primeng/drawer';
+import { InputTextModule } from 'primeng/inputtext';
+import { TextareaModule } from 'primeng/textarea';
+
+import { DotExperiment, MAX_INPUT_TITLE_LENGTH } from '@dotcms/dotcms-models';
+import {
+    DotAutofocusDirective,
+    DotFieldRequiredDirective,
+    DotFieldValidationMessageComponent,
+    DotMessagePipe,
+    DotSidebarDirective,
+    DotSidebarHeaderComponent,
+    DotTrimInputDirective,
+    DotValidators
+} from '@dotcms/ui';
+
+import {
+    DotExperimentsListStore,
+    VmCreateExperiments
+} from '../../store/dot-experiments-list-store';
+
+interface CreateForm {
+    pageId: FormControl<string>;
+    name: FormControl<string>;
+    description: FormControl<string>;
+}
+
+@Component({
+    selector: 'dot-experiments-create',
+    imports: [
+        ReactiveFormsModule,
+        // dotCMS
+        DotSidebarDirective,
+        DotSidebarHeaderComponent,
+        DotMessagePipe,
+        DotFieldValidationMessageComponent,
+        DotAutofocusDirective,
+        // PrimeNg
+        TextareaModule,
+        InputTextModule,
+        DrawerModule,
+        ButtonModule,
+        DotFieldRequiredDirective,
+        DotTrimInputDirective,
+        AsyncPipe
+    ],
+    templateUrl: './dot-experiments-create.component.html',
+    changeDetection: ChangeDetectionStrategy.OnPush
+})
+export class DotExperimentsCreateComponent implements OnInit {
+    private readonly dotExperimentsListStore = inject(DotExperimentsListStore);
+
+    vm$: Observable<VmCreateExperiments> = this.dotExperimentsListStore.createVm$;
+
+    form: FormGroup<CreateForm>;
+    protected readonly maxNameLength = MAX_INPUT_TITLE_LENGTH;
+
+    ngOnInit(): void {
+        this.initForm();
+    }
+
+    /**
+     * Save the experiment
+     *
+     * @param pageId
+     * @memberOf DotExperimentsCreateComponent
+     * @return void
+     */
+    handleSubmit(pageId: string) {
+        this.form.get('pageId').setValue(pageId);
+        this.dotExperimentsListStore.addExperiments(
+            this.form.value as Pick<DotExperiment, 'pageId' | 'name' | 'description'>
+        );
+    }
+
+    /**
+     * Close sidebar
+     *
+     * @memberOf DotExperimentsCreateComponent
+     * @return void
+     */
+    closeSidebar() {
+        this.dotExperimentsListStore.closeSidebar();
+    }
+
+    private initForm() {
+        this.form = new FormGroup<CreateForm>({
+            pageId: new FormControl<string>('', {
+                nonNullable: true
+            }),
+            name: new FormControl<string>('', {
+                nonNullable: true,
+                validators: [
+                    Validators.required,
+                    Validators.maxLength(this.maxNameLength),
+                    DotValidators.noWhitespace
+                ]
+            }),
+            description: new FormControl<string>('', {
+                validators: [Validators.maxLength(255), DotValidators.noWhitespace]
+            })
+        });
+    }
+}

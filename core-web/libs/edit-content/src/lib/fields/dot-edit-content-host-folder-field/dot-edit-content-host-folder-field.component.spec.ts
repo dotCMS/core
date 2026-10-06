@@ -1,12 +1,19 @@
-import { createFakeEvent } from '@ngneat/spectator';
-import { SpectatorHost, createHostFactory, mockProvider, SpyObject } from '@ngneat/spectator/jest';
+import {
+    byTestId,
+    createHostFactory,
+    mockProvider,
+    SpectatorHost,
+    SpyObject
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { Component } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
-import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotHttpErrorManagerService } from '@dotcms/data-access';
+import { ComponentStatus, DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotBrowsingService } from '@dotcms/ui';
 import { createFakeContentlet, mockMatchMedia } from '@dotcms/utils-testing';
 
@@ -14,7 +21,7 @@ import { DotHostFolderFieldComponent } from './components/host-folder-field/host
 import { DotEditContentHostFolderFieldComponent } from './dot-edit-content-host-folder-field.component';
 import { HostFolderFiledStore } from './store/host-folder-field.store';
 
-import { TREE_SELECT_SITES_MOCK, TREE_SELECT_MOCK, HOST_FOLDER_TEXT_MOCK } from '../../utils/mocks';
+import { HOST_FOLDER_TEXT_MOCK, TREE_SELECT_SITES_MOCK } from '../../utils/mocks';
 
 @Component({
     standalone: false,
@@ -41,10 +48,29 @@ describe('DotEditContentHostFolderFieldComponent', () => {
         imports: [ReactiveFormsModule],
         providers: [
             HostFolderFiledStore,
+            mockProvider(DotHttpErrorManagerService, {
+                handle: vi.fn()
+            }),
             mockProvider(DotBrowsingService, {
-                getSitesTreePath: jest.fn(() => of(TREE_SELECT_SITES_MOCK)),
-                getCurrentSiteAsTreeNodeItem: jest.fn(() => of(TREE_SELECT_SITES_MOCK[0])),
-                buildTreeByPaths: jest.fn(() => of({ node: TREE_SELECT_SITES_MOCK[0], tree: null }))
+                getSitesPage: vi.fn(() =>
+                    of({
+                        sites: TREE_SELECT_SITES_MOCK,
+                        pagination: {
+                            currentPage: 1,
+                            perPage: 40,
+                            totalEntries: TREE_SELECT_SITES_MOCK.length
+                        }
+                    })
+                ),
+                resolveSiteByHostname: vi.fn(() => of(null)),
+                getCurrentSiteAsTreeNodeItem: vi.fn(() => of(TREE_SELECT_SITES_MOCK[0])),
+                buildTreeByPaths: vi.fn(() => of({ node: TREE_SELECT_SITES_MOCK[0], tree: null })),
+                searchFolders: vi.fn(() =>
+                    of({
+                        folders: [],
+                        pagination: { currentPage: 1, perPage: 40, totalEntries: 0 }
+                    })
+                )
             })
         ],
         detectChanges: false
@@ -82,128 +108,244 @@ describe('DotEditContentHostFolderFieldComponent', () => {
         expect(spectator.component).toBeTruthy();
     });
 
-    it('should show options', () => {
+    it('should load sites into the store on init', () => {
         spectator.detectChanges();
 
-        expect(store.tree()).toBe(TREE_SELECT_SITES_MOCK);
-        expect(field.$treeSelect().options).toBe(TREE_SELECT_SITES_MOCK);
+        expect(service.getSitesPage).toHaveBeenCalled();
+        expect(store.sites()).toBe(TREE_SELECT_SITES_MOCK);
     });
 
-    it('should have virtual scroll configured with consistent height', async () => {
+    it('should render the field trigger', () => {
         spectator.detectChanges();
 
-        const triggerElement = spectator.query('.p-treeselect-dropdown');
-        expect(triggerElement).toBeTruthy();
-        spectator.click(triggerElement);
-
-        await spectator.fixture.whenStable();
-
-        const field = spectator.query(DotHostFolderFieldComponent);
-        const treeSelect = field.$treeSelect();
-        expect(treeSelect.scrollHeight).toBe('100%');
-        expect(treeSelect.virtualScrollOptions.style['height']).toBe('450px');
-        expect(treeSelect.virtualScrollOptions.style['minHeight']).toBe('450px');
+        const trigger = spectator.query(byTestId('host-folder-trigger'));
+        expect(trigger).toBeTruthy();
     });
 
-    describe('The init value with the root path', () => {
-        it('should show a root path', fakeAsync(() => {
-            const nodeSelected = TREE_SELECT_SITES_MOCK[0];
-            hostFormControl.setValue(null);
+    describe('Preselected value parity', () => {
+        it('should select the root site when the persisted value is a site only', () => {
+            const node = TREE_SELECT_SITES_MOCK[0];
+            hostFormControl.setValue(node.label);
             spectator.detectChanges();
 
-            store.chooseNode({
-                originalEvent: createFakeEvent('click'),
-                node: nodeSelected
-            });
-            spectator.detectChanges();
+            expect(store.selectedSite()?.key).toBe(node.key);
+            expect(store.confirmedNode()?.key).toBe(node.key);
+            expect(hostFormControl.value).toBe(`${node.data.hostname}:/`);
+        });
 
-            const field = spectator.query(DotHostFolderFieldComponent);
-            expect(hostFormControl.value).toBe('demo.dotcms.com:/');
-            expect(field.pathControl.value.key).toBe(nodeSelected.key);
-            expect(field.$treeSelect().value.label).toBe(nodeSelected.label);
-        }));
-
-        it('should show a path selected with the two levels', fakeAsync(() => {
-            const nodeSelected = TREE_SELECT_MOCK[0].children[0].children[0];
-            hostFormControl.setValue(null);
-            spectator.detectChanges();
-
+        it('should resolve and highlight a nested folder path via buildTreeByPaths', () => {
+            const site = TREE_SELECT_SITES_MOCK[0];
+            const nestedNode = {
+                key: 'demo.dotcms.comapplicationapivtl',
+                label: 'demo.dotcms.com/application/apivtl/',
+                data: {
+                    id: 'demo.dotcms.comapplicationapivtl',
+                    hostname: site.data.hostname,
+                    path: '/application/apivtl/',
+                    type: 'folder' as const
+                }
+            };
             service.buildTreeByPaths.mockReturnValue(
                 of({
-                    node: nodeSelected,
-                    tree: null
+                    node: nestedNode,
+                    tree: {
+                        path: '/',
+                        folders: [nestedNode],
+                        parent: {
+                            hostName: site.data.hostname,
+                            id: site.data.id,
+                            path: '/',
+                            addChildrenAllowed: true
+                        }
+                    }
                 })
             );
-            store.chooseNode({
-                originalEvent: createFakeEvent('click'),
-                node: nodeSelected
-            });
+
+            hostFormControl.setValue('//demo.dotcms.com/application/apivtl/');
             spectator.detectChanges();
 
-            const field = spectator.query(DotHostFolderFieldComponent);
-            expect(hostFormControl.value).toBe('demo.dotcms.com:/level1/child1/');
-            expect(field.pathControl.value.key).toBe(nodeSelected.key);
-            expect(field.$treeSelect().value.label).toBe(nodeSelected.label);
+            // The leading `//` is stripped before calling buildTreeByPaths so the folder
+            // search API receives a well-formed `hostname/path/` value.
+            expect(service.buildTreeByPaths).toHaveBeenCalledWith(
+                'demo.dotcms.com',
+                'demo.dotcms.com',
+                '/application/apivtl/'
+            );
+            expect(store.selectedSite()?.key).toBe(site.key);
+            expect(store.confirmedNode()?.key).toBe(nestedNode.key);
+        });
+
+        it('should keep the field functional when the persisted path references an unknown site', fakeAsync(() => {
+            service.buildTreeByPaths.mockReturnValue(
+                of({
+                    node: {
+                        key: 'unknown-node',
+                        label: 'unknown-site.dotcms.com/nonexistent-folder/',
+                        data: {
+                            id: 'unknown-node',
+                            hostname: 'unknown-site.dotcms.com',
+                            path: '/nonexistent-folder/',
+                            type: 'folder'
+                        }
+                    },
+                    tree: {
+                        path: '/',
+                        folders: [],
+                        parent: {
+                            hostName: 'unknown-site.dotcms.com',
+                            id: 'unknown-site-id',
+                            path: '/',
+                            addChildrenAllowed: true
+                        }
+                    }
+                })
+            );
+
+            hostFormControl.setValue('unknown-site.dotcms.com/nonexistent-folder/');
+            tick();
+            spectator.detectChanges();
+
+            expect(store.sitesStatus()).toBe(ComponentStatus.ERROR);
+            expect(spectator.query(byTestId('host-folder-trigger'))).toBeTruthy();
+            expect(field.$isDisabled()).toBe(false);
         }));
+    });
+
+    describe('Staged commit through the UI', () => {
+        it('should only propagate the value to the form control after commit', () => {
+            spectator.detectChanges();
+
+            const site = TREE_SELECT_SITES_MOCK[1];
+            field.onSiteSelect(site);
+            expect(hostFormControl.value).not.toBe(`${site.data.hostname}:/`);
+
+            field.onSelect();
+            spectator.detectChanges();
+
+            expect(hostFormControl.value).toBe(`${site.data.hostname}:/`);
+        });
     });
 
     describe('Disabled State Management', () => {
-        it('should sync disabled state from main form control to path control', fakeAsync(() => {
+        it('should sync disabled state from the main form control to the field', () => {
             spectator.detectChanges();
-            tick(50);
+            expect(field.$isDisabled()).toBe(false);
 
-            const field = spectator.query(DotHostFolderFieldComponent);
-            // Initially both controls should be enabled
-            expect(spectator.component.formControl.disabled).toBe(false);
-            expect(field.pathControl.disabled).toBe(false);
-
-            // Disable the main form control
             hostFormControl.disable();
             spectator.detectChanges();
-            tick(50);
 
-            // Path control should be disabled automatically
-            expect(field.pathControl.disabled).toBe(true);
-        }));
+            expect(field.$isDisabled()).toBe(true);
+        });
 
-        it('should sync enabled state from main form control to path control', fakeAsync(() => {
-            spectator.detectChanges();
-            tick(50);
-
-            // Start with disabled controls
+        it('should sync enabled state from the main form control to the field', () => {
             hostFormControl.disable();
             spectator.detectChanges();
-            tick(50);
             expect(field.$isDisabled()).toBe(true);
 
-            // Enable the main form control
             hostFormControl.enable();
             spectator.detectChanges();
-            tick(50);
 
-            // Path control should be enabled automatically
             expect(field.$isDisabled()).toBe(false);
-        }));
+        });
+    });
+});
 
-        it('should reflect disabled state in the TreeSelect through form control binding', fakeAsync(() => {
-            spectator.detectChanges();
-            tick(50);
+/**
+ * AC-209 — the control, not just the label, has to say the field is mandatory.
+ *
+ * The red asterisk is `::after` content and deliberately outside the label's accessible name, so
+ * a screen reader never announces it. Without `aria-required` on the control, a required field is
+ * announced exactly like an optional one.
+ *
+ * Host/Folder has no native form control: the affordance is a `<button>` that opens a tree picker.
+ * A bare button supports neither `aria-required` nor a `for` association, so it is given the
+ * combobox role it already behaves as — it carries `aria-expanded` and opens a listbox-like
+ * overlay — which is a role ARIA defines `aria-required` on.
+ */
+describe('DotEditContentHostFolderFieldComponent — required state for assistive technology', () => {
+    let spectator: SpectatorHost<DotEditContentHostFolderFieldComponent, MockFormComponent>;
 
-            // The TreeSelect is bound to pathControl via [formControl]="pathControl"
-            // When pathControl is disabled, the TreeSelect should be automatically disabled by Angular
-            // This is the same pattern used by the text field component
+    const createHost = createHostFactory({
+        component: DotEditContentHostFolderFieldComponent,
+        host: MockFormComponent,
+        imports: [ReactiveFormsModule],
+        providers: [
+            HostFolderFiledStore,
+            mockProvider(DotHttpErrorManagerService, {
+                handle: vi.fn()
+            }),
+            mockProvider(DotBrowsingService, {
+                getSitesPage: vi.fn(() =>
+                    of({
+                        sites: TREE_SELECT_SITES_MOCK,
+                        pagination: {
+                            currentPage: 1,
+                            perPage: 40,
+                            totalEntries: TREE_SELECT_SITES_MOCK.length
+                        }
+                    })
+                ),
+                resolveSiteByHostname: vi.fn(() => of(null)),
+                getCurrentSiteAsTreeNodeItem: vi.fn(() => of(TREE_SELECT_SITES_MOCK[0])),
+                buildTreeByPaths: vi.fn(() => of({ node: TREE_SELECT_SITES_MOCK[0], tree: null })),
+                searchFolders: vi.fn(() =>
+                    of({
+                        folders: [],
+                        pagination: { currentPage: 1, perPage: 40, totalEntries: 0 }
+                    })
+                )
+            })
+        ],
+        detectChanges: false
+    });
 
-            // Initially pathControl should be enabled
-            const field = spectator.query(DotHostFolderFieldComponent);
-            expect(field.pathControl.disabled).toBe(false);
+    const render = (required: boolean) => {
+        spectator = createHost(
+            `<form [formGroup]="formGroup">
+                <dot-edit-content-host-folder-field [field]="field" [contentlet]="contentlet" />
+            </form>`,
+            {
+                hostProps: {
+                    formGroup: new FormGroup({
+                        [HOST_FOLDER_TEXT_MOCK.variable]: new FormControl()
+                    }),
+                    field: { ...HOST_FOLDER_TEXT_MOCK, required },
+                    contentlet: createFakeContentlet({ [HOST_FOLDER_TEXT_MOCK.variable]: null })
+                }
+            }
+        );
+        spectator.detectChanges();
 
-            // Disable the main form control
-            hostFormControl.disable();
-            tick(50);
-            spectator.detectChanges();
+        // Throwing rather than returning `T | null` keeps every caller's assertion honest: with
+        // an optional chain, `expect(render(false)?.getAttribute('aria-required')).toBeNull()`
+        // would pass just as happily if the trigger never rendered at all.
+        const trigger = spectator.query(byTestId('host-folder-trigger'));
+        if (!trigger) {
+            throw new Error('the default host-folder trigger did not render');
+        }
 
-            // The pathControl should be disabled, which automatically disables the TreeSelect
-            expect(field.pathControl.disabled).toBe(true);
-        }));
+        return trigger;
+    };
+
+    it('should give the trigger the id the label points at', () => {
+        const trigger = render(true);
+
+        expect(trigger.getAttribute('id')).toBe(HOST_FOLDER_TEXT_MOCK.variable);
+        expect(spectator.query('label')?.getAttribute('for')).toBe(HOST_FOLDER_TEXT_MOCK.variable);
+    });
+
+    it('should expose the trigger as a combobox, the role it already behaves as', () => {
+        const trigger = render(true);
+
+        expect(trigger.getAttribute('role')).toBe('combobox');
+        expect(trigger.getAttribute('aria-haspopup')).toBe('tree');
+    });
+
+    it('should mark the trigger required when the field is required', () => {
+        expect(render(true).getAttribute('aria-required')).toBe('true');
+    });
+
+    it('should not mark the trigger when the field is not required', () => {
+        expect(render(false).getAttribute('aria-required')).toBeNull();
     });
 });

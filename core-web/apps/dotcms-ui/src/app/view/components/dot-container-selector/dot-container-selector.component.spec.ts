@@ -1,22 +1,17 @@
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { of as observableOf } from 'rxjs';
+import { vi } from 'vitest';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { DotMessageService, PaginatorService } from '@dotcms/data-access';
-import {
-    ApiRoot,
-    BrowserUtil,
-    CoreWebService,
-    LoggerService,
-    StringUtils,
-    UserModel
-} from '@dotcms/dotcms-js';
+import { ApiRoot, BrowserUtil, LoggerService, StringUtils, UserModel } from '@dotcms/dotcms-js';
 import { CONTAINER_SOURCE, DotContainer } from '@dotcms/dotcms-models';
-import { CoreWebServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContainerSelectorComponent } from './dot-container-selector.component';
 
@@ -40,14 +35,15 @@ describe('ContainerSelectorComponent', () => {
     const createComponent = createComponentFactory({
         component: DotContainerSelectorComponent,
         detectChanges: false,
-        imports: [BrowserAnimationsModule, HttpClientTestingModule],
+        imports: [BrowserAnimationsModule],
         providers: [
+            provideHttpClient(),
+            provideHttpClientTesting(),
             { provide: DotMessageService, useValue: messageServiceMock },
             BrowserUtil,
             IframeOverlayService,
             PaginatorService,
             DotTemplateContainersCacheService,
-            { provide: CoreWebService, useClass: CoreWebServiceMock },
             ApiRoot,
             UserModel,
             LoggerService,
@@ -86,7 +82,7 @@ describe('ContainerSelectorComponent', () => {
     });
 
     it('should set onInit Pagination Service with right values', () => {
-        jest.spyOn(paginatorService, 'setExtraParams');
+        vi.spyOn(paginatorService, 'setExtraParams');
         spectator.component.ngOnInit();
         expect(paginatorService.setExtraParams).toHaveBeenCalled();
     });
@@ -120,7 +116,7 @@ describe('ContainerSelectorComponent', () => {
         const page = 1;
 
         paginatorService.totalRecords = 2;
-        jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(observableOf([]));
+        vi.spyOn(paginatorService, 'getWithOffset').mockReturnValue(observableOf([]));
         spectator.detectChanges();
         searchableDropdownComponent = spectator.debugElement.query(
             By.css('dot-searchable-dropdown')
@@ -144,7 +140,7 @@ describe('ContainerSelectorComponent', () => {
         const filter = 'filter';
 
         paginatorService.totalRecords = 2;
-        jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(observableOf([]));
+        vi.spyOn(paginatorService, 'getWithOffset').mockReturnValue(observableOf([]));
         spectator.detectChanges();
         searchableDropdownComponent = spectator.debugElement.query(
             By.css('dot-searchable-dropdown')
@@ -161,7 +157,7 @@ describe('ContainerSelectorComponent', () => {
 
     it('should set container list replacing the identifier for the path, if needed', fakeAsync(() => {
         spectator.detectChanges();
-        jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(observableOf(containers));
+        vi.spyOn(paginatorService, 'getWithOffset').mockReturnValue(observableOf(containers));
         const searchable = spectator.debugElement.query(
             By.css('[data-testid="searchableDropdown"]')
         ).componentInstance as SearchableDropdownComponent;

@@ -1,5 +1,5 @@
 @if ($hasSelectedCategories()) {
-    <div class="flex flex-wrap items-center border border-gray-400 px-2 py-1 border-b-0">
+    <div class="dot-category-field__chips flex flex-wrap items-center px-2 py-1">
         <dot-category-field-chips
             data-testId="category-chip-list"
             [categories]="store.selected()"
@@ -8,13 +8,23 @@
     </div>
 }
 
-<div class="flex flex-wrap items-center border border-gray-400 h-10 px-0 justify-end">
+<div class="dot-category-field__actions flex flex-wrap items-center justify-end px-0">
+    @if ($hasSelectedCategories()) {
+        <button
+            type="button"
+            (click)="clearAllSelected()"
+            [disabled]="$isDisabled()"
+            [label]="'edit.content.category-field.clear-all' | dm"
+            class="p-button-sm p-button-text p-button-secondary"
+            data-testId="clear-all-btn"
+            pButton></button>
+    }
     <button
         type="button"
         (click)="openCategoriesDialog()"
         [disabled]="store.isDialogOpen() || $isDisabled()"
         [label]="'edit.content.category-field.show-categories-dialog' | dm"
-        class="p-button-sm p-button-text p-button-secondary"
+        class="p-button-sm m-1"
         data-testId="show-dialog-btn"
         pButton></button>
 </div>

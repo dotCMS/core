@@ -1,9 +1,12 @@
-import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
+
+import { take } from 'rxjs/operators';
 
 import {
     DotCurrentUserService,
@@ -13,25 +16,19 @@ import {
     DotSystemConfigService,
     DotIframeService
 } from '@dotcms/data-access';
-import {
-    CoreWebService,
-    CoreWebServiceMock,
-    DotcmsConfigService,
-    DotcmsEventsService,
-    DotEventsSocket,
-    DotEventsSocketURL,
-    LoggerService,
-    LoginService,
-    StringUtils
-} from '@dotcms/dotcms-js';
+import { DotcmsConfigService, LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
 import { GlobalStore } from '@dotcms/store';
-import { DotCurrentUserServiceMock, LoginServiceMock, mockAuth } from '@dotcms/utils-testing';
+import {
+    DOT_SYSTEM_CONFIG_SERVICE_MOCK,
+    DotCurrentUserServiceMock,
+    LoginServiceMock,
+    mockAuth
+} from '@dotcms/utils-testing';
 
 import { DotToolbarUserStore } from './dot-toolbar-user.store';
 
 import { DotMenuService } from '../../../../../../api/services/dot-menu.service';
 import { LOCATION_TOKEN } from '../../../../../../providers';
-import { dotEventSocketURLFactory } from '../../../../../../test/dot-test-bed';
 import { DotNavigationService } from '../../../../dot-navigation/services/dot-navigation.service';
 
 describe('DotToolbarUserStore', () => {
@@ -51,8 +48,6 @@ describe('DotToolbarUserStore', () => {
             DotEventsService,
             DotIframeService,
             DotMenuService,
-            DotcmsEventsService,
-            DotEventsSocket,
             DotcmsConfigService,
             StringUtils,
             DotRouterService,
@@ -65,12 +60,10 @@ describe('DotToolbarUserStore', () => {
                     }
                 }
             },
-            { provide: CoreWebService, useClass: CoreWebServiceMock },
-            { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
             { provide: LoginService, useClass: LoginServiceMock },
             {
                 provide: DotSystemConfigService,
-                useValue: { getSystemConfig: () => ({}) }
+                useValue: DOT_SYSTEM_CONFIG_SERVICE_MOCK
             },
             GlobalStore,
             provideHttpClient(),
@@ -108,15 +101,32 @@ describe('DotToolbarUserStore', () => {
             });
     });
 
+    it('should include report an issue action in the menu', () => {
+        store.init();
+
+        store
+            .select((s) => s)
+            .pipe(take(1))
+            .subscribe((state) => {
+                const reportIssueItem = state.items.find(
+                    (item) => item.id === 'dot-toolbar-user-link-report-issue'
+                );
+
+                expect(reportIssueItem).toBeTruthy();
+                expect(reportIssueItem?.label).toBe('report-an-issue');
+                expect(reportIssueItem?.icon).toBe('pi pi-wrench');
+            });
+    });
+
     it('should trigger loginService logoutAs, navigate to first portlet and reload the page when logoutAs is called', fakeAsync(() => {
-        jest.spyOn(dotNavigationService, 'goToFirstPortlet').mockReturnValue(
+        vi.spyOn(dotNavigationService, 'goToFirstPortlet').mockReturnValue(
             new Promise((resolve) => {
                 resolve(true);
             })
         );
 
-        jest.spyOn(loginService, 'logoutAs');
-        jest.spyOn(locationService, 'reload');
+        vi.spyOn(loginService, 'logoutAs');
+        vi.spyOn(locationService, 'reload');
 
         store.logoutAs();
 

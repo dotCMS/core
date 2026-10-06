@@ -1,5 +1,6 @@
 package com.dotcms.rest;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -12,6 +13,11 @@ public class ResponseEntityContentletView extends ResponseEntityView<Map<String,
 
     public ResponseEntityContentletView(final Map<String, Object> entity) {
         super(entity);
+    }
+
+    public ResponseEntityContentletView(final Map<String, Object> entity,
+                                        final List<MessageEntity> messages) {
+        super(entity, messages);
     }
 
 }

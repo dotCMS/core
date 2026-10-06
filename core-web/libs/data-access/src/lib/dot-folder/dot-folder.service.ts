@@ -1,11 +1,24 @@
 import { Observable } from 'rxjs';
 
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
-import { DotFolder, DotFolderEntity, DotCMSAPIResponse } from '@dotcms/dotcms-models';
+import {
+    DotFolder,
+    DotFolderEntity,
+    DotCMSAPIResponse,
+    FolderSearchParams,
+    FolderSearchView,
+    DotPagination
+} from '@dotcms/dotcms-models';
+import { hasValidValue } from '@dotcms/utils';
+
+export const FOLDER_SEARCH_URL = '/api/v1/folder/search';
+export const DEFAULT_FOLDER_SEARCH_PAGE = 1;
+export const DEFAULT_FOLDER_SEARCH_PER_PAGE = 40;
+
 @Injectable({
     providedIn: 'root'
 })
@@ -48,6 +61,78 @@ export class DotFolderService {
         return this.#http
             .put<DotCMSAPIResponse<DotFolder>>(`/api/v1/assets/folders`, body)
             .pipe(map((response) => response.entity));
+    }
+
+    /**
+     * Permanently deletes a folder and everything inside it.
+     *
+     * Keyed on the path rather than the id, which is what the endpoint takes, and the trailing
+     * slash matters: without it the path resolves as an asset and the endpoint refuses it.
+     *
+     * Recursive and irreversible on the server (`FolderAPI.delete`), which is why callers confirm
+     * first. Enforces EDIT on the folder (`FolderAPIImpl:438`), so gate the affordance on that.
+     *
+     * @param {string} assetPath - Full path to the folder, e.g. `//demo.dotcms.com/old-projects/`
+     * @returns {Observable<boolean>} Observable that emits the server's acknowledgement
+     */
+    deleteFolder(assetPath: string): Observable<boolean> {
+        return this.#http
+            .post<DotCMSAPIResponse<boolean>>('/api/v1/assets/folders/_delete', { assetPath })
+            .pipe(map((response) => response.entity));
+    }
+
+    /**
+     * Searches folders within a site using the unified, paginated search endpoint.
+     * Replaces `getFolders`/`byPath` for the interactive Site/Folder selector, where
+     * real server-side pagination and name filtering are required.
+     *
+     * @param {FolderSearchParams} params - Search scope (site, path, recursive), filter, sort and pagination
+     * @returns {Observable<{ folders: FolderSearchView[]; pagination: DotPagination }>} Observable that emits the matching folders and pagination metadata
+     */
+    searchFolders(
+        params: FolderSearchParams
+    ): Observable<{ folders: FolderSearchView[]; pagination: DotPagination }> {
+        let httpParams = new HttpParams().set('siteId', params.siteId);
+
+        if (hasValidValue(params.path)) {
+            httpParams = httpParams.set('path', params.path);
+        }
+
+        if (params.recursive !== undefined && params.recursive !== null) {
+            httpParams = httpParams.set('recursive', String(params.recursive));
+        }
+
+        if (hasValidValue(params.name)) {
+            httpParams = httpParams.set('name', params.name);
+        }
+
+        if (hasValidValue(params.orderby)) {
+            httpParams = httpParams.set('orderby', params.orderby);
+        }
+
+        if (hasValidValue(params.direction)) {
+            httpParams = httpParams.set('direction', params.direction);
+        }
+
+        // Only sent when opting in: the backend defaults it to false and caps `per_page` when it is
+        // true, so an always-on `includePermissions=false` would be noise on every tree request.
+        if (params.includePermissions) {
+            httpParams = httpParams.set('includePermissions', 'true');
+        }
+
+        httpParams = httpParams.set('page', String(params.page ?? DEFAULT_FOLDER_SEARCH_PAGE));
+        httpParams = httpParams.set(
+            'per_page',
+            String(params.per_page ?? DEFAULT_FOLDER_SEARCH_PER_PAGE)
+        );
+
+        return this.#http
+            .get<{ entity: FolderSearchView[]; pagination: DotPagination }>(FOLDER_SEARCH_URL, {
+                params: httpParams
+            })
+            .pipe(
+                map((response) => ({ folders: response.entity, pagination: response.pagination }))
+            );
     }
 
     /**

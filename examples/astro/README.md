@@ -1,5 +1,12 @@
 # Fully Editable Page Using dotCMS + Astro
 
+> [!NOTE]
+> This example's `@dotcms/*` dependencies are pinned to `latest`, matching a dotCMS Evergreen
+> instance (always the current release). If your dotCMS instance is **not** on Evergreen — an
+> older self-hosted release, or an LTS server — installing as-is may fail with GraphQL
+> `FieldUndefined` errors. Check your server's version and replace `latest` with that exact
+> version for every `@dotcms/*` entry in `package.json` before installing.
+
 ## Introduction & Overview
 
 This project demonstrates how to build dynamic, fully editable pages using [dotCMS](https://dotcms.com/) as a headless CMS with a [Astro](https://astro.build/) front end. By combining these technologies, you can:
@@ -52,7 +59,6 @@ The example above is a Astro front end for the [dotCMS demo site](https://demo.d
   - [Understanding the Structure](#understanding-the-structure)
   - [How to Fetch Content from dotCMS](#how-to-fetch-content-from-dotcms)
   - [How to Render Your Page](#how-to-render-your-page)
-  - [Style Editor](#style-editor)
 - [Conclusion](#conclusion)
 - [Learn More](#learn-more)
 
@@ -62,7 +68,7 @@ Before you begin, make sure you have:
 
 ### System Requirements
 
-- **Node.js**: v18.20.8 (LTS) or later (v22+ recommended)
+- **Node.js**: v22.12.0 or later (required by Astro 7)
 - **NPM**, **Yarn**, or **pnpm** package manager
 - **Git** for version control
 - A code editor (VS Code, WebStorm, etc.)
@@ -360,7 +366,7 @@ Learn more about the `@dotcms/client` package [here](https://www.npmjs.com/packa
 The rendering process for dotCMS content in Astro involves several key components working together:
 
 1. **Page Templates**: Define the overall layout and structure
-2. **DotCMSBodyLayout**: A component that renders the page content structure
+2. **DotCMSLayoutBody**: A component that renders the page content structure
 3. **Content Type Components**: Custom React components that render specific Content Types from dotCMS
 4. **useEditableDotCMSPage**: A hook that makes the page editable in the UVE
 
@@ -368,7 +374,7 @@ When a page is rendered:
 
 - The page data is fetched from dotCMS
 - The `useEditableDotCMSPage` hook prepares it for potential editing
-- The `DotCMSBodyLayout` component renders the page structure
+- The `DotCMSLayoutBody` component renders the page structure
 - Each content item is rendered by its corresponding React component
 
 Here's how this looks in code:
@@ -376,13 +382,17 @@ Here's how this looks in code:
 ```js
 "use client";
 
-import { DotCMSBodyLayout, useEditableDotCMSPage } from "@dotcms/react";
+import { lazy } from "react";
+import { DotCMSLayoutBody, useEditableDotCMSPage } from "@dotcms/react";
 
-// Define custom components for specific Content Types
-// The key is the Content Type variable name in dotCMS
+// Define custom components for specific Content Types.
+// The key is the Content Type variable name in dotCMS.
+//
+// Load them with React.lazy so each becomes its own chunk, fetched only when a page
+// actually contains that Content Type.
 const dotComponents = {
-  dotCMSProductContent: MyCustomDotCMSProductComponent,
-  dotCMSBlogPost: BlogPostComponent,
+  dotCMSProductContent: lazy(() => import("./MyCustomDotCMSProductComponent")),
+  dotCMSBlogPost: lazy(() => import("./BlogPostComponent")),
 };
 
 export function MyPage({ page }) {
@@ -390,7 +400,7 @@ export function MyPage({ page }) {
 
   return (
     <div>
-      <DotCMSBodyLayout page={pageAsset} components={dotComponents} />
+      <DotCMSLayoutBody page={pageAsset} components={dotComponents} />
     </div>
   );
 }
@@ -399,7 +409,7 @@ export function MyPage({ page }) {
 > [!IMPORTANT]
 >
 > - The `useEditableDotCMSPage` hook will not modify the `page` object outside the editor
-> - The `DotCMSBodyLayout` component renders both the page structure and content
+> - The `DotCMSLayoutBody` component renders both the page structure and content
 > - Custom components defined in `dotComponents` will be used to render Content Types
 
 Learn more about the `@dotcms/react` package [here](https://www.npmjs.com/package/@dotcms/react).
@@ -425,16 +435,30 @@ One of the key concepts in this integration is mapping dotCMS Content Types to R
 1. Each key in the mapping object must match exactly with a Content Type variable name in dotCMS
 2. Each value is a React component that will be used to render that specific Content Type
 3. When content is rendered, the contentlet data from dotCMS is passed as props to your component
+4. Load each component with `React.lazy`, so it is fetched only when a page contains that Content Type
 
 ```js
+import { lazy } from "react";
+
 // Example of mapping dotCMS Content Types to React components
 const dotComponents = {
   // The key "DotCMSProduct" must match a Content Type variable name in dotCMS
-  DotCMSProduct: ProductComponent,
+  DotCMSProduct: lazy(() => import("./ProductComponent")),
   // The key "DotCMSBlogPost" must match a Content Type variable name in dotCMS
-  DotCMSBlogPost: BlogPostComponent,
+  DotCMSBlogPost: lazy(() => import("./BlogPostComponent")),
 };
 ```
+
+**Why lazy imports.** The whole page is one `client:only="react"` island, so a static map means
+every mapped component ships in that island's bundle on every route, whether or not the page
+renders it. `React.lazy` gives each component its own chunk. You do not need to add a Suspense
+boundary: `DotCMSLayoutBody` wraps every contentlet in one. See
+`src/components/content-types/dotComponents.ts` for the real map.
+
+Two things to keep in mind:
+
+- Keep the `CustomNoComponent` fallback eagerly imported. It renders when no mapping matches, so it should not wait on a network round-trip.
+- Do not re-export your content-type components from a barrel (`export * from "./Banner"`). Anything importing that barrel makes every component statically reachable again, undoing the split.
 
 **What happens at runtime:**
 
@@ -464,137 +488,13 @@ function ProductComponent(props) {
 
 This pattern allows you to create custom rendering for each type of content in your dotCMS instance, while maintaining a clean separation between content and presentation.
 
-This mapping should be passed to the `DotCMSBodyLayout` component as shown in the previous section.
+This mapping should be passed to the `DotCMSLayoutBody` component as shown in the previous section.
 
 **Learn more about dotCMS Content and Components:**
 
 - [Understanding Content Types in dotCMS](https://dev.dotcms.com/docs/content-types) - In-depth explanation of content types and their structure
 - [Contentlets in dotCMS](https://dev.dotcms.com/docs/content#Contentlets) - Learn how individual content items (contentlets) work
 - [@dotcms/react Documentation](https://www.npmjs.com/package/@dotcms/react) - Complete reference for the React components library
-
-### Style Editor
-
-The Style Editor enables content editors to customize component appearance (typography, colors, layouts, etc.) directly in the Universal Visual Editor without code changes. Style properties are defined by developers and made editable through style editor schemas.
-
-#### Defining a Style Editor Schema
-
-Create a schema file (e.g., `src/integration/dotcms/styleEditorSchemas.ts`) that defines editable style properties for your content types:
-
-```typescript
-import { defineStyleEditorSchema, styleEditorField } from "@dotcms/uve";
-
-export const BANNER_SCHEMA = defineStyleEditorSchema({
-    contentType: 'Banner', // Must match your dotCMS Content Type
-    sections: [
-        {
-            title: 'Typography',
-            fields: [
-                styleEditorField.dropdown({
-                    id: 'title-size',
-                    label: 'Title Size',
-                    options: [
-                        { label: 'Small', value: 'text-4xl' },
-                        { label: 'Medium', value: 'text-5xl' },
-                        { label: 'Large', value: 'text-6xl' },
-                    ]
-                }),
-                styleEditorField.checkboxGroup({
-                    id: 'title-style',
-                    label: 'Title Style',
-                    options: [
-                        { label: 'Bold', key: 'bold' },
-                        { label: 'Italic', key: 'italic' },
-                    ]
-                }),
-            ]
-        },
-        {
-            title: 'Layout',
-            fields: [
-                styleEditorField.radio({
-                    id: 'text-alignment',
-                    label: 'Text Alignment',
-                    options: [
-                        { label: 'Left', value: 'left' },
-                        { label: 'Center', value: 'center' },
-                        { label: 'Right', value: 'right' },
-                    ]
-                }),
-            ]
-        },
-    ]
-});
-```
-
-#### Field Types
-
-The Style Editor supports four field types:
-
-- **`styleEditorField.input()`** - Text or number input for custom values
-- **`styleEditorField.dropdown()`** - Dropdown with predefined options
-- **`styleEditorField.radio()`** - Radio buttons for single selection (supports images)
-- **`styleEditorField.checkboxGroup()`** - Multiple checkboxes (returns object with boolean values)
-
-#### Registering Schemas
-
-Register your schemas in your page component using the `useStyleEditorSchemas` hook:
-
-```typescript
-import { useStyleEditorSchemas } from "@dotcms/react";
-import { BANNER_SCHEMA, ACTIVITY_SCHEMA } from "@/integration/dotcms/styleEditorSchemas";
-
-export const DotCMSPage = ({ pageResponse }) => {
-  // Register schemas - makes them available in UVE edit mode
-  useStyleEditorSchemas([BANNER_SCHEMA, ACTIVITY_SCHEMA]);
-
-  return (
-    // Your page content
-  );
-};
-```
-
-#### Using Style Properties in Components
-
-Style properties are automatically passed to your contentlet components via the `dotStyleProperties` prop. Access them with defaults:
-
-```typescript
-interface BannerProps extends DotCMSBasicContentlet {
-  dotStyleProperties?: Record<string, any>;
-}
-
-function Banner({ title, caption, dotStyleProperties }: BannerProps) {
-  // Extract style properties with defaults
-  const titleSize = dotStyleProperties?.["title-size"] || "text-6xl";
-  const titleStyle = dotStyleProperties?.["title-style"] || {};
-  const textAlignment = dotStyleProperties?.["text-alignment"] || "center";
-
-  // Build dynamic classes
-  const titleClasses = [
-    titleSize,
-    titleStyle.bold ? "font-bold" : "font-normal",
-    titleStyle.italic ? "italic" : "",
-  ].filter(Boolean).join(" ");
-
-  return (
-    <div className={`text-${textAlignment}`}>
-      <h2 className={titleClasses}>{title}</h2>
-      <p>{caption}</p>
-    </div>
-  );
-}
-```
-
-**Value Types:**
-- **Input/Dropdown/Radio**: Returns a string (the selected value)
-- **Checkbox Group**: Returns an object with boolean values (e.g., `{ bold: true, italic: false }`)
-
-**Best Practices:**
-- Always provide default values when accessing style properties
-- Use meaningful field IDs that match your styling logic
-- Group related fields into logical sections
-- The `contentType` in your schema must exactly match your dotCMS Content Type variable name
-
-For complete Style Editor documentation, see the [@dotcms/uve Style Editor guide](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/uve/README.md#style-editor).
 
 ## Conclusion
 

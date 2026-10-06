@@ -40,12 +40,16 @@ import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.FieldRelationshipDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
+import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestDataUtils.TestFile;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Tree;
+import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.IdentifierAPI;
@@ -93,7 +97,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.elasticsearch.action.search.SearchResponse;
+import com.dotcms.content.index.domain.AggregationBucket;
+import com.dotcms.content.index.domain.ContentSearchResponse;
+import com.dotcms.content.index.domain.ContentSearchResults;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -334,7 +340,7 @@ public class ESMappingAPITest {
                 identifierAPI, versionableAPI,
                 APILocator.getPermissionAPI(), APILocator.getContentletAPI(),
                 APILocator.getFileMetadataAPI(), APILocator.getHostAPI(),
-                APILocator.getFieldAPI(), APILocator.getESIndexAPI(),
+                APILocator.getFieldAPI(),
                 APILocator.getRelationshipAPI(), APILocator.getTagAPI(),
                 APILocator.getCategoryAPI(), APILocator.getRoleAPI(),
                 ()->APILocator.getContentTypeAPI(APILocator.systemUser()),
@@ -390,7 +396,7 @@ public class ESMappingAPITest {
                 identifierAPI, versionableAPI,
                 APILocator.getPermissionAPI(), APILocator.getContentletAPI(),
                 APILocator.getFileMetadataAPI(), APILocator.getHostAPI(),
-                APILocator.getFieldAPI(), APILocator.getESIndexAPI(),
+                APILocator.getFieldAPI(),
                 APILocator.getRelationshipAPI(), APILocator.getTagAPI(),
                 APILocator.getCategoryAPI(), APILocator.getRoleAPI(),
                 ()->APILocator.getContentTypeAPI(APILocator.systemUser()),
@@ -707,6 +713,104 @@ public class ESMappingAPITest {
             }
 
         }
+    }
+
+    /**
+     * Method to test: {@link ESMappingAPIImpl#dependenciesLeftToReindex(Contentlet)}
+     * When: a child contentlet is related to several parents in the index (the state previous
+     * to a save) and the database relationships then change — one parent removed, a new parent
+     * added, and another parent untouched
+     * Should: return only the removed and the added parents. The unchanged parent must NOT be
+     * marked for re-indexing
+     */
+    @Test
+    public void dependenciesLeftToReindexReturnsOnlyAddedAndRemovedParents() throws Exception {
+        final Host host = new SiteDataGen().nextPersisted();
+        final ContentType parentType = new ContentTypeDataGen().host(host).nextPersisted();
+        final ContentType childType = new ContentTypeDataGen().host(host).nextPersisted();
+
+        final Relationship relationship = new FieldRelationshipDataGen()
+                .parent(parentType)
+                .child(childType)
+                .nextPersisted();
+
+        final Contentlet child = new ContentletDataGen(childType).host(host).nextPersisted();
+        final Contentlet removedParent = new ContentletDataGen(parentType).host(host)
+                .nextPersisted();
+        final Contentlet unchangedParent = new ContentletDataGen(parentType).host(host)
+                .nextPersisted();
+        final Contentlet addedParent = new ContentletDataGen(parentType).host(host)
+                .nextPersisted();
+
+        contentletAPI.relateContent(removedParent, relationship, list(child), user, false);
+        contentletAPI.relateContent(unchangedParent, relationship, list(child), user, false);
+
+        // Make sure the parent documents, including their relationship field, are searchable
+        // in the index before the relationships change
+        removedParent.setIndexPolicy(IndexPolicy.FORCE);
+        contentletAPI.refresh(removedParent);
+        unchangedParent.setIndexPolicy(IndexPolicy.FORCE);
+        contentletAPI.refresh(unchangedParent);
+
+        // Change the DB state only, reproducing the mid-save state where the index still holds
+        // the previous relationships: one parent is removed and another one is added
+        TreeFactory.deleteTreesByChildAndParentsAndRelationType(child.getIdentifier(),
+                list(removedParent.getIdentifier()), relationship.getRelationTypeValue());
+        TreeFactory.insertTrees(list(new Tree(addedParent.getIdentifier(),
+                child.getIdentifier(), relationship.getRelationTypeValue(), 2)));
+
+        final List<String> dependencies = new ESMappingAPIImpl()
+                .dependenciesLeftToReindex(child);
+
+        assertEquals("Only the removed and the added parents must be re-indexed. Got: "
+                + dependencies, 2, dependencies.size());
+        assertTrue("The removed parent must be re-indexed",
+                dependencies.contains(removedParent.getIdentifier()));
+        assertTrue("The added parent must be re-indexed",
+                dependencies.contains(addedParent.getIdentifier()));
+    }
+
+    /**
+     * Method to test: {@link ESMappingAPIImpl#dependenciesLeftToReindex(Contentlet)}
+     * When: a parent related to the child has several language versions — so the index holds
+     * more than one document for the same parent identifier — and the relationships did NOT
+     * change
+     * Should: return no dependencies. Without deduping the identifiers coming from the index,
+     * the duplicate documents would force a spurious re-index of the unchanged parent on every
+     * save of the child
+     */
+    @Test
+    public void dependenciesLeftToReindexDedupesMultilingualParents() throws Exception {
+        final Host host = new SiteDataGen().nextPersisted();
+        final ContentType parentType = new ContentTypeDataGen().host(host).nextPersisted();
+        final ContentType childType = new ContentTypeDataGen().host(host).nextPersisted();
+
+        final Relationship relationship = new FieldRelationshipDataGen()
+                .parent(parentType)
+                .child(childType)
+                .nextPersisted();
+
+        final Contentlet child = new ContentletDataGen(childType).host(host).nextPersisted();
+        final Contentlet parent = new ContentletDataGen(parentType).host(host).nextPersisted();
+
+        contentletAPI.relateContent(parent, relationship, list(child), user, false);
+
+        parent.setIndexPolicy(IndexPolicy.FORCE);
+        contentletAPI.refresh(parent);
+
+        // A second language version of the parent adds a second index document for the same
+        // identifier; the relationship rows in the DB are identifier-scoped and stay the same
+        final Language secondLanguage = new LanguageDataGen().nextPersisted();
+        final Contentlet parentInSecondLanguage = ContentletDataGen.checkout(parent);
+        parentInSecondLanguage.setLanguageId(secondLanguage.getId());
+        parentInSecondLanguage.setIndexPolicy(IndexPolicy.FORCE);
+        contentletAPI.checkin(parentInSecondLanguage, user, false);
+
+        final List<String> dependencies = new ESMappingAPIImpl()
+                .dependenciesLeftToReindex(child);
+
+        assertTrue("Unchanged multilingual parents must not be re-indexed. Got: " + dependencies,
+                dependencies.isEmpty());
     }
 
     @Test
@@ -1046,10 +1150,9 @@ public class ESMappingAPITest {
                 + "  }"
                 + "}", queryString);
 
-        final ESSearchResults searchResults = contentletAPI.esSearch(wrappedQuery, false,  user, false);
+        final ContentSearchResults<Contentlet> searchResults = contentletAPI.search(wrappedQuery, false,  user, false);
         assertFalse(searchResults.isEmpty());
-        for (final Object searchResult : searchResults) {
-            final Contentlet contentlet = (Contentlet) searchResult;
+        for (final Contentlet contentlet : searchResults) {
             final Map<String, Object> map = (Map<String, Object>)contentlet.getMap().get("myKeyValueField");
 
             assertEquals(map.get("key1"),"val1");
@@ -1074,17 +1177,16 @@ public class ESMappingAPITest {
                 + "    } "
                 + "}", flattenQueryString, aggregationString);
 
-        final SearchResponse raw = contentletAPI.esSearchRaw(
+        final ContentSearchResponse raw = contentletAPI.searchRaw(
                 StringUtils.lowercaseStringExceptMatchingTokens(wrappedQueryWithAggregations,
                         ESContentFactoryImpl.LUCENE_RESERVED_KEYWORDS_REGEX), false, user, false);
 
-        final JSONArray jsonArray = new JSONObject(raw.toString()).getJSONObject("aggregations")
-                .getJSONObject("sterms#tag").getJSONArray("buckets");
+        final java.util.List<AggregationBucket> buckets = raw.aggregations().get("tag");
+        assertNotNull("aggregations must contain 'tag' key", buckets);
 
-        for(int i=0; i < jsonArray.length(); i++){
-            final JSONObject object = (JSONObject)jsonArray.get(i);
+        for (int i = 0; i < buckets.size(); i++) {
             final int keyVal = i + 1;
-            assertEquals(String.format("key%d_val%d",keyVal, keyVal ),object.get("key"));
+            assertEquals(String.format("key%d_val%d", keyVal, keyVal), buckets.get(i).key());
         }
     }
 
@@ -1114,7 +1216,7 @@ public class ESMappingAPITest {
                 + "  }"
                 + "}", queryString);
 
-        final ESSearchResults searchResults = contentletAPI.esSearch(wrappedQuery, false,  user, false);
+        final ContentSearchResults<Contentlet> searchResults = contentletAPI.search(wrappedQuery, false,  user, false);
         assertFalse(searchResults.isEmpty());
     }
 
@@ -1145,7 +1247,7 @@ public class ESMappingAPITest {
                 + "     }"
                 + "  } "
                 + "}", flattenQueryString.toLowerCase());
-        final ESSearchResults searchResults = contentletAPI.esSearch(wrappedQuery, false,  user, false);
+        final ContentSearchResults<Contentlet> searchResults = contentletAPI.search(wrappedQuery, false,  user, false);
         assertFalse(searchResults.isEmpty());
     }
 

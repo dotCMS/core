@@ -1,10 +1,9 @@
-import { CommonModule, DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { DatePipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 import { AvatarModule } from 'primeng/avatar';
-import { TooltipModule } from 'primeng/tooltip';
 
-import { DotCopyButtonComponent, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
+import { DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotPushPublishHistoryItem } from '../../../../../../models/dot-edit-content.model';
 
@@ -23,15 +22,7 @@ import { DotPushPublishHistoryItem } from '../../../../../../models/dot-edit-con
  */
 @Component({
     selector: 'dot-pushpublish-timeline-item',
-    imports: [
-        CommonModule,
-        AvatarModule,
-        TooltipModule,
-        DotCopyButtonComponent,
-        DotMessagePipe,
-        DotRelativeDatePipe
-    ],
-    providers: [DatePipe],
+    imports: [AvatarModule, DotCopyButtonComponent, DotMessagePipe, DatePipe],
     templateUrl: './dot-pushpublish-timeline-item.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -41,12 +32,4 @@ export class DotPushpublishTimelineItemComponent {
      * @readonly
      */
     $item = input.required<DotPushPublishHistoryItem>({ alias: 'item' });
-
-    /**
-     * Computed signal that returns the first 6 characters of the bundle ID for display
-     */
-    readonly $truncatedBundleId = computed(() => {
-        const bundleId = this.$item().bundleId;
-        return bundleId ? bundleId.substring(0, 6) : '';
-    });
 }

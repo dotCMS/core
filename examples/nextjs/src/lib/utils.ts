@@ -1,0 +1,24 @@
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+/**
+ * Merge Tailwind class names, resolving conflicts (the later class wins, e.g.
+ * `cn("px-2", "px-4")` -> `"px-4"`). Combines `clsx` (conditional composition)
+ * with `tailwind-merge` (conflict resolution).
+ */
+export function cn(...inputs: ClassValue[]): string {
+  return twMerge(clsx(inputs));
+}
+
+/**
+ * Coerce a free-form value (e.g. a dotCMS style property) into a known set of
+ * variant keys, returning `undefined` for unknown values so a `cva` call falls
+ * back to its `defaultVariants`. Bridges untyped CMS strings to typed variants
+ * without scattering `as` casts at call sites.
+ */
+export function variant<T extends string>(
+  value: unknown,
+  allowed: readonly T[],
+): T | undefined {
+  return allowed.includes(value as T) ? (value as T) : undefined;
+}

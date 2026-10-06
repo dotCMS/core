@@ -2,6 +2,7 @@ package com.dotmarketing.business;
 
 import com.dotcms.analytics.attributes.CustomAttributeCache;
 import com.dotcms.analytics.attributes.CustomAttributeCacheImpl;
+import com.dotcms.auth.dotAuth.session.DotAuthSessionCacheImpl;
 import com.dotcms.auth.providers.jwt.factories.ApiTokenCache;
 import com.dotcms.business.SystemCache;
 import com.dotcms.cache.KeyValueCache;
@@ -9,6 +10,7 @@ import com.dotcms.cache.KeyValueCacheImpl;
 import com.dotcms.content.elasticsearch.ESQueryCache;
 import com.dotcms.content.elasticsearch.business.IndiciesCache;
 import com.dotcms.content.elasticsearch.business.IndiciesCacheImpl;
+import com.dotcms.content.index.opensearch.OSQueryCache;
 import com.dotcms.contenttype.business.ContentTypeCache2;
 import com.dotcms.contenttype.business.ContentTypeCache2Impl;
 import com.dotcms.csspreproc.CSSCache;
@@ -307,6 +309,10 @@ public class CacheLocator extends Locator<CacheIndex>{
         return (ESQueryCache) getInstance(CacheIndex.ESQueryCache);
     }
 
+    public static OSQueryCache getOSQueryCache() {
+        return (OSQueryCache) getInstance(CacheIndex.OSQueryCache);
+    }
+
 	public static GraphQLCache getGraphQLCache() {
 		return (GraphQLCache) getInstance(CacheIndex.GraphQLCache);
 	}
@@ -329,6 +335,10 @@ public class CacheLocator extends Locator<CacheIndex>{
     }
     public static ApiTokenCache getApiTokenCache() {
         return (ApiTokenCache) getInstance(CacheIndex.ApiTokenCache);
+    }
+
+    public static DotAuthSessionCacheImpl getDotAuthSessionCache() {
+        return (DotAuthSessionCacheImpl) getInstance(CacheIndex.DotAuthSessionCache);
     }
 
 	/**
@@ -486,6 +496,7 @@ enum CacheIndex
 	ApiTokenCache("ApiTokenCache"),
 	PortletCache("PortletCache"),
 	ESQueryCache("ESQueryCache"),
+    OSQueryCache("OSQueryCache"),
 	KeyValueCache("Key/Value Cache"),
 	AppsCache("Apps"),
 	GraphQLSchemaCache("GraphQLSchemaCache"),
@@ -496,7 +507,8 @@ enum CacheIndex
 	CHAINABLE_404_STORAGE_CACHE("Chainable404StorageCache"),
 	Javascript("Javascript"),
 	JOB_CACHE("JobCache"),
-	ANALYTICS_CUSTOMATTRIBUTE_CACHE("CustomAttributeCache");
+	ANALYTICS_CUSTOMATTRIBUTE_CACHE("CustomAttributeCache"),
+	DotAuthSessionCache("DotAuthSessionCache");
 
 	Cachable create() {
 		switch(this) {
@@ -546,6 +558,7 @@ enum CacheIndex
 	      	case PortletCache : return new PortletCache();
 			case AppsCache: return new AppsCacheImpl();
 	      	case ESQueryCache : return new com.dotcms.content.elasticsearch.ESQueryCache();
+            case OSQueryCache: return new OSQueryCache();
 	      	case GraphQLSchemaCache : return new GraphQLSchemaCache();
 			case Metadata: return new MetadataCacheImpl();
 			case GraphQLCache: return new GraphQLCache();
@@ -555,6 +568,7 @@ enum CacheIndex
 			case Javascript: return new JsCache();
 			case JOB_CACHE: return new JobCacheImpl();
 			case ANALYTICS_CUSTOMATTRIBUTE_CACHE: return new CustomAttributeCacheImpl();
+			case DotAuthSessionCache: return DotAuthSessionCacheImpl.getInstance();
 		}
 		throw new AssertionError("Unknown Cache index: " + this);
 	}

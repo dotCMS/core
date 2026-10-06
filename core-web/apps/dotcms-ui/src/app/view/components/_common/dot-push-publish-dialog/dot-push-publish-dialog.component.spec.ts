@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
-import { Observable, of as observableOf, of } from 'rxjs';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { Observable, of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -10,13 +11,13 @@ import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { DotMessageService, PushPublishService } from '@dotcms/data-access';
-import { CoreWebService, DotPushPublishDialogService } from '@dotcms/dotcms-js';
+import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import {
     DotAjaxActionResponseView,
     DotPushPublishData,
     DotPushPublishDialogData
 } from '@dotcms/dotcms-models';
-import { CoreWebServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotPushPublishDialogComponent } from './dot-push-publish-dialog.component';
 
@@ -24,11 +25,11 @@ import { DotPushPublishFormComponent } from '../forms/dot-push-publish-form/dot-
 
 class PushPublishServiceMock {
     pushPublishContent(): Observable<any> {
-        return observableOf([]);
+        return of([]);
     }
 
     getEnvironments(): Observable<any> {
-        return observableOf([]);
+        return of([]);
     }
 }
 
@@ -77,7 +78,6 @@ describe('DotPushPublishDialogComponent', () => {
             provideHttpClientTesting(),
             { provide: PushPublishService, useValue: pushPublishServiceMock },
             { provide: DotMessageService, useValue: messageServiceMock },
-            { provide: CoreWebService, useClass: CoreWebServiceMock },
             DotPushPublishDialogService
         ],
         overrideComponents: [
@@ -88,8 +88,7 @@ describe('DotPushPublishDialogComponent', () => {
                     add: {
                         imports: [TestDotPushPublishFormComponent],
                         providers: [
-                            { provide: PushPublishService, useValue: pushPublishServiceMock },
-                            { provide: CoreWebService, useClass: CoreWebServiceMock }
+                            { provide: PushPublishService, useValue: pushPublishServiceMock }
                         ]
                     }
                 }
@@ -99,23 +98,10 @@ describe('DotPushPublishDialogComponent', () => {
     });
 
     function openDialogAndStabilize(data: DotPushPublishDialogData = publishData): void {
+        // Subscribe before emitting so Subject delivery is not missed (detectChanges: false).
+        spectator.detectChanges();
         dotPushPublishDialogService.open(data);
-        spectator.fixture.detectChanges(false);
-        if (!comp.dialogActions) {
-            comp.eventData = data;
-            comp.dialogShow = true;
-            comp.dialogActions = {
-                accept: {
-                    action: () => comp.submitPushAction(),
-                    label: 'Push',
-                    disabled: !comp.formValid
-                },
-                cancel: {
-                    action: () => comp.close(),
-                    label: 'Cancel'
-                }
-            };
-        }
+        spectator.detectChanges();
     }
 
     beforeEach(() => {
@@ -123,7 +109,7 @@ describe('DotPushPublishDialogComponent', () => {
         comp = spectator.component;
         dotPushPublishDialogService = spectator.inject(DotPushPublishDialogService);
         pushPublishService = spectator.inject(PushPublishService);
-        jest.spyOn(comp.cancel, 'emit');
+        vi.spyOn(comp.cancel, 'emit');
     });
 
     describe('p-dialog', () => {
@@ -132,6 +118,24 @@ describe('DotPushPublishDialogComponent', () => {
             expect(comp.dialogShow).toBe(true);
             expect(comp.dialogActions).toBeDefined();
             expect(comp.eventData?.title).toEqual(publishData.title);
+        });
+
+        it('should run detectChanges when opened so PrimeNG OnPush dialog receives visible', () => {
+            spectator.detectChanges();
+            const detectSpy = vi.spyOn(comp['cdr'], 'detectChanges');
+            dotPushPublishDialogService.open(publishData);
+            expect(detectSpy).toHaveBeenCalled();
+            expect(comp.dialogShow).toBe(true);
+        });
+
+        it('should append dialog to body', () => {
+            openDialogAndStabilize();
+            const dialogCmp = spectator.debugElement.query(By.css('p-dialog')).componentInstance;
+            const appendTo =
+                typeof dialogCmp.appendTo === 'function'
+                    ? dialogCmp.appendTo()
+                    : dialogCmp.appendTo;
+            expect(appendTo).toBe('body');
         });
 
         it('should hide buttons if there is custom code', () => {
@@ -151,6 +155,18 @@ describe('DotPushPublishDialogComponent', () => {
             expect(comp.cancel.emit).toHaveBeenCalled();
             expect(comp.dialogShow).toEqual(false);
             expect(comp.eventData).toEqual(null);
+        });
+
+        it('should close only when visibleChange emits false', () => {
+            openDialogAndStabilize();
+            vi.clearAllMocks();
+            comp.onVisibleChange(true);
+            expect(comp.cancel.emit).not.toHaveBeenCalled();
+            expect(comp.dialogShow).toBe(true);
+
+            comp.onVisibleChange(false);
+            expect(comp.cancel.emit).toHaveBeenCalled();
+            expect(comp.dialogShow).toBe(false);
         });
     });
 
@@ -195,7 +211,7 @@ describe('DotPushPublishDialogComponent', () => {
         let acceptButton: DebugElement;
 
         beforeEach(() => {
-            jest.clearAllMocks();
+            vi.clearAllMocks();
             openDialogAndStabilize();
             const formDe = spectator.debugElement.query(By.css('dot-push-publish-form'));
             pushPublishForm = formDe?.componentInstance ?? null;
@@ -209,10 +225,12 @@ describe('DotPushPublishDialogComponent', () => {
 
         describe('on success pushPublishContent', () => {
             beforeEach(() => {
-                jest.spyOn(pushPublishService, 'pushPublishContent').mockReturnValue(of(null));
+                vi.spyOn(pushPublishService, 'pushPublishContent').mockReturnValue(
+                    of({ errors: 0 } as unknown as DotAjaxActionResponseView)
+                );
             });
 
-            xit('should submit on accept and hide dialog', () => {
+            it.skip('should submit on accept and hide dialog', () => {
                 acceptButton?.triggerEventHandler('click', null);
 
                 expect<any>(pushPublishService.pushPublishContent).toHaveBeenCalledWith(
@@ -254,7 +272,7 @@ describe('DotPushPublishDialogComponent', () => {
         describe('on error pushPublishContent', () => {
             const errors = ['Error 1', 'Error 2'];
             beforeEach(() => {
-                jest.spyOn(pushPublishService, 'pushPublishContent').mockReturnValue(
+                vi.spyOn(pushPublishService, 'pushPublishContent').mockReturnValue(
                     of({ errors: errors } as unknown as DotAjaxActionResponseView)
                 );
             });

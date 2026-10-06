@@ -1,6 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
 import { Subject, of, throwError } from 'rxjs';
+import { Mock, Mocked, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { signal } from '@angular/core';
 
@@ -26,13 +26,13 @@ const createESResponse = (contentlets: DotCMSContentlet[], resultsSize = content
 describe('DotCMSPagesStore', () => {
     let spectator: SpectatorService<InstanceType<typeof DotCMSPagesStore>>;
     let store: InstanceType<typeof DotCMSPagesStore>;
-    let dotPageListService: jest.Mocked<
+    let dotPageListService: Mocked<
         Pick<DotPageListService, 'getPages' | 'getSinglePage' | 'getFavoritePages'>
     >;
-    let httpErrorManagerService: jest.Mocked<Pick<DotHttpErrorManagerService, 'handle'>>;
+    let httpErrorManagerService: Mocked<Pick<DotHttpErrorManagerService, 'handle'>>;
 
     const siteDetailsSig = signal<DotSite | null>(null);
-    const loggedUserMock = jest.fn(() => ({ userId: 'user-1' }) as unknown);
+    const loggedUserMock = vi.fn(() => ({ userId: 'user-1' }) as unknown);
 
     const createService = createServiceFactory({
         service: DotCMSPagesStore,
@@ -40,16 +40,16 @@ describe('DotCMSPagesStore', () => {
             {
                 provide: DotPageListService,
                 useValue: {
-                    getPages: jest.fn(),
-                    getSinglePage: jest.fn(),
+                    getPages: vi.fn(),
+                    getSinglePage: vi.fn(),
                     // Included to satisfy the injected feature; we explicitly do NOT test it here.
-                    getFavoritePages: jest.fn().mockReturnValue(of(createESResponse([])))
+                    getFavoritePages: vi.fn().mockReturnValue(of(createESResponse([])))
                 }
             },
             {
                 provide: DotHttpErrorManagerService,
                 useValue: {
-                    handle: jest.fn()
+                    handle: vi.fn()
                 }
             },
             {
@@ -66,22 +66,22 @@ describe('DotCMSPagesStore', () => {
     beforeEach(() => {
         spectator = createService();
         store = spectator.service;
-        dotPageListService = spectator.inject(DotPageListService) as unknown as jest.Mocked<
+        dotPageListService = spectator.inject(DotPageListService) as unknown as Mocked<
             Pick<DotPageListService, 'getPages' | 'getSinglePage' | 'getFavoritePages'>
         >;
-        httpErrorManagerService = spectator.inject(
-            DotHttpErrorManagerService
-        ) as unknown as jest.Mocked<Pick<DotHttpErrorManagerService, 'handle'>>;
+        httpErrorManagerService = spectator.inject(DotHttpErrorManagerService) as unknown as Mocked<
+            Pick<DotHttpErrorManagerService, 'handle'>
+        >;
 
         siteDetailsSig.set(null);
         loggedUserMock.mockClear();
         dotPageListService.getPages.mockReset();
         dotPageListService.getSinglePage.mockReset();
-        (httpErrorManagerService.handle as jest.Mock).mockClear();
+        (httpErrorManagerService.handle as Mock).mockClear();
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     describe('Initial state', () => {
@@ -182,7 +182,7 @@ describe('DotCMSPagesStore', () => {
 
             it('should set status=error and call httpErrorManagerService.handle(error) when request fails', () => {
                 const error = new Error('Pages failed');
-                dotPageListService.getPages.mockReturnValueOnce(throwError(error));
+                dotPageListService.getPages.mockReturnValueOnce(throwError(() => error));
 
                 store.getPages({ search: 'x' });
 
@@ -296,7 +296,7 @@ describe('DotCMSPagesStore', () => {
                 store.getPages();
 
                 const error = new Error('Single page failed');
-                dotPageListService.getSinglePage.mockReturnValueOnce(throwError(error));
+                dotPageListService.getSinglePage.mockReturnValueOnce(throwError(() => error));
 
                 store.updatePageNode('page-2');
 

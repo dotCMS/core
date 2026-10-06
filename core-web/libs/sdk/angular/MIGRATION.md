@@ -26,6 +26,32 @@ This guide helps you migrate from the alpha version to the 1.0.X version (`lates
 
 🚨 For detail information check the [README](./README.md) file.
 
+## Migrating to the semantic Block Editor renderer
+
+`DotCMSBlockEditorRendererComponent` (`<dotcms-block-editor-renderer>`) is **deprecated**. It wraps every semantic tag in a custom element — including a dispatcher element placed *between* a `<ul>` and its `<li>` children — which breaks the `list → listitem` relationship required by the HTML spec and assistive technology, and is flagged by accessibility scanners.
+
+Use `DotCMSBlockEditorRendererNativeComponent` (`<dotcms-block-editor-renderer-native>`) instead. It renders clean semantic HTML (`<ul><li><p>…</p></li></ul>`) with no wrapper elements between semantic tags, and keeps the **identical** public input API and `customRenderers` contract — so migration is just swapping the tag and import. Your `customRenderers` need **no changes**.
+
+```diff
+- import { DotCMSBlockEditorRendererComponent } from '@dotcms/angular';
++ import { DotCMSBlockEditorRendererNativeComponent } from '@dotcms/angular';
+
+  @Component({
+-     imports: [DotCMSBlockEditorRendererComponent],
++     imports: [DotCMSBlockEditorRendererNativeComponent],
+      template: `
+-         <dotcms-block-editor-renderer
++         <dotcms-block-editor-renderer-native
+              [blocks]="contentlet.myBlockEditorField"
+              [customRenderers]="customRenderers()" />
+      `
+  })
+```
+
+> ⚠️ The rendered DOM differs by design: the new component removes the `dotcms-block-editor-renderer-*` wrapper elements. If you styled or queried those wrappers, update those selectors to target the semantic tags (`ul`, `ol`, `li`, `p`, `h1`–`h6`, `blockquote`, `pre`) instead.
+>
+> The native renderer only forwards a node's **`textAlign`** attribute to the host element's `text-align` style. Any other inline-style attributes that the legacy renderer would have copied through (via `[style]="node.attrs"`) are dropped, including non-CSS attrs like `level` that were silently leaking onto the `style` attribute before. If you relied on arbitrary `attrs` reaching the DOM as styles, set them in CSS (or via a custom renderer) instead.
+
 ## Step-by-Step Migration Process
 Before starting, if you are using the `@dotcms/client` library in your Angular project, please refer to the [client documentation](https://www.npmjs.com/package/@dotcms/client) for more information.
 

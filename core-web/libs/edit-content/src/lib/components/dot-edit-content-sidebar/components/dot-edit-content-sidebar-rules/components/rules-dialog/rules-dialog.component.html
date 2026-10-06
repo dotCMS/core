@@ -1,0 +1,12 @@
+@if (iframeSrc) {
+    <iframe
+        [src]="iframeSrc"
+        class="block w-full border-none"
+        [style.min-height]="'70vh'"
+        title="Content rules"
+        data-testId="rules-iframe"></iframe>
+} @else {
+    <p class="p-3 m-0 text-500" data-testId="rules-empty">
+        {{ 'edit.content.sidebar.rules.no.content' | dm }}
+    </p>
+}

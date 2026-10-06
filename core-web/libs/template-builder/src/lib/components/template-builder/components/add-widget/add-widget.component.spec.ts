@@ -10,7 +10,7 @@ import { colIcon, rowIcon } from '../../assets/icons';
     standalone: false,
     selector: 'dotcms-host-component',
     template: `
-        <dotcms-add-widget [label]="label" [icon]="icon"></dotcms-add-widget>
+        <dotcms-add-widget [label]="label" [icon]="icon" />
     `
 })
 class HostComponent {
@@ -76,7 +76,7 @@ describe('AddWidgetComponent', () => {
             const img = de.query(By.css('img'));
             img.triggerEventHandler('error', null);
             fixture.detectChanges();
-            const icon = de.query(By.css('[data-testId="material-icons-fallback"]'));
+            const icon = de.query(By.css('[data-testId="material-symbols-outlined-fallback"]'));
             expect(icon?.nativeElement.textContent).toContain('add');
         });
     });

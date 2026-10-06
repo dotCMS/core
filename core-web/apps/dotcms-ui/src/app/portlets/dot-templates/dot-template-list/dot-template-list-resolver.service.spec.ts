@@ -1,6 +1,8 @@
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
 import { take } from 'rxjs/operators';
@@ -12,14 +14,12 @@ import {
 } from '@dotcms/data-access';
 import {
     ApiRoot,
-    CoreWebService,
     DotcmsConfigService,
     LoggerService,
     LoginService,
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
 
 import { DotTemplateListResolver } from './dot-template-list-resolver.service';
 
@@ -29,8 +29,9 @@ describe('DotTemplateListResolverService', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 PushPublishService,
                 ApiRoot,
                 UserModel,
@@ -38,7 +39,6 @@ describe('DotTemplateListResolverService', () => {
                 StringUtils,
                 DotCurrentUserService,
                 DotTemplateListResolver,
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 DotFormatDateService,
                 {
                     provide: DotcmsConfigService,
@@ -62,7 +62,7 @@ describe('DotTemplateListResolverService', () => {
     });
 
     it('should set pagination params, get first page, check license and publish environments', () => {
-        jest.spyOn(pushPublishService, 'getEnvironments').mockReturnValue(
+        vi.spyOn(pushPublishService, 'getEnvironments').mockReturnValue(
             of([
                 {
                     id: '1',

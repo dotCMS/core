@@ -162,6 +162,45 @@ public class SamlWebInterceptor implements WebInterceptor {
                             // if the auto login couldn't log in the user, then send it to the IdP login page (if it is not already logged in).
                             if (null == session || !autoLoginResult.isAutoLogin() || this.samlWebUtils.isNotLogged(request)) {
 
+                                // Loop-guard: if auto-login actually resolved a SAML user (isAutoLogin)
+                                // yet the request is STILL not logged in for this destination, re-authenticating
+                                // will resolve the very same user and produce the same result — that is
+                                // an infinite IdP redirect loop (e.g. a front-end-only SAML user sent
+                                // to a back-end URL like /dotAdmin). Break it
+                                // with a clean 403 instead of bouncing to the IdP again.
+                                //
+                                // Note: this is self-healing for a transient auto-login failure (e.g. a
+                                // one-off doCookieLogin error rather than a genuine realm mismatch). getUser()
+                                // consumes (removes) the SAML_USER_ID from the session, so isAutoLogin can only
+                                // be true for the single request following an IdP round-trip: a transient failure
+                                // yields one 403, and the next request has no SAML_USER_ID (isAutoLogin=false) and
+                                // re-runs a full IdP authentication. So a temporary glitch cannot lock the user out.
+                                if (autoLoginResult.isAutoLogin() && this.samlWebUtils.isNotLogged(request)) {
+
+                                    Logger.warn(this, ()-> "SAML auth redirect loop detected for URI '"
+                                            + request.getRequestURI() + "': the user is authenticated but not "
+                                            + "authorized for this destination. Returning 403 instead of "
+                                            + "redirecting to the IdP again.");
+                                    SecurityLogger.logInfo(this.getClass(), "SAML auth redirect loop broken for URI: "
+                                            + request.getRequestURI());
+                                    // Mirror SecurityUtils.sendPermissionDenied's authenticated-403 path: clear any
+                                    // stale REDIRECT_AFTER_LOGIN so it cannot resurface as an unwanted redirect on the
+                                    // next login. We clear it HERE (not by relying on the JSP 403 branch) because for
+                                    // /api/* destinations custom-error-page.jsp returns early before that branch runs.
+                                    // Cleared inline rather than via sendPermissionDenied because the resolved User is
+                                    // not in scope here and this path must never fall to the 401 branch (which would
+                                    // re-set REDIRECT_AFTER_LOGIN and re-enter the loop).
+                                    final HttpSession loopSession = request.getSession(false);
+                                    if (null != loopSession) {
+                                        loopSession.removeAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
+                                    }
+                                    // isCommitted() guard avoids IllegalStateException / a double response.
+                                    if (!response.isCommitted()) {
+                                        response.sendError(HttpServletResponse.SC_FORBIDDEN);
+                                    }
+                                    return Result.SKIP_NO_CHAIN;
+                                }
+
                                 Logger.debug(this, ()-> "User is not log in, doing SAML Authentication request");
                                 this.doAuthentication(request, response, session, identityProviderConfiguration, host.getIdentifier());
                                 return Result.SKIP_NO_CHAIN;

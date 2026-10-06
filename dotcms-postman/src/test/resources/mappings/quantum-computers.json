@@ -1,7 +1,6 @@
 {
   "request": {
     "method": "POST",
-    "url": "/c",
     "headers": {
       "Content-Type": {
         "equalTo": "application/json"
@@ -12,9 +11,10 @@
     },
     "bodyPatterns": [
       {
-        "matches": ".*\"content\":\"How do quantum computers differ from classical computers.*"
+        "matches": ".*\"content\" : \"How do quantum computers differ from classical computers.*"
       }
-    ]
+    ],
+    "urlPathPattern": "/chat/completions"
   },
   "response": {
     "status": 200,
@@ -25,10 +25,13 @@
       "model": "gpt-3.5-turbo-16k",
       "choices": [
         {
-          "text": "Quantum computers differ from classical computers in their fundamental operation. While classical computers use bits (0s and 1s) to process information, quantum computers use quantum bits or qubits, which can represent 0, 1, or both simultaneously due to superposition. This allows quantum computers to perform complex calculations much faster than classical computers for certain problems.",
           "index": 0,
           "logprobs": null,
-          "finish_reason": "stop"
+          "finish_reason": "stop",
+          "message": {
+            "role": "assistant",
+            "content": "Quantum computers differ from classical computers in their fundamental operation. While classical computers use bits (0s and 1s) to process information, quantum computers use quantum bits or qubits, which can represent 0, 1, or both simultaneously due to superposition. This allows quantum computers to perform complex calculations much faster than classical computers for certain problems."
+          }
         }
       ],
       "usage": {

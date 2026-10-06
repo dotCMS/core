@@ -1,8 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { of, throwError } from 'rxjs';
+import { MockInstance, vi } from 'vitest';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -17,13 +19,7 @@ import {
     DotMessageService,
     DotUiColorsService
 } from '@dotcms/data-access';
-import {
-    CoreWebService,
-    CoreWebServiceMock,
-    DotcmsConfigService,
-    LoggerService,
-    StringUtils
-} from '@dotcms/dotcms-js';
+import { DotcmsConfigService, LoggerService, StringUtils } from '@dotcms/dotcms-js';
 
 import { DotNavLogoService } from './api/services/dot-nav-logo/dot-nav-logo.service';
 import { AppComponent } from './app.component';
@@ -36,13 +32,14 @@ describe('AppComponent', () => {
     let dotMessageService: DotMessageService;
     let dotLicenseService: DotLicenseService;
     let dotNavLogoService: DotNavLogoService;
-    let consoleWarnSpy: jest.SpyInstance;
+    let consoleWarnSpy: MockInstance;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [AppComponent, RouterTestingModule, HttpClientTestingModule],
+            imports: [AppComponent, RouterTestingModule],
             providers: [
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 DotUiColorsService,
                 DotNavLogoService,
                 DotcmsConfigService,
@@ -61,11 +58,11 @@ describe('AppComponent', () => {
         dotLicenseService = TestBed.inject(DotLicenseService);
         dotNavLogoService = TestBed.inject(DotNavLogoService);
 
-        jest.spyOn(dotUiColorsService, 'setColors');
-        jest.spyOn(dotMessageService, 'init');
-        jest.spyOn(dotLicenseService, 'setLicense');
-        jest.spyOn(dotNavLogoService, 'setLogo');
-        consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+        vi.spyOn(dotUiColorsService, 'setColors');
+        vi.spyOn(dotMessageService, 'init');
+        vi.spyOn(dotLicenseService, 'setLicense');
+        vi.spyOn(dotNavLogoService, 'setLogo');
+        consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
         fixture = TestBed.createComponent(AppComponent);
         de = fixture.debugElement;
@@ -89,7 +86,7 @@ describe('AppComponent', () => {
 
     describe('Configuration loading', () => {
         it('should load and apply configuration successfully', () => {
-            jest.spyOn(dotCmsConfigService, 'getConfig').mockReturnValue(
+            vi.spyOn(dotCmsConfigService, 'getConfig').mockReturnValue(
                 of({
                     colors: {
                         primary: '#123',
@@ -125,7 +122,7 @@ describe('AppComponent', () => {
         });
 
         it('should handle partial configuration (missing optional fields)', () => {
-            jest.spyOn(dotCmsConfigService, 'getConfig').mockReturnValue(
+            vi.spyOn(dotCmsConfigService, 'getConfig').mockReturnValue(
                 of({
                     colors: {
                         primary: '#123',
@@ -159,14 +156,13 @@ describe('AppComponent', () => {
 
         it('should use default colors when configuration fails to load', () => {
             const error = new Error('Failed to load configuration');
-            jest.spyOn(dotCmsConfigService, 'getConfig').mockReturnValue(throwError(() => error));
+            vi.spyOn(dotCmsConfigService, 'getConfig').mockReturnValue(throwError(() => error));
 
             fixture.detectChanges();
 
-            // Should log warning (throwError wraps error in a function, so we check for the message)
             expect(consoleWarnSpy).toHaveBeenCalledWith(
                 'Failed to load configuration, using defaults:',
-                expect.any(Function)
+                error
             );
 
             // Should use default colors
@@ -183,16 +179,13 @@ describe('AppComponent', () => {
 
         it('should handle configuration error gracefully (unauthenticated user)', () => {
             const httpError = { status: 401, message: 'Unauthorized' };
-            jest.spyOn(dotCmsConfigService, 'getConfig').mockReturnValue(
-                throwError(() => httpError)
-            );
+            vi.spyOn(dotCmsConfigService, 'getConfig').mockReturnValue(throwError(() => httpError));
 
             fixture.detectChanges();
 
-            // Should log warning (throwError wraps error in a function)
             expect(consoleWarnSpy).toHaveBeenCalledWith(
                 'Failed to load configuration, using defaults:',
-                expect.any(Function)
+                httpError
             );
 
             // Should still set default colors to ensure app works
@@ -206,13 +199,13 @@ describe('AppComponent', () => {
         });
 
         it('should always set colors even when configuration fails', () => {
-            jest.spyOn(dotCmsConfigService, 'getConfig').mockReturnValue(
+            vi.spyOn(dotCmsConfigService, 'getConfig').mockReturnValue(
                 throwError(() => new Error('Network error'))
             );
 
             // Mock querySelector to return null (edge case)
             const originalQuerySelector = document.querySelector;
-            jest.spyOn(document, 'querySelector').mockReturnValue(null);
+            vi.spyOn(document, 'querySelector').mockReturnValue(null);
 
             fixture.detectChanges();
 
@@ -226,7 +219,7 @@ describe('AppComponent', () => {
 
     describe('Service initialization', () => {
         beforeEach(() => {
-            jest.spyOn(dotCmsConfigService, 'getConfig').mockReturnValue(
+            vi.spyOn(dotCmsConfigService, 'getConfig').mockReturnValue(
                 of({
                     colors: {
                         primary: '#123',

@@ -51,7 +51,15 @@ public class ContentDriveResource {
                      "• dotCMS does not provide support tickets for this endpoint\n" +
                      "• Use at your own risk for custom implementations\n\n" +
                      "**Functionality:** Search and browse content assets using drive-like functionality " +
-                     "with filtering, navigation, and content type filtering capabilities.",
+                     "with filtering, navigation, and content type filtering capabilities.\n\n" +
+                     "**Status filter:** the optional `status` array narrows by content state — " +
+                     "`ARCHIVED`, `UNPUBLISHED` or `LOCKED`. Entries combine with **OR**, so " +
+                     "selecting more statuses returns more content and adding one never shrinks " +
+                     "the result set. Archived content is excluded by default and only `ARCHIVED` " +
+                     "admits it, so `[\"UNPUBLISHED\"]` means \"unpublished and not archived\". " +
+                     "An empty or omitted array applies no status filtering at all; an " +
+                     "unrecognized value is rejected with a 400. It has no side effects on other " +
+                     "fields \u2014 `showFolders` is honoured as sent.",
         tags = {"Internal APIs"}
     )
     @ApiResponses(value = {
@@ -59,7 +67,7 @@ public class ContentDriveResource {
                     description = "Drive search results retrieved successfully",
                     content = @Content(mediaType = "application/json",
                         schema = @Schema(type = "object",
-                        description = "Drive search response containing filtered assets, folders, and navigation metadata with content type filtering")
+                        description = "Drive search response containing filtered assets, folders, and navigation metadata with content type filtering. WYSIWYG/TextArea/Story Block field values on each listing row are a <=150-character extracted plain-text preview, not the full stored value (issue #37185).")
                     )
         ),
         @ApiResponse(responseCode = "401",

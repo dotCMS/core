@@ -35,6 +35,14 @@ export interface DotContentTypeQueryParams {
     direction?: 'ASC' | 'DESC';
     /** Content type base types to filter by */
     types?: DotCMSBaseTypesContentTypes[];
+    /**
+     * Whether to include system Content Types (Host, Forms, Favorite Page…) in the response.
+     *
+     * Omit to keep the backend default, which is to include them — so callers that never asked
+     * about system types are unaffected. Pass `false` for a picker where creating such content
+     * makes no sense.
+     */
+    system?: boolean;
 }
 
 /**
@@ -165,6 +173,12 @@ export class DotPageContentTypeService {
             params.types.forEach((type: DotCMSBaseTypesContentTypes) => {
                 httpParams = httpParams.append('type', type);
             });
+        }
+
+        // Checked against `undefined` rather than truthiness: `false` is the meaningful value here
+        // (exclude system types), and a truthiness check would silently drop it.
+        if (params.system !== undefined) {
+            httpParams = httpParams.set('system', params.system);
         }
 
         return this.http

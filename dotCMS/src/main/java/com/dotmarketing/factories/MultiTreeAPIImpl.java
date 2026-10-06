@@ -3,7 +3,6 @@ package com.dotmarketing.factories;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
-import com.dotcms.enterprise.achecker.utility.Utility;
 import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.rendering.velocity.directive.ParseContainer;
 import com.dotcms.rendering.velocity.services.PageLoader;
@@ -21,10 +20,10 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.cache.MultiTreeCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.Params;
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.StalePageSaveException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
@@ -92,14 +91,13 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     private static final String DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION_PER_LANGUAGE_NOT_SQL =
             "delete from multi_tree where variant_id = ? and relation_type != ? and personalization = ? and multi_tree.parent1 = ?  and " +
                     "child in (select distinct identifier from contentlet,multi_tree where multi_tree.child = contentlet.identifier and multi_tree.parent1 = ? and language_id = ?)";
-    private static final String SELECT_COUNT_MULTI_TREE_BY_RELATION_PERSONALIZATION_PAGE_CONTAINER_AND_CHILD =
-            "select count(*) cc from multi_tree where relation_type = ? and personalization = ? and " +
-                    "multi_tree.parent1 = ? and multi_tree.parent2 = ? and multi_tree.child = ? and variant_id = ?";
-
-    private static final String DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION_PER_LANGUAGE_SQL =
-            "delete from multi_tree where relation_type != ? and personalization = ? and multi_tree.parent1 = ?  and child in (%s)";
-    private static final String SELECT_MULTI_TREE_BY_LANG =
-            "select distinct contentlet.identifier from contentlet,multi_tree where multi_tree.child = contentlet.identifier and multi_tree.parent1 = ? and language_id = ? and variant_id = ?";
+    private static final String DELETE_ALL_MULTI_TREE_BY_RELATION_AND_PERSONALIZATION_PER_TWO_LANGUAGES_NOT_SQL =
+            "delete from multi_tree where variant_id = ? and relation_type != ? and personalization = ? and multi_tree.parent1 = ? " +
+                    "and child in (select distinct identifier from contentlet,multi_tree where multi_tree.child = contentlet.identifier " +
+                    "and multi_tree.parent1 = ? and (language_id = ? or language_id =?))";
+    private static final String SELECT_EXISTING_MULTI_TREE_KEYS_BY_PAGE_AND_CHILDREN =
+            "SELECT relation_type, personalization, parent2, child, variant_id FROM multi_tree " +
+                    "WHERE parent1 = ? AND child IN (%s)";
 
     private static final String UPDATE_MULTI_TREE_PERSONALIZATION = "update multi_tree set personalization = ? where personalization = ?";
     private static final String SELECT_SQL = "select * from multi_tree where parent1 = ? and parent2 = ? and child = ? and  relation_type = ? and personalization = ? and variant_id = ?";
@@ -126,6 +124,65 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     private static final String SELECT_CHILD_BY_PARENT_RELATION_PERSONALIZATION_VARIANT_LANGUAGE =
             SELECT_CHILD_BY_PARENT_RELATION_PERSONALIZATION_VARIANT + " AND child IN (SELECT DISTINCT identifier FROM contentlet, multi_tree " +
                     "WHERE multi_tree.child = contentlet.identifier AND multi_tree.parent1 = ? AND language_id = ?)";
+    private static final String SELECT_CHILD_BY_PARENT_RELATION_PERSONALIZATION_VARIANT_TWO_LANGUAGES =
+            SELECT_CHILD_BY_PARENT_RELATION_PERSONALIZATION_VARIANT + " AND child IN (SELECT DISTINCT identifier FROM contentlet, multi_tree " +
+                    "WHERE multi_tree.child = contentlet.identifier AND multi_tree.parent1 = ? AND (language_id = ? OR language_id = ?))";
+    // Net-loss guard SQL (issue #37377). These mirror the SELECT_CHILD_BY_PARENT* queries above
+    // but additionally require the contentlet to have at least one NON-ARCHIVED version in scope.
+    // They exist as separate constants on purpose: the originals feed
+    // refreshContentletReferenceCount(), whose cached figure counts every multi_tree row including
+    // archived ones, so narrowing them would leave that cache permanently stale.
+    //
+    // "Archived" is contentlet_version_info.deleted, and that table is keyed
+    // (identifier, lang, variant_id) — so the check is scoped to the variant being saved, and to
+    // the language(s) the surrounding query already has in play. Testing deleted (rather than, say,
+    // live_inode) is deliberate: working-but-unpublished content is not archived and must still
+    // count.
+    // Variant resolution mirrors how dotCMS renders a variant page: use the save variant's own
+    // version row when the contentlet has one, and fall back to DEFAULT only when it does not.
+    // A plain `variant_id IN (?, 'DEFAULT')` would be wrong -- it would let a DEFAULT row keep a
+    // contentlet counted even though the save variant's own row says it is archived.
+    // Content on a variant page normally lives only in DEFAULT: copyMultiTree copies multi_tree
+    // rows into a variant but never the child contentlets, and nothing on the page-edit path
+    // copies content into a variant (copyContentToVariant runs only when promoting BACK to
+    // DEFAULT). Without the fallback the guard finds no version rows at all on a variant save,
+    // `existing` comes back empty, and the whole net-loss check is skipped.
+    private static final String NON_ARCHIVED_IN_VARIANT =
+            " AND EXISTS (SELECT 1 FROM contentlet_version_info cvi WHERE cvi.identifier = multi_tree.child"
+                    + " AND cvi.deleted = false"
+                    + " AND (cvi.variant_id = ?"
+                    + "      OR (cvi.variant_id = '" + DEFAULT_VARIANT.name() + "'"
+                    + "          AND NOT EXISTS (SELECT 1 FROM contentlet_version_info x"
+                    + "                          WHERE x.identifier = multi_tree.child AND x.variant_id = ?))))";
+    private static final String NON_ARCHIVED_IN_VARIANT_AND_LANGUAGE =
+            " AND EXISTS (SELECT 1 FROM contentlet_version_info cvi WHERE cvi.identifier = multi_tree.child"
+                    + " AND cvi.lang = ? AND cvi.deleted = false"
+                    + " AND (cvi.variant_id = ?"
+                    + "      OR (cvi.variant_id = '" + DEFAULT_VARIANT.name() + "'"
+                    + "          AND NOT EXISTS (SELECT 1 FROM contentlet_version_info x"
+                    + "                          WHERE x.identifier = multi_tree.child"
+                    + "                            AND x.lang = ? AND x.variant_id = ?))))";
+    private static final String NON_ARCHIVED_IN_VARIANT_AND_TWO_LANGUAGES =
+            " AND EXISTS (SELECT 1 FROM contentlet_version_info cvi WHERE cvi.identifier = multi_tree.child"
+                    + " AND (cvi.lang = ? OR cvi.lang = ?) AND cvi.deleted = false"
+                    + " AND (cvi.variant_id = ?"
+                    + "      OR (cvi.variant_id = '" + DEFAULT_VARIANT.name() + "'"
+                    + "          AND NOT EXISTS (SELECT 1 FROM contentlet_version_info x"
+                    + "                          WHERE x.identifier = multi_tree.child"
+                    + "                            AND (x.lang = ? OR x.lang = ?) AND x.variant_id = ?))))";
+
+    private static final String SELECT_NON_ARCHIVED_CHILD_BY_PARENT_PERSONALIZATION_VARIANT =
+            SELECT_CHILD_BY_PARENT_RELATION_PERSONALIZATION_VARIANT + NON_ARCHIVED_IN_VARIANT;
+    private static final String SELECT_NON_ARCHIVED_CHILD_BY_PARENT_PERSONALIZATION_VARIANT_LANGUAGE =
+            SELECT_CHILD_BY_PARENT_RELATION_PERSONALIZATION_VARIANT_LANGUAGE + NON_ARCHIVED_IN_VARIANT_AND_LANGUAGE;
+    private static final String SELECT_NON_ARCHIVED_CHILD_BY_PARENT_PERSONALIZATION_VARIANT_TWO_LANGUAGES =
+            SELECT_CHILD_BY_PARENT_RELATION_PERSONALIZATION_VARIANT_TWO_LANGUAGES + NON_ARCHIVED_IN_VARIANT_AND_TWO_LANGUAGES;
+
+    // Page-level variant fallback probe, mirroring getMultiTreesByVariant: a page with NO rows at
+    // all in a variant renders DEFAULT's rows instead.
+    private static final String SELECT_MULTI_TREE_EXISTS_BY_PARENT_AND_VARIANT =
+            "SELECT 1 FROM multi_tree WHERE parent1 = ? AND variant_id = ? LIMIT 1";
+
     private static final String SELECT_NOT_EMPTY_CONTENTLET_STYLES_BY_PAGE =
             SELECT_ALL + "WHERE parent1 = ? AND style_properties IS NOT NULL";
 
@@ -636,13 +693,32 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         refreshPageInCache(mTree.getHtmlPage(), mTree.getVariantId());
     }
 
+    @Override
+    @WrapInTransaction
+    public void updateStyleProperties(final List<MultiTree> mTrees) throws DotDataException {
+        if (mTrees == null || mTrees.isEmpty()) {
+            throw new DotDataException("empty list passed in");
+        }
+
+        for (final MultiTree tree : mTrees) {
+            _dbUpsert(tree);
+            this.multiTreeCache.get().removeContentletReferenceCount(tree.getContentlet());
+        }
+
+        final MultiTree mTree = mTrees.get(0);
+        updateHTMLPageVersionTS(mTree.getHtmlPage(), mTree.getVariantId());
+        refreshPageInCache(mTree.getHtmlPage(), mTree.getVariantId());
+    }
+
     /**
-     * Save a collection of {@link MultiTree} and link them with a page, Also delete all the
-     * {@link MultiTree} linked previously with the page.
+     * Saves a collection of {@link MultiTree} objects linked to an HTML Page and removes all
+     * previously existing entries for that page. This is a convenience overload that performs a
+     * full DELETE (no language or variant scope is applied).
      *
-     * @param pageId Page's identifier
-     * @param multiTrees
-     * @throws DotDataException
+     * @param pageId          The page identifier.
+     * @param personalization The personalization token (e.g., persona key tag).
+     * @param multiTrees      The list of {@link MultiTree} objects to save.
+     * @throws DotDataException If there is an issue retrieving or persisting data from/to the DB.
      */
     @Override
     @WrapInTransaction
@@ -655,15 +731,33 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     }
 
     /**
-     * Save a collection of {@link MultiTree} and link them with a page, Also delete all the
-     * {@link MultiTree} linked previously with the page.
+     * Saves a collection of {@link MultiTree} objects linked to an HTML Page, replacing existing
+     * entries. The deletion strategy depends on whether a language is specified and whether the
+     * global language-fallback flag ({@code DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE}) is enabled:
      *
-     * @param pageId {@link String} Page's identifier
-     * @param personalization {@link String} personalization token
-     * @param multiTrees {@link List} of {@link MultiTree} to safe
-     * @param languageIdOpt {@link Optional} {@link Long}   optional language, if present will deletes only the contentlets that have a version on this language.
-     *                                        Since it is by identifier, when deleting for instance in spanish, will remove the english and any other lang version too.
-     * @throws DotDataException If there is an issue retrieving data from the DB.
+     * <ul>
+     *   <li><b>Language-pair DELETE</b> (when {@code languageId} is non-null AND
+     *   {@code DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE} is {@code true}): Removes only multi-tree
+     *   entries whose child contentlet has a version in either the requested language or the
+     *   site's default language. When the requested language already IS the default language, a
+     *   single-language DELETE is performed.</li>
+     *
+     *   <li><b>Language-scoped DELETE</b> (when {@code languageId} is non-null AND
+     *   {@code DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE} is {@code false}): Removes only multi-tree
+     *   entries whose child contentlet has a version in the requested language.</li>
+     *
+     *   <li><b>Full DELETE</b> (when {@code languageId} is {@code null}): Removes all existing
+     *   multi-tree entries for the page/personalization/variant before inserting the new set.
+     *   Used when no language context is available (e.g. template-level saves).</li>
+     * </ul>
+     *
+     * @param pageId          The page identifier.
+     * @param personalization The personalization token (e.g., persona key tag).
+     * @param multiTrees      The list of {@link MultiTree} objects to save.
+     * @param languageIdOpt   Optional language ID. When present, restricts the deletion scope as
+     *                        described above.
+     * @param variantId       The variant identifier.
+     * @throws DotDataException If there is an issue retrieving or persisting data from/to the DB.
      */
     @Override
     @WrapInTransaction
@@ -678,33 +772,118 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                 pageId, personalization, multiTrees));
 
         if (multiTrees == null) {
-
             throw new DotDataException("empty list passed in");
         }
 
+        // Net-loss threshold guard. Disabled by default (-1). Set to 1 to reject any save that
+        // drops 2+ contentlets — safe for the UVE because each user action (add/remove/move)
+        // produces a net change of at most ±1. Also guards the complete-wipe case (empty payload)
+        // since a loss of N > threshold always triggers when N equals all existing rows.
+        // The DB SELECT is skipped entirely when the payload is non-empty AND threshold is -1.
+        final int threshold = Config.getIntProperty("MULTITREE_NET_LOSS_THRESHOLD", -1);
+        if (multiTrees.isEmpty() || threshold >= 0) {
+            // Follow the same language scoping as the downstream DELETE, so the guard measures the
+            // same slice of the page. When DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE=true and the
+            // requested language differs from the default, the DELETE targets both languages — use
+            // the two-language form so default-language-only contentlets stay visible to the guard.
+            //
+            // The guard counts only NON-ARCHIVED content, which is deliberately NOT the same set of
+            // rows the DELETE removes (issue #37377). An archived contentlet can still hold a stale
+            // multi_tree row; the DELETE clears that row, but losing it is not a loss of content, so
+            // counting it would reject legitimate saves. Do not "restore consistency" here by
+            // reverting to the unfiltered query — that is the bug this guard had.
+            final boolean defaultContentToDefaultLanguageGuard = Config.getBooleanProperty(
+                    "DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
+
+            // Page-level variant fallback, mirroring getMultiTreesByVariant. A page with no rows at
+            // all in the requested variant renders DEFAULT's rows, so those are what a save there
+            // would displace and what the guard must measure.
+            //
+            // The condition is "does this page have ANY row in that variant", NOT "did the count
+            // come back empty". The latter is also true when the variant's own rows exist but are
+            // all archived, and falling back then would count DEFAULT's live content against a
+            // variant that legitimately has none — inflating the count into false rejections, the
+            // very bug class issue #37377 was about.
+            final String countVariantId =
+                    !DEFAULT_VARIANT.name().equals(variantId)
+                            && !this.hasMultiTreesInVariant(pageId, variantId)
+                            ? DEFAULT_VARIANT.name()
+                            : variantId;
+            final Set<String> existing = this.countNonArchivedForGuard(pageId, personalization,
+                    countVariantId, languageIdOpt, defaultContentToDefaultLanguageGuard);
+            if (!existing.isEmpty()) {
+                final int netLoss = existing.size() - multiTrees.size();
+                final Set<String> incomingIds = multiTrees.stream()
+                        .map(MultiTree::getContentlet)
+                        .collect(Collectors.toSet());
+                final Set<String> wipedIds = existing.stream()
+                        .filter(id -> !incomingIds.contains(id))
+                        .collect(Collectors.toSet());
+                if (multiTrees.isEmpty()) {
+                    Logger.warn(this, String.format(
+                            "Empty save payload would wipe %d non-archived contentlet(s) from page '%s' " +
+                            "(personalization='%s', variantId='%s', language=%d). " +
+                            "Contentlets at risk: %s",
+                            existing.size(), pageId, personalization, variantId,
+                            languageIdOpt.orElse(-1L), existing));
+                }
+                if (threshold >= 0 && netLoss > threshold) {
+                    Logger.warn(this, String.format(
+                            "Save rejected: net loss of %d contentlet(s) from page '%s' exceeds threshold %d " +
+                            "(personalization='%s', variantId='%s', language=%d). " +
+                            "Incoming IDs: %s — Wiped IDs: %s",
+                            netLoss, pageId, threshold, personalization, variantId,
+                            languageIdOpt.orElse(-1L), incomingIds, wipedIds));
+                    throw new StalePageSaveException(
+                            "Save rejected: net content loss exceeds the configured threshold. Please refresh and try again.");
+                }
+            }
+        }
+
         Logger.debug(MultiTreeAPIImpl.class, ()->String.format("Saving page's content: %s", multiTrees));
-        Set<String> originalContentletIds = new HashSet<>();
+        Set<String> originalContentletIds;
         final DotConnect db = new DotConnect();
 
         // Preserves already existing styles
         preserveStylesBeforeSaving(pageId, multiTrees);
 
-        if (languageIdOpt.isPresent()) {
-            if (DbConnectionFactory.isMySql()) {
-                deleteMultiTreeToMySQL(pageId, personalization, languageIdOpt, variantId);
-           } else {
+        // When DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE is enabled, page rendering falls back to the
+        // default language for contentlets that have no version in the requested language. This
+        // means a client editing the page may receive and re-submit content whose identifiers span
+        // multiple languages.
+        final boolean defaultContentToDefaultLanguage = Config.getBooleanProperty(
+                "DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
+
+        // Removed legacy MySQL multi-tree delete workaround. Updated logic leverages PostgreSQL
+        // snapshot semantics to safely perform deletes using subqueries on the same table.
+        // System is now officially PostgreSQL-exclusive.
+        if (languageIdOpt.isPresent() && defaultContentToDefaultLanguage) {
+            final long defaultLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+
+            // When the requested language IS the default, a single-language DELETE is sufficient.
+            if (defaultLanguageId == languageIdOpt.get()) {
                 originalContentletIds = this.getOriginalContentlets(pageId, ContainerUUID.UUID_DEFAULT_VALUE,
                         personalization, variantId, languageIdOpt.get());
-                db.setSQL(DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION_PER_LANGUAGE_NOT_SQL)
-                        .addParam(variantId)
-                        .addParam(ContainerUUID.UUID_DEFAULT_VALUE)
-                        .addParam(personalization)
-                        .addParam(pageId)
-                        .addParam(pageId)
-                        .addParam(languageIdOpt.get())
-                        .loadResult();
+                deleteEntriesByRequestedLanguage(pageId, personalization, languageIdOpt.get(), variantId, db);
+            } else {
+                // Language-pair DELETE: remove entries whose child contentlet has a version in either
+                // the requested language or the default language. This ensures that contentlets
+                // exclusive to another language (e.g. FR-only) are not removed when editing a page
+                // in a non-default language, and their cache entries are not invalidated either.
+                originalContentletIds = this.getOriginalContentlets(pageId,
+                        personalization, variantId, languageIdOpt.get(), defaultLanguageId);
+                deleteEntriesByRequestedAndDefaultLanguage(pageId, personalization, languageIdOpt.get(), defaultLanguageId, variantId, db);
             }
+
+        } else if (languageIdOpt.isPresent()) {
+            originalContentletIds = this.getOriginalContentlets(pageId, ContainerUUID.UUID_DEFAULT_VALUE,
+                    personalization, variantId, languageIdOpt.get());
+
+            // Language-scoped DELETE: only remove entries whose child contentlet has a version
+            // in the given language. Preserves language-exclusive content in other languages.
+            deleteEntriesByRequestedLanguage(pageId, personalization, languageIdOpt.get(), variantId, db);
         } else {
+            // Full DELETE: no language context — remove all entries for this page/personalization/variant.
             originalContentletIds = this.getOriginalContentlets(pageId, ContainerUUID.UUID_DEFAULT_VALUE,
                     personalization, variantId);
             db.setSQL(DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION)
@@ -716,13 +895,74 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         }
 
         if (!multiTrees.isEmpty()) {
-
             copyMultiTree(pageId, multiTrees);
         }
         this.refreshContentletReferenceCount(originalContentletIds, multiTrees);
         updateHTMLPageVersionTS(pageId, variantId);
-
         refreshPageInCache(pageId, variantId);
+    }
+
+    /**
+     * Removes {@link MultiTree} entries for the given page whose contentlet has a version in
+     * the specified language. Entries for contentlets that exist only in other languages are left
+     * untouched, preserving language-exclusive content.
+     *
+     * <p>This is used both when {@code DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE} is {@code false} (any
+     * single-language edit) and when it is {@code true} but the requested language is the same as
+     * the site's default language (a language-pair DELETE degenerates to a single-language DELETE
+     * in that case).</p>
+     *
+     * @param pageId          The page identifier.
+     * @param personalization The personalization token (e.g., persona key tag).
+     * @param languageId      The language whose contentlets should be removed from the page's
+     *                        multi-tree entries.
+     * @param variantId       The variant identifier.
+     * @param db              An active {@link DotConnect} instance to execute the DELETE.
+     * @throws DotDataException If there is an error executing the DELETE statement.
+     */
+    private void deleteEntriesByRequestedLanguage(final String pageId, final String personalization,
+            final long languageId, final String variantId, final DotConnect db)
+            throws DotDataException {
+        db.setSQL(DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION_PER_LANGUAGE_NOT_SQL)
+                .addParam(variantId)
+                .addParam(ContainerUUID.UUID_DEFAULT_VALUE)
+                .addParam(personalization)
+                .addParam(pageId)
+                .addParam(pageId)
+                .addParam(languageId)
+                .loadResult();
+    }
+
+    /**
+     * Removes {@link MultiTree} entries for the given page whose contentlet has a version in
+     * either the requested language or the site's default language. Entries for contentlets that
+     * exist exclusively in other languages are left untouched.
+     *
+     * <p>This is used when {@code DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE} is {@code true} and the
+     * requested language differs from the default. This makes the request two-language
+     * scope and ensures that only those entries are cleaned up without inadvertently deleting
+     * contentlets that belong exclusively to a third language.</p>
+     *
+     * @param pageId            The page identifier.
+     * @param personalization   The personalization token (e.g., persona key tag).
+     * @param languageId        The requested language ID.
+     * @param variantId         The variant identifier.
+     * @param db                An active {@link DotConnect} instance to execute the DELETE.
+     * @param defaultLanguageId The site's default language ID.
+     * @throws DotDataException If there is an error executing the DELETE statement.
+     */
+    private void deleteEntriesByRequestedAndDefaultLanguage(final String pageId, final String personalization,
+            final long languageId, final long defaultLanguageId, final String variantId,
+            final DotConnect db) throws DotDataException {
+        db.setSQL(DELETE_ALL_MULTI_TREE_BY_RELATION_AND_PERSONALIZATION_PER_TWO_LANGUAGES_NOT_SQL)
+                .addParam(variantId)
+                .addParam(ContainerUUID.UUID_DEFAULT_VALUE)
+                .addParam(personalization)
+                .addParam(pageId)
+                .addParam(pageId)
+                .addParam(languageId)
+                .addParam(defaultLanguageId)
+                .loadResult();
     }
 
     public void copyMultiTree(final String pageId, final List<MultiTree> multiTrees) throws DotDataException {
@@ -745,6 +985,15 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
         DotPreconditions.notNull(multiTrees, () -> "multiTrees can't be null");
 
+        if (multiTrees.isEmpty()) {
+            return;
+        }
+
+        // Single query to detect duplicates — avoids N+1 SELECT round-trips.
+        // We fetch all existing rows for this page whose child matches any entry in
+        // the incoming list, then check in Java using a HashSet.
+        final Set<String> existingKeys = loadExistingMultiTreeKeys(pageId, multiTrees);
+
         final DotConnect db = new DotConnect();
         final List<Params> insertParams = Lists.newArrayList();
 
@@ -752,28 +1001,23 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             final String copiedMultiTreeVariantId =
                     UtilMethods.isSet(variantName) ? variantName : tree.getVariantId();
 
-            //This is for checking if the content we are trying to add is already added into the container
-            db.setSQL(SELECT_COUNT_MULTI_TREE_BY_RELATION_PERSONALIZATION_PAGE_CONTAINER_AND_CHILD)
-                    .addParam(tree.getRelationType())
-                    .addParam(tree.getPersonalization())
-                    .addParam(pageId)
-                    .addParam(tree.getContainerAsID())
-                    .addParam(tree.getContentlet())
-                    .addParam(copiedMultiTreeVariantId);
-            final int contentExist = Integer.parseInt(db.loadObjectResults().get(0).get("cc").toString());
-            if(contentExist != 0){
-                final String contentletTitle = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(tree.getContentlet()).getTitle();
-                final String errorMsg = String.format("Content '%s' [ %s ] has already been added to Container " +
-                                                              "'%s'", contentletTitle, tree.getContentlet(),
-                        tree.getContainer());
-                Logger.debug(MultiTreeAPIImpl.class, errorMsg);
-                throw new IllegalArgumentException(errorMsg);
+            final String currentMultiTreeKey = MultiTree.buildMultiTreeKey(tree.getRelationType(),
+                    tree.getPersonalization(), tree.getContainerAsID(), tree.getContentlet(),
+                    copiedMultiTreeVariantId);
+
+            if (existingKeys.contains(currentMultiTreeKey)) {
+                // Skip duplicates silently instead of throwing. The old behavior threw a
+                // DotRuntimeException on the first duplicate, which caused the caller (addContent)
+                // to hang waiting for a response that never arrived — see issue #35029. Logging at
+                // DEBUG level preserves observability without surfacing it as an error.
+                Logger.debug(MultiTreeAPIImpl.class, () -> String.format(
+                        "Content [%s] already exists in Container '%s', skipping.",
+                        tree.getContentlet(), tree.getContainer()));
+                continue;
             }
 
             final String stylePropertiesJson = serializeStyleProperties(tree.getStyleProperties());
-
-            insertParams
-                    .add(new Params(pageId, tree.getContainerAsID(), tree.getContentlet(),
+            insertParams.add(new Params(pageId, tree.getContainerAsID(), tree.getContentlet(),
                             tree.getRelationType(), tree.getTreeOrder(), tree.getPersonalization(),
                             copiedMultiTreeVariantId, stylePropertiesJson));
         }
@@ -781,36 +1025,45 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     }
 
     @Override
-    public void overridesMultitreesByPersonalization(String pageId,
-            String personalization, List<MultiTree> multiTrees,
-            Optional<Long> languageIdOpt) throws DotDataException {
+    public void overridesMultitreesByPersonalization(final String pageId,
+            final String personalization, final List<MultiTree> multiTrees,
+            final Optional<Long> languageIdOpt) throws DotDataException {
         overridesMultitreesByPersonalization(pageId, personalization, multiTrees,
                 languageIdOpt, VariantAPI.DEFAULT_VARIANT.name());
     }
 
-    private void deleteMultiTreeToMySQL(
-            final String pageId,
-            final String personalization,
-            final Optional<Long> languageIdOpt, final String variantId) throws DotDataException {
-        final DotConnect db = new DotConnect();
+    /**
+     * Returns the set of composite keys for all existing multi-tree rows whose {@code child}
+     * identifier appears in the given list. Used to detect duplicates before inserting with
+     * a single round-trip.
+     * <p>
+     * Each key encodes {@code (relation_type, personalization, parent2, child, variant_id)}
+     * separated by {@code |}, matching the structure built by {@link MultiTree#buildMultiTreeKey}.
+     */
+    private Set<String> loadExistingMultiTreeKeys(final String pageId,
+            final List<MultiTree> multiTrees) throws DotDataException {
 
-        final List<String> multiTreesId = db.setSQL(SELECT_MULTI_TREE_BY_LANG)
-            .addParam(pageId)
-            .addParam(languageIdOpt.get())
-            .addParam(variantId)
-            .loadObjectResults()
-            .stream()
-            .map(map -> String.format("'%s'", map.get("identifier")))
-            .collect(Collectors.toList());
+        final List<String> childIds = multiTrees.stream()
+                .map(MultiTree::getContentlet)
+                .distinct()
+                .collect(Collectors.toList());
 
-        if (!multiTreesId.isEmpty()) {
+        final String placeholders = childIds.stream().map(c -> "?")
+                .collect(Collectors.joining(","));
 
-            db.setSQL(String.format(DELETE_ALL_MULTI_TREE_SQL_BY_RELATION_AND_PERSONALIZATION_PER_LANGUAGE_SQL, Utility.joinList(",", multiTreesId)))
-                    .addParam(ContainerUUID.UUID_DEFAULT_VALUE)
-                    .addParam(personalization)
-                    .addParam(pageId)
-                    .loadResult();
-        }
+        final DotConnect db = new DotConnect().setSQL(String.format(
+                SELECT_EXISTING_MULTI_TREE_KEYS_BY_PAGE_AND_CHILDREN, placeholders))
+                .addParam(pageId);
+        childIds.forEach(db::addParam);
+
+        return db.loadObjectResults().stream()
+                .map(row -> MultiTree.buildMultiTreeKey(
+                        (String) row.get("relation_type"),
+                        (String) row.get("personalization"),
+                        (String) row.get("parent2"),
+                        (String) row.get("child"),
+                        (String) row.get("variant_id")))
+                .collect(Collectors.toSet());
     }
 
     @Override
@@ -1559,6 +1812,190 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     }
 
     /**
+     * Returns the set of Contentlet IDs currently persisted in the multi_tree table for the given
+     * page, container instance, personalization, variant, and either of two language IDs. Used when
+     * {@code DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE} is enabled and the requested language is not the
+     * default, so that both the requested-language rows and the fallback default-language rows are
+     * included in the original set — preventing spurious cache invalidation for contentlets that
+     * are only stored in the default language.
+     *
+     * @param pageId           The identifier of the HTML Page.
+     * @param personalization  The personalization tag (e.g., persona key tag).
+     * @param variantId        The ID of the selected Contentlet Variant.
+     * @param languageId       The requested Language ID.
+     * @param secondLanguageId The fallback (default) Language ID.
+     * @return The set of Contentlet IDs found under either language.
+     * @throws DotDataException An error occurred when accessing the data source.
+     */
+    private Set<String> getOriginalContentlets(final String pageId, final String personalization,
+            final String variantId, final Long languageId, final long secondLanguageId)
+            throws DotDataException {
+        final List<Object> params = List.of(pageId, ContainerUUID.UUID_DEFAULT_VALUE, personalization, variantId,
+                pageId, languageId, secondLanguageId);
+        return this.getOriginalContentlets(
+                SELECT_CHILD_BY_PARENT_RELATION_PERSONALIZATION_VARIANT_TWO_LANGUAGES, params);
+    }
+
+    /**
+     * Returns the IDs of the Contentlets currently on an HTML Page that are <b>not archived</b>, for
+     * the given personalization and variant, across every language.
+     *
+     * <p>This serves the net-loss guard in
+     * {@link #overridesMultitreesByPersonalization(String, String, List, Optional, String)} and is
+     * deliberately <b>not</b> interchangeable with {@code getOriginalContentlets(...)}. Those
+     * methods feed {@link #refreshContentletReferenceCount(Set, List)}, whose cached figure counts
+     * every {@code multi_tree} row — archived ones included — so they must stay unfiltered or the
+     * cache goes stale. The guard, by contrast, is measuring how much real content a save would
+     * remove, and an archived contentlet is not real content.</p>
+     *
+     * @param pageId          The ID of the HTML Page.
+     * @param personalization The Persona set for the Multi-Tree entry.
+     * @param variantId       The ID of the selected Contentlet Variant.
+     *
+     * @return The IDs of the non-archived Contentlets on the page.
+     *
+     * @throws DotDataException An error occurred when accessing the data source.
+     */
+    private Set<String> getNonArchivedContentlets(final String pageId, final String personalization,
+            final String variantId) throws DotDataException {
+        final List<Object> params = List.of(pageId,
+                ContainerUUID.UUID_DEFAULT_VALUE,
+                personalization,
+                variantId,
+                variantId,
+                variantId);
+        return this.getOriginalContentlets(SELECT_NON_ARCHIVED_CHILD_BY_PARENT_PERSONALIZATION_VARIANT, params);
+    }
+
+    /**
+     * Returns the IDs of the Contentlets currently on an HTML Page that are <b>not archived in the
+     * given language</b>, for the given personalization and variant.
+     *
+     * <p>Archived state is per language and per variant — {@code contentlet_version_info} is keyed
+     * {@code (identifier, lang, variant_id)} — so a Contentlet archived in one language is still
+     * real content in another and must still be counted here.</p>
+     *
+     * <p>Variant resolution follows page rendering: the save variant's own version row wins, and
+     * DEFAULT is consulted only when the Contentlet has no row in that variant. Content on a
+     * variant page normally lives only in DEFAULT, because copying a page into a variant copies
+     * its {@code multi_tree} rows but not the child Contentlets.</p>
+     *
+     * @param pageId          The ID of the HTML Page.
+     * @param personalization The Persona set for the Multi-Tree entry.
+     * @param variantId       The ID of the selected Contentlet Variant.
+     * @param languageId      The language the page is being saved in.
+     *
+     * @return The IDs of the non-archived Contentlets on the page.
+     *
+     * @throws DotDataException An error occurred when accessing the data source.
+     */
+    private Set<String> getNonArchivedContentlets(final String pageId, final String personalization,
+            final String variantId, final long languageId) throws DotDataException {
+        final List<Object> params = List.of(pageId,
+                ContainerUUID.UUID_DEFAULT_VALUE,
+                personalization,
+                variantId,
+                pageId,
+                languageId,
+                languageId,
+                variantId,
+                languageId,
+                variantId);
+        return this.getOriginalContentlets(SELECT_NON_ARCHIVED_CHILD_BY_PARENT_PERSONALIZATION_VARIANT_LANGUAGE, params);
+    }
+
+    /**
+     * Returns the IDs of the Contentlets currently on an HTML Page that are <b>not archived in
+     * either of two languages</b>, for the given personalization and variant.
+     *
+     * <p>Used when {@code DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE} is enabled and the requested language
+     * is not the site default. Page rendering falls back to the default language, so a Contentlet
+     * live in <i>either</i> language is on the page and counts; only one archived in both is
+     * excluded.</p>
+     *
+     * @param pageId           The ID of the HTML Page.
+     * @param personalization  The Persona set for the Multi-Tree entry.
+     * @param variantId        The ID of the selected Contentlet Variant.
+     * @param languageId       The requested Language ID.
+     * @param secondLanguageId The fallback (default) Language ID.
+     *
+     * @return The IDs of the non-archived Contentlets on the page.
+     *
+     * @throws DotDataException An error occurred when accessing the data source.
+     */
+    private Set<String> getNonArchivedContentlets(final String pageId, final String personalization,
+            final String variantId, final long languageId, final long secondLanguageId)
+            throws DotDataException {
+        final List<Object> params = List.of(pageId,
+                ContainerUUID.UUID_DEFAULT_VALUE,
+                personalization,
+                variantId,
+                pageId,
+                languageId,
+                secondLanguageId,
+                languageId,
+                secondLanguageId,
+                variantId,
+                languageId,
+                secondLanguageId,
+                variantId);
+        return this.getOriginalContentlets(SELECT_NON_ARCHIVED_CHILD_BY_PARENT_PERSONALIZATION_VARIANT_TWO_LANGUAGES, params);
+    }
+
+    /**
+     * Returns whether the given HTML Page has any {@link MultiTree} row at all in the given Variant.
+     *
+     * <p>Used by the net-loss guard to decide whether the page-level Variant fallback applies. It
+     * mirrors {@link #getMultiTreesByVariant(String, String)}, which serves DEFAULT's rows for a
+     * page that has none of its own in the requested Variant.</p>
+     *
+     * @param pageId    The ID of the HTML Page.
+     * @param variantId The Variant to look for rows in.
+     *
+     * @return {@code true} if at least one row exists for that page and Variant.
+     *
+     * @throws DotDataException An error occurred when accessing the data source.
+     */
+    private boolean hasMultiTreesInVariant(final String pageId, final String variantId)
+            throws DotDataException {
+        return !new DotConnect().setSQL(SELECT_MULTI_TREE_EXISTS_BY_PARENT_AND_VARIANT)
+                .addParam(pageId)
+                .addParam(variantId)
+                .loadObjectResults()
+                .isEmpty();
+    }
+
+    /**
+     * Counts the non-archived Contentlets on a page for the net-loss guard, picking the language
+     * scoping that matches what the save's DELETE will target.
+     *
+     * @param pageId          The ID of the HTML Page.
+     * @param personalization The Persona set for the Multi-Tree entry.
+     * @param variantId       The Variant to count in — already resolved for page-level fallback.
+     * @param languageIdOpt   The language the page is being saved in, when there is one.
+     * @param fallbackEnabled Whether {@code DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE} is on.
+     *
+     * @return The IDs of the non-archived Contentlets in scope.
+     *
+     * @throws DotDataException An error occurred when accessing the data source.
+     */
+    private Set<String> countNonArchivedForGuard(final String pageId, final String personalization,
+            final String variantId, final Optional<Long> languageIdOpt, final boolean fallbackEnabled)
+            throws DotDataException {
+        if (languageIdOpt.isEmpty()) {
+            return this.getNonArchivedContentlets(pageId, personalization, variantId);
+        }
+        if (fallbackEnabled) {
+            final long defaultLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+            if (defaultLanguageId != languageIdOpt.get()) {
+                return this.getNonArchivedContentlets(pageId, personalization, variantId,
+                        languageIdOpt.get(), defaultLanguageId);
+            }
+        }
+        return this.getNonArchivedContentlets(pageId, personalization, variantId, languageIdOpt.get());
+    }
+
+    /**
      * Executes the specified SQL query with the provided parameters to get list of Contentlet IDs added to an HTML
      * Page.
      *
@@ -1597,19 +2034,22 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         }
 
         // Create a "Lookup Map" from the DB multiTrees.
-        // Key: Unique combination of Container + Contentlet
+        // Key: full composite key (relationType|personalization|container|child|variantId)
         // Value: Contentlet styleProperties
         final Map<String, Map<String, Object>> dbStyleMap = multiTreesFromDB.stream()
-                .collect(Collectors.toMap(
-                        mt -> mt.getContainer() + "_" + mt.getContentlet(),
+                .collect(Collectors.toMap(mt -> MultiTree.buildMultiTreeKey(
+                                mt.getRelationType(), mt.getPersonalization(), mt.getContainerAsID(),
+                                mt.getContentlet(), mt.getVariantId()),
                         MultiTree::getStyleProperties,
-                        // In case of duplicates, keep last entrance value (shouldn't happen)
+                        // In case of duplicate keys, keep the last value (shouldn't happen)
                         (existing, replacement) -> replacement
                 ));
 
         // Update the multiTrees list to preserve existing styleProperties
-        for (MultiTree multiTree : multiTrees) {
-            String key = multiTree.getContainer() + "_" + multiTree.getContentlet();
+        for (final MultiTree multiTree : multiTrees) {
+            final String key = MultiTree.buildMultiTreeKey(multiTree.getRelationType(),
+                    multiTree.getPersonalization(), multiTree.getContainerAsID(),
+                    multiTree.getContentlet(), multiTree.getVariantId());
 
             // If this relationship already existed in DB, preserves the old styles
             if (dbStyleMap.containsKey(key)) {

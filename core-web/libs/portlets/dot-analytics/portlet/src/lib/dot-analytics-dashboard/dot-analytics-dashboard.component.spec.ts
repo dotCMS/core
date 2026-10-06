@@ -3,15 +3,18 @@ import {
     createRoutingFactory,
     mockProvider,
     SpectatorRouting
-} from '@ngneat/spectator/jest';
+} from '@openng/spectator/vitest';
 import { MockComponent } from 'ng-mocks';
+import { EMPTY } from 'rxjs';
+import { vi } from 'vitest';
 
 import { TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
+import { Router, UrlSegment } from '@angular/router';
 
 import { MessageModule } from 'primeng/message';
 
 import { DotLocalstorageService, DotMessageService } from '@dotcms/data-access';
+import { LoginService } from '@dotcms/dotcms-js';
 import {
     DotAnalyticsDashboardStore,
     DotAnalyticsService,
@@ -42,8 +45,8 @@ describe('DotAnalyticsDashboardComponent', () => {
     let store: InstanceType<typeof DotAnalyticsDashboardStore>;
 
     const defaultLocalStorageMock = {
-        getItem: jest.fn().mockReturnValue(true), // Por defecto, el banner está oculto
-        setItem: jest.fn()
+        getItem: vi.fn().mockReturnValue(true),
+        setItem: vi.fn()
     };
 
     const createComponent = createRoutingFactory({
@@ -57,19 +60,38 @@ describe('DotAnalyticsDashboardComponent', () => {
         ],
         componentProviders: [DotAnalyticsDashboardStore],
         providers: [
-            mockProvider(DotAnalyticsService),
+            // Every method stubbed, not just the ones a given test asserts on. A bare
+            // mockProvider returns `undefined` from all of them, and the store's loaders do
+            // `analyticsService.getX(...).pipe(...)` — so any test that moves the store
+            // (`setCurrentTab` + flushEffects, below) fires a real load against `undefined`
+            // and throws "Cannot read properties of undefined (reading 'pipe')" from inside
+            // an rxMethod, outside any test's try/catch. It surfaced as an intermittent
+            // "Unhandled error" that failed the whole project under `nx run-many` while
+            // passing 3/3 in isolation: whether the throw lands inside the test that caused
+            // it or after the file has finished is a timing race. EMPTY completes without
+            // emitting, so no loader state changes and no assertion here moves.
+            mockProvider(DotAnalyticsService, {
+                getContentAttribution: vi.fn().mockReturnValue(EMPTY),
+                getPageviewsByDeviceBrowser: vi.fn().mockReturnValue(EMPTY),
+                getSessionEngagement: vi.fn().mockReturnValue(EMPTY),
+                getSessionEngagementGroupBy: vi.fn().mockReturnValue(EMPTY),
+                getTopContent: vi.fn().mockReturnValue(EMPTY),
+                getTotalEvents: vi.fn().mockReturnValue(EMPTY),
+                getUniqueVisitors: vi.fn().mockReturnValue(EMPTY)
+            }),
             {
                 provide: DotMessageService,
                 useValue: messageServiceMock
             },
             mockProvider(GlobalStore, {
-                currentSiteId: jest.fn().mockReturnValue('test-site-123'),
-                addNewBreadcrumb: jest.fn()
+                currentSiteId: vi.fn().mockReturnValue('test-site-123'),
+                addNewBreadcrumb: vi.fn()
             }),
             {
                 provide: DotLocalstorageService,
                 useValue: defaultLocalStorageMock
             },
+            mockProvider(LoginService, { currentUserLanguageId: 'en-US' }),
             mockProvider(Router)
         ]
     });
@@ -84,14 +106,9 @@ describe('DotAnalyticsDashboardComponent', () => {
             expect(spectator.component).toBeTruthy();
         });
 
-        it('should render engagement report component by default', () => {
-            const engagementReport = spectator.query('dot-analytics-engagement-report');
-            expect(engagementReport).toExist();
-        });
-
-        it('should render tab panels for each report type', () => {
-            const tabPanels = spectator.queryAll('p-tabpanel');
-            expect(tabPanels.length).toBe(3);
+        it('should render a router-outlet for nested report routes', () => {
+            const outlet = spectator.query('router-outlet');
+            expect(outlet).toExist();
         });
 
         it('should render filters component', () => {
@@ -106,7 +123,7 @@ describe('DotAnalyticsDashboardComponent', () => {
 
         describe('User Interactions', () => {
             it('should call onRefresh when refresh button is clicked', () => {
-                const spy = jest.spyOn(spectator.component, 'onRefresh');
+                const spy = vi.spyOn(spectator.component, 'onRefresh');
 
                 const refreshButton = spectator.query(byTestId('refresh-button'));
                 expect(refreshButton).toExist();
@@ -115,6 +132,30 @@ describe('DotAnalyticsDashboardComponent', () => {
 
                 expect(spy).toHaveBeenCalled();
             });
+        });
+    });
+
+    describe('Route-derived tab sync', () => {
+        it('should set store currentTab from the active child route path', () => {
+            spectator = createComponent({
+                firstChild: {
+                    snapshot: { url: [new UrlSegment('pageview', {})] }
+                }
+            });
+            store = spectator.fixture.debugElement.injector.get(DotAnalyticsDashboardStore);
+
+            expect(store.currentTab()).toBe('pageview');
+        });
+
+        it('should sync conversions when child route is conversions', () => {
+            spectator = createComponent({
+                firstChild: {
+                    snapshot: { url: [new UrlSegment('conversions', {})] }
+                }
+            });
+            store = spectator.fixture.debugElement.injector.get(DotAnalyticsDashboardStore);
+
+            expect(store.currentTab()).toBe('conversions');
         });
     });
 
@@ -229,7 +270,7 @@ describe('DotAnalyticsDashboardComponent', () => {
         });
 
         it('should call addNewBreadcrumb with the new tab when tab changes', () => {
-            jest.clearAllMocks();
+            vi.clearAllMocks();
             store.setCurrentTab('conversions');
             TestBed.flushEffects();
 
@@ -239,7 +280,7 @@ describe('DotAnalyticsDashboardComponent', () => {
         });
 
         it('should call addNewBreadcrumb with pageview tab when switched', () => {
-            jest.clearAllMocks();
+            vi.clearAllMocks();
             store.setCurrentTab('pageview');
             TestBed.flushEffects();
 
@@ -251,7 +292,7 @@ describe('DotAnalyticsDashboardComponent', () => {
 
     describe('Development Status Banner', () => {
         beforeEach(() => {
-            jest.clearAllMocks();
+            vi.clearAllMocks();
         });
 
         it('should show the message banner', () => {

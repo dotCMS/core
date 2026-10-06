@@ -104,11 +104,10 @@ class MetadataGeneratorImpl implements MetadataGenerator {
         return metadataMap;
     }
 
-    static ImageFilterApiImpl imageApi = ImageFilterAPI.apiInstance.apply();
-
     /**
      * Computes the dimensions -- height and width -- of a given image binary through our
-     * {@link ImageFilterAPI}.
+     * {@link ImageFilterAPI}. The engine (legacy or libvips) is resolved per call so the
+     * {@code IMAGE_API_USE_LIBVIPS} feature flag is honoured at runtime.
      *
      * @param binary The {@link File} whose dimensions wil be computed.
      *
@@ -117,7 +116,7 @@ class MetadataGeneratorImpl implements MetadataGenerator {
      */
     private Dimension calculateDimensions(final File binary) {
         try {
-            return imageApi.getWidthHeight(binary);
+            return com.dotmarketing.image.ImageEngine.resolve().getWidthHeight(binary);
         } catch (final Throwable throwable) {
             Logger.warnAndDebug(MetadataGeneratorImpl.class,
                     String.format("Unable to calculate dimensions for the given binary %s.",

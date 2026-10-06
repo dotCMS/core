@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
     Component,
     computed,
@@ -7,7 +6,8 @@ import {
     HostListener,
     inject,
     signal,
-    viewChild
+    viewChild,
+    ChangeDetectionStrategy
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterOutlet } from '@angular/router';
@@ -89,7 +89,6 @@ type SavePageEventData = {
     templateUrl: './dot-pages.component.html',
     imports: [
         MenuModule,
-        CommonModule,
         RouterOutlet,
         ProgressSpinnerModule,
         DotAddToBundleComponent,
@@ -98,6 +97,7 @@ type SavePageEventData = {
         DotCreatePageDialogComponent,
         TieredMenu
     ],
+    changeDetection: ChangeDetectionStrategy.Eager,
     host: {
         class: 'h-full overflow-auto p-6 block'
     }

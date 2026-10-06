@@ -1,0 +1,141 @@
+<header class="flex flex-col gap-1">
+    <h3 class="m-0 text-base font-semibold">
+        {{ 'users.dialog.roles.header' | dm }}
+    </h3>
+    <p class="m-0 text-sm text-slate-500">
+        {{ 'users.dialog.roles.description' | dm }}
+    </p>
+</header>
+
+<!--
+    Grid claims the tab's remaining height (`flex-1 min-h-0`) so each
+    column can layout independently and only the tree / granted list
+    scroll inside. Without `min-h-0` on both the grid and each column,
+    the intrinsic content height would push the grid past the tab body
+    and drop the outer scrollbar back onto the whole dialog.
+-->
+<div class="grid min-h-0 flex-1 grid-cols-[1fr_auto_1fr] gap-4" data-testid="users-roles-shuttle">
+    <section
+        class="flex min-h-0 flex-col overflow-hidden rounded-lg border border-surface-200"
+        data-testid="users-roles-available-col">
+        <header
+            class="flex items-center justify-between border-b border-surface-200 px-3 py-2 font-medium">
+            <span>{{ 'users.dialog.roles.available' | dm }}</span>
+        </header>
+        <div class="border-b border-surface-100 p-2">
+            <input
+                pInputText
+                type="text"
+                class="w-full"
+                [ngModel]="$availableFilter()"
+                (ngModelChange)="onAvailableFilter($event)"
+                [placeholder]="'users.dialog.roles.filter.placeholder' | dm"
+                data-testid="users-roles-available-filter" />
+        </div>
+        <!--
+            PrimeNG `<p-tree>` in checkbox selection mode: partial /
+            fully-selected propagation is built in, so the shell no
+            longer has to hand-roll indeterminate state. `[selection]`
+            drives the visual state; `(selectionChange)` funnels back
+            into `$selectedAvailable` (leaf ids) so the existing
+            grant() code path is untouched. `[emptyMessage]` renders
+            the same "no matches" copy the custom implementation used.
+
+            `flex-1 min-h-0` on the wrapping section + host class
+            `contents` here means the tree owns the leftover height
+            and scrolls internally. Icons removed per the design
+            pass — no `[icon]` on any node. The expand/collapse
+            chevron is the tree's own functional affordance and stays
+            as PrimeNG's default.
+        -->
+        <p-tree
+            [value]="$availableTreeNodes()"
+            selectionMode="checkbox"
+            [selection]="$selectedTreeNodes()"
+            (selectionChange)="onTreeSelectionChange($event)"
+            (onNodeExpand)="onNodeExpand($event)"
+            (onNodeCollapse)="onNodeCollapse($event)"
+            [loading]="$isLoading()"
+            [emptyMessage]="'users.dialog.roles.empty' | dm"
+            styleClass="border-0 p-2 min-h-0 flex-1 overflow-auto"
+            data-testid="users-roles-available-body" />
+    </section>
+
+    <div
+        class="flex flex-col items-center justify-center gap-2"
+        data-testid="users-roles-shuttle-actions">
+        <p-button
+            [outlined]="true"
+            [disabled]="!$canGrant()"
+            (onClick)="grant()"
+            [attr.aria-label]="'users.dialog.roles.grant' | dm"
+            data-testid="users-roles-grant-btn">
+            <ng-template pTemplate="icon">
+                <span class="material-symbols-rounded" aria-hidden="true">chevron_right</span>
+            </ng-template>
+        </p-button>
+        <p-button
+            [outlined]="true"
+            [disabled]="!$canRevoke()"
+            (onClick)="revoke()"
+            [attr.aria-label]="'users.dialog.roles.revoke' | dm"
+            data-testid="users-roles-revoke-btn">
+            <ng-template pTemplate="icon">
+                <span class="material-symbols-rounded" aria-hidden="true">chevron_left</span>
+            </ng-template>
+        </p-button>
+    </div>
+
+    <section
+        class="flex min-h-0 flex-col overflow-hidden rounded-lg border border-surface-200"
+        data-testid="users-roles-granted-col">
+        <header
+            class="flex items-center justify-between border-b border-surface-200 px-3 py-2 font-medium">
+            <span>{{ 'users.dialog.roles.granted' | dm }}</span>
+            <span class="text-xs text-slate-500" data-testid="users-roles-granted-count">
+                {{ 'users.dialog.roles.granted.count' | dm: [$grantedCount().toString()] }}
+            </span>
+        </header>
+        <div class="border-b border-surface-100 p-2">
+            <input
+                pInputText
+                type="text"
+                class="w-full"
+                [ngModel]="$grantedFilter()"
+                (ngModelChange)="onGrantedFilter($event)"
+                [placeholder]="'users.dialog.roles.filter.placeholder' | dm"
+                data-testid="users-roles-granted-filter" />
+        </div>
+        <!--
+            Granted side mirrors the available side: same `<p-tree>` in
+            checkbox mode, flat forest (no parents), so the PrimeNG
+            theme paints identical row padding, hover and selection
+            colours on both panels. Selection funnels back to
+            `$selectedGranted` (id source of truth) so `revoke()` and
+            all existing tests keep working.
+
+            The truly-empty case swaps the tree for the app-wide
+            `<dot-empty-container>` instead of the tree's plain
+            `[emptyMessage]` string — same icon-plus-title empty pattern
+            the rest of the portlets use.
+        -->
+        @if ($grantedTreeNodes().length === 0) {
+            <div
+                class="flex min-h-0 flex-1 items-center justify-center overflow-auto p-4"
+                data-testid="users-roles-granted-body">
+                <dot-empty-container
+                    [configuration]="grantedEmptyConfig"
+                    [hideContactUsLink]="true"
+                    data-testid="users-roles-granted-empty" />
+            </div>
+        } @else {
+            <p-tree
+                [value]="$grantedTreeNodes()"
+                selectionMode="checkbox"
+                [selection]="$selectedGrantedTreeNodes()"
+                (selectionChange)="onGrantedTreeSelectionChange($event)"
+                styleClass="border-0 p-2 min-h-0 flex-1 overflow-auto"
+                data-testid="users-roles-granted-body" />
+        }
+    </section>
+</div>

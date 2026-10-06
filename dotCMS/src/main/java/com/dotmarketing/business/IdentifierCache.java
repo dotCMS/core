@@ -25,7 +25,24 @@ public abstract class IdentifierCache implements Cachable {
 	
 	abstract protected String getIdentifierFromInode(String inode);
 
-	abstract protected void removeFromCacheByURI(String hostId, String URI);
+	abstract public void removeFromCacheByURI(String hostId, String URI);
+
+	/**
+	 * Removes the UUID-keyed and URI-keyed cache entries for a single identifier
+	 * without triggering the recursive child-folder eviction that
+	 * {@link #removeFromCacheByIdentifier(String)} performs when the cached
+	 * entry has {@code assetType = "folder"}.
+	 * <p>
+	 * Use this when the caller already iterates the full set of descendants
+	 * (e.g. from a pre-loaded snapshot) and recursive re-discovery via
+	 * {@code findByParentPath} would be redundant and cause O(F × depth)
+	 * extra DB round-trips.
+	 *
+	 * @param id     UUID of the identifier to evict
+	 * @param hostId site/host identifier (used to construct the URI cache key)
+	 * @param uri    identifier URI ({@code parent_path + asset_name}) at the time of eviction
+	 */
+	abstract public void removeFromCacheDirect(String id, String hostId, String uri);
 
 	abstract public void removeFromCacheByVersionable(Versionable versionable);
 

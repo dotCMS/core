@@ -1,7 +1,15 @@
 import { Observable } from 'rxjs';
 
 import { AsyncPipe } from '@angular/common';
-import { Component, DestroyRef, inject, input, output, signal } from '@angular/core';
+import {
+    Component,
+    DestroyRef,
+    inject,
+    input,
+    output,
+    signal,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { ButtonModule } from 'primeng/button';
@@ -12,16 +20,16 @@ import { take } from 'rxjs/operators';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 
 import { IPublishEnvironment } from '../../services/api/bundle/bundle-service';
-import { RuleModel, RULE_CREATE } from '../../services/api/rule/Rule';
+import { RULE_CREATE, RuleModel } from '../../services/api/rule/Rule';
 import { ServerSideTypeModel } from '../../services/api/serverside-field/ServerSideFieldModel';
 import { I18nService } from '../../services/i18n/i18n.service';
 import {
     ConditionActionEvent,
+    ConditionGroupActionEvent,
     RuleActionActionEvent,
-    RuleActionEvent,
-    ConditionGroupActionEvent
+    RuleActionEvent
 } from '../../services/models/rule-event.model';
-import { RuleViewService, DotRuleMessage } from '../../services/ui/dot-view-rule-service';
+import { DotRuleMessage, RuleViewService } from '../../services/ui/dot-view-rule-service';
 import { RuleFilter } from '../../services/utils/filter.util';
 import { DotRuleComponent } from '../rule/dot-rule.component';
 
@@ -34,6 +42,7 @@ const I18N_BASE = 'api.sites.ruleengine';
     selector: 'dot-rule-engine',
     templateUrl: './dot-rule-engine.component.html',
     imports: [AsyncPipe, ButtonModule, InputTextModule, DotRuleComponent],
+    changeDetection: ChangeDetectionStrategy.Eager,
     host: {
         class: 'shadow-[0px_8px_16px_0px_hsla(230,13%,9%,0.08)] p-4 px-6 flex-grow bg-white overflow-auto'
     }

@@ -11,6 +11,9 @@ public class RegExpToolkitTest extends UnitTestBase {
 
     RegExpToolkit toolkit = new RegExpToolkit("/((?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%]).{6,})/");
 
+    // Default pattern from portal.properties (passwords.regexptoolkit.pattern)
+    RegExpToolkit defaultToolkit = new RegExpToolkit("/^[A-Za-z0-9!@#$%^&*()_\\-=+.,';:`~<>\\[\\]?]{8,}$/");
+
     @Test
     public void testInvalidPasswordFormat() {
         assertFalse(toolkit.validate(null));
@@ -46,5 +49,28 @@ public class RegExpToolkitTest extends UnitTestBase {
         assertTrue(toolkit.validate("1T@e$s#t%"));
         assertTrue(toolkit
                 .validate("1T@e$s#t%1T@e$s#t%1T@e$s#t%1T@e$s#t%1T@e$s#t%1T@e$s#t%1T@e$s#t%1T@e$s#t%1T@e$s#t%1T@e$s#t%1T@e$s#t%1T@e$s#t%"));
+    }
+
+    @Test
+    public void testDefaultPatternRejectsInvalidPasswords() {
+        // Too short
+        assertFalse(defaultToolkit.validate("Abc1234"));
+        // Contains disallowed whitespace
+        assertFalse(defaultToolkit.validate("Abc 12345"));
+        // null
+        assertFalse(defaultToolkit.validate(null));
+    }
+
+    @Test
+    public void testDefaultPatternAcceptsValidPasswords() {
+        // Basic alphanumeric (8+ chars)
+        assertTrue(defaultToolkit.validate("Abcde123"));
+        // With special chars from the allowed set
+        assertTrue(defaultToolkit.validate("Abcde1!@"));
+        // With '?' — previously rejected, now allowed (issue #34616)
+        assertTrue(defaultToolkit.validate("Abcde12?"));
+        assertTrue(defaultToolkit.validate("Ab?de12#"));
+        // Mixed special chars including '?'
+        assertTrue(defaultToolkit.validate("P@ssw0rd?"));
     }
 }

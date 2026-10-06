@@ -1,17 +1,25 @@
-@use "../../../../../dotcms-scss/shared/colors";
-@use "../../../../../dotcms-scss/shared/common";
 @use "../../../../../dotcms-scss/shared/spacing";
 
 @use "variables" as *;
 :host {
     .dot-wysiwyg-monaco__container {
-        border: common.$field-border-size solid colors.$color-palette-gray-400;
-        border-radius: common.$border-radius-md;
-        &.ng-invalid {
-            border-color: colors.$color-alert-red;
+        border: 1px solid var(--p-inputtext-border-color);
+        border-radius: var(--p-inputtext-border-radius);
+        transition:
+            border-color var(--p-inputtext-transition-duration),
+            box-shadow var(--p-inputtext-transition-duration);
+
+        &:hover:not(.ng-invalid) {
+            border-color: var(--p-inputtext-hover-border-color);
         }
-        &.ng-dirty {
-            border-color: colors.$color-alert-red;
+
+        &:focus-within:not(.ng-invalid) {
+            border-color: var(--p-inputtext-focus-border-color);
+            box-shadow: var(--p-focus-ring-shadow);
+        }
+
+        &.ng-invalid {
+            border-color: var(--p-inputtext-invalid-border-color);
         }
     }
 

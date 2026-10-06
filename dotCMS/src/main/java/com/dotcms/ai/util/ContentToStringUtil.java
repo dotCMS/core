@@ -133,8 +133,13 @@ public class ContentToStringUtil {
 
     private Optional<String> parseBlockEditor(@NotNull String val) {
 
+        // #36003: embed Story Block (Tiptap JSON) as Markdown, preserving structure (tables,
+        // code blocks, lists, headings). Markdown is already plain text, so it is returned
+        // directly: do NOT route it through parseText (collapses newlines) or parseHTML (Tika
+        // re-strips the markup) — either would re-flatten exactly the structure we want to keep.
         final StoryBlockMap storyBlockMap = new StoryBlockMap(val);
-        return parseHTML(storyBlockMap.toHtml());
+        final String markdown = storyBlockMap.toMarkdown();
+        return UtilMethods.isSet(markdown) ? Optional.of(markdown) : Optional.empty();
 
     }
 

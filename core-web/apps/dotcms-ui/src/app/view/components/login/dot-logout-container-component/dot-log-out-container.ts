@@ -1,4 +1,4 @@
-import { Component, ViewEncapsulation, inject } from '@angular/core';
+import { Component, ViewEncapsulation, inject, ChangeDetectionStrategy } from '@angular/core';
 
 import { take } from 'rxjs/operators';
 
@@ -9,6 +9,7 @@ import { LoginService, LOGOUT_URL } from '@dotcms/dotcms-js';
     encapsulation: ViewEncapsulation.Emulated,
     selector: 'dot-log-out-container',
     template: '',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class DotLogOutContainerComponent {

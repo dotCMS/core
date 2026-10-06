@@ -5,8 +5,9 @@ import {
     Spectator,
     SpectatorHost,
     SpyObject
-} from '@ngneat/spectator/jest';
-import { EMPTY, of } from 'rxjs';
+} from '@openng/spectator/vitest';
+import { of, Subject } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -17,22 +18,13 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { Button } from 'primeng/button';
 import { DataView } from 'primeng/dataview';
 
-import { DotThemesService } from '@dotcms/data-access';
-import { DotcmsEventsService } from '@dotcms/dotcms-js';
+import { DotEventsSocket, DotThemesService } from '@dotcms/data-access';
 import { DotPagination, DotTheme } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
 import { DotThemeComponent } from './dot-theme.component';
 
 import { DotSiteComponent } from '../dot-site/dot-site.component';
-
-jest.mock('@primeuix/motion', () => ({
-    createMotion: () => ({
-        enter: jest.fn(),
-        leave: jest.fn().mockResolvedValue(undefined),
-        cancel: jest.fn()
-    })
-}));
 
 const mockThemes: DotTheme[] = [
     {
@@ -89,10 +81,7 @@ describe('DotThemeComponent', () => {
         imports: [ReactiveFormsModule],
         providers: [
             mockProvider(DotThemesService),
-            {
-                provide: DotcmsEventsService,
-                useValue: { subscribeToEvents: jest.fn().mockReturnValue(EMPTY) }
-            },
+            mockProvider(DotEventsSocket, { on: vi.fn().mockReturnValue(new Subject()) }),
             provideHttpClient(),
             provideHttpClientTesting(),
             {
@@ -159,14 +148,14 @@ describe('DotThemeComponent', () => {
     });
 
     describe('User Selection - onThemeSelect', () => {
-        let onChangeSpy: jest.Mock;
-        let onTouchedSpy: jest.Mock;
-        let onChangeOutputSpy: jest.Mock;
+        let onChangeSpy: Mock;
+        let onTouchedSpy: Mock;
+        let onChangeOutputSpy: Mock;
 
         beforeEach(fakeAsync(() => {
-            onChangeSpy = jest.fn();
-            onTouchedSpy = jest.fn();
-            onChangeOutputSpy = jest.fn();
+            onChangeSpy = vi.fn();
+            onTouchedSpy = vi.fn();
+            onChangeOutputSpy = vi.fn();
 
             spectator.component.registerOnChange(onChangeSpy);
             spectator.component.registerOnTouched(onTouchedSpy);
@@ -181,7 +170,7 @@ describe('DotThemeComponent', () => {
         it('should call onThemeSelect when radio button ngModelChange fires (template binding)', fakeAsync(() => {
             // Spy on onThemeSelect to verify it's called from the template binding:
             // (ngModelChange)="onThemeSelect($event)"
-            const onThemeSelectSpy = jest.spyOn(spectator.component, 'onThemeSelect');
+            const onThemeSelectSpy = vi.spyOn(spectator.component, 'onThemeSelect');
 
             const triggerButton = spectator.query('button');
             expect(triggerButton).toBeTruthy();
@@ -237,7 +226,7 @@ describe('DotThemeComponent', () => {
         it('should handle null selection', () => {
             spectator.component.onThemeSelect('theme1');
             spectator.detectChanges();
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             spectator.component.onThemeSelect(null);
             spectator.detectChanges();
@@ -346,7 +335,7 @@ describe('DotThemeComponent - ControlValueAccessor writeValue', () => {
     let hostComponent: FormHostComponent;
     let hostThemesService: SpyObject<DotThemesService>;
     let hostGlobalStoreSignal: ReturnType<typeof signal<string | null>>;
-    let onChangeOutputSpy: jest.Mock;
+    let onChangeOutputSpy: Mock;
 
     const createHost = createHostFactory({
         component: DotThemeComponent,
@@ -354,10 +343,7 @@ describe('DotThemeComponent - ControlValueAccessor writeValue', () => {
         imports: [ReactiveFormsModule],
         providers: [
             mockProvider(DotThemesService),
-            {
-                provide: DotcmsEventsService,
-                useValue: { subscribeToEvents: jest.fn().mockReturnValue(EMPTY) }
-            },
+            mockProvider(DotEventsSocket, { on: vi.fn().mockReturnValue(new Subject()) }),
             provideHttpClient(),
             provideHttpClientTesting(),
             {
@@ -371,7 +357,7 @@ describe('DotThemeComponent - ControlValueAccessor writeValue', () => {
     });
 
     beforeEach(fakeAsync(() => {
-        onChangeOutputSpy = jest.fn();
+        onChangeOutputSpy = vi.fn();
         hostGlobalStoreSignal = signal<string | null>('site1');
 
         hostSpectator = createHost(`<dot-theme [formControl]="themeControl"></dot-theme>`);
@@ -465,10 +451,7 @@ describe('DotThemeComponent - ControlValueAccessor Integration', () => {
         imports: [ReactiveFormsModule],
         providers: [
             mockProvider(DotThemesService),
-            {
-                provide: DotcmsEventsService,
-                useValue: { subscribeToEvents: jest.fn().mockReturnValue(EMPTY) }
-            },
+            mockProvider(DotEventsSocket, { on: vi.fn().mockReturnValue(new Subject()) }),
             provideHttpClient(),
             provideHttpClientTesting(),
             {
@@ -505,7 +488,7 @@ describe('DotThemeComponent - ControlValueAccessor Integration', () => {
     }));
 
     it('should write value to component from FormControl without emitting', fakeAsync(() => {
-        const onChangeSpy = jest.fn();
+        const onChangeSpy = vi.fn();
         hostSpectator.component.onChange.subscribe(onChangeSpy);
 
         hostComponent.themeControl.setValue('theme1');

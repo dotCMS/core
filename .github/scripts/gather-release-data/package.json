@@ -10,6 +10,7 @@
     "test": "jest"
   },
   "dependencies": {
+    "@octokit/plugin-throttling": "^9.6.1",
     "@octokit/rest": "^21.1.1"
   },
   "devDependencies": {

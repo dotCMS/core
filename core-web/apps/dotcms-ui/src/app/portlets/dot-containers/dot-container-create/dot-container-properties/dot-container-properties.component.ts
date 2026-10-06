@@ -1,8 +1,8 @@
 import { Subject } from 'rxjs';
 
 import { animate, style, transition, trigger } from '@angular/animations';
-import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, inject, OnInit } from '@angular/core';
+import { AsyncPipe } from '@angular/common';
+import { AfterViewInit, Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import {
     FormArray,
     FormBuilder,
@@ -51,7 +51,6 @@ import { DotLoopEditorComponent } from '../dot-loop-editor/dot-loop-editor.compo
     selector: 'dot-container-properties',
     templateUrl: './dot-container-properties.component.html',
     imports: [
-        CommonModule,
         ReactiveFormsModule,
         InplaceModule,
         SharedModule,
@@ -66,8 +65,10 @@ import { DotLoopEditorComponent } from '../dot-loop-editor/dot-loop-editor.compo
         DotApiLinkComponent,
         DotAutofocusDirective,
         DotFieldRequiredDirective,
-        ButtonModule
+        ButtonModule,
+        AsyncPipe
     ],
+    changeDetection: ChangeDetectionStrategy.Eager,
     providers: [DotContainerPropertiesStore, DotContainersService]
 })
 export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {

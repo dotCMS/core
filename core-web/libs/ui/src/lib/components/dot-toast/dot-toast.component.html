@@ -1,0 +1,16 @@
+<p-toast [position]="$position()" data-testid="dot-toast">
+    <!-- Class names and `data-pc-section` mirror PrimeNG's own message template so the theme keeps
+         applying; only the icon and the escaping behaviour differ. -->
+    <ng-template let-message #message>
+        <span
+            class="p-toast-message-icon"
+            [attr.aria-hidden]="true"
+            [attr.data-pc-section]="'icon'">
+            <dot-severity-icon [severity]="message.severity" />
+        </span>
+        <div class="p-toast-message-text">
+            <div class="p-toast-summary" [innerHtml]="message.summary"></div>
+            <div class="p-toast-detail" [innerHtml]="message.detail"></div>
+        </div>
+    </ng-template>
+</p-toast>

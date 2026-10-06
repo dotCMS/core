@@ -4,13 +4,13 @@
 ## Drops the contents of the dotCMS database in preperation for a new import (only if requested)
 drop_db_tables () {
       echo "- DOT_IMPORT_DROP_DB - attempting to drop db schema"
-      psql -h "${DB_HOST}" -d "${DB_NAME}" -U "${DB_USERNAME}" -c "DROP SCHEMA public CASCADE;CREATE SCHEMA public;GRANT ALL ON SCHEMA public TO public;"
+      psql -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}" -U "${DB_USERNAME}" -c "DROP SCHEMA public CASCADE;CREATE SCHEMA public;GRANT ALL ON SCHEMA public TO public;"
 }
 
 ## This checks active connections to the dotCMS database - we can only proceed if there are no connections
 check_active_connections() {
 
-  ACTIVE=$(psql -h "$DB_HOST" -d "$DB_NAME" -U "$DB_USERNAME" -qtAX -c \
+  ACTIVE=$(psql -h "$DB_HOST" -p "$DB_PORT" -d "$DB_NAME" -U "$DB_USERNAME" -qtAX -c \
     "SELECT count(*) FROM pg_stat_activity 
      WHERE datname = '$DB_NAME' 
      AND pid != pg_backend_pid()
@@ -30,7 +30,7 @@ import_postgres () {
 
     if [ -s $DB_BACKUP_FILE ]; then
       # Check if database already has data (inode table exists with records)
-      INODE_COUNT=$(psql -h "${DB_HOST}" -d "${DB_NAME}" -U "${DB_USERNAME}" -qtAX -c \
+      INODE_COUNT=$(psql -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}" -U "${DB_USERNAME}" -qtAX -c \
         "SELECT CASE WHEN EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'inode')
          THEN (SELECT count(*) FROM inode) ELSE 0 END" 2>/dev/null | tr -d '[:space:]')
 
@@ -40,7 +40,7 @@ import_postgres () {
       fi
 
       # Run the query using psql
-      cat $DB_BACKUP_FILE | gzip -d | psql -h "${DB_HOST}" -d "${DB_NAME}" -U "${DB_USERNAME}" 
+      cat $DB_BACKUP_FILE | gzip -d | psql -h "${DB_HOST}" -p "${DB_PORT}" -d "${DB_NAME}" -U "${DB_USERNAME}"
 
     fi
 
@@ -144,10 +144,17 @@ export IMPORT_COMPLETE=$IMPORT_DATA_DIR/import_complete.txt
 export DOT_IMPORT_ALL_ASSETS=${DOT_IMPORT_ALL_ASSETS:-"false"}
 
 
-# Extract hostname and database name from JDBC URL (jdbc:postgresql://host/dbname)
-export DB_HOST="${DB_BASE_URL#jdbc:postgresql://}"  # Remove prefix -> host/dbname
-export DB_HOST="${DB_HOST%%/*}"                      # Remove /dbname -> host
-export DB_NAME="${DB_BASE_URL##*/}"                  # Remove everything before last / -> dbname
+# Extract hostname, port, and database name from JDBC URL
+# (jdbc:postgresql://host[:port]/dbname)
+DB_URL_REST="${DB_BASE_URL#jdbc:postgresql://}"      # host[:port]/dbname
+DB_HOSTPORT="${DB_URL_REST%%/*}"                     # host[:port]
+export DB_HOST="${DB_HOSTPORT%%:*}"                  # host
+if [ "$DB_HOSTPORT" = "$DB_HOST" ]; then
+  export DB_PORT="5432"
+else
+  export DB_PORT="${DB_HOSTPORT##*:}"
+fi
+export DB_NAME="${DB_BASE_URL##*/}"                  # dbname
 export PGPASSWORD="${DB_PASSWORD}"
 
 # Clear the password from environment on exit

@@ -18,6 +18,7 @@ import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLTypeReference;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -144,7 +145,10 @@ enum ContentAPIGraphQLFieldsProvider implements GraphQLFieldsProvider {
                         .name("sortBy")
                         .type(GraphQLString)
                         .build())
-                .type(list(type))
+                // By name, not by object: the asset base-type interfaces are rebuilt per schema
+                // when a content type collides with a flat asset property, and two different
+                // objects under one name would be rejected. See #34540.
+                .type(list(GraphQLTypeReference.typeRef(type.getName())))
                 .description(BASE_TYPE_SUFFIX)
                 .dataFetcher(new ContentletDataFetcher()).build();
     }

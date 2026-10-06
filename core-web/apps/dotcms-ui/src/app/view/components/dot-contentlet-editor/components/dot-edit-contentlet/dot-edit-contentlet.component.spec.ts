@@ -1,5 +1,7 @@
 import { of as observableOf } from 'rxjs';
+import { vi } from 'vitest';
 
+import { HttpTestingController } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -7,7 +9,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { DotMessageDisplayService } from '@dotcms/data-access';
-import { LoginService } from '@dotcms/dotcms-js';
+import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
 import { DotMessageDisplayServiceMock, LoginServiceMock } from '@dotcms/utils-testing';
 
 import { DotEditContentletComponent } from './dot-edit-contentlet.component';
@@ -27,6 +29,7 @@ describe('DotEditContentletComponent', () => {
     let dotEditContentletWrapper: DebugElement;
     let dotEditContentletWrapperComponent: DotContentletWrapperComponent;
     let dotContentletEditorService: DotContentletEditorService;
+    let httpMock: HttpTestingController;
 
     beforeEach(waitForAsync(() => {
         DOTTestBed.configureTestingModule({
@@ -59,8 +62,12 @@ describe('DotEditContentletComponent', () => {
                 {
                     provide: DotCustomEventHandlerService,
                     useValue: {
-                        handle: jest.fn()
+                        handle: vi.fn()
                     }
+                },
+                {
+                    provide: DotcmsConfigService,
+                    useValue: { getConfig: () => observableOf({}) }
                 }
             ]
         });
@@ -71,13 +78,18 @@ describe('DotEditContentletComponent', () => {
         de = fixture.debugElement;
         component = de.componentInstance;
         dotContentletEditorService = de.injector.get(DotContentletEditorService);
+        httpMock = de.injector.get(HttpTestingController);
 
-        jest.spyOn(component.shutdown, 'emit');
+        vi.spyOn(component.shutdown, 'emit');
 
         fixture.detectChanges();
 
         dotEditContentletWrapper = de.query(By.css('dot-contentlet-wrapper'));
         dotEditContentletWrapperComponent = dotEditContentletWrapper.componentInstance;
+    });
+
+    afterEach(() => {
+        httpMock.match(() => true).forEach((req) => req.flush({}));
     });
 
     describe('default', () => {

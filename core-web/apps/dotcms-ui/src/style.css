@@ -1,9 +1,18 @@
 @import 'tailwindcss';
 @import 'tailwindcss-primeui';
-@import './daisyui-theme.css';
+@plugin '@tailwindcss/typography';
+@import './tailwind-palette.css';
+@import '../../../libs/dotcms-scss/tailwind/theme.css';
 
 :root {
     --experiment-nav-size: 80px;
+    /*
+     * Analytics engagement stacked bars + legend (“not engaged” segment).
+     * Fill aligns with bounced slice: AnalyticsChartColors.neutralDark.line in
+     * @dotcms/portlets/dot-analytics/data-access dot-analytics.constants.ts
+     */
+    --bar-engagement-not-engaged: var(--p-gray-200);
+    --bar-engagement-not-engaged-foreground: var(--p-gray-700);
 }
 
 a {
@@ -55,24 +64,35 @@ a:visited {
     @apply hidden;
 } */
 
+/* Same rhythm as `.form`, for a form whose fields sit deeper than its direct children
+   (inside tabs, rows or columns) and so are out of `space-y`'s reach. */
+.form .fields {
+    @apply space-y-5;
+}
+
 .form .field {
     @apply flex flex-col gap-1;
 }
 
-.form .field label {
+.form .field > label {
     @apply text-sm font-medium;
 }
 
-.form .checkbox,
-.form .radio {
-    @apply flex flex-row gap-2 items-center;
+.form .form-checkbox,
+.form .form-radio {
+    @apply flex flex-row items-center gap-2;
 }
 
-.form .checkbox label,
-.form .radio label {
+.form .form-checkbox label,
+.form .form-radio label {
     @apply text-sm font-normal;
 }
 
+/*
+ * Scoped with the rest of the convention on purpose: these describe a *field's* hint and a *field's*
+ * error. A message that is not about a field — a dialog reporting that an action failed — is a
+ * `p-message`, not a field error wearing a form's clothes.
+ */
 .form .p-field-hint {
     @apply text-sm text-gray-500;
 }

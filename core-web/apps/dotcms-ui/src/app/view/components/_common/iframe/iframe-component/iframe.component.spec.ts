@@ -1,19 +1,23 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { Subject } from 'rxjs';
+import { vi } from 'vitest';
+
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { DotIframeService, DotRouterService, DotUiColorsService } from '@dotcms/data-access';
-import { DotcmsEventsService, LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
+import {
+    DotEventsSocket,
+    DotIframeService,
+    DotRouterService,
+    DotUiColorsService
+} from '@dotcms/data-access';
+import { LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
 import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
-import {
-    DotcmsEventsServiceMock,
-    LoginServiceMock,
-    MockDotRouterService
-} from '@dotcms/utils-testing';
+import { LoginServiceMock, MockDotRouterService } from '@dotcms/utils-testing';
 
 import { IframeOverlayService } from './../service/iframe-overlay.service';
 import { IframeComponent } from './iframe.component';
@@ -40,8 +44,22 @@ describe('IframeComponent', () => {
     let iframeEl: DebugElement;
     let dotIframeService: DotIframeService;
     let dotUiColorsService: DotUiColorsService;
-    const dotcmsEventsService = new DotcmsEventsServiceMock();
     let dotRouterService: DotRouterService;
+
+    let eventSubjects: Record<string, Subject<unknown>> = {};
+    const mockDotEventsSocket = {
+        on: vi.fn((eventType: string) => {
+            if (!eventSubjects[eventType]) {
+                eventSubjects[eventType] = new Subject<unknown>();
+            }
+            return eventSubjects[eventType].asObservable();
+        })
+    };
+
+    beforeEach(() => {
+        eventSubjects = {};
+        mockDotEventsSocket.on.mockClear();
+    });
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
@@ -59,7 +77,7 @@ describe('IframeComponent', () => {
                 IframeOverlayService,
                 DotIframeService,
                 { provide: LoginService, useClass: LoginServiceMock },
-                { provide: DotcmsEventsService, useValue: dotcmsEventsService },
+                { provide: DotEventsSocket, useValue: mockDotEventsSocket },
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 { provide: DotUiColorsService, useClass: MockDotUiColorsService },
                 LoggerService,
@@ -76,7 +94,7 @@ describe('IframeComponent', () => {
         dotIframeService = TestBed.inject(DotIframeService);
         dotUiColorsService = TestBed.inject(DotUiColorsService);
         dotRouterService = TestBed.inject(DotRouterService);
-        jest.spyOn(dotUiColorsService, 'setColors');
+        vi.spyOn(dotUiColorsService, 'setColors');
 
         fixture.componentRef.setInput('isLoading', false);
         comp.src = 'etc/etc?hello=world';
@@ -88,37 +106,33 @@ describe('IframeComponent', () => {
         beforeEach(() => {
             comp.iframeElement.nativeElement = {
                 location: {
-                    reload: jest.fn()
+                    reload: vi.fn()
                 },
                 contentWindow: {
-                    postMessage: jest.fn(),
+                    postMessage: vi.fn(),
                     document: {
                         body: {
                             innerHTML: '<html></html>'
                         },
                         querySelector: () => fakeHtmlEl,
-                        addEventListener: jest.fn(),
-                        removeEventListener: jest.fn()
+                        addEventListener: vi.fn(),
+                        removeEventListener: vi.fn()
                     },
-                    addEventListener: jest.fn(),
-                    removeEventListener: jest.fn()
+                    addEventListener: vi.fn(),
+                    removeEventListener: vi.fn()
                 }
             };
         });
 
         it('should reload on DELETE_BUNDLE and on publishing-queue portlet websocket event', () => {
-            dotcmsEventsService.triggerSubscribeTo('DELETE_BUNDLE', {
-                name: 'DELETE_BUNDLE'
-            });
+            eventSubjects['DELETE_BUNDLE'].next({ name: 'DELETE_BUNDLE' });
             expect(comp.iframeElement.nativeElement.contentWindow.postMessage).toHaveBeenCalledWith(
                 'reload'
             );
         });
 
         it('should reload on PAGE_RELOAD websocket event', () => {
-            dotcmsEventsService.triggerSubscribeTo('PAGE_RELOAD', {
-                name: 'PAGE_RELOAD'
-            });
+            eventSubjects['PAGE_RELOAD'].next({ name: 'PAGE_RELOAD' });
             expect(comp.iframeElement.nativeElement.contentWindow.postMessage).toHaveBeenCalledWith(
                 'reload'
             );
@@ -142,7 +156,7 @@ describe('IframeComponent', () => {
                     }
                 },
                 location: {
-                    reload: jest.fn()
+                    reload: vi.fn()
                 }
             }
         };
@@ -156,7 +170,7 @@ describe('IframeComponent', () => {
     it('should call function in the iframe window', () => {
         comp.iframeElement.nativeElement = {
             contentWindow: {
-                fakeFunction: jest.fn(),
+                fakeFunction: vi.fn(),
                 document: {
                     body: {
                         innerHTML: '<html></html>'
@@ -197,11 +211,11 @@ describe('IframeComponent', () => {
                             innerHTML: '<html></html>'
                         },
                         querySelector: () => fakeHtmlEl,
-                        addEventListener: jest.fn(),
-                        removeEventListener: jest.fn()
+                        addEventListener: vi.fn(),
+                        removeEventListener: vi.fn()
                     },
-                    addEventListener: jest.fn(),
-                    removeEventListener: jest.fn()
+                    addEventListener: vi.fn(),
+                    removeEventListener: vi.fn()
                 }
             };
         });
@@ -276,7 +290,7 @@ describe('IframeComponent', () => {
 
         it('should hide on click and call hide event', fakeAsync(() => {
             comp.showOverlay = true;
-            jest.spyOn(iframeOverlayService, 'hide');
+            vi.spyOn(iframeOverlayService, 'hide');
             fixture.detectChanges();
             let dotOverlayMask = de.query(By.css('dot-overlay-mask'));
             dotOverlayMask.triggerEventHandler('click', {});
@@ -292,7 +306,7 @@ describe('IframeComponent', () => {
     it('should refresh OSGI Plugis list on OSGI_BUNDLES_LOADED websocket event', fakeAsync(() => {
         comp.iframeElement.nativeElement = {
             contentWindow: {
-                getBundlesData: jest.fn(),
+                getBundlesData: vi.fn(),
                 document: {
                     body: {
                         innerHTML: '<html></html>'
@@ -300,9 +314,7 @@ describe('IframeComponent', () => {
                 }
             }
         };
-        dotcmsEventsService.triggerSubscribeTo('OSGI_BUNDLES_LOADED', {
-            name: 'OSGI_BUNDLES_LOADED'
-        });
+        eventSubjects['OSGI_BUNDLES_LOADED'].next(undefined);
         tick(4500);
         expect(comp.iframeElement.nativeElement.contentWindow.getBundlesData).toHaveBeenCalledTimes(
             1

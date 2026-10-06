@@ -1,6 +1,6 @@
-import { describe, it, expect } from '@jest/globals';
-import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
 import { signalStore, withState } from '@ngrx/signals';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 
@@ -10,22 +10,10 @@ import { UVE_MODE } from '@dotcms/types';
 
 import { withTrack } from './withTrack';
 
-import { DotPageApiParams } from '../../../services/dot-page-api.service';
-import { UVE_STATUS } from '../../../shared/enums';
 import { UVEState } from '../../models';
+import { createInitialUVEState } from '../../testing/mocks';
 
-const initialState: UVEState = {
-    isEnterprise: false,
-    languages: [],
-    pageAPIResponse: null,
-    currentUser: null,
-    experiment: null,
-    errorCode: null,
-    pageParams: {} as DotPageApiParams,
-    status: UVE_STATUS.LOADING,
-    isTraditionalPage: true,
-    isClientReady: false
-};
+const initialState = createInitialUVEState();
 
 export const uveStoreMock = signalStore(withState<UVEState>(initialState), withTrack());
 
@@ -39,7 +27,7 @@ describe('withTrack', () => {
             {
                 provide: DotAnalyticsTrackerService,
                 useValue: {
-                    track: jest.fn()
+                    track: vi.fn()
                 }
             },
             provideHttpClientTesting()
@@ -55,19 +43,19 @@ describe('withTrack', () => {
     describe('methods', () => {
         describe('trackUVEModeChange', () => {
             beforeEach(() => {
-                jest.useFakeTimers();
-                jest.resetAllMocks();
+                vi.useFakeTimers();
+                vi.resetAllMocks();
             });
 
             afterEach(() => {
-                jest.useRealTimers();
+                vi.useRealTimers();
             });
 
             it('should call analyticsTracker.track with correct payload', () => {
                 store.trackUVEModeChange({ fromMode: UVE_MODE.EDIT, toMode: UVE_MODE.PREVIEW });
 
                 // This waits for the delay to pass
-                jest.runAllTimers();
+                vi.runAllTimers();
 
                 expect(analyticsTracker.track).toHaveBeenCalledWith(EVENT_TYPES.UVE_MODE_CHANGE, {
                     fromMode: UVE_MODE.EDIT,
@@ -84,12 +72,12 @@ describe('withTrack', () => {
 
         describe('trackUVECalendarChange', () => {
             beforeEach(() => {
-                jest.resetAllMocks();
-                jest.useFakeTimers();
+                vi.resetAllMocks();
+                vi.useFakeTimers();
             });
 
             afterEach(() => {
-                jest.useRealTimers();
+                vi.useRealTimers();
             });
 
             it('should call analyticsTracker.track with correct payload', () => {
@@ -98,7 +86,7 @@ describe('withTrack', () => {
                 store.trackUVECalendarChange({ selectedDate });
 
                 // This waits for the delay to pass
-                jest.runAllTimers();
+                vi.runAllTimers();
 
                 expect(analyticsTracker.track).toHaveBeenCalledWith(
                     EVENT_TYPES.UVE_CALENDAR_CHANGE,

@@ -1,4 +1,4 @@
-<div class="relative min-w-[13rem]">
+<div class="relative min-w-52">
     <p-iconfield>
         <p-autoComplete
             #autoComplete
@@ -20,12 +20,12 @@
             <ng-template let-variable pTemplate="item">
                 <div class="flex flex-col" data-testid="language-variable-suggestion-item">
                     <div
-                        class="text-gray-900 font-semibold whitespace-nowrap overflow-hidden text-ellipsis group-hover:text-primary-500"
+                        class="truncate font-semibold text-gray-900 group-hover:text-primary-500"
                         data-testid="language-variable-suggestion-value">
                         {{ variable.value }}
                     </div>
                     <div
-                        class="text-sm text-gray-500 min-w-0 whitespace-nowrap overflow-hidden text-ellipsis"
+                        class="min-w-0 truncate text-sm text-gray-500"
                         data-testid="language-variable-suggestion-key"
                         [innerHTML]="variable.key | dotHighlight: $selectedItem()"></div>
                 </div>

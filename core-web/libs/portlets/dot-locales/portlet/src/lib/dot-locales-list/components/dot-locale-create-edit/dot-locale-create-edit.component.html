@@ -1,6 +1,6 @@
 <form
     (ngSubmit)="handleSubmit()"
-    [ngClass]="{ 'min-h-80': languageId?.value, 'min-h-122': !languageId?.value }"
+    [class]="{ 'min-h-80': languageId?.value, 'min-h-122': !languageId?.value }"
     [formGroup]="form"
     class="flex flex-col gap-6">
     @if (languageId?.value) {
@@ -32,8 +32,10 @@
                     class="w-full"
                     type="text" />
                 @if (localeIDInput.value) {
-                    <p-inputIcon class="flex items-center bottom-3">
-                        <dot-copy-button [copy]="localeIDInput.value" />
+                    <p-inputIcon class="bottom-3 flex items-center">
+                        <dot-copy-button
+                            [copy]="localeIDInput.value"
+                            iconStyle="material-symbols-rounded" />
                     </p-inputIcon>
                 }
             </p-iconField>
@@ -51,8 +53,10 @@
                     class="w-full"
                     type="text" />
                 @if (languageIDInput.value) {
-                    <p-inputIcon class="flex items-center bottom-3">
-                        <dot-copy-button [copy]="languageIDInput.value" />
+                    <p-inputIcon class="bottom-3 flex items-center">
+                        <dot-copy-button
+                            [copy]="languageIDInput.value"
+                            iconStyle="material-symbols-rounded" />
                     </p-inputIcon>
                 }
             </p-iconField>
@@ -68,7 +72,7 @@
                 id="localeType"
                 formControlName="localeType"
                 data-testId="localeType"
-                appendTo="body"></p-select>
+                appendTo="body" />
         </div>
 
         @if (form.get('localeType')?.value === 1) {
@@ -125,8 +129,10 @@
                         pInputText
                         type="text" />
                     @if (isoCodeInput.value) {
-                        <p-inputgroup-addon class="bg-transparent border-l-0">
-                            <dot-copy-button [copy]="isoCodeInput.value" />
+                        <p-inputgroup-addon class="border-l-0 bg-transparent">
+                            <dot-copy-button
+                                [copy]="isoCodeInput.value"
+                                iconStyle="material-symbols-rounded" />
                         </p-inputgroup-addon>
                     }
                 </p-inputgroup>
@@ -190,7 +196,7 @@
         </span>
     }
 
-    <div class="flex gap-3 mt-auto justify-end">
+    <div class="mt-auto flex justify-end gap-3">
         <button
             (click)="ref.close()"
             [label]="'Cancel' | dm"
@@ -198,7 +204,7 @@
             pButton
             type="button"></button>
         <button
-            [label]="(languageId?.value ? 'locales.edit.locale' : 'locales.add.locale') | dm"
+            [label]="(languageId?.value ? 'update' : 'save') | dm"
             [disabled]="!form.valid"
             data-testId="submit-button"
             pButton

@@ -107,9 +107,16 @@ export class DotAnalyticsFiltersComponent {
         this.#handleChangeInputTimeRange(this.$timeRange);
     }
 
-    /** Handle change time range */
+    /**
+     * Period dropdown change handler.
+     * Predefined ranges emit immediately. **Custom** does not emit here: `[(ngModel)]="$selectedTimeRange"`
+     * shows the date picker; the parent is updated only after `onDateSelect` emits a full `[from, to]` range.
+     */
     onChangeTimeRange(event: SelectChangeEvent): void {
-        this.changeFilters.emit(event.value);
+        if (event.value === TIME_RANGE_OPTIONS.custom) {
+            return;
+        }
+        this.changeFilters.emit(event.value as TimeRangeInput);
     }
 
     /**

@@ -5,10 +5,12 @@ import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rest.api.v1.analytics.content.util.ContentAnalyticsUtil;
 import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.security.apps.Secret;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
+import com.dotcms.security.apps.SecretsStoreUnreadableException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONObject;
@@ -60,7 +62,28 @@ public class SiteAuthValidator implements AnalyticsValidator {
             } else {
                 Logger.warn(this, "HTTP Request object could not be retrieved");
             }
-        } catch (final DotDataException | DotSecurityException e) {
+            // Matched on the CAUSE CHAIN rather than the thrown type. Since issue #36724 an
+            // unreadable secrets store raises instead of silently wiping itself, and that must
+            // surface as an ordinary validation failure here rather than escaping raw onto the
+            // analytics collection path. But SecretsStoreUnreadableException does not survive the
+            // journey: several `catch (Exception e) { throw new DotRuntimeException(e); }` layers
+            // sit between where it is raised and here -- SecretsKeyStoreHelper.loadValueFromStore
+            // being the one on this path -- so catching the specific type alone never matches in
+            // production.
+            //
+            // AnalyticsValidationException is deliberately NOT caught: it is this pipeline's own
+            // signal, raised by ContentAnalyticsUtil when the site cannot be resolved from the
+            // Origin/Referer headers, and already carries the message callers are meant to see.
+            // Catching Exception here swallowed it and re-wrapped it, which regressed
+            // AnalyticsValidatorUtilTest.
+        } catch (final DotDataException | DotSecurityException | DotRuntimeException e) {
+
+            if (e instanceof DotRuntimeException
+                    && !ExceptionUtil.causedBy(e, SecretsStoreUnreadableException.class)) {
+                // A database blip, a cache failure, a programming error -- stays loud rather than
+                // being reported as an invalid site auth.
+                throw (DotRuntimeException) e;
+            }
             final String errorMsg = String.format("Site Auth for Site '%s' could not be verified: %s",
                     null != currentSite ? currentSite.getHostname() : BLANK, ExceptionUtil.getErrorMessage(e));
             Logger.warnAndDebug(SiteAuthValidator.class, errorMsg, e);

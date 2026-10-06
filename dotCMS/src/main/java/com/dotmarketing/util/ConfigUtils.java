@@ -185,14 +185,37 @@ public class ConfigUtils {
 
 
     private static final String LOCAL = "LOCAL";
+    public static final String SHARED_COMPLETED = "SHARED_COMPLETED";
+
     public static String getDotGeneratedPath() {
         return dotGeneratedPath.get() + File.separator + "dotGenerated";
     }
 
-    private static Lazy<String> dotGeneratedPath =Lazy.of(() ->
-			LOCAL.equalsIgnoreCase(Config.getStringProperty("DOTGENERATED_DEFAULT_PATH", LOCAL))
-                    ? ConfigUtils.getDynamicContentPath()
-                    : ConfigUtils.getAbsoluteAssetsRootPath());
+    /**
+     * Shared, cross-instance rendition store. Only meaningful when
+     * {@code DOTGENERATED_DEFAULT_PATH=SHARED_COMPLETED}: renditions are generated locally (under
+     * dotsecure, see {@link #getDotGeneratedPath()}) and the finished file is published here so that
+     * other instances in the cluster — and the same instance after a restart — serve it directly
+     * instead of regenerating it.
+     */
+    public static String getDotGeneratedSharedPath() {
+        return ConfigUtils.getAbsoluteAssetsRootPath() + File.separator + "dotGenerated";
+    }
+
+    /** @return true when finished renditions should be published to the shared store after generation. */
+    public static boolean isDotGeneratedSharedCompleted() {
+        return SHARED_COMPLETED.equalsIgnoreCase(Config.getStringProperty("DOTGENERATED_DEFAULT_PATH", LOCAL));
+    }
+
+    private static Lazy<String> dotGeneratedPath = Lazy.of(() -> {
+        final String mode = Config.getStringProperty("DOTGENERATED_DEFAULT_PATH", LOCAL);
+        // LOCAL and SHARED_COMPLETED both generate under dotsecure (fast, instance-local scratch);
+        // SHARED_COMPLETED additionally publishes the finished file to getDotGeneratedSharedPath().
+        // Any other value keeps the legacy behaviour of writing straight to the shared assets path.
+        return LOCAL.equalsIgnoreCase(mode) || SHARED_COMPLETED.equalsIgnoreCase(mode)
+                ? ConfigUtils.getDynamicContentPath()
+                : ConfigUtils.getAbsoluteAssetsRootPath();
+    });
 
 
 	public static Tuple2<String,String> getDeclaredDefaultLanguage(){

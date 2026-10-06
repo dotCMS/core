@@ -1,13 +1,15 @@
-import { Observable, of, throwError } from 'rxjs';
+import { firstValueFrom, Observable, of, throwError } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
-import { HttpErrorResponse } from '@angular/common/http';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient, HttpErrorResponse } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Injectable } from '@angular/core';
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
 import {
+    DotCMSPageWorkflowState,
     DotCurrentUserService,
     DotESContentService,
     DotEventsService,
@@ -21,7 +23,6 @@ import {
     DotMessageDisplayService,
     DotPageTypesService,
     DotPageWorkflowsActionsService,
-    DotPropertiesService,
     DotRenderMode,
     DotRouterService,
     DotWizardService,
@@ -32,10 +33,7 @@ import {
     PushPublishService
 } from '@dotcms/data-access';
 import {
-    CoreWebService,
-    CoreWebServiceMock,
     DotcmsConfigService,
-    DotcmsEventsService,
     DotPushPublishDialogService,
     LoggerService,
     LoginService,
@@ -47,6 +45,7 @@ import {
     ComponentStatus,
     DotCMSContentlet,
     DotCMSContentType,
+    DotEnvironment,
     ESContent
 } from '@dotcms/dotcms-models';
 import {
@@ -55,7 +54,6 @@ import {
     DotcmsConfigServiceMock,
     dotcmsContentletMock,
     dotcmsContentTypeBasicMock,
-    DotcmsEventsServiceMock,
     DotCurrentUserServiceMock,
     DotLanguagesServiceMock,
     DotLicenseServiceMock,
@@ -75,7 +73,6 @@ import {
     SESSION_STORAGE_FAVORITES_KEY
 } from './dot-pages.store';
 
-import { PushPublishServiceMock } from '../../../view/components/_common/dot-push-publish-env-selector/dot-push-publish-env-selector.component.spec';
 import { DotCreatePageDialogComponent } from '../dot-create-page-dialog/dot-create-page-dialog.component';
 
 // Mock data for content types (replacement for removed dot-edit-page module)
@@ -111,6 +108,26 @@ export const favoritePagesInitialTestData = [
 ];
 
 @Injectable()
+/**
+ * Declared here rather than imported from dot-push-publish-env-selector's spec.
+ * Importing one spec file from another evaluates that file, which registers ITS suites
+ * and hooks into this one — including a `beforeEach` that reconfigures the TestBed
+ * after ours, so the store's initial load never landed and five expectations read
+ * pre-load state.
+ */
+class PushPublishServiceMock {
+    getEnvironments(): Observable<DotEnvironment[]> {
+        return of([
+            { id: '22e332', name: 'my environment' },
+            { id: 'joa08', name: 'my environment 2' }
+        ] as DotEnvironment[]);
+    }
+
+    pushPublishContent(): Observable<unknown> {
+        return of([]);
+    }
+}
+
 class MockESPaginatorService {
     paginationPerPage = 15;
     totalRecords = 20;
@@ -132,6 +149,21 @@ export class DialogServiceMock {
     }
 }
 
+/**
+ * A ComponentStore selector's SETTLED value.
+ *
+ * `select()` emits on rxjs' queue scheduler, so a `subscribe` placed right after the
+ * state was populated still receives the pre-load value first. The assertions below
+ * used to run against that inside the subscribe handler, where rxjs reports a failure
+ * asynchronously — Jest discarded it, so five wrong expectations sat green, and Vitest
+ * counts each as an unhandled error.
+ */
+const settled = async <T>(source: Observable<T>): Promise<T> => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    return firstValueFrom(source);
+};
+
 describe('DotPageStore', () => {
     let dotPageStore: DotPageStore;
     let dialogService: DialogService;
@@ -143,13 +175,13 @@ describe('DotPageStore', () => {
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
     let dotFavoritePageService: DotFavoritePageService;
     let dotLocalstorageService: DotLocalstorageService;
-    let dotPropertiesService: DotPropertiesService;
     let dotPushPublishDialogService: DotPushPublishDialogService;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 DotEventsService,
                 DotGlobalMessageService,
                 DotIframeService,
@@ -164,11 +196,8 @@ describe('DotPageStore', () => {
                 StringUtils,
                 DotFavoritePageService,
                 DotLocalstorageService,
-                DotPropertiesService,
                 DotPushPublishDialogService,
                 { provide: DialogService, useClass: DialogServiceMock },
-                { provide: DotcmsEventsService, useClass: DotcmsEventsServiceMock },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotCurrentUserService, useClass: DotCurrentUserServiceMock },
                 {
                     provide: DotMessageDisplayService,
@@ -198,14 +227,11 @@ describe('DotPageStore', () => {
         dotWorkflowActionsFireService = TestBed.inject(DotWorkflowActionsFireService);
         dotFavoritePageService = TestBed.inject(DotFavoritePageService);
         dotLocalstorageService = TestBed.inject(DotLocalstorageService);
-        dotPropertiesService = TestBed.inject(DotPropertiesService);
         dotPushPublishDialogService = TestBed.inject(DotPushPublishDialogService);
 
-        jest.spyOn(dialogService, 'open');
-        jest.spyOn(dotHttpErrorManagerService, 'handle');
-        jest.spyOn(dotLocalstorageService, 'getItem').mockReturnValue(`true`);
-        jest.spyOn(dotPropertiesService, 'getKey').mockReturnValue(of('*'));
-        jest.spyOn(dotPropertiesService, 'getFeatureFlag').mockReturnValue(of(false));
+        vi.spyOn(dialogService, 'open');
+        vi.spyOn(dotHttpErrorManagerService, 'handle');
+        vi.spyOn(dotLocalstorageService, 'getItem').mockReturnValue(`true`);
 
         dotPageStore.setInitialStateData(5);
         dotPageStore.setKeyword('test');
@@ -213,8 +239,8 @@ describe('DotPageStore', () => {
         dotPageStore.setArchived('true');
     });
 
-    it('should load Favorite Pages initial data', () => {
-        dotPageStore.state$.subscribe((data) => {
+    it('should load Favorite Pages initial data', async () => {
+        await settled(dotPageStore.state$).then((data) => {
             expect(data.environments).toEqual(true);
             expect(data.favoritePages.items).toEqual(favoritePagesInitialTestData);
             expect(data.favoritePages.showLoadMoreButton).toEqual(false);
@@ -237,10 +263,10 @@ describe('DotPageStore', () => {
     });
 
     it('should load null Favorite Pages data when error on initial data fetch', () => {
-        const error500 = mockResponseView(500, '/test', null, { message: 'error' });
-        jest.spyOn(dotESContentService, 'get').mockReturnValue(throwError(error500));
+        const error500 = mockResponseView(500, '/test', undefined, { message: 'error' });
+        vi.spyOn(dotESContentService, 'get').mockReturnValue(throwError(() => error500));
         // Mock sessionStorage.getItem
-        (sessionStorage.getItem as jest.Mock).mockReturnValue(null);
+        (sessionStorage.getItem as Mock).mockReturnValue(null);
 
         dotPageStore.setInitialStateData(5);
         expect(sessionStorage.getItem).toHaveBeenCalledWith(SESSION_STORAGE_FAVORITES_KEY);
@@ -270,8 +296,8 @@ describe('DotPageStore', () => {
     });
 
     // Selectors
-    it('should get language options for dropdown', () => {
-        dotPageStore.languageOptions$.subscribe((data) => {
+    it('should get language options for dropdown', async () => {
+        await settled(dotPageStore.languageOptions$).then((data) => {
             expect(data).toEqual([
                 { label: 'All', value: null },
                 { label: 'English (US)', value: 1 },
@@ -280,8 +306,8 @@ describe('DotPageStore', () => {
         });
     });
 
-    it('should get language Labels for row field', () => {
-        dotPageStore.languageLabels$.subscribe((data) => {
+    it('should get language Labels for row field', async () => {
+        await settled(dotPageStore.languageLabels$).then((data) => {
             expect(data).toEqual({ '1': 'en-US', '2': 'IT' });
         });
     });
@@ -376,7 +402,7 @@ describe('DotPageStore', () => {
 
     it('should update Session Storage Filter Params', () => {
         // Mock sessionStorage.setItem
-        (sessionStorage.setItem as jest.Mock).mockImplementation(() => {
+        (sessionStorage.setItem as Mock).mockImplementation(() => {
             //
         });
         dotPageStore.setSessionStorageFilterParams();
@@ -387,7 +413,7 @@ describe('DotPageStore', () => {
     });
 
     it('should update Local Storage Panel Collapsed Params', () => {
-        jest.spyOn(dotLocalstorageService, 'setItem');
+        vi.spyOn(dotLocalstorageService, 'setItem');
         dotPageStore.setLocalStorageFavoritePanelCollapsedParams(true);
         expect(dotLocalstorageService.setItem).toHaveBeenCalledWith(
             LOCAL_STORAGE_FAVORITES_PANEL_KEY,
@@ -452,7 +478,7 @@ describe('DotPageStore', () => {
             ...favoritePagesInitialTestData,
             ...favoritePagesInitialTestData
         ];
-        jest.spyOn(dotFavoritePageService, 'get').mockReturnValue(
+        vi.spyOn(dotFavoritePageService, 'get').mockReturnValue(
             of({
                 contentTook: 0,
                 jsonObjectView: {
@@ -475,7 +501,7 @@ describe('DotPageStore', () => {
 
     it('should get all Page Types value in store and show dialog', () => {
         const expectedInputArray = [{ ...dotcmsContentTypeBasicMock, ...contentTypeDataMock[0] }];
-        jest.spyOn(dotPageTypesService, 'getPageContentTypes').mockReturnValue(
+        vi.spyOn(dotPageTypesService, 'getPageContentTypes').mockReturnValue(
             of(expectedInputArray as unknown as DotCMSContentType[])
         );
         dotPageStore.getPageTypes();
@@ -502,7 +528,7 @@ describe('DotPageStore', () => {
                 ...favoritePagesInitialTestData[1]
             }
         ];
-        jest.spyOn(dotESContentService, 'get').mockReturnValue(
+        vi.spyOn(dotESContentService, 'get').mockReturnValue(
             of({
                 contentTook: 0,
                 jsonObjectView: {
@@ -539,7 +565,7 @@ describe('DotPageStore', () => {
 
         dotPageStore.setPages({ items: pagesData });
 
-        jest.spyOn(dotESContentService, 'get').mockReturnValue(
+        vi.spyOn(dotESContentService, 'get').mockReturnValue(
             of({
                 contentTook: 0,
                 jsonObjectView: {
@@ -558,8 +584,8 @@ describe('DotPageStore', () => {
     });
 
     it('should handle error when get Pages value fails', () => {
-        const error500 = mockResponseView(500, '/test', null, { message: 'error' });
-        jest.spyOn(dotESContentService, 'get').mockReturnValue(throwError(error500));
+        const error500 = mockResponseView(500, '/test', undefined, { message: 'error' });
+        vi.spyOn(dotESContentService, 'get').mockReturnValue(throwError(() => error500));
         dotPageStore.getPages({ offset: 0, sortField: 'title', sortOrder: 1 });
 
         dotPageStore.state$.subscribe((data) => {
@@ -582,7 +608,7 @@ describe('DotPageStore', () => {
             resultsSize: 4
         };
 
-        jest.spyOn(dotESContentService, 'get').mockReturnValue(of(updated));
+        vi.spyOn(dotESContentService, 'get').mockReturnValue(of(updated));
 
         dotPageStore.updateSinglePageData({
             identifier: '123',
@@ -599,10 +625,10 @@ describe('DotPageStore', () => {
 
     it('should get all Workflow actions and static actions from a contentlet', () => {
         const expectedInputArray = [{ ...dotcmsContentTypeBasicMock, ...contentTypeDataMock[0] }];
-        jest.spyOn(dotWorkflowsActionsService, 'getByInode').mockReturnValue(
+        vi.spyOn(dotWorkflowsActionsService, 'getByInode').mockReturnValue(
             of(mockWorkflowsActions)
         );
-        jest.spyOn(dotFavoritePageService, 'get').mockReturnValue(
+        vi.spyOn(dotFavoritePageService, 'get').mockReturnValue(
             of({
                 contentTook: 0,
                 jsonObjectView: {
@@ -657,60 +683,63 @@ describe('DotPageStore', () => {
         );
     });
 
-    it('should trigger push publish dialog with the correct item identifier', (done) => {
-        const expectedInputArray = [{ ...dotcmsContentTypeBasicMock, ...contentTypeDataMock[0] }];
+    it('should trigger push publish dialog with the correct item identifier', () =>
+        new Promise<void>((done) => {
+            const expectedInputArray = [
+                { ...dotcmsContentTypeBasicMock, ...contentTypeDataMock[0] }
+            ];
 
-        const item = favoritePagesInitialTestData[0];
+            const item = favoritePagesInitialTestData[0];
 
-        jest.spyOn(dotWorkflowsActionsService, 'getByInode').mockReturnValue(
-            of(mockWorkflowsActions)
-        );
-        jest.spyOn(dotFavoritePageService, 'get').mockReturnValue(
-            of({
-                contentTook: 0,
-                jsonObjectView: {
-                    contentlets: expectedInputArray as unknown as DotCMSContentlet[]
-                },
-                queryTook: 1,
-                resultsSize: 4
-            })
-        );
+            vi.spyOn(dotWorkflowsActionsService, 'getByInode').mockReturnValue(
+                of(mockWorkflowsActions)
+            );
+            vi.spyOn(dotFavoritePageService, 'get').mockReturnValue(
+                of({
+                    contentTook: 0,
+                    jsonObjectView: {
+                        contentlets: expectedInputArray as unknown as DotCMSContentlet[]
+                    },
+                    queryTook: 1,
+                    resultsSize: 4
+                })
+            );
 
-        jest.spyOn(dotPushPublishDialogService, 'open');
+            vi.spyOn(dotPushPublishDialogService, 'open');
 
-        dotPageStore.patchState({
-            isEnterprise: true,
-            environments: true,
-            loggedUser: {
-                id: 'test',
-                canRead: { contentlets: true, htmlPages: true },
-                canWrite: { contentlets: true, htmlPages: true }
-            }
-        });
-        dotPageStore.showActionsMenu({
-            item,
-            actionMenuDomId: 'test1'
-        });
-
-        dotPageStore.state$.subscribe((data) => {
-            const menuActions = data.pages?.menuActions;
-            if (!menuActions || menuActions.length < 9) return;
-
-            expect(menuActions[7].label).toEqual('contenttypes.content.push_publish');
-
-            menuActions[7].command({ originalEvent: createFakeEvent('click') });
-
-            expect(dotPushPublishDialogService.open).toHaveBeenCalledWith({
-                assetIdentifier: item.identifier,
-                title: 'contenttypes.content.push_publish'
+            dotPageStore.patchState({
+                isEnterprise: true,
+                environments: true,
+                loggedUser: {
+                    id: 'test',
+                    canRead: { contentlets: true, htmlPages: true },
+                    canWrite: { contentlets: true, htmlPages: true }
+                }
+            });
+            dotPageStore.showActionsMenu({
+                item,
+                actionMenuDomId: 'test1'
             });
 
-            done();
-        });
-    });
+            dotPageStore.state$.subscribe((data) => {
+                const menuActions = data.pages?.menuActions;
+                if (!menuActions || menuActions.length < 9) return;
+
+                expect(menuActions[7].label).toEqual('contenttypes.content.push_publish');
+
+                menuActions[7].command!({ originalEvent: createFakeEvent('click') });
+
+                expect(dotPushPublishDialogService.open).toHaveBeenCalledWith({
+                    assetIdentifier: item.identifier,
+                    title: 'contenttypes.content.push_publish'
+                });
+
+                done();
+            });
+        }));
 
     it('should get all Workflow actions and static actions from a favorite page', () => {
-        jest.spyOn(dotPageWorkflowsActionsService, 'getByUrl').mockReturnValue(
+        vi.spyOn(dotPageWorkflowsActionsService, 'getByUrl').mockReturnValue(
             of({ actions: mockWorkflowsActions, page: dotcmsContentletMock })
         );
         dotPageStore.showActionsMenu({
@@ -728,8 +757,8 @@ describe('DotPageStore', () => {
         });
     });
 
-    it('should not have Add/Edit Bookmark actions in context menu when contentlet is archived', () => {
-        jest.spyOn(dotPageWorkflowsActionsService, 'getByUrl').mockReturnValue(
+    it('should not have Add/Edit Bookmark actions in context menu when contentlet is archived', async () => {
+        vi.spyOn(dotPageWorkflowsActionsService, 'getByUrl').mockReturnValue(
             of({ actions: mockWorkflowsActions, page: dotcmsContentletMock })
         );
 
@@ -749,15 +778,15 @@ describe('DotPageStore', () => {
             url: '/index2'
         });
 
-        dotPageStore.state$.subscribe((data) => {
+        await settled(dotPageStore.state$).then((data) => {
             expect(data.pages.menuActions.length).toEqual(8);
             expect(data.pages.menuActions[0].label).toEqual('favoritePage.contextMenu.action.edit');
             expect(data.pages.menuActions[1].label).toEqual('favoritePage.dialog.delete.button');
         });
     });
 
-    it('should get all menu actions from a favorite page when page is archived', () => {
-        jest.spyOn(dotPageWorkflowsActionsService, 'getByUrl').mockReturnValue(
+    it('should get all menu actions from a favorite page when page is archived', async () => {
+        vi.spyOn(dotPageWorkflowsActionsService, 'getByUrl').mockReturnValue(
             of({ actions: mockWorkflowsActions, page: dotcmsContentletMock })
         );
 
@@ -776,7 +805,7 @@ describe('DotPageStore', () => {
             url: '/index1'
         });
 
-        dotPageStore.state$.subscribe((data) => {
+        await settled(dotPageStore.state$).then((data) => {
             expect(data.pages.menuActions[0].label).toEqual('favoritePage.contextMenu.action.edit');
             expect(data.pages.menuActions[1].label).toEqual('favoritePage.dialog.delete.button');
             expect(data.pages.menuActions[2]).toEqual({ separator: true });
@@ -795,10 +824,8 @@ describe('DotPageStore', () => {
         ];
         const testInode = '12345';
 
-        jest.spyOn(dotWorkflowActionsFireService, 'deleteContentlet').mockReturnValue(
-            of(testInode)
-        );
-        jest.spyOn(dotESContentService, 'get').mockReturnValue(
+        vi.spyOn(dotWorkflowActionsFireService, 'deleteContentlet').mockReturnValue(of(testInode));
+        vi.spyOn(dotESContentService, 'get').mockReturnValue(
             of({
                 contentTook: 0,
                 jsonObjectView: {
@@ -825,9 +852,7 @@ describe('DotPageStore', () => {
     it('should call deleteFavoritePage as much times as we need', () => {
         const testInode = '12345';
 
-        jest.spyOn(dotWorkflowActionsFireService, 'deleteContentlet').mockReturnValue(
-            of(testInode)
-        );
+        vi.spyOn(dotWorkflowActionsFireService, 'deleteContentlet').mockReturnValue(of(testInode));
 
         dotPageStore.deleteFavoritePage(testInode);
         dotPageStore.deleteFavoritePage(testInode);
@@ -838,37 +863,44 @@ describe('DotPageStore', () => {
         expect(dotWorkflowActionsFireService.deleteContentlet).toHaveBeenCalledTimes(5);
     });
 
-    it('should handle error when a Workflow Action Request fails', (done) => {
-        const actions = [mockPublishAction];
-        const page = dotcmsContentletMock;
-        const error: HttpErrorResponse = new HttpErrorResponse({
-            error: {
-                message:
-                    'The Workflow Action is not available in the Workflow Step the content is currently in.'
-            }
-        });
-        const item = {
-            ...favoritePagesInitialTestData[0],
-            contentType: 'dotFavoritePage',
-            archived: true
-        };
+    it('should handle error when a Workflow Action Request fails', () =>
+        new Promise<void>((done) => {
+            const actions = [mockPublishAction];
+            const page = dotcmsContentletMock;
+            const error: HttpErrorResponse = new HttpErrorResponse({
+                error: {
+                    message:
+                        'The Workflow Action is not available in the Workflow Step the content is currently in.'
+                }
+            });
+            const item = {
+                ...favoritePagesInitialTestData[0],
+                contentType: 'dotFavoritePage',
+                archived: true
+            };
 
-        jest.spyOn(dotPageWorkflowsActionsService, 'getByUrl').mockReturnValue(
-            of({ actions, page })
-        );
-        jest.spyOn(dotWorkflowActionsFireService, 'fireTo').mockReturnValue(throwError(error));
-
-        dotPageStore.showActionsMenu({ item, actionMenuDomId: 'test1' });
-
-        dotPageStore.state$.subscribe(({ pages }) => {
-            const menuAction = pages.menuActions;
-            const publishAction = menuAction.find(
-                (action) => action.label === mockPublishAction.name
+            vi.spyOn(dotPageWorkflowsActionsService, 'getByUrl').mockReturnValue(
+                // mockPublishAction carries `owner: null`; DotCMSWorkflowAction types it
+                // as `string | undefined`.
+                of({ actions, page } as unknown as DotCMSPageWorkflowState)
             );
-            publishAction.command({ originalEvent: createFakeEvent('click') });
-            expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(error, true);
-            expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
-            done();
-        });
-    });
+            vi.spyOn(dotWorkflowActionsFireService, 'fireTo').mockReturnValue(
+                throwError(() => error)
+            );
+
+            dotPageStore.showActionsMenu({ item, actionMenuDomId: 'test1' });
+
+            dotPageStore.state$.subscribe(({ pages }) => {
+                const publishAction = pages?.menuActions?.find(
+                    (action) => action.label === mockPublishAction.name
+                );
+                // state$ replays intermediate states before the actions land.
+                if (!publishAction) return;
+
+                publishAction.command!({ originalEvent: createFakeEvent('click') });
+                expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(error, true);
+                expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
+                done();
+            });
+        }));
 });

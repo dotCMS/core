@@ -4,11 +4,10 @@
 @let browserData = $browserData();
 @let languageData = $languageData();
 
-<h3 class="text-lg font-bold mb-2">
-    {{ 'analytics.engagement.platforms.title' | dm }}
-</h3>
-
 <p-card class="platforms-card h-full">
+    <ng-template #title>
+        {{ 'analytics.engagement.platforms.title' | dm }}
+    </ng-template>
     @if (isAllEmpty) {
         <dot-analytics-empty-state class="h-full" data-testid="platforms-empty-all" />
     } @else {

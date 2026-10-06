@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { it, expect } from '@jest/globals';
 import { of } from 'rxjs';
+import { expect, it, vi } from 'vitest';
 
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -10,9 +10,11 @@ import { ConfirmationService } from 'primeng/api';
 
 import {
     DotAlertConfirmService,
+    DotContentTypeService,
     DotMessageService,
     DotIframeService,
-    DotFormatDateService
+    DotFormatDateService,
+    DotPropertiesService
 } from '@dotcms/data-access';
 import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
 import { DotCMSContentlet, DotContentCompareEvent } from '@dotcms/dotcms-models';
@@ -32,8 +34,7 @@ const DotContentCompareEventMOCK = {
 @Component({
     standalone: false,
     selector: 'dot-test-host-component',
-    template:
-        '<dot-content-compare [data]="data"  (shutdown)="shutdown.emit(true)" ></dot-content-compare>'
+    template: '<dot-content-compare [data]="data"  (shutdown)="shutdown.emit(true)"  />'
 })
 class TestHostComponent {
     @Input() data: DotContentCompareEvent;
@@ -61,6 +62,7 @@ describe('DotContentCompareComponent', () => {
             imports: [DotContentCompareComponent],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
+                { provide: DotContentTypeService, useValue: { getContentType: () => of({}) } },
                 DotAlertConfirmService,
                 ConfirmationService,
                 {
@@ -84,16 +86,22 @@ describe('DotContentCompareComponent', () => {
                 {
                     provide: LoginService,
                     useValue: { currentUserLanguageId: 'en-US' }
+                },
+                {
+                    provide: DotPropertiesService,
+                    useValue: {
+                        getFeatureFlag: () => of(true)
+                    }
                 }
             ]
         });
         TestBed.overrideProvider(DotContentCompareStore, {
             useValue: {
                 vm$: of({ data: dotContentCompareTableDataMock, showDiff: false }),
-                loadData: jest.fn(),
-                updateShowDiff: jest.fn(),
-                updateCompare: jest.fn(),
-                bringBack: jest.fn()
+                loadData: vi.fn(),
+                updateShowDiff: vi.fn(),
+                updateCompare: vi.fn(),
+                bringBack: vi.fn()
             }
         });
 
@@ -130,11 +138,11 @@ describe('DotContentCompareComponent', () => {
     });
 
     it('should bring back version after confirm and emit shutdown', () => {
-        jest.spyOn(dotAlertConfirmService, 'confirm').mockImplementation((conf) => {
+        vi.spyOn(dotAlertConfirmService, 'confirm').mockImplementation((conf) => {
             conf.accept();
         });
-        const emitSpy = jest.spyOn(hostComponent.shutdown, 'emit');
-        const iframeServiceSpy = jest.spyOn(dotIframeService, 'run');
+        const emitSpy = vi.spyOn(hostComponent.shutdown, 'emit');
+        const iframeServiceSpy = vi.spyOn(dotIframeService, 'run');
 
         contentCompareTableComponent.bringBack.emit('123');
 

@@ -1,6 +1,6 @@
 import { Observable, Subject } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import {
     AfterViewChecked,
     ChangeDetectionStrategy,
@@ -46,7 +46,6 @@ import { DotCMSAssetDialogCopyFields } from '../../dot-content-type.store';
     styleUrls: ['./dot-content-type-copy-dialog.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        CommonModule,
         ReactiveFormsModule,
         DialogModule,
         ButtonModule,
@@ -56,7 +55,8 @@ import { DotCMSAssetDialogCopyFields } from '../../dot-content-type.store';
         DotAutofocusDirective,
         DotFieldRequiredDirective,
         DotMessagePipe,
-        DotSiteComponent
+        DotSiteComponent,
+        AsyncPipe
     ]
 })
 export class DotContentTypeCopyDialogComponent implements OnInit, AfterViewChecked, OnDestroy {

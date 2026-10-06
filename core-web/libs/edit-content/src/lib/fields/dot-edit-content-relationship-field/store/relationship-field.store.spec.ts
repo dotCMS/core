@@ -1,19 +1,22 @@
-import { expect, describe } from '@jest/globals';
-import { SpectatorService, createServiceFactory, mockProvider } from '@ngneat/spectator/jest';
-import { of } from 'rxjs';
+import { SpectatorService, createServiceFactory, mockProvider } from '@openng/spectator/vitest';
+import { of, throwError } from 'rxjs';
+import { describe, expect, vi } from 'vitest';
 
 import { TestBed } from '@angular/core/testing';
 
 import {
     DotContentTypeService,
     DotFieldService,
-    DotHttpErrorManagerService
+    DotHttpErrorManagerService,
+    DotPropertiesService
 } from '@dotcms/data-access';
-import { ComponentStatus, FeaturedFlags } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotLanguage, FeaturedFlags } from '@dotcms/dotcms-models';
 import { createFakeContentlet, createFakeRelationshipField } from '@dotcms/utils-testing';
 
 import { RelationshipFieldService } from './relationship-field.service';
-import { RelationshipFieldStore } from './relationship-field.store';
+import { RELATED_PAGE_SIZE, RelationshipFieldStore } from './relationship-field.store';
+
+import { DotEditContentService } from '../../../services/dot-edit-content.service';
 
 describe('RelationshipFieldStore', () => {
     let spectator: SpectatorService<InstanceType<typeof RelationshipFieldStore>>;
@@ -56,11 +59,22 @@ describe('RelationshipFieldStore', () => {
         providers: [
             RelationshipFieldService,
             mockProvider(DotContentTypeService, {
-                getContentType: jest.fn().mockReturnValue(of(mockContentType))
+                getContentType: vi.fn().mockReturnValue(of(mockContentType))
             }),
             mockProvider(DotFieldService),
             mockProvider(DotHttpErrorManagerService, {
-                handle: jest.fn()
+                handle: vi.fn()
+            }),
+            mockProvider(DotEditContentService, {
+                getContentById: vi.fn().mockReturnValue(of({}))
+            }),
+            // `withFlags` batch-fetches the side-panel flag on init.
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: vi
+                    .fn()
+                    .mockReturnValue(
+                        of({ [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: false })
+                    )
             })
         ]
     });
@@ -79,11 +93,7 @@ describe('RelationshipFieldStore', () => {
             expect(store.data()).toEqual([]);
             expect(store.status()).toBe(ComponentStatus.INIT);
             expect(store.selectionMode()).toBeNull();
-            expect(store.pagination()).toEqual({
-                offset: 0,
-                currentPage: 1,
-                rowsPerPage: 6
-            });
+            expect(store.showingAll()).toBe(false);
         });
     });
 
@@ -162,6 +172,84 @@ describe('RelationshipFieldStore', () => {
             });
         });
 
+        describe('reorderData', () => {
+            it('should apply the new order and mark the change as a user edit', () => {
+                const items = Array.from({ length: 8 }, (_, i) =>
+                    createFakeContentlet({
+                        inode: `reorder-inode-${i + 1}`,
+                        identifier: `reorder-identifier-${i + 1}`,
+                        id: `${i + 1}`
+                    })
+                );
+                store.setData(items);
+
+                const reordered = [...items];
+                [reordered[0], reordered[1]] = [reordered[1], reordered[0]];
+                store.reorderData(reordered);
+
+                expect(store.data()[0].inode).toBe('reorder-inode-2');
+                expect(store.data()[1].inode).toBe('reorder-inode-1');
+                expect(store.lastChangeSource()).toBe('user');
+            });
+        });
+
+        describe('refreshItem', () => {
+            it('should replace the matching item by identifier, keeping revealed rows revealed', () => {
+                const eightItems = Array.from({ length: 8 }, (_, i) =>
+                    createFakeContentlet({
+                        inode: `refresh-inode-${i + 1}`,
+                        identifier: `refresh-identifier-${i + 1}`,
+                        id: `${i + 1}`
+                    })
+                );
+                store.setData(eightItems);
+
+                // The editor has revealed a second page of rows and is looking at one they just
+                // edited elsewhere.
+                store.toggleShowAll();
+                expect(store.showingAll()).toBe(true);
+
+                // A save mints a new inode; the identifier is what stays stable.
+                store.refreshItem(
+                    createFakeContentlet({
+                        inode: 'inode-after-save',
+                        identifier: 'refresh-identifier-7',
+                        title: 'Edited elsewhere'
+                    })
+                );
+
+                // Collapsing the revealed rows would lose the editor's place — this is why the
+                // method exists instead of reusing setData.
+                expect(store.showingAll()).toBe(true);
+                expect(store.data()[6].inode).toBe('inode-after-save');
+                expect(store.data()[6].title).toBe('Edited elsewhere');
+                expect(store.data().length).toBe(8);
+            });
+
+            it('should mark the change as a load so it never dirties the form', () => {
+                store.setData(mockData);
+                expect(store.lastChangeSource()).toBe('user');
+
+                store.refreshItem(
+                    createFakeContentlet({ inode: 'new-inode', identifier: 'identifier1' })
+                );
+
+                // The relationship itself did not change — only the version of one entry.
+                expect(store.lastChangeSource()).toBe('load');
+            });
+
+            it('should be a no-op when the identifier is not in the list', () => {
+                store.setData(mockData);
+                const before = store.data();
+
+                store.refreshItem(
+                    createFakeContentlet({ inode: 'x', identifier: 'not-related-here' })
+                );
+
+                expect(store.data()).toBe(before);
+            });
+        });
+
         describe('deleteItem', () => {
             it('should delete item by inode', () => {
                 store.setData(mockData);
@@ -171,44 +259,9 @@ describe('RelationshipFieldStore', () => {
                 expect(store.data().find((item) => item.inode === 'inode1')).toBeUndefined();
             });
         });
-
-        describe('pagination', () => {
-            it('should handle next page correctly', () => {
-                store.nextPage();
-
-                expect(store.pagination()).toEqual({
-                    offset: 6,
-                    currentPage: 2,
-                    rowsPerPage: 6
-                });
-            });
-
-            it('should handle previous page correctly', () => {
-                store.nextPage();
-                store.previousPage();
-
-                expect(store.pagination()).toEqual({
-                    offset: 0,
-                    currentPage: 1,
-                    rowsPerPage: 6
-                });
-            });
-        });
     });
 
     describe('Computed Properties', () => {
-        describe('totalPages', () => {
-            it('should compute total pages correctly', () => {
-                store.setData(mockData);
-
-                expect(store.totalPages()).toBe(1);
-            });
-
-            it('should handle empty data', () => {
-                expect(store.totalPages()).toBe(0);
-            });
-        });
-
         describe('isDisabledCreateNewContent', () => {
             beforeEach(() => {
                 const mockField = createFakeRelationshipField({
@@ -256,6 +309,52 @@ describe('RelationshipFieldStore', () => {
             });
         });
 
+        describe('showThumbnail', () => {
+            it('should return false when no items have title images', () => {
+                store.setData([
+                    createFakeContentlet({ inode: '1', hasTitleImage: false }),
+                    createFakeContentlet({ inode: '2', hasTitleImage: false })
+                ]);
+
+                expect(store.showThumbnail()).toBe(false);
+            });
+
+            it('should return true when at least one item has a title image', () => {
+                store.setData([
+                    createFakeContentlet({ inode: '1', hasTitleImage: false }),
+                    createFakeContentlet({ inode: '2', hasTitleImage: true })
+                ]);
+
+                expect(store.showThumbnail()).toBe(true);
+            });
+
+            it('should return false when data is empty', () => {
+                expect(store.showThumbnail()).toBe(false);
+            });
+
+            it('should return true when hasTitleImage is string "true"', () => {
+                store.setData([
+                    createFakeContentlet({
+                        inode: '1',
+                        hasTitleImage: 'true' as unknown as boolean
+                    })
+                ]);
+
+                expect(store.showThumbnail()).toBe(true);
+            });
+
+            it('should return false when hasTitleImage is string "false"', () => {
+                store.setData([
+                    createFakeContentlet({
+                        inode: '1',
+                        hasTitleImage: 'false' as unknown as boolean
+                    })
+                ]);
+
+                expect(store.showThumbnail()).toBe(false);
+            });
+        });
+
         describe('formattedRelationship', () => {
             it('should format relationship IDs correctly', () => {
                 store.setData(mockData);
@@ -296,29 +395,6 @@ describe('RelationshipFieldStore', () => {
     });
 
     describe('Edge Cases', () => {
-        describe('pagination handling', () => {
-            it('should handle multiple page transitions correctly', () => {
-                // Move forward two pages
-                store.nextPage();
-                store.nextPage();
-
-                expect(store.pagination()).toEqual({
-                    offset: 12,
-                    currentPage: 3,
-                    rowsPerPage: 6
-                });
-
-                // Move back one page
-                store.previousPage();
-
-                expect(store.pagination()).toEqual({
-                    offset: 6,
-                    currentPage: 2,
-                    rowsPerPage: 6
-                });
-            });
-        });
-
         describe('data manipulation', () => {
             it('should handle deletion of non-existent item gracefully', () => {
                 store.setData(mockData);
@@ -337,6 +413,190 @@ describe('RelationshipFieldStore', () => {
 
                 expect(store.data().length).toBe(1);
                 expect(store.data()[0].inode).toBe('inode3');
+            });
+        });
+
+        describe('locale resolution (targetLanguageId)', () => {
+            const mockLanguage: DotLanguage = {
+                id: 42,
+                language: 'Spanish',
+                languageCode: 'es',
+                isoCode: 'es-ES'
+            };
+
+            let dotEditContentService: InstanceType<typeof DotEditContentService>;
+            let relationshipFieldService: RelationshipFieldService;
+            let mockField: ReturnType<typeof createFakeRelationshipField>;
+
+            beforeEach(() => {
+                dotEditContentService = spectator.inject(DotEditContentService);
+                relationshipFieldService = spectator.inject(RelationshipFieldService);
+                mockField = createFakeRelationshipField({
+                    variable: 'relationship_field',
+                    relationships: {
+                        cardinality: 0,
+                        isParentField: true,
+                        velocityVar: 'test-content-type'
+                    }
+                });
+            });
+
+            it('should skip locale resolution when targetLanguageId is not provided', () => {
+                const items = [createFakeContentlet({ inode: 'inode1', identifier: 'id1' })];
+                store.setData(items);
+
+                vi.spyOn(relationshipFieldService, 'prepareField').mockReturnValue(
+                    of({
+                        data: [],
+                        contentType: mockContentType,
+                        columns: [],
+                        selectionMode: 'multiple',
+                        isNewEditorEnabled: false
+                    } as never)
+                );
+
+                store.initialize({ field: mockField, contentlet: null });
+
+                expect(dotEditContentService.getContentById).not.toHaveBeenCalled();
+            });
+
+            it('should skip locale resolution when dataToProcess is empty', () => {
+                vi.spyOn(relationshipFieldService, 'prepareField').mockReturnValue(
+                    of({
+                        data: [],
+                        contentType: mockContentType,
+                        columns: [],
+                        selectionMode: 'multiple',
+                        isNewEditorEnabled: false
+                    } as never)
+                );
+
+                store.initialize({
+                    field: mockField,
+                    contentlet: null,
+                    targetLanguageId: 42,
+                    targetLanguage: mockLanguage
+                });
+
+                expect(dotEditContentService.getContentById).not.toHaveBeenCalled();
+            });
+
+            it('should call getContentById for each item when targetLanguageId is provided', () => {
+                const items = [
+                    createFakeContentlet({ inode: 'inode1', identifier: 'id1' }),
+                    createFakeContentlet({ inode: 'inode2', identifier: 'id2' })
+                ];
+                store.setData(items);
+
+                vi.spyOn(relationshipFieldService, 'prepareField').mockReturnValue(
+                    of({
+                        data: [],
+                        contentType: mockContentType,
+                        columns: [],
+                        selectionMode: 'multiple',
+                        isNewEditorEnabled: false
+                    } as never)
+                );
+
+                store.initialize({
+                    field: mockField,
+                    contentlet: null,
+                    targetLanguageId: 42,
+                    targetLanguage: mockLanguage
+                });
+
+                expect(dotEditContentService.getContentById).toHaveBeenCalledWith({
+                    id: 'id1',
+                    languageId: 42
+                });
+                expect(dotEditContentService.getContentById).toHaveBeenCalledWith({
+                    id: 'id2',
+                    languageId: 42
+                });
+            });
+
+            it('should patch language to the full DotLanguage object on each resolved item', () => {
+                const items = [createFakeContentlet({ inode: 'inode1', identifier: 'id1' })];
+                store.setData(items);
+
+                const fetched = createFakeContentlet({ inode: 'resolved', identifier: 'id1' });
+                vi.spyOn(dotEditContentService, 'getContentById').mockReturnValue(of(fetched));
+                vi.spyOn(relationshipFieldService, 'prepareField').mockReturnValue(
+                    of({
+                        data: [],
+                        contentType: mockContentType,
+                        columns: [],
+                        selectionMode: 'multiple',
+                        isNewEditorEnabled: false
+                    } as never)
+                );
+
+                store.initialize({
+                    field: mockField,
+                    contentlet: null,
+                    targetLanguageId: 42,
+                    targetLanguage: mockLanguage
+                });
+
+                expect((store.data()[0] as { language: DotLanguage }).language).toEqual(
+                    mockLanguage
+                );
+            });
+
+            it('should fall back to the original item when getContentById fails', () => {
+                const original = createFakeContentlet({ inode: 'inode1', identifier: 'id1' });
+                store.setData([original]);
+
+                vi.spyOn(dotEditContentService, 'getContentById').mockReturnValue(
+                    throwError(() => new Error('Not found'))
+                );
+                vi.spyOn(relationshipFieldService, 'prepareField').mockReturnValue(
+                    of({
+                        data: [],
+                        contentType: mockContentType,
+                        columns: [],
+                        selectionMode: 'multiple',
+                        isNewEditorEnabled: false
+                    } as never)
+                );
+
+                store.initialize({
+                    field: mockField,
+                    contentlet: null,
+                    targetLanguageId: 42,
+                    targetLanguage: mockLanguage
+                });
+
+                expect(store.data()[0].inode).toBe('inode1');
+            });
+
+            it('should use existingData (captured before reset) when contentlet is null', () => {
+                const existingItems = [
+                    createFakeContentlet({ inode: 'existing1', identifier: 'exist-id' })
+                ];
+                store.setData(existingItems);
+
+                vi.spyOn(relationshipFieldService, 'prepareField').mockReturnValue(
+                    of({
+                        data: [],
+                        contentType: mockContentType,
+                        columns: [],
+                        selectionMode: 'multiple',
+                        isNewEditorEnabled: false
+                    } as never)
+                );
+
+                store.initialize({
+                    field: mockField,
+                    contentlet: null,
+                    targetLanguageId: 42,
+                    targetLanguage: mockLanguage
+                });
+
+                expect(dotEditContentService.getContentById).toHaveBeenCalledWith({
+                    id: 'exist-id',
+                    languageId: 42
+                });
             });
         });
 
@@ -382,6 +642,170 @@ describe('RelationshipFieldStore', () => {
             });
         });
     });
+
+    describe('Show all / Show less (US4)', () => {
+        const many = (n: number) =>
+            Array.from({ length: n }, (_, i) =>
+                createFakeContentlet({
+                    inode: `inode${i}`,
+                    identifier: `identifier${i}`,
+                    id: `${i}`
+                })
+            );
+
+        it('starts by rendering the first page and no more', () => {
+            store.setData(many(95));
+
+            expect(store.showingAll()).toBe(false);
+            expect(store.$visibleItems()).toHaveLength(RELATED_PAGE_SIZE);
+        });
+
+        it('offers no toggle for a list that already fits', () => {
+            store.setData(many(12));
+
+            expect(store.$visibleItems()).toHaveLength(12);
+            expect(store.$canToggleAll()).toBe(false);
+        });
+
+        it('offers the toggle once the list outgrows one page', () => {
+            store.setData(many(RELATED_PAGE_SIZE + 1));
+
+            expect(store.$canToggleAll()).toBe(true);
+        });
+
+        /**
+         * One step each way, not an incremental reveal: the control shows everything, then returns
+         * to the first page. There is no intermediate amount.
+         */
+        it('shows everything in one step and collapses back to the first page', () => {
+            store.setData(many(95));
+
+            store.toggleShowAll();
+            expect(store.$visibleItems()).toHaveLength(95);
+
+            store.toggleShowAll();
+            expect(store.$visibleItems()).toHaveLength(RELATED_PAGE_SIZE);
+        });
+
+        /**
+         * FR-023. The bug `DotKeyValueComponent` hit and documented: with the count derived from
+         * the data, a single removal after revealing rows snapped the table back to 40.
+         */
+        it('stays expanded when an item is removed', () => {
+            store.setData(many(95));
+            store.toggleShowAll();
+            store.deleteItem('inode0');
+
+            expect(store.showingAll()).toBe(true);
+            expect(store.$visibleItems()).toHaveLength(94);
+        });
+
+        it('stays expanded when the list is reordered', () => {
+            store.setData(many(95));
+            store.toggleShowAll();
+            store.reorderData(many(95).reverse());
+
+            expect(store.showingAll()).toBe(true);
+        });
+
+        /**
+         * FR-022. Withholding is a rendering limit, never a change to the value: everything the
+         * field holds is emitted regardless of how much of it is on screen.
+         */
+        it('emits every item, including the withheld ones', () => {
+            store.setData(many(95));
+
+            expect(store.data()).toHaveLength(95);
+            expect(store.formattedRelationship().split(',')).toHaveLength(95);
+        });
+
+        it('does not lose withheld items when a visible row is removed', () => {
+            store.setData(many(95));
+            store.deleteItem('inode0');
+
+            expect(store.data()).toHaveLength(94);
+        });
+
+        /**
+         * The acceptance criterion itself: "drag-reordering works across **all** related items (not
+         * just a single page)".
+         *
+         * Reported in review as the gap — the case below proves the negative (a drag inside the
+         * visible slice leaves the withheld rows alone) and nothing proved the positive. It works
+         * because the rendered rows are always a prefix of `data`, so the indices the table reports
+         * need no translation; that is precisely the kind of invariant worth pinning, because the
+         * day the list stops being a prefix this fails instead of silently reordering the wrong row.
+         */
+        it('moves a withheld item to the front of the list', () => {
+            const items = many(95);
+            store.setData(items);
+
+            // Item 90 is well past the 40 rendered, so it can only be dragged once expanded.
+            store.toggleShowAll();
+
+            const withheld = items[90];
+            const reordered = [withheld, ...items.filter((i) => i.inode !== withheld.inode)];
+            store.reorderData(reordered);
+
+            expect(store.data()[0].inode).toBe(withheld.inode);
+            expect(store.data()).toHaveLength(95);
+            expect(store.$visibleItems()[0].inode).toBe(withheld.inode);
+        });
+
+        /**
+         * `setData` is the picker's close path, and the one most likely to produce a "the table
+         * snapped back to 40 rows" report. It leaves `showingAll` alone for the same reason
+         * `deleteItem` and `reorderData` do.
+         */
+        it('keeps revealed rows revealed when the picker writes a new set', () => {
+            store.setData(many(95));
+            store.toggleShowAll();
+
+            store.setData(many(95));
+
+            expect(store.showingAll()).toBe(true);
+        });
+
+        it('does not reorder withheld items as a side effect of a drag', () => {
+            const items = many(95);
+            store.setData(items);
+            const reordered = [items[1], items[0], ...items.slice(2)];
+            store.reorderData(reordered);
+
+            expect(
+                store
+                    .data()
+                    .map((i) => i.inode)
+                    .slice(2)
+            ).toEqual(items.slice(2).map((i) => i.inode));
+        });
+    });
+
+    /**
+     * US4 / T060 — the regression guard.
+     *
+     * Passes today and must never stop passing. A programmatic load that marks the form dirty makes
+     * the unsaved-changes guard fire on content the editor never touched, and this state lives
+     * right beside the paging state being deleted.
+     */
+    describe('lastChangeSource is untouched by the paging removal (US4)', () => {
+        it('stays "user" for an explicit edit', () => {
+            store.setData([createFakeContentlet({ inode: 'a', identifier: 'a' })]);
+            expect(store.lastChangeSource()).toBe('user');
+        });
+
+        it('stays "user" for a removal and for a reorder', () => {
+            store.setData([
+                createFakeContentlet({ inode: 'a', identifier: 'a' }),
+                createFakeContentlet({ inode: 'b', identifier: 'b' })
+            ]);
+            store.deleteItem('a');
+            expect(store.lastChangeSource()).toBe('user');
+
+            store.reorderData([createFakeContentlet({ inode: 'b', identifier: 'b' })]);
+            expect(store.lastChangeSource()).toBe('user');
+        });
+    });
 });
 
 describe('RelationshipFieldStore - Instance Isolation', () => {
@@ -399,11 +823,22 @@ describe('RelationshipFieldStore - Instance Isolation', () => {
         RelationshipFieldStore,
         RelationshipFieldService,
         mockProvider(DotContentTypeService, {
-            getContentType: jest.fn().mockReturnValue(of(mockContentType))
+            getContentType: vi.fn().mockReturnValue(of(mockContentType))
         }),
         mockProvider(DotFieldService),
         mockProvider(DotHttpErrorManagerService, {
-            handle: jest.fn()
+            handle: vi.fn()
+        }),
+        mockProvider(DotEditContentService, {
+            getContentById: vi.fn().mockReturnValue(of({}))
+        }),
+        // `withFlags` batch-fetches the side-panel flag on init.
+        mockProvider(DotPropertiesService, {
+            getFeatureFlags: vi
+                .fn()
+                .mockReturnValue(
+                    of({ [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: false })
+                )
         })
     ];
 
@@ -486,4 +921,11 @@ describe('RelationshipFieldStore - Instance Isolation', () => {
         expect(store1.data().length).toBe(0);
         expect(store2.data().length).toBe(1);
     });
+
+    /**
+     * US4 — the related list drops paging and reveals rows in pages of 40 instead.
+     *
+     * Mirrors `DotKeyValueComponent`, whose comments already record the trap: deriving the visible
+     * count from the data collapses the table to the first page on every edit.
+     */
 });

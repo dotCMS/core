@@ -10,7 +10,8 @@ import {
     SimpleChanges,
     ViewChild,
     inject,
-    signal
+    signal,
+    ChangeDetectionStrategy
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -28,7 +29,7 @@ import { DotPersona } from '@dotcms/dotcms-models';
 import { DotCMSViewAsPersona } from '@dotcms/types';
 import { DotAvatarDirective, DotMessagePipe } from '@dotcms/ui';
 
-import { DotPageApiService } from '../../../../../services/dot-page-api.service';
+import { DotPageApiService } from '../../../../../services/dot-page-api/dot-page-api.service';
 
 interface PersonaSelector {
     items: DotPersona[];
@@ -50,6 +51,7 @@ interface PersonaSelector {
         ChipModule,
         PaginatorModule
     ],
+    changeDetection: ChangeDetectionStrategy.Eager,
     templateUrl: './edit-ema-persona-selector.component.html'
 })
 export class EditEmaPersonaSelectorComponent implements AfterViewInit, OnChanges {
@@ -108,7 +110,7 @@ export class EditEmaPersonaSelectorComponent implements AfterViewInit, OnChanges
      * @memberof EditEmaPersonaSelectorComponent
      */
     onSelect({ value }: { value: DotCMSViewAsPersona }) {
-        if (value.identifier === this.value.identifier) {
+        if (value?.identifier === this.value?.identifier || !value) {
             return;
         }
 

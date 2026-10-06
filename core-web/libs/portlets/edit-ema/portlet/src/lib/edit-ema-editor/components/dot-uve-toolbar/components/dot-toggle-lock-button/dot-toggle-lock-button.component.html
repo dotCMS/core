@@ -1,28 +1,20 @@
-@if ($toggleLockOptions()) {
-    <p-button
-        [disabled]="$lockLoading() || !$toggleLockOptions().canLock"
+@if ($lockOptions()) {
+    <button
+        pButton
+        class="lock-button"
+        [class.lock-button--locked]="$lockOptions().isLocked"
+        [class.lock-button--unlocked]="!$lockOptions().isLocked"
+        [class.lock-button--disabled]="!$lockOptions().canLock"
+        [disabled]="$workflowLockIsLoading()"
         [pTooltip]="
-            $toggleLockOptions().canLock ? null : ('uve.editor.toggle.lock.button.disabled' | dm)
+            $lockOptions().canLock ? undefined : ('uve.editor.toggle.lock.button.disabled' | dm)
         "
         tooltipPosition="bottom"
-        [icon]="$toggleLockOptions().isLocked ? 'pi pi-lock' : 'pi pi-lock-open'"
+        [icon]="$lockOptions().isLocked ? 'pi pi-lock' : 'pi pi-lock-open'"
         [label]="$buttonLabel() | dm"
-        [loading]="$lockLoading()"
+        [loading]="$workflowLockIsLoading()"
         size="small"
         [outlined]="true"
         (click)="toggleLock()"
-        data-testId="toggle-lock-button" />
-} @else if ($unlockButton(); as unlockButton) {
-    <p-button
-        [disabled]="unlockButton.disabled"
-        [pTooltip]="unlockButton.info.message | dm: unlockButton.info.args"
-        [escape]="false"
-        tooltipPosition="bottom"
-        icon="pi pi-lock"
-        [text]="true"
-        size="small"
-        [rounded]="true"
-        [loading]="unlockButton.loading"
-        (click)="unlockPage(unlockButton.inode)"
-        data-testId="uve-toolbar-unlock-button" />
+        data-testId="toggle-lock-button"></button>
 }

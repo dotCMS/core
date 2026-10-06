@@ -14,7 +14,7 @@
 </style>
 <div class="portlet-wrapper">
     <div class="unlicense-content">
-        <i class="material-icons" style="font-size: 120px;">storage</i>
+        <i class="material-symbols-outlined" style="font-size: 120px;">storage</i>
         <h4><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.EXT_CLUSTERING_TOOL")%></h4>
         <p><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.EXT_CLUSTERING_TOOL")%> <%=LanguageUtil.get(pageContext, "only-available-in-enterprise")%></p>
         <ul>

@@ -40,7 +40,7 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
-import com.google.common.io.Files;
+import java.nio.file.Files;
 import com.liferay.portal.model.User;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import com.tngtech.java.junit.dataprovider.DataProvider;
@@ -317,7 +317,7 @@ public class StaticPushPublishBundleGeneratorTest extends IntegrationTestBase {
 
     private static File newTestFile(String fileName) throws Exception {
         final String extension = UtilMethods.getFileExtension(fileName);
-        final File testImage = new File(Files.createTempDir(), String.format("%s_%s.%s",fileName,System.currentTimeMillis(),extension));
+        final File testImage = new File(Files.createTempDirectory("dotcms-test").toFile(), String.format("%s_%s.%s",fileName,System.currentTimeMillis(),extension));
         try (FileOutputStream output = new FileOutputStream(testImage, true)) {
             output.write(RandomStringUtils.randomAlphanumeric(100).getBytes());
         }

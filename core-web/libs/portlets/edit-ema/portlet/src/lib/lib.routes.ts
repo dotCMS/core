@@ -1,27 +1,41 @@
+import { inject } from '@angular/core';
 import { Route } from '@angular/router';
+
+import { ConfirmationService, MessageService } from 'primeng/api';
+import { DialogService } from 'primeng/dynamicdialog';
 
 import {
     CanDeactivateGuardService,
+    DotAnalyticsTrackerService,
     DotContentletLockerService,
     DotESContentService,
-    DotEditPageResolver,
     DotExperimentsService,
     DotFavoritePageService,
-    DotPageRenderService,
-    DotPageStateService
+    DotLanguagesService,
+    DotLicenseService,
+    DotPageLayoutService,
+    DotPropertiesService,
+    DotSeoMetaTagsService,
+    DotSeoMetaTagsUtilService,
+    DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import {
     DotExperimentExperimentResolver,
-    DotExperimentsConfigResolver
+    DotExperimentsConfigResolver,
+    DotExperimentsPanelStore
 } from '@dotcms/portlets/dot-experiments/data-access';
 import {
     DotEnterpriseLicenseResolver,
     DotPushPublishEnvironmentsResolver,
     portletHaveLicenseResolver
 } from '@dotcms/ui';
+import { WINDOW } from '@dotcms/utils';
 
 import { DotEmaShellComponent } from './dot-ema-shell/dot-ema-shell.component';
+import { DotActionUrlService } from './services/dot-action-url/dot-action-url.service';
+import { DotPageApiService } from './services/dot-page-api/dot-page-api.service';
 import { editEmaGuard } from './services/guards/edit-ema.guard';
+import { UVEStore } from './store/dot-uve.store';
 
 export const dotEmaRoutes: Route[] = [
     {
@@ -29,19 +43,43 @@ export const dotEmaRoutes: Route[] = [
         canActivate: [editEmaGuard],
         component: DotEmaShellComponent,
         providers: [
-            DotEditPageResolver,
-            DotPageStateService,
+            // UVEStore and its direct dependencies (needed for store to persist across child routes)
+            UVEStore,
+            /**
+             * Route level, not on the shell component — and that difference is the whole feature
+             * (#37478).
+             *
+             * The shell is destroyed and rebuilt when the editor leaves for a variant, so a store
+             * provided by the component dies with it, taking the panel's memory of which
+             * experiment and which screen the editor was on. The return then had nothing to return
+             * to. Same reason UVEStore is here, and #37005 found it first.
+             */
+            DotExperimentsPanelStore,
+            DotPageApiService,
+            DotActionUrlService,
+            DotLanguagesService,
+            DotWorkflowsActionsService,
+            DotPageLayoutService,
+            DotAnalyticsTrackerService,
+            DotPropertiesService,
+            DotLicenseService,
+            MessageService,
+            ConfirmationService,
+            DialogService,
             DotContentletLockerService,
-            DotPageRenderService,
-            DotFavoritePageService,
             DotESContentService,
-            DotExperimentsService
+            DotExperimentsService,
+            DotFavoritePageService,
+            DotSeoMetaTagsService,
+            DotSeoMetaTagsUtilService,
+            {
+                provide: WINDOW,
+                useValue: window
+            }
         ],
         resolve: {
-            haveLicense: portletHaveLicenseResolver,
-            content: DotEditPageResolver
+            haveLicense: portletHaveLicenseResolver
         },
-        runGuardsAndResolvers: 'always',
         children: [
             {
                 path: 'content',
@@ -64,6 +102,22 @@ export const dotEmaRoutes: Route[] = [
             },
             {
                 path: 'experiments',
+                resolve: {
+                    content: () => {
+                        const uveStore = inject(UVEStore);
+                        const pageAsset = uveStore.pageAsset();
+                        const lockOptions = uveStore.$lockOptions();
+
+                        return {
+                            page: pageAsset?.page,
+                            state: {
+                                lockedByAnotherUser: !!(
+                                    lockOptions?.isLocked && !lockOptions?.isLockedByCurrentUser
+                                )
+                            }
+                        };
+                    }
+                },
                 providers: [
                     DotEnterpriseLicenseResolver,
                     DotExperimentExperimentResolver,

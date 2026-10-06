@@ -1393,7 +1393,7 @@
                   }
                 },
                 "url": {
-                  "raw": "{{serverURL}}/api/v1/page/{{page_version_keep_contentlet}}/content",
+                  "raw": "{{serverURL}}/api/v1/page/{{page_version_keep_contentlet}}/content?language_id=1",
                   "host": ["{{serverURL}}"],
                   "path": [
                     "api",
@@ -1401,6 +1401,12 @@
                     "page",
                     "{{page_version_keep_contentlet}}",
                     "content"
+                  ],
+                  "query": [
+                    {
+                      "key": "language_id",
+                      "value": "1"
+                    }
                   ]
                 }
               },
@@ -1640,7 +1646,7 @@
                   }
                 },
                 "url": {
-                  "raw": "{{serverURL}}/api/v1/page/{{page_version_keep_contentlet}}/content?variantName=dotexperiment-{{experimentShortId}}-variant-1",
+                  "raw": "{{serverURL}}/api/v1/page/{{page_version_keep_contentlet}}/content?variantName=dotexperiment-{{experimentShortId}}-variant-1&language_id=1",
                   "host": ["{{serverURL}}"],
                   "path": [
                     "api",
@@ -1653,6 +1659,10 @@
                     {
                       "key": "variantName",
                       "value": "dotexperiment-{{experimentShortId}}-variant-1"
+                    },
+                    {
+                      "key": "language_id",
+                      "value": "1"
                     }
                   ]
                 }
@@ -2371,7 +2381,7 @@
                   }
                 },
                 "url": {
-                  "raw": "{{serverURL}}/api/v1/page/{{add_contentlet_default_specific_variant_page_id}}/content",
+                  "raw": "{{serverURL}}/api/v1/page/{{add_contentlet_default_specific_variant_page_id}}/content?language_id=1",
                   "host": ["{{serverURL}}"],
                   "path": [
                     "api",
@@ -2379,6 +2389,12 @@
                     "page",
                     "{{add_contentlet_default_specific_variant_page_id}}",
                     "content"
+                  ],
+                  "query": [
+                    {
+                      "key": "language_id",
+                      "value": "1"
+                    }
                   ]
                 }
               },
@@ -2692,7 +2708,7 @@
                   }
                 },
                 "url": {
-                  "raw": "{{serverURL}}/api/v1/page/{{add_contentlet_default_specific_variant_page_id}}/content",
+                  "raw": "{{serverURL}}/api/v1/page/{{add_contentlet_default_specific_variant_page_id}}/content?language_id=1",
                   "host": ["{{serverURL}}"],
                   "path": [
                     "api",
@@ -2700,6 +2716,12 @@
                     "page",
                     "{{add_contentlet_default_specific_variant_page_id}}",
                     "content"
+                  ],
+                  "query": [
+                    {
+                      "key": "language_id",
+                      "value": "1"
+                    }
                   ]
                 }
               },
@@ -8618,6 +8640,62 @@
           "response": []
         },
         {
+          "name": "patchPageId_onDraftWithVariant_shouldFail",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "",
+                  "// Issue #37176. A non-control Variant holds a copy of the current Page's layout, so",
+                  "// repointing the Experiment would orphan it. Silently dropping the pageId is the bug",
+                  "// this closes, so the refusal has to be an actual 400 and not a 200 that ignores the field.",
+                  "pm.test(\"Changing the Page of an Experiment that has Variants should fail\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "    pm.expect(jsonData.message.toLowerCase()).to.include(\"variant\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "password",
+                  "value": "admin",
+                  "type": "string"
+                },
+                {
+                  "key": "username",
+                  "value": "admin@dotcms.com",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"pageId\": \"e424abd7e2e7a9031c5a0a3c18182f1b\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/experiments/{{experimentNoGoalsId}}",
+              "host": ["{{serverURL}}"],
+              "path": ["api", "v1", "experiments", "{{experimentNoGoalsId}}"]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "startExperiment_MissingGoal_shouldFail",
           "event": [
             {
@@ -8805,6 +8883,61 @@
                 "{{experimentNoGoalsId}}",
                 "_start"
               ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "patchPageId_onRunningExperiment_shouldFail",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "",
+                  "// Issue #37176. Only a DRAFT may change its Page. This Experiment is RUNNING, so the",
+                  "// message must name the status rule rather than the Variants rule.",
+                  "pm.test(\"Changing the Page of a RUNNING Experiment should fail\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "    pm.expect(jsonData.message.toUpperCase()).to.include(\"DRAFT\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "password",
+                  "value": "admin",
+                  "type": "string"
+                },
+                {
+                  "key": "username",
+                  "value": "admin@dotcms.com",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"pageId\": \"e424abd7e2e7a9031c5a0a3c18182f1b\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/experiments/{{experimentNoGoalsId}}",
+              "host": ["{{serverURL}}"],
+              "path": ["api", "v1", "experiments", "{{experimentNoGoalsId}}"]
             }
           },
           "response": []
@@ -12818,7 +12951,7 @@
               }
             },
             "url": {
-              "raw": "{{serverURL}}/api/v1/page/{{page_version_spanish_content}}/content",
+              "raw": "{{serverURL}}/api/v1/page/{{page_version_spanish_content}}/content?language_id=1",
               "host": ["{{serverURL}}"],
               "path": [
                 "api",
@@ -12826,6 +12959,12 @@
                 "page",
                 "{{page_version_spanish_content}}",
                 "content"
+              ],
+              "query": [
+                {
+                  "key": "language_id",
+                  "value": "1"
+                }
               ]
             }
           },

@@ -11,11 +11,12 @@
                 <p-select
                     [options]="dotRoles"
                     id="dotRoles"
+                    data-testid="assignee-select"
                     formControlName="assign"
                     [filter]="true"
                     filterBy="label"
                     [filterPlaceholder]="'search' | dm"
-                    appendTo="body"></p-select>
+                    appendTo="body" />
             </div>
         }
         @if (data['commentable']) {
@@ -24,6 +25,7 @@
                 <textarea
                     (keydown.enter)="$event.stopPropagation()"
                     id="comment"
+                    data-testid="comments-textarea"
                     pInputTextarea
                     formControlName="comments"></textarea>
             </div>

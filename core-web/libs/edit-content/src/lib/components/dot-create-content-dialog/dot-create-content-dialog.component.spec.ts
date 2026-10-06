@@ -1,12 +1,13 @@
-import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
 import { Subject, of } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { DynamicDialogRef, DynamicDialogConfig, DialogService } from 'primeng/dynamicdialog';
 
 import {
@@ -26,15 +27,22 @@ import {
 import { DotCMSContentlet, ComponentStatus } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
+import { DOT_SYSTEM_CONFIG_SERVICE_MOCK } from '@dotcms/utils-testing';
 
 import { DotEditContentDialogComponent } from './dot-create-content-dialog.component';
 
+import {
+    AngularImageEditorLauncher,
+    IMAGE_EDITOR_LAUNCHER
+} from '../../fields/shared/image-editor-launcher';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
+import { OverlayEditContentHost } from '../../services/host/overlay-edit-content-host';
 
 describe('DotEditContentDialogComponent', () => {
     let spectator: Spectator<DotEditContentDialogComponent>;
     let component: DotEditContentDialogComponent;
     let onCloseSubject: Subject<DotCMSContentlet | null>;
+    let closeSpy: Mock;
 
     const createComponent = createComponentFactory({
         component: DotEditContentDialogComponent,
@@ -44,39 +52,40 @@ describe('DotEditContentDialogComponent', () => {
                 snapshot: { params: {} }
             }),
             mockProvider(DotCurrentUserService, {
-                getCurrentUser: jest.fn(() => of({ id: 'test-user' }))
+                getCurrentUser: vi.fn(() => of({ id: 'test-user' }))
             }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotEditContentService, {
-                getContentById: jest.fn(() => of({}))
+                getContentById: vi.fn(() => of({}))
             }),
             mockProvider(DotContentTypeService, {
-                getContentType: jest.fn(() => of({}))
+                getContentType: vi.fn(() => of({}))
             }),
             mockProvider(DotWorkflowsActionsService, {
-                getDefaultActions: jest.fn(() => of([])),
-                getByInode: jest.fn(() => of([])),
-                getWorkFlowActions: jest.fn(() => of([]))
+                getDefaultActions: vi.fn(() => of([])),
+                getByInode: vi.fn(() => of([])),
+                getWorkFlowActions: vi.fn(() => of([]))
             }),
             mockProvider(DotWorkflowService, {
-                getWorkflowStatus: jest.fn(() => of({}))
+                getWorkflowStatus: vi.fn(() => of({}))
             }),
             mockProvider(DotWorkflowActionsFireService),
             mockProvider(MessageService),
+            ConfirmationService,
             mockProvider(DotMessageService, {
-                get: jest.fn(() => 'Test Message'),
-                init: jest.fn(() => of({}))
+                get: vi.fn(() => 'Test Message'),
+                init: vi.fn(() => of({}))
             }),
             mockProvider(DotContentletService, {
-                getLanguages: jest.fn(() => of([]))
+                getLanguages: vi.fn(() => of([]))
             }),
             mockProvider(DotLanguagesService, {
-                getDefault: jest.fn(() => of({}))
+                getDefault: vi.fn(() => of({}))
             }),
             mockProvider(DialogService),
             mockProvider(DotVersionableService),
             mockProvider(DotSiteService),
-            mockProvider(DotSystemConfigService),
+            mockProvider(DotSystemConfigService, DOT_SYSTEM_CONFIG_SERVICE_MOCK),
             GlobalStore,
             provideHttpClient(),
             provideHttpClientTesting()
@@ -86,6 +95,9 @@ describe('DotEditContentDialogComponent', () => {
 
     beforeEach(() => {
         onCloseSubject = new Subject<DotCMSContentlet | null>();
+        // Capture the original mock before DotEditContentLayoutComponent's
+        // #interceptDirtyClose() replaces dialogRef.close with its override.
+        closeSpy = vi.fn();
 
         spectator = createComponent({
             providers: [
@@ -93,7 +105,7 @@ describe('DotEditContentDialogComponent', () => {
                     provide: DynamicDialogRef,
                     useValue: {
                         onClose: onCloseSubject.asObservable(),
-                        close: jest.fn()
+                        close: closeSpy
                     }
                 },
                 {
@@ -108,6 +120,28 @@ describe('DotEditContentDialogComponent', () => {
 
     it('should create', () => {
         expect(component).toBeTruthy();
+    });
+
+    /**
+     * This host is an Angular Edit Content host like the shell and the side panel, so it must
+     * provide the same launcher pair. `DotFileFieldComponent` injects `IMAGE_EDITOR_LAUNCHER` as
+     * `{ optional: true }`, so a missing provider is legal at the type level and degrades in
+     * silence: the Image/File field falls back to the legacy Dojo editor with a clean console.
+     * Only an explicit assertion catches that, which is why these exist (#37398).
+     */
+    describe('image editor host capability', () => {
+        it('should provide IMAGE_EDITOR_LAUNCHER so fields use the new editor, not legacy Dojo', () => {
+            const launcher = spectator.inject(IMAGE_EDITOR_LAUNCHER, true);
+
+            expect(launcher).toBeDefined();
+            expect(launcher).toBeInstanceOf(AngularImageEditorLauncher);
+        });
+
+        it('should provide the DialogService the launcher opens the editor through', () => {
+            // The launcher injects `DialogService`; without one it cannot be constructed, so the
+            // token resolving above is necessary but not sufficient on its own.
+            expect(spectator.inject(DialogService, true)).toBeTruthy();
+        });
     });
 
     it('should set loaded state for new content', () => {
@@ -134,65 +168,99 @@ describe('DotEditContentDialogComponent', () => {
         expect(component['state']()).toBe(ComponentStatus.LOADED);
     });
 
-    it('should call onContentSaved callback when dialog closes and content was saved', () => {
-        // Arrange
-        const onContentSaved = jest.fn();
+    it('should call onContentSaved callback only after onClose emits', () => {
+        const onContentSaved = vi.fn();
         const dialogConfig = spectator.inject(DynamicDialogConfig);
         dialogConfig.data = { mode: 'edit', contentletInode: 'inode', onContentSaved };
         spectator.detectChanges();
 
         const contentlet = { inode: 'inode' } as DotCMSContentlet;
+        // The editor reports the save through the host; the dialog tracks it.
+        spectator.inject(OverlayEditContentHost, true).reportSaved(contentlet);
 
-        // Act
-        component.onContentSaved(contentlet);
+        // Callback must NOT fire before the close actually completes
+        component.closeDialog();
+        expect(onContentSaved).not.toHaveBeenCalled();
+
+        // Fires only when onClose emits (i.e. close was not cancelled by dirty guard)
         onCloseSubject.next(null);
-
-        // Assert
         expect(onContentSaved).toHaveBeenCalledWith(contentlet);
     });
 
-    it('should call onCancel callback when closeDialog is called', () => {
-        // Arrange
-        const onCancel = jest.fn();
+    it('should not call onContentSaved with content that was saved and then deleted', () => {
+        const onContentSaved = vi.fn();
+        const onCancel = vi.fn();
+        const dialogConfig = spectator.inject(DynamicDialogConfig);
+        dialogConfig.data = { mode: 'edit', contentletInode: 'inode', onContentSaved, onCancel };
+        spectator.detectChanges();
+
+        const host = spectator.inject(OverlayEditContentHost, true);
+        // Save, stay in the dialog, then delete it: the host closes the dialog itself.
+        host.reportSaved({ inode: 'inode' } as DotCMSContentlet);
+        host.leaveDeletedContent('SimpleWidget');
+        onCloseSubject.next(null);
+
+        expect(onContentSaved).not.toHaveBeenCalled();
+        expect(onCancel).toHaveBeenCalledTimes(1);
+    });
+
+    it('should call onCancel callback only after onClose emits', () => {
+        const onCancel = vi.fn();
         const dialogConfig = spectator.inject(DynamicDialogConfig);
         dialogConfig.data = { mode: 'edit', contentletInode: 'inode', onCancel };
         spectator.detectChanges();
 
-        // Act
         component.closeDialog();
+        expect(onCancel).not.toHaveBeenCalled();
 
-        // Assert
+        onCloseSubject.next(null);
         expect(onCancel).toHaveBeenCalled();
     });
 
     it('should close dialog with saved contentlet when closeDialog is called and content was saved', () => {
-        // Arrange
-        const dialogRef = spectator.inject(DynamicDialogRef);
         const dialogConfig = spectator.inject(DynamicDialogConfig);
         dialogConfig.data = { mode: 'edit', contentletInode: 'inode' };
         spectator.detectChanges();
 
         const contentlet = { inode: 'inode', title: 'Test Content' } as DotCMSContentlet;
 
-        // Act
-        component.onContentSaved(contentlet);
+        spectator.inject(OverlayEditContentHost, true).reportSaved(contentlet);
         component.closeDialog();
 
-        // Assert
-        expect(dialogRef.close).toHaveBeenCalledWith(contentlet);
+        // closeSpy is the original close fn captured before #interceptDirtyClose overrides it.
+        expect(closeSpy).toHaveBeenCalledWith(contentlet);
     });
 
     it('should close dialog with null when no content was saved', () => {
-        // Arrange
-        const dialogRef = spectator.inject(DynamicDialogRef);
         const dialogConfig = spectator.inject(DynamicDialogConfig);
         dialogConfig.data = { mode: 'new', contentTypeId: 'blog-post' };
         spectator.detectChanges();
 
-        // Act
         component.closeDialog();
 
-        // Assert
-        expect(dialogRef.close).toHaveBeenCalledWith(null);
+        expect(closeSpy).toHaveBeenCalledWith(null);
+    });
+
+    it('should render the footer cancel button', () => {
+        const dialogConfig = spectator.inject(DynamicDialogConfig);
+        dialogConfig.data = { mode: 'edit', contentletInode: 'inode' };
+        spectator.detectChanges();
+
+        expect(spectator.query('[data-testid="edit-content-dialog-footer"]')).toBeTruthy();
+        expect(spectator.query('[data-testid="edit-content-dialog-cancel-btn"]')).toBeTruthy();
+    });
+
+    it('should call closeDialog when the footer cancel button is clicked', () => {
+        const dialogConfig = spectator.inject(DynamicDialogConfig);
+        dialogConfig.data = { mode: 'edit', contentletInode: 'inode' };
+        spectator.detectChanges();
+
+        const closeDialogSpy = vi.spyOn(component, 'closeDialog');
+        const cancelBtn = spectator
+            .query('[data-testid="edit-content-dialog-cancel-btn"]')
+            ?.querySelector('button');
+        spectator.click(cancelBtn!);
+
+        expect(closeDialogSpy).toHaveBeenCalledTimes(1);
     });
 });

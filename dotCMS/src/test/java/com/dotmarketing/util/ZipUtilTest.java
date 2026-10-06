@@ -35,7 +35,7 @@ public class ZipUtilTest  {
      @Test(expected = SecurityException.class)
      public void testUnzipInvalidInputStream() throws Exception {
           final File evilZipFile = createEvilZip();
-          final File tmpDir = com.google.common.io.Files.createTempDir();
+          final File tmpDir = Files.createTempDirectory("dotcms-test").toFile();
           try (InputStream in = Files.newInputStream(evilZipFile.toPath())) {
                ZipUtil.extract(in, tmpDir.getAbsolutePath());
           }
@@ -48,7 +48,7 @@ public class ZipUtilTest  {
       */
      File createEvilZip() throws Exception {
 
-          final File tmpDir = com.google.common.io.Files.createTempDir();
+          final File tmpDir = Files.createTempDirectory("dotcms-test").toFile();
           final File goodFile = new File(tmpDir, System.currentTimeMillis() + ".tmp");
 
           FileUtils.touch(goodFile);

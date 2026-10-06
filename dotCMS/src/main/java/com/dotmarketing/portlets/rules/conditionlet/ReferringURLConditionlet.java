@@ -14,7 +14,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.Map;
 
-import static com.dotcms.repackage.com.google.common.base.Preconditions.checkState;
+import static com.google.common.base.Preconditions.checkState;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.CONTAINS;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.ENDS_WITH;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS;

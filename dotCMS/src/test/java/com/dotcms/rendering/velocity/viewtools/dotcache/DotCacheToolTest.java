@@ -1,6 +1,8 @@
 package com.dotcms.rendering.velocity.viewtools.dotcache;
 
 import com.dotmarketing.business.cache.provider.MockCacheAdministrator;
+import java.util.concurrent.TimeUnit;
+import org.awaitility.Awaitility;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -12,6 +14,12 @@ import org.junit.Test;
  * @since Nov 14th, 2022
  */
 public class DotCacheToolTest {
+
+    /**
+     * Upper bound for the cache to settle. Generous on purpose: it only caps how long a broken
+     * assertion takes to report, it is not the expected wait.
+     */
+    private static final long SETTLE_TIMEOUT_SECONDS = 10L;
 
     private static DotCacheTool dotCacheTool;
 
@@ -28,12 +36,9 @@ public class DotCacheToolTest {
      *     <li><b>Expected Result:</b> After setting the entry's TTL to zero, it must be flushed out of the cache and
      *     null must be returned.</li>
      * </ul>
-     *
-     * @throws InterruptedException Highly unlikely error related to the {@code Thread.sleep()} call, which is necessary
-     *                              because of the Debouncer being applied to the {@code DotCacheTool.put()} methods.
      */
     @Test
-    public void test_cache_TTL_0() throws InterruptedException {
+    public void test_cache_TTL_0() {
         dotCacheTool.clear();
         final String cacheKey = "cacheKey";
         final String now = "now:" + System.currentTimeMillis();
@@ -53,39 +58,38 @@ public class DotCacheToolTest {
      *     <li><b>Expected Result:</b> After waiting for more than 2 seconds, the entry must be flushed out of the
      *     cache and null must be returned.</li>
      * </ul>
-     *
-     * @throws InterruptedException Highly unlikely error related to the {@code Thread.sleep()} call, which is necessary
-     *                              because of the Debouncer being applied to the {@code DotCacheTool.put()} methods.
      */
     @Test
-    public void test_cache_TTL_2() throws InterruptedException {
+    public void test_cache_TTL_2() {
         dotCacheTool.clear();
         final String cacheKey = "cacheKey";
         final String now = "now:" + System.currentTimeMillis();
 
         dotCacheTool.put(cacheKey, now, 2);
         Assert.assertEquals(dotCacheTool.get(cacheKey), now);
-        Thread.sleep(2500);
-        Assert.assertNull(dotCacheTool.get(cacheKey));
+
+        // the entry must expire on its own; polling rather than sleeping just past the TTL
+        Awaitility.await()
+                .atMost(SETTLE_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                .until(() -> dotCacheTool.get(cacheKey) == null);
     }
 
     
     @Test
-    public void test_putDebounce() throws InterruptedException {
+    public void test_putDebounce() {
         dotCacheTool.clear();
         final String cacheKey = "cacheKey";
         final String now = "now:" + System.currentTimeMillis();
 
         dotCacheTool.putDebounce(cacheKey, now, 2);
-        
+
         // not in cache yet, debouncing for 1 sec
         Assert.assertNull(dotCacheTool.get(cacheKey));
-        
-        // added after 1 second
-        Thread.sleep(1200);
-        Assert.assertEquals(dotCacheTool.get(cacheKey), now);
 
-
+        // added once the debounce window elapses
+        Awaitility.await()
+                .atMost(SETTLE_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+                .until(() -> now.equals(dotCacheTool.get(cacheKey)));
     }
     
     
@@ -98,12 +102,9 @@ public class DotCacheToolTest {
      *     Then, clear the whole DotCache.</li>
      *     <li><b>Expected Result:</b> After clearing the whole cache, a null must be returned.</li>
      * </ul>
-     *
-     * @throws InterruptedException Highly unlikely error related to the {@code Thread.sleep()} call, which is necessary
-     *                              because of the Debouncer being applied to the {@code DotCacheTool.put()} methods.
      */
     @Test
-    public void test_cache_clear() throws InterruptedException {
+    public void test_cache_clear() {
         dotCacheTool.clear();
         final String cacheKey = "cacheKey";
         final String now = "now:" + System.currentTimeMillis();
@@ -123,18 +124,15 @@ public class DotCacheToolTest {
      *     Then, remove it from the DotCache by its key.</li>
      *     <li><b>Expected Result:</b> After explicitly removing it, a null must be returned.</li>
      * </ul>
-     *
-     * @throws InterruptedException Highly unlikely error related to the {@code Thread.sleep()} call, which is necessary
-     *                              because of the Debouncer being applied to the {@code DotCacheTool.put()} methods.
      */
     @Test
-    public void test_remove() throws InterruptedException {
+    public void test_remove() {
         dotCacheTool.clear();
         final String cacheKey = "cacheKey";
         final String now = "now:" + System.currentTimeMillis();
 
+        // NOTE: no wait needed. Only putDebounce() is debounced; put() writes through.
         dotCacheTool.put(cacheKey, now);
-        Thread.sleep(1200);
         Assert.assertEquals(dotCacheTool.get(cacheKey), now);
 
         dotCacheTool.remove(cacheKey);

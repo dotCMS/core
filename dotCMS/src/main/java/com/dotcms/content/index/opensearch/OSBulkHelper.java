@@ -1,13 +1,16 @@
 package com.dotcms.content.index.opensearch;
 
+import com.dotcms.content.index.IndexConfigHelper;
+import com.dotcms.content.index.VersionedIndices;
+import com.dotcms.content.index.VersionedIndicesAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.reindex.ReindexEntry;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotcms.content.index.IndexConfigHelper;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
 import io.vavr.control.Try;
 import org.opensearch.client.opensearch.OpenSearchClient;
 import org.opensearch.client.opensearch._types.Time;
@@ -51,6 +54,17 @@ public class OSBulkHelper {
 
     @Inject
     private OSClientProvider clientProvider;
+
+    @Inject
+    private VersionedIndicesAPI versionedIndicesAPI;
+
+    /** Required for CDI proxying — do not use directly. */
+    public OSBulkHelper() {}
+
+    /** Testing constructor — injects the versioned-indices API without CDI. */
+    OSBulkHelper(final VersionedIndicesAPI versionedIndicesAPI) {
+        this.versionedIndicesAPI = versionedIndicesAPI;
+    }
 
     // Thread-safe collections for bulk operations
     private final List<BulkOperation> operations = new ArrayList<>();
@@ -280,14 +294,22 @@ public class OSBulkHelper {
     }
 
     /**
-     * Gets the current index name.
-     * This should be enhanced to use the proper index resolution logic.
+     * Resolves the active OS working index name via the injected {@link VersionedIndicesAPI}.
+     *
+     * <p>Uses the OS index store directly instead of routing through
+     * {@code ContentletIndexAPI.getActiveIndexName}, which only dispatches on
+     * {@code "working"} and {@code "live"} type strings — never on an index-name suffix.</p>
+     *
+     * @return the active working index name, or {@code "dotcms_content"} if none is configured
      */
-    private String getIndexName() {
-        // TODO: Use proper index resolution logic from ContentletIndexAPI
-        return Try.of(() -> APILocator.getContentletIndexAPI().getActiveIndexName(DEFAULT_INDEX_SUFFIX))
+    @VisibleForTesting
+    String getIndexName() {
+        return Try.of(() -> versionedIndicesAPI
+                    .loadDefaultVersionedIndices()
+                    .flatMap(VersionedIndices::working)
+                    .orElseThrow(() -> new DotDataException("No active OS working index configured")))
             .getOrElse(() -> {
-                Logger.warn(this, "Could not resolve active index name, using default");
+                Logger.warn(this, "Could not resolve active OS working index name, using default");
                 return "dotcms_" + DEFAULT_INDEX_SUFFIX;
             });
     }

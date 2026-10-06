@@ -1,9 +1,10 @@
 package com.dotcms.ai.workflow;
 
-import com.dotcms.ai.app.AppKeys;
+import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.util.ContentToStringUtil;
 import com.dotcms.ai.util.VelocityContextFactory;
+import com.dotmarketing.beans.Host;
 import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
@@ -45,8 +46,6 @@ public class OpenAIAutoTagRunner implements Runnable {
     final User user;
     final boolean overwriteField;
     final boolean limitTags;
-    final String model;
-    final float temperature;
     final Contentlet contentlet;
 
     OpenAIAutoTagRunner(final WorkflowProcessor processor, final Map<String, WorkflowActionClassParameter> params) {
@@ -54,18 +53,14 @@ public class OpenAIAutoTagRunner implements Runnable {
                 processor.getContentlet(),
                 processor.getUser(),
                 Boolean.parseBoolean(params.get(OpenAIParams.OVERWRITE_FIELDS.key).getValue()),
-                Boolean.parseBoolean(params.get(OpenAIParams.LIMIT_TAGS_TO_HOST.key).getValue()),
-                params.get(OpenAIParams.MODEL.key).getValue(),
-                Try.of(() -> Float.parseFloat(params.get(OpenAIParams.TEMPERATURE.key).getValue())).getOrElse(ConfigService.INSTANCE.config().getConfigFloat(AppKeys.COMPLETION_TEMPERATURE))
+                Boolean.parseBoolean(params.get(OpenAIParams.LIMIT_TAGS_TO_HOST.key).getValue())
         );
     }
 
     OpenAIAutoTagRunner(final Contentlet contentlet,
                         final User user,
                         final boolean overwriteField,
-                        final boolean limitTags,
-                        final String model,
-                        final float temperature) {
+                        final boolean limitTags) {
 
         if (UtilMethods.isEmpty(contentlet::getIdentifier)) {
             throw new IllegalArgumentException("Content must be saved and have an identifier before running AI Content Prompt");
@@ -74,8 +69,6 @@ public class OpenAIAutoTagRunner implements Runnable {
         this.overwriteField = overwriteField;
         this.limitTags = limitTags;
         this.user = user;
-        this.model = model;
-        this.temperature = temperature;
     }
 
 
@@ -145,8 +138,10 @@ public class OpenAIAutoTagRunner implements Runnable {
         final String parsedSystemPrompt = VelocityUtil.eval(systemPrompt, ctx);
         final String parsedContentPrompt = VelocityUtil.eval(contentToTag, ctx);
 
-        final JSONObject openAIResponse = APILocator.getDotAIAPI().getCompletionsAPI()
-                .prompt(parsedSystemPrompt, parsedContentPrompt, model, temperature, 2000, user.getUserId());
+        final Host host = Try.of(() -> APILocator.getHostAPI().find(workingContentlet.getHost(), user, false)).getOrNull();
+        final AppConfig appConfig = ConfigService.INSTANCE.config(host);
+        final JSONObject openAIResponse = APILocator.getDotAIAPI().getCompletionsAPI(appConfig)
+                .prompt(parsedSystemPrompt, parsedContentPrompt, null, 0f, 2000, user.getUserId());
 
         return openAIResponse.getJSONArray("choices").getJSONObject(0).getJSONObject("message").getString("content");
     }

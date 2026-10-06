@@ -22,6 +22,7 @@ import {
     FloatingActionsKeydownProps,
     FloatingActionsPlugin,
     FloatingActionsProps,
+    getEditorElement,
     ItemsType,
     suggestionOptions,
     SuggestionPopperModifiers,
@@ -176,6 +177,7 @@ function execCommand({
         subscript: () => editor.chain().setSubscript().focus().run(),
         superscript: () => editor.chain().setSuperscript().focus().run(),
         video: () => editor.commands.openAssetForm({ type: 'video' }),
+        audio: () => editor.commands.openAssetForm({ type: 'audio' }),
         aiContentPrompt: () => editor.commands.openAIPrompt(),
         aiContent: () => editor.commands.insertAINode(),
         aiImagePrompt: () => editor.commands.openImagePrompt(),
@@ -234,7 +236,7 @@ export const ActionsMenu = (
         if (shouldShow) {
             setUpSuggestionComponent(editor, range);
             myTippy = getTippyInstance({
-                element: editor.options.element.parentElement,
+                element: getEditorElement(editor)?.parentElement,
                 content: suggestionsComponent.location.nativeElement,
                 rect: clientRect,
                 onHide: () => {

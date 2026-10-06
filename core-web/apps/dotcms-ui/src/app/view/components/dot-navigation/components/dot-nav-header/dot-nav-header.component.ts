@@ -1,4 +1,4 @@
-import { Component, input, inject, output } from '@angular/core';
+import { Component, input, inject, output, ChangeDetectionStrategy } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 
 import { ButtonModule } from 'primeng/button';
@@ -9,6 +9,7 @@ import { DotNavLogoService } from '../../../../../api/services/dot-nav-logo/dot-
     selector: 'dot-nav-header',
     styleUrls: ['./dot-nav-header.component.scss'],
     templateUrl: 'dot-nav-header.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [ButtonModule]
 })
 export class DotNavHeaderComponent {

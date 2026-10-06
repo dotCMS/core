@@ -2,7 +2,7 @@ package com.dotmarketing.portlets.workflows.business;
 
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.api.v1.workflow.BulkActionsResultView;
 import com.dotcms.workflow.form.AdditionalParamsBean;
 import com.dotmarketing.beans.Permission;
@@ -1235,7 +1235,17 @@ public interface WorkflowAPI {
 		ARCHIVE,
 		UNARCHIVE,
 		DELETE,
-		DESTROY;
+		DESTROY,
+		/**
+		 * Locking is <b>per user</b> rather than a workflow transition, so unlike the actions above
+		 * these two have no actionlet and no shipped workflow action to map to. They are served by
+		 * the API-call fallback in
+		 * {@link com.dotcms.rest.api.v1.workflow.SystemActionApiFireCommandFactory}, which calls
+		 * {@link com.dotmarketing.portlets.contentlet.business.ContentletAPI#lock} /
+		 * {@code unlock} directly. Mapping either one to a workflow action has no effect.
+		 */
+		LOCK,
+		UNLOCK;
 
 		/**
 		 * Prefer this over valueOf(String..) since mySQL sends lowercased vals

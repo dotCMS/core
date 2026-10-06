@@ -1,20 +1,16 @@
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
-import { HttpClientTestingModule, provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { DotMessageService, DotSystemConfigService } from '@dotcms/data-access';
-import { CoreWebService } from '@dotcms/dotcms-js';
 import { GlobalStore } from '@dotcms/store';
-import {
-    CoreWebServiceMock,
-    dotcmsContentTypeBasicMock,
-    MockDotMessageService
-} from '@dotcms/utils-testing';
+import { dotcmsContentTypeBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotAddToMenuComponent } from './dot-add-to-menu.component';
 
@@ -121,9 +117,8 @@ describe('DotAddToMenuComponent', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             declarations: [TestHostComponent],
-            imports: [DotAddToMenuComponent, BrowserAnimationsModule, HttpClientTestingModule],
+            imports: [DotAddToMenuComponent, BrowserAnimationsModule],
             providers: [
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: DotAddToMenuService, useClass: DotAddToMenuServiceMock },
                 { provide: DotMenuService, useClass: DotMenuServiceMock },
@@ -144,7 +139,7 @@ describe('DotAddToMenuComponent', () => {
         dotAddToMenuService = TestBed.inject(DotAddToMenuService);
         dotMenuService = TestBed.inject(DotMenuService);
 
-        jest.spyOn(dotMenuService, 'loadMenu').mockReturnValue(
+        vi.spyOn(dotMenuService, 'loadMenu').mockReturnValue(
             of([
                 {
                     id: '123',
@@ -196,12 +191,14 @@ describe('DotAddToMenuComponent', () => {
         expect(
             dotdialog.query(By.css('[data-testId="ViewModeLabel"]')).nativeElement.textContent
         ).toContain(messageServiceMock.get('contenttypes.content.add_to_menu.default_view'));
-        // Check radio button labels (they are in sibling <label> elements inside .radio div)
+        // Check radio button labels (they are in sibling <label> elements inside .form-radio div)
         expect(
-            dotdialog.query(By.css('.radio label[for="cardViewMode"]')).nativeElement.textContent
+            dotdialog.query(By.css('.form-radio label[for="cardViewMode"]')).nativeElement
+                .textContent
         ).toContain(messageServiceMock.get('custom.content.portlet.dataViewMode.card'));
         expect(
-            dotdialog.query(By.css('.radio label[for="listViewMode"]')).nativeElement.textContent
+            dotdialog.query(By.css('.form-radio label[for="listViewMode"]')).nativeElement
+                .textContent
         ).toContain(messageServiceMock.get('custom.content.portlet.dataViewMode.list'));
 
         expect(dotdialog.query(By.css('[data-testId="titleMenu"]')).nativeElement.value).toBe(
@@ -242,9 +239,9 @@ describe('DotAddToMenuComponent', () => {
             By.css('[data-testId="dotDialogAcceptAction"]')
         );
 
-        jest.spyOn(dotAddToMenuService, 'createCustomTool').mockReturnValue(of(''));
-        jest.spyOn(dotAddToMenuService, 'addToLayout').mockReturnValue(of(''));
-        jest.spyOn(component.$cancel, 'emit');
+        vi.spyOn(dotAddToMenuService, 'createCustomTool').mockReturnValue(of(''));
+        vi.spyOn(dotAddToMenuService, 'addToLayout').mockReturnValue(of(''));
+        vi.spyOn(component.cancel, 'emit');
 
         addButton.nativeElement.click();
 
@@ -258,7 +255,7 @@ describe('DotAddToMenuComponent', () => {
             dataViewMode: 'list',
             layoutId: component.form.get('menuOption').value
         });
-        expect(component.$cancel.emit).toHaveBeenCalledTimes(1);
+        expect(component.cancel.emit).toHaveBeenCalledTimes(1);
     });
 
     it('should emit Cancel event on close button click', () => {
@@ -266,9 +263,9 @@ describe('DotAddToMenuComponent', () => {
             By.css('[data-testId="dotDialogCancelAction"]')
         );
 
-        jest.spyOn(component.$cancel, 'emit');
+        vi.spyOn(component.cancel, 'emit');
         cancelButton.nativeElement.click();
 
-        expect(component.$cancel.emit).toHaveBeenCalledTimes(1);
+        expect(component.cancel.emit).toHaveBeenCalledTimes(1);
     });
 });

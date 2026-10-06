@@ -7,9 +7,11 @@ import javax.ws.rs.ext.Provider;
 import org.elasticsearch.ElasticsearchStatusException;
 import javax.ws.rs.ext.ExceptionMapper;
 
+// ES-DECOMMISSION: JAX-RS mapper typed to ElasticsearchStatusException.
+// Decommission entire class — OpenSearchExceptionMapper is the OS replacement.
+@Deprecated(forRemoval = true)
 @Provider
 public class ElasticsearchStatusExceptionMapper implements ExceptionMapper<ElasticsearchStatusException> {
-
 
     @Override
     public Response toResponse(final ElasticsearchStatusException exception) {

@@ -5,6 +5,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockParameterRequest;
 import com.dotcms.mock.request.MockSession;
 import com.dotcms.mock.request.MockSessionRequest;
@@ -286,6 +287,75 @@ public class PageModeTest {
         assert (PageMode.get(parameterRequest) == PageMode.LIVE);
 
 
+    }
+
+    /**
+     * Method to test: {@link PageMode#getWithReferer(HttpServletRequest)}
+     * Given Scenario: A backend user requests a sub-resource (no {@code ?mode=} of its own) whose
+     * {@code Referer} page was viewed in {@code LIVE} mode.
+     * Expected Result: The mode declared on the Referer ({@code LIVE}) is honored instead of the
+     * backend user's default {@code PREVIEW_MODE}.
+     */
+    @Test
+    public void getWithReferer_backend_user_honors_referer_mode() {
+        final HttpServletRequest request = new MockHeaderRequest(backEndRequest(),
+                "Referer", "http://localhost/my-page?mode=LIVE").request();
+        Assert.assertEquals(PageMode.LIVE, PageMode.getWithReferer(request));
+    }
+
+    /**
+     * Method to test: {@link PageMode#getWithReferer(HttpServletRequest)}
+     * Given Scenario: An anonymous request carries a {@code Referer} that declares {@code EDIT_MODE}.
+     * Expected Result: The referer is ignored and the request stays on the forced-LIVE path; a spoofed
+     * Referer cannot escalate an anonymous request out of LIVE.
+     */
+    @Test
+    public void getWithReferer_anonymous_ignores_referer() {
+        final HttpServletRequest request = new MockHeaderRequest(anonymousRequest(),
+                "Referer", "http://localhost/my-page?mode=EDIT_MODE").request();
+        Assert.assertEquals(PageMode.LIVE, PageMode.getWithReferer(request));
+    }
+
+    /**
+     * Method to test: {@link PageMode#getWithReferer(HttpServletRequest)}
+     * Given Scenario: The request itself declares an explicit {@code ?mode=} while its {@code Referer}
+     * declares a different mode.
+     * Expected Result: The request's own {@code ?mode=} wins; the Referer is never consulted when the
+     * request already declares a mode.
+     */
+    @Test
+    public void getWithReferer_request_mode_wins_over_referer() {
+        final HttpServletRequest withReferer = new MockHeaderRequest(backEndRequest(),
+                "Referer", "http://localhost/my-page?mode=LIVE").request();
+        final HttpServletRequest request = new MockParameterRequest(withReferer,
+                ImmutableMap.of("mode", "EDIT_MODE")).request();
+        Assert.assertEquals(PageMode.EDIT_MODE, PageMode.getWithReferer(request));
+    }
+
+    /**
+     * Method to test: {@link PageMode#getWithReferer(HttpServletRequest)}
+     * Given Scenario: A backend user requests a sub-resource with no {@code ?mode=} and a {@code Referer}
+     * that declares no {@code mode}.
+     * Expected Result: Falls back to the backend user's default {@code PREVIEW_MODE}.
+     */
+    @Test
+    public void getWithReferer_backend_user_no_referer_mode_falls_back() {
+        final HttpServletRequest request = new MockHeaderRequest(backEndRequest(),
+                "Referer", "http://localhost/my-page").request();
+        Assert.assertEquals(PageMode.PREVIEW_MODE, PageMode.getWithReferer(request));
+    }
+
+    /**
+     * Method to test: {@link PageMode#getWithReferer(HttpServletRequest)}
+     * Given Scenario: A front-end-only user carries a {@code Referer} declaring {@code EDIT_MODE}.
+     * Expected Result: The referer is ignored (the backend-user gate is not satisfied) and the user
+     * stays on LIVE.
+     */
+    @Test
+    public void getWithReferer_frontend_user_ignores_referer() {
+        final HttpServletRequest request = new MockHeaderRequest(frontEndRequest(),
+                "Referer", "http://localhost/my-page?mode=EDIT_MODE").request();
+        Assert.assertEquals(PageMode.LIVE, PageMode.getWithReferer(request));
     }
 
     /**

@@ -1,6 +1,7 @@
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
+import { Spectator, byTestId, createComponentFactory } from '@openng/spectator/vitest';
 import { MockComponent } from 'ng-mocks';
 import { MarkdownComponent } from 'ngx-markdown';
+import { vi } from 'vitest';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { FormGroupDirective, ReactiveFormsModule } from '@angular/forms';
@@ -17,6 +18,34 @@ import { DotFieldRequiredDirective } from '@dotcms/ui';
 import { DotAppsConfigurationDetailFormComponent } from './dot-apps-configuration-detail-form.component';
 
 import { DotAppsConfigurationDetailGeneratedStringFieldComponent } from '../dot-apps-configuration-detail-generated-string-field/dot-apps-configuration-detail-generated-string-field.component';
+
+const headingSecret = {
+    dynamic: false,
+    name: 'sectionHeader',
+    hidden: false,
+    hint: '',
+    label: 'Server-Rendered Pages Configuration',
+    required: false,
+    type: 'HEADING',
+    value: '',
+    hasEnvVar: false,
+    envShow: false,
+    hasEnvVarValue: false
+};
+
+const infoSecret = {
+    dynamic: false,
+    name: 'infoBox',
+    hidden: false,
+    hint: 'These settings apply ONLY to pages rendered by dotCMS servers.',
+    label: '',
+    required: false,
+    type: 'INFO',
+    value: '',
+    hasEnvVar: false,
+    envShow: false,
+    hasEnvVarValue: false
+};
 
 const secrets = [
     {
@@ -280,7 +309,7 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
 
             const field = secrets[4];
 
-            const openMock = jest.fn();
+            const openMock = vi.fn();
             window.open = openMock;
             const row = spectator.query(byTestId('integration'));
             const buttonElement = row.querySelector('button');
@@ -304,8 +333,8 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
         });
 
         it('should emit form state when value changed', () => {
-            const spyDataOutput = jest.spyOn(spectator.component.data, 'emit');
-            const spyValidOutput = jest.spyOn(spectator.component.valid, 'emit');
+            const spyDataOutput = vi.spyOn(spectator.component.data, 'emit');
+            const spyValidOutput = vi.spyOn(spectator.component.valid, 'emit');
 
             spectator.component.myFormGroup.get('name').setValue('Test2');
             spectator.component.myFormGroup.get('password').setValue('Password2');
@@ -315,8 +344,44 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
             expect(spyValidOutput).toHaveBeenCalledTimes(3);
         });
 
+        it('should render HEADING field as section header with label text', () => {
+            const spectatorWithHeading = createComponent({
+                props: { formFields: [headingSecret, ...secrets] } as unknown
+            });
+            spectatorWithHeading.detectChanges();
+
+            const header = spectatorWithHeading.query('[data-testid="sectionHeader"]');
+            expect(header).toBeTruthy();
+            expect(header.classList).toContain('dot-apps-configuration-detail__section-header');
+            expect(header.querySelector('h3').textContent.trim()).toBe(headingSecret.label);
+        });
+
+        it('should render INFO field as info box with hint text', () => {
+            const spectatorWithInfo = createComponent({
+                props: { formFields: [infoSecret, ...secrets] } as unknown
+            });
+            spectatorWithInfo.detectChanges();
+
+            const infoBox = spectatorWithInfo.query('[data-testid="infoBox"]');
+            expect(infoBox).toBeTruthy();
+            expect(infoBox.classList).toContain('dot-apps-configuration-detail__info-box');
+            expect(infoBox.querySelector('markdown')).toBeTruthy();
+        });
+
+        it('should not add HEADING or INFO fields to the form group', () => {
+            const spectatorWithExtra = createComponent({
+                props: {
+                    formFields: [headingSecret, infoSecret, ...secrets]
+                } as unknown
+            });
+            spectatorWithExtra.detectChanges();
+
+            expect(spectatorWithExtra.component.myFormGroup.contains('sectionHeader')).toBe(false);
+            expect(spectatorWithExtra.component.myFormGroup.contains('infoBox')).toBe(false);
+        });
+
         it('should emit form state disabled when required field empty', () => {
-            const spyValidOutput = jest.spyOn(spectator.component.valid, 'emit');
+            const spyValidOutput = vi.spyOn(spectator.component.valid, 'emit');
 
             spectator.component.myFormGroup.get('name').setValue('');
             expect(spyValidOutput).toHaveBeenCalledWith(false);

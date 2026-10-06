@@ -1,23 +1,17 @@
 @let type = $type();
 @let height = $height();
-@let chartTitle = $title();
 @let isError = $isError();
 @let isLoading = $isLoading();
 @let isEmpty = $isEmpty();
-@let hasTitle = !!chartTitle;
 @let shouldUsePieLayout =
     (type === 'pie' || type === 'doughnut') && !isLoading && !isEmpty && !isError;
 
-@if (hasTitle) {
-    <h3 class="text-lg font-bold mb-2" data-testid="chart-title">
-        {{ chartTitle | dm }}
-    </h3>
-}
-
 <p-card
     class="chart-card"
+    [dt]="{ body: { padding: '1.5rem' } }"
     [class.flex]="shouldUsePieLayout"
     [class.w-full]="shouldUsePieLayout"
+    [header]="$resolvedCardHeader()"
     data-testid="analytics-chart">
     @if ($isError()) {
         <!-- Error state -->

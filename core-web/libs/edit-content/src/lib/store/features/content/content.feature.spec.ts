@@ -1,18 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { signalStore, withState, patchState } from '@ngrx/signals';
 import {
     createServiceFactory,
     mockProvider,
     SpectatorService,
     SpyObject
-} from '@ngneat/spectator/jest';
-import { signalStore, withState, patchState } from '@ngrx/signals';
+} from '@openng/spectator/vitest';
 import { NEVER, of, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { fakeAsync, tick } from '@angular/core/testing';
-import { Title } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 
 import {
@@ -30,12 +30,15 @@ import {
     DotCMSWorkflowAction,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
-import { GlobalStore } from '@dotcms/store';
-import { MOCK_SINGLE_WORKFLOW_ACTIONS } from '@dotcms/utils-testing';
+import {
+    DOT_SYSTEM_CONFIG_SERVICE_MOCK,
+    MOCK_SINGLE_WORKFLOW_ACTIONS
+} from '@dotcms/utils-testing';
 
 import { withContent } from './content.feature';
 
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
+import { EDIT_CONTENT_HOST } from '../../../services/host/edit-content-host.model';
 import { MOCK_WORKFLOW_STATUS } from '../../../utils/edit-content.mock';
 import { CONTENT_TYPE_MOCK } from '../../../utils/mocks';
 import { parseCurrentActions, parseWorkflows } from '../../../utils/workflows.utils';
@@ -50,8 +53,18 @@ describe('ContentFeature', () => {
     let workflowActionService: SpyObject<DotWorkflowsActionsService>;
     let workflowService: SpyObject<DotWorkflowService>;
     let router: SpyObject<Router>;
-    let title: SpyObject<Title>;
     let dotMessageService: SpyObject<DotMessageService>;
+
+    // Chrome/navigation concerns are delegated to the EditContentHost port.
+    // In full-screen the RouterEditContentHost fulfils these; here we assert
+    // the feature states the intent (title/breadcrumb) against the port.
+    const mockHost = {
+        setContentTitle: vi.fn(),
+        addBreadcrumb: vi.fn(),
+        goToSavedContent: vi.fn(),
+        leaveDeletedContent: vi.fn(),
+        goToRestoredVersion: vi.fn()
+    };
 
     const createStore = createServiceFactory({
         service: signalStore(
@@ -64,24 +77,24 @@ describe('ContentFeature', () => {
             DotHttpErrorManagerService,
             DotWorkflowsActionsService,
             DotWorkflowService,
-            Title,
             DotMessageService
         ],
         providers: [
             mockProvider(Router, {
-                navigate: jest.fn().mockReturnValue(Promise.resolve(true)),
+                navigate: vi.fn().mockReturnValue(Promise.resolve(true)),
                 url: '/test-url',
                 events: of()
             }),
             mockProvider(DotSiteService),
-            mockProvider(DotSystemConfigService),
-            mockProvider(GlobalStore, { addNewBreadcrumb: jest.fn() }),
+            mockProvider(DotSystemConfigService, DOT_SYSTEM_CONFIG_SERVICE_MOCK),
+            { provide: EDIT_CONTENT_HOST, useValue: mockHost },
             provideHttpClient(),
             provideHttpClientTesting()
         ]
     });
 
     beforeEach(() => {
+        Object.values(mockHost).forEach((fn) => fn.mockClear());
         spectator = createStore();
         store = spectator.service;
         contentTypeService = spectator.inject(DotContentTypeService);
@@ -89,7 +102,6 @@ describe('ContentFeature', () => {
         workflowActionService = spectator.inject(DotWorkflowsActionsService);
         workflowService = spectator.inject(DotWorkflowService);
         router = spectator.inject(Router);
-        title = spectator.inject(Title);
         dotMessageService = spectator.inject(DotMessageService);
 
         dotMessageService.get.mockImplementation((key) => {
@@ -137,6 +149,35 @@ describe('ContentFeature', () => {
             const parsedSchemes = parseWorkflows(MOCK_SINGLE_WORKFLOW_ACTIONS);
             expect(store.schemes()).toEqual(parsedSchemes);
             expect(store.currentSchemeId()).toBe(MOCK_SINGLE_WORKFLOW_ACTIONS[0].scheme.id);
+        }));
+
+        // #36883: this is the seeding point the reported bug takes — a single-scheme content
+        // type auto-selects its scheme here and seeds `currentContentActions` straight from the
+        // default-actions payload. The missing `actionInputs` is fixed in
+        // DotWorkflowsActionsService (which is mocked here), so this asserts the remaining half:
+        // that the store's reshape carries the array through instead of dropping it.
+        it('should carry actionInputs through into currentContentActions for new content', fakeAsync(() => {
+            const commentableActions = [
+                {
+                    ...MOCK_SINGLE_WORKFLOW_ACTIONS[0],
+                    action: {
+                        ...MOCK_SINGLE_WORKFLOW_ACTIONS[0].action,
+                        commentable: true,
+                        actionInputs: [{ id: 'commentable', body: {} }]
+                    }
+                }
+            ];
+            contentTypeService.getContentTypeWithRender.mockReturnValue(of(CONTENT_TYPE_MOCK));
+            workflowActionService.getDefaultActions.mockReturnValue(of(commentableActions));
+
+            store.initializeNewContent('testContentType');
+            tick();
+
+            const schemeId = commentableActions[0].scheme.id;
+            expect(store.currentSchemeId()).toBe(schemeId);
+            expect(store.currentContentActions()[schemeId][0].actionInputs).toEqual([
+                { id: 'commentable', body: {} }
+            ]);
         }));
 
         it('should return correct computed values for existing content', fakeAsync(() => {
@@ -306,15 +347,17 @@ describe('ContentFeature', () => {
             expect(store.currentSchemeId()).toBe(MOCK_SINGLE_WORKFLOW_ACTIONS[0].scheme.id);
         }));
 
-        it('should set the correct title for new content', fakeAsync(() => {
+        it('should set the title and breadcrumb via the host for new content', fakeAsync(() => {
             store.initializeNewContent('testContentType');
             tick();
 
             expect(dotMessageService.get).toHaveBeenCalledWith('New');
-            expect(dotMessageService.get).toHaveBeenCalledWith(
-                'dotcms.content.management.platform.title'
-            );
-            expect(title.setTitle).toHaveBeenCalledWith('New Test - DotCMS');
+            // The feature passes the raw label; the host appends any platform suffix.
+            expect(mockHost.setContentTitle).toHaveBeenCalledWith('New Test');
+            expect(mockHost.addBreadcrumb).toHaveBeenCalledWith({
+                label: 'New Test',
+                url: '/dotAdmin/#/content/new/Test'
+            });
         }));
 
         it('should reset hiddenFields immediately when initializing new content', fakeAsync(() => {
@@ -387,14 +430,15 @@ describe('ContentFeature', () => {
             tick();
         }));
 
-        it('should set the correct title for existing content', fakeAsync(() => {
+        it('should set the title and breadcrumb via the host for existing content', fakeAsync(() => {
             store.initializeExistingContent({ inode: '123' });
             tick();
 
-            expect(dotMessageService.get).toHaveBeenCalledWith(
-                'dotcms.content.management.platform.title'
-            );
-            expect(title.setTitle).toHaveBeenCalledWith('Test Content Title - DotCMS');
+            expect(mockHost.setContentTitle).toHaveBeenCalledWith('Test Content Title');
+            expect(mockHost.addBreadcrumb).toHaveBeenCalledWith({
+                label: 'Test Content Title',
+                url: `/dotAdmin/#/content/${testInode}`
+            });
         }));
 
         it('should handle error when initializing existing content', fakeAsync(() => {
@@ -409,6 +453,16 @@ describe('ContentFeature', () => {
             );
 
             expect(router.navigate).toHaveBeenCalledWith(['/c/content']);
+        }));
+
+        it('should pass inode to getContentTypeWithRender for Velocity variable resolution', fakeAsync(() => {
+            store.initializeExistingContent({ inode: testInode });
+            tick();
+
+            expect(contentTypeService.getContentTypeWithRender).toHaveBeenCalledWith(
+                mockContentlet.contentType,
+                testInode
+            );
         }));
 
         it('should set initialContentletState to reset when no scheme or step', fakeAsync(() => {

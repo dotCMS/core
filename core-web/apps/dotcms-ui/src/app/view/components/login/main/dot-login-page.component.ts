@@ -1,9 +1,9 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 
 import { CardModule } from 'primeng/card';
 
-import { pluck, take } from 'rxjs/operators';
+import { map, take } from 'rxjs/operators';
 
 import { DotLoginUserSystemInformation } from '@dotcms/dotcms-models';
 
@@ -13,6 +13,7 @@ import { DotLoginPageStateService } from '../shared/services/dot-login-page-stat
     selector: 'dot-login-page-component',
     styleUrls: ['./dot-login-page.component.scss'],
     templateUrl: 'dot-login-page.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [RouterOutlet, CardModule]
 })
 /**
@@ -24,7 +25,10 @@ export class DotLoginPageComponent implements OnInit {
     ngOnInit(): void {
         this.loginPageStateService
             .get()
-            .pipe(take(1), pluck('entity'))
+            .pipe(
+                take(1),
+                map((x) => x?.entity)
+            )
             .subscribe((dotLoginUserSystemInformation: DotLoginUserSystemInformation) => {
                 document.body.style.backgroundColor =
                     dotLoginUserSystemInformation.backgroundColor || '';

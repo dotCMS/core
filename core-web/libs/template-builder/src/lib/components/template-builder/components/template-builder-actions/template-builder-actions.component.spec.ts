@@ -1,5 +1,6 @@
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
-import { of } from 'rxjs';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { of, Subscription } from 'rxjs';
+import { vi } from 'vitest';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 
@@ -8,10 +9,9 @@ import {
     DotMessageService,
     DotSystemConfigService
 } from '@dotcms/data-access';
-import { DotcmsEventsService } from '@dotcms/dotcms-js';
 import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
-import { DotCurrentUserServiceMock, DotcmsEventsServiceMock } from '@dotcms/utils-testing';
+import { DotCurrentUserServiceMock } from '@dotcms/utils-testing';
 
 import { TemplateBuilderActionsComponent } from './template-builder-actions.component';
 
@@ -42,10 +42,6 @@ describe('TemplateBuilderActionsComponent', () => {
                 provide: GlobalStore,
                 useValue: mockGlobalStore
             },
-            {
-                provide: DotcmsEventsService,
-                useClass: DotcmsEventsServiceMock
-            },
             DotTemplateBuilderStore
         ],
         imports: [HttpClientTestingModule, DotMessagePipe]
@@ -70,7 +66,7 @@ describe('TemplateBuilderActionsComponent', () => {
     });
 
     it('should emit selectTheme event when style button is clicked', () => {
-        const spy = jest.spyOn(spectator.component.selectTheme, 'emit');
+        const spy = vi.spyOn(spectator.component.selectTheme, 'emit');
         spectator.detectChanges();
 
         spectator.component.onThemeChange('test-theme-id');
@@ -92,7 +88,14 @@ describe('TemplateBuilderActionsComponent', () => {
     });
 
     it('should emit changes everytime the layout properties changes', () => {
-        const changesMock = jest.spyOn(store, 'updateLayoutProperties');
+        // mockImplementation, not a bare spy: the store is provided but never given an
+        // initial state here, so the real updater throws "DotTemplateBuilderStore has
+        // not been initialized yet" from inside the form subscription. rxjs reported
+        // that asynchronously, which Jest dropped and Vitest counts as an unhandled
+        // error. The test only cares that the call happened.
+        const changesMock = vi
+            .spyOn(store, 'updateLayoutProperties')
+            .mockImplementation(() => new Subscription());
         spectator.component.group.setValue({
             footer: true,
             header: false,

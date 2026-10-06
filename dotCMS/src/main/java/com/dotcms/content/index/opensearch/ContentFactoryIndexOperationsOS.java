@@ -9,6 +9,7 @@ import com.dotcms.cost.RequestCost;
 import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotcms.content.index.IndexConfigHelper;
@@ -23,17 +24,14 @@ import io.vavr.control.Try;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import org.elasticsearch.ElasticsearchStatusException;
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
-import org.elasticsearch.index.IndexNotFoundException;
 import org.jetbrains.annotations.NotNull;
 import org.opensearch.client.opensearch.OpenSearchClient;
 import org.opensearch.client.opensearch._types.FieldSort;
+import org.opensearch.client.opensearch._types.mapping.FieldType;
 import org.opensearch.client.opensearch._types.OpenSearchException;
 import org.opensearch.client.opensearch._types.SortOptions;
 import org.opensearch.client.opensearch._types.SortOrder;
 import org.opensearch.client.opensearch._types.query_dsl.FunctionScoreQuery;
-import org.opensearch.client.opensearch._types.query_dsl.MatchAllQuery;
 import org.opensearch.client.opensearch._types.query_dsl.Query;
 import org.opensearch.client.opensearch._types.query_dsl.QueryStringQuery;
 import org.opensearch.client.opensearch._types.query_dsl.RandomScoreFunction;
@@ -62,8 +60,7 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
     private final OSClientProvider clientProvider;
 
     public ContentFactoryIndexOperationsOS() {
-        this.queryCache = new OSQueryCache();
-        this.clientProvider = CDIUtils.getBeanThrows(OSClientProvider.class);
+        this(CacheLocator.getOSQueryCache(), CDIUtils.getBeanThrows(OSClientProvider.class));
     }
 
     public ContentFactoryIndexOperationsOS(OSQueryCache queryCache, OSClientProvider clientProvider) {
@@ -85,6 +82,33 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
         final String exception = exceptionMsg.toLowerCase();
         return exception.contains("parse_exception") ||
                 exception.contains("search_phase_execution_exception");
+    }
+
+
+    /**
+     * Whether a failure this provider would otherwise absorb must be raised instead.
+     *
+     * <p>These read paths historically convert a failure into a legitimate-looking empty result
+     * — an empty {@code SearchHits}, the {@code ERROR_HIT} sentinel, {@code -1} for a count, an
+     * empty scroll list. The provider then reports success, so the phase router sees nothing to
+     * catch and cannot fall back: with OpenSearch unable to answer in Phase 2, a search returned
+     * zero results while Elasticsearch held the data the whole time (issue #37413).</p>
+     *
+     * <p>The change is scoped to Phase 2 on purpose, and the scoping is what makes it safe. In
+     * Phase 2 the router catches the raised failure immediately above this class and turns it
+     * into a successful Elasticsearch read, so <strong>no caller ever observes a new exception
+     * type</strong> — which is why no enumeration of callers relying on empty-instead-of-throw
+     * is needed. In every other phase the absorbing behaviour is untouched: phases 0 and 1 do
+     * not read from OpenSearch at all, and Phase 3 has no Elasticsearch to fall back to, so
+     * raising there would expose every such caller with nothing gained.</p>
+     *
+     * <p>The one genuine behaviour change: when both engines fail on the same read the caller now
+     * receives an error rather than a silent empty result. That is the improvement being asked
+     * for — the silent variant is the dangerous one, because a caller cannot tell it apart from
+     * "this content type has no content".</p>
+     */
+    private static boolean mustRaiseForPhase2Fallback() {
+        return IndexConfigHelper.isReadEnabled() && !IndexConfigHelper.isMigrationComplete();
     }
 
     /**
@@ -118,6 +142,21 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
             Logger.warn(this.getClass(), String.format("OS Query: %s", String.valueOf(searchRequest)));
             Logger.warn(this.getClass(), String.format("Class %s: %s", e.getClass().getName(), exceptionMsg));
             Logger.warn(this.getClass(), "----------------------------------------------");
+            if (mustRaiseForPhase2Fallback()) {
+                // Not cached: a sentinel stored here would be replayed to every later identical
+                // query as a successful empty result, outliving the outage and defeating the
+                // fallback even after OpenSearch recovers.
+                // Index name and OpenSearch's own reason only. The full SearchRequest is
+                // deliberately left out: in Phase 2 the router logs this message at ERROR, and a
+                // Lucene query can carry end-user search terms and field values (Constitution
+                // Principle III). The request body is still available at DEBUG on the WARN block
+                // above for anyone diagnosing a specific query.
+                throw new DotRuntimeException(String.format(
+                        "OpenSearch search failed on index [%s]: %s",
+                        (searchRequest.index() != null) ? String.join(",", searchRequest.index())
+                                : "unknown",
+                        exceptionMsg), e);
+            }
             if(shouldQueryCache(exceptionMsg)) {
                 queryCache.put(searchRequest, ERROR_HIT);
             }
@@ -178,6 +217,13 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
             Logger.warn(this.getClass(), String.format("OS Query: %s", countRequest));
             Logger.warn(this.getClass(), String.format("Class %s: %s", e.getClass().getName(), exceptionMsg));
             Logger.warn(this.getClass(), "----------------------------------------------");
+            if (mustRaiseForPhase2Fallback()) {
+                // Not cached, for the same reason as the search path above.
+                // Index name only -- see the search path above for why the request is omitted.
+                throw new DotRuntimeException(String.format(
+                        "OpenSearch count failed on index [%s]: %s",
+                        countRequest.index(), exceptionMsg), e);
+            }
             if(shouldQueryCache(exceptionMsg)) {
                 queryCache.put(countRequest, -1L);
             }
@@ -207,10 +253,19 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
         try {
             indexToHit = inferIndexToHit(query);
             if (indexToHit == null) {
+                if (mustRaiseForPhase2Fallback()) {
+                    // The query itself is omitted -- see cachedIndexSearch below.
+                    throw new DotRuntimeException(
+                            "Unable to determine which OpenSearch index to query");
+                }
                 return SearchHits.empty();
             }
-        } catch (Exception e) {
+        } catch (final Exception e) {
             Logger.error(this, "Can't get indices information.", e);
+            if (mustRaiseForPhase2Fallback()) {
+                throw new DotRuntimeException(
+                        "Can't get OpenSearch indices information: " + e.getMessage(), e);
+            }
             return SearchHits.empty();
         }
 
@@ -233,7 +288,7 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
         searchRequestBuilder.query(searchQuery);
 
         // Set timeout
-        searchRequestBuilder.timeout(ConfigurableOpenSearchProvider.INDEX_OPERATIONS_TIMEOUT);
+        searchRequestBuilder.timeout(OSIndexAPIImpl.INDEX_OPERATIONS_TIMEOUT);
 
         // Set source fields
         searchRequestBuilder.source(src -> src.filter(f -> f.includes(List.of(OS_FIELDS))));
@@ -252,7 +307,8 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
         if(UtilMethods.isSet(sortBy)) {
             addSorting(searchRequestBuilder, sortBy);
         } else {
-            searchRequestBuilder.sort(SortOptions.of(so -> so.field(FieldSort.of(fs -> fs.field("moddate").order(SortOrder.Desc)))));
+            searchRequestBuilder.sort(SortOptions.of(so -> so.field(FieldSort.of(fs -> fs
+                    .field("moddate").order(SortOrder.Desc).unmappedType(FieldType.Date)))));
         }
 
         SearchRequest searchRequest = searchRequestBuilder.build();
@@ -265,10 +321,12 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
     @Override
     public List<String> search(String query, int limit, int offset) {
 
+            final String indexToHit = inferIndexToHit(query);
             SearchRequest.Builder searchRequestBuilder = new SearchRequest.Builder();
 
             Query searchQuery = createQuery(query, null);
             searchRequestBuilder.query(searchQuery)
+                    .index(indexToHit)
                     .size(limit)
                     .from(offset)
                     .source(src -> src.filter(f -> f.includes(List.of(OS_FIELDS))));
@@ -280,31 +338,51 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
                     .map(Hit::source)
                     .filter(source -> source instanceof java.util.Map)
                     .map(source -> (java.util.Map<String, Object>) source)
+                    .filter(map -> map.get("inode") != null)
                     .map(map -> map.get("inode").toString())
                     .collect(Collectors.toList());
 
     }
 
     /**
-     * Creates a Query object from the query string and sort parameters
+     * Creates a Query object from the query string and sort parameters.
+     *
+     * <p><strong>The Lucene query must survive every branch.</strong> The Elasticsearch
+     * counterpart ({@code ContentFactoryIndexOperationsES.createSearchSourceBuilder}) keeps it
+     * as a {@code post_filter} whenever it swaps the main query for {@code match_all}; the
+     * OpenSearch port dropped it on the {@code random} branch and never applied a post-filter at
+     * all, so a random-sorted search returned an unfiltered sample of the whole index. Callers
+     * then resolved arbitrary documents against the database: {@code IdentifierDateJob} NPE'd on
+     * inodes that do not exist and tried to INSERT phantom identifier rows, and any VTL
+     * {@code $dotcontent.pull(query, limit, "random")} returned content the query never asked
+     * for (issue #36501, D12).</p>
+     *
+     * <p>Rather than mirroring {@code post_filter}, the random branch wraps the real query inside
+     * the {@code function_score}. The hit set and its ordering are identical — {@code post_filter}
+     * is only distinguishable when aggregations are in play, and this request carries none — and
+     * filtering in query context is cheaper, since scoring only runs on matching documents.</p>
      */
-    private Query createQuery(final String query, final String sortBy) {
+    @VisibleForTesting
+    Query createQuery(final String query, final String sortBy) {
+
+        final Query queryString = Query.of(q -> q.queryString(QueryStringQuery.of(qs -> qs.query(query))));
 
         if(IndexConfigHelper.getBoolean(OSIndexProperty.USE_FILTERS_FOR_SEARCHING, false)
                 && sortBy != null && !sortBy.toLowerCase().startsWith("score")) {
 
             if("random".equals(sortBy)){
                 return Query.of(q -> q.functionScore(FunctionScoreQuery.of(fsq -> fsq
-                        .query(Query.of(maq -> maq.matchAll(MatchAllQuery.of(ma -> ma))))
+                        .query(queryString)
                         .functions(fsf -> fsf.randomScore(RandomScoreFunction.of(rs -> rs)))
                 )));
             } else {
-                // Use match_all with post_filter (this would need to be implemented differently in OpenSearch Java client)
-                return Query.of(q -> q.queryString(QueryStringQuery.of(qs -> qs.query(query))));
+                // ES builds match_all + post_filter(query) here; querying directly yields the same
+                // hits without the extra clause, so there is nothing to port.
+                return queryString;
             }
 
         } else {
-            return Query.of(q -> q.queryString(QueryStringQuery.of(qs -> qs.query(query))));
+            return queryString;
         }
     }
 
@@ -332,7 +410,16 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
 
             final String finalDefaultSecondarySort = defaultSecondarySort;
             final SortOrder finalSecondaryOrder = defaultSecondaryOrder;
-            searchRequestBuilder.sort(SortOptions.of(builder ->  builder.field(FieldSort.of(fs -> fs.field(finalDefaultSecondarySort).order(finalSecondaryOrder)))));
+            // Primary sort by relevance (_score DESC), then the secondary field — mirrors the ES path
+            // (ContentFactoryIndexOperationsES.addSorting). Without the _score sort, sortBy=score
+            // ordered only by the secondary field, so hit[0] was not the highest-scoring document.
+            // unmappedType(Date) keeps the secondary sort from failing on indices where that field
+            // is not mapped.
+            searchRequestBuilder.sort(SortOptions.of(so -> so.score(sc -> sc.order(SortOrder.Desc))));
+            searchRequestBuilder.sort(SortOptions.of(builder ->  builder.field(FieldSort.of(fs -> fs
+                    .field(finalDefaultSecondarySort)
+                    .order(finalSecondaryOrder)
+                    .unmappedType(FieldType.Date)))));
 
         } else if(!sortBy.startsWith("undefined") && !sortBy.startsWith("undefined_dotraw") && !sortBy.equals("random")
                 && !sortBy.equals(SortOrder.Asc.toString())  && !sortBy.equals(SortOrder.Desc.toString())) {
@@ -340,14 +427,24 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
         }
     }
 
+    /**
+     * Adds keyword-field sorts. The public/canonical form remains an unsuffixed field name;
+     * accepting an existing {@code _dotraw} suffix is a compatibility path and must not append a
+     * second suffix. Thus existing consumers keep the same generated field while callers that
+     * historically supplied the mapped field directly no longer target a nonexistent mapping.
+     */
     public static void addBuilderSort(@NotNull String sortBy, SearchRequest.Builder searchRequestBuilder) {
         String[] sortByArr = sortBy.split(",");
         for (String sort : sortByArr) {
             String[] x = sort.trim().split(" ");
             SortOrder order = x.length > 1 && x[1].equalsIgnoreCase("desc") ? SortOrder.Desc : SortOrder.Asc;
+            final String requestedField = x[0].toLowerCase();
+            final String field = requestedField.endsWith("_dotraw")
+                    ? requestedField : requestedField + "_dotraw";
             searchRequestBuilder.sort(SortOptions.of(so -> so.field(FieldSort.of(fs -> fs
-                    .field(x[0].toLowerCase() + "_dotraw")
-                    .order(order)))));
+                    .field(field)
+                    .order(order)
+                    .unmappedType(FieldType.Keyword)))));
         }
     }
 
@@ -407,7 +504,7 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
             int scrollBatchSize) {
         final PaginatedArrayList<ContentletSearch> contentletSearchList = new PaginatedArrayList<>();
 
-        // Use the ESContentletScrollImpl inner class to handle all scroll logic
+        // Use the OSContentletScrollImpl inner class to handle all scroll logic
         // Using configurable batch size instead of MAX_LIMIT for better memory management
         try (IndexContentletScroll contentletScroll = createScrollQuery(query, APILocator.systemUser(),
                 false, scrollBatchSize, sortBy)) {
@@ -421,16 +518,20 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
             }
 
             Logger.debug(this.getClass(),
-                    () -> String.format("indexSearchScroll completed: totalResults=%d, query=%s",
+                    () -> String.format("OS indexSearchScroll completed: totalResults=%d, query=%s",
                             contentletSearchList.getTotalResults(), query));
 
-        } catch (final ElasticsearchStatusException | IndexNotFoundException |
-                       SearchPhaseExecutionException e) {
+        } catch (final OpenSearchException e) {
             final String exceptionMsg = (null != e.getCause() ? e.getCause().getMessage() : e.getMessage());
             Logger.warn(this.getClass(), "----------------------------------------------");
             Logger.warn(this.getClass(), String.format("OpenSearch error for query: %s", query));
             Logger.warn(this.getClass(), String.format("Class %s: %s", e.getClass().getName(), exceptionMsg));
             Logger.warn(this.getClass(), "----------------------------------------------");
+            if (mustRaiseForPhase2Fallback()) {
+                // The Lucene query is omitted here for the same reason.
+                throw new DotRuntimeException(
+                        "OpenSearch scroll failed: " + exceptionMsg, e);
+            }
             return new PaginatedArrayList<>();
         } catch (final IllegalStateException e) {
             Logger.warnAndDebug(ContentFactoryIndexOperationsOS.class, e);

@@ -41,6 +41,7 @@ export interface DotGridStackWidget extends GridStackWidget {
     subGridOpts?: DotGridStackOptions;
     parentId?: string;
     willBoxFit?: boolean;
+    metadata?: Record<string, unknown>;
 }
 
 /**
@@ -56,6 +57,7 @@ export interface DotGridStackNode extends GridStackNode {
     subGridOpts?: DotGridStackOptions;
     parentId?: string;
     willBoxFit?: boolean;
+    metadata?: Record<string, unknown>;
 }
 
 /**

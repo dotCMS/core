@@ -4,7 +4,7 @@ import {
     mockProvider,
     SpectatorHttp,
     SpyObject
-} from '@ngneat/spectator/jest';
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
 
 import { DotContentletCanLock } from '@dotcms/dotcms-models';

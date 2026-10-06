@@ -14,7 +14,21 @@ backend: &backend
   - 'dotcms-postman/**'
   - 'test-karate/**'
   - 'e2e/**'
-  - 'dotCMS/!(src/main/webapp/html/)**'
+  - 'dotCMS/src/main/webapp/WEB-INF/messages/**/!(Language*.properties)'
+  # Exclude html/ and WEB-INF/messages/ from backend triggering via per-segment
+  # negation (picomatch !() only negates within a single path segment, so a
+  # multi-segment !() followed by ** does NOT exclude a directory — see lines 78-89).
+  # html/ is re-included for non-css/js above; messages/ for non-Language* above.
+  - 'dotCMS/*'
+  - 'dotCMS/!(src)/**'
+  - 'dotCMS/src/*'
+  - 'dotCMS/src/!(main)/**'
+  - 'dotCMS/src/main/*'
+  - 'dotCMS/src/main/!(webapp)/**'
+  - 'dotCMS/src/main/webapp/*'
+  - 'dotCMS/src/main/webapp/!(html|WEB-INF)/**'
+  - 'dotCMS/src/main/webapp/WEB-INF/*'
+  - 'dotCMS/src/main/webapp/WEB-INF/!(messages)/**'
   - 'dotcms-integration/**'
   - 'independent-projects/**'
   - 'maven-plugins/**'
@@ -36,11 +50,39 @@ cli: &cli
 sdk_libs:
   - 'core-web/libs/sdk/**'
 
+examples:
+  - 'examples/**'
+
+# The package.json shape guardrail's own source. Deliberately NOT folded into sdk_libs:
+# that filter also gates the trunk npm publish job (cicd_3-trunk.yml), and touching the
+# validator must not trigger an SDK release. Without this key the job that runs the
+# validator is not triggered by changes to the validator — you could break the guardrail
+# and keep a green build.
+sdk_package_shapes:
+  - '.github/scripts/validate-sdk-package-shapes/**'
+  - '.github/scripts/resolve-sdk-pin/**'
+  # resolve-sdk-pin's only caller, and the owner of the CLI's argument contract. Without it,
+  # changing a flag in the workflow does not run the tests that cover the module it invokes.
+  - '.github/workflows/cicd_comp_release-prepare-phase.yml'
+
 # PR area labeling filters
 # These are separate from test-triggering filters to avoid false positives
 # (e.g., workflow changes should trigger backend tests but shouldn't label PR as "Area : Backend")
 area_backend:
-  - 'dotCMS/**'
+  - 'dotCMS/src/main/webapp/WEB-INF/messages/**/!(Language*.properties)'
+  # Exclude WEB-INF/messages/Language* from the Area:Backend label via per-segment
+  # negation (see backend filter above and the note at lines 78-89). html/ is NOT
+  # excluded here — area_backend intentionally labels html changes as backend.
+  - 'dotCMS/*'
+  - 'dotCMS/!(src)/**'
+  - 'dotCMS/src/*'
+  - 'dotCMS/src/!(main)/**'
+  - 'dotCMS/src/main/*'
+  - 'dotCMS/src/main/!(webapp)/**'
+  - 'dotCMS/src/main/webapp/*'
+  - 'dotCMS/src/main/webapp/!(WEB-INF)/**'
+  - 'dotCMS/src/main/webapp/WEB-INF/*'
+  - 'dotCMS/src/main/webapp/WEB-INF/!(messages)/**'
   - 'dotcms-integration/**'
   - 'dotcms-postman/**'
   - 'test-karate/**'

@@ -1,0 +1,299 @@
+:host {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+}
+
+.canvas {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    background-color: var(--p-surface-0, #ffffff);
+    color: var(--p-surface-900, #1f2937);
+}
+
+.canvas__address-bar {
+    // Don't set `display` here — let the address bar's own `:host { display: flex }`
+    // lay the URL (left) and zoom controls (right) out on a single row.
+    flex: 0 0 auto;
+    // Shared band height with the footer so the top/bottom frames match and the image
+    // reads as vertically centered (the footer is empty in 'move' mode).
+    min-height: 3.5rem;
+}
+
+.canvas__viewport {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 1.5rem;
+}
+
+// Floating action bar centered at the bottom of the viewport: hosts the crop
+// tool's actions (aspect presets + size inputs + apply/cancel). Light rounded
+// chrome (white card), revealed on hover or keyboard focus so it floats over the
+// image instead of taking a permanent band.
+.canvas__actions {
+    position: absolute;
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    // Size to content (capped to the viewport) so the bar is as wide as it needs to
+    // be. Without an explicit width an absolutely-positioned box is capped at the
+    // space right of `left: 50%`, which squeezed "Apply crop" onto two lines.
+    width: max-content;
+    max-width: calc(100% - 2rem);
+    padding: 0.375rem 0.625rem;
+    border-radius: 0.75rem;
+    background-color: var(--p-surface-0, #ffffff);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+    color: var(--p-surface-700, #374151);
+    // Hidden until the user hovers the canvas (or tabs into an action, for keyboard a11y).
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 200ms ease;
+}
+
+// Keep the action button labels (e.g. "Apply crop") on a single line; the bar
+// sizes to content so they never need to wrap.
+:host ::ng-deep .canvas__actions .p-button-label {
+    white-space: nowrap;
+}
+
+.canvas__viewport:hover .canvas__actions,
+.canvas__actions:focus-within {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .canvas__actions {
+        transition: none;
+    }
+}
+
+// Aspect presets in the (light) floating crop action bar: plain dark-gray text
+// pills, the selected one filled with the primary color.
+// Compact aspect-ratio preset dropdown; the floating bar is tight so cap the
+// trigger width. The overlay panel (appended to body) keeps the default theme.
+:host ::ng-deep .canvas__aspect-select {
+    min-width: 5.5rem;
+}
+
+:host ::ng-deep .canvas__aspect-select .p-select-label {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8125rem;
+}
+
+// Orientation toggle: two square icon buttons (landscape / portrait). Active
+// reads as a filled primary chip; disabled (Free / 1:1) dims out.
+.canvas__orient {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.canvas__orient-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.875rem;
+    height: 1.875rem;
+    padding: 0;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--p-surface-600, #4b5563);
+    cursor: pointer;
+    transition:
+        background 150ms ease,
+        color 150ms ease;
+
+    .material-symbols-outlined {
+        font-size: 1.125rem;
+    }
+}
+
+.canvas__orient-btn:hover:not(:disabled) {
+    background: var(--p-surface-100, #f3f4f6);
+    color: var(--p-surface-900, #1f2937);
+}
+
+.canvas__orient-btn--active,
+.canvas__orient-btn--active:hover {
+    background: var(--p-primary-color, #6366f1);
+    color: #ffffff;
+}
+
+.canvas__orient-btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .canvas__orient-btn {
+        transition: none;
+    }
+}
+
+// Thin vertical dividers separating the preset group, the size inputs and the
+// action buttons.
+.canvas__separator {
+    width: 1px;
+    height: 1.25rem;
+    background: var(--p-surface-200, #e5e7eb);
+}
+
+// Natural-pixel width/height readout/editor: white right-aligned number fields
+// flanking an `×` glyph, with a static `px` unit label.
+.canvas__size {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.8125rem;
+    color: var(--p-surface-700, #374151);
+}
+
+.canvas__size-glyph {
+    color: var(--p-surface-500, #6b7280);
+}
+
+.canvas__size-unit {
+    color: var(--p-surface-500, #6b7280);
+    font-variant-numeric: tabular-nums;
+}
+
+// Tighten the PrimeNG inputNumber to a compact, right-aligned field that reads as
+// part of the light bar; the disabled (Free) state is visibly muted.
+:host ::ng-deep .canvas__size-input input {
+    width: 4rem;
+    padding: 0.25rem 0.5rem;
+    border: 1px solid var(--p-surface-300, #d1d5db);
+    border-radius: 6px;
+    background: var(--p-surface-0, #ffffff);
+    color: var(--p-surface-900, #1f2937);
+    font-size: 0.8125rem;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+:host ::ng-deep .canvas__size-input input:disabled {
+    background: var(--p-surface-100, #f3f4f6);
+    color: var(--p-surface-500, #6b7280);
+    opacity: 1;
+}
+
+.canvas__stage {
+    position: relative;
+    // Grid + centered items: stack both image layers in one cell and center them with
+    // equal margins on every side (so the black bars top and bottom match), while
+    // giving the images a definite box to contain against.
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    transform-origin: center center;
+    transition: transform 150ms ease-out;
+}
+
+// Grab cursor while a zoomed-in image can be panned; tighten to grabbing during the
+// drag and drop the transition so the pan tracks the pointer 1:1 (no easing lag).
+.canvas__stage--pannable {
+    cursor: grab;
+}
+
+.canvas__stage--panning {
+    cursor: grabbing;
+    transition: none;
+}
+
+// Both image layers occupy the same grid cell so they overlay pixel-for-pixel and stay
+// centered. min-* lets them shrink to fit (an in-flow flex <img> doesn't honor
+// max-height reliably, which clipped the new frame).
+.canvas__img {
+    grid-area: 1 / 1;
+    max-width: 100%;
+    max-height: 100%;
+    min-width: 0;
+    min-height: 0;
+    object-fit: contain;
+    user-select: none;
+    transition: opacity 200ms ease-in-out;
+}
+
+// Dim the current frame while a new preview renders so loading reads clearly.
+.canvas__img--loading {
+    opacity: 0.35;
+}
+
+// The incoming frame loads HIDDEN — it is only a preloader. A visible <img>
+// paints progressively as it downloads, which would flash a half-loaded image on
+// top of the canvas. Instead the current frame (Layer A) stays visible (dimmed)
+// until this one is fully decoded and promoted, then shown instantly from cache.
+.canvas__img--pending {
+    z-index: 1;
+    opacity: 0;
+}
+
+.canvas__skeleton {
+    display: block;
+}
+
+// Centered, non-blocking loading indicator over the dimmed image.
+.canvas__loading {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+.canvas__error {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 2rem;
+    text-align: center;
+    background-color: rgba(255, 255, 255, 0.85);
+}
+
+.canvas__error-icon {
+    font-size: 2.5rem;
+    color: var(--yellow-500, #f5a623);
+}
+
+// The retry button's glyph is projected into PrimeNG's button; pierce with
+// ::ng-deep to scale the Material Symbol down to the previous icon footprint.
+:host ::ng-deep .canvas__error .p-button .material-symbols-outlined {
+    font-size: 1.125rem;
+}
+
+.canvas__error-message {
+    margin: 0;
+    max-width: 24rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .canvas__stage,
+    .canvas__img--pending {
+        transition: none;
+    }
+}

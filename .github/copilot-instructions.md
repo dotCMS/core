@@ -29,7 +29,7 @@ dotCMS is a **Universal Content Management System** - a large-scale enterprise J
 | Tool | Version | Installation | Verification |
 |------|---------|--------------|--------------|
 | Java | 21.0.8+ | `sdk env install` (SDKMAN) | `java -version` |
-| Node.js | 22.15.0+ | `nvm use` (from `.nvmrc`) | `node --version` |
+| Node.js | 22.22.3+ | `nvm use` (from `.nvmrc`) | `node --version` |
 | Maven | 3.9+ | Wrapper included (`./mvnw`) | `./mvnw --version` |
 | Docker | Latest | [Docker Desktop](https://www.docker.com/products/docker-desktop) | `docker --version` |
 
@@ -118,7 +118,7 @@ just test-postman ai            # Shorter command
 cd core-web
 
 # Install dependencies first
-yarn install                    # Required before first test
+pnpm install                    # Required before first test
 
 # Run specific component tests (RECOMMENDED)
 nx run dotcms-ui:test --testNamePattern="ContentTypeComponent"
@@ -548,14 +548,14 @@ error @angular/compiler-cli@19.2.15: The engine "node" is incompatible
 **Solution:**
 ```bash
 # Check required version
-cat .nvmrc  # Shows: v22.15.0
+cat .nvmrc  # Shows: v22.22.3
 
 # Install and use correct version
-nvm install 22.15.0
-nvm use 22.15.0
+nvm install 22.22.3
+nvm use 22.22.3
 
 # Verify
-node --version  # Should show v22.15.0
+node --version  # Should show v22.22.3
 ```
 
 ### Issue #5: Frontend Build Fails - Puppeteer ARM64
@@ -578,7 +578,7 @@ export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 source ~/.zshrc
 
 # Reinstall dependencies
-cd core-web && yarn install
+cd core-web && pnpm install
 ```
 
 ### Issue #6: Dependency Version Conflict
@@ -716,7 +716,7 @@ curl -X GET http://localhost:8080/api/v1/myresource/123
 cd core-web
 
 # 2. Install dependencies (first time only)
-yarn install
+pnpm install
 
 # 3. Start development server
 nx serve dotcms-ui
@@ -860,7 +860,7 @@ When working with dotCMS:
 - ✅ Complete OpenAPI docs for REST endpoints
 
 ### Frontend (Angular/TypeScript)
-- ✅ Use Node 22.15+ (`nvm use`)
+- ✅ Use Node 22.22.3+ (`nvm use`)
 - ✅ Modern syntax: `@if`, `@for`, `input()`, `output()`
 - ✅ Test with Spectator: `spectator.setInput()`, `data-testid`
 - ✅ Build with `nx run dotcms-ui:build`

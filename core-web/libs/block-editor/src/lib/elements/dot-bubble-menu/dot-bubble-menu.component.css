@@ -21,3 +21,7 @@
 .bubble-menu .bubble-menu-icon {
     @apply text-base w-5 h-5 inline-flex items-center justify-center leading-none;
 }
+
+.bubble-menu ::ng-deep .is-active .p-button {
+    @apply bg-blue-100;
+}

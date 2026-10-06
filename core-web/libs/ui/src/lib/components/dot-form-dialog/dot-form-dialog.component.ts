@@ -8,7 +8,8 @@ import {
     OnDestroy,
     OnInit,
     Output,
-    inject
+    inject,
+    ChangeDetectionStrategy
 } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -23,6 +24,7 @@ import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
     selector: 'dot-form-dialog',
     imports: [ButtonModule, FocusTrapModule, DotMessagePipe],
     templateUrl: './dot-form-dialog.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     host: {
         class: 'flex min-h-0 flex-1 flex-col',
         style: 'height: 100%'
@@ -32,7 +34,7 @@ export class DotFormDialogComponent implements OnInit, OnDestroy {
     private dynamicDialog = inject(DynamicDialogRef);
     private el = inject(ElementRef);
 
-    destroy = new Subject();
+    destroy = new Subject<void>();
     destroy$ = this.destroy.asObservable();
 
     @Input()
@@ -50,13 +52,15 @@ export class DotFormDialogComponent implements OnInit, OnDestroy {
     ngOnInit(): void {
         const content = document.querySelector('p-dynamicdialog .p-dialog-content');
 
-        fromEvent(content, 'scroll')
-            .pipe(takeUntil(this.destroy$))
-            .subscribe((e: Event) => {
-                const pos = this.getYPosition(e);
-                const target = e.target as HTMLDivElement;
-                target.style.boxShadow = pos > 10 ? 'inset 0px 3px 20px 0 #00000026' : null;
-            });
+        if (content) {
+            fromEvent(content, 'scroll')
+                .pipe(takeUntil(this.destroy$))
+                .subscribe((e: Event) => {
+                    const pos = this.getYPosition(e);
+                    const target = e.target as HTMLDivElement;
+                    target.style.boxShadow = pos > 10 ? 'inset 0px 3px 20px 0 #00000026' : null;
+                });
+        }
 
         fromEvent(this.el.nativeElement, 'keydown')
             .pipe(takeUntil(this.destroy$))

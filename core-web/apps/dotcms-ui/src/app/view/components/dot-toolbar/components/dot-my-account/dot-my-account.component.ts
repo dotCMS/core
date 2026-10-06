@@ -259,12 +259,12 @@ export class DotMyAccountComponent implements OnInit, OnDestroy {
                     this.resetFormState();
                     this.handleClose();
 
-                    if (response.entity.reauthenticate) {
+                    if (response.reauthenticate) {
                         this.dotRouterService.doLogOut();
                     } else {
                         this.loginService.setAuth({
                             loginAsUser: null,
-                            user: response.entity.user
+                            user: response.user
                         });
                     }
                 },

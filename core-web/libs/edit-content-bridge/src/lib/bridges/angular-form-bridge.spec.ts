@@ -1,31 +1,69 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-empty-function */
 
+import { of, throwError } from 'rxjs';
+import { Mock, vi } from 'vitest';
+
+import { FormControl, FormGroup } from '@angular/forms';
+
+import { DotSite } from '@dotcms/dotcms-models';
+import { DotAssetPickerComponent } from '@dotcms/ui';
+
 import { AngularFormBridge } from './angular-form-bridge';
+
+import { DotBrowserOptions } from '../interfaces/asset-browser.interface';
+
+/** The site the picker browses; the bridge is handed a way to resolve it. */
+const SITE: DotSite = {
+    identifier: 'site-1',
+    hostname: 'dotcms.com',
+    aliases: null,
+    archived: false
+};
 
 // Mock Angular dependencies
 const mockFormGroup = {
-    get: jest.fn(),
-    setValue: jest.fn()
+    get: vi.fn(),
+    setValue: vi.fn(),
+    events: {
+        subscribe: vi.fn(() => {
+            return { unsubscribe: vi.fn() };
+        })
+    }
 };
 
 const mockFormControl = {
     value: '',
-    setValue: jest.fn(),
-    markAsTouched: jest.fn(),
-    markAsDirty: jest.fn(),
-    updateValueAndValidity: jest.fn(),
-    enable: jest.fn(),
-    disable: jest.fn(),
+    valid: true,
+    invalid: false,
+    touched: false,
+    dirty: false,
+    errors: null as Record<string, unknown> | null,
+    setValue: vi.fn(),
+    markAsTouched: vi.fn(),
+    markAsDirty: vi.fn(),
+    updateValueAndValidity: vi.fn(),
+    enable: vi.fn(),
+    disable: vi.fn(),
     valueChanges: {
-        subscribe: jest.fn((callback) => {
+        subscribe: vi.fn((callback) => {
             mockFormControl.valueChanges._callback = callback;
 
             return {
-                unsubscribe: jest.fn()
+                unsubscribe: vi.fn()
             };
         }),
         _callback: null as ((value: string) => void) | null
+    },
+    events: {
+        subscribe: vi.fn((callback) => {
+            mockFormControl.events._callback = callback;
+
+            return {
+                unsubscribe: vi.fn()
+            };
+        }),
+        _callback: null as ((event: unknown) => void) | null
     }
 };
 
@@ -34,12 +72,12 @@ const mockNgZone = {
 };
 
 const mockDialogRef = {
-    close: jest.fn(),
+    close: vi.fn(),
     onClose: {
-        subscribe: jest.fn((callback) => {
+        subscribe: vi.fn((callback) => {
             mockDialogRef.onClose._callback = callback;
             return {
-                unsubscribe: jest.fn()
+                unsubscribe: vi.fn()
             };
         }),
         _callback: null as ((content: any) => void) | null
@@ -47,7 +85,7 @@ const mockDialogRef = {
 };
 
 const mockDialogService = {
-    open: jest.fn().mockReturnValue(mockDialogRef)
+    open: vi.fn().mockReturnValue(mockDialogRef)
 };
 
 describe('AngularFormBridge', () => {
@@ -58,13 +96,14 @@ describe('AngularFormBridge', () => {
         AngularFormBridge.resetInstance();
         mockFormGroup.get.mockReturnValue(mockFormControl);
         mockFormControl.valueChanges._callback = null;
+        mockFormControl.events._callback = null;
         mockDialogRef.onClose._callback = null;
         bridge = AngularFormBridge.getInstance(
             mockFormGroup as any,
             mockNgZone as any,
             mockDialogService as any
         );
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     afterEach(() => {
@@ -85,9 +124,8 @@ describe('AngularFormBridge', () => {
         });
         expect(mockFormControl.markAsTouched).toHaveBeenCalled();
         expect(mockFormControl.markAsDirty).toHaveBeenCalled();
-        expect(mockFormControl.updateValueAndValidity).toHaveBeenCalledWith({
-            emitEvent: true
-        });
+        // setValue already re-runs validation; a second pass would emit valueChanges twice
+        expect(mockFormControl.updateValueAndValidity).not.toHaveBeenCalled();
     });
 
     it('should not set value if control is not found', () => {
@@ -103,14 +141,14 @@ describe('AngularFormBridge', () => {
     });
 
     it('should run set value inside NgZone', () => {
-        const zoneRunSpy = jest.spyOn(mockNgZone, 'run');
+        const zoneRunSpy = vi.spyOn(mockNgZone, 'run');
         bridge.set('testField', 'new value');
         expect(zoneRunSpy).toHaveBeenCalled();
     });
 
     describe('field changes', () => {
         it('should watch field changes in Angular form', () => {
-            const callback = jest.fn();
+            const callback = vi.fn();
             bridge.onChangeField('testField', callback);
 
             expect(mockFormGroup.get).toHaveBeenCalledWith('testField');
@@ -123,8 +161,8 @@ describe('AngularFormBridge', () => {
         });
 
         it('should support multiple callbacks for the same field', () => {
-            const callback1 = jest.fn();
-            const callback2 = jest.fn();
+            const callback1 = vi.fn();
+            const callback2 = vi.fn();
 
             bridge.onChangeField('testField', callback1);
             bridge.onChangeField('testField', callback2);
@@ -137,8 +175,8 @@ describe('AngularFormBridge', () => {
         });
 
         it('should remove only the specified callback when unsubscribing', () => {
-            const callback1 = jest.fn();
-            const callback2 = jest.fn();
+            const callback1 = vi.fn();
+            const callback2 = vi.fn();
 
             const unsubscribe1 = bridge.onChangeField('testField', callback1);
             bridge.onChangeField('testField', callback2);
@@ -153,7 +191,7 @@ describe('AngularFormBridge', () => {
         });
 
         it('should cleanup subscription when last callback is removed', () => {
-            const unsubscribeSpy = jest.fn();
+            const unsubscribeSpy = vi.fn();
             mockFormControl.valueChanges.subscribe.mockReturnValue({ unsubscribe: unsubscribeSpy });
 
             const unsubscribe = bridge.onChangeField('testField', () => {});
@@ -170,7 +208,7 @@ describe('AngularFormBridge', () => {
         });
 
         it('should log warning when field not found', () => {
-            const consoleSpy = jest.spyOn(console, 'warn');
+            const consoleSpy = vi.spyOn(console, 'warn');
             mockFormGroup.get.mockReturnValue(null);
 
             bridge.onChangeField('nonExistentField', () => {});
@@ -197,13 +235,13 @@ describe('AngularFormBridge', () => {
             AngularFormBridge.resetInstance();
             // Reset the callback to ensure clean state
             mockFormControl.valueChanges._callback = null;
-            const zoneRunSpy = jest.spyOn(mockNgZone, 'run');
+            const zoneRunSpy = vi.spyOn(mockNgZone, 'run');
             const testBridge = AngularFormBridge.getInstance(
                 mockFormGroup as any,
                 mockNgZone as any,
                 mockDialogService as any
             );
-            const callback = jest.fn();
+            const callback = vi.fn();
 
             testBridge.onChangeField('testField', callback);
 
@@ -222,7 +260,7 @@ describe('AngularFormBridge', () => {
 
     describe('cleanup', () => {
         it('should cleanup subscriptions on destroy', () => {
-            const unsubscribeSpy = jest.fn();
+            const unsubscribeSpy = vi.fn();
             mockFormControl.valueChanges.subscribe.mockReturnValue({ unsubscribe: unsubscribeSpy });
 
             bridge.onChangeField('testField', () => {});
@@ -232,8 +270,8 @@ describe('AngularFormBridge', () => {
         });
 
         it('should cleanup all subscriptions on destroy', () => {
-            const unsubscribeSpy1 = jest.fn();
-            const unsubscribeSpy2 = jest.fn();
+            const unsubscribeSpy1 = vi.fn();
+            const unsubscribeSpy2 = vi.fn();
 
             mockFormControl.valueChanges.subscribe
                 .mockReturnValueOnce({ unsubscribe: unsubscribeSpy1 })
@@ -282,9 +320,11 @@ describe('AngularFormBridge', () => {
             expect(instance1).toBe(instance2);
         });
 
-        it('should warn when getInstance is called with different parameters', () => {
-            const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
-            const differentFormGroup = { get: jest.fn() } as any;
+        it('should reset and return a new instance when getInstance is called with a different FormGroup', () => {
+            const differentFormGroup = {
+                get: vi.fn(),
+                events: { subscribe: vi.fn(() => ({ unsubscribe: vi.fn() })) }
+            } as any;
 
             const instance1 = AngularFormBridge.getInstance(
                 mockFormGroup as any,
@@ -297,14 +337,36 @@ describe('AngularFormBridge', () => {
                 mockDialogService as any
             );
 
-            expect(instance1).toBe(instance2);
-            expect(consoleSpy).toHaveBeenCalledWith(
-                expect.stringContaining(
-                    'AngularFormBridge: Attempted to get instance with different form or zone'
-                )
+            // A fresh instance is created so it binds to the new FormGroup's controls
+            // and validation state from the previous form (e.g. touched controls after
+            // a Save) cannot leak across navigations.
+            expect(instance1).not.toBe(instance2);
+        });
+
+        it('should call forceDestroy on the old instance when FormGroup changes (cleans up subscriptions)', () => {
+            const unsubscribeSpy = vi.fn();
+            mockFormControl.valueChanges.subscribe.mockReturnValue({ unsubscribe: unsubscribeSpy });
+
+            const instance1 = AngularFormBridge.getInstance(
+                mockFormGroup as any,
+                mockNgZone as any,
+                mockDialogService as any
+            );
+            instance1.onChangeField('testField', () => {});
+
+            // Simulate form recreation with a new FormGroup
+            const differentFormGroup = {
+                get: vi.fn(),
+                events: { subscribe: vi.fn(() => ({ unsubscribe: vi.fn() })) }
+            } as any;
+            AngularFormBridge.getInstance(
+                differentFormGroup,
+                mockNgZone as any,
+                mockDialogService as any
             );
 
-            consoleSpy.mockRestore();
+            // forceDestroy on the old instance must have unsubscribed all field subscriptions
+            expect(unsubscribeSpy).toHaveBeenCalled();
         });
 
         it('should reset instance when resetInstance is called', () => {
@@ -324,7 +386,7 @@ describe('AngularFormBridge', () => {
         });
 
         it('should destroy subscriptions when resetInstance is called', () => {
-            const unsubscribeSpy = jest.fn();
+            const unsubscribeSpy = vi.fn();
             mockFormControl.valueChanges.subscribe.mockReturnValue({ unsubscribe: unsubscribeSpy });
 
             const instance = AngularFormBridge.getInstance(
@@ -416,7 +478,7 @@ describe('AngularFormBridge', () => {
         });
 
         it('should keep subscriptions alive when one of two consumers calls destroy', () => {
-            const unsubscribeSpy = jest.fn();
+            const unsubscribeSpy = vi.fn();
             mockFormControl.valueChanges.subscribe.mockReturnValue({ unsubscribe: unsubscribeSpy });
 
             // Two consumers
@@ -445,6 +507,8 @@ describe('AngularFormBridge', () => {
             expect(typeof fieldAPI.getValue).toBe('function');
             expect(typeof fieldAPI.setValue).toBe('function');
             expect(typeof fieldAPI.onChange).toBe('function');
+            expect(typeof fieldAPI.getValidationState).toBe('function');
+            expect(typeof fieldAPI.onValidationChange).toBe('function');
             expect(typeof fieldAPI.enable).toBe('function');
             expect(typeof fieldAPI.disable).toBe('function');
             expect(typeof fieldAPI.show).toBe('function');
@@ -470,7 +534,7 @@ describe('AngularFormBridge', () => {
         });
 
         it('should subscribe to changes using onChange', () => {
-            const callback = jest.fn();
+            const callback = vi.fn();
             const fieldAPI = bridge.getField('testField');
             const unsubscribe = fieldAPI.onChange(callback);
 
@@ -481,6 +545,141 @@ describe('AngularFormBridge', () => {
                 mockFormControl.valueChanges._callback('changed value');
                 expect(callback).toHaveBeenCalledWith('changed value');
             }
+        });
+
+        describe('validation state', () => {
+            beforeEach(() => {
+                mockFormControl.valid = true;
+                mockFormControl.invalid = false;
+                mockFormControl.touched = false;
+                mockFormControl.dirty = false;
+                mockFormControl.errors = null;
+                mockFormControl.events._callback = null;
+            });
+
+            it('should return current validation snapshot via getValidationState', () => {
+                mockFormControl.valid = false;
+                mockFormControl.invalid = true;
+                mockFormControl.touched = true;
+                mockFormControl.dirty = true;
+                mockFormControl.errors = { required: true };
+
+                const state = bridge.getField('testField').getValidationState();
+
+                expect(state).toEqual({
+                    valid: false,
+                    invalid: true,
+                    touched: true,
+                    dirty: true,
+                    errors: { required: true }
+                });
+            });
+
+            it('should return a neutral validation state when control is missing', () => {
+                mockFormGroup.get.mockReturnValue(null);
+
+                const state = bridge.getField('missingField').getValidationState();
+
+                // Matches DojoFormBridge so VTL templates that read `state.valid`
+                // get the same answer in both editors when the control is unknown.
+                expect(state).toEqual({
+                    valid: true,
+                    invalid: false,
+                    touched: false,
+                    dirty: false,
+                    errors: null
+                });
+            });
+
+            it('should fire onValidationChange callback with initial state and on control events', () => {
+                const callback = vi.fn();
+                const fieldAPI = bridge.getField('testField');
+                const unsubscribe = fieldAPI.onValidationChange(callback);
+
+                expect(mockFormControl.events.subscribe).toHaveBeenCalled();
+                expect(typeof unsubscribe).toBe('function');
+
+                // Initial emit when the control is found on subscribe
+                expect(callback).toHaveBeenCalledTimes(1);
+                expect(callback).toHaveBeenLastCalledWith({
+                    valid: true,
+                    invalid: false,
+                    touched: false,
+                    dirty: false,
+                    errors: null
+                });
+
+                mockFormControl.invalid = true;
+                mockFormControl.touched = true;
+                mockFormControl.errors = { required: true };
+                mockFormControl.events._callback?.({});
+
+                expect(callback).toHaveBeenLastCalledWith({
+                    valid: true,
+                    invalid: true,
+                    touched: true,
+                    dirty: false,
+                    errors: { required: true }
+                });
+            });
+
+            it('should re-attach to the control when it is registered after onValidationChange is called', () => {
+                // Simulate the race condition: the control is not yet in the form when subscribe runs.
+                mockFormGroup.get.mockReturnValueOnce(null);
+                const formSubscribe = mockFormGroup.events.subscribe as Mock;
+                let reconcileOnFormEvent: (() => void) | null = null;
+                formSubscribe.mockImplementationOnce((cb: () => void) => {
+                    reconcileOnFormEvent = cb;
+                    return { unsubscribe: vi.fn() };
+                });
+
+                const callback = vi.fn();
+                bridge.getField('testField').onValidationChange(callback);
+
+                // No initial emit because the control was missing.
+                expect(callback).not.toHaveBeenCalled();
+
+                // The control now appears in the form (e.g. after the FormGroup registers it).
+                mockFormGroup.get.mockReturnValue(mockFormControl);
+                reconcileOnFormEvent?.();
+
+                // Initial state of the now-registered control is emitted exactly once.
+                expect(callback).toHaveBeenCalledTimes(1);
+                expect(callback).toHaveBeenLastCalledWith({
+                    valid: true,
+                    invalid: false,
+                    touched: false,
+                    dirty: false,
+                    errors: null
+                });
+            });
+
+            it('should not emit when control is missing on subscribe', () => {
+                mockFormGroup.get.mockReturnValue(null);
+                const callback = vi.fn();
+                const unsubscribe = bridge.getField('missingField').onValidationChange(callback);
+
+                expect(callback).not.toHaveBeenCalled();
+                expect(typeof unsubscribe).toBe('function');
+                expect(() => unsubscribe()).not.toThrow();
+            });
+
+            it('should unsubscribe from events when the returned function is called', () => {
+                const controlUnsubscribeSpy = vi.fn();
+                const formUnsubscribeSpy = vi.fn();
+                mockFormControl.events.subscribe.mockReturnValueOnce({
+                    unsubscribe: controlUnsubscribeSpy
+                });
+                (mockFormGroup.events.subscribe as Mock).mockReturnValueOnce({
+                    unsubscribe: formUnsubscribeSpy
+                });
+
+                const unsubscribe = bridge.getField('testField').onValidationChange(vi.fn());
+                unsubscribe();
+
+                expect(controlUnsubscribeSpy).toHaveBeenCalled();
+                expect(formUnsubscribeSpy).toHaveBeenCalled();
+            });
         });
 
         it('should enable field using enable', () => {
@@ -510,14 +709,14 @@ describe('AngularFormBridge', () => {
         });
 
         it('should run enable inside NgZone', () => {
-            const zoneRunSpy = jest.spyOn(mockNgZone, 'run');
+            const zoneRunSpy = vi.spyOn(mockNgZone, 'run');
             const fieldAPI = bridge.getField('testField');
             fieldAPI.enable();
             expect(zoneRunSpy).toHaveBeenCalled();
         });
 
         it('should run disable inside NgZone', () => {
-            const zoneRunSpy = jest.spyOn(mockNgZone, 'run');
+            const zoneRunSpy = vi.spyOn(mockNgZone, 'run');
             const fieldAPI = bridge.getField('testField');
             fieldAPI.disable();
             expect(zoneRunSpy).toHaveBeenCalled();
@@ -534,7 +733,7 @@ describe('AngularFormBridge', () => {
             });
 
             it('should call onFieldVisibilityChange with true when show is called', () => {
-                const onFieldVisibilityChange = jest.fn();
+                const onFieldVisibilityChange = vi.fn();
                 AngularFormBridge.resetInstance();
                 const bridgeWithCallback = AngularFormBridge.getInstance(
                     mockFormGroup as any,
@@ -550,7 +749,7 @@ describe('AngularFormBridge', () => {
             });
 
             it('should call onFieldVisibilityChange with false when hide is called', () => {
-                const onFieldVisibilityChange = jest.fn();
+                const onFieldVisibilityChange = vi.fn();
                 AngularFormBridge.resetInstance();
                 const bridgeWithCallback = AngularFormBridge.getInstance(
                     mockFormGroup as any,
@@ -576,7 +775,7 @@ describe('AngularFormBridge', () => {
             });
 
             it('should warn once when show is called without callback', () => {
-                const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+                const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
                 const fieldAPI = bridge.getField('testField');
 
                 fieldAPI.show();
@@ -594,7 +793,7 @@ describe('AngularFormBridge', () => {
             });
 
             it('should warn once when hide is called without callback', () => {
-                const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+                const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
                 const fieldAPI = bridge.getField('testField');
 
                 fieldAPI.hide();
@@ -612,8 +811,8 @@ describe('AngularFormBridge', () => {
             });
 
             it('should not warn when callback is provided', () => {
-                const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
-                const onFieldVisibilityChange = jest.fn();
+                const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+                const onFieldVisibilityChange = vi.fn();
                 AngularFormBridge.resetInstance();
                 const bridgeWithCallback = AngularFormBridge.getInstance(
                     mockFormGroup as any,
@@ -631,7 +830,7 @@ describe('AngularFormBridge', () => {
             });
 
             it('should run show inside NgZone', () => {
-                const onFieldVisibilityChange = jest.fn();
+                const onFieldVisibilityChange = vi.fn();
                 AngularFormBridge.resetInstance();
                 const bridgeWithCallback = AngularFormBridge.getInstance(
                     mockFormGroup as any,
@@ -639,7 +838,7 @@ describe('AngularFormBridge', () => {
                     mockDialogService as any,
                     onFieldVisibilityChange
                 );
-                const zoneRunSpy = jest.spyOn(mockNgZone, 'run');
+                const zoneRunSpy = vi.spyOn(mockNgZone, 'run');
 
                 const fieldAPI = bridgeWithCallback.getField('testField');
                 fieldAPI.show();
@@ -648,7 +847,7 @@ describe('AngularFormBridge', () => {
             });
 
             it('should run hide inside NgZone', () => {
-                const onFieldVisibilityChange = jest.fn();
+                const onFieldVisibilityChange = vi.fn();
                 AngularFormBridge.resetInstance();
                 const bridgeWithCallback = AngularFormBridge.getInstance(
                     mockFormGroup as any,
@@ -656,7 +855,7 @@ describe('AngularFormBridge', () => {
                     mockDialogService as any,
                     onFieldVisibilityChange
                 );
-                const zoneRunSpy = jest.spyOn(mockNgZone, 'run');
+                const zoneRunSpy = vi.spyOn(mockNgZone, 'run');
 
                 const fieldAPI = bridgeWithCallback.getField('testField');
                 fieldAPI.hide();
@@ -668,279 +867,553 @@ describe('AngularFormBridge', () => {
 
     describe('ready', () => {
         it('should execute callback with bridge instance', () => {
-            const callback = jest.fn();
+            const callback = vi.fn();
             bridge.ready(callback);
             expect(callback).toHaveBeenCalledWith(bridge);
         });
     });
 
     describe('openBrowserModal', () => {
+        let resolveSite: Mock;
+
+        /** A file asset row, as the picker hands one back. */
+        const FILE_ITEM = {
+            identifier: 'asset-id',
+            inode: 'asset-inode',
+            title: 'Logo',
+            fileName: 'logo.png',
+            url: '/images/logo.png',
+            mimeType: 'image/png',
+            baseType: 'FILEASSET',
+            contentType: 'FileAsset'
+        };
+
         beforeEach(() => {
-            jest.clearAllMocks();
-        });
-
-        it('should open dialog with correct configuration', () => {
-            const onClose = jest.fn();
-            bridge.openBrowserModal({
-                header: 'Select a Page',
-                params: {
-                    hostFolderId: 'test-folder-id',
-                    mimeTypes: ['application/dotpage']
-                },
-                onClose
-            });
-
-            expect(mockDialogService.open).toHaveBeenCalledWith(
-                expect.any(Function),
-                expect.objectContaining({
-                    header: 'Select a Page',
-                    appendTo: 'body',
-                    closeOnEscape: false,
-                    draggable: false,
-                    keepInViewport: false,
-                    maskStyleClass: 'p-dialog-mask-dynamic',
-                    resizable: false,
-                    modal: true,
-                    width: '90%',
-                    style: { 'max-width': '1040px' },
-                    data: {
-                        hostFolderId: 'test-folder-id',
-                        mimeTypes: ['application/dotpage']
-                    }
-                })
+            vi.clearAllMocks();
+            window.localStorage.clear();
+            AngularFormBridge.resetInstance();
+            resolveSite = vi.fn(() => of(SITE));
+            bridge = AngularFormBridge.getInstance(
+                mockFormGroup as any,
+                mockNgZone as any,
+                mockDialogService as any,
+                undefined,
+                resolveSite as any
             );
         });
 
-        it('should use default header if not provided', () => {
-            const onClose = jest.fn();
-            bridge.openBrowserModal({
-                header: undefined as any,
-                params: {
-                    hostFolderId: 'test-folder-id',
-                    mimeTypes: ['image']
-                },
-                onClose
+        /** The picker config the bridge handed the dialog. */
+        const openedConfig = () => mockDialogService.open.mock.calls[0][1].data;
+
+        describe('opening', () => {
+            it('should open the new AssetPicker', () => {
+                bridge.openBrowserModal({ kinds: ['file'] });
+
+                expect(mockDialogService.open).toHaveBeenCalledWith(
+                    DotAssetPickerComponent,
+                    expect.anything()
+                );
             });
 
-            expect(mockDialogService.open).toHaveBeenCalledWith(
-                expect.any(Function),
-                expect.objectContaining({
-                    header: 'Select Content'
-                })
+            it('should browse the resolved site', () => {
+                // The picker cannot browse without one, which is why the bridge has to be given a
+                // way to resolve it.
+                bridge.openBrowserModal({ kinds: ['file'] });
+
+                expect(resolveSite).toHaveBeenCalled();
+                expect(openedConfig().site).toBe(SITE);
+            });
+
+            it('should show the caller-supplied title', () => {
+                // The picker renders its own header, so the title travels in the config rather
+                // than in `DynamicDialogConfig.header`.
+                bridge.openBrowserModal({ title: 'Select a Page', kinds: ['page'] });
+
+                expect(openedConfig().title).toBe('Select a Page');
+            });
+
+            it('should run inside NgZone', () => {
+                // Callers are VTL scripts running outside Angular, so without this the dialog
+                // opens with no change detection behind it.
+                const zoneRunSpy = vi.spyOn(mockNgZone, 'run');
+
+                bridge.openBrowserModal({ kinds: ['file'] });
+
+                expect(zoneRunSpy).toHaveBeenCalled();
+            });
+
+            it('should default to asset-only browsing when given no options', () => {
+                bridge.openBrowserModal();
+
+                expect(openedConfig().allowedBaseTypes).toEqual(['DOTASSET', 'FILEASSET']);
+                expect(openedConfig().browse?.showLinks).toBeFalsy();
+            });
+        });
+
+        describe('option mapping', () => {
+            it('should map kinds to the offered base types', () => {
+                bridge.openBrowserModal({ kinds: ['file', 'page'] });
+
+                expect(openedConfig().allowedBaseTypes).toEqual(['FILEASSET', 'HTMLPAGE']);
+            });
+
+            it('should map the link kind to a browse option', () => {
+                bridge.openBrowserModal({ kinds: ['page', 'link'] });
+
+                expect(openedConfig().browse).toEqual(expect.objectContaining({ showLinks: true }));
+            });
+
+            it('should not carry a folder browse option for a caller that asks for folders', () => {
+                // #37366: `'folder'` left the contract, but a VTL template is a string literal —
+                // TypeScript polices nothing here, so the runtime has to. The kind is dropped, and
+                // the picker is never handed an option that would list folders.
+                bridge.openBrowserModal({
+                    kinds: ['page', 'folder', 'link']
+                } as unknown as DotBrowserOptions);
+
+                expect(openedConfig().browse).not.toHaveProperty('showFolders');
+                expect(openedConfig().browse).toEqual(expect.objectContaining({ showLinks: true }));
+            });
+
+            it('should warn about an unsupported kind rather than ignore it silently', () => {
+                // AC-008: a template author must not be able to ask for a kind the picker refuses
+                // and get no signal. Same treatment the `link` + `mimeTypes` conflict already gets.
+                const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+                bridge.openBrowserModal({
+                    kinds: ['file', 'page', 'folder']
+                } as unknown as DotBrowserOptions);
+
+                expect(warn).toHaveBeenCalledTimes(1);
+                expect(warn.mock.calls[0][0]).toContain('folder');
+                expect(openedConfig().allowedBaseTypes).toEqual(['FILEASSET', 'HTMLPAGE']);
+
+                warn.mockRestore();
+            });
+
+            it('should fall back to asset-only browsing when folder is the only kind asked for', () => {
+                // Degenerate case: no requested kind maps to a base type, so `baseTypesFor` returns
+                // undefined and the picker uses its own default. Must not throw — an exception
+                // inside a VTL <script> takes the whole custom field down with it.
+                const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+                expect(() =>
+                    bridge.openBrowserModal({
+                        kinds: ['folder']
+                    } as unknown as DotBrowserOptions)
+                ).not.toThrow();
+
+                expect(openedConfig().allowedBaseTypes).toEqual(['DOTASSET', 'FILEASSET']);
+                expect(warn).toHaveBeenCalledTimes(1);
+
+                warn.mockRestore();
+            });
+
+            it('should not warn for a caller whose kinds are all supported', () => {
+                const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+                bridge.openBrowserModal({ kinds: ['file', 'dotasset', 'page', 'link'] });
+
+                expect(warn).not.toHaveBeenCalled();
+
+                warn.mockRestore();
+            });
+
+            // `status` answers two different questions now (FR-014b): `'live'` / `'working'` set
+            // the version state, and `'archived'` seeds the Status *filter* instead of pinning a
+            // flag — so it means "archived only" and the editor can clear it in the dialog.
+            it.each([
+                ['live', { showWorking: false }],
+                ['working', { showWorking: true }],
+                ['archived', { showWorking: true }]
+            ] as const)('should map status %s to a version state', (status, expected) => {
+                bridge.openBrowserModal({ status });
+
+                expect(openedConfig().browse).toEqual(expect.objectContaining(expected));
+            });
+
+            it.each(['live', 'working', 'archived'] as const)(
+                'should never send showArchived for status %s',
+                (status) => {
+                    bridge.openBrowserModal({ status });
+
+                    // The pin is gone: content condition is expressed once, through the filter.
+                    expect(openedConfig().browse).not.toHaveProperty('showArchived');
+                }
             );
-        });
 
-        it('should pass params to dialog data', () => {
-            const onClose = jest.fn();
-            const params = {
-                hostFolderId: 'test-folder-id',
-                mimeTypes: ['image/jpeg', 'image/png'],
-                showPages: true,
-                showFiles: false
-            };
-            bridge.openBrowserModal({
-                header: 'Select Content',
-                params,
-                onClose
+            it('should seed the Status filter with Archived for status archived', () => {
+                bridge.openBrowserModal({ status: 'archived' });
+
+                expect(openedConfig().status).toEqual(['ARCHIVED']);
             });
 
-            expect(mockDialogService.open).toHaveBeenCalledWith(
-                expect.any(Function),
-                expect.objectContaining({
-                    data: params
-                })
+            it.each(['live', 'working'] as const)(
+                'should seed no Status filter for status %s',
+                (status) => {
+                    bridge.openBrowserModal({ status });
+
+                    expect(openedConfig().status).toBeUndefined();
+                }
             );
+
+            it('should map sort direction', () => {
+                bridge.openBrowserModal({ sort: { field: 'modDate', direction: 'desc' } });
+
+                expect(openedConfig().browse).toEqual(
+                    expect.objectContaining({ sortByDesc: true })
+                );
+            });
+
+            it('should map the sort field, not just the direction', () => {
+                // Reported in review of #37273: only `direction` was read, so a caller asking for
+                // `title` silently got the picker's default `modDate`. Both shipped templates pass
+                // `modDate`, which is the default, so the drop was invisible.
+                bridge.openBrowserModal({ sort: { field: 'title', direction: 'asc' } });
+
+                expect(openedConfig().browse).toEqual(
+                    expect.objectContaining({ sortField: 'title', sortByDesc: false })
+                );
+            });
+
+            it('should pass mimeTypes and path straight through', () => {
+                // No `extensions` here on purpose: the browse endpoint has no such parameter yet,
+                // so the option is not exposed rather than accepted and ignored.
+                bridge.openBrowserModal({ mimeTypes: ['image/*'], path: '/images/' });
+
+                expect(openedConfig().mimeTypes).toEqual(['image/*']);
+                expect(openedConfig().path).toBe('/images/');
+            });
+
+            it('should warn when links are asked for together with mimeTypes', () => {
+                // The endpoint drops links whenever a mimetype filter is set. Surfaced, not worked
+                // around — silently returning fewer kinds than requested is the worse outcome.
+                const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+                bridge.openBrowserModal({ kinds: ['link'], mimeTypes: ['image/*'] });
+
+                expect(warn).toHaveBeenCalled();
+                warn.mockRestore();
+            });
         });
 
-        it('should handle onClose callback with content', () => {
-            const onClose = jest.fn();
-            bridge.openBrowserModal({
-                header: 'Select Content',
-                params: {
-                    hostFolderId: 'test-folder-id'
-                },
-                onClose
+        describe('result', () => {
+            /** Hands the picker's close payload back through the dialog ref. */
+            const closeWith = (payload: any) => mockDialogRef.onClose._callback?.(payload);
+
+            it('should report a file selection', () => {
+                const onClose = vi.fn();
+                bridge.openBrowserModal({ kinds: ['file'], onClose });
+                closeWith(FILE_ITEM);
+
+                expect(onClose).toHaveBeenCalledWith({
+                    kind: 'file',
+                    identifier: 'asset-id',
+                    inode: 'asset-inode',
+                    title: 'Logo',
+                    name: 'logo.png',
+                    url: '/images/logo.png',
+                    mimeType: 'image/png',
+                    baseType: 'FILEASSET',
+                    contentType: 'FileAsset'
+                });
             });
 
-            const content = {
-                identifier: 'test-id',
-                inode: 'test-inode',
-                title: 'Test Title',
-                name: 'test-name',
-                url: 'https://example.com/test',
-                mimeType: 'image/png',
-                baseType: 'FILEASSET',
-                contentType: 'FileAsset'
-            };
+            it('should report a dotAsset as its own kind', () => {
+                const onClose = vi.fn();
+                bridge.openBrowserModal({ kinds: ['dotasset'], onClose });
+                closeWith({ ...FILE_ITEM, baseType: 'DOTASSET' });
 
-            if (mockDialogRef.onClose._callback) {
-                mockDialogRef.onClose._callback(content);
-            }
+                expect(onClose).toHaveBeenCalledWith(expect.objectContaining({ kind: 'dotasset' }));
+            });
 
-            expect(onClose).toHaveBeenCalledWith({
-                identifier: 'test-id',
-                inode: 'test-inode',
-                title: 'Test Title',
-                name: 'test-name',
-                url: 'https://example.com/test',
-                mimeType: 'image/png',
-                baseType: 'FILEASSET',
-                contentType: 'FileAsset'
+            it('should report a page selection', () => {
+                const onClose = vi.fn();
+                bridge.openBrowserModal({ kinds: ['page'], onClose });
+                closeWith({
+                    identifier: 'page-id',
+                    inode: 'page-inode',
+                    title: 'Home',
+                    url: '/index',
+                    baseType: 'HTMLPAGE',
+                    contentType: 'htmlpageasset'
+                });
+
+                expect(onClose).toHaveBeenCalledWith(
+                    expect.objectContaining({ kind: 'page', url: '/index' })
+                );
+            });
+
+            it('should fall back to urlMap when there is no url', () => {
+                const onClose = vi.fn();
+                bridge.openBrowserModal({ kinds: ['file'], onClose });
+                closeWith({ ...FILE_ITEM, url: undefined, urlMap: '/mapped/url' });
+
+                expect(onClose).toHaveBeenCalledWith(
+                    expect.objectContaining({ url: '/mapped/url' })
+                );
+            });
+
+            // Removed in #37366: "should report a folder with its path as the url". A folder can no
+            // longer be picked, so there is no selection to report. The path a custom field stores
+            // for a folder is now typed into the field, not returned by the picker.
+
+            it('should report a menu link with its target as the url', () => {
+                const onClose = vi.fn();
+                bridge.openBrowserModal({ kinds: ['link'], onClose });
+                closeWith({
+                    type: 'link',
+                    extension: 'link',
+                    identifier: 'link-1',
+                    inode: 'link-inode',
+                    title: 'Docs',
+                    url: '/docs'
+                });
+
+                expect(onClose).toHaveBeenCalledWith({
+                    kind: 'link',
+                    identifier: 'link-1',
+                    inode: 'link-inode',
+                    title: 'Docs',
+                    url: '/docs'
+                });
+            });
+
+            it.each([
+                // The `folder` case went with #37366 — a folder is no longer a selectable kind, so
+                // there is no folder selection whose shape could be wrong.
+                ['link', { extension: 'link', identifier: 'l', inode: 'li', title: 'l', url: '/l' }]
+            ])('should not attach contentlet-only fields to a %s', (_kind, item) => {
+                // The whole point of the discriminated union: a consumer can never read a mimetype
+                // off something that has none.
+                const onClose = vi.fn();
+                bridge.openBrowserModal({ onClose });
+                closeWith(item);
+
+                const selection = onClose.mock.calls[0][0];
+
+                expect(selection).not.toHaveProperty('mimeType');
+                expect(selection).not.toHaveProperty('contentType');
+                expect(selection.url).not.toBe('');
+            });
+
+            it('should fall back to fileName when there is no name', () => {
+                const onClose = vi.fn();
+                bridge.openBrowserModal({ kinds: ['file'], onClose });
+                closeWith({ ...FILE_ITEM, name: undefined });
+
+                expect(onClose).toHaveBeenCalledWith(expect.objectContaining({ name: 'logo.png' }));
             });
         });
 
-        it('should handle onClose callback with null', () => {
-            const onClose = jest.fn();
-            bridge.openBrowserModal({
-                header: 'Select Content',
-                params: {
-                    hostFolderId: 'test-folder-id'
-                },
-                onClose
+        describe('cancelling', () => {
+            const closeWith = (payload: any) => mockDialogRef.onClose._callback?.(payload);
+
+            it('should report null when the picker is dismissed', () => {
+                // ✕, Esc and mask click all arrive as the same empty close from PrimeNG.
+                const onClose = vi.fn();
+                bridge.openBrowserModal({ kinds: ['file'], onClose });
+                closeWith(undefined);
+
+                expect(onClose).toHaveBeenCalledWith(null);
             });
 
-            if (mockDialogRef.onClose._callback) {
-                mockDialogRef.onClose._callback(null);
-            }
+            it('should call onClose exactly once even if the dialog closes twice', () => {
+                const onClose = vi.fn();
+                bridge.openBrowserModal({ kinds: ['file'], onClose });
+                closeWith(null);
+                closeWith(FILE_ITEM);
 
-            expect(onClose).toHaveBeenCalledWith(null);
-        });
-
-        it('should handle content with fileName instead of name', () => {
-            const onClose = jest.fn();
-            bridge.openBrowserModal({
-                header: 'Select Content',
-                params: {
-                    hostFolderId: 'test-folder-id'
-                },
-                onClose
+                // The first outcome wins; a late second emission cannot overwrite it.
+                expect(onClose).toHaveBeenCalledTimes(1);
+                expect(onClose).toHaveBeenCalledWith(null);
             });
 
-            const content = {
-                identifier: 'test-id',
-                inode: 'test-inode',
-                title: 'Test Title',
-                fileName: 'test-file.png',
-                url: 'https://example.com/test',
-                mimeType: 'image/png'
-            };
+            it('should close the dialog when close() is called', () => {
+                const onClose = vi.fn();
+                const controller = bridge.openBrowserModal({ kinds: ['file'], onClose });
 
-            if (mockDialogRef.onClose._callback) {
-                mockDialogRef.onClose._callback(content);
-            }
+                controller.close();
 
-            expect(onClose).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    name: 'test-file.png'
-                })
-            );
-        });
-
-        it('should handle content with urlMap instead of url', () => {
-            const onClose = jest.fn();
-            bridge.openBrowserModal({
-                header: 'Select Content',
-                params: {
-                    hostFolderId: 'test-folder-id'
-                },
-                onClose
+                expect(mockDialogRef.close).toHaveBeenCalled();
+                expect(onClose).toHaveBeenCalledWith(null);
             });
 
-            const content = {
-                identifier: 'test-id',
-                inode: 'test-inode',
-                title: 'Test Title',
-                urlMap: 'https://example.com/mapped-url'
-            };
+            it('should not call onClose a second time after close()', () => {
+                // PrimeNG still emits its own close afterwards; the caller must not see two.
+                const onClose = vi.fn();
+                const controller = bridge.openBrowserModal({ kinds: ['file'], onClose });
 
-            if (mockDialogRef.onClose._callback) {
-                mockDialogRef.onClose._callback(content);
-            }
+                controller.close();
+                closeWith(undefined);
 
-            expect(onClose).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    url: 'https://example.com/mapped-url'
-                })
-            );
-        });
-
-        it('should handle content with empty url and urlMap', () => {
-            const onClose = jest.fn();
-            bridge.openBrowserModal({
-                header: 'Select Content',
-                params: {
-                    hostFolderId: 'test-folder-id'
-                },
-                onClose
+                expect(onClose).toHaveBeenCalledTimes(1);
             });
 
-            const content = {
-                identifier: 'test-id',
-                inode: 'test-inode',
-                title: 'Test Title'
-            };
+            it('should report null when no site can be resolved', () => {
+                // Opening a picker that cannot browse anything is worse than not opening it.
+                resolveSite.mockReturnValue(of(null));
+                const onClose = vi.fn();
 
-            if (mockDialogRef.onClose._callback) {
-                mockDialogRef.onClose._callback(content);
-            }
+                bridge.openBrowserModal({ kinds: ['file'], onClose });
 
-            expect(onClose).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    url: ''
-                })
-            );
-        });
-
-        it('should return controller with close method', () => {
-            const onClose = jest.fn();
-            const controller = bridge.openBrowserModal({
-                header: 'Select Content',
-                params: {
-                    hostFolderId: 'test-folder-id'
-                },
-                onClose
+                expect(mockDialogService.open).not.toHaveBeenCalled();
+                expect(onClose).toHaveBeenCalledWith(null);
             });
 
-            expect(controller).toBeDefined();
-            expect(typeof controller.close).toBe('function');
+            it('should report null when the site lookup fails', () => {
+                resolveSite.mockReturnValue(throwError(() => new Error('offline')));
+                const onClose = vi.fn();
 
-            controller.close();
-            expect(mockDialogRef.close).toHaveBeenCalled();
-        });
+                bridge.openBrowserModal({ kinds: ['file'], onClose });
 
-        it('should run openBrowserModal inside NgZone', () => {
-            const zoneRunSpy = jest.spyOn(mockNgZone, 'run');
-            const onClose = jest.fn();
-            bridge.openBrowserModal({
-                header: 'Select Content',
-                params: {
-                    hostFolderId: 'test-folder-id'
-                },
-                onClose
+                expect(mockDialogService.open).not.toHaveBeenCalled();
+                expect(onClose).toHaveBeenCalledWith(null);
             });
 
-            expect(zoneRunSpy).toHaveBeenCalled();
+            it('should report null when the host gave the bridge no way to resolve a site', () => {
+                // A host that never wired one up cannot browse. Saying so beats opening an empty
+                // picker.
+                AngularFormBridge.resetInstance();
+                const bridgeWithoutSite = AngularFormBridge.getInstance(
+                    mockFormGroup as any,
+                    mockNgZone as any,
+                    mockDialogService as any
+                );
+                const onClose = vi.fn();
+
+                bridgeWithoutSite.openBrowserModal({ kinds: ['file'], onClose });
+
+                expect(mockDialogService.open).not.toHaveBeenCalled();
+                expect(onClose).toHaveBeenCalledWith(null);
+            });
         });
     });
 
     describe('destroy with dialog cleanup', () => {
         it('should close dialog when destroyed', () => {
-            const onClose = jest.fn();
-            bridge.openBrowserModal({
-                header: 'Select Content',
-                params: {
-                    hostFolderId: 'test-folder-id'
-                },
-                onClose
-            });
+            AngularFormBridge.resetInstance();
+            const bridgeWithSite = AngularFormBridge.getInstance(
+                mockFormGroup as any,
+                mockNgZone as any,
+                mockDialogService as any,
+                undefined,
+                (() => of(SITE)) as any
+            );
+            bridgeWithSite.openBrowserModal({ kinds: ['file'] });
 
-            bridge.destroy();
+            bridgeWithSite.destroy();
 
             expect(mockDialogRef.close).toHaveBeenCalled();
         });
 
         it('should not throw if no dialog is open when destroyed', () => {
             expect(() => bridge.destroy()).not.toThrow();
+        });
+    });
+});
+
+describe('AngularFormBridge with a real FormGroup', () => {
+    const zone = { run: (fn: () => void) => fn() } as any;
+    const dialogService = { open: vi.fn() } as any;
+    let form: FormGroup;
+    let bridge: AngularFormBridge;
+
+    beforeEach(() => {
+        AngularFormBridge.resetInstance();
+        form = new FormGroup({ slug: new FormControl(''), title: new FormControl('') });
+        bridge = AngularFormBridge.getInstance(form, zone, dialogService);
+    });
+
+    afterEach(() => {
+        AngularFormBridge.resetInstance();
+        delete (globalThis as any).DotCustomFieldApi;
+    });
+
+    describe('set', () => {
+        it('should notify onChange callbacks once per value change', () => {
+            const callback = vi.fn();
+            bridge.onChangeField('slug', callback);
+
+            bridge.set('slug', 'hello-world');
+
+            expect(callback).toHaveBeenCalledTimes(1);
+            expect(callback).toHaveBeenCalledWith('hello-world');
+        });
+
+        it('should mark the field touched and dirty by default', () => {
+            bridge.getField('slug').setValue('hello-world');
+
+            expect(form.get('slug')?.touched).toBe(true);
+            expect(form.get('slug')?.dirty).toBe(true);
+        });
+
+        it('should leave touched and dirty untouched when markDirty is false', () => {
+            bridge.getField('slug').setValue('000000', { markDirty: false });
+
+            expect(form.get('slug')?.value).toBe('000000');
+            expect(form.get('slug')?.touched).toBe(false);
+            expect(form.get('slug')?.dirty).toBe(false);
+        });
+
+        it('should still notify onChange callbacks when markDirty is false', () => {
+            const callback = vi.fn();
+            bridge.getField('slug').onChange(callback);
+
+            bridge.set('slug', '000000', { markDirty: false });
+
+            expect(callback).toHaveBeenCalledWith('000000');
+        });
+    });
+
+    describe('popInstance', () => {
+        it('should point window.DotCustomFieldApi back at the parent bridge', () => {
+            (globalThis as any).DotCustomFieldApi = bridge;
+
+            AngularFormBridge.pushInstance();
+            const nested = AngularFormBridge.getInstance(
+                new FormGroup({ title: new FormControl('') }),
+                zone,
+                dialogService
+            );
+            (globalThis as any).DotCustomFieldApi = nested;
+
+            AngularFormBridge.popInstance();
+
+            expect((globalThis as any).DotCustomFieldApi).toBe(bridge);
+        });
+
+        it('should point window.DotCustomFieldApi back at the parent bridge when the nested one was already destroyed', () => {
+            (globalThis as any).DotCustomFieldApi = bridge;
+
+            AngularFormBridge.pushInstance();
+            const nested = AngularFormBridge.getInstance(
+                new FormGroup({ title: new FormControl('') }),
+                zone,
+                dialogService
+            );
+            (globalThis as any).DotCustomFieldApi = nested;
+
+            // The dialog's last custom field goes away before the dialog closes.
+            nested.destroy();
+            AngularFormBridge.popInstance();
+
+            expect((globalThis as any).DotCustomFieldApi).toBe(bridge);
+        });
+
+        it('should leave window.DotCustomFieldApi alone when it is not the popped bridge', () => {
+            const other = { name: 'set by someone else' };
+            (globalThis as any).DotCustomFieldApi = other;
+
+            AngularFormBridge.pushInstance();
+            AngularFormBridge.getInstance(
+                new FormGroup({ title: new FormControl('') }),
+                zone,
+                dialogService
+            );
+            AngularFormBridge.popInstance();
+
+            expect((globalThis as any).DotCustomFieldApi).toBe(other);
         });
     });
 });

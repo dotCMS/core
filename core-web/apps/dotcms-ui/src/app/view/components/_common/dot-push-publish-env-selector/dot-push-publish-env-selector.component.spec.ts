@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { Observable, of as observableOf } from 'rxjs';
+import { vi } from 'vitest';
 
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture } from '@angular/core/testing';
@@ -9,10 +10,8 @@ import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { DotMessageService, PushPublishService } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe, PushPublishEnvSelectorComponent } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-
-import { PushPublishEnvSelectorComponent } from './dot-push-publish-env-selector.component';
 
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 
@@ -95,7 +94,7 @@ describe('PushPublishEnvSelectorComponent', () => {
         comp.selectedEnvironmentIds = [];
         expect(comp.selectedEnvironmentIds).toEqual([]);
 
-        jest.spyOn(comp, 'propagateChange');
+        vi.spyOn(comp, 'propagateChange');
         comp.valueChange(new Event('MouseEvent'), [
             {
                 id: '22e332',
@@ -124,7 +123,7 @@ describe('PushPublishEnvSelectorComponent', () => {
         const component: PushPublishEnvSelectorComponent = de.componentInstance;
         comp.selectedEnvironmentIds = [];
 
-        jest.spyOn(component, 'writeValue');
+        vi.spyOn(component, 'writeValue');
         comp.valueChange(new Event('MouseEvent'), [
             {
                 id: '12345ab',
@@ -148,10 +147,10 @@ describe('PushPublishEnvSelectorComponent', () => {
                 name: 'my environment'
             }
         ];
-        jest.spyOn(pushPublishServiceMock, 'getEnvironments').mockReturnValue(
+        vi.spyOn(pushPublishServiceMock, 'getEnvironments').mockReturnValue(
             observableOf(environment)
         );
-        jest.spyOn(comp, 'propagateChange');
+        vi.spyOn(comp, 'propagateChange');
         comp.ngOnInit();
         expect(comp.selectedEnvironments).toEqual(environment);
         expect(comp.pushEnvironments).toEqual(environment);
@@ -163,7 +162,7 @@ describe('PushPublishEnvSelectorComponent', () => {
             value: ['22e332', 'joa08'],
             writable: true
         });
-        jest.spyOn(comp, 'propagateChange');
+        vi.spyOn(comp, 'propagateChange');
         comp.ngOnInit();
         expect(comp.selectedEnvironments).toEqual([
             {

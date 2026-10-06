@@ -1,0 +1,44 @@
+<!-- Diff header: file name + path, live ⇄ working labels, close. -->
+<div
+    class="flex h-12 flex-none items-center justify-between gap-3 border-b border-surface-200 bg-white px-4">
+    <div class="flex min-w-0 items-center gap-2.5">
+        <p-button
+            [text]="true"
+            severity="secondary"
+            [rounded]="true"
+            (onClick)="closed.emit()"
+            [attr.aria-label]="'accessibility.studio.diff.backtopreview' | dm"
+            data-testid="diff-viewer-close-btn">
+            <span class="material-symbols-outlined text-base!" aria-hidden="true">arrow_back</span>
+        </p-button>
+        <div class="min-w-0">
+            <div class="truncate text-sm font-bold text-color">
+                {{ file()?.name }}
+            </div>
+            <div class="truncate text-xs text-muted-color">{{ file()?.path }}</div>
+        </div>
+    </div>
+    <div class="flex flex-none items-center gap-2 text-[11px] font-semibold">
+        <span
+            class="inline-flex items-center gap-1 rounded-full bg-surface-100 px-2.5 py-1 text-muted-color">
+            <!-- text-[11px]!: material-symbols-outlined sets its own font-size on the
+                 class, which a plain size utility loses to at equal specificity. -->
+            <span class="material-symbols-outlined text-[11px]!" aria-hidden="true">public</span>
+            {{ 'accessibility.studio.diff.live' | dm }}
+        </span>
+        <span class="material-symbols-outlined text-base! text-surface-300" aria-hidden="true">
+            arrow_forward
+        </span>
+        <span
+            class="inline-flex items-center gap-1 rounded-full bg-primary-50 px-2.5 py-1 text-primary">
+            <span class="material-symbols-outlined text-[11px]!" aria-hidden="true">
+                auto_awesome
+            </span>
+            {{ 'accessibility.studio.diff.working' | dm }}
+        </span>
+    </div>
+</div>
+
+<!-- Monaco host. Always mounted so the editor keeps its instance while the
+     user moves between files; only the models are swapped. -->
+<div #diffHost class="min-h-0 flex-1" data-testid="diff-editor-host"></div>

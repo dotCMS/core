@@ -1,11 +1,12 @@
 import '@testing-library/jest-dom';
 
 import { render, screen } from '@testing-library/react';
+import { vi } from 'vitest';
 
 import { Column } from '../../components/Column/Column';
 import { MOCK_COLUMN } from '../mock';
 
-jest.mock('../../components/Container/Container', () => ({
+vi.mock('../../components/Container/Container', () => ({
     Container: ({ container }: any) => (
         <div data-testid="mock-container" data-container-id={container.identifier}>
             Mock Container

@@ -31,6 +31,10 @@ import java.util.List;
  *     <li>{@code Deprecation Warnings From Dependencies}: ({@code false} by default) This flag tells Sass not to
  *     emit deprecation warnings that come from dependencies. It considers any file that’s transitively imported
  *     through a load path to be a "dependency".</li>
+ *     <li>{@code Source Map}: ({@code false} by default) This flag tells Sass to emit an <b>inline (embedded)</b>
+ *     source map, appended to the compiled CSS as a {@code sourceMappingURL} data URI, along with the original SCSS
+ *     source contents ({@code --embed-sources}). When disabled, {@code --no-source-map} is used so the output is
+ *     byte-identical to the historical default.</li>
  * </ul>
  *
  * @author Jose Castro
@@ -44,12 +48,24 @@ public class CompilerOptions implements Serializable {
     private final boolean stopOnError;
     private final boolean deprecationWarnings;
     private final boolean deprecationWarningsFromDependencies;
+    private final boolean sourceMap;
 
     /**
-     * Contains the list of commands that are either not required, or only useful when calling the compiler directly
-     * from a Terminal.
+     * Contains the list of commands that are always passed to the compiler regardless of the configured parameters.
      */
-    private static final List<String> DEFAULT_COMMANDS = List.of("--no-color", "--no-source-map");
+    private static final List<String> DEFAULT_COMMANDS = List.of("--no-color");
+
+    /**
+     * Commands that enable an inline (embedded) source map carrying the original SCSS source contents.
+     */
+    private static final List<String> SOURCE_MAP_COMMANDS = List.of("--source-map", "--embed-source-map",
+            "--embed-sources");
+
+    /**
+     * Command that disables source map generation. Used when the source map flag is off so the output is
+     * byte-identical to the historical default.
+     */
+    private static final String NO_SOURCE_MAP_COMMAND = "--no-source-map";
 
     /**
      * Private builder-based class constructor.
@@ -63,6 +79,7 @@ public class CompilerOptions implements Serializable {
         this.stopOnError = builder.stopOnError.get();
         this.deprecationWarnings = builder.deprecationWarnings.get();
         this.deprecationWarningsFromDependencies = builder.deprecationWarningsFromDependencies.get();
+        this.sourceMap = builder.sourceMap.get();
     }
 
     /**
@@ -120,6 +137,15 @@ public class CompilerOptions implements Serializable {
     }
 
     /**
+     * Returns the value of the "Source Map" flag.
+     *
+     * @return Returns {@code true} if an inline (embedded) source map will be emitted.
+     */
+    public boolean sourceMap() {
+        return this.sourceMap;
+    }
+
+    /**
      * Generates a list with the Dart SASS configuration parameters that were specified when an instance of this class
      * was created.
      *
@@ -127,6 +153,11 @@ public class CompilerOptions implements Serializable {
      */
     public List<String> generate() {
         final List<String> commands = new ArrayList<>(DEFAULT_COMMANDS);
+        if (this.sourceMap()) {
+            commands.addAll(SOURCE_MAP_COMMANDS);
+        } else {
+            commands.add(NO_SOURCE_MAP_COMMAND);
+        }
         if (this.verbose()) {
             commands.add(SassCommands.VERBOSE.enable());
         }
@@ -149,7 +180,7 @@ public class CompilerOptions implements Serializable {
         return "CompilerOptions{" + "verbose=" + verbose + ", expandedCss=" + expandedCss + ", errorInCss="
                        + errorInCss + ", stopOnError=" + stopOnError + ", deprecationWarnings=" + deprecationWarnings
                        + ", deprecationWarningsFromDependencies=" + deprecationWarningsFromDependencies
-                       + ", defaultCommands=" + DEFAULT_COMMANDS + '}';
+                       + ", sourceMap=" + sourceMap + ", defaultCommands=" + DEFAULT_COMMANDS + '}';
     }
 
     /**
@@ -233,6 +264,7 @@ public class CompilerOptions implements Serializable {
         private Lazy<Boolean> deprecationWarningsFromDependencies =
                 Lazy.of(() -> Config.getBooleanProperty(SassCommands.DEPRECATION_WARNINGS_FROM_DEPENDENCIES.key(),
                         Boolean.FALSE));
+        private Lazy<Boolean> sourceMap = Lazy.of(() -> Boolean.FALSE);
 
         /**
          * Default class constructor.
@@ -317,6 +349,20 @@ public class CompilerOptions implements Serializable {
          */
         public Builder deprecationWarningsFromDependencies(final boolean deprecationWarningsFromDependencies) {
             this.deprecationWarningsFromDependencies = Lazy.of(() -> deprecationWarningsFromDependencies);
+            return this;
+        }
+
+        /**
+         * This flag tells Sass to emit an inline (embedded) source map appended to the compiled CSS as a
+         * {@code sourceMappingURL} data URI, together with the original SCSS source contents. When disabled, the
+         * output is byte-identical to the historical default ({@code --no-source-map}).
+         *
+         * @param sourceMap Set to {@code true} to enable this parameter. Otherwise, set to false.
+         *
+         * @return The current {@link Builder} instance.
+         */
+        public Builder sourceMap(final boolean sourceMap) {
+            this.sourceMap = Lazy.of(() -> sourceMap);
             return this;
         }
 

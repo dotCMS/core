@@ -435,6 +435,7 @@ public class ImportContentletsProcessor implements JobProcessor, Validator, Canc
                 .csvReader(csvReader)
                 .languageCodeHeaderColumn(headerInfo.languageCodeColumn)
                 .countryCodeHeaderColumn(headerInfo.countryCodeColumn)
+                .isMultilingual(headerInfo.languageCodeColumn != -1)
                 .workflowActionId(workflowActionId)
                 .fileTotalLines(fileTotalLines)
                 .request(httpReq)

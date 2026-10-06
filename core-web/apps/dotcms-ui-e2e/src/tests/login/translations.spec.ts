@@ -1,6 +1,5 @@
 import { expect, test } from '@playwright/test';
 import { waitForVisibleAndCallback } from '@utils/utils';
-import { assert } from 'console';
 
 const languages = [
     { language: 'español (España)', translation: '¡Bienvenido!' },
@@ -26,10 +25,9 @@ languages.forEach((list) => {
             dropdownTriggerLocator.click()
         );
 
-        const pageByTextLocator = page.getByText(language);
-        await waitForVisibleAndCallback(pageByTextLocator, () => pageByTextLocator.click());
+        const languageOption = page.getByText(language);
+        await waitForVisibleAndCallback(languageOption, () => languageOption.click());
 
-        // Assertion of the translation
-        assert(await expect(page.getByTestId('header')).toContainText(translation));
+        await expect(page.getByTestId('header')).toContainText(translation);
     });
 });

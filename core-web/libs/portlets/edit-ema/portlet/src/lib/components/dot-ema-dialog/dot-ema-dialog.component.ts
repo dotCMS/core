@@ -245,6 +245,14 @@ export class DotEmaDialogComponent {
                     });
                 } else {
                     this.callEmbeddedFunction(callback, args);
+                    // Reload so pageLanguages reflects the post-action state. The workflow
+                    // action triggers an async save inside the iframe; by the time
+                    // saveContentCallback fires LANGUAGE_IS_CHANGED, the dialog may already
+                    // be closed and its iframe listener gone. Firing here — while the dialog
+                    // is still open — guarantees the reload runs. The Spanish draft already
+                    // exists at this point (created when the user selected the language),
+                    // so getLanguagesUsedPage correctly returns translated: true.
+                    this.reloadFromDialog.emit();
                     this.messageService.add({
                         severity: 'success',
                         summary: this.dotMessageService.get('Workflow-Action'),
@@ -318,63 +326,63 @@ export class DotEmaDialogComponent {
         const iframeDoc = this.getIframeDocument();
         if (iframeDoc) {
             this.dotUiColorsService.setColors(iframeDoc.querySelector('html'));
-        }
 
-        // This event is destroyed when you close the dialog
-        fromEvent(
-            // The events are getting sended to the document
-            iframeDoc,
-            'ng-event'
-        )
-            .pipe(takeUntilDestroyed(this.destroyRef$))
-            .subscribe((event: CustomEvent) => {
-                this.emitAction(event);
+            // This event is destroyed when you close the dialog
+            fromEvent(
+                // The events are getting sended to the document
+                iframeDoc,
+                'ng-event'
+            )
+                .pipe(takeUntilDestroyed(this.destroyRef$))
+                .subscribe((event: CustomEvent) => {
+                    this.emitAction(event);
 
-                switch (event.detail.name) {
-                    case NG_CUSTOM_EVENTS.DIALOG_CLOSED: {
-                        this.store.resetDialog();
+                    switch (event.detail.name) {
+                        case NG_CUSTOM_EVENTS.DIALOG_CLOSED: {
+                            this.store.resetDialog();
 
-                        break;
-                    }
+                            break;
+                        }
 
-                    case NG_CUSTOM_EVENTS.COMPARE_CONTENTLET: {
-                        this.ngZone.run(() => {
-                            this.$compareData.set(<DotContentCompareEvent>event.detail.data);
-                        });
-                        break;
-                    }
+                        case NG_CUSTOM_EVENTS.COMPARE_CONTENTLET: {
+                            this.ngZone.run(() => {
+                                this.$compareData.set(<DotContentCompareEvent>event.detail.data);
+                            });
+                            break;
+                        }
 
-                    case NG_CUSTOM_EVENTS.EDIT_CONTENTLET_UPDATED: {
-                        // The edit content emits this for savings when translating a page and does not emit anything when changing the content
-                        if (this.dialogState().form.isTranslation) {
+                        case NG_CUSTOM_EVENTS.EDIT_CONTENTLET_UPDATED: {
+                            // The edit content emits this for savings when translating a page and does not emit anything when changing the content
+                            if (this.dialogState().form.isTranslation) {
+                                this.store.setSaved();
+
+                                if (event.detail.payload.isMoveAction) {
+                                    this.reloadIframe();
+                                }
+                            } else {
+                                this.store.setDirty();
+                            }
+
+                            break;
+                        }
+
+                        case NG_CUSTOM_EVENTS.OPEN_WIZARD: {
+                            this.handleWorkflowEvent(event.detail.data);
+                            break;
+                        }
+
+                        case NG_CUSTOM_EVENTS.SAVE_PAGE: {
                             this.store.setSaved();
 
                             if (event.detail.payload.isMoveAction) {
                                 this.reloadIframe();
                             }
-                        } else {
-                            this.store.setDirty();
+
+                            break;
                         }
-
-                        break;
                     }
-
-                    case NG_CUSTOM_EVENTS.OPEN_WIZARD: {
-                        this.handleWorkflowEvent(event.detail.data);
-                        break;
-                    }
-
-                    case NG_CUSTOM_EVENTS.SAVE_PAGE: {
-                        this.store.setSaved();
-
-                        if (event.detail.payload.isMoveAction) {
-                            this.reloadIframe();
-                        }
-
-                        break;
-                    }
-                }
-            });
+                });
+        }
     }
 
     /**

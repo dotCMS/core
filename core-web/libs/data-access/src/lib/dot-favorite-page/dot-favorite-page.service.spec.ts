@@ -1,9 +1,8 @@
-import { describe, expect, it } from '@jest/globals';
+import { describe, expect, it, vi } from 'vitest';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { getTestBed, TestBed } from '@angular/core/testing';
-
-import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 
 import { DotFavoritePageService } from './dot-favorite-page.service';
 
@@ -16,9 +15,9 @@ describe('DotFavoritePageService', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
             providers: [
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 DotESContentService,
                 DotFavoritePageService
             ]
@@ -26,7 +25,7 @@ describe('DotFavoritePageService', () => {
         injector = getTestBed();
         dotESContentService = injector.inject(DotESContentService);
         dotFavoritePageService = injector.inject(DotFavoritePageService);
-        jest.spyOn(dotESContentService, 'get');
+        vi.spyOn(dotESContentService, 'get');
     });
 
     it('should get Favorite Pages based on an URL', () => {

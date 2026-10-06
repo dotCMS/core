@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.index.IndexAPI;
+import com.dotcms.content.index.MigrationIndexVisibility;
 import com.dotcms.content.index.domain.ClusterIndexHealth;
 import com.dotcms.content.index.domain.IndexStats;
 import com.dotmarketing.business.APILocator;
@@ -18,7 +19,7 @@ import io.vavr.control.Try;
 public class IndexResourceHelper {
 
     private static class IndexResourceHelperHolder{
-        private static IndexResourceHelper helper = new IndexResourceHelper();
+        private static final IndexResourceHelper helper = new IndexResourceHelper();
     }
     ContentletIndexAPI idxApi = APILocator.getContentletIndexAPI();
     IndexAPI esapi = APILocator.getESIndexAPI();
@@ -39,8 +40,11 @@ public class IndexResourceHelper {
 
 
         Map<String,ClusterIndexHealth> clusterHealth = esapi.getClusterHealth();
-        List<String> openIndicies=idxApi.listDotCMSIndices();
-        List<String> closedIndices=idxApi.listDotCMSClosedIndices();
+        // Hide OS-tagged (.os) migration indices from the maintenance dashboard outside Phase 3
+        // (phase-based, for everyone). Operational paths keep the full set; only this display sink
+        // filters — see MigrationIndexVisibility.
+        List<String> openIndices=MigrationIndexVisibility.filter(idxApi.listDotCMSIndices());
+        List<String> closedIndices=MigrationIndexVisibility.filter(idxApi.listDotCMSClosedIndices());
         List<String> currentIdx = Try.of(()->idxApi.getCurrentIndex()).getOrElse(ImmutableList.of());
         List<String> newIdx =Try.of(()->idxApi.getNewIndex()).getOrElse(ImmutableList.of());
         Map<String, IndexStats> indexInfo = esapi.getIndicesStats();
@@ -48,7 +52,7 @@ public class IndexResourceHelper {
         
         
         
-        openIndicies.stream().forEach(index->{
+        openIndices.forEach(index->{
             Map<String, Object> indexStats = new HashMap<>();
             indexStats.put("active", currentIdx.contains(index));
             indexStats.put("building", newIdx.contains(index));
@@ -60,7 +64,7 @@ public class IndexResourceHelper {
             indexList.add(indexStats);
         });
         
-        closedIndices.stream().forEach(index->{
+        closedIndices.forEach(index->{
             Map<String, Object> indexStats = new HashMap<>();
             indexStats.put("active", false);
             indexStats.put("building", false);

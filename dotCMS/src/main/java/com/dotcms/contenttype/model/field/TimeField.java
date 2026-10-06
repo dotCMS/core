@@ -12,7 +12,7 @@ import org.immutables.value.Value;
 import com.dotcms.contenttype.util.FieldUtil;
 import com.google.common.collect.ImmutableList;
 import com.dotmarketing.util.UtilMethods;
-import com.dotcms.repackage.com.google.common.base.Preconditions;
+import com.google.common.base.Preconditions;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;

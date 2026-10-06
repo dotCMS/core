@@ -1,4 +1,5 @@
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { Component, CUSTOM_ELEMENTS_SCHEMA, DebugElement, inject as inject_1 } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -96,7 +97,7 @@ describe('DotTemplateThumbnailFieldComponent', () => {
             component = fixture.componentInstance;
             dotTempFileUploadService = TestBed.inject(DotTempFileUploadService);
             dotWorkflowActionsFireService = TestBed.inject(DotWorkflowActionsFireService);
-            jest.spyOn(component, 'propagateChange');
+            vi.spyOn(component, 'propagateChange');
         });
 
         it('should have basic attr', () => {
@@ -106,13 +107,30 @@ describe('DotTemplateThumbnailFieldComponent', () => {
             expect(field.attributes).toEqual(
                 expect.objectContaining({
                     accept: 'image/*',
+                    name: 'thumbnail',
                     style: 'height: 3.35rem;'
                 })
             );
 
-            expect(field.nativeNode.previewImageUrl).toBeNull();
-            expect(field.nativeNode.previewImageName).toBeNull();
+            expect(field.nativeNode.previewImageUrl).toBeFalsy();
+            expect(field.nativeNode.previewImageName).toBeFalsy();
             expect(field.nativeNode.placeholder).toBe('Drop or paste image or image url');
+            expect(field.nativeNode.disabled).toBeFalsy();
+        });
+
+        it('should not fetch or disable when writeValue receives an empty id', () => {
+            dotCrudService = TestBed.inject(DotCrudService);
+            vi.spyOn(dotCrudService, 'getDataById');
+
+            component.writeValue('');
+            fixture.detectChanges();
+
+            const field = de.query(By.css('dot-binary-file'));
+
+            expect(dotCrudService.getDataById).not.toHaveBeenCalled();
+            expect(component.loading).toBe(false);
+            expect(component.asset).toBeNull();
+            expect(field.nativeNode.disabled).toBeFalsy();
         });
 
         it('should have fillted attr', () => {
@@ -180,8 +198,8 @@ describe('DotTemplateThumbnailFieldComponent', () => {
             });
 
             it('should show error for invalid image url', () => {
-                jest.spyOn(dotWorkflowActionsFireService, 'publishContentletAndWaitForIndex');
-                jest.spyOn(dotTempFileUploadService, 'upload').mockReturnValue(
+                vi.spyOn(dotWorkflowActionsFireService, 'publishContentletAndWaitForIndex');
+                vi.spyOn(dotTempFileUploadService, 'upload').mockReturnValue(
                     of([
                         {
                             fileName: '',
@@ -218,11 +236,11 @@ describe('DotTemplateThumbnailFieldComponent', () => {
             });
 
             it('should show default error', () => {
-                jest.spyOn(
+                vi.spyOn(
                     dotWorkflowActionsFireService,
                     'publishContentletAndWaitForIndex'
-                ).mockReturnValue(throwError({}));
-                jest.spyOn(dotTempFileUploadService, 'upload').mockReturnValue(
+                ).mockReturnValue(throwError(() => ({})));
+                vi.spyOn(dotTempFileUploadService, 'upload').mockReturnValue(
                     of([
                         {
                             fileName: '',
@@ -269,11 +287,11 @@ describe('DotTemplateThumbnailFieldComponent', () => {
                     name: 'Something',
                     identifier: '456'
                 };
-                jest.spyOn(
+                vi.spyOn(
                     dotWorkflowActionsFireService,
                     'publishContentletAndWaitForIndex'
                 ).mockReturnValue(of(mock));
-                jest.spyOn(dotTempFileUploadService, 'upload').mockReturnValue(
+                vi.spyOn(dotTempFileUploadService, 'upload').mockReturnValue(
                     of([
                         {
                             fileName: '',
@@ -324,7 +342,7 @@ describe('DotTemplateThumbnailFieldComponent', () => {
         });
 
         it('should set asset', () => {
-            jest.spyOn(dotCrudService, 'getDataById').mockReturnValue(
+            vi.spyOn(dotCrudService, 'getDataById').mockReturnValue(
                 of([
                     {
                         ...dotcmsContentletMock,
@@ -344,6 +362,57 @@ describe('DotTemplateThumbnailFieldComponent', () => {
                 assetVersion: 'path/to/something.png',
                 name: 'Something'
             });
+        });
+
+        it('should update preview bindings after async writeValue without extra detectChanges', () => {
+            const response$ = new Subject<
+                {
+                    assetVersion: string;
+                    name: string;
+                    inode: string;
+                }[]
+            >();
+
+            vi.spyOn(dotCrudService, 'getDataById').mockReturnValue(response$.asObservable());
+
+            fixture.detectChanges();
+
+            const binaryFile = de.query(By.css('dot-binary-file'));
+
+            expect(binaryFile.nativeNode.previewImageName).toBeFalsy();
+            expect(binaryFile.nativeNode.previewImageUrl).toBeFalsy();
+            expect(field.loading).toBe(true);
+
+            response$.next([
+                {
+                    ...dotcmsContentletMock,
+                    assetVersion: 'path/to/something.png',
+                    name: 'Something',
+                    inode: '123inode'
+                }
+            ]);
+            response$.complete();
+
+            // Component must trigger CD itself (DynamicDialog path); do not call fixture.detectChanges().
+            expect(field.loading).toBe(false);
+            expect(field.asset).toEqual({
+                ...dotcmsContentletMock,
+                assetVersion: 'path/to/something.png',
+                name: 'Something',
+                inode: '123inode'
+            });
+            expect(binaryFile.nativeNode.previewImageName).toBe('Something');
+            expect(binaryFile.nativeNode.previewImageUrl).toBe('/dA/123inode');
+        });
+
+        it('should not call getDataById when form control value is empty', () => {
+            vi.spyOn(dotCrudService, 'getDataById');
+
+            field.writeValue('');
+
+            expect(dotCrudService.getDataById).not.toHaveBeenCalled();
+            expect(field.loading).toBe(false);
+            expect(field.asset).toBeNull();
         });
     });
 });

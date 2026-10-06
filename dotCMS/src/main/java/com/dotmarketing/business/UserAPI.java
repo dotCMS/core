@@ -1,6 +1,7 @@
 package com.dotmarketing.business;
 
 import com.dotcms.rest.api.v1.authentication.DotInvalidTokenException;
+import com.dotcms.util.pagination.OrderDirection;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -108,9 +109,10 @@ public interface UserAPI {
 	 * Returns a list of Users in dotCMS that match the specified search criteria. It's worth noting that this method
 	 * WILL hit the database EVERY time.
 	 *
-	 * @param filter          Any character sequence that might be present in the combination of a User's first and last
-	 *                        name. For example, for a {@code filter} value of {@code "hn Do"}, the User named {@code
-	 *                        "John Doe"} will match this filter.
+	 * @param filter          Any character sequence that might be present in a User's ID, first name, last name, email
+	 *                        address, or the combination of their first and last name. For example, for a {@code
+	 *                        filter} value of {@code "hn Do"}, the User named {@code "John Doe"} will match this
+	 *                        filter.
 	 * @param roles           The list of {@link Role} objects that Users must match.
 	 * @param start           The start page of the result set, for pagination purposes.
 	 * @param limit           The end or limit page of the result set, for pagination purposes.
@@ -125,6 +127,22 @@ public interface UserAPI {
 	public long getCountUsersByName(String filter) throws DotDataException;
 
 	public long getCountUsersByName(String filter, List<Role> roles) throws DotDataException;
+
+	/**
+	 * Returns the total number of Users matching the specified search criteria, applying the exact same exclusions as
+	 * {@link #getUsersByName(String, List, int, int, FilteringParams)} so paginated counts stay consistent with the
+	 * returned items.
+	 *
+	 * @param filter          Any character sequence that might be present in a User's ID, first name, last name, email
+	 *                        address, or the combination of their first and last name.
+	 * @param roles           The list of {@link Role} objects that Users must match.
+	 * @param filteringParams Additional filtering parameters. Please refer to {@link FilteringParams}.
+	 *
+	 * @return The number of Users matching the specified search criteria.
+	 *
+	 * @throws DotDataException An error occurred when accessing the data source.
+	 */
+	long getCountUsersByName(String filter, List<Role> roles, FilteringParams filteringParams) throws DotDataException;
 	/**
 	 * Creates an instance of a user
      * @param userId Can be null
@@ -458,6 +476,19 @@ public interface UserAPI {
 			this.orderDirection = builder.orderDirection;
 			this.includeAnonymousUser = builder.includeAnonymousUser;
 			this.includeDefaultUser = builder.includeDefaultUser;
+		}
+
+		/**
+		 * Maps a REST {@link OrderDirection} to the SQL direction token this class expects in
+		 * {@link Builder#orderDirection(String)} / {@link #ORDER_DIRECTION_PARAM}: {@link SQLUtil#_DESC} for
+		 * {@code DESC}, otherwise {@link SQLUtil#_ASC}. Shared by the resources that feed {@code UserPaginator}.
+		 *
+		 * @param direction The requested direction; {@code null} means ascending.
+		 *
+		 * @return The SQL direction token, leading space included.
+		 */
+		public static String sqlDirection(final OrderDirection direction) {
+			return OrderDirection.DESC == direction ? SQLUtil._DESC : SQLUtil._ASC;
 		}
 
 		/**

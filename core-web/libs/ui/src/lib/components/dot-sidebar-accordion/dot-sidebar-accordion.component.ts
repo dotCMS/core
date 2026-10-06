@@ -1,5 +1,5 @@
 import { trigger, state, style, transition, animate, AnimationEvent } from '@angular/animations';
-import { CommonModule } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -55,7 +55,7 @@ import { DotSidebarAccordionTabComponent } from './components/dot-sidebar-accord
  */
 @Component({
     selector: 'dot-sidebar-accordion',
-    imports: [CommonModule],
+    imports: [NgTemplateOutlet],
     templateUrl: './dot-sidebar-accordion.component.html',
     styleUrls: ['./dot-sidebar-accordion.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,

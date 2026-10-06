@@ -1,0 +1,20 @@
+{
+  "entity": {
+    "id": "ct-malicious",
+    "variable": "../../evil",
+    "fields": [
+      {
+        "id": "field-malicious-widget",
+        "variable": "widget",
+        "clazz": "com.dotcms.contenttype.model.field.ImmutableCustomField",
+        "values": "<script>dojo.ready(function(){ dijit.byId('x'); });</script>"
+      },
+      {
+        "id": "field-malicious-code",
+        "variable": "code",
+        "clazz": "com.dotcms.contenttype.model.field.ImmutableCustomField",
+        "values": "#dotParse(\"/dA/asset-malicious-001\")"
+      }
+    ]
+  }
+}

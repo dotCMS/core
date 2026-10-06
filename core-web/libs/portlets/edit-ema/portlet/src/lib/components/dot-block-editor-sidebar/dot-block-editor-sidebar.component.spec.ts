@@ -1,18 +1,28 @@
-import { byTestId, mockProvider, Spectator } from '@ngneat/spectator';
-import { createComponentFactory } from '@ngneat/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { MockComponent } from 'ng-mocks';
 import { of, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
+import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+
+import { ConfirmationService } from 'primeng/api';
 import { Drawer } from 'primeng/drawer';
 
-import { BlockEditorModule, DotBlockEditorComponent } from '@dotcms/block-editor';
+import { BlockEditorModule } from '@dotcms/block-editor';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
     DotMessageService,
+    DotPropertiesService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { DotCMSContentType, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSEditorComponent } from '@dotcms/new-block-editor';
 import {
     dotcmsContentTypeBasicMock,
     MockDotMessageService,
@@ -95,18 +105,30 @@ describe('DotBlockEditorSidebarComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotBlockEditorSidebarComponent,
-        imports: [BlockEditorModule],
-        declarations: [MockComponent(DotBlockEditorComponent)],
+        schemas: [CUSTOM_ELEMENTS_SCHEMA],
+        overrideComponents: [
+            [
+                DotBlockEditorSidebarComponent,
+                {
+                    remove: { imports: [DotCMSEditorComponent, BlockEditorModule] },
+                    add: { imports: [MockComponent(DotCMSEditorComponent)] }
+                }
+            ]
+        ],
         providers: [
             DotAlertConfirmService,
+            ConfirmationService,
             { provide: DotMessageService, useValue: messageServiceMock },
             {
                 provide: DotWorkflowActionsFireService,
                 useValue: {
-                    saveContentlet: jest.fn()
+                    saveContentlet: vi.fn()
                 }
             },
-            mockProvider(DotContentTypeService)
+            mockProvider(DotContentTypeService),
+            mockProvider(DotPropertiesService, {
+                getFeatureFlag: vi.fn().mockReturnValue(of(true))
+            })
         ]
     });
 
@@ -116,7 +138,7 @@ describe('DotBlockEditorSidebarComponent', () => {
         dotAlertConfirmService = spectator.inject(DotAlertConfirmService, true);
         dotWorkflowActionsFireService = spectator.inject(DotWorkflowActionsFireService, true);
 
-        jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(of(contentTypeMock));
+        vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(of(contentTypeMock));
 
         spectator.component.open(EVENT_DATA);
         spectator.detectChanges();
@@ -132,17 +154,21 @@ describe('DotBlockEditorSidebarComponent', () => {
     });
 
     it('should set inputs to the block editor', () => {
-        const blockEditor = spectator.query(DotBlockEditorComponent);
+        const blockEditor = spectator.query(DotCMSEditorComponent);
 
         expect(blockEditor.field).toEqual(BLOCK_EDITOR_FIELD);
         expect(blockEditor.languageId).toBe(EVENT_DATA.language);
         expect(blockEditor.value).toEqual(EVENT_DATA.content);
+        // The editor must fill the drawer height when rendered inline in the UVE sidebar.
+        expect(blockEditor.fillHeight).toBe(true);
         expect(dotContentTypeService.getContentType).toHaveBeenCalledWith('Blog');
     });
 
     it('should save changes in the editor', () => {
-        const spyWorkflowService = jest.spyOn(dotWorkflowActionsFireService, 'saveContentlet');
-        const blockEditor = spectator.query(DotBlockEditorComponent);
+        const spyWorkflowService = vi
+            .spyOn(dotWorkflowActionsFireService, 'saveContentlet')
+            .mockReturnValue(of({}));
+        const blockEditor = spectator.query(DotCMSEditorComponent);
 
         const newValue = { data: 'test value 1' };
         blockEditor.valueChange.emit(newValue);
@@ -155,12 +181,38 @@ describe('DotBlockEditorSidebarComponent', () => {
         spectator.detectChanges();
 
         expect(dotContentTypeService.getContentType).toHaveBeenCalledWith('Blog');
-        expect(spyWorkflowService).toHaveBeenCalledWith({ testName: JSON.stringify(newValue) });
+        expect(spyWorkflowService).toHaveBeenCalledWith(
+            expect.objectContaining({
+                variantName: 'DEFAULT',
+                testName: JSON.stringify(newValue)
+            })
+        );
+    });
+
+    it('should pass the variantName input to saveContentlet when set', () => {
+        const spyWorkflowService = vi
+            .spyOn(dotWorkflowActionsFireService, 'saveContentlet')
+            .mockReturnValue(of({}));
+        const blockEditor = spectator.query(DotCMSEditorComponent);
+
+        spectator.setInput('variantName', 'my-experiment-variant');
+
+        const newValue = { data: 'variant value' };
+        blockEditor.valueChange.emit(newValue);
+        spectator.detectChanges();
+
+        const saveBtn = spectator.query(byTestId('save-btn')) as HTMLButtonElement;
+        saveBtn.click();
+        spectator.detectChanges();
+
+        expect(spyWorkflowService).toHaveBeenCalledWith(
+            expect.objectContaining({ variantName: 'my-experiment-variant' })
+        );
     });
 
     it('should call drawer close when cancel is clicked', () => {
         const drawer = spectator.query(Drawer);
-        const closeSpy = jest.spyOn(drawer, 'close');
+        const closeSpy = vi.spyOn(drawer!, 'close');
 
         const cancelBtn = spectator.query(byTestId('cancel-btn')) as HTMLButtonElement;
         cancelBtn.click();
@@ -173,12 +225,12 @@ describe('DotBlockEditorSidebarComponent', () => {
         const error404 = mockResponseView(404, '', null, {
             error: { message: 'An error occurred' }
         });
-        const dotAletConfirmServiceSpy = jest.spyOn(dotAlertConfirmService, 'alert');
-        const spyWorkflowService = jest
+        const dotAletConfirmServiceSpy = vi.spyOn(dotAlertConfirmService, 'alert');
+        const spyWorkflowService = vi
             .spyOn(dotWorkflowActionsFireService, 'saveContentlet')
-            .mockReturnValue(throwError(error404));
+            .mockReturnValue(throwError(() => error404));
 
-        const blockEditor = spectator.query(DotBlockEditorComponent);
+        const blockEditor = spectator.query(DotCMSEditorComponent);
         const newValue = { data: 'test value 1' };
         blockEditor.valueChange.emit(newValue);
 
@@ -194,7 +246,7 @@ describe('DotBlockEditorSidebarComponent', () => {
 
     it('should call event.stopPropagation on escape keydown', () => {
         const event = new KeyboardEvent('keydown', { key: 'Escape' });
-        jest.spyOn(event, 'stopPropagation');
+        vi.spyOn(event, 'stopPropagation');
 
         const container = spectator.query('[data-testId="dot-container"]');
         container.dispatchEvent(event);
@@ -202,5 +254,5 @@ describe('DotBlockEditorSidebarComponent', () => {
         expect(event.stopPropagation).toHaveBeenCalled();
     });
 
-    afterEach(() => jest.clearAllMocks());
+    afterEach(() => vi.clearAllMocks());
 });

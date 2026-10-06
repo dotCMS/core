@@ -1,0 +1,267 @@
+import { Events, injectDispatch } from '@ngrx/signals/events';
+
+import { DOCUMENT } from '@angular/common';
+import { ChangeDetectionStrategy, Component, effect, inject, Renderer2 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+
+import { ConfirmationService, ConfirmEventType, MessageService } from 'primeng/api';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { Dialog } from 'primeng/dialog';
+import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
+
+import { DotMessageService } from '@dotcms/data-access';
+import {
+    DotDialogComponent,
+    DotDialogContentComponent,
+    DotDialogFooterComponent,
+    DotDialogHeaderComponent,
+    DotMessagePipe,
+    DotToastComponent
+} from '@dotcms/ui';
+
+import { imageEditorModalScaleFade } from '../../animations/image-editor.animations';
+import { DIALOG_SIZE_TRANSITION, MAXIMIZED_DIALOG_CLASS } from '../../image-editor.constants';
+import { ImageEditorOpenParams } from '../../models/image-editor.models';
+import {
+    imageEditorHistoryEvents,
+    imageEditorLifecycleEvents
+} from '../../store/image-editor.events';
+import { ImageEditorStore } from '../../store/image-editor.store';
+import { DotImageEditorCanvasComponent } from '../dot-image-editor-canvas/dot-image-editor-canvas.component';
+import { DotImageEditorFooterComponent } from '../dot-image-editor-footer/dot-image-editor-footer.component';
+import { DotImageEditorFullscreenToggleComponent } from '../dot-image-editor-fullscreen-toggle/dot-image-editor-fullscreen-toggle.component';
+import { DotImageEditorPanelsComponent } from '../dot-image-editor-panels/dot-image-editor-panels.component';
+
+/**
+ * Full-screen "Edit image" modal shell, opened through PrimeNG's `DialogService`.
+ * Assembles the header, canvas, side panels and footer over a single
+ * {@link ImageEditorStore} instance scoped to this dialog. It owns the dialog
+ * lifecycle: it requests the asset on init, closes with the saved temp file when a
+ * save succeeds, and guards close/cancel against unsaved edits.
+ */
+@Component({
+    selector: 'dot-image-editor',
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [
+        ConfirmDialogModule,
+        DotDialogComponent,
+        DotDialogHeaderComponent,
+        DotDialogContentComponent,
+        DotDialogFooterComponent,
+        DotMessagePipe,
+        DotImageEditorFullscreenToggleComponent,
+        DotImageEditorCanvasComponent,
+        DotImageEditorPanelsComponent,
+        DotImageEditorFooterComponent,
+        DotToastComponent
+    ],
+    providers: [
+        ImageEditorStore,
+        // Scoped here so the template's `<p-confirmDialog />` and the discard
+        // guard share one instance; the lib has no global confirm dialog.
+        ConfirmationService,
+        // Scoped here — not left to the host — so the editor renders in every host rather than
+        // only the ones that happen to provide one. `DialogService` opens this dialog from the
+        // host's injector, so the address bar's `inject(MessageService)` used to walk up into the
+        // host chain: the full-screen shell had one, the UVE side panel and the centered dialog
+        // did not, and the injection threw NG0201 mid-construction — a blank white dialog (#37398).
+        // Mirrors `DotAssetPickerComponent`, and the contract `DotToastComponent` documents:
+        // the outlet's owner provides the stream. The template renders that outlet below.
+        MessageService
+    ],
+    templateUrl: './dot-image-editor.component.html',
+    styleUrl: './dot-image-editor.component.scss',
+    animations: [imageEditorModalScaleFade()],
+    host: {
+        '[@imageEditorModalScaleFade]': '',
+        // Listen on the document, not the host: in a DynamicDialog focus usually
+        // sits outside this component, so a host-only keydown never fires.
+        '(document:keydown)': 'onKeydown($event)'
+    }
+})
+export class DotImageEditorComponent {
+    /** Image editor state store, isolated to this dialog instance. */
+    protected readonly store = inject(ImageEditorStore);
+
+    readonly #config = inject<DynamicDialogConfig<ImageEditorOpenParams>>(DynamicDialogConfig);
+    readonly #dialogRef = inject(DynamicDialogRef);
+    readonly #confirmationService = inject(ConfirmationService);
+    readonly #dotMessageService = inject(DotMessageService);
+    readonly #dispatch = injectDispatch(imageEditorLifecycleEvents);
+    readonly #historyDispatch = injectDispatch(imageEditorHistoryEvents);
+    readonly #events = inject(Events);
+    readonly #document = inject(DOCUMENT);
+    readonly #renderer = inject(Renderer2);
+    // The PrimeNG dialog hosting this editor: injectable because the dialog content
+    // is declared inside `<p-dialog>` in DynamicDialog's template, so we sit in the
+    // Dialog's element injector. Its `container()` signal is the `.p-dialog` element.
+    readonly #dialog = inject(Dialog, { optional: true });
+
+    /** True while the discard-confirm prompt is showing, so a repeated Esc can't re-open it. */
+    #discardPromptOpen = false;
+
+    constructor() {
+        this.#dispatch.assetRequested(this.#config.data as ImageEditorOpenParams);
+
+        // The editor owns its dialog, so it owns full-screen too: resize the host
+        // `.p-dialog` to fill the viewport whenever `isFullscreen` flips.
+        effect(() => this.#applyFullscreen(this.store.isFullscreen()));
+
+        // A successful save resolves the editor with the staged temp file; a failed
+        // save keeps the dialog open and surfaces the error in the template.
+        this.#events
+            .on(imageEditorLifecycleEvents.saveSucceeded)
+            .pipe(takeUntilDestroyed())
+            .subscribe(({ payload }) => this.#dialogRef.close(payload));
+    }
+
+    /**
+     * Expands the host dialog to the viewport, or restores it.
+     *
+     * Full-screen is PrimeNG's own maximized state, so there is nothing to save and restore: the
+     * theme sizes {@link MAXIMIZED_DIALOG_CLASS} with `!important`, which is what beats the
+     * width/height `DialogService` writes inline. Dropping the class hands the windowed size back.
+     *
+     * `maximize()` keeps PrimeNG's `maximized` flag in step, so its own class computation agrees with
+     * us; the class is applied here as well because the `Dialog` is `OnPush` and a toggle coming from
+     * its projected content never marks it dirty.
+     */
+    #applyFullscreen(on: boolean): void {
+        const container = this.#dialog?.container() as HTMLElement | undefined;
+
+        if (!this.#dialog || !container) {
+            return;
+        }
+
+        // Set the size transition (idempotent) before any toggle, honouring reduced-motion. It
+        // lands on the first (windowed) effect run, so the first real toggle already animates.
+        this.#renderer.setStyle(
+            container,
+            'transition',
+            this.#prefersReducedMotion() ? '' : DIALOG_SIZE_TRANSITION
+        );
+
+        // `Boolean(...)`: PrimeNG leaves `maximized` UNSET until its own button is clicked, and
+        // `undefined !== false` would fire `maximize()` on the effect's first (windowed) run —
+        // flipping the flag to `true` and opening the editor full screen.
+        if (Boolean(this.#dialog.maximized) !== on) {
+            this.#dialog.maximize();
+        }
+
+        if (on) {
+            this.#renderer.addClass(container, MAXIMIZED_DIALOG_CLASS);
+        } else {
+            this.#renderer.removeClass(container, MAXIMIZED_DIALOG_CLASS);
+        }
+    }
+
+    /** Whether the user has requested reduced motion (skips the resize animation). */
+    #prefersReducedMotion(): boolean {
+        return (
+            this.#document.defaultView?.matchMedia?.('(prefers-reduced-motion: reduce)').matches ??
+            false
+        );
+    }
+
+    /**
+     * Handles editor-wide keyboard shortcuts: Esc closes (through the unsaved-changes
+     * guard) and the standard undo/redo combos run while the editor is focused —
+     * Ctrl/Cmd+Z undoes, Ctrl/Cmd+Shift+Z and Ctrl/Cmd+Y redo. Undo/redo is skipped
+     * when a text field has focus so its native text undo keeps working.
+     */
+    protected onKeydown(event: KeyboardEvent): void {
+        if (event.key === 'Escape') {
+            // The dialog's own closeOnEscape is disabled so Esc routes through
+            // requestClose() and confirms unsaved edits (PrimeNG would otherwise close
+            // the dialog directly, skipping the guard). An active crop/focal overlay
+            // consumes Esc first (stopPropagation), so a bubbled Esc here means no
+            // overlay handled it. Ignore while the discard prompt is already open.
+            if (this.#discardPromptOpen) {
+                return;
+            }
+
+            event.preventDefault();
+            this.requestClose();
+
+            return;
+        }
+
+        if (!(event.metaKey || event.ctrlKey) || this.#isEditableTarget(event.target)) {
+            return;
+        }
+
+        const key = event.key.toLowerCase();
+        const isUndo = key === 'z' && !event.shiftKey;
+        const isRedo = key === 'y' || (key === 'z' && event.shiftKey);
+
+        if (!isUndo && !isRedo) {
+            return;
+        }
+
+        event.preventDefault();
+
+        if (isUndo && this.store.canUndo()) {
+            this.#historyDispatch.undoRequested();
+        } else if (isRedo && this.store.canRedo()) {
+            this.#historyDispatch.redoRequested();
+        }
+    }
+
+    /** Closes the editor, confirming first when there are unsaved edits. */
+    protected requestClose(): void {
+        if (!this.store.isDirty()) {
+            this.#dialogRef.close(null);
+
+            return;
+        }
+
+        this.#discardPromptOpen = true;
+        this.#confirmationService.confirm({
+            header: this.#dotMessageService.get('edit.content.image-editor.discard.header'),
+            message: this.#dotMessageService.get('edit.content.image-editor.discard.message'),
+            // Mirror the edit-content unsaved-changes dialog (unsavedChangesGuard):
+            // the safe "Keep editing" is the primary (accept) button and the
+            // destructive "Discard" is the secondary outlined (reject) button, so
+            // the prompt never renders two identical primaries. The labels reuse the
+            // existing message keys; only the accept/reject roles carry the hierarchy.
+            acceptLabel: this.#dotMessageService.get('edit.content.image-editor.discard.reject'),
+            rejectLabel: this.#dotMessageService.get('edit.content.image-editor.discard.confirm'),
+            // Text-only buttons, matching the unsaved-changes prompt.
+            acceptIcon: 'hidden',
+            rejectIcon: 'hidden',
+            rejectButtonStyleClass: 'p-button-outlined',
+            // "Keep editing" (primary): stay in the editor, nothing to do.
+            accept: () => {
+                this.#discardPromptOpen = false;
+            },
+            // PrimeNG funnels the secondary button and dismissals (X / ESC / mask
+            // click) through reject(); only the explicit "Discard" click (REJECT)
+            // closes, so a dismissal safely keeps the user's edits.
+            reject: (type?: ConfirmEventType) => {
+                this.#discardPromptOpen = false;
+
+                if (type === ConfirmEventType.REJECT) {
+                    this.#dialogRef.close(null);
+                }
+            }
+        });
+    }
+
+    /** Whether the event originated from an editable control (keeps its native undo). */
+    #isEditableTarget(target: EventTarget | null): boolean {
+        if (!(target instanceof HTMLElement)) {
+            return false;
+        }
+
+        return (
+            target.tagName === 'INPUT' ||
+            target.tagName === 'TEXTAREA' ||
+            target.tagName === 'SELECT' ||
+            target.isContentEditable ||
+            // PrimeNG p-select/p-dropdown/p-autocomplete expose a focusable element with
+            // role="combobox"; treat it (and its contents) as an editable control so the
+            // undo/redo shortcuts don't hijack keyboard selection inside an open control.
+            target.closest('[role="combobox"]') !== null
+        );
+    }
+}

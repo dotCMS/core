@@ -197,16 +197,15 @@
       --basic-speed: 150ms;
     }
 
-	/* fallback */
 	@font-face {
-	font-family: 'Material Icons';
+	font-family: 'Material Symbols Outlined';
 	font-style: normal;
-	font-weight: 400;
+	font-weight: 100 700;
 	font-display: swap;
-	src: url('/dotAdmin/assets/MaterialIcons-Regular.ttf') format('truetype');
+	src: url('/dotAdmin/assets/MaterialSymbolsOutlined-Regular.woff2') format('woff2');
 	}
-	.material-icons {
-	font-family: 'Material Icons';
+	.material-symbols-outlined {
+	font-family: 'Material Symbols Outlined';
 	font-weight: normal;
 	font-style: normal;
 	font-size: 24px;
@@ -217,6 +216,8 @@
 	white-space: nowrap;
 	word-wrap: normal;
 	direction: ltr;
+	font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+	font-feature-settings: 'liga';
 	-webkit-font-feature-settings: 'liga';
 	-webkit-font-smoothing: antialiased;
 	}
@@ -324,7 +325,14 @@
 
                 if(UtilMethods.isSet(textValue)){
                     org.apache.velocity.context.Context velocityContext =  com.dotmarketing.util.web.VelocityWebUtil.getVelocityContext(request,response);
-                    // Set velocity variable if not already set
+                    if (contentlet != null && UtilMethods.isSet(contentlet.getInode())) {
+                        velocityContext.put("inode", contentlet.getInode());
+                        velocityContext.put("identifier", contentlet.getIdentifier());
+                        velocityContext.put("lang", contentlet.getLanguageId());
+                        velocityContext.put("contentlet", contentlet);
+                        velocityContext.put("structure", contentType);
+                    }
+                    velocityContext.put("field", field);
                     if(!UtilMethods.isSet(velocityContext.get(field.variable()))){
                         if(UtilMethods.isSet(value)){
                             velocityContext.put(field.variable(), value);

@@ -6,10 +6,13 @@ import { ActivatedRouteSnapshot, Resolve } from '@angular/router';
 import { DotPropertiesService } from '@dotcms/data-access';
 
 @Injectable()
-export class DotExperimentsConfigResolver implements Resolve<Record<string, string> | null> {
+export class DotExperimentsConfigResolver implements Resolve<Record<
+    string,
+    string | boolean
+> | null> {
     private readonly dotConfigurationService = inject(DotPropertiesService);
 
-    resolve(route: ActivatedRouteSnapshot): Observable<Record<string, string>> | null {
+    resolve(route: ActivatedRouteSnapshot): Observable<Record<string, string | boolean>> | null {
         return this.dotConfigurationService.getKeys(route.data['experimentsConfigProps']);
     }
 }

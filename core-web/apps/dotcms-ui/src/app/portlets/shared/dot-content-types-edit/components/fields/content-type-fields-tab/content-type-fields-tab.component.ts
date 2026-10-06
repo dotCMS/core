@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, input, output } from '@angular/core';
+import { Component, OnInit, inject, input, output, ChangeDetectionStrategy } from '@angular/core';
 
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
@@ -13,6 +13,7 @@ import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotc
     selector: 'dot-content-type-fields-tab',
     templateUrl: './content-type-fields-tab.component.html',
     standalone: false,
+    changeDetection: ChangeDetectionStrategy.Eager,
     host: {
         class: 'cursor-move flex justify-center mb-4 relative'
     }

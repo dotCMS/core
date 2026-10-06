@@ -1,12 +1,10 @@
 package com.dotcms.ai.app;
 
-import com.dotcms.ai.domain.Model;
 import com.dotcms.security.apps.Secret;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -114,55 +112,6 @@ public class AIAppUtilTest {
 
         boolean result = aiAppUtil.discoverBooleanSecret(secrets, AppKeys.API_KEY);
         assertTrue(result);
-    }
-
-    /**
-     * Given a map of secrets containing a key with a text model name
-     * When the createTextModel method is called
-     * Then an AIModel instance should be created with the specified type and model name.
-     */
-    @Test
-    public void testCreateTextModel() {
-        when(secrets.get(AppKeys.TEXT_MODEL_NAMES.key)).thenReturn(secret);
-        when(secret.getString()).thenReturn("textModel");
-
-        AIModel model = aiAppUtil.createTextModel(secrets);
-        assertNotNull(model);
-        assertEquals(AIModelType.TEXT, model.getType());
-        assertTrue(model.getModels().stream().map(Model::getName).collect(Collectors.toList()).contains("textmodel"));
-    }
-
-    /**
-     * Given a map of secrets containing a key with an image model name
-     * When the createImageModel method is called
-     * Then an AIModel instance should be created with the specified type and model name.
-     */
-    @Test
-    public void testCreateImageModel() {
-        when(secrets.get(AppKeys.IMAGE_MODEL_NAMES.key)).thenReturn(secret);
-        when(secret.getString()).thenReturn("imageModel");
-
-        AIModel model = aiAppUtil.createImageModel(secrets);
-        assertNotNull(model);
-        assertEquals(AIModelType.IMAGE, model.getType());
-        assertTrue(model.getModels().stream().map(Model::getName).collect(Collectors.toList()).contains("imagemodel"));
-    }
-
-    /**
-     * Given a map of secrets containing a key with an embeddings model name
-     * When the createEmbeddingsModel method is called
-     * Then an AIModel instance should be created with the specified type and model name.
-     */
-    @Test
-    public void testCreateEmbeddingsModel() {
-        when(secrets.get(AppKeys.EMBEDDINGS_MODEL_NAMES.key)).thenReturn(secret);
-        when(secret.getString()).thenReturn("embeddingsModel");
-
-        AIModel model = aiAppUtil.createEmbeddingsModel(secrets);
-        assertNotNull(model);
-        assertEquals(AIModelType.EMBEDDINGS, model.getType());
-        assertTrue(model.getModels().stream().map(Model::getName).collect(Collectors.toList())
-                .contains("embeddingsmodel"));
     }
 
     @Test

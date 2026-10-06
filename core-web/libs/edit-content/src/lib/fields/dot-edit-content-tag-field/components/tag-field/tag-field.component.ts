@@ -19,6 +19,8 @@ import { AutoComplete, AutoCompleteCompleteEvent, AutoCompleteModule } from 'pri
 
 import { catchError, skip, switchMap } from 'rxjs/operators';
 
+import { DotMessagePipe } from '@dotcms/ui';
+
 import { DotEditContentService } from '../../../../services/dot-edit-content.service';
 import { BaseControlValueAccessor } from '../../../shared/base-control-value-accesor';
 
@@ -35,7 +37,7 @@ export const AUTO_COMPLETE_UNIQUE = true;
  */
 @Component({
     selector: 'dot-tag-field',
-    imports: [AutoCompleteModule, FormsModule, ReactiveFormsModule],
+    imports: [AutoCompleteModule, FormsModule, ReactiveFormsModule, DotMessagePipe],
     templateUrl: './tag-field.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [

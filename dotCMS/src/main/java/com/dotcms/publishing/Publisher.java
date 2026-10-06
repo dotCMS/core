@@ -1,8 +1,13 @@
 package com.dotcms.publishing;
 
 import com.dotcms.enterprise.publishing.staticpublishing.LanguageFolder;
+import com.dotcms.publisher.business.EndpointDetail;
+import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
+import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.pusher.PushUtils;
+import com.dotcms.system.event.local.type.pushpublish.EndpointFailureDetail;
+import com.dotcms.system.event.local.type.pushpublish.FailureCategory;
 import com.dotcms.publishing.output.BundleOutput;
 import com.dotcms.publishing.output.DirectoryBundleOutput;
 import com.dotmarketing.beans.Host;
@@ -366,5 +371,31 @@ public abstract class Publisher implements IPublisher {
 
     public BundleOutput createBundleOutput() throws IOException {
         return new DirectoryBundleOutput(config);
+    }
+
+    /**
+     * Builds a per-endpoint failure detail for static push-publishing events.
+     * {@code httpStatusCode} is always {@code null} for static publishers (no HTTP call is made).
+     */
+    protected EndpointFailureDetail buildStaticFailureDetail(
+            final Environment environment,
+            final PublishingEndPoint endpoint,
+            final EndpointDetail detail,
+            final FailureCategory category,
+            final Throwable throwable) {
+        final PublishAuditStatus.Status auditStatus =
+                PublishAuditStatus.getStatusObjectByCode(detail.getStatus());
+        return EndpointFailureDetail.builder()
+                .endpointId(endpoint.getId())
+                .endpointName(endpoint.getServerName() != null ? endpoint.getServerName().toString() : null)
+                .address(endpoint.getAddress())
+                .environmentId(environment.getId())
+                .environmentName(environment.getName())
+                .failureCategory(category)
+                .auditStatus(auditStatus)
+                .httpStatusCode(null)
+                .message(detail.getInfo())
+                .exceptionClass(throwable != null ? throwable.getClass().getName() : null)
+                .build();
     }
 }

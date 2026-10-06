@@ -2,6 +2,7 @@ package com.dotmarketing.business;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.contenttype.model.type.ContentType;
@@ -17,9 +18,12 @@ import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.liferay.portal.model.User;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -105,5 +109,42 @@ public class PermissionBitFactoryImplTest {
         // Ensure queue is cleared up.
         TestDataUtils.assertEmptyQueue();
 
+    }
+
+    /**
+     * Method to test: {@link PermissionBitFactoryImpl} loadPermissions walk-up caching behavior
+     * When: a permissionable has no parent (getParentPermissionable() returns null), causing the
+     * walk-up to return an empty permission list
+     * Should: NOT cache the empty result — the next request must retry the walk-up instead of
+     * being served a cached empty list that would cause persistent 401s for anonymous users
+     */
+    @Test
+    public void testEmptyWalkUpResultIsNotCached() throws DotDataException {
+        final PermissionCache cache = CacheLocator.getPermissionCache();
+
+        // Permissionable with no parent and no DB rows forces the walk-up to return empty
+        final String orphanId = UUID.randomUUID().toString();
+        final Permissionable orphan = new Permissionable() {
+            @Override public String getPermissionId() { return orphanId; }
+            @Override public Permissionable getParentPermissionable() { return null; }
+            @Override public String getPermissionType() { return IHTMLPage.class.getCanonicalName(); }
+            @Override public String getOwner() { return null; }
+            @Override public void setOwner(String owner) {}
+            @Override public List<PermissionSummary> acceptedPermissions() { return Collections.emptyList(); }
+            @Override public List<RelatedPermissionableGroup> permissionDependencies(int r) { return Collections.emptyList(); }
+            @Override public boolean isParentPermissionable() { return false; }
+        };
+
+        assertNull("Sanity: orphan must not be in cache before test",
+                cache.getPermissionsFromCache(orphanId));
+
+        final List<Permission> perms = APILocator.getPermissionAPI().getPermissions(orphan);
+        assertTrue("Walk-up with null parent must return empty permissions", perms.isEmpty());
+
+        // Before the fix this returned [] (not null), causing every subsequent request to skip
+        // the walk-up and return no permissions — a persistent 401 until the next
+        // resetPermissionReferences() evicted the entry.
+        assertNull("Empty walk-up result must not be written to cache",
+                cache.getPermissionsFromCache(orphanId));
     }
 }

@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
@@ -181,6 +182,54 @@ public class LanguageFactoryIntegrationTest extends IntegrationTestBase {
                 Collectors.toMap(LanguageKey::getKey, LanguageKey::getValue));
 
         Assert.assertEquals(generalKeys, mappedGeneral);
+    }
+
+    /**
+     * Method to test: {@link LanguageFactoryImpl#getDefaultLanguage()}
+     * Given Scenario: Reproduce the issue #35780 precondition where both the default-language
+     * cache and the internal resolution lock hold the {@code LANG_404} sentinel (id=-1) — the
+     * transient state a caller observes when it loses the default-language init race.
+     * Expected Result: getDefaultLanguage() must never surface the sentinel; it resolves a real
+     * language (id &gt; 0). A non-positive id would otherwise cause fk_contentlet_lang FK
+     * violations on contentlet save and HTMLPageAssetNotFound (404) on page lookups.
+     */
+    @Test
+    public void test_getDefaultLanguage_neverReturnsSentinel() throws Exception {
+
+        final LanguageCache languageCache = CacheLocator.getLanguageCache();
+        final Language originalDefault = languageFactory.getDefaultLanguage();
+        final Language originalLock = getDefaultLanguageLock();
+        try {
+            // Poison both the cache and the resolution lock with the sentinel.
+            languageCache.setDefaultLanguage(LanguageCacheImpl.LANG_404);
+            setDefaultLanguageLock(LanguageCacheImpl.LANG_404);
+
+            final Language resolved = languageFactory.getDefaultLanguage();
+
+            assertNotNull(resolved);
+            assertTrue("getDefaultLanguage must never return a non-positive id (was "
+                    + resolved.getId() + ")", resolved.getId() > 0);
+        } finally {
+            languageCache.setDefaultLanguage(originalDefault);
+            setDefaultLanguageLock(originalDefault);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static java.util.concurrent.atomic.AtomicReference<Language> defaultLanguageLockRef()
+            throws Exception {
+        final java.lang.reflect.Field field =
+                LanguageFactoryImpl.class.getDeclaredField("createDefaultLanguageLock");
+        field.setAccessible(true);
+        return (java.util.concurrent.atomic.AtomicReference<Language>) field.get(languageFactory);
+    }
+
+    private static Language getDefaultLanguageLock() throws Exception {
+        return defaultLanguageLockRef().get();
+    }
+
+    private static void setDefaultLanguageLock(final Language value) throws Exception {
+        defaultLanguageLockRef().set(value);
     }
 
 }

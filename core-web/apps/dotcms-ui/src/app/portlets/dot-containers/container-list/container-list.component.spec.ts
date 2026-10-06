@@ -1,8 +1,9 @@
-import { of } from 'rxjs';
+import { of, Subject } from 'rxjs';
+import { vi } from 'vitest';
 
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { HttpClient, provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import {
     Component,
     CUSTOM_ELEMENTS_SCHEMA,
@@ -35,12 +36,7 @@ import {
     PaginatorService
 } from '@dotcms/data-access';
 import {
-    CoreWebService,
-    CoreWebServiceMock,
     DotcmsConfigService,
-    DotcmsEventsService,
-    DotEventsSocket,
-    DotEventsSocketURL,
     DotPushPublishDialogService,
     LoggerService,
     LoginService,
@@ -48,11 +44,17 @@ import {
     SiteService,
     StringUtils
 } from '@dotcms/dotcms-js';
-import { CONTAINER_SOURCE, DotActionBulkResult, DotContainer } from '@dotcms/dotcms-models';
 import {
-    DotActionMenuButtonComponent,
+    CONTAINER_SOURCE,
+    DotActionBulkResult,
+    DotCMSResponse,
+    DotContainer,
+    DotSite
+} from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
+import {
     DotAddToBundleComponent,
-    DotContentletStatusChipComponent,
+    DotContentletStatusBadgeComponent,
     DotMessagePipe,
     DotRelativeDatePipe
 } from '@dotcms/ui';
@@ -69,11 +71,25 @@ import { ContainerListComponent } from './container-list.component';
 import { DotContainerListStore } from './store/dot-container-list.store';
 
 import { DotContainersService } from '../../../api/services/dot-containers/dot-containers.service';
-import { dotEventSocketURLFactory } from '../../../test/dot-test-bed';
 import { DotEmptyStateComponent } from '../../../view/components/_common/dot-empty-state/dot-empty-state.component';
 import { DotContentTypeSelectorComponent } from '../../../view/components/dot-content-type-selector/dot-content-type-selector.component';
 import { ActionHeaderComponent } from '../../../view/components/dot-listing-data-table/action-header/action-header.component';
 import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-base/dot-portlet-base.component';
+
+// Mock window.matchMedia (required by PrimeNG ContextMenu)
+Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: vi.fn().mockImplementation((query: string) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn()
+    }))
+});
 
 const containersMock: DotContainer[] = [
     {
@@ -221,17 +237,17 @@ describe('ContainerListComponent', () => {
 
     let dotRouterService: DotRouterService;
 
-    let unPublishContainer: DotActionMenuButtonComponent;
-    let publishContainer: DotActionMenuButtonComponent;
-    let archivedContainer: DotActionMenuButtonComponent;
     let contentTypesSelector: MockDotContentTypeSelectorComponent;
     let siteService: SiteServiceMock;
     let store: DotContainerListStore;
     let paginatorService: PaginatorService;
+    let switchSiteSubject: Subject<DotSite>;
 
     const messageServiceMock = new MockDotMessageService(messages);
 
     beforeEach(async () => {
+        switchSiteSubject = new Subject<DotSite>();
+
         await TestBed.configureTestingModule({
             declarations: [],
             imports: [
@@ -241,28 +257,26 @@ describe('ContainerListComponent', () => {
                 ButtonModule,
                 CheckboxModule,
                 CommonModule,
-                DotActionMenuButtonComponent,
                 DotAddToBundleComponent,
-                DotContentletStatusChipComponent,
+                DotContentletStatusBadgeComponent,
                 DotEmptyStateComponent,
                 DotMessagePipe,
                 DotPortletBaseComponent,
                 DotRelativeDatePipe,
-                HttpClientTestingModule,
                 InputTextModule,
                 MenuModule,
                 TableModule
             ],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 provideNoopAnimations(),
                 ConfirmationService,
                 DialogService,
                 DotAlertConfirmService,
                 DotcmsConfigService,
-                DotcmsEventsService,
                 DotContainerListStore,
                 DotContainersService,
-                DotEventsSocket,
                 DotHttpErrorManagerService,
                 DotSiteBrowserService,
                 HttpClient,
@@ -285,18 +299,22 @@ describe('ContainerListComponent', () => {
                 {
                     provide: DotRouterService,
                     useValue: {
-                        gotoPortlet: jest.fn(),
-                        goToEditContainer: jest.fn(),
-                        goToSiteBrowser: jest.fn()
+                        gotoPortlet: vi.fn(),
+                        goToEditContainer: vi.fn(),
+                        goToSiteBrowser: vi.fn()
                     }
                 },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotMessageService, useValue: messageServiceMock },
-                { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 { provide: DotFormatDateService, useClass: DotFormatDateServiceMock },
                 {
                     provide: DotMessageDisplayService,
                     useClass: DotMessageDisplayServiceMock
+                },
+                {
+                    provide: GlobalStore,
+                    useValue: {
+                        switchSiteEvent$: () => switchSiteSubject.asObservable()
+                    }
                 }
             ],
             schemas: [CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA]
@@ -311,7 +329,7 @@ describe('ContainerListComponent', () => {
         dotRouterService = TestBed.inject(DotRouterService);
         siteService = TestBed.inject(SiteService) as unknown as SiteServiceMock;
         paginatorService = TestBed.inject(PaginatorService);
-        jest.spyOn(paginatorService, 'get').mockReturnValue(of(containersMock));
+        vi.spyOn(paginatorService, 'get').mockReturnValue(of(containersMock));
 
         fixture = TestBed.createComponent(ContainerListComponent);
         comp = fixture.componentInstance;
@@ -325,7 +343,7 @@ describe('ContainerListComponent', () => {
             tick(2);
             fixture.detectChanges();
 
-            jest.spyOn(dotPushPublishDialogService, 'open');
+            vi.spyOn(dotPushPublishDialogService, 'open');
             table = fixture.debugElement.query(
                 By.css('[data-testId="container-list-table"]')
             ).componentInstance;
@@ -333,7 +351,7 @@ describe('ContainerListComponent', () => {
 
         it('should clicked on row and emit dotRouterService', () => {
             fixture.detectChanges();
-            comp.tableRows.get(0).nativeElement.click();
+            comp.tableRows()[0].nativeElement.click();
             expect(dotRouterService.goToEditContainer).toHaveBeenCalledTimes(1);
             expect(dotRouterService.goToEditContainer).toHaveBeenCalledWith(
                 containersMock[0].identifier
@@ -341,9 +359,7 @@ describe('ContainerListComponent', () => {
         });
 
         it('should set actions to publish template', () => {
-            publishContainer = fixture.debugElement.query(
-                By.css('[data-testid="123Published"]')
-            ).componentInstance;
+            const publishedContainer = containersMock.find((c) => c.identifier === '123Published');
             const actions = setBasicOptions();
             actions.push({
                 menuItem: { label: 'Unpublish', command: expect.any(Function) }
@@ -352,13 +368,13 @@ describe('ContainerListComponent', () => {
                 menuItem: { label: 'Duplicate', command: expect.any(Function) }
             });
 
-            expect(publishContainer.actions).toEqual(actions);
+            expect(comp.setContainerActions(publishedContainer)).toEqual(actions);
         });
 
         it('should set actions to unPublish template', () => {
-            unPublishContainer = fixture.debugElement.query(
-                By.css('[data-testid="123Unpublish"]')
-            ).componentInstance;
+            const unpublishedContainer = containersMock.find(
+                (c) => c.identifier === '123Unpublish'
+            );
             const actions = setBasicOptions();
             actions.push({
                 menuItem: { label: 'Archive', command: expect.any(Function) }
@@ -367,25 +383,23 @@ describe('ContainerListComponent', () => {
                 menuItem: { label: 'Duplicate', command: expect.any(Function) }
             });
 
-            expect(unPublishContainer.actions).toEqual(actions);
+            expect(comp.setContainerActions(unpublishedContainer)).toEqual(actions);
         });
 
         it('should set actions to archived template', () => {
-            archivedContainer = fixture.debugElement.query(
-                By.css('[data-testid="123Archived"]')
-            ).componentInstance;
+            const archivedContainer = containersMock.find((c) => c.identifier === '123Archived');
 
             const actions = [
                 { menuItem: { label: 'Unarchive', command: expect.any(Function) } },
                 { menuItem: { label: 'Delete', command: expect.any(Function) } }
             ];
-            expect(archivedContainer.actions).toEqual(actions);
+            expect(comp.setContainerActions(archivedContainer)).toEqual(actions);
         });
 
         it('should select all except system and file container', () => {
             const menu: Menu = fixture.debugElement.query(By.directive(Menu)).componentInstance;
             // Spy on the store's dotContainersService since it's now using component-level providers
-            jest.spyOn(store['dotContainersService'], 'publish').mockReturnValue(
+            vi.spyOn(store['dotContainersService'], 'publish').mockReturnValue(
                 of(mockBulkResponseSuccess)
             );
 
@@ -421,10 +435,10 @@ describe('ContainerListComponent', () => {
         it('should click on file container and move on Browser Screen', () => {
             const fileContainer = containersMock.find((c) => c.identifier === 'FILE_CONTAINER');
             // Spy on the store's methods since it's now using component-level providers
-            jest.spyOn(store['dotSiteBrowserService'], 'setSelectedFolder').mockReturnValue(
-                of(null)
+            vi.spyOn(store['dotSiteBrowserService'], 'setSelectedFolder').mockReturnValue(
+                of({} as DotCMSResponse<Record<string, unknown>>)
             );
-            jest.spyOn(store['dotRouterService'], 'goToSiteBrowser');
+            vi.spyOn(store['dotRouterService'], 'goToSiteBrowser');
 
             // Call the method directly instead of triggering the event
             comp.handleRowClick(fileContainer);
@@ -438,7 +452,7 @@ describe('ContainerListComponent', () => {
         });
 
         it('should fetch containers when content types selector changes', () => {
-            jest.spyOn(store, 'getContainersByContentType');
+            vi.spyOn(store, 'getContainersByContentType');
             fixture.detectChanges();
 
             contentTypesSelector = fixture.debugElement.query(
@@ -452,7 +466,7 @@ describe('ContainerListComponent', () => {
         });
 
         it('should fetch containers when archive state change', () => {
-            jest.spyOn(store, 'getContainersByArchiveState');
+            vi.spyOn(store, 'getContainersByArchiveState');
 
             const headerCheckbox = fixture.debugElement.query(
                 By.css('[data-testId="archiveCheckbox"]')
@@ -465,7 +479,7 @@ describe('ContainerListComponent', () => {
         });
 
         it('should fetch containers when query change', () => {
-            jest.spyOn(store, 'getContainersByQuery');
+            vi.spyOn(store, 'getContainersByQuery');
 
             const queryInput = fixture.debugElement.query(
                 By.css('[data-testId="query-input"]')
@@ -481,7 +495,7 @@ describe('ContainerListComponent', () => {
         });
 
         it('should fetch containers with offset when table emits onPage', () => {
-            jest.spyOn(store, 'getContainersWithOffset');
+            vi.spyOn(store, 'getContainersWithOffset');
 
             table.onPage.emit({ first: 10, rows: 10 });
 
@@ -490,7 +504,7 @@ describe('ContainerListComponent', () => {
         });
 
         it('should update selectedContainers in store when actions button is clicked', () => {
-            jest.spyOn(store, 'updateSelectedContainers');
+            vi.spyOn(store, 'updateSelectedContainers');
 
             fixture.detectChanges();
 
@@ -503,7 +517,7 @@ describe('ContainerListComponent', () => {
         });
 
         it('should focus first row when you press arrow down in query input', () => {
-            jest.spyOn(comp, 'focusFirstRow');
+            vi.spyOn(comp, 'focusFirstRow');
             const queryInput = fixture.debugElement.query(
                 By.css('[data-testId="query-input"]')
             ).nativeElement;
@@ -516,9 +530,10 @@ describe('ContainerListComponent', () => {
         });
 
         it("should fetch containers when site is changed and it's not the first time", () => {
-            jest.spyOn(paginatorService, 'setExtraParams');
+            vi.spyOn(paginatorService, 'setExtraParams');
+            vi.spyOn(paginatorService, 'getFirstPage').mockReturnValue(of(containersMock));
 
-            siteService.setFakeCurrentSite(mockSites[1]);
+            switchSiteSubject.next(mockSites[1] as unknown as DotSite);
 
             fixture.detectChanges();
 
@@ -526,7 +541,7 @@ describe('ContainerListComponent', () => {
                 'host',
                 mockSites[1].identifier
             );
-            expect(paginatorService.get).toHaveBeenCalled();
+            expect(paginatorService.getFirstPage).toHaveBeenCalled();
         });
     });
 

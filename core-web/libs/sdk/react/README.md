@@ -6,8 +6,8 @@ The `@dotcms/react` SDK is the DotCMS official React library. It empowers React 
 
 -   [Prerequisites & Setup](#prerequisites--setup)
     -   [Get a dotCMS Environment](#get-a-dotcms-environment)
-    -   [Create a dotCMS API Key](#create-a-dotcms-api-key)
     -   [Configure The Universal Visual Editor App](#configure-the-universal-visual-editor-app)
+    -   [Create a dotCMS API Key](#create-a-dotcms-api-key)
     -   [Installation](#installation)
     -   [dotCMS Client Configuration](#dotcms-client-configuration)
     -   [Proxy Configuration for Static Assets](#proxy-configuration-for-static-assets)
@@ -15,16 +15,15 @@ The `@dotcms/react` SDK is the DotCMS official React library. It empowers React 
     -   [Example Project](#example-project-)
 -   [SDK Reference](#sdk-reference)
     -   [DotCMSLayoutBody](#dotcmslayoutbody)
-    -   [DotCMSShow](#dotcmsshow)
-    -   [DotCMSBlockEditorRenderer](#dotcmsblockeditorrenderer)
     -   [DotCMSEditableText](#dotcmseditabletext)
+    -   [DotCMSBlockEditorRenderer](#dotcmsblockeditorrenderer)
+    -   [DotCMSShow](#dotcmsshow)
     -   [useEditableDotCMSPage](#useeditabledotcmspage)
     -   [useDotCMSShowWhen](#usedotcmsshowwhen)
     -   [useAISearch](#useaisearch)
 -   [Troubleshooting](#troubleshooting)
     -   [Common Issues & Solutions](#common-issues--solutions)
     -   [Debugging Tips](#debugging-tips)
-    -   [Version Compatibility](#version-compatibility)
     -   [Still Having Issues?](#still-having-issues)
 -   [Migration from Alpha to 1.0.X](./MIGRATION.md)
 -   [Support](#support)
@@ -35,11 +34,33 @@ The `@dotcms/react` SDK is the DotCMS official React library. It empowers React 
 
 ### Get a dotCMS Environment
 
-#### Version Compatibility
+#### Which SDK Version Should I Use?
 
--   **Recommended**: dotCMS Evergreen
--   **Minimum**: dotCMS v25.05
--   **Best Experience**: Latest Evergreen release
+dotCMS SDKs are published in lockstep with dotCMS itself: every `@dotcms/*` package ships
+at the **exact same version number** as the dotCMS release it was built for (e.g. dotCMS
+`26.7.14-1` → `@dotcms/client@26.7.14-1`, `@dotcms/react@26.7.14-1`, and so on).
+
+**Simple rule of thumb: use the SDK version that matches your dotCMS instance's version.**
+
+You don't have to upgrade the SDK every time dotCMS releases a new version (or vice versa).
+Most releases don't change anything the SDKs rely on, so an older SDK usually keeps working
+fine against a newer dotCMS instance. Occasionally, though, a release does include a real
+breaking change — and if your SDK is older than that point, it will stop working correctly.
+
+You don't need to track this yourself: your dotCMS instance always knows the oldest SDK
+version it still supports, and the SDK checks itself against it automatically. If you're
+using an SDK that's too old, you'll see a clear warning in your console telling you to
+upgrade.
+
+**Recommendation:** pin your SDKs to the same version as your dotCMS instance, and only bump
+them when you upgrade dotCMS — or when the console tells you to.
+
+> **On an LTS release?** LTS releases don't currently get their own matching SDK version.
+> Until that's addressed, use the SDK version published for the closest regular release at
+> or before your LTS version.
+>
+> Want more background on how dotCMS releases and support windows work? See
+> [Release & Support Lifecycle](https://dev.dotcms.com/docs/release-support-lifecycle).
 
 #### Environment Setup
 
@@ -77,15 +98,24 @@ This integration requires an API Key with read-only permissions for security bes
 
 For detailed instructions, please refer to the [dotCMS API Documentation - Read-only token](https://dev.dotcms.com/docs/rest-api-authentication#ReadOnlyToken).
 
-### Install Dependencies
+### Installation
 
 ```bash
 npm install @dotcms/react@latest
 ```
 
-This will automatically install the required dependencies:
+You also need to install these packages yourself:
 - `@dotcms/uve`: Enables interaction with the [Universal Visual Editor](https://dev.dotcms.com/docs/uve-headless-config) for real-time content editing
 - `@dotcms/client`: Provides the core client functionality for fetching and managing dotCMS data
+- `@dotcms/types`: TypeScript definitions used throughout the API
+
+```bash
+npm install @dotcms/uve @dotcms/client @dotcms/types
+```
+
+> npm 7+ and pnpm install these automatically as peer dependencies alongside `@dotcms/react`.
+> **Yarn Classic (1.x) and npm below v7 do not** — they only print a warning if one is missing,
+> so on those package managers you must add them explicitly as shown above.
 
 ### dotCMS Client Configuration
 
@@ -132,7 +162,7 @@ Learn more about Vite configuration [here](https://vitejs.dev/config/).
 
 Once configured, image URLs in your components will automatically be proxied to your dotCMS instance:
 
->📚 Learn more about [Image Resizing and Processing in dotCMS with React](https://www.dotcms.com/blog/image-resizing-and-processing-in-dotcms-with-angular-and-nextjs).
+>📚 Learn more about [Image Resizing and Processing in dotCMS with Angular and Next.js](https://www.dotcms.com/blog/image-resizing-and-processing-in-dotcms-with-angular-and-nextjs).
 
 ```typescript
 // /components/my-dotcms-image.tsx
@@ -210,7 +240,7 @@ All components and hooks should be imported from `@dotcms/react`:
 | ------------ | ------------------------ | -------- | -------------- | ---------------------------------------------- |
 | `page`       | `DotCMSPageAsset`        | ✅       | -              | The page asset containing the layout to render |
 | `components` | `DotCMSPageComponent`    | ✅       | `{}`           | [Map of content type → React component](#component-mapping)          |
-| `mode`       | `DotCMSPageRendererMode` | ❌       | `’production’` | [Rendering mode (‘production’ or ‘development’)](#layout-body-modes) |
+| `mode`       | `DotCMSPageRendererMode` | ❌       | `'production'` | [Rendering mode ('production' or 'development')](#layout-body-modes) |
 | `slots`      | `Record<string, ReactNode>` | ❌    | `{}`           | Pre-rendered server component nodes keyed by contentlet identifier. See [`buildSlots`](#buildslots). |
 
 #### Next.js App Router
@@ -227,7 +257,7 @@ export default async function Page() {
 
 ```tsx
 // PageView.tsx — "use client", owns components and renders layout
-‘use client’;
+'use client';
 
 export function PageView({ pageContent }) {
     const { pageAsset } = useEditableDotCMSPage(pageContent);
@@ -238,11 +268,11 @@ export function PageView({ pageContent }) {
 #### Usage
 
 ```tsx
-import type { DotCMSPageAsset } from ‘@dotcms/types’;
-import { DotCMSLayoutBody } from ‘@dotcms/react’;
+import type { DotCMSPageResponse } from '@dotcms/types';
+import { DotCMSLayoutBody } from '@dotcms/react';
 
-import { MyBlogCard } from ‘./MyBlogCard’;
-import { DotCMSProductComponent } from ‘./DotCMSProductComponent’;
+import { MyBlogCard } from './MyBlogCard';
+import { DotCMSProductComponent } from './DotCMSProductComponent';
 
 const COMPONENTS_MAP = {
     Blog: MyBlogCard,
@@ -256,10 +286,10 @@ const MyPage = ({ pageAsset }: DotCMSPageResponse) => {
 
 #### buildSlots
 
-Use `buildSlots` when you have Next.js async server components that need to fetch their own data. Since async server components can’t be called from inside a client component tree, pre-render them on the server and pass the result into the layout via `slots`:
+Use `buildSlots` when you have Next.js async server components that need to fetch their own data. Since async server components can't be called from inside a client component tree, pre-render them on the server and pass the result into the layout via `slots`:
 
 ```tsx
-import { buildSlots, DotCMSLayoutBody } from ‘@dotcms/react’;
+import { buildSlots, DotCMSLayoutBody } from '@dotcms/react';
 
 // BlogListContainer is an async server component that fetches its own data
 const slots = buildSlots(pageContent.pageAsset.containers, {
@@ -278,22 +308,69 @@ The layout renders the pre-rendered slot node for a contentlet if one exists, ot
 
 #### Component Mapping
 
-The `DotCMSLayoutBody` component uses a `components` prop to map content type variable names to React components. This allows you to render different components for different content types. Example:
+The `DotCMSLayoutBody` component uses a `components` prop to map content type variable names to React components. This allows you to render different components for different content types.
 
-```typescript
-const DYNAMIC_COMPONENTS = {
-    Blog: MyBlogCard,
-    Product: DotCMSProductComponent
+**Load the mapped components dynamically.** A static map makes every component reachable from the client entry, so a visitor downloads all of them on every route — even the ones that page never renders. Wrapping each in a dynamic import gives each component its own chunk, fetched only when a page actually contains that content type.
+
+In Next.js, use `next/dynamic`:
+
+```tsx
+import dynamic from 'next/dynamic';
+
+import { CustomNoComponent } from './Empty';
+
+export const pageComponents = {
+    Blog: dynamic(() => import('./MyBlogCard')),
+    Product: dynamic(() => import('./DotCMSProductComponent')),
+    // The fallback for unmapped content types stays eager: it should render without
+    // waiting on a network round-trip, and it is small.
+    CustomNoComponent
 };
 ```
 
+Anywhere else — Astro, Vite, plain React — use `React.lazy`:
+
+```tsx
+import { lazy } from 'react';
+
+export const pageComponents = {
+    Blog: lazy(() => import('./MyBlogCard')),
+    Product: lazy(() => import('./DotCMSProductComponent'))
+};
+```
+
+`next/dynamic` brings its own Suspense boundary. `React.lazy` does not, but you do not need to add one: `DotCMSLayoutBody` wraps every contentlet in a Suspense boundary, so a lazy component can be mapped directly.
+
 -   Keys (e.g., `Blog`, `Product`): Match your [content type variable names](https://dev.dotcms.com/docs/content-types#VariableNames) in dotCMS
--   Values: Dynamic imports of your React components that render each content type
--   Supports lazy loading through dynamic imports
--   Components must be standalone or declared in a module
+-   Values: any React component type — including the result of `next/dynamic` or `React.lazy`
 
 > [!TIP]
 > Always use the exact content type variable name from dotCMS as the key. You can find this in the Content Types section of your dotCMS admin panel.
+
+> [!WARNING]
+> Avoid re-exporting your content-type components from a barrel (`export * from './Banner'`). Anything importing that barrel makes every component statically reachable, which puts them all back in the initial bundle no matter how the map loads them.
+
+#### Migrating an existing app to dynamic mapping
+
+Earlier versions of our examples showed a static component map, so an app built from them ships **every** mapped component on **every** route. If you have dozens of content types, that is the single biggest thing you can fix — and upgrading the SDK does not fix it for you, because the map lives in your code.
+
+Measured on the Next.js example with 135 mapped content types, one realistic component each:
+
+| Component map | Initial route JS | Mapped components in the initial bundle |
+| --- | --- | --- |
+| Static imports | 892.7 KB raw / 250.4 KB gzip | **135 of 135** |
+| `next/dynamic` | 792.6 KB raw / 238.1 KB gzip | **0 of 135** |
+
+Every mapped component leaves the initial route and is fetched only when a page contains that content type. How much weight that removes depends on your components: the 100 KB above is what 135 modest ones cost, and real component libraries are usually heavier.
+
+To migrate:
+
+1. Wrap each entry in the map with `next/dynamic` (or `React.lazy` outside Next.js). Keep the unmatched-type fallback eager.
+2. Delete any barrel that re-exports your content-type components, and import them directly where you need them elsewhere. A single `export * from './Banner'` re-exports every component from one module and undoes the whole change.
+3. Do the same for the `customRenderers` map you pass to `DotCMSBlockEditorRenderer` if it maps more than a handful of components.
+4. Rebuild and confirm. The quickest check is to map a component no page uses, give it a unique string, and grep the production client chunks for that string — it should appear only in its own chunk. `examples/scripts/check-initial-bundle.mjs` in this repository does exactly that for the Next.js and Astro examples and can be pointed at your build.
+
+`next/dynamic` keeps server rendering on by default, so this does not change what the crawler sees.
 
 
 ### DotCMSEditableText
@@ -304,7 +381,7 @@ const DYNAMIC_COMPONENTS = {
 | ------------ | ------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `contentlet` | `T extends DotCMSBasicContentlet`  | ✅       | The contentlet containing the editable field                                                                                                   |
 | `fieldName`  | `keyof T`                     | ✅       | Name of the field to edit, which must be a valid key of the contentlet type `T`                                                                |
-| `mode`       | `'plain' \| 'full'` | ❌       | `plain` (default): Support text editing. Does not show style controls. <br/> `full`: Enables a bubble menu with style options. This mode only works with [`WYSIWYG` fields](https://dev.dotcms.com/docs/the-wysiwyg-field). |
+| `mode`       | `'plain' \| 'full'` | ❌       | `plain` (default): Supports text editing. Does not show style controls. <br/> `full`: Enables a bubble menu with style options. This mode only works with [`WYSIWYG` fields](https://dev.dotcms.com/docs/the-wysiwyg-field). |
 | `format`     | `'text' \| 'html'`  | ❌       | `text` (default): Renders HTML tags as plain text <br/> `html`: Interprets and renders HTML markup                                                                                                                          |
 
 #### Usage
@@ -341,7 +418,7 @@ export default MyBannerComponent;
 -   Detects UVE edit mode and enables inline TinyMCE editing
 -   Triggers a `Save` [workflow action](https://dev.dotcms.com/docs/workflows) on blur without needing full content dialog.
 
-#### DotCMSBlockEditorRenderer
+### DotCMSBlockEditorRenderer
 
 `DotCMSBlockEditorRenderer` is a component for rendering [Block Editor](https://dev.dotcms.com/docs/block-editor) content from dotCMS with support for custom block renderers.
 
@@ -404,9 +481,9 @@ export default async function ArticlePage() {
 -   Take into account the CSS cascade can affect the look and feel of your blocks.
 -   `DotCMSBlockEditorRenderer` only works with [Block Editor fields](https://dev.dotcms.com/docs/block-editor). For other fields, use [`DotCMSEditableText`](#dotcmseditabletext).
 
-📘 For advanced examples, customization options, and best practices, refer to the [DotCMSBlockEditorRenderer README](https://github.com/dotCMS/core/tree/master/core-web/libs/sdk/react/src/lib/components/DotCMSBlockEditorRenderer).
+📘 For advanced examples, customization options, and best practices, refer to the [DotCMSBlockEditorRenderer README](https://github.com/dotCMS/core/tree/main/core-web/libs/sdk/react/src/lib/next/components/DotCMSBlockEditorRenderer).
 
-#### DotCMSShow
+### DotCMSShow
 
 `DotCMSShow` is a component for conditionally rendering content based on the current UVE mode. Useful for mode-based behaviors outside of render logic.
 
@@ -430,7 +507,7 @@ const MyComponent = () => {
 };
 ```
 
-📚 Learn more about the `UVE_MODE` enum in the [dotCMS UVE Package Documentation](https://dev.dotcms.com/docs/uve).
+📚 Learn more about the `UVE_MODE` enum in the [dotCMS UVE Package Documentation](https://dev.dotcms.com/docs/universal-visual-editor).
 
 ### useEditableDotCMSPage
 
@@ -469,11 +546,11 @@ const COMPONENTS_MAP = {
 
 export function DotCMSPage({ pageResponse }: { pageResponse: DotCMSPageResponse }) {
     const { pageAsset } = useEditableDotCMSPage(pageResponse);
-    return <DotCMSLayoutBody pageAsset={pageAsset} components={COMPONENTS_MAP} />;
+    return <DotCMSLayoutBody page={pageAsset} components={COMPONENTS_MAP} />;
 }
 ```
 
-#### useDotCMSShowWhen
+### useDotCMSShowWhen
 
 `useDotCMSShowWhen` is a hook for conditionally showing content based on the current UVE mode. Useful for mode-based behaviors outside of render logic.
 
@@ -643,7 +720,7 @@ export default AISearchComponent;
     - **Possible Causes**:
         - Incorrect UVE configuration
         - Missing API token permissions
-        - Missing the `DotCMSEditablePageService` call to enable UVE.
+        - Missing the `useEditableDotCMSPage` hook to enable UVE.
     - **Solutions**:
         - Verify UVE app configuration in dotCMS admin
         - Check API token has edit permissions
@@ -722,7 +799,7 @@ export default AISearchComponent;
 
             export function DotCMSPage({ pageResponse }: { pageResponse: DotCMSPageResponse }) {
                 const { pageAsset } = useEditableDotCMSPage(pageResponse);
-                return <DotCMSLayoutBody pageAsset={pageAsset} components={COMPONENTS_MAP} />;
+                return <DotCMSLayoutBody page={pageAsset} components={COMPONENTS_MAP} />;
             }
             ```
 
@@ -733,10 +810,10 @@ export default AISearchComponent;
 
 1. **Enable Development Mode**
 
-    ```typescript
-    <dotcms-layout-body
-        [page]="pageAsset()"
-        [components]="components()"
+    ```tsx
+    <DotCMSLayoutBody
+        page={pageAsset}
+        components={COMPONENTS_MAP}
         mode="development"
     />
     ```
@@ -776,7 +853,7 @@ We offer multiple channels to get help with the dotCMS React SDK:
 -   **GitHub Issues**: For bug reports and feature requests, please [open an issue](https://github.com/dotCMS/core/issues/new/choose) in the GitHub repository.
 -   **Community Forum**: Join our [community discussions](https://community.dotcms.com/) to ask questions and share solutions.
 -   **Stack Overflow**: Use the tag `dotcms-react` when posting questions.
--   **Enterprise Support**: Enterprise customers can access premium support through the [dotCMS Support Portal](https://helpdesk.dotcms.com/support/).
+-   **Enterprise Support**: Enterprise customers can access premium support through the [dotCMS Support Portal](https://www.dotcms.com/support).
 
 When reporting issues, please include:
 
@@ -799,8 +876,8 @@ Please ensure your code follows the existing style and includes appropriate test
 
 ## Licensing
 
-dotCMS comes in multiple editions and as such is dual-licensed. The dotCMS Community Edition is licensed under the GPL 3.0 and is freely available for download, customization, and deployment for use within organizations of all stripes. dotCMS Enterprise Editions (EE) adds several enterprise features and is available via a supported, indemnified commercial license from dotCMS. For the differences between the editions, see [the feature page](http://www.dotcms.com/cms-platform/features).
+dotCMS is available under either the [Business Source License 1.1 (BSL)](https://www.dotcms.com/bsl) or a commercial license.
 
-This SDK is part of dotCMS's dual-licensed platform (GPL 3.0 for Community, commercial license for Enterprise).
+Under the BSL, dotCMS can be used at no cost by individual developers, small businesses or agencies under $5M in total finances, and by larger organizations in non-production environments. Every BSL release automatically converts to GPL v3 four years after its release date. For full terms and FAQs, visit [dotcms.com/bsl](https://www.dotcms.com/bsl) and [dotcms.com/bsl-faq](https://www.dotcms.com/bsl-faq).
 
-[Learn more ](https://www.dotcms.com)at [dotcms.com](https://www.dotcms.com).
+Production use in larger organizations, along with access to managed cloud, SLAs, support, and enterprise capabilities, is available under a commercial license from dotCMS. For details on commercial plans, features, and support options, see [dotcms.com/pricing](https://www.dotcms.com/pricing).

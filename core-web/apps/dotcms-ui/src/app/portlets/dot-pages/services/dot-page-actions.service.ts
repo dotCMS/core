@@ -5,7 +5,7 @@ import { inject, Injectable, signal } from '@angular/core';
 import { MenuItem } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { map, take } from 'rxjs/operators';
+import { map, switchMap, take } from 'rxjs/operators';
 
 import {
     DotCurrentUserService,
@@ -30,7 +30,6 @@ import {
     UserPermissions
 } from '@dotcms/dotcms-models';
 import { DotFavoritePageComponent } from '@dotcms/portlets/dot-ema/ui';
-import { GlobalStore } from '@dotcms/store';
 import { generateDotFavoritePageUrl } from '@dotcms/utils';
 
 import { DotPageListService } from './dot-page-list.service';
@@ -77,7 +76,6 @@ export class DotPageActionsService {
     readonly #dotPushPublishDialogService = inject(DotPushPublishDialogService);
     readonly #dotCurrentUser = inject(DotCurrentUserService);
     readonly #pushPublishService = inject(PushPublishService);
-    readonly #globalStore = inject(GlobalStore);
     readonly #dotCMSPagesStore = inject(DotCMSPagesStore);
     readonly #dotPageListService = inject(DotPageListService);
 
@@ -373,17 +371,27 @@ export class DotPageActionsService {
     /**
      * Fetches logged-user permissions once and caches them in signals.
      *
+     * We resolve the current user via `getCurrentUser()` rather than reading the `GlobalStore`
+     * `loggedUser` signal synchronously: this service is constructed during navigation (e.g. right
+     * after login from /starter) before the store has finished loading the user, so the signal can
+     * still be `null` at construction time. Sourcing the userId from the request avoids that race.
+     *
      * We intentionally `take(1)` because this service is used for menu building only; permissions are
      * expected to be stable for the session, and reactivity is not required here.
      */
     #initUserPermissions(): void {
         this.#dotCurrentUser
-            .getUserPermissions(
-                this.#globalStore.loggedUser().userId,
-                [UserPermissions.READ, UserPermissions.WRITE],
-                [PermissionsType.CONTENTLETS, PermissionsType.HTMLPAGES]
+            .getCurrentUser()
+            .pipe(
+                take(1),
+                switchMap(({ userId }) =>
+                    this.#dotCurrentUser.getUserPermissions(
+                        userId,
+                        [UserPermissions.READ, UserPermissions.WRITE],
+                        [PermissionsType.CONTENTLETS, PermissionsType.HTMLPAGES]
+                    )
+                )
             )
-            .pipe(take(1))
             .subscribe({
                 next: (permissions: DotPermissionsType) => {
                     this.#contentletsPermissions.set(permissions['CONTENTLETS'] as DotPermissions);

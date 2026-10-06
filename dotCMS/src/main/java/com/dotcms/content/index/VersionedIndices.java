@@ -1,6 +1,9 @@
 package com.dotcms.content.index;
 
 import com.twelvemonkeys.lang.StringUtil;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -61,5 +64,30 @@ public interface VersionedIndices {
                reindexLive().isPresent() ||
                reindexWorking().isPresent() ||
                siteSearch().isPresent();
+    }
+
+    /**
+     * Returns an iterable over every present index name in declaration order:
+     * live, working, reindexLive, reindexWorking, siteSearch.
+     *
+     * <p>Absent slots are skipped — the iterable never contains {@code null}.</p>
+     *
+     * <pre>{@code
+     * for (String name : indices.allIndices()) {
+     *     IndexNameTag.Tagged t = IndexNameTag.parse(name);
+     *     // … route to correct delegate …
+     * }
+     * }</pre>
+     *
+     * @return unmodifiable, non-null iterable of present index names
+     */
+    default Iterable<String> allIndices() {
+        final List<String> result = new ArrayList<>();
+        live()          .ifPresent(result::add);
+        working()       .ifPresent(result::add);
+        reindexLive()   .ifPresent(result::add);
+        reindexWorking().ifPresent(result::add);
+        siteSearch()    .ifPresent(result::add);
+        return Collections.unmodifiableList(result);
     }
 }

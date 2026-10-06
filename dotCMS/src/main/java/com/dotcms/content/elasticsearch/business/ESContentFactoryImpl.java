@@ -1,8 +1,6 @@
 package com.dotcms.content.elasticsearch.business;
 
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.MAX_LIMIT;
-import static com.dotcms.content.index.IndexConfigHelper.isMigrationComplete;
-import static com.dotcms.content.index.IndexConfigHelper.isReadEnabled;
 import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.AUTO_ASSIGN_WORKFLOW;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITLE_IMAGE_KEY;
@@ -17,6 +15,7 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.content.index.ContentFactoryIndexOperations;
+import com.dotcms.content.index.PhaseRouter;
 import com.dotcms.content.index.IndexContentletScroll;
 import com.dotcms.content.index.domain.SearchHit;
 import com.dotcms.content.index.domain.SearchHits;
@@ -42,6 +41,9 @@ import com.dotcms.util.transform.TransformerLocator;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
+import com.dotcms.business.interceptor.RequestCostHandler;
+import com.dotcms.cost.RequestCost;
+import com.dotcms.cost.RequestPrices.Price;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
@@ -115,7 +117,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 
 /**
@@ -130,7 +131,7 @@ import org.apache.commons.lang.StringUtils;
 
 @IndexLibraryIndependent
 @IndexRouter(
-        access = IndexAccess.READ_ONLY
+        access = {IndexAccess.READ}
 )
 public class ESContentFactoryImpl implements ContentletFactory {
 
@@ -230,8 +231,19 @@ public class ESContentFactoryImpl implements ContentletFactory {
 
     private final ContentletCache contentletCache;
 	private final LanguageAPI languageAPI;
-    private final ContentFactoryIndexOperations indexOperationsES;
-    private final ContentFactoryIndexOperations indexOperationsOS;
+    /**
+     * Phase-aware router for every index read this factory performs.
+     *
+     * <p>These read call sites are the funnel for essentially all content search in the product:
+     * {@code /api/content/_search}, {@code ContentletAPI} search and count, Velocity
+     * {@code $dotcontent.pull}, URL maps, Site Search, scroll consumers and the admin content
+     * browser. They used to pick a provider with a bare ternary and call it directly, which left
+     * the router's Phase 2 fallback to Elasticsearch unreachable from the busiest read path in
+     * the product — with OpenSearch down, a search returned a well-formed empty result rather
+     * than the data Elasticsearch was holding the whole time (issue #37413). The router is now
+     * the only way a provider is selected here; do not reintroduce a second mechanism.</p>
+     */
+    private final PhaseRouter<ContentFactoryIndexOperations> indexRouter;
 
     private static final ObjectMapper mapper = DotObjectMapperProvider.getInstance()
             .getDefaultObjectMapper();
@@ -250,25 +262,36 @@ public class ESContentFactoryImpl implements ContentletFactory {
 	public static final String LUCENE_RESERVED_KEYWORDS_REGEX = "OR|AND|NOT|TO";
     private static final Set<String> REMOVABLE_KEY_SET = CollectionsUtils.set(WORKFLOW_ACTION_KEY,
             WORKFLOW_ASSIGN_KEY, WORKFLOW_COMMENTS_KEY, WORKFLOW_BULK_KEY,
-            WORKFLOW_IN_PROGRESS, AUTO_ASSIGN_WORKFLOW, TITLE_IMAGE_KEY, "_use_mod_date");
+            WORKFLOW_IN_PROGRESS, AUTO_ASSIGN_WORKFLOW, TITLE_IMAGE_KEY, "_use_mod_date",
+            Contentlet.STORY_BLOCK_CONVERSION_WARNINGS_KEY);
 
     /**
 	 * Default factory constructor that initializes the connection with the
 	 * Elastic index.
 	 */
 	public ESContentFactoryImpl() {
-        this.contentletCache = CacheLocator.getContentletCache();
-        this.languageAPI     =  APILocator.getLanguageAPI();
-        this.indexOperationsOS = new ContentFactoryIndexOperationsOS();
-        this.indexOperationsES = new ContentFactoryIndexOperationsES(CacheLocator.getESQueryCache());
+        this(new ContentFactoryIndexOperationsES(CacheLocator.getESQueryCache()),
+                new ContentFactoryIndexOperationsOS());
 	}
 
     /**
-     * Migration-phase-aware Operations delegate
-     * @return {@link ContentFactoryIndexOperations}
+     * Constructor that accepts both index-operation providers, so a test can substitute one of
+     * them — typically an OpenSearch provider that fails on every read, to exercise the Phase 2
+     * fallback to Elasticsearch.
+     *
+     * <p>This exists only for testing: production code must use {@link #ESContentFactoryImpl()},
+     * which supplies the real providers. It carries no behaviour of its own — provider selection
+     * for reads is decided by {@link com.dotcms.content.index.PhaseRouter}, not here.</p>
+     *
+     * @param indexOperationsES the Elasticsearch provider
+     * @param indexOperationsOS the OpenSearch provider
      */
-    ContentFactoryIndexOperations indexOperationsDelegate(){
-        return isMigrationComplete() || isReadEnabled() ? indexOperationsOS : indexOperationsES ;
+    @VisibleForTesting
+    ESContentFactoryImpl(final ContentFactoryIndexOperations indexOperationsES,
+            final ContentFactoryIndexOperations indexOperationsOS) {
+        this.contentletCache = CacheLocator.getContentletCache();
+        this.languageAPI     =  APILocator.getLanguageAPI();
+        this.indexRouter = new PhaseRouter<>(indexOperationsES, indexOperationsOS);
     }
 
 	@Override
@@ -754,6 +777,11 @@ public class ESContentFactoryImpl implements ContentletFactory {
      * @param ignoreStoryBlock if it is true then the StoryBlock are not hydrated
      * @return
      */
+    // The cache-miss surcharge for the single-contentlet path. Reaching this method IS the
+    // miss - find() has already charged the CONTENT_FROM_CACHE base fee, so a warm find
+    // costs 1 and a cold one costs 11. Annotations are not inherited, so the @RequestCost on
+    // ContentletFactory's findInDb default does nothing here; this needs its own.
+    @RequestCost(Price.CONTENT_FROM_DB)
     public Optional<Contentlet> findInDb(final String inode, final boolean ignoreStoryBlock) {
         try {
             if (inode != null) {
@@ -853,7 +881,8 @@ public class ESContentFactoryImpl implements ContentletFactory {
      * Contentlets, if applicable.
      */
     private Contentlet processCachedContentlet(final Contentlet cachedContentlet) {
-        if (REFRESH_BLOCK_EDITOR_REFERENCES && null != cachedContentlet.getContentType() && cachedContentlet.getContentType().hasStoryBlockFields()) {
+        final ContentType contentType = cachedContentlet.getContentType();
+        if (REFRESH_BLOCK_EDITOR_REFERENCES && null != contentType && contentType.hasStoryBlockFields()) {
             final StoryBlockReferenceResult storyBlockRefreshedResult =
                     APILocator.getStoryBlockAPI().refreshReferences(cachedContentlet);
             if (storyBlockRefreshedResult.isRefreshed()) {
@@ -1272,17 +1301,35 @@ public class ESContentFactoryImpl implements ContentletFactory {
   @Override
   public List<Contentlet> findContentlets(final List<String> inodes) throws DotDataException {
 
+    // Single pass: the cache lookup already knows which inodes missed, so collect them here
+    // rather than re-deriving the difference afterwards. A hit only counts when the cached
+    // inode matches the requested one: the cache stores the CACHE_404_CONTENTLET sentinel
+    // under the requested key after a failed single-item lookup, and treating it as a hit
+    // would silently drop that inode from the result instead of falling through to the DB
+    // (the old CollectionUtils.subtract over conMap's keys had the same inode-equality
+    // semantics, since the sentinel's inode never matches a requested inode).
     final HashMap<String, Contentlet> conMap = new HashMap<>();
-    for (String i : inodes) {
+    final List<String> missingCons = new ArrayList<>();
+    for (final String i : inodes) {
       final Contentlet contentlet = contentletCache.get(i);
-      if (contentlet != null && InodeUtils.isSet(contentlet.getInode())) {
-        conMap.put(contentlet.getInode(), processCachedContentlet(contentlet));
+      if (contentlet != null && i.equals(contentlet.getInode())) {
+        conMap.put(i, processCachedContentlet(contentlet));
+      } else {
+        missingCons.add(i);
       }
     }
 
-    if (conMap.size() != inodes.size()) {
-        final List<String> missingCons = new ArrayList<>(
-                CollectionUtils.subtract(inodes, conMap.keySet()));
+    // This is the bulk loader behind every search result (GraphQL, /api/content,
+    // /api/es/search, page render) and it bypasses ESContentletAPIImpl.find(), so nothing
+    // else meters it. Base fee per contentlet asked for; the cache misses pay a surcharge
+    // below. Note the surcharge is per missed ROW, not per SQL statement - the 200-row
+    // batching is our implementation detail and is deliberately not priced.
+    RequestCostHandler.incrementCost(Price.CONTENT_FROM_CACHE,
+            ESContentFactoryImpl.class, "findContentlets", new Object[]{}, inodes.size());
+
+    if (!missingCons.isEmpty()) {
+        RequestCostHandler.incrementCost(Price.CONTENT_FROM_DB,
+                ESContentFactoryImpl.class, "findContentlets", new Object[]{}, missingCons.size());
 
         final String contentletBase =
                 "select contentlet.*, contentlet_1_.owner  from contentlet join inode contentlet_1_ "
@@ -1322,7 +1369,8 @@ public class ESContentFactoryImpl implements ContentletFactory {
 	public List<Contentlet> findContentletsByHost(final String hostId, final int limit,
             final int offset) {
 		try {
-            final List<String> inodes = indexOperationsDelegate().search("+conhost:" + hostId, limit, offset);
+            final List<String> inodes = indexRouter.read("search",
+                    impl -> impl.search("+conhost:" + hostId, limit, offset));
             return findContentlets(inodes);
 		} catch (Exception e) {
 			throw new RuntimeException(e.getMessage(), e);
@@ -1577,7 +1625,7 @@ public class ESContentFactoryImpl implements ContentletFactory {
 	public long indexCount(final String query) {
 	    final String qq = LuceneQueryDateTimeFormatter
                 .findAndReplaceQueryDates(translateQuery(query, null).getQuery());
-        return indexOperationsDelegate().indexCount(qq);
+        return indexRouter.read("indexCount", impl -> impl.indexCount(qq));
     }
 
     @Override
@@ -1586,8 +1634,8 @@ public class ESContentFactoryImpl implements ContentletFactory {
         final String formattedQuery = LuceneQueryDateTimeFormatter
                 .findAndReplaceQueryDates(translateQuery(query, sortBy).getQuery());
 
-        return indexOperationsDelegate().searchHits(
-                formattedQuery, limit, offset, sortBy);
+        return indexRouter.read("searchHits",
+                impl -> impl.searchHits(formattedQuery, limit, offset, sortBy));
 
     }
 
@@ -1604,7 +1652,8 @@ public class ESContentFactoryImpl implements ContentletFactory {
      * @return PaginatedArrayList containing all search results
      */
     PaginatedArrayList<ContentletSearch> indexSearchScroll(final String query, String sortBy) {
-       return indexOperationsDelegate().indexSearchScroll(query, sortBy, SCROLL_BATCH_SIZE.get());
+       return indexRouter.read("indexSearchScroll",
+               impl -> impl.indexSearchScroll(query, sortBy, SCROLL_BATCH_SIZE.get()));
     }
 
     /**
@@ -1639,7 +1688,15 @@ public class ESContentFactoryImpl implements ContentletFactory {
     public IndexContentletScroll createScrollQuery(final String luceneQuery, final User user,
                                                   final boolean respectFrontendRoles, final int batchSize,
                                                   final String sortBy) {
-       return indexOperationsDelegate().createScrollQuery(luceneQuery, user, respectFrontendRoles, batchSize, sortBy);
+       // Routed for provider selection only: the fallback here can never fire, and that is
+       // correct rather than an oversight. Both provider implementations just construct a
+       // cursor -- no I/O, nothing to throw -- and the requests happen later, inside that
+       // cursor, outside the router. A mid-scroll fallback is impossible in principle anyway:
+       // an OpenSearch scroll id is meaningless to Elasticsearch, so a half-drained scroll
+       // cannot be resumed on the other engine. Residual gap: a consumer already iterating a
+       // scroll when OpenSearch dies still fails (issue #37413, AC-002 documented exclusion).
+       return indexRouter.read("createScrollQuery", impl -> impl.createScrollQuery(
+               luceneQuery, user, respectFrontendRoles, batchSize, sortBy));
     }
 
     /**
@@ -2092,7 +2149,7 @@ public class ESContentFactoryImpl implements ContentletFactory {
 	    SearchHits hits = indexSearch(query, limit, offset, sortBy);
 	    List<String> inodes=new ArrayList<>();
 	    for(SearchHit h : hits){
-            inodes.add(Try.of(()->h.sourceAsMap().get("inode").toString()).getOrNull());
+            inodes.add(Try.of(()->h.getSourceAsMap().get("inode").toString()).getOrNull());
         }
 	    return findContentlets(inodes);
 	}

@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import { Component, CUSTOM_ELEMENTS_SCHEMA, DebugElement, forwardRef, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import {
@@ -126,7 +128,7 @@ describe('DotLoopEditorComponent', () => {
         de = fixture.debugElement.query(By.css('dot-loop-editor'));
         const showEditorBtn = de.query(By.css('[data-testId="showEditorBtn"]'));
         expect(showEditorBtn).toBeDefined();
-        jest.spyOn(de.componentInstance.buttonClick, 'emit');
+        vi.spyOn(de.componentInstance.buttonClick, 'emit');
         showEditorBtn.triggerEventHandler('onClick', {});
         expect(de.componentInstance.buttonClick.emit).toHaveBeenCalled();
     });

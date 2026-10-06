@@ -1,5 +1,5 @@
-import { describe, expect, it } from '@jest/globals';
 import { of } from 'rxjs';
+import { describe, expect, it, vi } from 'vitest';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { CUSTOM_ELEMENTS_SCHEMA, Component, DebugElement } from '@angular/core';
@@ -10,12 +10,9 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { PopoverModule } from 'primeng/popover';
 
-import { DotCurrentUserService, DotDevicesService, DotMessageService } from '@dotcms/data-access';
-import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
+import { DotDevicesService, DotMessageService } from '@dotcms/data-access';
 import { WINDOW } from '@dotcms/utils';
 import {
-    CurrentUserDataMock,
-    DotCurrentUserServiceMock,
     DotDevicesServiceMock,
     MockDotMessageService,
     mockDotDevices
@@ -28,12 +25,16 @@ import { DotDeviceSelectorSeoComponent } from './dot-device-selector-seo.compone
     selector: 'dot-test-host-component',
     template: `
         <button (click)="op.openMenu($event)" type="text">Open</button>
-        <dot-device-selector-seo [apiLink]="apiLink" #op></dot-device-selector-seo>
+        <dot-device-selector-seo
+            [apiLink]="apiLink"
+            [currentUser]="currentUser"
+            #op></dot-device-selector-seo>
     `
 })
 class TestHostComponent {
     apiLink = 'api/v1/page/render/an/url/test?language_id=1';
     linkToAddDevice = '/c/c_Devices';
+    currentUser: { admin?: boolean } | null = { admin: true };
 }
 
 describe('DotDeviceSelectorSeoComponent', () => {
@@ -41,7 +42,6 @@ describe('DotDeviceSelectorSeoComponent', () => {
     let deHost: DebugElement;
     let component: DotDeviceSelectorSeoComponent;
     let de: DebugElement;
-    let dotCurrentUserService: DotCurrentUserService;
     const messageServiceMock = new MockDotMessageService({
         'editpage.device.selector.title': 'Devices',
         'editpage.device.selector.media.tile': 'Social Media Tiles',
@@ -77,12 +77,7 @@ describe('DotDeviceSelectorSeoComponent', () => {
                 {
                     provide: DotMessageService,
                     useValue: messageServiceMock
-                },
-                {
-                    provide: CoreWebService,
-                    useClass: CoreWebServiceMock
-                },
-                { provide: DotCurrentUserService, useClass: DotCurrentUserServiceMock }
+                }
             ],
             schemas: [CUSTOM_ELEMENTS_SCHEMA]
         }).compileComponents();
@@ -94,9 +89,7 @@ describe('DotDeviceSelectorSeoComponent', () => {
         de = deHost.query(By.css('dot-device-selector-seo'));
         component = de.componentInstance;
         TestBed.inject(DotDevicesService);
-        jest.spyOn(component, 'getOptions').mockReturnValue(of(mockDotDevices));
-
-        dotCurrentUserService = de.injector.get(DotCurrentUserService);
+        vi.spyOn(component, 'getOptions').mockReturnValue(of(mockDotDevices));
 
         fixtureHost.detectChanges();
         const buttonEl = fixtureHost.debugElement.query(By.css('button')).nativeElement;
@@ -106,7 +99,7 @@ describe('DotDeviceSelectorSeoComponent', () => {
     it('should emit selected device on change', async () => {
         await fixtureHost.whenStable();
         fixtureHost.detectChanges();
-        jest.spyOn(component.selected, 'emit');
+        vi.spyOn(component.selected, 'emit');
         const selectorOptions = fixtureHost.debugElement.queryAll(
             By.css('[data-testId="device-selector-option"] > .device-list__button')
         );
@@ -177,17 +170,17 @@ describe('DotDeviceSelectorSeoComponent', () => {
         expect(link.properties['href']).toContain('/c/content');
     });
 
-    it('should not have a link to add device', async () => {
-        jest.spyOn(dotCurrentUserService, 'getCurrentUser').mockReturnValue(
-            of(CurrentUserDataMock)
-        );
+    it('should not have a link to add device when currentUser is not admin', () => {
+        const host = deHost.componentInstance;
+        host.currentUser = { admin: false };
+        fixtureHost.detectChanges();
 
         const link = de.query(By.css('[data-testId="dot-device-link-add"]'));
         expect(link).toBeNull();
     });
 
     it('should trigger the changeSeoMedia', () => {
-        jest.spyOn(component, 'changeSeoMediaEvent');
+        vi.spyOn(component, 'changeSeoMediaEvent');
         fixtureHost.detectChanges();
 
         const buttonMedia = de.query(By.css('[data-testId="device-list-button-media"]'));
@@ -198,7 +191,7 @@ describe('DotDeviceSelectorSeoComponent', () => {
     });
 
     it('should emit hideOverlayPanel event when onHideDeviceSelector is called', () => {
-        jest.spyOn(component.hideOverlayPanel, 'emit');
+        vi.spyOn(component.hideOverlayPanel, 'emit');
         component.onHideDeviceSelector();
         expect(component.hideOverlayPanel.emit).toHaveBeenCalled();
     });
@@ -223,5 +216,13 @@ describe('DotDeviceSelectorSeoComponent', () => {
             '/an/url/test?language_id=1&disabledNavigateMode=true&mode=LIVE'
         );
         expect(mediaTiles).toBeNull();
+    });
+
+    it('should use currentUser input for isCMSAdmin', () => {
+        component.currentUser = { admin: true };
+        fixtureHost.detectChanges();
+
+        const link = de.query(By.css('[data-testId="dot-device-link-add"]'));
+        expect(link).not.toBeNull();
     });
 });

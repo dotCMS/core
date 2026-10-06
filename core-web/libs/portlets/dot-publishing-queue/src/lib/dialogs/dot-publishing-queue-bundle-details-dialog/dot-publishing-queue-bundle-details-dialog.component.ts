@@ -1,0 +1,166 @@
+import { DatePipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+
+import { ButtonModule } from 'primeng/button';
+import { DynamicDialogRef } from 'primeng/dynamicdialog';
+import { SkeletonModule } from 'primeng/skeleton';
+import { TableModule } from 'primeng/table';
+
+import { DotMessageService, DotPublishingQueueService } from '@dotcms/data-access';
+import { EndpointDetailView, PublishAuditStatus } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
+
+import { DotPublishingStatusChipComponent } from '../../components/dot-publishing-status-chip/dot-publishing-status-chip.component';
+import { DotPublishingQueueStore } from '../../store/dot-publishing-queue.store';
+
+/** Flattened row used by the endpoints table — each endpoint carries its
+ * environment name as a column, so all groups share one uniform grid. */
+export interface EndpointTableRow {
+    key: string;
+    envName: string;
+    endpoint: EndpointDetailView;
+}
+
+/** Discriminator for which body cell renders the row's value. Plain rows just
+ * show `value`; the special cases need bespoke markup (a chip, a monospace id,
+ * the "name · N assets" title). */
+type MetaKey =
+    | 'title'
+    | 'status'
+    | 'scheduledFor'
+    | 'bundleId'
+    | 'bundleStart'
+    | 'bundleEnd'
+    | 'publishStart'
+    | 'publishEnd'
+    | 'filter'
+    | 'assets';
+
+export interface MetaRow {
+    key: MetaKey;
+    label: string;
+}
+
+@Component({
+    selector: 'dot-publishing-queue-bundle-details-dialog',
+    imports: [
+        DatePipe,
+        ButtonModule,
+        SkeletonModule,
+        TableModule,
+        DotMessagePipe,
+        DotPublishingStatusChipComponent
+    ],
+    templateUrl: './dot-publishing-queue-bundle-details-dialog.component.html',
+    changeDetection: ChangeDetectionStrategy.OnPush
+})
+export class DotPublishingQueueBundleDetailsDialogComponent {
+    protected readonly store = inject(DotPublishingQueueStore);
+
+    readonly #publishingService = inject(DotPublishingQueueService);
+    readonly #dotMessageService = inject(DotMessageService);
+    readonly #dialogRef = inject(DynamicDialogRef, { optional: true });
+
+    /** Rows shown in the meta key/value table — the order here is the order
+     * rendered. The body template switches on `key` to pick the right value
+     * cell. Computed because the `scheduledFor` row is only included when the
+     * bundle is in SCHEDULED status (the BE leaves `scheduledPublishDate` null
+     * for every other status, so the row would be a permanent "—" otherwise). */
+    readonly $metaRows = computed<readonly MetaRow[]>(() => {
+        const isScheduled = this.store.detail()?.status === PublishAuditStatus.SCHEDULED;
+        return [
+            { key: 'title', label: this.#dotMessageService.get('publishing-queue.detail.title') },
+            { key: 'status', label: this.#dotMessageService.get('publishing-queue.detail.status') },
+            ...(isScheduled
+                ? [
+                      {
+                          key: 'scheduledFor' as const,
+                          label: this.#dotMessageService.get(
+                              'publishing-queue.detail.scheduled-for'
+                          )
+                      }
+                  ]
+                : []),
+            {
+                key: 'bundleId',
+                label: this.#dotMessageService.get('publishing-queue.detail.bundle-id')
+            },
+            {
+                key: 'bundleStart',
+                label: this.#dotMessageService.get('publishing-queue.detail.bundle-start')
+            },
+            {
+                key: 'bundleEnd',
+                label: this.#dotMessageService.get('publishing-queue.detail.bundle-end')
+            },
+            {
+                key: 'publishStart',
+                label: this.#dotMessageService.get('publishing-queue.detail.publish-start')
+            },
+            {
+                key: 'publishEnd',
+                label: this.#dotMessageService.get('publishing-queue.detail.publish-end')
+            },
+            { key: 'filter', label: this.#dotMessageService.get('publishing-queue.detail.filter') },
+            {
+                key: 'assets',
+                label: this.#dotMessageService.get('publishing-queue.detail.total-assets')
+            }
+        ];
+    });
+
+    /** Both download buttons are driven by HEAD probes the store fires on
+     * `openDetail` — `true` only after the probe confirms the artifact is
+     * actually downloadable right now. `null` (in flight) stays hidden so the
+     * UI doesn't flicker on the way in. See
+     * `DotPublishingQueueService.probeBundleDownload` for the full why. */
+    readonly $canDownloadBundle = computed(() => this.store.canDownloadBundle() === true);
+    readonly $canDownloadManifest = computed(() => this.store.canDownloadManifest() === true);
+
+    /** Flattens environments → one row per endpoint, with the env name carried
+     * as a column. Single table, no subheader rows. */
+    readonly $endpointRows = computed<EndpointTableRow[]>(() => {
+        const detail = this.store.detail();
+        if (!detail) {
+            return [];
+        }
+        const rows: EndpointTableRow[] = [];
+        for (const env of detail.environments) {
+            for (const endpoint of env.endpoints) {
+                rows.push({
+                    key: `${env.id}-${endpoint.id}`,
+                    envName: env.name,
+                    endpoint
+                });
+            }
+        }
+        return rows;
+    });
+
+    /** Builds the endpoint URL, omitting protocol/port when they're blank.
+     * Returns null when the address itself is empty — the cell renders "—"
+     * rather than the malformed `://:` the JSP would show. */
+    endpointAddress(endpoint: EndpointDetailView): string | null {
+        const address = (endpoint.address ?? '').trim();
+        if (!address) {
+            return null;
+        }
+        const protocol = (endpoint.protocol ?? '').trim();
+        const port = (endpoint.port ?? '').trim();
+        const prefix = protocol ? `${protocol}://` : '';
+        const suffix = port ? `:${port}` : '';
+        return `${prefix}${address}${suffix}`;
+    }
+
+    downloadHref(bundleId: string): string {
+        return this.#publishingService.getBundleDownloadUrl(bundleId);
+    }
+
+    manifestHref(bundleId: string): string {
+        return this.#publishingService.getBundleManifestUrl(bundleId);
+    }
+
+    closeDialog(): void {
+        this.#dialogRef?.close();
+    }
+}

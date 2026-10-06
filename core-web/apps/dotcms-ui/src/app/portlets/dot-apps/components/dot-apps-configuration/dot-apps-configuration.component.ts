@@ -9,7 +9,8 @@ import {
     OnInit,
     computed,
     inject,
-    viewChild
+    viewChild,
+    ChangeDetectionStrategy
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
@@ -18,7 +19,7 @@ import { LazyLoadEvent } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { debounceTime, pluck, take } from 'rxjs/operators';
+import { debounceTime, map, take } from 'rxjs/operators';
 
 import {
     DotAlertConfirmService,
@@ -40,6 +41,7 @@ import { DotAppsConfigurationHeaderComponent } from '../dot-apps-configuration-d
     selector: 'dot-apps-configuration',
     templateUrl: './dot-apps-configuration.component.html',
     styleUrls: ['./dot-apps-configuration.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         InputTextModule,
         ButtonModule,
@@ -81,22 +83,27 @@ export class DotAppsConfigurationComponent implements OnInit, AfterViewInit {
     });
 
     ngOnInit() {
-        this.#route.data.pipe(pluck('data'), take(1)).subscribe((app: DotApp) => {
-            patchState(this.$state, {
-                app: {
-                    ...app,
-                    sites: []
-                }
-            });
+        this.#route.data
+            .pipe(
+                map((x) => x?.data),
+                take(1)
+            )
+            .subscribe((app: DotApp) => {
+                patchState(this.$state, {
+                    app: {
+                        ...app,
+                        sites: []
+                    }
+                });
 
-            // Initialize pagination after app data is available
-            this.paginationService.url = `v1/apps/${app.key}`;
-            this.paginationService.paginationPerPage = this.$paginationPerPage();
-            this.paginationService.sortField = 'name';
-            this.paginationService.setExtraParams('filter', '');
-            this.paginationService.sortOrder = 1;
-            this.loadData();
-        });
+                // Initialize pagination after app data is available
+                this.paginationService.url = `v1/apps/${app.key}`;
+                this.paginationService.paginationPerPage = this.$paginationPerPage();
+                this.paginationService.sortField = 'name';
+                this.paginationService.setExtraParams('filter', '');
+                this.paginationService.sortOrder = 1;
+                this.loadData();
+            });
     }
 
     ngAfterViewInit() {

@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { expect } from '@jest/globals';
-import { createServiceFactory, SpectatorService, SpyObject } from '@ngneat/spectator/jest';
 import { patchState, signalStore, withMethods, withState } from '@ngrx/signals';
-import { of, throwError } from 'rxjs';
+import { createServiceFactory, SpectatorService, SpyObject } from '@openng/spectator/vitest';
+import { NEVER, of, throwError } from 'rxjs';
+import { expect, vi } from 'vitest';
 
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -26,7 +26,9 @@ import { GlobalStore } from '@dotcms/store';
 
 import { withWorkflow } from './workflow.feature';
 
+import { CurrentContentActionsWithScheme } from '../../../models/dot-edit-content-field.type';
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
+import { EDIT_CONTENT_HOST } from '../../../services/host/edit-content-host.model';
 import {
     MOCK_CONTENTLET_1_TAB,
     MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB,
@@ -37,16 +39,26 @@ import { parseCurrentActions } from '../../../utils/workflows.utils';
 import { initialRootState } from '../../edit-content.store';
 import { withContent } from '../content/content.feature';
 
+type DeleteFlags = { hasDeleteActionlet?: boolean; hasDestroyActionlet?: boolean };
+
 describe('WorkflowFeature', () => {
     let spectator: SpectatorService<any>;
     let store: any;
     let workflowActionService: SpyObject<DotWorkflowsActionsService>;
     let workflowActionsFireService: SpyObject<DotWorkflowActionsFireService>;
-    let router: SpyObject<Router>;
     let messageService: SpyObject<MessageService>;
     let dotMessageService: SpyObject<DotMessageService>;
     let dotWorkflowService: SpyObject<DotWorkflowService>;
     let dotEditContentService: SpyObject<DotEditContentService>;
+
+    // Post-save navigation is delegated to the EditContentHost port.
+    const mockHost = {
+        setContentTitle: vi.fn(),
+        addBreadcrumb: vi.fn(),
+        goToSavedContent: vi.fn(),
+        leaveDeletedContent: vi.fn(),
+        goToRestoredVersion: vi.fn()
+    };
 
     const createStore = createServiceFactory({
         service: signalStore(
@@ -63,8 +75,13 @@ describe('WorkflowFeature', () => {
             withContent(),
             withWorkflow(),
             withMethods((store) => ({
-                updateContent: (content) => {
+                updateContent: (content: DotCMSContentlet) => {
                     patchState(store, { contentlet: content });
+                },
+                setCurrentContentActions: (
+                    currentContentActions: CurrentContentActionsWithScheme
+                ) => {
+                    patchState(store, { currentContentActions });
                 }
             }))
         ),
@@ -82,15 +99,19 @@ describe('WorkflowFeature', () => {
             DotSystemConfigService,
             GlobalStore
         ],
-        providers: [provideHttpClient(), provideHttpClientTesting()]
+        providers: [
+            { provide: EDIT_CONTENT_HOST, useValue: mockHost },
+            provideHttpClient(),
+            provideHttpClientTesting()
+        ]
     });
 
     beforeEach(() => {
+        Object.values(mockHost).forEach((fn) => fn.mockClear());
         spectator = createStore();
         store = spectator.service;
         workflowActionService = spectator.inject(DotWorkflowsActionsService);
         workflowActionsFireService = spectator.inject(DotWorkflowActionsFireService);
-        router = spectator.inject(Router);
         messageService = spectator.inject(MessageService);
         dotMessageService = spectator.inject(DotMessageService);
         dotWorkflowService = spectator.inject(DotWorkflowService);
@@ -128,10 +149,12 @@ describe('WorkflowFeature', () => {
                     parseCurrentActions(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
                 );
 
-                expect(router.navigate).toHaveBeenCalledWith(
-                    ['/content', updatedContentlet.inode],
-                    expect.any(Object)
-                );
+                expect(mockHost.goToSavedContent).toHaveBeenCalled();
+                const [savedArg] = mockHost.goToSavedContent.mock.calls[0];
+                expect(savedArg).toEqual({
+                    inode: updatedContentlet.inode,
+                    title: updatedContentlet.title
+                });
                 expect(messageService.add).toHaveBeenCalled();
             }));
 
@@ -170,6 +193,82 @@ describe('WorkflowFeature', () => {
                     })
                 );
             }));
+
+            describe('when the action deletes the content', () => {
+                const deletedContentlet = { ...MOCK_CONTENTLET_1_TAB, inode: '123' };
+
+                const withDeletingAction = (flags: DeleteFlags) => {
+                    store.updateContent(deletedContentlet);
+                    store.setCurrentContentActions({
+                        'scheme-1': [{ ...MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB[0], ...flags }]
+                    });
+                    // Reset calls made by the contentlet-change effect.
+                    workflowActionService.getByInode.mockClear();
+                    dotEditContentService.getContentById.mockClear();
+                    dotWorkflowService.getWorkflowStatus.mockClear();
+                };
+
+                it.each([
+                    ['Delete', { hasDeleteActionlet: true }],
+                    ['Destroy', { hasDestroyActionlet: true }]
+                ])(
+                    'should leave the editor without reloading the content after %s',
+                    fakeAsync((_name: string, flags: DeleteFlags) => {
+                        withDeletingAction(flags);
+                        workflowActionsFireService.fireTo.mockReturnValue(
+                            of({} as DotCMSContentlet)
+                        );
+
+                        store.fireWorkflowAction(mockOptions);
+                        tick();
+                        flush();
+
+                        expect(mockHost.leaveDeletedContent).toHaveBeenCalledWith(
+                            deletedContentlet.contentType
+                        );
+                        expect(mockHost.goToSavedContent).not.toHaveBeenCalled();
+                        expect(dotEditContentService.getContentById).not.toHaveBeenCalled();
+                        expect(workflowActionService.getByInode).not.toHaveBeenCalled();
+                        expect(dotWorkflowService.getWorkflowStatus).not.toHaveBeenCalled();
+                        expect(store.state()).toBe(ComponentStatus.LOADED);
+                        expect(store.workflowActionSuccess()).toEqual(deletedContentlet);
+                        expect(messageService.add).toHaveBeenCalledWith(
+                            expect.objectContaining({ severity: 'success' })
+                        );
+                    })
+                );
+
+                it('should keep the error handling and stay on the content when the delete fails', fakeAsync(() => {
+                    withDeletingAction({ hasDeleteActionlet: true });
+                    const mockError = new HttpErrorResponse({ status: 500 });
+                    workflowActionsFireService.fireTo.mockReturnValue(throwError(() => mockError));
+
+                    store.fireWorkflowAction(mockOptions);
+                    tick();
+
+                    expect(
+                        spectator.inject(DotHttpErrorManagerService).handle
+                    ).toHaveBeenCalledWith(mockError);
+                    expect(store.error()).toBe('Error firing workflow action');
+                    expect(mockHost.leaveDeletedContent).not.toHaveBeenCalled();
+                }));
+
+                it('should keep the reload path for actions that do not delete the content', fakeAsync(() => {
+                    withDeletingAction({ hasDeleteActionlet: false, hasDestroyActionlet: false });
+                    const savedContentlet = { ...deletedContentlet, inode: '456' };
+                    workflowActionsFireService.fireTo.mockReturnValue(of(savedContentlet));
+                    dotEditContentService.getContentById.mockReturnValue(of(savedContentlet));
+                    dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
+
+                    store.fireWorkflowAction(mockOptions);
+                    tick();
+                    flush();
+
+                    expect(dotEditContentService.getContentById).toHaveBeenCalled();
+                    expect(mockHost.goToSavedContent).toHaveBeenCalled();
+                    expect(mockHost.leaveDeletedContent).not.toHaveBeenCalled();
+                }));
+            });
         });
 
         describe('setSelectedWorkflow', () => {
@@ -270,6 +369,39 @@ describe('WorkflowFeature', () => {
                 expect(store.currentContentActions()).toEqual(
                     parseCurrentActions(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
                 );
+
+                // The actions re-fetch should settle into a non-loading state
+                expect(store.actionsStatus().status).toBe(ComponentStatus.LOADED);
+                expect(store.isLoadingActions()).toBe(false);
+            }));
+
+            it('should flag the actions as loading while they are being re-fetched', fakeAsync(() => {
+                workflowActionService.getByInode.mockClear();
+                // A request that never resolves keeps the re-fetch in flight
+                workflowActionService.getByInode.mockReturnValue(NEVER);
+
+                store.updateContent({ ...MOCK_CONTENTLET_1_TAB, inode: '789' });
+
+                spectator.flushEffects();
+
+                expect(store.actionsStatus().status).toBe(ComponentStatus.LOADING);
+                expect(store.isLoadingActions()).toBe(true);
+            }));
+
+            it('should clear the loading flag when the actions re-fetch fails', fakeAsync(() => {
+                workflowActionService.getByInode.mockClear();
+                workflowActionService.getByInode.mockReturnValue(
+                    throwError(() => new HttpErrorResponse({ status: 500 }))
+                );
+
+                store.updateContent({ ...MOCK_CONTENTLET_1_TAB, inode: '999' });
+
+                spectator.flushEffects();
+                tick();
+
+                // A failed re-fetch must not leave the workflow actions disabled forever
+                expect(store.actionsStatus().status).toBe(ComponentStatus.ERROR);
+                expect(store.isLoadingActions()).toBe(false);
             }));
 
             it('should not update workflow actions when contentlet has no inode', fakeAsync(() => {
