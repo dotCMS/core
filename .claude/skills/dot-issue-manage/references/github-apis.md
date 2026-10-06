@@ -37,6 +37,8 @@ gh api graphql -f query='
             | select(.project.number==7) | .id'
 ```
 
+If this returns empty, the issue is not in Project #7 — add it with [Section I](#i-add-an-issue-to-project-7-addprojectv2itembyid) first. Passing an empty item ID to Section C fails with `Could not resolve to a node with the global id of ''`.
+
 ---
 
 ## C. Set a single-select project field (Status / Technology / Priority)
@@ -141,3 +143,23 @@ To extract Project #7 field values from the `projectItems` JSON:
 gh issue view ISSUE_NUM --repo dotCMS/core --json projectItems \
   | jq '.projectItems[] | select(.project.number==7) | .fieldValues'
 ```
+
+---
+
+## I. Add an issue to Project #7 (addProjectV2ItemById)
+
+Use only when Section B returns an empty item ID — the issue is not in Project #7 (for example, `gh issue create` without `--template` does not apply the template's `projects:`). If Section B returns an ID, skip this section: never add the same issue twice.
+
+> **Important:** Do NOT use GraphQL variables (`$projId:ID!` etc.) — the `!` in `ID!` is
+> backslash-escaped by Claude Code's Bash tool, causing a parse error. Inline all values
+> directly as string literals instead.
+
+```bash
+# 1. Get the issue node ID (I_kw...) — not the numeric .id used in Section D
+NODE_ID=$(gh api repos/dotCMS/core/issues/ISSUE_NUM --jq '.node_id')
+
+# 2. Add the issue to Project #7 and capture the new item ID (inline all IDs — no GraphQL variables)
+ITEM_ID=$(gh api graphql -f query='mutation { addProjectV2ItemById(input:{projectId:"PVT_kwDOAA9Wz84AKDq_" contentId:"'"$NODE_ID"'"}) { item { id } } }' --jq '.data.addProjectV2ItemById.item.id')
+```
+
+Use `$ITEM_ID` as `ITEM_ID` in Section C.
