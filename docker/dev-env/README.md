@@ -72,7 +72,7 @@ docker run --rm \
 --pull always \
 -p 8443:8443 \
 -v $PWD/data:/data \
--e DOTCMS_STARTER_URL=https://dotcms-repo.b-cdn.net/libs-release/com/dotcms/starter/20260630/starter-20260630.zip \
+-e DOTCMS_STARTER_URL=https://dotcms-repo.b-cdn.net/libs-release/com/dotcms/starter/20261006/starter-20261006.zip \
 dotcms/dotcms-dev:nightly
 
 ```
