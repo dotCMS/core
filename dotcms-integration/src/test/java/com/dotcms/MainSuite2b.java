@@ -110,7 +110,6 @@ import com.dotcms.rest.api.v1.folder.FolderResourceSearchTest;
 import com.dotcms.rest.api.v1.folder.FolderResourceTest;
 import com.dotcms.rest.api.v1.maintenance.ClusterLogCollectorTest;
 import com.dotcms.rest.api.v1.menu.MenuResourceTest;
-import com.dotcms.rest.api.v1.portlet.ToolGroupResourceTest;
 import com.dotcms.rest.api.v1.publishing.BundleManagementResourceIntegrationTest;
 import com.dotcms.rest.api.v1.publishing.PublishingResourceIntegrationTest;
 import com.dotcms.rest.api.v1.pushpublish.PushPublishFilterResourceTest;
@@ -389,7 +388,6 @@ import org.junit.runners.Suite.SuiteClasses;
         Task220606UpdatePushNowActionletNameTest.class,
         BundlerUtilTest.class,
         MenuResourceTest.class,
-        ToolGroupResourceTest.class,
         AWSS3PublisherTest.class,
         ContentTypeInitializerTest.class,
         CSSPreProcessServletIT.class,
