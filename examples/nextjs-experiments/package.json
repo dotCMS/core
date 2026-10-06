@@ -10,7 +10,7 @@
     },
     "dependencies": {
         "@dotcms/client": "latest",
-        "@dotcms/experiments": "latest",
+        "@dotcms/events": "latest",
         "@dotcms/react": "latest",
         "@dotcms/types": "latest",
         "@dotcms/uve": "latest",
