@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
+import { DotCMSExperiment } from "@dotcms/events/react";
+
 import NotFound from "@/app/not-found";
 import { ErrorPage } from "@/components/error";
 import { getDotCMSPage } from "@/utils/getDotCMSPage";
@@ -52,5 +54,10 @@ export default async function Home({ params, searchParams }: SlugPageProps) {
         return <NotFound />;
     }
 
-    return <Page pageContent={pageContent} />;
+    // Rendered here, in a server component, the experiment's markup costs the client no JavaScript
+    return (
+        <DotCMSExperiment page={pageContent.pageAsset}>
+            <Page pageContent={pageContent} />
+        </DotCMSExperiment>
+    );
 }

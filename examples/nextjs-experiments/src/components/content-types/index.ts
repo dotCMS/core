@@ -28,6 +28,7 @@ export const pageComponents = {
     CategoryFilter: dynamic(() => import("./CategoryFilter")),
     CustomNoComponent: CustomNoComponent,
     Image: dynamic(() => import("./Image")),
+    PageForm: dynamic(() => import("./PageForm")),
     Product: dynamic(() => import("./Product")),
     SimpleWidget: dynamic(() => import("./SimpleWidget")),
     StoreProductList: dynamic(() => import("./StoreProductList")),

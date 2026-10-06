@@ -1,0 +1,43 @@
+{
+    "compilerOptions": {
+        "allowJs": false,
+        "esModuleInterop": false,
+        "allowSyntheticDefaultImports": true,
+        "strict": true,
+        "forceConsistentCasingInFileNames": true,
+        "noImplicitOverride": true,
+        "noImplicitReturns": true,
+        "noFallthroughCasesInSwitch": true,
+        "noPropertyAccessFromIndexSignature": true,
+        "noUncheckedIndexedAccess": true,
+        "exactOptionalPropertyTypes": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "allowUnreachableCode": false,
+        "allowUnusedLabels": false,
+        "verbatimModuleSyntax": true,
+        // The React adapter (src/react.ts) uses the automatic runtime: react/jsx-runtime
+        "jsx": "react-jsx",
+        // Compile against the published declarations of the sibling SDKs, as the Rollup build
+        // (withNx) and every consumer do. Through the base aliases their sources would join this
+        // program and be checked with the options above, which they were not written for. This
+        // list replaces the base paths, so it holds every @dotcms/* module the package reaches.
+        "paths": {
+            "@dotcms/types": ["dist/libs/sdk/types/index.d.ts"],
+            "@dotcms/types/internal": ["dist/libs/sdk/types/internal.d.ts"],
+            "@dotcms/uve": ["dist/libs/sdk/uve/index.d.ts"],
+            "@dotcms/uve/internal": ["dist/libs/sdk/uve/internal.d.ts"]
+        }
+    },
+    "files": [],
+    "include": [],
+    "references": [
+        {
+            "path": "./tsconfig.lib.json"
+        },
+        {
+            "path": "./tsconfig.spec.json"
+        }
+    ],
+    "extends": "../../../tsconfig.base.json"
+}

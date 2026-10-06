@@ -12,7 +12,8 @@
         "sdk-analytics",
         "sdk-angular",
         "sdk-vue",
-        "sdk-experiments"
+        "sdk-experiments",
+        "sdk-events"
     ],
     "targets": {
         "test": {
