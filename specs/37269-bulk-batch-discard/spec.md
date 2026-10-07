@@ -172,9 +172,12 @@ Open questions (to confirm in planning, not blocking the spec):
   contentlet (all field values), so 12 failed records of oversized content made a 168 MB response
   and the Maintenance portlet's "Download Failed Records" button crashed the browser tab (out of
   memory). A new `GET /api/v1/index/failed` (vendor-neutral `index` family, same CMS
-  Administrator + `maintenance` portlet access as today) returns each failed record with a typed
-  response — identifier, inode, title, content type, language, failure reason, priority and
-  operation — and **no content field values**. The button uses it. `GET /api/v1/esindex/failed`
+  Administrator + `maintenance` portlet access as today) returns a typed listing with **no content
+  field values**: at the root, the document limits in force and the retry policy; for each failed
+  record, identifier, inode, title, content type variable, language, the pending operation, the
+  failed attempts, the last failure reason and — when the document exceeded a document limit —
+  which limit, field, actual value, allowed value and unit. Unknown values are explicit nulls. The
+  button uses it. `GET /api/v1/esindex/failed`
   keeps its response exactly as today and is marked deprecated in favour of the new endpoint.
 
 **Explicitly out of scope / non-goals**:
@@ -234,9 +237,12 @@ Open questions (to confirm in planning, not blocking the spec):
   refused / timeout / authentication), every record of the group is still marked failed and
   retried as today.
 - **AC-007**: With failed records for oversized content in `dist_reindex_journal`,
-  `GET /api/v1/index/failed` returns one entry per failed record carrying identifier, inode,
-  title, content type, language, failure reason, priority and operation, and no contentlet field
-  values, so its size does not grow with the size of the content. A user without the CMS
+  `GET /api/v1/index/failed` returns the document limits in force (`maxStringLength`,
+  `maxNestingDepth`), the retry policy (`maxFailedAttempts`), the failed-record count and one entry
+  per failed record carrying identifier, inode, title, content type variable, language, pending
+  operation, failed attempts, priority, last failure reason and, for a document-limit failure, a
+  violation (limit, field path, actual, allowed, unit), with explicit nulls for unknown values and
+  no contentlet field values, so its size does not grow with the size of the content. A user without the CMS
   Administrator role gets 401/403 as with the old endpoint. `GET /api/v1/esindex/failed` returns
   the same response as before, documented as deprecated. The Maintenance portlet's "Download
   Failed Records" button calls the new endpoint.
