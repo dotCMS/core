@@ -88,24 +88,6 @@ export class WysiwygField {
         await expect(this.images).toHaveCount(0);
     }
 
-    /**
-     * Types plain text into the editor body.
-     *
-     * A plain smoke check of dotCMS's own integration (the field renders, TinyMCE boots inside it,
-     * and typing reaches the document) — not a TinyMCE feature test.
-     */
-    async typeText(text: string): Promise<void> {
-        await this.body.locator('body').click();
-        // `type()` over `fill()`: this is a contenteditable rich-text body, not a form input —
-        // `fill()` sets `.value` directly, which contenteditable elements do not have.
-        await this.body.locator('body').type(text);
-    }
-
-    /** Asserts the editor body contains the given text. */
-    async expectText(text: string): Promise<void> {
-        await expect(this.body.locator('body')).toContainText(text, { timeout: 15000 });
-    }
-
     /** Whether the toolbar button carries an accessible name — it is icon-only. */
     async expectInsertImageButtonLabelled(): Promise<void> {
         await expect(this.insertImageButton).toHaveAttribute('aria-label', 'Insert Image');

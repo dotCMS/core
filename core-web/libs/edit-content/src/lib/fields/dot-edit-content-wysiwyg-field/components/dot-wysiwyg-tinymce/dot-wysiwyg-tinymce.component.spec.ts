@@ -89,67 +89,6 @@ describe('DotWysiwygTinymceComponent', () => {
         expect(config.iframe_attrs).toEqual({ title: WYSIWYG_MOCK.name });
     });
 
-    /**
-     * dotCMS ships TinyMCE under the GPL license (not commercial), so every editor instance
-     * must set `license_key: 'gpl'` — TinyMCE 8+ requires this key to be set explicitly.
-     */
-    it('should set license_key to gpl', () => {
-        spectator = createHost(
-            `<form [formGroup]="formGroup">
-                <dot-wysiwyg-tinymce [field]="field" [hasError]="hasError" />
-            </form>`,
-            {
-                hostProps: {
-                    formGroup: new FormGroup({ [WYSIWYG_MOCK.variable]: new FormControl() }),
-                    field: WYSIWYG_MOCK,
-                    hasError: false
-                }
-            }
-        );
-        spectator.detectChanges();
-
-        expect(spectator.component.$editorConfig().license_key).toBe('gpl');
-    });
-
-    /**
-     * `license_key` is set after the wide-config and custom-field-props spreads (like
-     * `iframe_aria_text`/`iframe_attrs` above), so neither a system-wide TinyMCE config nor a
-     * per-field `tinymceprops` value can accidentally switch the editor out of GPL mode.
-     */
-    it('should not let system-wide or per-field config override license_key', () => {
-        const fieldVariables = [
-            {
-                clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
-                fieldId: '1',
-                id: '1',
-                key: 'tinymceprops',
-                value: '{ "license_key": "some-other-value" }'
-            }
-        ];
-        const fieldWithVariables = { ...WYSIWYG_MOCK, fieldVariables };
-
-        spectator = createHost(
-            `<form [formGroup]="formGroup">
-                <dot-wysiwyg-tinymce [field]="field" [hasError]="hasError" />
-            </form>`,
-            {
-                hostProps: {
-                    formGroup: new FormGroup({ [fieldWithVariables.variable]: new FormControl() }),
-                    field: fieldWithVariables,
-                    hasError: false
-                },
-                providers: [
-                    mockProvider(DotWysiwygTinymceService, {
-                        getProps: vi.fn().mockReturnValue(of({ license_key: 'also-not-gpl' }))
-                    })
-                ]
-            }
-        );
-        spectator.detectChanges();
-
-        expect(spectator.component.$editorConfig().license_key).toBe('gpl');
-    });
-
     it('should initialize editor with correct configuration', () => {
         spectator = createHost(
             `<form [formGroup]="formGroup">
@@ -175,7 +114,6 @@ describe('DotWysiwygTinymceComponent', () => {
             ...mockSystemWideConfig,
             iframe_aria_text: WYSIWYG_MOCK.name,
             iframe_attrs: { title: WYSIWYG_MOCK.name },
-            license_key: 'gpl',
             setup: (editor: Editor) => dotWysiwygPluginService.initializePlugins(editor)
         };
 
@@ -222,7 +160,6 @@ describe('DotWysiwygTinymceComponent', () => {
                 // TinyMCE renders into an iframe; this is its own option for that iframe's name.
                 iframe_aria_text: WYSIWYG_MOCK.name,
                 iframe_attrs: { title: WYSIWYG_MOCK.name },
-                license_key: 'gpl',
                 setup: (editor: Editor) => dotWysiwygPluginService.initializePlugins(editor)
             })
         );
@@ -238,7 +175,6 @@ describe('DotWysiwygTinymceComponent', () => {
                 // TinyMCE renders into an iframe; this is its own option for that iframe's name.
                 iframe_aria_text: WYSIWYG_MOCK.name,
                 iframe_attrs: { title: WYSIWYG_MOCK.name },
-                license_key: 'gpl',
                 setup: (editor: Editor) => dotWysiwygPluginService.initializePlugins(editor)
             })
         );
@@ -285,7 +221,6 @@ describe('DotWysiwygTinymceComponent', () => {
                 // TinyMCE renders into an iframe; this is its own option for that iframe's name.
                 iframe_aria_text: WYSIWYG_MOCK.name,
                 iframe_attrs: { title: WYSIWYG_MOCK.name },
-                license_key: 'gpl',
                 setup: (editor: Editor) => dotWysiwygPluginService.initializePlugins(editor)
             })
         );

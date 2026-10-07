@@ -49,9 +49,6 @@ export function TinyMCEEditor({
         <Editor
             tinymceScriptSrc={scriptSrc}
             inline={true}
-            // dotCMS ships TinyMCE under the GPL license, never commercial. This wrapper only
-            // honors a license key passed as this top-level prop — `init.license_key` is ignored.
-            licenseKey="gpl"
             onInit={(_, editor) => onEditorInit(editor)}
             init={TINYMCE_CONFIG[mode]}
             initialValue={initialValue}

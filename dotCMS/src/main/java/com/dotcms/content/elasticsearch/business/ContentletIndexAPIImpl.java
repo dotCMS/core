@@ -34,6 +34,7 @@ import com.dotcms.content.index.opensearch.IndexStartupValidator;
 import com.dotcms.content.index.opensearch.OSIndexAPIImpl;
 import com.dotcms.content.index.opensearch.OSIndexAPIImpl.ConnectionFailureKind;
 import com.dotcms.content.index.IndexTag;
+import com.dotcms.content.index.IndexTimestamp;
 import com.dotcms.content.index.PhaseRouter;
 import com.dotcms.content.index.VersionedIndices;
 import com.dotcms.content.index.VersionedIndicesAPI;
@@ -92,7 +93,6 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -874,7 +874,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             return initOSCatchup();
         }
 
-        final String ts = ContentletIndexAPI.threadSafeTimestampFormatter.format(LocalDateTime.now());
+        final String ts = IndexTimestamp.now();
         final boolean osPointed = bootstrapAndPoint(ts, esNeeded, osNeeded);
 
         // The OS suffix is reported only when the OS bootstrap actually registered its indices:
@@ -901,7 +901,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      * <p>ES is bootstrapped first so that a shadow-phase OS failure — which is absorbed by
      * {@link #handleOsBootstrapFailure} — can never leave ES without indices (issue #36222).</p>
      *
-     * @param ts       timestamp string produced by {@link ContentletIndexAPI#threadSafeTimestampFormatter}
+     * @param ts       timestamp string produced by {@link IndexTimestamp#now()}
      * @param needsES  {@code true} when ES working/live indices must be created
      * @param needsOS  {@code true} when OS working/live indices must be created
      * @throws DotDataException on persistence or creation failure
@@ -982,8 +982,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         // Case 3: no record in either store — fresh install or data-loss scenario.
         Logger.warn(this, "OS catchup: no OS or ES index record found;"
                 + " bootstrapping OS with fresh timestamp");
-        final String ts = ContentletIndexAPI.threadSafeTimestampFormatter
-                .format(LocalDateTime.now());
+        final String ts = IndexTimestamp.now();
         final boolean osPointed = bootstrapAndPointOS(
                 IndexType.WORKING.getPrefix() + "_" + ts,
                 IndexType.LIVE.getPrefix()    + "_" + ts);
@@ -1441,8 +1440,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             Logger.info(this, "Full reindex started by system user at " + new java.util.Date());
         }
 
-        final String ts = ContentletIndexAPI.threadSafeTimestampFormatter
-                .format(LocalDateTime.now());
+        final String ts = IndexTimestamp.now();
         initAndPointReindex(ts);
 
         return ImmutableIndexStartResult.builder()
@@ -1473,7 +1471,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      * dual-write phase is absorbed by {@link #handleOsBootstrapFailure} (ES reindex proceeds); in
      * Phase 3 it propagates.</p>
      *
-     * @param ts timestamp string produced by {@link ContentletIndexAPI#threadSafeTimestampFormatter}
+     * @param ts timestamp string produced by {@link IndexTimestamp#now()}
      * @throws DotDataException on persistence or creation failure
      */
     @VisibleForTesting
@@ -1557,6 +1555,23 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     }
 
     /**
+     * Decides whether the reindex has run long enough to be switched over.
+     *
+     * <p>A name ahead of the clock by no more than the minimum is treated as ordinary clock drift
+     * between nodes and still waits, which bounds the wait to twice the minimum. A name ahead by
+     * more than that cannot be a settling index: its timestamp is wrong, and waiting for the clock
+     * to reach it would defer the switchover for no reason (issue #37282).</p>
+     *
+     * @param elapsedMillis time since the reindex index was created, as read from its name;
+     *                      negative when the name is ahead of the clock
+     * @param minimumMillis the configured minimum runtime
+     * @return {@code true} when the switchover may proceed
+     */
+    static boolean minimumRuntimeGuardPasses(final long elapsedMillis, final long minimumMillis) {
+        return elapsedMillis >= minimumMillis || elapsedMillis < -minimumMillis;
+    }
+
+    /**
      * Promotes the current reindex indices to active, completing a full-reindex cycle.
      *
      * <h3>Phase-aware behavior</h3>
@@ -1582,7 +1597,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      * {@code REINDEX_THREAD_MINIMUM_RUNTIME_IN_SEC} seconds ago the method returns
      * {@code false} and sleeps briefly to let the index settle. The timestamp is parsed
      * from the reindex-working index name suffix; both ES and OS use the same
-     * {@code ..._yyyyMMddHHmmss} convention.</p>
+     * {@code ..._yyyyMMddHHmmss} convention. A name too far ahead of the clock to be trusted
+     * does not hold the switchover back (see {@link #minimumRuntimeGuardPasses}).</p>
      */
     @CloseDBIfOpened
     public synchronized boolean fullReindexSwitchover(Connection conn, final boolean forceSwitch) {
@@ -1590,10 +1606,24 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         // ── Guard: minimum reindex runtime ───────────────────────────────────
         // reindexTimeElapsedInLong() is itself phase-aware: Phase 3 reads from
         // versionedIndicesAPI, all other phases read from legacyIndiciesAPI.
-        if (reindexTimeElapsedInLong()
-                < Config.getLongProperty("REINDEX_THREAD_MINIMUM_RUNTIME_IN_SEC", 30) * 1000) {
+        final long elapsedMillis = reindexTimeElapsedInLong();
+        final long minimumMillis =
+                Config.getLongProperty("REINDEX_THREAD_MINIMUM_RUNTIME_IN_SEC", 30) * 1000;
+        if (elapsedMillis < -minimumMillis) {
+            Logger.warn(this.getClass(), "Reindex index name timestamp is "
+                    + DateUtil.humanReadableFormat(Duration.ofMillis(-elapsedMillis)).toLowerCase()
+                    + " ahead of the current time and cannot be trusted;"
+                    + " skipping the minimum-runtime wait.");
+        }
+        if (!minimumRuntimeGuardPasses(elapsedMillis, minimumMillis)) {
             final Optional<String> reindexTimeElapsed = reindexTimeElapsed();
-            if (reindexTimeElapsed.isPresent()) {
+            if (elapsedMillis < 0) {
+                // Slightly ahead of the clock (drift between nodes): wait it out, but say why
+                // instead of "not set" (#37282).
+                Logger.warn(this.getClass(), "Reindex index name timestamp is "
+                        + DateUtil.humanReadableFormat(Duration.ofMillis(-elapsedMillis)).toLowerCase()
+                        + " ahead of the current time; letting the reindex settle.");
+            } else if (reindexTimeElapsed.isPresent()) {
                 Logger.info(this.getClass(),
                         "Reindex has been running only " + reindexTimeElapsed.orElse("n/a")
                                 + ". Letting the reindex settle.");
@@ -1934,7 +1964,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                         .map(this::elapsedSinceIndexCreated)
                         .orElse(0L);
             } catch (Exception e) {
-                Logger.debug(this, "unable to parse reindex time from OS store: " + e, e);
+                Logger.warnAndDebug(this.getClass(),
+                        "unable to parse reindex time from OS store: " + e, e);
                 return 0;
             }
         }
@@ -1945,7 +1976,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 return oldInfo.getIndexTimeStamp(IndexType.REINDEX_WORKING);
             }
         } catch (Exception e) {
-            Logger.debug(this, "unable to parse time:" + e, e);
+            Logger.warnAndDebug(this.getClass(), "unable to parse reindex time: " + e, e);
         }
         return 0;
     }
@@ -1963,14 +1994,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      */
     private long elapsedSinceIndexCreated(final String indexName) {
         try {
-            // The timestamp parser cannot consume a trailing .os tag — strip it locally
-            // before parsing (the name identity is unaffected; see OPENSEARCH_MIGRATION.md).
-            final String base = IndexTag.strip(indexName);
-            final String ts = base.substring(base.lastIndexOf('_') + 1);
-            final Date startTime = IndiciesInfo.timestampFormatter.parse(ts);
-            return System.currentTimeMillis() - startTime.getTime();
+            return IndexTimestamp.elapsedSince(indexName).toMillis();
         } catch (Exception e) {
-            Logger.debug(this, "unable to parse timestamp from index name '" + indexName + "': " + e, e);
+            Logger.warnAndDebug(this.getClass(),
+                    "unable to parse timestamp from index name '" + indexName + "': " + e, e);
             return 0;
         }
     }
@@ -1980,10 +2007,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     public Optional<String> reindexTimeElapsed() {
         try {
 
-            long elapsedTime = reindexTimeElapsedInLong();
+            final long elapsedTime = reindexTimeElapsedInLong();
             if (elapsedTime > 0) {
                 return Optional.of(
-                        DateUtil.humanReadableFormat(Duration.ofMillis(reindexTimeElapsedInLong()))
+                        DateUtil.humanReadableFormat(Duration.ofMillis(elapsedTime))
                                 .toLowerCase());
             }
         } catch (Exception e) {

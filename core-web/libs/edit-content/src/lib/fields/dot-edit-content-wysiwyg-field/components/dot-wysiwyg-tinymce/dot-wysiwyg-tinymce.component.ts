@@ -99,9 +99,6 @@ export class DotWysiwygTinymceComponent implements OnDestroy {
             // editor unnamed.
             iframe_aria_text: this.$field()?.name,
             iframe_attrs: { title: this.$field()?.name },
-            // dotCMS ships TinyMCE under the GPL license, never commercial — set after the spreads
-            // so a system-wide or per-field config cannot switch the editor out of GPL mode.
-            license_key: 'gpl',
             setup: (editor) => {
                 this.#dotWysiwygPluginService.initializePlugins(editor);
             }

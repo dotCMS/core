@@ -6,12 +6,13 @@ import { Injectable, inject } from '@angular/core';
 import { map } from 'rxjs/operators';
 
 import {
-    DotFolder,
-    DotFolderEntity,
     DotCMSAPIResponse,
+    DotFolder,
+    DotFolderBean,
+    DotFolderEntity,
+    DotPagination,
     FolderSearchParams,
-    FolderSearchView,
-    DotPagination
+    FolderSearchView
 } from '@dotcms/dotcms-models';
 import { hasValidValue } from '@dotcms/utils';
 
@@ -36,6 +37,19 @@ export class DotFolderService {
 
         return this.#http
             .post<DotCMSAPIResponse<DotFolder[]>>(`/api/v1/folder/byPath`, { path: folderPath })
+            .pipe(map((response) => response.entity));
+    }
+
+    /**
+     * Reads one folder by its identifier, as a Content Drive folder-dialog link names it (#37759).
+     * A lookup by id, never through the deprecated `byPath` endpoint (ADR-0020).
+     *
+     * @param {string} folderId - The folder identifier
+     * @returns {Observable<DotFolderBean>} Observable that emits the folder
+     */
+    getFolderById(folderId: string): Observable<DotFolderBean> {
+        return this.#http
+            .get<DotCMSAPIResponse<DotFolderBean>>(`/api/v1/folder/${encodeURIComponent(folderId)}`)
             .pipe(map((response) => response.entity));
     }
 
