@@ -387,7 +387,8 @@ export async function fetchPRDetails(
       // so a PR that passed the gate is not reported as an orphan.
       const src = linkSources.get(n);
       const declared = src && findDeclaredIssue(src.body, pr.title, src.branch);
-      if (declared) pr.linkedIssues = [declared];
+      // A PR is never its own issue; guards a title ending in its own "(#N)".
+      if (declared && declared !== n) pr.linkedIssues = [declared];
     }
   }
 
