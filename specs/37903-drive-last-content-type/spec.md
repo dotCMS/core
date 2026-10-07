@@ -48,6 +48,10 @@ only its content.
 5. **Given** the user opened a content type in the editor,
    **When** they follow a link that opens Content Drive in a specific folder but with no filters,
    **Then** the Drive opens that folder with the content type filter applied.
+6. **Given** the user did not open any content type in the Content Types editor, but opened a
+   contentlet in Edit Content (which also reads its content type),
+   **When** they open Content Drive from the menu,
+   **Then** the Drive opens with no content type filter.
 
 ---
 
@@ -84,7 +88,9 @@ remembered content type, and still wipes it.
 
 **Why this priority**: Overriding an explicit filter or an edit request would make links and
 redirects unreliable. Wiping the remembered type anyway keeps it from surfacing on some later,
-unrelated visit.
+unrelated visit. The accepted cost: if the user opens a content type, then takes a detour through
+a filtered link or an edit request before opening the Drive directly, the remembered type is gone
+and the direct visit opens unfiltered.
 
 **Independent Test**: Open a content type in the editor, then reach the Drive through a link or a
 redirect that already sets a filter. The Drive shows only that filter. Open the Drive again from
@@ -132,6 +138,18 @@ the menu: it opens with no content type filter.
 
 ## Requirements *(mandatory)*
 
+### Terms
+
+- **Opening Content Drive**: entering the Drive, either by navigating to it from another screen or
+  by loading or reloading its page. Moving around inside the Drive (changing folders, applying or
+  clearing filters, opening and closing items) is not opening it.
+- **Filters**: any of the Drive's list filters, such as content type, base type, language,
+  workflow, status, search text, shared assets or search scope, when they are part of the address
+  the Drive was opened with.
+- **Not filters**: the folder being browsed, whether the folder tree is expanded, and any defaults
+  the Drive fills in by itself after opening (such as its default language). These don't stop the
+  remembered type from being applied.
+
 ### Functional Requirements
 
 - **FR-001**: When the Content Types editor opens an existing content type, the system MUST
@@ -154,8 +172,9 @@ the menu: it opens with no content type filter.
   (`sessionStorage`), so it belongs to a single browser tab. Other tabs, including new ones, MUST
   NOT see it. It MUST NOT be kept on the server or in storage shared across tabs.
 - **FR-008**: Logging out MUST forget the remembered type.
-- **FR-009**: If the remembered type no longer exists or the user cannot access it, the Drive
-  MUST open without showing an error and MUST forget the remembered type.
+- **FR-009**: If the remembered type no longer exists, the user cannot access it, or the Drive's
+  Content Type filter does not offer it, the Drive MUST open without showing an error and MUST
+  forget the remembered type.
 
 ### Key Entities
 
@@ -199,8 +218,6 @@ the menu: it opens with no content type filter.
   counts after its first save, because the editor then reopens it as an existing type.
 - The Drive's other defaults, such as its default language, still apply next to the content type
   filter.
-- Content types that the Drive's Content Type filter doesn't offer are handled like an unknown
-  type (FR-009).
 - Out of scope: changing Content Search, adding a server endpoint for the server's remembered
   type, and sharing the last browsed site or folder between the Drive and the asset picker
   (noted for later).
