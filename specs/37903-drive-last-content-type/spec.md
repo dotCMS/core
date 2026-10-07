@@ -143,8 +143,10 @@ independent of the content type handoff.
   saving does not count, because there is no type yet.
 - **The remembered content type was deleted, or the user has no permission on it.** If that
   content type was deleted, or the user has no permission on that content type, by the time the
-  Drive opens, the Drive still opens normally: no content type filter, no error message, and the
-  remembered content type is forgotten.
+  Drive opens, the Drive drops that filter on its own: it disappears from the address and the
+  filter chip, and the list loads unfiltered. The Drive's existing "Something went wrong loading
+  options" notice may show once, as it does today for any Drive link naming a deleted content
+  type. The remembered content type is already forgotten.
 - **The user goes somewhere else first.** If the user opens a type in the editor, visits other
   screens, and only later opens the Drive in the same tab, the Drive still applies the type,
   because nothing has used it yet.
@@ -190,8 +192,10 @@ independent of the content type handoff.
   NOT see it. It MUST NOT be kept on the server or in storage shared across tabs.
 - **FR-008**: If the remembered content type can't be used as a filter when the Drive opens
   (the content type was deleted, the user has no permission on that content type, or the Drive's
-  Content Type filter doesn't list it), the Drive MUST open normally, without that filter and
-  without an error, and MUST forget the remembered content type.
+  Content Type filter doesn't list it), the Drive MUST end up without that filter (not in the
+  address, not in the filter chip, list unfiltered) and MUST forget the remembered content type.
+  The Drive's existing notice about field options failing to load may show once for a deleted
+  type; this change does not alter how the Drive reacts to an unknown content type.
 - **FR-009**: Content Drive MUST NOT offer a Rename action, including when exactly one item is
   selected.
 
@@ -212,7 +216,8 @@ independent of the content type handoff.
   the remembered type is applied at most once per time a type is opened in the editor.
 - **SC-003**: Every Drive link that carries its own filters opens with exactly those filters,
   whatever type was opened in the editor before.
-- **SC-004**: None of the edge cases above produces an error message or a broken Drive screen.
+- **SC-004**: None of the edge cases above produces a broken Drive screen. The only message allowed
+  is the Drive's existing field-options notice for a deleted content type (FR-008).
 
 ## Legacy Considerations *(dotCMS-specific — mandatory)*
 
