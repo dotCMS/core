@@ -132,7 +132,6 @@ the menu: it opens with no content type filter.
   because nothing has used it yet.
 - **Another tab.** A content type opened in the editor in one tab is not picked up by the Drive in
   a different, newly opened tab.
-- **Logging out.** After logging out and back in, the Drive opens with no remembered content type.
 - **Content Search is unaffected.** Content Search keeps its own existing behavior. Opening the
   Drive does not change what Content Search pre-selects, and the other way around.
 
@@ -171,16 +170,14 @@ the menu: it opens with no content type filter.
 - **FR-007**: The remembered type MUST be kept in the browser's session storage
   (`sessionStorage`), so it belongs to a single browser tab. Other tabs, including new ones, MUST
   NOT see it. It MUST NOT be kept on the server or in storage shared across tabs.
-- **FR-008**: Logging out MUST forget the remembered type.
-- **FR-009**: If the remembered type no longer exists, the user cannot access it, or the Drive's
+- **FR-008**: If the remembered type no longer exists, the user cannot access it, or the Drive's
   Content Type filter does not offer it, the Drive MUST open without showing an error and MUST
   forget the remembered type.
 
 ### Key Entities
 
 - **Remembered content type**: the identifier (variable name) of the last content type opened in
-  the Content Types editor, held for one browser tab until the Drive uses it, the tab closes, or
-  the user logs out.
+  the Content Types editor, held for one browser tab until the Drive uses it or the tab closes.
 
 ## Success Criteria *(mandatory)*
 
@@ -214,6 +211,11 @@ the menu: it opens with no content type filter.
   MUST use it and not reopen this choice.
   The server's own remembered type, used by Content Search, is never returned to the browser, so
   the Drive can't reuse it.
+- **Logging out deliberately does not clear it.** Logout reloads the same tab, so the remembered
+  type survives until the next Drive visit uses it. If someone else logs in on that tab, their
+  first Drive visit may open filtered to the previous user's content type, once: FR-008 covers a
+  type they can't access, and otherwise it's a visible filter they can clear. Clearing it would
+  make the login code depend on a Content Drive detail for a one-time, harmless effect.
 - "Opening a type" means the Content Types editor loading an existing type. A newly created type
   counts after its first save, because the editor then reopens it as an existing type.
 - The Drive's other defaults, such as its default language, still apply next to the content type
