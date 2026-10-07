@@ -55,14 +55,21 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 		this.hostAPI = APILocator.getHostAPI();
 	}
 	
-	/* (non-Javadoc)
-	 * @see com.bradmcevoy.http.MakeCollectionableResource#createCollection(java.lang.String)
+	/**
+	 * Creates a folder named {@code newName} inside this folder. A temp-style name goes to temp
+	 * storage and must be a single plain path segment.
+	 *
+	 * @param newName the folder name received from the WebDAV client
+	 * @return the created folder
+	 * @throws DotRuntimeException if the folder cannot be created
+	 * @throws BadRequestException (HTTP 400) when a temp-style name is not a single plain path segment
 	 */
-	public CollectionResource createCollection(String newName) throws DotRuntimeException {
+	public CollectionResource createCollection(String newName) throws DotRuntimeException, BadRequestException {
 
 	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		String folderPath ="";
 		if(dotDavHelper.isTempResource(newName)){
+			DotWebdavHelper.requirePlainSegment(this, newName);
 			Host host;
 			try {
 				host = hostAPI.find(folder.getHostId(), user, false);
@@ -259,6 +266,7 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
         User user=(User)HttpManager.request().getAuthorization().getTag();
         
         if(collRes instanceof TempFolderResourceImpl){
+            DotWebdavHelper.requirePlainSegment(this, name);
             TempFolderResourceImpl tr = (TempFolderResourceImpl)collRes;
             try {
                 dotDavHelper.copyFolderToTemp(folder, tr.getFolder(), user, name, isAutoPub, lang);
@@ -289,13 +297,20 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
         }
     }
 
-	/* (non-Javadoc)
-	 * @see com.bradmcevoy.http.MoveableResource#moveTo(com.bradmcevoy.http.CollectionResource, java.lang.String)
+	/**
+	 * Moves this folder into {@code collRes} under {@code name}. A move that ends in temp storage
+	 * requires {@code name} to be a single plain path segment.
+	 *
+	 * @param collRes the destination collection
+	 * @param name    the destination name received from the WebDAV client
+	 * @throws DotRuntimeException if the move fails
+	 * @throws BadRequestException (HTTP 400) when a temp destination name is not a single plain path segment
 	 */
-	public void moveTo(CollectionResource collRes, String name) throws DotRuntimeException{
+	public void moveTo(CollectionResource collRes, String name) throws DotRuntimeException, BadRequestException {
 	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		if(collRes instanceof TempFolderResourceImpl){
 			Logger.debug(this, "Webdav clients wants to move a file from dotcms to a temporary storage but we don't allow this in fear that the transaction may break and delete a file from dotcms");
+			DotWebdavHelper.requirePlainSegment(this, name);
 			TempFolderResourceImpl tr = (TempFolderResourceImpl)collRes;
 			try {
 				dotDavHelper.copyFolderToTemp(folder, tr.getFolder(), user, name, isAutoPub, lang);
@@ -306,6 +321,7 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 		}else if(collRes instanceof FolderResourceImpl){
 			FolderResourceImpl fr = (FolderResourceImpl)collRes;
 			if(dotDavHelper.isTempResource(name)){
+				DotWebdavHelper.requirePlainSegment(this, name);
 				Host host;
 				String folderPath = "";
 				try {
@@ -401,9 +417,23 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 	}
 
 
+	/**
+	 * Creates a folder named {@code name} and locks it. The lock interface only allows
+	 * {@link NotAuthorizedException}, so an invalid temp-style name is reported as a runtime error.
+	 *
+	 * @param name     the folder name received from the WebDAV client
+	 * @param timeout  the requested lock timeout
+	 * @param lockInfo the requested lock details
+	 * @return the lock token of the created folder
+	 * @throws NotAuthorizedException if the lock is not authorized
+	 */
 	public LockToken createAndLock(String name, LockTimeout timeout, LockInfo lockInfo)
 			throws NotAuthorizedException {
-		createCollection(name);
+		try {
+			createCollection(name);
+		} catch (BadRequestException e) {
+			throw new DotRuntimeException(e.getReason(), e);
+		}
 		return lock(timeout, lockInfo).getLockToken();
 	}
 
