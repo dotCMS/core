@@ -178,7 +178,8 @@ the menu: it opens with no content type filter.
 ### Key Entities
 
 - **Remembered content type**: the identifier (variable name) of the last content type opened in
-  the Content Types editor, held for one browser tab until the Drive uses it or the tab closes.
+  the Content Types editor, held for one browser tab until the Drive next opens (applied or not, per FR-005) or the
+  tab closes.
 
 ## Success Criteria *(mandatory)*
 
