@@ -4,7 +4,6 @@ import com.dotcms.ai.AiTest;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
-import com.dotcms.datagen.EmbeddingsDTODataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
@@ -106,9 +105,9 @@ public class CompletionsToolTest {
      * And the JSONObject should not contain an "error" key
      */
     @Test
-    public void test_summarize() {
+    public void test_summarize() throws Exception {
         final String query = "Is AI the future";
-        EmbeddingsDTODataGen.persistEmbeddings(query, null, "default", 1);
+        AiTest.persistEmbeddedContentlet(query, "default", true);
 
         final JSONObject result = (JSONObject) completionsTool.summarize(query);
         assertAll(result);
@@ -191,10 +190,10 @@ public class CompletionsToolTest {
      * index, so it is covered by this test without touching the shared index.
      */
     @Test
-    public void test_summarize_providerFailure_returnsGenericError() {
+    public void test_summarize_providerFailure_returnsGenericError() throws Exception {
         final String query = AiTest.FORCE_CHAT_ERROR + " " + UUID.randomUUID();
         final String privateIndex = "idx" + UUID.randomUUID().toString().replace("-", "");
-        EmbeddingsDTODataGen.persistEmbeddings(query, null, privateIndex, 1);
+        AiTest.persistEmbeddedContentlet(query, privateIndex, true);
 
         final Object result = completionsTool.summarize(query, privateIndex);
 

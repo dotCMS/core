@@ -35,6 +35,10 @@
   content" even though readable matches rank lower. Retrieval now filters first and applies
   `offset`/`limit` to the readable results, over a capped set of candidates, in one query
   (FR-008, FR-012).
+- Q: Should anonymous callers read ahead as far as logged-in ones? → A: No (agreed with the
+  reviewer, 2026-10-06). Anonymous `$ai.*` widgets run on every public page render, so they read
+  ahead at most 200 rows. Logged-in callers keep 1000, because mixed-permission indexes (intranets)
+  are where a false "no matching content" actually happens.
 - Q: What does `count` report? → A: The distinct readable content items in the response
   (FR-009). An unfiltered count would reveal that restricted matches exist, and a filtered
   count over every match would need a permission check over the whole index on every request.
@@ -198,8 +202,11 @@ checks a missing user as the Anonymous user.
   retrieval returns nothing. The REST resources then return an error response, and the
   viewtools return the generic error payload.
 - **FR-012**: For a caller other than a CMS admin or the system user, retrieval runs **one**
-  embeddings query with `offset 0` and `limit = max(offset + limit, cap)`. The cap is a
-  configurable property, default 1000, which is today's default page size for GET `/search`.
+  embeddings query with `offset 0` and `limit = max(limit, cap)`. For logged-in
+  callers the cap is a configurable property, default 1000, which is today's default page size
+  for GET `/search`. For anonymous callers (no user, or the Anonymous user, i.e. `$ai.*` on
+  public pages) the cap is 200, or the configured cap if that is lower. 200 is 2–4× what those
+  widgets read before (50–100), and it keeps per-render cost close to before.
   Candidates are filtered in rank order, in batches of distinct content items. Each batch is
   one content load plus one per-item permission check (FR-001). Filtering stops as soon as
   `offset + limit` readable chunks are collected, and retrieval returns that slice. It never
@@ -236,12 +243,24 @@ checks a missing user as the Anonymous user.
   do not go through retrieval and must not change. No caller outside dotAI retrieval uses
   the changed method.
 - **Restricted matches beyond the cap**: a page comes back short only when the readable
-  matches lie beyond the first `max(offset + limit, cap)` candidates. That needs more than
-  1000 restricted chunks ranked above them by default. It is an accepted, known limitation,
-  and raising the cap property reaches further.
+  matches lie beyond the first `max(limit, cap)` candidates. For logged-in callers
+  that needs more than 1000 restricted chunks ranked above them by default. For anonymous
+  callers it needs more than about 150 (with a page of 50), which is only reached in indexes
+  mixing a lot of restricted content with public content. `offset` does not grow the rows read,
+  so for non-admin callers a page that starts beyond those rows comes back short or empty. That
+  keeps every request bounded: a huge `offset` cannot make one request read the whole table.
+  It is an accepted, known limitation.
+- **Rows read per request (accepted, known)**: logged-in non-admin retrieval reads up to the
+  candidate cap (default 1000) of rows within the threshold instead of 50; anonymous `$ai.*`
+  renders read up to 200 instead of 50–100. Each row carries about 512 tokens of text. Headless
+  sites using the JS SDK already read up to 1000 rows per search (the SDK's default `limit` is
+  1000), so the logged-in level is one dotCMS already serves. The distance scan itself does
+  not grow, because there is no vector index. Admins can lower `embeddingsSearchCandidateCap`
+  per site.
 - **Performance**: There is still one embeddings query per request. For a non-admin caller,
-  it returns up to the cap (1000 by default) instead of `limit` rows: completions and the
-  viewtools go from 50 to at most 1000 rows, while GET `/search` stays at 1000. The database
+  it returns up to the cap instead of `limit` rows: for logged-in callers, completions go from
+  50 to at most 1000 rows; anonymous viewtool renders go from 50–100 to at most 200; GET
+  `/search` stays at 1000. The database
   work is unchanged, because it already computes the distance for every row. The extra cost
   is transferring rows (about 512 tokens of text each) plus loading content and checking
   permission per batch of candidates, both cache-backed. Because filtering stops once the

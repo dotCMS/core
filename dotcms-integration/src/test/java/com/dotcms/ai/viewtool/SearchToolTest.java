@@ -21,6 +21,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import org.apache.velocity.context.Context;
@@ -92,9 +93,9 @@ public class SearchToolTest {
      * Then the system should return the search results related to the query from the specified index
      */
     @Test
-    public void test_query_withIndexName() {
-        final String query = "Facts about Nikola Tesla";
-        EmbeddingsDTODataGen.persistEmbeddings(query, null, "default");
+    public void test_query_withIndexName() throws Exception {
+        final String query = "Facts about Nikola Tesla" + " " + UUID.randomUUID();
+        AiTest.persistEmbeddedContentlet(query, "default", true);
 
         final JSONObject result = (JSONObject) searchTool.query(query, "default");
         assertNotNull(result);
@@ -111,9 +112,9 @@ public class SearchToolTest {
      * Then the system should return the search results related to the query from the default index
      */
     @Test
-    public void test_query() {
-        final String query = "Facts about Nikola Tesla";
-        EmbeddingsDTODataGen.persistEmbeddings(query, null, "default");
+    public void test_query() throws Exception {
+        final String query = "Facts about Nikola Tesla" + " " + UUID.randomUUID();
+        AiTest.persistEmbeddedContentlet(query, "default", true);
 
         final JSONObject result = (JSONObject) searchTool.query(query);
         assertNotNull(result);
@@ -130,9 +131,9 @@ public class SearchToolTest {
      * Then the system should return the search results related to the query based on the parameters in the map
      */
     @Test
-    public void test_query_usingMap() {
-        final String query = "Brief description of theory of relativity";
-        EmbeddingsDTODataGen.persistEmbeddings(query, null, "default");
+    public void test_query_usingMap() throws Exception {
+        final String query = "Brief description of theory of relativity" + " " + UUID.randomUUID();
+        AiTest.persistEmbeddedContentlet(query, "default", true);
 
         final JSONObject result = (JSONObject) searchTool.query(
                 Map.of(
@@ -144,6 +145,31 @@ public class SearchToolTest {
         assertFalse(result.isEmpty());
         assertEquals(query, result.getString("query"));
         assertFalse(result.getJSONArray("dotCMSResults").isEmpty());
+    }
+
+    /**
+     * Feature: Search respects READ permission (#37151)
+     * Scenario: Anonymous visitor queries an index holding readable and restricted content
+     * Given two published contentlets embedded with the same text in a private index
+     * And only one of them is readable by CMS Anonymous
+     * When an anonymous visitor (no user on the request) performs a search with that text
+     * Then only the Anonymous-readable contentlet is returned
+     */
+    @Test
+    public void test_query_anonymous_excludesRestricted() throws Exception {
+        final String query = "Quarterly salary review guidance " + UUID.randomUUID();
+        final String privateIndex = "idx" + UUID.randomUUID().toString().replace("-", "");
+        final Contentlet readable = AiTest.persistEmbeddedContentlet(query, privateIndex, true);
+        final Contentlet restricted = AiTest.persistEmbeddedContentlet(query, privateIndex, false);
+
+        final JSONObject result = (JSONObject) searchTool.query(query, privateIndex);
+
+        // a denied contentlet used to come back as a bare {title, matches} entry with no inode,
+        // so the restricted one is excluded only if the readable one is the single result
+        final JSONArray results = result.getJSONArray("dotCMSResults");
+        assertEquals(1, results.size());
+        assertEquals(readable.getInode(), results.getJSONObject(0).getString("inode"));
+        assertFalse(results.toString().contains(restricted.getInode()));
     }
 
     /**
