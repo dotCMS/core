@@ -73,7 +73,6 @@ for (Map.Entry<String, String> aliasEntry : ssapi.getAliasToIndexMapAllEngines()
 }
 Map<String, IndexStats> indexInfo = esapi.getIndicesStats();
 
-SimpleDateFormat dater = APILocator.getContentletIndexAPI().timestampFormatter;
 
 
 Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();

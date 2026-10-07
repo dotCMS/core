@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.cmsmaintenance.ajax;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.DotIndexException;
 import com.dotcms.content.elasticsearch.business.ESIndexHelper;
+import com.dotcms.content.index.IndexTimestamp;
 import com.dotcms.content.index.IndexAPI;
 import com.dotcms.content.elasticsearch.business.IndexType;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelper;
@@ -23,7 +24,6 @@ import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import javax.servlet.ServletException;
@@ -123,7 +123,7 @@ public class IndexAjaxAction extends AjaxAction {
 
 
 		final boolean live = map.get("live") != null;
-		final String indexName=((live) ? "live_" : "working_" ) + APILocator.getContentletIndexAPI().timestampFormatter.format(new Date());
+		final String indexName=((live) ? "live_" : "working_" ) + IndexTimestamp.now();
 
 		APILocator.getContentletIndexAPI().createContentIndex(indexName, shards);
         ESMappingUtilHelper.getInstance().addCustomMapping(indexName);

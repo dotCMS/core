@@ -1,13 +1,13 @@
 package com.dotcms.content.elasticsearch.business;
 
+import com.dotcms.content.index.IndexTimestamp;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotmarketing.exception.DotRuntimeException;
 import io.vavr.control.Try;
 
 import java.io.Serializable;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.commons.beanutils.PropertyUtils;
@@ -75,6 +75,11 @@ public class IndiciesInfo implements Serializable {
         }
     }
 
+    /**
+     * @deprecated zone-dependent and not thread-safe; index-name suffixes are written and read by
+     * {@link IndexTimestamp}, which always uses UTC (issue #37282).
+     */
+    @Deprecated(forRemoval = true)
     public static final SimpleDateFormat timestampFormatter = new SimpleDateFormat("yyyyMMddHHmmss");
     public static final String CLUSTER_PREFIX = "cluster_";
     private final static String INDEX_NAME_PATTERN = CLUSTER_PREFIX + "%s.%s_%s";
@@ -130,20 +135,18 @@ public class IndiciesInfo implements Serializable {
     }
 
     /**
-     * Return the timestamp from a index name, a index name has the follow sintax:
+     * Tells how long ago the index of the given type was created, based on the timestamp in its
+     * name ({@code cluster_<CLUSTER_ID>.<INDEX_NAME_PREFIX>_<TIME_STAMP>}). The timestamp is read
+     * as UTC by {@link IndexTimestamp}.
      *
-     * <b>cluster_<CLUSTER_ID>.<INDEX_NAME_PREFIX>_<TIME_STAMP></b>
-     * @return
+     * @param indexType the index whose name is read
+     * @return milliseconds since the index was created; negative if the name is ahead of the clock
+     * @throws DotRuntimeException if the name does not carry a valid timestamp
      */
     public long getIndexTimeStamp(final IndexType indexType) {
-        Date startTime;
         try {
-            final String indexName = indiciesNames.get(indexType);
-            final String indexTimestamp = indexName.substring(indexName.lastIndexOf("_") + 1);
-            startTime = timestampFormatter.parse(indexTimestamp);
-
-            return System.currentTimeMillis() - startTime.getTime();
-        } catch (ParseException e) {
+            return IndexTimestamp.elapsedSince(indiciesNames.get(indexType)).toMillis();
+        } catch (DateTimeParseException e) {
             throw new DotRuntimeException(e);
         }
     }
@@ -157,7 +160,7 @@ public class IndiciesInfo implements Serializable {
      * {@link IndiciesInfo#getReindexWorking()} {@link IndiciesInfo#getSiteSearch()}
      */
     public String createNewIndiciesName(final IndexType... indiciesType) {
-        final String timeStamp = timestampFormatter.format(new Date());
+        final String timeStamp = IndexTimestamp.now();
 
         for (final IndexType indexType : indiciesType) {
             final String indexName = String.format(

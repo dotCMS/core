@@ -197,7 +197,13 @@ export const PANEL_SCROLL_HEIGHT = CHIP_FILTER_SCROLL_HEIGHT;
 export const DIALOG_TYPE = {
     FOLDER: 'FOLDER',
     CONTENT_TYPE_SELECTOR: 'CONTENT_TYPE_SELECTOR',
-    ACTION_CENTER: 'ACTION_CENTER'
+    ACTION_CENTER: 'ACTION_CENTER',
+    /**
+     * Edit Permissions for a folder. Opened through the store like the other folder dialogs, so
+     * the URL can name it while it is open (#37759, FR-030); the shell renders it as the JSP
+     * permissions dialog rather than in its own `p-dialog`.
+     */
+    FOLDER_PERMISSIONS: 'FOLDER_PERMISSIONS'
 } as const;
 
 /**
@@ -301,11 +307,24 @@ export const ERROR_MESSAGE_LIFE = 4500;
 export const MOVE_TO_FOLDER_WORKFLOW_ACTION_ID = 'dd4c4b7c-e9d3-4dc0-8fbf-36102f9c6324';
 
 /**
- * `editContent` value written for a `new`-mode panel: a non-shareable marker (creating has no
- * identifier) whose only job is to give browser Back a history entry to pop, so Back closes the
- * create panel too (AC8). The deep-link reader ignores it; only real identifiers are resolved.
+ * The Content Drive URL params that say which side panel or folder dialog is open (#37759). They are
+ * a supported entry point: Part 1's redirects build the panel ones, other screens may link to them,
+ * and at most one of them is in the URL at a time (FR-023).
  */
-export const NEW_CONTENT_MARKER = 'new';
+export const CONTENT_DRIVE_URL_PARAM = {
+    /** Identifier of the content open for edit, in either editor. */
+    EDIT_CONTENT: 'editContent',
+    /** Language of the version open for edit. Read only together with `editContent`. */
+    EDIT_CONTENT_LANG: 'editContentLang',
+    /** Variable of the content type being created, in either editor. */
+    CREATE_CONTENT: 'createContent',
+    /** `true` while New Folder is open; its parent is the folder in `path`. */
+    CREATE_FOLDER: 'createFolder',
+    /** Identifier of the folder whose Folder Settings are open. */
+    EDIT_FOLDER: 'editFolder',
+    /** Identifier of the folder whose Edit Permissions dialog is open. */
+    FOLDER_PERMISSIONS: 'folderPermissions'
+} as const;
 
 /**
  * Operation key for the upload's own phase, the window before the server answers a handle.

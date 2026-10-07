@@ -298,6 +298,62 @@ describe('DotContentTypeFilterComponent', () => {
         });
     });
 
+    describe('Content types selected without their base type', () => {
+        it('should show the content type in the chip', () => {
+            spectator.setInput('selectedContentTypes', ['blog']);
+            spectator.detectChanges();
+
+            expect(spectator.component.$chipSelections()).toEqual(['Blog']);
+        });
+
+        it('should select the base type the content type belongs to', () => {
+            spectator.setInput('selectedContentTypes', ['blog', 'videoFile']);
+            spectator.detectChanges();
+
+            expect(spectator.component.$selectedBaseTypes()).toEqual(['CONTENT', 'FILEASSET']);
+        });
+
+        it('should keep the base types the host selected', () => {
+            spectator.setInput('selectedBaseTypes', ['HTMLPAGE']);
+            spectator.setInput('selectedContentTypes', ['blog']);
+            spectator.detectChanges();
+
+            expect(spectator.component.$selectedBaseTypes()).toEqual(['HTMLPAGE', 'CONTENT']);
+            expect(spectator.component.$chipSelections()).toEqual(['Page (All)', 'Blog']);
+        });
+
+        it('should not emit when every selected content type is found', () => {
+            spectator.setInput('selectedContentTypes', ['blog']);
+            spectator.detectChanges();
+
+            expect(selections).toEqual([]);
+        });
+
+        it('should drop the content types the server does not return', () => {
+            spectator.setInput('selectedContentTypes', ['blog', 'deletedType']);
+            spectator.detectChanges();
+
+            expect(lastSelection()).toEqual({ baseTypes: ['CONTENT'], contentTypes: ['blog'] });
+        });
+
+        it('should clear the selection when none of the content types is found', () => {
+            spectator.setInput('selectedContentTypes', ['deletedType']);
+            spectator.detectChanges();
+
+            expect(lastSelection()).toEqual({ baseTypes: [], contentTypes: [] });
+        });
+
+        it('should keep the selection when the content types cannot be loaded', () => {
+            contentTypeService.getContentTypesWithPagination.mockReturnValue(
+                throwError(() => new Error('network'))
+            );
+            spectator.setInput('selectedContentTypes', ['blog']);
+            spectator.detectChanges();
+
+            expect(selections).toEqual([]);
+        });
+    });
+
     describe('Chip label rules', () => {
         beforeEach(() => spectator.detectChanges());
 
