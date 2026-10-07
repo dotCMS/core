@@ -167,6 +167,15 @@ Open questions (to confirm in planning, not blocking the spec):
   marked failed and retried).
 - In Phase 1, a serialization failure on the shadow engine does not mark the primary's entry
   failed (only if the open question above is confirmed).
+- The failed-records download stays usable once oversized content is what fails. Found while
+  verifying the fix by hand: `GET /api/v1/esindex/failed` embeds every failed record's full
+  contentlet (all field values), so 12 failed records of oversized content made a 168 MB response
+  and the Maintenance portlet's "Download Failed Records" button crashed the browser tab (out of
+  memory). A new `GET /api/v1/index/failed` (vendor-neutral `index` family, same CMS
+  Administrator + `maintenance` portlet access as today) returns each failed record with a typed
+  response — identifier, inode, title, content type, language, failure reason, priority and
+  operation — and **no content field values**. The button uses it. `GET /api/v1/esindex/failed`
+  keeps its response exactly as today and is marked deprecated in favour of the new endpoint.
 
 **Explicitly out of scope / non-goals**:
 
@@ -194,8 +203,10 @@ Open questions (to confirm in planning, not blocking the spec):
   negligible. Keeping the journal row when a sibling succeeds means a retry re-sends the
   identifier's healthy documents too; index writes are idempotent per document id, so this is
   safe.
-- **Backward compatibility**: No change to index mappings, REST contracts or the
-  `dist_reindex_journal` schema. The text stored as a failure reason becomes per-document; any
+- **Backward compatibility**: No change to index mappings or the `dist_reindex_journal` schema.
+  REST: one endpoint is added (`GET /api/v1/index/failed`); `GET /api/v1/esindex/failed` is only
+  marked deprecated, its response is unchanged, so existing scripts and the migration runbook
+  keep working. The text stored as a failure reason becomes per-document; any
   tooling that grouped failures by identical message will see distinct messages.
 - **Data considerations**: Installs that already hit this have healthy content parked as failed
   in `dist_reindex_journal`. This fix does not requeue it; recovery is a reindex after the
@@ -222,12 +233,21 @@ Open questions (to confirm in planning, not blocking the spec):
 - **AC-006**: When the engine is unreachable or rejects the request as a whole (connection
   refused / timeout / authentication), every record of the group is still marked failed and
   retried as today.
+- **AC-007**: With failed records for oversized content in `dist_reindex_journal`,
+  `GET /api/v1/index/failed` returns one entry per failed record carrying identifier, inode,
+  title, content type, language, failure reason, priority and operation, and no contentlet field
+  values, so its size does not grow with the size of the content. A user without the CMS
+  Administrator role gets 401/403 as with the old endpoint. `GET /api/v1/esindex/failed` returns
+  the same response as before, documented as deprecated. The Maintenance portlet's "Download
+  Failed Records" button calls the new endpoint.
 - **Verification method**: A new integration test in `dotcms-integration` (named `*Test`,
   registered in a `MainSuite*` class) that builds the reproduction — one >20,000,000-character
   field plus N healthy contentlets fetched in the same iteration — and asserts AC-001/AC-002,
   plus the sibling scenarios of AC-005, parameterized or repeated for Phase 0, Phase 1 and
   Phase 3. It must fail (Red) on current code before the fix. AC-006 is covered by a unit test of
-  the classification with a transport exception. The weekly OpenSearch Phase Sweep exercises the phase variants in CI.
+  the classification with a transport exception. AC-007 is covered by an API test
+  (`dotcms-postman`) for the new endpoint's shape and access, plus a unit test that the response
+  omits field values. The weekly OpenSearch Phase Sweep exercises the phase variants in CI.
 
 ## Assumptions
 
