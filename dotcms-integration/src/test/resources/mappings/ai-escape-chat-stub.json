@@ -1,0 +1,43 @@
+{
+  "priority": 1,
+  "request": {
+    "method": "POST",
+    "urlPathPattern": "/chat/completions",
+    "headers": {
+      "Authorization": {
+        "equalTo": "Bearer some-api-key-1a2bc3"
+      }
+    },
+    "bodyPatterns": [
+      {
+        "matches": "(?s).*Escaping probe markup.*"
+      }
+    ]
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "id": "chatcmpl-escape-probe-markup",
+      "object": "chat.completion",
+      "created": 1757950000,
+      "model": "gpt-4o-mini",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "<script>alert(1)</script><img src=x onerror=alert(1)>"
+          },
+          "logprobs": null,
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 12,
+        "completion_tokens": 14,
+        "total_tokens": 26
+      },
+      "system_fingerprint": null
+    }
+  }
+}
