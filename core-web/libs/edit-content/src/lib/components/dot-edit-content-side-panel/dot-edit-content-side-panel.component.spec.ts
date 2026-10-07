@@ -26,7 +26,8 @@ describe('DotEditContentSidePanelComponent', () => {
     let spectator: Spectator<DotEditContentSidePanelComponent>;
     let saved$: Subject<DotCMSContentlet>;
     let left$: Subject<void>;
-    let mockHost: Pick<OverlayEditContentHost, 'saved$' | 'left$'>;
+    let languageChanged$: Subject<number>;
+    let mockHost: Pick<OverlayEditContentHost, 'saved$' | 'left$' | 'languageChanged$'>;
 
     const EDIT_DATA: EditContentDialogData = {
         mode: 'edit',
@@ -61,7 +62,12 @@ describe('DotEditContentSidePanelComponent', () => {
         localStorage.clear();
         saved$ = new Subject<DotCMSContentlet>();
         left$ = new Subject<void>();
-        mockHost = { saved$: saved$.asObservable(), left$: left$.asObservable() };
+        languageChanged$ = new Subject<number>();
+        mockHost = {
+            saved$: saved$.asObservable(),
+            left$: left$.asObservable(),
+            languageChanged$: languageChanged$.asObservable()
+        };
 
         spectator = createComponent({
             providers: [
