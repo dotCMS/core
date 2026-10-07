@@ -123,10 +123,10 @@ the menu: it opens with no content type filter.
   editor does.
 - **Creating a type that is never saved.** Opening the "new content type" form and leaving without
   saving does not count, because there is no type yet.
-- **The saved type no longer exists, or the user can't see it.** If the type was deleted, or the
-  user has no permission on it, by the time the Drive opens, the Drive loads without an error
-  message and the remembered type is forgotten. The list behaves as it does today for a
-  content type it doesn't recognize.
+- **The remembered content type was deleted, or the user has no permission on it.** If that
+  content type was deleted, or the user has no permission on that content type, by the time the
+  Drive opens, the Drive still opens normally: no content type filter, no error message, and the
+  remembered content type is forgotten.
 - **The user goes somewhere else first.** If the user opens a type in the editor, visits other
   screens, and only later opens the Drive in the same tab, the Drive still applies the type,
   because nothing has used it yet.
@@ -170,9 +170,10 @@ the menu: it opens with no content type filter.
 - **FR-007**: The remembered type MUST be kept in the browser's session storage
   (`sessionStorage`), so it belongs to a single browser tab. Other tabs, including new ones, MUST
   NOT see it. It MUST NOT be kept on the server or in storage shared across tabs.
-- **FR-008**: If the remembered type no longer exists, the user cannot access it, or the Drive's
-  Content Type filter does not offer it, the Drive MUST open without showing an error and MUST
-  forget the remembered type.
+- **FR-008**: If the remembered content type can't be used as a filter when the Drive opens
+  (the content type was deleted, the user has no permission on that content type, or the Drive's
+  Content Type filter doesn't list it), the Drive MUST open normally, without that filter and
+  without an error, and MUST forget the remembered content type.
 
 ### Key Entities
 
@@ -214,7 +215,7 @@ the menu: it opens with no content type filter.
 - **Logging out deliberately does not clear it.** Logout reloads the same tab, so the remembered
   type survives until the next Drive visit uses it. If someone else logs in on that tab, their
   first Drive visit may open filtered to the previous user's content type, once: FR-008 covers a
-  type they can't access, and otherwise it's a visible filter they can clear. Clearing it would
+  content type they have no permission on, and otherwise it's a visible filter they can clear. Clearing it would
   make the login code depend on a Content Drive detail for a one-time, harmless effect.
 - "Opening a type" means the Content Types editor loading an existing type. A newly created type
   counts after its first save, because the editor then reopens it as an existing type.
