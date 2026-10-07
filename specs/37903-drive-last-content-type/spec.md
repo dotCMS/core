@@ -134,6 +134,41 @@ independent of the content type handoff.
 
 ---
 
+### User Story 5 - The content row menu only offers what the user may do (Priority: P3)
+
+The folder row menu already hides what the user has no permission for. The content row menu does
+not: a user who can only read an item is still offered Edit, Push Publish and Add to Bundle. Edit
+opens an editor that cannot save, and the other two lead to actions the server refuses.
+
+**Why this priority**: Small cleanup, carried in this change at the developer's request. It
+matches the folder menu and Content Search, and removes dead ends from normal use.
+
+**Independent Test**: As a user with only read permission on a content item, open its row menu.
+It offers View instead of Edit, and no Push Publish or Add to Bundle.
+
+**Acceptance Scenarios**:
+
+1. **Given** the user can read but not edit a content item,
+   **When** they open its row menu,
+   **Then** the first entry is "View Content" instead of "Edit Content", and it opens the item the
+   same way.
+2. **Given** the user can edit a content item,
+   **When** they open its row menu,
+   **Then** the entry still reads "Edit Content".
+3. **Given** the user opens the row menu of a page,
+   **When** the menu shows,
+   **Then** it offers two entries: "Edit Page" (opens the page editor) and "Edit Properties" (opens
+   the page's content form in the side panel), or "View Page" and "View Properties" when the user
+   can't edit the page.
+4. **Given** the user has no publish permission on a content item,
+   **When** they open its row menu,
+   **Then** Push Publish and Add to Bundle are not offered.
+5. **Given** the user has publish permission on a content item,
+   **When** they open its row menu,
+   **Then** Push Publish and Add to Bundle are offered as today.
+
+---
+
 ### Edge Cases
 
 - **Other screens load content types too.** Opening a contentlet in Edit Content, or any other
@@ -198,6 +233,14 @@ independent of the content type handoff.
   type; this change does not alter how the Drive reacts to an unknown content type.
 - **FR-009**: Content Drive MUST NOT offer a Rename action, including when exactly one item is
   selected.
+- **FR-010**: In a content row's menu, the Drive MUST label the open-in-editor entry "View Content"
+  when the user lacks edit permission on that item, and "Edit Content" when they have it. Either
+  way it opens the item in the editor, as Content Search does. A page's menu MUST offer two
+  entries, "Edit Page" (page editor) and "Edit Properties" (the page's content form in the side
+  panel), each labelled "View …" instead when the user lacks edit permission.
+- **FR-011**: In a content row's menu, the Drive MUST offer Push Publish and Add to Bundle only when
+  the user has publish permission on that item, the same rule the folder row menu already applies.
+  When the item's permissions are not known, the Drive MUST behave as it does today (offer them).
 
 ### Key Entities
 
