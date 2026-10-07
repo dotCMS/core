@@ -26,8 +26,9 @@ contentlet in the batch is recorded as failed**, although none of them is at fau
 contentlets are retried in the same batches and fail again until they run out of retries.
 
 The same batching also exhausts server memory. The OpenSearch client builds the whole request
-body in memory before sending it, in a buffer that grows by doubling; a batch of ten large
-documents needs a contiguous allocation of hundreds of MB on top of what it already holds. With
+body in memory before sending it, in a buffer that grows by doubling; a batch of large
+documents (up to 250 per batch with the shipped configuration) needs contiguous allocations of
+hundreds of MB on top of what it already holds. With
 `-Xmx4g` this killed the reindex thread (`ReindexThread terminating on unrecoverable error: Java
 heap space`). The thread is started again by the next trigger (a reindex start, a content
 operation) and dies again on the same queued entries, so indexing makes no progress while the
@@ -46,7 +47,9 @@ whose request limit is lower than 100 MB.
 
 **Environment**: dotCMS built from the #37269 branch (#37924), migration Phase 3
 (`PHASE_3_OPENSEARCH_ONLY`), OpenSearch 3.4.0 with the default `http.max_content_length`,
-`-Xmx4g`, default `REINDEX_THREAD_ELASTICSEARCH_BULK_ACTIONS` (10).
+`-Xmx4g`, shipped `REINDEX_THREAD_ELASTICSEARCH_BULK_ACTIONS` (250, from
+`dotcms-config-cluster.properties`; the code fallback of 10 does not apply), so the 20
+contentlets travel in one OpenSearch request of roughly 540 MB.
 
 **Steps to Reproduce**:
 
@@ -85,7 +88,8 @@ carry the full logs and the stack trace.
   `ReindexQueueFactory`) is a consumer and is not expected to change.
 - **Related known decisions**: OpenSearch content writes are fire-and-forget in Phase 1 and
   propagate from Phase 2 on (`docs/backend/OPENSEARCH_MIGRATION.md`). The Elasticsearch
-  processor's byte threshold (`REINDEX_THREAD_ELASTICSEARCH_BULK_SIZE`, MB, default 1) is the
+  processor's byte threshold (`REINDEX_THREAD_ELASTICSEARCH_BULK_SIZE`, MB; shipped value 10 in
+  `dotcms-config-cluster.properties`, code fallback 1, `-1` disables it) is the
   existing precedent. Configuration follows the `OS_*`/`ES_*` fallback convention in
   `docs/backend/OPENSEARCH_CLIENT_CONFIGURATION.md`. The plan consults `dotCMS/platform-adrs`.
 
@@ -108,7 +112,7 @@ Each document is measured by the character length of `jsonMapping`, counted as i
 bytes (1 MB = 1,048,576 characters). Decided with the developer: it costs nothing, since the
 string is already in hand, and the Elasticsearch processor's own size is an estimate too. For
 plain text a character is one byte; for accented or Asian text the request can be somewhat
-larger than configured, and the action lines of the bulk body are not counted. With a 1 MB
+larger than configured, and the action lines of the bulk body are not counted. With a 10 MB
 default against a 100 MB server limit this does not matter; the documentation states that the
 limit is approximate and should be set well below the server's `http.max_content_length`.
 
@@ -121,11 +125,21 @@ limit is approximate and should be set well below the server's `http.max_content
   exceed it.
 - A single document larger than the byte size is sent alone and indexed; it is never split,
   dropped or failed by the batching itself.
-- The byte size has its own OpenSearch property (working name
-  `REINDEX_THREAD_OPENSEARCH_BULK_SIZE`, MB) that falls back to
-  `REINDEX_THREAD_ELASTICSEARCH_BULK_SIZE` when unset, following the `OS_*`/`ES_*` fallback
-  convention. Out of the box both engines batch alike; an install whose OpenSearch accepts
-  smaller requests than its Elasticsearch can lower only the OpenSearch value.
+- The byte size has its own OpenSearch property, `OS_REINDEX_BULK_SIZE_MB`, declared in
+  `OSIndexProperty` with `REINDEX_THREAD_ELASTICSEARCH_BULK_SIZE` as its fallback, following the
+  `OS_*`/`ES_*` convention (raised in review). `REINDEX` in the name keeps it apart from
+  `OS_BULK_BATCH_SIZE`, which `OSBulkHelper` uses on a different path. Out of the box both
+  engines batch alike (10 MB shipped); an install whose OpenSearch accepts smaller requests than
+  its Elasticsearch can lower only the OpenSearch value.
+- The OpenSearch limit is never switched off by inheritance (raised in review: `-1` disables the
+  Elasticsearch limit, and a plain fallback would silently bring this defect back):
+
+  | `OS_REINDEX_BULK_SIZE_MB` | `REINDEX_THREAD_ELASTICSEARCH_BULK_SIZE` | OpenSearch byte limit |
+  |---|---|---|
+  | > 0 | any | that value |
+  | ≤ 0 (`-1`, `0`) | any | disabled — count only, as today — and one `WARN` at startup |
+  | unset | > 0 | the Elasticsearch value |
+  | unset | ≤ 0 | 10 MB (the shipped default), not disabled |
 - The fix applies in every phase that writes to OpenSearch (1, 2 and 3), through the one
   processor they share.
 - `docs/backend/OPENSEARCH_CLIENT_CONFIGURATION.md` documents the threshold (in MB, approximate,
@@ -146,7 +160,8 @@ limit is approximate and should be set well below the server's `http.max_content
   serialization and the OpenSearch re-parse).
 
 **Workaround until the fix ships**: lower `REINDEX_THREAD_ELASTICSEARCH_BULK_ACTIONS` (for
-example `DOT_REINDEX_THREAD_ELASTICSEARCH_BULK_ACTIONS=2`); the OpenSearch batch size follows
+example from the shipped 250 down to `DOT_REINDEX_THREAD_ELASTICSEARCH_BULK_ACTIONS=10`, or
+lower for very large content); the OpenSearch batch size follows
 it, so request size and memory drop proportionally, at the cost of more requests.
 
 ## Regression Risk *(mandatory)*
@@ -157,8 +172,9 @@ it, so request size and memory drop proportionally, at the cost of more requests
   first, so batching must stay exactly as today; this is an acceptance criterion.
 - **Backward compatibility**: No change to index mappings, REST contracts, or the
   `dist_reindex_journal` schema. One configuration property is added
-  (`REINDEX_THREAD_OPENSEARCH_BULK_SIZE`); existing properties keep their meaning. The listener callbacks (`beforeBulk` / `afterBulk`) are unchanged; only
-  how many operations each call carries changes.
+  (`OS_REINDEX_BULK_SIZE_MB`); existing properties keep their meaning. The listener callbacks
+  (`beforeBulk` / `afterBulk`) are unchanged; only how many operations each call carries
+  changes.
 - **Data considerations**: Entries already failed by this defect stay parked in
   `dist_reindex_journal`; a reindex after the fix indexes them. No data repair.
 
@@ -175,12 +191,17 @@ it, so request size and memory drop proportionally, at the cost of more requests
   sent in a request of its own and indexed.
 - **AC-005**: In Phase 1 the large documents reach the OpenSearch shadow index (no silent
   divergence); in Phase 2 they reach both engines.
-- **AC-006**: The byte threshold honours the OpenSearch property when set; when unset it equals
-  `REINDEX_THREAD_ELASTICSEARCH_BULK_SIZE`, and changing the OpenSearch property does not change
-  the Elasticsearch processor's threshold.
+- **AC-006**: The byte threshold follows the table in Fix Scope: a positive
+  `OS_REINDEX_BULK_SIZE_MB` is used as is; unset, it takes a positive
+  `REINDEX_THREAD_ELASTICSEARCH_BULK_SIZE`; changing the OpenSearch property does not change the
+  Elasticsearch processor's threshold.
+- **AC-007**: `REINDEX_THREAD_ELASTICSEARCH_BULK_SIZE=-1` with `OS_REINDEX_BULK_SIZE_MB` unset
+  leaves the OpenSearch limit at 10 MB (the reproduction of AC-001 still passes). Only
+  `OS_REINDEX_BULK_SIZE_MB` ≤ 0 disables it, and that logs one `WARN` naming the property.
 - **Verification method**: Unit tests of `OSIndexBulkProcessor` with a fake client that records
   each request's operations and size: flush by count (AC-003), flush by bytes before
-  overflowing, a single oversized operation alone (AC-004), configured threshold (AC-006).
+  overflowing, a single oversized operation alone (AC-004), the property resolution table
+  including `-1`/`0` and the non-inherited disable (AC-006, AC-007).
   Integration test in `dotcms-integration` (named `*Test`, registered in a `MainSuite*`) that
   queues large-but-legal contentlets and asserts AC-001, run at Phase 1 and Phase 3 through the
   phased run recipe (AC-005). AC-002 is verified manually with the reproduction environment
