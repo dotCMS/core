@@ -36,7 +36,6 @@ on:
       issue_number:
         description: 'Issue number to assess'
         required: true
-        default: '36951'
       dry_run:
         description: 'Dry run: build the report but do not comment or write to dotCMS'
         type: boolean
