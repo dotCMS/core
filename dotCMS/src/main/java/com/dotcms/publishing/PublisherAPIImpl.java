@@ -30,6 +30,7 @@ import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -298,6 +299,13 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
                 try {
                     Files.copy(shippedFilter, target);
                     Logger.info(this, () -> "Copied new shipped PP Filter: " + fileName);
+                    alreadyShipped.add(fileName);
+                } catch (final FileAlreadyExistsException e) {
+                    // Benign race on clustered deployments sharing one assets volume: another
+                    // node copied this filter between our existence check and this attempt. The
+                    // file is there either way, so this is not an error.
+                    Logger.debug(this, () -> "PP filter '" + fileName
+                            + "' was copied by another node concurrently");
                     alreadyShipped.add(fileName);
                 } catch (final IOException e) {
                     // Do NOT mark as shipped on failure, so a transient I/O error is retried on
