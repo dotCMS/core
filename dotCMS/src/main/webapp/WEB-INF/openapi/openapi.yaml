@@ -10697,12 +10697,17 @@ paths:
       tags:
       - Search Index
     get:
+      deprecated: true
+      description: "Deprecated: use GET /api/v1/index/failed. Returns every failed\
+        \ reindex record together with the full contentlet, including all field values,\
+        \ so the response grows with the size of the failed content."
       operationId: downloadRemainingRecordsAsCsv
       responses:
         default:
           content:
             application/json: {}
           description: default response
+      summary: List failed reindex records with their content (deprecated)
       tags:
       - Search Index
   /v1/esindex/indexlist/{params}:
@@ -11828,6 +11833,38 @@ paths:
       summary: Get system status summary
       tags:
       - Health
+  /v1/index/failed:
+    get:
+      description: "Returns every reindex journal entry that exhausted its retries,\
+        \ with the index-document limits and retry policy they are measured against.\
+        \ Each record identifies the content (identifier, inode, title, content type\
+        \ variable, language), what the index still owes for it (reindex or delete),\
+        \ how many attempts failed, the last failure reason and, when the document\
+        \ exceeded a document limit, which limit, field, actual value and allowed\
+        \ value. Unknown values are explicit nulls. Content field values are never\
+        \ included, so the response size does not depend on the size of the failed\
+        \ content. Requires the CMS Administrator role and access to the Maintenance\
+        \ portlet. Replaces the deprecated GET /api/v1/esindex/failed."
+      operationId: listFailedReindexRecords
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityFailedReindexRecordsView"
+          description: Failed records listed
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role and Maintenance portlet
+            access required
+      summary: List failed reindex records
+      tags:
+      - Search Index
   /v1/jobs:
     get:
       description: Fetches a paginated list of all jobs regardless of state. Results
@@ -28523,6 +28560,21 @@ components:
           items:
             type: number
             format: double
+    DocumentLimits:
+      type: object
+      description: Index-document limits enforced before a document is sent to the
+        engine
+      properties:
+        maxNestingDepth:
+          type: integer
+          format: int32
+          description: Maximum nesting of maps and lists
+          example: 1000
+        maxStringLength:
+          type: integer
+          format: int32
+          description: Maximum characters of a single string value
+          example: 20000000
     DoesNotExistException:
       type: object
       properties:
@@ -29317,6 +29369,75 @@ components:
           type: string
       required:
       - packages
+    FailedReindexRecordView:
+      type: object
+      description: "A reindex journal entry that exhausted its retries, without content\
+        \ values"
+      properties:
+        contentTypeVariable:
+          type: string
+          description: Content type variable; null if it cannot be resolved
+          example: Blog
+          nullable: true
+        failedAttempts:
+          type: integer
+          format: int32
+          description: How many times indexing the entry failed
+          example: 5
+        identifier:
+          type: string
+          description: Contentlet identifier
+          example: d5edd758f166259247356e7ea2deca4e
+        inode:
+          type: string
+          description: Inode of the version resolved for display; null if the content
+            no longer exists
+          nullable: true
+        languageId:
+          type: integer
+          format: int64
+          description: Language of the resolved version; null if unknown
+          example: 1
+          nullable: true
+        lastFailureReason:
+          type: string
+          description: "Last failure recorded for the entry, as stored by the reindex\
+            \ journal (truncated to 300 characters); null if no message was recorded"
+          nullable: true
+        pendingOperation:
+          type: string
+          description: What the index still owes for the identifier
+          enum:
+          - reindex
+          - delete
+        priority:
+          type: integer
+          format: int32
+          description: Raw journal priority; encodes the failed attempts
+          example: 505
+        title:
+          type: string
+          description: Content title; null if the content no longer exists
+          nullable: true
+        violation:
+          $ref: "#/components/schemas/ViolationView"
+    FailedReindexRecordsView:
+      type: object
+      description: Failed reindex records with the limits they are measured against
+      properties:
+        documentLimits:
+          $ref: "#/components/schemas/DocumentLimits"
+        failedRecordCount:
+          type: integer
+          format: int32
+          description: Number of failed records
+          example: 4
+        failedRecords:
+          type: array
+          items:
+            $ref: "#/components/schemas/FailedReindexRecordView"
+        retryPolicy:
+          $ref: "#/components/schemas/RetryPolicy"
     FailedResultView:
       type: object
       properties:
@@ -35041,6 +35162,29 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityFailedReindexRecordsView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/FailedReindexRecordsView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityFieldTypeListView:
       type: object
       properties:
@@ -38285,6 +38429,15 @@ components:
           example: false
       required:
       - bundleIds
+    RetryPolicy:
+      type: object
+      description: How the reindex journal retries an entry
+      properties:
+        maxFailedAttempts:
+          type: integer
+          format: int32
+          description: Failures after which an entry stops being retried
+          example: 5
     Role:
       type: object
       properties:
@@ -42029,6 +42182,37 @@ components:
           type: string
         visitor:
           $ref: "#/components/schemas/Visitor"
+    ViolationView:
+      type: object
+      description: A document limit exceeded by the index document
+      nullable: true
+      properties:
+        actual:
+          type: integer
+          format: int64
+          description: "The document's value, in unit"
+          example: 42000792
+        allowed:
+          type: integer
+          format: int64
+          description: "The limit, in unit"
+          example: 20000000
+        fieldPath:
+          type: string
+          description: Path of the offending field in the index document
+          example: catchall
+        limit:
+          type: string
+          description: Which limit was exceeded
+          enum:
+          - maxStringLength
+          - maxNestingDepth
+        unit:
+          type: string
+          description: Unit of actual and allowed
+          enum:
+          - chars
+          - levels
     Visitor:
       type: object
       properties:

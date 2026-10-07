@@ -82,6 +82,15 @@ public final class IndexDocumentConstraints {
     }
 
     /**
+     * Returns the maximum nesting depth this check enforces.
+     *
+     * @return the maximum number of nested maps and lists a document may have
+     */
+    public int maxNestingDepth() {
+        return constraints().getMaxNestingDepth();
+    }
+
+    /**
      * Checks a document against the read constraints.
      *
      * @param document the final index document, as produced by the mapping step

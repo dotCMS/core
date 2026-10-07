@@ -193,6 +193,129 @@
 				}
 			],
 			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "GetFailedRecords",
+			"item": [
+				{
+					"name": "FailedRecordsAsAdmin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "65fc199c-4793-423f-acc4-429d41fed8ba",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+									"",
+									"pm.test(\"Root carries limits, retry policy, count and records\", function () {",
+									"    const entity = pm.response.json().entity;",
+									"    pm.expect(entity).to.have.all.keys('documentLimits', 'retryPolicy', 'failedRecordCount', 'failedRecords');",
+									"    pm.expect(entity.documentLimits.maxStringLength).to.be.a('number');",
+									"    pm.expect(entity.documentLimits.maxNestingDepth).to.be.a('number');",
+									"    pm.expect(entity.retryPolicy.maxFailedAttempts).to.be.a('number');",
+									"    pm.expect(entity.failedRecords).to.be.an('array');",
+									"    pm.expect(entity.failedRecordCount).to.eql(entity.failedRecords.length);",
+									"});",
+									"",
+									"pm.test(\"Records identify the content without its values\", function () {",
+									"    const keys = ['identifier', 'inode', 'title', 'contentTypeVariable', 'languageId', 'pendingOperation',",
+									"        'failedAttempts', 'priority', 'lastFailureReason', 'violation'];",
+									"    pm.response.json().entity.failedRecords.forEach(function (record) {",
+									"        pm.expect(Object.keys(record)).to.have.members(keys);",
+									"        pm.expect(record).to.not.have.property('contentlet');",
+									"    });",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/index/failed",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"index",
+								"failed"
+							]
+						},
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "FailedRecordsWithoutCredentials",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "6ec417eb-dcc0-401d-bd4a-5e07a372e5ad",
+								"exec": [
+									"pm.test(\"Anonymous access is rejected\", function () { pm.response.to.have.status(401); });",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/index/failed",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"index",
+								"failed"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						}
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
 		}
 	],
 	"variable": [

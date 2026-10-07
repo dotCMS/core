@@ -68,6 +68,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 
@@ -173,6 +174,27 @@ public class ESIndexResource {
         return Response.ok(new ResponseEntityView<>(builder.build())).build();
     }
     
+    /**
+     * Lists the failed reindex records, each with its full contentlet.
+     *
+     * @param request  the HTTP request
+     * @param response the HTTP response
+     * @return the failed records with their contentlets' field values
+     * @throws DotDataException if the journal cannot be read
+     * @deprecated embeds every failed record's field values, so the response grows with the size
+     *             of the failed content (168 MB for a dozen oversized documents, #37269). Use
+     *             {@code GET /api/v1/index/failed} ({@link FailedReindexRecordsResource}), which
+     *             identifies each record without its content. The response is kept unchanged.
+     */
+    @Deprecated
+    @Operation(
+            operationId = "downloadRemainingRecordsAsCsv",
+            summary = "List failed reindex records with their content (deprecated)",
+            description = "Deprecated: use GET /api/v1/index/failed. Returns every failed reindex"
+                    + " record together with the full contentlet, including all field values, so"
+                    + " the response grows with the size of the failed content.",
+            deprecated = true
+    )
     @CloseDBIfOpened
     @GET
     @JSONP
