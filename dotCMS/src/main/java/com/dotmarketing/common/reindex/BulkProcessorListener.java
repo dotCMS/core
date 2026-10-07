@@ -151,7 +151,6 @@ public class BulkProcessorListener implements IndexBulkListener {
         float totalResponses = 0;
 
         for (final IndexBulkItemResult result : results) {
-            totalResponses++;
             final String reservedId = getMatchingReservedIdIfAny(result.id());
             final String id;
             if (reservedId != null) {
@@ -163,8 +162,12 @@ public class BulkProcessorListener implements IndexBulkListener {
 
             final ReindexEntry idx = workingRecords.get(id);
             if (idx == null) {
+                // Not tracked in this batch (e.g. a sibling of a withheld identifier, #37269): it
+                // is neither a success nor a failure of a tracked entry, so it stays out of the
+                // failure-rate ratio below.
                 continue;
             }
+            totalResponses++;
             if (result.failed()) {
                 handleFailure(idx, "bulk index failure:" + result.failureMessage());
             } else {
@@ -176,7 +179,10 @@ public class BulkProcessorListener implements IndexBulkListener {
         // 50% failure rate guard: log a warning so the failure is observable.
         // No explicit rebuild needed — ReindexThread creates a fresh processor per batch,
         // so the next batch will automatically start with a clean processor.
-        if (lastBatchSize > 0 && (totalResponses == 0 || ((float) successful.size() / totalResponses < .5))) {
+        // An empty response is suspicious; a batch whose results are all untracked (only siblings
+        // of withheld identifiers) is not.
+        if (lastBatchSize > 0 && (results.isEmpty()
+                || (totalResponses > 0 && (float) successful.size() / totalResponses < .5))) {
             Logger.warn(this.getClass(),
                     "High bulk-index failure rate detected (>50%) — next batch will use a fresh processor.");
         }

@@ -4,19 +4,25 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.content.elasticsearch.ESQueryCache;
+import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.index.IndexTag;
 import com.dotcms.content.index.domain.IndexBulkItemResult;
 import com.dotcms.content.index.opensearch.OSQueryCache;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.util.Logger;
 import java.util.List;
+import java.util.Optional;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -150,6 +156,41 @@ public class BulkProcessorListenerWithholdTest {
 
         verify(queue, never()).deleteReindexEntry(anyList());
         verify(queue, never()).markAsFailed(any(), any());
+    }
+
+    /**
+     * Given Scenario: {@code id-1} was withheld and two of its healthy sibling documents plus the
+     * one document of {@code id-2} are indexed successfully in a batch of three.
+     * Expected Result: No "high failure rate" warning: the withheld identifier's results are not
+     * tracked, so they count neither as failures nor towards the total. Before the fix they
+     * counted in the total only, so one success out of three looked like a 67% failure rate.
+     */
+    @Test
+    public void test_withheldSiblingSuccesses_doNotTriggerHighFailureRateWarning() throws Exception {
+        final ServerAPI serverAPI = mock(ServerAPI.class);
+        when(serverAPI.readServerId()).thenReturn("server-1");
+        when(serverAPI.getReindexingServers()).thenReturn(List.of("server-1"));
+        apiLocator.when(APILocator::getServerAPI).thenReturn(serverAPI);
+        final ContentletIndexAPI indexAPI = mock(ContentletIndexAPI.class);
+        when(indexAPI.reindexTimeElapsed()).thenReturn(Optional.empty());
+        apiLocator.when(APILocator::getContentletIndexAPI).thenReturn(indexAPI);
+
+        try (MockedStatic<Logger> logger = mockStatic(Logger.class)) {
+            listener.withhold(WITHHELD);
+            listener.beforeBulk(1L, 3);
+            listener.afterBulk(1L, List.of(succeeded(WITHHELD + "_1_DEFAULT"),
+                    succeeded(WITHHELD + "_2_DEFAULT"), succeeded(OTHER + "_1_DEFAULT")));
+
+            logger.verify(() -> Logger.warn(eq(BulkProcessorListener.class),
+                    contains("High bulk-index failure rate")), never());
+
+            // A batch made only of the withheld identifier's siblings is not a failure either.
+            listener.beforeBulk(2L, 1);
+            listener.afterBulk(2L, List.of(succeeded(WITHHELD + "_3_DEFAULT")));
+
+            logger.verify(() -> Logger.warn(eq(BulkProcessorListener.class),
+                    contains("High bulk-index failure rate")), never());
+        }
     }
 
     private static ReindexEntry entry(final long id, final String identifier) {
