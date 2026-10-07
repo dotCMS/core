@@ -22,6 +22,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PushPublishLogger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
@@ -34,7 +35,9 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Stream;
 
@@ -56,6 +59,13 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
     private List<FilterDescriptor> filterList = new CopyOnWriteArrayList<>();
     /** Path where the YAML files are stored */
     private final Lazy<Path> PUBLISHING_FILTERS_FOLDER = Lazy.of(() -> Path.of(APILocator.getFileAssetAPI().getRealAssetsRootPath(), "server" , "publishing-filters" ));
+    /**
+     * Tracks, one filename per line, every shipped PP Filter (from {@code WEB-INF/publishing-filters})
+     * this dotCMS instance has already synced into {@link #PUBLISHING_FILTERS_FOLDER} at least once.
+     * Lets a filter shipped in a later release reach an upgraded environment without re-creating a
+     * shipped filter a user deliberately deleted.
+     */
+    private static final String SHIPPED_FILTERS_MARKER = ".shipped-filters";
 
     @Override
     public PublishStatus publish ( PublisherConfig config) throws DotPublishingException {
@@ -223,32 +233,18 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
                 if(!mkDirOk){
                     Logger.error(PublisherAPIImpl.class,String.format("Failure creating basePath dir [%s]", basePath));
                 }
-                // If the directory does not exist, copy the YAML files that are shipped with dotCMS into the created
-                // directory
-                final String systemFiltersPathString =
-                        Config.CONTEXT.getRealPath(File.separator + "WEB-INF" + File.separator + "publishing-filters" + File.separator);
-                final File systemFilters = new File(systemFiltersPathString);
-                try (
-                        final Stream<Path> list = Try.of(()->Files.list(systemFilters.toPath())).getOrElse(Stream.of())
-                ) {
-                    list.forEach(filter -> {
-                        try {
-                            final Path partialPath = filter.getFileName();
-                            final Path rootPath = PUBLISHING_FILTERS_FOLDER.get();
-                            Files.copy(filter, rootPath.resolve(partialPath));
-                        } catch (final IOException e) {
-                            Logger.error(this, String.format(
-                                    "An error occurred when copying PP filter '%s': %s",
-                                    filter.getFileName(), e.getMessage()), e);
-                        }
-                    });
-                    Logger.info(this, () -> "dotcms filters files copied");
-                }
             }
+            // Copy in any PP Filter shipped with dotCMS that this instance has not synced before --
+            // covers both the first-ever startup and a filter added in a later release reaching an
+            // environment that already has this directory.
+            this.copyNewlyShippedFilters(basePath);
+
             Logger.info(this, ()->"Push Publishing Filters Directory: " + PUBLISHING_FILTERS_FOLDER);
-            // Read each YAML file under the directory and re-load the Filter list
+            // Read each YAML file under the directory (except our own marker file) and re-load the
+            // Filter list
             try(
-                    final Stream<Path> list = Files.list(basePath.toPath());){
+                    final Stream<Path> list = Files.list(basePath.toPath())
+                            .filter(path -> !SHIPPED_FILTERS_MARKER.equals(path.getFileName().toString()));){
                 final List<FilterDescriptor> descriptors = this.loadFiltersFromFolder(list);
                 Collections.sort(descriptors);
                 this.filterList = descriptors;
@@ -256,6 +252,56 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
         } catch (final IOException e) {
             Logger.error(this, String.format("PP Filters could not be initialized: %s", e.getMessage()), e);
         }
+    }
+
+    /**
+     * Copies every PP Filter shipped with dotCMS (under {@code WEB-INF/publishing-filters}) into
+     * {@code basePath} the first time it is seen, tracking already-seen shipped filenames in the
+     * {@value #SHIPPED_FILTERS_MARKER} marker file. This means:
+     * <ul>
+     *     <li>A filter shipped for the first time (e.g. added in a later dotCMS release) is copied
+     *     in even on an environment whose filters directory already existed before the upgrade.</li>
+     *     <li>A shipped filter a user deliberately deleted is <b>not</b> silently recreated, since
+     *     its name is already recorded in the marker from the run that first copied it.</li>
+     *     <li>A shipped filter the user edited in place is never overwritten, since it already
+     *     exists on disk.</li>
+     * </ul>
+     *
+     * @param basePath The assets-backed directory Filter Descriptors are loaded from.
+     */
+    @VisibleForTesting
+    void copyNewlyShippedFilters(final File basePath) {
+        final Path rootPath = basePath.toPath();
+        final Path markerPath = rootPath.resolve(SHIPPED_FILTERS_MARKER);
+        final Set<String> alreadyShipped = new HashSet<>(
+                Try.of(() -> Files.readAllLines(markerPath)).getOrElse(Collections.emptyList()));
+
+        final String systemFiltersPathString =
+                Config.CONTEXT.getRealPath(File.separator + "WEB-INF" + File.separator + "publishing-filters" + File.separator);
+        final File systemFilters = new File(systemFiltersPathString);
+        try (
+                final Stream<Path> list = Try.of(() -> Files.list(systemFilters.toPath())).getOrElse(Stream.of())
+        ) {
+            list.forEach(shippedFilter -> {
+                final String fileName = shippedFilter.getFileName().toString();
+                final Path target = rootPath.resolve(fileName);
+                if (!alreadyShipped.contains(fileName) && !Files.exists(target)) {
+                    try {
+                        Files.copy(shippedFilter, target);
+                        Logger.info(this, () -> "Copied new shipped PP Filter: " + fileName);
+                    } catch (final IOException e) {
+                        Logger.error(this, String.format(
+                                "An error occurred when copying PP filter '%s': %s", fileName, e.getMessage()), e);
+                    }
+                }
+                alreadyShipped.add(fileName);
+            });
+        }
+
+        Try.run(() -> Files.write(markerPath, alreadyShipped))
+                .onFailure(e -> Logger.error(this, String.format(
+                        "An error occurred when writing the shipped PP Filters marker '%s': %s",
+                        markerPath, e.getMessage()), e));
     }
 
     @Override
