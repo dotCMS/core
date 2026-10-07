@@ -10,7 +10,8 @@ import { Mock, Mocked, describe, expect, vi } from 'vitest';
 import { Location } from '@angular/common';
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { fakeAsync, tick } from '@angular/core/testing';
+import { signal, WritableSignal } from '@angular/core';
+import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 
 import {
@@ -27,6 +28,7 @@ import {
     DotFolderService,
     DotHttpErrorManagerService,
     DotPropertiesService,
+    DotSessionStorageService,
     DotUploadFileService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
@@ -50,6 +52,7 @@ import { createFakeTagField, createFakeTextField, mockLocales } from '@dotcms/ut
 import { DotContentDriveStore } from './dot-content-drive.store';
 
 import {
+    CONTENT_DRIVE_URL_PARAM,
     DEFAULT_PAGINATION,
     DEFAULT_PATH,
     DEFAULT_SORT,
@@ -1487,6 +1490,174 @@ describe('DotContentDriveStore - onInit', () => {
         );
         expect(store.isTreeExpanded()).toBe(true);
         expect(store.currentSite()).toBe(MOCK_SITES[2]);
+    });
+});
+
+/** Everything the store needs except session storage, which each block decides. */
+const rememberedContentTypeProviders = (
+    routeSnapshot: { queryParams: Record<string, string> },
+    siteDetails: WritableSignal<DotSite>
+) => [
+    mockProvider(ActivatedRoute, { snapshot: routeSnapshot }),
+    mockProvider(GlobalStore, { siteDetails }),
+    mockProvider(DotCurrentUserService, {
+        getCurrentUser: vi.fn().mockReturnValue(of({ admin: false } as DotCurrentUser))
+    }),
+    mockProvider(DotContentDriveService, {
+        search: vi.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
+    }),
+    mockProvider(DotFolderService, {
+        getFolders: vi.fn().mockReturnValue(of([]))
+    }),
+    mockProvider(DotWorkflowActionsFireService),
+    mockProvider(AddToBundleService),
+    mockProvider(PushPublishService, { getEnvironments: vi.fn(() => of([])) }),
+    mockProvider(DotBulkRefreshService),
+    mockProvider(DotFolderBulkDeleteService, {
+        readActiveRuns: vi.fn(() => of([]))
+    }),
+    mockProvider(DotHttpErrorManagerService),
+    mockProvider(Location, {
+        subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() })
+    }),
+    mockProvider(DotPropertiesService, {
+        getFeatureFlags: vi.fn().mockReturnValue(of({}))
+    }),
+    mockProvider(DotLanguagesService, {
+        get: vi.fn().mockReturnValue(of(mockLocales))
+    }),
+    provideHttpClient()
+];
+
+/**
+ * The content type last opened in the Content Types editor, handed to Content Drive once through
+ * session storage (#37903).
+ */
+describe('DotContentDriveStore - remembered content type', () => {
+    let spectator: SpectatorService<InstanceType<typeof DotContentDriveStore>>;
+    let store: InstanceType<typeof DotContentDriveStore>;
+
+    /** Mutated per test before the store is built: `onInit` reads it straight away. */
+    const routeSnapshot: { queryParams: Record<string, string> } = { queryParams: {} };
+    const consumeLastContentType = vi.fn();
+    /** A real signal, so a test can switch site and re-run the store's init effect. */
+    const siteDetails = signal(MOCK_SITES[2]);
+
+    const sharedProviders = rememberedContentTypeProviders(routeSnapshot, siteDetails);
+
+    const createService = createServiceFactory({
+        service: DotContentDriveStore,
+        providers: [
+            ...sharedProviders,
+            mockProvider(DotSessionStorageService, { consumeLastContentType })
+        ]
+    });
+
+    const buildStore = (queryParams: Record<string, string>, remembered: string | null) => {
+        routeSnapshot.queryParams = queryParams;
+        siteDetails.set(MOCK_SITES[2]);
+        consumeLastContentType.mockReset();
+        consumeLastContentType.mockReturnValue(remembered);
+        spectator = createService();
+        store = spectator.service;
+        spectator.flushEffects();
+    };
+
+    it('should filter by the remembered content type when the Drive opens with no instructions', () => {
+        buildStore({}, 'anyContentType');
+
+        expect(store.filters()).toEqual(
+            withSeeded({ contentType: ['anyContentType'], languageId: ['1'] })
+        );
+    });
+
+    it('should keep the folder from the URL and still filter by the remembered content type', () => {
+        buildStore({ path: '/a/folder/' }, 'anyContentType');
+
+        expect(store.path()).toBe('/a/folder/');
+        expect(store.filters()).toEqual(
+            withSeeded({ contentType: ['anyContentType'], languageId: ['1'] })
+        );
+    });
+
+    it('should open as today when no content type is remembered', () => {
+        buildStore({}, null);
+
+        expect(store.filters()).toEqual(withSeeded({ languageId: ['1'] }));
+    });
+
+    it('should read the remembered content type once per Drive open', () => {
+        buildStore({}, 'anyContentType');
+
+        expect(consumeLastContentType).toHaveBeenCalledTimes(1);
+    });
+
+    it('should keep the content type filter when the site changes, like a filter from the URL', () => {
+        buildStore({}, 'anyContentType');
+
+        siteDetails.set(MOCK_SITES[1]);
+        spectator.flushEffects();
+
+        expect(store.currentSite()).toBe(MOCK_SITES[1]);
+        expect(store.filters()).toEqual(
+            withSeeded({ contentType: ['anyContentType'], languageId: ['1'] })
+        );
+        expect(consumeLastContentType).toHaveBeenCalledTimes(1);
+    });
+
+    describe('when the Drive opens with its own instructions', () => {
+        it('should apply only the filters from the URL', () => {
+            buildStore({ filters: 'baseType:4' }, 'anyContentType');
+
+            expect(store.filters()).toEqual(withSeeded({ baseType: ['4'], languageId: ['1'] }));
+            expect(consumeLastContentType).toHaveBeenCalledTimes(1);
+        });
+
+        it.each([
+            [CONTENT_DRIVE_URL_PARAM.EDIT_CONTENT, 'an-identifier'],
+            [CONTENT_DRIVE_URL_PARAM.CREATE_CONTENT, 'aContentType'],
+            [CONTENT_DRIVE_URL_PARAM.CREATE_FOLDER, 'true'],
+            [CONTENT_DRIVE_URL_PARAM.EDIT_FOLDER, 'a-folder-id'],
+            [CONTENT_DRIVE_URL_PARAM.FOLDER_PERMISSIONS, 'a-folder-id']
+        ])('should not apply the remembered content type with %s in the URL', (param, value) => {
+            buildStore({ [param]: value }, 'anyContentType');
+
+            expect(store.filters()).toEqual(withSeeded({ languageId: ['1'] }));
+            expect(consumeLastContentType).toHaveBeenCalledTimes(1);
+        });
+    });
+});
+
+/**
+ * The same handoff with the real session storage: the first Drive visit empties it, so the next
+ * visit finds nothing to apply (#37903, User Story 2).
+ */
+describe('DotContentDriveStore - remembered content type, next visit', () => {
+    const routeSnapshot: { queryParams: Record<string, string> } = { queryParams: {} };
+    const siteDetails = signal(MOCK_SITES[2]);
+
+    const createService = createServiceFactory({
+        service: DotContentDriveStore,
+        providers: rememberedContentTypeProviders(routeSnapshot, siteDetails)
+    });
+
+    beforeEach(() => sessionStorage.clear());
+
+    it('should not filter the next Drive visit, because the first one emptied session storage', () => {
+        TestBed.inject(DotSessionStorageService).setLastContentType('anyContentType');
+
+        const firstVisit = createService();
+        firstVisit.flushEffects();
+
+        expect(firstVisit.service.filters()).toEqual(
+            withSeeded({ contentType: ['anyContentType'], languageId: ['1'] })
+        );
+
+        const nextVisit = TestBed.runInInjectionContext(() => new DotContentDriveStore());
+        TestBed.tick();
+
+        expect(nextVisit.filters()).toEqual(withSeeded({ languageId: ['1'] }));
+        expect(sessionStorage.length).toBe(0);
     });
 });
 

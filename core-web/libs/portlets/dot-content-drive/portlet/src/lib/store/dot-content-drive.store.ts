@@ -21,6 +21,7 @@ import {
     DotFolderBulkDeleteService,
     DotFolderBulkDuplicateService,
     DotLanguagesService,
+    DotSessionStorageService,
     DotUploadFileService
 } from '@dotcms/data-access';
 import {
@@ -45,6 +46,7 @@ import { withSidebar } from './features/sidebar/withSidebar';
 import { withSitePermissions } from './features/site-permissions/withSitePermissions';
 
 import {
+    CONTENT_DRIVE_URL_PARAM,
     DEFAULT_PAGE,
     DEFAULT_PAGINATION,
     DEFAULT_PATH,
@@ -640,6 +642,7 @@ export const DotContentDriveStore = signalStore(
         const route = inject(ActivatedRoute);
         const globalStore = inject(GlobalStore);
         const location = inject(Location);
+        const dotSessionStorageService = inject(DotSessionStorageService);
         let initEffect: EffectRef;
         let searchEffect: EffectRef;
         let locationSub: SubscriptionLike;
@@ -656,11 +659,24 @@ export const DotContentDriveStore = signalStore(
                 // first search DOES wait on this — see the gate in `loadItems`.
                 store.loadDefaultLanguage();
 
+                // The content type last opened in the Content Types editor (#37903). Read once per
+                // Drive entry and forgotten right away, whether or not it ends up applied.
+                const rememberedContentType = dotSessionStorageService.consumeLastContentType();
+
                 initEffect = effect(() => {
                     const queryParams = route.snapshot.queryParams;
                     const currentSite = globalStore.siteDetails();
                     const path = queryParams['path'] || DEFAULT_PATH;
-                    const filters = decodeFilters(queryParams['filters'] || '');
+                    // A URL that already says what to show (filters, an item to edit or create, a
+                    // folder dialog) wins; the remembered type is only for opening the Drive directly.
+                    const urlHasInstructions = [
+                        'filters',
+                        ...Object.values(CONTENT_DRIVE_URL_PARAM)
+                    ].some((param) => !!queryParams[param]);
+                    const filters =
+                        rememberedContentType && !urlHasInstructions
+                            ? { contentType: [rememberedContentType] }
+                            : decodeFilters(queryParams['filters'] || '');
                     const queryTreeExpanded =
                         queryParams['isTreeExpanded'] ?? DEFAULT_TREE_EXPANDED.toString();
 

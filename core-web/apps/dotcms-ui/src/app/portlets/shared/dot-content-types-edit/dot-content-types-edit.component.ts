@@ -22,9 +22,11 @@ import {
     DotFieldService,
     DotHttpErrorManagerService,
     DotMessageService,
-    DotRouterService
+    DotRouterService,
+    DotSessionStorageService
 } from '@dotcms/data-access';
 import {
+    DotCMSBaseTypesContentTypes,
     DotCMSContentType,
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow,
@@ -60,6 +62,7 @@ export class DotContentTypesEditComponent implements OnInit {
     private dotMessageService = inject(DotMessageService);
     router = inject(Router);
     readonly #globalStore = inject(GlobalStore);
+    readonly #dotSessionStorageService = inject(DotSessionStorageService);
 
     readonly $contentTypesForm = viewChild<ContentTypesFormComponent>('form');
     readonly $fieldsDropZone = viewChild<ContentTypeFieldsDropZoneComponent>('fieldsDropZone');
@@ -97,6 +100,7 @@ export class DotContentTypesEditComponent implements OnInit {
                 const isFirstLoad = !this.data;
                 this.data = contentType;
                 this.layout = contentType.layout;
+                this.#rememberForContentDrive(contentType);
                 if (isFirstLoad) {
                     this.checkAndOpenFormDialog();
                 }
@@ -219,6 +223,29 @@ export class DotContentTypesEditComponent implements OnInit {
      * @returns boolean
      * @memberof DotContentTypesEditComponent
      */
+    /**
+     * Remembers the content type open in the editor so the next Content Drive visit in this tab
+     * starts filtered to it (#37903). Forms and system types are forgotten instead, since the
+     * Drive's Content Type filter doesn't offer them. A type still being created has nothing to
+     * remember yet; it is remembered once it reopens in edit mode after the first save.
+     *
+     * @param contentType the content type the editor received
+     */
+    #rememberForContentDrive(contentType: DotCMSContentType): void {
+        if (!contentType.id) {
+            return;
+        }
+
+        const isOfferedByDrive =
+            !contentType.system && contentType.baseType !== DotCMSBaseTypesContentTypes.FORM;
+
+        if (isOfferedByDrive) {
+            this.#dotSessionStorageService.setLastContentType(contentType.variable);
+        } else {
+            this.#dotSessionStorageService.removeLastContentType();
+        }
+    }
+
     isEditMode(): boolean {
         return !!(this.data && this.data.id);
     }
