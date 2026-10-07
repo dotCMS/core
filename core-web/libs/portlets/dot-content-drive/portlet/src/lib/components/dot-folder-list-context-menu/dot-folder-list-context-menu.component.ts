@@ -78,6 +78,28 @@ const GROUP_LABEL_STYLE_CLASS =
     'p-menu-submenu-label p-0! pointer-events-none [&_.p-contextmenu-item-content]:text-inherit';
 
 /**
+ * Content rows carry their permissions as the server's numeric bits, unlike folders, which carry
+ * names. Only the bits the content menu reads are listed.
+ */
+const CONTENT_PERMISSION = {
+    WRITE: 2,
+    PUBLISH: 4
+} as const;
+
+/**
+ * Whether a content row allows `bit`. A row without `permissions` reads as allowed: the search did
+ * not send them, and refusing would hide entries users had before (#37903, FR-011).
+ *
+ * @param contentlet the content row
+ * @param bit the permission bit to check
+ */
+const contentAllows = (contentlet: DotCMSContentlet, bit: number): boolean => {
+    const permissions = contentlet.permissions as unknown as number[] | undefined;
+
+    return !permissions || permissions.includes(bit);
+};
+
+/**
  * The row context menu.
  *
  * **None of these actions announce success.** The listing shows the result, so a notification
@@ -359,19 +381,33 @@ export class DotFolderListViewContextMenuComponent {
 
         const actionsMenu = [];
 
-        const label =
-            contentlet.baseType === DotCMSBaseTypesContentTypes.HTMLPAGE ? 'page' : 'content';
+        const isPage = contentlet.baseType === DotCMSBaseTypesContentTypes.HTMLPAGE;
+        // Without WRITE the entries still open the item, read as View, as in Content Search
+        // (#37903, FR-010).
+        const verb = contentAllows(contentlet, CONTENT_PERMISSION.WRITE) ? 'edit' : 'view';
 
-        // The built-in entries are a group like any other, so they get named too. Unconditional,
-        // unlike the folder branch: Edit Content is pushed immediately below with no gate.
+        // The built-in entries are a group like any other, so they get named too. Never empty:
+        // the open-in-editor entry is pushed immediately below for every row.
         actionsMenu.push(this.#buildGroupLabel(ACTIONS_LABEL_KEY));
 
         actionsMenu.push({
-            label: this.#dotMessageService.get(`content-drive.context-menu.edit-${label}`),
+            label: this.#dotMessageService.get(
+                `content-drive.context-menu.${verb}-${isPage ? 'page' : 'content'}`
+            ),
             command: () => {
                 this.#navigationService.editContent(contentlet);
             }
         });
+
+        // A page also opens its fields, in the same side-panel form Edit Content uses elsewhere.
+        if (isPage) {
+            actionsMenu.push({
+                label: this.#dotMessageService.get(`content-drive.context-menu.${verb}-properties`),
+                command: () => {
+                    this.#navigationService.editPageProperties(contentlet);
+                }
+            });
+        }
 
         if (canLockData.canLock) {
             actionsMenu.push({
@@ -387,14 +423,17 @@ export class DotFolderListViewContextMenuComponent {
         // The push group, ordered the same way as on a folder: Push Publish then Add to Bundle.
         // Push Publish is what the old content search offered outside its workflow dropdown, so it
         // belongs here rather than among the workflow actions, which are scheme-driven.
-        actionsMenu.push(this.#buildPushPublishItem(contentlet.identifier));
+        // Gated on PUBLISH like the folder branch, so a read-only row offers neither (FR-011).
+        if (contentAllows(contentlet, CONTENT_PERMISSION.PUBLISH)) {
+            actionsMenu.push(this.#buildPushPublishItem(contentlet.identifier));
 
-        actionsMenu.push({
-            label: this.#dotMessageService.get('contenttypes.content.add_to_bundle'),
-            command: () => {
-                this.#store.setShowAddToBundle(true);
-            }
-        });
+            actionsMenu.push({
+                label: this.#dotMessageService.get('contenttypes.content.add_to_bundle'),
+                command: () => {
+                    this.#store.setShowAddToBundle(true);
+                }
+            });
+        }
 
         // Workflow actions get a labelled section rather than a flyout. "Workflows" is a real
         // dotCMS concept, so it reads as a name rather than an invented category — which matters
