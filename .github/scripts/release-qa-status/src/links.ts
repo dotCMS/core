@@ -13,6 +13,13 @@
  * the release report. Keep the patterns and their priority in step with the
  * gate's "Check if PR already has linked issues" and "Extract issue number
  * from branch name" steps; like the gate, only the first match is returned.
+ *
+ * One ordering difference is intentional. The gate checks "Refs #N" and the
+ * title suffix before closingIssuesReferences; the report checks
+ * closingIssuesReferences first. They only disagree when a PR has both a
+ * closing link the gate's regex misses (e.g. "fixes [#A](url)") and a
+ * "Refs #B": the gate picks #B, the report picks #A. For QA the issue the PR
+ * actually closes is the right one to read labels from.
  */
 
 const CLOSING_BODY_REF = /(close[ds]?|fix(e[ds])?|resolve[ds]?):?\s+#(\d+)/i;
