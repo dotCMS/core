@@ -1,5 +1,6 @@
 export * from './lib/add-to-bundle/add-to-bundle.service';
 export * from './lib/can-deactivate/can-deactivate-guard.service';
+export * from './lib/dot-action-url/dot-action-url.service';
 export * from './lib/dot-agent-run/dot-agent-run.service';
 export * from './lib/dot-ai/dot-ai.constants';
 export * from './lib/dot-ai/dot-ai-config.service';

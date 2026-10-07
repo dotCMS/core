@@ -264,8 +264,9 @@
             #sidePanelRef
             data-testId="edit-content-side-panel"
             [data]="data"
-            (saved)="onEditPanelSaved()"
-            (closed)="onEditPanelClosed()" />
+            (saved)="onEditPanelSaved($event)"
+            (closed)="onEditPanelClosed()"
+            (languageChanged)="onEditPanelLanguage($event)" />
     }
 } @loading {
     <div
@@ -273,4 +274,18 @@
         data-testid="edit-content-side-panel-loading">
         <p-progressSpinner styleClass="h-8! w-8!" strokeWidth="4" ariaLabel="loading editor" />
     </div>
+}
+
+<!-- The legacy (JSP) editor, for content types that have not opted into the new editor (#37759).
+     Kept apart from the new-editor panel above. Remove with the legacy editor. Not deferred: it
+     is a thin iframe host, with nothing heavy to split out. -->
+@if ($legacyPanelRequest(); as request) {
+    <dot-legacy-editor-side-panel
+        #legacyPanelRef
+        [request]="request"
+        (saved)="onLegacyPanelSaved($event)"
+        (closed)="onLegacyPanelClosed()"
+        (pageEditorRequested)="onLegacyPanelPageEditor($event)"
+        (versionRestored)="onLegacyPanelRestored()"
+        (languageChanged)="onLegacyPanelLanguage($event)" />
 }

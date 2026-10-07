@@ -20,6 +20,8 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.json.JSONObject;
 import com.github.tomakehurst.wiremock.WireMockServer;
@@ -29,8 +31,11 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.owasp.encoder.Encode;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -40,6 +45,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -54,10 +60,15 @@ import static org.mockito.Mockito.when;
  */
 public class SearchToolTest {
 
+    /** Title carried by the probe embedding rows; must come back untouched (contentlet field). */
+    private static final String PROBE_TITLE = AiTest.PROBE_MARKUP + " title";
+    /** Dedicated index for the probe rows so they can never appear in another test's results. */
+    private static final String PROBE_INDEX = "escape-probe";
     private static WireMockServer wireMockServer;
 
     private Host host;
     private SearchTool searchTool;
+    private SearchTool unsafeSearchTool;
 
     @BeforeClass
     public static void beforeClass() throws Exception {
@@ -81,6 +92,7 @@ public class SearchToolTest {
         when(viewContext.getRequest()).thenReturn(mock(HttpServletRequest.class));
         host = new SiteDataGen().nextPersisted();
         searchTool = prepareSearchTool(viewContext);
+        unsafeSearchTool = prepareSearchTool(viewContext, false);
         AiTest.aiAppSecretsWithProviderConfig(host, AiTest.providerConfigJson(AiTest.PORT, "gpt-4o-mini"));
     }
 
@@ -335,6 +347,89 @@ public class SearchToolTest {
                 .nextPersisted();
         ContentletDataGen.publish(contentlet);
         return contentlet;
+    }
+
+    // ------------------------------------------------------------------------------------------
+    // #37153: escaped by default, raw only through the unsafe construction
+    // ------------------------------------------------------------------------------------------
+
+    /**
+     * Feature: Search output is escaped by default and raw through the unsafe tool (#37153, AC-002 / AC-003)
+     * Given a row whose excerpt and title carry markup
+     * When query(String,String) and query(Map) are called on the default tool
+     * Then the query echo and the match's extractedText are HTML-escaped, the title is returned as stored
+     * and the operator metadata is untouched; the unsafe tool returns the excerpt and the echo literally
+     */
+    @Test
+    public void test_query_escapedByDefault_rawThroughUnsafe() {
+        final String text = "Escaping probe search " + AiTest.PROBE_MARKUP;
+        seedProbeEmbeddings(text, PROBE_INDEX);
+
+        for (final JSONObject escaped : List.of(
+                (JSONObject) searchTool.query(text, PROBE_INDEX),
+                (JSONObject) searchTool.query(Map.of("query", text, "indexName", PROBE_INDEX)))) {
+            assertEquals(Encode.forHtml(text), escaped.getString("query"));
+            assertEquals("<=>", escaped.getString("operator"));
+            final JSONObject probeResult = AiTest.findResultByTitle(escaped, PROBE_TITLE);
+            assertEquals(PROBE_TITLE, probeResult.getString("title"));
+            assertEquals(Encode.forHtml(text),
+                    probeResult.getJSONArray("matches").getJSONObject(0).getString("extractedText"));
+        }
+
+        final JSONObject raw = (JSONObject) unsafeSearchTool.query(text, PROBE_INDEX);
+        assertEquals(text, raw.getString("query"));
+        assertEquals(text, AiTest.findResultByTitle(raw, PROBE_TITLE)
+                .getJSONArray("matches").getJSONObject(0).getString("extractedText"));
+    }
+
+    /**
+     * Feature: Stored visitor input in the cache index is escaped (#37153, AC-002, cache clause)
+     * Given a row in the index named "cache" holding raw markup as extractedText (as the embeddings API
+     * stores every query it embeds) and a template that searches that index
+     * When query(text, "cache") is called on the default tool
+     * Then every extractedText in the result is escaped; the unsafe tool returns the literal text
+     */
+    @Test
+    public void test_query_cacheIndex_escapesStoredQueryText() {
+        final String text = "Escaping probe cache " + AiTest.PROBE_MARKUP;
+        seedProbeEmbeddings(text, "cache");
+
+        final JSONObject escaped = (JSONObject) searchTool.query(text, "cache");
+        final JSONObject raw = (JSONObject) unsafeSearchTool.query(text, "cache");
+
+        final List<String> escapedTexts = extractedTexts(escaped);
+        assertTrue("probe excerpt missing from " + escapedTexts, escapedTexts.contains(Encode.forHtml(text)));
+        escapedTexts.forEach(AiTest::assertNoRawMarkup);
+        assertTrue(extractedTexts(raw).contains(text));
+    }
+
+    // ------------------------------------------------------------------------------ helpers
+
+    /** One row whose extractedText is exactly {@code text} (so the query reuses its vector) with a markup title. */
+    private static void seedProbeEmbeddings(final String text, final String indexName) {
+        final String inode = "probe-" + UUIDGenerator.generateUuid();
+        new EmbeddingsDTODataGen().generate(inode, indexName, text).withTitle(PROBE_TITLE).nextPersisted();
+    }
+
+    private static List<String> extractedTexts(final JSONObject payload) {
+        final List<String> texts = new ArrayList<>();
+        final JSONArray results = payload.getJSONArray("dotCMSResults");
+        for (int i = 0; i < results.length(); i++) {
+            final JSONArray matches = results.getJSONObject(i).optJSONArray("matches");
+            for (int j = 0; matches != null && j < matches.length(); j++) {
+                texts.add(matches.getJSONObject(j).getString("extractedText"));
+            }
+        }
+        return texts;
+    }
+
+    private SearchTool prepareSearchTool(final ViewContext viewContext, final boolean escapeOutput) {
+        return new SearchTool(viewContext, escapeOutput) {
+            @Override
+            Host host() {
+                return host;
+            }
+        };
     }
 
     private SearchTool prepareSearchTool(final ViewContext viewContext) {
