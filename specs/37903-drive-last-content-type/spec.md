@@ -116,6 +116,24 @@ the menu: it opens with no content type filter.
 
 ---
 
+### User Story 4 - Content Drive stops offering a Rename action that doesn't work (Priority: P3)
+
+When exactly one item is selected, Content Drive offers a Rename action. It doesn't work, and the
+Drive isn't meant to rename items from there. Offering it only leads users into a dead end.
+
+**Why this priority**: Small cleanup, carried in this change at the developer's request. It's
+independent of the content type handoff.
+
+**Independent Test**: Select exactly one item in Content Drive. No Rename action is offered.
+
+**Acceptance Scenarios**:
+
+1. **Given** the user selected exactly one item in Content Drive,
+   **When** they look at the actions offered for it,
+   **Then** there is no Rename action.
+
+---
+
 ### Edge Cases
 
 - **Other screens load content types too.** Opening a contentlet in Edit Content, or any other
@@ -174,6 +192,8 @@ the menu: it opens with no content type filter.
   (the content type was deleted, the user has no permission on that content type, or the Drive's
   Content Type filter doesn't list it), the Drive MUST open normally, without that filter and
   without an error, and MUST forget the remembered content type.
+- **FR-009**: Content Drive MUST NOT offer a Rename action, including when exactly one item is
+  selected.
 
 ### Key Entities
 
