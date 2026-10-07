@@ -1,0 +1,206 @@
+# Feature Specification: Open Content Drive filtered to the last content type opened in the editor
+
+**Feature Branch**: `issue-37903-drive-last-content-type`
+
+**Created**: 2026-10-07
+
+**Status**: Draft
+
+**Type**: New Feature
+
+**Input**: GitHub issue dotCMS/core#37903. After a user opens any content type in the Content
+Types editor, the next time they open Content Drive in that tab it starts filtered to that content
+type, once. This mirrors what Content Search already does.
+
+## User Scenarios & Testing *(mandatory)*
+
+### User Story 1 - Content Drive picks up the content type I was just working on (Priority: P1)
+
+A developer or content architect opens any content type in the Content Types editor to check or
+change its fields. Then they open Content Drive to look at that type's content. Today the Drive
+opens unfiltered and they have to find the same content type in the Content Type filter again.
+With this feature, the Drive opens already filtered to the content type they just opened, the same
+way Content Search does today.
+
+**Why this priority**: This is the whole point of the feature. It removes a repeated manual step
+between editing a content type and looking at its content.
+
+**Independent Test**: Open any existing content type in the Content Types editor, then open
+Content Drive from the menu. The Content Type filter shows that content type and the list shows
+only its content.
+
+**Acceptance Scenarios**:
+
+1. **Given** the user opened an existing content type in the Content Types editor,
+   **When** they open Content Drive from the menu in the same tab,
+   **Then** the Drive's Content Type filter is set to that content type and the list shows only
+   its content.
+2. **Given** the user created a new content type and saved it (so the editor now shows it),
+   **When** they open Content Drive in the same tab,
+   **Then** the Drive is filtered to the new content type.
+3. **Given** the Drive applied the content type filter this way,
+   **When** the user reloads the page,
+   **Then** the filter is still applied, because it is now part of the Drive's own address like
+   any filter the user picks by hand.
+4. **Given** the user opened one content type in the editor and then a different one,
+   **When** they open Content Drive,
+   **Then** the Drive is filtered to the second one, the last one opened.
+5. **Given** the user opened a content type in the editor,
+   **When** they follow a link that opens Content Drive in a specific folder but with no filters,
+   **Then** the Drive opens that folder with the content type filter applied.
+
+---
+
+### User Story 2 - The remembered content type is used once (Priority: P2)
+
+As soon as Content Drive loads and picks up the remembered content type, it is wiped. The Drive
+doesn't watch what the user does with the filter afterwards. The next time the user opens the
+Drive, nothing is remembered, unless they open a content type in the editor again.
+
+**Why this priority**: A filter that keeps reappearing on every visit looks like a bug and hides
+content. Content Search avoids this by forgetting the type after its first use, and the Drive has
+to do the same.
+
+**Independent Test**: Open a content type in the editor, open the Drive (filtered to that type),
+then go to another screen and open the Drive from the menu again. It opens with no content type
+filter.
+
+**Acceptance Scenarios**:
+
+1. **Given** Content Drive already loaded and applied the remembered content type,
+   **When** the user opens Content Drive again from the menu,
+   **Then** the Drive opens with no content type filter.
+
+---
+
+### User Story 3 - When the Drive arrives with its own instructions, the remembered type is dropped (Priority: P3)
+
+The remembered content type is only for opening Content Drive directly. Sometimes the Drive opens
+with its own instructions instead: a bookmark or a shared link that carries filters, another screen
+that sends the user to the Drive with a filter already set (for example Content Search redirecting
+to the Drive when Content Search is not in the user's menu), or the Drive opening an item straight
+into the editor. In those cases the Drive does exactly what it was asked, does not apply the
+remembered content type, and still wipes it.
+
+**Why this priority**: Overriding an explicit filter or an edit request would make links and
+redirects unreliable. Wiping the remembered type anyway keeps it from surfacing on some later,
+unrelated visit.
+
+**Independent Test**: Open a content type in the editor, then reach the Drive through a link or a
+redirect that already sets a filter. The Drive shows only that filter. Open the Drive again from
+the menu: it opens with no content type filter.
+
+**Acceptance Scenarios**:
+
+1. **Given** the user opened a content type in the editor,
+   **When** they open a Content Drive link that already includes any filter,
+   **Then** the Drive applies only the link's filters, the remembered content type is not added,
+   and it is wiped.
+2. **Given** the user opened a content type in the editor,
+   **When** another screen sends them to Content Drive with a filter already set (for example a
+   redirect from Content Search),
+   **Then** the Drive applies only that filter, and the remembered content type is not added and
+   is wiped.
+3. **Given** the user opened a content type in the editor,
+   **When** Content Drive opens straight into editing an item,
+   **Then** the remembered content type is not applied and is wiped.
+4. **Given** any of the cases above already happened,
+   **When** the user later opens Content Drive from the menu,
+   **Then** the Drive opens with no content type filter.
+
+---
+
+### Edge Cases
+
+- **Other screens load content types too.** Opening a contentlet in Edit Content, or any other
+  screen that reads a content type, does not count. Only opening a type in the Content Types
+  editor does.
+- **Creating a type that is never saved.** Opening the "new content type" form and leaving without
+  saving does not count, because there is no type yet.
+- **The saved type no longer exists, or the user can't see it.** If the type was deleted, or the
+  user has no permission on it, by the time the Drive opens, the Drive loads without an error
+  message and the remembered type is forgotten. The list behaves as it does today for a
+  content type it doesn't recognize.
+- **The user goes somewhere else first.** If the user opens a type in the editor, visits other
+  screens, and only later opens the Drive in the same tab, the Drive still applies the type,
+  because nothing has used it yet.
+- **Another tab.** A content type opened in the editor in one tab is not picked up by the Drive in
+  a different, newly opened tab.
+- **Logging out.** After logging out and back in, the Drive opens with no remembered content type.
+- **Content Search is unaffected.** Content Search keeps its own existing behavior. Opening the
+  Drive does not change what Content Search pre-selects, and the other way around.
+
+## Requirements *(mandatory)*
+
+### Functional Requirements
+
+- **FR-001**: When the Content Types editor opens an existing content type, the system MUST
+  remember that content type as the "last opened type" for the current browser tab, replacing
+  any type remembered before.
+- **FR-002**: Only the Content Types editor MUST set the remembered type. Other screens that read
+  content types MUST NOT change it.
+- **FR-003**: When Content Drive opens without any filters in its address, and a type is
+  remembered, the Drive MUST apply a Content Type filter for that type. Any folder in the address
+  MUST still be applied.
+- **FR-004**: When Content Drive opens with its own instructions (filters already in its address,
+  whether from a link or from another screen redirecting to it, or a request to open an item in the
+  editor), the Drive MUST follow only those instructions and MUST NOT apply the remembered type.
+- **FR-005**: The system MUST forget the remembered type every time Content Drive opens, whether
+  or not the type was applied, including when the Drive opened with its own instructions (FR-004).
+- **FR-006**: Once applied, the Content Type filter MUST behave like a filter the user picked by
+  hand: it shows in the filter bar, appears in the Drive's address, survives a reload, and can be
+  cleared.
+- **FR-007**: The remembered type MUST be kept in the browser's session storage
+  (`sessionStorage`), so it belongs to a single browser tab. Other tabs, including new ones, MUST
+  NOT see it. It MUST NOT be kept on the server or in storage shared across tabs.
+- **FR-008**: Logging out MUST forget the remembered type.
+- **FR-009**: If the remembered type no longer exists or the user cannot access it, the Drive
+  MUST open without showing an error and MUST forget the remembered type.
+
+### Key Entities
+
+- **Remembered content type**: the identifier (variable name) of the last content type opened in
+  the Content Types editor, held for one browser tab until the Drive uses it, the tab closes, or
+  the user logs out.
+
+## Success Criteria *(mandatory)*
+
+### Measurable Outcomes
+
+- **SC-001**: After opening a content type in the editor, a user reaches a Drive list filtered to
+  that type in one step (opening the Drive), down from three today (open the Drive, open the
+  Content Type filter, find and pick the type).
+- **SC-002**: In every scenario under User Story 2, the Drive opens with no content type filter:
+  the remembered type is applied at most once per time a type is opened in the editor.
+- **SC-003**: Every Drive link that carries its own filters opens with exactly those filters,
+  whatever type was opened in the editor before.
+- **SC-004**: None of the edge cases above produces an error message or a broken Drive screen.
+
+## Legacy Considerations *(dotCMS-specific — mandatory)*
+
+- **Existing behavior touched**: The Content Types editor (Angular admin) and Content Drive. It
+  copies a behavior from the legacy Content Search portlet, where the server remembers the last
+  content type read and Content Search pre-selects it once. That legacy behavior is not changed.
+- **Backward-compatibility expectations**: Existing Drive links, bookmarks and filter behavior keep
+  working unchanged. No APIs, server data or content are changed. Content Search's pre-selection
+  stays as it is.
+- **Known related decisions**: Content Search forgets the remembered type after its first search,
+  which is the one-time behavior this feature copies. The plan phase will consult
+  `dotCMS/platform-adrs`.
+
+## Assumptions
+
+- **Storage is decided: `sessionStorage`.** The remembered type is held in the browser's session
+  storage, not on the server and not in `localStorage`, so it needs no backend change. The plan
+  MUST use it and not reopen this choice.
+  The server's own remembered type, used by Content Search, is never returned to the browser, so
+  the Drive can't reuse it.
+- "Opening a type" means the Content Types editor loading an existing type. A newly created type
+  counts after its first save, because the editor then reopens it as an existing type.
+- The Drive's other defaults, such as its default language, still apply next to the content type
+  filter.
+- Content types that the Drive's Content Type filter doesn't offer are handled like an unknown
+  type (FR-009).
+- Out of scope: changing Content Search, adding a server endpoint for the server's remembered
+  type, and sharing the last browsed site or folder between the Drive and the asset picker
+  (noted for later).
