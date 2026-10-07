@@ -1,6 +1,9 @@
 package com.dotcms.ai.rest;
 
 import com.dotcms.ai.AiTest;
+import com.dotcms.ai.api.CompletionsAPIImpl;
+import com.dotcms.ai.api.DotAIAPIFacadeImpl;
+import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.rest.forms.CompletionsForm;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.TextField;
@@ -35,6 +38,7 @@ import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Response;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.UUID;
 
@@ -77,6 +81,11 @@ public class AiRetrievalPermissionTest {
     @BeforeClass
     public static void beforeClass() throws Exception {
         IntegrationTestInitService.getInstance().init();
+        // another test in the same suite may leave a stub as the global completions API (one whose
+        // summarize() returns null); these tests need the platform's real implementation
+        DotAIAPIFacadeImpl.addCompletionsAPIImplementation("default", initArguments -> new CompletionsAPIImpl(
+                Arrays.stream(initArguments).filter(AppConfig.class::isInstance).map(AppConfig.class::cast)
+                        .findFirst().orElse(null)));
         IPUtils.disabledIpPrivateSubnet(true);
         wireMockServer = AiTest.prepareWireMock();
         AiTest.aiAppSecretsWithProviderConfig(
