@@ -103,6 +103,18 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
      * dependency processing; once present, that Contentlet's own related content is added to the
      * bundle without being recursed into again. This both caps traversal at exactly one extra
      * level and makes circular relationship chains inherently non-recursive beyond that point.
+     * <p>
+     * <b>Known limitation:</b> this set is global to the whole bundle and processing runs
+     * concurrently ({@link ConcurrentDependencyProcessor} dispatches queued assets across a
+     * thread pool). If a Contentlet is <i>both</i> an explicitly-selected bundle root <i>and</i> a
+     * first-level relation of another explicitly-selected root, which one is processed first
+     * determines whether it still gets its own second-level expansion -- the outcome does not
+     * depend on which Contentlet the user actually selected. The cap is never exceeded in this
+     * scenario (no correctness risk beyond this), so it is a bounded, order-dependent
+     * under-inclusion rather than a crash or data-integrity issue. Fixing it properly would mean
+     * distinguishing "explicit bundle root" from "reached via a relationship" across the shared
+     * {@link DependencyProcessor} queue that every asset type uses, which is out of scope for this
+     * opt-in filter.
      */
     private final Set<String> relationshipHopConsumed = ConcurrentHashMap.newKeySet();
 

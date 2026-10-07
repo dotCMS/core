@@ -261,11 +261,16 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
      * <ul>
      *     <li>A filter shipped for the first time (e.g. added in a later dotCMS release) is copied
      *     in even on an environment whose filters directory already existed before the upgrade.</li>
-     *     <li>A shipped filter a user deliberately deleted is <b>not</b> silently recreated, since
-     *     its name is already recorded in the marker from the run that first copied it.</li>
+     *     <li>A shipped filter a user deliberately deleted <b>after</b> the marker first recorded
+     *     it is not silently recreated.</li>
      *     <li>A shipped filter the user edited in place is never overwritten, since it already
      *     exists on disk.</li>
      * </ul>
+     * <b>Known one-time limitation:</b> on the very first run on an environment that predates this
+     * marker (no {@value #SHIPPED_FILTERS_MARKER} file yet), there is no record of which missing
+     * filters were deleted on purpose versus simply never copied -- so a filter a user had
+     * deliberately removed before upgrading to this version is copied back in exactly once. From
+     * that point on, the marker exists and later deliberate deletions are respected.
      *
      * @param basePath The assets-backed directory Filter Descriptors are loaded from.
      */
@@ -285,16 +290,21 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
             list.forEach(shippedFilter -> {
                 final String fileName = shippedFilter.getFileName().toString();
                 final Path target = rootPath.resolve(fileName);
-                if (!alreadyShipped.contains(fileName) && !Files.exists(target)) {
-                    try {
-                        Files.copy(shippedFilter, target);
-                        Logger.info(this, () -> "Copied new shipped PP Filter: " + fileName);
-                    } catch (final IOException e) {
-                        Logger.error(this, String.format(
-                                "An error occurred when copying PP filter '%s': %s", fileName, e.getMessage()), e);
-                    }
+                if (alreadyShipped.contains(fileName) || Files.exists(target)) {
+                    // Nothing to copy -- either already synced before, or already on disk.
+                    alreadyShipped.add(fileName);
+                    return;
                 }
-                alreadyShipped.add(fileName);
+                try {
+                    Files.copy(shippedFilter, target);
+                    Logger.info(this, () -> "Copied new shipped PP Filter: " + fileName);
+                    alreadyShipped.add(fileName);
+                } catch (final IOException e) {
+                    // Do NOT mark as shipped on failure, so a transient I/O error is retried on
+                    // the next init() call instead of permanently stranding the filter.
+                    Logger.error(this, String.format(
+                            "An error occurred when copying PP filter '%s': %s", fileName, e.getMessage()), e);
+                }
             });
         }
 

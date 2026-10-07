@@ -1472,6 +1472,51 @@ public class PublisherAPIImplTest {
     }
 
     /**
+     * Method to test: {@link PublisherAPIImpl#copyNewlyShippedFilters(File)} <p>
+     * Given Scenario: {@code basePath} does not exist as a directory on the first sync, so every
+     * {@code Files.copy} call fails with a {@link java.nio.file.NoSuchFileException} (a copy
+     * failure that is deterministic and independent of OS file permissions or the user the test
+     * runs as, unlike a read-only-directory simulation). The directory is then created and the
+     * sync runs a second time (simulating the next startup). <p>
+     * Expected Result: No filter is recorded in the marker after the failed first attempt, so the
+     * second run retries and successfully copies every shipped filter in -- addresses the PR
+     * #37909 review finding that a transient copy failure used to permanently strand a filter by
+     * marking it "shipped" even though it was never actually written to disk.
+     */
+    @Test
+    public void test_copyNewlyShippedFilters_retries_after_a_failed_copy() throws IOException {
+        final PublisherAPIImpl publisherAPI = new PublisherAPIImpl();
+        final Path parentDir = Files.createTempDirectory("pp-filters-retry-test");
+        final Path tempDir = parentDir.resolve("filters-dir-not-created-yet");
+
+        final String systemFiltersPathString = Config.CONTEXT.getRealPath(
+                File.separator + "WEB-INF" + File.separator + "publishing-filters" + File.separator);
+        final String filterName;
+        try (final Stream<Path> list = Files.list(Paths.get(systemFiltersPathString))) {
+            filterName = list.findFirst()
+                    .orElseThrow(() -> new IllegalStateException("No shipped PP filters found"))
+                    .getFileName().toString();
+        }
+
+        // First run: tempDir's parent-in-chain does not exist, so every Files.copy call fails.
+        // The failure must be caught internally rather than thrown out of the method.
+        publisherAPI.copyNewlyShippedFilters(tempDir.toFile());
+
+        Assert.assertFalse("The directory must still not exist since nothing could be written into it",
+                tempDir.resolve(filterName).toFile().exists());
+
+        // Second run (e.g. the next startup): create the directory so the copy can now succeed.
+        Files.createDirectories(tempDir);
+        publisherAPI.copyNewlyShippedFilters(tempDir.toFile());
+
+        Assert.assertTrue("The filter must be copied in once the directory actually exists",
+                tempDir.resolve(filterName).toFile().exists());
+        final List<String> marker = Files.readAllLines(tempDir.resolve(".shipped-filters"));
+        Assert.assertTrue("The marker must record the filter only after it was actually copied",
+                marker.contains(filterName));
+    }
+
+    /**
      * Tests All filter related methods
      *  First we mock real assets-path.
      *  then we create a brand-new descriptor file then we..
