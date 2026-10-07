@@ -17,6 +17,8 @@ import com.liferay.portal.ejb.CompanyManagerUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.dotcms.rest.exception.BadRequestException;
 
@@ -27,6 +29,16 @@ import com.dotcms.rest.exception.BadRequestException;
  * @author hassandotcms
  */
 public class CompanyConfigHelper {
+
+    private static final String LICENSE_TITLE = "dotCMS Business Source License";
+    private static final Pattern LICENSE_VERSION =
+            Pattern.compile("^Business Source License\\s+(\\S+)\\s*$", Pattern.MULTILINE);
+    private static final Pattern LICENSE_LICENSOR =
+            Pattern.compile("^Licensor:\\s*(.+)$", Pattern.MULTILINE);
+    private static final Pattern LICENSE_CHANGE_DATE =
+            Pattern.compile("^Change Date:\\s*(.+)$", Pattern.MULTILINE);
+    private static final Pattern LICENSE_CHANGE_LICENSE =
+            Pattern.compile("^Change License:\\s*(.+)$", Pattern.MULTILINE);
 
     private final CompanyAPI companyAPI;
 
@@ -80,6 +92,7 @@ public class CompanyConfigHelper {
             PrincipalThreadLocal.setName(user.getUserId());
 
             final Company company = companyAPI.getDefaultCompany();
+            validateBackgroundImage(form.getBackgroundImage(), company.getHomeURL());
 
             // Map semantic names → Liferay Company model fields
             company.setPortalURL(form.getPortalURL());
@@ -113,6 +126,64 @@ public class CompanyConfigHelper {
         } finally {
             PrincipalThreadLocal.setName(null);
         }
+    }
+
+    /**
+     * Checks a new login background. Accepted: empty, a dotAsset path starting with
+     * {@code /dA}, one of the bundled backgrounds, or the value already stored, so that saving
+     * back what was read never fails or clears a background set before these rules existed.
+     *
+     * @param backgroundImage the value sent by the client
+     * @param storedHomeURL   the value currently stored in {@code company.homeURL}
+     * @throws BadRequestException if the value is none of the accepted forms
+     */
+    private void validateBackgroundImage(final String backgroundImage, final String storedHomeURL) {
+
+        if (!UtilMethods.isSet(backgroundImage)
+                || backgroundImage.startsWith("/dA")
+                || CompanyBasicInfoForm.BACKGROUND_PRESETS.contains(backgroundImage)
+                || backgroundImage.equals(storedHomeURL)) {
+            return;
+        }
+        throw new BadRequestException("backgroundImage must be a dotAsset path starting with /dA "
+                + "or one of the bundled backgrounds /html/images/backgrounds/bg-1.jpg to bg-11.jpg");
+    }
+
+    /**
+     * Returns the license shipped with the running build.
+     *
+     * @return the license text and its header values
+     */
+    public LicenseInfoView getLicenseInfo() {
+        return parseLicenseInfo(LicenseUtil.getLicenseText());
+    }
+
+    /**
+     * Reads the header values of the Business Source License text. A value whose line is
+     * missing, for example in the fallback text used when the file can't be read, is
+     * {@code null}.
+     *
+     * @param text the license text
+     * @return the license text with its title, licensor, change date and change license
+     */
+    static LicenseInfoView parseLicenseInfo(final String text) {
+
+        final String version = licenseHeader(LICENSE_VERSION, text);
+        return LicenseInfoView.builder()
+                .title(version == null ? LICENSE_TITLE : LICENSE_TITLE + " " + version)
+                .licensor(licenseHeader(LICENSE_LICENSOR, text))
+                .changeDate(licenseHeader(LICENSE_CHANGE_DATE, text))
+                .changeLicense(licenseHeader(LICENSE_CHANGE_LICENSE, text))
+                .text(text)
+                .build();
+    }
+
+    /**
+     * Returns the trimmed first group of {@code pattern} in {@code text}, or {@code null}.
+     */
+    private static String licenseHeader(final Pattern pattern, final String text) {
+        final Matcher matcher = pattern.matcher(text);
+        return matcher.find() ? matcher.group(1).trim() : null;
     }
 
     /**
@@ -212,8 +283,11 @@ public class CompanyConfigHelper {
                 .secondaryColor(company.getStreet())
                 .backgroundColor(
                         UtilMethods.isSet(company.getSize()) ? company.getSize() : null)
+                // Any stored background is returned so a client can save it back unchanged;
+                // "localhost" is the fresh-install value that means no background.
                 .backgroundImage(
-                        UtilMethods.isSet(company.getHomeURL()) && company.getHomeURL().startsWith("/dA")
+                        UtilMethods.isSet(company.getHomeURL())
+                                && !"localhost".equals(company.getHomeURL())
                                 ? company.getHomeURL() : null)
                 .loginScreenLogo(
                         UtilMethods.isSet(loginLogo) && loginLogo.startsWith("/dA")

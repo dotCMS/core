@@ -5,10 +5,13 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.company.CompanyAPI;
+import com.dotcms.datagen.LayoutDataGen;
 import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
@@ -16,7 +19,11 @@ import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.exception.SecurityException;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.rest.api.v1.system.CompanyEmailForm;
+import com.dotcms.rest.api.v1.system.ConfigurationResource;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.Layout;
+import com.dotmarketing.util.PortletID;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
@@ -24,6 +31,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.dotcms.rest.exception.ValidationException;
 import com.dotcms.rest.exception.BadRequestException;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -40,6 +48,7 @@ public class CompanyResourceIntegrationTest extends IntegrationTestBase {
     private static User adminUser;
     private static User nonAdminUser;
     private static CompanyAPI companyAPI;
+    private static Layout configurationLayout;
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -54,6 +63,21 @@ public class CompanyResourceIntegrationTest extends IntegrationTestBase {
         nonAdminUser = new UserDataGen().nextPersisted();
         APILocator.getRoleAPI().addRoleToUser(
                 APILocator.getRoleAPI().loadBackEndUserRole(), nonAdminUser);
+
+        // Give the non-admin the Configuration portlet, to show the role is still required
+        configurationLayout = new LayoutDataGen()
+                .name("configuration-" + System.currentTimeMillis())
+                .portletIds(PortletID.CONFIGURATION.toString())
+                .nextPersisted();
+        APILocator.getRoleAPI().addLayoutToRole(configurationLayout,
+                APILocator.getRoleAPI().getUserRole(nonAdminUser));
+    }
+
+    @AfterClass
+    public static void cleanUp() throws Exception {
+        if (configurationLayout != null) {
+            APILocator.getLayoutAPI().removeLayout(configurationLayout);
+        }
     }
 
     // ==================== GET /v1/configuration/branding ====================
@@ -202,6 +226,223 @@ public class CompanyResourceIntegrationTest extends IntegrationTestBase {
                 "http://localhost:8080", "test@dotcms.com", null,
                 "#FF0000", "#00FF00", null, null, null, null);
         resource.saveBasicInfo(request, mockResponse, form);
+    }
+
+    // ==================== backgroundImage (#37873) ====================
+
+    /**
+     * The bundled login backgrounds are accepted on save, persisted to {@code homeURL} and
+     * returned unchanged on read.
+     */
+    @Test
+    public void test_saveBasicInfo_presetBackground_isAcceptedAndReturned() {
+        final CompanySnapshot snapshot = CompanySnapshot.take(companyAPI);
+        try {
+            for (final String preset : new String[]{
+                    "/html/images/backgrounds/bg-1.jpg",
+                    "/html/images/backgrounds/bg-5.jpg",
+                    "/html/images/backgrounds/bg-11.jpg"}) {
+
+                final CompanyConfigView saved = resource.saveBasicInfo(
+                        createAdminRequest(), mockResponse, brandingForm(preset)).getEntity();
+
+                assertEquals(preset, saved.backgroundImage());
+                assertEquals(preset, companyAPI.getDefaultCompany().getHomeURL());
+                assertEquals(preset, resource.getCompanyConfig(createAdminRequest(), mockResponse)
+                        .getEntity().backgroundImage());
+            }
+        } finally {
+            snapshot.restore(companyAPI);
+        }
+    }
+
+    /**
+     * A stored background that is not a dotAsset path is returned as stored; the fresh-install
+     * {@code localhost} value is returned as {@code null}.
+     */
+    @Test
+    public void test_getCompanyConfig_storedNonDotAssetBackground_isReturned() throws Exception {
+        final CompanySnapshot snapshot = CompanySnapshot.take(companyAPI);
+        try {
+            storeHomeURL("https://example.com/bg.jpg");
+            assertEquals("https://example.com/bg.jpg",
+                    resource.getCompanyConfig(createAdminRequest(), mockResponse)
+                            .getEntity().backgroundImage());
+
+            storeHomeURL("localhost");
+            assertNull(resource.getCompanyConfig(createAdminRequest(), mockResponse)
+                    .getEntity().backgroundImage());
+        } finally {
+            snapshot.restore(companyAPI);
+        }
+    }
+
+    /**
+     * Reading the branding and saving it back with another field changed keeps the stored
+     * background, whether it is a preset or a legacy URL that is only accepted because it is
+     * the value already stored.
+     */
+    @Test
+    public void test_saveBasicInfo_roundTrip_keepsStoredBackground() throws Exception {
+        final CompanySnapshot snapshot = CompanySnapshot.take(companyAPI);
+        try {
+            for (final String stored : new String[]{
+                    "/html/images/backgrounds/bg-5.jpg", "https://example.com/bg.jpg"}) {
+
+                storeHomeURL(stored);
+                final CompanyConfigView read = resource.getCompanyConfig(
+                        createAdminRequest(), mockResponse).getEntity();
+
+                resource.saveBasicInfo(createAdminRequest(), mockResponse,
+                        brandingForm(read.backgroundImage()));
+
+                assertEquals(stored, companyAPI.getDefaultCompany().getHomeURL());
+            }
+        } finally {
+            snapshot.restore(companyAPI);
+        }
+    }
+
+    /**
+     * A new background that is neither a dotAsset path, a bundled preset nor the stored value
+     * is rejected with a message naming the field, and nothing is saved.
+     */
+    @Test
+    public void test_saveBasicInfo_invalidBackground_isRejected() throws Exception {
+        final CompanySnapshot snapshot = CompanySnapshot.take(companyAPI);
+        try {
+            storeHomeURL("/dA/stored/bg.png");
+            for (final String invalid : new String[]{
+                    "/html/images/backgrounds/bg-12.jpg",
+                    "/html/images/backgrounds/bg-1-sm.jpg",
+                    "/html/images/backgrounds/BG-1.JPG",
+                    "/html/images/backgrounds/bg-1.jpg?x",
+                    "/html/images/../bg-1.jpg",
+                    "https://example.com/html/images/backgrounds/bg-1.jpg"}) {
+                try {
+                    resource.saveBasicInfo(createAdminRequest(), mockResponse, brandingForm(invalid));
+                    fail("Expected BadRequestException for " + invalid);
+                } catch (final BadRequestException e) {
+                    final String body = String.valueOf(e.getResponse().getEntity());
+                    assertTrue(body, body.contains("backgroundImage"));
+                }
+                assertEquals("/dA/stored/bg.png", companyAPI.getDefaultCompany().getHomeURL());
+            }
+        } finally {
+            snapshot.restore(companyAPI);
+        }
+    }
+
+    /**
+     * dotAsset and empty backgrounds behave exactly as before.
+     */
+    @Test
+    public void test_saveBasicInfo_dotAssetAndEmptyBackground_unchanged() {
+        final CompanySnapshot snapshot = CompanySnapshot.take(companyAPI);
+        try {
+            final CompanyConfigView withAsset = resource.saveBasicInfo(createAdminRequest(),
+                    mockResponse, brandingForm("/dA/abc/bg.png")).getEntity();
+            assertEquals("/dA/abc/bg.png", withAsset.backgroundImage());
+            assertEquals("/dA/abc/bg.png", companyAPI.getDefaultCompany().getHomeURL());
+
+            final CompanyConfigView cleared = resource.saveBasicInfo(createAdminRequest(),
+                    mockResponse, brandingForm(null)).getEntity();
+            assertNull(cleared.backgroundImage());
+            assertTrue(!com.dotmarketing.util.UtilMethods.isSet(
+                    companyAPI.getDefaultCompany().getHomeURL()));
+        } finally {
+            snapshot.restore(companyAPI);
+        }
+    }
+
+    // ==================== GET /v1/configuration/license (#37874) ====================
+
+    /**
+     * Any backend user gets the license of the running build. The test container can't resolve
+     * the license file, so this also proves the endpoint answers 200 with the fallback text
+     * instead of failing; header parsing is covered by {@code CompanyConfigHelperTest}.
+     */
+    @Test
+    public void test_getLicense_asBackendUser_returnsLicenseInfo() {
+        final LicenseInfoView info = resource.getLicense(
+                createRequestForUser(nonAdminUser), mockResponse).getEntity();
+
+        assertEquals(LicenseUtil.getLicenseText(), info.text());
+        assertTrue(info.title(), info.title().startsWith("dotCMS Business Source License"));
+    }
+
+    /**
+     * Front-end-only users and anonymous requests are rejected with 401.
+     */
+    @Test
+    public void test_getLicense_frontEndOrAnonymous_throws401() throws Exception {
+        final User frontEndUser = new UserDataGen().nextPersisted();
+        APILocator.getRoleAPI().addRoleToUser(
+                APILocator.getRoleAPI().loadFrontEndUserRole(), frontEndUser);
+
+        for (final HttpServletRequest request : new HttpServletRequest[]{
+                createRequestForUser(frontEndUser), createRequestForUser(null)}) {
+            try {
+                resource.getLicense(request, mockResponse);
+                fail("Expected 401");
+            } catch (final SecurityException e) {
+                assertEquals(401, e.getResponse().getStatus());
+            }
+        }
+    }
+
+    // ==================== Portlet gate (#37872) ====================
+
+    /**
+     * A non-admin with the Configuration portlet in their layout, and an anonymous request, are
+     * rejected with 401 by every configuration endpoint.
+     */
+    @Test
+    public void test_endpoints_nonAdminWithConfigurationPortlet_or_anonymous_throw401() {
+        final ConfigurationResource configurationResource = new ConfigurationResource();
+        for (final User user : new User[]{nonAdminUser, null}) {
+            final java.util.List<Runnable> calls = java.util.List.of(
+                    () -> resource.getCompanyConfig(createRequestForUser(user), mockResponse),
+                    () -> resource.saveBasicInfo(createRequestForUser(user), mockResponse,
+                            brandingForm(null)),
+                    () -> resource.saveAuthType(createRequestForUser(user), mockResponse,
+                            new CompanyAuthTypeForm(AuthType.EMAIL_ADDRESS)),
+                    () -> resource.saveLocaleInfo(createRequestForUser(user), mockResponse,
+                            new CompanyLocaleForm("en_US", "America/New_York")),
+                    () -> {
+                        try {
+                            resource.regenerateKey(createRequestForUser(user), mockResponse);
+                        } catch (final com.dotmarketing.exception.DotDataException
+                                | com.dotmarketing.exception.DotSecurityException e) {
+                            throw new RuntimeException(e);
+                        }
+                    },
+                    () -> {
+                        try {
+                            configurationResource.validateEmail(createRequestForUser(user),
+                                    mockResponse, new CompanyEmailForm("test@dotcms.com"));
+                        } catch (final java.util.concurrent.ExecutionException
+                                | InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+            for (final Runnable call : calls) {
+                try {
+                    call.run();
+                    fail("Expected 401 for " + (user == null ? "anonymous" : "non-admin"));
+                } catch (final SecurityException e) {
+                    assertEquals(401, e.getResponse().getStatus());
+                }
+            }
+        }
+    }
+
+    /**
+     * Sending no body to the e-mail validation endpoint is a client error, not a server error.
+     */
+    @Test(expected = BadRequestException.class)
+    public void test_validateEmail_nullBody_returns400() throws Exception {
+        new ConfigurationResource().validateEmail(createAdminRequest(), mockResponse, null);
     }
 
     // ==================== PUT /v1/configuration/authentication ====================
@@ -379,6 +620,65 @@ public class CompanyResourceIntegrationTest extends IntegrationTestBase {
                 portalURL, email, mx,
                 primaryColor, secondaryColor,
                 bgColor, bgImage, loginLogo, navLogo);
+    }
+
+    /**
+     * A valid branding form that differs only in its background image.
+     */
+    private static CompanyBasicInfoForm brandingForm(final String backgroundImage) {
+        return basicInfoForm("http://localhost:8080", "test@dotcms.com", null,
+                "#FF0000", "#00FF00", null, backgroundImage, null, null);
+    }
+
+    /**
+     * Writes {@code homeURL} straight to the company row, the way the legacy screen stores it.
+     */
+    private static void storeHomeURL(final String homeURL) throws Exception {
+        final Company company = companyAPI.getDefaultCompany();
+        company.setHomeURL(homeURL);
+        com.liferay.portal.ejb.CompanyManagerUtil.updateCompany(company);
+    }
+
+    /**
+     * The branding fields of the default company, captured so a test can put them back.
+     */
+    private static final class CompanySnapshot {
+
+        private final String portalURL, email, mx, type, street, size, homeURL, city, state;
+
+        private CompanySnapshot(final Company company) {
+            portalURL = company.getPortalURL();
+            email = company.getEmailAddress();
+            mx = company.getMx();
+            type = company.getType();
+            street = company.getStreet();
+            size = company.getSize();
+            homeURL = company.getHomeURL();
+            city = company.getCity();
+            state = company.getState();
+        }
+
+        static CompanySnapshot take(final CompanyAPI companyAPI) {
+            return new CompanySnapshot(companyAPI.getDefaultCompany());
+        }
+
+        void restore(final CompanyAPI companyAPI) {
+            try {
+                final Company company = companyAPI.getDefaultCompany();
+                company.setPortalURL(portalURL);
+                company.setEmailAddress(email);
+                company.setMx(mx);
+                company.setType(type);
+                company.setStreet(street);
+                company.setSize(size);
+                company.setHomeURL(homeURL);
+                company.setCity(city);
+                company.setState(state);
+                com.liferay.portal.ejb.CompanyManagerUtil.updateCompany(company);
+            } catch (Exception e) {
+                // best effort restore
+            }
+        }
     }
 
     private void restoreCompany(

@@ -6,7 +6,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotmarketing.util.UtilMethods;
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import javax.validation.constraints.NotNull;
 import com.dotcms.rest.exception.BadRequestException;
 
@@ -29,6 +32,13 @@ public class CompanyBasicInfoForm extends Validated {
      */
     private static final Pattern HEX_COLOR_PATTERN =
             Pattern.compile("^#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$");
+
+    /**
+     * The login backgrounds bundled under {@code /html/images/backgrounds/}. Matched exactly.
+     */
+    static final Set<String> BACKGROUND_PRESETS = IntStream.rangeClosed(1, 11)
+            .mapToObj(n -> "/html/images/backgrounds/bg-" + n + ".jpg")
+            .collect(Collectors.toUnmodifiableSet());
 
     @JsonProperty("portalURL")
     @Schema(description = "Portal URL for the dotCMS instance", example = "http://localhost:8080",
@@ -68,8 +78,10 @@ public class CompanyBasicInfoForm extends Validated {
     private final String backgroundColor;
 
     @JsonProperty("backgroundImage")
-    @Schema(description = "Background image path (dotAsset path starting with /dA). Cleared if omitted.",
-            example = "/dA/abc123/background.png")
+    @Schema(description = "Login background: a dotAsset path starting with /dA, one of the bundled "
+            + "backgrounds /html/images/backgrounds/bg-1.jpg to bg-11.jpg, or the value already "
+            + "stored. Cleared if omitted.",
+            example = "/html/images/backgrounds/bg-11.jpg")
     private final String backgroundImage;
 
     @JsonProperty("loginScreenLogo")
@@ -167,12 +179,9 @@ public class CompanyBasicInfoForm extends Validated {
             validateHexColor("backgroundColor", backgroundColor);
         }
 
-        // Image/logo paths must be dotAsset references (matches the read-side
-        // filter in CompanyConfigHelper.toView that drops non-/dA values)
-        if (UtilMethods.isSet(backgroundImage) && !backgroundImage.startsWith("/dA")) {
-            throw new BadRequestException(
-                    "backgroundImage must be a dotAsset path starting with /dA");
-        }
+        // Logo paths must be dotAsset references (matches the read-side filter in
+        // CompanyConfigHelper.toView). backgroundImage is checked in
+        // CompanyConfigHelper.saveBasicInfo, which needs the stored value.
         if (UtilMethods.isSet(loginScreenLogo) && !loginScreenLogo.startsWith("/dA")) {
             throw new BadRequestException(
                     "loginScreenLogo must be a dotAsset path starting with /dA");
