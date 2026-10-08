@@ -5,6 +5,7 @@ import com.dotcms.auth.providers.jwt.factories.ApiTokenAPI;
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.jobs.business.processor.JobQueueEntryPoint;
 import com.dotcms.listeners.SessionMonitor;
 import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
@@ -786,6 +787,7 @@ public class MaintenanceResource implements Serializable {
     })
     @POST
     @Path("/assets/_fix")
+    @JobQueueEntryPoint(MaintenanceJobHelper.FIX_ASSETS_QUEUE)
     @NoCache
     @Produces({MediaType.APPLICATION_JSON})
     public ResponseEntityJobStatusView requestFixAssetsJob(
@@ -964,6 +966,7 @@ public class MaintenanceResource implements Serializable {
     })
     @POST
     @Path("/assets/_clean")
+    @JobQueueEntryPoint(MaintenanceJobHelper.CLEAN_ASSETS_QUEUE)
     @NoCache
     @Produces({MediaType.APPLICATION_JSON})
     public ResponseEntityJobStatusView requestCleanAssetsJob(
