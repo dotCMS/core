@@ -111,6 +111,8 @@ jobs:
           echo "inject_test=$INJECT_TEST"   >> "$GITHUB_OUTPUT"
           echo "Trigger: $EVENT  issue: #$ISSUE_NUMBER  dry_run: $DRY_RUN"
 
+          # $owner etc. are GraphQL variables, not shell ones: single quotes intended.
+          # shellcheck disable=SC2016
           INFO=$(gh api graphql \
             -f query='
               query($owner: String!, $repo: String!, $number: Int!) {
