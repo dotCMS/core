@@ -41,7 +41,8 @@ import {
     DotFolderDeleteActiveRun,
     DotLanguage,
     DotSite,
-    DotWorkflowPushPublishValue
+    DotWorkflowPushPublishValue,
+    FeaturedFlags
 } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { createFakeTagField, createFakeTextField, mockLocales } from '@dotcms/utils-testing';
@@ -165,6 +166,19 @@ describe('DotContentDriveStore', () => {
             expect(store.status()).toBe(DotContentDriveStatus.LOADING);
             expect(store.isTreeExpanded()).toBe(DEFAULT_TREE_EXPANDED);
             expect(store.sort()).toEqual(DEFAULT_SORT);
+        });
+    });
+
+    // Content Drive stopped reading the side-panel flag: both editors always open in a panel
+    // (#37759, FR-006). The flag keeps working outside Content Drive; this store just never asks.
+    describe('side-panel flag', () => {
+        it('does not fetch the side-panel flag', () => {
+            const properties = spectator.inject(DotPropertiesService);
+            const askedFor = (properties.getFeatureFlags as Mock).mock.calls.flatMap(
+                ([keys]) => keys ?? []
+            );
+
+            expect(askedFor).not.toContain(FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL);
         });
     });
 
@@ -1879,6 +1893,18 @@ describe('DotContentDriveStore - default language resolution', () => {
         expect(store.defaultLanguageId()).toBeUndefined();
         expect(store.filters()).toEqual(withSeeded({}));
         expect(contentDriveService.search).toHaveBeenCalledTimes(1);
+    });
+
+    it('should keep a filter changed before the default language resolves', () => {
+        // The init effect used to re-run when the default language landed, re-reading the page's
+        // original URL and wiping any filter a chip had already corrected in between.
+        spectator.flushEffects();
+        store.patchFilters({ contentType: ['Blog'] });
+
+        languages$.next(mockLocales);
+        spectator.flushEffects();
+
+        expect(store.filters()).toEqual(withSeeded({ contentType: ['Blog'], languageId: ['1'] }));
     });
 
     it('should expose the environment languages for the Locale filter to render', () => {

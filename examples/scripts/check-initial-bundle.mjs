@@ -38,7 +38,7 @@ const FORBIDDEN = [
     },
     {
         // NOT the bare string "tinymce": @dotcms/uve/internal legitimately ships the editor's
-        // URL (`/ext/tinymce/tinymce.min.js`) and its toolbar config objects, and those are a
+        // URL (`/ext/tinymcev7/tinymce.min.js`) and its toolbar config objects, and those are a
         // few hundred bytes of strings rather than the editor. `tinymceScriptSrc` is the prop
         // the @tinymce/tinymce-react wrapper takes, so it appears only where the real
         // integration was bundled.

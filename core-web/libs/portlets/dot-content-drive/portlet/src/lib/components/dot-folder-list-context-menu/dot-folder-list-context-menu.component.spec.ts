@@ -638,9 +638,11 @@ describe('DotFolderListViewContextMenuComponent', () => {
                     ).toBeUndefined();
                 });
 
-                // Both dialogs share one component now, so `data` is what distinguishes them —
-                // asserting the component alone would pass with the two call sites swapped.
-                it('should open the permissions JSP with correct config when triggered', async () => {
+                // Edit Permissions opens through the store now, like the other folder dialogs, so
+                // the URL can name it while it is open; the shell opens the JSP dialog itself
+                // (#37759, FR-030).
+                it('should ask the store to open Edit Permissions for the folder', async () => {
+                    vi.spyOn(store, 'setDialog');
                     await component.getMenuItems(folderContextMenuWithEditPermissions);
 
                     component
@@ -648,18 +650,15 @@ describe('DotFolderListViewContextMenuComponent', () => {
                         .find((item) => item.label === 'Edit-Permissions')
                         ?.command?.({} as unknown as MenuItemCommandEvent);
 
-                    expect(dialogService.open).toHaveBeenCalledWith(
+                    expect(store.setDialog).toHaveBeenCalledWith({
+                        type: 'FOLDER_PERMISSIONS',
+                        header: 'Edit-Permissions',
+                        payload: { identifier: folderWithEditPermissions.identifier }
+                    });
+                    expect(dialogService.open).not.toHaveBeenCalledWith(
                         DotJspIframeDialogComponent,
                         expect.objectContaining({
-                            width: 'min(92vw, 75rem)',
-                            closable: true,
-                            closeOnEscape: true,
-                            data: {
-                                url: `/html/portlet/ext/folders/permissions.jsp?folderIdentifier=${folderWithEditPermissions.identifier}&popup=true`,
-                                titleKey: 'Permissions',
-                                emptyKey: 'dot.permissions.iframe.dialog.no-asset',
-                                testIdPrefix: 'permissions'
-                            }
+                            data: expect.objectContaining({ titleKey: 'Permissions' })
                         })
                     );
                 });

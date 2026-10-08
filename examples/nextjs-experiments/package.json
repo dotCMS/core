@@ -10,16 +10,16 @@
     },
     "dependencies": {
         "@dotcms/client": "latest",
-        "@dotcms/experiments": "latest",
+        "@dotcms/events": "latest",
         "@dotcms/react": "latest",
         "@dotcms/types": "latest",
         "@dotcms/uve": "latest",
-        "@tinymce/tinymce-react": "6.3.0",
+        "@tinymce/tinymce-react": "6.2.1",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
-        "next": "16.2.9",
-        "react": "19.2.4",
-        "react-dom": "19.2.4",
+        "next": "16.3.8",
+        "react": "19.2.8",
+        "react-dom": "19.2.8",
         "tailwind-merge": "^3.6.0"
     },
     "devDependencies": {
@@ -29,7 +29,7 @@
         "@types/react": "^19",
         "@types/react-dom": "^19",
         "eslint": "^9",
-        "eslint-config-next": "16.2.9",
+        "eslint-config-next": "16.3.8",
         "prettier": "^3.5.3",
         "tailwindcss": "^4",
         "typescript": "^5"

@@ -2,6 +2,9 @@
   "name": "dotcms-astro-uve",
   "type": "module",
   "version": "0.0.1",
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
@@ -10,32 +13,34 @@
     "astro": "astro"
   },
   "dependencies": {
-    "@astrojs/check": "^0.9.6",
-    "@astrojs/react": "^4.4.2",
-    "@astrojs/ts-plugin": "^1.10.6",
-    "@astrojs/vercel": "^9.0.2",
+    "@astrojs/check": "0.9.10",
+    "@astrojs/react": "7.0.0",
+    "@astrojs/ts-plugin": "1.10.12",
+    "@astrojs/vercel": "11.0.11",
     "@dotcms/client": "latest",
     "@dotcms/react": "latest",
     "@dotcms/types": "latest",
     "@dotcms/uve": "latest",
     "@tailwindcss/typography": "^0.5.16",
     "@tailwindcss/vite": "^4.1.10",
-    "@tinymce/tinymce-react": "6.3.0",
+    "@tinymce/tinymce-react": "6.2.1",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
-    "astro": "^5.16.6",
+    "astro": "7.3.5",
     "dotenv": "^16.5.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
     "tailwindcss": "^4.1.10",
     "typescript": "^5.5.4"
   },
   "overrides": {
-    "path-to-regexp": "^8.0.0"
+    "@vercel/routing-utils": {
+      "path-to-regexp": "6.3.0"
+    }
   },
   "devDependencies": {
-    "@types/node": "^20.11.19",
+    "@types/node": "^22.12.0",
     "prettier": "^3.2.5",
-    "prettier-plugin-astro": "^0.13.0"
+    "prettier-plugin-astro": "^1.1.0"
   }
 }

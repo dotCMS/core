@@ -15,19 +15,6 @@
     </rule>
     
 -->
-
-<rule>
-    <note>
-        Deprecated backward-compat alias. TinyMCE's vendored copies were consolidated onto a
-        single version-neutral path at /ext/tinymce/. Already-published SDK versions in customer
-        apps still hardcode /ext/tinymcev7/ and cannot be changed retroactively, so this keeps
-        that path resolving to the same (current) files instead of removing it outright. No fixed
-        removal date is set.
-    </note>
-    <from>^/ext/tinymcev7/(.*)$</from>
-    <to last="true">/ext/tinymce/$1</to>
-</rule>
-
 <!-- BEGIN PLUGINS -->
 <!-- END PLUGINS -->
 </urlrewrite>

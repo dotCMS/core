@@ -62,6 +62,15 @@ describe('OverlayEditContentHost', () => {
                 contentTypeId: 'Blog'
             });
         });
+
+        // Content Drive starts a create in the language the list is filtered by (#37759, FR-003).
+        it('carries the language the opener asked the content to start in', () => {
+            config.data = { mode: 'new', contentTypeId: 'Blog', languageId: 2 };
+
+            expect(host.resolveIdentity()).toEqual(
+                expect.objectContaining({ contentTypeId: 'Blog', languageId: 2 })
+            );
+        });
     });
 
     describe('leaveDeletedContent', () => {
@@ -178,16 +187,40 @@ describe('OverlayEditContentHost', () => {
     });
 
     describe('reloadContent (locale switch)', () => {
-        it('emits a reload request WITHOUT a trail (keeps the current trail)', () =>
+        it('emits a reload request WITHOUT a trail, carrying the language', () =>
             new Promise<void>((done) => {
                 host.inPlaceNavigation$.subscribe((request) => {
-                    expect(request).toEqual({ inode: 'inode-5' });
+                    expect(request).toEqual({ inode: 'inode-5', languageId: 2 });
                     expect(request.trail).toBeUndefined();
                     done();
                 });
 
-                host.reloadContent('inode-5');
+                host.reloadContent('inode-5', 2);
             }));
+
+        // The layout may still keep the old version (unsaved changes, "keep editing"), so asking
+        // for the reload reports nothing yet (#37759, FR-020, T125).
+        it('does not report the language when only asked to reload', () => {
+            const spy = vi.fn();
+            host.languageChanged$.subscribe(spy);
+
+            host.reloadContent('inode-5', 2);
+
+            expect(spy).not.toHaveBeenCalled();
+        });
+    });
+
+    // The layout reports the language once the reload runs; the opener names it in its URL
+    // (#37759, FR-020, FR-028, T125).
+    describe('reportLanguage', () => {
+        it('emits the language on languageChanged$', () => {
+            const spy = vi.fn();
+            host.languageChanged$.subscribe(spy);
+
+            host.reportLanguage(2);
+
+            expect(spy).toHaveBeenCalledWith(2);
+        });
     });
 
     describe('setTrail', () => {

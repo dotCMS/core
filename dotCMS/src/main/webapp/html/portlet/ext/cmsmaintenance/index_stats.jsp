@@ -5,6 +5,7 @@
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
 <%@page import="com.dotcms.content.index.IndexAPI"%>
+<%@page import="com.dotcms.content.index.IndexTimestamp"%>
 <%@page import="com.dotmarketing.portlets.structure.factories.StructureFactory"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@page import="java.util.Map"%>
@@ -52,7 +53,6 @@ List<String> indices=MigrationIndexVisibility.filter(idxApi.listDotCMSIndices())
 List<String> closedIndices=MigrationIndexVisibility.filter(idxApi.listDotCMSClosedIndices());
 Map<String, IndexStats> indexInfo = esapi.getIndicesStats();
 
-SimpleDateFormat dater = new SimpleDateFormat("yyyyMMddHHmmss");
 
 
 Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
@@ -112,8 +112,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 				<%	Date d = null;
 					String myDate = null;
 					try{
-						 myDate = x.split("_")[1];
-						d = dater.parse(myDate);
+						 d = Date.from(IndexTimestamp.createdAt(x));
 
 						myDate = UtilMethods.dateToPrettyHTMLDate(d)  + " "+ UtilMethods.dateToHTMLTime(d);
 						}
@@ -150,8 +149,7 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 			    <%   Date d = null;
                     String myDate = null;
                     try{
-                         myDate = idx.split("_")[1];
-                        d = dater.parse(myDate);
+                         d = Date.from(IndexTimestamp.createdAt(idx));
 
                         myDate = UtilMethods.dateToPrettyHTMLDate(d)  + " "+ UtilMethods.dateToHTMLTime(d);
                         }

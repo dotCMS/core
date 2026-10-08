@@ -19,6 +19,7 @@ import com.dotcms.rest.api.v1.content.search.handlers.FieldHandlerRegistry;
 import com.dotcms.rest.api.v1.drive.SearchScope;
 import com.dotcms.content.index.SearchAPI;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -72,11 +73,15 @@ import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.ArrayDeque;
 import java.util.Collections;
+import java.util.Deque;
+import java.util.IdentityHashMap;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
@@ -172,6 +177,12 @@ public class BrowserAPIImpl implements BrowserAPI {
     private static final String INODE_FILTER_PREFIX = " +inode:(";
     private static final String INODE_FILTER_SEPARATOR = " OR ";
     private static final String INODE_FILTER_SUFFIX = ") ";
+
+    // A request must leave room for at least this many UUID inodes per ES sub-query, or it is
+    // rejected as bad input (see baseQueryLeavesRoomForInodes). Matches the floor
+    // calculateMaxInodesPerESQuery applies to the clause cap.
+    private static final int MIN_INODES_PER_ES_QUERY = 100;
+    private static final int UUID_LENGTH = 36;
 
     /**
      * JSON-escapes a Lucene query string so it can be safely interpolated as the string value in
@@ -281,11 +292,21 @@ public class BrowserAPIImpl implements BrowserAPI {
      * completeness under normal conditions; it does not eliminate the possibility of a dropped
      * match under sustained load, only make it far less likely and no longer position-dependent.
      * </p>
+     * <p>
+     * Chunk size also depends on {@code applyESFilter}. The ES-narrowed scan reads every chunk at
+     * the same size. The permission-only scan reads its first chunk at {@code chunkSize}, then,
+     * while {@code BROWSER_DB_CHUNK_ADAPTIVE} is on, sizes each next chunk from how many of the
+     * rows read so far the user could see (see {@link #nextChunkSize}). Each chunk re-runs the
+     * query at a larger offset, so a user who can see little of a large folder would otherwise pay
+     * for dozens of re-reads of the same leading rows (issue #37665). Paging is unaffected: the
+     * cursor is still a row position, and a page holds the same items either way.
+     * </p>
      *
      * @param browserQuery  query containing search criteria, user context, and the current cursor
      * @param maxRows       maximum number of permission-visible items to return
      * @param sqlQuery      the pre-built SQL select query containing: string query and parameters
-     * @param chunkSize     number of DB rows to fetch per iteration
+     * @param chunkSize     number of DB rows to fetch per iteration; on the permission-only scan,
+     *                      the size of the first chunk and the floor for the rest
      * @param applyESFilter when {@code true}, each chunk is text-filtered through Elasticsearch
      *                      before permission filtering; when {@code false}, only permission
      *                      filtering is applied
@@ -329,24 +350,37 @@ public class BrowserAPIImpl implements BrowserAPI {
                 ? Config.getIntProperty(BROWSER_DB_MAX_SCAN_ROWS_ES_HARD_CAP_KEY, BROWSER_DB_MAX_SCAN_ROWS_ES_HARD_CAP_DEFAULT)
                 : -1;
         final long scanStartNanos = System.nanoTime();
+        // Only the permission-only scan grows its chunks (issue #37665). The ES-narrowed scan's
+        // cost is bounded by elapsed time and a row hard cap (#37211); growing its chunks would
+        // change how those bounds behave.
+        final boolean adaptiveChunks = !applyESFilter
+                && Config.getBooleanProperty(BROWSER_DB_CHUNK_ADAPTIVE_KEY, BROWSER_DB_CHUNK_ADAPTIVE_DEFAULT);
+        final int adaptiveCeiling = Config.getIntProperty(BROWSER_DB_CHUNK_ADAPTIVE_MAX_SIZE_KEY,
+                BROWSER_DB_CHUNK_ADAPTIVE_MAX_SIZE_DEFAULT);
+        final int adaptiveMaxGrowth = Config.getIntProperty(BROWSER_DB_CHUNK_ADAPTIVE_MAX_GROWTH_KEY,
+                BROWSER_DB_CHUNK_ADAPTIVE_MAX_GROWTH_DEFAULT);
+        final float adaptiveSafetyFactor = Config.getFloatProperty(BROWSER_DB_CHUNK_ADAPTIVE_SAFETY_FACTOR_KEY,
+                BROWSER_DB_CHUNK_ADAPTIVE_SAFETY_FACTOR_DEFAULT);
 
         final List<Contentlet> accumulatedContent = new ArrayList<>();
         List<String> candidateChunkInodes;
         int dbOffset = browserQuery.contentCursor;
+        int rowsRead = 0;
+        int requestedChunkSize = effectiveChunkSize;
         int chunkCount = 0;
         int nextContentCursor;
         boolean hasMore = false;
 
         Logger.debug(this, String.format(
-                "[Starting content search by chunks]: content required %d, chunk size: %d, user: %s",
-                maxRows, effectiveChunkSize, browserQuery.user.getFullName()));
+                "[Starting content search by chunks]: content required %d, chunk size: %d, adaptive: %s, user: %s",
+                maxRows, effectiveChunkSize, adaptiveChunks, browserQuery.user.getFullName()));
 
         while (true) {
             chunkCount++;
-            Logger.debug(this, String.format("#%d Chunk: starting row: %d", chunkCount, dbOffset));
+            Logger.debug(this, String.format("#%d Chunk: starting row: %d, requested size: %d",
+                    chunkCount, dbOffset, requestedChunkSize));
 
-            final DotConnect dcSelectChunk = buildPaginatedDotConnect(sqlQuery, effectiveChunkSize, dbOffset);
-            candidateChunkInodes = collectInodesFromDB(dcSelectChunk);
+            candidateChunkInodes = readChunkInodes(sqlQuery, requestedChunkSize, dbOffset);
 
             if (candidateChunkInodes.isEmpty()) {
                 Logger.debug(this, String.format("DB exhausted at offset %d after %d chunks.",
@@ -360,14 +394,18 @@ public class BrowserAPIImpl implements BrowserAPI {
             accumulatedContent.addAll(chunkFiltered);
 
             dbOffset += candidateChunkInodes.size();
+            rowsRead += candidateChunkInodes.size();
 
             // A satisfied page wins over the guard rail: when this chunk already produced enough
             // visible items we must exit through generateNextContentCursor so the next page resumes
             // right after the last item returned. Checking the scan budget first would exit via the
             // warn path with a chunk-aligned cursor and silently skip whatever is left over in this
             // chunk -- reachable whenever a chunk boundary lands exactly on the scan budget.
+            // "Full" and "partial" are judged against what this iteration asked for: once chunks
+            // grow, comparing against the first chunk's size would call a full grown chunk partial
+            // (ending paging early) or a partial one full (issue #37665).
             if (accumulatedContent.size() >= maxRows) {
-                hasMore = (candidateChunkInodes.size() == effectiveChunkSize);
+                hasMore = (candidateChunkInodes.size() == requestedChunkSize);
                 nextContentCursor = generateNextContentCursor(accumulatedContent, maxRows,
                         candidateChunkInodes, dbOffset);
                 break;
@@ -380,7 +418,7 @@ public class BrowserAPIImpl implements BrowserAPI {
             // checking the scan budget first would report hasMore=true for a folder that is
             // actually fully paged through whenever the last (partial) chunk's ending point happens
             // to land on or past the budget (found in review, issue #37184).
-            if (candidateChunkInodes.size() < effectiveChunkSize) {
+            if (candidateChunkInodes.size() < requestedChunkSize) {
                 Logger.debug(this, String.format(
                         "Reached end of results (partial chunk) - DB is exhausted. Total accumulated: %d",
                         accumulatedContent.size()));
@@ -415,6 +453,12 @@ public class BrowserAPIImpl implements BrowserAPI {
                 nextContentCursor = dbOffset;
                 hasMore = true;
                 break;
+            }
+
+            if (adaptiveChunks) {
+                requestedChunkSize = nextChunkSize(requestedChunkSize, effectiveChunkSize, rowsRead,
+                        accumulatedContent.size(), maxRows - accumulatedContent.size(), scanRowLimit,
+                        dbOffset, adaptiveCeiling, adaptiveMaxGrowth, adaptiveSafetyFactor);
             }
 
             Logger.debug(this, String.format(
@@ -515,6 +559,79 @@ public class BrowserAPIImpl implements BrowserAPI {
         return results.stream()
                 .map(m -> m.get("inode"))
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Reads one chunk of the listing: {@code limit} candidate inodes starting at row
+     * {@code offset}, in the query's own order. This is the only place the chunk loop in
+     * {@link #getContentByChunks} touches the database, so tests spy on it to see how many rows
+     * each iteration asked for.
+     *
+     * @param sqlQuery the pre-built SQL select query (must already contain an ORDER BY clause)
+     * @param limit    number of rows requested for this chunk
+     * @param offset   absolute row position the chunk starts at
+     * @return ordered inodes of the chunk; empty when the listing has no rows left
+     * @throws DotDataException if the underlying JDBC call fails
+     */
+    @VisibleForTesting
+    List<String> readChunkInodes(final SelectQuery sqlQuery, final int limit, final int offset)
+            throws DotDataException {
+        return collectInodesFromDB(buildPaginatedDotConnect(sqlQuery, limit, offset));
+    }
+
+    /**
+     * Works out how many rows the next chunk of a permission-only scan should request, from what
+     * the chunks read so far in this request returned (issue #37665).
+     * <p>
+     * When some items were visible, the rows still needed are projected from the visible/read
+     * ratio and padded by {@code safetyFactor}, rounded up to a whole row. When nothing was visible
+     * yet there is no ratio to go on, so the previous request is doubled instead. Either way the
+     * result is then capped by {@code maxGrowth} times the previous request, by {@code ceiling},
+     * and by what is left of the scan budget ({@code scanLimit - dbOffset}); finally it is raised
+     * to {@code floor} if it fell below it. The floor wins every conflict, so a chunk is never
+     * smaller than the fixed chunk this scan would have used without adaptive sizing.
+     * </p>
+     * <p>
+     * A {@code ceiling} of zero or less, a {@code maxGrowth} below one, or a {@code safetyFactor}
+     * that is not a positive finite number falls back to its default.
+     * </p>
+     *
+     * @param previousRequested rows requested for the chunk just read
+     * @param floor             the caller's chunk size; the result is never below it
+     * @param rowsRead          rows read so far in this request
+     * @param visibleSoFar      permission-visible items accumulated so far in this request
+     * @param stillNeeded       items still missing to fill the page
+     * @param scanLimit         the permission-only scan budget ({@code BROWSER_DB_MAX_SCAN_ROWS})
+     * @param dbOffset          absolute row position the next chunk starts at
+     * @param ceiling           largest chunk growth may reach
+     * @param maxGrowth         largest multiple of {@code previousRequested} growth may reach
+     * @param safetyFactor      margin applied to the rows projected from the ratio
+     * @return rows to request for the next chunk
+     */
+    @VisibleForTesting
+    static int nextChunkSize(final int previousRequested, final int floor, final int rowsRead,
+            final int visibleSoFar, final int stillNeeded, final int scanLimit, final int dbOffset,
+            final int ceiling, final int maxGrowth, final float safetyFactor) {
+        final int effectiveCeiling = ceiling > 0 ? ceiling : BROWSER_DB_CHUNK_ADAPTIVE_MAX_SIZE_DEFAULT;
+        final int effectiveMaxGrowth = maxGrowth >= 1 ? maxGrowth : BROWSER_DB_CHUNK_ADAPTIVE_MAX_GROWTH_DEFAULT;
+        final float effectiveSafetyFactor = safetyFactor > 0 && Float.isFinite(safetyFactor)
+                ? safetyFactor : BROWSER_DB_CHUNK_ADAPTIVE_SAFETY_FACTOR_DEFAULT;
+        if (effectiveCeiling != ceiling || effectiveMaxGrowth != maxGrowth
+                || effectiveSafetyFactor != safetyFactor) {
+            Logger.debug(BrowserAPIImpl.class, String.format(
+                    "Invalid adaptive chunk setting (ceiling %d, max growth %d, safety factor %s); "
+                            + "using ceiling %d, max growth %d, safety factor %s",
+                    ceiling, maxGrowth, safetyFactor,
+                    effectiveCeiling, effectiveMaxGrowth, effectiveSafetyFactor));
+        }
+
+        // Kept in double/long until the final clamp: a large safety factor must not overflow int.
+        final double projected = visibleSoFar > 0
+                ? Math.ceil((double) stillNeeded * rowsRead * effectiveSafetyFactor / visibleSoFar)
+                : (double) previousRequested * 2;
+        final double capped = Math.min(Math.min(projected, (double) previousRequested * effectiveMaxGrowth),
+                Math.min(effectiveCeiling, (double) scanLimit - dbOffset));
+        return (int) Math.max(floor, capped);
     }
 
     /**
@@ -920,8 +1037,10 @@ public class BrowserAPIImpl implements BrowserAPI {
                 }
             });
 
-    // Multiplier applied to (startRow + maxRows) to determine the DB chunk size for permission-aware pagination.
-    // A factor of 3 means: fetch 3x the needed rows per chunk, expecting ~1/3 may be filtered by permissions.
+    // Multiplier applied to maxRows to determine the DB chunk size for permission-aware pagination.
+    // The default of 10 fetches 10x the needed rows per chunk, expecting most may be filtered out by
+    // permissions. max(maxRows * factor, BROWSER_DB_CHUNK_MIN_SIZE) is the permission-only loop's
+    // first chunk, and the floor adaptive sizing never goes below (issue #37665).
     final Lazy<Integer> BROWSER_DB_CHUNK_FACTOR = Lazy.of(
             () -> Config.getIntProperty("BROWSER_DB_CHUNK_FACTOR", 10));
 
@@ -936,6 +1055,37 @@ public class BrowserAPIImpl implements BrowserAPI {
     // BROWSER_DB_MAX_SCAN_TIME_MILLIS_KEY for the ES-narrowed (text-filter) scan's cost bound.
     static final String BROWSER_DB_MAX_SCAN_ROWS_KEY = "BROWSER_DB_MAX_SCAN_ROWS";
     static final int BROWSER_DB_MAX_SCAN_ROWS_DEFAULT = 50_000;
+
+    // Adaptive chunk sizing for the permission-only scan (applyESFilter=false, issue #37665).
+    // Each chunk re-runs the listing query at a larger OFFSET, so a fixed chunk makes the cost
+    // grow with the square of the chunk count, and the chunk count is driven by how much the
+    // permission filter discards. When on, every chunk after the first is sized from the
+    // visible/read ratio seen so far (doubling when nothing was visible yet), never below the
+    // caller's chunk size. Setting it to false restores the fixed chunk exactly. The ES-narrowed
+    // scan never grows its chunks regardless of this flag.
+    static final String BROWSER_DB_CHUNK_ADAPTIVE_KEY = "BROWSER_DB_CHUNK_ADAPTIVE";
+    static final boolean BROWSER_DB_CHUNK_ADAPTIVE_DEFAULT = true;
+
+    // Largest chunk adaptive sizing may request. Every row of a chunk is loaded as a Contentlet
+    // before the permission filter, so this bounds each request's working set. The benchmark in
+    // the #37665 review showed 7,000 saturating a 2 GB heap with 10 concurrent permission-limited
+    // listings, while 2,000 kept most of the latency gain. Values <= 0 fall back to the default.
+    static final String BROWSER_DB_CHUNK_ADAPTIVE_MAX_SIZE_KEY = "BROWSER_DB_CHUNK_ADAPTIVE_MAX_SIZE";
+    static final int BROWSER_DB_CHUNK_ADAPTIVE_MAX_SIZE_DEFAULT = 2_000;
+
+    // Largest multiple of the previous chunk that the next one may grow to. It bounds the ratio
+    // estimate when visible items are clustered rather than spread evenly: 1 visible item early
+    // on can project a chunk far larger than the page needs, and every row read is loaded and
+    // permission-checked. Doubling (2x) never reaches the default. Values < 1 fall back to the
+    // default.
+    static final String BROWSER_DB_CHUNK_ADAPTIVE_MAX_GROWTH_KEY = "BROWSER_DB_CHUNK_ADAPTIVE_MAX_GROWTH";
+    static final int BROWSER_DB_CHUNK_ADAPTIVE_MAX_GROWTH_DEFAULT = 4;
+
+    // Margin applied to the rows projected from the visible/read ratio, which is only a sample:
+    // the next stretch of the folder may be sparser. Values <= 0 or non-finite fall back to the
+    // default.
+    static final String BROWSER_DB_CHUNK_ADAPTIVE_SAFETY_FACTOR_KEY = "BROWSER_DB_CHUNK_ADAPTIVE_SAFETY_FACTOR";
+    static final float BROWSER_DB_CHUNK_ADAPTIVE_SAFETY_FACTOR_DEFAULT = 1.5f;
 
     // Maximum wall-clock time to spend scanning DB chunks when text-filtering through ES
     // (applyESFilter=true). A row-count cutoff here silently drops matches that fall later in
@@ -1021,15 +1171,20 @@ public class BrowserAPIImpl implements BrowserAPI {
      * <p>Each ES sub-query carries its candidates as {@code +inode:(id1 OR id2 ...)}, so the
      * chunk is split into batches that respect both the boolean-clause limit and the index
      * server's maximum query-string length ({@link #BROWSER_ES_MAX_QUERY_STRING_LENGTH_KEY}).
-     * One batch runs directly; several run in parallel. If the base query alone leaves no room
-     * for any inode, the chunk is not sent to ES at all: the condition is logged and the chunk
-     * contributes no matches, the same outcome as any other failed sub-query.</p>
+     * One batch runs directly; several run in parallel.</p>
+     *
+     * <p>Any sub-query that cannot run fails the whole call rather than contributing an empty
+     * set: silently dropping a chunk's matches would return an incomplete page as a successful
+     * response (issue #37488). User input that could break an index query is rejected with
+     * HTTP 400 before this point, so what fails here is the index itself, or a base query too
+     * long to leave room for the inode restriction.</p>
      *
      * @param browserQuery The {@link BrowserQuery} containing search criteria (filter, fileName)
      * @param inodes       The set of inodes to filter through Elasticsearch text search
      * @return A filtered set of inodes that match the text search criteria
+     * @throws DotDataException if a sub-query fails or times out, or no sub-query can be built
      */
-    Set<String> processESDirectly(BrowserQuery browserQuery, Set<String> inodes) {
+    Set<String> processESDirectly(BrowserQuery browserQuery, Set<String> inodes) throws DotDataException {
         if (inodes == null || inodes.isEmpty()) {
             return new LinkedHashSet<>();
         }
@@ -1048,11 +1203,12 @@ public class BrowserAPIImpl implements BrowserAPI {
                 totalInodes, maxInodesByClauses, maxQueryLength, batches.size()));
 
         if (batches.isEmpty()) {
-            Logger.error(this, String.format(
-                    "ES filtering skipped for %d inodes: the base query is %d characters, leaving no "
+            final String errorMsg = String.format(
+                    "ES filtering cannot run for %d inodes: the base query is %d characters, leaving no "
                             + "room for the inode restriction within the %d-character budget (%s)",
-                    totalInodes, baseQueryLength, maxQueryLength, BROWSER_ES_MAX_QUERY_STRING_LENGTH_KEY));
-            return new LinkedHashSet<>();
+                    totalInodes, baseQueryLength, maxQueryLength, BROWSER_ES_MAX_QUERY_STRING_LENGTH_KEY);
+            Logger.error(this, errorMsg);
+            throw new DotDataException(errorMsg);
         }
         if (batches.size() == 1) {
             return processSingleESQuery(browserQuery, inodes, startTime);
@@ -1074,6 +1230,86 @@ public class BrowserAPIImpl implements BrowserAPI {
             limit = BROWSER_ES_MAX_QUERY_STRING_LENGTH_DEFAULT;
         }
         return (int) (limit * ES_QUERY_STRING_LENGTH_SAFETY_RATIO);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p>Only requests that go through the index are checked. The base query is the one every
+     * sub-query of this request would carry.</p>
+     */
+    @Override
+    public boolean esQueryLeavesRoomForInodes(final BrowserQuery browserQuery) {
+        if (!isUseElasticSearchForFiltering(browserQuery)) {
+            return true;
+        }
+        return baseQueryLeavesRoomForInodes(buildBaseESQuery(browserQuery).length(),
+                getESQueryStringLengthBudget());
+    }
+
+    /**
+     * Tells whether a base query leaves room for a useful batch of inodes within the
+     * query-string budget: at least {@link #MIN_INODES_PER_ES_QUERY} UUID inodes, the same floor
+     * {@link #calculateMaxInodesPerESQuery} uses. With less room a request would still run, but
+     * fan out into a large number of tiny sub-queries (issue #37488 review).
+     *
+     * @param baseQueryLength Length of the base query.
+     * @param maxQueryLength  The query-string length budget.
+     * @return {@code true} when the minimum batch fits.
+     */
+    @VisibleForTesting
+    static boolean baseQueryLeavesRoomForInodes(final int baseQueryLength, final int maxQueryLength) {
+        final long minimumBatchLength = INODE_FILTER_PREFIX.length() + INODE_FILTER_SUFFIX.length()
+                + (long) MIN_INODES_PER_ES_QUERY * UUID_LENGTH
+                + (long) (MIN_INODES_PER_ES_QUERY - 1) * INODE_FILTER_SEPARATOR.length();
+        return baseQueryLength + minimumBatchLength <= maxQueryLength;
+    }
+
+    /**
+     * Index error reasons that mean the query built from the user's search term or filter values
+     * was too complex for the index to build: a wildcard it cannot determinize (its effort limit,
+     * or its maximum automaton size), or more boolean clauses than it allows. Matched in lower
+     * case. A generic {@code query_shard_exception} is deliberately not on this list: it is also
+     * how the index reports a mapping that has not caught up, which is not the user's doing
+     * (see {@code OSSearchAPIImpl#searchFailure}).
+     */
+    private static final List<String> QUERY_TOO_COMPLEX_REASONS = List.of(
+            "determinizing automaton", "too_complex_to_determinize", "input automaton is too large",
+            "too_many_clauses", "maxclausecount");
+
+    /**
+     * Tells whether an index failure means the query built from the user's input was too complex
+     * for the index to build ({@link #QUERY_TOO_COMPLEX_REASONS}). The reason is looked for in the
+     * whole chain: the OpenSearch client carries it in a cause's message, the Elasticsearch client
+     * in a suppressed exception holding the response body.
+     *
+     * @param failure The failure raised by the search.
+     * @return {@code true} when the input, not the index, is at fault.
+     */
+    @VisibleForTesting
+    static boolean isQueryTooComplex(final Throwable failure) {
+        final Set<Throwable> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+        final Deque<Throwable> pending = new ArrayDeque<>();
+        if (null != failure) {
+            pending.push(failure);
+        }
+        while (!pending.isEmpty()) {
+            final Throwable current = pending.pop();
+            if (!seen.add(current)) {
+                continue;
+            }
+            final String message = null == current.getMessage() ? "" : current.getMessage().toLowerCase();
+            if (QUERY_TOO_COMPLEX_REASONS.stream().anyMatch(message::contains)) {
+                return true;
+            }
+            if (null != current.getCause()) {
+                pending.push(current.getCause());
+            }
+            for (final Throwable suppressed : current.getSuppressed()) {
+                pending.push(suppressed);
+            }
+        }
+        return false;
     }
 
     /**
@@ -1207,8 +1443,11 @@ public class BrowserAPIImpl implements BrowserAPI {
      * @param startTime    The time when this method was called, for performance analysis purposes.
      *
      * @return A set of Inodes matching the query.
+     * @throws DotDataException if the search fails; see {@link #processESDirectly} for why it is
+     *                          not swallowed.
      */
-    private Set<String> processSingleESQuery(final BrowserQuery browserQuery, final Set<String> inodes, final long startTime) {
+    private Set<String> processSingleESQuery(final BrowserQuery browserQuery, final Set<String> inodes,
+            final long startTime) throws DotDataException {
         final boolean live = !browserQuery.showWorking;
         final SearchAPI searchAPI = APILocator.getSearchAPI();
         final List<String> collectedInodes = new ArrayList<>();
@@ -1233,24 +1472,26 @@ public class BrowserAPIImpl implements BrowserAPI {
                 inodes.size(), collectedInodes.size(), duration));
 
         } catch (final Exception e) {
-            // Deliberately swallowed, and it is worth saying why rather than leaving it to look
-            // like an oversight. Raising this instead was tried while fixing #37532 and reverted:
-            // once the term is escaped (see buildAllFieldsScopedQuery/buildTitleScopedQuery) no
-            // user input can break the query, so what remains here is infrastructure failure — and
-            // raising it also broke the guarantee that a Lucene-injection attempt is escaped,
-            // matches nothing, and does NOT produce a 500 (see
-            // ContentDriveFieldFilterTest#testMalformedDateBoundIsSafe).
-            //
-            // This does NOT give the shell's error banner (dot-content-drive-shell.component.html)
-            // full coverage, and the comment should not be read as claiming it does: the request
-            // still completes with HTTP 200 here, falling through to whatever was collected into
-            // `collectedInodes` before the failure — a short, silently partial result rather than
-            // an explicit error. The banner only fires for failures the front end can itself
-            // observe (network/transport errors surfacing as a failed HTTP call); a query that
-            // fails inside this method never becomes one. Narrower than the ideal, wider than
-            // nothing: still strictly better than the pre-#37532 state, where EVERY failure here
-            // (including a reserved-character term) looked exactly like this.
-            Logger.error(this, String.format("Single ES query failed for %d inodes: %s", inodes.size(), getErrorMessage(e)), e);
+            // Raised, not swallowed (issue #37488). Swallowing it returned whatever had been
+            // collected so far as a successful page, silently missing this sub-query's matches.
+            // That was a deliberate trade-off while user input could break the query and raising
+            // would have turned it into a 500. Input the index cannot use is now told apart: a
+            // non-date range bound is rejected with HTTP 400 by ContentDriveFieldFilterResolver, a
+            // term or values too long for the query budget by ContentDriveHelper before the search
+            // runs, and a query the index finds too complex to build is raised as
+            // ESQueryTooComplexException, which Content Drive also answers with HTTP 400. Anything
+            // else is the index itself and fails the request visibly: the Content Drive shell
+            // shows its error banner for it.
+            if (isQueryTooComplex(e)) {
+                final String warnMsg = String.format("ES query for %d inodes rejected as too complex "
+                        + "to build from the search input: %s", inodes.size(), getErrorMessage(e));
+                Logger.warn(this, warnMsg);
+                throw new ESQueryTooComplexException(warnMsg, e);
+            }
+            final String errorMsg = String.format("Single ES query failed for %d inodes: %s",
+                    inodes.size(), getErrorMessage(e));
+            Logger.error(this, errorMsg, e);
+            throw new DotDataException(errorMsg, e);
         }
 
         return new LinkedHashSet<>(collectedInodes);
@@ -1265,9 +1506,11 @@ public class BrowserAPIImpl implements BrowserAPI {
      * @param maxQueryLength The query-string length budget the batches were sized for (logging only).
      * @param startTime      When the caller started, for performance logging.
      * @return The inodes that matched, across all sub-queries.
+     * @throws DotDataException if any sub-query fails or times out, or the overall wait does
      */
     private Set<String> processMultipleESQueries(final BrowserQuery browserQuery,
-            final List<List<String>> subBatches, final int maxQueryLength, final long startTime) {
+            final List<List<String>> subBatches, final int maxQueryLength, final long startTime)
+            throws DotDataException {
         final Set<String> allResults = Collections.synchronizedSet(new LinkedHashSet<>());
         final int totalInodes = subBatches.stream().mapToInt(List::size).sum();
 
@@ -1287,49 +1530,72 @@ public class BrowserAPIImpl implements BrowserAPI {
                 .supplyAsync(() -> {
                     Logger.debug(BrowserAPIImpl.this, String.format("Processing ES sub-query %d/%d: %d inodes",
                         batchIndex, batchCount, batch.size()));
-                    return processSingleESQuery(browserQuery, new LinkedHashSet<>(batch), System.currentTimeMillis());
+                    try {
+                        return processSingleESQuery(browserQuery, new LinkedHashSet<>(batch), System.currentTimeMillis());
+                    } catch (final DotDataException e) {
+                        // Unchecked so it completes the future exceptionally; unwrapped below.
+                        throw new DotRuntimeException(e.getMessage(), e);
+                    }
                 }, submitter)
-                .orTimeout(60, TimeUnit.SECONDS)
-                .exceptionally(throwable -> {
-                    // Same partial-result trade-off as processSingleESQuery's catch block, one
-                    // level up: a timed-out or failed chunk contributes an empty set rather than
-                    // failing the whole request, so the other chunks' hits still come back with
-                    // HTTP 200 and this chunk's rows are simply missing from the page.
-                    Logger.error(BrowserAPIImpl.this, String.format("ES sub-query %d failed: %s",
-                        batchIndex, throwable.getMessage()), throwable);
-                    return new LinkedHashSet<>();
-                });
+                .orTimeout(60, TimeUnit.SECONDS);
         }
 
-        // Collect results from all sub-queries
+        // Collect results from all sub-queries. A failed or timed-out sub-query fails the whole
+        // call instead of contributing an empty set (issue #37488; see processESDirectly).
         try {
             CompletableFuture<Void> allFutures = CompletableFuture.allOf(futures);
             allFutures.get(120, TimeUnit.SECONDS);
 
             for (CompletableFuture<Set<String>> future : futures) {
-                try {
-                    Set<String> batchResults = future.get();
-                    allResults.addAll(batchResults);
-                } catch (Exception e) {
-                    Logger.warn(this, "Failed to get result from ES sub-query future: " + e.getMessage());
-                    Thread.currentThread().interrupt();
-                }
+                allResults.addAll(future.get());
             }
 
             final long totalDuration = System.currentTimeMillis() - startTime;
             Logger.info(this, String.format("Multiple ES queries completed: %d inodes in %d sub-queries → %d matches in %d ms",
                 totalInodes, batchCount, allResults.size(), totalDuration));
 
-        } catch (InterruptedException e) {
-            Logger.error(this, "Multiple ES queries interrupted: " + e.getMessage(), e);
+        } catch (final InterruptedException e) {
             Thread.currentThread().interrupt();
-        } catch (ExecutionException e) {
-            Logger.error(this, "Multiple ES queries execution error: " + e.getMessage(), e);
-        } catch (TimeoutException e) {
-            Logger.error(this, "Multiple ES queries timed out: " + e.getMessage(), e);
+            cancelOutstanding(futures);
+            final String errorMsg = "Multiple ES queries interrupted: " + e.getMessage();
+            Logger.error(this, errorMsg, e);
+            throw new DotDataException(errorMsg, e);
+        } catch (final ExecutionException e) {
+            cancelOutstanding(futures);
+            final Optional<Throwable> tooComplex = ExceptionUtil.get(e, ESQueryTooComplexException.class);
+            if (tooComplex.isPresent()) {
+                // Already logged by processSingleESQuery; kept as is so the caller can answer 400.
+                throw (ESQueryTooComplexException) tooComplex.get();
+            }
+            final String errorMsg = String.format("ES sub-query failed (%d sub-queries, %d inodes): %s",
+                    batchCount, totalInodes, getErrorMessage(e));
+            Logger.error(this, errorMsg, e);
+            throw new DotDataException(errorMsg, null != e.getCause() ? e.getCause() : e);
+        } catch (final TimeoutException e) {
+            cancelOutstanding(futures);
+            final String errorMsg = String.format("Multiple ES queries timed out (%d sub-queries, %d inodes)",
+                    batchCount, totalInodes);
+            Logger.error(this, errorMsg, e);
+            throw new DotDataException(errorMsg, e);
         }
 
         return allResults;
+    }
+
+    /**
+     * Cancels the sub-queries that have not finished once the call has already failed, so they
+     * give back their place in the submitter's queue instead of running for a result nobody
+     * reads. {@link CompletableFuture#cancel(boolean)} does not interrupt a search already in
+     * flight; it stops the ones that have not started.
+     *
+     * @param futures The sub-query futures.
+     */
+    private static void cancelOutstanding(final CompletableFuture<?>[] futures) {
+        for (final CompletableFuture<?> future : futures) {
+            if (!future.isDone()) {
+                future.cancel(true);
+            }
+        }
     }
 
     /**
@@ -2066,8 +2332,10 @@ public class BrowserAPIImpl implements BrowserAPI {
 
     /**
      * Normalizes a range bound to a time-of-day ({@code HH:mm:ss}) in the server timezone, matching
-     * how the Time field's {@code _dotraw} value is indexed. Open/blank bounds become {@code *};
-     * unparseable values are escaped so a crafted value can't alter the query structure.
+     * how the Time field's {@code _dotraw} value is indexed. A full date-time contributes its time
+     * of day; a bare time ({@code HH:mm[:ss]}) is taken as is. Open/blank bounds become {@code *};
+     * unparseable values are escaped so a crafted value can't alter the query structure (Content
+     * Drive rejects them with HTTP 400 before they get here).
      *
      * @param raw The raw bound value.
      * @return The {@code HH:mm:ss} bound, {@code *}, or an escaped token.
@@ -2077,6 +2345,12 @@ public class BrowserAPIImpl implements BrowserAPI {
             return "*";
         }
         final Date parsed = parseFlexibleDate(raw.trim());
+        final LocalTime bareTime = null == parsed ? parseBareTime(raw.trim()) : null;
+        if (null != bareTime) {
+            // Already a time of day (e.g. 14:00 from a direct API client): no date or zone to
+            // convert, only normalize to the indexed HH:mm:ss form.
+            return bareTime.format(java.time.format.DateTimeFormatter.ofPattern(ES_QUERY_TIME_PATTERN));
+        }
         if (null == parsed) {
             Logger.warn(this, String.format(
                     "Unparseable time range bound '%s'; escaping it (the criterion will match "
@@ -2093,8 +2367,8 @@ public class BrowserAPIImpl implements BrowserAPI {
      * matches nothing. We parse the value and reformat it to {@link #ES_QUERY_DATE_PATTERN}
      * ({@code yyyy-MM-dd'T'HH:mm:ss}, literal {@code T} — a space would break Lucene range parsing)
      * in the server timezone, matching how date fields are indexed ({@code ESMappingAPIImpl}).
-     * Values that can't be parsed as a date are passed through unchanged (already ES-formatted or
-     * open bound).
+     * A blank bound or {@code *} is an open bound. A value that can't be parsed as a date is
+     * escaped; Content Drive rejects such a value with HTTP 400 before it gets here.
      *
      * @param raw The raw bound value.
      * @return The normalized bound, or the original value if it isn't a recognizable date.
@@ -2106,12 +2380,13 @@ public class BrowserAPIImpl implements BrowserAPI {
         }
         final Date parsed = parseFlexibleDate(value);
         if (null == parsed) {
-            // For a date-typed field the bound should be a date. If it isn't, don't let the raw
-            // value reach the Lucene query_string as-is — escape it so a crafted value can't alter
-            // the query structure (an escaped non-date simply matches nothing).
+            // Content Drive rejects a non-date bound with HTTP 400 before a query is built
+            // (ContentDriveFieldFilterResolver), so this only happens for a BrowserQuery assembled
+            // directly. The value is still escaped so a crafted one cannot alter the query
+            // structure; the index rejects the resulting range and the request fails (#37488).
             Logger.warn(this, String.format(
-                    "Unparseable date range bound '%s'; escaping it (the criterion will match "
-                            + "nothing).", value));
+                    "Unparseable date range bound '%s'; escaping it (the index will reject the "
+                            + "range).", value));
             return ESUtils.escape(value);
         }
         final String normalized = new SimpleDateFormat(ES_QUERY_DATE_PATTERN).format(parsed);
@@ -2121,13 +2396,30 @@ public class BrowserAPIImpl implements BrowserAPI {
     }
 
     /**
+     * Parses a bare time of day ({@code HH:mm} or {@code HH:mm:ss}, ISO-8601), which a Time field's
+     * range may be given as instead of a full date-time. Public so Content Drive's field-filter
+     * resolver accepts exactly what {@link #normalizeTimeBound} can use (issue #37488 review).
+     *
+     * @param value The trimmed bound value.
+     * @return The parsed time, or {@code null} when the value is not a time of day.
+     */
+    public static LocalTime parseBareTime(final String value) {
+        return Try.of(() -> LocalTime.parse(value)).getOrNull();
+    }
+
+    /**
      * Best-effort parse of a date bound across the ISO-8601 shapes the client sends: instant (with
      * offset/{@code Z}), offset date-time, local date-time, and date-only. Naive (zone-less) inputs
      * are resolved in the JVM default zone, the same zone the reformat and indexing use, so the
-     * boundary stays consistent. Returns {@code null} when none match (the raw value is then passed
-     * through unchanged).
+     * boundary stays consistent. Returns {@code null} when none match.
+     *
+     * <p>Public so Content Drive's field-filter resolver can reject a non-date bound with HTTP 400
+     * using exactly the rules this class later applies to it (issue #37488).</p>
+     *
+     * @param value The trimmed bound value.
+     * @return The parsed date, or {@code null} when the value is not a recognizable date.
      */
-    private Date parseFlexibleDate(final String value) {
+    public static Date parseFlexibleDate(final String value) {
         Date date = Try.of(() -> Date.from(Instant.parse(value))).getOrNull();
         if (null == date) {
             date = Try.of(() -> Date.from(OffsetDateTime.parse(value).toInstant())).getOrNull();
