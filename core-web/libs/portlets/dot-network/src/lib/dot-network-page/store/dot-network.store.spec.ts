@@ -17,6 +17,7 @@ const DOWN = createDownNode({ serverId: 'down', displayServerId: 'down' });
 
 const RESPONSE: DotClusterNodes = {
     licensed: true,
+    heartbeatEnabled: true,
     currentServerId: 'current',
     clusterHealth: 'RED',
     nodes: [OTHER, DOWN, CURRENT]
@@ -118,7 +119,13 @@ describe('DotNetworkStore', () => {
 
     it('should show the empty state when no node is listed', () => {
         vi.mocked(clusterService.getNodes).mockReturnValue(
-            of({ licensed: true, currentServerId: 'x', clusterHealth: 'GREEN', nodes: [] })
+            of({
+                licensed: true,
+                heartbeatEnabled: true,
+                currentServerId: 'x',
+                clusterHealth: 'GREEN',
+                nodes: []
+            })
         );
 
         store.load();
@@ -129,13 +136,49 @@ describe('DotNetworkStore', () => {
 
     it('should show the unlicensed state', () => {
         vi.mocked(clusterService.getNodes).mockReturnValue(
-            of({ licensed: false, currentServerId: '', clusterHealth: 'GREEN', nodes: [] })
+            of({
+                licensed: false,
+                heartbeatEnabled: true,
+                currentServerId: '',
+                clusterHealth: 'GREEN',
+                nodes: []
+            })
         );
 
         store.load();
 
         expect(store.showUnlicensed()).toBe(true);
         expect(store.showEmpty()).toBe(false);
+    });
+
+    describe('heartbeat notice (FR-047)', () => {
+        it('should show the notice when the heartbeat feature is off and nodes are shown', () => {
+            vi.mocked(clusterService.getNodes).mockReturnValue(
+                of({ ...RESPONSE, heartbeatEnabled: false })
+            );
+
+            store.load();
+
+            expect(store.showHeartbeatNotice()).toBe(true);
+        });
+
+        it('should not show the notice when the heartbeat feature is on', () => {
+            expect(store.showHeartbeatNotice()).toBe(false);
+        });
+
+        it('should not show the notice when there are no nodes or the install is unlicensed', () => {
+            vi.mocked(clusterService.getNodes).mockReturnValue(
+                of({ ...RESPONSE, heartbeatEnabled: false, nodes: [] })
+            );
+            store.load();
+            expect(store.showHeartbeatNotice()).toBe(false);
+
+            vi.mocked(clusterService.getNodes).mockReturnValue(
+                of({ ...RESPONSE, heartbeatEnabled: false, licensed: false, nodes: [] })
+            );
+            store.load();
+            expect(store.showHeartbeatNotice()).toBe(false);
+        });
     });
 
     describe('on error', () => {

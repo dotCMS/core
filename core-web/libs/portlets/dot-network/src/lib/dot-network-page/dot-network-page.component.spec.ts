@@ -4,9 +4,10 @@ import {
     mockProvider,
     Spectator
 } from '@openng/spectator/vitest';
+import { BehaviorSubject } from 'rxjs';
 import { vi } from 'vitest';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotNetworkPageComponent } from './dot-network-page.component';
@@ -18,7 +19,16 @@ const MESSAGES = {
     'network.retry': 'Try again',
     'network.empty.title': 'No nodes found',
     'network.error.title': 'Cluster status could not be loaded',
-    'network.unlicensed.title': 'Network requires an Enterprise license'
+    'network.heartbeat.disabled': 'The server heartbeat feature is disabled.',
+    'com.dotcms.repackage.javax.portlet.title.EXT_CLUSTERING_TOOL': 'Clustering',
+    'only-available-in': 'is only available in'
+};
+
+/** What the Clustering upsell is fed (FR-046, research.md R-2). */
+const CLUSTERING_UPSELL = {
+    icon: 'server',
+    titleKey: 'com.dotcms.repackage.javax.portlet.title.EXT_CLUSTERING_TOOL',
+    url: '/c/network-beta'
 };
 
 const NODE = createNode({ serverId: 'current' });
@@ -29,6 +39,7 @@ const storeMock = () =>
         showUnlicensed: vi.fn().mockReturnValue(false),
         showError: vi.fn().mockReturnValue(false),
         showEmpty: vi.fn().mockReturnValue(false),
+        showHeartbeatNotice: vi.fn().mockReturnValue(false),
         selectedNode: vi.fn().mockReturnValue(NODE),
         sortedNodes: vi.fn().mockReturnValue([NODE]),
         selectedServerId: vi.fn().mockReturnValue('current'),
@@ -38,16 +49,28 @@ const storeMock = () =>
         selectNode: vi.fn()
     });
 
-const FLAGS = ['showSkeleton', 'showUnlicensed', 'showError', 'showEmpty'] as const;
+const FLAGS = [
+    'showSkeleton',
+    'showUnlicensed',
+    'showError',
+    'showEmpty',
+    'showHeartbeatNotice'
+] as const;
 type StoreFlag = (typeof FLAGS)[number];
 
 describe('DotNetworkPageComponent', () => {
     let spectator: Spectator<DotNetworkPageComponent>;
+    const licenseService = {
+        unlicenseData: new BehaviorSubject({ icon: '', titleKey: '', url: '' })
+    };
 
     const createComponent = createComponentFactory({
         component: DotNetworkPageComponent,
         componentProviders: [storeMock()],
-        providers: [{ provide: DotMessageService, useValue: new MockDotMessageService(MESSAGES) }],
+        providers: [
+            { provide: DotMessageService, useValue: new MockDotMessageService(MESSAGES) },
+            { provide: DotLicenseService, useValue: licenseService }
+        ],
         detectChanges: false
     });
 
@@ -98,12 +121,45 @@ describe('DotNetworkPageComponent', () => {
         expect(spectator.query(byTestId('network-node-list'))).toBeNull();
     });
 
-    it('should show the unlicensed state', () => {
-        setup('showUnlicensed');
+    describe('unlicensed install (FR-046)', () => {
+        beforeEach(() => {
+            licenseService.unlicenseData.next({ icon: '', titleKey: '', url: '' });
+        });
 
-        expect(spectator.query(byTestId('network-unlicensed'))).toContainText(
-            'Network requires an Enterprise license'
-        );
+        it('should show the Clustering upsell instead of the empty-state message', () => {
+            const next = vi.spyOn(licenseService.unlicenseData, 'next');
+            setup('showUnlicensed');
+
+            expect(next).toHaveBeenCalledWith(CLUSTERING_UPSELL);
+            const unlicensed = spectator.query(byTestId('network-unlicensed'));
+            expect(unlicensed?.querySelector('dot-not-license')).toExist();
+            expect(unlicensed?.querySelector('[data-testid="title"]')).toHaveText('Clustering');
+            expect(spectator.query('dot-empty-container')).toBeNull();
+            next.mockRestore();
+        });
+    });
+
+    describe('heartbeat feature off (FR-047)', () => {
+        it('should show the notice above the node list and keep the data visible', () => {
+            setup('showHeartbeatNotice');
+
+            const notice = spectator.query(byTestId('network-heartbeat-notice'));
+            const list = spectator.query(byTestId('network-node-list'));
+            expect(notice).toContainText('The server heartbeat feature is disabled.');
+            expect(list).toExist();
+            expect(spectator.query(byTestId('network-node-detail'))).toExist();
+            expect(
+                notice &&
+                    list &&
+                    notice.compareDocumentPosition(list) & Node.DOCUMENT_POSITION_FOLLOWING
+            ).toBeTruthy();
+        });
+
+        it('should not show the notice when the heartbeat feature is on', () => {
+            setup();
+
+            expect(spectator.query(byTestId('network-heartbeat-notice'))).toBeNull();
+        });
     });
 
     it('should show the error state with a retry', () => {

@@ -40,6 +40,10 @@ describe('DotClusterService', () => {
 describe('DOT_CLUSTER_NODES_MOCK', () => {
     const { nodes, currentServerId } = DOT_CLUSTER_NODES_MOCK;
 
+    it('should report whether the heartbeat feature is on, as the contract requires (FR-047)', () => {
+        expect(DOT_CLUSTER_NODES_MOCK.heartbeatEnabled).toBe(true);
+    });
+
     it('should contain the node serving the request', () => {
         expect(nodes.some((node) => node.serverId === currentServerId)).toBe(true);
     });
