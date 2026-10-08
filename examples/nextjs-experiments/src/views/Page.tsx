@@ -7,9 +7,6 @@ import { dotCMSMode } from '@/config/dotcms.config';
 import Footer from '@/components/footer/Footer';
 import Header from '@/components/header/Header';
 import type { PageExtraContent } from '@/types/content';
-import { withExperiments } from "@dotcms/experiments";
-import { experimentsConfig } from "@/config/dotcms.config";
-import { useRouter } from 'next/navigation';
 
 interface PageProps {
     pageContent: Parameters<typeof useEditableDotCMSPage>[0];
@@ -19,15 +16,6 @@ export function Page({ pageContent }: PageProps) {
     const { pageAsset, content = {} } = useEditableDotCMSPage(pageContent) ?? {};
     const pageContentData = content as PageExtraContent;
     const navigation = pageContentData.navigation;
-    const { replace } = useRouter();
-
-    // Conditionally wrap with experiments if apiKey is configured
-    const DotCMSLayoutBodyComponent = experimentsConfig.apiKey
-        ? withExperiments(DotCMSLayoutBody, {
-            ...experimentsConfig,
-            redirectFn: replace
-        })
-        : DotCMSLayoutBody;
 
     return (
         <div className="flex min-h-dvh flex-col bg-bg">
@@ -35,7 +23,7 @@ export function Page({ pageContent }: PageProps) {
 
             <main className="flex-1">
                 <div className="container mx-auto flex flex-col gap-16 px-4 py-10 sm:px-6 sm:py-14 md:gap-24">
-                    <DotCMSLayoutBodyComponent
+                    <DotCMSLayoutBody
                         page={pageAsset}
                         components={pageComponents}
                         mode={dotCMSMode}

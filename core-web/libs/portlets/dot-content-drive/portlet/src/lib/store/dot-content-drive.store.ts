@@ -31,11 +31,10 @@ import {
     DotContentDriveSearchRequest,
     DotFolderDeleteActiveRun,
     DotFolderDuplicateActiveRun,
-    FeaturedFlags,
     LOAD_MORE_NODE_TYPE,
     PERMISSIONS_TYPE
 } from '@dotcms/dotcms-models';
-import { GlobalStore, withFlags } from '@dotcms/store';
+import { GlobalStore } from '@dotcms/store';
 
 import { withActionExecution } from './features/action-execution/withActionExecution';
 import { withContextMenu } from './features/context-menu/withContextMenu';
@@ -115,10 +114,6 @@ export const DOT_CONTENT_DRIVE_INITIAL_STATE: DotContentDriveState = {
 
 export const DotContentDriveStore = signalStore(
     withState<DotContentDriveState>(DOT_CONTENT_DRIVE_INITIAL_STATE),
-    // Side-panel feature flag, fetched once on init and exposed as `flags()`. `as const` narrows the
-    // typing to exactly this flag. Consumed by DotContentDriveNavigationService to decide side panel
-    // vs full-screen editor.
-    withFlags([FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL] as const),
     withComputed(
         ({
             path,
@@ -693,12 +688,18 @@ export const DotContentDriveStore = signalStore(
                     const queryTreeExpanded =
                         queryParams['isTreeExpanded'] ?? DEFAULT_TREE_EXPANDED.toString();
 
-                    store.initContentDrive({
-                        currentSite,
-                        path,
-                        filters,
-                        isTreeExpanded: queryTreeExpanded == 'true'
-                    });
+                    // Untracked: `initContentDrive` reads `defaultLanguageId`, and tracking it would
+                    // re-run the init when the default language lands, re-reading the page's
+                    // original URL over any filter changed in between. `loadDefaultLanguage` seeds
+                    // the language into the current filters itself, so only the site re-runs this.
+                    untracked(() =>
+                        store.initContentDrive({
+                            currentSite: currentSite ?? SYSTEM_HOST,
+                            path,
+                            filters,
+                            isTreeExpanded: queryTreeExpanded == 'true'
+                        })
+                    );
                 });
 
                 /**

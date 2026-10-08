@@ -70,7 +70,7 @@ on:
         required: false
         default: ''
       artifact-suffix:
-        description: 'Artifact suffix without leading separator (e.g., java25, java25-ms). Separators added automatically: dash (-) for Maven artifacts, underscore (_) for Docker tags. If not set, derived from java-version major (e.g., java25).'
+        description: 'Artifact suffix without leading separator (e.g., java-25, java-25-ms). Separators added automatically: dash (-) for Maven artifacts, underscore (_) for Docker tags. If not set, derived from java-version major (e.g., java-25).'
         type: string
         required: false
         default: ''
@@ -261,7 +261,10 @@ jobs:
       deploy-dev-image: true
       publish-npm-cli: false
       java-version: ${{ github.event.inputs.java-version }}
-      artifact-suffix: ${{ github.event.inputs.artifact-suffix }}
+      # Take the suffix from the build rather than re-deriving it here. Three
+      # independent derivations is how the deployment phase came to ask for
+      # '-java-25' while the build published '-java25'.
+      artifact-suffix: ${{ needs.build.outputs.artifact-suffix }}
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
@@ -496,7 +499,7 @@ jobs:
       update_plugins: ${{ github.event.inputs.update_plugins == 'true' }}
       update_github_labels: ${{ github.event.inputs.update_github_labels == 'true' && github.ref_name == 'main' }}
       java-version: ${{ github.event.inputs.java-version }}
-      artifact-suffix: ${{ github.event.inputs.artifact-suffix }}
+      artifact-suffix: ${{ needs.build.outputs.artifact-suffix }}
     secrets:
       MAVEN_BUNNY_RW_USERNAME: ${{ secrets.MAVEN_BUNNY_RW_USERNAME }}
       MAVEN_BUNNY_RW_PASSWORD: ${{ secrets.MAVEN_BUNNY_RW_PASSWORD }}

@@ -1,6 +1,7 @@
 <%@page import="com.dotcms.cluster.ClusterUtils"%>
 <%@page import="com.dotcms.content.index.IndexAPI"%>
 <%@page import="com.dotcms.content.index.IndexTag"%>
+<%@page import="com.dotcms.content.index.IndexTimestamp"%>
 <%@page import="com.dotcms.content.index.IndexConfigHelper"%>
 <%@page import="com.dotcms.content.elasticsearch.business.IndiciesInfo"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
@@ -56,7 +57,6 @@ Map<String, String> alias = new java.util.HashMap<>();
 for (Map.Entry<String, String> aliasEntry : ssapi.getAliasToIndexMapAllEngines().entrySet()) {
 	alias.put(aliasEntry.getValue(), aliasEntry.getKey());
 }
-SimpleDateFormat dater = APILocator.getContentletIndexAPI().timestampFormatter;
 
 
 Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
@@ -140,8 +140,7 @@ try { defaultSiteSearchIndex = ssapi.defaultIndexName().orElse(null); } catch (E
 		<%	Date d = null;
 			String myDate = null;
 			try{
-				 myDate = x.split("_")[1];
-				d = dater.parse(myDate);
+				d = Date.from(IndexTimestamp.createdAt(x));
 
 				myDate = UtilMethods.dateToPrettyHTMLDate(d)  + " "+ UtilMethods.dateToHTMLTime(d);
 				}
@@ -174,8 +173,7 @@ try { defaultSiteSearchIndex = ssapi.defaultIndexName().orElse(null); } catch (E
 	    <%   Date d = null;
             String myDate = null;
             try {
-                 myDate = x.split("_")[1];
-                 d = dater.parse(myDate);
+                 d = Date.from(IndexTimestamp.createdAt(x));
                  myDate = UtilMethods.dateToPrettyHTMLDate(d)  + " "+ UtilMethods.dateToHTMLTime(d);
             }
             catch(Exception e){}%>

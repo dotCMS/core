@@ -68,7 +68,7 @@ Before you begin, make sure you have:
 
 ### System Requirements
 
-- **Node.js**: v18.20.8 (LTS) or later (v22+ recommended)
+- **Node.js**: v22.12.0 or later (required by Astro 7)
 - **NPM**, **Yarn**, or **pnpm** package manager
 - **Git** for version control
 - A code editor (VS Code, WebStorm, etc.)

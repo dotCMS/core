@@ -34,7 +34,17 @@ import { SDK_DIST } from './bundle-probe.ts';
  */
 
 /** Published libraries. Each must be built before this spec runs — see `implicitDependencies`. */
-const PACKAGES = ['react', 'client', 'uve', 'types', 'analytics', 'angular', 'vue', 'experiments'];
+const PACKAGES = [
+    'react',
+    'client',
+    'uve',
+    'types',
+    'analytics',
+    'angular',
+    'vue',
+    'experiments',
+    'events'
+];
 
 /** `from 'x'`, `import 'x'`, `import('x')` and `require('x')` — not bare strings that merely look like specifiers. */
 const SPECIFIER = /(?:from|import|require)\s*\(?\s*['"](@dotcms\/[^'"]+)['"]/g;

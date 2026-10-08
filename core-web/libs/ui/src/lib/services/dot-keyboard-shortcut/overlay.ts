@@ -1,6 +1,18 @@
 import { ZIndexUtils } from 'primeng/utils';
 
 /**
+ * The lowest z-index PrimeNG stacks an overlay at: its default `overlay` and `menu` bases, which
+ * dotCMS does not override. Below this an inline z-index is ordinary layout, such as the `2` PrimeNG
+ * puts on an input's icon, and must not be read as something open above the page.
+ *
+ * Most overlays add their `baseZIndex` to these bases (a dialog stacks at `baseZIndex + 1100`), so a
+ * small `baseZIndex` such as the wizard's `100` still lands above this. Drawer, datepicker and
+ * galleria are the exception: they use `baseZIndex || base`, so one given a `baseZIndex` below 1000
+ * would stack under this line and stop blocking shortcuts while a toast is up. None does today.
+ */
+const LOWEST_OVERLAY_Z_INDEX = 1000;
+
+/**
  * Whether a PrimeNG overlay is stacked above the given element.
  *
  * The registry cannot arbitrate with an overlay's own key handling. A `<p-dialog closeOnEscape>`
@@ -24,7 +36,40 @@ import { ZIndexUtils } from 'primeng/utils';
  * does across tests in one file: the Content Drive shell suite reads **1102** with nothing visible
  * once an earlier test has opened a dialog. **Tests that depend on this must mock
  * `ZIndexUtils.getCurrent`** rather than trusting the ambient value.
+ *
+ * Toasts and tooltips are the exception. They join the same stack, under the same `modal` key a
+ * dialog uses, but they block nothing, so a shortcut must keep working while one is on screen
+ * (#37884). The stack records only values, not which element holds them, so when it says something
+ * is above, the stacked elements are looked up in the DOM. Only when a passive layer holds the top
+ * of the stack, and every other stacked element is passive too, is nothing that should block open.
+ * If the top cannot be matched to a passive layer (a mocked stack, an entry left behind, or a toast
+ * that is not the topmost thing), the stack's answer stands, so this can only ever relax the check,
+ * never fire behind a dialog.
  */
 export function hasOverlayAbove(container?: Element | null): boolean {
-    return ZIndexUtils.getCurrent() > ZIndexUtils.get(container);
+    const floor = ZIndexUtils.get(container);
+    const top = ZIndexUtils.getCurrent();
+
+    if (top <= floor) {
+        return false;
+    }
+
+    const stacked = Array.from(document.querySelectorAll<HTMLElement>('[style*="z-index"]')).filter(
+        (element) => {
+            const zIndex = ZIndexUtils.get(element);
+
+            return zIndex > floor && zIndex >= LOWEST_OVERLAY_Z_INDEX;
+        }
+    );
+
+    const passiveLayerOnTop = stacked.some(
+        (element) => ZIndexUtils.get(element) === top && isPassiveLayer(element)
+    );
+
+    return !passiveLayerOnTop || stacked.some((element) => !isPassiveLayer(element));
+}
+
+/** A layer that sits above the page without taking it over: it informs and blocks nothing. */
+function isPassiveLayer(element: Element): boolean {
+    return element.matches('.p-toast, .p-tooltip');
 }

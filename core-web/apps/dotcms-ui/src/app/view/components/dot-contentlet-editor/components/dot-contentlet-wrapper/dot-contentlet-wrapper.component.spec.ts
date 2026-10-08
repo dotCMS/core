@@ -198,12 +198,10 @@ describe('DotContentletWrapperComponent', () => {
                 expect(dotRouterService.goToEditPage).not.toHaveBeenCalled();
             });
 
-            it('should close the dialog and navigate to content-drive when CD query params exist', () => {
-                const contentDriveParams = {
-                    folderId: '123',
-                    path: '/images'
-                };
-
+            // Content Drive no longer sends anyone to this full-page editor, so the `CD_` params
+            // that used to bring them back are not read any more (#37759, FR-026). A close with
+            // them in the URL closes like any other.
+            it('should close the dialog without going to Content Drive, even with old CD_ params', () => {
                 Object.defineProperty(dotRouterService, 'currentPortlet', {
                     value: {
                         url: '/test?CD_folderId=123&CD_path=/images',
@@ -224,9 +222,10 @@ describe('DotContentletWrapperComponent', () => {
                 expect(component.header).toBe('');
                 expect(component.custom.emit).toHaveBeenCalledTimes(1);
                 expect(component.shutdown.emit).toHaveBeenCalledTimes(1);
-                expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('content-drive', {
-                    queryParams: contentDriveParams
-                });
+                expect(dotRouterService.gotoPortlet).not.toHaveBeenCalledWith(
+                    'content-drive',
+                    expect.anything()
+                );
             });
 
             it('should called goToEdit', () => {

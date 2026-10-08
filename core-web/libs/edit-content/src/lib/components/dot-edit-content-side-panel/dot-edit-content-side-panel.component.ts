@@ -147,6 +147,12 @@ export class DotEditContentSidePanelComponent implements OnDestroy {
     readonly saved = output<DotCMSContentlet>();
 
     /**
+     * The author switched language inside the editor, which reloads in place. The opener can name
+     * the language now open in its URL (#37759, FR-020).
+     */
+    readonly languageChanged = output<number>();
+
+    /**
      * Whether the panel is expanded to the full viewport width (vs the default ~80%). Seeded from
      * the user's persisted preference so a panel opens in the mode last chosen (see
      * {@link toggleExpanded}).
@@ -205,6 +211,10 @@ export class DotEditContentSidePanelComponent implements OnDestroy {
                 this.#fireCloseCallbacks();
                 this.closed.emit();
             });
+
+            host.languageChanged$
+                .pipe(takeUntilDestroyed(this.#destroyRef))
+                .subscribe((languageId) => this.languageChanged.emit(languageId));
         });
     }
 

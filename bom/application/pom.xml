@@ -14,7 +14,7 @@
     <properties>
         <maven.deploy.skip>false</maven.deploy.skip>
         <flatten.mode>bom</flatten.mode>
-        <aws-java-sdk.version>1.12.488</aws-java-sdk.version>
+        <aws-java-sdk.version>1.12.797</aws-java-sdk.version>
         <aws-java-sdk-v2.version>2.41.34</aws-java-sdk-v2.version>
         <twelvemonkeys.version>3.13.1-fixed</twelvemonkeys.version>
         <vips-ffm.version>1.9.8</vips-ffm.version>
@@ -24,7 +24,7 @@
         <bouncy-castle.version>1.85</bouncy-castle.version>
         <awaitility.version>4.0.0</awaitility.version>
         <shedlock.version>4.33.0</shedlock.version>
-        <jackson.version>2.17.2</jackson.version>
+        <jackson.version>2.18.11</jackson.version>
         <jersey.version>2.47</jersey.version>
         <graalvm.polyglot.version>25.0.1</graalvm.polyglot.version>
         <micrometer.version>1.15.12</micrometer.version>
@@ -32,6 +32,7 @@
         <pyroscope-agent.version>2.9.2</pyroscope-agent.version>
         <opensearch.version>3.3.0</opensearch.version>
         <langchain4j.version>1.15.1</langchain4j.version>
+        <grpc.version>1.75.0</grpc.version>
         <netty.version>4.1.138.Final</netty.version>
         <commonmark.version>0.22.0</commonmark.version>
         <jsoup.version>1.21.1</jsoup.version>
@@ -74,6 +75,17 @@
                 <groupId>com.dotcms</groupId>
                 <artifactId>dotcms-logging-bom</artifactId>
                 <version>${project.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- grpc: imported before langchain4j-bom so every io.grpc artifact (grpc-netty-shaded
+                 arrives transitively via langchain4j-vertex-ai-gemini) resolves to one version.
+                 Stay on 1.75.x: 1.76+ expects guava 33.4+, and guava is pinned to 32.0.1-jre below. -->
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-bom</artifactId>
+                <version>${grpc.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -677,7 +689,7 @@
             <dependency>
                 <groupId>commons-fileupload</groupId>
                 <artifactId>commons-fileupload</artifactId>
-                <version>1.5</version>
+                <version>1.6.0</version>
             </dependency>
             <dependency>
                 <groupId>commons-io</groupId>

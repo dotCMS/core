@@ -1,7 +1,15 @@
 package com.dotcms.rest.api.v1.announcements;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching;
+
 import com.dotcms.system.announcements.Announcement;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.util.WireMockTestHelper;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.github.tomakehurst.wiremock.WireMockServer;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -13,6 +21,8 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.ChronoField;
 import java.util.List;
 import java.util.function.Supplier;
+import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -24,10 +34,30 @@ public class RemoteAnnouncementsLoaderIntegrationTest {
 
     public static final String DOTCMS_COM = "https://www2.dotcms.com";
 
+    // Matches the announcements query path regardless of how the client encodes it
+    private static final String ANNOUNCEMENTS_PATH_PATTERN = "/api/content/render/false/query/.*";
+
+    // Local stand-in for the remote dotCMS instance, so the test never leaves the machine
+    private static WireMockServer wireMockServer;
+
     @BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
+        wireMockServer = WireMockTestHelper.wireMockServer(null);
+        wireMockServer.start();
+    }
+
+    @AfterClass
+    public static void afterClass() {
+        if (wireMockServer != null) {
+            wireMockServer.stop();
+        }
+    }
+
+    @After
+    public void resetStubs() {
+        wireMockServer.resetAll();
     }
 
     /**
@@ -151,18 +181,41 @@ public class RemoteAnnouncementsLoaderIntegrationTest {
     }
 
     /**
-     * Given scenario: We want to make sure we can hit the remote server and get a response
-     * Expected result: We test that the loader can hit prod and get a response back that's it no announcement validation is performed
+     * Given scenario: The remote instance answers the announcements query with one announcement
+     * Expected result: The loader calls the announcements endpoint and turns the response into
+     * that one announcement
      */
     @Test
     public void TestAnnouncementsLoader() {
+        wireMockServer.stubFor(get(urlPathMatching(ANNOUNCEMENTS_PATH_PATTERN))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(jsonString)));
 
-        final RemoteAnnouncementsLoaderImpl urlSupplied = new RemoteAnnouncementsLoaderImpl(
-                () -> DOTCMS_COM);
+        final RemoteAnnouncementsLoaderImpl loader = new RemoteAnnouncementsLoaderImpl(
+                wireMockServer::baseUrl);
 
-        final List<Announcement> announcements = urlSupplied.loadAnnouncements();
-        Assert.assertNotNull(announcements);
+        final List<Announcement> announcements = loader.loadAnnouncements();
+        Assert.assertEquals(1, announcements.size());
+        Assert.assertEquals("Title #1", announcements.get(0).title());
+        wireMockServer.verify(1, getRequestedFor(urlPathMatching(ANNOUNCEMENTS_PATH_PATTERN)));
+    }
 
+    /**
+     * Given scenario: The remote instance answers the announcements query with a 502
+     * Expected result: The loader reports the failure with a DotRuntimeException instead of
+     * returning an empty list
+     */
+    @Test
+    public void TestAnnouncementsLoaderRemoteFailure() {
+        wireMockServer.stubFor(get(urlPathMatching(ANNOUNCEMENTS_PATH_PATTERN))
+                .willReturn(aResponse().withStatus(502)));
+
+        final RemoteAnnouncementsLoaderImpl loader = new RemoteAnnouncementsLoaderImpl(
+                wireMockServer::baseUrl);
+
+        Assert.assertThrows(DotRuntimeException.class, loader::loadAnnouncements);
     }
 
 }

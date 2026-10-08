@@ -597,6 +597,7 @@ describe('DotTemplateListComponent', () => {
             link.nativeElement.click();
 
             expect(mockGoToFolder).toHaveBeenCalledWith(expect.any(Event), 'test');
+            expect(dotRouterService.goToSiteBrowser).toHaveBeenCalledWith('test');
         }));
 
         it("should render 'System Theme' when the theme is SYSTEM_THEME", fakeAsync(() => {
@@ -764,6 +765,9 @@ describe('DotTemplateListComponent', () => {
                     const nameCell = fileTemplateRow!.query(By.css('td span'));
                     nameCell.nativeElement.click();
                     expect(dotSiteBrowserService.setSelectedFolder).toHaveBeenCalledWith(
+                        templatesMock[4].identifier
+                    );
+                    expect(dotRouterService.goToSiteBrowser).toHaveBeenCalledWith(
                         templatesMock[4].identifier
                     );
                     expect(dotRouterService.goToSiteBrowser).toHaveBeenCalledTimes(1);

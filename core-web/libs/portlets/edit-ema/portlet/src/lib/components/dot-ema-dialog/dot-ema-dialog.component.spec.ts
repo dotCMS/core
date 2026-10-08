@@ -17,6 +17,7 @@ import { MessageService } from 'primeng/api';
 import { Dialog } from 'primeng/dialog';
 
 import {
+    DotActionUrlService,
     DotAlertConfirmService,
     DotContentletService,
     DotContentTypeService,
@@ -36,7 +37,6 @@ import { DotcmsConfigServiceMock, MockDotMessageService } from '@dotcms/utils-te
 import { DotEmaDialogComponent } from './dot-ema-dialog.component';
 import { DotEmaDialogStore } from './store/dot-ema-dialog.store';
 
-import { DotActionUrlService } from '../../services/dot-action-url/dot-action-url.service';
 import { DotEmaWorkflowActionsService } from '../../services/dot-ema-workflow-actions/dot-ema-workflow-actions.service';
 import { FormStatus, NG_CUSTOM_EVENTS } from '../../shared/enums';
 import { MOCK_RESPONSE_HEADLESS, PAYLOAD_MOCK } from '../../shared/mocks';

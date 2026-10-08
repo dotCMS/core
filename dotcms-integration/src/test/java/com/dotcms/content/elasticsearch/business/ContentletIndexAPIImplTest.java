@@ -12,6 +12,7 @@ import static org.junit.Assert.assertTrue;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.content.index.IndexAPI;
 import com.dotcms.content.index.IndexTag;
+import com.dotcms.content.index.IndexTimestamp;
 import com.dotcms.content.index.domain.IndexBulkRequest;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
@@ -760,7 +761,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
         SiteSearchAPI siteSearchAPI = APILocator.getSiteSearchAPI();
 
         String indexName = SiteSearchAPI.ES_SITE_SEARCH_NAME + "_"
-                + ContentletIndexAPIImpl.timestampFormatter.format(new Date());
+                + IndexTimestamp.now();
         APILocator.getSiteSearchAPI().createSiteSearchIndex(indexName, null, 1);
         APILocator.getSiteSearchAPI().activateIndex(indexName);
 

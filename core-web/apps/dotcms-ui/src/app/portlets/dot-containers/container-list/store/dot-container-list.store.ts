@@ -576,7 +576,7 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
                   .setSelectedFolder(container.pathName ?? '')
                   .pipe(take(1))
                   .subscribe(() => {
-                      this.dotRouterService.goToSiteBrowser();
+                      this.dotRouterService.goToSiteBrowser(container.pathName);
                   })
             : this.dotRouterService.goToEditContainer(container.identifier);
     }

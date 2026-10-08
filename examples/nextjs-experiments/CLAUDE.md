@@ -33,7 +33,11 @@ cp .env.local.example .env.local
 # NEXT_PUBLIC_DOTCMS_HOST - Your dotCMS instance URL
 # NEXT_PUBLIC_DOTCMS_AUTH_TOKEN - API key from dotCMS
 # NEXT_PUBLIC_DOTCMS_SITE_ID - Site identifier in dotCMS
+# NEXT_PUBLIC_DOTCMS_SITE_AUTH - Site Auth from the Content Analytics app
+# NEXT_PUBLIC_EVENTS_DEBUG - "true" logs what @dotcms/events does
 ```
+
+`@dotcms/events` is not on npm yet, so `npm install` fails on it. Build it from `core-web` (`pnpm nx build sdk-events`) and install the local build with `npm install --no-save --install-links --legacy-peer-deps ../../core-web/dist/libs/sdk/events`, which leaves `package.json` and the lockfile untouched; run it again after rebuilding.
 
 ## Architecture Overview
 
@@ -55,7 +59,7 @@ This is a **Next.js 16 application** using **App Router** that integrates with *
 - `@dotcms/react` - React components and hooks for rendering
 - `@dotcms/uve` - Universal Visual Editor integration
 - `@dotcms/types` - TypeScript type definitions
-- `@dotcms/experiments` - A/B testing capabilities
+- `@dotcms/events` - Pageviews, conversions, content impressions and clicks, and experiments (A/B testing)
 
 ## Project Structure
 
@@ -64,7 +68,7 @@ src/
 ├── app/                     # Next.js App Router pages (SSR, .tsx)
 │   ├── [[...slug]]/         # Dynamic catch-all routing
 │   │   └── page.tsx         # Main page component
-│   ├── blog/                # Blog-specific routes
+│   ├── blog/                # Blog-specific routes (streamed: loading.tsx)
 │   ├── layout.tsx           # Root layout component
 │   ├── not-found.tsx        # 404 page
 │   └── globals.css          # Global styles
@@ -75,8 +79,9 @@ src/
 │   ├── editor/              # UVE editor components (EditButton, ReorderMenuButton)
 │   ├── header/ footer/      # Site chrome
 │   └── forms/               # Form components
+├── instrumentation-client.ts # dotEvents.init(eventsConfig), before hydration
 ├── config/
-│   └── dotcms.config.ts     # Typed, centralized environment access
+│   └── dotcms.config.ts     # Typed, centralized environment access, and eventsConfig
 ├── hooks/                   # Custom React hooks (useIsEditMode, useDebounce)
 ├── lib/
 │   └── dotCMSClient.ts      # dotCMS API client configuration
@@ -165,6 +170,13 @@ The UVE enables in-context editing:
 - `NEXT_PUBLIC_DOTCMS_HOST`: dotCMS instance URL
 - `NEXT_PUBLIC_DOTCMS_AUTH_TOKEN`: API key with read permissions
 - `NEXT_PUBLIC_DOTCMS_SITE_ID`: Site identifier for multi-site setups
+- `NEXT_PUBLIC_DOTCMS_SITE_AUTH`: Site Auth from the Content Analytics app, sent with every event
+- `NEXT_PUBLIC_EVENTS_DEBUG`: `true` logs what `@dotcms/events` does
+
+### Experiments and Events
+
+- `src/instrumentation-client.ts` calls `dotEvents.init(eventsConfig)` once; any module imports `dotEvents` from `@dotcms/events` (for example `dotEvents.conversion("contact-form")` in `ContactUs.tsx`).
+- The catch-all route and `/blog` wrap the page in `DotCMSExperiment` (`@dotcms/events/react`) in their server components, and pass the URL's `variantName` to `getDotCMSPage`: the SDK sends a visitor assigned another variant to `?variantName=<variant>`.
 
 ## Development Workflow
 
@@ -210,7 +222,7 @@ The UVE enables in-context editing:
 
 - Uses Next.js 16 with React 19 and TypeScript 5
 - Turbopack enabled for faster development
-- dotCMS SDK packages (`@dotcms/client`, `@dotcms/react`, `@dotcms/uve`, `@dotcms/types`, `@dotcms/experiments`)
+- dotCMS SDK packages (`@dotcms/client`, `@dotcms/react`, `@dotcms/uve`, `@dotcms/types`, `@dotcms/events`), pinned to `latest`
 
 ## Common Troubleshooting
 
