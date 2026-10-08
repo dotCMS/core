@@ -5,22 +5,109 @@
 @use "variables" as *;
 
 :host {
-    form {
-        max-width: 64.25rem;
-    }
-
     textarea {
         font-family: fonts.$font-code;
         max-height: 21.5rem;
         overflow: auto !important;
     }
+}
 
-    ::ng-deep {
-        .p-field-hint {
-            markdown pre {
-                background-color: colors.$color-palette-secondary-100;
-            }
-        }
+// Rendered markdown hints. Selectors stay fully qualified (not nested) to keep at most three
+// levels while preserving specificity, so the code-block rules still override the plain ones.
+:host ::ng-deep {
+    .p-field-hint markdown {
+        display: block;
+        line-height: 1.5;
+    }
+
+    .p-field-hint markdown p,
+    .p-field-hint markdown ul {
+        margin: 0 0 spacing.$spacing-2;
+    }
+
+    .p-field-hint markdown ul {
+        padding-left: spacing.$spacing-4;
+        list-style: disc;
+    }
+
+    .p-field-hint markdown code {
+        font-family: fonts.$font-code;
+        font-size: fonts.$font-size-sm;
+        background-color: colors.$color-palette-gray-100;
+        border-radius: $border-radius-sm;
+        padding: 0 spacing.$spacing-0;
+    }
+
+    .p-field-hint markdown pre {
+        background-color: colors.$color-palette-gray-100;
+        border: 1px solid colors.$color-palette-gray-300;
+        border-radius: $border-radius-md;
+        margin: spacing.$spacing-2 0 0;
+        max-height: 21.5rem; // same cap as the textarea above
+        overflow: auto;
+        padding: spacing.$spacing-3;
+    }
+
+    .p-field-hint markdown pre code {
+        background: none;
+        color: colors.$color-palette-gray-800;
+        font-size: fonts.$font-size-sm;
+        line-height: 1.6;
+        padding: 0;
+        white-space: pre;
+    }
+
+    // Code blocks upgraded by DotAppsCodeBlocksDirective: white panel with a purple header,
+    // using the primary palette so it follows the instance theme color.
+    .p-field-hint markdown .dot-code-block {
+        background-color: colors.$white;
+        border: 1px solid colors.$color-palette-primary-200;
+        border-radius: $border-radius-md;
+        margin-top: spacing.$spacing-2;
+        overflow: hidden;
+    }
+
+    .p-field-hint markdown .dot-code-block pre {
+        background: none;
+        border: 0;
+        border-radius: 0;
+        margin: 0;
+    }
+
+    .p-field-hint markdown .dot-code-block pre code {
+        color: colors.$color-palette-gray-700;
+        text-shadow: none;
+    }
+
+    .dot-code-block__header {
+        align-items: center;
+        background-color: colors.$color-palette-primary-100;
+        border-bottom: 1px solid colors.$color-palette-primary-200;
+        display: flex;
+        justify-content: space-between;
+        padding: spacing.$spacing-1 spacing.$spacing-1 spacing.$spacing-1 spacing.$spacing-3;
+    }
+
+    .dot-code-block__language {
+        color: colors.$color-palette-primary-700;
+        font-family: fonts.$font-code;
+        font-size: fonts.$font-size-sm;
+        font-weight: fonts.$font-weight-semi-bold;
+        text-transform: uppercase;
+    }
+
+    .dot-code-block__key {
+        color: colors.$color-palette-primary-700;
+        font-weight: fonts.$font-weight-semi-bold;
+    }
+
+    .dot-code-block__string {
+        color: colors.$color-palette-primary-500;
+    }
+
+    .dot-code-block__number,
+    .dot-code-block__literal {
+        color: colors.$color-palette-secondary-600;
     }
 }
 
