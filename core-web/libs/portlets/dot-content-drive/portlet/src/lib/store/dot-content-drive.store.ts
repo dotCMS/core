@@ -667,16 +667,20 @@ export const DotContentDriveStore = signalStore(
                     const queryParams = route.snapshot.queryParams;
                     const currentSite = globalStore.siteDetails();
                     const path = queryParams['path'] || DEFAULT_PATH;
-                    // A URL that already says what to show (filters, an item to edit or create, a
-                    // folder dialog) wins; the remembered type is only for opening the Drive directly.
-                    const urlHasInstructions = [
-                        'filters',
-                        ...Object.values(CONTENT_DRIVE_URL_PARAM)
-                    ].some((param) => !!queryParams[param]);
+                    const urlFilters = decodeFilters(queryParams['filters'] || '');
+                    // A URL that already says what to show (valid filters, an item to edit or
+                    // create, a folder dialog) wins; the remembered type is only for opening the
+                    // Drive directly. Checked after decoding, so filters that decode to nothing
+                    // don't count.
+                    const urlHasInstructions =
+                        Object.keys(urlFilters).length > 0 ||
+                        Object.values(CONTENT_DRIVE_URL_PARAM).some(
+                            (param) => !!queryParams[param]
+                        );
                     const filters =
                         rememberedContentType && !urlHasInstructions
                             ? { contentType: [rememberedContentType] }
-                            : decodeFilters(queryParams['filters'] || '');
+                            : urlFilters;
                     // Used on the first run only: a site change re-runs this effect, and the type
                     // must not come back after the user has moved on (FR-005).
                     rememberedContentType = null;

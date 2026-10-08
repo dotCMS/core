@@ -217,8 +217,8 @@ It offers View instead of Edit, and no Push Publish or Add to Bundle.
 - **FR-003**: When Content Drive opens without any filters in its address, and a type is
   remembered, the Drive MUST apply a Content Type filter for that type. Any folder in the address
   MUST still be applied.
-- **FR-004**: When Content Drive opens with its own instructions (filters already in its address,
-  whether from a link or from another screen redirecting to it, or a request to open an item in the
+- **FR-004**: When Content Drive opens with its own instructions (filters in its address that the Drive
+  recognizes, whether from a link or from another screen redirecting to it, or a request to open an item in the
   editor), the Drive MUST follow only those instructions and MUST NOT apply the remembered type.
 - **FR-005**: The system MUST forget the remembered type every time Content Drive opens, whether
   or not the type was applied, including when the Drive opened with its own instructions (FR-004).

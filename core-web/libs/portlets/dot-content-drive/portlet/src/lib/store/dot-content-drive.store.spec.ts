@@ -1580,6 +1580,14 @@ describe('DotContentDriveStore - remembered content type', () => {
         );
     });
 
+    it('should filter by the remembered content type when the URL filters decode to nothing', () => {
+        buildStore({ filters: 'status:BOGUS' }, 'anyContentType');
+
+        expect(store.filters()).toEqual(
+            withSeeded({ contentType: ['anyContentType'], languageId: ['1'] })
+        );
+    });
+
     it('should open as today when no content type is remembered', () => {
         buildStore({}, null);
 
