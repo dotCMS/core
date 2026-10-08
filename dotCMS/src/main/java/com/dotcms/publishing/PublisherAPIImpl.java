@@ -271,7 +271,10 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
      * marker (no {@value #SHIPPED_FILTERS_MARKER} file yet), there is no record of which missing
      * filters were deleted on purpose versus simply never copied -- so a filter a user had
      * deliberately removed before upgrading to this version is copied back in exactly once. From
-     * that point on, the marker exists and later deliberate deletions are respected.
+     * that point on, the marker exists and later deliberate deletions are respected. If the marker
+     * exists but cannot be read (corrupted, permissions), this method fails closed and skips the
+     * sync entirely for that startup rather than risk silently resurrecting a deliberate deletion;
+     * it is retried on the next startup.
      *
      * @param basePath The assets-backed directory Filter Descriptors are loaded from.
      */
@@ -279,8 +282,18 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
     void copyNewlyShippedFilters(final File basePath) {
         final Path rootPath = basePath.toPath();
         final Path markerPath = rootPath.resolve(SHIPPED_FILTERS_MARKER);
-        final Set<String> alreadyShipped = new HashSet<>(
-                Try.of(() -> Files.readAllLines(markerPath)).getOrElse(Collections.emptyList()));
+
+        final Try<List<String>> markerRead = Try.of(() -> Files.readAllLines(markerPath));
+        if (markerRead.isFailure() && Files.exists(markerPath)) {
+            // Fail closed: a marker that exists but can't be read must not be treated the same as
+            // "no marker yet" -- that would silently resurrect any shipped filter the user
+            // deliberately deleted. Skip the whole sync; it's retried on the next startup.
+            Logger.error(this, String.format(
+                    "Could not read the shipped PP Filters marker '%s', skipping sync this startup: %s",
+                    markerPath, markerRead.getCause().getMessage()), markerRead.getCause());
+            return;
+        }
+        final Set<String> alreadyShipped = new HashSet<>(markerRead.getOrElse(Collections.emptyList()));
 
         final String systemFiltersPathString =
                 Config.CONTEXT.getRealPath(File.separator + "WEB-INF" + File.separator + "publishing-filters" + File.separator);

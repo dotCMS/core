@@ -1517,6 +1517,48 @@ public class PublisherAPIImplTest {
     }
 
     /**
+     * Method to test: {@link PublisherAPIImpl#copyNewlyShippedFilters(File)} <p>
+     * Given Scenario: A directory is first synced normally (bootstrapping the marker), a shipped
+     * filter is then deliberately deleted, and the {@code .shipped-filters} marker is then
+     * corrupted by replacing it with a directory -- guaranteeing {@code Files.readAllLines} throws
+     * an {@link java.io.IOException}, regardless of OS permissions or the user the test runs as. <p>
+     * Expected Result: The sync fails closed and copies nothing on that run, so the deliberately
+     * deleted filter is NOT resurrected -- addresses the PR #37909 review finding that an
+     * unreadable (vs. simply absent) marker was being silently treated as empty, which would have
+     * re-copied every missing filter including ones a user had deleted on purpose.
+     */
+    @Test
+    public void test_copyNewlyShippedFilters_fails_closed_when_marker_is_unreadable() throws IOException {
+        final PublisherAPIImpl publisherAPI = new PublisherAPIImpl();
+        final Path tempDir = Files.createTempDirectory("pp-filters-corrupt-marker-test");
+
+        // First run: fresh directory, bootstraps the marker and copies every shipped filter in.
+        publisherAPI.copyNewlyShippedFilters(tempDir.toFile());
+
+        final String systemFiltersPathString = Config.CONTEXT.getRealPath(
+                File.separator + "WEB-INF" + File.separator + "publishing-filters" + File.separator);
+        final String deletedFilterName;
+        try (final Stream<Path> list = Files.list(Paths.get(systemFiltersPathString))) {
+            deletedFilterName = list.findFirst()
+                    .orElseThrow(() -> new IllegalStateException("No shipped PP filters found"))
+                    .getFileName().toString();
+        }
+        Assert.assertTrue("Simulating the user deliberately deleting a shipped filter",
+                tempDir.resolve(deletedFilterName).toFile().delete());
+
+        final Path markerPath = tempDir.resolve(".shipped-filters");
+        Files.delete(markerPath);
+        Files.createDirectory(markerPath);
+
+        // Second run (e.g. a restart) must fail closed rather than treat the unreadable marker as
+        // empty, which would otherwise silently resurrect the deliberate deletion.
+        publisherAPI.copyNewlyShippedFilters(tempDir.toFile());
+
+        Assert.assertFalse("A deliberately-deleted shipped filter must not be resurrected by a corrupt marker",
+                tempDir.resolve(deletedFilterName).toFile().exists());
+    }
+
+    /**
      * Tests All filter related methods
      *  First we mock real assets-path.
      *  then we create a brand-new descriptor file then we..
