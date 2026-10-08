@@ -35,7 +35,10 @@
                     [value]="tag.labelKey | dm"
                     data-testid="network-node-status" />
             </div>
-            <span class="truncate text-sm text-gray-500" data-testid="network-node-name">
+            <span
+                class="truncate text-sm text-gray-500"
+                [attr.title]="node.name"
+                data-testid="network-node-name">
                 {{ node.name }}
             </span>
             <span class="text-sm text-gray-500" data-testid="network-node-contacted">
