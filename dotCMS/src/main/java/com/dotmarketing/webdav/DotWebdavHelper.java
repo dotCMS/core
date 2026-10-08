@@ -15,6 +15,7 @@ import com.bradmcevoy.http.LockToken;
 import com.bradmcevoy.http.Request;
 import com.bradmcevoy.http.Request.Method;
 import com.bradmcevoy.http.Resource;
+import com.bradmcevoy.http.exceptions.BadRequestException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -391,6 +392,14 @@ public class DotWebdavHelper {
 		return folder;
 	}
 
+	/**
+	 * Resolves a temporary WebDAV resource from a request-derived path. The path is built under
+	 * {@link #getTempDir()} and must resolve inside it; otherwise {@code null} is returned and the
+	 * caller treats it as "not found".
+	 *
+	 * @param url the request URL (endpoint mapping is stripped internally)
+	 * @return the temp {@link File}, or {@code null} when the path is not inside the temp directory
+	 */
 	public File loadTempFile(String url){
 		try {
 			url = stripMapping(url);
@@ -398,7 +407,12 @@ public class DotWebdavHelper {
 			Logger.error( this, "Error happened with uri: [" + url + "]", e);
 		}
 		Logger.debug(this, "Getting temp file from path " + url);
-		return new File(getTempDir().getPath() + url);
+		final File tempFile = new File(getTempDir().getPath() + url);
+		if (!isWithinTempDir(tempFile)) {
+			Logger.warn(this, "Rejected a WebDAV temp path outside the temp directory");
+			return null;
+		}
+		return tempFile;
 	}
 
 	/**
@@ -507,6 +521,81 @@ public class DotWebdavHelper {
 		return new File(ConfigUtils.getAssetTempPath());
 	}
 
+	/**
+	 * Verifies that {@code candidate} resolves to a location strictly inside the WebDAV temp
+	 * directory ({@link #getTempDir()}). The temp directory itself is not a valid temp resource.
+	 * Canonicalization collapses {@code .} and {@code ..} segments and resolves symlinks, so the
+	 * check holds however the path is written. Fails closed: any canonicalization error is treated
+	 * as "not contained".
+	 *
+	 * @param candidate the {@link File} built from request-derived input
+	 * @return {@code true} only when the canonical candidate is a descendant of the temp directory
+	 */
+	private boolean isWithinTempDir(final File candidate) {
+		try {
+			final String root = getTempDir().getCanonicalPath();
+			return candidate.getCanonicalPath().startsWith(root + File.separator);
+		} catch (IOException e) {
+			Logger.error(this, "WebDAV temp-path canonicalization failed; rejecting", e);
+			return false;
+		}
+	}
+
+	/**
+	 * Tells whether a client-supplied name can be used as a child name in temp storage: a single
+	 * plain path segment that is not empty, not {@code .} or {@code ..}, and contains no path
+	 * separator or NUL character.
+	 *
+	 * @param name the name received from the WebDAV client
+	 * @return {@code true} when the name is a single plain path segment
+	 */
+	static boolean isPlainSegment(final String name) {
+		return name != null
+				&& !name.isEmpty()
+				&& !".".equals(name)
+				&& !"..".equals(name)
+				&& name.indexOf('/') < 0
+				&& name.indexOf('\\') < 0
+				&& name.indexOf('\0') < 0;
+	}
+
+	/**
+	 * Rejects a client-supplied name that is not a single plain path segment, before it reaches
+	 * temp storage.
+	 *
+	 * @param resource the resource handling the request, reported in the rejection
+	 * @param name     the name received from the WebDAV client
+	 * @throws BadRequestException (HTTP 400) when the name is not a single plain path segment
+	 */
+	static void requirePlainSegment(final Resource resource, final String name) throws BadRequestException {
+		if (!isPlainSegment(name)) {
+			Logger.warn(DotWebdavHelper.class, "Rejected a WebDAV name that is not a single path segment");
+			throw new BadRequestException(resource, "Invalid name");
+		}
+	}
+
+	/**
+	 * Resolves the target of a write into temp storage: {@code name} inside {@code folder}. The name
+	 * must be a single plain path segment and the target must stay strictly inside the temp
+	 * directory.
+	 *
+	 * @param resource the resource handling the request, reported in the rejection
+	 * @param folder   the temp folder receiving the write
+	 * @param name     the name received from the WebDAV client
+	 * @return the target {@link File}
+	 * @throws BadRequestException (HTTP 400) when the name or the target is not valid
+	 */
+	File resolveTempChild(final Resource resource, final File folder, final String name)
+			throws BadRequestException {
+		requirePlainSegment(resource, name);
+		final File target = new File(folder, name);
+		if (!isWithinTempDir(target)) {
+			Logger.warn(this, "Rejected a WebDAV temp target outside the temp directory");
+			throw new BadRequestException(resource, "Invalid destination");
+		}
+		return target;
+	}
+
 	public String getHostName ( String uri ) {
 		try {
 			return getHostname(stripMapping(uri));
@@ -523,6 +612,14 @@ public class DotWebdavHelper {
 		return false;
 	}
 
+	/**
+	 * Creates a temporary WebDAV folder under {@link #getTempDir()}. The folder must resolve inside
+	 * the temp directory; otherwise nothing is created.
+	 *
+	 * @param path the request-derived folder path (endpoint mapping is stripped internally)
+	 * @return the created temp folder
+	 * @throws DotRuntimeException if the path is not inside the temp directory
+	 */
 	public File createTempFolder(String path){
 		try {
 			path = stripMapping(path);
@@ -536,6 +633,10 @@ public class DotWebdavHelper {
 		}
 		path = path.replace("/", File.separator);
 		File f = new File(getTempDir().getPath() + File.separator + path);
+		if (!isWithinTempDir(f)) {
+			Logger.warn(this, "Rejected a WebDAV temp folder outside the temp directory");
+			throw new DotRuntimeException("WebDAV temp folder path is outside the temp directory");
+		}
 		f.mkdirs();
 		return f;
 	}
@@ -575,8 +676,20 @@ public class DotWebdavHelper {
 		return nf;
 	}
 
+	/**
+	 * Creates a temporary WebDAV file under {@link #getTempDir()}. The file must resolve inside the
+	 * temp directory; otherwise nothing is created.
+	 *
+	 * @param path the request-derived file path, relative to the temp directory
+	 * @return the created temp file
+	 * @throws IOException if the path is not inside the temp directory, or the file cannot be created
+	 */
 	public File createTempFile(String path) throws IOException{
 		File file = new File(getTempDir().getPath() + path);
+		if (!isWithinTempDir(file)) {
+			Logger.warn(this, "Rejected a WebDAV temp file outside the temp directory");
+			throw new IOException("WebDAV temp file path is outside the temp directory");
+		}
 		String p = file.getPath().substring(0,file.getPath().lastIndexOf(File.separator));
 		File f = new File(p);
 		f.mkdirs();
