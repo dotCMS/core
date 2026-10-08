@@ -11253,15 +11253,16 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityExperimentResults"
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityExperimentResults"
-          description: default response
+          description: Experiment results retrieved
+        "503":
+          content:
+            application/json: {}
+          description: Analytics App not configured for this site
       tags:
       - Experiment
   /v1/fieldTypes:

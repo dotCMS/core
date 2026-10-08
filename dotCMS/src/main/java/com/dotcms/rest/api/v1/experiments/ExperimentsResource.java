@@ -589,19 +589,35 @@ public class ExperimentsResource {
     }
 
     /**
-     * Returns the partial or total Result of a {@link Experiment}
+     * Returns the partial or total results of a {@link Experiment}.
+     *
+     * <p>Gated on Analytics App configuration: results depend on the analytics backend and
+     * cannot be retrieved when the App is absent for the site. Returns
+     * {@code 503 ANALYTICS_NOT_CONFIGURED} when the App is not configured.
      */
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Experiment results retrieved",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityExperimentResults.class))),
+            @ApiResponse(responseCode = "503", description = "Analytics App not configured for this site",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @NoCache
     @Path("/{id}/results")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public ResponseEntityExperimentResults getResult(@Context final HttpServletRequest request,
-                                                     @Context final HttpServletResponse response,
-                                                     @PathParam("id") String id)
-        throws DotDataException, DotSecurityException {
+    public Response getResult(@Context final HttpServletRequest request,
+                              @Context final HttpServletResponse response,
+                              @PathParam("id") String id)
+        throws DotDataException, DotSecurityException, SystemException, PortalException {
 
         final InitDataObject initData = getInitData(request, response);
         final User user = initData.getUser();
+        final Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
+
+        if (!ContentAnalyticsUtil.isAppConfigured(host)) {
+            return analyticsNotConfiguredResponse();
+        }
 
         final Experiment experiment = experimentsAPI.find(id, user)
                 .orElseThrow(
@@ -609,7 +625,7 @@ public class ExperimentsResource {
 
         final ExperimentResults experimentResults = APILocator.getExperimentsAPI().getResults(experiment, user);
 
-        return new ResponseEntityExperimentResults(experimentResults);
+        return Response.ok(new ResponseEntityExperimentResults(experimentResults)).build();
     }
 
     /**
