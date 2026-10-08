@@ -119,7 +119,12 @@ jobs:
       # pipes, if/then) never matches, and every denied call fails silently.
       # Removing older review comments needs a comment id, which cannot be pinned
       # in a rule, so the finalize-backend-review job does it outside the model.
+      # Sub-agents must run in the foreground. Claude Code starts Agent calls as
+      # background tasks by default; the orchestrator then ends its turn while
+      # the four reviewers are still running, the action treats that turn as the
+      # end of the session, and nothing is ever posted.
       claude_args: >-
+        --settings '{"env":{"CLAUDE_CODE_DISABLE_BACKGROUND_TASKS":"1"}}'
         --allowedTools
         "Agent,Bash(git diff*),Bash(git log*),Bash(git show*),Bash(cat CLAUDE.md*),Bash(cat docs/backend/*),Bash(cat docs/core/*),Bash(cat dotCMS/src/*),Bash(find dotCMS/src -name '*.java'*),Bash(grep -rn dotCMS/src*),Edit(//tmp/dotcms_review_body.md),Bash(gh pr comment ${{ github.event.pull_request.number }} --body-file /tmp/dotcms_review_body.md),Bash(gh pr review ${{ github.event.pull_request.number }} --approve),Bash(gh pr review ${{ github.event.pull_request.number }} --request-changes --body-file /tmp/dotcms_review_body.md)"
       prompt: |
