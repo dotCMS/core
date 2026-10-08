@@ -202,6 +202,16 @@ jobs:
           GTM status, and strategic framing. If no Vault Context is present, infer from
           the Epic and PR content.
 
+          **Confidentiality.** Your report is published as a comment on a public GitHub
+          issue. The Vault Context and anything from a repository marked
+          *(private repository)* are internal: use them to inform your judgment, but do not
+          quote or closely paraphrase them, and do not reveal internal commentary, risks,
+          open questions, GTM status, strategy, customer names or internal processes. Do not
+          name private repositories or cite their issue and PR numbers; say "an internal
+          ticket" or "internal planning notes" instead. Personas and the product area may
+          be stated plainly. Product behaviour that the documentation draft itself is meant
+          to tell customers may be described, in your own words.
+
           Run one or more dotCMS AI semantic searches to assess current documentation
           coverage. Use the Bash tool to run the `autodoc-search` command, which queries the
           dotCMS documentation search and prints its JSON results:
@@ -327,7 +337,7 @@ jobs:
           TRUSTED = {'OWNER', 'MEMBER', 'COLLABORATOR'}
 
           PR_REFS = '''closedByPullRequestsReferences(first: 25, includeClosedPrs: true) {
-            nodes { number title repository { nameWithOwner } } }'''
+            nodes { number title repository { nameWithOwner isPrivate } } }'''
 
           QUERY = '''query($owner: String!, $name: String!, $number: Int!) {
             repository(owner: $owner, name: $name) {
@@ -340,7 +350,7 @@ jobs:
                 subIssues(first: 50) {
                   nodes {
                     number title body url state
-                    repository { nameWithOwner }
+                    repository { nameWithOwner isPrivate }
                     labels(first: 20) { nodes { name } }
                     %s
                   }
@@ -378,24 +388,31 @@ jobs:
               return out.strip()
 
 
+          # Shown next to anything from a private repo; the prompt tells the model not to
+          # repeat such material in the (public) report.
+          PRIVATE = ' *(private repository)*'
+
+
           def pr_refs(node):
-              return [(r['repository']['nameWithOwner'], r['number'], r.get('title') or '')
+              return [(r['repository']['nameWithOwner'], r['number'], r.get('title') or '',
+                       bool(r['repository'].get('isPrivate')))
                       for r in ((node.get('closedByPullRequestsReferences') or {}).get('nodes') or [])
                       if r and r.get('repository')]
 
 
-          def render_pr(pr_repo, number, title):
+          def render_pr(pr_repo, number, title, private):
+              mark = PRIVATE if private else ''
               r = gh('pr', 'view', str(number), '--repo', pr_repo,
                      '--json', 'number,title,body,state,mergedAt,author,comments')
               if r.returncode != 0:
                   print(f'warning: cannot read PR {pr_repo}#{number}: {r.stderr.strip()}', file=sys.stderr)
                   return ['', '---', '',
-                          f'## Related PR: {pr_repo}#{number} — {title or "(title unavailable)"}',
+                          f'## Related PR: {pr_repo}#{number} — {title or "(title unavailable)"}{mark}',
                           '*(PR exists but its contents could not be retrieved.)*']
               pr = json.loads(r.stdout)
               author = (pr.get('author') or {}).get('login', '?')
               lines = ['', '---', '',
-                       f'## Related PR: {pr_repo}#{pr["number"]} — {pr["title"]}',
+                       f'## Related PR: {pr_repo}#{pr["number"]} — {pr["title"]}{mark}',
                        f'**State:** {pr.get("state", "?")}  |  **Author:** {author}  |  '
                        f'**Merged:** {pr.get("mergedAt") or "N/A"}',
                        '', clip(pr.get('body'), MAX_BODY_CHARS)]
@@ -406,8 +423,10 @@ jobs:
 
 
           def sub_ref(s):
-              s_repo = (s.get('repository') or {}).get('nameWithOwner') or repo
-              return f'#{s["number"]}' if s_repo == repo else f'{s_repo}#{s["number"]}'
+              r = s.get('repository') or {}
+              s_repo = r.get('nameWithOwner') or repo
+              ref = f'#{s["number"]}' if s_repo == repo else f'{s_repo}#{s["number"]}'
+              return ref + (PRIVATE if r.get('isPrivate') else '')
 
 
           # Dry-run security test: a comment-shaped payload that tries to make the model
@@ -467,7 +486,7 @@ jobs:
               f'**State:** {issue.get("state", "?")}',
               f'**Labels:** {labels or "(none)"}',
               f'**Sub-issues:** {", ".join(sub_ref(s) for s in subs) or "(none)"}',
-              f'**Related PRs:** {", ".join(f"{p[0]}#{p[1]}" for p in prs) or "(none)"}',
+              f'**Related PRs:** {", ".join(f"{p[0]}#{p[1]}{PRIVATE if p[3] else ''}" for p in prs) or "(none)"}',
               '', '### Issue Body', '', clip(issue.get('body'), MAX_BODY_CHARS),
           ]
           ct = render_comments(issue['comments']['nodes'])
@@ -479,19 +498,21 @@ jobs:
 
           for s in subs:
               slabels = ', '.join(l['name'] for l in s['labels']['nodes'])
-              srefs = ', '.join(f'{p[0]}#{p[1]}' for p in pr_refs(s)) or '(none)'
+              srefs = ', '.join(f'{p[0]}#{p[1]}{PRIVATE if p[3] else ""}' for p in pr_refs(s)) or '(none)'
               lines += ['', '---', '',
                         f'## Sub-issue: {sub_ref(s)} — {s["title"]}',
                         f'**State:** {s.get("state", "?")}  |  **Labels:** {slabels or "(none)"}  |  '
                         f'**PRs:** {srefs}',
                         '', clip(s.get('body'), MAX_BODY_CHARS)]
 
-          for pr_repo, number, title in prs:
-              lines += render_pr(pr_repo, number, title)
+          for pr_repo, number, title, private in prs:
+              lines += render_pr(pr_repo, number, title, private)
 
           vault = find_vault_file(issue_num)
           if vault:
-              lines += ['', '---', '', '## Vault Context', '', vault.strip()]
+              lines += ['', '---', '', '## Vault Context', '',
+                        '*(Internal planning notes. Confidential: see the confidentiality '
+                        'rules in the prompt.)*', '', vault.strip()]
           else:
               print(f'warning: no vault file for {repo}#{issue_num}', file=sys.stderr)
 
@@ -721,16 +742,42 @@ jobs:
           use_sticky_comment: 'false'
           track_progress: 'false'
 
+      # Tool names (and, for refused Bash calls, only the command's first word)
+      # so a run is debuggable without exposing context text in a public log.
+      - name: Summarize Claude's tool use
+        if: ${{ !cancelled() && steps.claude.outcome != 'skipped' }}
+        run: |
+          EXEC_FILE="$RUNNER_TEMP/claude-execution-output.json"
+          if [ ! -s "$EXEC_FILE" ]; then
+            echo "No execution log found."
+            exit 0
+          fi
+          {
+            echo "### Claude tool use"
+            echo
+            jq -r '[.[] | select(.type == "assistant") | .message.content[]?
+                    | select(.type == "tool_use") | .name]
+                   | group_by(.) | map("- \(.[0]): \(length)") | .[]' "$EXEC_FILE"
+            echo
+            jq -r '[.[] | select(.type == "result") | .permission_denials[]?] as $d
+                   | if ($d | length) == 0 then "No refused tool calls."
+                     else "Refused tool calls:", ($d[] | "- \(.tool_name)"
+                       + (if .tool_name == "Bash"
+                          then " (`\((.tool_input.command // "") | split(" ")[0])`)"
+                          else "" end))
+                     end' "$EXEC_FILE"
+          } | tee -a "$GITHUB_STEP_SUMMARY" || echo "Could not parse the execution log."
+
       - name: Fail if the action skipped itself
         if: steps.claude.outputs.skipped_due_to_workflow_validation_mismatch == 'true'
         run: |
           echo "::error::claude-code-action skipped (workflow validation) without running Claude"
           exit 1
 
-      # Skipped when an earlier setup step failed, so that step's error is the
-      # one reported rather than a secondary "no files found".
+      # Skipped when Claude never ran (an earlier setup step failed), so that
+      # step's error is the one reported rather than a secondary "no files found".
       - name: Upload report artifact
-        if: ${{ !cancelled() && steps.compose.outcome == 'success' }}
+        if: ${{ !cancelled() && steps.claude.outcome != 'skipped' }}
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.6.0 - https://github.com/actions/upload-artifact/releases/tag/v4.6.0
         with:
           name: autodoc-report
@@ -881,8 +928,10 @@ jobs:
           fi
 
           if [ "$ACTION" = "update" ]; then
-            # Verify the identifier is UUID-shaped before placing it in a URL.
-            if ! echo "$IDENTIFIER" | grep -qE '^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$'; then
+            # Verify the identifier is ID-shaped before placing it in a URL. dotCMS
+            # uses dashed UUIDs for newer content and 32-hex IDs for older content
+            # (e.g. evergreen-tracks); both are safe in a URL.
+            if ! echo "$IDENTIFIER" | grep -qE '^([a-f0-9]{32}|[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})$'; then
               echo "::warning::No valid contentlet found for urlTitle '${URL_TITLE}' — not applying."
               echo "ACTION=none" >> "$GITHUB_ENV"
               exit 0
