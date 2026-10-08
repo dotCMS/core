@@ -61,6 +61,12 @@ describe('DotNetworkNodeListComponent', () => {
         expect(spectator.query(byTestId('network-node-count'))).toHaveText('2');
     });
 
+    it('should keep a truncated host name readable in full (FR-050)', () => {
+        const names = spectator.queryAll(byTestId('network-node-name'));
+
+        expect(names.map((el) => el.getAttribute('title'))).toEqual(NODES.map((n) => n.name));
+    });
+
     it('should mark only the node serving the request as "This node"', () => {
         const markers = spectator.queryAll(byTestId('network-node-current'));
 
