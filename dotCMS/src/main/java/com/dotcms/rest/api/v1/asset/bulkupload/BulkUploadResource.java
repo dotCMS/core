@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.asset.bulkupload;
 
+import com.dotcms.jobs.business.processor.JobQueueEntryPoint;
 import com.dotcms.rest.ResponseEntityBulkUploadSubmitView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -83,6 +84,7 @@ public class BulkUploadResource {
      */
     @POST
     @Path("/_bulkupload")
+    @JobQueueEntryPoint(BulkUploadHelper.QUEUE_NAME)
     @NoCache
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)

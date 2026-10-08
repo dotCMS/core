@@ -21,7 +21,7 @@ import javax.enterprise.context.Dependent;
  * This class reads a large file and prints the content to the log.
  * It is here for the sole purpose of demonstrating the job queue system.
  */
-@Queue("demo")
+@Queue(value = "demo", genericEntry = true)
 @Dependent
 public class LargeFileReader implements JobProcessor, Cancellable {
 

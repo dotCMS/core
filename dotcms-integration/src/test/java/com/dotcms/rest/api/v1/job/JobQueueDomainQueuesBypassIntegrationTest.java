@@ -148,8 +148,10 @@ public class JobQueueDomainQueuesBypassIntegrationTest extends Junit5WeldBaseTes
         final ForbiddenException refusal = assertThrows(ForbiddenException.class,
                 () -> createThroughJson(queueName, parameters));
 
-        assertTrue(refusal.getMessage().contains(expectedRoute),
-                "message must name " + expectedRoute + " but was: " + refusal.getMessage());
+        // the message lives in the 403 response entity: WebApplicationException#getMessage is generic
+        final String body = refusal.getResponse().getEntity().toString();
+        assertTrue(body.contains(expectedRoute),
+                "message must name " + expectedRoute + " but was: " + body);
         assertEquals(before, jobsOn(queueName), "a refused request must not create a job");
     }
 
