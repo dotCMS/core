@@ -24,7 +24,7 @@ describe('DotNavHeaderComponent', () => {
         imports: [ButtonModule],
         providers: [
             mockProvider(DotNavLogoService, {
-                navBarLogo$: new BehaviorSubject<string>('')
+                navBarLogo$: new BehaviorSubject<string | null>('')
             })
         ]
     });
