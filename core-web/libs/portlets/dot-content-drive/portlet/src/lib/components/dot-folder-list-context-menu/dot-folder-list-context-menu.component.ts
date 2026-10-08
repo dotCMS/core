@@ -94,7 +94,7 @@ const CONTENT_PERMISSION = {
  * @param bit the permission bit to check
  */
 const contentAllows = (contentlet: DotCMSContentlet, bit: number): boolean => {
-    const permissions = contentlet.permissions as unknown as number[] | undefined;
+    const permissions = contentlet['permissions'] as unknown as number[] | undefined;
 
     return !permissions || permissions.includes(bit);
 };
