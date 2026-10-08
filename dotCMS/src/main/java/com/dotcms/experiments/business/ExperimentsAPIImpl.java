@@ -103,6 +103,8 @@ import org.apache.commons.lang3.StringUtils;
 public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<SystemTableUpdatedKeyEvent> {
 
     private static final int VARIANTS_NUMBER_MAX = 3;
+    /** Maximum duration for a free experiment in limited mode ({@code FEATURE_FLAG_EXPERIMENTS=false}), in days. */
+    private static final long LIMITED_MODE_MAX_DAYS = 10L;
     private static final List<Status> RESULTS_QUERY_VALID_STATUSES = List.of(RUNNING, ENDED);
     private static final Supplier<String> INVALID_LICENSE_MESSAGE_SUPPLIER = () -> "Valid License is required";
     private static final String ONLY_DRAFT_EXPERIMENTS_CAN_BE_STARTED_MESSAGE = "Only DRAFT experiments can be started";
@@ -123,7 +125,6 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
     final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
     final HTMLPageAssetAPI pageAssetAPI = APILocator.getHTMLPageAssetAPI();
     final BayesianAPI bayesianAPI = APILocator.getBayesianAPI();
-    final CubeJSClientFactory cubeJSClientFactory = FactoryLocator.getCubeJSClientFactory();
 
     private final AtomicInteger maxDuration = new AtomicInteger(resolveMaxDuration());
     private final AtomicInteger defaultDuration = new AtomicInteger(resolveDefaultDuration());
@@ -517,6 +518,19 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
     }
 
     @Override
+    @CloseDBIfOpened
+    public boolean isFreeSlotUsed() throws DotDataException {
+        if (ConfigExperimentUtil.INSTANCE.isExperimentEnabled()) {
+            throw new IllegalStateException(
+                    "isFreeSlotUsed() must only be called in limited mode (FEATURE_FLAG_EXPERIMENTS=false)");
+        }
+        final ExperimentFilter filter = ExperimentFilter.builder()
+                .statuses(Set.of(RUNNING, SCHEDULED, ENDED))
+                .build();
+        return !factory.list(filter).isEmpty();
+    }
+
+    @Override
     @WrapInTransaction
     public Experiment start(String experimentId, User user)
             throws DotDataException, DotSecurityException {
@@ -579,7 +593,9 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
             Experiment toReturn;
 
             if (emptyScheduling(persistedExperiment)) {
-                final Scheduling scheduling = startNowScheduling();
+                final Scheduling scheduling = ConfigExperimentUtil.INSTANCE.isExperimentEnabled()
+                        ? startNowScheduling()
+                        : startLimitedScheduling();
                 final Experiment experimentToSave = persistedExperiment.withScheduling(scheduling)
                         .withStatus(RUNNING);
                 validateNoConflictsWithScheduledExperiments(experimentToSave, user);
@@ -1645,6 +1661,19 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
         final Instant now = Instant.now().plus(1, ChronoUnit.MINUTES);
         return Scheduling.builder().startDate(now)
                 .endDate(now.plus(defaultDuration.get(), ChronoUnit.DAYS))
+                .build();
+    }
+
+    /**
+     * Builds an immediate-start scheduling capped at the limited-mode maximum duration.
+     * Used instead of {@link #startNowScheduling()} when {@code FEATURE_FLAG_EXPERIMENTS=false}
+     * so that a free experiment cannot run longer than the allowed cap.
+     */
+    private static Scheduling startLimitedScheduling() {
+        final Instant now = Instant.now().plus(1, ChronoUnit.MINUTES);
+        return Scheduling.builder()
+                .startDate(now)
+                .endDate(now.plus(LIMITED_MODE_MAX_DAYS, ChronoUnit.DAYS))
                 .build();
     }
 

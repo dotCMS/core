@@ -195,6 +195,22 @@ public class EventAnalyticsProxyResource {
                 return;
             }
 
+            // Resolve site before site_auth check: the App-config gate must fire first (FR-006).
+            site = ContentAnalyticsUtil.getSiteFromRequest(request);
+
+            // Gate: App must be configured BEFORE site_auth validation.
+            if (!ContentAnalyticsUtil.isAppConfigured(site)) {
+                final Host unconfiguredSite = site;
+                Logger.debug(this, () -> "Analytics App not configured for site '"
+                        + unconfiguredSite.getIdentifier() + "' — returning 503 for event ingest");
+                asyncResponse.resume(Response.status(Response.Status.SERVICE_UNAVAILABLE)
+                        .entity(new ResponseEntityView<>(
+                                List.of(new ErrorEntity("ANALYTICS_NOT_CONFIGURED",
+                                        "Analytics is not configured for this site."))))
+                        .build());
+                return;
+            }
+
             @SuppressWarnings("unchecked")
             final Map<String, Object> contextMap = (Map<String, Object>) context;
             final Object siteAuth = contextMap.get("site_auth");
@@ -210,7 +226,6 @@ public class EventAnalyticsProxyResource {
 
             new SiteAuthValidator().validate(siteAuth.toString());
 
-            site = ContentAnalyticsUtil.getSiteFromRequest(request);
             contextMap.put("site_id", site.getIdentifier());
             proxyBody = JsonUtil.getJsonStringFromObject(bodyMap);
         } catch (final AnalyticsValidationException e) {
@@ -255,6 +270,86 @@ public class EventAnalyticsProxyResource {
                 () -> EventAnalyticsProxyHelper.proxy("event/ingest", uriInfo, finalProxyBody,
                         request.getHeader("User-Agent"), finalSite),
                 asyncResponse);
+    }
+
+    /**
+     * Returns a dotCMS-evaluated analytics health status for the site resolved from the request.
+     *
+     * <p>Unlike the catch-all proxy path, this endpoint is always accessible and never returns
+     * {@code 503}. The response reflects what {@link ContentAnalyticsUtil#resolveAnalyticsHealth}
+     * determines about the site's Content Analytics configuration and backend connectivity:
+     * <ul>
+     *   <li>{@code "OK"} — credentials present and backend reachable.
+     *   <li>{@code "NOT_CONFIGURED"} — the Analytics App is not configured for the site.
+     *   <li>{@code "CONFIGURATION_ERROR"} — credentials present but incomplete or backend unreachable.
+     * </ul>
+     *
+     * <p>Auth required ({@code 401} if unauthenticated); site READ permission required
+     * ({@code 403 SITE_ACCESS_DENIED} if missing).
+     *
+     * @param request  the HTTP servlet request
+     * @param response the HTTP servlet response
+     * @return a {@code 200} response with a {@code ResponseEntityView} containing {@code { "health": "..." }}
+     */
+    @Operation(
+            operationId = "analyticsHealth",
+            summary = "Evaluate analytics health for the current site",
+            description = "Returns a dotCMS-evaluated analytics health state. Always returns 200 — " +
+                    "never returns 503 unlike the catch-all proxy. Reflects the App configuration " +
+                    "and backend connectivity for the site resolved from the request.",
+            tags = {"Content Analytics"}
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Health state evaluated successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(type = "object",
+                                    description = "ResponseEntityView containing {\"health\": \"OK\"|\"NOT_CONFIGURED\"|\"CONFIGURATION_ERROR\"}"))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized — backend user required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403", description = "User lacks READ on the resolved site",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @GET
+    @Path("/health")
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response analyticsHealth(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response) {
+
+        final User user = new WebResource.InitBuilder(this.webResource)
+                .requestAndResponse(request, response)
+                .requiredBackendUser(true)
+                .rejectWhenNoUser(true)
+                .init()
+                .getUser();
+
+        final Host site;
+        try {
+            site = resolveSiteForUser(request, user);
+        } catch (DotSecurityException e) {
+            Logger.warn(this, "User '" + user.getUserId()
+                    + "' denied site access on analytics health: " + e.getMessage());
+            SecurityLogger.logInfo(this.getClass(), "User '" + user.getUserId()
+                    + "' denied site access on analytics health: " + e.getMessage());
+            return Response.status(Response.Status.FORBIDDEN)
+                    .entity(new ResponseEntityView<>(
+                            List.of(new ErrorEntity("SITE_ACCESS_DENIED",
+                                    "User does not have access to the requested site"))))
+                    .build();
+        } catch (DotDataException e) {
+            Logger.warn(this, "Failed to resolve site for analytics health: " + e.getMessage());
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ResponseEntityView<>(
+                            List.of(new ErrorEntity("INVALID_SITE_ID",
+                                    "Could not resolve a site for the request"))))
+                    .build();
+        }
+
+        final com.dotcms.experiments.business.ExperimentsAPI.Health health =
+                ContentAnalyticsUtil.resolveAnalyticsHealth(site);
+        return Response.ok(new ResponseEntityView<>(
+                java.util.Map.of("health", health.name()))).build();
     }
 
     /**
@@ -335,6 +430,17 @@ public class EventAnalyticsProxyResource {
                     .entity(new ResponseEntityView<>(
                             List.of(new ErrorEntity("INVALID_SITE_ID",
                                     "Could not resolve a site for the request"))))
+                    .build();
+        }
+        // Gate: App must be configured for this site — the /health and /content/siteauth/generate
+        // paths are handled by dedicated methods (JAX-RS most-specific-match) and never reach here.
+        if (!ContentAnalyticsUtil.isAppConfigured(site)) {
+            Logger.debug(this, () -> "Analytics App not configured for site '"
+                    + site.getIdentifier() + "' — returning 503 for path: " + path);
+            return Response.status(Response.Status.SERVICE_UNAVAILABLE)
+                    .entity(new ResponseEntityView<>(
+                            List.of(new ErrorEntity("ANALYTICS_NOT_CONFIGURED",
+                                    "Analytics is not configured for this site."))))
                     .build();
         }
         return EventAnalyticsProxyHelper.proxy(path, uriInfo, null, request.getHeader("User-Agent"), site);

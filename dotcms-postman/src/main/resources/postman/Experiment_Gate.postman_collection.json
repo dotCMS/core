@@ -1,0 +1,532 @@
+{
+  "info": {
+    "_postman_id": "e3b7c2a1-4f8d-4b2e-9c1a-8d5e7f3a2b6c",
+    "name": "Experiment Gate",
+    "description": "Gate behavior for experiment activation endpoints (FEATURE_FLAG_EXPERIMENTS=false) and Analytics App configuration gates.\n\nDefault server state assumed:\n- FEATURE_FLAG_EXPERIMENTS defaults to false (changed by analytics-gate feature)\n- Analytics App not configured for the default site\n\nFor the _start → 403 FEATURE_DISABLED test, the Analytics App must be configured first\n(the App-config gate fires before the flag gate). That scenario requires manual App\nsetup and is documented as a manual validation step.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Experiment Flag Gate (FEATURE_FLAG_EXPERIMENTS=false)",
+      "item": [
+        {
+          "name": "_end — flag=false → 403 FEATURE_DISABLED",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 403 Forbidden\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "",
+                  "pm.test(\"errorCode is FEATURE_DISABLED\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.errors).to.be.an('array').that.is.not.empty;",
+                  "    pm.expect(json.errors[0].errorCode).to.eql('FEATURE_DISABLED');",
+                  "});",
+                  "",
+                  "pm.test(\"message is non-empty\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.errors[0].message).to.be.a('string').and.not.empty;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "admin@dotcms.com", "type": "string" },
+                { "key": "password", "value": "admin", "type": "string" }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/experiments/00000000-0000-0000-0000-000000000001/_end",
+              "host": ["{{serverURL}}"],
+              "path": ["api", "v1", "experiments", "00000000-0000-0000-0000-000000000001", "_end"]
+            },
+            "description": "Gate fires before any DB lookup — any UUID works. Flag=false → 403 FEATURE_DISABLED immediately after auth."
+          },
+          "response": []
+        },
+        {
+          "name": "_cancel — flag=false → 403 FEATURE_DISABLED",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 403 Forbidden\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "",
+                  "pm.test(\"errorCode is FEATURE_DISABLED\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.errors).to.be.an('array').that.is.not.empty;",
+                  "    pm.expect(json.errors[0].errorCode).to.eql('FEATURE_DISABLED');",
+                  "});",
+                  "",
+                  "pm.test(\"message is non-empty\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.errors[0].message).to.be.a('string').and.not.empty;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "admin@dotcms.com", "type": "string" },
+                { "key": "password", "value": "admin", "type": "string" }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/experiments/scheduled/00000000-0000-0000-0000-000000000001/_cancel",
+              "host": ["{{serverURL}}"],
+              "path": ["api", "v1", "experiments", "scheduled", "00000000-0000-0000-0000-000000000001", "_cancel"]
+            },
+            "description": "Gate fires before any DB lookup. Flag=false → 403 FEATURE_DISABLED."
+          },
+          "response": []
+        },
+        {
+          "name": "_archive — flag=false → 403 FEATURE_DISABLED",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 403 Forbidden\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "",
+                  "pm.test(\"errorCode is FEATURE_DISABLED\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.errors).to.be.an('array').that.is.not.empty;",
+                  "    pm.expect(json.errors[0].errorCode).to.eql('FEATURE_DISABLED');",
+                  "});",
+                  "",
+                  "pm.test(\"message is non-empty\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.errors[0].message).to.be.a('string').and.not.empty;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "admin@dotcms.com", "type": "string" },
+                { "key": "password", "value": "admin", "type": "string" }
+              ]
+            },
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/experiments/00000000-0000-0000-0000-000000000001/_archive",
+              "host": ["{{serverURL}}"],
+              "path": ["api", "v1", "experiments", "00000000-0000-0000-0000-000000000001", "_archive"]
+            },
+            "description": "Gate fires before any DB lookup. Flag=false → 403 FEATURE_DISABLED."
+          },
+          "response": []
+        },
+        {
+          "name": "_start — flag=false + slot used → 403 FEATURE_DISABLED",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Fetch a DRAFT experiment to use as the start target.",
+                  "// The slot is already occupied (freeExperimentUsed=true), so _start must return 403.",
+                  "pm.sendRequest({",
+                  "    url: pm.variables.get('serverURL') + '/api/v1/experiments?status=DRAFT',",
+                  "    method: 'GET',",
+                  "    header: {",
+                  "        'Authorization': 'Basic ' + btoa('admin@dotcms.com:admin')",
+                  "    }",
+                  "}, function (err, res) {",
+                  "    if (!err && res.json().entity && res.json().entity.length > 0) {",
+                  "        pm.variables.set('draftExperimentId', res.json().entity[0].id);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// App is configured + flag=false + slot already occupied → 403 FEATURE_DISABLED.",
+                  "pm.test(\"Status is 403 Forbidden\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "",
+                  "pm.test(\"errorCode is FEATURE_DISABLED\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.errors).to.be.an('array').that.is.not.empty;",
+                  "    pm.expect(json.errors[0].errorCode).to.eql('FEATURE_DISABLED');",
+                  "});",
+                  "",
+                  "pm.test(\"message is non-empty\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.errors[0].message).to.be.a('string').and.not.empty;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "admin@dotcms.com", "type": "string" },
+                { "key": "password", "value": "admin", "type": "string" }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/experiments/{{draftExperimentId}}/_start",
+              "host": ["{{serverURL}}"],
+              "path": ["api", "v1", "experiments", "{{draftExperimentId}}", "_start"]
+            },
+            "description": "Slot already occupied → 403 FEATURE_DISABLED before reaching the DB start logic."
+          },
+          "response": []
+        },
+        {
+          "name": "unauthenticated _end → blocked (401 or 403)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Unauthenticated request is blocked (401 or 403)\", function () {",
+                  "    pm.expect([401, 403]).to.include(pm.response.code);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/experiments/00000000-0000-0000-0000-000000000001/_end",
+              "host": ["{{serverURL}}"],
+              "path": ["api", "v1", "experiments", "00000000-0000-0000-0000-000000000001", "_end"]
+            },
+            "description": "Unauthenticated callers are blocked. When flag=false the gate (403) may fire before the auth check (401)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Experiments Health Endpoint",
+      "item": [
+        {
+          "name": "GET /health — returns tier and health fields",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"entity.health field is present\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.entity).to.have.property('health');",
+                  "    pm.expect(['OK', 'NOT_CONFIGURED', 'CONFIGURATION_ERROR'])",
+                  "        .to.include(json.entity.health);",
+                  "});",
+                  "",
+                  "pm.test(\"entity.tier field is present\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.entity).to.have.property('tier');",
+                  "    pm.expect(['FULL', 'LIMITED']).to.include(json.entity.tier);",
+                  "});",
+                  "",
+                  "pm.test(\"entity.freeExperimentUsed present when tier=LIMITED\", function () {",
+                  "    var json = pm.response.json();",
+                  "    if (json.entity.tier === 'LIMITED') {",
+                  "        pm.expect(json.entity).to.have.property('freeExperimentUsed');",
+                  "        pm.expect(json.entity.freeExperimentUsed).to.be.a('boolean');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "admin@dotcms.com", "type": "string" },
+                { "key": "password", "value": "admin", "type": "string" }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/experiments/health",
+              "host": ["{{serverURL}}"],
+              "path": ["api", "v1", "experiments", "health"]
+            },
+            "description": "Health endpoint always returns 200. Verifies the new tier/health/freeExperimentUsed fields are present."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /health — tier=LIMITED when flag=false",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"tier is LIMITED when flag=false\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.entity.tier).to.eql('LIMITED');",
+                  "});",
+                  "",
+                  "pm.test(\"freeExperimentUsed is boolean\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.entity.freeExperimentUsed).to.be.a('boolean');",
+                  "});",
+                  "",
+                  "pm.test(\"warning is ANALYTICS_DISABLED when App not configured (conditional)\", function () {",
+                  "    var json = pm.response.json();",
+                  "    if (json.entity.health === 'NOT_CONFIGURED') {",
+                  "        pm.expect(json.entity.warning).to.eql('ANALYTICS_DISABLED');",
+                  "    } else {",
+                  "        pm.expect(json.entity.warning).to.be.undefined;",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "admin@dotcms.com", "type": "string" },
+                { "key": "password", "value": "admin", "type": "string" }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/experiments/health",
+              "host": ["{{serverURL}}"],
+              "path": ["api", "v1", "experiments", "health"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Analytics App Configuration Gate",
+      "item": [
+        {
+          "name": "POST /analytics/content/event — App not configured → 503 (skip if App configured)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Only assert 503 when App is not configured.",
+                  "// If App is configured the gate passes and site_auth validation runs instead.",
+                  "if (pm.response.code === 503) {",
+                  "    pm.test(\"Status is 503 when Analytics App not configured\", function () {",
+                  "        pm.response.to.have.status(503);",
+                  "    });",
+                  "    pm.test(\"errorCode is ANALYTICS_NOT_CONFIGURED\", function () {",
+                  "        var json = pm.response.json();",
+                  "        pm.expect(json.errors).to.be.an('array').that.is.not.empty;",
+                  "        pm.expect(json.errors[0].errorCode).to.eql('ANALYTICS_NOT_CONFIGURED');",
+                  "    });",
+                  "} else {",
+                  "    pm.test(\"App is configured — gate passes (503 not expected)\", function () {",
+                  "        pm.expect([400, 200]).to.include(pm.response.code);",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"context\":{\"site_auth\":\"any-token\"},\"events\":[]}"
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/analytics/content/event",
+              "host": ["{{serverURL}}"],
+              "path": ["api", "v1", "analytics", "content", "event"]
+            },
+            "description": "App-config gate fires before site_auth validation. No App secrets → 503 even with a valid site_auth token."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /analytics/events — App not configured → 503 (skip if App configured)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 503) {",
+                  "    pm.test(\"Status is 503 when Analytics App not configured\", function () {",
+                  "        pm.response.to.have.status(503);",
+                  "    });",
+                  "    pm.test(\"errorCode is ANALYTICS_NOT_CONFIGURED\", function () {",
+                  "        var json = pm.response.json();",
+                  "        pm.expect(json.errors).to.be.an('array').that.is.not.empty;",
+                  "        pm.expect(json.errors[0].errorCode).to.eql('ANALYTICS_NOT_CONFIGURED');",
+                  "    });",
+                  "} else {",
+                  "    pm.test(\"App is configured — gate passes (503 not expected)\", function () {",
+                  "        pm.expect(pm.response.code).to.not.eql(503);",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "admin@dotcms.com", "type": "string" },
+                { "key": "password", "value": "admin", "type": "string" }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/analytics/events?metrics=totalEvents&range=last_7_days",
+              "host": ["{{serverURL}}"],
+              "path": ["api", "v1", "analytics", "events"],
+              "query": [
+                { "key": "metrics", "value": "totalEvents" },
+                { "key": "range", "value": "last_7_days" }
+              ]
+            },
+            "description": "Any GET analytics path (except /health and /siteauth) returns 503 when App not configured."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /analytics/health — always 200 with health field",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status is 200 — health endpoint never returns 503\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"entity.health reflects App configuration state\", function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.entity).to.have.property('health');",
+                  "    pm.expect(['OK', 'NOT_CONFIGURED', 'CONFIGURATION_ERROR']).to.include(json.entity.health);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "admin@dotcms.com", "type": "string" },
+                { "key": "password", "value": "admin", "type": "string" }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/analytics/health",
+              "host": ["{{serverURL}}"],
+              "path": ["api", "v1", "analytics", "health"]
+            },
+            "description": "The /health endpoint is never gated — always returns 200 with a dotCMS-evaluated health state."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /analytics/content/siteauth/generate/{siteId} — always accessible",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// siteauth/generate is never gated — returns 200 regardless of App config.",
+                  "// The site ID used here is the default system host.",
+                  "pm.test(\"Status is 200 — siteauth endpoint is never gated\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "admin@dotcms.com", "type": "string" },
+                { "key": "password", "value": "admin", "type": "string" }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/analytics/content/siteauth/generate/SYSTEM_HOST",
+              "host": ["{{serverURL}}"],
+              "path": ["api", "v1", "analytics", "content", "siteauth", "generate", "SYSTEM_HOST"]
+            },
+            "description": "siteauth/generate is always accessible regardless of flag state or App configuration — operators need it to set up the App."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

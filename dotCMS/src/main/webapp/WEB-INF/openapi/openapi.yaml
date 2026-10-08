@@ -3562,6 +3562,32 @@ paths:
       summary: Generate Site Auth
       tags:
       - Content Analytics
+  /v1/analytics/health:
+    get:
+      description: Returns a dotCMS-evaluated analytics health state. Always returns
+        200 — never returns 503 unlike the catch-all proxy. Reflects the App configuration
+        and backend connectivity for the site resolved from the request.
+      operationId: analyticsHealth
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: "ResponseEntityView containing {\"health\": \"OK\"|\"\
+                  NOT_CONFIGURED\"|\"CONFIGURATION_ERROR\"}"
+          description: Health state evaluated successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized — backend user required
+        "403":
+          content:
+            application/json: {}
+          description: User lacks READ on the resolved site
+      summary: Evaluate analytics health for the current site
+      tags:
+      - Content Analytics
   /v1/analytics/{path}:
     get:
       description: "Forwards any authenticated GET request to /v1/analytics/** to\
@@ -10863,10 +10889,10 @@ paths:
           content:
             application/javascript:
               schema:
-                $ref: "#/components/schemas/ResponseEntityViewMapStringHealth"
+                $ref: "#/components/schemas/ResponseEntityViewExperimentsHealthView"
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityViewMapStringHealth"
+                $ref: "#/components/schemas/ResponseEntityViewExperimentsHealthView"
           description: default response
       tags:
       - Experiment
@@ -10899,12 +10925,8 @@ paths:
       responses:
         default:
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
+            application/javascript: {}
+            application/json: {}
           description: default response
       tags:
       - Experiment
@@ -10966,12 +10988,8 @@ paths:
       responses:
         default:
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityExperimentView"
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityExperimentView"
+            application/javascript: {}
+            application/json: {}
           description: default response
       tags:
       - Experiment
@@ -10987,12 +11005,8 @@ paths:
       responses:
         default:
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
+            application/javascript: {}
+            application/json: {}
           description: default response
       tags:
       - Experiment
@@ -11008,12 +11022,8 @@ paths:
       responses:
         default:
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
+            application/javascript: {}
+            application/json: {}
           description: default response
       tags:
       - Experiment
@@ -29256,6 +29266,39 @@ components:
           format: float
         trafficProportion:
           $ref: "#/components/schemas/TrafficProportion"
+    ExperimentsHealthView:
+      type: object
+      properties:
+        freeExperimentUsed:
+          type: boolean
+          description: Whether the single free experiment slot is already occupied.
+            Present only when tier=LIMITED; null when tier=FULL.
+        health:
+          type: string
+          description: Current health state of the experiments / analytics configuration
+          enum:
+          - OK
+          - NOT_CONFIGURED
+          - CONFIGURATION_ERROR
+          - OK
+          - NOT_CONFIGURED
+          - CONFIGURATION_ERROR
+        tier:
+          type: string
+          description: "License tier: FULL when experiments are fully enabled, LIMITED\
+            \ when restricted to one free experiment"
+          enum:
+          - FULL
+          - LIMITED
+          - FULL
+          - LIMITED
+        warning:
+          type: string
+          description: Warning code present when the Analytics App is not configured
+            for the site. Absent when configured.
+          enum:
+          - ANALYTICS_DISABLED
+          - ANALYTICS_DISABLED
     ExportSecretForm:
       type: object
       properties:
@@ -37281,6 +37324,29 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityViewExperimentsHealthView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/ExperimentsHealthView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityViewJob:
       type: object
       properties:
@@ -37453,35 +37519,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/MulitreeView"
-        errors:
-          type: array
-          items:
-            $ref: "#/components/schemas/ErrorEntity"
-        i18nMessagesMap:
-          type: object
-          additionalProperties:
-            type: string
-        messages:
-          type: array
-          items:
-            $ref: "#/components/schemas/MessageEntity"
-        pagination:
-          $ref: "#/components/schemas/Pagination"
-        permissions:
-          type: array
-          items:
-            type: string
-    ResponseEntityViewMapStringHealth:
-      type: object
-      properties:
-        entity:
-          type: object
-          additionalProperties:
-            type: string
-            enum:
-            - OK
-            - NOT_CONFIGURED
-            - CONFIGURATION_ERROR
         errors:
           type: array
           items:
