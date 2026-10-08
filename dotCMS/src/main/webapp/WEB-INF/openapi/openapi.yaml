@@ -27035,8 +27035,8 @@ components:
           example: "#3C1361"
         backgroundImage:
           type: string
-          description: "Login background: a dotAsset path starting with /dA, one of\
-            \ the bundled backgrounds /html/images/backgrounds/bg-1.jpg to bg-11.jpg,\
+          description: "Login background: a dotAsset path starting with /dA/, one\
+            \ of the bundled backgrounds /html/images/backgrounds/bg-1.jpg to bg-11.jpg,\
             \ or the value already stored. Cleared if omitted."
           example: /html/images/backgrounds/bg-11.jpg
         emailAddress:

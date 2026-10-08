@@ -318,7 +318,9 @@ public class CompanyResourceIntegrationTest extends IntegrationTestBase {
                     "/html/images/backgrounds/BG-1.JPG",
                     "/html/images/backgrounds/bg-1.jpg?x",
                     "/html/images/../bg-1.jpg",
-                    "https://example.com/html/images/backgrounds/bg-1.jpg"}) {
+                    "https://example.com/html/images/backgrounds/bg-1.jpg",
+                    "/dAnything/bg.png",
+                    "/dA/../html/bg.png"}) {
                 try {
                     resource.saveBasicInfo(createAdminRequest(), mockResponse, brandingForm(invalid));
                     fail("Expected BadRequestException for " + invalid);

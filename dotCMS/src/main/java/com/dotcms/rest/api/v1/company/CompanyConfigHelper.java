@@ -129,9 +129,10 @@ public class CompanyConfigHelper {
     }
 
     /**
-     * Checks a new login background. Accepted: empty, a dotAsset path starting with
-     * {@code /dA}, one of the bundled backgrounds, or the value already stored, so that saving
-     * back what was read never fails or clears a background set before these rules existed.
+     * Checks a new login background. Besides the values {@link
+     * CompanyBasicInfoForm#isAcceptedBackgroundImage(String)} accepts, the value already stored
+     * is accepted, so that saving back what was read never fails or clears a background set
+     * before these rules existed.
      *
      * @param backgroundImage the value sent by the client
      * @param storedHomeURL   the value currently stored in {@code company.homeURL}
@@ -139,14 +140,13 @@ public class CompanyConfigHelper {
      */
     private void validateBackgroundImage(final String backgroundImage, final String storedHomeURL) {
 
-        if (!UtilMethods.isSet(backgroundImage)
-                || backgroundImage.startsWith("/dA")
-                || CompanyBasicInfoForm.BACKGROUND_PRESETS.contains(backgroundImage)
+        if (CompanyBasicInfoForm.isAcceptedBackgroundImage(backgroundImage)
                 || backgroundImage.equals(storedHomeURL)) {
             return;
         }
-        throw new BadRequestException("backgroundImage must be a dotAsset path starting with /dA "
-                + "or one of the bundled backgrounds /html/images/backgrounds/bg-1.jpg to bg-11.jpg");
+        throw new BadRequestException("backgroundImage must be a dotAsset path starting with /dA/, "
+                + "one of the bundled backgrounds " + CompanyBasicInfoForm.BACKGROUND_PRESETS_TEXT
+                + ", or the background currently saved");
     }
 
     /**
