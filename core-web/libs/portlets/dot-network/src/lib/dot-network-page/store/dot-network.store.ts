@@ -23,6 +23,7 @@ interface DotNetworkState {
     currentServerId: string;
     selectedServerId: string | null;
     licensed: boolean;
+    heartbeatEnabled: boolean;
     status: ComponentStatus;
 }
 
@@ -31,6 +32,7 @@ const initialState: DotNetworkState = {
     currentServerId: '',
     selectedServerId: null,
     licensed: true,
+    heartbeatEnabled: true,
     status: ComponentStatus.INIT
 };
 
@@ -80,7 +82,14 @@ export const DotNetworkStore = signalStore(
             /** A failed refresh keeps the previous data on screen; only the toast reports it. */
             showError: computed(() => store.status() === ComponentStatus.ERROR && !hasNodes()),
             showUnlicensed: computed(() => isLoaded() && !store.licensed()),
-            showEmpty: computed(() => isLoaded() && store.licensed() && !hasNodes())
+            showEmpty: computed(() => isLoaded() && store.licensed() && !hasNodes()),
+            /**
+             * Follows the data on screen, including while refreshing or after a failed refresh.
+             * Never shown on its own: no nodes or no license have their own state.
+             */
+            showHeartbeatNotice: computed(
+                () => store.licensed() && hasNodes() && !store.heartbeatEnabled()
+            )
         };
     }),
     withMethods(
@@ -105,6 +114,7 @@ export const DotNetworkStore = signalStore(
                                         nodes: result.nodes,
                                         currentServerId: result.currentServerId,
                                         licensed: result.licensed,
+                                        heartbeatEnabled: result.heartbeatEnabled,
                                         selectedServerId: resolveSelection(
                                             store.selectedServerId(),
                                             result

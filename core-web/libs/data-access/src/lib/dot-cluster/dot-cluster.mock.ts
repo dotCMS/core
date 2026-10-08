@@ -66,6 +66,7 @@ function answeringNode(
 
 export const DOT_CLUSTER_NODES_MOCK: DotClusterNodes = {
     licensed: true,
+    heartbeatEnabled: true,
     currentServerId: '10b10fa5-7d2c-4c51-9a3e-2f6c1b8e0d41',
     clusterHealth: 'RED',
     nodes: [

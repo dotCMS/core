@@ -88,6 +88,11 @@ export interface DotClusterNode {
 export interface DotClusterNodes {
     /** `false` when the license does not allow cluster data. `nodes` is then empty. */
     readonly licensed: boolean;
+    /**
+     * `false` when the server heartbeat feature (`ENABLE_SERVER_HEARTBEAT`) is switched off;
+     * dead servers are then not removed from the cluster automatically.
+     */
+    readonly heartbeatEnabled: boolean;
     /** Id of the node that served the request. */
     readonly currentServerId: string;
     /** `GREEN` when every node seen in the last heartbeat window answered. */
