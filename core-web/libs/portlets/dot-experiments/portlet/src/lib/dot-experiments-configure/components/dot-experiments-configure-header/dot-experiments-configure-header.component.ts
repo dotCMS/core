@@ -1,6 +1,9 @@
 import { injectDispatch } from '@ngrx/signals/events';
 
 import { Component, computed, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+
+import { map } from 'rxjs/operators';
 
 import { ConfirmationService, MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -8,9 +11,13 @@ import { MenuModule } from 'primeng/menu';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotExperimentsService, DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
-import { CONFIGURATION_CONFIRM_DIALOG_KEY } from '@dotcms/dotcms-models';
+import {
+    CONFIGURATION_CONFIRM_DIALOG_KEY,
+    DotMessageSeverity,
+    DotMessageType
+} from '@dotcms/dotcms-models';
 import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
 import { DotAddToBundleComponent, DotMessagePipe } from '@dotcms/ui';
 
@@ -184,6 +191,13 @@ export class DotExperimentsConfigureHeaderComponent {
     readonly #experimentsRouter = inject(DotExperimentsRouter);
     readonly #confirmationService = inject(ConfirmationService);
     readonly #dotMessageService = inject(DotMessageService);
+    readonly #dotMessageDisplayService = inject(DotMessageDisplayService);
+    readonly #isLimitedMode = toSignal(
+        inject(DotExperimentsService)
+            .healthCheck()
+            .pipe(map((r) => r.tier === 'LIMITED')),
+        { initialValue: false }
+    );
     readonly #pushPublishDialogService = inject(DotPushPublishDialogService);
 
     /**
@@ -241,6 +255,19 @@ export class DotExperimentsConfigureHeaderComponent {
      * same RUNNING → ENDED transition, and the API has one endpoint for it (AC33).
      */
     confirmStop(): void {
+        if (this.#isLimitedMode()) {
+            this.#dotMessageDisplayService.push({
+                life: 5000,
+                message: this.#dotMessageService.get(
+                    'experiments.list.limited-mode.action.disabled'
+                ),
+                severity: DotMessageSeverity.INFO,
+                type: DotMessageType.SIMPLE_MESSAGE
+            });
+
+            return;
+        }
+
         this.#confirm({
             headerKey: 'experiments.action.end-experiment',
             messageKey: 'experiments.action.stop.delete-confirm',

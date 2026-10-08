@@ -1,9 +1,14 @@
 import { injectDispatch } from '@ngrx/signals/events';
 
 import { Component, computed, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+
+import { map } from 'rxjs/operators';
 
 import { ButtonModule } from 'primeng/button';
+import { TooltipModule } from 'primeng/tooltip';
 
+import { DotExperimentsService } from '@dotcms/data-access';
 import { DotExperimentStatus } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -54,7 +59,7 @@ interface FooterHint {
  */
 @Component({
     selector: 'dot-experiments-configure-footer',
-    imports: [ButtonModule, DotMessagePipe],
+    imports: [ButtonModule, TooltipModule, DotMessagePipe],
     templateUrl: './dot-experiments-configure-footer.component.html',
     host: {
         class: 'flex flex-none items-center justify-between gap-4 border-t border-surface-200 bg-surface-50 px-8 py-3'
@@ -62,6 +67,17 @@ interface FooterHint {
 })
 export class DotExperimentsConfigureFooterComponent {
     readonly store = inject(DotExperimentsConfigureStore);
+
+    /**
+     * Start is disabled when in limited mode AND the free slot is already occupied.
+     * Resolved once per screen opening — the flag requires a restart to change.
+     */
+    readonly $startDisabled = toSignal(
+        inject(DotExperimentsService)
+            .healthCheck()
+            .pipe(map((r) => r.tier === 'LIMITED' && r.freeExperimentUsed === true)),
+        { initialValue: false }
+    );
 
     /**
      * The single line of copy on the left, in precedence order: a locked experiment is not saving

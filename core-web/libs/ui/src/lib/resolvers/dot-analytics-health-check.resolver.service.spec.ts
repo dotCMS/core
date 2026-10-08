@@ -20,7 +20,11 @@ describe('dotAnalyticsHealthCheckResolver', () => {
             providers: [
                 {
                     provide: DotExperimentsService,
-                    useValue: { healthCheck: vi.fn().mockReturnValue(of(HealthStatusTypes.OK)) }
+                    useValue: {
+                        healthCheck: vi
+                            .fn()
+                            .mockReturnValue(of({ health: HealthStatusTypes.OK, tier: 'FULL' }))
+                    }
                 }
             ]
         });
@@ -28,12 +32,14 @@ describe('dotAnalyticsHealthCheckResolver', () => {
         dotExperimentsService = TestBed.inject(DotExperimentsService);
     });
 
-    it('should return HealthStatusTypes.OK when healthCheck is successful', () => {
+    it('should extract and return only the health field as HealthStatusTypes', () => {
         const resolver = runInInjectionContext(TestBed.inject(EnvironmentInjector), () =>
             dotAnalyticsHealthCheckResolver(null, {} as RouterStateSnapshot)
         );
 
-        vi.spyOn(dotExperimentsService, 'healthCheck').mockReturnValue(of(HealthStatusTypes.OK));
+        vi.spyOn(dotExperimentsService, 'healthCheck').mockReturnValue(
+            of({ health: HealthStatusTypes.OK, tier: 'FULL' })
+        );
 
         resolver.subscribe((healthStatus) => {
             expect(healthStatus).toBe(HealthStatusTypes.OK);

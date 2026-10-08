@@ -18,6 +18,21 @@ import {
     TrafficProportion
 } from '@dotcms/dotcms-models';
 
+/**
+ * Shape of `entity` from GET `/api/v1/experiments/health`.
+ * The `health` field drives the analytics gate; `tier`, `freeExperimentUsed`, and `warning`
+ * drive the limited-mode UI in the Experiments portlet.
+ */
+export interface ExperimentsHealthResponse {
+    health: HealthStatusTypes;
+    /** `'FULL'` when `FEATURE_FLAG_EXPERIMENTS=true`; `'LIMITED'` when `false`. */
+    tier: 'FULL' | 'LIMITED';
+    /** Present only when `tier='LIMITED'`: whether the one free experiment slot is occupied. */
+    freeExperimentUsed?: boolean | null;
+    /** Present when the Analytics App is not configured for the site. */
+    warning?: 'ANALYTICS_DISABLED';
+}
+
 const API_ENDPOINT = '/api/v1/experiments';
 
 interface DotCMSResponseExperiment<T> extends DotCMSResponse<T> {
@@ -29,16 +44,15 @@ export class DotExperimentsService {
     private readonly http = inject(HttpClient);
 
     /**
-     * returns the connection status with the infrastructure of experiments
-     * @returns Observable<HealthStatusTypes>
-     * @memberof DotExperimentsService
+     * Returns the full health response for the Experiments / Analytics gate.
+     *
+     * The `health` field drives the gate (only `OK` allows the list to load);
+     * `tier`, `freeExperimentUsed`, and `warning` drive the limited-mode UI.
      */
-    healthCheck(): Observable<HealthStatusTypes> {
+    healthCheck(): Observable<ExperimentsHealthResponse> {
         return this.http
-            .get<
-                DotCMSResponseExperiment<{ health: HealthStatusTypes }>
-            >('/api/v1/experiments/health')
-            .pipe(map((x) => x?.entity?.health));
+            .get<DotCMSResponseExperiment<ExperimentsHealthResponse>>('/api/v1/experiments/health')
+            .pipe(map((x) => x.entity));
     }
     /**
      * Creates an experiment.

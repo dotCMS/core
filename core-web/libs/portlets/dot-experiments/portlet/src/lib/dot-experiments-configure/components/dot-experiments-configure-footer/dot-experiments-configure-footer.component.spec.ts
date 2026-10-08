@@ -1,11 +1,12 @@
 import { Dispatcher } from '@ngrx/signals/events';
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
+import { of } from 'rxjs';
 import { MockInstance, vi } from 'vitest';
 
 import { provideLocationMocks } from '@angular/common/testing';
 import { provideRouter } from '@angular/router';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotExperimentsService, DotMessageService } from '@dotcms/data-access';
 import { DotExperimentStatus } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -57,7 +58,10 @@ describe('DotExperimentsConfigureFooterComponent', () => {
             provideRouter([{ path: 'experiments', children: [] }]),
             provideLocationMocks(),
             { provide: DotExperimentsConfigureStore, useFactory: () => storeMock },
-            { provide: DotMessageService, useValue: messageServiceMock }
+            { provide: DotMessageService, useValue: messageServiceMock },
+            mockProvider(DotExperimentsService, {
+                healthCheck: vi.fn().mockReturnValue(of({ health: 'OK', tier: 'FULL' }))
+            })
         ],
         detectChanges: false
     });

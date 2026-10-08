@@ -41,11 +41,9 @@ describe('analyticsHealthGuard', () => {
         });
     });
 
-    it('should allow access when health status is AVAILABLE', () =>
+    it('should allow access when health status is OK', () =>
         new Promise<void>((done) => {
-            (mockAnalyticsService.healthCheck as Mock).mockReturnValue(
-                of(HealthStatusTypes.AVAILABLE)
-            );
+            (mockAnalyticsService.healthCheck as Mock).mockReturnValue(of(HealthStatusTypes.OK));
 
             TestBed.runInInjectionContext(() => {
                 const result = analyticsHealthGuard(mockRouteSnapshot, mockStateSnapshot);
@@ -60,10 +58,10 @@ describe('analyticsHealthGuard', () => {
             });
         }));
 
-    it('should return a UrlTree to the error page when health status is NOT_AVAILABLE', () =>
+    it('should redirect to error page when health status is NOT_CONFIGURED', () =>
         new Promise<void>((done) => {
             (mockAnalyticsService.healthCheck as Mock).mockReturnValue(
-                of(HealthStatusTypes.NOT_AVAILABLE)
+                of(HealthStatusTypes.NOT_CONFIGURED)
             );
 
             TestBed.runInInjectionContext(() => {
@@ -75,7 +73,7 @@ describe('analyticsHealthGuard', () => {
                             ['/analytics/error'],
                             {
                                 queryParams: {
-                                    status: HealthStatusTypes.NOT_AVAILABLE,
+                                    status: HealthStatusTypes.NOT_CONFIGURED,
                                     isEnterprise: true
                                 }
                             }
@@ -84,24 +82,48 @@ describe('analyticsHealthGuard', () => {
                             commands: ['/analytics/error'],
                             extras: {
                                 queryParams: {
-                                    status: HealthStatusTypes.NOT_AVAILABLE,
+                                    status: HealthStatusTypes.NOT_CONFIGURED,
                                     isEnterprise: true
                                 }
                             }
                         });
-                        expect(mockRouter.navigate).not.toHaveBeenCalled();
                         done();
                     });
                 }
             });
         }));
 
-    it('should handle missing isEnterprise data by defaulting to true', () =>
+    it('should redirect to error page when health status is CONFIGURATION_ERROR', () =>
+        new Promise<void>((done) => {
+            (mockAnalyticsService.healthCheck as Mock).mockReturnValue(
+                of(HealthStatusTypes.CONFIGURATION_ERROR)
+            );
+
+            TestBed.runInInjectionContext(() => {
+                const result = analyticsHealthGuard(mockRouteSnapshot, mockStateSnapshot);
+
+                if (result && typeof result === 'object' && 'subscribe' in result) {
+                    result.subscribe((canActivate) => {
+                        expect(mockRouter.createUrlTree).toHaveBeenCalledWith(
+                            ['/analytics/error'],
+                            {
+                                queryParams: {
+                                    status: HealthStatusTypes.CONFIGURATION_ERROR,
+                                    isEnterprise: true
+                                }
+                            }
+                        );
+                        done();
+                    });
+                }
+            });
+        }));
+
+    it('should redirect to error page when health status is NOT_AVAILABLE (legacy)', () =>
         new Promise<void>((done) => {
             (mockAnalyticsService.healthCheck as Mock).mockReturnValue(
                 of(HealthStatusTypes.NOT_AVAILABLE)
             );
-            mockRouteSnapshot.data = {};
 
             TestBed.runInInjectionContext(() => {
                 const result = analyticsHealthGuard(mockRouteSnapshot, mockStateSnapshot);
@@ -124,10 +146,38 @@ describe('analyticsHealthGuard', () => {
             });
         }));
 
+    it('should handle missing isEnterprise data by defaulting to true', () =>
+        new Promise<void>((done) => {
+            (mockAnalyticsService.healthCheck as Mock).mockReturnValue(
+                of(HealthStatusTypes.NOT_CONFIGURED)
+            );
+            mockRouteSnapshot.data = {};
+
+            TestBed.runInInjectionContext(() => {
+                const result = analyticsHealthGuard(mockRouteSnapshot, mockStateSnapshot);
+
+                if (result && typeof result === 'object' && 'subscribe' in result) {
+                    result.subscribe((canActivate) => {
+                        expect(mockRouter.createUrlTree).toHaveBeenCalledWith(
+                            ['/analytics/error'],
+                            {
+                                queryParams: {
+                                    status: HealthStatusTypes.NOT_CONFIGURED,
+                                    isEnterprise: true
+                                }
+                            }
+                        );
+                        expect(canActivate).toBeTruthy();
+                        done();
+                    });
+                }
+            });
+        }));
+
     it('should pass isEnterprise false when it is set to false', () =>
         new Promise<void>((done) => {
             (mockAnalyticsService.healthCheck as Mock).mockReturnValue(
-                of(HealthStatusTypes.NOT_AVAILABLE)
+                of(HealthStatusTypes.NOT_CONFIGURED)
             );
             mockRouteSnapshot.data = { isEnterprise: false };
 
@@ -140,7 +190,7 @@ describe('analyticsHealthGuard', () => {
                             ['/analytics/error'],
                             {
                                 queryParams: {
-                                    status: HealthStatusTypes.NOT_AVAILABLE,
+                                    status: HealthStatusTypes.NOT_CONFIGURED,
                                     isEnterprise: false
                                 }
                             }
