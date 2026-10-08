@@ -89,6 +89,16 @@ describe('DotConfigurationBrandingComponent', () => {
             expect(spectator.query(byTestId('configuration-background-file'))).toHaveText('bg.jpg');
         });
 
+        it('quotes the preview URL so file names with spaces still render', () => {
+            patchDraftBranding({ backgroundImage: '/dA/bg-id/asset/my bg (1).jpg' });
+            render();
+
+            expect(
+                spectator.query<HTMLElement>(byTestId('configuration-background-preview'))?.style
+                    .backgroundImage
+            ).toBe('url("/dA/bg-id/asset/my bg (1).jpg")');
+        });
+
         it('says None when no background is set', () => {
             patchDraftBranding({ backgroundImage: '' });
             render();

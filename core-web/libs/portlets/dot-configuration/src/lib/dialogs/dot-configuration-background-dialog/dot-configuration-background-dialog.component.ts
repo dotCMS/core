@@ -1,18 +1,12 @@
-import { EMPTY } from 'rxjs';
-
-import { Component, DestroyRef, inject, signal, viewChild } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, inject, signal, viewChild } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { FileSelectEvent, FileUpload, FileUploadModule } from 'primeng/fileupload';
 
-import { catchError, finalize } from 'rxjs/operators';
-
-import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotConfigurationAssetService } from '../../services/dot-configuration-asset.service';
+import { injectImageUpload } from '../../services/dot-configuration-image-upload';
 import {
     BUNDLED_BACKGROUNDS,
     assetFileName,
@@ -44,9 +38,7 @@ interface BackgroundTile {
 export class DotConfigurationBackgroundDialogComponent {
     readonly #ref = inject(DynamicDialogRef);
     readonly #config = inject(DynamicDialogConfig<DotConfigurationBackgroundDialogData>);
-    readonly #assetService = inject(DotConfigurationAssetService);
-    readonly #httpErrorManager = inject(DotHttpErrorManagerService);
-    readonly #destroyRef = inject(DestroyRef);
+    readonly #imageUpload = injectImageUpload();
 
     protected readonly fileUpload = viewChild<FileUpload>('fileUpload');
 
@@ -61,7 +53,7 @@ export class DotConfigurationBackgroundDialogComponent {
     protected readonly $custom = signal(
         this.#isCustom(this.#config.data?.current ?? '') ? (this.#config.data?.current ?? '') : ''
     );
-    protected readonly $uploading = signal(false);
+    protected readonly $uploading = this.#imageUpload.$uploading;
 
     protected readonly assetFileName = assetFileName;
 
@@ -70,29 +62,10 @@ export class DotConfigurationBackgroundDialogComponent {
     }
 
     onFileSelect(event: FileSelectEvent): void {
-        const [file] = event.currentFiles;
-        this.fileUpload()?.clear();
-
-        if (!file) {
-            return;
-        }
-
-        this.$uploading.set(true);
-        this.#assetService
-            .uploadImage(file)
-            .pipe(
-                catchError((error) => {
-                    this.#httpErrorManager.handle(error);
-
-                    return EMPTY;
-                }),
-                finalize(() => this.$uploading.set(false)),
-                takeUntilDestroyed(this.#destroyRef)
-            )
-            .subscribe((path) => {
-                this.$custom.set(path);
-                this.$selected.set(path);
-            });
+        this.#imageUpload.upload(event, this.fileUpload(), (path) => {
+            this.$custom.set(path);
+            this.$selected.set(path);
+        });
     }
 
     apply(): void {

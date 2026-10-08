@@ -45,6 +45,8 @@ export class DotConfigurationBrandingComponent {
     protected readonly $branding = computed(() => this.store.draft()?.branding);
     protected readonly $backgroundImage = computed(() => this.$branding()?.backgroundImage ?? '');
     protected readonly $backgroundFileName = computed(() => assetFileName(this.$backgroundImage()));
+    // Quoted: uploaded file names keep their spaces and parentheses, which end an unquoted url().
+    protected readonly $backgroundCss = computed(() => `url("${this.$backgroundImage()}")`);
     protected readonly $loginLogo = computed(() => this.$branding()?.loginScreenLogo ?? '');
     protected readonly $loginLogoFileName = computed(() => assetFileName(this.$loginLogo()));
     protected readonly $navBarLogo = computed(() => this.$branding()?.navBarLogo ?? '');

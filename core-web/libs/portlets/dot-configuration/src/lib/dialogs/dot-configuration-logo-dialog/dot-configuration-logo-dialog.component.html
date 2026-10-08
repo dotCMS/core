@@ -9,9 +9,14 @@
         [auto]="false"
         [customUpload]="true"
         [disabled]="$uploading()"
+        class="block"
         styleClass="w-full"
         (onSelect)="onFileSelect($event)"
-        [pt]="{ header: { style: { padding: '0', border: '0' } } }"
+        [pt]="{
+            root: { class: 'border-0! rounded-none!' },
+            header: { class: 'p-0! border-0!' },
+            content: { class: 'p-0!' }
+        }"
         data-testid="configuration-logo-upload">
         <ng-template #header></ng-template>
         <ng-template #content>
@@ -47,11 +52,11 @@
             placeholder="/dA/..."
             [ngModel]="$path()"
             (ngModelChange)="onPathChange($event)"
-            [invalid]="$pathInvalid()"
-            [attr.aria-invalid]="$pathInvalid()"
-            [attr.aria-describedby]="$pathInvalid() ? 'configuration-logo-path-error' : null"
+            [invalid]="$showPathError()"
+            [attr.aria-invalid]="$showPathError()"
+            [attr.aria-describedby]="$showPathError() ? 'configuration-logo-path-error' : null"
             data-testid="configuration-logo-path" />
-        @if ($pathInvalid()) {
+        @if ($showPathError()) {
             <small
                 class="p-field-error"
                 id="configuration-logo-path-error"

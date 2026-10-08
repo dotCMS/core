@@ -110,6 +110,22 @@ describe('DotConfigurationLogoDialogComponent', () => {
         );
     });
 
+    it('accepts an asset whose file name has spaces and parentheses', () => {
+        open('/dA/logo-id/asset/logo.svg');
+
+        spectator.typeInElement(
+            '/dA/fa15df96/asset/image (8).png',
+            byTestId('configuration-logo-path')
+        );
+        spectator.detectChanges();
+        spectator.click(applyButton());
+
+        expect(spectator.query(byTestId('configuration-logo-path-error'))).not.toExist();
+        expect(spectator.inject(DynamicDialogRef).close).toHaveBeenCalledWith(
+            '/dA/fa15df96/asset/image (8).png'
+        );
+    });
+
     it('rejects a path outside the asset store and blocks Apply', () => {
         open('/dA/logo-id/asset/logo.svg');
 
@@ -126,6 +142,16 @@ describe('DotConfigurationLogoDialogComponent', () => {
         open('');
 
         expect(applyButton()).toBeDisabled();
+    });
+
+    it('opens empty without showing an error', () => {
+        open('');
+
+        expect(spectator.query(byTestId('configuration-logo-path-error'))).not.toExist();
+        expect(spectator.query(byTestId('configuration-logo-path'))).not.toHaveAttribute(
+            'aria-invalid',
+            'true'
+        );
     });
 
     it('reports a failed upload and keeps the current logo', () => {

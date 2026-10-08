@@ -35,7 +35,7 @@
                 @if ($backgroundImage()) {
                     <div
                         class="h-24 bg-cover bg-center"
-                        [style.background-image]="'url(' + $backgroundImage() + ')'"
+                        [style.background-image]="$backgroundCss()"
                         data-testid="configuration-background-preview"></div>
                 } @else {
                     <div
