@@ -31,10 +31,10 @@ jobs:
         run: |
           PILOT_AUTHORS='["danielsolis-dotcms","gortiz-dotcms","danielsilva-dotcms"]'
           if echo "$PILOT_AUTHORS" | jq -e --arg a "$AUTHOR" 'index($a) != null' > /dev/null; then
-            echo "authorized=true" >> $GITHUB_OUTPUT
+            echo "authorized=true" >> "$GITHUB_OUTPUT"
             echo "✅ $AUTHOR is in the pilot list"
           else
-            echo "authorized=false" >> $GITHUB_OUTPUT
+            echo "authorized=false" >> "$GITHUB_OUTPUT"
             echo "ℹ️  $AUTHOR is not in the pilot list — skipping backend review"
           fi
 
@@ -68,10 +68,10 @@ jobs:
           echo "Changed files:"
           echo "$CHANGED"
           if echo "$CHANGED" | grep -qE '\.java$'; then
-            echo "has_java=true" >> $GITHUB_OUTPUT
+            echo "has_java=true" >> "$GITHUB_OUTPUT"
             echo "✅ Java files detected — proceeding with backend review"
           else
-            echo "has_java=false" >> $GITHUB_OUTPUT
+            echo "has_java=false" >> "$GITHUB_OUTPUT"
             echo "ℹ️  No Java files changed — skipping backend review"
           fi
 
