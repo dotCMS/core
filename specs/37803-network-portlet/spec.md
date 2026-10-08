@@ -20,7 +20,7 @@ This feature adds a standalone **Network (Beta)** portlet — a node list on the
 
 Three boundaries are worth stating up front.
 
-**This is a screen, not a backend change.** The portlet displays what the cluster status service reports. It does not decide whether a node is Up, Lagging or Down, does not compute section health, and does not change how nodes are discovered or contacted. Everything it needs from the backend is listed under [Dependencies](#dependencies); some of it is not built yet.
+**This is a screen, not a backend change.** The portlet displays what the cluster status service reports. It does not decide whether a node is Up, Lagging or Down, and does not change how nodes are discovered or contacted. Everything it needs from the backend is listed under [Dependencies](#dependencies); some of it is not built yet.
 
 **This is a Beta beside the old tab, not a replacement of it.** The Configuration portlet's Network tab stays exactly as it is, so an admin who hits a problem in the Beta still has the old view. Promoting the Beta to the primary Network portlet, adding it to default layouts and retiring the tab are separate work ([#37805](https://github.com/dotCMS/core/issues/37805)).
 
@@ -64,9 +64,10 @@ Every feature of the old tab, where it lands in the new portlet, and the require
 | Opens on the node serving the request | That node is listed first and selected on load | Carry | FR-013 |
 | Click a row to open its floating panel | Select an entry to show its detail | Carry | FR-014 |
 | Panel title `{name} - {server ID}` | Detail header: server ID, status, name | Carry | FR-015 |
-| Cache Transport rows and status dot | Cache Transport section | Fix | FR-020 – FR-024 |
-| ES Cluster Health rows and status dot | Search Cluster section, Elasticsearch or OpenSearch | Fix | FR-025 – FR-029 |
-| Assets rows and status dot | Assets section | Fix | FR-030 – FR-033 |
+| Cache Transport rows | Cache Transport section | Fix | FR-020 – FR-024 |
+| ES Cluster Health rows | Search Cluster section, Elasticsearch or OpenSearch | Fix | FR-025 – FR-029 |
+| Assets rows | Assets section | Fix | FR-030 – FR-032 |
+| Status dot on each section (Cache, ES, Assets) | — | Drop | FR-034 |
 | "Refresh Status" link (reloads the tab) | Refresh control (reloads data in place) | Carry, improved | FR-036 – FR-041 |
 | "No Nodes found." | Empty state with retry | Carry | FR-043 |
 | "An unexpected error occurred: …" (English only) | Error state with retry, translated | Fix | FR-044 |
@@ -104,7 +105,7 @@ An administrator opens the Network portlet to find out whether every node in the
 
 ### User Story 2 - Inspect one node's detail (Priority: P1)
 
-The administrator selects a node to see its full detail: server ID, status, host name, cluster, IP address and the dotCMS version it runs, followed by three sections — Cache Transport, Search Cluster and Assets — each with its own health and every value the old tab showed, correctly labelled.
+The administrator selects a node to see its full detail: server ID, status, host name, cluster, IP address and the dotCMS version it runs, followed by three sections — Cache Transport, Search Cluster and Assets — with every value the old tab showed, correctly labelled.
 
 **Why this priority**: The list says *that* something is wrong; the detail says *what*. Without it the portlet is not at parity with the tab it replaces.
 
@@ -119,24 +120,23 @@ The administrator selects a node to see its full detail: server ID, status, host
 5. **Given** a node is selected, **When** the admin reads Search Cluster, **Then** it names the search engine in use (Elasticsearch or OpenSearch) and shows all fourteen rows listed in FR-026, each with its own value.
 6. **Given** the search health request did not time out and the search cluster has 3 nodes of which 2 hold data, **When** Search Cluster shows, **Then** Timed Out reads "false", Number of Nodes reads 3 and Number of Data Nodes reads 2.
 7. **Given** a node is selected, **When** the admin reads Assets, **Then** it shows the shared assets path, and on two separate rows whether the path can be read and whether it can be written.
-8. **Given** any section, **When** it shows, **Then** its header carries that section's health as reported by the backend: Healthy, Degraded, Unhealthy or Unknown.
-9. **Given** the admin selects another node, **When** the selection changes, **Then** the header, summary and all three sections show the newly selected node.
+8. **Given** the admin selects another node, **When** the selection changes, **Then** the header, summary and all three sections show the newly selected node.
 
 ---
 
 ### User Story 3 - Read a node that did not answer (Priority: P1)
 
-When a node does not answer the status request, the administrator still sees who it is and when it was last heard from, and the detail makes it clear that its health values are unavailable rather than broken.
+When a node does not answer the status request, the administrator still sees who it is and when it was last heard from, and the detail makes it clear that its values are unavailable rather than broken.
 
 **Why this priority**: A node that stops answering is exactly the case an admin opens this screen for. Showing it as an error, or hiding it, defeats the purpose.
 
-**Independent Test**: Stop one node of a multi-node cluster; within the heartbeat window, select it and confirm its identity shows, its sections show placeholders with Unknown health, and nothing on screen reports an error.
+**Independent Test**: Stop one node of a multi-node cluster; within the heartbeat window, select it and confirm its identity shows, its sections show placeholders, and nothing on screen reports an error.
 
 **Acceptance Scenarios**:
 
 1. **Given** node C did not answer, **When** it is selected, **Then** its server ID, host name, IP address, version and last contact are shown.
-2. **Given** node C did not answer, **When** it is selected, **Then** a notice explains that the node did not answer and that its health values are unavailable.
-3. **Given** node C did not answer, **When** its sections show, **Then** every value shows a "no value" placeholder and every section's health reads Unknown.
+2. **Given** node C did not answer, **When** it is selected, **Then** a notice explains that the node did not answer and that its values are unavailable.
+3. **Given** node C did not answer, **When** its sections show, **Then** every value shows a "no value" placeholder.
 4. **Given** node C did not answer, **When** the detail shows, **Then** no error message, error dialog or broken value (such as `undefined`) appears.
 
 ---
@@ -193,7 +193,7 @@ If the Beta misbehaves, an administrator can go back to the Configuration portle
 
 ### Edge Cases
 
-- **A node that did not answer** is listed with its identity and reported status; its sections show placeholders and Unknown health, never an error (User Story 3).
+- **A node that did not answer** is listed with its identity and reported status; its sections show placeholders, never an error (User Story 3).
 - **A node that never checked in** has no last-contact time; the entry says so (FR-010).
 - **Values that do not apply** to the node's cache transport — no port, no transport address — show "N/A", not `-1`, `0` or blank (FR-024).
 - **A value missing from a node that did answer** shows the "no value" placeholder, not "N/A"; "N/A" is reserved for values that cannot exist for that transport (FR-024, FR-052).
@@ -202,7 +202,6 @@ If the Beta misbehaves, an administrator can go back to the Configuration portle
 - **A slow status request** — several seconds when a node does not answer — keeps the loading or refreshing indicator visible for the whole wait (FR-039, FR-042).
 - **A refresh that fails** after data was shown reports the failure and keeps the last good data (FR-041).
 - **The selected node disappears** after a refresh; the selection falls back to the node serving the request (FR-037).
-- **Search health is degraded but the node is up** (for example a single-node search cluster with replica shards unassigned): the node stays Up and only the Search Cluster section shows Degraded (FR-018).
 - **An install where OpenSearch serves reads**: the Search Cluster section names OpenSearch and shows OpenSearch's values (FR-025).
 - **The license does not include cluster data**: the upsell shows; no request failure or empty list is shown instead (FR-045).
 - **The heartbeat feature is off**: the data shows, plus the notice (FR-047).
@@ -221,11 +220,11 @@ If the Beta misbehaves, an administrator can go back to the Configuration portle
 ### Node list
 
 - **FR-006**: The portlet MUST show the list of nodes and the selected node's detail side by side. The list MUST scroll independently of the detail.
-- **FR-007**: The list MUST show how many nodes it contains.
+- **FR-007**: *(Removed 2026-10-08: the node count is in neither the design nor the epic.)*
 - **FR-008**: The list MUST contain every node the backend reports, including nodes that did not answer the status request. It MUST NOT add, hide or merge nodes.
 - **FR-009**: Each entry MUST show the node's short server ID and its host name (the server's friendly name).
 - **FR-010**: Each entry MUST show the time since the node's last heartbeat as "Contacted … ago", in whole seconds under a minute, whole minutes under an hour, whole hours under a day, and whole days beyond that, using singular wording for 1. A node with no recorded heartbeat MUST say so instead.
-- **FR-011**: Each entry MUST show the node's status — Up, Lagging or Down — exactly as the backend reports it. The portlet MUST NOT derive the status from heartbeat age, section health or any other value.
+- **FR-011**: Each entry MUST show the node's status — Up, Lagging or Down — exactly as the backend reports it. The portlet MUST NOT derive the status from heartbeat age or any other value.
 - **FR-012**: The entry for the node that served the request MUST carry a "This node" marker. No other entry may carry it.
 - **FR-013**: The node that served the request MUST be listed first and selected when data first loads. The remaining nodes MUST keep the order the backend sent. If that node is not in the list, the first listed node MUST be selected.
 - **FR-014**: The admin MUST be able to select any entry, with the pointer or the keyboard, to show its detail. Exactly one entry MUST be selected whenever nodes are shown; selecting the already-selected entry MUST NOT clear the selection.
@@ -235,7 +234,7 @@ If the Beta misbehaves, an administrator can go back to the Configuration portle
 - **FR-015**: The detail header MUST show the selected node's short server ID, its status, a "This node" marker when it applies, and its host name.
 - **FR-016**: Below the header, a summary MUST show the node's short server ID, cluster name (the cache transport's cluster name), IP address and the dotCMS release version it runs.
 - **FR-017**: The Refresh control MUST be in the detail header.
-- **FR-018**: A section's health MUST NOT change the node's status. A node can be Up while one of its sections is Degraded or Unhealthy.
+- **FR-018**: *(Removed 2026-10-08: sections no longer show health — see FR-034.)*
 - **FR-019**: The license ID MUST NOT be displayed. The old tab showed it under a "Server ID" heading; the real server ID replaces it. This is a signed-off drop.
 
 ### Cache Transport section
@@ -259,12 +258,12 @@ If the Beta misbehaves, an administrator can go back to the Configuration portle
 - **FR-030**: An Assets section MUST show, in this order: Shared path, Read, Write. Its header MUST say it describes the shared volume.
 - **FR-031**: Shared path MUST show the shared assets path, labelled as a path. The old tab labelled it "Cluster Address", and the design shows an IP address there.
 - **FR-032**: Read and Write MUST be two rows, each showing its own true / false value. The old tab drew both in one cell.
-- **FR-033**: The section's health MUST reflect the backend's assets check (read, write and test-file creation together).
+- **FR-033**: *(Removed 2026-10-08: sections no longer show health — see FR-034.)*
 
 ### Section health and nodes that did not answer
 
-- **FR-034**: Each section MUST show its health in its header, as one of: Healthy, Degraded, Unhealthy, Unknown — exactly as the backend reports it. Health MUST be conveyed by text as well as colour.
-- **FR-035**: For a node that did not answer, the detail MUST show the node's identity (FR-015, FR-016), a notice that the node did not answer and its health values are unavailable, the "no value" placeholder for every section value, and Unknown health for every section. It MUST NOT show an error.
+- **FR-034**: Sections MUST NOT show a health indicator, matching the design. This intentionally drops the old tab's per-section status dots and the epic acceptance criterion "Each section (Cache Transport, Search Cluster, Assets) shows its health status" — a signed-off drop, **pending the epic owner's sign-off** (see [Deviations from the epic](#deviations-from-the-epic)). Node health stays visible through the node status (FR-011).
+- **FR-035**: For a node that did not answer, the detail MUST show the node's identity (FR-015, FR-016), a notice that the node did not answer and its values are unavailable, and the "no value" placeholder for every section value. It MUST NOT show an error.
 
 ### Refresh
 
@@ -280,14 +279,14 @@ If the Beta misbehaves, an administrator can go back to the Configuration portle
 - **FR-042**: During the first load the portlet MUST show placeholders in the shape of the node list and the detail. The placeholders MUST stay until the load finishes, however long it takes.
 - **FR-043**: When the backend reports no nodes, the portlet MUST show "No nodes found", a short explanation, and a way to try again.
 - **FR-044**: When the first load fails, the portlet MUST show an error message, a short explanation and a way to try again. The message MUST be translated.
-- **FR-045**: When the backend reports that the license does not include cluster data, the portlet MUST show the unlicensed state and no cluster data. The portlet MUST rely on the backend's report, not infer it from a failure or an empty list.
+- **FR-045**: When the backend reports that the license does not include cluster data, the portlet MUST show the unlicensed state and no cluster data. The backend reports it as a dedicated license refusal (a 403 marked as a license error). The portlet MUST NOT treat any other failure, or an empty list, as unlicensed.
 - **FR-046**: The unlicensed state MUST show the Clustering upsell: what the feature does, that it is available in the Enterprise edition, a link to contact dotCMS and a way to request a trial license. It reuses the copy of the old tab's unused unlicensed page.
 - **FR-047**: When the backend reports that the server heartbeat feature is switched off, the portlet MUST stay available, show cluster data as usual, and show a notice that the heartbeat feature is disabled and dead servers are not removed from the cluster automatically.
 - **FR-048**: Exactly one of these states MUST show at a time: first-load placeholders, unlicensed, error, empty, or the node list with detail.
 
 ### Cross-cutting
 
-- **FR-049**: Every user-facing text MUST be translatable, including status and health labels, relative times, "N/A" and units.
+- **FR-049**: Every user-facing text MUST be translatable, including status labels, relative times, "N/A" and units.
 - **FR-050**: Long values (host names, paths, cluster names) MUST be shortened or wrapped without breaking the layout, and the full value MUST stay readable.
 - **FR-051**: The node list MUST be usable with the keyboard alone and announced to screen readers as a single-selection list labelled "Nodes". The Refresh control MUST be reachable and operable by keyboard.
 - **FR-052**: The portlet MUST NOT show raw placeholder values such as `undefined`, `null`, `-1` or empty strings anywhere.
@@ -295,7 +294,8 @@ If the Beta misbehaves, an administrator can go back to the Configuration portle
 
 ### Out of Scope
 
-- **Deciding node status or section health.** Up / Lagging / Down thresholds and health rules are backend behaviour (Dependencies).
+- **Deciding node status.** Up / Lagging / Down thresholds are backend behaviour (Dependencies).
+- **Section health indicators** (dropped, FR-034).
 - **Promotion to primary**, default layouts, navigation placement under Settings, and retiring the old tab (#37805).
 - **Cluster-changing actions**: removing a server, editing cache or search settings.
 - **Search configuration properties, license repository totals and the cache ping** — offered by the old tab's backend, never shown by the tab.
@@ -305,11 +305,11 @@ If the Beta misbehaves, an administrator can go back to the Configuration portle
 
 ### Key Entities
 
-- **Cluster status**: one snapshot for the whole cluster — whether the license allows cluster data, whether the heartbeat feature is on, which node served the request, the overall cluster health, and the list of nodes.
+- **Cluster status**: one snapshot for the whole cluster — which node served the request and the list of nodes. Two install-wide facts accompany it: whether the license allows cluster data, and whether the heartbeat feature is on.
 - **Node**: one dotCMS server seen in the last heartbeat window — server ID (full and short), friendly name, host name, IP address, dotCMS version, seconds since last heartbeat, whether it answered the status request, and its status (Up, Lagging, Down).
-- **Cache transport info** (per node): health, cluster name, transport type and provider, number of nodes, channel open, transport address, port, received and sent bytes and messages.
-- **Search cluster info** (per node): health, engine (Elasticsearch or OpenSearch), cluster name, timed out, node and data-node counts, shard counts (active primary, active, relocating, initializing, unassigned, delayed unassigned), pending tasks, unfinished fetches, maximum task queue wait, active shards percent.
-- **Assets info** (per node): health, shared path, can read, can write.
+- **Cache transport info** (per node): cluster name, transport type and provider, number of nodes, channel open, transport address, port, received and sent bytes and messages.
+- **Search cluster info** (per node): engine (Elasticsearch or OpenSearch), cluster name, timed out, node and data-node counts, shard counts (active primary, active, relocating, initializing, unassigned, delayed unassigned), pending tasks, unfinished fetches, maximum task queue wait, active shards percent.
+- **Assets info** (per node): shared path, can read, can write.
 
 ## Success Criteria *(mandatory)*
 
@@ -333,6 +333,12 @@ If the Beta misbehaves, an administrator can go back to the Configuration portle
 - **Backward-compatibility expectations**: The Configuration portlet's Network tab and its cluster status service keep working unchanged; the Beta is purely additive. No layout is modified and nothing is deprecated by this feature.
 - **Known related decisions**: The spike (#37802) is the reference for current behaviour, the old tab's display bugs and the proposed data shape. The OpenSearch migration matters: on installs where OpenSearch serves reads, the Search Cluster section must describe OpenSearch (#37876). The plan will formally consult `dotCMS/platform-adrs`.
 
+## Deviations from the epic
+
+| Epic #37801 says | This spec | Status |
+|---|---|---|
+| "Each section (Cache Transport, Search Cluster, Assets) shows its health status" | No section health indicators, matching the design (FR-034). The backend has no real per-node cache health (the per-node flag is hard-coded), and the node status already conveys whether a node is healthy | **Pending the epic owner's sign-off** |
+
 ## Dependencies
 
 The data this portlet needs is not fully served by the backend today. The spike (#37802 §2.8) proposed a typed cluster status service (`GET /api/v1/cluster/nodes`) that returns every node in one consistent shape with its status computed on the server. Until it exists, the portlet can be built and reviewed against that proposed shape with stand-in data, but it cannot reach parity on a live cluster.
@@ -340,14 +346,13 @@ The data this portlet needs is not fully served by the backend today. The spike 
 | Needed by this feature | Requirement | Covered by |
 |---|---|---|
 | Network and Network (Beta) users allowed to load cluster data | FR-003 | #37875 |
-| An explicit "unlicensed" answer instead of a server error | FR-045 | #37875 |
+| An explicit "unlicensed" answer (a license 403) instead of a server error | FR-045 | #37875 |
 | Search health that works when OpenSearch serves reads, and the engine name | FR-025, SC-011 | #37876 |
 | The node serving the request never reported as not answering because of its own slow search check; concurrent refreshes not wiping each other's results | FR-013, FR-035 | #37877 |
-| Whether the heartbeat feature is switched off | FR-047 | Requested on #37875; may move to the typed service below |
+| Whether the heartbeat feature is switched off | FR-047 | Requested on #37875; proposed as an install-wide setting in the app configuration (pending approval) |
 | Server-computed Up / Lagging / Down status | FR-011 | **Not yet filed** — typed cluster status service |
 | Whether each node answered the status request | FR-035 | **Not yet filed** — typed cluster status service |
 | One consistent shape for nodes that answered and nodes that did not | FR-008, FR-052 | **Not yet filed** — typed cluster status service |
-| Per-node section health (cache health is cluster-wide today) | FR-034 | **Not yet filed** — typed cluster status service |
 | The real cache transport address (overwritten by the node's IP today) | FR-024 | **Not yet filed** — typed cluster status service |
 
 ## Assumptions
@@ -356,7 +361,6 @@ The data this portlet needs is not fully served by the backend today. The spike 
 - **"Every node" means every node seen in the heartbeat window** (600 seconds by default). A node silent for longer is no longer reported by the backend and therefore not listed.
 - **Host name** is the server's friendly name, as in the old tab. In containerised installs it usually equals the pod's host name.
 - **Cache "Cluster Address"** stays as a row for parity and shows "N/A" for transports without an address (PubSub, the default).
-- **Section health placement**: the design does not show section health; it goes in each section's header.
 - **Navigation placement**: the design places Network under Settings. That applies once the Beta is promoted (#37805); the Beta lives wherever an admin adds it.
 - **True / false values** (Channel Open, Timed Out, Read, Write) are shown as the reported true / false, as in the old tab.
 
@@ -373,6 +377,5 @@ The design ("Network Portlet", variant 1d, 1-node and 3-node toggles) is the vis
 | Cache Port = `-1` | "N/A" (FR-024) | `-1` means "no port" |
 | No "This node" marker | Marker on the node serving the request (FR-012) | Epic acceptance criterion |
 | Only Up and Lagging nodes | Down nodes too, with the not-answering notice (FR-035) | Epic acceptance criterion |
-| No section health | Health in each section header (FR-034) | Epic acceptance criterion |
 | "Search Cluster" with no engine | Engine named beside the title (FR-025) | Elasticsearch and OpenSearch both possible |
 | No loading, empty, error, unlicensed or heartbeat-off states; no Refresh in progress | All of them (FR-039, FR-042 – FR-047) | Epic acceptance criteria and the product decisions on the unlicensed and heartbeat-off states |
