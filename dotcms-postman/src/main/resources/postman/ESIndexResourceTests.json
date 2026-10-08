@@ -310,9 +310,13 @@
 						},
 						"auth": {
 							"type": "noauth"
-						}
+						},
+						"description": "Runs with cookies disabled: the earlier requests logged in as admin and left JSESSIONID and the remember-me cookie (rme) in the run's cookie jar, which would otherwise authenticate this request."
 					},
-					"response": []
+					"response": [],
+					"protocolProfileBehavior": {
+						"disableCookies": true
+					}
 				}
 			],
 			"protocolProfileBehavior": {}
