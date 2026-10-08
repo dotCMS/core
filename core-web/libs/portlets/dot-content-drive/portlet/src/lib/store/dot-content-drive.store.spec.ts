@@ -1592,16 +1592,14 @@ describe('DotContentDriveStore - remembered content type', () => {
         expect(consumeLastContentType).toHaveBeenCalledTimes(1);
     });
 
-    it('should keep the content type filter when the site changes, like a filter from the URL', () => {
+    it('should not apply the remembered content type again when the site changes', () => {
         buildStore({}, 'anyContentType');
 
         siteDetails.set(MOCK_SITES[1]);
         spectator.flushEffects();
 
         expect(store.currentSite()).toBe(MOCK_SITES[1]);
-        expect(store.filters()).toEqual(
-            withSeeded({ contentType: ['anyContentType'], languageId: ['1'] })
-        );
+        expect(store.filters()).toEqual(withSeeded({ languageId: ['1'] }));
         expect(consumeLastContentType).toHaveBeenCalledTimes(1);
     });
 

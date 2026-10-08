@@ -661,7 +661,7 @@ export const DotContentDriveStore = signalStore(
 
                 // The content type last opened in the Content Types editor (#37903). Read once per
                 // Drive entry and forgotten right away, whether or not it ends up applied.
-                const rememberedContentType = dotSessionStorageService.consumeLastContentType();
+                let rememberedContentType = dotSessionStorageService.consumeLastContentType();
 
                 initEffect = effect(() => {
                     const queryParams = route.snapshot.queryParams;
@@ -677,6 +677,9 @@ export const DotContentDriveStore = signalStore(
                         rememberedContentType && !urlHasInstructions
                             ? { contentType: [rememberedContentType] }
                             : decodeFilters(queryParams['filters'] || '');
+                    // Used on the first run only: a site change re-runs this effect, and the type
+                    // must not come back after the user has moved on (FR-005).
+                    rememberedContentType = null;
                     const queryTreeExpanded =
                         queryParams['isTreeExpanded'] ?? DEFAULT_TREE_EXPANDED.toString();
 

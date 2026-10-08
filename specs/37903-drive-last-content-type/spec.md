@@ -185,6 +185,9 @@ It offers View instead of Edit, and no Push Publish or Add to Bundle.
 - **The user goes somewhere else first.** If the user opens a type in the editor, visits other
   screens, and only later opens the Drive in the same tab, the Drive still applies the type,
   because nothing has used it yet.
+- **Switching site.** After the Drive applied the remembered type, switching site does not bring
+  it back: it was used once, so the Drive treats the site change like any other visit with nothing
+  remembered.
 - **Another tab.** A content type opened in the editor in one tab is not picked up by the Drive in
   a different, newly opened tab.
 - **Content Search is unaffected.** Content Search keeps its own existing behavior. Opening the
