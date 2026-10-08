@@ -46,7 +46,6 @@ import { withSidebar } from './features/sidebar/withSidebar';
 import { withSitePermissions } from './features/site-permissions/withSitePermissions';
 
 import {
-    CONTENT_DRIVE_URL_PARAM,
     DEFAULT_PAGE,
     DEFAULT_PAGINATION,
     DEFAULT_PATH,
@@ -76,6 +75,7 @@ import {
     getUserSearchableActive,
     listsFolders,
     parseWorkflowFilter,
+    resolveContentDriveUrlIntent,
     sortedEncodedFilters,
     toRequestLocation,
     withFilterDefaults
@@ -668,22 +668,23 @@ export const DotContentDriveStore = signalStore(
                     const currentSite = globalStore.siteDetails();
                     const path = queryParams['path'] || DEFAULT_PATH;
                     const urlFilters = decodeFilters(queryParams['filters'] || '');
-                    // A URL that already says what to show (valid filters, an item to edit or
-                    // create, a folder dialog) wins; the remembered type is only for opening the
-                    // Drive directly. Checked after decoding, so filters that decode to nothing
-                    // don't count.
+                    // A URL that already says what to show (valid filters, or an item or folder
+                    // dialog the shell will open) wins; the remembered type is only for opening the
+                    // Drive directly. Both are judged after parsing, so a URL whose filters decode
+                    // to nothing or whose dialog params open nothing doesn't count.
                     const urlHasInstructions =
                         Object.keys(urlFilters).length > 0 ||
-                        Object.values(CONTENT_DRIVE_URL_PARAM).some(
-                            (param) => !!queryParams[param]
-                        );
+                        resolveContentDriveUrlIntent(queryParams).kind !== 'none';
                     const filters =
-                        rememberedContentType && !urlHasInstructions
+                        rememberedContentType && currentSite && !urlHasInstructions
                             ? { contentType: [rememberedContentType] }
                             : urlFilters;
-                    // Used on the first run only: a site change re-runs this effect, and the type
-                    // must not come back after the user has moved on (FR-005).
-                    rememberedContentType = null;
+                    // Used on the first run that has a site only. A run before the site has loaded
+                    // would be followed by one that re-reads the opening URL and loses it; a later
+                    // site change must not bring it back (FR-005).
+                    if (currentSite) {
+                        rememberedContentType = null;
+                    }
                     const queryTreeExpanded =
                         queryParams['isTreeExpanded'] ?? DEFAULT_TREE_EXPANDED.toString();
 

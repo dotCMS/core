@@ -1494,9 +1494,12 @@ describe('DotContentDriveStore - onInit', () => {
 });
 
 /** Everything the store needs except session storage, which each block decides. */
+/** An identifier in the shape the Drive accepts from its URL. */
+const A_URL_IDENTIFIER = '6f2f0f56-6c7e-4c11-9f3a-0c7c1a7f2b11';
+
 const rememberedContentTypeProviders = (
     routeSnapshot: { queryParams: Record<string, string> },
-    siteDetails: WritableSignal<DotSite>
+    siteDetails: WritableSignal<DotSite | null>
 ) => [
     mockProvider(ActivatedRoute, { snapshot: routeSnapshot }),
     mockProvider(GlobalStore, { siteDetails }),
@@ -1541,7 +1544,7 @@ describe('DotContentDriveStore - remembered content type', () => {
     const routeSnapshot: { queryParams: Record<string, string> } = { queryParams: {} };
     const consumeLastContentType = vi.fn();
     /** A real signal, so a test can switch site and re-run the store's init effect. */
-    const siteDetails = signal(MOCK_SITES[2]);
+    const siteDetails = signal<DotSite | null>(MOCK_SITES[2]);
 
     const sharedProviders = rememberedContentTypeProviders(routeSnapshot, siteDetails);
 
@@ -1553,9 +1556,13 @@ describe('DotContentDriveStore - remembered content type', () => {
         ]
     });
 
-    const buildStore = (queryParams: Record<string, string>, remembered: string | null) => {
+    const buildStore = (
+        queryParams: Record<string, string>,
+        remembered: string | null,
+        site: DotSite | null = MOCK_SITES[2]
+    ) => {
         routeSnapshot.queryParams = queryParams;
-        siteDetails.set(MOCK_SITES[2]);
+        siteDetails.set(site);
         consumeLastContentType.mockReset();
         consumeLastContentType.mockReturnValue(remembered);
         spectator = createService();
@@ -1587,6 +1594,35 @@ describe('DotContentDriveStore - remembered content type', () => {
             withSeeded({ contentType: ['anyContentType'], languageId: ['1'] })
         );
     });
+
+    it('should keep the remembered content type when the site loads after the Drive', () => {
+        buildStore({}, 'anyContentType', null);
+
+        siteDetails.set(MOCK_SITES[2]);
+        spectator.flushEffects();
+
+        expect(store.currentSite()).toBe(MOCK_SITES[2]);
+        expect(store.filters()).toEqual(
+            withSeeded({ contentType: ['anyContentType'], languageId: ['1'] })
+        );
+        expect(consumeLastContentType).toHaveBeenCalledTimes(1);
+    });
+
+    it.each([
+        ['the retired create marker', { [CONTENT_DRIVE_URL_PARAM.EDIT_CONTENT]: 'new' }],
+        ['a folder dialog switched off', { [CONTENT_DRIVE_URL_PARAM.CREATE_FOLDER]: 'false' }],
+        ['a malformed folder id', { [CONTENT_DRIVE_URL_PARAM.EDIT_FOLDER]: 'not-an-id' }],
+        ['a language with no item', { [CONTENT_DRIVE_URL_PARAM.EDIT_CONTENT_LANG]: '1' }]
+    ])(
+        'should filter by the remembered content type when the URL asks for nothing (%s)',
+        (_case, queryParams) => {
+            buildStore(queryParams, 'anyContentType');
+
+            expect(store.filters()).toEqual(
+                withSeeded({ contentType: ['anyContentType'], languageId: ['1'] })
+            );
+        }
+    );
 
     it('should open as today when no content type is remembered', () => {
         buildStore({}, null);
@@ -1620,11 +1656,11 @@ describe('DotContentDriveStore - remembered content type', () => {
         });
 
         it.each([
-            [CONTENT_DRIVE_URL_PARAM.EDIT_CONTENT, 'an-identifier'],
+            [CONTENT_DRIVE_URL_PARAM.EDIT_CONTENT, A_URL_IDENTIFIER],
             [CONTENT_DRIVE_URL_PARAM.CREATE_CONTENT, 'aContentType'],
             [CONTENT_DRIVE_URL_PARAM.CREATE_FOLDER, 'true'],
-            [CONTENT_DRIVE_URL_PARAM.EDIT_FOLDER, 'a-folder-id'],
-            [CONTENT_DRIVE_URL_PARAM.FOLDER_PERMISSIONS, 'a-folder-id']
+            [CONTENT_DRIVE_URL_PARAM.EDIT_FOLDER, A_URL_IDENTIFIER],
+            [CONTENT_DRIVE_URL_PARAM.FOLDER_PERMISSIONS, A_URL_IDENTIFIER]
         ])('should not apply the remembered content type with %s in the URL', (param, value) => {
             buildStore({ [param]: value }, 'anyContentType');
 
@@ -1640,7 +1676,7 @@ describe('DotContentDriveStore - remembered content type', () => {
  */
 describe('DotContentDriveStore - remembered content type, next visit', () => {
     const routeSnapshot: { queryParams: Record<string, string> } = { queryParams: {} };
-    const siteDetails = signal(MOCK_SITES[2]);
+    const siteDetails = signal<DotSite | null>(MOCK_SITES[2]);
 
     const createService = createServiceFactory({
         service: DotContentDriveStore,
