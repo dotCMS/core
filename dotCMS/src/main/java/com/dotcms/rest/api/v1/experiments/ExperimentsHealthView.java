@@ -28,7 +28,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @JsonInclude(Include.NON_NULL)
 public class ExperimentsHealthView {
 
-    /** Serialized as {@code "full"} or {@code "limited"} in the JSON response. */
+    /** Serialized as {@code "FULL"} or {@code "LIMITED"} in the JSON response. */
     public enum Tier {
         FULL, LIMITED
     }
@@ -38,19 +38,16 @@ public class ExperimentsHealthView {
         ANALYTICS_DISABLED
     }
 
-    @Schema(description = "Current health state of the experiments / analytics configuration",
-            allowableValues = {"OK", "NOT_CONFIGURED", "CONFIGURATION_ERROR"})
+    @Schema(description = "Current health state of the experiments / analytics configuration")
     private final Health health;
 
-    @Schema(description = "License tier: FULL when experiments are fully enabled, LIMITED when restricted to one free experiment",
-            allowableValues = {"FULL", "LIMITED"})
+    @Schema(description = "License tier: FULL when experiments are fully enabled, LIMITED when restricted to one free experiment")
     private final Tier tier;
 
     @Schema(description = "Whether the single free experiment slot is already occupied. Present only when tier=LIMITED; null when tier=FULL.")
     private final Boolean freeExperimentUsed;
 
-    @Schema(description = "Warning code present when the Analytics App is not configured for the site. Absent when configured.",
-            allowableValues = {"ANALYTICS_DISABLED"})
+    @Schema(description = "Warning code present when the Analytics App is not configured for the site. Absent when configured.")
     private final Warning warning;
 
     private ExperimentsHealthView(final Builder builder) {

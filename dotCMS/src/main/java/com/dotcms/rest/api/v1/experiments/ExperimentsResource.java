@@ -29,6 +29,10 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 
 import com.google.common.annotations.VisibleForTesting;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -171,6 +175,13 @@ public class ExperimentsResource {
      * returns {@code 403 FEATURE_DISABLED}. Archiving applies for experiments with already
      * collected data where deletion is not wanted.
      */
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Experiment archived successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityExperimentView.class))),
+            @ApiResponse(responseCode = "403", description = "Feature disabled (FEATURE_DISABLED) — flag=false",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PUT
     @Path("/{experimentId}/_archive")
     @JSONP
@@ -296,6 +307,17 @@ public class ExperimentsResource {
      * </ul>
      * When {@code FEATURE_FLAG_EXPERIMENTS=true} only the App-configuration check applies.
      */
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Experiment started successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntitySingleExperimentView.class))),
+            @ApiResponse(responseCode = "400", description = "Duration exceeds the 10-day limited-mode cap",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403", description = "Feature disabled (FEATURE_DISABLED) — flag=false and slot occupied or scheduled start",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "503", description = "Analytics App not configured for this site (ANALYTICS_NOT_CONFIGURED)",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @Path("/{experimentId}/_start")
     @JSONP
@@ -336,6 +358,13 @@ public class ExperimentsResource {
      * when {@code false}, returns {@code 403 FEATURE_DISABLED}. App configuration has no effect
      * on this endpoint because {@code _end} does not interact with the analytics backend.
      */
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Experiment ended successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntitySingleExperimentView.class))),
+            @ApiResponse(responseCode = "403", description = "Feature disabled (FEATURE_DISABLED) — flag=false",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @Path("/{experimentId}/_end")
     @JSONP
@@ -358,6 +387,13 @@ public class ExperimentsResource {
      * Running {@link Experiment}. Gated on {@code FEATURE_FLAG_EXPERIMENTS}: when {@code false},
      * returns {@code 403 FEATURE_DISABLED}.
      */
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Experiment cancelled successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntitySingleExperimentView.class))),
+            @ApiResponse(responseCode = "403", description = "Feature disabled (FEATURE_DISABLED) — flag=false",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @Path("/scheduled/{experimentId}/_cancel")
     @JSONP
