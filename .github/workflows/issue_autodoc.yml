@@ -609,13 +609,16 @@ jobs:
             echo "::error::context_artifact was given but secret AUTODOC_CONTEXT_KEY was not passed."
             exit 1
           fi
-          if ! openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 \
+          if openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 \
                 -in "$WORKDIR/eval_context.md.enc" -out "$WORKDIR/eval_context.md" \
                 -pass env:AUTODOC_CONTEXT_KEY; then
+            # Only the plaintext is needed from here on; the ciphertext stays in
+            # the run's artifact if anyone needs to retry.
+            rm -f "$WORKDIR/eval_context.md.enc"
+          else
             echo "::error::Could not decrypt the eval context (missing artifact or key mismatch between caller and executor)."
             exit 1
           fi
-          rm -f "$WORKDIR/eval_context.md.enc"
 
       - name: Compose prompt
         id: compose
@@ -667,8 +670,11 @@ jobs:
           mkdir -p "$BIN"
           ( umask 077; printf '%s' "$AUTODOC_DOTCMS_API_TOKEN_AISEARCH" > "$TOKEN_FILE" )
 
-          cat > "$BIN/autodoc-search" << 'SCRIPTEOF'
-          #!/bin/bash
+          # The token file's absolute path is baked in as the script's first
+          # assignment (shell-quoted with %q); the body is a quoted heredoc, so
+          # nothing in it is expanded at install time.
+          printf '#!/bin/bash\nTOKEN_FILE=%q\n' "$TOKEN_FILE" > "$BIN/autodoc-search"
+          cat >> "$BIN/autodoc-search" << 'SCRIPTEOF'
           # autodoc-search "<query>" - semantic search over the dotCMS documentation.
           # Prints the AI search API's JSON response.
           set -euo pipefail
@@ -679,15 +685,14 @@ jobs:
           jq -n --arg q "$*" '{model: "gpt-5.2", indexName: "default", prompt: $q,
                                operator: "cosine", threshold: ".25", searchLimit: 20}' |
           curl -sS --fail-with-body --max-time 60 -X POST "https://cdn.dotcms.dev/api/v1/ai/search" \
-            -H "Authorization: Bearer $(cat "__TOKEN_FILE__")" \
+            -H "Authorization: Bearer $(cat "$TOKEN_FILE")" \
             -H "Content-Type: application/json" \
             -H "Origin: https://dev.dotcms.com" \
             -H "Referer: https://dev.dotcms.com/" \
             --data @-
           SCRIPTEOF
-          sed -i "s|__TOKEN_FILE__|$TOKEN_FILE|" "$BIN/autodoc-search"
-          if grep -q '__TOKEN_FILE__' "$BIN/autodoc-search" || [ ! -s "$TOKEN_FILE" ]; then
-            echo "::error::autodoc-search install failed (token file missing or path not substituted)."
+          if [ ! -s "$TOKEN_FILE" ]; then
+            echo "::error::autodoc-search install failed: secret AUTODOC_DOTCMS_API_TOKEN_AISEARCH is empty."
             exit 1
           fi
           chmod 755 "$BIN/autodoc-search"
@@ -695,8 +700,20 @@ jobs:
 
           # Smoke test: a bad token or a search outage would otherwise surface
           # only as a confident "no existing docs" report.
-          if ! OUT=$("$BIN/autodoc-search" "dotCMS content types"); then
-            echo "::error::autodoc-search smoke test failed. The curl error above distinguishes the cause: HTTP 401/403 means AUTODOC_DOTCMS_API_TOKEN_AISEARCH is wrong; a timeout or 5xx means the AI search API is unavailable."
+          set +e
+          OUT=$("$BIN/autodoc-search" "dotCMS content types")
+          RC=$?
+          set -e
+          if [ "$RC" -ne 0 ]; then
+            # autodoc-search exits with curl's code: 22 = HTTP error status,
+            # 28 = timeout, 6/7 = DNS/connection failure.
+            case "$RC" in
+              22) CAUSE="the API returned an HTTP error. 401/403 means AUTODOC_DOTCMS_API_TOKEN_AISEARCH is wrong or expired; 5xx means the AI search API is failing. The status and body are printed above" ;;
+              28) CAUSE="the request timed out; the AI search API is slow or unavailable" ;;
+              6|7) CAUSE="the AI search API could not be reached (DNS or connection failure)" ;;
+              *) CAUSE="curl exited with code $RC" ;;
+            esac
+            echo "::error::autodoc-search smoke test failed: $CAUSE."
             exit 1
           fi
           if ! echo "$OUT" | jq -e . > /dev/null; then
@@ -730,6 +747,7 @@ jobs:
           # Legacy prompts reference this variable in their curl command. In
           # context-artifact mode Claude searches via autodoc-search instead and
           # this is left empty, keeping the token out of Claude's environment.
+          # (`cond && a || b` is GitHub's documented conditional idiom.)
           AUTODOC_DOTCMS_API_TOKEN_AISEARCH: ${{ false && secrets.AUTODOC_DOTCMS_API_TOKEN_AISEARCH || '' }}
         with:
           # Claude never needs GitHub access here. Passing this job's read-only
