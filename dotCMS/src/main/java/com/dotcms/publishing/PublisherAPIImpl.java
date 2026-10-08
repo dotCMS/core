@@ -237,21 +237,48 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
             }
             // Copy in any PP Filter shipped with dotCMS that this instance has not synced before --
             // covers both the first-ever startup and a filter added in a later release reaching an
-            // environment that already has this directory.
+            // environment that already has this directory. Startup-only: admin CRUD on a user
+            // filter calls reloadFilterListQuietly() instead, since it can't have changed what
+            // dotCMS ships, and re-running this on every save/delete would needlessly widen the
+            // marker's read-compute-write race window.
             this.copyNewlyShippedFilters(basePath);
 
-            Logger.info(this, ()->"Push Publishing Filters Directory: " + PUBLISHING_FILTERS_FOLDER);
-            // Read each YAML file under the directory (except our own marker file) and re-load the
-            // Filter list
-            try(
-                    final Stream<Path> list = Files.list(basePath.toPath())
-                            .filter(path -> !SHIPPED_FILTERS_MARKER.equals(path.getFileName().toString()));){
-                final List<FilterDescriptor> descriptors = this.loadFiltersFromFolder(list);
-                Collections.sort(descriptors);
-                this.filterList = descriptors;
-            }
+            this.reloadFilterList(basePath);
         } catch (final IOException e) {
             Logger.error(this, String.format("PP Filters could not be initialized: %s", e.getMessage()), e);
+        }
+    }
+
+    /**
+     * Re-reads every Filter Descriptor from {@code basePath} into {@link #filterList}, without
+     * re-syncing shipped filters. Called after an admin adds, edits, or removes a Filter
+     * Descriptor, and as part of {@link #init()} on startup.
+     *
+     * @param basePath The assets-backed directory Filter Descriptors are loaded from.
+     * @throws IOException If the directory cannot be listed.
+     */
+    private void reloadFilterList(final File basePath) throws IOException {
+        Logger.info(this, ()->"Push Publishing Filters Directory: " + PUBLISHING_FILTERS_FOLDER);
+        // Read each YAML file under the directory (except our own marker file) and re-load the
+        // Filter list
+        try(
+                final Stream<Path> list = Files.list(basePath.toPath())
+                        .filter(path -> !SHIPPED_FILTERS_MARKER.equals(path.getFileName().toString()));){
+            final List<FilterDescriptor> descriptors = this.loadFiltersFromFolder(list);
+            Collections.sort(descriptors);
+            this.filterList = descriptors;
+        }
+    }
+
+    /**
+     * Calls {@link #reloadFilterList(File)}, logging rather than propagating a failure -- matches
+     * the error handling {@link #init()} has always applied to the same reload logic.
+     */
+    private void reloadFilterListQuietly() {
+        try {
+            this.reloadFilterList(PUBLISHING_FILTERS_FOLDER.get().toFile());
+        } catch (final IOException e) {
+            Logger.error(this, String.format("PP Filters could not be reloaded: %s", e.getMessage()), e);
         }
     }
 
@@ -433,7 +460,7 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
         final File filterPathFile = Path.of(parentFolder, filterKey).toFile();
         try {
             if (filterPathFile.getCanonicalPath().startsWith(parentFolder) &&  FileUtils.deleteQuietly(filterPathFile)) {
-                this.init();
+                this.reloadFilterListQuietly();
                 return Boolean.TRUE;
             }
         }catch (IOException e){
@@ -446,7 +473,7 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
     public void upsertFilterDescriptor(FilterDescriptor filterDescriptor) {
         final File filterPathFile = Path.of(PUBLISHING_FILTERS_FOLDER.get().toString(), filterDescriptor.getKey()).toFile();
         YamlUtil.write(filterPathFile, filterDescriptor);
-        this.init();
+        this.reloadFilterListQuietly();
     }
 
     @Override
@@ -460,7 +487,7 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
                         filterPathFile.getAbsolutePath(), e.getMessage()));
             }
         }
-        this.init();
+        this.reloadFilterListQuietly();
     }
 
     /**
