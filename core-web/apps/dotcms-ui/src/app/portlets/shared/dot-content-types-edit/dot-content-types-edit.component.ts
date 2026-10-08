@@ -218,12 +218,6 @@ export class DotContentTypesEditComponent implements OnInit {
     }
 
     /**
-     * Check if the component is in edit mode
-     *
-     * @returns boolean
-     * @memberof DotContentTypesEditComponent
-     */
-    /**
      * Remembers the content type open in the editor so the next Content Drive visit in this tab
      * starts filtered to it (#37903). Forms and system types are forgotten instead, since the
      * Drive's Content Type filter doesn't offer them. A type still being created has nothing to
@@ -246,6 +240,12 @@ export class DotContentTypesEditComponent implements OnInit {
         }
     }
 
+    /**
+     * Check if the component is in edit mode
+     *
+     * @returns boolean
+     * @memberof DotContentTypesEditComponent
+     */
     isEditMode(): boolean {
         return !!(this.data && this.data.id);
     }
