@@ -13,7 +13,7 @@ import { pipe } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
 
-import { switchMap, tap } from 'rxjs/operators';
+import { exhaustMap, tap } from 'rxjs/operators';
 
 import { DotClusterService, DotHttpErrorManagerService } from '@dotcms/data-access';
 import { ComponentStatus, DotClusterNode, DotClusterNodes } from '@dotcms/dotcms-models';
@@ -89,11 +89,15 @@ export const DotNetworkStore = signalStore(
             clusterService = inject(DotClusterService),
             httpErrorManager = inject(DotHttpErrorManagerService)
         ) => ({
-            /** Loads every node. Also used by Refresh, which keeps the current selection. */
+            /**
+             * Loads every node. Also used by Refresh, which keeps the current selection.
+             * A call made while a request is in flight is ignored: every status request makes
+             * each node write a test file to the shared assets volume, so it is never duplicated.
+             */
             load: rxMethod<void>(
                 pipe(
                     tap(() => patchState(store, { status: ComponentStatus.LOADING })),
-                    switchMap(() =>
+                    exhaustMap(() =>
                         clusterService.getNodes().pipe(
                             tapResponse({
                                 next: (result) =>

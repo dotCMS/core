@@ -96,6 +96,26 @@ describe('DotNetworkStore', () => {
         expect(store.isRefreshing()).toBe(false);
     });
 
+    it('should never start a second status request while one is in flight', () => {
+        // Each status request makes every node write a test file to the shared assets
+        // volume, so a refresh pressed twice must not cost the cluster twice (FR-039, SC-005).
+        const pending = new Subject<DotClusterNodes>();
+        vi.mocked(clusterService.getNodes).mockClear().mockReturnValue(pending);
+
+        store.load();
+        store.load();
+        store.load();
+
+        expect(clusterService.getNodes).toHaveBeenCalledTimes(1);
+
+        pending.next(RESPONSE);
+        pending.complete();
+        vi.mocked(clusterService.getNodes).mockReturnValue(of(RESPONSE));
+        store.load();
+
+        expect(clusterService.getNodes).toHaveBeenCalledTimes(2);
+    });
+
     it('should show the empty state when no node is listed', () => {
         vi.mocked(clusterService.getNodes).mockReturnValue(
             of({ licensed: true, currentServerId: 'x', clusterHealth: 'GREEN', nodes: [] })
