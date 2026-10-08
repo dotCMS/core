@@ -295,6 +295,7 @@ cmd_maven() {
 
   require_credentials
 
+  MAVEN_REPO_DIR="${MAVEN_REPO_DIR%/}"
   local group_dir="$MAVEN_REPO_DIR/com/dotcms"
   [[ -d "$group_dir" ]] || die "No com/dotcms directory under $MAVEN_REPO_DIR"
 
