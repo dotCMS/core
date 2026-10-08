@@ -663,13 +663,17 @@ jobs:
             --data @-
           SCRIPTEOF
           sed -i "s|__TOKEN_FILE__|$TOKEN_FILE|" "$BIN/autodoc-search"
+          if grep -q '__TOKEN_FILE__' "$BIN/autodoc-search" || [ ! -s "$TOKEN_FILE" ]; then
+            echo "::error::autodoc-search install failed (token file missing or path not substituted)."
+            exit 1
+          fi
           chmod 755 "$BIN/autodoc-search"
           echo "$BIN" >> "$GITHUB_PATH"
 
           # Smoke test: a bad token or a search outage would otherwise surface
           # only as a confident "no existing docs" report.
           if ! OUT=$("$BIN/autodoc-search" "dotCMS content types"); then
-            echo "::error::autodoc-search smoke test failed — check AUTODOC_DOTCMS_API_TOKEN_AISEARCH and the AI search API."
+            echo "::error::autodoc-search smoke test failed. The curl error above distinguishes the cause: HTTP 401/403 means AUTODOC_DOTCMS_API_TOKEN_AISEARCH is wrong; a timeout or 5xx means the AI search API is unavailable."
             exit 1
           fi
           if ! echo "$OUT" | jq -e . > /dev/null; then
@@ -723,8 +727,10 @@ jobs:
           echo "::error::claude-code-action skipped (workflow validation) without running Claude"
           exit 1
 
+      # Skipped when an earlier setup step failed, so that step's error is the
+      # one reported rather than a secondary "no files found".
       - name: Upload report artifact
-        if: always()
+        if: ${{ !cancelled() && steps.compose.outcome == 'success' }}
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.6.0 - https://github.com/actions/upload-artifact/releases/tag/v4.6.0
         with:
           name: autodoc-report
