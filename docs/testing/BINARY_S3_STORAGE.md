@@ -387,6 +387,66 @@ per direct child record on every listing, and that includes the tombstone of eve
 child, so it grows with the number of temporary names ever written directly in that folder until
 tombstones can be reclaimed.
 
+## Renditions and rendering
+
+With the flag on, completed image-filter outputs are uploaded to the `generated-assets` group as
+they are produced, at `generated-assets/{first}/{second}/{inode}/dotGenerated_...`, with the same
+relative layout under the local `dotGenerated` root. A cold read restores a completed rendition
+from S3 without running the filter again. A warm hit is served from local disk without contacting
+S3, so an S3 outage does not break a cached response and a warm read cannot republish an
+invalidated object. A cold read, which has to look in S3, fails while S3 is unavailable.
+Incomplete filter outputs are never uploaded or evicted. Thumbnail invalidation and source
+deletion target that inode's directory. With the flag off, renditions keep the existing
+two-character layout. Existing rendition objects are not moved to the new layout.
+
+The exporter finds an existing rendition by predicting the path each filter writes, so each
+filter's prediction must match its output; the JPEG filter, for example, predicts `.jpg`. Some
+requests leave the image unchanged, for instance a maximum width larger than the image. Such a
+filter writes nothing, so the first request for it looks for its predicted output in S3 and finds
+nothing. The node then remembers that this output is never produced, and later requests on that
+node skip the lookup. Only an output written at its predicted path is uploaded.
+
+Upload failures do not fail the request. If S3 rejects a rendition upload, the locally produced
+rendition is served and a warning is logged. The rendition then stays local only: later requests
+on that node are warm hits and do not retry the upload, eviction keeps the file because it has no
+durable copy, and other nodes generate their own. Uploads run after the image-generation permit is
+released.
+
+Rendition keys include the original's revision key, so replacing bytes under the same inode and
+filename never selects the previous revision's rendition. Crops read the focal point from the
+content's metadata snapshot, including focal points saved on a temporary upload, and the Java and
+native crop engines use the same pinned coordinates. When a focal point is read through the
+content API instead, as `$content.image.fpx` does, content the current user cannot read, or that
+does not exist, has no focal point, as with the flag off; only a failed lookup is an error.
+
+Compiled Sass output also uses the `generated-assets` group. Its key covers the source and
+dependency bytes, site, live or working mode, compiler options and application build, so a cold
+node restores a matching CSS output without running Sass. Source maps keep their existing private,
+uncached behavior. As with renditions, a compiled output whose upload fails is still served,
+with a warning, and is kept locally only. Each change to the key, such as an edit to an imported
+partial, a working-mode compile of an edit in progress, or an upgrade, stores a new CSS object
+without removing the old one. Old objects are removed only when the main Sass file's generated
+outputs are invalidated or its inode's binaries are deleted, so for a main file that rarely
+changes they accumulate. Superseded compiled CSS objects are not reclaimed yet.
+
+Markdown files are read through the protected FileAsset stream, and VTL and included files are
+opened through the binary asset API, so a file whose local copy was evicted is restored from S3
+before it is rendered. A missing VTL or included file outside the asset root cannot be restored,
+so it is reported as not found, as with the flag off. When restoring a VTL, macro or included file
+fails, the render fails with a storage error that is not cached as a missing template, so the next
+render tries again. Templates, containers, pages and other database-built sources keep their
+existing failure handling.
+
+### Known limitation: long cache leases
+
+Image-filter execution holds a cache lease for the whole export: the S3 lookups, the pixel work
+and the uploads of every filter in the chain. Sass compilation holds a lease while it gathers and
+copies the sources, which includes database lookups, and while it reads a stored output, but not
+while Dart Sass runs. Eviction skips every file while any lease is held, so on a node with steady
+image traffic a sweep can be deferred again and again, and the local cache can stay above its
+budget. Narrowing the rendition lease to the moments a filter reads a local file needs the filters
+to restore their inputs themselves, which is a larger change and is left as a follow-up.
+
 ## Local cache eviction
 
 With the flag on, the local asset directory is a cache that `BinaryCacheEvictionJob` can trim.
@@ -485,7 +545,7 @@ docker run -d --rm --name binary-cleanup-postgres-test \
   -e POSTGRES_DB=binary_storage_test postgres:16-alpine
 
 ./mvnw test -pl :dotcms-core -Dmaven.build.cache.enabled=false \
-  -Dtest=AssetStorageFeatureTest,AssetStorageFeatureLatchTest,S3StorageConfigurationTest,NoWebIdentityCredentialsProviderChainTest,BinaryS3StorageTest,BinaryAssetReferenceTest,BinaryCacheEvictionJobTest,BinaryFileSystemStorageTest,BinaryAssetStorageAPIImplTest,MetadataLocalCacheTest,BinaryAssetCleanupTransactionTest,BinaryAssetCleanupProcessorTest,ContentletBackupStorageGateTest,BinaryFieldCleanupProcessorTest,AssetJobEventSerializationTest,BinaryAssetBackfillCheckpointTest,ImportStarterWorkflowCleanupTest,BinaryAssetBackfillProcessorTest,BinaryAssetBackfillTest,ExportStarterFailureTest,BundleArchiveStorageTest,FileAssetBundlerTest,TemporaryAssetStorageTest,WebdavAssetStorageTest,TemporaryMetadataStorageTest,WebdavTemporaryStorageTest \
+  -Dtest=AssetStorageFeatureTest,AssetStorageFeatureLatchTest,S3StorageConfigurationTest,NoWebIdentityCredentialsProviderChainTest,BinaryS3StorageTest,BinaryAssetReferenceTest,BinaryCacheEvictionJobTest,BinaryFileSystemStorageTest,BinaryAssetStorageAPIImplTest,MetadataLocalCacheTest,BinaryAssetCleanupTransactionTest,BinaryAssetCleanupProcessorTest,ContentletBackupStorageGateTest,BinaryFieldCleanupProcessorTest,AssetJobEventSerializationTest,BinaryAssetBackfillCheckpointTest,ImportStarterWorkflowCleanupTest,BinaryAssetBackfillProcessorTest,BinaryAssetBackfillTest,ExportStarterFailureTest,BundleArchiveStorageTest,FileAssetBundlerTest,TemporaryAssetStorageTest,WebdavAssetStorageTest,TemporaryMetadataStorageTest,WebdavTemporaryStorageTest,ImageFilterExporterFocalPointTest,ImageFilterExporterTest,ImageFilterExporterSharedStoreTest,ImageFilterExporterEngineSelectionTest,ImageFilterExporterStorageTest,FocalPointAPIImplTest,StoredVelocityFileLoaderTest \
   -Ds3.test.endpoint=http://127.0.0.1:19002 \
   -Ds3.test.jdbc=jdbc:postgresql://127.0.0.1:19003/binary_storage_test
 
@@ -498,7 +558,7 @@ stack:
 ```sh
 ./mvnw install -pl :dotcms-core --am -DskipTests -Ddocker.skip
 ./mvnw verify -pl :dotcms-integration -Dmaven.build.cache.enabled=false -Dcoreit.test.skip=false \
-  -Dit.test=BinaryAssetStorageIntegrationTest,ContentletBackupStorageTest,SharedAssetStorageIntegrationTest,BinaryAssetStarterRestoreTest,PublishingArchiveStorageTest,DotWebdavHelperTest
+  -Dit.test=BinaryAssetStorageIntegrationTest,ContentletBackupStorageTest,SharedAssetStorageIntegrationTest,BinaryAssetStarterRestoreTest,PublishingArchiveStorageTest,DotWebdavHelperTest,AssetTemplateStorageTest,CSSAssetStorageTest
 ```
 
 These default to flag-off mode, where the S3 cases are skipped. To run the S3 cases, create a
