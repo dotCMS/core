@@ -40,6 +40,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Stream;
 
 import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.MOD_DATE;
@@ -60,6 +61,13 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
     private List<FilterDescriptor> filterList = new CopyOnWriteArrayList<>();
     /** Path where the YAML files are stored */
     private final Lazy<Path> PUBLISHING_FILTERS_FOLDER = Lazy.of(() -> Path.of(APILocator.getFileAssetAPI().getRealAssetsRootPath(), "server" , "publishing-filters" ));
+    /**
+     * Serializes each CRUD method's write-the-file-then-reload-the-list sequence, so two
+     * concurrent admin requests (e.g. a delete and a save) can't each list the directory and race
+     * on which resulting {@link #filterList} assignment wins -- the loser's just-written change
+     * would otherwise be silently absent from the in-memory cache until the next reload.
+     */
+    private final ReentrantLock filterCrudLock = new ReentrantLock();
     /**
      * Tracks, one filename per line, every shipped PP Filter (from {@code WEB-INF/publishing-filters})
      * this dotCMS instance has already synced into {@link #PUBLISHING_FILTERS_FOLDER} at least once.
@@ -458,6 +466,7 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
         }
         final String parentFolder = PUBLISHING_FILTERS_FOLDER.get().toString();
         final File filterPathFile = Path.of(parentFolder, filterKey).toFile();
+        filterCrudLock.lock();
         try {
             if (filterPathFile.getCanonicalPath().startsWith(parentFolder) &&  FileUtils.deleteQuietly(filterPathFile)) {
                 this.reloadFilterListQuietly();
@@ -465,6 +474,8 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
             }
         }catch (IOException e){
             Logger.error(PublisherAPIImpl.class, String.format("Exception trying to get canonical path from file [%s]",filterPathFile), e);
+        } finally {
+            filterCrudLock.unlock();
         }
         return Boolean.FALSE;
     }
@@ -472,22 +483,32 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
     @Override
     public void upsertFilterDescriptor(FilterDescriptor filterDescriptor) {
         final File filterPathFile = Path.of(PUBLISHING_FILTERS_FOLDER.get().toString(), filterDescriptor.getKey()).toFile();
-        YamlUtil.write(filterPathFile, filterDescriptor);
-        this.reloadFilterListQuietly();
+        filterCrudLock.lock();
+        try {
+            YamlUtil.write(filterPathFile, filterDescriptor);
+            this.reloadFilterListQuietly();
+        } finally {
+            filterCrudLock.unlock();
+        }
     }
 
     @Override
     public void saveFilterDescriptors(final List<File> filterFiles) {
-        for (final File file : filterFiles) {
-            final File filterPathFile =  Path.of(PUBLISHING_FILTERS_FOLDER.get().toString(), file.getName()).toFile();
-            try {
-                FileUtils.copyFile(file, filterPathFile);
-            } catch (final IOException e) {
-                Logger.warn(this, String.format("An error occurred when saving Filter Descriptor '%s': %s",
-                        filterPathFile.getAbsolutePath(), e.getMessage()));
+        filterCrudLock.lock();
+        try {
+            for (final File file : filterFiles) {
+                final File filterPathFile = Path.of(PUBLISHING_FILTERS_FOLDER.get().toString(), file.getName()).toFile();
+                try {
+                    FileUtils.copyFile(file, filterPathFile);
+                } catch (final IOException e) {
+                    Logger.warn(this, String.format("An error occurred when saving Filter Descriptor '%s': %s",
+                            filterPathFile.getAbsolutePath(), e.getMessage()));
+                }
             }
+            this.reloadFilterListQuietly();
+        } finally {
+            filterCrudLock.unlock();
         }
-        this.reloadFilterListQuietly();
     }
 
     /**
