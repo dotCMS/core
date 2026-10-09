@@ -4,12 +4,14 @@ import com.dotcms.analytics.track.collectors.Collector;
 import com.dotcms.analytics.track.collectors.EventSource;
 import com.dotcms.analytics.track.collectors.EventType;
 import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.experiments.business.ExperimentsAPI;
 import com.dotcms.jitsu.EventLogSubmitter;
 import com.dotcms.jitsu.ValidAnalyticsEventPayload;
 import com.dotcms.jitsu.ValidAnalyticsEventPayloadAttributes;
 import com.dotcms.jitsu.validators.AnalyticsValidator;
 import com.dotcms.jitsu.validators.AnalyticsValidatorUtil;
 import com.dotcms.jitsu.validators.SiteAuthValidator;
+import com.dotcms.rest.api.v1.analytics.event.EventAnalyticsProxyHelper;
 import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.security.apps.Secret;
 import com.dotcms.security.apps.SecretsStoreUnreadableException;
@@ -254,6 +256,67 @@ public class ContentAnalyticsUtil {
             Logger.error(SiteAuthValidator.class, errorMsg, e);
             throw new AnalyticsValidator.AnalyticsValidationException(errorMsg, INVALID_SITE_AUTH);
         }
+    }
+
+    /**
+     * Returns {@code true} when the Content Analytics app is configured for the given site —
+     * meaning the secrets map is non-empty <em>and</em> both {@code siteAuth} and
+     * {@code bearerToken} secrets are present and non-blank.
+     *
+     * <p>A non-empty map with blank secret values is not a usable configuration; this check is
+     * therefore stricter than a simple {@code !secrets.isEmpty()}, matching what the health check
+     * already verifies. All gate call sites must use this method rather than repeating the raw
+     * secrets check inline.
+     *
+     * @param host the site to evaluate
+     * @return {@code true} if the app is configured with usable credentials; {@code false} otherwise
+     */
+    public static boolean isAppConfigured(final Host host) {
+        final Map<String, Secret> secrets = getAppSecrets(host);
+        if (secrets.isEmpty()) {
+            return false;
+        }
+        final Secret siteAuth = secrets.get(SITE_AUTH_KEY);
+        final Secret bearerToken = secrets.get(BEARER_TOKEN_KEY);
+        return siteAuth != null && UtilMethods.isSet(siteAuth.getString())
+                && bearerToken != null && UtilMethods.isSet(bearerToken.getString());
+    }
+
+    /**
+     * Evaluates the health of the Content Analytics backend for the given site.
+     *
+     * <p>The three-state result mirrors what {@code ExperimentsResource.healthcheck()} returns on
+     * the CAEM path. Extracting it here gives a single, reusable implementation used by both the
+     * experiments health endpoint and the new analytics health endpoint.
+     *
+     * <ul>
+     *   <li>{@link com.dotcms.experiments.business.ExperimentsAPI.Health#NOT_CONFIGURED} — the
+     *       secrets map is empty (App not installed for this site).
+     *   <li>{@link com.dotcms.experiments.business.ExperimentsAPI.Health#CONFIGURATION_ERROR} —
+     *       secrets present but credentials are blank, or the upstream health check fails.
+     *   <li>{@link com.dotcms.experiments.business.ExperimentsAPI.Health#OK} — credentials are
+     *       non-blank and the upstream health check passes.
+     * </ul>
+     *
+     * @param host the site to evaluate
+     * @return the resolved {@link com.dotcms.experiments.business.ExperimentsAPI.Health} state
+     */
+    public static ExperimentsAPI.Health resolveAnalyticsHealth(
+            final Host host) {
+        final Map<String, Secret> secrets = getAppSecrets(host);
+        if (secrets.isEmpty()) {
+            return ExperimentsAPI.Health.NOT_CONFIGURED;
+        }
+        final Secret siteAuth = secrets.get(SITE_AUTH_KEY);
+        final Secret bearerToken = secrets.get(BEARER_TOKEN_KEY);
+        final boolean configured = siteAuth != null && UtilMethods.isSet(siteAuth.getString())
+                && bearerToken != null && UtilMethods.isSet(bearerToken.getString());
+        if (!configured) {
+            return ExperimentsAPI.Health.CONFIGURATION_ERROR;
+        }
+        return EventAnalyticsProxyHelper.healthCheck()
+                ? ExperimentsAPI.Health.OK
+                : ExperimentsAPI.Health.CONFIGURATION_ERROR;
     }
 
     /**

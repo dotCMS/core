@@ -2,11 +2,15 @@ package com.dotcms.rest.api.v1.experiments;
 
 import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.LicenseTestUtil;
+import com.dotcms.business.SystemTableUpdatedKeyEvent;
 import com.dotcms.datagen.ExperimentDataGen;
+import com.dotcms.experiments.business.ConfigExperimentUtil;
+import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
@@ -333,6 +337,39 @@ public class ExperimentsResourceIntegrationTest {
     private Experiment archived() throws Exception {
         return APILocator.getExperimentsAPI()
                 .archive(ended().id().orElseThrow(), adminUser);
+    }
+
+    // --- T059: live-toggle removal (SC-004) ---
+
+    /**
+     * Method to test: {@link ConfigExperimentUtil#notify(SystemTableUpdatedKeyEvent)}
+     * Given scenario: {@code FEATURE_FLAG_EXPERIMENTS} is written to the system table at runtime
+     *   (simulating an operator toggling the flag) without restarting the server.
+     * Expected result: {@code ConfigExperimentUtil.INSTANCE.isExperimentEnabled()} does NOT
+     *   change — the live-toggle for this flag was intentionally removed. A server restart is
+     *   required for the flag change to take effect (FR-010, SC-004).
+     *
+     * <p>This test pins the guarantee that removing the live-toggle branch from
+     *   {@code notify()} does not silently re-introduce itself in a future merge.
+     */
+    @Test
+    public void liveToggle_featureFlagExperiments_doesNotChangeGateBehavior() {
+        // Record the current gate state before simulating a system-table write.
+        final boolean before = ConfigExperimentUtil.INSTANCE.isExperimentEnabled();
+
+        // Simulate a system-table update for FEATURE_FLAG_EXPERIMENTS — same mechanism an
+        // operator or another cluster node would trigger by writing to the system table.
+        final SystemTableUpdatedKeyEvent event =
+                new SystemTableUpdatedKeyEvent(FeatureFlagName.FEATURE_FLAG_EXPERIMENTS);
+        ConfigExperimentUtil.INSTANCE.notify(event);
+
+        final boolean after = ConfigExperimentUtil.INSTANCE.isExperimentEnabled();
+
+        assertEquals(
+                "notify() with FEATURE_FLAG_EXPERIMENTS must not change gate behavior — "
+                        + "live-toggle was intentionally removed (FR-010). "
+                        + "A restart is required for flag changes to take effect.",
+                before, after);
     }
 
     private HttpServletRequest getHttpRequest() {

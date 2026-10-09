@@ -45,6 +45,7 @@ import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.experiments.model.TargetingCondition;
 import com.dotcms.experiments.model.TrafficProportion;
 
+import com.dotcms.rest.api.v1.experiments.ExperimentLimitedModeGate;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotcms.util.CollectionsUtils;
@@ -123,7 +124,6 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
     final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
     final HTMLPageAssetAPI pageAssetAPI = APILocator.getHTMLPageAssetAPI();
     final BayesianAPI bayesianAPI = APILocator.getBayesianAPI();
-    final CubeJSClientFactory cubeJSClientFactory = FactoryLocator.getCubeJSClientFactory();
 
     private final AtomicInteger maxDuration = new AtomicInteger(resolveMaxDuration());
     private final AtomicInteger defaultDuration = new AtomicInteger(resolveDefaultDuration());
@@ -517,6 +517,16 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
     }
 
     @Override
+    @CloseDBIfOpened
+    public boolean isFreeSlotUsed() throws DotDataException {
+        if (ConfigExperimentUtil.INSTANCE.isExperimentEnabled()) {
+            throw new IllegalStateException(
+                    "isFreeSlotUsed() must only be called in limited mode (FEATURE_FLAG_EXPERIMENTS=false)");
+        }
+        return factory.countByStatuses(Set.of(RUNNING, SCHEDULED, ENDED)) > 0;
+    }
+
+    @Override
     @WrapInTransaction
     public Experiment start(String experimentId, User user)
             throws DotDataException, DotSecurityException {
@@ -579,7 +589,9 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
             Experiment toReturn;
 
             if (emptyScheduling(persistedExperiment)) {
-                final Scheduling scheduling = startNowScheduling();
+                final Scheduling scheduling = ConfigExperimentUtil.INSTANCE.isExperimentEnabled()
+                        ? startNowScheduling()
+                        : startLimitedScheduling();
                 final Experiment experimentToSave = persistedExperiment.withScheduling(scheduling)
                         .withStatus(RUNNING);
                 validateNoConflictsWithScheduledExperiments(experimentToSave, user);
@@ -1645,6 +1657,19 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
         final Instant now = Instant.now().plus(1, ChronoUnit.MINUTES);
         return Scheduling.builder().startDate(now)
                 .endDate(now.plus(defaultDuration.get(), ChronoUnit.DAYS))
+                .build();
+    }
+
+    /**
+     * Builds an immediate-start scheduling capped at the limited-mode maximum duration.
+     * Used instead of {@link #startNowScheduling()} when {@code FEATURE_FLAG_EXPERIMENTS=false}
+     * so that a free experiment cannot run longer than the allowed cap.
+     */
+    private static Scheduling startLimitedScheduling() {
+        final Instant now = Instant.now().plus(1, ChronoUnit.MINUTES);
+        return Scheduling.builder()
+                .startDate(now)
+                .endDate(ExperimentLimitedModeGate.defaultEndDate(now))
                 .build();
     }
 

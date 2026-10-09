@@ -4,8 +4,10 @@ import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.analytics.helper.AnalyticsHelper;
 import com.dotcms.experiments.business.ConfigExperimentUtil;
 import com.dotcms.experiments.business.ExperimentFilter;
+import com.dotcms.http.CircuitBreakerUrl;
+import com.dotcms.jitsu.EventLogRunnable;
+import io.vavr.control.Try;
 import com.dotcms.rest.api.v1.analytics.content.util.ContentAnalyticsUtil;
-import com.dotcms.security.apps.Secret;
 import com.dotcms.experiments.business.ExperimentsAPI;
 import com.dotcms.experiments.business.ExperimentsAPI.Health;
 import com.dotcms.experiments.business.result.ExperimentResults;
@@ -13,9 +15,7 @@ import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.experiments.model.TargetingCondition;
-import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.rest.api.v1.analytics.event.EventAnalyticsProxyHelper;
-import com.dotcms.jitsu.EventLogRunnable;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.PATCH;
 import com.dotcms.rest.ResponseEntityView;
@@ -32,11 +32,17 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
+
+import com.google.common.annotations.VisibleForTesting;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import io.vavr.control.Try;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
@@ -52,8 +58,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
-import org.apache.commons.lang3.StringUtils;
 import org.glassfish.jersey.server.JSONP;
 
 /**
@@ -69,10 +75,22 @@ public class ExperimentsResource {
     private final ExperimentsAPI experimentsAPI;
 
     private static final String HEALTH_KEY = "health";
+    private static final String FEATURE_DISABLED_CODE = "FEATURE_DISABLED";
+    private static final String FEATURE_DISABLED_MSG =
+            "The Experiments feature is currently disabled. Please contact dotCMS to enable it.";
+    private static final String ANALYTICS_NOT_CONFIGURED_CODE = "ANALYTICS_NOT_CONFIGURED";
+    private static final String ANALYTICS_NOT_CONFIGURED_MSG =
+            "Analytics is not configured for this site. Please configure the Analytics App to use this feature.";
 
     public ExperimentsResource() {
         webResource =  new WebResource();
         experimentsAPI = APILocator.getExperimentsAPI();
+    }
+
+    @VisibleForTesting
+    ExperimentsResource(final WebResource webResource, final ExperimentsAPI experimentsAPI) {
+        this.webResource = webResource;
+        this.experimentsAPI = experimentsAPI;
     }
 
     /**
@@ -158,23 +176,34 @@ public class ExperimentsResource {
     }
 
     /**
-     * Archives an Experiment. Archiving operation applies for experiments to whom there's already
-     * data collected and deletion is not wanted.
-     *
-     * Returns the archived version of the Experiment.
+     * Archives an Experiment. Gated on {@code FEATURE_FLAG_EXPERIMENTS}: when {@code false},
+     * returns {@code 403 FEATURE_DISABLED}. Archiving applies for experiments with already
+     * collected data where deletion is not wanted.
      */
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Experiment archived successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityExperimentView.class))),
+            @ApiResponse(responseCode = "403", description = "Feature disabled (FEATURE_DISABLED) — flag=false",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PUT
     @Path("/{experimentId}/_archive")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public ResponseEntityExperimentView archive(@Context final HttpServletRequest request,
+    public Response archive(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @PathParam("experimentId") final String experimentId) throws DotDataException, DotSecurityException {
         final InitDataObject initData = getInitData(request, response);
         final User user = initData.getUser();
-        final Experiment archivedExperiment =  experimentsAPI.archive(experimentId, user);
-        return new ResponseEntityExperimentView(Collections.singletonList(archivedExperiment));
+        if (!ConfigExperimentUtil.INSTANCE.isExperimentEnabled()) {
+            return featureDisabledResponse();
+        }
+        final Experiment archivedExperiment = experimentsAPI.archive(experimentId, user);
+        return Response.ok(
+                new ResponseEntityExperimentView(Collections.singletonList(archivedExperiment)))
+                .build();
     }
 
     /**
@@ -271,72 +300,120 @@ public class ExperimentsResource {
     }
 
     /**
-     * Starts an {@link Experiment}. In order to start an Experiment it needs to:
-     * <li>Have a {@link Status#DRAFT} status
-     * <li>Have at least one Variant
-     * <li>Have a primary goal set
-     * <p>
-     * The following considerations regarding {@link Experiment#scheduling()} are also taking place
-     * when starting an Experiment:
-     * <li>If no {@link Scheduling#startDate()} is provided, set it to now()
-     * <li>If no {@link Scheduling#endDate()} is provided, set it to four weeks
-     * <li>Unable to start if provided {@link Scheduling#startDate()} is in the past
-     * <li>Unable to start if provided {@link Scheduling#endDate()} is in the past
-     * <li>Unable to start if provided {@link Scheduling#endDate()} is not after provided {@link Scheduling#startDate()}
-     * <li>Unable to start if difference {@link Scheduling#endDate()} is not after provided {@link Scheduling#startDate()}
-     *
+     * Starts an {@link Experiment}. In addition to the standard validation, this endpoint applies
+     * feature-gate checks when {@code FEATURE_FLAG_EXPERIMENTS=false} (limited mode):
+     * <ul>
+     *   <li>The Analytics App must be configured for the site ({@code 503} otherwise).
+     *   <li>Scheduling with a future {@code startDate} is not allowed ({@code 403 FEATURE_DISABLED}).
+     *   <li>The free experiment slot must be available ({@code 403 FEATURE_DISABLED} if occupied).
+     *   <li>Duration is capped at {@link ExperimentLimitedModeGate#MAX_DAYS} days ({@code 400} if exceeded).
+     *   <li>When no {@code endDate} is set, it is automatically set to
+     *       {@link ExperimentLimitedModeGate#MAX_DAYS} days from now.
+     * </ul>
+     * When {@code FEATURE_FLAG_EXPERIMENTS=true} only the App-configuration check applies.
      */
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Experiment started successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntitySingleExperimentView.class))),
+            @ApiResponse(responseCode = "400", description = "Duration exceeds the 10-day limited-mode cap",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403", description = "Feature disabled (FEATURE_DISABLED) — flag=false and slot occupied or scheduled start",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "503", description = "Analytics App not configured for this site (ANALYTICS_NOT_CONFIGURED)",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @Path("/{experimentId}/_start")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public ResponseEntitySingleExperimentView start(@Context final HttpServletRequest request,
+    public Response start(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @PathParam("experimentId") final String experimentId) throws DotDataException, DotSecurityException {
+            @PathParam("experimentId") final String experimentId)
+            throws DotDataException, DotSecurityException, SystemException, PortalException {
+
         final InitDataObject initData = getInitData(request, response);
         final User user = initData.getUser();
+        final Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
+
+        // Gate 1: Analytics App must be configured
+        if (!ContentAnalyticsUtil.isAppConfigured(host)) {
+            return analyticsNotConfiguredResponse();
+        }
+
+        // Gate 2: limited-mode checks (flag=false)
+        if (!ConfigExperimentUtil.INSTANCE.isExperimentEnabled()) {
+            final Optional<ExperimentLimitedModeGate.Rejection> rejection =
+                    ExperimentLimitedModeGate.evaluate(experimentId, user);
+            if (rejection.isPresent()) {
+                return switch (rejection.get()) {
+                    case FEATURE_DISABLED -> featureDisabledResponse();
+                    case DURATION_EXCEEDED -> durationExceededResponse();
+                };
+            }
+        }
+
         final Experiment startedExperiment = experimentsAPI.start(experimentId, user);
-        return new ResponseEntitySingleExperimentView(startedExperiment);
+        return Response.ok(new ResponseEntitySingleExperimentView(startedExperiment)).build();
     }
 
     /**
-     * Ends an already started {@link Experiment}. The Experiment needs to be in
-     * {@link Status#RUNNING} status to be able to end it.
+     * Ends an already started {@link Experiment}. Gated on {@code FEATURE_FLAG_EXPERIMENTS}:
+     * when {@code false}, returns {@code 403 FEATURE_DISABLED}. App configuration has no effect
+     * on this endpoint because {@code _end} does not interact with the analytics backend.
      */
-
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Experiment ended successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntitySingleExperimentView.class))),
+            @ApiResponse(responseCode = "403", description = "Feature disabled (FEATURE_DISABLED) — flag=false",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @Path("/{experimentId}/_end")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public ResponseEntitySingleExperimentView end(@Context final HttpServletRequest request,
+    public Response end(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @PathParam("experimentId") final String experimentId) throws DotDataException, DotSecurityException {
         final InitDataObject initData = getInitData(request, response);
         final User user = initData.getUser();
+        if (!ConfigExperimentUtil.INSTANCE.isExperimentEnabled()) {
+            return featureDisabledResponse();
+        }
         final Experiment endedExperiment = experimentsAPI.end(experimentId, user);
-        return new ResponseEntitySingleExperimentView(endedExperiment);
+        return Response.ok(new ResponseEntitySingleExperimentView(endedExperiment)).build();
     }
 
     /**
-     * Cancels the future execution of a Scheduled {@link Experiment} or the current execution of a Running
-     * {@link Experiment}. The Experiment needs to be either in
-     * {@link Status#SCHEDULED} or {@link Status#RUNNING} status to be able to cancel it.
+     * Cancels the future execution of a Scheduled {@link Experiment} or the current execution of a
+     * Running {@link Experiment}. Gated on {@code FEATURE_FLAG_EXPERIMENTS}: when {@code false},
+     * returns {@code 403 FEATURE_DISABLED}.
      */
-
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Experiment cancelled successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntitySingleExperimentView.class))),
+            @ApiResponse(responseCode = "403", description = "Feature disabled (FEATURE_DISABLED) — flag=false",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @Path("/scheduled/{experimentId}/_cancel")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public ResponseEntitySingleExperimentView cancel(@Context final HttpServletRequest request,
+    public Response cancel(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @PathParam("experimentId") final String experimentId) throws DotDataException, DotSecurityException {
         final InitDataObject initData = getInitData(request, response);
         final User user = initData.getUser();
-        final Experiment endedExperiment = experimentsAPI.cancel(experimentId, user);
-        return new ResponseEntitySingleExperimentView(endedExperiment);
+        if (!ConfigExperimentUtil.INSTANCE.isExperimentEnabled()) {
+            return featureDisabledResponse();
+        }
+        final Experiment cancelledExperiment = experimentsAPI.cancel(experimentId, user);
+        return Response.ok(new ResponseEntitySingleExperimentView(cancelledExperiment)).build();
     }
 
     /**
@@ -517,19 +594,35 @@ public class ExperimentsResource {
     }
 
     /**
-     * Returns the partial or total Result of a {@link Experiment}
+     * Returns the partial or total results of a {@link Experiment}.
+     *
+     * <p>Gated on Analytics App configuration: results depend on the analytics backend and
+     * cannot be retrieved when the App is absent for the site. Returns
+     * {@code 503 ANALYTICS_NOT_CONFIGURED} when the App is not configured.
      */
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Experiment results retrieved",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityExperimentResults.class))),
+            @ApiResponse(responseCode = "503", description = "Analytics App not configured for this site",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @NoCache
     @Path("/{id}/results")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public ResponseEntityExperimentResults getResult(@Context final HttpServletRequest request,
-                                                     @Context final HttpServletResponse response,
-                                                     @PathParam("id") String id)
-        throws DotDataException, DotSecurityException {
+    public Response getResult(@Context final HttpServletRequest request,
+                              @Context final HttpServletResponse response,
+                              @PathParam("id") String id)
+        throws DotDataException, DotSecurityException, SystemException, PortalException {
 
         final InitDataObject initData = getInitData(request, response);
         final User user = initData.getUser();
+        final Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
+
+        if (!ContentAnalyticsUtil.isAppConfigured(host)) {
+            return analyticsNotConfiguredResponse();
+        }
 
         final Experiment experiment = experimentsAPI.find(id, user)
                 .orElseThrow(
@@ -537,22 +630,32 @@ public class ExperimentsResource {
 
         final ExperimentResults experimentResults = APILocator.getExperimentsAPI().getResults(experiment, user);
 
-        return new ResponseEntityExperimentResults(experimentResults);
+        return Response.ok(new ResponseEntityExperimentResults(experimentResults)).build();
     }
 
     /**
-     * Healthcheck for the Experiments/Analytics configuration.
+     * Healthcheck for the Experiments / Analytics configuration.
      *
-     * <p>When {@code FEATURE_FLAG_CAEM_EXPERIMENT_RESULTS} is {@code true} the check targets the
-     * {@code dotContentAnalytics-config} app and verifies that both the {@code siteAuth} and
-     * {@code bearerToken} secrets are set. When the flag is {@code false} (legacy path) the
-     * original {@code dotExperiments-config} / EventLogRunnable connectivity test is used.
+     * <p>Returns an {@link ExperimentsHealthView} with:
+     * <ul>
+     *   <li>{@code health} — when {@code FEATURE_FLAG_CAEM_EXPERIMENT_RESULTS=true}, evaluated by
+     *       {@link ContentAnalyticsUtil#resolveAnalyticsHealth} (CAEM / dotContentAnalytics-config
+     *       path). When {@code false}, evaluated via the legacy dotExperiments-config path.
+     *   <li>{@link ExperimentsHealthView.Tier} — {@code "full"} when {@code FEATURE_FLAG_EXPERIMENTS=true},
+     *       {@code "limited"} when {@code false}. Reflects flag state only; App configuration
+     *       does not affect this field.
+     *   <li>{@code freeExperimentUsed} — present (non-null) only when {@code tier="limited"}: {@code true}
+     *       if any experiment is in {@code {RUNNING, SCHEDULED, ENDED}}.
+     *   <li>{@code warning} — {@code "analytics_disabled"} when the CAEM App is not configured for
+     *       this site; absent when configured or when {@code FEATURE_FLAG_CAEM_EXPERIMENT_RESULTS=false}
+     *       (warning is CAEM-specific and does not apply on the legacy path).
+     * </ul>
      */
     @GET
     @NoCache
     @Path("/health")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public ResponseEntityView<Map<String, Health>> healthcheck(
+    public ResponseEntityView<ExperimentsHealthView> healthcheck(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response)
             throws DotDataException, DotSecurityException, SystemException, PortalException {
@@ -560,29 +663,30 @@ public class ExperimentsResource {
         getInitData(request, response);
         final Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
 
+        final boolean fullMode = ConfigExperimentUtil.INSTANCE.isExperimentEnabled();
+        final ExperimentsHealthView.Tier tier =
+                fullMode ? ExperimentsHealthView.Tier.FULL : ExperimentsHealthView.Tier.LIMITED;
+        final Boolean freeExperimentUsed = fullMode ? null : experimentsAPI.isFreeSlotUsed();
+
+        final Health health;
+        final ExperimentsHealthView.Warning warning;
         if (ConfigExperimentUtil.INSTANCE.isCaemExperimentResultsEnabled()) {
-            return new ResponseEntityView<>(Map.of(HEALTH_KEY, caemHealthCheck(host)));
+            health = ContentAnalyticsUtil.resolveAnalyticsHealth(host);
+            warning = ContentAnalyticsUtil.isAppConfigured(host)
+                    ? null : ExperimentsHealthView.Warning.ANALYTICS_DISABLED;
+        } else {
+            health = legacyAnalyticsHealth(host);
+            warning = null;
         }
 
-        return new ResponseEntityView<>(Map.of(HEALTH_KEY, legacyHealthCheck(host)));
+        return new ResponseEntityView<>(new ExperimentsHealthView(health, tier, freeExperimentUsed, warning));
     }
 
-    private Health caemHealthCheck(final Host host) {
-        final Map<String, Secret> secrets = ContentAnalyticsUtil.getAppSecrets(host);
-        if (secrets.isEmpty()) {
-            return Health.NOT_CONFIGURED;
-        }
-        final Secret siteAuth = secrets.get(ContentAnalyticsUtil.SITE_AUTH_KEY);
-        final Secret bearerToken = secrets.get(ContentAnalyticsUtil.BEARER_TOKEN_KEY);
-        final boolean configured = siteAuth != null && UtilMethods.isSet(siteAuth.getString())
-                && bearerToken != null && UtilMethods.isSet(bearerToken.getString());
-        if (!configured) {
-            return Health.CONFIGURATION_ERROR;
-        }
-        return EventAnalyticsProxyHelper.healthCheck() ? Health.OK : Health.CONFIGURATION_ERROR;
-    }
-
-    private Health legacyHealthCheck(final Host host) {
+    /**
+     * Evaluates analytics health via the legacy dotExperiments-config path.
+     * Used when {@code FEATURE_FLAG_CAEM_EXPERIMENT_RESULTS=false}.
+     */
+    private Health legacyAnalyticsHealth(final Host host) {
         final AnalyticsApp analyticsApp = Try.of(() -> AnalyticsHelper.get().appFromHost(host))
                 .getOrNull();
         if (analyticsApp == null) {
@@ -652,4 +756,44 @@ public class ExperimentsResource {
                 .rejectWhenNoUser(true)
                 .init();
     }
+
+    /**
+     * Builds a {@code 403 FEATURE_DISABLED} gate response used when {@code FEATURE_FLAG_EXPERIMENTS=false}
+     * prevents an operation.
+     */
+    private static Response featureDisabledResponse() {
+        return Response.status(Response.Status.FORBIDDEN)
+                .entity(new ResponseEntityView<>(
+                        List.of(new com.dotcms.rest.ErrorEntity(
+                                FEATURE_DISABLED_CODE, FEATURE_DISABLED_MSG))))
+                .build();
+    }
+
+    /**
+     * Builds a {@code 400 Bad Request} response used when the experiment duration exceeds
+     * the limited-mode cap defined in {@link ExperimentLimitedModeGate#MAX_DAYS}.
+     */
+    private static Response durationExceededResponse() {
+        return Response.status(Response.Status.BAD_REQUEST)
+                .entity(new ResponseEntityView<>(
+                        List.of(new com.dotcms.rest.ErrorEntity(
+                                "DURATION_EXCEEDED",
+                                "Limited mode allows experiments of at most "
+                                        + ExperimentLimitedModeGate.MAX_DAYS
+                                        + " days. Please shorten the duration."))))
+                .build();
+    }
+
+    /**
+     * Builds a {@code 503 Service Unavailable} gate response used when the Analytics App is
+     * not configured for the site.
+     */
+    private static Response analyticsNotConfiguredResponse() {
+        return Response.status(Response.Status.SERVICE_UNAVAILABLE)
+                .entity(new ResponseEntityView<>(
+                        List.of(new com.dotcms.rest.ErrorEntity(
+                                ANALYTICS_NOT_CONFIGURED_CODE, ANALYTICS_NOT_CONFIGURED_MSG))))
+                .build();
+    }
+
 }

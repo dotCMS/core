@@ -74,6 +74,25 @@ public interface ExperimentsAPI {
     List<Experiment> list(final ExperimentFilter filter, final User user) throws DotDataException;
 
     /**
+     * Returns {@code true} when the free experiment slot is already occupied — meaning at least one
+     * experiment globally is in the {@code {RUNNING, SCHEDULED, ENDED}} states.
+     *
+     * <p>This check is used by the limited-mode gate in {@code ExperimentsResource.start()} to
+     * enforce the one-experiment limit when {@code FEATURE_FLAG_EXPERIMENTS=false}. The query
+     * goes to the database rather than an in-memory cache because cluster nodes may start or end
+     * experiments independently; only the DB provides a cluster-shared, authoritative answer.
+     *
+     * <p>This method is only called from inside the {@code flag=false} branch — it is never
+     * invoked on the fully-enabled happy path, so its DB round-trip adds no cost to normal
+     * operations.
+     *
+     * @return {@code true} if a free slot is already occupied; {@code false} if the slot is
+     *         available
+     * @throws DotDataException if the underlying experiment query fails
+     */
+    boolean isFreeSlotUsed() throws DotDataException;
+
+    /**
      * Starts an {@link Experiment}. In order to start an Experiment it needs to:
      * <li>Have a {@link Status#DRAFT} status
      * <li>Have at least one Variant
