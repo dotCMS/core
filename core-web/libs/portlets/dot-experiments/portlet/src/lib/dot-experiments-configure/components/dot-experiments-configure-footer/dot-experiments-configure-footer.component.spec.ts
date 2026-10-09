@@ -3,6 +3,8 @@ import { byTestId, createComponentFactory, mockProvider, Spectator } from '@open
 import { of } from 'rxjs';
 import { MockInstance, vi } from 'vitest';
 
+import { ConfirmationService } from 'primeng/api';
+
 import { provideLocationMocks } from '@angular/common/testing';
 import { provideRouter } from '@angular/router';
 
@@ -61,7 +63,8 @@ describe('DotExperimentsConfigureFooterComponent', () => {
             { provide: DotMessageService, useValue: messageServiceMock },
             mockProvider(DotExperimentsService, {
                 healthCheck: vi.fn().mockReturnValue(of({ health: 'OK', tier: 'FULL' }))
-            })
+            }),
+            mockProvider(ConfirmationService)
         ],
         detectChanges: false
     });
