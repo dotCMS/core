@@ -239,7 +239,7 @@ describe('DotConfigurationStore', () => {
             expect(spectator.inject(DotNavLogoService).setLogo).toHaveBeenCalledWith('');
         });
 
-        it('leaves the admin chrome alone when only the locale is saved', () => {
+        it('reloads the system time zone but leaves the admin chrome alone when only the locale is saved', () => {
             service.saveLocale.mockReturnValue(
                 of(createFakeCompanyConfiguration({ timeZoneId: 'Europe/Madrid' }))
             );
@@ -247,8 +247,29 @@ describe('DotConfigurationStore', () => {
 
             store.save();
 
+            expect(spectator.inject(GlobalStore).loadSystemConfig).toHaveBeenCalledTimes(1);
             expect(spectator.inject(DotUiColorsService).setColors).not.toHaveBeenCalled();
             expect(spectator.inject(DotNavLogoService).setLogo).not.toHaveBeenCalled();
+        });
+
+        it('keeps the system time zone when the locale save fails', () => {
+            service.saveLocale.mockReturnValue(throwError(() => new Error('rejected')));
+            store.patchLocale({ timeZoneId: 'Europe/Madrid' });
+
+            store.save();
+
+            expect(spectator.inject(GlobalStore).loadSystemConfig).not.toHaveBeenCalled();
+        });
+
+        it('does not reload the system config when only the authentication type is saved', () => {
+            service.saveAuthType.mockReturnValue(
+                of(createFakeCompanyConfiguration({ authType: DotCompanyAuthType.USER_ID }))
+            );
+            store.setAuthType(DotCompanyAuthType.USER_ID);
+
+            store.save();
+
+            expect(spectator.inject(GlobalStore).loadSystemConfig).not.toHaveBeenCalled();
         });
 
         it('leaves the admin chrome alone when the branding save fails', () => {

@@ -6,9 +6,9 @@
     <p-tag
         card-header-end
         severity="info"
-        [value]="$utcTime() + ' UTC'"
-        [attr.aria-label]="'configuration.locale.server-time' | dm: [$utcTime()]"
-        data-testid="configuration-locale-server-time" />
+        [value]="$zoneTime()"
+        [attr.aria-label]="'configuration.locale.zone-time' | dm: [$zoneTime()]"
+        data-testid="configuration-locale-zone-time" />
 
     @let locale = $locale();
     @let errors = store.errors();

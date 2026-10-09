@@ -297,6 +297,12 @@ export const DotConfigurationStore = signalStore(
                                     if (section === DotConfigurationSection.BRANDING) {
                                         refreshAdminChrome(view);
                                     }
+
+                                    // The server changed its default time zone; screens such as
+                                    // Edit Content's date fields read it from the system config.
+                                    if (section === DotConfigurationSection.LOCALE) {
+                                        globalStore.loadSystemConfig();
+                                    }
                                 }),
                                 catchError((error) => {
                                     httpErrorManager.handle(error);

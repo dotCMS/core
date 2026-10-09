@@ -5,7 +5,10 @@ import { Select } from 'primeng/select';
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
-import { DotConfigurationLocaleComponent } from './dot-configuration-locale.component';
+import {
+    DotConfigurationLocaleComponent,
+    formatTimeInZone
+} from './dot-configuration-locale.component';
 
 import { DotConfigurationStore } from '../../store/dot-configuration.store';
 import { createConfigurationStoreSignals } from '../../testing/configuration-store.stub';
@@ -45,20 +48,29 @@ describe('DotConfigurationLocaleComponent', () => {
         vi.useRealTimers();
     });
 
-    describe('server time badge', () => {
-        it('shows the current time in UTC', () => {
-            expect(spectator.query(byTestId('configuration-locale-server-time'))).toHaveText(
-                '14:20 UTC'
+    describe('time badge', () => {
+        const badge = () => spectator.query(byTestId('configuration-locale-zone-time'));
+
+        it('shows the current time in the selected time zone', () => {
+            expect(badge()).toHaveText('14:20 UTC');
+        });
+
+        it('follows the time zone as the selection changes, before saving', () => {
+            store.draft.update((draft) =>
+                draft
+                    ? { ...draft, locale: { ...draft.locale, timeZoneId: 'Europe/Madrid' } }
+                    : draft
             );
+            spectator.detectChanges();
+
+            expect(badge()).toHaveText('16:20 GMT+2');
         });
 
         it('moves forward as time passes', () => {
             vi.advanceTimersByTime(60_000);
             spectator.detectChanges();
 
-            expect(spectator.query(byTestId('configuration-locale-server-time'))).toHaveText(
-                '14:21 UTC'
-            );
+            expect(badge()).toHaveText('14:21 UTC');
         });
     });
 
@@ -112,5 +124,17 @@ describe('DotConfigurationLocaleComponent', () => {
         expect(spectator.query(byTestId('configuration-locale'))).toContainText(
             'This field is required.'
         );
+    });
+});
+
+describe('formatTimeInZone', () => {
+    const now = new Date('2026-10-02T14:20:00Z');
+
+    it('applies daylight saving time for the zone', () => {
+        expect(formatTimeInZone(now, 'America/Chicago', -21600000)).toBe('09:20 CDT');
+    });
+
+    it('falls back to the raw offset for an ID the browser does not recognize', () => {
+        expect(formatTimeInZone(now, 'Not/AZone', 3600000)).toBe('15:20 Not/AZone');
     });
 });
