@@ -102,6 +102,17 @@ on:
         required: false
         type: string
         default: ''
+      docker-cache-scope-prefix:
+        description: |
+          When set, give each image built here a stable BuildKit cache scope
+          instead of relying on BuildKit's implicit ref-keyed one. Release refs
+          are new every time, so a ref-keyed cache is always cold. The generated
+          scope includes the Java variant and the image identity, and deliberately
+          excludes the release version, commit and run id so the cache stays warm
+          across releases. Empty (default) preserves existing behaviour.
+        required: false
+        type: string
+        default: ''
     outputs:
       docker_tags:
         description: 'Docker image tags that were built'
@@ -165,22 +176,37 @@ jobs:
           # version dashes (e.g., "25.02.16-01_java-25_abc123" vs "25.02.16-01-java-25-abc123").
           # This convention may be revisited in future.
 
-          # Use provided java-version if set, otherwise read from .sdkmanrc
+          # SDKMAN version: explicit override, otherwise .sdkmanrc (source of truth)
           if [ -n "${{ inputs.java-version }}" ]; then
             SDKMAN_JAVA_VERSION="${{ inputs.java-version }}"
             echo "Using override Java version: ${SDKMAN_JAVA_VERSION}"
+          elif [ -f .sdkmanrc ]; then
+            SDKMAN_JAVA_VERSION=$(awk -F "=" '/^java=/ {print $2}' .sdkmanrc)
+            echo "Using default Java version from .sdkmanrc: ${SDKMAN_JAVA_VERSION}"
+          else
+            echo "No .sdkmanrc file found"
+            exit 1
+          fi
 
-            # Compute Java suffix for artifact isolation
-            # Priority: explicit artifact-suffix > derived from java-version major
-            if [ -n "${{ inputs.artifact-suffix }}" ]; then
-              RAW_SUFFIX="${{ inputs.artifact-suffix }}"
-              echo "Using explicit artifact suffix: ${RAW_SUFFIX}"
-            else
-              JAVA_MAJOR=$(echo "${{ inputs.java-version }}" | grep -oE '^[0-9]+')
-              RAW_SUFFIX="java-${JAVA_MAJOR}"
-              echo "Using derived artifact suffix: ${RAW_SUFFIX}"
-            fi
+          # Artifact suffix is resolved independently of how the Java version was
+          # found: an explicit artifact-suffix wins outright, otherwise derive
+          # java-<major> from an explicit java-version. A baseline run (no override)
+          # carries no suffix. maven-job resolves it this same way — previously this
+          # step only honoured artifact-suffix when java-version was also set, so a
+          # caller supplying only artifact-suffix had the build publish
+          # maven-repo-<suffix> while this job looked for an unsuffixed artifact.
+          if [ -n "${{ inputs.artifact-suffix }}" ]; then
+            RAW_SUFFIX="${{ inputs.artifact-suffix }}"
+            echo "Using explicit artifact suffix: ${RAW_SUFFIX}"
+          elif [ -n "${{ inputs.java-version }}" ]; then
+            JAVA_MAJOR=$(echo "${{ inputs.java-version }}" | grep -oE '^[0-9]+')
+            RAW_SUFFIX="java-${JAVA_MAJOR}"
+            echo "Using derived artifact suffix: ${RAW_SUFFIX}"
+          else
+            RAW_SUFFIX=""
+          fi
 
+          if [ -n "${RAW_SUFFIX}" ]; then
             # Normalize: strip any leading separators, then add appropriate separator
             while [[ "${RAW_SUFFIX}" =~ ^[-_] ]]; do
               RAW_SUFFIX="${RAW_SUFFIX:1}"
@@ -190,20 +216,14 @@ jobs:
             MAVEN_SUFFIX="-${RAW_SUFFIX}"
             # For Docker tags: use underscore separator
             DOCKER_SUFFIX="_${RAW_SUFFIX}"
-
-            echo "Raw suffix: '${RAW_SUFFIX}'"
-            echo "Maven suffix: '${MAVEN_SUFFIX}'"
-            echo "Docker suffix: '${DOCKER_SUFFIX}'"
-          elif [ -f .sdkmanrc ]; then
-            SDKMAN_JAVA_VERSION=$(awk -F "=" '/^java=/ {print $2}' .sdkmanrc)
-            echo "Using default Java version from .sdkmanrc: ${SDKMAN_JAVA_VERSION}"
-            RAW_SUFFIX=""
+          else
             MAVEN_SUFFIX=""
             DOCKER_SUFFIX=""
-          else
-            echo "No .sdkmanrc file found"
-            exit 1
           fi
+
+          echo "Raw suffix: '${RAW_SUFFIX}'"
+          echo "Maven suffix: '${MAVEN_SUFFIX}'"
+          echo "Docker suffix: '${DOCKER_SUFFIX}'"
 
           # Used as the dotcms/java-base docker tag (FROM dotcms/java-base:<tag>), which
           # cannot contain '+' - convert SDKMAN's '+' to '-' (e.g. 25.0.4+1-ms -> 25.0.4-1-ms)
@@ -245,6 +265,38 @@ jobs:
           fi
           echo "identifier_tag=${IDENTIFIER_TAG}" >> "$GITHUB_OUTPUT"
 
+      # Must run before the builds below: they consume these scopes.
+      - name: Compute Docker Cache Scopes
+        id: docker-cache-scopes
+        shell: bash
+        env:
+          PREFIX: ${{ inputs.docker-cache-scope-prefix }}
+          VARIANT: ${{ steps.get-sdkman-version.outputs.raw_suffix }}
+          SDKMAN_JAVA: ${{ steps.get-sdkman-version.outputs.SDKMAN_JAVA_VERSION }}
+        run: |
+          # No prefix -> leave the scope alone and let BuildKit key on the ref,
+          # which is what every caller had before this input existed.
+          if [[ -z "$PREFIX" ]]; then
+            {
+              echo "main=buildkit"
+              echo "dev=buildkit"
+            } >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Stable by construction: the release version, commit and run id are
+          # excluded so each release warms the cache the next one reuses, while
+          # the variant and image identity keep unrelated builds (and the main and
+          # dev images themselves) apart.
+          # get-sdkman-version already normalises '+' to '-'; this is belt and
+          # braces so the scope can never contain a character Docker rejects.
+          variant="${VARIANT:-primary}"
+          java="${SDKMAN_JAVA//+/-}"
+          {
+            echo "main=${PREFIX}-main-${variant}-${java}"
+            echo "dev=${PREFIX}-dev-${variant}-${java}"
+          } >> "$GITHUB_OUTPUT"
+
       # Build and push the main Docker image.
       # All tags (base, sha, identifier alias, custom) are applied in a single build.
       - name: Build/Push Docker Image
@@ -264,6 +316,7 @@ jobs:
           docker_io_token: ${{ secrets.DOCKER_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           pull: true
+          cache-scope: ${{ steps.docker-cache-scopes.outputs.main }}
           artifact_suffix: ${{ steps.get-sdkman-version.outputs.maven_suffix }}
           build_args: |
             DOTCMS_DOCKER_TAG=${{ steps.docker-tags.outputs.base_tag }}
@@ -308,6 +361,7 @@ jobs:
           docker_io_token: ${{ secrets.DOCKER_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           pull: true
+          cache-scope: ${{ steps.docker-cache-scopes.outputs.dev }}
           build_args: |
             DOTCMS_DOCKER_TAG=${{ steps.docker-tags.outputs.base_tag }}
             DEV_REQUEST_TOKEN=${{ secrets.DEV_REQUEST_TOKEN }}

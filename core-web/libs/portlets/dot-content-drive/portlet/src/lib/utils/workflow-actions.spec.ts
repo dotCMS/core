@@ -930,7 +930,7 @@ describe('workflow-actions', () => {
                 expect(result.allAreAssets).toBe(true);
             });
 
-            it('should support "Rename" action visibility (single non-archived item)', () => {
+            it('should report a single non-archived item', () => {
                 const items: DotContentDriveItem[] = [
                     {
                         archived: false,
@@ -1031,7 +1031,7 @@ describe('workflow-actions', () => {
                     expect(result.isSingleSelection).toBe(false);
                 });
 
-                it('should hide Rename in multi-selection', () => {
+                it('should not report a single selection for two items', () => {
                     const items: DotContentDriveItem[] = [
                         {
                             archived: false,
@@ -1051,7 +1051,6 @@ describe('workflow-actions', () => {
 
                     const result = getActionConditions(items);
 
-                    // Rename requires isSingleSelection: true
                     expect(result.isSingleSelection).toBe(false);
                 });
 
