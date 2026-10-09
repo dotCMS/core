@@ -46,8 +46,19 @@ public class ResourceFactoryImpl implements ResourceFactory, Initable {
 		return getResource(davHost, url, dotDavHelper, hostAPI);
 	}
 
+	/**
+	 * Resolves a WebDAV URL to the site, folder, file, language file or temporary file it names.
+	 * With S3 asset storage on, a temporary file is resolved from its S3 entry, and that entry is
+	 * reused to build the resource rather than looked up a second time.
+	 *
+	 * @param davHost the host header of the request
+	 * @param url the requested WebDAV URL
+	 * @param dotDavHelper the WebDAV helper
+	 * @param hostAPI the site API
+	 * @return the resource, or {@code null} if the URL names nothing
+	 */
 	public static Resource getResource(final String davHost, String url, final DotWebdavHelper dotDavHelper, final HostAPI hostAPI) {
-		url = url.toLowerCase();
+		if (!com.dotcms.storage.AssetStorageFeature.isEnabled() || !dotDavHelper.isTempResource(url)) url = url.toLowerCase();
 		Logger.debug(ResourceFactoryImpl.class, "WebDav ResourceFactory: Host is " + davHost + " and the url is " + url);
 		try{
 			dotDavHelper.stripMapping(url);//method also sets the language
@@ -115,6 +126,12 @@ public class ResourceFactoryImpl implements ResourceFactory, Initable {
 			// handle crappy dav clients temp files
 			if(dotDavHelper.isTempResource(url)){
 				java.io.File tempFile = dotDavHelper.loadTempFile(url);
+				if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+					final var entry = com.dotcms.storage.WebdavTemporaryStorage.getInstance().stat(tempFile);
+					if (entry == null) return null;
+					return entry.directory() ? new TempFolderResourceImpl(url, tempFile, dotDavHelper.isAutoPub(url))
+							: new TempFileResourceImpl(tempFile, url, dotDavHelper.isAutoPub(url), entry);
+				}
 				if(tempFile == null || !tempFile.exists()){
 					return null;
 				}else if(tempFile.isDirectory()){
@@ -204,6 +221,9 @@ public class ResourceFactoryImpl implements ResourceFactory, Initable {
 				return fr;
 			}
 		} catch (Exception e) {
+            if (com.dotcms.storage.AssetStorageFeature.isEnabled() && dotDavHelper.isTempResource(url)) {
+                throw new com.dotmarketing.exception.DotRuntimeException("Unable to resolve WebDAV staging resource", e);
+            }
 			Logger.error(ResourceFactoryImpl.class, e.getMessage(), e);
 			return null;
 		}
