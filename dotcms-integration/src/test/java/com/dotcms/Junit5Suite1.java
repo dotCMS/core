@@ -79,7 +79,8 @@ import org.junit.platform.suite.api.Suite;
         FolderBulkDuplicateHeartbeatIT.class,
         com.dotcms.storage.binary.BinaryAssetStorageIntegrationTest.class,
         com.dotcms.storage.binary.ContentletBackupStorageTest.class,
-        com.dotcms.storage.binary.SharedAssetStorageIntegrationTest.class
+        com.dotcms.storage.binary.SharedAssetStorageIntegrationTest.class,
+        com.dotcms.storage.binary.BinaryAssetStarterRestoreTest.class
 })
 public class Junit5Suite1 {
 
