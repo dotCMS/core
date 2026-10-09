@@ -272,7 +272,13 @@ export class DotUveIframeComponent {
         // click dotCMS didn't recognize as a link (e.g. the click landed on a
         // padded/delegate wrapper, not the anchor itself) and performs its own
         // `location.href` navigation, which silently bypasses the SPA entirely
-        // and blanks the canvas (dotCMS/core#37961).
+        // and blanks the canvas (dotCMS/core#37961). This is deliberately
+        // broad: any click outside the UVE-owned targets below — a theme's
+        // cookie banner, carousel, accordion, or other page-authored widget —
+        // stops responding in the editor preview too, not just link clicks.
+        // There's no reliable way to tell "page click we must stop" from
+        // "page click that's harmless" in advance, so the trade-off is
+        // accepted in exchange for closing the race entirely.
         fromEvent<MouseEvent>(win, 'click', { capture: true })
             .pipe(
                 filter((e) => {
