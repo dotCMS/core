@@ -29302,7 +29302,7 @@ components:
         freeExperimentUsed:
           type: boolean
           description: Whether the single free experiment slot is already occupied.
-            Present only when tier=LIMITED; null when tier=FULL.
+            Present only when tier="limited"; null when tier="full".
         health:
           type: string
           description: Current health state of the experiments / analytics configuration
@@ -29312,8 +29312,8 @@ components:
           - CONFIGURATION_ERROR
         tier:
           type: string
-          description: "License tier: FULL when experiments are fully enabled, LIMITED\
-            \ when restricted to one free experiment"
+          description: "License tier: \"full\" when experiments are fully enabled,\
+            \ \"limited\" when restricted to one free experiment"
           enum:
           - full
           - limited
