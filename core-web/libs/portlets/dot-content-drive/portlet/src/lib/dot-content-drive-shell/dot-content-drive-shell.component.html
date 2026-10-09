@@ -289,3 +289,21 @@
         (versionRestored)="onLegacyPanelRestored()"
         (languageChanged)="onLegacyPanelLanguage($event)" />
 }
+
+<!-- Edit Source: a file's source in Monaco. Deferred like the new-editor panel, so the editor
+     module stays out of this portlet's chunk until the first time a developer opens a file. -->
+@defer (when $sourceEditorRequest()) {
+    @if ($sourceEditorRequest(); as request) {
+        <dot-source-editor-side-panel
+            data-testId="source-editor-side-panel"
+            [request]="request"
+            (saved)="onSourceEditorSaved()"
+            (closed)="onSourceEditorClosed()" />
+    }
+} @loading {
+    <div
+        class="fixed right-4 bottom-4 z-10000 rounded-full bg-white p-3 shadow-lg"
+        data-testid="source-editor-side-panel-loading">
+        <p-progressSpinner styleClass="h-8! w-8!" strokeWidth="4" ariaLabel="loading editor" />
+    </div>
+}

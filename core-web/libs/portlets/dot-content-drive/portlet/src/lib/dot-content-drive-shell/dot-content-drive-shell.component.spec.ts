@@ -57,6 +57,8 @@ import {
 import {
     DotEditContentSidePanelComponent,
     DotSidePanelNavController,
+    DotSourceEditorRequest,
+    DotSourceEditorSidePanelComponent,
     EditContentDialogData
 } from '@dotcms/edit-content';
 import {
@@ -132,6 +134,8 @@ const dialogServiceOpen = vi.fn(() => permissionsDialogRef);
 
 // Backs the mock's `$legacyPanelRequest`: the legacy-editor panel the shell must render (#37759).
 const legacyPanelRequestSignal: WritableSignal<DotLegacyEditorRequest | null> = signal(null);
+// Backs the mock's `sourceEditor`: the file the Edit Source panel shows.
+const sourceEditorSignal: WritableSignal<DotSourceEditorRequest | null> = signal(null);
 // Module scope: both store mocks in this file read it, and they live in describes that do not
 // share a `beforeEach`. Reset per test rather than re-created, so neither mock captures a stale one.
 /** Nothing refused by default; the refusal tests set it. Module-scoped like its siblings,
@@ -266,14 +270,24 @@ describe('DotContentDriveShellComponent', () => {
             // be provided the same way the shell provides it in production.
             provideContentDriveFieldFilterHost()
         ],
-        // The legacy panel hosts a JSP iframe and has its own spec; the shell only needs its
-        // inputs, outputs and `requestClose()`.
+        // The legacy panel hosts a JSP iframe and the source panel hosts Monaco; both have their
+        // own specs, and the shell only needs their inputs, outputs and `requestClose()`.
         overrideComponents: [
             [
                 DotContentDriveShellComponent,
                 {
-                    remove: { imports: [DotLegacyEditorSidePanelComponent] },
-                    add: { imports: [MockComponent(DotLegacyEditorSidePanelComponent)] }
+                    remove: {
+                        imports: [
+                            DotLegacyEditorSidePanelComponent,
+                            DotSourceEditorSidePanelComponent
+                        ]
+                    },
+                    add: {
+                        imports: [
+                            MockComponent(DotLegacyEditorSidePanelComponent),
+                            MockComponent(DotSourceEditorSidePanelComponent)
+                        ]
+                    }
                 }
             ]
         ],
@@ -302,6 +316,7 @@ describe('DotContentDriveShellComponent', () => {
         editPanelRequestSignal.set(null);
         panelLocationSignal.set(null);
         legacyPanelRequestSignal.set(null);
+        sourceEditorSignal.set(null);
         permissionsDialogClose$ = new Subject<unknown>();
         dialogServiceOpen.mockClear();
         permissionsDialogRef.close.mockClear();
@@ -408,6 +423,8 @@ describe('DotContentDriveShellComponent', () => {
                     selectSystemHost: vi.fn(),
                     sidebarLoading: vi.fn(),
                     closeDialog: vi.fn(),
+                    sourceEditor: sourceEditorSignal,
+                    closeSourceEditor: vi.fn(),
                     patchContextMenu: vi.fn(),
                     resetContextMenu: vi.fn(),
                     setDragItems: vi.fn(),
@@ -982,6 +999,20 @@ describe('DotContentDriveShellComponent', () => {
                 expect(store.loadItems).not.toHaveBeenCalled();
 
                 legacyPanelRequestSignal.set(null);
+                spectator.detectChanges();
+
+                expect(store.loadItems).toHaveBeenCalledWith({ quiet: true });
+            });
+
+            it('should hold the reload while the Edit Source panel is open, and run it when it closes', () => {
+                sourceEditorSignal.set({} as DotSourceEditorRequest);
+                spectator.detectChanges();
+
+                settle(backgrounded);
+
+                expect(store.loadItems).not.toHaveBeenCalled();
+
+                sourceEditorSignal.set(null);
                 spectator.detectChanges();
 
                 expect(store.loadItems).toHaveBeenCalledWith({ quiet: true });
@@ -5639,6 +5670,59 @@ describe('DotContentDriveShellComponent', () => {
         });
     });
 
+    describe('Edit Source panel', () => {
+        const SOURCE_PANEL = 'dot-source-editor-side-panel';
+        const SOURCE_REQUEST: DotSourceEditorRequest = {
+            inode: 'vtl-inode',
+            identifier: 'vtl-id',
+            languageId: 1,
+            title: 'header.vtl',
+            language: 'velocity'
+        };
+
+        /** Opens the panel and lets its `@defer` block resolve. */
+        const openSourcePanel = async () => {
+            sourceEditorSignal.set(SOURCE_REQUEST);
+            spectator.detectChanges();
+            await spectator.fixture.whenStable();
+            spectator.detectChanges();
+        };
+
+        it('renders the panel with the requested file', async () => {
+            await openSourcePanel();
+
+            const panel = spectator.debugElement.query(By.css(SOURCE_PANEL));
+
+            expect(panel).not.toBeNull();
+            // Read through ng-mocks: a mocked component holds a signal input as a plain value.
+            expect(ngMocks.input(panel, 'request')).toEqual(SOURCE_REQUEST);
+        });
+
+        it('renders no panel while no file is open', async () => {
+            spectator.detectChanges();
+            await spectator.fixture.whenStable();
+
+            expect(spectator.query(SOURCE_PANEL)).toBeNull();
+        });
+
+        it('refreshes the list quietly on save and keeps the panel open', async () => {
+            await openSourcePanel();
+
+            spectator.triggerEventHandler(SOURCE_PANEL, 'saved', undefined);
+
+            expect(store.reloadContentDrive).toHaveBeenCalledWith({ quiet: true });
+            expect(store.closeSourceEditor).not.toHaveBeenCalled();
+        });
+
+        it('clears the request when the panel closes', async () => {
+            await openSourcePanel();
+
+            spectator.triggerEventHandler(SOURCE_PANEL, 'closed', undefined);
+
+            expect(store.closeSourceEditor).toHaveBeenCalledTimes(1);
+        });
+    });
+
     describe('extra columns (Show In List)', () => {
         beforeEach(() => spectator.detectChanges());
 
@@ -5951,14 +6035,24 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
             // be provided the same way the shell provides it in production.
             provideContentDriveFieldFilterHost()
         ],
-        // The legacy panel hosts a JSP iframe and has its own spec; the shell only needs its
-        // inputs, outputs and `requestClose()`.
+        // The legacy panel hosts a JSP iframe and the source panel hosts Monaco; both have their
+        // own specs, and the shell only needs their inputs, outputs and `requestClose()`.
         overrideComponents: [
             [
                 DotContentDriveShellComponent,
                 {
-                    remove: { imports: [DotLegacyEditorSidePanelComponent] },
-                    add: { imports: [MockComponent(DotLegacyEditorSidePanelComponent)] }
+                    remove: {
+                        imports: [
+                            DotLegacyEditorSidePanelComponent,
+                            DotSourceEditorSidePanelComponent
+                        ]
+                    },
+                    add: {
+                        imports: [
+                            MockComponent(DotLegacyEditorSidePanelComponent),
+                            MockComponent(DotSourceEditorSidePanelComponent)
+                        ]
+                    }
                 }
             ]
         ],
@@ -6072,6 +6166,8 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
                     sidebarLoading,
                     defaultLanguageLoaded,
                     closeDialog: vi.fn(),
+                    sourceEditor: signal(null),
+                    closeSourceEditor: vi.fn(),
                     patchContextMenu: vi.fn(),
                     resetContextMenu: vi.fn(),
                     setDragItems: vi.fn(),

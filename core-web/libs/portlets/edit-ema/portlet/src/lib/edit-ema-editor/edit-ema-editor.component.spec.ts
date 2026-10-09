@@ -5,7 +5,7 @@ import {
     createRoutingFactory,
     mockProvider
 } from '@openng/spectator/vitest';
-import { MockComponent } from 'ng-mocks';
+import { MockComponent, ngMocks } from 'ng-mocks';
 import { of, Subject, throwError } from 'rxjs';
 import { Mock, MockInstance, describe, expect, it, vi } from 'vitest';
 
@@ -56,11 +56,12 @@ import {
 } from '@dotcms/data-access';
 import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
 import { DEFAULT_VARIANT_ID, DotCMSContentlet, FeaturedFlags } from '@dotcms/dotcms-models';
+import { DotSourceEditorSidePanelComponent } from '@dotcms/edit-content';
 import { DotPaletteListStore, DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
 import { DotCMSURLContentMap, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
-import { DotCopyContentModalService, SafeUrlPipe } from '@dotcms/ui';
+import { DOT_VELOCITY_LANGUAGE_ID, DotCopyContentModalService, SafeUrlPipe } from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
 import {
     CONTENT_TYPE_MOCK_FOR_EDITOR,
@@ -213,11 +214,21 @@ const createRouting = () =>
             [
                 EditEmaEditorComponent,
                 {
+                    // The source editor hosts Monaco and has its own spec; the editor only needs
+                    // its input and outputs.
                     remove: {
-                        imports: [DotUveToolbarComponent, DotUvePaletteComponent]
+                        imports: [
+                            DotUveToolbarComponent,
+                            DotUvePaletteComponent,
+                            DotSourceEditorSidePanelComponent
+                        ]
                     },
                     add: {
-                        imports: [DotUveToolbarStubComponent, DotUvePaletteStubComponent]
+                        imports: [
+                            DotUveToolbarStubComponent,
+                            DotUvePaletteStubComponent,
+                            MockComponent(DotSourceEditorSidePanelComponent)
+                        ]
                     }
                 }
             ]
@@ -278,7 +289,10 @@ const createRouting = () =>
             {
                 provide: DotContentletService,
                 useValue: {
-                    getContentletByInode: () => of(URL_MAP_CONTENTLET)
+                    getContentletByInode: () => of(URL_MAP_CONTENTLET),
+                    // The VTL menu asks before opening Edit Source; by default the user may edit.
+                    canLock: () =>
+                        of({ canLock: true, locked: false, id: '', inode: '', lockedBy: '' })
                 }
             },
             {
@@ -2769,6 +2783,106 @@ describe('EditEmaEditorComponent', () => {
                             contentletInode: 'vtl-inode-123'
                         })
                     );
+                });
+
+                describe('Edit Source panel', () => {
+                    const SOURCE_PANEL = 'dot-source-editor-side-panel';
+                    const VELOCITY_FILE = {
+                        ...URL_MAP_CONTENTLET,
+                        inode: 'vtl-inode-123',
+                        identifier: 'vtl-identifier-123',
+                        languageId: 2,
+                        baseType: 'FILEASSET',
+                        extension: 'vtl',
+                        fileName: 'my-template.vtl'
+                    } as DotCMSContentlet;
+
+                    /** Clicks the file in the VTL menu and lets the deferred panel render. */
+                    const openVelocityFile = async () => {
+                        vi.spyOn(
+                            spectator.debugElement.injector.get(DotContentletService),
+                            'getContentletByInode'
+                        ).mockReturnValue(of(VELOCITY_FILE));
+
+                        spectator.component.handleEditVTL(VTL_FILE_MOCK);
+                        spectator.detectChanges();
+                        await spectator.fixture.whenStable();
+                        spectator.detectChanges();
+                    };
+
+                    it("should open a Velocity file's source instead of the content editor", async () => {
+                        const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
+                        const dialogServiceOpenSpy = vi.spyOn(
+                            spectator.inject(DialogService),
+                            'open'
+                        );
+
+                        await openVelocityFile();
+
+                        const panel = spectator.debugElement.query(By.css(SOURCE_PANEL));
+
+                        // Read through ng-mocks: a mocked component holds a signal input as a
+                        // plain value.
+                        expect(ngMocks.input(panel, 'request')).toEqual({
+                            inode: 'vtl-inode-123',
+                            identifier: 'vtl-identifier-123',
+                            languageId: 2,
+                            title: 'my-template.vtl',
+                            language: DOT_VELOCITY_LANGUAGE_ID
+                        });
+                        expect(dialogSpy).not.toHaveBeenCalled();
+                        expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
+                    });
+
+                    it.each([
+                        [
+                            'the user cannot edit it',
+                            of({
+                                canLock: false,
+                                locked: true,
+                                id: '',
+                                inode: '',
+                                lockedBy: 'someone'
+                            })
+                        ],
+                        ['the lock check fails', throwError(() => new Error('network'))]
+                    ])(
+                        'should open the content editor instead when %s',
+                        async (_label, lockAnswer) => {
+                            vi.spyOn(
+                                spectator.debugElement.injector.get(DotContentletService),
+                                'canLock'
+                            ).mockReturnValue(
+                                lockAnswer as ReturnType<DotContentletService['canLock']>
+                            );
+                            const openContentForEdit = vi
+                                .spyOn(spectator.component, 'openContentForEdit')
+                                .mockImplementation(() => undefined);
+
+                            await openVelocityFile();
+
+                            expect(openContentForEdit).toHaveBeenCalledWith(VELOCITY_FILE);
+                            expect(spectator.query(SOURCE_PANEL)).toBeNull();
+                        }
+                    );
+
+                    it('should reload the page when the source is saved', async () => {
+                        await openVelocityFile();
+                        const pageReloadSpy = vi.spyOn(pageApi(), 'pageReload');
+
+                        spectator.triggerEventHandler(SOURCE_PANEL, 'saved', undefined);
+
+                        expect(pageReloadSpy).toHaveBeenCalled();
+                    });
+
+                    it('should remove the panel when it closes', async () => {
+                        await openVelocityFile();
+
+                        spectator.triggerEventHandler(SOURCE_PANEL, 'closed', undefined);
+                        spectator.detectChanges();
+
+                        expect(spectator.query(SOURCE_PANEL)).toBeNull();
+                    });
                 });
             });
 
