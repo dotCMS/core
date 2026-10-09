@@ -37,6 +37,12 @@ avatar, language chip and content type below).
 - Q: What picture should the owner avatar show? → A: The owner's Gravatar, looked up from their
   email, as the toolbar already does; their initials when they have no Gravatar.
 
+### Session 2026-10-09
+
+- Q: Do the Content Drive keyboard shortcuts (#32591) apply to the grid, and how do arrow keys move
+  between cards? → A: Yes, all of them. Left/Right move one card, Up/Down move one row of cards
+  (the standard keyboard pattern for grids). Everything else matches the table.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Browse the Drive as a grid of cards (Priority: P1)
@@ -252,6 +258,62 @@ grid keeps whatever order was set there.
 
 ---
 
+### User Story 7 - Use the Drive's keyboard shortcuts in the grid (Priority: P2)
+
+Content Drive already has keyboard shortcuts (#32591): one Tab stop into the listing, arrows to
+move between rows, Shift+Arrow to extend a selection, Escape to clear it, and shortcuts for search
+and the folder tree. A keyboard user who switches to the grid keeps all of them. Because cards sit
+in rows and columns, the arrows move in two directions: Left/Right move one card, Up/Down move one
+row of cards.
+
+**Why this priority**: Losing the shortcuts would make the grid a step back for keyboard users and
+break the accessibility the Drive already offers. It builds on the selection from Story 3.
+
+**Independent Test**: In the grid, press Tab until focus enters the listing, then use the arrows,
+Shift+Arrow and Escape without the mouse. Focus, selection and the folder tree respond as described
+below.
+
+**Acceptance Scenarios**:
+
+1. **Given** the grid is showing,
+   **When** the user tabs into the listing,
+   **Then** focus lands on one card only; one more Tab leaves the grid, as with the table.
+2. **Given** a card has focus,
+   **When** the user presses Right or Left,
+   **Then** focus moves to the next or previous card in reading order, wrapping onto the next or
+   previous row, without changing the selection.
+3. **Given** a card has focus,
+   **When** the user presses Down or Up,
+   **Then** focus moves to the card in the same column one row below or above; when that row is
+   shorter (the last row), focus goes to its last card.
+4. **Given** focus is on the first or last card of the page,
+   **When** the user presses an arrow that would leave the page,
+   **Then** focus stays where it is; no arrow key changes the page.
+5. **Given** a card has focus,
+   **When** the user presses Shift with any arrow,
+   **Then** the selection extends from the anchor card to the newly focused card in reading order,
+   and reversing direction shrinks it back toward the anchor, as Shift+Arrow does in the table.
+6. **Given** one card is selected,
+   **When** the user Shift-clicks another card's checkbox,
+   **Then** every card between them in reading order is selected.
+7. **Given** some cards cannot be selected (for example busy with a running bulk action),
+   **When** the user moves with the arrows or extends a range,
+   **Then** those cards are skipped and left out of the range, as in the table.
+8. **Given** cards are selected,
+   **When** the user presses Escape,
+   **Then** the selection clears and filters, search text and folder stay as they are.
+9. **Given** the grid is showing,
+   **When** the user presses the search shortcut or the folder tree shortcut,
+   **Then** they work exactly as in the table view.
+10. **Given** a card has focus,
+    **When** the user presses Enter or Space,
+    **Then** the same thing happens as on a focused table row.
+11. **Given** the user sorts, filters, searches or changes page in the grid,
+    **When** the new results appear,
+    **Then** the grid is still reachable with a single Tab, as the table is after the same changes.
+
+---
+
 ### Edge Cases
 
 - **Loading**: While results load, the grid shows placeholder cards of the same size, not an empty
@@ -271,8 +333,10 @@ grid keeps whatever order was set there.
   icon.
 - **Very long language tag or type name**: Cut to fit on the second line like the title; never
   pushes the card wider.
-- **Keyboard users**: Cards and their checkboxes are reachable with the Tab key, and selection with
-  the keyboard works as it does in the table.
+- **Keyboard users on a resized grid**: When the number of columns changes (window resized, folder
+  tree toggled), Up/Down follow the new layout, and the focused card and anchor stay the same items.
+- **Read-only grid**: A grid the user cannot act on takes no card focus and ignores selection
+  shortcuts, as a read-only table does.
 
 ## Requirements *(mandatory)*
 
@@ -337,7 +401,21 @@ grid keeps whatever order was set there.
 - **FR-026**: Lock and shared-asset markers shown on table rows MUST also appear on the matching card.
 - **FR-027**: Cards, checkboxes and the view switcher MUST be operable with the keyboard and announced
   with meaningful labels to screen readers.
-- **FR-028**: All new visible text MUST be translatable, like the rest of the Drive.
+- **FR-028**: The grid MUST be a single Tab stop, and MUST stay reachable that way after every sort,
+  page change, page-size change, filter change and search.
+- **FR-029**: Left and Right MUST move focus one card in reading order; Up and Down MUST move focus to
+  the same column one row away (to the last card of a shorter last row). None of these keys may
+  change the selection, scroll the listing on their own, or change the page.
+- **FR-030**: Shift with any arrow MUST extend or shrink the selection from the anchor card to the
+  focused card in reading order, keeping cards that were already selected, exactly as Shift+Arrow
+  does in the table. Shift-clicking a card's checkbox MUST select the range from the anchor.
+- **FR-031**: Unselectable cards MUST be skipped by arrow movement and left out of ranges; a
+  read-only grid MUST take no card focus and accept no selection shortcut.
+- **FR-032**: Escape, the search shortcut and the folder tree shortcut MUST behave in the grid exactly
+  as in the table; Enter and Space on a focused card MUST do what they do on a focused table row.
+- **FR-033**: Any grid-only key behaviour (the two-direction arrows) MUST be documented alongside the
+  existing Content Drive shortcuts.
+- **FR-034**: All new visible text MUST be translatable, like the rest of the Drive.
 
 ### Key Entities
 
@@ -362,6 +440,8 @@ grid keeps whatever order was set there.
   same browser, unless the browser blocks storage.
 - **SC-006**: Every bulk action available from a table selection is available, with the same result,
   from the same selection made in the grid.
+- **SC-007**: Every Content Drive keyboard shortcut that works in the table also works in the grid, and
+  a keyboard user can reach, move through and select any card on the page without the mouse.
 
 ## Legacy Considerations *(dotCMS-specific — mandatory)*
 
@@ -377,7 +457,9 @@ grid keeps whatever order was set there.
   reads the tool's `dataViewMode` and opens in cards when it is `card` (`view_contentlets.jsp`), and
   the custom tool catalog work (#37574) exposes it as `list` or `card`. Making the Drive honour it
   is a separate ticket, so this feature's remembered-view rule must leave room for a tool setting to
-  be added later. The plan will consult `dotCMS/platform-adrs`.
+  be added later. The keyboard behaviour must follow the Content Drive shortcuts spec (#32591,
+  `specs/32591-content-drive-keybindings/spec.md`), changed only where a grid needs two-direction
+  arrows. The plan will consult `dotCMS/platform-adrs`.
 
 ## Assumptions
 
