@@ -208,9 +208,25 @@ export class DotUveIframeComponent {
 
         this.iframeClickListener$.next();
 
-        fromEvent<MouseEvent>(win, 'click')
+        // Bound on the capture phase so this fires before ANY bubble-phase
+        // listener the page's own content registered (e.g. a docs-theme's
+        // client-side router delegating clicks on `document`), and before any
+        // capture-phase listener on a node closer to the click target. Capture
+        // traverses window → document → … → target, so a listener on `window`
+        // is always first; bubble traverses the reverse, so a page-owned
+        // listener on `document` would otherwise fire *before* a same-phase
+        // listener on `window` ever could, regardless of registration order.
+        // stopPropagation() here, unconditionally, prevents the page's own
+        // handlers from ever seeing the click — closing the gap where a page
+        // script reacts to a click dotCMS didn't recognize as a link (e.g. the
+        // click landed on a padded/delegate wrapper, not the anchor itself)
+        // and performs its own `location.href` navigation, which silently
+        // bypasses the SPA entirely and blanks the canvas (dotCMS/core#37961).
+        fromEvent<MouseEvent>(win, 'click', { capture: true })
             .pipe(
                 filter((e) => {
+                    e.stopPropagation();
+
                     const target = e.target as HTMLElement;
                     const linkElement = target.closest('a');
                     const href = linkElement?.getAttribute('href');

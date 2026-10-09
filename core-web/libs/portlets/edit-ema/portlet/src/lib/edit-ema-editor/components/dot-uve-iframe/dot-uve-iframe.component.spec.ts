@@ -288,6 +288,49 @@ describe('DotUveIframeComponent', () => {
             expect(typeof (mockWindow.addEventListener as Mock).mock.calls[0][1]).toBe('function');
         });
 
+        it('should subscribe on the capture phase, not the bubble phase', () => {
+            // Capture traverses window -> document -> ... -> target, so a
+            // listener on `window` always runs first. Bubble traverses the
+            // reverse, letting a page-owned listener on a node closer to the
+            // target (e.g. `document`) run before this one regardless of
+            // registration order — the exact gap that let a page's own
+            // click-delegation script win the race and navigate the iframe
+            // natively, bypassing the SPA (dotCMS/core#37961).
+            (mockWindow.addEventListener as Mock).mockClear();
+            (component as any).handleInlineScripts(false);
+            const options = (mockWindow.addEventListener as Mock).mock.calls[0][2];
+            expect(options).toEqual(expect.objectContaining({ capture: true }));
+        });
+
+        it('should stop propagation for every click, even ones it does not recognize as a link or edit target', () => {
+            // Regression test for dotCMS/core#37961: a click that lands just
+            // outside the real anchor (e.g. a padded/delegate-click wrapper a
+            // page's own navigation theme made clickable) must never reach the
+            // page's own bubble-phase handlers — otherwise that handler can
+            // perform its own `location.href` navigation, silently bypassing
+            // dotCMS and blanking the canvas.
+            let clickHandler: ((e: MouseEvent) => void) | undefined;
+
+            (mockWindow.addEventListener as Mock).mockImplementation(
+                (event: string, handler: (e: MouseEvent) => void) => {
+                    if (event === 'click') {
+                        clickHandler = handler;
+                    }
+                }
+            );
+
+            (component as any).handleInlineScripts(false);
+
+            const plainDiv = document.createElement('div');
+            const clickEvent = new MouseEvent('click', { bubbles: true });
+            Object.defineProperty(clickEvent, 'target', { value: plainDiv, writable: false });
+            const stopPropagationSpy = vi.spyOn(clickEvent, 'stopPropagation');
+
+            clickHandler?.(clickEvent);
+
+            expect(stopPropagationSpy).toHaveBeenCalled();
+        });
+
         it('should emit internalNav on click', () => {
             const internalNavSpy = vi.spyOn(component.internalNav, 'emit');
             let clickHandler: ((e: MouseEvent) => void) | undefined;
