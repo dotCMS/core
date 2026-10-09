@@ -37,6 +37,7 @@ import {
 
 import { withContent } from './content.feature';
 
+import { EDIT_CONTENT_NAVIGATION_OVERRIDE } from '../../../models/edit-content-navigation-override';
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
 import { EDIT_CONTENT_HOST } from '../../../services/host/edit-content-host.model';
 import { MOCK_WORKFLOW_STATUS } from '../../../utils/edit-content.mock';
@@ -554,6 +555,136 @@ describe('ContentFeature', () => {
                 workflow: contentType.workflows.map((w: any) => w.id)
             });
             expect(router.navigate).toHaveBeenCalledWith([`/c/content/`, '123']);
+        }));
+    });
+});
+
+/**
+ * An opener can take over how the editor leaves for the legacy editor or after a load error
+ * (#37759, FR-028, FR-029). Only Content Drive provides the override; without it the editor
+ * navigates exactly as above. The override answers for the editor its opener opened, so it gets
+ * what this editor was opened with, and declines for any other one.
+ */
+describe('ContentFeature - with a navigation override', () => {
+    let spectator: SpectatorService<any>;
+    let store: any;
+    let contentTypeService: SpyObject<DotContentTypeService>;
+    let dotEditContentService: SpyObject<DotEditContentService>;
+    let router: SpyObject<Router>;
+
+    const OPENED = { inode: 'opened-inode', contentTypeId: undefined };
+    const override = { switchToLegacyEditor: vi.fn(), leaveOnLoadError: vi.fn() };
+    const mockHost = {
+        setContentTitle: vi.fn(),
+        addBreadcrumb: vi.fn(),
+        goToSavedContent: vi.fn(),
+        leaveDeletedContent: vi.fn(),
+        goToRestoredVersion: vi.fn(),
+        resolveIdentity: vi.fn().mockReturnValue(OPENED)
+    };
+
+    const createStore = createServiceFactory({
+        service: signalStore(withState({ ...initialRootState }), withContent()),
+        mocks: [
+            DotContentTypeService,
+            DotEditContentService,
+            DotHttpErrorManagerService,
+            DotWorkflowsActionsService,
+            DotWorkflowService,
+            DotMessageService
+        ],
+        providers: [
+            mockProvider(Router, {
+                navigate: vi.fn().mockReturnValue(Promise.resolve(true)),
+                url: '/test-url',
+                events: of()
+            }),
+            mockProvider(DotSiteService),
+            mockProvider(DotSystemConfigService, DOT_SYSTEM_CONFIG_SERVICE_MOCK),
+            { provide: EDIT_CONTENT_HOST, useValue: mockHost },
+            { provide: EDIT_CONTENT_NAVIGATION_OVERRIDE, useValue: override },
+            provideHttpClient(),
+            provideHttpClientTesting()
+        ]
+    });
+
+    beforeEach(() => {
+        override.switchToLegacyEditor.mockReset();
+        override.leaveOnLoadError.mockReset();
+        spectator = createStore();
+        store = spectator.service;
+        contentTypeService = spectator.inject(DotContentTypeService);
+        dotEditContentService = spectator.inject(DotEditContentService);
+        router = spectator.inject(Router);
+        // The Router mock is created once with the factory, so its calls carry over between tests.
+        router.navigate.mockClear();
+    });
+
+    describe('switch to the old editor', () => {
+        const contentlet = { inode: '123', identifier: 'id-1' } as DotCMSContentlet;
+        const contentType = { ...CONTENT_TYPE_MOCK, id: 'st-123', variable: 'Blog', workflows: [] };
+
+        beforeEach(() => {
+            patchState(store, { contentlet, contentType });
+            contentTypeService.updateContentType.mockReturnValue(of(contentType));
+        });
+
+        it('lets the override reopen the content, with what the editor was opened with', fakeAsync(() => {
+            override.switchToLegacyEditor.mockReturnValue(true);
+
+            store.disableNewContentEditor();
+            tick();
+
+            expect(override.switchToLegacyEditor).toHaveBeenCalledWith(OPENED, contentlet, 'Blog');
+            expect(router.navigate).not.toHaveBeenCalled();
+        }));
+
+        it("navigates as main does when the override declines (another opener's editor)", fakeAsync(() => {
+            override.switchToLegacyEditor.mockReturnValue(false);
+
+            store.disableNewContentEditor();
+            tick();
+
+            expect(router.navigate).toHaveBeenCalledWith([`/c/content/`, '123']);
+        }));
+
+        it('lets the override reopen a create that was never saved', fakeAsync(() => {
+            override.switchToLegacyEditor.mockReturnValue(true);
+            patchState(store, { contentlet: null });
+
+            store.disableNewContentEditor();
+            tick();
+
+            expect(override.switchToLegacyEditor).toHaveBeenCalledWith(OPENED, null, 'Blog');
+            expect(router.navigate).not.toHaveBeenCalled();
+        }));
+    });
+
+    describe('load error', () => {
+        const error = new HttpErrorResponse({ status: 404 });
+
+        beforeEach(() => {
+            dotEditContentService.getContentById.mockReturnValue(throwError(() => error));
+        });
+
+        it('shows the standard error and lets the override close its editor', fakeAsync(() => {
+            override.leaveOnLoadError.mockReturnValue(true);
+
+            store.initializeExistingContent({ inode: '123' });
+            tick();
+
+            expect(spectator.inject(DotHttpErrorManagerService).handle).toHaveBeenCalledWith(error);
+            expect(override.leaveOnLoadError).toHaveBeenCalledWith(OPENED);
+            expect(router.navigate).not.toHaveBeenCalled();
+        }));
+
+        it("navigates as main does when the override declines (another opener's editor)", fakeAsync(() => {
+            override.leaveOnLoadError.mockReturnValue(false);
+
+            store.initializeExistingContent({ inode: '123' });
+            tick();
+
+            expect(router.navigate).toHaveBeenCalledWith(['/c/content']);
         }));
     });
 });

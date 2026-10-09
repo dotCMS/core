@@ -90,6 +90,7 @@ describe('LocalesFeature', () => {
 
     beforeEach(() => {
         Object.values(mockHost).forEach((fn) => fn.mockClear());
+        mockHost.resolveIdentity.mockReturnValue({});
         spectator = createStore();
         store = spectator.service;
         dotLanguagesService = spectator.inject(DotLanguagesService);
@@ -130,9 +131,45 @@ describe('LocalesFeature', () => {
         expect(store.currentLocale()).toEqual(SYSTEM_LANGUAGES[1]);
     }));
 
+    // A create opened from Content Drive starts in the language its list is filtered by, so the new
+    // content shows in that list once saved (#37759, FR-003).
+    describe('starting language of new content', () => {
+        it('starts in the language the host asks for', fakeAsync(() => {
+            mockHost.resolveIdentity.mockReturnValue({ contentTypeId: 'Blog', languageId: 1 });
+            dotLanguagesService.get.mockReturnValue(of(SYSTEM_LANGUAGES));
+
+            store.loadSystemLocales();
+            tick();
+
+            expect(store.currentLocale()).toEqual(SYSTEM_LANGUAGES[0]);
+            // The system default is still known, for whatever compares against it.
+            expect(store.systemDefaultLocale()).toEqual(SYSTEM_LANGUAGES[1]);
+        }));
+
+        it('falls back to the default when the asked-for language is not a system language', fakeAsync(() => {
+            mockHost.resolveIdentity.mockReturnValue({ contentTypeId: 'Blog', languageId: 99 });
+            dotLanguagesService.get.mockReturnValue(of(SYSTEM_LANGUAGES));
+
+            store.loadSystemLocales();
+            tick();
+
+            expect(store.currentLocale()).toEqual(SYSTEM_LANGUAGES[1]);
+        }));
+
+        it('starts in the default when the host asks for no language', fakeAsync(() => {
+            mockHost.resolveIdentity.mockReturnValue({ contentTypeId: 'Blog' });
+            dotLanguagesService.get.mockReturnValue(of(SYSTEM_LANGUAGES));
+
+            store.loadSystemLocales();
+            tick();
+
+            expect(store.currentLocale()).toEqual(SYSTEM_LANGUAGES[1]);
+        }));
+    });
+
     describe('when there is switch of locale', () => {
         beforeEach(() => {
-            const mockContentlet = { inode: '456' } as DotCMSContentlet;
+            const mockContentlet = { inode: '456', languageId: 2 } as DotCMSContentlet;
             dotEditContentService.getContentById.mockReturnValue(of(mockContentlet));
             dotContentletService.getLanguages.mockReturnValue(of(MOCK_LANGUAGES));
             dotLanguagesService.getDefault.mockReturnValue(of(MOCK_LANGUAGES[0]));
@@ -150,8 +187,8 @@ describe('LocalesFeature', () => {
             });
 
             // The host decides router vs in-place reload; the feature just states
-            // the intent with the resolved inode.
-            expect(mockHost.reloadContent).toHaveBeenCalledWith('456');
+            // the intent with the resolved inode and its language (#37759, T124).
+            expect(mockHost.reloadContent).toHaveBeenCalledWith('456', 2);
         }));
 
         it('should open dialog and update state for untranslated locale doing populate copy', fakeAsync(() => {

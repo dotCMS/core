@@ -136,11 +136,18 @@ export function withLocales() {
                                         const defaultLocale = locales.find(
                                             (locale) => locale.defaultLanguage
                                         );
+                                        // An opener may ask the new content to start in another
+                                        // language (#37759); a language the system does not know
+                                        // falls back to the default.
+                                        const { languageId } = host.resolveIdentity();
+                                        const startingLocale =
+                                            locales.find((locale) => locale.id === languageId) ??
+                                            defaultLocale;
 
                                         patchState(store, {
                                             locales,
                                             systemDefaultLocale: defaultLocale,
-                                            currentLocale: defaultLocale,
+                                            currentLocale: startingLocale,
                                             localesStatus: {
                                                 status: ComponentStatus.LOADED,
                                                 error: ''
@@ -188,7 +195,10 @@ export function withLocales() {
                                                 // The host reloads the editor: a route change in
                                                 // full-screen (guard handles the dirty check) or an
                                                 // in-place reload in the dialog (layout handles it).
-                                                host.reloadContent(contentlet.inode);
+                                                host.reloadContent(
+                                                    contentlet.inode,
+                                                    contentlet.languageId
+                                                );
                                             },
                                             error: (error: HttpErrorResponse) => {
                                                 dotHttpErrorManagerService.handle(error);

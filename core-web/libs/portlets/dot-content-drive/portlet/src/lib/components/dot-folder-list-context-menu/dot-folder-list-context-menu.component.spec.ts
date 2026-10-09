@@ -37,6 +37,7 @@ import {
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import {
     DotCMSBaseTypesContentTypes,
+    DotCMSContentlet,
     DotContentDriveFolder,
     DotContentDriveItem,
     PERMISSIONS_TYPE
@@ -111,7 +112,12 @@ describe('DotFolderListViewContextMenuComponent', () => {
     let messageService: SpyObject<MessageService>;
     let dotMessageService: SpyObject<DotMessageService>;
 
-    const mockContentlet = createFakeContentlet();
+    // Content rows carry numeric permissions (1 READ, 2 WRITE, 4 PUBLISH, 8 EDIT_PERMISSIONS,
+    // 16 CAN_ADD_CHILDREN). Full permissions here, so the shared fixture is a user who may do
+    // everything; the content-permissions block below narrows them (#37903, FR-010, FR-011).
+    const mockContentlet = createFakeContentlet({
+        permissions: [1, 2, 4, 8, 16] as unknown as DotCMSContentlet['permissions']
+    });
 
     const mockWorkflowActions = mockWorkflowsActionsWithMove; // 3 mocked workflow actions + 1 Move workflow action
 
@@ -138,7 +144,8 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 getByInode: vi.fn().mockReturnValue(of(mockWorkflowActions))
             }),
             mockProvider(DotContentDriveNavigationService, {
-                editContent: vi.fn()
+                editContent: vi.fn(),
+                editPageProperties: vi.fn()
             }),
             mockProvider(MessageService, {
                 add: vi.fn()
@@ -448,6 +455,98 @@ describe('DotFolderListViewContextMenuComponent', () => {
             });
         });
 
+        describe('content permissions', () => {
+            const openMenuFor = async (overrides: Partial<DotCMSContentlet>) => {
+                await component.getMenuItems({
+                    triggeredEvent: mockEvent,
+                    contentlet: createFakeContentlet(overrides),
+                    showAddToBundle: false
+                });
+
+                return labels(component.$items());
+            };
+            const readOnly = [1] as unknown as DotCMSContentlet['permissions'];
+            const everything = [1, 2, 4, 8, 16] as unknown as DotCMSContentlet['permissions'];
+
+            it('should offer View instead of Edit when the user cannot edit the content', async () => {
+                const items = await openMenuFor({ permissions: readOnly });
+
+                expect(items).toContain('content-drive.context-menu.view-content');
+                expect(items).not.toContain('content-drive.context-menu.edit-content');
+            });
+
+            it('should offer View Page and View Properties when the user cannot edit the page', async () => {
+                const items = await openMenuFor({
+                    permissions: readOnly,
+                    baseType: DotCMSBaseTypesContentTypes.HTMLPAGE
+                });
+
+                expect(items).toContain('content-drive.context-menu.view-page');
+                expect(items).toContain('content-drive.context-menu.view-properties');
+                expect(items).not.toContain('content-drive.context-menu.edit-page');
+                expect(items).not.toContain('content-drive.context-menu.edit-properties');
+            });
+
+            it('should offer Edit Page and Edit Properties when the user can edit the page', async () => {
+                const items = await openMenuFor({
+                    permissions: everything,
+                    baseType: DotCMSBaseTypesContentTypes.HTMLPAGE
+                });
+
+                expect(items).toContain('content-drive.context-menu.edit-page');
+                expect(items).toContain('content-drive.context-menu.edit-properties');
+            });
+
+            it("should open the page's properties from Edit Properties", async () => {
+                await openMenuFor({
+                    permissions: everything,
+                    baseType: DotCMSBaseTypesContentTypes.HTMLPAGE
+                });
+
+                invoke(component.$items(), 'content-drive.context-menu.edit-properties');
+
+                expect(navigationService.editPageProperties).toHaveBeenCalled();
+            });
+
+            it('should not offer properties for content that is not a page', async () => {
+                const items = await openMenuFor({ permissions: everything });
+
+                expect(items).not.toContain('content-drive.context-menu.edit-properties');
+                expect(items).not.toContain('content-drive.context-menu.view-properties');
+            });
+
+            it('should open the item in the editor from View, as Edit does', async () => {
+                await openMenuFor({ permissions: readOnly });
+
+                invoke(component.$items(), 'content-drive.context-menu.view-content');
+
+                expect(navigationService.editContent).toHaveBeenCalled();
+            });
+
+            it('should not offer Push Publish or Add to Bundle without publish permission', async () => {
+                const items = await openMenuFor({ permissions: readOnly });
+
+                expect(items.some((label) => label.includes('push-publish'))).toBe(false);
+                expect(items).not.toContain('contenttypes.content.add_to_bundle');
+            });
+
+            it('should offer Edit, Push Publish and Add to Bundle with full permissions', async () => {
+                const items = await openMenuFor({ permissions: everything });
+
+                expect(items).toContain('content-drive.context-menu.edit-content');
+                expect(items.some((label) => label.includes('push-publish'))).toBe(true);
+                expect(items).toContain('contenttypes.content.add_to_bundle');
+            });
+
+            it('should behave as today when the content carries no permissions', async () => {
+                const items = await openMenuFor({ permissions: undefined });
+
+                expect(items).toContain('content-drive.context-menu.edit-content');
+                expect(items.some((label) => label.includes('push-publish'))).toBe(true);
+                expect(items).toContain('contenttypes.content.add_to_bundle');
+            });
+        });
+
         describe('folder handling', () => {
             const mockFolder: DotContentDriveFolder = {
                 __icon__: 'folderIcon',
@@ -638,9 +737,11 @@ describe('DotFolderListViewContextMenuComponent', () => {
                     ).toBeUndefined();
                 });
 
-                // Both dialogs share one component now, so `data` is what distinguishes them —
-                // asserting the component alone would pass with the two call sites swapped.
-                it('should open the permissions JSP with correct config when triggered', async () => {
+                // Edit Permissions opens through the store now, like the other folder dialogs, so
+                // the URL can name it while it is open; the shell opens the JSP dialog itself
+                // (#37759, FR-030).
+                it('should ask the store to open Edit Permissions for the folder', async () => {
+                    vi.spyOn(store, 'setDialog');
                     await component.getMenuItems(folderContextMenuWithEditPermissions);
 
                     component
@@ -648,18 +749,15 @@ describe('DotFolderListViewContextMenuComponent', () => {
                         .find((item) => item.label === 'Edit-Permissions')
                         ?.command?.({} as unknown as MenuItemCommandEvent);
 
-                    expect(dialogService.open).toHaveBeenCalledWith(
+                    expect(store.setDialog).toHaveBeenCalledWith({
+                        type: 'FOLDER_PERMISSIONS',
+                        header: 'Edit-Permissions',
+                        payload: { identifier: folderWithEditPermissions.identifier }
+                    });
+                    expect(dialogService.open).not.toHaveBeenCalledWith(
                         DotJspIframeDialogComponent,
                         expect.objectContaining({
-                            width: 'min(92vw, 75rem)',
-                            closable: true,
-                            closeOnEscape: true,
-                            data: {
-                                url: `/html/portlet/ext/folders/permissions.jsp?folderIdentifier=${folderWithEditPermissions.identifier}&popup=true`,
-                                titleKey: 'Permissions',
-                                emptyKey: 'dot.permissions.iframe.dialog.no-asset',
-                                testIdPrefix: 'permissions'
-                            }
+                            data: expect.objectContaining({ titleKey: 'Permissions' })
                         })
                     );
                 });

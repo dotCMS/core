@@ -176,8 +176,18 @@ export class DotRouterService {
         this.router.navigate(['/public/login'], this.addCacheBusting(navExtras));
     }
 
-    goToSiteBrowser(): void {
-        this.router.navigate(['/c/site-browser']);
+    /**
+     * Redirects to the Site Browser.
+     *
+     * The legacy Site Browser opens the folder saved with `DotSiteBrowserService.setSelectedFolder`,
+     * so callers still call that first. The `path` query param is for users without Site Browser:
+     * the menu guard reads it to open the same folder in Content Drive.
+     *
+     * @param path the folder to open, as `//<host>/<folder path>/` or a path in the current site
+     * @memberof DotRouterService
+     */
+    goToSiteBrowser(path?: string): void {
+        this.router.navigate(['/c/site-browser'], path ? { queryParams: { path } } : {});
     }
 
     /**

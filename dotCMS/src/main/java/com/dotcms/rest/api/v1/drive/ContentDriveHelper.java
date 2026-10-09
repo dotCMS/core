@@ -5,6 +5,8 @@ import com.dotcms.browser.BrowserAPIImpl.PaginatedContents;
 import com.dotcms.browser.BrowserQuery;
 import com.dotcms.browser.BrowserQuery.Builder;
 import com.dotcms.browser.ContentStatus;
+import com.dotcms.browser.ESQueryTooComplexException;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.browser.SystemHostMode;
 import com.dotcms.browser.FieldSearchCriteria;
 import com.dotcms.rest.exception.BadRequestException;
@@ -16,6 +18,7 @@ import com.dotcms.rest.api.v1.asset.ResolvedAssetAndPath;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.form.business.FormAPI;
@@ -79,7 +82,9 @@ public class ContentDriveHelper {
      *
      * @return a Map with all requested content and metadata
      *
-     * @throws DotDataException     any data-related exception
+     * @throws BadRequestException  when the request is invalid, including search text or filter
+     *                              values too long or too complex for the index to search
+     * @throws DotDataException     any data-related exception, including an index failure
      * @throws DotSecurityException any security violation exception
      */
     public PaginatedContents driveSearch(final DriveRequestForm requestForm, final User user)
@@ -269,7 +274,23 @@ public class ContentDriveHelper {
         Logger.debug(this, () -> String.format("Content drive search - User: %s, Path: %s, %s",
                 user.getUserId(), assetPath, browserQuery));
 
-        return browserAPI.getPaginatedContents(browserQuery);
+        // Search input the index cannot serve is bad input, not a server failure (issue #37488):
+        // a term or values too long to leave room for the per-sub-query inode restriction, and a
+        // query the index finds too complex to build from them.
+        if (!browserAPI.esQueryLeavesRoomForInodes(browserQuery)) {
+            throw new BadRequestException(
+                    "The search text or filter values are too long; shorten them and try again.");
+        }
+        try {
+            return browserAPI.getPaginatedContents(browserQuery);
+        } catch (final DotDataException | DotRuntimeException e) {
+            if (ExceptionUtil.causedBy(e, ESQueryTooComplexException.class)) {
+                throw new BadRequestException(e,
+                        "The search text or filter values are too complex to search for; simplify "
+                                + "or shorten them and try again.");
+            }
+            throw e;
+        }
     }
 
     /**
