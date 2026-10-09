@@ -27,6 +27,10 @@ import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import { ComponentStatus, DotEnvironment } from '@dotcms/dotcms-models';
 import { DotAddToBundleComponent, DotMessagePipe } from '@dotcms/ui';
 
+import {
+    DotUsersDialogMaximizeIconComponent,
+    DotUsersDialogMinimizeIconComponent
+} from './components/dot-users-dialog-fullscreen-icon/dot-users-dialog-fullscreen-icon.component';
 import { DotUsersFilterByComponent } from './components/dot-users-filter-by/dot-users-filter-by.component';
 import { DotUsersListStore } from './store/dot-users-list.store';
 
@@ -285,6 +289,12 @@ export class DotUsersListComponent {
             closable: true,
             closeOnEscape: true,
             maximizable: true,
+            // Swap PrimeNG's window icons for the Material Symbols every
+            // other full-screen dialog in the app uses.
+            templates: {
+                maximizeicon: DotUsersDialogMaximizeIconComponent,
+                minimizeicon: DotUsersDialogMinimizeIconComponent
+            },
             draggable: false,
             position: 'center',
             contentStyle: { padding: '0', overflow: 'hidden' },

@@ -17,6 +17,10 @@ import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
+import {
+    DotUsersDialogMaximizeIconComponent,
+    DotUsersDialogMinimizeIconComponent
+} from './components/dot-users-dialog-fullscreen-icon/dot-users-dialog-fullscreen-icon.component';
 import { DotUsersListComponent } from './dot-users-list.component';
 import { DotUsersListStore } from './store/dot-users-list.store';
 
@@ -288,6 +292,10 @@ describe('DotUsersListComponent', () => {
                 width: 'min(95vw, 90rem)',
                 height: 'min(92vh, 60rem)',
                 maximizable: true,
+                templates: {
+                    maximizeicon: DotUsersDialogMaximizeIconComponent,
+                    minimizeicon: DotUsersDialogMinimizeIconComponent
+                },
                 closable: true,
                 closeOnEscape: true
             })
