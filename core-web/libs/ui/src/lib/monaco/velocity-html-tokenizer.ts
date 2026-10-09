@@ -1,4 +1,12 @@
-export const HTML_BASE_TOKENIZER_ROOT = [
+/**
+ * The markup half of the Velocity grammar: Monaco's HTML Monarch rules, with `<script>` and
+ * `<style>` bodies handed to the JavaScript and CSS languages.
+ *
+ * Only for `velocity-language.ts`. Tags and attribute values include its `velocity` state, so
+ * `<div class="$!{cssClass}" #if($hidden)hidden#end>` highlights the Velocity inside the tag, and
+ * plain text stops at `#` and `$` so the Velocity rules get to read them.
+ */
+export const VELOCITY_HTML_ROOT = [
     [/<!DOCTYPE/, 'metatag', '@doctype'],
     [/<!--/, 'comment', '@comment'],
     [/(<)((?:[\w-]+:)?[\w-]+)(\s*)(\/>)/, ['delimiter', 'tag', '', 'delimiter']],
@@ -8,9 +16,9 @@ export const HTML_BASE_TOKENIZER_ROOT = [
     [/(<\/)((?:[\w-]+:)?[\w-]+)/, ['delimiter', { token: 'tag', next: '@otherTag' }]],
     [/</, 'delimiter'],
     [/[^<#$]+/, ''] // text
-] as monaco.languages.IMonarchLanguageRule[];
+];
 
-export const HTML_BASE_TOKENIZER_STATES = {
+export const VELOCITY_HTML_STATES = {
     doctype: [
         [/[^>]+/, 'metatag.content'],
         [/>/, 'metatag', '@pop']
@@ -24,11 +32,27 @@ export const HTML_BASE_TOKENIZER_STATES = {
 
     otherTag: [
         [/\/?>/, 'delimiter', '@pop'],
-        [/"([^"]*)"/, 'attribute.value'],
-        [/'([^']*)'/, 'attribute.value'],
+        { include: '@velocity' },
+        [/"/, 'attribute.value', '@attributeValueDouble'],
+        [/'/, 'attribute.value', '@attributeValueSingle'],
         [/[\w-]+/, 'attribute.name'],
         [/=/, 'delimiter'],
-        [/[ \t\r\n]+/, ''] // whitespace
+        [/[ \t\r\n]+/, ''], // whitespace
+        [/./, '']
+    ],
+
+    attributeValueDouble: [
+        [/"/, 'attribute.value', '@pop'],
+        { include: '@velocity' },
+        [/[^"#$]+/, 'attribute.value'],
+        [/[#$]/, 'attribute.value']
+    ],
+
+    attributeValueSingle: [
+        [/'/, 'attribute.value', '@pop'],
+        { include: '@velocity' },
+        [/[^'#$]+/, 'attribute.value'],
+        [/[#$]/, 'attribute.value']
     ],
 
     script: [

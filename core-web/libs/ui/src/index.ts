@@ -153,6 +153,7 @@ export * from './lib/dialog/fullscreen-dialog';
 // Monaco editor presets
 export * from './lib/monaco/editor-options';
 export * from './lib/monaco/run-shortcut';
+export * from './lib/monaco/velocity-language';
 
 // Theme
 export * from './lib/theme';
