@@ -184,7 +184,12 @@ the same exceptions the `PATH_NOT_FOUND` mapping relies on.
 - The removal runs synchronously once the transaction commits, before the call that committed
   returns, so the ordering of later writes is the same as today.
 - A failure while removing is logged and does not stop the rest of the commit's after-commit work,
-  and is not reported to the caller as a failed delete.
+  and is not reported to the caller as a failed delete. This covers every part of the removal: the
+  files, the resized-image cache, the metadata, and the single version's metadata.
+- The removal needs no fixed position among the commit's other after-commit work, because none of
+  that work reads the content's files or metadata. The plan confirms this; if any listener turns
+  out to depend on them, the removal's order is pinned explicitly rather than left to registration
+  order.
 - A content destroy outside any transaction keeps removing them immediately, as today.
 - Bulk delete reports a descendant as `COVERED_BY_PARENT` only when its selected ancestor was
   actually deleted. Otherwise the descendant goes through its own checks and is deleted on its own,
@@ -263,9 +268,9 @@ the same exceptions the `PATH_NOT_FOUND` mapping relies on.
   folder's outcome is recorded).
 - **AC-003a**: Deleting a content type that has content with binaries still removes that content's
   binaries and metadata after the commit, although the type no longer exists by then.
-- **AC-003b**: When the deferred removal fails, it catches and logs the failure itself: the delete
-  still reports success, and an after-commit listener registered later in the same transaction
-  still runs.
+- **AC-003b**: When the deferred removal fails, whether in removing files or metadata (including a
+  single version's metadata), it catches and logs the failure itself: the delete still reports
+  success, and an after-commit listener registered later in the same transaction still runs.
 - **AC-004**: A content destroy run outside any transaction still removes the files immediately, so
   callers that are not transactional see no change.
 - **AC-005**: Bulk delete keeps its two levels of behaviour: a failed folder does not stop the other
