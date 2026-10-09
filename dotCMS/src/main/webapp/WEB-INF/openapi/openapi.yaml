@@ -29315,14 +29315,14 @@ components:
           description: "License tier: FULL when experiments are fully enabled, LIMITED\
             \ when restricted to one free experiment"
           enum:
-          - FULL
-          - LIMITED
+          - full
+          - limited
         warning:
           type: string
           description: Warning code present when the Analytics App is not configured
             for the site. Absent when configured.
           enum:
-          - ANALYTICS_DISABLED
+          - analytics_disabled
     ExportSecretForm:
       type: object
       properties:

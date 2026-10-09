@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.experiments;
 import com.dotcms.experiments.business.ExperimentsAPI.Health;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonValue;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
@@ -28,14 +29,24 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @JsonInclude(Include.NON_NULL)
 public class ExperimentsHealthView {
 
-    /** Serialized as {@code "FULL"} or {@code "LIMITED"} in the JSON response. */
+    /** Serialized as {@code "full"} or {@code "limited"} in the JSON response. */
     public enum Tier {
-        FULL, LIMITED
+        FULL, LIMITED;
+
+        @JsonValue
+        public String value() {
+            return name().toLowerCase();
+        }
     }
 
-    /** Present when the Analytics App is not configured for the site; absent otherwise. */
+    /** Serialized as {@code "analytics_disabled"} in the JSON response. */
     public enum Warning {
-        ANALYTICS_DISABLED
+        ANALYTICS_DISABLED;
+
+        @JsonValue
+        public String value() {
+            return name().toLowerCase();
+        }
     }
 
     @Schema(description = "Current health state of the experiments / analytics configuration")
