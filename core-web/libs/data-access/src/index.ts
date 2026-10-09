@@ -1,5 +1,6 @@
 export * from './lib/add-to-bundle/add-to-bundle.service';
 export * from './lib/can-deactivate/can-deactivate-guard.service';
+export * from './lib/dot-action-url/dot-action-url.service';
 export * from './lib/dot-agent-run/dot-agent-run.service';
 export * from './lib/dot-ai/dot-ai.constants';
 export * from './lib/dot-ai/dot-ai-config.service';
@@ -13,6 +14,8 @@ export * from './lib/dot-analytics-search/dot-analytics-search.service';
 export * from './lib/dot-analytics-tracker/dot-analytics-tracker.service';
 export * from './lib/dot-apps/dot-apps.service';
 export * from './lib/dot-bulk-refresh/dot-bulk-refresh.service';
+export * from './lib/dot-folder-bulk-duplicate/dot-folder-bulk-duplicate.service';
+export * from './lib/dot-job-queue/dot-job-queue.service';
 export * from './lib/dot-categories/dot-categories.service';
 export * from './lib/dot-containers/dot-containers.service';
 export * from './lib/dot-content-drive/dot-content-drive.service';

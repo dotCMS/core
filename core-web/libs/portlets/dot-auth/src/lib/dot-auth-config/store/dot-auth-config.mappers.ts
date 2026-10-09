@@ -80,6 +80,17 @@ export const DEFAULT_CONFIG: DotAuthConfig = {
     }
 };
 
+/** The SAML signature validation type the backend enforces for a stored value. */
+function samlValidationType(value: unknown): 'response' | 'assertion' | 'responseandassertion' {
+    const normalized = String(value ?? '')
+        .trim()
+        .toLowerCase();
+
+    return normalized === 'response' || normalized === 'assertion'
+        ? normalized
+        : 'responseandassertion';
+}
+
 export function fromView(view: DotAuthConfigView): DotAuthConfig {
     const config = clone(DEFAULT_CONFIG);
     config.protocol =
@@ -112,12 +123,10 @@ export function fromView(view: DotAuthConfigView): DotAuthConfig {
             x509cert: String(values.publicCert ?? ''),
             privateKey: String(values.privateKey ?? ''),
             signRequests: String(values['signRequests'] ?? 'true') === 'true',
-            wantAssertionsSigned:
-                values.signatureValidationType === 'assertion' ||
-                values.signatureValidationType === 'responseandassertion',
-            wantResponseSigned:
-                values.signatureValidationType === 'response' ||
-                values.signatureValidationType === 'responseandassertion',
+            // Anything other than 'response' / 'assertion' (e.g. a legacy 'none') is enforced by
+            // the backend as 'responseandassertion', so show it that way.
+            wantAssertionsSigned: samlValidationType(values.signatureValidationType) !== 'response',
+            wantResponseSigned: samlValidationType(values.signatureValidationType) !== 'assertion',
             claimEmail: String(values['attribute.email.name'] ?? config.saml.claimEmail),
             claimFirstName: String(
                 values['attribute.firstname.name'] ?? config.saml.claimFirstName
@@ -180,13 +189,13 @@ export function toPayload(config: DotAuthConfig, siteId: string): DotAuthConfigP
                 // empty string would be STORED and shadow the host-name fallback downstream.
                 sPEndpointHostname: config.saml.spEndpointHostname || undefined,
                 signRequests: String(config.saml.signRequests),
-                signatureValidationType: config.saml.wantResponseSigned
-                    ? config.saml.wantAssertionsSigned
-                        ? 'responseandassertion'
-                        : 'response'
-                    : config.saml.wantAssertionsSigned
-                      ? 'assertion'
-                      : 'none',
+                // Never 'none': with neither box checked both signatures are required.
+                signatureValidationType:
+                    config.saml.wantResponseSigned && !config.saml.wantAssertionsSigned
+                        ? 'response'
+                        : config.saml.wantAssertionsSigned && !config.saml.wantResponseSigned
+                          ? 'assertion'
+                          : 'responseandassertion',
                 idPMetadataFile: config.saml.metadataUrl,
                 publicCert: config.saml.x509cert || undefined,
                 privateKey: config.saml.privateKey || undefined,

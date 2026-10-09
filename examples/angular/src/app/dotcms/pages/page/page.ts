@@ -6,6 +6,7 @@ import {
   Component,
   DestroyRef,
   inject,
+  isDevMode,
   OnInit,
   signal,
 } from '@angular/core';
@@ -20,6 +21,7 @@ import {
 } from '@dotcms/angular';
 import { DotCMSComposedPageResponse, DotCMSPageAsset, DotErrorPage } from '@dotcms/types';
 import {
+  DEV_ERROR_COPY,
   ERROR_COPY,
   ErrorComponent,
 } from '../../../components/error/error.component';
@@ -60,6 +62,8 @@ interface ErrorState {
   status: number;
   heading: string;
   body: string;
+  /** Only set in development; production keeps the generic copy. */
+  message?: string;
 }
 
 @Component({
@@ -106,12 +110,17 @@ export class PageComponent implements OnInit {
           this.pageAsset.set(response?.pageAsset);
         },
         error: (err) => {
+          // The message names the actual cause (a redirect away from `dotcmsUrl`, a non-JSON
+          // response, ...). It can include URLs and server details, so production never gets it.
+          const message = isDevMode() && err instanceof Error ? err.message : undefined;
+          const defaultCopy = message ? DEV_ERROR_COPY : ERROR_COPY['default'];
+
           if (err instanceof DotErrorPage) {
             const status = err.status ?? 500;
-            const copy = ERROR_COPY[status as keyof typeof ERROR_COPY] ?? ERROR_COPY['default'];
-            this.error.set({ status, ...copy });
+            const copy = ERROR_COPY[status as keyof typeof ERROR_COPY] ?? defaultCopy;
+            this.error.set({ status, ...copy, message });
           } else {
-            this.error.set({ status: 500, ...ERROR_COPY['default'] });
+            this.error.set({ status: 500, ...defaultCopy, message });
           }
         },
       });

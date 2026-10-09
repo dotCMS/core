@@ -65,15 +65,25 @@ export class DotEditContentCustomFieldComponent extends BaseWrapperField<Content
     $contentlet = input<DotCMSContentlet>(null, { alias: 'contentlet' });
     /**
      * The render mode to use.
+     *
+     * Read the way the backend reads it (trimmed, any case), because the backend decides whether
+     * the field comes with `rendered` HTML at all. Matching only the exact lowercase spelling made
+     * `IFRAME` mount the native component, which then had nothing to show.
      */
     $renderMode = computed(() => {
         const field = this.$field();
         if (!field) return DotRenderModes.IFRAME;
 
-        const renderMode = field.fieldVariables?.find(
-            (variable) => variable.key === NEW_RENDER_MODE_VARIABLE_KEY
-        )?.value;
-        return renderMode || DotRenderModes.IFRAME;
+        const renderMode = field.fieldVariables
+            ?.find((variable) => variable.key === NEW_RENDER_MODE_VARIABLE_KEY)
+            ?.value?.trim()
+            .toLowerCase();
+
+        if (!renderMode || renderMode === DotRenderModes.IFRAME) {
+            return DotRenderModes.IFRAME;
+        }
+
+        return DotRenderModes.COMPONENT;
     });
     /**
      * Whether the render mode is IFRAME.

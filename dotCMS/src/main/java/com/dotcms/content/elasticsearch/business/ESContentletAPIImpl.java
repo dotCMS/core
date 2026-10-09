@@ -197,7 +197,6 @@ import io.vavr.Lazy;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchResponse;
@@ -9712,7 +9711,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             if (!destFile.exists()) {
                                 destFile.createNewFile();
                             }
-                            FileUtils.copyFile(srcFile, destFile);
+                            FileUtil.copyFile(srcFile, destFile);
                             newContentlet.setBinary(tempField.getVelocityVarName(), destFile);
                         }
                     } catch (final Exception e) {

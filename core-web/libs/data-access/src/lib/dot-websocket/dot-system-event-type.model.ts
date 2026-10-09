@@ -31,7 +31,9 @@ export enum DotSystemEventType {
      */
     FOLDER_DELETE_FINISHED = 'FOLDER_DELETE_FINISHED',
     /** A bulk folder delete finished; scoped to the submitter, and carries the run's outcome. */
-    BULK_FOLDER_DELETE_COMPLETED = 'BULK_FOLDER_DELETE_COMPLETED'
+    BULK_FOLDER_DELETE_COMPLETED = 'BULK_FOLDER_DELETE_COMPLETED',
+    /** A bulk folder duplication finished; the payload carries the run's outcome (#37062). */
+    BULK_FOLDER_DUPLICATE_COMPLETED = 'BULK_FOLDER_DUPLICATE_COMPLETED'
 }
 
 /**

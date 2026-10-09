@@ -1,6 +1,7 @@
 <%@page import="com.dotcms.cluster.ClusterUtils"%>
 <%@page import="com.dotcms.content.index.IndexAPI"%>
 <%@page import="com.dotcms.content.index.IndexTag"%>
+<%@page import="com.dotcms.content.index.IndexTimestamp"%>
 <%@page import="com.dotcms.content.index.IndexConfigHelper"%>
 <%@page import="com.dotcms.content.elasticsearch.business.IndiciesInfo"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
@@ -56,7 +57,6 @@ Map<String, String> alias = new java.util.HashMap<>();
 for (Map.Entry<String, String> aliasEntry : ssapi.getAliasToIndexMapAllEngines().entrySet()) {
 	alias.put(aliasEntry.getValue(), aliasEntry.getKey());
 }
-SimpleDateFormat dater = APILocator.getContentletIndexAPI().timestampFormatter;
 
 
 Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
@@ -137,13 +137,9 @@ try { defaultSiteSearchIndex = ssapi.defaultIndexName().orElse(null); } catch (E
 		<% IndexStats status         = indexInfo.get(x); if (status == null) { status = indexInfo.get(IndexTag.OS.tag(x)); } %>
 
 		<%boolean active = x.equals(defaultSiteSearchIndex);%>
-		<%	Date d = null;
-			String myDate = null;
+		<%	String myDate = null;
 			try{
-				 myDate = x.split("_")[1];
-				d = dater.parse(myDate);
-
-				myDate = UtilMethods.dateToPrettyHTMLDate(d)  + " "+ UtilMethods.dateToHTMLTime(d);
+				myDate = IndexTimestamp.formatCreatedForDisplay(x, APILocator.systemTimeZone());
 				}
 				catch(Exception e){
 
@@ -171,12 +167,9 @@ try { defaultSiteSearchIndex = ssapi.defaultIndexName().orElse(null); } catch (E
 	<%} %>
 	
 	<% for(String x : closedIndices) { %>
-	    <%   Date d = null;
-            String myDate = null;
-            try {
-                 myDate = x.split("_")[1];
-                 d = dater.parse(myDate);
-                 myDate = UtilMethods.dateToPrettyHTMLDate(d)  + " "+ UtilMethods.dateToHTMLTime(d);
+	    <%   String myDate = null;
+            try{
+                 myDate = IndexTimestamp.formatCreatedForDisplay(x, APILocator.systemTimeZone());
             }
             catch(Exception e){}%>
 	    <tr class="trIdxNothing pointer" id="<%=x%>Row">

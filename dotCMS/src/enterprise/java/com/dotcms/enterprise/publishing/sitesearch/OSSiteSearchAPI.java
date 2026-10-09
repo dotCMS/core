@@ -10,12 +10,12 @@
 package com.dotcms.enterprise.publishing.sitesearch;
 
 import com.dotcms.cdi.CDIUtils;
-import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.content.elasticsearch.business.IndiciesInfo;
 import com.dotcms.content.elasticsearch.business.IndexType;
 import com.dotcms.content.index.IndexAPI;
 import com.dotcms.content.index.IndexTag;
+import com.dotcms.content.index.IndexTimestamp;
 import com.dotcms.content.index.VersionedIndices;
 import com.dotcms.content.index.VersionedIndicesAPI;
 import com.dotcms.content.index.VersionedIndicesImpl;
@@ -740,9 +740,9 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
         indicesToRemove.removeAll(indicesWithAlias);
 
         // Keep indices created within the last 24 hours.
-        final Date yesterday = Date.from(Instant.now().minus(Duration.ofDays(1)));
+        // The cutoff must use the same UTC suffix the names are written with (issue #37282).
         final long yesterdayTimestamp =
-                Long.parseLong(ContentletIndexAPIImpl.timestampFormatter.format(yesterday));
+                Long.parseLong(IndexTimestamp.of(Instant.now().minus(Duration.ofDays(1))));
 
         final List<String> recent = new ArrayList<>();
         for (final String index : indicesToRemove) {

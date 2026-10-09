@@ -1,16 +1,13 @@
-import { Observable, of, throwError } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
 
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
 import { catchError, map } from 'rxjs/operators';
 
-import {
-    DotFolderBulkDeleteSubmitResponse,
-    DotFolderDeleteActiveRun,
-    DotJobState,
-    isJobInProgress
-} from '@dotcms/dotcms-models';
+import { DotFolderBulkDeleteSubmitResponse, DotFolderDeleteActiveRun } from '@dotcms/dotcms-models';
+
+import { DotJobQueueService } from '../dot-job-queue/dot-job-queue.service';
 
 /**
  * Why a submission was refused before any run was created.
@@ -60,18 +57,15 @@ interface RefusalBody {
  * folder identifier is already announced for it (dotCMS/core#37612, comment 5736831790). Reading
  * it here, rather than in the store, is what keeps that addition to one file.
  */
-interface ActiveRunEntry {
-    id: string;
-    state: DotJobState;
-    parameters?: { userId?: string; paths?: { path?: string }[] };
+interface ActiveRunParameters {
+    userId?: string;
+    paths?: { path?: string }[];
 }
 
 const SUBMIT_URL = '/api/v1/assets/folders/_bulkdelete';
 
 /** The queue this feature's runs live in. */
 const QUEUE_NAME = 'folderBulkDelete';
-
-const ACTIVE_URL = `/api/v1/jobs/${QUEUE_NAME}/active`;
 
 /**
  * Submission for Content Drive bulk folder delete (#37063).
@@ -84,6 +78,7 @@ const ACTIVE_URL = `/api/v1/jobs/${QUEUE_NAME}/active`;
 @Injectable({ providedIn: 'root' })
 export class DotFolderBulkDeleteService {
     readonly #http = inject(HttpClient);
+    readonly #jobQueueService = inject(DotJobQueueService);
 
     /**
      * Submit a selection of folder paths for deletion.
@@ -114,30 +109,21 @@ export class DotFolderBulkDeleteService {
      * Answers with an empty list rather than erroring: see the `catchError` below.
      */
     readActiveRuns(): Observable<DotFolderDeleteActiveRun[]> {
-        return this.#http.get<{ entity?: { jobs?: ActiveRunEntry[] } }>(ACTIVE_URL).pipe(
-            map((response) => response?.entity?.jobs ?? []),
-            // THE filter. The endpoint is called "active" but answers with every run in a
-            // NON-TERMINAL state, failed and abandoned ones included. Without this, folders
-            // whose delete already failed are reported as still being deleted, and they stay
-            // that way until the framework moves the run on (contract CR-10).
-            map((jobs) => jobs.filter((job) => isJobInProgress(job?.state))),
-            map((jobs) =>
-                jobs.map(
-                    (job): DotFolderDeleteActiveRun => ({
-                        id: job.id,
-                        state: job.state,
-                        // A run with no readable paths marks nothing, which is the same outcome as
-                        // not knowing about it — better than dropping the run and losing its id.
-                        paths: (job.parameters?.paths ?? [])
-                            .map((entry) => entry?.path)
-                            .filter((path): path is string => !!path)
-                    })
-                )
-            ),
-            // Never surfaced to the author: they did not ask for this read, and a listing that
-            // renders unmarked is exactly the behaviour Content Drive has today. Marking
-            // degrades; the portlet does not (FR-022, SC-010).
-            catchError(() => of([] as DotFolderDeleteActiveRun[]))
+        // `readActiveJobs` keeps only runs still working: the endpoint answers every run in a
+        // non-terminal state, failed and abandoned ones included, and without the filter folders
+        // whose delete already failed would stay marked (contract CR-10). A failed read marks
+        // nothing rather than erroring: marking degrades, the portlet does not (FR-022, SC-010).
+        return this.#jobQueueService.readActiveJobs<ActiveRunParameters, DotFolderDeleteActiveRun>(
+            QUEUE_NAME,
+            (job) => ({
+                id: job.id,
+                state: job.state,
+                // A run with no readable paths marks nothing, which is the same outcome as not
+                // knowing about it — better than dropping the run and losing its id.
+                paths: (job.parameters?.paths ?? [])
+                    .map((entry) => entry?.path)
+                    .filter((path): path is string => !!path)
+            })
         );
     }
 

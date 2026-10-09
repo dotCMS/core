@@ -4598,6 +4598,34 @@ paths:
       summary: "Delete several folders from one submission, asynchronously"
       tags:
       - Web Assets
+  /v1/assets/folders/_bulkduplicate:
+    post:
+      description: |-
+        Accepts a list of site-qualified folder paths and answers `202` with a job handle **before any folder is duplicated**. The run is asynchronous, queued to the `folderBulkDuplicate` queue. Follow it with `GET /api/v1/jobs/{jobId}/status`, cancel it with `POST /api/v1/jobs/{jobId}/cancel`, and watch it with `GET /api/v1/jobs/{jobId}/monitor`. The submitting author is notified on any terminal state. The run's outcome stays readable from the job status indefinitely, since finished jobs are not purged, and the author's notification stays until they dismiss it. A cancelled run's outcome names the first folder it never reached, as `stoppedAt`.
+
+        Each folder is duplicated in place, beside its original in the same parent, holding everything the original holds in the same state. The duplicate takes the original's name followed by `_copy`, with `_copy` appended again until the name is free. The outcome identifies each folder by the path that was submitted.
+
+        One folder failing does not abort the run: every remaining folder is still attempted, and each failure is reported by path with a machine-readable reason.
+      operationId: bulkDuplicateFolders
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FolderBulkDuplicateForm"
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityFolderBulkDuplicateSubmitView"
+          description: Run queued
+        "400":
+          description: "No paths submitted, or more paths than the configured maximum"
+        "401":
+          description: "No authenticated user, or the user is not a back-end user"
+      summary: "Duplicate several folders in place from one submission, asynchronously"
+      tags:
+      - Web Assets
   /v1/assets/folders/_delete:
     post:
       description: Permanently delete a folder and all its contents from the system
@@ -5621,29 +5649,39 @@ paths:
           description: Security key regenerated successfully
         "401":
           content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - CMS Administrator role required
+            text/plain: {}
+          description: "Unauthorized - not authenticated, or not a CMS Administrator"
       summary: Regenerate company security key
       tags:
       - System Configuration
   /v1/configuration/_validateCompanyEmail:
     post:
+      description: Queues a test e-mail from the given sender to the logged-in user.
+        The result is delivered later as a system message.
       operationId: validateEmail
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/CompanyEmailForm"
+        description: Sender address to send the test e-mail from
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Test e-mail queued
+        "400":
+          content:
             application/json: {}
-          description: default response
+          description: "Missing body, or the sender is not a valid e-mail address"
+        "401":
+          content:
+            text/plain: {}
+          description: "Unauthorized - not authenticated, or not a CMS Administrator"
+      summary: Send a test e-mail from the company address
       tags:
       - System Configuration
   /v1/configuration/authentication:
@@ -5671,12 +5709,8 @@ paths:
           description: Bad request - invalid auth type
         "401":
           content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - CMS Administrator role required
+            text/plain: {}
+          description: "Unauthorized - not authenticated, or not a CMS Administrator"
       summary: Save company authentication type
       tags:
       - System Configuration
@@ -5694,12 +5728,8 @@ paths:
           description: Company configuration retrieved successfully
         "401":
           content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - CMS Administrator role required
+            text/plain: {}
+          description: "Unauthorized - not authenticated, or not a CMS Administrator"
       summary: Get company configuration
       tags:
       - System Configuration
@@ -5727,12 +5757,8 @@ paths:
           description: Bad request - invalid parameters
         "401":
           content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - CMS Administrator role required
+            text/plain: {}
+          description: "Unauthorized - not authenticated, or not a CMS Administrator"
       summary: Save company basic info and branding
       tags:
       - System Configuration
@@ -5773,6 +5799,27 @@ paths:
       summary: Retrieve whitelisted configuration values
       tags:
       - System Configuration
+  /v1/configuration/license:
+    get:
+      description: "Returns the title, licensor, change date, change license and full\
+        \ text of the license shipped with the running build. When the license file\
+        \ can't be read, returns a short pointer to the published license and null\
+        \ header values."
+      operationId: getLicense
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityLicenseInfoView"
+          description: License retrieved successfully
+        "401":
+          content:
+            text/plain: {}
+          description: "Unauthorized - not authenticated, or not a backend user"
+      summary: Get the dotCMS license
+      tags:
+      - System Configuration
   /v1/configuration/locale:
     put:
       description: Updates the locale (language and timezone) for the current company.
@@ -5798,12 +5845,8 @@ paths:
           description: Invalid locale parameters (e.g. invalid timezone)
         "401":
           content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - CMS Administrator role required
+            text/plain: {}
+          description: "Unauthorized - not authenticated, or not a CMS Administrator"
       summary: Save company locale info
       tags:
       - System Configuration
@@ -27032,9 +27075,10 @@ components:
           example: "#3C1361"
         backgroundImage:
           type: string
-          description: Background image path (dotAsset path starting with /dA). Cleared
-            if omitted.
-          example: /dA/abc123/background.png
+          description: "Login background: a dotAsset path starting with /dA/, one\
+            \ of the bundled backgrounds /html/images/backgrounds/bg-1.jpg to bg-11.jpg,\
+            \ or the value already stored. Cleared if omitted."
+          example: /html/images/backgrounds/bg-11.jpg
         emailAddress:
           type: string
           description: Company email address used as the system sender. Accepts plain
@@ -27089,8 +27133,10 @@ components:
           example: "#3C1361"
         backgroundImage:
           type: string
-          description: Background image path (dotAsset path starting with /dA)
-          example: /dA/abc123/background.png
+          description: "Stored login background: a /dA path, a bundled background\
+            \ /html/images/backgrounds/bg-1.jpg to bg-11.jpg, or a legacy URL; null\
+            \ when none is set"
+          example: /html/images/backgrounds/bg-11.jpg
         companyId:
           type: string
           description: Company identifier
@@ -30053,6 +30099,39 @@ components:
         submitted:
           type: integer
           format: int32
+    FolderBulkDuplicateForm:
+      type: object
+      properties:
+        assetPaths:
+          type: array
+          description: "The selected folders, as site-qualified paths. Each is duplicated\
+            \ beside its original, in the same parent"
+          example:
+          - //demo.dotcms.com/blogs/alpha/
+          items:
+            type: string
+            description: "The selected folders, as site-qualified paths. Each is duplicated\
+              \ beside its original, in the same parent"
+            example: "[\"//demo.dotcms.com/blogs/alpha/\"]"
+          properties:
+            empty:
+              type: boolean
+            first:
+              type: string
+            last:
+              type: string
+      required:
+      - assetPaths
+    FolderBulkDuplicateSubmitResponse:
+      type: object
+      properties:
+        jobId:
+          type: string
+        statusUrl:
+          type: string
+        submitted:
+          type: integer
+          format: int32
     FolderDeletionRequestForm:
       type: object
       properties:
@@ -32240,6 +32319,31 @@ components:
           type: array
           items:
             type: string
+    LicenseInfoView:
+      type: object
+      properties:
+        changeDate:
+          type: string
+          description: When the license changes to the Change License
+          example: "Four years from August 01, 2025"
+        changeLicense:
+          type: string
+          description: License that applies after the Change Date
+          example: GNU General Public License (GPL) v3
+        licensor:
+          type: string
+          description: Licensor named in the license
+          example: dotCMS LLC
+        text:
+          type: string
+          description: Full license text
+        title:
+          type: string
+          description: License name and version
+          example: dotCMS Business Source License 1.1
+      required:
+      - text
+      - title
     LineDividerField:
       type: object
       allOf:
@@ -35122,6 +35226,29 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityFolderBulkDuplicateSubmitView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/FolderBulkDuplicateSubmitResponse"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityFolderSearchResultView:
       type: object
       properties:
@@ -35425,6 +35552,29 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Layout"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityLicenseInfoView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/LicenseInfoView"
         errors:
           type: array
           items:

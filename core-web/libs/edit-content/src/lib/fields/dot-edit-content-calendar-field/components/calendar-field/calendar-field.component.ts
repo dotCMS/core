@@ -61,6 +61,9 @@ import { BaseControlValueAccessor } from '../../../shared/base-control-value-acc
     imports: [ButtonModule, DatePickerModule, ReactiveFormsModule, DotMessagePipe],
     templateUrl: 'calendar-field.component.html',
     styleUrls: ['./calendar-field.component.scss'],
+    // `relative` anchors the visually hidden `.sr-only` name/timezone spans to the field; without
+    // it they resolve against the document and stretch the page below the form.
+    host: { class: 'block relative' },
     providers: [
         {
             provide: NG_VALUE_ACCESSOR,

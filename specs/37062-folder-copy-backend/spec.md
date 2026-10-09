@@ -258,7 +258,8 @@ per-folder outcome is still readable and a durable notification was addressed to
   no-op. This is the one place duplication is materially more dangerous than delete on retry. See
   FR-034 and D-015.
 - **Two authors duplicate the same folder at the same time.** Both succeed, each duplicate takes a
-  distinct derived name, and neither run is refused. There is no overlap guard and none is needed
+  distinct derived name, and neither run is refused. The second waits while the first is
+  duplicating into the same place, so it sees the first's duplicate and derives the next name
   (FR-033).
 - **Every folder in the submission is refused at submission-time validation.** Still a submission
   refusal, not an accepted job that fails immediately. A caller must be able to tell "you sent me
@@ -421,6 +422,15 @@ per-folder outcome is still readable and a durable notification was addressed to
   ancestor in the same submission already covers it, and MUST be distinguishable from a folder
   skipped because a cancellation stopped the run before reaching it.
 
+  **Covered only when the ancestor was actually duplicated** *(amended in review, 2026-09-29)*. The
+  skip is justified by the ancestor's duplicate carrying the descendant, so it MUST be decided once
+  the ancestor's outcome is known, not from the submitted paths alone. When the ancestor is refused
+  (a permission refusal, say) or its duplicate fails and rolls back, the descendant MUST go through
+  its own checks and be duplicated on its own. When a cancellation stops the run before the
+  ancestor, the descendant is unreached like the rest of the remainder. To make this decidable, a
+  descendant runs after every selected folder that contains it; otherwise the run keeps submission
+  order. A descendant that fails its own checks keeps its own refusal.
+
   **Why skipped rather than duplicated**, since the two folders land in different places and an
   earlier draft of this document treated that as reason enough to do both. Acting on both is
   **order-dependent**, and there is no ordering that is correct. Duplicating the descendant first
@@ -507,11 +517,17 @@ per-folder outcome is still readable and a durable notification was addressed to
   MUST be distinguishable from failures: they were never attempted, not refused.
 - **FR-032**: A cancelled run's outcome MUST record where it stopped, so the remainder can be
   resubmitted deliberately.
-- **FR-033**: The system MUST NOT refuse a submission because it overlaps an in-flight run, and MUST
-  NOT carry an overlap guard. Two runs duplicating the same folder, or duplicating into the same
-  parent, cannot interfere: neither destroys anything, and the naming rule gives each duplicate a
-  distinct name. **This is a deliberate omission of a requirement bulk delete carries** (its
-  FR-029), recorded so its absence reads as a decision rather than an oversight.
+- **FR-033**: The system MUST NOT refuse a submission because it overlaps an in-flight run. Two runs
+  duplicating the same folder, or duplicating into the same parent, destroy nothing, and each
+  duplicate MUST get a distinct name. **The refusal is a deliberate omission of a requirement bulk
+  delete carries** (its FR-029), recorded so its absence reads as a decision rather than an
+  oversight.
+
+  *(Amended in review, 2026-09-29.)* The naming rule alone does not guarantee distinct names when
+  two duplicates overlap in time: each transaction misses the other's uncommitted duplicate, both
+  derive the same name, and the second fails. So a duplicate MUST wait while another duplicate is
+  being made in the same parent folder or site root, then derive its name. This serializes; it
+  never refuses, and the author sees no difference except the wait.
 - **FR-034**: The processor MUST record that **duplication is not idempotent**: a folder that was
   duplicated successfully leaves nothing that makes a second attempt a no-op, and the framework
   holds no durable per-item state, so a re-run restarts from the first folder and duplicates again
@@ -544,7 +560,11 @@ per-folder outcome is still readable and a durable notification was addressed to
 - **FR-036a**: "Durable" MUST be given a lifetime. The retention of completed runs and their
   outcomes MUST be stated rather than assumed to be forever.
 - **FR-037**: The notification's wording MUST reflect what happened: a clean run, a partial one and
-  a cancelled one MUST read differently, and a cancelled run MUST NOT read as a fault.
+  a cancelled one MUST read differently, and a cancelled run MUST NOT read as a fault. *(Amended in
+  review, 2026-09-29.)* A run that ends with no recorded outcome, because it was abandoned or failed
+  before it could report, MUST say it was interrupted and that some folders may already be
+  duplicated. It MUST NOT give counts it does not have: each folder commits on its own, so an author
+  told "0 duplicated" could resubmit and get a second set of copies.
 - **FR-038**: Notification MUST be best-effort. A failure to deliver it MUST NOT change the run's
   recorded outcome.
 - **FR-039**: The system MUST emit a distinguishable completion signal type, so a client can tell a
