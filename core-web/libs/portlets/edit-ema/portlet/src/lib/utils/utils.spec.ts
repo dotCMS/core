@@ -33,6 +33,7 @@ import {
     escapeHtmlAttributeValue,
     isSamePageNavigation,
     isAssetPath,
+    resolveClickedAnchor,
     scrollIframeToFragment
 } from '.';
 
@@ -1249,6 +1250,62 @@ describe('utils functions', () => {
         it('should not throw on a malformed escape or a missing window', () => {
             expect(() => scrollIframeToFragment(win, '#%E0%A4%A')).not.toThrow();
             expect(() => scrollIframeToFragment(null, '#section')).not.toThrow();
+        });
+    });
+
+    describe('resolveClickedAnchor', () => {
+        let doc: Document;
+
+        beforeEach(() => {
+            doc = document.implementation.createHTMLDocument();
+        });
+
+        it('should return the target itself when it is the anchor', () => {
+            const a = doc.createElement('a');
+            a.setAttribute('href', '/page');
+
+            expect(resolveClickedAnchor(a)).toBe(a);
+        });
+
+        it('should return the closest ancestor anchor when the click lands on a descendant', () => {
+            const a = doc.createElement('a');
+            a.setAttribute('href', '/page');
+            const span = doc.createElement('span');
+            a.appendChild(span);
+
+            expect(resolveClickedAnchor(span)).toBe(a);
+        });
+
+        it('should fall back to a single descendant anchor when no ancestor anchor exists', () => {
+            // Mirrors a real pattern: an anchor styled `pointer-events: none`,
+            // wrapped in a container a page's own script makes clickable
+            // instead. Hit-testing such an anchor always resolves to its
+            // wrapper, never the anchor itself, regardless of click precision.
+            const wrapper = doc.createElement('div');
+            wrapper.className = 'nav-row';
+            const a = doc.createElement('a');
+            a.setAttribute('href', '/page');
+            wrapper.appendChild(a);
+
+            expect(resolveClickedAnchor(wrapper)).toBe(a);
+        });
+
+        it('should return null when the wrapper contains more than one anchor', () => {
+            const wrapper = doc.createElement('div');
+            const a1 = doc.createElement('a');
+            a1.setAttribute('href', '/page-1');
+            const a2 = doc.createElement('a');
+            a2.setAttribute('href', '/page-2');
+            wrapper.append(a1, a2);
+
+            expect(resolveClickedAnchor(wrapper)).toBeNull();
+        });
+
+        it('should return null for a plain element with no anchor anywhere', () => {
+            const div = doc.createElement('div');
+            div.textContent = 'Not a link';
+
+            expect(resolveClickedAnchor(div)).toBeNull();
         });
     });
 

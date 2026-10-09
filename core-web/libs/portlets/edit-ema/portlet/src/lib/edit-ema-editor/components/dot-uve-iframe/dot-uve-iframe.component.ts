@@ -21,7 +21,7 @@ import { SafeUrlPipe } from '@dotcms/ui';
 import { InlineEditService } from '../../../services/inline-edit/inline-edit.service';
 import { UVEStore } from '../../../store/dot-uve.store';
 import { PageType } from '../../../store/models';
-import { scrollIframeToFragment } from '../../../utils';
+import { resolveClickedAnchor, scrollIframeToFragment } from '../../../utils';
 import { addEditorPageScript } from '../../../utils/ema-legacy-script-injection';
 
 /**
@@ -304,7 +304,7 @@ export class DotUveIframeComponent {
                         e.stopPropagation();
                     }
 
-                    const linkElement = target.closest('a');
+                    const linkElement = resolveClickedAnchor(target);
                     const href = linkElement?.getAttribute('href');
 
                     // Hash-only anchors (#section) are same-page scrolls. The
@@ -369,7 +369,7 @@ export class DotUveIframeComponent {
                     const target = e.target as HTMLElement;
                     const { isInlineEditTarget, isBlockEditorTarget, isContentSelectionTarget } =
                         this.classifyUveClickTarget(target);
-                    const href = target.closest('a')?.getAttribute('href');
+                    const href = resolveClickedAnchor(target)?.getAttribute('href');
 
                     return (
                         !!href &&

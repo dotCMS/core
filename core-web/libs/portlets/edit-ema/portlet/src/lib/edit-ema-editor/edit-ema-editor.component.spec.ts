@@ -3698,7 +3698,7 @@ describe('EditEmaEditorComponent', () => {
 
                 it('should not do anything if href is empty', () => {
                     const mockEvent = {
-                        target: { href: '', closest: () => null },
+                        target: { href: '', closest: () => null, querySelectorAll: () => [] },
                         preventDefault: vi.fn()
                     } as unknown as MouseEvent;
 
@@ -3799,6 +3799,51 @@ describe('EditEmaEditorComponent', () => {
                         url: '/test-page'
                     });
                     expect(mockEvent.preventDefault).toHaveBeenCalled();
+                });
+
+                it('should resolve a descendant anchor when the click lands on a wrapper with no ancestor anchor', () => {
+                    // Mirrors a real pattern: an anchor styled `pointer-events: none`,
+                    // wrapped in a container a page's own script makes clickable
+                    // instead. The click's target is the wrapper — `closest('a')`
+                    // finds nothing — so the href must come from the single
+                    // descendant anchor instead.
+                    const internalUrl = 'http://localhost:3000/test-page';
+                    const mockEvent = {
+                        target: {
+                            closest: () => null,
+                            querySelectorAll: () => [
+                                { href: internalUrl, getAttribute: () => internalUrl }
+                            ]
+                        },
+                        preventDefault: vi.fn()
+                    } as unknown as MouseEvent;
+
+                    vi.spyOn(store, 'editorState').mockReturnValue(EDITOR_STATE.IDLE);
+
+                    spectator.component.handleInternalNav(mockEvent);
+
+                    expect(pageLoadSpy).toHaveBeenCalledWith({ url: '/test-page' });
+                    expect(mockEvent.preventDefault).toHaveBeenCalled();
+                });
+
+                it('should not resolve a link when the wrapper contains more than one descendant anchor', () => {
+                    const mockEvent = {
+                        target: {
+                            closest: () => null,
+                            querySelectorAll: () => [
+                                { href: 'http://localhost:3000/page-1', getAttribute: () => '' },
+                                { href: 'http://localhost:3000/page-2', getAttribute: () => '' }
+                            ]
+                        },
+                        preventDefault: vi.fn()
+                    } as unknown as MouseEvent;
+
+                    vi.spyOn(store, 'editorState').mockReturnValue(EDITOR_STATE.IDLE);
+
+                    spectator.component.handleInternalNav(mockEvent);
+
+                    expect(pageLoadSpy).not.toHaveBeenCalled();
+                    expect(mockEvent.preventDefault).not.toHaveBeenCalled();
                 });
 
                 it('should open a same-host PDF link in a new tab instead of loading it as a page', () => {

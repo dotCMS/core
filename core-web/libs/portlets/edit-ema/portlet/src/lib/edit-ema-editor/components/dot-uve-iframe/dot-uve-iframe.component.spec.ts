@@ -467,6 +467,36 @@ describe('DotUveIframeComponent', () => {
             expect(inlineEditingSpy).toHaveBeenCalledTimes(1);
         });
 
+        it('should defer to the bubble-phase listener for a pointer-events-disabled link inside a contentlet, resolving the descendant anchor', () => {
+            // Combines both fixes: a `.nav-row`-style wrapper (the click's
+            // real target, since a `pointer-events: none` anchor always
+            // hit-tests to its wrapper) nested inside a contentlet. Same
+            // defer-to-bubble timing as the plain-link case above, but the
+            // href must be resolved from the descendant anchor, not an
+            // ancestor one.
+            (component as any).handleInlineScripts(false);
+
+            const contentletLink = document.createElement('a');
+            contentletLink.setAttribute('href', '/qa-a');
+            const navRow = document.createElement('div');
+            navRow.className = 'nav-row';
+            navRow.appendChild(contentletLink);
+            const contentletWrapper = document.createElement('div');
+            contentletWrapper.setAttribute('data-dot-object', 'contentlet');
+            contentletWrapper.appendChild(navRow);
+
+            const internalNavSpy = vi.spyOn(component.internalNav, 'emit');
+            const inlineEditingSpy = vi.spyOn(component.inlineEditing, 'emit');
+
+            captureClickHandler?.(createClickWithTarget(navRow));
+            expect(internalNavSpy).not.toHaveBeenCalled();
+            expect(inlineEditingSpy).not.toHaveBeenCalled();
+
+            bubbleClickHandler?.(createClickWithTarget(navRow));
+            expect(internalNavSpy).toHaveBeenCalledTimes(1);
+            expect(inlineEditingSpy).toHaveBeenCalledTimes(1);
+        });
+
         it('should emit internalNav on click', () => {
             const internalNavSpy = vi.spyOn(component.internalNav, 'emit');
 
@@ -545,6 +575,43 @@ describe('DotUveIframeComponent', () => {
 
                 expect(internalNavSpy).toHaveBeenCalledTimes(1);
                 expect(inlineEditingSpy).toHaveBeenCalledTimes(1);
+            });
+
+            it('should emit internalNav and inlineEditing when the click lands on a wrapper around a single descendant anchor', () => {
+                // Mirrors a real pattern: an anchor styled `pointer-events: none`,
+                // with a page-authored wrapper div making it clickable instead
+                // (confirmed live in dotCMS/core#37962's follow-up: hit-testing
+                // such an anchor always resolves to the wrapper, never the
+                // anchor itself, however precisely the click lands).
+                const wrapper = doc.createElement('div');
+                const a = doc.createElement('a');
+                a.setAttribute('href', '/page');
+                wrapper.appendChild(a);
+
+                const internalNavSpy = vi.spyOn(component.internalNav, 'emit');
+                const inlineEditingSpy = vi.spyOn(component.inlineEditing, 'emit');
+
+                captureClickHandler?.(createClickWithTarget(wrapper));
+
+                expect(internalNavSpy).toHaveBeenCalledTimes(1);
+                expect(inlineEditingSpy).toHaveBeenCalledTimes(1);
+            });
+
+            it('should not emit when the click lands on a wrapper with more than one descendant anchor', () => {
+                const wrapper = doc.createElement('div');
+                const a1 = doc.createElement('a');
+                a1.setAttribute('href', '/page-1');
+                const a2 = doc.createElement('a');
+                a2.setAttribute('href', '/page-2');
+                wrapper.append(a1, a2);
+
+                const internalNavSpy = vi.spyOn(component.internalNav, 'emit');
+                const inlineEditingSpy = vi.spyOn(component.inlineEditing, 'emit');
+
+                captureClickHandler?.(createClickWithTarget(wrapper));
+
+                expect(internalNavSpy).not.toHaveBeenCalled();
+                expect(inlineEditingSpy).not.toHaveBeenCalled();
             });
 
             it('should emit internalNav and inlineEditing when click target has data-mode', () => {
