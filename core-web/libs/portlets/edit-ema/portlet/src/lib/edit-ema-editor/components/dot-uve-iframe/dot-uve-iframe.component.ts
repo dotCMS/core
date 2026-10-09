@@ -363,6 +363,19 @@ export class DotUveIframeComponent {
         // proper SPA navigation instead of a real iframe navigation. See the
         // capture-phase filter above for why this is deferred instead of
         // handled there directly.
+        //
+        // Residual gap: `window` is the LAST node in the bubble path, so a
+        // page-owned router bound on `document` (bubble, no capture) — the
+        // exact pattern #37961 is about — still runs before this listener on
+        // that second click, and could still navigate the iframe natively
+        // first. This isn't new: the single pre-PR bubble listener had the
+        // same ordering for every link, contentlet-wrapped or not; the
+        // capture-phase fix above closes it everywhere except here, because
+        // this listener can only safely emit *after* the SDK's own capture
+        // listener has decided to let the click through, and that decision
+        // can't be observed any earlier than bubble without assuming
+        // something about the SDK's listener registration order.
+
         fromEvent<MouseEvent>(win, 'click')
             .pipe(
                 filter((e) => {
