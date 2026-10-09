@@ -63,21 +63,8 @@
                 [style.top.px]="hoverTopClipOffset()"
                 [style.transform]="hoverTopClipOffset() ? 'translate(0, 0)' : null"
                 data-testId="hover-actions">
-                @if (hasVtlFiles()) {
-                    <p-button
-                        (click)="menuHoverVTL.toggle($event)"
-                        data-testId="hover-edit-vtl-button"
-                        [pTooltip]="'uve.tooltip.edit.vtl' | dm"
-                        tooltipPosition="bottom"
-                        [text]="true"
-                        icon="pi pi-code" />
-                    <p-menu
-                        [model]="vtlMenuItems()"
-                        [popup]="true"
-                        #menuHoverVTL
-                        appendTo="body"
-                        data-testId="hover-menu-vtl" />
-                }
+                <!-- Order: Edit (quick edit), Styles, Full Edit, Edit Code, then Remove. The
+                     collapsed menu below (`actionsMenuItems`) follows the same order. -->
                 <p-button
                     (click)="promoteHoverToSelected(); openQuickEdit.emit()"
                     [disabled]="!canEditContentlet()"
@@ -104,6 +91,21 @@
                     tooltipPosition="bottom"
                     [text]="true"
                     icon="pi pi-pencil" />
+                @if (hasVtlFiles()) {
+                    <p-button
+                        (click)="menuHoverVTL.toggle($event)"
+                        data-testId="hover-edit-vtl-button"
+                        [pTooltip]="'uve.tooltip.edit.vtl' | dm"
+                        tooltipPosition="bottom"
+                        [text]="true"
+                        icon="pi pi-code" />
+                    <p-menu
+                        [model]="vtlMenuItems()"
+                        [popup]="true"
+                        #menuHoverVTL
+                        appendTo="body"
+                        data-testId="hover-menu-vtl" />
+                }
                 <p-button
                     (click)="deleteContent.emit(hoverContext)"
                     [disabled]="!allowContentDelete()"
