@@ -4,7 +4,6 @@ import {
     ElementRef,
     NgZone,
     OnDestroy,
-    afterNextRender,
     computed,
     inject,
     input,
@@ -34,8 +33,8 @@ import {
     DotFunctionInfo,
     DotPushPublishDialogData
 } from '@dotcms/dotcms-models';
-import { DotSidePanelNavController } from '@dotcms/edit-content';
-import { DotKeyboardShortcutService, DotMessagePipe, hasOverlayAbove } from '@dotcms/ui';
+import { injectSidePanelChrome } from '@dotcms/edit-content';
+import { DotMessagePipe } from '@dotcms/ui';
 import { isSameOriginRelativeUrl } from '@dotcms/utils';
 
 import {
@@ -46,30 +45,6 @@ import {
 
 /** The admin route every legacy portlet screen is served from. */
 const LAYOUT_URL = '/c/portal/layout';
-
-/**
- * Shared with the new-editor side panel on purpose, so the author's expanded (full-width) choice
- * carries over between the two panels.
- */
-const EXPANDED_STORAGE_KEY = 'dot-edit-content-side-panel-expanded';
-
-/** Best-effort read of the expanded preference; `false` when storage is unavailable. */
-function readExpandedPreference(): boolean {
-    try {
-        return localStorage.getItem(EXPANDED_STORAGE_KEY) === 'true';
-    } catch {
-        return false;
-    }
-}
-
-/** Persists the expanded preference; storage failures must not break the panel. */
-function writeExpandedPreference(expanded: boolean): void {
-    try {
-        localStorage.setItem(EXPANDED_STORAGE_KEY, String(expanded));
-    } catch {
-        // best-effort: quota errors / disabled storage are ignored.
-    }
-}
 
 /** The shape of the `ng-event` CustomEvents the legacy editor dispatches on its own document. */
 interface LegacyEditorEventDetail {
@@ -83,7 +58,8 @@ interface LegacyEditorEventDetail {
  * Hosts the legacy (JSP) content editor in a side panel over Content Drive (#37759).
  *
  * It looks and behaves like the new-editor side panel (`DotEditContentSidePanelComponent`): the
- * same drawer, width toggle, mask and close rules. It is kept separate from it so that removing the
+ * same drawer, and the same width toggle, mask and Escape rules, which both get from
+ * `injectSidePanelChrome`. It is kept separate from it so that removing the
  * legacy editor later never touches the new-editor panel. Remove with the legacy editor. Every other piece that goes
  * with it carries the same phrase.
  *
@@ -98,16 +74,9 @@ interface LegacyEditorEventDetail {
     // another one mounted elsewhere on the page.
     providers: [ConfirmationService],
     templateUrl: './dot-legacy-editor-side-panel.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    // Bound at document level because `appendTo="body"` moves the drawer and its mask out of this
-    // component's DOM, so a template listener would never hear the mask click.
-    host: {
-        '(document:click)': 'onMaskClick($event)'
-    }
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotLegacyEditorSidePanelComponent implements OnDestroy {
-    readonly #navController = inject(DotSidePanelNavController);
-    readonly #shortcuts = inject(DotKeyboardShortcutService);
     readonly #uiColors = inject(DotUiColorsService);
     readonly #sanitizer = inject(DomSanitizer);
     readonly #zone = inject(NgZone);
@@ -147,8 +116,20 @@ export class DotLegacyEditorSidePanelComponent implements OnDestroy {
      */
     readonly languageChanged = output<number>();
 
-    /** This panel's own drawer, so the mask-click check compares against ITS mask only. */
+    /** This panel's own drawer: its mask and container are what the shared chrome checks. */
     protected readonly $drawer = viewChild(Drawer);
+
+    /**
+     * Escape, a click on the mask, the side-panel stack and the full-width toggle, shared with the
+     * other side panels. Escape and the mask close through {@link requestClose}, so the
+     * unsaved-changes prompt runs first.
+     */
+    readonly #chrome = injectSidePanelChrome({
+        panel: this,
+        drawer: this.$drawer,
+        requestClose: () => this.requestClose(),
+        escapeLabel: 'edit.content.side-panel.shortcut.close'
+    });
 
     /** The iframe the legacy editor loads in. */
     protected readonly $iframe = viewChild<ElementRef<HTMLIFrameElement>>('iframe');
@@ -166,7 +147,7 @@ export class DotLegacyEditorSidePanelComponent implements OnDestroy {
     readonly #languageId = linkedSignal(() => this.request()?.languageId ?? 0);
 
     /** Whether the panel is expanded to the full width (vs 80%), seeded from the stored choice. */
-    protected readonly $expanded = signal(readExpandedPreference());
+    protected readonly $expanded = this.#chrome.expanded;
 
     /** The legacy editor URL for the request, or `null` when there is nothing valid to load. */
     protected readonly $url = computed<SafeResourceUrl | null>(() => {
@@ -186,9 +167,6 @@ export class DotLegacyEditorSidePanelComponent implements OnDestroy {
      */
     protected readonly $loading = linkedSignal(() => this.$url() !== null);
 
-    /** Withdraws the Escape claim; called on destroy. */
-    readonly #withdrawShortcuts: () => void;
-
     /**
      * A Bring Back is under way: the editor was asked for `getVersionBack` and will reload with the
      * restored version. Reported once that reload lands.
@@ -199,17 +177,6 @@ export class DotLegacyEditorSidePanelComponent implements OnDestroy {
     #detachFrame: () => void = () => undefined;
 
     constructor() {
-        // ESC goes through the shared shortcut registry, as in the new-editor panel, so the portlet
-        // behind does not act on the same key while the panel is open.
-        this.#withdrawShortcuts = this.#shortcuts.register({
-            combination: 'escape',
-            label: 'edit.content.side-panel.shortcut.close',
-            handler: () => this.#onEscape()
-        });
-
-        // Join the side-panel stack (and collapse the main nav) after the current render.
-        afterNextRender(() => this.#navController.acquire(this));
-
         // Other admin code asks the legacy editor to run one of its functions through this service:
         // the workflow wizard hands its answer back with `saveAssignCallBackAngular`, which fills
         // the workflow fields and saves (FR-009). The full-page editor's iframe answers it the same
@@ -294,7 +261,7 @@ export class DotLegacyEditorSidePanelComponent implements OnDestroy {
         // told apart by having consumed the key.
         const onKeydown = (event: KeyboardEvent) => {
             if (event.key === 'Escape' && !event.defaultPrevented) {
-                this.#zone.run(() => this.#onEscape());
+                this.#zone.run(() => this.#chrome.escape());
             }
         };
 
@@ -313,32 +280,14 @@ export class DotLegacyEditorSidePanelComponent implements OnDestroy {
         };
     }
 
-    /**
-     * Click-outside handler. Matches this drawer's own mask by identity, not by class, so a click on
-     * another drawer's mask never closes this panel. Only the frontmost side panel reacts.
-     */
-    protected onMaskClick(event: MouseEvent): void {
-        if (event.target !== this.$drawer()?.mask) {
-            return;
-        }
-
-        if (this.#navController.isTop(this)) {
-            this.requestClose();
-        }
-    }
-
     /** Toggles the full-width state and remembers it for the next panel. */
     protected toggleExpanded(): void {
-        const next = !this.$expanded();
-        this.$expanded.set(next);
-        writeExpandedPreference(next);
+        this.#chrome.toggleExpanded();
     }
 
-    /** Drops the iframe listeners, leaves the side-panel stack and withdraws the Escape claim. */
+    /** Drops the iframe listeners. The chrome releases its own registrations. */
     ngOnDestroy(): void {
         this.#detachFrame();
-        this.#navController.release(this);
-        this.#withdrawShortcuts();
     }
 
     /**
@@ -456,24 +405,6 @@ export class DotLegacyEditorSidePanelComponent implements OnDestroy {
                 Number(versions.find((version) => version.inode === inode)?.languageId) ||
                 0
         };
-    }
-
-    /**
-     * ESC handler. Always consumes the key while the panel is open, so it never falls through to the
-     * portlet behind; only closes when no overlay sits above and this is the frontmost panel.
-     *
-     * @returns `true`: the key is consumed.
-     */
-    #onEscape(): boolean {
-        if (hasOverlayAbove(this.$drawer()?.container)) {
-            return true;
-        }
-
-        if (this.#navController.isTop(this)) {
-            this.requestClose();
-        }
-
-        return true;
     }
 
     /**
