@@ -132,6 +132,14 @@ files in place and keeps today's timing for callers outside a transaction.
 The removal from the search index already works this way: a destroy registers it with the same hook
 (`ContentletIndexAPIImpl.removeContentFromIndex`), which is why, after the rollback, the file still
 shows in Content Drive while its binary is gone. This fix brings the disk in line with the index.
+The same class already defers a binary file removal this way, too: deleting a binary field from a
+content type moves its files to the trash only after commit
+(`ESContentletAPIImpl`, `addCommitListener(() -> moveBinaryFilesToTrash(...))`).
+
+The hook fires on the commit of the **outermost** transaction. Each destroy method opens its own
+transaction, but inside a folder delete it joins the folder's, so the files of everything the folder
+delete reached wait for the folder as a whole. That is what makes a refusal anywhere in the folder
+keep every file; the plan confirms it against the nested-transaction handling.
 
 Four details of the existing code shape the fix:
 
