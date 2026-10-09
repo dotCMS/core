@@ -7,6 +7,7 @@ import {
 import { of } from 'rxjs';
 import { Mock, vi } from 'vitest';
 
+import { formatDate } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 
 import { DialogService } from 'primeng/dynamicdialog';
@@ -264,6 +265,33 @@ describe('DotUsersListComponent', () => {
         // hover (and focus-within for keyboard). At rest it stays opacity-0.
         expect(btn?.className).toContain('opacity-0');
         expect(btn?.className).toContain('group-hover:opacity-100');
+    });
+
+    it('should show the date and time of the last login', () => {
+        const cell = spectator.query(byTestId('users-cell-last-login'));
+
+        // Expected value goes through the same formatter the template's
+        // `date` pipe uses, so the assertion holds in any CI timezone.
+        expect(cell?.textContent?.trim()).toBe(
+            formatDate(1717977600000, 'MM/dd/yyyy, h:mm a', 'en-US')
+        );
+        expect(cell?.className).toContain('whitespace-nowrap');
+    });
+
+    it('should open the user dialog maximizable and closable', () => {
+        const dialogService = spectator.inject(DialogService, true);
+        spectator.component.openCreateDialog();
+
+        expect(dialogService.open).toHaveBeenCalledWith(
+            expect.anything(),
+            expect.objectContaining({
+                width: 'min(95vw, 90rem)',
+                height: 'min(92vh, 60rem)',
+                maximizable: true,
+                closable: true,
+                closeOnEscape: true
+            })
+        );
     });
 
     it('should open the create dialog when openCreateDialog is called', () => {
