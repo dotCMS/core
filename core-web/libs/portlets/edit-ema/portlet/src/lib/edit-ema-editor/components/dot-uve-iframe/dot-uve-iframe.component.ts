@@ -216,18 +216,32 @@ export class DotUveIframeComponent {
         // is always first; bubble traverses the reverse, so a page-owned
         // listener on `document` would otherwise fire *before* a same-phase
         // listener on `window` ever could, regardless of registration order.
-        // stopPropagation() here, unconditionally, prevents the page's own
-        // handlers from ever seeing the click — closing the gap where a page
-        // script reacts to a click dotCMS didn't recognize as a link (e.g. the
-        // click landed on a padded/delegate wrapper, not the anchor itself)
-        // and performs its own `location.href` navigation, which silently
-        // bypasses the SPA entirely and blanks the canvas (dotCMS/core#37961).
+        // stopPropagation() here prevents the page's own handlers from ever
+        // seeing the click — closing the gap where a page script reacts to a
+        // click dotCMS didn't recognize as a link (e.g. the click landed on a
+        // padded/delegate wrapper, not the anchor itself) and performs its own
+        // `location.href` navigation, which silently bypasses the SPA entirely
+        // and blanks the canvas (dotCMS/core#37961).
         fromEvent<MouseEvent>(win, 'click', { capture: true })
             .pipe(
                 filter((e) => {
-                    e.stopPropagation();
-
                     const target = e.target as HTMLElement;
+
+                    // The `@dotcms/uve` SDK script injected into headless pages
+                    // wires block-editor inline editing with a plain bubble-phase
+                    // `click` listener registered directly on the
+                    // [data-block-editor-content] node (see
+                    // libs/sdk/uve/src/script/utils.ts). Since this listener runs
+                    // on `window` during the capture phase — before the event ever
+                    // reaches that node — stopping propagation here would prevent
+                    // the SDK's own handler from firing at all. Let those clicks
+                    // through untouched so block-editor inline editing keeps working.
+                    const isBlockEditorTarget = !!target.closest('[data-block-editor-content]');
+
+                    if (!isBlockEditorTarget) {
+                        e.stopPropagation();
+                    }
+
                     const linkElement = target.closest('a');
                     const href = linkElement?.getAttribute('href');
 

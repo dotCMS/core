@@ -331,6 +331,41 @@ describe('DotUveIframeComponent', () => {
             expect(stopPropagationSpy).toHaveBeenCalled();
         });
 
+        it('should not stop propagation for clicks on a block-editor inline-edit target', () => {
+            // Regression test for the block-editor inline-editing regression
+            // introduced while fixing dotCMS/core#37961: the `@dotcms/uve` SDK
+            // wires block-editor fields with its own bubble-phase `click`
+            // listener directly on the [data-block-editor-content] node. Since
+            // this listener runs on `window` during the capture phase — before
+            // the event ever reaches that node — unconditionally stopping
+            // propagation here would prevent the SDK's handler from ever firing,
+            // silently breaking block-editor inline editing.
+            let clickHandler: ((e: MouseEvent) => void) | undefined;
+
+            (mockWindow.addEventListener as Mock).mockImplementation(
+                (event: string, handler: (e: MouseEvent) => void) => {
+                    if (event === 'click') {
+                        clickHandler = handler;
+                    }
+                }
+            );
+
+            (component as any).handleInlineScripts(false);
+
+            const blockEditorTarget = document.createElement('div');
+            blockEditorTarget.setAttribute('data-block-editor-content', '');
+            const clickEvent = new MouseEvent('click', { bubbles: true });
+            Object.defineProperty(clickEvent, 'target', {
+                value: blockEditorTarget,
+                writable: false
+            });
+            const stopPropagationSpy = vi.spyOn(clickEvent, 'stopPropagation');
+
+            clickHandler?.(clickEvent);
+
+            expect(stopPropagationSpy).not.toHaveBeenCalled();
+        });
+
         it('should emit internalNav on click', () => {
             const internalNavSpy = vi.spyOn(component.internalNav, 'emit');
             let clickHandler: ((e: MouseEvent) => void) | undefined;
