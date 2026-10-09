@@ -7,6 +7,12 @@ export * from './lib/models/dot-edit-content-dialog.interface';
 export * from './lib/services/dot-edit-content.service';
 export * from './lib/components/dot-edit-content-side-panel/dot-edit-content-side-panel.component';
 export { DotSidePanelNavController } from './lib/services/dot-side-panel-nav.service';
+// Escape, mask click, side-panel stack and full width, for side panels outside this library too.
+export { injectSidePanelChrome } from './lib/services/dot-side-panel-chrome';
+export type {
+    DotSidePanelChrome,
+    DotSidePanelChromeOptions
+} from './lib/services/dot-side-panel-chrome';
 export * from './lib/utils/functions.util';
 export * from './lib/models/dot-edit-content-field.constant';
 

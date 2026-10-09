@@ -10,7 +10,6 @@ import {
     inject,
     input,
     output,
-    signal,
     viewChild
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -21,47 +20,17 @@ import { DialogService, DynamicDialogConfig } from 'primeng/dynamicdialog';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { popFormBridge, pushFormBridge } from '@dotcms/edit-content-bridge';
-import {
-    ASSET_PICKER_LAUNCHER,
-    AngularAssetPickerLauncher,
-    DotKeyboardShortcutService,
-    DotMessagePipe,
-    hasOverlayAbove
-} from '@dotcms/ui';
+import { ASSET_PICKER_LAUNCHER, AngularAssetPickerLauncher, DotMessagePipe } from '@dotcms/ui';
 
 import {
     AngularImageEditorLauncher,
     IMAGE_EDITOR_LAUNCHER
 } from '../../fields/shared/image-editor-launcher';
 import { EditContentDialogData } from '../../models/dot-edit-content-dialog.interface';
-import { DotSidePanelNavController } from '../../services/dot-side-panel-nav.service';
+import { injectSidePanelChrome } from '../../services/dot-side-panel-chrome';
 import { EDIT_CONTENT_HOST } from '../../services/host/edit-content-host.model';
 import { OverlayEditContentHost } from '../../services/host/overlay-edit-content-host';
 import { DotEditContentLayoutComponent } from '../dot-edit-content-layout/dot-edit-content.layout.component';
-
-/** localStorage key persisting the user's expanded (full-width) preference for the side panel. */
-const EXPANDED_STORAGE_KEY = 'dot-edit-content-side-panel-expanded';
-
-/**
- * Reads the persisted expanded preference. Best-effort: returns `false` when storage is
- * unavailable (SSR/tests) or the value is missing, so a read failure never breaks the panel.
- */
-function readExpandedPreference(): boolean {
-    try {
-        return localStorage.getItem(EXPANDED_STORAGE_KEY) === 'true';
-    } catch {
-        return false;
-    }
-}
-
-/** Persists the expanded preference; silently ignores storage failures. */
-function writeExpandedPreference(expanded: boolean): void {
-    try {
-        localStorage.setItem(EXPANDED_STORAGE_KEY, String(expanded));
-    } catch {
-        // best-effort: quota errors / disabled storage must not break the panel.
-    }
-}
 
 /**
  * Renders the new Edit Content editor inside a right-to-left slide-in panel (`p-drawer`), as an
@@ -107,35 +76,29 @@ function writeExpandedPreference(expanded: boolean): void {
         }
     ],
     templateUrl: './dot-edit-content-side-panel.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    // Click-outside closes the panel through the unsaved-changes guard, bound at document level
-    // because `appendTo="body"` moves the drawer (and its mask) out of this component's DOM subtree,
-    // so a template listener would never receive it.
-    //
-    // ESC used to be bound the same way. It now goes through the shared shortcut registry instead —
-    // see the registration in the constructor for why.
-    host: {
-        '(document:click)': 'onMaskClick($event)'
-    }
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEditContentSidePanelComponent implements OnDestroy {
     readonly #injector = inject(Injector);
     readonly #destroyRef = inject(DestroyRef);
-    readonly #navController = inject(DotSidePanelNavController);
-    readonly #shortcuts = inject(DotKeyboardShortcutService);
-
-    /** Withdraws the Escape claim; called from `ngOnDestroy` alongside the other teardown. */
-    #withdrawShortcuts: () => void = () => undefined;
 
     /** The hosted editor; used to run its unsaved-changes guard before closing. */
     protected readonly $layout = viewChild(DotEditContentLayoutComponent);
 
-    /**
-     * This panel's own drawer. Needed for its `mask` element: the click-outside handler compares
-     * the clicked node against THIS mask, not against the shared `p-drawer-mask` class, so masks
-     * belonging to other drawers in the document never close this panel (see {@link onMaskClick}).
-     */
+    /** This panel's own drawer: its mask and container are what the shared chrome checks. */
     protected readonly $drawer = viewChild(Drawer);
+
+    /**
+     * Escape, a click on the mask, the side-panel stack and the full-width toggle, shared with the
+     * other side panels. Escape and the mask close through {@link requestClose}, so the editor's
+     * unsaved-changes guard runs first.
+     */
+    readonly #chrome = injectSidePanelChrome({
+        panel: this,
+        drawer: this.$drawer,
+        requestClose: () => this.requestClose(),
+        escapeLabel: 'edit.content.side-panel.shortcut.close'
+    });
 
     /** Identity (and header title) of the content to create/edit, or `null` when closed. */
     readonly data = input<EditContentDialogData | null>(null);
@@ -154,10 +117,9 @@ export class DotEditContentSidePanelComponent implements OnDestroy {
 
     /**
      * Whether the panel is expanded to the full viewport width (vs the default ~80%). Seeded from
-     * the user's persisted preference so a panel opens in the mode last chosen (see
-     * {@link toggleExpanded}).
+     * the user's persisted preference so a panel opens in the mode last chosen.
      */
-    protected readonly $expanded = signal(readExpandedPreference());
+    protected readonly $expanded = this.#chrome.expanded;
 
     /** Last successfully-saved contentlet, forwarded to `data.onContentSaved` when the panel closes. */
     #lastSaved: DotCMSContentlet | null = null;
@@ -176,22 +138,6 @@ export class DotEditContentSidePanelComponent implements OnDestroy {
     constructor() {
         // Give the editor a clean form-bridge slot; restore the previous one on close.
         pushFormBridge();
-
-        // ESC goes through the shared registry rather than a document listener of this component's
-        // own. Two independent document listeners cannot arbitrate: `preventDefault` does not stop
-        // the other one, so the portlet behind would clear its selection at the same moment this
-        // panel closed. The registry gives the key to the most recent claim, and the panel opens
-        // after the portlet, so it wins for exactly as long as it is open.
-        this.#withdrawShortcuts = this.#shortcuts.register({
-            combination: 'escape',
-            label: 'edit.content.side-panel.shortcut.close',
-            handler: () => this.#onEscape()
-        });
-
-        // Collapse the main navigation while the panel is open (restored on close), and register
-        // this panel on the stack so ESC only closes the frontmost one. In afterNextRender so the
-        // store mutation lands after the current render, not during it.
-        afterNextRender(() => this.#navController.acquire(this));
 
         // Forward each save to the opener so it can refresh its view. The overlay host is resolved
         // AFTER construction (afterNextRender) on purpose: resolving it in the constructor would
@@ -216,71 +162,6 @@ export class DotEditContentSidePanelComponent implements OnDestroy {
                 .pipe(takeUntilDestroyed(this.#destroyRef))
                 .subscribe((languageId) => this.languageChanged.emit(languageId));
         });
-    }
-
-    /**
-     * ESC handler, invoked by the shared shortcut registry rather than a document listener of this
-     * component's own.
-     *
-     * Always **consumes** the key while a panel is open, whether or not it closes. A panel is a modal
-     * surface, so ESC must never fall through to the portlet behind it and act on a listing the user
-     * cannot even see — which is exactly what would happen with two independent document listeners,
-     * since `preventDefault` does not stop other listeners on the same node.
-     *
-     * The `isTop` guard was originally needed because stacked panels shared one document listener and
-     * a single ESC would collapse the whole stack. The registry makes that structurally impossible —
-     * only the most recent claim on a combination is called, and the frontmost panel registered last.
-     * It is kept as a second line of defence, not because it is still load-bearing.
-     */
-    #onEscape(): boolean {
-        // An overlay above owns the key. Consumed, not declined, so it cannot reach the portlet.
-        if (this.#hasOverlayAbove()) {
-            return true;
-        }
-
-        if (this.#navController.isTop(this)) {
-            this.requestClose();
-        }
-
-        return true;
-    }
-
-    /**
-     * Whether another PrimeNG overlay is stacked on top of this panel — the image editor dialog, a
-     * confirm popup, an open select panel, or a second side panel.
-     *
-     * Delegates to the shared helper in `@dotcms/ui`: the portlet shell asks the same question for
-     * its own dialogs, and two copies of a z-index comparison would drift.
-     */
-    #hasOverlayAbove(): boolean {
-        return hasOverlayAbove(this.$drawer()?.container);
-    }
-
-    /**
-     * Click-outside handler: clicking the area behind the panel closes it with the exact same
-     * semantics as ESC and the X button — i.e. through the unsaved-changes guard.
-     *
-     * The drawer's own `dismissible` is deliberately left off: it hides the drawer and emits
-     * `visibleChange(false)` the moment the mask is clicked, which both bypasses the guard (unsaved
-     * edits lost silently) and desyncs the one-way `[visible]` binding. Matching the mask ourselves
-     * keeps the panel on screen until the guard says it is safe to close.
-     *
-     * The listener is document-wide because the mask is built imperatively into `document.body`, so
-     * no template binding can reach it. It matches on the mask's IDENTITY rather than its
-     * `p-drawer-mask` class: that class is shared by every modal drawer in the app (the UVE block
-     * editor sidebar is one), and a class check would let a foreign drawer's mask close this panel
-     * and pop the unsaved-changes prompt. Comparing the element also means a click inside the panel,
-     * or a drag that starts inside and ends on the mask, resolves to a different node and is
-     * ignored. As with ESC, only the frontmost stacked panel reacts.
-     */
-    protected onMaskClick(event: MouseEvent): void {
-        if (event.target !== this.$drawer()?.mask) {
-            return;
-        }
-
-        if (this.#navController.isTop(this)) {
-            this.requestClose();
-        }
     }
 
     /**
@@ -312,9 +193,7 @@ export class DotEditContentSidePanelComponent implements OnDestroy {
      * starts in the same mode.
      */
     protected toggleExpanded(): void {
-        const next = !this.$expanded();
-        this.$expanded.set(next);
-        writeExpandedPreference(next);
+        this.#chrome.toggleExpanded();
     }
 
     /** Fires the `data` lifecycle callbacks on close, matching {@link DotEditContentDialogComponent}. */
@@ -329,11 +208,7 @@ export class DotEditContentSidePanelComponent implements OnDestroy {
     }
 
     ngOnDestroy(): void {
+        // The chrome releases its own registrations; only the form bridge is this panel's.
         popFormBridge();
-        // Restore the main navigation once the last panel closes.
-        this.#navController.release(this);
-        // Withdrawn here rather than through `DestroyRef` so every teardown this component owns is
-        // in one place. `DestroyRef` stays for `takeUntilDestroyed` on the `saved$` subscription.
-        this.#withdrawShortcuts();
     }
 }
