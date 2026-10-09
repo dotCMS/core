@@ -64,9 +64,11 @@ confusing limited mode would prevent adoption.
 3. **Given** experiments=OFF and App configured and free slot available, **When** a backend
    user calls `_start` with a duration > 10 days, **Then** the system returns `400 Bad
    Request` with a message indicating the 10-day duration limit.
-4. **Given** experiments=OFF and App configured and free slot available, **When** the date
-   picker is used in the creation form, **Then** end dates beyond 10 days from the start
-   date are disabled — the UI enforces the limit before submission.
+4. **Given** experiments=OFF and App configured and free slot available, **When** the
+   configuration form is displayed, **Then** the scheduling section is entirely disabled
+   (blocked with an upgrade tooltip) — scheduling is not permitted in limited mode, so the
+   date picker is inaccessible. The 10-day duration cap is enforced at the backend
+   (`400 Bad Request` on `_start` if the duration is exceeded, per scenario 3).
 5. **Given** experiments=OFF and App configured and free slot is now used (experiment in
    RUNNING, SCHEDULED, or ENDED state), **When** `GET /api/v1/experiments/health` is called,
    **Then** it returns `tier: "limited"` and `freeExperimentUsed: true`. The `_start` button
@@ -92,7 +94,7 @@ and surfaces a clear signal to contact dotCMS for setup.
 
 1. **Given** the Analytics App is not configured, **When** `GET /api/v1/experiments/health`
    is called, **Then** it returns `tier: "limited"`, `freeExperimentUsed: true/false`, and
-   `warning: "ANALYTICS_DISABLED"` when `FEATURE_FLAG_EXPERIMENTS=true`; the Experiments
+   `warning: "analytics_disabled"` when `FEATURE_FLAG_EXPERIMENTS=true`; the Experiments
    portlet displays a warning banner.
 2. **Given** the Analytics App is not configured, **When** `GET /api/v1/analytics/health` is
    called, **Then** it returns `NOT_CONFIGURED` — the analytics health endpoint always returns
@@ -125,15 +127,16 @@ changes are made, and no Elasticsearch/OpenSearch index mapping changes are intr
 
 **1. Experiment activation endpoints**
 
-Affected: `POST /api/v1/experiments/{id}/_start` (immediate and future-dated),
-`POST /api/v1/experiments/scheduled/{id}/_cancel`, and `archive`.
+Affected: `POST /api/v1/experiments/{id}/_start` (immediate and future-dated).
 
 *When the Analytics App is not configured (any flag state):*
-- All activation endpoints → `503 Service Unavailable`. Activation is blocked because there
+- `_start` → `503 Service Unavailable`. Starting an experiment is blocked because there
   is no backend to track events.
+- `_end`, `_cancel`, and `archive` are governed solely by `FEATURE_FLAG_EXPERIMENTS` (see
+  below) — App configuration has no effect on them because they do not interact with CAEM.
+  An operator must be able to stop, cancel, or clean up experiments even if the analytics
+  backend becomes unavailable.
 - CRUD, health, and `isUserIncluded` remain accessible; results are not available.
-- `_end` accessibility is governed solely by `FEATURE_FLAG_EXPERIMENTS` (see below) — App
-  configuration has no effect on it because `_end` does not interact with CAEM.
 
 *When `FEATURE_FLAG_EXPERIMENTS=false` and the free slot is already used:*
 - `_start` (immediate), future-dated `_start`, `_cancel`, `archive`, and `_end` → `403 FEATURE_DISABLED`.
@@ -251,7 +254,7 @@ configure the Analytics App regardless of flag state.
        omitted or null when `tier="full"`.
   Additionally, when the Analytics App is not configured, the response MUST include a
   `warning` field regardless of flag state or slot availability:
-  - `warning`: `"ANALYTICS_DISABLED"` — present whenever the Analytics App is not
+  - `warning`: `"analytics_disabled"` — present whenever the Analytics App is not
     configured for the site; omitted otherwise.
   Example responses:
 
@@ -261,7 +264,7 @@ configure the Analytics App regardless of flag state.
   ```
   *experiments=true, App not configured:*
   ```json
-  { "health": "NOT_CONFIGURED", "tier": "full", "warning": "ANALYTICS_DISABLED" }
+  { "health": "NOT_CONFIGURED", "tier": "full", "warning": "analytics_disabled" }
   ```
   *experiments=false, App configured, slot available:*
   ```json
@@ -274,17 +277,17 @@ configure the Analytics App regardless of flag state.
   *experiments=false, App not configured, slot available:*
   ```json
   { "health": "NOT_CONFIGURED", "tier": "limited", "freeExperimentUsed": false,
-    "warning": "ANALYTICS_DISABLED" }
+    "warning": "analytics_disabled" }
   ```
   *experiments=false, App not configured, slot used:*
   ```json
   { "health": "NOT_CONFIGURED", "tier": "limited", "freeExperimentUsed": true,
-    "warning": "ANALYTICS_DISABLED" }
+    "warning": "analytics_disabled" }
   ```
   > The warning is always included when the App is not configured, regardless of flag state
   > or slot availability — it describes a system condition the operator must act on.
   > **Note**: The Experiments portlet UI calls this endpoint on load to drive button state:
-  > - `tier="full"` → all buttons enabled normally. If `warning="ANALYTICS_DISABLED"` is
+  > - `tier="full"` → all buttons enabled normally. If `warning="analytics_disabled"` is
   >   also present, the warning banner is shown but buttons remain enabled — the operator has
   >   paid for the full feature and should be directed to configure the App, not to upgrade.
   > - `tier="limited"` → **scheduling section**, **Stop Experiment**, and **archive** are
@@ -294,7 +297,7 @@ configure the Analytics App regardless of flag state.
   >     message, date picker restriction, and Start confirmation dialog are defined in
   >     US2 scenarios 1 and 2.
   >   - `freeExperimentUsed=true` → **Start** also disabled with the same upgrade tooltip.
-  > - `warning="ANALYTICS_DISABLED"` → MUST display a dismissable warning banner: *"Analytics
+  > - `warning="analytics_disabled"` → MUST display a dismissable warning banner: *"Analytics
   >   data collection is currently disabled. Experiments require Analytics to be enabled for
   >   full functionality. Please contact dotCMS to activate it."* Shown alongside the normal
   >   interface; does not block usage.
@@ -321,7 +324,7 @@ configure the Analytics App regardless of flag state.
       10 days from the selected start date; verify clicking **Start** opens the confirmation
       dialog; verify **Cancel** closes it without starting; verify **Continue** starts the
       experiment.
-    - Given `warning="ANALYTICS_DISABLED"`: verify the dismissable warning banner is rendered
+    - Given `warning="analytics_disabled"`: verify the dismissable warning banner is rendered
       with the expected message text.
 
 **EventAnalyticsProxyResource — GET endpoints**

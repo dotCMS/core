@@ -45,9 +45,9 @@ services:
           memory: 2G
 
   dotcms:
-    image: dotcms/dotcms:latest
+    image: dotcms/dotcms-test:1.0.0-SNAPSHOT
     environment:
-      CMS_JAVA_OPTS: '-Xmx1g '
+      CMS_JAVA_OPTS: '-Xmx1g -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:8000'
       LANG: 'C.UTF-8'
       TZ: 'UTC'
       DB_BASE_URL: "jdbc:postgresql://db/dotcms"
@@ -59,6 +59,16 @@ services:
       DOT_DOTCMS_CLUSTER_ID: 'dotcms-production'
       GLOWROOT_ENABLED: 'true'
       GLOWROOT_WEB_UI_ENABLED: 'true' # Enable glowroot web ui on localhost.  do not use in production
+
+      DOT_ANALYTICS_BASE_URL: 'http://host.docker.internal:8081'
+      DOT_ANALYTICS_TENANT: 'dotcms-test'
+      DOT_ANALYTICS_PROJECT: 'test'
+      DOT_ALLOW_ACCESS_TO_PRIVATE_SUBNETS: 'true'
+      DOT_FEATURE_FLAG_CONTENT_ANALYTICS_AUTO_INJECT: 'true'
+      DOT_FEATURE_FLAG_EXPERIMENTS_PORTLET: 'true'
+      DOT_FEATURE_FLAG_CAEM_EXPERIMENT_RESULTS: 'true'
+      DOT_FEATURE_FLAG_EXPERIMENTS: 'false'
+
       #CMS_SSL_CERTIFICATE_FILE: '/certs/localhost.pem'    # Can create cert with mkcert tool
       #CMS_SSL_CERTIFICATE_KEY_FILE: '/certs/localhost-key.pem'
       #CUSTOM_STARTER_URL: 'https://dotcms-repo.b-cdn.net/libs-release/com/dotcms/starter/20260630/starter-20260630.zip'
@@ -73,10 +83,10 @@ services:
       - db_net
       - opensearch-net
     ports:
-      - "8000:8000"
       - "8082:8082"
       - "8443:8443"
       - "4000:4000" # Glowroot web ui if enabled
+      - "8000:8000"
 
 networks:
   db_net:
