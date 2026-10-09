@@ -10923,16 +10923,11 @@ paths:
         schema:
           type: string
       responses:
-        "200":
+        default:
           content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
-          description: Experiment cancelled successfully
-        "403":
-          content:
+            application/javascript: {}
             application/json: {}
-          description: Feature disabled (FEATURE_DISABLED) — flag=false
+          description: default response
       tags:
       - Experiment
   /v1/experiments/{experimentId}:
@@ -10991,16 +10986,11 @@ paths:
         schema:
           type: string
       responses:
-        "200":
+        default:
           content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityExperimentView"
-          description: Experiment archived successfully
-        "403":
-          content:
+            application/javascript: {}
             application/json: {}
-          description: Feature disabled (FEATURE_DISABLED) — flag=false
+          description: default response
       tags:
       - Experiment
   /v1/experiments/{experimentId}/_end:
@@ -11013,16 +11003,11 @@ paths:
         schema:
           type: string
       responses:
-        "200":
+        default:
           content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
-          description: Experiment ended successfully
-        "403":
-          content:
+            application/javascript: {}
             application/json: {}
-          description: Feature disabled (FEATURE_DISABLED) — flag=false
+          description: default response
       tags:
       - Experiment
   /v1/experiments/{experimentId}/_start:
@@ -11035,25 +11020,11 @@ paths:
         schema:
           type: string
       responses:
-        "200":
+        default:
           content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
-          description: Experiment started successfully
-        "400":
-          content:
+            application/javascript: {}
             application/json: {}
-          description: Duration exceeds the 10-day limited-mode cap
-        "403":
-          content:
-            application/json: {}
-          description: Feature disabled (FEATURE_DISABLED) — flag=false and slot occupied
-            or scheduled start
-        "503":
-          content:
-            application/json: {}
-          description: Analytics App not configured for this site (ANALYTICS_NOT_CONFIGURED)
+          description: default response
       tags:
       - Experiment
   /v1/experiments/{experimentId}/goals/primary:
