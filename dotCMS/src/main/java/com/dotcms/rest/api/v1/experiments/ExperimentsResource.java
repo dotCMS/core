@@ -1,7 +1,12 @@
 package com.dotcms.rest.api.v1.experiments;
 
+import com.dotcms.analytics.app.AnalyticsApp;
+import com.dotcms.analytics.helper.AnalyticsHelper;
 import com.dotcms.experiments.business.ConfigExperimentUtil;
 import com.dotcms.experiments.business.ExperimentFilter;
+import com.dotcms.http.CircuitBreakerUrl;
+import com.dotcms.jitsu.EventLogRunnable;
+import io.vavr.control.Try;
 import com.dotcms.rest.api.v1.analytics.content.util.ContentAnalyticsUtil;
 import com.dotcms.experiments.business.ExperimentsAPI;
 import com.dotcms.experiments.business.ExperimentsAPI.Health;
@@ -633,14 +638,17 @@ public class ExperimentsResource {
      *
      * <p>Returns an {@link ExperimentsHealthView} with:
      * <ul>
-     *   <li>{@code health} — evaluated by {@link ContentAnalyticsUtil#resolveAnalyticsHealth}.
-     *   <li>{@link ExperimentsHealthView.Tier} — {@code FULL} when {@code FEATURE_FLAG_EXPERIMENTS=true},
-     *       {@code LIMITED} when {@code false}. Reflects flag state only; App configuration
+     *   <li>{@code health} — when {@code FEATURE_FLAG_CAEM_EXPERIMENT_RESULTS=true}, evaluated by
+     *       {@link ContentAnalyticsUtil#resolveAnalyticsHealth} (CAEM / dotContentAnalytics-config
+     *       path). When {@code false}, evaluated via the legacy dotExperiments-config path.
+     *   <li>{@link ExperimentsHealthView.Tier} — {@code "full"} when {@code FEATURE_FLAG_EXPERIMENTS=true},
+     *       {@code "limited"} when {@code false}. Reflects flag state only; App configuration
      *       does not affect this field.
-     *   <li>{@code freeExperimentUsed} — present only when {@code tier=LIMITED}: {@code true}
+     *   <li>{@code freeExperimentUsed} — present (non-null) only when {@code tier="limited"}: {@code true}
      *       if any experiment is in {@code {RUNNING, SCHEDULED, ENDED}}.
-     *   <li>{@code warning} — {@code "analytics_disabled"} when the App is not configured;
-     *       absent otherwise.
+     *   <li>{@code warning} — {@code "analytics_disabled"} when the CAEM App is not configured for
+     *       this site; absent when configured or when {@code FEATURE_FLAG_CAEM_EXPERIMENT_RESULTS=false}
+     *       (warning is CAEM-specific and does not apply on the legacy path).
      * </ul>
      */
     @GET
@@ -658,13 +666,42 @@ public class ExperimentsResource {
         final boolean fullMode = ConfigExperimentUtil.INSTANCE.isExperimentEnabled();
         final ExperimentsHealthView.Tier tier =
                 fullMode ? ExperimentsHealthView.Tier.FULL : ExperimentsHealthView.Tier.LIMITED;
-        final Health health = ContentAnalyticsUtil.resolveAnalyticsHealth(host);
-        final boolean appConfigured = ContentAnalyticsUtil.isAppConfigured(host);
-        final ExperimentsHealthView.Warning warning =
-                appConfigured ? null : ExperimentsHealthView.Warning.ANALYTICS_DISABLED;
         final Boolean freeExperimentUsed = fullMode ? null : experimentsAPI.isFreeSlotUsed();
 
+        final Health health;
+        final ExperimentsHealthView.Warning warning;
+        if (ConfigExperimentUtil.INSTANCE.isCaemExperimentResultsEnabled()) {
+            health = ContentAnalyticsUtil.resolveAnalyticsHealth(host);
+            warning = ContentAnalyticsUtil.isAppConfigured(host)
+                    ? null : ExperimentsHealthView.Warning.ANALYTICS_DISABLED;
+        } else {
+            health = legacyAnalyticsHealth(host);
+            warning = null;
+        }
+
         return new ResponseEntityView<>(new ExperimentsHealthView(health, tier, freeExperimentUsed, warning));
+    }
+
+    /**
+     * Evaluates analytics health via the legacy dotExperiments-config path.
+     * Used when {@code FEATURE_FLAG_CAEM_EXPERIMENT_RESULTS=false}.
+     */
+    private Health legacyAnalyticsHealth(final Host host) {
+        final AnalyticsApp analyticsApp = Try.of(() -> AnalyticsHelper.get().appFromHost(host))
+                .getOrNull();
+        if (analyticsApp == null) {
+            return Health.NOT_CONFIGURED;
+        }
+        try {
+            final EventLogRunnable eventLogRunnable = new EventLogRunnable(host);
+            final Optional<CircuitBreakerUrl.Response<String>> responseOptional =
+                    eventLogRunnable.sendTestEvent();
+            return responseOptional.isPresent()
+                    && UtilMethods.isSet(responseOptional.get().getResponse())
+                    ? Health.OK : Health.CONFIGURATION_ERROR;
+        } catch (final IllegalStateException e) {
+            return Health.CONFIGURATION_ERROR;
+        }
     }
 
     private Experiment patchExperiment(final Experiment experimentToUpdate,
