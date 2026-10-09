@@ -24,6 +24,7 @@ import {
     FeaturedFlags
 } from '@dotcms/dotcms-models';
 
+import { EDIT_CONTENT_NAVIGATION_OVERRIDE } from '../../../models/edit-content-navigation-override';
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
 import { EDIT_CONTENT_HOST } from '../../../services/host/edit-content-host.model';
 import { transformFormDataFn } from '../../../utils/functions.util';
@@ -171,7 +172,10 @@ export function withContent() {
                 router = inject(Router),
                 dotWorkflowService = inject(DotWorkflowService),
                 dotMessageService = inject(DotMessageService),
-                host = inject(EDIT_CONTENT_HOST)
+                host = inject(EDIT_CONTENT_HOST),
+                // Only Content Drive provides it (#37759, FR-028, FR-029).
+                // Remove with the legacy editor.
+                navigationOverride = inject(EDIT_CONTENT_NAVIGATION_OVERRIDE, { optional: true })
             ) => ({
                 /**
                  * Initializes the state for creating new content of a specified type.
@@ -398,6 +402,16 @@ export function withContent() {
                                             error: 'edit.content.sidebar.information.error.initializing.content'
                                         });
                                         dotHttpErrorManagerService.handle(error);
+
+                                        // Remove with the legacy editor.
+                                        if (
+                                            navigationOverride?.leaveOnLoadError(
+                                                host.resolveIdentity()
+                                            )
+                                        ) {
+                                            return;
+                                        }
+
                                         router.navigate(['/c/content']);
                                     }
                                 })
@@ -434,6 +448,18 @@ export function withContent() {
                                 .pipe(
                                     tapResponse({
                                         next: () => {
+                                            // Remove with the legacy editor.
+                                            if (
+                                                navigationOverride?.switchToLegacyEditor(
+                                                    host.resolveIdentity(),
+                                                    contentlet ?? null,
+                                                    // Set: the update above already read its id.
+                                                    contentType!.variable
+                                                )
+                                            ) {
+                                                return;
+                                            }
+
                                             // Redirect to legacy edit content page
                                             router.navigate([`/c/content/`, contentlet.inode]);
                                         },

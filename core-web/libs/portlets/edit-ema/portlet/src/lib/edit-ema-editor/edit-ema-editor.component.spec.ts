@@ -23,6 +23,7 @@ import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { map } from 'rxjs/operators';
 
 import {
+    DotActionUrlService,
     DotAlertConfirmService,
     DotAnalyticsTrackerService,
     DotContentTypeService,
@@ -91,7 +92,6 @@ import { EditEmaEditorComponent } from './edit-ema-editor.component';
 
 import { DotBlockEditorSidebarComponent } from '../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
-import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiParams, DotPageApiService } from '../services/dot-page-api/dot-page-api.service';
 import { DotUveActionsHandlerService } from '../services/dot-uve-actions-handler/dot-uve-actions-handler.service';
 import { DotUveDragDropService } from '../services/dot-uve-drag-drop/dot-uve-drag-drop.service';
@@ -3698,7 +3698,7 @@ describe('EditEmaEditorComponent', () => {
 
                 it('should not do anything if href is empty', () => {
                     const mockEvent = {
-                        target: { href: '', closest: () => null },
+                        target: { href: '', closest: () => null, querySelectorAll: () => [] },
                         preventDefault: vi.fn()
                     } as unknown as MouseEvent;
 
@@ -3799,6 +3799,82 @@ describe('EditEmaEditorComponent', () => {
                         url: '/test-page'
                     });
                     expect(mockEvent.preventDefault).toHaveBeenCalled();
+                });
+
+                it('should resolve a descendant anchor when the click lands on a wrapper with no ancestor anchor', () => {
+                    // Mirrors a real pattern (confirmed live): an anchor styled
+                    // `pointer-events: none` via a stylesheet rule, wrapped in a
+                    // container a page's own script makes clickable instead.
+                    // The click's target is the wrapper — `closest('a')` finds
+                    // nothing — so the href must come from the single
+                    // descendant anchor instead. Needs real DOM elements, not
+                    // plain mocks: resolving this case checks computed style.
+                    const wrapper = document.createElement('div');
+                    const anchor = document.createElement('a');
+                    anchor.href = 'http://localhost:3000/test-page';
+                    anchor.style.pointerEvents = 'none';
+                    wrapper.appendChild(anchor);
+
+                    const mockEvent = {
+                        target: wrapper,
+                        preventDefault: vi.fn()
+                    } as unknown as MouseEvent;
+
+                    vi.spyOn(store, 'editorState').mockReturnValue(EDITOR_STATE.IDLE);
+
+                    spectator.component.handleInternalNav(mockEvent);
+
+                    expect(pageLoadSpy).toHaveBeenCalledWith({ url: '/test-page' });
+                    expect(mockEvent.preventDefault).toHaveBeenCalled();
+                });
+
+                it('should not resolve a link when the wrapper contains more than one descendant anchor', () => {
+                    const wrapper = document.createElement('div');
+                    const anchor1 = document.createElement('a');
+                    anchor1.href = 'http://localhost:3000/page-1';
+                    anchor1.style.pointerEvents = 'none';
+                    const anchor2 = document.createElement('a');
+                    anchor2.href = 'http://localhost:3000/page-2';
+                    anchor2.style.pointerEvents = 'none';
+                    wrapper.append(anchor1, anchor2);
+
+                    const mockEvent = {
+                        target: wrapper,
+                        preventDefault: vi.fn()
+                    } as unknown as MouseEvent;
+
+                    vi.spyOn(store, 'editorState').mockReturnValue(EDITOR_STATE.IDLE);
+
+                    spectator.component.handleInternalNav(mockEvent);
+
+                    expect(pageLoadSpy).not.toHaveBeenCalled();
+                    expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+                });
+
+                it('should not resolve a link when the single descendant anchor is a normal, clickable link', () => {
+                    // Regression test (MEDIUM, review feedback on #37962): a
+                    // click resolves to `target` instead of the anchor only
+                    // when pointer-events: none prevented hit-testing from
+                    // ever reaching it. Without that check, clicking
+                    // padding/whitespace inside any container — a card, a
+                    // section, a footer — that happens to contain exactly one
+                    // ordinary link would wrongly navigate there.
+                    const wrapper = document.createElement('div');
+                    const anchor = document.createElement('a');
+                    anchor.href = 'http://localhost:3000/unrelated-page';
+                    wrapper.appendChild(anchor);
+
+                    const mockEvent = {
+                        target: wrapper,
+                        preventDefault: vi.fn()
+                    } as unknown as MouseEvent;
+
+                    vi.spyOn(store, 'editorState').mockReturnValue(EDITOR_STATE.IDLE);
+
+                    spectator.component.handleInternalNav(mockEvent);
+
+                    expect(pageLoadSpy).not.toHaveBeenCalled();
+                    expect(mockEvent.preventDefault).not.toHaveBeenCalled();
                 });
 
                 it('should open a same-host PDF link in a new tab instead of loading it as a page', () => {

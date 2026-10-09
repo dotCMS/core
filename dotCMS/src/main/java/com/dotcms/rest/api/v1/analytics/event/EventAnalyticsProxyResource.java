@@ -153,61 +153,53 @@ public class EventAnalyticsProxyResource {
                     required = true)
             final String body) {
 
+        // Gate 1 (FR-006): resolve site from request headers — reads Origin/Referer only,
+        // no body inspection — then check App config before ANY payload validation.
+        final Host site;
+        try {
+            site = ContentAnalyticsUtil.getSiteFromRequest(request);
+        } catch (final AnalyticsValidationException e) {
+            // Site cannot be resolved from headers — no meaningful gate to run.
+            resumeWithBadRequest(asyncResponse, e.getCode().name(), e.getMessage());
+            return;
+        }
+
+        if (!ContentAnalyticsUtil.isAppConfigured(site)) {
+            Logger.debug(this, () -> "Analytics App not configured for site '"
+                    + site.getIdentifier() + "' — returning 503 for event ingest");
+            asyncResponse.resume(analyticsNotConfiguredResponse());
+            return;
+        }
+
+        // Gate 2: body and site_auth validation (runs only when App is configured).
         if (body == null || body.isBlank()) {
-            asyncResponse.resume(Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new ResponseEntityView<>(
-                            List.of(new ErrorEntity(ValidationErrorCode.INVALID_JSON.name(),
-                                    "Request body is required"))))
-                    .build());
+            resumeWithBadRequest(asyncResponse, ValidationErrorCode.INVALID_JSON.name(),
+                    "Request body is required");
             return;
         }
 
         String proxyBody = body;
-        Host site = null;
         try {
             final Map<String, Object> bodyMap = JsonUtil.getJsonFromString(body);
             // The literal JSON token "null" parses to a Java null — guard before deref.
             if (bodyMap == null) {
-                asyncResponse.resume(Response.status(Response.Status.BAD_REQUEST)
-                        .entity(new ResponseEntityView<>(
-                                List.of(new ErrorEntity(ValidationErrorCode.INVALID_JSON.name(),
-                                        "Request body must be a JSON object"))))
-                        .build());
+                resumeWithBadRequest(asyncResponse, ValidationErrorCode.INVALID_JSON.name(),
+                        "Request body must be a JSON object");
                 return;
             }
-            Object context = bodyMap.get("context");
 
+            final Object context = bodyMap.get("context");
             if (context == null) {
                 Logger.warn(this, "Context is required");
-                asyncResponse.resume(Response.status(Response.Status.BAD_REQUEST)
-                        .entity(new ResponseEntityView<>(
-                                List.of(new ErrorEntity(ValidationErrorCode.INVALID_SITE_AUTH.name(), "SiteAuth is required"))))
-                        .build());
+                resumeWithBadRequest(asyncResponse, ValidationErrorCode.INVALID_SITE_AUTH.name(),
+                        "SiteAuth is required");
                 return;
             }
 
             if (!(context instanceof Map)) {
                 Logger.warn(this, "\"context\" must be a JSON object");
-                asyncResponse.resume(Response.status(Response.Status.BAD_REQUEST)
-                        .entity(new ResponseEntityView<>(
-                                List.of(new ErrorEntity(ValidationErrorCode.INVALID_JSON.name(), "\"context\" must be a JSON object"))))
-                        .build());
-                return;
-            }
-
-            // Resolve site before site_auth check: the App-config gate must fire first (FR-006).
-            site = ContentAnalyticsUtil.getSiteFromRequest(request);
-
-            // Gate: App must be configured BEFORE site_auth validation.
-            if (!ContentAnalyticsUtil.isAppConfigured(site)) {
-                final Host unconfiguredSite = site;
-                Logger.debug(this, () -> "Analytics App not configured for site '"
-                        + unconfiguredSite.getIdentifier() + "' — returning 503 for event ingest");
-                asyncResponse.resume(Response.status(Response.Status.SERVICE_UNAVAILABLE)
-                        .entity(new ResponseEntityView<>(
-                                List.of(new ErrorEntity("ANALYTICS_NOT_CONFIGURED",
-                                        "Analytics is not configured for this site."))))
-                        .build());
+                resumeWithBadRequest(asyncResponse, ValidationErrorCode.INVALID_JSON.name(),
+                        "\"context\" must be a JSON object");
                 return;
             }
 
@@ -217,10 +209,8 @@ public class EventAnalyticsProxyResource {
 
             if (siteAuth == null) {
                 Logger.warn(this, "SiteAuth is required");
-                asyncResponse.resume(Response.status(Response.Status.BAD_REQUEST)
-                        .entity(new ResponseEntityView<>(
-                                List.of(new ErrorEntity(ValidationErrorCode.INVALID_SITE_AUTH.name(), "SiteAuth is required"))))
-                        .build());
+                resumeWithBadRequest(asyncResponse, ValidationErrorCode.INVALID_SITE_AUTH.name(),
+                        "SiteAuth is required");
                 return;
             }
 
@@ -230,17 +220,12 @@ public class EventAnalyticsProxyResource {
             proxyBody = JsonUtil.getJsonStringFromObject(bodyMap);
         } catch (final AnalyticsValidationException e) {
             Logger.warn(this, "SiteAuth validation failed for analytics proxy: " + e.getMessage());
-            asyncResponse.resume(Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new ResponseEntityView<>(
-                            List.of(new ErrorEntity(e.getCode().name(), e.getMessage()))))
-                    .build());
+            resumeWithBadRequest(asyncResponse, e.getCode().name(), e.getMessage());
             return;
         } catch (IOException | IllegalArgumentException e) {
             Logger.warn(this, "Malformed body for analytics proxy: " + e.getMessage());
-            asyncResponse.resume(Response.status(Response.Status.BAD_REQUEST)
-                    .entity(new ResponseEntityView<>(
-                            List.of(new ErrorEntity(ValidationErrorCode.INVALID_JSON.name(), e.getMessage()))))
-                    .build());
+            resumeWithBadRequest(asyncResponse, ValidationErrorCode.INVALID_JSON.name(),
+                    e.getMessage());
             return;
         }
 
@@ -513,5 +498,30 @@ public class EventAnalyticsProxyResource {
         final Host site = APILocator.getHostAPI().find(siteId, user, DONT_RESPECT_FRONT_END_ROLES);
         Objects.requireNonNull(site, String.format("Site with ID '%s' was not found", siteId));
         return Response.ok().entity(ContentAnalyticsUtil.generateInternalSiteKey(site.getIdentifier())).build();
+    }
+
+    /**
+     * Resumes an async response with {@code 503 ANALYTICS_NOT_CONFIGURED} — the App-config gate
+     * response used when the Analytics App is absent for the site.
+     */
+    private static Response analyticsNotConfiguredResponse() {
+        return Response.status(Response.Status.SERVICE_UNAVAILABLE)
+                .entity(new ResponseEntityView<>(
+                        List.of(new ErrorEntity("ANALYTICS_NOT_CONFIGURED",
+                                "Analytics is not configured for this site."))))
+                .build();
+    }
+
+    /**
+     * Resumes an async response with {@code 400 Bad Request} carrying a machine-readable error
+     * code and human-readable message. Centralises the repeated inline pattern.
+     */
+    private static void resumeWithBadRequest(final AsyncResponse asyncResponse,
+                                             final String errorCode,
+                                             final String message) {
+        asyncResponse.resume(Response.status(Response.Status.BAD_REQUEST)
+                .entity(new ResponseEntityView<>(
+                        List.of(new ErrorEntity(errorCode, message))))
+                .build());
     }
 }

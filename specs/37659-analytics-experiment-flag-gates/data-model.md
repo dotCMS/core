@@ -22,21 +22,21 @@ Carries the existing health state plus the new tier fields.
 | `health` | `ExperimentsAPI.Health` enum (`OK`, `NOT_CONFIGURED`, `CONFIGURATION_ERROR`) | Always | Existing health state — unchanged semantics |
 | `tier` | `String` (`"limited"` or `"full"`) | Always | Reflects license level only — `"full"` when `FEATURE_FLAG_EXPERIMENTS=true`; `"limited"` when `false`. App configuration has no effect on this field. |
 | `freeExperimentUsed` | `Boolean` | When `tier="limited"`; `null` when `tier="full"` | `true` if any experiment globally is in `{RUNNING, SCHEDULED, ENDED}`; `false` otherwise |
-| `warning` | `String` | Present when App not configured; absent otherwise | Fixed value `"ANALYTICS_DISABLED"` when App is absent |
+| `warning` | `String` | Present when App not configured; absent otherwise | Fixed value `"analytics_disabled"` when App is absent |
 
 **Validation rules**:
 - `tier` is `"full"` iff `FEATURE_FLAG_EXPERIMENTS=true`. App configuration is irrelevant to this field.
 - `freeExperimentUsed` is `null` when `tier="full"` (slot concept doesn't apply).
-- `warning` is `"ANALYTICS_DISABLED"` whenever `!isAppConfigured(host)`, regardless of flag state.
+- `warning` is `"analytics_disabled"` whenever `!isAppConfigured(host)`, regardless of flag state.
 
 **State table** (four combinations):
 
 | flag | App | tier | freeExperimentUsed | warning |
 |---|---|---|---|---|
 | true | configured | `"full"` | null | absent |
-| true | not configured | `"full"` | null | `"ANALYTICS_DISABLED"` |
+| true | not configured | `"full"` | null | `"analytics_disabled"` |
 | false | configured | `"limited"` | true/false | absent |
-| false | not configured | `"limited"` | true/false | `"ANALYTICS_DISABLED"` |
+| false | not configured | `"limited"` | true/false | `"analytics_disabled"` |
 
 ---
 
@@ -70,7 +70,7 @@ export interface ExperimentsHealthResponse {
     health: 'OK' | 'NOT_CONFIGURED' | 'CONFIGURATION_ERROR';
     tier: 'full' | 'limited';
     freeExperimentUsed?: boolean | null;
-    warning?: 'ANALYTICS_DISABLED';
+    warning?: 'analytics_disabled';
 }
 ```
 
@@ -114,13 +114,13 @@ refreshed after startup — a restart is required for changes to take effect (FR
 { "entity": { "health": "OK", "tier": "full" } }
 ```
 ```json
-{ "entity": { "health": "NOT_CONFIGURED", "tier": "full", "warning": "ANALYTICS_DISABLED" } }
+{ "entity": { "health": "NOT_CONFIGURED", "tier": "full", "warning": "analytics_disabled" } }
 ```
 ```json
 { "entity": { "health": "OK", "tier": "limited", "freeExperimentUsed": false } }
 ```
 ```json
-{ "entity": { "health": "NOT_CONFIGURED", "tier": "limited", "freeExperimentUsed": false, "warning": "ANALYTICS_DISABLED" } }
+{ "entity": { "health": "NOT_CONFIGURED", "tier": "limited", "freeExperimentUsed": false, "warning": "analytics_disabled" } }
 ```
 
 ### `GET /api/v1/analytics/health` — new dotCMS-evaluated response

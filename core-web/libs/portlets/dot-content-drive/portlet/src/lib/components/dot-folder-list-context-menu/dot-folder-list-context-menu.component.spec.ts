@@ -37,6 +37,7 @@ import {
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import {
     DotCMSBaseTypesContentTypes,
+    DotCMSContentlet,
     DotContentDriveFolder,
     DotContentDriveItem,
     PERMISSIONS_TYPE
@@ -111,7 +112,12 @@ describe('DotFolderListViewContextMenuComponent', () => {
     let messageService: SpyObject<MessageService>;
     let dotMessageService: SpyObject<DotMessageService>;
 
-    const mockContentlet = createFakeContentlet();
+    // Content rows carry numeric permissions (1 READ, 2 WRITE, 4 PUBLISH, 8 EDIT_PERMISSIONS,
+    // 16 CAN_ADD_CHILDREN). Full permissions here, so the shared fixture is a user who may do
+    // everything; the content-permissions block below narrows them (#37903, FR-010, FR-011).
+    const mockContentlet = createFakeContentlet({
+        permissions: [1, 2, 4, 8, 16] as unknown as DotCMSContentlet['permissions']
+    });
 
     const mockWorkflowActions = mockWorkflowsActionsWithMove; // 3 mocked workflow actions + 1 Move workflow action
 
@@ -138,7 +144,8 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 getByInode: vi.fn().mockReturnValue(of(mockWorkflowActions))
             }),
             mockProvider(DotContentDriveNavigationService, {
-                editContent: vi.fn()
+                editContent: vi.fn(),
+                editPageProperties: vi.fn()
             }),
             mockProvider(MessageService, {
                 add: vi.fn()
@@ -448,6 +455,98 @@ describe('DotFolderListViewContextMenuComponent', () => {
             });
         });
 
+        describe('content permissions', () => {
+            const openMenuFor = async (overrides: Partial<DotCMSContentlet>) => {
+                await component.getMenuItems({
+                    triggeredEvent: mockEvent,
+                    contentlet: createFakeContentlet(overrides),
+                    showAddToBundle: false
+                });
+
+                return labels(component.$items());
+            };
+            const readOnly = [1] as unknown as DotCMSContentlet['permissions'];
+            const everything = [1, 2, 4, 8, 16] as unknown as DotCMSContentlet['permissions'];
+
+            it('should offer View instead of Edit when the user cannot edit the content', async () => {
+                const items = await openMenuFor({ permissions: readOnly });
+
+                expect(items).toContain('content-drive.context-menu.view-content');
+                expect(items).not.toContain('content-drive.context-menu.edit-content');
+            });
+
+            it('should offer View Page and View Properties when the user cannot edit the page', async () => {
+                const items = await openMenuFor({
+                    permissions: readOnly,
+                    baseType: DotCMSBaseTypesContentTypes.HTMLPAGE
+                });
+
+                expect(items).toContain('content-drive.context-menu.view-page');
+                expect(items).toContain('content-drive.context-menu.view-properties');
+                expect(items).not.toContain('content-drive.context-menu.edit-page');
+                expect(items).not.toContain('content-drive.context-menu.edit-properties');
+            });
+
+            it('should offer Edit Page and Edit Properties when the user can edit the page', async () => {
+                const items = await openMenuFor({
+                    permissions: everything,
+                    baseType: DotCMSBaseTypesContentTypes.HTMLPAGE
+                });
+
+                expect(items).toContain('content-drive.context-menu.edit-page');
+                expect(items).toContain('content-drive.context-menu.edit-properties');
+            });
+
+            it("should open the page's properties from Edit Properties", async () => {
+                await openMenuFor({
+                    permissions: everything,
+                    baseType: DotCMSBaseTypesContentTypes.HTMLPAGE
+                });
+
+                invoke(component.$items(), 'content-drive.context-menu.edit-properties');
+
+                expect(navigationService.editPageProperties).toHaveBeenCalled();
+            });
+
+            it('should not offer properties for content that is not a page', async () => {
+                const items = await openMenuFor({ permissions: everything });
+
+                expect(items).not.toContain('content-drive.context-menu.edit-properties');
+                expect(items).not.toContain('content-drive.context-menu.view-properties');
+            });
+
+            it('should open the item in the editor from View, as Edit does', async () => {
+                await openMenuFor({ permissions: readOnly });
+
+                invoke(component.$items(), 'content-drive.context-menu.view-content');
+
+                expect(navigationService.editContent).toHaveBeenCalled();
+            });
+
+            it('should not offer Push Publish or Add to Bundle without publish permission', async () => {
+                const items = await openMenuFor({ permissions: readOnly });
+
+                expect(items.some((label) => label.includes('push-publish'))).toBe(false);
+                expect(items).not.toContain('contenttypes.content.add_to_bundle');
+            });
+
+            it('should offer Edit, Push Publish and Add to Bundle with full permissions', async () => {
+                const items = await openMenuFor({ permissions: everything });
+
+                expect(items).toContain('content-drive.context-menu.edit-content');
+                expect(items.some((label) => label.includes('push-publish'))).toBe(true);
+                expect(items).toContain('contenttypes.content.add_to_bundle');
+            });
+
+            it('should behave as today when the content carries no permissions', async () => {
+                const items = await openMenuFor({ permissions: undefined });
+
+                expect(items).toContain('content-drive.context-menu.edit-content');
+                expect(items.some((label) => label.includes('push-publish'))).toBe(true);
+                expect(items).toContain('contenttypes.content.add_to_bundle');
+            });
+        });
+
         describe('folder handling', () => {
             const mockFolder: DotContentDriveFolder = {
                 __icon__: 'folderIcon',
@@ -638,9 +737,11 @@ describe('DotFolderListViewContextMenuComponent', () => {
                     ).toBeUndefined();
                 });
 
-                // Both dialogs share one component now, so `data` is what distinguishes them —
-                // asserting the component alone would pass with the two call sites swapped.
-                it('should open the permissions JSP with correct config when triggered', async () => {
+                // Edit Permissions opens through the store now, like the other folder dialogs, so
+                // the URL can name it while it is open; the shell opens the JSP dialog itself
+                // (#37759, FR-030).
+                it('should ask the store to open Edit Permissions for the folder', async () => {
+                    vi.spyOn(store, 'setDialog');
                     await component.getMenuItems(folderContextMenuWithEditPermissions);
 
                     component
@@ -648,18 +749,15 @@ describe('DotFolderListViewContextMenuComponent', () => {
                         .find((item) => item.label === 'Edit-Permissions')
                         ?.command?.({} as unknown as MenuItemCommandEvent);
 
-                    expect(dialogService.open).toHaveBeenCalledWith(
+                    expect(store.setDialog).toHaveBeenCalledWith({
+                        type: 'FOLDER_PERMISSIONS',
+                        header: 'Edit-Permissions',
+                        payload: { identifier: folderWithEditPermissions.identifier }
+                    });
+                    expect(dialogService.open).not.toHaveBeenCalledWith(
                         DotJspIframeDialogComponent,
                         expect.objectContaining({
-                            width: 'min(92vw, 75rem)',
-                            closable: true,
-                            closeOnEscape: true,
-                            data: {
-                                url: `/html/portlet/ext/folders/permissions.jsp?folderIdentifier=${folderWithEditPermissions.identifier}&popup=true`,
-                                titleKey: 'Permissions',
-                                emptyKey: 'dot.permissions.iframe.dialog.no-asset',
-                                testIdPrefix: 'permissions'
-                            }
+                            data: expect.objectContaining({ titleKey: 'Permissions' })
                         })
                     );
                 });
@@ -1157,6 +1255,175 @@ describe('DotFolderListViewContextMenuComponent', () => {
                     expect(
                         spectator.inject(DotHttpErrorManagerService, true).handle
                     ).toHaveBeenCalled();
+                });
+            });
+
+            /**
+             * Duplicate for one folder (#37062 US3). The same run as the Action Center's, submitted
+             * as a batch of one, so its outcome is reported the same way.
+             */
+            describe('duplicate', () => {
+                const DUPLICATE = 'content-drive.action-center.duplicate';
+
+                const readable: DotContentDriveFolder = {
+                    ...mockFolder,
+                    permissions: [PERMISSIONS_TYPE.READ]
+                };
+
+                const rightClick = (folder: DotContentDriveFolder) =>
+                    component.getMenuItems({
+                        triggeredEvent: mockEvent,
+                        contentlet: folder,
+                        showAddToBundle: false
+                    });
+
+                const duplicateItem = () =>
+                    component.$items().find((item) => item.label === DUPLICATE);
+
+                beforeEach(() => {
+                    // Paths are site-qualified, so the browsed site has to be a real one.
+                    store.initContentDrive({
+                        currentSite: { hostname: 'demo.dotcms.com' } as never,
+                        path: '/',
+                        filters: {},
+                        isTreeExpanded: true
+                    });
+                    component.$memoizedMenuItems.set({});
+                });
+
+                it('should show Duplicate when the folder can be read and the author can add here', async () => {
+                    await rightClick(readable);
+
+                    expect(duplicateItem()).toBeDefined();
+                });
+
+                it('should not show Duplicate when the folder cannot be read', async () => {
+                    await rightClick({ ...mockFolder, permissions: [PERMISSIONS_TYPE.EDIT] });
+
+                    expect(duplicateItem()).toBeUndefined();
+                });
+
+                it('should not show Duplicate when the author cannot add folders where they are browsing', async () => {
+                    // Every duplicate lands in that folder, so every one would be refused (FR-005).
+                    patchState(store as never, { siteCanAddChildren: false } as never);
+
+                    await rightClick(readable);
+
+                    expect(duplicateItem()).toBeUndefined();
+                });
+
+                it('should drop Duplicate from a cached menu once the browsed folder refuses new children', async () => {
+                    // Decided when the menu is built, and the menu is cached per folder, so a menu
+                    // cached before the answer changed would go on offering a duplicate the server
+                    // then refuses.
+                    await rightClick(readable);
+                    expect(duplicateItem()).toBeDefined();
+
+                    // Through a node the tree really holds: the store keeps the selection in step
+                    // with the tree, and replaces a node the tree does not own with the one it does.
+                    const browsed = {
+                        key: 'site-root',
+                        label: '',
+                        data: { path: '', type: 'folder', permissions: [PERMISSIONS_TYPE.READ] }
+                    };
+                    patchState(
+                        store as never,
+                        { folders: [browsed], selectedNode: browsed } as never
+                    );
+                    spectator.flushEffects();
+
+                    await rightClick(readable);
+
+                    expect(duplicateItem()).toBeUndefined();
+                });
+
+                it('should refuse with an error instead of submitting when no site is resolved', async () => {
+                    vi.spyOn(store, 'executeDuplicate');
+
+                    await rightClick(readable);
+                    patchState(store as never, { currentSite: undefined } as never);
+                    duplicateItem()?.command?.({} as unknown as MenuItemCommandEvent);
+
+                    expect(store.executeDuplicate).not.toHaveBeenCalled();
+                    expect(messageService.add).toHaveBeenCalledWith(
+                        expect.objectContaining({
+                            severity: 'error',
+                            detail: 'content-drive.dialog.duplicate-folder.no-site'
+                        })
+                    );
+                });
+
+                it('should show Duplicate in All site content, even when the site root refuses new children', async () => {
+                    // The listing spans every folder, so each duplicate lands in its own parent
+                    // rather than the site root, and there is no single folder to gate against
+                    // (US6 acceptance scenario 4). The server refuses per folder.
+                    store.initContentDrive({
+                        currentSite: { hostname: 'demo.dotcms.com' } as never,
+                        path: undefined,
+                        filters: {},
+                        isTreeExpanded: true
+                    });
+                    patchState(store as never, { siteCanAddChildren: false } as never);
+                    component.$memoizedMenuItems.set({});
+
+                    await rightClick(readable);
+
+                    expect(duplicateItem()).toBeDefined();
+                });
+
+                it('should not show Duplicate when the folder carries no permissions at all', async () => {
+                    await rightClick({ ...mockFolder, permissions: undefined } as never);
+
+                    expect(duplicateItem()).toBeUndefined();
+                });
+
+                it("should submit that one folder's site-qualified path", async () => {
+                    vi.spyOn(store, 'executeDuplicate');
+
+                    await rightClick(readable);
+                    duplicateItem()?.command?.({} as unknown as MenuItemCommandEvent);
+
+                    expect(store.executeDuplicate).toHaveBeenCalledWith(expect.any(String), [
+                        '//demo.dotcms.com/documents/'
+                    ]);
+                });
+
+                it('should run straight away, without asking for confirmation', async () => {
+                    // Nothing is overwritten or removed: the duplicate lands beside the original.
+                    const alertConfirmService = spectator.inject(DotAlertConfirmService);
+                    vi.spyOn(store, 'executeDuplicate');
+
+                    await rightClick(readable);
+                    duplicateItem()?.command?.({} as unknown as MenuItemCommandEvent);
+
+                    // The command ran: a missing item would make the assertion below pass on its own.
+                    expect(store.executeDuplicate).toHaveBeenCalled();
+                    expect(alertConfirmService.confirm).not.toHaveBeenCalled();
+                });
+
+                it('should not announce a start the server can still refuse, as the bulk action does not', async () => {
+                    // The status indicator reports the run until it ends, and a refusal ends it.
+                    vi.spyOn(store, 'executeDuplicate');
+
+                    await rightClick(readable);
+                    duplicateItem()?.command?.({} as unknown as MenuItemCommandEvent);
+
+                    // The command ran: a missing item would make the assertion below pass on its own.
+                    expect(store.executeDuplicate).toHaveBeenCalled();
+                    expect(messageService.add).not.toHaveBeenCalled();
+                });
+
+                it('should sit right after Folder Settings', async () => {
+                    await rightClick({
+                        ...mockFolder,
+                        permissions: [PERMISSIONS_TYPE.READ, PERMISSIONS_TYPE.EDIT]
+                    });
+
+                    expect(labels(component.$items())).toEqual([
+                        'content-drive.context-menu.actions',
+                        'content-drive.context-menu.edit-folder',
+                        DUPLICATE
+                    ]);
                 });
             });
 

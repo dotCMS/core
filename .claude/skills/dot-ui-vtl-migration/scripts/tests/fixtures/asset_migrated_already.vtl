@@ -1,0 +1,7 @@
+#if( $structures.isNewEditModeEnabled() )
+<p>new, modern DotCustomFieldApi code</p>
+#else
+<script type="text/javascript">
+  dojo.ready(function() { dijit.byId('x'); });
+</script>
+#end

@@ -15,16 +15,18 @@ failures return `401`/`403 SITE_ACCESS_DENIED` before the gate fires).
 |---|---|---|---|---|
 | `POST /{id}/_start` (immediate) | `503` | `403 FEATURE_DISABLED` | Allowed (10-day cap; `400` if exceeded) | Allowed |
 | `POST /{id}/_start` (future-dated) | `503` | `403 FEATURE_DISABLED` | `403 FEATURE_DISABLED` | Allowed |
-| `POST /scheduled/{id}/_cancel` | `503` | `403 FEATURE_DISABLED` | `403 FEATURE_DISABLED` | Allowed |
-| `PUT /{id}/_archive` | `503` | `403 FEATURE_DISABLED` | `403 FEATURE_DISABLED` | Allowed |
+| `POST /scheduled/{id}/_cancel` | Allowed* | `403 FEATURE_DISABLED` | `403 FEATURE_DISABLED` | Allowed |
+| `PUT /{id}/_archive` | Allowed* | `403 FEATURE_DISABLED` | `403 FEATURE_DISABLED` | Allowed |
 | `POST /{id}/_end` | Allowed* | `403 FEATURE_DISABLED` | `403 FEATURE_DISABLED` | Allowed |
 | `GET /health` | Allowed | Allowed | Allowed | Allowed |
 | CRUD (`GET`, `POST`, `PATCH`, `DELETE`) | Allowed | Allowed | Allowed | Allowed |
 | `GET /{id}/results` | `503` | Allowed | Allowed | Allowed |
 | `GET /{id}/isUserIncluded` | Allowed | Allowed | Allowed | Allowed |
 
-*`_end` is gated solely by `FEATURE_FLAG_EXPERIMENTS` — App configuration has no effect on it
-because `_end` does not interact with CAEM.
+*`_end`, `_cancel`, and `archive` are gated solely by `FEATURE_FLAG_EXPERIMENTS` — App
+configuration has no effect on them because none of these operations interact with CAEM.
+An operator must be able to stop, cancel, or clean up experiments even when the analytics
+backend is unavailable.
 
 ---
 
@@ -76,6 +78,6 @@ Always accessible. Auth required (`401` if unauthenticated).
 | `health` | `"OK"` \| `"NOT_CONFIGURED"` \| `"CONFIGURATION_ERROR"` | Always |
 | `tier` | `"full"` \| `"limited"` | Always |
 | `freeExperimentUsed` | `boolean` | When `tier="limited"` |
-| `warning` | `"ANALYTICS_DISABLED"` | When App not configured |
+| `warning` | `"analytics_disabled"` | When App not configured |
 
 **Example responses** (see `data-model.md` for full state table).

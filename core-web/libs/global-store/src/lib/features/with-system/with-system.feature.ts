@@ -145,6 +145,20 @@ export function withSystem() {
             systemBulkUpload: computed(() => systemConfig()?.bulkUpload ?? null),
 
             /**
+             * The bulk folder delete ceiling the server advertises, or null when it advertises none.
+             *
+             * Null for the same two reasons as {@link systemBulkUpload}, treated the same way: no
+             * readable ceiling, so leave the refusing to the server.
+             */
+            systemFolderBulkDelete: computed(() => systemConfig()?.folderBulkDelete ?? null),
+
+            /**
+             * The bulk folder duplicate ceiling the server advertises, or null when it advertises
+             * none. Same reading as {@link systemFolderBulkDelete}.
+             */
+            systemFolderBulkDuplicate: computed(() => systemConfig()?.folderBulkDuplicate ?? null),
+
+            /**
              * Computed signal that returns the system timezone configuration.
              *
              * @returns The system timezone or null if not loaded
