@@ -14,6 +14,7 @@ import com.amazonaws.services.s3.model.HeadBucketResult;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.Owner;
 import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.amazonaws.services.s3.transfer.Download;
 import com.amazonaws.services.s3.transfer.MultipleFileUpload;
 import com.amazonaws.services.s3.transfer.ObjectMetadataProvider;
@@ -91,6 +92,26 @@ public interface Storage {
      */
     Upload uploadFile(final PutObjectRequest putObjectRequest) throws DotRuntimeException;
 
+    /** Creates an object without replacing an existing key. Unsupported implementations must fail. */
+    default void uploadFileIfAbsent(final String bucketName, final String key, final File file) {
+        throw new UnsupportedOperationException("Conditional uploads are not supported");
+    }
+
+    /** Reads bytes and their version from the same S3 response. Caller closes the response. */
+    default com.amazonaws.services.s3.model.S3Object getObject(final String bucket, final String key) {
+        throw new UnsupportedOperationException("Versioned reads are not supported");
+    }
+
+    /** Writes a small record only if its ETag still matches; null expects absence. */
+    default String uploadFileIfMatch(final String bucket, final String key, final File file, final String etag) {
+        throw new UnsupportedOperationException("Conditional writes are not supported");
+    }
+
+    /** Compares object bytes when an ETag cannot verify file contents. */
+    default boolean fileContentsMatch(final String bucketName, final String key, final File file) throws java.io.IOException {
+        return false;
+    }
+
     /**
      * Async method: Schedules a new transfer to download data from Amazon S3 and save it to the specified file.
      */
@@ -105,6 +126,24 @@ public interface Storage {
      * Contains the results of listing the objects in an Amazon S3 bucket under the folder path specified.
      */
     ObjectListing listObjects(final String bucketName, final String folderPath) throws DotRuntimeException;
+
+    /**
+     * Returns the first object, in key order, whose key starts with the prefix, or {@code null} when
+     * there is none. S3 lists keys in ascending order, so when an object's key equals the prefix it
+     * is the one returned. Use this instead of {@link #listObjects(String, String)} when only
+     * existence matters: it asks for one key instead of every page under the prefix. The default
+     * implementation filters a full listing so existing implementations keep working.
+     *
+     * @param bucketName the bucket to look in
+     * @param prefix     the key prefix
+     * @return the first matching object summary, or {@code null}
+     * @throws DotRuntimeException if the listing fails
+     */
+    default S3ObjectSummary listFirstObject(final String bucketName,
+            final String prefix) throws DotRuntimeException {
+        final List<S3ObjectSummary> objects = listObjects(bucketName, prefix).getObjectSummaries();
+        return objects.isEmpty() ? null : objects.get(0);
+    }
 
     /**
      * Performs a head bucket operation on the requested bucket name. This operation is useful to determine if a bucket exists and you have permission to access it.

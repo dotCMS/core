@@ -29,6 +29,9 @@ import com.dotmarketing.util.UtilMethods;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
 
@@ -44,8 +47,31 @@ public class AWSS3Storage implements Storage {
     private final AmazonS3 s3client;
     private final TransferManager transferManager;
 
+    /**
+     * Creates a storage client that authenticates through the given AWS default credential chain
+     * and uses the global S3 endpoint. With S3 asset storage off, requests are signed for
+     * {@code us-west-2} as before. With it on, no region is pinned, so the SDK looks up each
+     * bucket's region on first use and signs for that region.
+     *
+     * @param credentialsProviderChain the credential chain to authenticate with
+     */
     public AWSS3Storage(DefaultAWSCredentialsProviderChain credentialsProviderChain) {
-        this (getAmazonS3Client(credentialsProviderChain , null, DEFAULT_S3_REGION));
+        this (getAmazonS3Client(credentialsProviderChain , null,
+                com.dotcms.storage.AssetStorageFeature.isEnabled() ? null : DEFAULT_S3_REGION));
+    }
+
+    /**
+     * Creates a storage client from any credential provider, with an optional custom endpoint and
+     * region. See {@link #getAmazonS3Client(AWSCredentialsProvider, String, String)} for how the two
+     * are applied.
+     *
+     * @param credentialsProvider the credentials to authenticate with
+     * @param endpoint            a custom S3-compatible endpoint, or {@code null} for AWS
+     * @param region              the bucket region, or {@code null}
+     */
+    public AWSS3Storage(final AWSCredentialsProvider credentialsProvider, final String endpoint,
+            final String region) {
+        this(getAmazonS3Client(credentialsProvider, endpoint, region));
     }
 
     public AWSS3Storage(final AWSS3Configuration configuration) {
@@ -59,18 +85,35 @@ public class AWSS3Storage implements Storage {
                 , endPoint, region);
     }
 
+    /**
+     * Builds the S3 client. With S3 asset storage off, the client always uses the configured
+     * endpoint, or the global endpoint {@code s3.amazonaws.com}, with the given signing region, as
+     * before. With it on, a custom endpoint is used with the given signing region, a region alone
+     * selects that region's AWS endpoint, and with neither the client uses the global endpoint and
+     * the SDK looks up each bucket's region on first use instead of requiring one.
+     *
+     * @param credentialsProvider the credentials to authenticate with
+     * @param endPoint            a custom endpoint, or {@code null}
+     * @param region              the signing region, or {@code null}
+     * @return the configured client
+     */
     private static AmazonS3 getAmazonS3Client(final AWSCredentialsProvider credentialsProvider,
             final String endPoint, final String region) {
 
 
-        return AmazonS3ClientBuilder.standard()
+        final AmazonS3ClientBuilder builder = AmazonS3ClientBuilder.standard()
                 .withCredentials(credentialsProvider)
-                .withClientConfiguration(getClientConfiguration())
-                .withEndpointConfiguration(
+                .withClientConfiguration(getClientConfiguration());
+        if (!com.dotcms.storage.AssetStorageFeature.isEnabled() || UtilMethods.isSet(endPoint)
+                || !UtilMethods.isSet(region)) {
+            builder.withEndpointConfiguration(
                         new AwsClientBuilder.EndpointConfiguration(
                                 UtilMethods.isSet(endPoint) ? endPoint : "s3.amazonaws.com",
-                                region))
-                .build();
+                                region));
+        } else if (UtilMethods.isSet(region)) {
+            builder.withRegion(region);
+        }
+        return builder.build();
     }
 
     private AWSS3Storage(AmazonS3 s3client) {
@@ -84,9 +127,19 @@ public class AWSS3Storage implements Storage {
 
     }
 
+    /**
+     * Returns the client configuration. With S3 asset storage off, requests keep the legacy
+     * {@code S3SignerType} override. With it on, no signer is forced: the SDK's default S3 signer is
+     * already SigV4, and an explicit override would stop the SDK from looking up a bucket's region
+     * when the client has none configured.
+     *
+     * @return a new client configuration
+     */
     private static ClientConfiguration getClientConfiguration(){
         ClientConfiguration conf = new ClientConfiguration();
-        conf.setSignerOverride("S3SignerType");
+        if (!com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+            conf.setSignerOverride("S3SignerType");
+        }
 
         return conf;
     }
@@ -184,7 +237,38 @@ public class AWSS3Storage implements Storage {
     public ObjectListing listObjects(String bucketName, String folderPath) throws DotRuntimeException {
         try {
             ListObjectsRequest lor = new ListObjectsRequest().withBucketName(bucketName).withPrefix(folderPath);
-            return s3client.listObjects(lor);
+            final ObjectListing result = s3client.listObjects(lor);
+            if (!com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+                return result;
+            }
+            ObjectListing page = result;
+            while (page.isTruncated()) {
+                page = s3client.listNextBatchOfObjects(page);
+                result.getObjectSummaries().addAll(page.getObjectSummaries());
+            }
+            result.setTruncated(false);
+            return result;
+        } catch (AmazonServiceException ase) {
+            throw new DotRuntimeException("Caught an error from Amazon S3: request made but was rejected", ase);
+        } catch (AmazonClientException ace) {
+            throw new DotRuntimeException("Caught an error from Amazon S3: client encountered an internal error", ace);
+        }
+    }
+
+    /**
+     * Lists at most one key under the prefix, without following further pages.
+     *
+     * @param bucketName the bucket to look in
+     * @param prefix     the key prefix
+     * @return the first matching object summary in key order, or {@code null}
+     * @throws DotRuntimeException if S3 rejects the request or the client fails
+     */
+    @Override
+    public S3ObjectSummary listFirstObject(final String bucketName, final String prefix) throws DotRuntimeException {
+        try {
+            final List<S3ObjectSummary> objects = s3client.listObjects(new ListObjectsRequest()
+                    .withBucketName(bucketName).withPrefix(prefix).withMaxKeys(1)).getObjectSummaries();
+            return objects.isEmpty() ? null : objects.get(0);
         } catch (AmazonServiceException ase) {
             throw new DotRuntimeException("Caught an error from Amazon S3: request made but was rejected", ase);
         } catch (AmazonClientException ace) {
@@ -230,6 +314,76 @@ public class AWSS3Storage implements Storage {
             throw new DotRuntimeException("Caught an error from Amazon S3: request made but was rejected", ase);
         } catch (AmazonClientException ace) {
             throw new DotRuntimeException("Caught an error from Amazon S3: client encountered an internal error", ace);
+        }
+    }
+
+    @Override
+    public S3Object getObject(final String bucket, final String key) {
+        try {
+            return s3client.getObject(bucket, key);
+        } catch (AmazonS3Exception failure) {
+            if (failure.getStatusCode() == 404 && "NoSuchKey".equals(failure.getErrorCode())) return null;
+            throw failure;
+        }
+    }
+
+    @Override
+    public String uploadFileIfMatch(final String bucket, final String key, final File file, final String etag) {
+        if (!com.dotcms.storage.AssetStorageFeature.isEnabled()) throw new IllegalStateException("S3 asset storage is disabled");
+        final var request = new PutObjectRequest(bucket, key, file);
+        request.putCustomRequestHeader(etag == null ? "If-None-Match" : "If-Match", etag == null ? "*" : "\"" + etag + "\"");
+        try {
+            return s3client.putObject(request).getETag();
+        } catch (AmazonS3Exception failure) {
+            if (failure.getStatusCode() == 412 || failure.getStatusCode() == 409
+                    || (etag != null && failure.getStatusCode() == 404 && "NoSuchKey".equals(failure.getErrorCode()))) return null;
+            throw failure;
+        }
+    }
+
+    /** Creates an object without replacing an existing key, including multipart completion. */
+    @Override
+    public void uploadFileIfAbsent(final String bucket, final String key, final File file) {
+        if (!com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+            throw new IllegalStateException("S3 asset storage is disabled");
+        }
+        if (file.length() <= DEFAULT_STATIC_PUSH_MULTIPART_UPLOAD_THRESHOLD) {
+            final PutObjectRequest request = new PutObjectRequest(bucket, key, file);
+            request.putCustomRequestHeader("If-None-Match", "*");
+            s3client.putObject(request);
+            return;
+        }
+        // The bundled TransferManager does not carry custom headers to multipart completion.
+        final String uploadId = s3client.initiateMultipartUpload(new InitiateMultipartUploadRequest(bucket, key)).getUploadId();
+        try {
+            final List<PartETag> parts = new ArrayList<>();
+            final long length = file.length();
+            final long partSize = Math.max(8L * 1024 * 1024, (length + 9999) / 10000);
+            for (long offset = 0; offset < length; offset += partSize) {
+                parts.add(s3client.uploadPart(new UploadPartRequest().withBucketName(bucket).withKey(key)
+                        .withUploadId(uploadId).withPartNumber(parts.size() + 1).withFile(file)
+                        .withFileOffset(offset).withPartSize(Math.min(partSize, length - offset))).getPartETag());
+            }
+            final CompleteMultipartUploadRequest request = new CompleteMultipartUploadRequest(bucket, key, uploadId, parts);
+            request.putCustomRequestHeader("If-None-Match", "*");
+            s3client.completeMultipartUpload(request);
+        } catch (RuntimeException failure) {
+            try {
+                s3client.abortMultipartUpload(new AbortMultipartUploadRequest(bucket, key, uploadId));
+            } catch (RuntimeException abortFailure) {
+                failure.addSuppressed(abortFailure);
+            }
+            throw failure;
+        }
+    }
+
+    /** Verifies opaque/encrypted/multipart ETags by reading the actual object bytes. */
+    @Override
+    public boolean fileContentsMatch(final String bucket, final String key, final File file) throws IOException {
+        try (final S3Object object = s3client.getObject(bucket, key);
+             final InputStream local = Files.newInputStream(file.toPath())) {
+            return object.getObjectMetadata().getContentLength() == file.length()
+                    && org.apache.commons.io.IOUtils.contentEquals(object.getObjectContent(), local);
         }
     }
 

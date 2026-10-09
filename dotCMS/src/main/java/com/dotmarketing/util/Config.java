@@ -787,12 +787,17 @@ public class Config {
      */
     public static void setProperty(String key, Object value) {
         if (props != null) {
+            final boolean assetStorageFlag = com.dotcms.storage.AssetStorageFeature.FLAG.equals(key);
             if(props.containsKey(envKey(key))) {
                 key = envKey(key);
             }
             trackOverrides(key, value);
             Logger.info(Config.class, "Setting property: " + key + " to " + value);
             props.setProperty(key, value);
+            if (assetStorageFlag) {
+                // ponytail: only in-memory overrides re-read the latched flag; reloads and the system table stay latched.
+                com.dotcms.storage.AssetStorageFeature.reset();
+            }
         }
     }
 
