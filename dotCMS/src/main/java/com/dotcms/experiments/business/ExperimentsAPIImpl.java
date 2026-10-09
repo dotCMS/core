@@ -523,10 +523,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
             throw new IllegalStateException(
                     "isFreeSlotUsed() must only be called in limited mode (FEATURE_FLAG_EXPERIMENTS=false)");
         }
-        final ExperimentFilter filter = ExperimentFilter.builder()
-                .statuses(Set.of(RUNNING, SCHEDULED, ENDED))
-                .build();
-        return !factory.list(filter).isEmpty();
+        return factory.countByStatuses(Set.of(RUNNING, SCHEDULED, ENDED)) > 0;
     }
 
     @Override

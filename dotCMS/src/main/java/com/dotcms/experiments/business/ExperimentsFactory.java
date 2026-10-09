@@ -1,5 +1,6 @@
 package com.dotcms.experiments.business;
 
+import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.exception.DotDataException;
@@ -7,6 +8,7 @@ import com.dotmarketing.exception.DotDataException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Interaction with the persistence layer for CRUD and other operations with {@link Experiment}s
@@ -48,4 +50,14 @@ public interface ExperimentsFactory {
      * @throws DotDataException
      */
     Collection<Experiment> listActive(final String pageIdentifier) throws DotDataException;
+
+    /**
+     * Returns the number of experiments whose {@code status} is in {@code statuses}.
+     * Issues a SQL {@code COUNT} query — no experiment rows are loaded into memory.
+     *
+     * @param statuses the set of statuses to count
+     * @return the count of matching experiments
+     * @throws DotDataException on persistence errors
+     */
+    int countByStatuses(Set<Status> statuses) throws DotDataException;
 }
