@@ -180,7 +180,10 @@ const createStoreMock = () => ({
     perPage: vi.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_PER_PAGE),
     orderBy: vi.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_ORDER_BY),
     direction: vi.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_DIRECTION),
-    totalRecords: vi.fn().mockReturnValue(0)
+    totalRecords: vi.fn().mockReturnValue(0),
+    isLimitedMode: vi.fn().mockReturnValue(false),
+    isSlotUsed: vi.fn().mockReturnValue(false),
+    showAnalyticsWarning: vi.fn().mockReturnValue(false)
 });
 
 describe('DotExperimentsListComponent', () => {

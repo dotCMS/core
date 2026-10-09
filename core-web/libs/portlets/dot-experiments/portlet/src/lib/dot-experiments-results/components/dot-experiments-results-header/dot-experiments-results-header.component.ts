@@ -1,14 +1,17 @@
 import { injectDispatch } from '@ngrx/signals/events';
 
 import { Component, computed, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+
+import { map } from 'rxjs/operators';
 
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotMessageService } from '@dotcms/data-access';
-import { DotExperimentStatus } from '@dotcms/dotcms-models';
+import { DotExperimentsService, DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
+import { DotExperimentStatus, DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotExperimentsRouter } from '../../../services/dot-experiments-router.service';
@@ -73,6 +76,13 @@ export class DotExperimentsResultsHeaderComponent {
     readonly #experimentsRouter = inject(DotExperimentsRouter);
     readonly #confirmationService = inject(ConfirmationService);
     readonly #dotMessageService = inject(DotMessageService);
+    readonly #dotMessageDisplayService = inject(DotMessageDisplayService);
+    readonly #isLimitedMode = toSignal(
+        inject(DotExperimentsService)
+            .healthCheck()
+            .pipe(map((r) => r.tier === 'limited')),
+        { initialValue: false }
+    );
 
     /** `{pageTitle} · {pagePath} · {n} Variants`, dropping whichever parts are not known yet (AC2). */
     readonly $subline = computed<string>(() => {
@@ -120,6 +130,19 @@ export class DotExperimentsResultsHeaderComponent {
      * so a keyed request reaches this one and only this one (AC21).
      */
     confirmStop(): void {
+        if (this.#isLimitedMode()) {
+            this.#dotMessageDisplayService.push({
+                life: 5000,
+                message: this.#dotMessageService.get(
+                    'experiments.list.limited-mode.action.disabled'
+                ),
+                severity: DotMessageSeverity.INFO,
+                type: DotMessageType.SIMPLE_MESSAGE
+            });
+
+            return;
+        }
+
         this.#confirmationService.confirm({
             key: RESULTS_CONFIRM_DIALOG_KEY,
             header: this.#dotMessageService.get('experiments.action.stop-experiment'),

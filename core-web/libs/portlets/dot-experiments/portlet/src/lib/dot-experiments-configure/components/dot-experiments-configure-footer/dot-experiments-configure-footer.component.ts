@@ -1,9 +1,15 @@
 import { injectDispatch } from '@ngrx/signals/events';
 
 import { Component, computed, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 
+import { map } from 'rxjs/operators';
+
+import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { TooltipModule } from 'primeng/tooltip';
 
+import { DotExperimentsService, DotMessageService } from '@dotcms/data-access';
 import { DotExperimentStatus } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -32,6 +38,9 @@ const LOCKED_HINT_KEY = 'experiments.configure.footer.locked';
 const VALIDATION_HINT_KEY_ONE = 'experiments.configure.footer.validation.one';
 const VALIDATION_HINT_KEY_MANY = 'experiments.configure.footer.validation.many';
 
+/** Key for the limited-mode start confirmation dialog, distinct from the configure shell's key. */
+export const LIMITED_MODE_START_CONFIRM_KEY = 'limitedModeStartConfirm';
+
 /** What the footer says, and whether it says it as an error. */
 interface FooterHint {
     key: string;
@@ -54,7 +63,7 @@ interface FooterHint {
  */
 @Component({
     selector: 'dot-experiments-configure-footer',
-    imports: [ButtonModule, DotMessagePipe],
+    imports: [ButtonModule, TooltipModule, DotMessagePipe],
     templateUrl: './dot-experiments-configure-footer.component.html',
     host: {
         class: 'flex flex-none items-center justify-between gap-4 border-t border-surface-200 bg-surface-50 px-8 py-3'
@@ -62,6 +71,27 @@ interface FooterHint {
 })
 export class DotExperimentsConfigureFooterComponent {
     readonly store = inject(DotExperimentsConfigureStore);
+
+    readonly #healthResponse = toSignal(
+        inject(DotExperimentsService).healthCheck(),
+        { initialValue: null }
+    );
+
+    /**
+     * Start is disabled when in limited mode AND the free slot is already occupied.
+     * Resolved once per screen opening — the flag requires a restart to change.
+     */
+    readonly $startDisabled = computed<boolean>(
+        () => this.#healthResponse()?.tier === 'limited' && this.#healthResponse()?.freeExperimentUsed === true
+    );
+
+    /**
+     * Limited mode with the slot still free: the user is about to consume their one free experiment.
+     * Clicking Start in this state shows a confirmation dialog (US2/AC2) before dispatching.
+     */
+    readonly $isLimitedModeSlotFree = computed<boolean>(
+        () => this.#healthResponse()?.tier === 'limited' && this.#healthResponse()?.freeExperimentUsed !== true
+    );
 
     /**
      * The single line of copy on the left, in precedence order: a locked experiment is not saving
@@ -130,6 +160,8 @@ export class DotExperimentsConfigureFooterComponent {
     );
 
     readonly #dispatch = injectDispatch(dotExperimentsConfigurePageEvents);
+    readonly #confirmationService = inject(ConfirmationService);
+    readonly #dotMessageService = inject(DotMessageService);
 
     /** Writes the form: creates the experiment on the first press, patches it afterwards. */
     onSaveDraft(): void {
@@ -139,10 +171,31 @@ export class DotExperimentsConfigureFooterComponent {
     /**
      * Asks the store to start — or, on an incomplete form, to reveal what is missing.
      *
+     * In limited mode with the free slot available, shows a confirmation dialog warning the
+     * operator that this experiment cannot be stopped once started (US2/AC2). The dispatch
+     * only happens when the operator confirms.
+     *
      * There is no guard here on purpose: the store's reducer runs the eight rules on this event,
      * and only lets the call through when none of them failed (AC29/AC30).
      */
     onStart(): void {
+        if (this.$isLimitedModeSlotFree()) {
+            this.#confirmationService.confirm({
+                key: LIMITED_MODE_START_CONFIRM_KEY,
+                header: this.#dotMessageService.get('experiments.limited-mode.start.confirm.header'),
+                message: this.#dotMessageService.get('experiments.limited-mode.start.confirm.message'),
+                acceptLabel: this.#dotMessageService.get('experiments.limited-mode.start.confirm.accept'),
+                rejectLabel: this.#dotMessageService.get('dot.common.dialog.reject'),
+                rejectButtonStyleClass: 'p-button-secondary',
+                defaultFocus: 'reject',
+                closable: true,
+                closeOnEscape: true,
+                accept: () => this.#dispatch.startRequested()
+            });
+
+            return;
+        }
+
         this.#dispatch.startRequested();
     }
 }

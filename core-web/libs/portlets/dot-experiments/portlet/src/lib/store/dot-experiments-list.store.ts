@@ -13,7 +13,8 @@ import { filter, map, mergeMap, switchMap } from 'rxjs/operators';
 import {
     DotContentSearchService,
     DotExperimentsService,
-    DotHttpErrorManagerService
+    DotHttpErrorManagerService,
+    ExperimentsHealthResponse
 } from '@dotcms/data-access';
 import {
     ComponentStatus,
@@ -65,8 +66,12 @@ import { resolvePagePath } from '../util/dot-experiments-list.util';
 /** Full state of the experiments list. */
 export interface DotExperimentsListState extends DotExperimentsListViewState {
     status: ComponentStatus;
-    /** Analytics health, `null` until the gate resolves. Anything but `OK` blocks the list. */
-    healthStatus: HealthStatusTypes | null;
+    /**
+     * Full health response from the experiments gate, `null` until resolved.
+     * Use the `healthStatus`, `isLimitedMode`, `isSlotUsed`, and `showAnalyticsWarning`
+     * computeds rather than reading this directly.
+     */
+    healthResponse: ExperimentsHealthResponse | null;
     /** Every experiment returned by the API, across all sites. Narrowed by `siteScopedExperiments`. */
     experiments: DotExperiment[];
     /** Page url/host resolved per `pageId`; the only source of site information for an experiment. */
@@ -101,7 +106,7 @@ const CLEARED_TOOLBAR_NARROWINGS = {
 
 const initialState: DotExperimentsListState = {
     status: ComponentStatus.LOADING,
-    healthStatus: null,
+    healthResponse: null,
     experiments: [],
     pageInfoByPageId: {},
     filter: '',
@@ -416,24 +421,40 @@ export const DotExperimentsListStore = signalStore(
             sortedExperiments,
             pagedExperiments,
             totalRecords: computed<number>(() => filteredExperiments().length),
+            /** The resolved `health` field, or `null` while the gate is pending. */
+            healthStatus: computed<HealthStatusTypes | null>(
+                () => store.healthResponse()?.health ?? null
+            ),
             /**
              * Same rule as the legacy `AnalyticsAppGuard`: only `OK` passes. Stays `false`
              * while the gate is pending, so the list is never blocked on a guess.
              */
             isMisconfigured: computed<boolean>(() => {
-                const healthStatus = store.healthStatus();
+                const healthResponse = store.healthResponse();
 
-                return healthStatus !== null && healthStatus !== HealthStatusTypes.OK;
-            })
+                return healthResponse !== null && healthResponse.health !== HealthStatusTypes.OK;
+            }),
+            /** `true` when `FEATURE_FLAG_EXPERIMENTS=false` — operator can run one free experiment. */
+            isLimitedMode: computed<boolean>(() => store.healthResponse()?.tier === 'limited'),
+            /** `true` when the one free experiment slot is already occupied (limited mode only). */
+            isSlotUsed: computed<boolean>(
+                () => store.healthResponse()?.freeExperimentUsed === true
+            ),
+            /** `true` when the Analytics App is not configured for the site. */
+            showAnalyticsWarning: computed<boolean>(
+                () => store.healthResponse()?.warning === 'analytics_disabled'
+            )
         };
     }),
     withReducer<DotExperimentsListState>(
         on(dotExperimentsApiEvents.healthCheckSucceeded, ({ payload }) => ({
-            healthStatus: payload,
+            healthResponse: payload,
             // A non-OK gate stops the flow here: nothing else is fetched, so settle instead of
             // leaving the table stuck on its skeleton.
             status:
-                payload === HealthStatusTypes.OK ? ComponentStatus.LOADING : ComponentStatus.LOADED
+                payload.health === HealthStatusTypes.OK
+                    ? ComponentStatus.LOADING
+                    : ComponentStatus.LOADED
         })),
         on(dotExperimentsApiEvents.healthCheckFailed, ({ payload }) => ({
             status: ComponentStatus.ERROR,
@@ -602,8 +623,8 @@ export const DotExperimentsListStore = signalStore(
                     switchMap(() =>
                         experimentsService.healthCheck().pipe(
                             mapResponse({
-                                next: (healthStatus) =>
-                                    dotExperimentsApiEvents.healthCheckSucceeded(healthStatus),
+                                next: (healthResponse) =>
+                                    dotExperimentsApiEvents.healthCheckSucceeded(healthResponse),
                                 error: toFailure(dotExperimentsApiEvents.healthCheckFailed)
                             })
                         )
@@ -613,7 +634,7 @@ export const DotExperimentsListStore = signalStore(
                 // Querying experiments on a broken Analytics install is pointless, so the first
                 // load hangs off the gate rather than off init.
                 loadAfterHealthCheck$: events.on(dotExperimentsApiEvents.healthCheckSucceeded).pipe(
-                    filter(({ payload }) => payload === HealthStatusTypes.OK),
+                    filter(({ payload }) => payload.health === HealthStatusTypes.OK),
                     map(() => dotExperimentsListPageEvents.loadExperiments())
                 ),
 

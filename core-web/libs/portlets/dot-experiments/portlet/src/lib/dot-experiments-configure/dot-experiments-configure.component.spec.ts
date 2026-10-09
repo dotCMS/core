@@ -5,6 +5,7 @@ import {
     mockProvider,
     Spectator
 } from '@openng/spectator/vitest';
+import { of } from 'rxjs';
 import { Mock, MockInstance, vi } from 'vitest';
 
 import { provideLocationMocks } from '@angular/common/testing';
@@ -14,7 +15,7 @@ import { ActivatedRoute, convertToParamMap, Params, provideRouter, Router } from
 
 import { ConfirmationService, MenuItem } from 'primeng/api';
 
-import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
+import { DotExperimentsService, DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
 import {
     ComponentStatus,
     DotExperiment,
@@ -269,7 +270,10 @@ describe('DotExperimentsConfigureComponent', () => {
                 { provide: DotExperimentsConfigureStore, useFactory: () => storeMock },
                 // Real: these tests assert where the screen goes, and this is what decides.
                 DotExperimentsRouter,
-                ConfirmationService
+                ConfirmationService,
+                mockProvider(DotExperimentsService, {
+                    healthCheck: vi.fn().mockReturnValue(of({ health: 'OK', tier: 'full' }))
+                })
             ],
             providers: [
                 provideRouter([{ path: 'experiments', children: [] }]),
@@ -1472,7 +1476,10 @@ describe('DotExperimentsConfigureComponent', () => {
                 { provide: DotExperimentsConfigureStore, useFactory: () => storeMock },
                 // Real: these tests assert where the screen goes, and this is what decides.
                 DotExperimentsRouter,
-                ConfirmationService
+                ConfirmationService,
+                mockProvider(DotExperimentsService, {
+                    healthCheck: vi.fn().mockReturnValue(of({ health: 'OK', tier: 'full' }))
+                })
             ],
             providers: [
                 provideRouter([{ path: 'experiments', children: [] }]),

@@ -7,6 +7,7 @@ import { catchError, map } from 'rxjs/operators';
 
 import { DotCMSResponse, HealthStatusTypes } from '@dotcms/dotcms-models';
 
+
 import {
     ANALYTICS_CONTENT_URL,
     ANALYTICS_EVENTS_URL,
@@ -53,6 +54,19 @@ function isAnalyticsHealthAvailable(available: string | boolean | undefined): bo
     return String(available).trim().toLowerCase() === 'true';
 }
 
+function mapHealthField(health: string): HealthStatusTypes {
+    switch (health) {
+        case 'OK':
+            return HealthStatusTypes.OK;
+        case 'NOT_CONFIGURED':
+            return HealthStatusTypes.NOT_CONFIGURED;
+        case 'CONFIGURATION_ERROR':
+            return HealthStatusTypes.CONFIGURATION_ERROR;
+        default:
+            return HealthStatusTypes.ERROR;
+    }
+}
+
 /** Reads the 8 session engagement metric fields off a domain-query row; field names match 1:1. */
 function toSessionEngagementData(row: Record<string, string | number>): SessionEngagementData {
     return {
@@ -94,19 +108,26 @@ export class DotAnalyticsService {
 
     /**
      * Checks Content Analytics availability via `GET /api/v1/analytics/health`.
-     * `entity.available` true (boolean) or `"true"` (case-insensitive string) maps to AVAILABLE.
      *
-     * Always makes a fresh HTTP request.
+     * Maps the response in priority order:
+     * 1. `entity.health` string — present after the analytics-gate feature ships:
+     *    `"OK"` → `OK`, `"NOT_CONFIGURED"` → `NOT_CONFIGURED`, `"CONFIGURATION_ERROR"` → `CONFIGURATION_ERROR`.
+     * 2. Legacy `entity.available` field — for rollback safety; `true`/`"true"` → `OK`.
+     * 3. HTTP error → `ERROR`.
      *
-     * @returns Observable of HealthStatusTypes (AVAILABLE, NOT_AVAILABLE, or ERROR on failure)
+     * @returns Observable of {@link HealthStatusTypes}
      */
     healthCheck(): Observable<HealthStatusTypes> {
         return this.#http.get<DotCMSResponse<HealthEntity>>(this.#HEALTH_URL).pipe(
-            map((response) =>
-                isAnalyticsHealthAvailable(response.entity?.available)
-                    ? HealthStatusTypes.AVAILABLE
-                    : HealthStatusTypes.NOT_AVAILABLE
-            ),
+            map((response) => {
+                const { health, available } = response.entity ?? {};
+                if (health != null) {
+                    return mapHealthField(health);
+                }
+                return isAnalyticsHealthAvailable(available)
+                    ? HealthStatusTypes.OK
+                    : HealthStatusTypes.NOT_AVAILABLE;
+            }),
             catchError(() => of(HealthStatusTypes.ERROR))
         );
     }

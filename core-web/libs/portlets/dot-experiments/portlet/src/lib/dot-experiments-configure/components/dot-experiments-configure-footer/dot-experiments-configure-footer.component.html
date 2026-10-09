@@ -21,10 +21,13 @@
     }
 
     @if ($showStart()) {
-        <!-- Never disabled, not even while a start is in flight: pressing it on an incomplete
-             form is the only thing that reveals the missing fields (AC28). -->
+        <!-- Disabled only when in limited mode and the free slot is occupied — otherwise
+             never disabled (AC28): pressing it on an incomplete form reveals the missing fields. -->
         <p-button
             [label]="$startLabelKey() | dm"
+            [disabled]="$startDisabled()"
+            [pTooltip]="$startDisabled() ? ('experiments.list.limited-mode.banner.slot-used' | dm) : ''"
+            tooltipPosition="top"
             (onClick)="onStart()"
             data-testid="experiments-configure-start-btn" />
     }

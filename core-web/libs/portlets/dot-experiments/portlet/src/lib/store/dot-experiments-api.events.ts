@@ -1,7 +1,8 @@
 import { type } from '@ngrx/signals';
 import { eventGroup } from '@ngrx/signals/events';
 
-import { DotExperiment, HealthStatusTypes } from '@dotcms/dotcms-models';
+import { DotExperiment } from '@dotcms/dotcms-models';
+import { ExperimentsHealthResponse } from '@dotcms/data-access';
 
 import { DotExperimentPageInfo } from '../shared/models';
 
@@ -17,7 +18,7 @@ export const dotExperimentsApiEvents = eventGroup({
     source: 'Experiments API',
     events: {
         // Analytics health gate
-        healthCheckSucceeded: type<HealthStatusTypes>(),
+        healthCheckSucceeded: type<ExperimentsHealthResponse>(),
         healthCheckFailed: type<unknown>(),
 
         // Load

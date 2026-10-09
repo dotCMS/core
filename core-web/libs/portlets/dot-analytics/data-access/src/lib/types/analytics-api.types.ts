@@ -224,7 +224,10 @@ export interface SessionEngagementGroupByData {
 // GET /api/v1/analytics/health — see HealthEntity
 // ---------------------------------------------------------------------------
 
-/** `entity` payload from GET `/api/v1/analytics/health`. Backend may send string or boolean. */
+/** `entity` payload from GET `/api/v1/analytics/health`. */
 export interface HealthEntity {
-    available: string | boolean;
+    /** New field — present from the analytics-gate feature onwards. */
+    health?: 'OK' | 'NOT_CONFIGURED' | 'CONFIGURATION_ERROR';
+    /** Legacy field — kept for rollback safety; ignored when `health` is present. */
+    available?: string | boolean;
 }

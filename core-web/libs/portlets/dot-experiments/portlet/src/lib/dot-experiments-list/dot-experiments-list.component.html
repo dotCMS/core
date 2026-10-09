@@ -20,6 +20,28 @@
             (buttonAction)="onRetry()" />
     </div>
 } @else {
+    @if (store.isLimitedMode()) {
+        <p-message
+            [severity]="store.isSlotUsed() ? 'warn' : 'info'"
+            styleClass="w-full rounded-none! border-x-0! border-t-0!"
+            data-testid="experiments-limited-mode-banner">
+            <span>{{
+                (store.isSlotUsed()
+                    ? 'experiments.list.limited-mode.banner.slot-used'
+                    : 'experiments.list.limited-mode.banner'
+                ) | dm
+            }}</span>
+        </p-message>
+    }
+    @if (store.showAnalyticsWarning()) {
+        <p-message
+            severity="warn"
+            [closable]="true"
+            styleClass="w-full rounded-none! border-x-0! border-t-0!"
+            data-testid="experiments-analytics-warning">
+            <span>{{ 'experiments.list.analytics.disabled.warning' | dm }}</span>
+        </p-message>
+    }
     <p-toolbar
         class="justify-start gap-1 border-x-0! border-t-0!"
         [class.px-3]="!$inPanel"

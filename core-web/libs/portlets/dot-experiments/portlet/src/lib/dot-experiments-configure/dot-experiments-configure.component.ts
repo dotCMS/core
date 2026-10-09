@@ -33,10 +33,11 @@ import { ActivatedRoute } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { MessageModule } from 'primeng/message';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { SkeletonModule } from 'primeng/skeleton';
 
-import { take } from 'rxjs/operators';
+import { map, take } from 'rxjs/operators';
 
 import {
     DotExperimentsService,
@@ -63,7 +64,10 @@ import { GlobalStore } from '@dotcms/store';
 import { DotEmptyContainerComponent, DotMessagePipe, PrincipalConfiguration } from '@dotcms/ui';
 
 import { DotExperimentsConfigureDetailsComponent } from './components/dot-experiments-configure-details/dot-experiments-configure-details.component';
-import { DotExperimentsConfigureFooterComponent } from './components/dot-experiments-configure-footer/dot-experiments-configure-footer.component';
+import {
+    DotExperimentsConfigureFooterComponent,
+    LIMITED_MODE_START_CONFIRM_KEY
+} from './components/dot-experiments-configure-footer/dot-experiments-configure-footer.component';
 import { DotExperimentsConfigureGoalComponent } from './components/dot-experiments-configure-goal/dot-experiments-configure-goal.component';
 import { DotExperimentsConfigureHeaderComponent } from './components/dot-experiments-configure-header/dot-experiments-configure-header.component';
 import { DotExperimentsConfigurePageComponent } from './components/dot-experiments-configure-page/dot-experiments-configure-page.component';
@@ -154,6 +158,7 @@ function formKeyOf(experiment: DotExperiment | null | undefined): string | null 
     imports: [
         FormRoot,
         ConfirmDialogModule,
+        MessageModule,
         ProgressBarModule,
         SkeletonModule,
         DotEmptyContainerComponent,
@@ -184,6 +189,19 @@ export class DotExperimentsConfigureComponent {
     readonly store = inject(DotExperimentsConfigureStore);
 
     readonly CONFIRM_KEY = CONFIGURATION_CONFIRM_DIALOG_KEY;
+    readonly LIMITED_MODE_START_CONFIRM_KEY = LIMITED_MODE_START_CONFIRM_KEY;
+
+    /**
+     * Whether the install is in limited mode (`FEATURE_FLAG_EXPERIMENTS=false`).
+     * Scheduling is not allowed in limited mode — only immediate-start experiments.
+     * Resolved once per screen opening; a flag change requires a restart anyway.
+     */
+    readonly $isLimitedMode = toSignal(
+        inject(DotExperimentsService)
+            .healthCheck()
+            .pipe(map((r) => r.tier === 'limited')),
+        { initialValue: false }
+    );
 
     /**
      * Public so `experimentsUnsavedChangesGuard` can raise its prompt on the same instance that
@@ -577,6 +595,28 @@ export class DotExperimentsConfigureComponent {
      * `untracked` still guards the dispatch: the store re-seeds the form from every response, so a
      * binding that read anything else would turn one save into a round trip.
      */
+    /**
+     * Clears both scheduling dates when in limited mode so the autosave PATCH never persists
+     * a scheduling that would cause ExperimentsAPIImpl.emptyScheduling() to return false,
+     * which would route the experiment to SCHEDULED instead of RUNNING on _start.
+     */
+    protected readonly clearSchedulingInLimitedModeEffect = effect(() => {
+        if (!this.$isLimitedMode()) {
+            return;
+        }
+
+        const model = this.$model();
+
+        if (model.scheduling.startDate !== null || model.scheduling.endDate !== null) {
+            untracked(() => {
+                this.$model.update((m) => ({
+                    ...m,
+                    scheduling: { startDate: null, endDate: null }
+                }));
+            });
+        }
+    });
+
     protected readonly mirrorFormEffect = effect(() => {
         const value = this.$model();
 
