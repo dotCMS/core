@@ -139,7 +139,8 @@ content type moves its files to the trash only after commit
 The hook fires on the commit of the **outermost** transaction. Each destroy method opens its own
 transaction, but inside a folder delete it joins the folder's, so the files of everything the folder
 delete reached wait for the folder as a whole. That is what makes a refusal anywhere in the folder
-keep every file; the plan confirms it against the nested-transaction handling.
+keep every file; the plan proves it for each of the four destroy paths, since the fix depends on
+it.
 
 Four details of the existing code shape the fix:
 
@@ -262,9 +263,9 @@ the same exceptions the `PATH_NOT_FOUND` mapping relies on.
   folder's outcome is recorded).
 - **AC-003a**: Deleting a content type that has content with binaries still removes that content's
   binaries and metadata after the commit, although the type no longer exists by then.
-- **AC-003b**: When the deferred removal fails, the failure is logged, the delete still reports
-  success, and the commit's other after-commit work (such as removing the content from the search
-  index) still runs.
+- **AC-003b**: When the deferred removal fails, it catches and logs the failure itself: the delete
+  still reports success, and an after-commit listener registered later in the same transaction
+  still runs.
 - **AC-004**: A content destroy run outside any transaction still removes the files immediately, so
   callers that are not transactional see no change.
 - **AC-005**: Bulk delete keeps its two levels of behaviour: a failed folder does not stop the other
@@ -283,7 +284,9 @@ the same exceptions the `PATH_NOT_FOUND` mapping relies on.
     first where today's code is wrong: a folder delete refused partway checking the file on disk,
     the lock variant, a rolled-back destroy for each destroy path, a successful delete and a
     content type delete still clearing disk, a removal failure that does not break the commit, a
-    non-transactional destroy, and one test per AC-006 ancestor outcome. AC-003, AC-003a and AC-004
+    non-transactional destroy, and one test per AC-006 ancestor outcome. AC-003 is asserted on the
+    calling thread right after the call returns, with no waiting or polling, so a regression to
+    background removal fails the test instead of being hidden by the wait. AC-003, AC-003a and AC-004
     describe behaviour that is correct today, so they pass before and after; they guard against the
     fix breaking it. New test classes are registered in a `MainSuite*` / `Junit5Suite*`
     suite, run with `-Dmaven.build.cache.enabled=false`, and `Tests run: N` is confirmed in
@@ -299,7 +302,9 @@ the same exceptions the `PATH_NOT_FOUND` mapping relies on.
   the bulk duplicate amended its equivalent rule in review on 2026-09-29. The amendment is recorded
   here; the approved #37063 spec is not edited.
 - Content metadata is removed through whichever storage is configured (file system, database or
-  object storage). Deferring its removal until commit is correct for all of them, because a
-  rolled-back destroy should keep the metadata as much as the files.
+  object storage), and none of them takes part in the delete's transaction today: the database
+  storage uses its own pooled connection (`DataBaseStoragePersistenceAPIImpl.getConnection`), so a
+  rollback does not undo its removal either. Deferring the removal until commit therefore treats
+  every backend the same way, and a rolled-back destroy keeps the metadata as much as the files.
 - No caller relies on the files being gone before its own transaction commits. The plan verifies
   this, starting with the push publishing receiver.
