@@ -639,7 +639,7 @@ public class ExperimentsResource {
      *       does not affect this field.
      *   <li>{@code freeExperimentUsed} — present only when {@code tier=LIMITED}: {@code true}
      *       if any experiment is in {@code {RUNNING, SCHEDULED, ENDED}}.
-     *   <li>{@code warning} — {@code "ANALYTICS_DISABLED"} when the App is not configured;
+     *   <li>{@code warning} — {@code "analytics_disabled"} when the App is not configured;
      *       absent otherwise.
      * </ul>
      */
