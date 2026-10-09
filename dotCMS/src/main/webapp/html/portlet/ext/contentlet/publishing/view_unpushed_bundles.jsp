@@ -75,7 +75,8 @@
 				User bundleOwner = APILocator.getUserAPI().loadUserById(bundle.getOwner());
 
 				PublisherAPI publisherAPI = PublisherAPI.getInstance();
-				List<PublishQueueElement> assets = publisherAPI.getQueueElementsByBundleId(bundle.getId());%>
+				List<PublishQueueElement> assets = publisherAPI.getQueueElementsByBundleId(bundle.getId());
+				final boolean bundleTgzExists = bundle.bundleTgzExists();%>
 				<table id="un_publish_table_<%=bundle.getId()%>" class="listingTable" style="margin-bottom: 50px;">
 					<thead>
 					<tr>
@@ -83,7 +84,7 @@
 							<b><%=StringEscapeUtils.unescapeJava(bundle.getName())%></b> 
                             (<span> <%=bundle.getId() %> </span>)
 
-                            <%if(bundle.bundleTgzExists()){%>
+                            <%if(bundleTgzExists){%>
                                 - <%=LanguageUtil.get(pageContext, "Already Generated") %> / Filter:
                                 <%if(bundle.getOperation()==null || bundle.getOperation()==0){%>
                                     <%=(bundle.getFilterKey()!=null) ?bundle.getFilterKey().replace(".yml", "")  :""%>
@@ -114,14 +115,14 @@
 									<div data-dojo-type="dijit/MenuItem" onClick="deleteSavedBundle('<%=bundle.getId()%>')">
 										<%= LanguageUtil.get(pageContext, "Delete") %>
 									</div>
-                                    <%if(bundle.bundleTgzExists()){%>
+                                    <%if(bundleTgzExists){%>
                                         <div data-dojo-type="dijit/MenuItem" onClick="window.open('/api/bundle/_download/<%=bundle.getId()%>','_blank');">
                                             <%= LanguageUtil.get(pageContext, "Download") %>
                                         </div>
                                     <%} %>
                      
 									<div data-dojo-type="dijit/MenuItem" disabled="<%= assets.isEmpty() %>" onClick="openDownloadBundleDialog('<%=bundle.getId()%>')">
-                                        <%if(bundle.bundleTgzExists()){%>
+                                        <%if(bundleTgzExists){%>
                                             <%=LanguageUtil.get(pageContext, "Regenerate") %> / <%= LanguageUtil.get(pageContext, "Download") %>
                                         <%}else{ %>
 										  <%=LanguageUtil.get(pageContext, "Generate") %> / <%= LanguageUtil.get(pageContext, "Download") %>
