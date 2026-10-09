@@ -1276,26 +1276,45 @@ describe('utils functions', () => {
             expect(resolveClickedAnchor(span)).toBe(a);
         });
 
-        it('should fall back to a single descendant anchor when no ancestor anchor exists', () => {
-            // Mirrors a real pattern: an anchor styled `pointer-events: none`,
-            // wrapped in a container a page's own script makes clickable
-            // instead. Hit-testing such an anchor always resolves to its
-            // wrapper, never the anchor itself, regardless of click precision.
+        it('should fall back to a single descendant anchor with pointer-events: none when no ancestor anchor exists', () => {
+            // Mirrors a real pattern (confirmed live): an anchor styled
+            // `pointer-events: none` via a stylesheet rule, wrapped in a
+            // container a page's own script makes clickable instead.
+            // Hit-testing such an anchor always resolves to its wrapper,
+            // never the anchor itself, regardless of click precision.
             const wrapper = doc.createElement('div');
             wrapper.className = 'nav-row';
             const a = doc.createElement('a');
             a.setAttribute('href', '/page');
+            a.style.pointerEvents = 'none';
             wrapper.appendChild(a);
 
             expect(resolveClickedAnchor(wrapper)).toBe(a);
+        });
+
+        it('should return null when the single descendant anchor is a normal, clickable link', () => {
+            // A click resolves to `target` instead of the anchor only when
+            // something (pointer-events: none) prevented hit-testing from
+            // ever reaching the anchor. Without that, the click genuinely
+            // landed elsewhere — e.g. padding inside a large card or section
+            // that happens to contain one unrelated link — and must not be
+            // treated as a click on that link.
+            const wrapper = doc.createElement('div');
+            const a = doc.createElement('a');
+            a.setAttribute('href', '/page');
+            wrapper.appendChild(a);
+
+            expect(resolveClickedAnchor(wrapper)).toBeNull();
         });
 
         it('should return null when the wrapper contains more than one anchor', () => {
             const wrapper = doc.createElement('div');
             const a1 = doc.createElement('a');
             a1.setAttribute('href', '/page-1');
+            a1.style.pointerEvents = 'none';
             const a2 = doc.createElement('a');
             a2.setAttribute('href', '/page-2');
+            a2.style.pointerEvents = 'none';
             wrapper.append(a1, a2);
 
             expect(resolveClickedAnchor(wrapper)).toBeNull();

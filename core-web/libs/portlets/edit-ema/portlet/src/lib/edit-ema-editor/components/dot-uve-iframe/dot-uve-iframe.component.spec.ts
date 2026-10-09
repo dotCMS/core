@@ -478,6 +478,7 @@ describe('DotUveIframeComponent', () => {
 
             const contentletLink = document.createElement('a');
             contentletLink.setAttribute('href', '/qa-a');
+            contentletLink.style.pointerEvents = 'none';
             const navRow = document.createElement('div');
             navRow.className = 'nav-row';
             navRow.appendChild(contentletLink);
@@ -577,7 +578,7 @@ describe('DotUveIframeComponent', () => {
                 expect(inlineEditingSpy).toHaveBeenCalledTimes(1);
             });
 
-            it('should emit internalNav and inlineEditing when the click lands on a wrapper around a single descendant anchor', () => {
+            it('should emit internalNav and inlineEditing when the click lands on a wrapper around a single pointer-events-none descendant anchor', () => {
                 // Mirrors a real pattern: an anchor styled `pointer-events: none`,
                 // with a page-authored wrapper div making it clickable instead
                 // (confirmed live in dotCMS/core#37962's follow-up: hit-testing
@@ -586,6 +587,7 @@ describe('DotUveIframeComponent', () => {
                 const wrapper = doc.createElement('div');
                 const a = doc.createElement('a');
                 a.setAttribute('href', '/page');
+                a.style.pointerEvents = 'none';
                 wrapper.appendChild(a);
 
                 const internalNavSpy = vi.spyOn(component.internalNav, 'emit');
@@ -595,6 +597,27 @@ describe('DotUveIframeComponent', () => {
 
                 expect(internalNavSpy).toHaveBeenCalledTimes(1);
                 expect(inlineEditingSpy).toHaveBeenCalledTimes(1);
+            });
+
+            it('should not emit when the click lands on a large container that merely happens to contain one normal, clickable link', () => {
+                // Regression test (MEDIUM, review feedback on #37962): without
+                // the pointer-events check, clicking padding/whitespace inside
+                // any container with exactly one descendant anchor — a card, a
+                // section, a footer — would wrongly resolve to that anchor and
+                // navigate, even though the click landed nowhere near it and
+                // the anchor was always perfectly clickable on its own.
+                const wrapper = doc.createElement('div');
+                const a = doc.createElement('a');
+                a.setAttribute('href', '/unrelated-page');
+                wrapper.appendChild(a);
+
+                const internalNavSpy = vi.spyOn(component.internalNav, 'emit');
+                const inlineEditingSpy = vi.spyOn(component.inlineEditing, 'emit');
+
+                captureClickHandler?.(createClickWithTarget(wrapper));
+
+                expect(internalNavSpy).not.toHaveBeenCalled();
+                expect(inlineEditingSpy).not.toHaveBeenCalled();
             });
 
             it('should not emit when the click lands on a wrapper with more than one descendant anchor', () => {
