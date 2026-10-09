@@ -124,6 +124,46 @@ export function getHrefFromClickTarget(target: EventTarget | null): string | nul
 }
 
 /**
+ * Resolves the anchor a click is meant for, even when the hit-tested
+ * `target` isn't the anchor itself.
+ *
+ * Checks ancestors first (`target.closest('a')`), same as a normal click. If
+ * that finds nothing, falls back to a descendant anchor — but only when
+ * there's exactly one inside `target`, AND that anchor has
+ * `pointer-events: none`. This covers a real pattern: an anchor styled that
+ * way, wrapped in a container a page's own script makes clickable instead
+ * (e.g. a "clickable card"). Hit-testing a `pointer-events: none` element
+ * always resolves to whatever is behind it — here, its own containing
+ * wrapper — so `target.closest('a')` can never find it no matter how
+ * precisely the click lands; `pointer-events: none` is also the only reason
+ * hit-testing could have skipped a real, clickable anchor to land on `target`
+ * in the first place, so it's what tells this apart from a click that merely
+ * landed somewhere else inside a large, unrelated container that happens to
+ * contain one ordinary link.
+ *
+ * Multiple descendant anchors are left alone (returns `null`): picking one
+ * would be a guess, and guessing wrong risks navigating somewhere the user
+ * didn't click.
+ */
+export function resolveClickedAnchor(target: HTMLElement): HTMLAnchorElement | null {
+    const ancestorAnchor = target.closest('a');
+
+    if (ancestorAnchor) {
+        return ancestorAnchor;
+    }
+
+    const descendantAnchors = target.querySelectorAll('a');
+
+    if (descendantAnchors.length !== 1) {
+        return null;
+    }
+
+    const [onlyAnchor] = descendantAnchors;
+
+    return getComputedStyle(onlyAnchor).pointerEvents === 'none' ? onlyAnchor : null;
+}
+
+/**
  * Ensure the rendered HTML has a `<base>` tag so relative links resolve properly inside iframes.
  *
  * If a `<base>` tag already exists, this is a no-op.

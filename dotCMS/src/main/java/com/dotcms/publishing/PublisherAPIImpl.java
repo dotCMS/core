@@ -22,6 +22,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PushPublishLogger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
@@ -29,13 +30,17 @@ import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Stream;
 
 import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.MOD_DATE;
@@ -56,6 +61,20 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
     private List<FilterDescriptor> filterList = new CopyOnWriteArrayList<>();
     /** Path where the YAML files are stored */
     private final Lazy<Path> PUBLISHING_FILTERS_FOLDER = Lazy.of(() -> Path.of(APILocator.getFileAssetAPI().getRealAssetsRootPath(), "server" , "publishing-filters" ));
+    /**
+     * Serializes each CRUD method's write-the-file-then-reload-the-list sequence, so two
+     * concurrent admin requests (e.g. a delete and a save) can't each list the directory and race
+     * on which resulting {@link #filterList} assignment wins -- the loser's just-written change
+     * would otherwise be silently absent from the in-memory cache until the next reload.
+     */
+    private final ReentrantLock filterCrudLock = new ReentrantLock();
+    /**
+     * Tracks, one filename per line, every shipped PP Filter (from {@code WEB-INF/publishing-filters})
+     * this dotCMS instance has already synced into {@link #PUBLISHING_FILTERS_FOLDER} at least once.
+     * Lets a filter shipped in a later release reach an upgraded environment without re-creating a
+     * shipped filter a user deliberately deleted.
+     */
+    private static final String SHIPPED_FILTERS_MARKER = ".shipped-filters";
 
     @Override
     public PublishStatus publish ( PublisherConfig config) throws DotPublishingException {
@@ -229,39 +248,132 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
                 if(!mkDirOk){
                     Logger.error(PublisherAPIImpl.class,String.format("Failure creating basePath dir [%s]", basePath));
                 }
-                // If the directory does not exist, copy the YAML files that are shipped with dotCMS into the created
-                // directory
-                final String systemFiltersPathString =
-                        Config.CONTEXT.getRealPath(File.separator + "WEB-INF" + File.separator + "publishing-filters" + File.separator);
-                final File systemFilters = new File(systemFiltersPathString);
-                try (
-                        final Stream<Path> list = Try.of(()->Files.list(systemFilters.toPath())).getOrElse(Stream.of())
-                ) {
-                    list.forEach(filter -> {
-                        try {
-                            final Path partialPath = filter.getFileName();
-                            final Path rootPath = PUBLISHING_FILTERS_FOLDER.get();
-                            Files.copy(filter, rootPath.resolve(partialPath));
-                        } catch (final IOException e) {
-                            Logger.error(this, String.format(
-                                    "An error occurred when copying PP filter '%s': %s",
-                                    filter.getFileName(), e.getMessage()), e);
-                        }
-                    });
-                    Logger.info(this, () -> "dotcms filters files copied");
-                }
             }
-            Logger.info(this, ()->"Push Publishing Filters Directory: " + PUBLISHING_FILTERS_FOLDER);
-            // Read each YAML file under the directory and re-load the Filter list
-            try(
-                    final Stream<Path> list = Files.list(basePath.toPath());){
-                final List<FilterDescriptor> descriptors = this.loadFiltersFromFolder(list);
-                Collections.sort(descriptors);
-                this.filterList = descriptors;
-            }
+            // Copy in any PP Filter shipped with dotCMS that this instance has not synced before --
+            // covers both the first-ever startup and a filter added in a later release reaching an
+            // environment that already has this directory. Startup-only: admin CRUD on a user
+            // filter calls reloadFilterListQuietly() instead, since it can't have changed what
+            // dotCMS ships, and re-running this on every save/delete would needlessly widen the
+            // marker's read-compute-write race window.
+            this.copyNewlyShippedFilters(basePath);
+
+            this.reloadFilterList(basePath);
         } catch (final IOException e) {
             Logger.error(this, String.format("PP Filters could not be initialized: %s", e.getMessage()), e);
         }
+    }
+
+    /**
+     * Re-reads every Filter Descriptor from {@code basePath} into {@link #filterList}, without
+     * re-syncing shipped filters. Called after an admin adds, edits, or removes a Filter
+     * Descriptor, and as part of {@link #init()} on startup.
+     *
+     * @param basePath The assets-backed directory Filter Descriptors are loaded from.
+     * @throws IOException If the directory cannot be listed.
+     */
+    private void reloadFilterList(final File basePath) throws IOException {
+        Logger.info(this, ()->"Push Publishing Filters Directory: " + PUBLISHING_FILTERS_FOLDER);
+        // Read each YAML file under the directory (except our own marker file) and re-load the
+        // Filter list
+        try(
+                final Stream<Path> list = Files.list(basePath.toPath())
+                        .filter(path -> !SHIPPED_FILTERS_MARKER.equals(path.getFileName().toString()));){
+            final List<FilterDescriptor> descriptors = this.loadFiltersFromFolder(list);
+            Collections.sort(descriptors);
+            this.filterList = descriptors;
+        }
+    }
+
+    /**
+     * Calls {@link #reloadFilterList(File)}, logging rather than propagating a failure -- matches
+     * the error handling {@link #init()} has always applied to the same reload logic.
+     */
+    private void reloadFilterListQuietly() {
+        try {
+            this.reloadFilterList(PUBLISHING_FILTERS_FOLDER.get().toFile());
+        } catch (final IOException e) {
+            Logger.error(this, String.format("PP Filters could not be reloaded: %s", e.getMessage()), e);
+        }
+    }
+
+    /**
+     * Copies every PP Filter shipped with dotCMS (under {@code WEB-INF/publishing-filters}) into
+     * {@code basePath} the first time it is seen, tracking already-seen shipped filenames in the
+     * {@value #SHIPPED_FILTERS_MARKER} marker file. This means:
+     * <ul>
+     *     <li>A filter shipped for the first time (e.g. added in a later dotCMS release) is copied
+     *     in even on an environment whose filters directory already existed before the upgrade.</li>
+     *     <li>A shipped filter a user deliberately deleted <b>after</b> the marker first recorded
+     *     it is not silently recreated.</li>
+     *     <li>A shipped filter the user edited in place is never overwritten, since it already
+     *     exists on disk.</li>
+     * </ul>
+     * <b>Known one-time limitation:</b> on the very first run on an environment that predates this
+     * marker (no {@value #SHIPPED_FILTERS_MARKER} file yet), there is no record of which missing
+     * filters were deleted on purpose versus simply never copied -- so a filter a user had
+     * deliberately removed before upgrading to this version is copied back in exactly once. From
+     * that point on, the marker exists and later deliberate deletions are respected. If the marker
+     * exists but cannot be read (corrupted, permissions), this method fails closed and skips the
+     * sync entirely for that startup rather than risk silently resurrecting a deliberate deletion;
+     * it is retried on the next startup.
+     *
+     * @param basePath The assets-backed directory Filter Descriptors are loaded from.
+     */
+    @VisibleForTesting
+    void copyNewlyShippedFilters(final File basePath) {
+        final Path rootPath = basePath.toPath();
+        final Path markerPath = rootPath.resolve(SHIPPED_FILTERS_MARKER);
+
+        final Try<List<String>> markerRead = Try.of(() -> Files.readAllLines(markerPath));
+        if (markerRead.isFailure() && Files.exists(markerPath)) {
+            // Fail closed: a marker that exists but can't be read must not be treated the same as
+            // "no marker yet" -- that would silently resurrect any shipped filter the user
+            // deliberately deleted. Skip the whole sync; it's retried on the next startup.
+            Logger.error(this, String.format(
+                    "Could not read the shipped PP Filters marker '%s', skipping sync this startup: %s",
+                    markerPath, markerRead.getCause().getMessage()), markerRead.getCause());
+            return;
+        }
+        final Set<String> alreadyShipped = new HashSet<>(markerRead.getOrElse(Collections.emptyList()));
+
+        final String systemFiltersPathString =
+                Config.CONTEXT.getRealPath(File.separator + "WEB-INF" + File.separator + "publishing-filters" + File.separator);
+        final File systemFilters = new File(systemFiltersPathString);
+        try (
+                final Stream<Path> list = Try.of(() -> Files.list(systemFilters.toPath())).getOrElse(Stream.of())
+        ) {
+            list.forEach(shippedFilter -> {
+                final String fileName = shippedFilter.getFileName().toString();
+                final Path target = rootPath.resolve(fileName);
+                if (alreadyShipped.contains(fileName) || Files.exists(target)) {
+                    // Nothing to copy -- either already synced before, or already on disk.
+                    alreadyShipped.add(fileName);
+                    return;
+                }
+                try {
+                    Files.copy(shippedFilter, target);
+                    Logger.info(this, () -> "Copied new shipped PP Filter: " + fileName);
+                    alreadyShipped.add(fileName);
+                } catch (final FileAlreadyExistsException e) {
+                    // Benign race on clustered deployments sharing one assets volume: another
+                    // node copied this filter between our existence check and this attempt. The
+                    // file is there either way, so this is not an error.
+                    Logger.debug(this, () -> "PP filter '" + fileName
+                            + "' was copied by another node concurrently");
+                    alreadyShipped.add(fileName);
+                } catch (final IOException e) {
+                    // Do NOT mark as shipped on failure, so a transient I/O error is retried on
+                    // the next init() call instead of permanently stranding the filter.
+                    Logger.error(this, String.format(
+                            "An error occurred when copying PP filter '%s': %s", fileName, e.getMessage()), e);
+                }
+            });
+        }
+
+        Try.run(() -> Files.write(markerPath, alreadyShipped))
+                .onFailure(e -> Logger.error(this, String.format(
+                        "An error occurred when writing the shipped PP Filters marker '%s': %s",
+                        markerPath, e.getMessage()), e));
     }
 
     @Override
@@ -321,7 +433,8 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
         final String filterKey = APILocator.getBundleAPI().getBundleById(bundleId).getFilterKey();
         final FilterDescriptor filterDescriptor = this.getFilterDescriptorByKey(filterKey);
         final PublisherFilterImpl publisherFilter = new PublisherFilterImpl(filterKey, (Boolean)filterDescriptor.getFilters().getOrDefault(FilterDescriptor.DEPENDENCIES_KEY,true),
-                (Boolean)filterDescriptor.getFilters().getOrDefault(FilterDescriptor.RELATIONSHIPS_KEY,true));
+                (Boolean)filterDescriptor.getFilters().getOrDefault(FilterDescriptor.RELATIONSHIPS_KEY,true),
+                (Boolean)filterDescriptor.getFilters().getOrDefault(FilterDescriptor.RELATIONSHIPS_SECOND_LEVEL_KEY,false));
 
         if(filterDescriptor.getFilters().containsKey(FilterDescriptor.EXCLUDE_CLASSES_KEY)){
             List.class.cast(filterDescriptor.getFilters().get(FilterDescriptor.EXCLUDE_CLASSES_KEY)).forEach(type -> publisherFilter.addTypeToExcludeClassesSet(type.toString()));
@@ -359,13 +472,16 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
         }
         final String parentFolder = PUBLISHING_FILTERS_FOLDER.get().toString();
         final File filterPathFile = Path.of(parentFolder, filterKey).toFile();
+        filterCrudLock.lock();
         try {
             if (filterPathFile.getCanonicalPath().startsWith(parentFolder) &&  FileUtils.deleteQuietly(filterPathFile)) {
-                this.init();
+                this.reloadFilterListQuietly();
                 return Boolean.TRUE;
             }
         }catch (IOException e){
             Logger.error(PublisherAPIImpl.class, String.format("Exception trying to get canonical path from file [%s]",filterPathFile), e);
+        } finally {
+            filterCrudLock.unlock();
         }
         return Boolean.FALSE;
     }
@@ -373,22 +489,32 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
     @Override
     public void upsertFilterDescriptor(FilterDescriptor filterDescriptor) {
         final File filterPathFile = Path.of(PUBLISHING_FILTERS_FOLDER.get().toString(), filterDescriptor.getKey()).toFile();
-        YamlUtil.write(filterPathFile, filterDescriptor);
-        this.init();
+        filterCrudLock.lock();
+        try {
+            YamlUtil.write(filterPathFile, filterDescriptor);
+            this.reloadFilterListQuietly();
+        } finally {
+            filterCrudLock.unlock();
+        }
     }
 
     @Override
     public void saveFilterDescriptors(final List<File> filterFiles) {
-        for (final File file : filterFiles) {
-            final File filterPathFile =  Path.of(PUBLISHING_FILTERS_FOLDER.get().toString(), file.getName()).toFile();
-            try {
-                FileUtils.copyFile(file, filterPathFile);
-            } catch (final IOException e) {
-                Logger.warn(this, String.format("An error occurred when saving Filter Descriptor '%s': %s",
-                        filterPathFile.getAbsolutePath(), e.getMessage()));
+        filterCrudLock.lock();
+        try {
+            for (final File file : filterFiles) {
+                final File filterPathFile = Path.of(PUBLISHING_FILTERS_FOLDER.get().toString(), file.getName()).toFile();
+                try {
+                    FileUtils.copyFile(file, filterPathFile);
+                } catch (final IOException e) {
+                    Logger.warn(this, String.format("An error occurred when saving Filter Descriptor '%s': %s",
+                            filterPathFile.getAbsolutePath(), e.getMessage()));
+                }
             }
+            this.reloadFilterListQuietly();
+        } finally {
+            filterCrudLock.unlock();
         }
-        this.init();
     }
 
     /**
