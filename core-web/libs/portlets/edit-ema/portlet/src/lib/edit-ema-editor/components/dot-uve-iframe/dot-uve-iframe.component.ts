@@ -195,6 +195,57 @@ export class DotUveIframeComponent {
     }
 
     /**
+     * Classifies a click target against the markers dotCMS's own in-iframe
+     * editing machinery relies on. Shared by both click listeners in
+     * {@link handleInlineScripts} so the two stay in agreement about which
+     * clicks belong to that machinery.
+     * @param {HTMLElement} target - The click event's target element.
+     * @returns Classification flags for the target.
+     */
+    private classifyUveClickTarget(target: HTMLElement): {
+        isInlineEditTarget: boolean;
+        isTinyMceUiTarget: boolean;
+        isBlockEditorTarget: boolean;
+        isContentSelectionTarget: boolean;
+    } {
+        // [data-mode] (WYSIWYG inline edit): TinyMCE (configured `inline: true`
+        // in inline-edit.service.ts) binds its content click dispatch directly
+        // on this node — it's `editor.getBody()` — to drive selection/
+        // image-select and other click-reactive behavior.
+        const isInlineEditTarget = !!target.closest('[data-mode]') || !!target.dataset?.mode;
+
+        // [id^="mceu_"]: every control TinyMCE's UI framework renders
+        // (toolbar, buttons, menus) gets this id prefix. Its floating toolbar
+        // is appended to <body> as a *sibling* of the editable node, not a
+        // descendant of it, and wires its own native click listener directly
+        // on each control's element.
+        const isTinyMceUiTarget = !!target.closest('[id^="mceu_"]');
+
+        // The `@dotcms/uve` SDK script injected into every rendered page
+        // (dot-uve.js) wires block-editor inline editing with a plain
+        // bubble-phase `click` listener registered directly on the
+        // [data-block-editor-content] node (see libs/sdk/uve/src/script/utils.ts).
+        const isBlockEditorTarget = !!target.closest('[data-block-editor-content]');
+
+        // The same SDK script also wires contentlet *selection* —
+        // onContentletClicked() binds its own capture-phase listener on
+        // `document.documentElement` (libs/sdk/uve/src/internal/events.ts),
+        // not on `window`. findDotCMSElement() (dom.utils.ts) walks ancestors
+        // for the nearest `data-dot-object`, so any element carrying it is a
+        // target that selection logic needs to see — matching broadly here
+        // (vs. replicating that function's contentlet/empty-container
+        // nuance) only widens what's let through, never narrows it.
+        const isContentSelectionTarget = !!target.closest('[data-dot-object]');
+
+        return {
+            isInlineEditTarget,
+            isTinyMceUiTarget,
+            isBlockEditorTarget,
+            isContentSelectionTarget
+        };
+    }
+
+    /**
      * Subscribes to filtered click events and injects or removes inline-edit scripts.
      * @param {boolean} enableInlineEdit - Whether to inject inline-edit scripts.
      * @returns {void}
@@ -226,51 +277,18 @@ export class DotUveIframeComponent {
             .pipe(
                 filter((e) => {
                     const target = e.target as HTMLElement;
-
-                    // dotCMS's own in-iframe editing machinery needs the real
-                    // click to reach it unobstructed, same problem as the
-                    // block-editor case below in each case:
-                    //  - [data-mode] (WYSIWYG inline edit): TinyMCE (configured
-                    //    `inline: true` in inline-edit.service.ts) binds its
-                    //    content click dispatch directly on this node — it's
-                    //    `editor.getBody()` — to drive selection/image-select
-                    //    and other click-reactive behavior.
-                    //  - [id^="mceu_"]: every control TinyMCE's UI framework
-                    //    renders (toolbar, buttons, menus) gets this id prefix.
-                    //    Its floating toolbar is appended to <body> as a
-                    //    *sibling* of the editable node, not a descendant of
-                    //    it, and wires its own native click listener directly
-                    //    on each control's element.
-                    const isInlineEditTarget =
-                        !!target.closest('[data-mode]') || !!target.dataset?.mode;
-                    const isTinyMceUiTarget = !!target.closest('[id^="mceu_"]');
-
-                    // The `@dotcms/uve` SDK script injected into every rendered
-                    // page (dot-uve.js) wires block-editor inline editing with a
-                    // plain bubble-phase `click` listener registered directly on
-                    // the [data-block-editor-content] node (see
-                    // libs/sdk/uve/src/script/utils.ts).
-                    const isBlockEditorTarget = !!target.closest('[data-block-editor-content]');
-
-                    // The same SDK script also wires contentlet *selection* —
-                    // onContentletClicked() binds its own capture-phase listener
-                    // on `document.documentElement` (libs/sdk/uve/src/internal/events.ts),
-                    // not on `window`. Capture traverses window → document →
-                    // documentElement → … → target, so this `window` listener
-                    // runs first; stopping propagation here would prevent that
-                    // listener from ever seeing the click, breaking contentlet
-                    // selection entirely. findDotCMSElement() (dom.utils.ts)
-                    // walks ancestors for the nearest `data-dot-object`, so any
-                    // element carrying it is a target that selection logic needs
-                    // to see — matching broadly here (vs. replicating that
-                    // function's contentlet/empty-container nuance) only widens
-                    // what's let through, never narrows it.
-                    const isContentSelectionTarget = !!target.closest('[data-dot-object]');
+                    const {
+                        isInlineEditTarget,
+                        isTinyMceUiTarget,
+                        isBlockEditorTarget,
+                        isContentSelectionTarget
+                    } = this.classifyUveClickTarget(target);
 
                     // Stopping propagation here — on `window`, during the
                     // capture phase, before the event ever reaches any of the
-                    // nodes above — would prevent their own handlers from
-                    // firing at all. Let those clicks through untouched.
+                    // nodes the classification above identifies — would
+                    // prevent their own handlers from firing at all. Let
+                    // those clicks through untouched.
                     if (
                         !isInlineEditTarget &&
                         !isTinyMceUiTarget &&
@@ -297,7 +315,63 @@ export class DotUveIframeComponent {
                     }
 
                     const hasLink = !!href;
+
+                    // A plain link inside a contentlet (not also an inline-edit
+                    // or block-editor target) is the SDK's to decide first: its
+                    // document.documentElement capture listener (events.ts)
+                    // selects the contentlet on the first click — calling its
+                    // own preventDefault()+stopPropagation() — and only lets a
+                    // second click on the already-selected contentlet continue.
+                    // That listener runs right after this one (window is its
+                    // ancestor), so emitting internalNav here unconditionally
+                    // would navigate on the first click instead of letting the
+                    // SDK select. Defer entirely to the bubble-phase listener
+                    // below, which — being bubble-phase on `window` — only ever
+                    // runs once the SDK has already made that call, exactly as
+                    // it did before this listener moved to the capture phase.
+                    if (
+                        hasLink &&
+                        isContentSelectionTarget &&
+                        !isInlineEditTarget &&
+                        !isBlockEditorTarget
+                    ) {
+                        return false;
+                    }
+
                     return hasLink || isInlineEditTarget;
+                }),
+                takeUntil(this.iframeClickListener$),
+                takeUntilDestroyed(this.destroyRef)
+            )
+            .subscribe((e) => {
+                this.internalNav.emit(e);
+                this.inlineEditing.emit(e);
+            });
+
+        // Bubble phase (default, no capture): the last listener to run in the
+        // whole dispatch. For a contentlet-wrapped link, this only fires once
+        // the SDK's document.documentElement capture listener has already
+        // decided the click isn't selecting a (new) contentlet — i.e. a
+        // second click on the already-selected one, the same "let the page
+        // handle it natively" case events.ts hands off, converted here into a
+        // proper SPA navigation instead of a real iframe navigation. See the
+        // capture-phase filter above for why this is deferred instead of
+        // handled there directly.
+        fromEvent<MouseEvent>(win, 'click')
+            .pipe(
+                filter((e) => {
+                    const target = e.target as HTMLElement;
+                    const { isInlineEditTarget, isBlockEditorTarget, isContentSelectionTarget } =
+                        this.classifyUveClickTarget(target);
+                    const href = target.closest('a')?.getAttribute('href');
+
+                    return (
+                        !!href &&
+                        !href.startsWith('#') &&
+                        isContentSelectionTarget &&
+                        !isInlineEditTarget &&
+                        !isBlockEditorTarget
+                    );
                 }),
                 takeUntil(this.iframeClickListener$),
                 takeUntilDestroyed(this.destroyRef)
