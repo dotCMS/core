@@ -3,6 +3,7 @@ package com.dotcms;
 import com.dotcms.ai.app.ConfigServiceTest;
 import com.dotcms.ai.client.AIProxyClientTest;
 import com.dotcms.ai.listener.EmbeddingContentListenerTest;
+import com.dotcms.ai.rest.AiRetrievalPermissionTest;
 import com.dotcms.ai.viewtool.AIViewToolTest;
 import com.dotcms.ai.viewtool.CompletionsToolTest;
 import com.dotcms.ai.viewtool.EmbeddingsToolTest;
@@ -571,6 +572,7 @@ import org.junit.runners.Suite.SuiteClasses;
         RoleResourceCountsIntegrationTest.class,
         RoleResourceUsersIntegrationTest.class,
         com.dotmarketing.common.reindex.ReindexDeleteJournalTest.class,
+        AiRetrievalPermissionTest.class,
 })
 
 public class MainSuite2b {

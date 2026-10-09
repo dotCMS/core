@@ -65,7 +65,11 @@ public class EmbeddingsDTO implements Serializable {
         this.host = builder.host;
         this.limit = builder.limit;
         this.offset = builder.offset;
-        this.threshold = builder.threshold;
+        // the configured default is read only when no threshold was given: result rows always
+        // carry their distance, and reading the app config rebuilds it from the stored secrets
+        this.threshold = Float.isNaN(builder.threshold)
+                ? ConfigService.INSTANCE.config().getConfigFloat(AppKeys.EMBEDDINGS_SEARCH_DEFAULT_THRESHOLD)
+                : builder.threshold;
         this.operator = (Arrays.asList(operators).contains(builder.operator)) ? builder.operator : "<=>";
         this.indexName = UtilMethods.isSet(builder.indexName) ? builder.indexName : DEFAULT_INDEX;
         this.tokenCount = builder.tokenCount;
@@ -164,8 +168,9 @@ public class EmbeddingsDTO implements Serializable {
 
     public static final class Builder implements Serializable {
 
+        /** {@code NaN} until set; the DTO then falls back to the site's configured default threshold. */
         @JsonProperty(defaultValue = ".25f")
-        public float threshold = ConfigService.INSTANCE.config().getConfigFloat(AppKeys.EMBEDDINGS_SEARCH_DEFAULT_THRESHOLD);
+        public float threshold = Float.NaN;
         @JsonProperty(defaultValue = "<=>")
         public String operator = "<=>";
         @JsonProperty

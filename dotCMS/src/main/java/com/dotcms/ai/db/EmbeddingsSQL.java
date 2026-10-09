@@ -90,10 +90,11 @@ class EmbeddingsSQL {
                     "?," +
                     "?)";
 
+    /** Selects {@code id} so results can be ordered by distance and then id, a stable order for paging. */
     static final String SEARCH_EMBEDDINGS_SELECT_PREFIX=
             "select " +
-            "inode, title, language, identifier,host, content_type, extracted_text, index_name, distance, token_count " +
-            "from (select inode, title, language, identifier,host, content_type,extracted_text, index_name, token_count, (embeddings {operator} ?) AS distance " +
+            "id, inode, title, language, identifier,host, content_type, extracted_text, index_name, distance, token_count " +
+            "from (select id, inode, title, language, identifier,host, content_type,extracted_text, index_name, token_count, (embeddings {operator} ?) AS distance " +
             "from dot_embeddings where true ";
 
     static final String COUNT_EMBEDDINGS_PREFIX=
