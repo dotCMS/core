@@ -94,6 +94,39 @@ public class IndexTimestampTest {
     }
 
     /**
+     * An index created at 8:21 PM New York time is already the next day in UTC. The Created column
+     * must show the New York date and time together (Aug 26, 8:21), not the UTC date next to the
+     * New York time, whatever the JVM default zone is (issue #37253).
+     */
+    @Test
+    public void formatCreatedForDisplay_eveningIndex_dateAndTimeAgreeInDisplayZone() {
+        final String indexName = "cluster_abc.working_20260827002116";
+        final TimeZone newYork = TimeZone.getTimeZone("America/New_York");
+        for (final String zone : ZONES) {
+            TimeZone.setDefault(TimeZone.getTimeZone(zone));
+            final String displayed = IndexTimestamp.formatCreatedForDisplay(indexName, newYork);
+
+            assertTrue("default zone " + zone + ": " + displayed, displayed.contains(" 26 2026 "));
+            assertTrue("default zone " + zone + ": " + displayed, displayed.contains(" 8:21"));
+        }
+        // Positive control: the same name shown in UTC is on the 27th, so the test can tell them apart.
+        assertTrue(IndexTimestamp.formatCreatedForDisplay(indexName, TimeZone.getTimeZone("UTC"))
+                .contains(" 27 2026 "));
+    }
+
+    /**
+     * A daytime index is on the same calendar day in UTC and New York, so nothing changes for it.
+     */
+    @Test
+    public void formatCreatedForDisplay_daytimeIndex_keepsTheSameDay() {
+        final String displayed = IndexTimestamp.formatCreatedForDisplay(
+                "cluster_abc.working_20260826140000.os", TimeZone.getTimeZone("America/New_York"));
+
+        assertTrue(displayed, displayed.contains(" 26 2026 "));
+        assertTrue(displayed, displayed.contains(" 10:00"));
+    }
+
+    /**
      * A name without a valid suffix is a fault the caller can see, not a silent zero.
      */
     @Test
