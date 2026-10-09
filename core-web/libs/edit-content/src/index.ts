@@ -13,6 +13,11 @@ export type {
     DotSidePanelChrome,
     DotSidePanelChromeOptions
 } from './lib/services/dot-side-panel-chrome';
+// Edit Source: a file's source in Monaco, in a side panel. Opened from Content Drive's row menu and
+// from the page editor's VTL menu, both deciding with `toSourceEditorRequest`.
+export { DotSourceEditorSidePanelComponent } from './lib/components/dot-source-editor-side-panel/dot-source-editor-side-panel.component';
+export type { DotSourceEditorRequest } from './lib/models/dot-source-editor.model';
+export { toSourceEditorRequest } from './lib/utils/source-editor.util';
 export * from './lib/utils/functions.util';
 export * from './lib/models/dot-edit-content-field.constant';
 

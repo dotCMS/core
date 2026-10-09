@@ -206,6 +206,28 @@ export class DotWorkflowActionsFireService {
     }
 
     /**
+     * Fire the default EDIT (Save) action against an existing contentlet, resolved by the
+     * `identifier` in `data` and the given language. The fields in `data` replace the stored ones;
+     * the rest are kept. Saves a new working version without publishing it.
+     *
+     * @template T
+     * @param {{ [key: string]: string }} data contentlet fields (must include `identifier`)
+     * @param {string | number} [language] language of the version to fire against
+     * @returns {Observable<T>}
+     * @memberof DotWorkflowActionsFireService
+     */
+    saveContentletByIdentifier<T>(
+        data: { [key: string]: string },
+        language?: string | number
+    ): Observable<T> {
+        return this.request<T>({
+            data,
+            action: ActionToFire.EDIT,
+            language
+        });
+    }
+
+    /**
      * Fire the default PUBLISH action against an existing contentlet, resolved by the
      * `identifier` in `data` and the given language. Used to check in and publish a new
      * version of the `dotAsset` referenced by an Image/File field from the image editor.

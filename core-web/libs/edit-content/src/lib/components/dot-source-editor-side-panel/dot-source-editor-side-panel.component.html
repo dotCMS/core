@@ -1,0 +1,115 @@
+<!--
+    Same drawer as the Edit Content side panel (dot-edit-content-side-panel): a transparent mask so
+    the screen behind stays visible, the shadow on `pt.root.class` because
+    `appendTo="body"` puts the drawer out of reach of component styles, and `dismissible` off so a
+    mask click goes through `requestClose()` instead of tearing the panel down.
+
+    Unlike it, the content keeps the theme's side padding, so the bordered editor lines up with the
+    title and the buttons. Only the bottom padding goes: the footer's own padding already spaces the
+    buttons from the editor.
+-->
+<p-drawer
+    [visible]="!!request()"
+    [modal]="true"
+    [dismissible]="false"
+    [closeOnEscape]="false"
+    [closable]="false"
+    appendTo="body"
+    [maskStyle]="{ background: 'transparent !important' }"
+    [pt]="{
+        root: {
+            'data-testid': 'source-editor-side-panel',
+            class: '!shadow-2xl',
+            style: { width: $expanded() ? '100%' : '80%', transition: 'width 250ms ease' }
+        },
+        content: { class: 'pb-0! flex' }
+    }"
+    position="right">
+    <ng-template #header>
+        <div class="flex w-full items-center justify-between gap-4">
+            <span class="truncate text-2xl font-semibold" data-testid="source-editor-title">
+                {{ request()?.title }}
+            </span>
+            <div class="flex items-center gap-1">
+                <p-button
+                    [text]="true"
+                    severity="secondary"
+                    [ariaLabel]="
+                        $expanded()
+                            ? ('edit.content.side-panel.collapse' | dm)
+                            : ('edit.content.side-panel.expand' | dm)
+                    "
+                    (onClick)="toggleExpanded()"
+                    data-testid="source-editor-expand">
+                    <ng-template #icon>
+                        <i class="material-symbols-outlined text-xl!">
+                            {{ $expanded() ? 'close_fullscreen' : 'open_in_full' }}
+                        </i>
+                    </ng-template>
+                </p-button>
+                <p-button
+                    [text]="true"
+                    severity="secondary"
+                    [ariaLabel]="'edit.content.side-panel.close' | dm"
+                    (onClick)="requestClose()"
+                    data-testid="source-editor-close">
+                    <ng-template #icon>
+                        <i class="material-symbols-outlined text-xl!">close</i>
+                    </ng-template>
+                </p-button>
+            </div>
+        </div>
+    </ng-template>
+
+    @switch ($status()) {
+        @case (ComponentStatus.LOADING) {
+            <div
+                class="flex size-full flex-1 items-center justify-center"
+                data-testid="source-editor-loading">
+                <i class="pi pi-spin pi-spinner text-4xl text-gray-500"></i>
+            </div>
+        }
+        @case (ComponentStatus.ERROR) {
+            <div
+                class="flex size-full flex-1 items-center justify-center text-gray-500"
+                data-testid="source-editor-error">
+                {{ 'edit.content.source-editor.load-error' | dm }}
+            </div>
+        }
+        @default {
+            <!-- Mounted only once the source is in, so the editor starts on the file rather than on
+                 an empty model that is then replaced. The border is this panel's alone, on the host,
+                 so other Monaco editors are untouched; `overflow-hidden` clips the editor's
+                 background to the rounded corners and hides nothing, since ngx-monaco-editor already
+                 clips its own container. -->
+            <ngx-monaco-editor
+                class="min-h-0 flex-1 overflow-hidden rounded-md border border-surface"
+                [ngModel]="$source()"
+                (ngModelChange)="$source.set($event)"
+                [options]="$editorOptions()"
+                (init)="onEditorInit($event)"
+                data-testid="source-editor-monaco" />
+        }
+    }
+
+    <ng-template #footer>
+        <div class="flex items-center justify-end gap-2">
+            <p-button
+                [label]="'dot.common.cancel' | dm"
+                severity="secondary"
+                [outlined]="true"
+                [disabled]="$status() === ComponentStatus.SAVING"
+                (onClick)="requestClose()"
+                data-testid="source-editor-cancel" />
+            <p-button
+                [label]="'dot.common.save' | dm"
+                [disabled]="!$canSave()"
+                [loading]="$status() === ComponentStatus.SAVING"
+                (onClick)="save()"
+                data-testid="source-editor-save" />
+        </div>
+    </ng-template>
+</p-drawer>
+
+<!-- The unsaved-changes prompt, on this panel's own ConfirmationService (see requestClose). -->
+<p-confirmDialog />

@@ -58,7 +58,11 @@ import {
     isActionableBrowseItem,
     DotCMSContentlet
 } from '@dotcms/dotcms-models';
-import { DotEditContentSidePanelComponent, DotSidePanelNavController } from '@dotcms/edit-content';
+import {
+    DotEditContentSidePanelComponent,
+    DotSidePanelNavController,
+    DotSourceEditorSidePanelComponent
+} from '@dotcms/edit-content';
 import {
     DotContentDriveUploadFiles,
     DotFolderTreeNodeData,
@@ -184,6 +188,7 @@ type DotFolderUserAccess = { canEdit: boolean; canEditPermissions: boolean };
         DotEditContentSidePanelComponent,
         // Remove with the legacy editor.
         DotLegacyEditorSidePanelComponent,
+        DotSourceEditorSidePanelComponent,
         ProgressSpinnerModule,
         DotContentDriveActionCenterComponent,
         DotContentDriveScopeBarComponent,
@@ -354,9 +359,15 @@ export class DotContentDriveShellComponent implements OnDestroy {
      */
     protected readonly $legacyPanelRequest = this.#navigationService.$legacyPanelRequest;
 
-    /** Whether either side panel is open. */
+    /** The file open in the Edit Source panel, from the store; read by the template. */
+    protected readonly $sourceEditorRequest = this.#store.sourceEditor;
+
+    /** Whether any side panel is open. */
     readonly #anyPanelOpen = computed(
-        () => !!this.$editPanelRequest() || !!this.$legacyPanelRequest()
+        () =>
+            !!this.$editPanelRequest() ||
+            !!this.$legacyPanelRequest() ||
+            !!this.$sourceEditorRequest()
     );
 
     /**
@@ -2089,6 +2100,19 @@ export class DotContentDriveShellComponent implements OnDestroy {
         this.#navigationService.closeEditPanel();
         this.#store.reloadContentDrive({ quiet: true });
         this.#dotRouterService.goToEditPage({ url, language_id: languageId });
+    }
+
+    /**
+     * A save in the Edit Source panel changed the file's version and modification date: refresh the
+     * list quietly. The panel closes itself right after, through `closed`.
+     */
+    protected onSourceEditorSaved() {
+        this.#store.reloadContentDrive({ quiet: true });
+    }
+
+    /** The Edit Source panel closed: clear its request. */
+    protected onSourceEditorClosed() {
+        this.#store.closeSourceEditor();
     }
 
     /**

@@ -194,6 +194,29 @@ describe('DotWorkflowActionsFireService', () => {
             });
         }));
 
+    it('should EDIT by identifier in the given language and return the saved contentlet', () =>
+        new Promise<void>((done) => {
+            const mockResult = { identifier: 'abc', inode: '456' };
+
+            spectator.service
+                .saveContentletByIdentifier({ identifier: 'abc', fileAsset: 'temp_1' }, 2)
+                .subscribe((res) => {
+                    expect(res).toEqual(mockResult);
+                    done();
+                });
+
+            const req = spectator.expectOne(
+                '/api/v1/workflow/actions/default/fire/EDIT?language=2',
+                HttpMethod.PUT
+            );
+
+            expect(req.request.body).toEqual({
+                contentlet: { identifier: 'abc', fileAsset: 'temp_1' }
+            });
+
+            req.flush({ entity: mockResult });
+        }));
+
     it('should DESTROY and return the deleted contentlet', () =>
         new Promise<void>((done) => {
             const mockResult = {

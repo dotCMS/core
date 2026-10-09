@@ -272,6 +272,37 @@ describe('DotUveContentletToolsComponent', () => {
             expect(editVtlButton).toBeFalsy();
         });
 
+        it('should order the toolbar: Edit, Styles, Full Editor, Code, then Remove', () => {
+            spectator.setInput('showStyleEditorOption', true);
+            spectator.detectChanges();
+
+            const toolbar = spectator.query(byTestId('hover-actions')) as HTMLElement;
+            const order = Array.from(toolbar.querySelectorAll(':scope > p-button')).map((button) =>
+                button.getAttribute('data-testid')
+            );
+
+            expect(order).toEqual([
+                'hover-quick-edit-button',
+                'hover-palette-button',
+                'hover-edit-button',
+                'hover-edit-vtl-button',
+                'hover-delete-button'
+            ]);
+        });
+
+        it('should order the collapsed menu the same way as the toolbar', () => {
+            spectator.setInput('showStyleEditorOption', true);
+            spectator.detectChanges();
+
+            expect(spectator.component.actionsMenuItems().map((item) => item.label)).toEqual([
+                'uve.tooltip.edit.quick',
+                'uve.tooltip.edit.style',
+                'uve.tooltip.edit.full',
+                'uve.tooltip.edit.vtl',
+                'uve.tooltip.remove'
+            ]);
+        });
+
         it('should render drag button', () => {
             const dragButton = spectator.query(byTestId('hover-drag-button'));
             expect(dragButton).toBeTruthy();

@@ -309,23 +309,15 @@ export class DotUveContentletToolsComponent {
 
     /**
      * Menu items for the collapsed actions toolbar (small contentlets).
-     * Mirrors the icon-row buttons one-for-one. The drag button is NOT
-     * included — it lives outside `.actions` (left-center of the border)
-     * and stays visible at all sizes. VTL is a nested submenu (PrimeNG
-     * `<p-menu>` honors `items` on a MenuItem).
+     * Mirrors the icon-row buttons one-for-one, in the same order: Edit (quick
+     * edit), Styles, Full Editor, Code, then Remove. The drag button is NOT
+     * included — it lives outside `.actions` (left-center of the border) and
+     * stays visible at all sizes. Code is a nested submenu of the
+     * contentlet's VTL files (PrimeNG `<p-menu>` honors `items` on a MenuItem).
      */
     readonly actionsMenuItems = computed<MenuItem[]>(() => {
         const context = this.contentContext();
         const items: MenuItem[] = [];
-
-        const vtlSubmenu = this.vtlMenuItems();
-        if (vtlSubmenu?.length) {
-            items.push({
-                label: this.#dotMessageService.get('uve.tooltip.edit.vtl'),
-                icon: 'pi pi-code',
-                items: vtlSubmenu
-            });
-        }
 
         items.push({
             label: this.#dotMessageService.get('uve.tooltip.edit.quick'),
@@ -355,6 +347,15 @@ export class DotUveContentletToolsComponent {
             disabled: !this.canEditContentlet(),
             command: () => this.openFullEditor.emit(context)
         });
+
+        const vtlSubmenu = this.vtlMenuItems();
+        if (vtlSubmenu.length) {
+            items.push({
+                label: this.#dotMessageService.get('uve.tooltip.edit.vtl'),
+                icon: 'pi pi-code',
+                items: vtlSubmenu
+            });
+        }
 
         items.push({
             label: this.#dotMessageService.get('uve.tooltip.remove'),

@@ -44,6 +44,7 @@ import { withFolderDeleteRuns } from './features/folder-delete-runs/with-folder-
 import { withPushPublishEnvironments } from './features/push-publish-environments/withPushPublishEnvironments';
 import { withSidebar } from './features/sidebar/withSidebar';
 import { withSitePermissions } from './features/site-permissions/withSitePermissions';
+import { withSourceEditor } from './features/source-editor/withSourceEditor';
 
 import {
     DEFAULT_PAGE,
@@ -771,6 +772,7 @@ export const DotContentDriveStore = signalStore(
     }),
     withContextMenu(),
     withDialog(),
+    withSourceEditor(),
     withSidebar(),
     withDragging(),
     withActionExecution(),
