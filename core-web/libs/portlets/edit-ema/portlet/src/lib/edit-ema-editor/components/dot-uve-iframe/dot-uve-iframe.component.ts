@@ -267,18 +267,15 @@ export class DotUveIframeComponent {
         // is always first; bubble traverses the reverse, so a page-owned
         // listener on `document` would otherwise fire *before* a same-phase
         // listener on `window` ever could, regardless of registration order.
-        // stopPropagation() here prevents the page's own handlers from ever
-        // seeing the click — closing the gap where a page script reacts to a
-        // click dotCMS didn't recognize as a link (e.g. the click landed on a
-        // padded/delegate wrapper, not the anchor itself) and performs its own
-        // `location.href` navigation, which silently bypasses the SPA entirely
-        // and blanks the canvas (dotCMS/core#37961). This is deliberately
-        // broad: any click outside the UVE-owned targets below — a theme's
-        // cookie banner, carousel, accordion, or other page-authored widget —
-        // stops responding in the editor preview too, not just link clicks.
-        // There's no reliable way to tell "page click we must stop" from
-        // "page click that's harmless" in advance, so the trade-off is
-        // accepted in exchange for closing the race entirely.
+        // That ordering alone — not stopPropagation() — is what closes the
+        // original gap (dotCMS/core#37961): a page's own unrelated bubble-phase
+        // code (e.g. a sidebar's `onclick="event.stopPropagation()"`, confirmed
+        // in QA's repro) could stop a click from ever reaching the OLD
+        // bubble-phase listener on `window`, so preventDefault() never ran and
+        // the anchor's native navigation went through unimpeded. Running on
+        // capture means preventDefault() (below, via handleInternalNav) always
+        // fires before any later node gets a chance to interfere, regardless of
+        // what that node does with the event afterward.
         fromEvent<MouseEvent>(win, 'click', { capture: true })
             .pipe(
                 filter((e) => {
@@ -290,12 +287,25 @@ export class DotUveIframeComponent {
                         isContentSelectionTarget
                     } = this.classifyUveClickTarget(target);
 
-                    // Stopping propagation here — on `window`, during the
-                    // capture phase, before the event ever reaches any of the
-                    // nodes the classification above identifies — would
-                    // prevent their own handlers from firing at all. Let
-                    // those clicks through untouched.
+                    const linkElement = resolveClickedAnchor(target);
+                    const href = linkElement?.getAttribute('href');
+                    const hasLink = !!href;
+
+                    // stopPropagation() is scoped to clicks that resolve to an
+                    // actual link — the only kind of click a page's own code
+                    // could still react to in a way that bypasses the SPA (e.g.
+                    // a delegate router on a padded wrapper around a
+                    // `pointer-events: none` anchor, resolveClickedAnchor's
+                    // fallback above already covers that case as `hasLink`).
+                    // Stopping every click regardless of whether it resolves to
+                    // a link was tried first and failed QA (dotCMS/core#37961):
+                    // it also silenced page-owned, non-navigating UI — a
+                    // Usercentrics cookie-consent dialog's Accept/Reject buttons
+                    // stopped responding, along with any other accordion/tab/
+                    // carousel control — because none of those clicks are links
+                    // and none of this iframe's own four target types.
                     if (
+                        hasLink &&
                         !isInlineEditTarget &&
                         !isTinyMceUiTarget &&
                         !isBlockEditorTarget &&
@@ -303,9 +313,6 @@ export class DotUveIframeComponent {
                     ) {
                         e.stopPropagation();
                     }
-
-                    const linkElement = resolveClickedAnchor(target);
-                    const href = linkElement?.getAttribute('href');
 
                     // Hash-only anchors (#section) are same-page scrolls. The
                     // browser can't do it here: the srcdoc's base URL is the
@@ -319,8 +326,6 @@ export class DotUveIframeComponent {
 
                         return false;
                     }
-
-                    const hasLink = !!href;
 
                     // A plain link inside a contentlet (not also an inline-edit
                     // or block-editor target) is the SDK's to decide first: its
