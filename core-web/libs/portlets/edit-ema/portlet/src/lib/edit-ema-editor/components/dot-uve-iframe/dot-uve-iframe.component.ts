@@ -252,11 +252,31 @@ export class DotUveIframeComponent {
                     // libs/sdk/uve/src/script/utils.ts).
                     const isBlockEditorTarget = !!target.closest('[data-block-editor-content]');
 
+                    // The same SDK script also wires contentlet *selection* —
+                    // onContentletClicked() binds its own capture-phase listener
+                    // on `document.documentElement` (libs/sdk/uve/src/internal/events.ts),
+                    // not on `window`. Capture traverses window → document →
+                    // documentElement → … → target, so this `window` listener
+                    // runs first; stopping propagation here would prevent that
+                    // listener from ever seeing the click, breaking contentlet
+                    // selection entirely. findDotCMSElement() (dom.utils.ts)
+                    // walks ancestors for the nearest `data-dot-object`, so any
+                    // element carrying it is a target that selection logic needs
+                    // to see — matching broadly here (vs. replicating that
+                    // function's contentlet/empty-container nuance) only widens
+                    // what's let through, never narrows it.
+                    const isContentSelectionTarget = !!target.closest('[data-dot-object]');
+
                     // Stopping propagation here — on `window`, during the
                     // capture phase, before the event ever reaches any of the
                     // nodes above — would prevent their own handlers from
                     // firing at all. Let those clicks through untouched.
-                    if (!isInlineEditTarget && !isTinyMceUiTarget && !isBlockEditorTarget) {
+                    if (
+                        !isInlineEditTarget &&
+                        !isTinyMceUiTarget &&
+                        !isBlockEditorTarget &&
+                        !isContentSelectionTarget
+                    ) {
                         e.stopPropagation();
                     }
 

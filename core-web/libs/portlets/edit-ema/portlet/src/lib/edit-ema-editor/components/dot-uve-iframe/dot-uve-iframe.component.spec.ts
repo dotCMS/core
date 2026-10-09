@@ -436,6 +436,42 @@ describe('DotUveIframeComponent', () => {
             expect(stopPropagationSpy).not.toHaveBeenCalled();
         });
 
+        it('should not stop propagation for clicks on a dotCMS contentlet selection target', () => {
+            // Regression test (CRITICAL): the `@dotcms/uve` SDK's
+            // onContentletClicked() binds its own capture-phase click listener
+            // on `document.documentElement`, not `window`, to drive contentlet
+            // selection (libs/sdk/uve/src/internal/events.ts). Since capture
+            // traverses window -> document -> documentElement -> ... -> target,
+            // this component's window-level listener runs first; unconditionally
+            // stopping propagation there would prevent the SDK's listener from
+            // ever seeing the click, breaking contentlet selection on every
+            // traditional (VTL) page.
+            let clickHandler: ((e: MouseEvent) => void) | undefined;
+
+            (mockWindow.addEventListener as Mock).mockImplementation(
+                (event: string, handler: (e: MouseEvent) => void) => {
+                    if (event === 'click') {
+                        clickHandler = handler;
+                    }
+                }
+            );
+
+            (component as any).handleInlineScripts(false);
+
+            const contentletTarget = document.createElement('div');
+            contentletTarget.setAttribute('data-dot-object', 'contentlet');
+            const clickEvent = new MouseEvent('click', { bubbles: true });
+            Object.defineProperty(clickEvent, 'target', {
+                value: contentletTarget,
+                writable: false
+            });
+            const stopPropagationSpy = vi.spyOn(clickEvent, 'stopPropagation');
+
+            clickHandler?.(clickEvent);
+
+            expect(stopPropagationSpy).not.toHaveBeenCalled();
+        });
+
         it('should emit internalNav on click', () => {
             const internalNavSpy = vi.spyOn(component.internalNav, 'emit');
             let clickHandler: ((e: MouseEvent) => void) | undefined;
