@@ -10,15 +10,17 @@
 
 **Input**: GitHub issue dotCMS/core#37930. Content Drive needs a grid view as an alternative to the
 current table view, to reach parity with Content Search's card view. Users switch between the two
-views and their choice is remembered in the browser. When the tool's stored view mode
-(`dataViewMode`, already used by Content Search) is empty, the Drive opens in the table (reading
-that value is deferred to a separate ticket; see Clarifications). Each card
-shows the item's title, language, status, owner and creation date, content type and image, plus a
-checkbox for multi-selection. Titles stay on one line, all cards share one size, the grid fits as
+views and their choice is remembered in the browser; with no remembered choice the Drive opens in
+the table. (The ticket also mentions the custom tool's stored view mode, `dataViewMode`, which
+Content Search uses; reading it is split out to #37964, see Clarifications.) Each card shows the
+item's image, title, status, language and content type, the avatar of the user who last edited it
+(name and date on hover), plus a checkbox for multi-selection. Titles stay on one line, all cards share one size, the grid fits as
 many cards per row as the screen allows, and an item with no usable image shows its content type
 icon instead. Reference images: a four-column grid of cards inside the Drive, and a single card
-(image on top with the checkbox over its corner; title and a "Published" badge on one line; owner
-avatar, language chip and content type below).
+(image on top with the checkbox over its corner; title and a "Published" badge on one line; user
+avatar, language chip and content type below). The ticket asked for "creation date / owner"; the PR
+review changed this to the last editor and last-edited date so the card matches the table (see
+Clarifications).
 
 ## Clarifications
 
@@ -26,15 +28,15 @@ avatar, language chip and content type below).
 
 - Q: How should a custom tool end up opening Content Drive, so the Drive can read its
   `dataViewMode`? → A: Out of scope. This ticket covers the grid view and the switcher only.
-  Reading `dataViewMode` from the tool's portlet configuration is a separate ticket; until then
-  the Drive opens in the remembered view, or the table.
+  Reading `dataViewMode` from the tool's portlet configuration is a separate ticket (#37964);
+  until then the Drive opens in the remembered view, or the table.
 - Q: Should the card show the creation date as visible text, or only when hovering the owner
-  avatar? → A: Only on hover. The card shows the owner's avatar; hovering it shows the owner's name
-  and the creation date.
+  avatar? → A: Only on hover. The card shows the user's avatar; hovering it shows their name and the
+  date. (Which user and which date were changed on 2026-10-09: see below.)
 - Q: What should a single click on the card body (not the checkbox) do? → A: The same as a table
   row: a click selects the card, Shift-click and Ctrl/Cmd-click extend the selection, a
   double-click opens the item, and clicking the title opens it.
-- Q: What picture should the owner avatar show? → A: The owner's Gravatar, looked up from their
+- Q: What picture should the owner avatar show? → A: The user's Gravatar, looked up from their
   email, as the toolbar already does; their initials when they have no Gravatar.
 
 ### Session 2026-10-09
@@ -42,6 +44,30 @@ avatar, language chip and content type below).
 - Q: Do the Content Drive keyboard shortcuts (#32591) apply to the grid, and how do arrow keys move
   between cards? → A: Yes, all of them. Left/Right move one card, Up/Down move one row of cards
   (the standard keyboard pattern for grids). Everything else matches the table.
+
+### Session 2026-10-09 (PR #37959 review)
+
+- Q: Which person and date should the card's avatar and hover show? → A: The same as the table's
+  Edited By and Last Edited columns: for content, the user who last edited it and when; for folders,
+  the folder's owner, as the table shows. This replaces "owner and creation date" so the grid and
+  the table never disagree.
+- Q: What should a card show at the top for PDFs and videos? → A: The same preview the table's
+  thumbnail shows (image, SVG, PDF page), except that videos show a still frame with no player
+  controls, so clicks on the card still select and open it.
+- Q: How should a keyboard-only user open a card? → A: As in the table: Enter and Space select, and
+  there is no keyboard way to open an item in either view today. Adding one is a follow-up for both
+  views together, not part of this feature.
+- Q: Does the grid keep its sort order after a reload? → A: No, the same as the table. The Drive
+  does not keep the sort across a reload today (it starts from the default sort), so the grid keeps
+  the sort in effect while the user stays on the page, and a reload resets it in both views.
+- Q: How wide is a card? → A: Like Content Search's card view: at least 260px wide, with the columns
+  stretching evenly to fill the row, so all cards in the grid share one width.
+- Q: After switching views, where do focus and scroll go? → A: The focused item and the selection
+  anchor stay the same if they are on the page, and the focused item is scrolled into view;
+  otherwise the listing falls back to its single Tab stop.
+- Q: Can keyboard, screen reader and touch users reach the name and date shown on hover? → A: Yes.
+  They are part of the card's label read by screen readers, and tapping the avatar on a touch screen
+  shows them.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -68,29 +94,34 @@ same order as the table, with the details listed below.
 2. **Given** the grid view is showing,
    **When** the user chooses the table option,
    **Then** the table returns with the same items, page and filters.
-3. **Given** a content item with an image the user can see (an image asset, or content whose image
+3. **Given** an item the table shows a preview for (an image or SVG, a PDF, or content whose image
    field holds one),
    **When** its card is drawn,
-   **Then** the top of the card shows that image, cropped to fill the space without distortion.
-4. **Given** a folder, a page, or content with no image,
+   **Then** the top of the card shows that preview, cropped to fill the space without distortion.
+4. **Given** a video file,
+   **When** its card is drawn,
+   **Then** the top of the card shows a still frame of the video with no player controls, and
+   clicking it selects or opens the card like anywhere else on the card body.
+5. **Given** a folder, a page, or content with no preview,
    **When** its card is drawn,
    **Then** the top of the card shows the icon for its type (folder icon, page icon, the content
    type's own icon) centred on a plain background.
-5. **Given** an item whose image fails to load (deleted, no permission, broken file),
+6. **Given** an item whose preview fails to load (deleted, no permission, broken file),
    **When** its card is drawn,
    **Then** the card shows its content type icon instead, never a broken-image marker.
-6. **Given** a content item,
+7. **Given** a content item,
    **When** its card is drawn,
-   **Then** below the image it shows: the title and the status badge on the first line; the owner's
-   avatar, the language and the content type name on the second line.
-7. **Given** any card,
-   **When** the user hovers the owner's avatar,
-   **Then** the owner's name and the item's creation date appear; neither is shown as text on the
-   card otherwise.
-8. **Given** a folder,
+   **Then** below the image it shows: the title and the status badge on the first line; the avatar
+   of the user who last edited it, the language and the content type name on the second line.
+8. **Given** any card,
+   **When** the user hovers the avatar (or taps it on a touch screen),
+   **Then** the name and date the table shows in its Edited By and Last Edited columns appear;
+   neither is shown as text on the card otherwise, and both are part of the card's screen reader
+   label.
+9. **Given** a folder,
    **When** its card is drawn,
-   **Then** it shows its name, its owner and the word "Folder", with no language and no status,
-   exactly as the table leaves those cells empty for folders.
+   **Then** it shows its name, its owner's avatar and the word "Folder", with no language and no
+   status, exactly as the table shows folders.
 
 ---
 
@@ -119,9 +150,9 @@ from narrow to wide. Card size stays uniform and the number of columns changes w
 3. **Given** the grid is showing,
    **When** the user widens or narrows the browser window, or opens or closes the folder tree
    beside the listing,
-   **Then** the grid shows as many cards per row as fit the space left, without horizontal
-   scrolling and without stretching any card beyond the shared size.
-4. **Given** the listing area is narrower than a single card,
+   **Then** the grid shows as many cards per row as fit at the minimum card width (260px), the
+   columns stretch evenly to fill the row, and there is no horizontal scrolling.
+4. **Given** the listing area is narrower than the minimum card width,
    **When** the grid is drawn,
    **Then** it shows one card per row and the card shrinks to fit rather than overflowing.
 
@@ -147,18 +178,22 @@ actions reflect three items. Switch to the table: the same three rows are ticked
 2. **Given** several cards are ticked,
    **When** the user switches to the table view,
    **Then** the same items are ticked in the table, and the reverse holds when switching back.
-3. **Given** a card that cannot be selected in the table today (for example an item busy with a
-   running bulk action),
+3. **Given** an unselectable item (see Terms),
    **When** it appears in the grid,
    **Then** its checkbox is unavailable in the same way.
-4. **Given** the grid is showing,
-   **When** the user clicks the body of a card (anywhere but the checkbox and the title),
-   **Then** that card becomes the selection, as clicking a table row does.
+4. **Given** some cards are selected,
+   **When** the user clicks the body of another card (anywhere but the checkbox and the title),
+   **Then** that card replaces the selection, as clicking a table row does, while ticking a
+   card's checkbox adds or removes just that card and keeps the rest.
 5. **Given** one card is selected,
    **When** the user Shift-clicks another card,
    **Then** every card between them, in grid order, is selected; Ctrl-click (Cmd-click on Mac)
    adds or removes a single card instead, as in the table.
-6. **Given** the same content exists in two languages and both are listed,
+6. **Given** some cards are selected,
+   **When** the user double-clicks another card,
+   **Then** the item opens, and the selection ends up as a single click on that card would leave it,
+   the same as double-clicking a table row.
+7. **Given** the same content exists in two languages and both are listed,
    **When** the user ticks one language's card,
    **Then** only that card is selected, matching the table's per-language selection.
 
@@ -237,7 +272,8 @@ drag a card onto a folder card (the item moves).
 ### User Story 6 - The grid keeps the table's sort order (Priority: P3)
 
 In the table, the user sorts by clicking a column header. The grid has no headers and gets no sort
-control of its own in this feature: it shows items in whatever order the table was last sorted by.
+control of its own in this feature: it shows items in the sort order currently in effect, which the
+user sets from the table.
 
 **Why this priority**: Sorting matters but the user can still switch to the table to sort, and the
 grid keeps whatever order was set there.
@@ -252,9 +288,9 @@ grid keeps whatever order was set there.
 2. **Given** the grid is showing,
    **When** the user wants a different order,
    **Then** they switch to the table, sort there, and switch back; the grid shows the new order.
-3. **Given** the grid is showing,
+3. **Given** the grid is showing with a sort the user picked in the table,
    **When** the user reloads the page,
-   **Then** the grid keeps the sort order that was in effect.
+   **Then** the sort goes back to the default, exactly as the table does after a reload today.
 
 ---
 
@@ -268,6 +304,9 @@ row of cards.
 
 **Why this priority**: Losing the shortcuts would make the grid a step back for keyboard users and
 break the accessibility the Drive already offers. It builds on the selection from Story 3.
+
+Opening an item from the keyboard is not part of this story: the table has no keyboard way to
+open an item today, and adding one is a follow-up for both views together (see Clarifications).
 
 **Independent Test**: In the grid, press Tab until focus enters the listing, then use the arrows,
 Shift+Arrow and Escape without the mouse. Focus, selection and the folder tree respond as described
@@ -295,8 +334,9 @@ below.
    and reversing direction shrinks it back toward the anchor, as Shift+Arrow does in the table.
 6. **Given** one card is selected,
    **When** the user Shift-clicks another card's checkbox,
-   **Then** every card between them in reading order is selected.
-7. **Given** some cards cannot be selected (for example busy with a running bulk action),
+   **Then** every card between them in reading order is selected (the same rule as Story 3,
+   scenario 5, applied to the checkbox).
+7. **Given** some cards are unselectable,
    **When** the user moves with the arrows or extends a range,
    **Then** those cards are skipped and left out of the range, as in the table.
 8. **Given** cards are selected,
@@ -307,10 +347,14 @@ below.
    **Then** they work exactly as in the table view.
 10. **Given** a card has focus,
     **When** the user presses Enter or Space,
-    **Then** the same thing happens as on a focused table row.
+    **Then** the card's selection changes as a focused table row's does; neither key opens it.
 11. **Given** the user sorts, filters, searches or changes page in the grid,
     **When** the new results appear,
     **Then** the grid is still reachable with a single Tab, as the table is after the same changes.
+12. **Given** a card has focus or is the selection anchor,
+    **When** the user switches to the table and back,
+    **Then** the same item keeps focus and anchor and is scrolled into view; if it is no longer on
+    the page, the listing falls back to its single Tab stop.
 
 ---
 
@@ -323,11 +367,14 @@ below.
 - **Search failed**: The search-failed message shown above the table also shows above the grid.
 - **Shared assets and links**: Items the table marks as shared from elsewhere, or as locked, carry
   the same marker on their card.
-- **Missing owner**: An item whose owner cannot be resolved (deleted user, system user) shows a
+- **Missing user**: An item whose editor cannot be resolved (deleted user, system user) shows a
   neutral placeholder instead of a broken avatar.
-- **No Gravatar or Gravatar unreachable**: The avatar shows the owner's initials; the card never shows
-  a broken image or waits on the Gravatar service to finish drawing.
-- **Image too large or slow**: Cards show their icon until the image loads; a slow image never
+- **No Gravatar or Gravatar unreachable**: The avatar shows the user's initials; the card never shows
+  a broken image or waits on the Gravatar service to finish drawing. Servers with no internet access
+  get initials for everyone.
+- **Many cards by the same user**: Each user's Gravatar is looked up once per page, not once per
+  card.
+- **Preview too large or slow**: Cards show their icon until the preview loads; a slow image never
   changes the card's size.
 - **Unknown content type icon**: A content type with no icon of its own uses the generic content
   icon.
@@ -347,41 +394,52 @@ below.
 - **View switcher**: the two-button control beside the search box that picks the view (reference
   image: list icon and grid icon).
 - **Remembered view**: the user's last choice of view, kept in their browser for that browser only.
+- **Editor**: the user the table shows in its Edited By column: for content, the user who last edited
+  it; for folders, the folder's owner. The card's avatar and hover show this user, with the date the
+  table shows as Last Edited.
+- **Unselectable item**: an item the table does not let the user select, for example one busy with a
+  running bulk action. The grid follows the same rule wherever this term is used.
 
 ### Functional Requirements
 
 - **FR-001**: Content Drive MUST offer a view switcher that toggles the listing between the table view
   and the grid view, and MUST show which view is active.
 - **FR-002**: Switching views MUST keep the current folder, filters, search text, sort order, page,
-  page size and selection.
+  page size and selection, and MUST keep the focused item and selection anchor when they are on the
+  page, scrolling the focused item into view.
 - **FR-003**: The grid view MUST show the same items as the table view, in the same order, for the
   same page of results.
 - **FR-004**: Each card MUST show: the image area, the selection checkbox, the title, the status, the
-  language, the owner's avatar and the content type name, laid out as in the reference
+  language, the editor's avatar and the content type name, laid out as in the reference
   card.
 - **FR-005**: Folder cards MUST omit status and language, and MUST show "Folder" as their type.
-- **FR-006**: The owner MUST be shown as a small avatar, and hovering it MUST reveal the owner's name
-  and the item's creation date.
-- **FR-007**: The avatar MUST show the owner's Gravatar, found from their email; when they have none,
-  it MUST show their initials instead.
-- **FR-008**: The image area MUST show the item's image when it has one the user can load, cropped to
-  fill the area without distortion.
-- **FR-009**: When an item has no image, or its image cannot be loaded, the image area MUST show its
+- **FR-006**: The editor MUST be shown as a small avatar. Hovering it, or tapping it on a touch screen,
+  MUST reveal the same name and date the table shows in its Edited By and Last Edited columns, and
+  both MUST be part of the card's screen reader label.
+- **FR-007**: The avatar MUST show the editor's Gravatar, found from their email, looked up at most
+  once per user per page; when they have none, or Gravatar cannot be reached, it MUST show their
+  initials instead.
+- **FR-008**: The image area MUST show the same preview the table's thumbnail shows (image, SVG, PDF
+  page), cropped to fill the area without distortion; for videos it MUST show a still frame with no
+  player controls.
+- **FR-009**: When an item has no preview, or its preview cannot be loaded, the image area MUST show its
   type icon (folder, page, or the content type's icon) instead, with no broken-image marker.
 - **FR-010**: Titles MUST stay on one line, cut with an ellipsis when too long, with the full title
   available on hover.
 - **FR-011**: All cards MUST have the same width and height, and the spacing between cards MUST be
   the same horizontally and vertically.
-- **FR-012**: The grid MUST fit as many cards per row as the available width allows, recalculating
-  when the window is resized or the folder tree is opened or closed, and MUST never scroll
-  horizontally.
+- **FR-012**: Cards MUST be at least 260px wide, as in Content Search's card view. The grid MUST fit
+  as many columns as that allows, stretch them evenly to fill the row, recalculate when the window is
+  resized or the folder tree is opened or closed, and never scroll horizontally. Below 260px of
+  available width it MUST show one card that shrinks to fit.
 - **FR-013**: Ticking a card's checkbox MUST add the item to the same selection the table uses, so bulk
   actions, the selection count and the opposite view all reflect it.
-- **FR-014**: Items that cannot be selected in the table MUST NOT be selectable in the grid.
+- **FR-014**: Unselectable items MUST NOT be selectable in the grid.
 - **FR-015**: Double-clicking a card or clicking its title MUST open the item exactly like the
   matching table row.
-- **FR-016**: Clicking a card's body MUST select it, and Shift-click and Ctrl/Cmd-click MUST extend
-  the selection exactly as they do on table rows, following the grid's reading order.
+- **FR-016**: Clicking a card's body MUST replace the selection with that card, and Shift-click and
+  Ctrl/Cmd-click MUST extend it exactly as they do on table rows, following the grid's reading order.
+  Ticking a card's checkbox MUST add or remove only that card.
 - **FR-017**: Right-clicking a card MUST show the same context menu, with the same actions, as the
   matching table row.
 - **FR-018**: The grid MUST use the same pagination control and page sizes as the table.
@@ -392,8 +450,8 @@ below.
   dragging table rows does, including dragging every selected item together.
 - **FR-022**: Dropping files from the computer onto the grid MUST upload them exactly as dropping
   onto the table does.
-- **FR-023**: The grid MUST show items in the sort order currently set for the table, and MUST NOT
-  offer its own sort control in this feature.
+- **FR-023**: The grid MUST show items in the sort order currently in effect, and MUST NOT offer its
+  own sort control in this feature. Like the table, it MUST NOT keep the sort across a reload.
 - **FR-024**: When the browser cannot store the choice, switching views MUST still work for the current
   visit and MUST NOT show an error.
 - **FR-025**: Loading, empty and search-failed states MUST be shown in the grid as they are in the
@@ -409,10 +467,11 @@ below.
 - **FR-030**: Shift with any arrow MUST extend or shrink the selection from the anchor card to the
   focused card in reading order, keeping cards that were already selected, exactly as Shift+Arrow
   does in the table. Shift-clicking a card's checkbox MUST select the range from the anchor.
-- **FR-031**: Unselectable cards MUST be skipped by arrow movement and left out of ranges; a
+- **FR-031**: Unselectable items MUST be skipped by arrow movement and left out of ranges; a
   read-only grid MUST take no card focus and accept no selection shortcut.
 - **FR-032**: Escape, the search shortcut and the folder tree shortcut MUST behave in the grid exactly
-  as in the table; Enter and Space on a focused card MUST do what they do on a focused table row.
+  as in the table; Enter and Space on a focused card MUST change its selection as they do on a
+  focused table row, and MUST NOT open it.
 - **FR-033**: Any grid-only key behaviour (the two-direction arrows) MUST be documented alongside the
   existing Content Drive shortcuts.
 - **FR-034**: All new visible text MUST be translatable, like the rest of the Drive.
@@ -420,19 +479,20 @@ below.
 ### Key Entities
 
 - **Drive item**: anything the Drive lists, either a folder or a content item (including pages,
-  images and files). Carries a title or name, an owner (whose name and email the card needs for its
-  avatar and hover), a creation date, a content type, and for
-  content only, a language, a status and possibly an image.
+  images and files). Carries a title or name, an editor and last-edited date (whose name the table
+  already shows, and whose email the card needs for the Gravatar), a content type, and for content
+  only, a language, a status and possibly a preview.
 - **View preference**: the user's remembered choice of table or grid, per browser.
 
 ## Success Criteria *(mandatory)*
 
 ### Measurable Outcomes
 
-- **SC-001**: A user switches between table and grid with one click, and the new view appears within
-  1 second with no new search needed.
-- **SC-002**: On a wide monitor (1920px wide, folder tree open) the grid shows at least 4 cards per
-  row; on a 1280px laptop screen, at least 3.
+- **SC-001**: With a full page of results at the largest page size, a user switches between table and
+  grid with one click, and in 95% of switches the new view appears within 1 second, with no new
+  search.
+- **SC-002**: With the 260px minimum card width, the grid shows at least 4 cards per row on a 1920px
+  wide window with the folder tree open, and at least 3 on a 1280px window.
 - **SC-003**: For any page of results, 100% of cards share one height, and no title, chip or badge
   extends past its card's edge.
 - **SC-004**: 0 broken-image markers appear in the grid, including for deleted or forbidden images.
@@ -442,6 +502,7 @@ below.
   from the same selection made in the grid.
 - **SC-007**: Every Content Drive keyboard shortcut that works in the table also works in the grid, and
   a keyboard user can reach, move through and select any card on the page without the mouse.
+  (Opening an item from the keyboard is a follow-up for both views.)
 
 ## Legacy Considerations *(dotCMS-specific — mandatory)*
 
@@ -471,8 +532,17 @@ below.
 - Reading a custom tool's `dataViewMode` from its portlet configuration, and deciding how it ranks
   against the remembered view, is out of scope and belongs to a separate ticket.
 - A sort control for the grid is out of scope and can be filed as a follow-up.
-- The item's image is the one the table already shows as its thumbnail; this feature adds no new rule
-  for choosing which image represents a content item.
+- The card's preview is the one the table already shows as its thumbnail; this feature adds no new
+  rule for choosing which image represents a content item. The only difference is that videos show a
+  still frame instead of a player.
+- Drive items already carry the editor's name. The editor's email, needed for the Gravatar, may not
+  be on them: whether the Drive search must return it is an open question for the plan. Whatever the
+  answer, editor details MUST be resolved in one batch per page, never one request per card, and
+  MUST NOT hold up drawing the cards; until they arrive, cards show initials or the placeholder.
+- No keyboard way to open an item exists in the table today, and the grid does not add one. Adding
+  it to both views is a follow-up.
+- A reload resets the sort in both views; keeping the sort across reloads is not part of this
+  feature.
 - Status uses the same badge and wording as the table (Published, Draft, Changed, Archived).
 - The grid shows the table's fixed details only; the per-type extra columns that the table adds for
   "Show in list" fields are not shown on cards.
