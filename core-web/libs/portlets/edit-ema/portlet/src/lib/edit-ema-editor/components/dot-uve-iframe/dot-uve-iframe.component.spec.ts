@@ -366,6 +366,76 @@ describe('DotUveIframeComponent', () => {
             expect(stopPropagationSpy).not.toHaveBeenCalled();
         });
 
+        it('should not stop propagation for clicks inside a WYSIWYG [data-mode] inline-edit target', () => {
+            // Regression test: TinyMCE (configured `inline: true` in
+            // inline-edit.service.ts) binds its content click dispatch
+            // directly on the editable [data-mode] node itself
+            // (`editor.getBody()`). Unconditionally stopping propagation on
+            // the window capture-phase listener would prevent that native
+            // click from ever reaching the editable element, breaking
+            // selection/click-reactive behavior inside the WYSIWYG field.
+            let clickHandler: ((e: MouseEvent) => void) | undefined;
+
+            (mockWindow.addEventListener as Mock).mockImplementation(
+                (event: string, handler: (e: MouseEvent) => void) => {
+                    if (event === 'click') {
+                        clickHandler = handler;
+                    }
+                }
+            );
+
+            (component as any).handleInlineScripts(false);
+
+            const wysiwygTarget = document.createElement('div');
+            wysiwygTarget.setAttribute('data-mode', 'edit');
+            const clickEvent = new MouseEvent('click', { bubbles: true });
+            Object.defineProperty(clickEvent, 'target', {
+                value: wysiwygTarget,
+                writable: false
+            });
+            const stopPropagationSpy = vi.spyOn(clickEvent, 'stopPropagation');
+
+            clickHandler?.(clickEvent);
+
+            expect(stopPropagationSpy).not.toHaveBeenCalled();
+        });
+
+        it('should not stop propagation for clicks on TinyMCE\'s own floating toolbar UI', () => {
+            // Regression test: TinyMCE's UI framework (modern skin,
+            // classPrefix "mce-") renders every control — toolbar, buttons,
+            // menus — with an id prefixed "mceu_", and that floating toolbar
+            // is appended to <body> as a SIBLING of the editable [data-mode]
+            // node, not a descendant of it. Its buttons wire native click
+            // listeners directly on themselves, so stopping propagation at
+            // the window capture phase would silently break every toolbar
+            // button (Bold, Italic, Link, etc.) even though the click never
+            // lands inside [data-mode].
+            let clickHandler: ((e: MouseEvent) => void) | undefined;
+
+            (mockWindow.addEventListener as Mock).mockImplementation(
+                (event: string, handler: (e: MouseEvent) => void) => {
+                    if (event === 'click') {
+                        clickHandler = handler;
+                    }
+                }
+            );
+
+            (component as any).handleInlineScripts(false);
+
+            const toolbarButton = document.createElement('button');
+            toolbarButton.setAttribute('id', 'mceu_42');
+            const clickEvent = new MouseEvent('click', { bubbles: true });
+            Object.defineProperty(clickEvent, 'target', {
+                value: toolbarButton,
+                writable: false
+            });
+            const stopPropagationSpy = vi.spyOn(clickEvent, 'stopPropagation');
+
+            clickHandler?.(clickEvent);
+
+            expect(stopPropagationSpy).not.toHaveBeenCalled();
+        });
+
         it('should emit internalNav on click', () => {
             const internalNavSpy = vi.spyOn(component.internalNav, 'emit');
             let clickHandler: ((e: MouseEvent) => void) | undefined;

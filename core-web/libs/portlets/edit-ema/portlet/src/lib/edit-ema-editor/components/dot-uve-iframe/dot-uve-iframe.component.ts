@@ -227,18 +227,36 @@ export class DotUveIframeComponent {
                 filter((e) => {
                     const target = e.target as HTMLElement;
 
-                    // The `@dotcms/uve` SDK script injected into headless pages
-                    // wires block-editor inline editing with a plain bubble-phase
-                    // `click` listener registered directly on the
-                    // [data-block-editor-content] node (see
-                    // libs/sdk/uve/src/script/utils.ts). Since this listener runs
-                    // on `window` during the capture phase — before the event ever
-                    // reaches that node — stopping propagation here would prevent
-                    // the SDK's own handler from firing at all. Let those clicks
-                    // through untouched so block-editor inline editing keeps working.
+                    // dotCMS's own in-iframe editing machinery needs the real
+                    // click to reach it unobstructed, same problem as the
+                    // block-editor case below in each case:
+                    //  - [data-mode] (WYSIWYG inline edit): TinyMCE (configured
+                    //    `inline: true` in inline-edit.service.ts) binds its
+                    //    content click dispatch directly on this node — it's
+                    //    `editor.getBody()` — to drive selection/image-select
+                    //    and other click-reactive behavior.
+                    //  - [id^="mceu_"]: every control TinyMCE's UI framework
+                    //    renders (toolbar, buttons, menus) gets this id prefix.
+                    //    Its floating toolbar is appended to <body> as a
+                    //    *sibling* of the editable node, not a descendant of
+                    //    it, and wires its own native click listener directly
+                    //    on each control's element.
+                    const isInlineEditTarget =
+                        !!target.closest('[data-mode]') || !!target.dataset?.mode;
+                    const isTinyMceUiTarget = !!target.closest('[id^="mceu_"]');
+
+                    // The `@dotcms/uve` SDK script injected into every rendered
+                    // page (dot-uve.js) wires block-editor inline editing with a
+                    // plain bubble-phase `click` listener registered directly on
+                    // the [data-block-editor-content] node (see
+                    // libs/sdk/uve/src/script/utils.ts).
                     const isBlockEditorTarget = !!target.closest('[data-block-editor-content]');
 
-                    if (!isBlockEditorTarget) {
+                    // Stopping propagation here — on `window`, during the
+                    // capture phase, before the event ever reaches any of the
+                    // nodes above — would prevent their own handlers from
+                    // firing at all. Let those clicks through untouched.
+                    if (!isInlineEditTarget && !isTinyMceUiTarget && !isBlockEditorTarget) {
                         e.stopPropagation();
                     }
 
@@ -259,9 +277,7 @@ export class DotUveIframeComponent {
                     }
 
                     const hasLink = !!href;
-                    const hasInlineEditTarget =
-                        !!target.closest('[data-mode]') || !!target.dataset?.mode;
-                    return hasLink || hasInlineEditTarget;
+                    return hasLink || isInlineEditTarget;
                 }),
                 takeUntil(this.iframeClickListener$),
                 takeUntilDestroyed(this.destroyRef)
