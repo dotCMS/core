@@ -310,9 +310,9 @@ export class DotUveContentletToolsComponent {
     /**
      * Menu items for the collapsed actions toolbar (small contentlets).
      * Mirrors the icon-row buttons one-for-one, in the same order: Edit (quick
-     * edit), Styles, Full Edit, Edit Code, then Remove. The drag button is NOT
+     * edit), Styles, Full Edit, Code, then Remove. The drag button is NOT
      * included — it lives outside `.actions` (left-center of the border) and
-     * stays visible at all sizes. Edit Code is a nested submenu of the
+     * stays visible at all sizes. Code is a nested submenu of the
      * contentlet's VTL files (PrimeNG `<p-menu>` honors `items` on a MenuItem).
      */
     readonly actionsMenuItems = computed<MenuItem[]>(() => {
