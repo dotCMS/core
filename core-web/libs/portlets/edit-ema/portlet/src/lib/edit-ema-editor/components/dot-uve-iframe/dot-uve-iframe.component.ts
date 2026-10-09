@@ -212,7 +212,7 @@ export class DotUveIframeComponent {
         // in inline-edit.service.ts) binds its content click dispatch directly
         // on this node — it's `editor.getBody()` — to drive selection/
         // image-select and other click-reactive behavior.
-        const isInlineEditTarget = !!target.closest('[data-mode]') || !!target.dataset?.mode;
+        const isInlineEditTarget = !!target.closest('[data-mode]') || !!target.dataset?.['mode'];
 
         // [id^="mceu_"]: every control TinyMCE's UI framework renders
         // (toolbar, buttons, menus) gets this id prefix. Its floating toolbar
