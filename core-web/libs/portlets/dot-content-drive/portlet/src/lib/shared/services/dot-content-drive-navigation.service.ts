@@ -112,6 +112,17 @@ export class DotContentDriveNavigationService implements EditContentNavigationOv
     }
 
     /**
+     * Opens a page's content form (its properties) in the side panel, the same form Edit Content
+     * opens for any other content. {@link editContent} sends pages to the page editor instead, so
+     * this is the way into a page's fields (#37903, FR-010).
+     *
+     * @param contentlet - The page whose properties to open
+     */
+    editPageProperties(contentlet: DotCMSContentlet) {
+        this.#editContentlet(contentlet);
+    }
+
+    /**
      * Opens the create form for a content type in the side panel of the editor that type chose:
      * the legacy panel for a type that has not opted into the new editor, the new-editor panel
      * otherwise (#37759, FR-002). Either way the author stays in Content Drive.

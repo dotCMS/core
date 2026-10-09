@@ -137,12 +137,9 @@ try { defaultSiteSearchIndex = ssapi.defaultIndexName().orElse(null); } catch (E
 		<% IndexStats status         = indexInfo.get(x); if (status == null) { status = indexInfo.get(IndexTag.OS.tag(x)); } %>
 
 		<%boolean active = x.equals(defaultSiteSearchIndex);%>
-		<%	Date d = null;
-			String myDate = null;
+		<%	String myDate = null;
 			try{
-				d = Date.from(IndexTimestamp.createdAt(x));
-
-				myDate = UtilMethods.dateToPrettyHTMLDate(d)  + " "+ UtilMethods.dateToHTMLTime(d);
+				myDate = IndexTimestamp.formatCreatedForDisplay(x, APILocator.systemTimeZone());
 				}
 				catch(Exception e){
 
@@ -170,11 +167,9 @@ try { defaultSiteSearchIndex = ssapi.defaultIndexName().orElse(null); } catch (E
 	<%} %>
 	
 	<% for(String x : closedIndices) { %>
-	    <%   Date d = null;
-            String myDate = null;
-            try {
-                 d = Date.from(IndexTimestamp.createdAt(x));
-                 myDate = UtilMethods.dateToPrettyHTMLDate(d)  + " "+ UtilMethods.dateToHTMLTime(d);
+	    <%   String myDate = null;
+            try{
+                 myDate = IndexTimestamp.formatCreatedForDisplay(x, APILocator.systemTimeZone());
             }
             catch(Exception e){}%>
 	    <tr class="trIdxNothing pointer" id="<%=x%>Row">

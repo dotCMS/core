@@ -31,10 +31,10 @@ jobs:
         run: |
           PILOT_AUTHORS='["danielsolis-dotcms","gortiz-dotcms","danielsilva-dotcms"]'
           if echo "$PILOT_AUTHORS" | jq -e --arg a "$AUTHOR" 'index($a) != null' > /dev/null; then
-            echo "authorized=true" >> $GITHUB_OUTPUT
+            echo "authorized=true" >> "$GITHUB_OUTPUT"
             echo "✅ $AUTHOR is in the pilot list"
           else
-            echo "authorized=false" >> $GITHUB_OUTPUT
+            echo "authorized=false" >> "$GITHUB_OUTPUT"
             echo "ℹ️  $AUTHOR is not in the pilot list — skipping backend review"
           fi
 
@@ -68,10 +68,10 @@ jobs:
           echo "Changed files:"
           echo "$CHANGED"
           if echo "$CHANGED" | grep -qE '\.java$'; then
-            echo "has_java=true" >> $GITHUB_OUTPUT
+            echo "has_java=true" >> "$GITHUB_OUTPUT"
             echo "✅ Java files detected — proceeding with backend review"
           else
-            echo "has_java=false" >> $GITHUB_OUTPUT
+            echo "has_java=false" >> "$GITHUB_OUTPUT"
             echo "ℹ️  No Java files changed — skipping backend review"
           fi
 
@@ -119,13 +119,29 @@ jobs:
       # pipes, if/then) never matches, and every denied call fails silently.
       # Removing older review comments needs a comment id, which cannot be pinned
       # in a rule, so the finalize-backend-review job does it outside the model.
+      # Sub-agents must run in the foreground. Claude Code starts Agent calls as
+      # background tasks by default; the orchestrator then ends its turn while
+      # the four reviewers are still running, the action treats that turn as the
+      # end of the session, and nothing is ever posted.
       claude_args: >-
+        --settings '{"env":{"CLAUDE_CODE_DISABLE_BACKGROUND_TASKS":"1"}}'
         --allowedTools
         "Agent,Bash(git diff*),Bash(git log*),Bash(git show*),Bash(cat CLAUDE.md*),Bash(cat docs/backend/*),Bash(cat docs/core/*),Bash(cat dotCMS/src/*),Bash(find dotCMS/src -name '*.java'*),Bash(grep -rn dotCMS/src*),Edit(//tmp/dotcms_review_body.md),Bash(gh pr comment ${{ github.event.pull_request.number }} --body-file /tmp/dotcms_review_body.md),Bash(gh pr review ${{ github.event.pull_request.number }} --approve),Bash(gh pr review ${{ github.event.pull_request.number }} --request-changes --body-file /tmp/dotcms_review_body.md)"
       prompt: |
         You are the orchestrator of a dotCMS backend code review pipeline.
         Your job is to coordinate specialized sub-agents, collect their findings,
         and post one consolidated review comment on the PR.
+
+        ## Tool rules (apply to you and to every sub-agent)
+        - Run each shell command on its own, exactly as written. Do not
+          redirect output (>, >>, tee), and do not chain commands with ;, &&
+          or a pipe into a file. You cannot save command output to a file:
+          the only file you may write is /tmp/dotcms_review_body.md, through
+          the Write tool.
+        - If a tool call is denied, do not retry it in another form. Carry on
+          with what you already have.
+        - Always finish with STEPs 5 and 6. A review that says which areas
+          could not be checked is better than no review at all.
 
         ## STEP 1 — Load dotCMS conventions
         Read these files before doing anything else:
@@ -135,14 +151,19 @@ jobs:
           cat docs/backend/REST_API_PATTERNS.md
           cat docs/core/SECURITY_PRINCIPLES.md
 
-        ## STEP 2 — Get the Java diff
-          git diff ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }} -- '*.java'
+        ## STEP 2 — List the changed Java files
+          git diff --stat ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }} -- '*.java'
 
         ## STEP 3 — Spawn 4 specialized sub-agents in parallel
 
         Use the Agent tool to launch all four sub-agents at the same time.
-        Pass each sub-agent the full diff output from STEP 2 and the relevant
-        rules from the docs you read in STEP 1.
+        Pass each sub-agent the list of changed files from STEP 2, the
+        relevant rules from the docs you read in STEP 1, the Tool rules above,
+        and this instruction: "Read the full diff yourself by running exactly
+        this command:
+          git diff ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }} -- '*.java'"
+        Do not paste the diff into the sub-agent prompts; each sub-agent
+        reads it directly.
 
         ---
 

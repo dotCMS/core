@@ -109,12 +109,9 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 
 				<%boolean active =currentIdx.contains(x);%>
 				<%boolean building =newIdx.contains(x);%>
-				<%	Date d = null;
-					String myDate = null;
+				<%	String myDate = null;
 					try{
-						 d = Date.from(IndexTimestamp.createdAt(x));
-
-						myDate = UtilMethods.dateToPrettyHTMLDate(d)  + " "+ UtilMethods.dateToHTMLTime(d);
+						 myDate = IndexTimestamp.formatCreatedForDisplay(x, APILocator.systemTimeZone());
 						}
 						catch(Exception e){
 
@@ -146,12 +143,9 @@ Map<String,ClusterIndexHealth> map = esapi.getClusterHealth();
 			
 			<% for(String idx : closedIndices) {%>
 			    
-			    <%   Date d = null;
-                    String myDate = null;
+			    <%   String myDate = null;
                     try{
-                         d = Date.from(IndexTimestamp.createdAt(idx));
-
-                        myDate = UtilMethods.dateToPrettyHTMLDate(d)  + " "+ UtilMethods.dateToHTMLTime(d);
+                         myDate = IndexTimestamp.formatCreatedForDisplay(idx, APILocator.systemTimeZone());
                         }
                         catch(Exception e){}%>
 			    
