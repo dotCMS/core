@@ -173,10 +173,17 @@ public class DropOldContentletRunner implements Runnable {
                     dc.setSQL(String.format(DELETE_TAG_INODES, inodes));
                     dc.loadResult(conn);
 
+                    if (com.dotcms.storage.AssetStorageFeature.isEnabled() && CLEAN_DEAD_INODE_FROM_FS) {
+                        for (final String inode : inodeList) {
+                            com.dotcms.storage.binary.BinaryAssetCleanupProcessor.enqueue(inode);
+                        }
+                    }
                     conn.commit();
                     conn.setAutoCommit(true);
 
-                    deleteFromAssetsDir(inodeList);
+                    if (!com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+                        deleteFromAssetsDir(inodeList);
+                    }
 
                     inodeList.clear();
                     if (isInterrupted()) {

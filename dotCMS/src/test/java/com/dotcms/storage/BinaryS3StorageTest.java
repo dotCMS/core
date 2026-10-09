@@ -187,6 +187,83 @@ class BinaryS3StorageTest {
     }
 
     @Test
+    void immutableReplacementCommitsAndRollsBackWithRealPostgres() throws Exception {
+        String jdbc = System.getProperty("s3.test.jdbc");
+        org.junit.jupiter.api.Assumptions.assumeTrue(jdbc != null, "Supply s3.test.jdbc for transaction coverage");
+        String schema = "binary_revisions_" + UUID.randomUUID().toString().replace("-", "");
+        var contentApi = new BinaryAssetStorageAPIImpl(new ChainableStoragePersistenceAPI(
+                new JsonWriterDelegate(), List.of(fs, s3), mock(Chainable404StorageCache.class)), true);
+        try (var writer = java.sql.DriverManager.getConnection(jdbc, CREDENTIAL, CREDENTIAL);
+             var observer = java.sql.DriverManager.getConnection(jdbc, CREDENTIAL, CREDENTIAL)) {
+            writer.createStatement().execute("create schema " + schema);
+            try {
+                writer.createStatement().execute("set search_path to " + schema);
+                observer.createStatement().execute("set search_path to " + schema);
+                writer.createStatement().execute("create table contentlet (inode varchar(255) primary key, contentlet_as_json jsonb)");
+                writer.createStatement().execute("insert into contentlet values ('abc123', '{}')");
+                File source = root.resolve("upload.tmp").toFile();
+                Files.writeString(source.toPath(), "last committed pixels");
+                File original = contentApi.storeRevision("abc123", "HeroImage", "Friday.GIF", source);
+                String originalKey = com.dotcms.storage.binary.BinaryAssetReference.keyOf(original);
+                writeReference(writer, originalKey);
+
+                writer.setAutoCommit(false);
+                Files.writeString(source.toPath(), "uncommitted replacement");
+                File replacement = contentApi.storeRevision("abc123", "HeroImage", "Friday.GIF", source);
+                String replacementKey = com.dotcms.storage.binary.BinaryAssetReference.keyOf(replacement);
+                assertNotEquals(originalKey, replacementKey);
+                writeReference(writer, replacementKey);
+                com.dotmarketing.db.DbConnectionFactory.setConnection(observer);
+                assertEquals("last committed pixels", Files.readString(contentApi.getBinaryFile("abc123", "HeroImage").toPath()));
+                writer.rollback();
+                assertTrue(contentApi.evictLocalFile(original));
+                assertTrue(contentApi.evictLocalFile(replacement));
+                assertEquals("last committed pixels", Files.readString(contentApi.getBinaryFile("abc123", "HeroImage", "Friday.GIF").toPath()));
+
+                // The same immutable replacement can be referenced by a later successful save.
+                writeReference(writer, replacementKey);
+                writer.commit();
+                File current = contentApi.getBinaryFile("abc123", "HeroImage");
+                assertEquals("Friday.GIF", current.getName());
+                assertEquals("uncommitted replacement", Files.readString(current.toPath()));
+                assertTrue(contentApi.evictLocalFile(original));
+                try (var locator = mockStatic(com.dotmarketing.business.APILocator.class)) {
+                    locator.when(com.dotmarketing.business.APILocator::getBinaryAssetStorageAPI).thenReturn(contentApi);
+                    var snapshot = new com.dotmarketing.portlets.contentlet.model.Contentlet();
+                    snapshot.setInode("abc123");
+                    snapshot.getMap().put("HeroImage", original);
+                    assertEquals("last committed pixels", Files.readString(snapshot.getBinary("HeroImage").toPath()));
+                }
+                assertEquals("last committed pixels", readStoredBinary(originalKey));
+
+                // An authoritative cleared field must not discover an older revision by listing.
+                writer.createStatement().execute("update contentlet set contentlet_as_json = '{}'");
+                writer.commit();
+                assertNull(contentApi.getBinaryFile("abc123", "HeroImage"));
+                contentApi.deleteAllBinaries("abc123");
+                assertTrue(client.listObjectsV2(bucket, GROUP + "/a/b/abc123/").getObjectSummaries().isEmpty());
+            } finally {
+                writer.rollback();
+                writer.setAutoCommit(true);
+                writer.createStatement().execute("drop schema " + schema + " cascade");
+            }
+        } finally {
+            com.dotmarketing.db.DbConnectionFactory.closeConnection();
+        }
+    }
+
+    private void writeReference(java.sql.Connection connection, String key) throws Exception {
+        var binary = com.dotcms.content.model.type.system.BinaryFieldType.builder()
+                .value("Friday.GIF").storageKey(key).build();
+        String json = new com.fasterxml.jackson.databind.ObjectMapper()
+                .writeValueAsString(Map.of("fields", Map.of("HeroImage", binary)));
+        try (var statement = connection.prepareStatement("update contentlet set contentlet_as_json = ?::jsonb where inode = 'abc123'")) {
+            statement.setString(1, json);
+            assertEquals(1, statement.executeUpdate());
+        }
+    }
+
+    @Test
     @EnabledIfSystemProperty(named = "s3.test.sts.accessKey", matches = ".+")
     void temporaryRoleCredentialsCanRefreshDuringBinaryLifecycle() throws Exception {
         final var sts = com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder.standard()
@@ -530,6 +607,107 @@ class BinaryS3StorageTest {
         assertEquals("neighbor pixels", Files.readString(neighbor));
         assertTrue(api.evictLocalFile(neighbor.toFile()));
         assertEquals("neighbor pixels", Files.readString(api.getGeneratedFile(neighbor.toFile()).toPath()));
+    }
+
+    @Test
+    void metadataOutageDoesNotRegenerateAndRecoveryRecreatesTheMappedCache() throws Exception {
+        final String group = "metadata";
+        final String path = "/a/b/abc123/asset-metadata.json";
+        final Path cacheRoot = Files.createDirectories(root.resolve("custom-cache"));
+        fs.addGroupMapping(group, cacheRoot.toFile());
+        final var chain = new ChainableStoragePersistenceAPI(new JsonWriterDelegate(), List.of(fs, s3),
+                mock(Chainable404StorageCache.class));
+        final var provider = mock(StoragePersistenceProvider.class);
+        when(provider.getStorage(any())).thenReturn(chain);
+        final var generator = mock(MetadataGenerator.class);
+        final var metadata = new FileStorageAPIImpl(new JsonReaderDelegate<>(Map.class), new JsonWriterDelegate(),
+                generator, provider, mock(com.dotmarketing.portlets.contentlet.business.MetadataCache.class));
+        final var key = new StorageKey.Builder().group(group).path(path).storage(StorageType.DEFAULT_CHAIN).build();
+        final var request = new FetchMetadataParams.Builder().cache(false).storageKey(key).build();
+        metadata.setMetadata(request, Map.of("dot:focalPoint", "0.75,0.5"));
+        org.apache.commons.io.FileUtils.deleteDirectory(cacheRoot.toFile());
+
+        final AWSS3Storage unavailable = spy(storage);
+        final var outage = new com.amazonaws.services.s3.model.AmazonS3Exception("injected read outage");
+        outage.setStatusCode(503);
+        doThrow(outage).when(unavailable).downloadFile(eq(bucket), anyString(), any(File.class));
+        final var failingS3 = new AmazonS3StoragePersistenceAPIImpl(unavailable, bucket,
+                AmazonS3StoragePersistenceAPIImpl.PathEncryptionMode.NONE);
+        when(provider.getStorage(any())).thenReturn(new ChainableStoragePersistenceAPI(new JsonWriterDelegate(),
+                List.of(fs, failingS3), mock(Chainable404StorageCache.class)));
+        assertThrows(com.dotmarketing.exception.DotDataException.class, () -> metadata.retrieveMetaData(request));
+        final var sourceReads = new java.util.concurrent.atomic.AtomicInteger();
+        final java.util.function.Supplier<File> source = () -> {
+            sourceReads.incrementAndGet();
+            return root.resolve("must-not-be-read.PNG").toFile();
+        };
+        final var config = new GenerateMetadataConfig.Builder().storageKey(key).build();
+        assertThrows(com.dotmarketing.exception.DotDataException.class, () -> metadata.generateMetaData(source, config));
+        assertEquals(0, sourceReads.get(), "An outage must not start metadata regeneration");
+        verifyNoInteractions(generator);
+        assertFalse(Files.exists(cacheRoot));
+        when(provider.getStorage(any())).thenReturn(chain);
+        assertEquals("0.75,0.5", metadata.retrieveMetaData(request).get("dot:focalPoint"));
+        final Path local = cacheRoot.resolve(path.substring(1));
+        assertTrue(Files.isRegularFile(local), "Restore must preserve the custom cache mapping");
+        assertFalse(Files.exists(root.resolve(group)), "Restore must not silently relocate the cache");
+        final var absent = new FetchMetadataParams.Builder().cache(false).storageKey(new StorageKey.Builder()
+                .group(group).path("/missing.json").storage(StorageType.DEFAULT_CHAIN).build()).build();
+        assertNull(metadata.retrieveMetaData(absent), "A real S3 404 is still normal absence");
+
+        Files.writeString(local, "broken JSON");
+        when(provider.getStorage(any())).thenReturn(new ChainableStoragePersistenceAPI(new JsonWriterDelegate(),
+                List.of(fs), mock(Chainable404StorageCache.class)));
+        assertThrows(com.dotmarketing.exception.DotDataException.class, () -> metadata.retrieveMetaData(request));
+        assertEquals("broken JSON", Files.readString(local),
+                "Without a durable copy, read errors must not delete evidence or regenerate metadata");
+        verifyNoInteractions(generator);
+        when(provider.getStorage(any())).thenReturn(chain);
+        assertEquals("0.75,0.5", metadata.retrieveMetaData(request).get("dot:focalPoint"),
+                "An unreadable local copy is replaced from S3");
+        assertNotEquals("broken JSON", Files.readString(local));
+        Files.delete(local);
+        assertEquals("0.75,0.5", metadata.retrieveMetaData(request).get("dot:focalPoint"));
+        org.apache.commons.io.FileUtils.deleteDirectory(cacheRoot.toFile());
+        assertEquals(local.toFile().getCanonicalFile(), chain.pullFile(group, path),
+                "File restoration must also preserve a removed cache directory's mapping");
+    }
+
+    @Test
+    void metadataReplacementSurvivesUploadFailureAndColdRead() throws Exception {
+        final String group = "metadata";
+        final String path = "/a/b/abc123/HeroImage-metadata.json";
+        final var chain = new ChainableStoragePersistenceAPI(new JsonWriterDelegate(), List.of(fs, s3),
+                mock(Chainable404StorageCache.class));
+        final var provider = mock(StoragePersistenceProvider.class);
+        when(provider.getStorage(any())).thenReturn(chain);
+        final var metadata = new FileStorageAPIImpl(new JsonReaderDelegate<>(Map.class), new JsonWriterDelegate(),
+                mock(MetadataGenerator.class), provider,
+                mock(com.dotmarketing.portlets.contentlet.business.MetadataCache.class));
+        final var request = new FetchMetadataParams.Builder().cache(false)
+                .storageKey(new StorageKey.Builder().group(group).path(path).storage(StorageType.DEFAULT_CHAIN).build()).build();
+        metadata.setMetadata(request, Map.of("dot:credit", "Original"));
+        metadata.setMetadata(request, Map.of("dot:credit", "Replacement"));
+        assertEquals("Replacement", metadata.retrieveMetaData(request).get("dot:credit"),
+                "The local cache must receive the replacement without a pre-delete");
+
+        final AWSS3Storage failingUpload = spy(storage);
+        doThrow(new com.amazonaws.AmazonClientException("injected upload failure"))
+                .when(failingUpload).uploadFile(any(com.amazonaws.services.s3.model.PutObjectRequest.class));
+        final var failingS3 = new AmazonS3StoragePersistenceAPIImpl(failingUpload, bucket,
+                AmazonS3StoragePersistenceAPIImpl.PathEncryptionMode.NONE);
+        when(provider.getStorage(any())).thenReturn(new ChainableStoragePersistenceAPI(new JsonWriterDelegate(),
+                List.of(fs, failingS3), mock(Chainable404StorageCache.class)));
+        assertThrows(com.dotmarketing.exception.DotDataException.class,
+                () -> metadata.setMetadata(request, Map.of("dot:credit", "Lost update")));
+        when(provider.getStorage(any())).thenReturn(chain);
+        assertEquals("Replacement", metadata.retrieveMetaData(request).get("dot:credit"));
+        Files.delete(fs.pullFile(group, path).toPath());
+        assertEquals("Replacement", metadata.retrieveMetaData(request).get("dot:credit"),
+                "The prior remote value must survive the rejected upload");
+        metadata.putCustomMetadataAttributes(request, Map.of("credit", "Recovered"));
+        Files.delete(fs.pullFile(group, path).toPath());
+        assertEquals("Recovered", metadata.retrieveMetaData(request).get("dot:credit"));
     }
 
     @Test

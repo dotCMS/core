@@ -35,6 +35,34 @@ public interface FileMetadataAPI {
     String METADATA_JSON = "-metadata.json";
 
     /**
+     * Lists the stored metadata paths that belong to a deleted inode: legacy per-field metadata, any
+     * metadata left under the inode folder, and the metadata of each revision in {@code binaryPaths}.
+     * Whole-inode deletion records this list with its cleanup job, so the job later deletes exactly
+     * these paths and never metadata written after the deletion. Only the S3 asset lifecycle calls
+     * this; the default returns nothing, as filesystem/NFS cleanup keeps metadata.
+     *
+     * @param inode       the deleted contentlet inode
+     * @param binaryPaths the inode's stored binary paths at deletion time
+     * @return the metadata paths to delete, each starting with {@code /}
+     * @throws DotDataException if metadata cannot be listed or a path escapes the inode
+     */
+    default java.util.List<String> listMetadataForInode(String inode, java.util.List<String> binaryPaths)
+            throws DotDataException {
+        return java.util.List.of();
+    }
+
+    /**
+     * Deletes the metadata paths recorded by {@link #listMetadataForInode} for a deleted inode and
+     * evicts them from the metadata cache. Deleting a path that is already gone succeeds, so a retried
+     * cleanup job can call this again. The default does nothing.
+     *
+     * @param inode         the deleted contentlet inode
+     * @param metadataPaths the recorded metadata paths, each under the inode's folder
+     * @throws DotDataException if a path escapes the inode or remains after deletion
+     */
+    default void removeMetadataPaths(String inode, java.util.List<String> metadataPaths) throws DotDataException { }
+
+    /**
      * Metadata file generator.
      * @param contentlet
      * @param fieldVariableName
@@ -43,10 +71,28 @@ public interface FileMetadataAPI {
     default String getFileName (final Contentlet contentlet, final String fieldVariableName) {
 
         final String inode        = contentlet.getInode();
+        if (AssetStorageFeature.isEnabled() && contentlet.get(fieldVariableName) instanceof File) {
+            final String metadataKey = com.dotcms.storage.binary.BinaryAssetReference.metadataKeyOf(
+                    (File) contentlet.get(fieldVariableName), inode, fieldVariableName);
+            if (metadataKey != null) {
+                return metadataKey;
+            }
+            final String revision = com.dotcms.storage.binary.BinaryAssetReference.keyOf(
+                    (File) contentlet.get(fieldVariableName), inode, fieldVariableName);
+            if (revision != null) {
+                return File.separator + revision + METADATA_JSON;
+            }
+        }
         final String fileName     = fieldVariableName + METADATA_JSON;
         return StringUtils.builder(File.separator,
                 inode.charAt(0), File.separator, inode.charAt(1), File.separator, inode, File.separator,
                 fileName).toString();
+    }
+
+    /** Cache and persistent metadata must identify the same binary snapshot, without reading its bytes. */
+    default String getMetadataCacheKey(final Contentlet contentlet, final String fieldVariableName) {
+        return AssetStorageFeature.isEnabled() ? getFileName(contentlet, fieldVariableName)
+                : contentlet.getInode() + ":" + fieldVariableName;
     }
 
     /**
@@ -177,6 +223,19 @@ public interface FileMetadataAPI {
 
 
     /**
+     * Check-in publishes its binary and metadata references together after handling all fields.
+     * The default writes the attributes directly, as {@link #putCustomMetadataAttributes} does.
+     *
+     * @param contentlet              the contentlet being checked in
+     * @param customAttributesByField custom attributes keyed by binary field variable
+     * @throws DotDataException if the attributes cannot be stored
+     */
+    default void putCustomMetadataAttributesForCheckin(Contentlet contentlet,
+            Map<String, Map<String, Serializable>> customAttributesByField) throws DotDataException {
+        putCustomMetadataAttributes(contentlet, customAttributesByField);
+    }
+
+    /**
      * Write custom metadata to linked to a temporary file
      * @param tempResourceId
      * @param customAttributesByField
@@ -202,6 +261,18 @@ public interface FileMetadataAPI {
      * @param destination
      */
     void copyCustomMetadata(Contentlet source, Contentlet destination) throws DotDataException;
+
+    /**
+     * Check-in copies attributes to its new binary revision before publishing the content JSON.
+     * The default copies them directly, as {@link #copyCustomMetadata} does.
+     *
+     * @param source      the contentlet whose custom attributes are copied
+     * @param destination the contentlet receiving them
+     * @throws DotDataException if the attributes cannot be copied
+     */
+    default void copyCustomMetadataForCheckin(Contentlet source, Contentlet destination) throws DotDataException {
+        copyCustomMetadata(source, destination);
+    }
 
     /**
      * This forces the metadata into a contentlet. No validation type is performed

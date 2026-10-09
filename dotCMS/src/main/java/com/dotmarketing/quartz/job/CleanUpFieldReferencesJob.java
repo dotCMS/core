@@ -22,6 +22,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -110,6 +111,16 @@ public class CleanUpFieldReferencesJob extends DotStatefulJob {
     }
 
     public static void triggerCleanUpJob(final Field field, final User user) {
+
+        if (com.dotcms.storage.AssetStorageFeature.isEnabled()
+                && field instanceof com.dotcms.contenttype.model.field.BinaryField) {
+            try {
+                com.dotcms.storage.binary.BinaryFieldCleanupProcessor.enqueue(field.contentTypeId(), field.variable(), new Date());
+            } catch (final DotDataException e) {
+                throw new DotRuntimeException("Unable to schedule binary field cleanup for " + field.variable(), e);
+            }
+            return;
+        }
 
         final Map<String, Serializable> nextExecutionData = Map
                 .of("field", field,

@@ -1,10 +1,16 @@
 package com.dotcms.storage.binary;
 
+import com.dotcms.content.model.type.system.AbstractBinaryFieldType;
+import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.storage.AssetStorageFeature;
+import com.dotcms.storage.StoragePersistenceAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -50,10 +56,144 @@ class BinaryAssetReferenceTest {
         } finally { Config.setProperty(AssetStorageFeature.FLAG, previous); }
     }
 
+    @Test void metadataFileUsesLegacyFileXmlWithoutLosingTheSourceReference() throws Exception {
+        final String previous = Config.getStringProperty(AssetStorageFeature.FLAG, null);
+        try (var paths = mockStatic(ConfigUtils.class)) {
+            Config.setProperty(AssetStorageFeature.FLAG, true);
+            paths.when(ConfigUtils::getAssetPath).thenReturn(root.toString());
+            final File original = new File(root.toFile(), "a/b/abc123/HeroImage/Mixed.GIF");
+            final String metadataKey = BinaryAssetReference.newMetadataKey(original, "abc123", "HeroImage");
+            final File snapshot = BinaryAssetReference.withMetadata(original, "abc123", "HeroImage", metadataKey);
+            final var serializer = com.dotcms.util.xstream.XStreamHandler.newXStreamInstance();
+            final var input = new HashMap<String, Object>();
+            input.put("asset", snapshot);
+            final String xml = serializer.toXML(input);
+            assertFalse(xml.contains("MetadataFile"));
+            final Map<?, ?> restored = (Map<?, ?>) serializer.fromXML(xml);
+            assertEquals(File.class, restored.get("asset").getClass());
+            assertEquals(original, restored.get("asset"));
+            assertEquals(metadataKey, BinaryAssetReference.metadataKeyOf(snapshot));
+            Config.setProperty(AssetStorageFeature.FLAG, false);
+            assertEquals(serializer.toXML(new HashMap<>(Map.of("asset", original))), xml,
+                    "Enabled wrappers must keep the original File wire format");
+        } finally {
+            Config.setProperty(AssetStorageFeature.FLAG, previous);
+        }
+    }
+
+    @Test void immutableFieldReferenceSerializesWithoutReadingFileAndFlagOffRetainsLegacyJson() throws Exception {
+        String previous = Config.getStringProperty(AssetStorageFeature.FLAG, null);
+        try (var paths = mockStatic(ConfigUtils.class)) {
+            paths.when(ConfigUtils::getAssetPath).thenReturn(root.toString());
+            Config.setProperty(AssetStorageFeature.FLAG, true);
+            String key = "a/b/abc123/HeroImage/.revisions/" + UUID.randomUUID() + "/Friday.PNG";
+            File file = BinaryAssetReference.localFile("abc123", "HeroImage", key);
+            assertFalse(file.exists());
+            assertEquals(key, BinaryAssetReference.keyOf(file, "abc123", "HeroImage"));
+            assertNull(BinaryAssetReference.keyOf(file, "def456", "HeroImage"), "A new content version must copy the bytes before publishing its own reference");
+            assertNull(BinaryAssetReference.keyOf(file, "abc123", "OtherImage"));
+            BinaryField field = mock(BinaryField.class, CALLS_REAL_METHODS);
+            var value = (AbstractBinaryFieldType) field.fieldValue(file).orElseThrow().build();
+            assertEquals("Friday.PNG", value.value());
+            assertEquals(key, value.storageKey());
+            String json = new ObjectMapper().writeValueAsString(value);
+            assertTrue(json.contains(key));
+            assertEquals(key, ((AbstractBinaryFieldType) new ObjectMapper().readValue(json,
+                    com.dotcms.content.model.FieldValue.class)).storageKey());
+            assertFalse(file.exists());
+
+            Config.setProperty(AssetStorageFeature.FLAG, false);
+            var legacy = (AbstractBinaryFieldType) field.fieldValue(file).orElseThrow().build();
+            assertNull(legacy.storageKey());
+            assertFalse(new ObjectMapper().writeValueAsString(legacy).contains("storageKey"));
+            var provider = mock(StoragePersistenceAPI.class);
+            var api = new BinaryAssetStorageAPIImpl(provider);
+            assertThrows(IllegalStateException.class, () -> api.storeRevision("abc123", "HeroImage", "Friday.PNG", file));
+            assertThrows(IllegalStateException.class, () -> api.getRevisionFile("abc123", "HeroImage", key));
+            verifyNoInteractions(provider);
+        } finally {
+            Config.setProperty(AssetStorageFeature.FLAG, previous);
+        }
+    }
+
+    @Test void metadataEditsHaveIndependentReferencesAndSurviveJsonAndColdRestoration() throws Exception {
+        final String previous = Config.getStringProperty(AssetStorageFeature.FLAG, null);
+        try (var paths = mockStatic(ConfigUtils.class)) {
+            Config.setProperty(AssetStorageFeature.FLAG, true);
+            paths.when(ConfigUtils::getAssetPath).thenReturn(root.toString());
+            final String key = "a/b/abc123/HeroImage/.revisions/" + UUID.randomUUID() + "/Friday.PNG";
+            final File binary = BinaryAssetReference.localFile("abc123", "HeroImage", key);
+            final String firstKey = BinaryAssetReference.newMetadataKey(binary, "abc123", "HeroImage");
+            final File first = BinaryAssetReference.withMetadata(binary, "abc123", "HeroImage", firstKey);
+            final String secondKey = BinaryAssetReference.newMetadataKey(first, "abc123", "HeroImage");
+            assertNotEquals(firstKey, secondKey);
+            assertEquals(key, BinaryAssetReference.keyOf(first));
+            assertEquals(firstKey, BinaryAssetReference.metadataKeyOf(
+                    BinaryAssetReference.preserveMetadata(binary, first)));
+            assertNull(BinaryAssetReference.metadataKeyOf(first, "def456", "HeroImage"));
+            assertThrows(IllegalArgumentException.class, () -> BinaryAssetReference.withMetadata(
+                    binary, "abc123", "OtherField", firstKey));
+            assertThrows(IllegalArgumentException.class, () -> BinaryAssetReference.withMetadata(
+                    binary, "abc123", "HeroImage", firstKey + "/../outside"));
+            final BinaryField field = mock(BinaryField.class, CALLS_REAL_METHODS);
+            final var value = (AbstractBinaryFieldType) field.fieldValue(first).orElseThrow().build();
+            final ObjectMapper mapper = new ObjectMapper();
+            final String json = mapper.writeValueAsString(value);
+            assertEquals(firstKey, ((AbstractBinaryFieldType) mapper.readValue(json,
+                    com.dotcms.content.model.FieldValue.class)).metadataStorageKey());
+            final File hydrated = BinaryAssetReference.fromJson(mapper.readTree(json), "abc123", "HeroImage")
+                    .localFile("abc123", "HeroImage");
+            assertEquals(firstKey, BinaryAssetReference.metadataKeyOf(hydrated));
+            assertFalse(hydrated.exists(), "JSON reconstruction must not require stored bytes");
+            Config.setProperty(AssetStorageFeature.FLAG, false);
+            assertFalse(mapper.writeValueAsString(field.fieldValue(first).orElseThrow().build())
+                    .contains("metadataStorageKey"));
+        } finally {
+            Config.setProperty(AssetStorageFeature.FLAG, previous);
+        }
+    }
+
     @Test void revisionReferencesCannotEscapeTheirOwner() {
         String key = "a/b/abc123/HeroImage/.revisions/" + UUID.randomUUID() + "/Friday.PNG";
         assertThrows(IllegalArgumentException.class, () -> BinaryAssetReference.localFile("abc123", "OtherField", key));
         assertThrows(IllegalArgumentException.class, () -> BinaryAssetReference.localFile("abc123", "HeroImage", key + "/../../outside"));
         assertThrows(IllegalArgumentException.class, () -> BinaryAssetReference.localFile("../outside", "HeroImage", key));
+    }
+
+    @Test void ownerIsReadFromTheRevisionKeyLayout() {
+        String key = "a/b/abc123/HeroImage/.revisions/" + UUID.randomUUID() + "/Friday.PNG";
+        assertEquals(new BinaryAssetReference.Owner("abc123", "HeroImage"), BinaryAssetReference.ownerOf(key));
+        assertNull(BinaryAssetReference.ownerOf("a/b/abc123/HeroImage/Friday.PNG"));
+        assertNull(BinaryAssetReference.ownerOf(key + "/extra"));
+    }
+
+    @Test void metadataIdentityFollowsTheSnapshotWithoutFilesystemAccess() {
+        String previous = Config.getStringProperty(AssetStorageFeature.FLAG, null);
+        try (var paths = mockStatic(ConfigUtils.class)) {
+            paths.when(ConfigUtils::getAssetPath).thenReturn(root.toString());
+            var metadata = mock(com.dotcms.storage.FileMetadataAPI.class, CALLS_REAL_METHODS);
+            var content = new com.dotmarketing.portlets.contentlet.model.Contentlet();
+            content.setInode("abc123");
+            String firstKey = "a/b/abc123/HeroImage/.revisions/" + UUID.randomUUID() + "/Friday.PNG";
+            File first = BinaryAssetReference.localFile("abc123", "HeroImage", firstKey);
+            content.getMap().put("HeroImage", first);
+            Config.setProperty(AssetStorageFeature.FLAG, true);
+            String firstMetadata = metadata.getFileName(content, "HeroImage");
+            assertEquals("/" + firstKey + "-metadata.json", firstMetadata);
+            assertEquals(firstMetadata, metadata.getMetadataCacheKey(content, "HeroImage"));
+            File second = BinaryAssetReference.localFile("abc123", "HeroImage",
+                    "a/b/abc123/HeroImage/.revisions/" + UUID.randomUUID() + "/Friday.PNG");
+            content.getMap().put("HeroImage", second);
+            assertNotEquals(firstMetadata, metadata.getFileName(content, "HeroImage"));
+            assertNotEquals(firstMetadata, metadata.getMetadataCacheKey(content, "HeroImage"));
+            assertFalse(first.exists());
+            assertFalse(second.exists());
+
+            Config.setProperty(AssetStorageFeature.FLAG, false);
+            assertEquals("/a/b/abc123/HeroImage-metadata.json", metadata.getFileName(content, "HeroImage"));
+            assertEquals("abc123:HeroImage", metadata.getMetadataCacheKey(content, "HeroImage"));
+        } finally {
+            Config.setProperty(AssetStorageFeature.FLAG, previous);
+        }
     }
 }

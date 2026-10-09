@@ -3,13 +3,19 @@ package com.dotcms.storage;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mockStatic;
 
+import com.dotcms.storage.binary.BinaryAssetCleanupProcessor;
+import com.dotcms.storage.binary.BinaryFieldCleanupProcessor;
 import com.dotmarketing.util.Config;
+import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
 class AssetStorageFeatureLatchTest {
+    private static final List<Class<?>> S3_PROCESSORS = List.of(BinaryAssetCleanupProcessor.class,
+            BinaryFieldCleanupProcessor.class);
+
     private String previous;
 
     @BeforeEach
@@ -42,5 +48,15 @@ class AssetStorageFeatureLatchTest {
         assertTrue(AssetStorageFeature.isEnabled());
         Config.setProperty(AssetStorageFeature.FLAG, false);
         assertFalse(AssetStorageFeature.isEnabled());
+    }
+
+    @Test
+    void s3JobProcessorsRegisterOnlyWhenEnabled() {
+        Config.setProperty(AssetStorageFeature.FLAG, false);
+        S3_PROCESSORS.forEach(p -> assertFalse(AssetStorageFeature.allowsJobProcessor(p), p.getName()));
+        assertTrue(AssetStorageFeature.allowsJobProcessor(String.class), "Other processors are unaffected");
+
+        Config.setProperty(AssetStorageFeature.FLAG, true);
+        S3_PROCESSORS.forEach(p -> assertTrue(AssetStorageFeature.allowsJobProcessor(p), p.getName()));
     }
 }
