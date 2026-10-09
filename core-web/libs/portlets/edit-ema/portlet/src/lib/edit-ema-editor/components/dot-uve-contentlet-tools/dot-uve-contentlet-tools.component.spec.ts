@@ -272,7 +272,7 @@ describe('DotUveContentletToolsComponent', () => {
             expect(editVtlButton).toBeFalsy();
         });
 
-        it('should order the toolbar: Edit, Styles, Full Edit, Code, then Remove', () => {
+        it('should order the toolbar: Edit, Styles, Full Editor, Code, then Remove', () => {
             spectator.setInput('showStyleEditorOption', true);
             spectator.detectChanges();
 
