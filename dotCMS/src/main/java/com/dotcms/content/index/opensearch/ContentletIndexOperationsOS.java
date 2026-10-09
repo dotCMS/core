@@ -23,7 +23,6 @@ import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.exception.DotDataException;
 import com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -117,20 +116,12 @@ public class ContentletIndexOperationsOS implements ContentletIndexOperations {
     }
 
     /**
-     * Estimated size of a delete operation in a bulk request: it carries only its action line
-     * (index and id), no document. Counted so that a run of deletes still contributes to the byte
-     * limit, without measuring each one.
-     */
-    static final long DELETE_OPERATION_SIZE = 100L;
-
-    /**
      * {@link IndexBulkProcessor} for OpenSearch.
      *
      * <p>{@code opensearch-java} 3.x does not ship a built-in BulkProcessor equivalent, so
      * this class implements the same behaviour manually: operations accumulate in a pending
-     * list and are flushed to OpenSearch whenever the list reaches {@code maxActions} or
-     * {@code maxBytes} of estimated size (as the Elasticsearch {@code BulkProcessor}'s
-     * {@code setBulkSize}, #37905), or when {@link #close()} is called. The supplied {@link IndexBulkListener} receives
+     * list and are flushed to OpenSearch whenever the list reaches {@code maxActions} or when
+     * {@link #close()} is called. The supplied {@link IndexBulkListener} receives
      * {@code beforeBulk} / {@code afterBulk} callbacks around each flush, mirroring the
      * contract provided by the Elasticsearch {@code BulkProcessor.Listener} adapter in
      * {@link ContentletIndexOperationsES}.</p>
@@ -141,47 +132,18 @@ public class ContentletIndexOperationsOS implements ContentletIndexOperations {
         private final OSClientProvider clientProvider;
         private final IndexBulkListener listener;
         private final int maxActions;
-        /** Byte limit of one batch; {@code <= 0} disables it (count-only batching). */
-        private final long maxBytes;
-        /** Estimated size of {@link #pending}, in characters counted as bytes. */
-        private long pendingSize;
         private final AtomicLong executionIdCounter = new AtomicLong(0);
 
-        /**
-         * Creates a processor that sends a batch when it reaches {@code maxActions} operations or
-         * {@code maxBytes} of estimated size, whichever comes first (#37905).
-         *
-         * @param clientProvider supplies the OpenSearch client used to send each batch
-         * @param listener       receives {@code beforeBulk} / {@code afterBulk} around each batch
-         * @param maxActions     the most operations one batch may hold
-         * @param maxBytes       the most estimated bytes one batch may hold; {@code <= 0} disables
-         *                       the byte limit
-         */
         OSIndexBulkProcessor(final OSClientProvider clientProvider,
-                final IndexBulkListener listener, final int maxActions, final long maxBytes) {
+                final IndexBulkListener listener, final int maxActions) {
             this.clientProvider = clientProvider;
             this.listener = listener;
             this.maxActions = maxActions;
-            this.maxBytes = maxBytes;
         }
 
-        /**
-         * Queues an operation, sending the pending batch first if this operation would push it
-         * over the byte limit, and sending the batch afterwards once it reaches the count or the
-         * byte limit. An operation larger than the byte limit on its own is therefore sent in a
-         * batch of one; it is never split or dropped.
-         *
-         * @param op   the operation to queue
-         * @param size the operation's estimated size (characters of its JSON counted as bytes)
-         */
-        synchronized void addAndMaybeFlush(final BulkOperation op, final long size) {
-            final boolean byteLimited = maxBytes > 0;
-            if (byteLimited && !pending.isEmpty() && pendingSize + size > maxBytes) {
-                flush();
-            }
+        synchronized void addAndMaybeFlush(final BulkOperation op) {
             pending.add(op);
-            pendingSize += size;
-            if (pending.size() >= maxActions || (byteLimited && pendingSize >= maxBytes)) {
+            if (pending.size() >= maxActions) {
                 flush();
             }
         }
@@ -200,7 +162,6 @@ public class ContentletIndexOperationsOS implements ContentletIndexOperations {
             final long executionId = executionIdCounter.incrementAndGet();
             final List<BulkOperation> batch = new ArrayList<>(pending);
             pending.clear();
-            pendingSize = 0;
 
             listener.beforeBulk(executionId, batch.size());
 
@@ -401,61 +362,7 @@ public class ContentletIndexOperationsOS implements ContentletIndexOperations {
                     "Could not determine reindexing server count; using default bulk actions: "
                             + maxActions, e);
         }
-        return new OSIndexBulkProcessor(clientProvider, listener, maxActions,
-                resolveReindexBulkMaxBytes());
-    }
-
-    /** Byte limit used when neither OpenSearch nor Elasticsearch sets a positive one, in MB. */
-    static final int DEFAULT_REINDEX_BULK_SIZE_MB = 10;
-
-    private static final long BYTES_PER_MB = 1_048_576L;
-
-    /** How often the "byte limit disabled" warning may repeat: once an hour. */
-    private static final int DISABLED_LIMIT_WARN_EVERY_MILLIS = 60 * 60 * 1000;
-
-    /**
-     * Resolves the byte limit of one OpenSearch reindex bulk request (#37905).
-     *
-     * <ul>
-     *   <li>{@code OS_REINDEX_BULK_SIZE_MB} set and positive: that value.</li>
-     *   <li>{@code OS_REINDEX_BULK_SIZE_MB} set to {@code 0} or less: no byte limit (batches close
-     *       by count only, as before #37905), logged at WARN at most once an hour.</li>
-     *   <li>Not set: {@code REINDEX_THREAD_ELASTICSEARCH_BULK_SIZE} if positive, otherwise
-     *       {@value #DEFAULT_REINDEX_BULK_SIZE_MB} MB. A disabled Elasticsearch value ({@code -1})
-     *       is deliberately not inherited: it would silently bring back requests large enough for
-     *       OpenSearch to reject (HTTP 413) and to exhaust the heap while being built.</li>
-     * </ul>
-     *
-     * <p>Sizes are estimates — each document's JSON characters counted as bytes — so the limit
-     * should be set well below the server's {@code http.max_content_length}.</p>
-     *
-     * @return the limit in bytes, or a value {@code <= 0} when the byte limit is disabled
-     */
-    static long resolveReindexBulkMaxBytes() {
-        final OSIndexProperty property = OSIndexProperty.REINDEX_BULK_SIZE_MB;
-        if (Config.getStringProperty(property.osKey, null) != null) {
-            final int osValue = Config.getIntProperty(property.osKey, DEFAULT_REINDEX_BULK_SIZE_MB);
-            if (osValue <= 0) {
-                // A processor is created per reindex iteration: throttle so the warning is seen
-                // without repeating every few seconds.
-                Logger.warnEvery(ContentletIndexOperationsOS.class, property.osKey,
-                        property.osKey + "=" + osValue
-                        + " disables the size limit of OpenSearch reindex bulk requests: batches"
-                        + " close by document count only and can exceed the server's"
-                        + " http.max_content_length (HTTP 413) or exhaust the heap.",
-                        DISABLED_LIMIT_WARN_EVERY_MILLIS);
-                return osValue;
-            }
-            return osValue * BYTES_PER_MB;
-        }
-        if (Config.getStringProperty(property.esFallback, null) != null) {
-            final int esValue = Config.getIntProperty(property.esFallback,
-                    DEFAULT_REINDEX_BULK_SIZE_MB);
-            if (esValue > 0) {
-                return esValue * BYTES_PER_MB;
-            }
-        }
-        return DEFAULT_REINDEX_BULK_SIZE_MB * BYTES_PER_MB;
+        return new OSIndexBulkProcessor(clientProvider, listener, maxActions);
     }
 
     @Override
@@ -465,8 +372,7 @@ public class ContentletIndexOperationsOS implements ContentletIndexOperations {
                 .index(IndexOperation.of(io -> io
                         .index(indexName)
                         .id(docId)
-                        .document(parseJsonToMap(jsonMapping))))),
-                jsonMapping.length());
+                        .document(parseJsonToMap(jsonMapping))))));
     }
 
     @Override
@@ -475,8 +381,7 @@ public class ContentletIndexOperationsOS implements ContentletIndexOperations {
         asBulkProcessor(proc).addAndMaybeFlush(BulkOperation.of(op -> op
                 .delete(DeleteOperation.of(del -> del
                         .index(indexName)
-                        .id(docId)))),
-                DELETE_OPERATION_SIZE);
+                        .id(docId)))));
     }
 
     // =========================================================================

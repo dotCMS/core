@@ -144,13 +144,6 @@ public enum OSIndexProperty {
     /** Number of documents per bulk request. Falls back to {@code ES_BULK_BATCH_SIZE}. */
     BULK_BATCH_SIZE("OS_BULK_BATCH_SIZE", "ES_BULK_BATCH_SIZE"),
 
-    /**
-     * Maximum estimated size, in MB, of one reindex bulk request to OpenSearch (#37905). Falls back
-     * to {@code REINDEX_THREAD_ELASTICSEARCH_BULK_SIZE}, but never inherits a disabled ({@code <= 0})
-     * value: see {@code ContentletIndexOperationsOS#resolveReindexBulkMaxBytes()}.
-     */
-    REINDEX_BULK_SIZE_MB("OS_REINDEX_BULK_SIZE_MB", "REINDEX_THREAD_ELASTICSEARCH_BULK_SIZE"),
-
     // -------------------------------------------------------------------------
     // Query behaviour
     // -------------------------------------------------------------------------
