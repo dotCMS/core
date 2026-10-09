@@ -94,10 +94,9 @@ public class LanguageFolderResourceImpl implements FolderResource, LockingCollec
 	public CollectionResource createCollection(String newName) throws BadRequestException {
 		if(dotDavHelper.isTempResource(newName) && isLanguageRoot){
 			DotWebdavHelper.requirePlainSegment(this, newName);
-			dotDavHelper.createTempFolder(File.separator + "system" + File.separator + "languages" + File.separator + newName);
-			File f = new File(File.separator + "system" + File.separator + "languages");
-			TempFolderResourceImpl tr = new TempFolderResourceImpl(f.getPath(),f ,true);
-			return tr;
+			final File created = dotDavHelper.createTempFolder(
+					File.separator + "system" + File.separator + "languages" + File.separator + newName);
+			return new TempFolderResourceImpl(created.getPath(), created, true);
 		}else{
 			return null;
 		}

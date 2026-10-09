@@ -85,10 +85,8 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
             final String hostFolderPath = new StringBuilder(File.separator).append(host.getHostname())
 					.append(!folderPath.endsWith(File.separator)?folderPath + File.separator : folderPath).toString();
 
-            dotDavHelper.createTempFolder(hostFolderPath + newName);
-			File file = new File(File.separator + host.getHostname() + folderPath);
-			TempFolderResourceImpl tempFolderResource = new TempFolderResourceImpl(file.getPath(),file ,isAutoPub);
-			return tempFolderResource;
+            final File created = dotDavHelper.createTempFolder(hostFolderPath + newName);
+			return new TempFolderResourceImpl(created.getPath(), created, isAutoPub);
 		}
 		if(!path.endsWith("/")){
 			path = path + "/";
