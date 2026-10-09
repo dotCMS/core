@@ -16,8 +16,7 @@ import java.util.Optional;
 /**
  * Evaluates the limited-mode constraints for {@code POST /{id}/_start}.
  *
- * <p>When {@code FEATURE_FLAG_EXPERIMENTS=false}, only a single immediate experiment within the
- * {@value MAX_DAYS}-day duration cap is allowed. This class centralises those checks so
+ * <p>When {@code FEATURE_FLAG_EXPERIMENTS=false}, only a single immediate experiment within the* {@value MAX_DAYS}-day duration cap is allowed. This class centralises those checks so
  * {@link ExperimentsResource#start} stays focused on request handling.
  *
  * <p>{@link #evaluate} is a pure check — it does not mutate state. The caller is responsible
@@ -26,13 +25,10 @@ import java.util.Optional;
  * @author dotCMS
  * @since Oct 2026
  */
-class ExperimentLimitedModeGate {
+public class ExperimentLimitedModeGate {
 
-    /**
-     * Maximum duration allowed for a free experiment in limited mode, in days.
-     * Delegates to {@link ExperimentsAPI#LIMITED_MODE_MAX_DAYS} — single source of truth.
-     */
-    static final long MAX_DAYS = ExperimentsAPI.LIMITED_MODE_MAX_DAYS;
+    /** Maximum duration allowed for a free experiment in limited mode, in days. */
+    public static final long MAX_DAYS = 10L;
 
     /**
      * Reason why the limited-mode gate blocked a start request. The caller maps each value
@@ -97,7 +93,7 @@ class ExperimentLimitedModeGate {
      * @param effectiveStart the instant the experiment will start (typically {@code Instant.now()})
      * @return the computed end date at the duration cap
      */
-    static Instant defaultEndDate(final Instant effectiveStart) {
+    public static Instant defaultEndDate(final Instant effectiveStart) {
         return effectiveStart.plus(MAX_DAYS, ChronoUnit.DAYS);
     }
 }

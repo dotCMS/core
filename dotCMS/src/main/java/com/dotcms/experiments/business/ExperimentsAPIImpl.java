@@ -45,6 +45,7 @@ import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.experiments.model.TargetingCondition;
 import com.dotcms.experiments.model.TrafficProportion;
 
+import com.dotcms.rest.api.v1.experiments.ExperimentLimitedModeGate;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotcms.util.CollectionsUtils;
@@ -1671,7 +1672,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
         final Instant now = Instant.now().plus(1, ChronoUnit.MINUTES);
         return Scheduling.builder()
                 .startDate(now)
-                .endDate(now.plus(ExperimentsAPI.LIMITED_MODE_MAX_DAYS, ChronoUnit.DAYS))
+                .endDate(ExperimentLimitedModeGate.defaultEndDate(now))
                 .build();
     }
 

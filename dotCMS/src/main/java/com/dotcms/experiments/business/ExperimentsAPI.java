@@ -29,9 +29,6 @@ public interface ExperimentsAPI {
     String EXPERIMENTS_MIN_DURATION_KEY = "EXPERIMENTS_MIN_DURATION";
     String EXPERIMENTS_LOOKBACK_WINDOW_KEY = "EXPERIMENTS_LOOKBACK_WINDOW";
 
-    /** Maximum duration for a free experiment when {@code FEATURE_FLAG_EXPERIMENTS=false} (limited mode), in days. */
-    long LIMITED_MODE_MAX_DAYS = 10L;
-
     enum Health {
         OK, NOT_CONFIGURED, CONFIGURATION_ERROR
     }
