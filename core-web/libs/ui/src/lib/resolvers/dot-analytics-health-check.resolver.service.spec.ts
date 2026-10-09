@@ -23,7 +23,7 @@ describe('dotAnalyticsHealthCheckResolver', () => {
                     useValue: {
                         healthCheck: vi
                             .fn()
-                            .mockReturnValue(of({ health: HealthStatusTypes.OK, tier: 'FULL' }))
+                            .mockReturnValue(of({ health: HealthStatusTypes.OK, tier: 'full' }))
                     }
                 }
             ]
@@ -38,7 +38,7 @@ describe('dotAnalyticsHealthCheckResolver', () => {
         );
 
         vi.spyOn(dotExperimentsService, 'healthCheck').mockReturnValue(
-            of({ health: HealthStatusTypes.OK, tier: 'FULL' })
+            of({ health: HealthStatusTypes.OK, tier: 'full' })
         );
 
         resolver.subscribe((healthStatus) => {

@@ -435,14 +435,14 @@ export const DotExperimentsListStore = signalStore(
                 return healthResponse !== null && healthResponse.health !== HealthStatusTypes.OK;
             }),
             /** `true` when `FEATURE_FLAG_EXPERIMENTS=false` — operator can run one free experiment. */
-            isLimitedMode: computed<boolean>(() => store.healthResponse()?.tier === 'LIMITED'),
+            isLimitedMode: computed<boolean>(() => store.healthResponse()?.tier === 'limited'),
             /** `true` when the one free experiment slot is already occupied (limited mode only). */
             isSlotUsed: computed<boolean>(
                 () => store.healthResponse()?.freeExperimentUsed === true
             ),
             /** `true` when the Analytics App is not configured for the site. */
             showAnalyticsWarning: computed<boolean>(
-                () => store.healthResponse()?.warning === 'ANALYTICS_DISABLED'
+                () => store.healthResponse()?.warning === 'analytics_disabled'
             )
         };
     }),

@@ -25,12 +25,12 @@ import {
  */
 export interface ExperimentsHealthResponse {
     health: HealthStatusTypes;
-    /** `'FULL'` when `FEATURE_FLAG_EXPERIMENTS=true`; `'LIMITED'` when `false`. */
-    tier: 'FULL' | 'LIMITED';
-    /** Present only when `tier='LIMITED'`: whether the one free experiment slot is occupied. */
+    /** `'full'` when `FEATURE_FLAG_EXPERIMENTS=true`; `'limited'` when `false`. */
+    tier: 'full' | 'limited';
+    /** Present only when `tier='limited'`: whether the one free experiment slot is occupied. */
     freeExperimentUsed?: boolean | null;
     /** Present when the Analytics App is not configured for the site. */
-    warning?: 'ANALYTICS_DISABLED';
+    warning?: 'analytics_disabled';
 }
 
 const API_ENDPOINT = '/api/v1/experiments';

@@ -62,7 +62,7 @@ describe('DotExperimentsConfigureFooterComponent', () => {
             { provide: DotExperimentsConfigureStore, useFactory: () => storeMock },
             { provide: DotMessageService, useValue: messageServiceMock },
             mockProvider(DotExperimentsService, {
-                healthCheck: vi.fn().mockReturnValue(of({ health: 'OK', tier: 'FULL' }))
+                healthCheck: vi.fn().mockReturnValue(of({ health: 'OK', tier: 'full' }))
             }),
             mockProvider(ConfirmationService)
         ],

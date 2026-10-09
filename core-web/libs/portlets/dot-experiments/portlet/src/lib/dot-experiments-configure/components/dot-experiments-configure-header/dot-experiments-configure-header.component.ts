@@ -195,7 +195,7 @@ export class DotExperimentsConfigureHeaderComponent {
     readonly #isLimitedMode = toSignal(
         inject(DotExperimentsService)
             .healthCheck()
-            .pipe(map((r) => r.tier === 'LIMITED')),
+            .pipe(map((r) => r.tier === 'limited')),
         { initialValue: false }
     );
     readonly #pushPublishDialogService = inject(DotPushPublishDialogService);

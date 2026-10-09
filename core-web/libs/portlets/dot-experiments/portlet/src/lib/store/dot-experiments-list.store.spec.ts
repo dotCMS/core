@@ -170,9 +170,9 @@ const PAGE_SEARCH_RESULT = {
 /** Builds a minimal ExperimentsHealthResponse for test stubs. */
 function healthResponse(
     health: HealthStatusTypes = HealthStatusTypes.OK,
-    tier: 'FULL' | 'LIMITED' = 'FULL',
+    tier: 'full' | 'limited' = 'full',
     freeExperimentUsed: boolean | null = null,
-    warning?: 'ANALYTICS_DISABLED'
+    warning?: 'analytics_disabled'
 ): ExperimentsHealthResponse {
     return { health, tier, freeExperimentUsed, warning };
 }
@@ -510,14 +510,14 @@ describe('DotExperimentsListStore', () => {
 
         describe('limited-mode computed signals (isLimitedMode, isSlotUsed, showAnalyticsWarning)', () => {
             it('should report isLimitedMode=false when tier=FULL', () => {
-                healthCheck.mockReturnValue(of(healthResponse(HealthStatusTypes.OK, 'FULL')));
+                healthCheck.mockReturnValue(of(healthResponse(HealthStatusTypes.OK, 'full')));
                 initStore();
                 expect(store.isLimitedMode()).toBe(false);
             });
 
             it('should report isLimitedMode=true when tier=LIMITED', () => {
                 healthCheck.mockReturnValue(
-                    of(healthResponse(HealthStatusTypes.OK, 'LIMITED', false))
+                    of(healthResponse(HealthStatusTypes.OK, 'limited', false))
                 );
                 initStore();
                 expect(store.isLimitedMode()).toBe(true);
@@ -525,7 +525,7 @@ describe('DotExperimentsListStore', () => {
 
             it('should report isSlotUsed=false when freeExperimentUsed=false', () => {
                 healthCheck.mockReturnValue(
-                    of(healthResponse(HealthStatusTypes.OK, 'LIMITED', false))
+                    of(healthResponse(HealthStatusTypes.OK, 'limited', false))
                 );
                 initStore();
                 expect(store.isSlotUsed()).toBe(false);
@@ -533,14 +533,14 @@ describe('DotExperimentsListStore', () => {
 
             it('should report isSlotUsed=true when freeExperimentUsed=true', () => {
                 healthCheck.mockReturnValue(
-                    of(healthResponse(HealthStatusTypes.OK, 'LIMITED', true))
+                    of(healthResponse(HealthStatusTypes.OK, 'limited', true))
                 );
                 initStore();
                 expect(store.isSlotUsed()).toBe(true);
             });
 
             it('should report showAnalyticsWarning=false when App is configured', () => {
-                healthCheck.mockReturnValue(of(healthResponse(HealthStatusTypes.OK, 'FULL')));
+                healthCheck.mockReturnValue(of(healthResponse(HealthStatusTypes.OK, 'full')));
                 initStore();
                 expect(store.showAnalyticsWarning()).toBe(false);
             });
@@ -550,9 +550,9 @@ describe('DotExperimentsListStore', () => {
                     of(
                         healthResponse(
                             HealthStatusTypes.NOT_CONFIGURED,
-                            'LIMITED',
+                            'limited',
                             false,
-                            'ANALYTICS_DISABLED'
+                            'analytics_disabled'
                         )
                     )
                 );

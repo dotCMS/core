@@ -272,7 +272,7 @@ describe('DotExperimentsConfigureComponent', () => {
                 DotExperimentsRouter,
                 ConfirmationService,
                 mockProvider(DotExperimentsService, {
-                    healthCheck: vi.fn().mockReturnValue(of({ health: 'OK', tier: 'FULL' }))
+                    healthCheck: vi.fn().mockReturnValue(of({ health: 'OK', tier: 'full' }))
                 })
             ],
             providers: [
@@ -1478,7 +1478,7 @@ describe('DotExperimentsConfigureComponent', () => {
                 DotExperimentsRouter,
                 ConfirmationService,
                 mockProvider(DotExperimentsService, {
-                    healthCheck: vi.fn().mockReturnValue(of({ health: 'OK', tier: 'FULL' }))
+                    healthCheck: vi.fn().mockReturnValue(of({ health: 'OK', tier: 'full' }))
                 })
             ],
             providers: [

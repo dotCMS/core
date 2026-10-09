@@ -152,7 +152,7 @@ describe('DotExperimentsConfigureHeaderComponent', () => {
             mockProvider(DotMessageDisplayService),
             ConfirmationService,
             mockProvider(DotExperimentsService, {
-                healthCheck: vi.fn().mockReturnValue(of({ health: 'OK', tier: 'FULL' }))
+                healthCheck: vi.fn().mockReturnValue(of({ health: 'OK', tier: 'full' }))
             })
         ],
         detectChanges: false

@@ -82,7 +82,7 @@ export class DotExperimentsConfigureFooterComponent {
      * Resolved once per screen opening — the flag requires a restart to change.
      */
     readonly $startDisabled = computed<boolean>(
-        () => this.#healthResponse()?.tier === 'LIMITED' && this.#healthResponse()?.freeExperimentUsed === true
+        () => this.#healthResponse()?.tier === 'limited' && this.#healthResponse()?.freeExperimentUsed === true
     );
 
     /**
@@ -90,7 +90,7 @@ export class DotExperimentsConfigureFooterComponent {
      * Clicking Start in this state shows a confirmation dialog (US2/AC2) before dispatching.
      */
     readonly $isLimitedModeSlotFree = computed<boolean>(
-        () => this.#healthResponse()?.tier === 'LIMITED' && this.#healthResponse()?.freeExperimentUsed !== true
+        () => this.#healthResponse()?.tier === 'limited' && this.#healthResponse()?.freeExperimentUsed !== true
     );
 
     /**
