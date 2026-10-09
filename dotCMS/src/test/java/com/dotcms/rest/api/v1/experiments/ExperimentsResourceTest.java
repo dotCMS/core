@@ -352,10 +352,10 @@ public class ExperimentsResourceTest {
                             withAuthenticatedUser(resource -> resource.healthcheck(request, response));
 
             final ExperimentsHealthView view = result.getEntity();
-            assertEquals(Health.OK, view.getHealth());
-            assertEquals(ExperimentsHealthView.Tier.FULL, view.getTier());
-            assertNull(view.getFreeExperimentUsed(), "freeExperimentUsed must be null when tier=full");
-            assertNull(view.getWarning(), "warning must be absent when App is configured");
+            assertEquals(Health.OK, view.health());
+            assertEquals(ExperimentsHealthView.Tier.FULL, view.tier());
+            assertNull(view.freeExperimentUsed(), "freeExperimentUsed must be null when tier=full");
+            assertNull(view.warning(), "warning must be absent when App is configured");
         }
     }
 
@@ -385,10 +385,10 @@ public class ExperimentsResourceTest {
                             withAuthenticatedUser(resource -> resource.healthcheck(request, response));
 
             final ExperimentsHealthView view = result.getEntity();
-            assertEquals(Health.OK, view.getHealth());
-            assertEquals(ExperimentsHealthView.Tier.LIMITED, view.getTier());
-            assertEquals(Boolean.FALSE, view.getFreeExperimentUsed());
-            assertNull(view.getWarning());
+            assertEquals(Health.OK, view.health());
+            assertEquals(ExperimentsHealthView.Tier.LIMITED, view.tier());
+            assertEquals(Boolean.FALSE, view.freeExperimentUsed());
+            assertNull(view.warning());
         }
     }
 
@@ -419,8 +419,8 @@ public class ExperimentsResourceTest {
                             withAuthenticatedUser(resource -> resource.healthcheck(request, response));
 
             final ExperimentsHealthView view = result.getEntity();
-            assertEquals(ExperimentsHealthView.Tier.LIMITED, view.getTier());
-            assertEquals(Boolean.TRUE, view.getFreeExperimentUsed());
+            assertEquals(ExperimentsHealthView.Tier.LIMITED, view.tier());
+            assertEquals(Boolean.TRUE, view.freeExperimentUsed());
         }
     }
 
@@ -450,10 +450,10 @@ public class ExperimentsResourceTest {
                             withAuthenticatedUser(resource -> resource.healthcheck(request, response));
 
             final ExperimentsHealthView view = result.getEntity();
-            assertEquals(Health.NOT_CONFIGURED, view.getHealth());
-            assertEquals(ExperimentsHealthView.Tier.FULL, view.getTier());
-            assertNull(view.getFreeExperimentUsed());
-            assertEquals(ExperimentsHealthView.Warning.ANALYTICS_DISABLED, view.getWarning());
+            assertEquals(Health.NOT_CONFIGURED, view.health());
+            assertEquals(ExperimentsHealthView.Tier.FULL, view.tier());
+            assertNull(view.freeExperimentUsed());
+            assertEquals(ExperimentsHealthView.Warning.ANALYTICS_DISABLED, view.warning());
         }
     }
 
@@ -482,9 +482,9 @@ public class ExperimentsResourceTest {
                             withAuthenticatedUser(resource -> resource.healthcheck(request, response));
 
             final ExperimentsHealthView view = result.getEntity();
-            assertEquals(ExperimentsHealthView.Tier.LIMITED, view.getTier());
-            assertEquals(ExperimentsHealthView.Warning.ANALYTICS_DISABLED, view.getWarning());
-            assertNotNull(view.getFreeExperimentUsed(),
+            assertEquals(ExperimentsHealthView.Tier.LIMITED, view.tier());
+            assertEquals(ExperimentsHealthView.Warning.ANALYTICS_DISABLED, view.warning());
+            assertNotNull(view.freeExperimentUsed(),
                     "freeExperimentUsed must be present when tier=limited");
         }
     }

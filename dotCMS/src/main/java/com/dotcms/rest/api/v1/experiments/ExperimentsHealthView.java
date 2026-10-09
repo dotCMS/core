@@ -9,8 +9,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 /**
  * Response shape for {@code GET /api/v1/experiments/health}.
  *
- * <p>Replaces the previous {@code Map<String, Health>} return type. Carries the existing health
- * state plus the new tier fields that drive portlet button state in the frontend.
+ * <p>Carries the health state plus the tier fields that drive portlet button state in the
+ * frontend. {@link JsonInclude#NON_NULL} ensures absent optional fields are omitted from the
+ * JSON response rather than written as {@code null}.
  *
  * <p>Field presence rules:
  * <ul>
@@ -27,7 +28,21 @@ import io.swagger.v3.oas.annotations.media.Schema;
  * @since Oct 2026
  */
 @JsonInclude(Include.NON_NULL)
-public class ExperimentsHealthView {
+public record ExperimentsHealthView(
+
+        @Schema(description = "Current health state of the experiments / analytics configuration")
+        Health health,
+
+        @Schema(description = "License tier: \"full\" when experiments are fully enabled, \"limited\" when restricted to one free experiment")
+        Tier tier,
+
+        @Schema(description = "Whether the single free experiment slot is already occupied. Present only when tier=\"limited\"; null when tier=\"full\".")
+        Boolean freeExperimentUsed,
+
+        @Schema(description = "Warning code present when the Analytics App is not configured for the site. Absent when configured.")
+        Warning warning
+
+) {
 
     /**
      * Wire values: {@code "full"} and {@code "limited"} — annotated with {@link JsonProperty}
@@ -45,79 +60,5 @@ public class ExperimentsHealthView {
      */
     public enum Warning {
         @JsonProperty("analytics_disabled") ANALYTICS_DISABLED
-    }
-
-    @Schema(description = "Current health state of the experiments / analytics configuration")
-    private final Health health;
-
-    @Schema(description = "License tier: \"full\" when experiments are fully enabled, \"limited\" when restricted to one free experiment")
-    private final Tier tier;
-
-    @Schema(description = "Whether the single free experiment slot is already occupied. Present only when tier=\"limited\"; null when tier=\"full\".")
-    private final Boolean freeExperimentUsed;
-
-    @Schema(description = "Warning code present when the Analytics App is not configured for the site. Absent when configured.")
-    private final Warning warning;
-
-    private ExperimentsHealthView(final Builder builder) {
-        this.health = builder.health;
-        this.tier = builder.tier;
-        this.freeExperimentUsed = builder.freeExperimentUsed;
-        this.warning = builder.warning;
-    }
-
-    public Health getHealth() {
-        return health;
-    }
-
-    public Tier getTier() {
-        return tier;
-    }
-
-    public Boolean getFreeExperimentUsed() {
-        return freeExperimentUsed;
-    }
-
-    public Warning getWarning() {
-        return warning;
-    }
-
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    public static final class Builder {
-
-        private Health health;
-        private Tier tier;
-        private Boolean freeExperimentUsed;
-        private Warning warning;
-
-        private Builder() {
-        }
-
-        public Builder health(final Health health) {
-            this.health = health;
-            return this;
-        }
-
-        public Builder tier(final Tier tier) {
-            this.tier = tier;
-            return this;
-        }
-
-        public Builder freeExperimentUsed(final Boolean freeExperimentUsed) {
-            this.freeExperimentUsed = freeExperimentUsed;
-            return this;
-        }
-
-        public Builder warning(final Warning warning) {
-            this.warning = warning;
-            return this;
-        }
-
-        public ExperimentsHealthView build() {
-            return new ExperimentsHealthView(this);
-        }
     }
 }

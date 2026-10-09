@@ -664,12 +664,7 @@ public class ExperimentsResource {
                 appConfigured ? null : ExperimentsHealthView.Warning.ANALYTICS_DISABLED;
         final Boolean freeExperimentUsed = fullMode ? null : experimentsAPI.isFreeSlotUsed();
 
-        return new ResponseEntityView<>(ExperimentsHealthView.builder()
-                .health(health)
-                .tier(tier)
-                .freeExperimentUsed(freeExperimentUsed)
-                .warning(warning)
-                .build());
+        return new ResponseEntityView<>(new ExperimentsHealthView(health, tier, freeExperimentUsed, warning));
     }
 
     private Experiment patchExperiment(final Experiment experimentToUpdate,
