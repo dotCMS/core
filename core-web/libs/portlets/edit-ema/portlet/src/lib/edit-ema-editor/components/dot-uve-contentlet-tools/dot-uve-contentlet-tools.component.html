@@ -63,7 +63,7 @@
                 [style.top.px]="hoverTopClipOffset()"
                 [style.transform]="hoverTopClipOffset() ? 'translate(0, 0)' : null"
                 data-testId="hover-actions">
-                <!-- Order: Edit (quick edit), Styles, Full Edit, Edit Code, then Remove. The
+                <!-- Order: Edit (quick edit), Styles, Full Edit, Code, then Remove. The
                      collapsed menu below (`actionsMenuItems`) follows the same order. -->
                 <p-button
                     (click)="promoteHoverToSelected(); openQuickEdit.emit()"
