@@ -30,12 +30,20 @@ describe('dot-configuration mappers', () => {
     });
 
     describe('toBrandingForm', () => {
-        it('sends every value the page does not show, including the background color', () => {
+        it('sends the background color the page does not show', () => {
             const { branding } = toDraft(createFakeCompanyConfiguration());
 
             expect(toBrandingForm(branding)).toEqual(
-                expect.objectContaining({ backgroundColor: '#1b3359', mx: 'dotcms.com' })
+                expect.objectContaining({ backgroundColor: '#1b3359' })
             );
+        });
+
+        it('leaves mx out so the server derives it from the sender address', () => {
+            const { branding } = toDraft(createFakeCompanyConfiguration({ mx: 'dotcms.com' }));
+
+            expect(
+                toBrandingForm({ ...branding, emailAddress: 'Acme <web@acme.com>' })
+            ).not.toHaveProperty('mx');
         });
 
         it('omits empty optional values so the server stores them blank', () => {

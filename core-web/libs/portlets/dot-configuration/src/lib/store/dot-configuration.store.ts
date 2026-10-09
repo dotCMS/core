@@ -181,8 +181,8 @@ export const DotConfigurationStore = signalStore(
 
         /**
          * Takes the server's answer as the new stored state, and replaces the saved section of
-         * the draft with what the server actually kept (it may normalize values, e.g. derive
-         * `mx`). Sections not saved yet keep their edits.
+         * the draft with what the server actually kept, which may differ from what was sent.
+         * Sections not saved yet keep their edits.
          */
         function applySaved(section: DotConfigurationSection, view: DotCompanyConfiguration): void {
             const saved = toDraft(view);

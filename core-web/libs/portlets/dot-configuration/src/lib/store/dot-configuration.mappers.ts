@@ -28,7 +28,6 @@ export const SECTION_SAVE_ORDER: readonly DotConfigurationSection[] = [
 export interface DotConfigurationBranding {
     portalURL: string;
     emailAddress: string;
-    mx: string;
     primaryColor: string;
     secondaryColor: string;
     backgroundColor: string;
@@ -118,7 +117,6 @@ export function toDraft(view: DotCompanyConfiguration): DotConfigurationDraft {
         branding: {
             portalURL: view.portalURL ?? '',
             emailAddress: view.emailAddress ?? '',
-            mx: view.mx ?? '',
             primaryColor: view.primaryColor ?? '',
             secondaryColor: view.secondaryColor ?? '',
             backgroundColor: view.backgroundColor ?? '',
@@ -135,8 +133,9 @@ export function toDraft(view: DotCompanyConfiguration): DotConfigurationDraft {
 }
 
 /**
- * Builds the body of `PUT /branding`. Every field is sent, including the ones the page does not
- * show, because the endpoint clears whatever is left out.
+ * Builds the body of `PUT /branding`. The endpoint clears whatever is left out, so every field is
+ * sent, including the background color the page does not show. `mx` is the exception: left out,
+ * the server derives it from the sender's domain, so it follows the system email address.
  *
  * @param branding - Branding values from the draft.
  * @returns The request body; empty optional values are omitted so the server stores them blank.
@@ -147,7 +146,6 @@ export function toBrandingForm(branding: DotConfigurationBranding): DotCompanyBr
     return {
         portalURL: branding.portalURL,
         emailAddress: branding.emailAddress,
-        mx: optional(branding.mx),
         primaryColor: branding.primaryColor,
         secondaryColor: branding.secondaryColor,
         backgroundColor: optional(branding.backgroundColor),
