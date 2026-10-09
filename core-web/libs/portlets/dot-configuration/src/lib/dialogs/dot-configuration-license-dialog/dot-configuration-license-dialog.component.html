@@ -1,15 +1,35 @@
 <div class="flex flex-col gap-4">
-    <p class="m-0" data-testid="configuration-license-text">
-        {{ 'configuration.license.placeholder' | dm }}
-        <a
-            class="text-primary underline"
-            target="_blank"
-            rel="noopener noreferrer"
-            [href]="licenseSourceUrl"
-            data-testid="configuration-license-source-link">
-            {{ licenseSourceUrl }}
-        </a>
-    </p>
+    @if ($state().status === 'loading') {
+        <div class="flex flex-col gap-2" data-testid="configuration-license-loading">
+            <p-skeleton width="60%" height="1rem" />
+            <p-skeleton height="12rem" />
+        </div>
+    } @else if ($license(); as license) {
+        @if ($details(); as details) {
+            <p class="m-0 text-sm text-gray-500" data-testid="configuration-license-details">
+                {{ details }}
+            </p>
+        }
+        <div
+            class="max-h-[60vh] overflow-y-auto rounded-md border border-surface p-4 text-sm leading-relaxed wrap-break-word whitespace-pre-wrap"
+            tabindex="0"
+            role="region"
+            [attr.aria-label]="license.title"
+            [textContent]="license.text"
+            data-testid="configuration-license-text"></div>
+    } @else {
+        <p class="m-0" data-testid="configuration-license-fallback">
+            {{ 'configuration.license.placeholder' | dm }}
+            <a
+                class="text-primary underline"
+                target="_blank"
+                rel="noopener noreferrer"
+                [href]="licenseSourceUrl"
+                data-testid="configuration-license-source-link">
+                {{ licenseSourceUrl }}
+            </a>
+        </p>
+    }
 
     <div class="flex items-center justify-between gap-2">
         <a

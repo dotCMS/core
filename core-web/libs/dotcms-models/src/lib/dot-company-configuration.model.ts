@@ -66,3 +66,19 @@ export interface DotCompanyLocaleForm {
     languageId: string;
     timeZoneId: string;
 }
+
+/**
+ * The dotCMS license shipped with the running build, as returned by
+ * `GET /api/v1/configuration/license`. When the server cannot read the license file, `text`
+ * is a short pointer to the published license and the header values are `null`.
+ */
+export interface DotLicenseInfo {
+    /** License name and version, e.g. `dotCMS Business Source License 1.1`. */
+    title: string;
+    licensor: string | null;
+    /** As written in the license, e.g. `Four years from August 01, 2025`. */
+    changeDate: string | null;
+    changeLicense: string | null;
+    /** Full license text, plain text with its original line breaks. */
+    text: string;
+}

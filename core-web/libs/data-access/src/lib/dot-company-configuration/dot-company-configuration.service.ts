@@ -11,6 +11,7 @@ import {
     DotCompanyBrandingForm,
     DotCompanyConfiguration,
     DotCompanyLocaleForm,
+    DotLicenseInfo,
     DotLoginLanguage,
     DotLoginUserSystemInformation
 } from '@dotcms/dotcms-models';
@@ -19,7 +20,8 @@ const CONFIGURATION_URL = '/api/v1/configuration';
 
 /**
  * Reads and saves the company-wide configuration edited in the Configuration portlet:
- * branding, outbound email, authentication type, locale and the company key.
+ * branding, outbound email, authentication type, locale and the company key, plus the license
+ * the running build ships with.
  *
  * Every save returns the full configuration as the server stored it, so a caller can refresh
  * its state from the response without a second read. The saves are independent requests with
@@ -81,6 +83,17 @@ export class DotCompanyConfigurationService {
     saveLocale(form: DotCompanyLocaleForm): Observable<DotCompanyConfiguration> {
         return this.#http
             .put<DotCMSAPIResponse<DotCompanyConfiguration>>(`${CONFIGURATION_URL}/locale`, form)
+            .pipe(map((response) => response.entity));
+    }
+
+    /**
+     * Loads the license shipped with the running build.
+     *
+     * @returns Its title, header values and full text.
+     */
+    getLicense(): Observable<DotLicenseInfo> {
+        return this.#http
+            .get<DotCMSAPIResponse<DotLicenseInfo>>(`${CONFIGURATION_URL}/license`)
             .pipe(map((response) => response.entity));
     }
 

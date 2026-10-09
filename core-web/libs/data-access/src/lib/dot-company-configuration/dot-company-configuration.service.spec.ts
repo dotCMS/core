@@ -4,6 +4,7 @@ import {
     DotCompanyAuthType,
     DotCompanyBrandingForm,
     DotCompanyConfiguration,
+    DotLicenseInfo,
     DotLoginLanguage
 } from '@dotcms/dotcms-models';
 
@@ -37,6 +38,26 @@ describe('DotCompanyConfigurationService', () => {
 
     beforeEach(() => {
         spectator = createHttp();
+    });
+
+    describe('getLicense', () => {
+        it('reads the license from the license endpoint', () => {
+            const license: DotLicenseInfo = {
+                title: 'dotCMS Business Source License 1.1',
+                licensor: 'dotCMS LLC',
+                changeDate: 'Four years from August 01, 2025',
+                changeLicense: 'GNU General Public License (GPL) v3',
+                text: 'Licensor: dotCMS LLC'
+            };
+            let result: DotLicenseInfo | undefined;
+
+            spectator.service.getLicense().subscribe((value) => (result = value));
+            spectator
+                .expectOne('/api/v1/configuration/license', HttpMethod.GET)
+                .flush({ entity: license });
+
+            expect(result).toEqual(license);
+        });
     });
 
     describe('getConfiguration', () => {
