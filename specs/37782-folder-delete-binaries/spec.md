@@ -129,8 +129,31 @@ the current transaction commits, and runs it immediately when there is no transa
 (`HibernateUtil.addCommitListener`). Registering the removal there leaves a rolled-back delete's
 files in place and keeps today's timing for callers outside a transaction.
 
-Ordering matters: the metadata removal walks the binary directory to find what to remove, so it must
-run before the directory is deleted, as it does today.
+The removal from the search index already works this way: a destroy registers it with the same hook
+(`ContentletIndexAPIImpl.removeContentFromIndex`), which is why, after the rollback, the file still
+shows in Content Drive while its binary is gone. This fix brings the disk in line with the index.
+
+Four details of the existing code shape the fix:
+
+- **What to remove must be worked out during the destroy, not after the commit.** The metadata
+  removal reads the content type's binary fields and walks the binary directory to find what to
+  remove. By the time the transaction commits, the content type may be gone too (deleting a content
+  type destroys its content in the same transaction), and the directory listing must happen before
+  the directory is deleted. So the paths and metadata keys are collected at destroy time, and only
+  the removal itself waits for the commit.
+- **Not all metadata removal goes through `deleteBinaryFiles`.** Deleting a single version also
+  removes that version's metadata directly (`ESContentletAPIImpl.deleteVersion`, through
+  `fileMetadataAPI.removeVersionMetadata`). It needs the same deferral.
+- **After-commit work runs in the background by default.** A plain listener is queued to a
+  background thread (`ASYNC_COMMIT_LISTENERS` defaults to `true`). For file removal that would let a
+  committed delete's files linger for a moment, and on a push publishing receiver, which keeps the
+  sender's inodes, a removal still pending could land after the same inode's files were written
+  again. Running the removal synchronously after the commit (`HibernateUtil.DotSyncRunnable`), before
+  the committing call returns, keeps today's ordering.
+- **After-commit listeners have no error handling between them.** They run one after another
+  (`DotRunnableThread`), so an exception in one stops the rest of that commit's after-commit work,
+  such as index updates and cache flushes, and in synchronous mode it reaches the caller as an error
+  after the delete has already committed. The removal must catch and log its own failures.
 
 **Smaller defects.** (1) `COVERED_BY_PARENT` is decided before the run from string prefixes of the
 submitted paths, with no knowledge of whether the ancestor will be deleted. (2) The helper reads the
@@ -145,13 +168,25 @@ the same exceptions the `PATH_NOT_FOUND` mapping relies on.
 
 - A content destroy that runs inside a transaction removes the content's binaries, resized-image
   cache and stored metadata **only after that transaction commits**. If it rolls back, nothing is
-  removed.
+  removed. This covers every destroy path that removes them: destroying content, deleting it,
+  deleting all its versions with a backup, and deleting a single version (including the single
+  version's metadata, which is removed outside the shared removal today).
+- What to remove is determined during the destroy; only the removal waits for the commit.
+- The removal runs synchronously once the transaction commits, before the call that committed
+  returns, so the ordering of later writes is the same as today.
+- A failure while removing is logged and does not stop the rest of the commit's after-commit work,
+  and is not reported to the caller as a failed delete.
 - A content destroy outside any transaction keeps removing them immediately, as today.
 - Bulk delete reports a descendant as `COVERED_BY_PARENT` only when its selected ancestor was
   actually deleted. Otherwise the descendant goes through its own checks and is deleted on its own,
   or, if a cancellation stopped the run before it, is recorded as skipped with no reason like the
   rest of the remainder. To make this decidable, descendants run after the selected folders that
-  contain them; otherwise submission order is kept.
+  contain them; otherwise submission order is kept. Three existing rules carry over unchanged:
+  - Coverage is transitive: a descendant of a folder that was itself covered by a deleted ancestor
+    is covered too.
+  - A site root never covers anything, since it is always refused and never deleted.
+  - On a cancelled run, the first unreached folder reported as where the run stopped is the first
+    in the order the run actually used, not in submission order.
 - A bulk delete request with no body answers `400 EMPTY_SELECTION`, as `{}` already does.
 - Bulk delete resolves each submitted path without listing the folder's contents. A path naming a
   file, with or without a trailing slash, is still `PATH_NOT_FOUND`.
@@ -179,30 +214,49 @@ the same exceptions the `PATH_NOT_FOUND` mapping relies on.
   and from plugins. The risk is in the timing only: inside a transaction, files are removed after
   commit instead of during the transaction. Code that destroys content and then, **in the same
   transaction**, checks that the files are gone or writes new files to the same path would see a
-  difference. The plan must look for such callers. The three smaller fixes are confined to the bulk
-  delete job and endpoint.
-- **Backward compatibility**: No API signature, REST contract, database schema or index mapping
-  changes. The bulk delete outcome keeps the same statuses and reasons; only *when*
-  `COVERED_BY_PARENT` is used changes, which matches what the bulk duplicate already does. The
-  no-body response changes from `500` to `400`, which only fixes an error. Nothing here is in the
-  rollback-unsafe categories (`docs/core/ROLLBACK_UNSAFE_CATEGORIES.md`); a rollback to a version
-  without the fix returns to removing files immediately.
+  difference. The plan must look for such callers. The concrete case to check first is the push
+  publishing receiver, which keeps the sender's inodes, so a destroy and a later write can share a
+  path; running the removal synchronously after the commit (see In scope) is what keeps that safe.
+  The three smaller fixes are confined to the bulk delete job and endpoint.
+- **Backward compatibility**: No API signature, database schema or index mapping changes. Two REST
+  responses change, both compatibly:
+  - The bulk delete outcome keeps the same statuses and reasons; only *when* `COVERED_BY_PARENT` is
+    used changes, so a descendant can now come back `SUCCESS` or `FAILED` where it used to come
+    back skipped. The Content Drive client already maps every status and reason generically
+    (`folder-delete-outcome.ts`), and the bulk duplicate already behaves this way.
+  - A request with no body answers `400` instead of `500`, which only fixes an error.
+
+  Nothing here is in the rollback-unsafe categories (`docs/core/ROLLBACK_UNSAFE_CATEGORIES.md`); a
+  rollback to a version without the fix returns to removing files immediately.
 - **Data considerations**:
   - Files lost before this fix cannot be recovered; no repair task is proposed.
   - If the deferred removal itself fails after commit (for example an I/O error), the files stay on
     disk with no rows pointing to them: orphaned, wasting space, but losing nothing. Today the same
-    failure surfaces during the delete. The removal must log such a failure.
+    failure surfaces during the delete. The removal logs the failure with the paths left behind, so
+    they can be cleaned up by hand.
   - Large folder deletes will hold the list of directories to remove until commit. It is one entry
     per destroyed version, small next to the content objects the delete already holds.
 
 ## Acceptance & Verification *(mandatory)*
 
 - **AC-001**: Following the main reproduction, after the delete fails the file still opens by its
-  path and through `/dA/`, and its binary directory and every version's files are still on disk.
+  path and through `/dA/`, its binary directory and every version's files are still on disk, and its
+  metadata can still be read.
 - **AC-002**: The same holds when the failure is not a permission refusal: content locked by another
-  user deeper in the tree, and a database error forced after the first file is destroyed.
+  user deeper in the tree.
+- **AC-002a**: For each destroy path (destroy, delete, delete all versions with backup, delete a
+  single version), destroying content inside a transaction that then rolls back leaves its binaries,
+  resized-image cache and metadata in place. This is tested directly on the content API, so it does
+  not depend on how a folder delete happens to fail.
 - **AC-003**: A folder delete that succeeds still removes every destroyed version's binaries,
-  resized-image cache and stored metadata from disk once it commits.
+  resized-image cache and stored metadata from disk, and they are gone by the time the commit of
+  the outermost transaction returns (for the single-folder delete, before its response is sent; for the bulk delete, before that
+  folder's outcome is recorded).
+- **AC-003a**: Deleting a content type that has content with binaries still removes that content's
+  binaries and metadata after the commit, although the type no longer exists by then.
+- **AC-003b**: When the deferred removal fails, the failure is logged, the delete still reports
+  success, and the commit's other after-commit work (such as removing the content from the search
+  index) still runs.
 - **AC-004**: A content destroy run outside any transaction still removes the files immediately, so
   callers that are not transactional see no change.
 - **AC-005**: Bulk delete keeps its two levels of behaviour: a failed folder does not stop the other
@@ -211,15 +265,19 @@ the same exceptions the `PATH_NOT_FOUND` mapping relies on.
   reason (`IN_USE`, `PATH_NOT_FOUND`, `UNCLASSIFIED`) or is never reached because of a cancellation is
   not reported `COVERED_BY_PARENT`. A refused or failed ancestor's descendant goes through its own
   checks; a cancelled run's descendant is `SKIPPED` with no reason. A descendant whose ancestor was
-  deleted is still `COVERED_BY_PARENT`.
+  deleted is still `COVERED_BY_PARENT`, including through a covered intermediate folder, and a site
+  root still covers nothing.
 - **AC-007**: `POST /api/v1/assets/folders/_bulkdelete` with no body answers `400 EMPTY_SELECTION`.
 - **AC-008**: Submitted paths are resolved without listing the folders' contents. A path naming a
   file, with or without a trailing slash, is still `PATH_NOT_FOUND`.
 - **Verification method**:
   - Integration tests (`dotcms-integration`) for AC-001 to AC-006, each **failing on today's code**
-    first: a folder delete refused partway checking the file on disk, the lock and forced-error
-    variants, a successful delete still clearing disk, a non-transactional destroy, and one test per
-    AC-006 ancestor outcome. New test classes are registered in a `MainSuite*` / `Junit5Suite*`
+    first where today's code is wrong: a folder delete refused partway checking the file on disk,
+    the lock variant, a rolled-back destroy for each destroy path, a successful delete and a
+    content type delete still clearing disk, a removal failure that does not break the commit, a
+    non-transactional destroy, and one test per AC-006 ancestor outcome. AC-003, AC-003a and AC-004
+    describe behaviour that is correct today, so they pass before and after; they guard against the
+    fix breaking it. New test classes are registered in a `MainSuite*` / `Junit5Suite*`
     suite, run with `-Dmaven.build.cache.enabled=false`, and `Tests run: N` is confirmed in
     `target/failsafe-reports/*.txt`.
   - A unit test on `FolderBulkDeleteHelper` and a Postman request for AC-007.
@@ -236,4 +294,4 @@ the same exceptions the `PATH_NOT_FOUND` mapping relies on.
   object storage). Deferring its removal until commit is correct for all of them, because a
   rolled-back destroy should keep the metadata as much as the files.
 - No caller relies on the files being gone before its own transaction commits. The plan verifies
-  this.
+  this, starting with the push publishing receiver.
