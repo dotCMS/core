@@ -28,8 +28,11 @@ import java.util.Optional;
  */
 class ExperimentLimitedModeGate {
 
-    /** Maximum duration allowed for a free experiment in limited mode, in days. */
-    static final long MAX_DAYS = 10L;
+    /**
+     * Maximum duration allowed for a free experiment in limited mode, in days.
+     * Delegates to {@link ExperimentsAPI#LIMITED_MODE_MAX_DAYS} — single source of truth.
+     */
+    static final long MAX_DAYS = ExperimentsAPI.LIMITED_MODE_MAX_DAYS;
 
     /**
      * Reason why the limited-mode gate blocked a start request. The caller maps each value
