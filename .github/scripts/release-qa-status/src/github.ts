@@ -8,6 +8,7 @@
 import { Octokit } from '@octokit/rest';
 import { throttling } from '@octokit/plugin-throttling';
 import { CommitInfo, ExternalRef, LinkedIssueInfo, PRDetails } from './types';
+import { findDeclaredIssue } from './links';
 
 const STANDARD_RELEASE_PATTERN = /^v\d{2}\.\d{2}\.\d{2}-\d{1,2}$/;
 
@@ -319,6 +320,8 @@ export async function fetchPRDetails(
   prNumbers: number[]
 ): Promise<Map<number, PRDetails>> {
   const results = new Map<number, PRDetails>();
+  // Body and branch feed the non-closing link fallback below.
+  const linkSources = new Map<number, { body: string | null; branch: string }>();
   const fetchErrors: number[] = [];
   const BATCH_SIZE = 15;
 
@@ -333,6 +336,7 @@ export async function fetchPRDetails(
           pull_number: prNumber,
         });
         const labels = data.labels.map((l) => l.name || '');
+        linkSources.set(prNumber, { body: data.body, branch: data.head.ref });
         return {
           number: prNumber,
           title: data.title,
@@ -377,6 +381,14 @@ export async function fetchPRDetails(
     if (r) {
       pr.linkedIssues = r.sameRepo;
       pr.externalRefs = r.external;
+    }
+    if (pr.linkedIssues.length === 0 && pr.externalRefs.length === 0) {
+      // No closing link: accept the same non-closing forms the PR gate does,
+      // so a PR that passed the gate is not reported as an orphan.
+      const src = linkSources.get(n);
+      const declared = src && findDeclaredIssue(src.body, pr.title, src.branch);
+      // A PR is never its own issue; guards a title ending in its own "(#N)".
+      if (declared && declared !== n) pr.linkedIssues = [declared];
     }
   }
 

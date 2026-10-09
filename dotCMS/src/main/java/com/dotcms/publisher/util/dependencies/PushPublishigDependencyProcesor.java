@@ -67,6 +67,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
@@ -93,6 +94,29 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
     private final PushedAssetUtil pushedAssetUtil;
     private final Lazy<StoryBlockAPI> storyBlockAPI = Lazy.of(APILocator::getStoryBlockAPI);
     private final Lazy<ContentletAPI> contentletAPI = Lazy.of(APILocator::getContentletAPI);
+
+    /**
+     * Tracks, for the lifetime of this bundle generation, which Contentlet identifiers have
+     * already "consumed" the one extra relationship-traversal hop that
+     * {@link PublisherFilter#isRelationshipsSecondLevel()} allows. A Contentlet's identifier is
+     * added to this set right before its related content is recursively enqueued for its own
+     * dependency processing; once present, that Contentlet's own related content is added to the
+     * bundle without being recursed into again. This both caps traversal at exactly one extra
+     * level and makes circular relationship chains inherently non-recursive beyond that point.
+     * <p>
+     * <b>Known limitation:</b> this set is global to the whole bundle and processing runs
+     * concurrently ({@link ConcurrentDependencyProcessor} dispatches queued assets across a
+     * thread pool). If a Contentlet is <i>both</i> an explicitly-selected bundle root <i>and</i> a
+     * first-level relation of another explicitly-selected root, which one is processed first
+     * determines whether it still gets its own second-level expansion -- the outcome does not
+     * depend on which Contentlet the user actually selected. The cap is never exceeded in this
+     * scenario (no correctness risk beyond this), so it is a bounded, order-dependent
+     * under-inclusion rather than a crash or data-integrity issue. Fixing it properly would mean
+     * distinguishing "explicit bundle root" from "reached via a relationship" across the shared
+     * {@link DependencyProcessor} queue that every asset type uses, which is out of scope for this
+     * opt-in filter.
+     */
+    private final Set<String> relationshipHopConsumed = ConcurrentHashMap.newKeySet();
 
     /**
      * Creates an instance of the Push Publishing Dependency Processor mechanism, and initializes all the different data
@@ -479,12 +503,27 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
                         contentRelationships.keySet(), ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(contentlet));
 
                 if(publisherFilter.isRelationships() && publisherFilter.isDependencies()) {
+                    // Only recurse into a related Contentlet's OWN relationships when the current
+                    // Contentlet hasn't itself already consumed its one allowed extra hop — this
+                    // caps traversal at exactly one extra level instead of recursing unbounded.
+                    final boolean recurseOneMoreLevel = publisherFilter.isRelationshipsSecondLevel()
+                            && !relationshipHopConsumed.contains(contentId);
+
                     for (Entry<Relationship, List<Contentlet>> relationshipListEntry : contentRelationships
                             .entrySet()) {
-                        contentsToProcess.addAll(relationshipListEntry.getValue());
+                        if (recurseOneMoreLevel) {
+                            relationshipListEntry.getValue().forEach(
+                                    relatedContentlet -> relationshipHopConsumed.add(relatedContentlet.getIdentifier()));
 
-                        tryToAddAll(PusheableAsset.CONTENTLET, relationshipListEntry.getValue(),
-                                ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(relationshipListEntry.getKey()));
+                            tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET,
+                                    relationshipListEntry.getValue(),
+                                    ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(relationshipListEntry.getKey()));
+                        } else {
+                            contentsToProcess.addAll(relationshipListEntry.getValue());
+
+                            tryToAddAll(PusheableAsset.CONTENTLET, relationshipListEntry.getValue(),
+                                    ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(relationshipListEntry.getKey()));
+                        }
                     }
                 }
 
