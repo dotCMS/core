@@ -139,7 +139,8 @@ import org.junit.runners.Suite;
         SystemEventsReconciliationIntegrationTest.class,
         SystemEventsRetentionIntegrationTest.class,
         com.dotcms.rest.api.v1.portlet.PortletResourceIntegrationTest.class,
-        LayoutResourceIntegrationTest.class
+        LayoutResourceIntegrationTest.class,
+        com.dotmarketing.webdav.DotWebdavTempPathContainmentTest.class
 })
 
 public class MainSuite3a {

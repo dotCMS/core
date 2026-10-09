@@ -15,7 +15,9 @@ import com.bradmcevoy.http.Range;
 import com.bradmcevoy.http.Request;
 import com.bradmcevoy.http.Request.Method;
 import com.bradmcevoy.http.Resource;
+import com.bradmcevoy.http.exceptions.BadRequestException;
 import com.bradmcevoy.http.exceptions.NotAuthorizedException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.Config;
@@ -81,15 +83,20 @@ public class LanguageFolderResourceImpl implements FolderResource, LockingCollec
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see com.bradmcevoy.http.MakeCollectionableResource#createCollection(java.lang.String)
+	/**
+	 * Creates a temp folder for a temp-style {@code newName} at the language root; any other name is
+	 * not supported here. The temp-style name must be a single plain path segment.
+	 *
+	 * @param newName the folder name received from the WebDAV client
+	 * @return the created temp folder, or {@code null} when the name is not supported here
+	 * @throws BadRequestException (HTTP 400) when a temp-style name is not a single plain path segment
 	 */
-	public CollectionResource createCollection(String newName) {
+	public CollectionResource createCollection(String newName) throws BadRequestException {
 		if(dotDavHelper.isTempResource(newName) && isLanguageRoot){
-			dotDavHelper.createTempFolder(File.separator + "system" + File.separator + "languages" + File.separator + newName);
-			File f = new File(File.separator + "system" + File.separator + "languages");
-			TempFolderResourceImpl tr = new TempFolderResourceImpl(f.getPath(),f ,true);
-			return tr;
+			DotWebdavHelper.requirePlainSegment(this, newName);
+			final File created = dotDavHelper.createTempFolder(
+					File.separator + "system" + File.separator + "languages" + File.separator + newName);
+			return new TempFolderResourceImpl(created.getPath(), created, true);
 		}else{
 			return null;
 		}
@@ -374,9 +381,23 @@ public class LanguageFolderResourceImpl implements FolderResource, LockingCollec
 		return (long)60;
 	}
 
+	/**
+	 * Creates a temp folder named {@code name} and locks it. The lock interface only allows
+	 * {@link NotAuthorizedException}, so an invalid temp-style name is reported as a runtime error.
+	 *
+	 * @param name     the folder name received from the WebDAV client
+	 * @param timeout  the requested lock timeout
+	 * @param lockInfo the requested lock details
+	 * @return the lock token of the created folder
+	 * @throws NotAuthorizedException if the lock is not authorized
+	 */
 	public LockToken createAndLock(String name, LockTimeout timeout, LockInfo lockInfo)
 			throws NotAuthorizedException {
-		createCollection(name);
+		try {
+			createCollection(name);
+		} catch (BadRequestException e) {
+			throw new DotRuntimeException(e.getReason(), e);
+		}
 		return lock(timeout, lockInfo).getLockToken();
 	}
 
