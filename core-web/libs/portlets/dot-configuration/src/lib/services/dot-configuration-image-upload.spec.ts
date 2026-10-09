@@ -1,5 +1,6 @@
 import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { Subject, of, throwError } from 'rxjs';
+import { Mock } from 'vitest';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
@@ -19,7 +20,7 @@ class UploadHost {
 describe('injectImageUpload', () => {
     let spectator: SpectatorService<UploadHost>;
     let picker: FileUpload;
-    let onUploaded: ReturnType<typeof vi.fn>;
+    let onUploaded: Mock<(path: string) => void>;
 
     const file = new File(['<svg/>'], 'brand.svg', { type: 'image/svg+xml' });
     const selection = (...files: File[]) => ({ currentFiles: files }) as unknown as FileSelectEvent;
@@ -38,7 +39,7 @@ describe('injectImageUpload', () => {
         vi.clearAllMocks();
         spectator = createService();
         picker = { clear: vi.fn() } as unknown as FileUpload;
-        onUploaded = vi.fn();
+        onUploaded = vi.fn<(path: string) => void>();
     });
 
     it('uploads the picked file and hands over its path', () => {
