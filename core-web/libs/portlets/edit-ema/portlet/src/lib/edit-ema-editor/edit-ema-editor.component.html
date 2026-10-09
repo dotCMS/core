@@ -335,7 +335,7 @@
 
 <!-- Edit Source: a VTL file's source in Monaco, opened from the contentlet tools' VTL menu. A save
      writes a new working version, which edit mode renders, so the page reloads to show it; the
-     panel stays open for the next edit. Deferred like the panel above. -->
+     panel then closes itself through `closed`. Deferred like the panel above. -->
 @defer (when $sourceEditorPanel()) {
     @if ($sourceEditorPanel(); as request) {
         <dot-source-editor-side-panel

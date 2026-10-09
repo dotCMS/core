@@ -290,7 +290,24 @@ describe('DotSourceEditorSidePanelComponent', () => {
             });
         });
 
-        it('reports the save and stays open, with nothing left to save', async () => {
+        it('reports the save, then closes without asking', async () => {
+            await open();
+            const events: string[] = [];
+            spectator.output('saved').subscribe(() => events.push('saved'));
+            spectator.output('closed').subscribe(() => events.push('closed'));
+            const confirm = vi.spyOn(panelConfirmation(), 'confirm');
+            typeInEditor('#set($title = "Bye")');
+
+            spectator.click(button('source-editor-save'));
+
+            // Saved first, so the opener refreshes before it clears the panel.
+            expect(events).toEqual(['saved', 'closed']);
+            expect(confirm).not.toHaveBeenCalled();
+        });
+
+        it('stays open with the edits and reports the error when the save fails', async () => {
+            const error = new HttpErrorResponse({ status: 400 });
+            save.mockReturnValue(throwError(() => error));
             await open();
             const saved = vi.fn();
             const closed = vi.fn();
@@ -301,24 +318,9 @@ describe('DotSourceEditorSidePanelComponent', () => {
             spectator.click(button('source-editor-save'));
             spectator.detectChanges();
 
-            expect(saved).toHaveBeenCalledTimes(1);
-            expect(closed).not.toHaveBeenCalled();
-            expect(button('source-editor-save').disabled).toBe(true);
-        });
-
-        it('keeps the edits and reports the error when the save fails', async () => {
-            const error = new HttpErrorResponse({ status: 400 });
-            save.mockReturnValue(throwError(() => error));
-            await open();
-            const saved = vi.fn();
-            spectator.output('saved').subscribe(saved);
-            typeInEditor('#set($title = "Bye")');
-
-            spectator.click(button('source-editor-save'));
-            spectator.detectChanges();
-
             expect(spectator.inject(DotHttpErrorManagerService).handle).toHaveBeenCalledWith(error);
             expect(saved).not.toHaveBeenCalled();
+            expect(closed).not.toHaveBeenCalled();
             expect(editor()?.value).toBe('#set($title = "Bye")');
             expect(button('source-editor-save').disabled).toBe(false);
         });

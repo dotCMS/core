@@ -2104,7 +2104,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
 
     /**
      * A save in the Edit Source panel changed the file's version and modification date: refresh the
-     * list quietly. The panel stays open, so the author can keep editing.
+     * list quietly. The panel closes itself right after, through `closed`.
      */
     protected onSourceEditorSaved() {
         this.#store.reloadContentDrive({ quiet: true });

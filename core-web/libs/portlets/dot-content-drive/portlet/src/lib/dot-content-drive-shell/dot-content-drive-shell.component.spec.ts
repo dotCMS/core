@@ -5705,7 +5705,8 @@ describe('DotContentDriveShellComponent', () => {
             expect(spectator.query(SOURCE_PANEL)).toBeNull();
         });
 
-        it('refreshes the list quietly on save and keeps the panel open', async () => {
+        // The panel follows a save with its own `closed`, so the save itself only refreshes.
+        it('refreshes the list quietly on save', async () => {
             await openSourcePanel();
 
             spectator.triggerEventHandler(SOURCE_PANEL, 'saved', undefined);

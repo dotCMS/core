@@ -44,8 +44,8 @@ interface DotSourceEditorInstance {
 
 /**
  * Edits a file's source in Monaco, in a side panel over the screen that opened it (Content Drive,
- * the page editor). A developer tool: it opens straight on the code, saves with the button or
- * `Cmd/Ctrl + S`, and stays open after a save so the author can keep working.
+ * the page editor). A developer tool: it opens straight on the code, and saves and closes with the
+ * button or `Cmd/Ctrl + S`.
  *
  * It looks and closes like the other side panels: the same drawer, and the same width toggle, mask
  * and Escape rules from `injectSidePanelChrome`, with the Edit Content panel's unsaved-changes
@@ -80,10 +80,10 @@ export class DotSourceEditorSidePanelComponent {
     /** The file to open, or `null` when the panel is closed. */
     readonly request = input<DotSourceEditorRequest | null>(null);
 
-    /** A save landed: the opener refreshes its view. The panel stays open. */
+    /** A save landed: the opener refreshes its view. `closed` follows straight after. */
     readonly saved = output<void>();
 
-    /** The panel closed: the opener clears its request. */
+    /** The panel closed, after a save or without one: the opener clears its request. */
     readonly closed = output<void>();
 
     /** This panel's own drawer: its mask and container are what the shared chrome checks. */
@@ -169,9 +169,11 @@ export class DotSourceEditorSidePanelComponent {
     }
 
     /**
-     * Saves the source as a new working version. A no-op without changes or while a save runs.
+     * Saves the source as a new working version, then closes the panel. A no-op without changes or
+     * while a save runs.
      *
-     * On failure the edits stay in the editor and a server error goes through the shared handler.
+     * On failure the panel stays open with the edits, and a server error goes through the shared
+     * handler.
      */
     save(): void {
         const request = this.request();
@@ -197,6 +199,8 @@ export class DotSourceEditorSidePanelComponent {
                     this.#savedSource.set(source);
                     this.$status.set(ComponentStatus.LOADED);
                     this.saved.emit();
+                    // Nothing is left unsaved, so no prompt: straight out.
+                    this.closed.emit();
                 },
                 error: (error: unknown) => {
                     this.$status.set(ComponentStatus.LOADED);
