@@ -157,13 +157,17 @@ public class PermissionCacheImpl extends PermissionCache {
 	}
 
 	/**
-	 * If no key is returned, it means that the object should not be cached.
-	 * @param permissionable
-	 * @param permissionType
-	 * @param userIn
-	 * @param respectFrontendRoles
-	 * @param nullableContent
-	 * @return
+	 * Builds a key for a permission decision, including the user's effective backend status.
+	 * When admin-site restrictions apply, the same user can be backend-eligible on an admin
+	 * host or without a request, but restricted on a public host. Those contexts must not
+	 * share cached decisions, particularly READ access to unpublished content.
+	 *
+	 * @param permissionable the {@link Permissionable} being checked
+	 * @param permissionType the requested permission
+	 * @param userIn the {@link User} whose current backend status is part of the key
+	 * @param respectFrontendRoles whether frontend roles participate in the check
+	 * @param nullableContent the optional {@link Contentlet} providing workflow context
+	 * @return the key, or an empty optional during a transaction or when required IDs are absent
 	 */
 	private Optional<String> shortLivedKey(@NotNull final Permissionable permissionable,
 			@NotNull final String permissionType,
@@ -190,7 +194,8 @@ public class PermissionCacheImpl extends PermissionCache {
 		}
 
 		return Optional.of(permissionableKey + permissionType + userIn.getUserId() + respectFrontendRoles + (
-				nullableContent != null ? nullableContent.getIdentifier() : ""));
+				nullableContent != null ? nullableContent.getIdentifier() : "")
+				+ StringPool.COLON + userIn.isBackendUser());
 
 
 	}
