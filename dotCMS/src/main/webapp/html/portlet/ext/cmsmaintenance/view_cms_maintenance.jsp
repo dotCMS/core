@@ -163,10 +163,10 @@ function stopReIndexingAndSwitchover() {
 
 }
 
-/** Downloads the main information of the records that could not be re-indexed
-    as a .CSV file*/
+/** Opens the records that could not be re-indexed as JSON. Uses the endpoint that omits
+    content values: the deprecated /api/v1/esindex/failed embeds them and can crash the tab. */
 function downloadFailedAsJson() {
-	var href = "/api/v1/esindex/failed";
+	var href = "/api/v1/index/failed";
 	window.open(href);
 }
 
