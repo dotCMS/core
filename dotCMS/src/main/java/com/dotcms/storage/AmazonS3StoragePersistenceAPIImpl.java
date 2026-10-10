@@ -74,6 +74,13 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
     private final Storage storage;
     private final String namespace = configuredNamespace();
 
+    private boolean sharesBinaryBytes(final String group) {
+        return AssetStorageFeature.isEnabled() && pathEncryptionMode == PathEncryptionMode.NONE
+                && (com.dotcms.storage.binary.BinaryAssetStorageAPI.BINARY_ASSETS_GROUP.equals(group)
+                || com.dotcms.storage.binary.BinaryAssetStorageAPI.GENERATED_ASSETS_GROUP.equals(group));
+    }
+
+    private S3ContentAddressedStorage sharedBytes() { return new S3ContentAddressedStorage(storage, bucketName); }
     private final FileRepositoryManager fileRepositoryManager = this.getFileRepository();
     private MessageDigest sha256;
     private final Set<String> groups = ConcurrentHashMap.newKeySet();
@@ -389,6 +396,7 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
     @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public Object pushFile(final String groupName, final String path, final File file,
                            final Map<String, Serializable> extraMeta) throws DotDataException {
+        if (sharesBinaryBytes(groupName)) return sharedBytes().store(transformReadPath(groupName, path), file, false);
         if (!AssetStorageFeature.isEnabled()) {
         final String pathForS3 = transformWritePath(groupName, path, file.getName());
         final Upload upload = this.storage.uploadFile(this.bucketName, pathForS3,
@@ -527,6 +535,11 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
                 throw new DotDataException("Unable to allocate an S3 download file");
             }
             try {
+                if (sharesBinaryBytes(groupName)) {
+                    if (sharedBytes().retrieve(transformReadPath(groupName, path), download)) return download;
+                    releaseRetrievedFile(download);
+                    return null;
+                }
                 storage.downloadFile(bucketName, transformReadPath(groupName, path), download).waitForCompletion();
                 return download;
             } catch (Exception e) {
@@ -790,6 +803,10 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
             return false;
         }
         final String key = transformReadPath(groupName, path);
+        if (sharesBinaryBytes(groupName)) {
+            try { return sharedBytes().matches(key, file); }
+            catch (IOException | RuntimeException failure) { throw new DotDataException("Unable to verify shared asset " + path, failure); }
+        }
         try (final InputStream input = Files.newInputStream(file.toPath())) {
             final String md5 = DigestUtils.md5Hex(input);
             final var object = storage.listFirstObject(bucketName, key);
@@ -809,6 +826,10 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
         }
         if (!Files.isRegularFile(file.toPath(), java.nio.file.LinkOption.NOFOLLOW_LINKS)) {
             throw new DotDataException("Backfill requires a regular source file: " + file);
+        }
+        if (sharesBinaryBytes(groupName)) {
+            sharedBytes().store(transformReadPath(groupName, path), file, true);
+            return true;
         }
         try {
             if (hasDurableCopy(groupName, path, file)) {
