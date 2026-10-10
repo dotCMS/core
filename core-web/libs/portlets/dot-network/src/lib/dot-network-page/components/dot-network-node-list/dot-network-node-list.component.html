@@ -1,0 +1,55 @@
+<header class="flex items-center gap-2 px-4 pt-4 pb-3">
+    <h2 class="m-0 font-semibold" id="network-nodes-heading">
+        {{ 'network.nodes' | dm }}
+    </h2>
+    <p-badge [value]="nodes().length" severity="secondary" data-testid="network-node-count" />
+</header>
+
+<p-listbox
+    class="flex min-h-0 flex-1 flex-col"
+    [options]="nodes()"
+    optionValue="serverId"
+    [ngModel]="selectedServerId()"
+    (onChange)="onChange($event.value)"
+    [pt]="listboxPt"
+    scrollHeight="100%"
+    ariaLabelledBy="network-nodes-heading"
+    data-testid="network-node-listbox">
+    <ng-template #item let-node>
+        @let tag = statusTags[node.status];
+
+        <div class="flex w-full min-w-0 flex-col gap-1.5 py-1" data-testid="network-node-card">
+            <div class="flex items-center gap-2">
+                <span class="font-semibold" data-testid="network-node-id">
+                    {{ node.displayServerId }}
+                </span>
+                @if (node.serverId === currentServerId()) {
+                    <p-tag
+                        severity="info"
+                        [value]="'network.node.this-node' | dm"
+                        data-testid="network-node-current" />
+                }
+                <p-tag
+                    class="ml-auto"
+                    [severity]="tag.severity"
+                    [value]="tag.labelKey | dm"
+                    data-testid="network-node-status" />
+            </div>
+            <span
+                class="truncate text-sm text-gray-500"
+                [attr.title]="node.name"
+                data-testid="network-node-name">
+                {{ node.name }}
+            </span>
+            <span class="text-sm text-gray-500" data-testid="network-node-contacted">
+                @if (node.lastContactSeconds === null) {
+                    {{ 'network.node.contacted.never' | dm }}
+                } @else {
+                    {{
+                        'network.node.contacted' | dm: [node.lastContactSeconds | dotNetworkElapsed]
+                    }}
+                }
+            </span>
+        </div>
+    </ng-template>
+</p-listbox>
