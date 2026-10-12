@@ -1728,7 +1728,10 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
                     .orElseThrow(() -> new IllegalStateException("Invalid Scheduling. Start date is missing"));
             DotPreconditions.checkState(startDate.isAfter(now), "Invalid Scheduling. Start date is in the past");
 
-            toReturn = scheduling.withEndDate(startDate.plus(defaultDuration.get(), ChronoUnit.DAYS));
+            final long durationDays = ConfigExperimentUtil.INSTANCE.isExperimentEnabled()
+                    ? defaultDuration.get()
+                    : ExperimentLimitedModeGate.MAX_DAYS;
+            toReturn = scheduling.withEndDate(startDate.plus(durationDays, ChronoUnit.DAYS));
         } else if (scheduling.startDate().isEmpty() && scheduling.endDate().isPresent()) {
             final Instant endDate = scheduling
                     .endDate()

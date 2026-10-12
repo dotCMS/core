@@ -1,5 +1,7 @@
 package com.dotcms.experiments.business;
 
+import com.dotcms.experiments.model.Scheduling;
+import com.dotcms.rest.api.v1.experiments.ExperimentLimitedModeGate;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -8,11 +10,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Set;
 
 import static com.dotcms.experiments.model.AbstractExperiment.Status.ENDED;
 import static com.dotcms.experiments.model.AbstractExperiment.Status.RUNNING;
 import static com.dotcms.experiments.model.AbstractExperiment.Status.SCHEDULED;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -84,6 +89,56 @@ public class ExperimentsAPIImplTest {
 
         assertTrue(new ExperimentsAPIImpl(experimentsFactory).isFreeSlotUsed(),
                 "Count > 0 for {RUNNING, SCHEDULED, ENDED} must mark the slot as used");
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#validateScheduling(Scheduling)}
+     * Given scenario: Feature flag disabled (limited mode); scheduling carries only a
+     *                 {@code startDate} with no {@code endDate}.
+     * Expected result: {@code endDate} is auto-set to exactly {@link ExperimentLimitedModeGate#MAX_DAYS}
+     *                  days from {@code startDate}, enforcing the 10-day limited-mode cap.
+     */
+    @Test
+    void validateScheduling_limitedMode_startDateOnly_capsEndDateAtMaxDays() {
+        ConfigExperimentUtil.INSTANCE.setExperimentEnabled(false);
+        try {
+            final Instant startDate = Instant.now().plus(1, ChronoUnit.DAYS);
+            final Scheduling input = Scheduling.builder().startDate(startDate).build();
+
+            final Scheduling result = new ExperimentsAPIImpl(experimentsFactory).validateScheduling(input);
+
+            assertTrue(result.endDate().isPresent(), "endDate must be auto-set in limited mode");
+            assertEquals(ExperimentLimitedModeGate.MAX_DAYS,
+                    ChronoUnit.DAYS.between(startDate, result.endDate().get()),
+                    "endDate must be capped at MAX_DAYS (10) in limited mode");
+        } finally {
+            ConfigExperimentUtil.INSTANCE.setExperimentEnabled(true);
+        }
+    }
+
+    /**
+     * Method to test: {@link ExperimentsAPIImpl#validateScheduling(Scheduling)}
+     * Given scenario: Feature flag enabled (normal mode); scheduling carries only a
+     *                 {@code startDate} with no {@code endDate}.
+     * Expected result: {@code endDate} is auto-set to the default duration (14 days) from
+     *                  {@code startDate}, not the limited-mode cap.
+     */
+    @Test
+    void validateScheduling_normalMode_startDateOnly_setsDefaultEndDate() {
+        ConfigExperimentUtil.INSTANCE.setExperimentEnabled(true);
+        try {
+            final Instant startDate = Instant.now().plus(1, ChronoUnit.DAYS);
+            final Scheduling input = Scheduling.builder().startDate(startDate).build();
+
+            final Scheduling result = new ExperimentsAPIImpl(experimentsFactory).validateScheduling(input);
+
+            assertTrue(result.endDate().isPresent(), "endDate must be auto-set in normal mode");
+            assertEquals(14L,
+                    ChronoUnit.DAYS.between(startDate, result.endDate().get()),
+                    "endDate must be defaultDuration (14) days from startDate in normal mode");
+        } finally {
+            ConfigExperimentUtil.INSTANCE.setExperimentEnabled(false);
+        }
     }
 
     /**
