@@ -404,3 +404,4 @@ jobs:
       rename_label: 'Next Release'
     secrets:
       CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
+# CI probe for #37888 (release-only change) - do not merge
