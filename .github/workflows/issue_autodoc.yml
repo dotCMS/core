@@ -700,11 +700,28 @@ jobs:
             exit 0
           fi
 
-          IDENTIFIER=$(curl -s --fail-with-body -X POST "$AUTODOC_DOTCMS_BASE_URL/api/es/search" \
+          SERVICE_ACCOUNT='user-3244a6be-d28b-4d80-a3fc-9f66a1d832ae'
+
+          # Confirm the token authenticates as the service account. dotCMS serves the
+          # search and content reads below to anonymous callers, so a stale token or a
+          # wrong host would otherwise look like "no page" and show the live version
+          # instead of the working one, hiding human drafts from the guardrail.
+          ME=$(curl -s --max-time 30 "$AUTODOC_DOTCMS_BASE_URL/api/v1/users/current" \
+            -H "Authorization: Bearer $AUTODOC_DOTCMS_API_TOKEN_DRAFTING" | jq -r '.userId // empty' 2>/dev/null || true)
+          if [ "$ME" != "$SERVICE_ACCOUNT" ]; then
+            echo "::error::dotCMS token check failed: expected $SERVICE_ACCOUNT, got '${ME:-no user}'. Check the AUTODOC_DOTCMS_BASE_URL variable and the AUTODOC_DOTCMS_API_TOKEN_DRAFTING secret."
+            exit 1
+          fi
+
+          if ! LOOKUP=$(curl -s --fail-with-body --max-time 60 -X POST "$AUTODOC_DOTCMS_BASE_URL/api/es/search" \
             -H "Authorization: Bearer $AUTODOC_DOTCMS_API_TOKEN_DRAFTING" \
             -H "Content-Type: application/json" \
-            -d "{\"query\":{\"query_string\":{\"query\":\"+contentType:DotcmsDocumentation +DotcmsDocumentation.urlTitle:\\\"$URL_TITLE\\\"\"}},\"size\":1}" \
-            | jq -r '(.esresponse[0].hits.hits[0]._source.identifier) // empty')
+            -d "{\"query\":{\"query_string\":{\"query\":\"+contentType:DotcmsDocumentation +DotcmsDocumentation.urlTitle:\\\"$URL_TITLE\\\"\"}},\"size\":1}") \
+            || ! echo "$LOOKUP" | jq -e '.esresponse[0].hits.hits | type == "array"' > /dev/null 2>&1; then
+            echo "::error::dotCMS page lookup for '${URL_TITLE}' failed or returned an unexpected response."
+            exit 1
+          fi
+          IDENTIFIER=$(echo "$LOOKUP" | jq -r '.esresponse[0].hits.hits[0]._source.identifier // empty')
           echo "IDENTIFIER=$IDENTIFIER" >> "$GITHUB_ENV"
 
           if [ "$ACTION" = "create" ] && [ -n "$IDENTIFIER" ]; then
@@ -739,7 +756,6 @@ jobs:
             fi
             IS_LIVE=$(echo "$CONTENT_CHECK" | jq -r '.entity.live // empty')
             MOD_USER=$(echo "$CONTENT_CHECK" | jq -r '.entity.modUser // ""')
-            SERVICE_ACCOUNT='user-3244a6be-d28b-4d80-a3fc-9f66a1d832ae'
 
             if [ -z "$IS_LIVE" ]; then
               echo "::warning::Content check returned unexpected response — cannot confirm draft ownership. Skipping to avoid clobbering a potential human edit."
