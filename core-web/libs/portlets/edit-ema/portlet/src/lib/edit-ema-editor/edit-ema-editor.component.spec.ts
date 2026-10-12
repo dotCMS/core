@@ -3719,6 +3719,24 @@ describe('EditEmaEditorComponent', () => {
                     expect(mockEvent.preventDefault).not.toHaveBeenCalled();
                 });
 
+                it('should not do anything for a javascript:-href anchor', () => {
+                    // Regression test: a `javascript:…` href never navigates —
+                    // it's a page's own click handler invoked via the href
+                    // itself, not a link. `anchor.href` for such an anchor
+                    // resolves to the literal string back (hostname ""),
+                    // which — before this bailed early alongside the
+                    // hash-only case — wrongly tripped the external-link
+                    // branch below and tried to open it in a new tab.
+                    const mockEvent = createMockEvent('javascript:void(0)');
+
+                    spectator.component.handleInternalNav(mockEvent);
+
+                    expect(pageLoadSpy).not.toHaveBeenCalled();
+                    expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+                    expect(windowOpenSpy).not.toHaveBeenCalled();
+                    expect(openedLink.click).not.toHaveBeenCalled();
+                });
+
                 it('should open external URL in new tab', () => {
                     const externalUrl = 'https://external-site.com/page';
                     const mockEvent = createMockEvent(externalUrl);
