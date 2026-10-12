@@ -142,12 +142,6 @@ limit is approximate and should be set well below the server's `http.max_content
   | unset | ≤ 0 | 10 MB (the shipped default), not disabled |
 - The fix applies in every phase that writes to OpenSearch (1, 2 and 3), through the one
   processor they share.
-- `REINDEX_THREAD_ELASTICSEARCH_BULK_SIZE` ≤ 0 really disables the Elasticsearch byte limit, as
-  its comment in `ReindexThread` says. Found while verifying this fix: `ContentletIndexOperationsES.createBulkProcessor`
-  builds `new ByteSizeValue(-1, ByteSizeUnit.MB)`, which the library rejects
-  (`Values less than -1 bytes are not supported: -1mb`) on every reindex iteration, so a
-  documented setting stalls reindexing in Phases 0–2. A value ≤ 0 must map to the library's
-  "unbounded" value (`-1` bytes); positive values keep their meaning.
 - `docs/backend/OPENSEARCH_CLIENT_CONFIGURATION.md` documents the threshold (in MB, approximate,
   to be set well below the server's `http.max_content_length`) and the workaround below for
   builds without the fix.
@@ -156,6 +150,7 @@ limit is approximate and should be set well below the server's `http.max_content
 
 - Detecting or surfacing a reindex thread that crash-loops on an `Error` — a separate,
   engine-independent issue.
+- The Elasticsearch path: it already batches by bytes.
 - The synchronous save path (`putToIndex` with `IndexPolicy.FORCE` / `WAIT_FOR`): one save's
   documents are sent together and are not a reindex batch.
 - Raising `http.max_content_length` on the server, streaming the request body, or changing the
@@ -203,17 +198,13 @@ it, so request size and memory drop proportionally, at the cost of more requests
 - **AC-007**: `REINDEX_THREAD_ELASTICSEARCH_BULK_SIZE=-1` with `OS_REINDEX_BULK_SIZE_MB` unset
   leaves the OpenSearch limit at 10 MB (the reproduction of AC-001 still passes). Only
   `OS_REINDEX_BULK_SIZE_MB` ≤ 0 disables it, and that logs one `WARN` naming the property.
-- **AC-008**: With `REINDEX_THREAD_ELASTICSEARCH_BULK_SIZE=-1` (or `0`), the Elasticsearch bulk
-  processor is created without error and batches by document count only; positive values
-  still bound the batch in MB.
 - **Verification method**: Unit tests of `OSIndexBulkProcessor` with a fake client that records
   each request's operations and size: flush by count (AC-003), flush by bytes before
   overflowing, a single oversized operation alone (AC-004), the property resolution table
   including `-1`/`0` and the non-inherited disable (AC-006, AC-007).
   Integration test in `dotcms-integration` (named `*Test`, registered in a `MainSuite*`) that
   queues large-but-legal contentlets and asserts AC-001, run at Phase 1 and Phase 3 through the
-  phased run recipe (AC-005). A unit test pins the Elasticsearch bulk-size conversion for
-  `-1`, `0` and a positive value (AC-008). AC-002 is verified manually with the reproduction environment
+  phased run recipe (AC-005). AC-002 is verified manually with the reproduction environment
   (memory behaviour is not deterministic enough for CI), and the result recorded on #37905.
 
 ## Assumptions
