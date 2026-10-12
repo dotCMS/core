@@ -46,8 +46,8 @@ public class ExperimentsFactoryImpl implements
 
     public static final String STATUS_FILTER = "SELECT * from experiment WHERE status = ?";
 
-    private static final String COUNT_BY_STATUS_BASE = "SELECT COUNT(*) AS total FROM experiment WHERE status = ?";
-    private static final String COUNT_BY_STATUS_UNION = " UNION ALL SELECT COUNT(*) AS total FROM experiment WHERE status = ?";
+    private static final String COUNT_BY_STATUS_IN =
+            "SELECT COUNT(*) AS total FROM experiment WHERE status IN (";
 
     private static final String ACTIVE_EXPERIMENTS_BY_PAGE = "SELECT experiment.* " +
     "FROM experiment " +
@@ -211,17 +211,16 @@ public class ExperimentsFactoryImpl implements
         if (statuses == null || statuses.isEmpty()) {
             return 0;
         }
-        // Build: SELECT COUNT(*) … WHERE status=? UNION ALL SELECT COUNT(*) … WHERE status=? …
-        // then sum the per-status counts in Java — one round-trip, no full-row fetch.
-        final StringBuilder sql = new StringBuilder(COUNT_BY_STATUS_BASE);
-        statuses.stream().skip(1).forEach(ignored -> sql.append(COUNT_BY_STATUS_UNION));
+        final String placeholders = statuses.stream()
+                .map(ignored -> "?")
+                .collect(Collectors.joining(", "));
+        final String sql = COUNT_BY_STATUS_IN + placeholders + ")";
 
-        final DotConnect dc = new DotConnect().setSQL(sql.toString());
+        final DotConnect dc = new DotConnect().setSQL(sql);
         statuses.forEach(status -> dc.addParam(status.name()));
 
-        return dc.loadObjectResults().stream()
-                .mapToInt(row -> Integer.parseInt(String.valueOf(row.get("total"))))
-                .sum();
+        final List<Map<String, Object>> result = dc.loadObjectResults();
+        return Integer.parseInt(String.valueOf(result.get(0).get("total")));
     }
 
     @Override
