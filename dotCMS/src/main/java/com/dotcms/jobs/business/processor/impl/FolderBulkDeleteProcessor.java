@@ -275,11 +275,16 @@ public class FolderBulkDeleteProcessor implements JobProcessor, Cancellable {
      */
     static List<String> ancestorsFirst(final List<String> submittedPaths) {
         // A stable sort on the number of selected folders containing each path, so paths at the
-        // same depth within the selection keep submission order.
+        // same depth within the selection keep submission order. Counted once per path, not on
+        // every comparison.
+        final Map<String, Long> containingCount = new HashMap<>();
+        for (final String path : submittedPaths) {
+            containingCount.put(path, submittedPaths.stream()
+                    .filter(other -> findCoveringAncestor(path, List.of(other)) != null)
+                    .count());
+        }
         return submittedPaths.stream()
-                .sorted(Comparator.comparingLong(path -> submittedPaths.stream()
-                        .filter(other -> findCoveringAncestor(path, List.of(other)) != null)
-                        .count()))
+                .sorted(Comparator.comparingLong(containingCount::get))
                 .toList();
     }
 
