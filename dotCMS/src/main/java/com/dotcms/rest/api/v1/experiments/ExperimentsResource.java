@@ -77,7 +77,7 @@ public class ExperimentsResource {
     private static final String HEALTH_KEY = "health";
     private static final String FEATURE_DISABLED_CODE = "FEATURE_DISABLED";
     private static final String FEATURE_DISABLED_MSG =
-            "The Experiments feature is currently disabled. Please contact dotCMS to enable it.";
+            "This instance is running in limited mode. The free experiment slot is already in use or this operation requires a full license. Please contact dotCMS to upgrade.";
     private static final String ANALYTICS_NOT_CONFIGURED_CODE = "ANALYTICS_NOT_CONFIGURED";
     private static final String ANALYTICS_NOT_CONFIGURED_MSG =
             "Analytics is not configured for this site. Please configure the Analytics App to use this feature.";
@@ -201,7 +201,7 @@ public class ExperimentsResource {
         final InitDataObject initData = getInitData(request, response);
         final User user = initData.getUser();
         if (!ConfigExperimentUtil.INSTANCE.isExperimentEnabled()) {
-            return featureDisabledResponse();
+            return limitedModeResponse();
         }
         final Experiment archivedExperiment = experimentsAPI.archive(experimentId, user);
         return Response.ok(
@@ -353,7 +353,7 @@ public class ExperimentsResource {
                     ExperimentLimitedModeGate.evaluate(experimentId, user);
             if (rejection.isPresent()) {
                 return switch (rejection.get()) {
-                    case FEATURE_DISABLED -> featureDisabledResponse();
+                    case FEATURE_DISABLED -> limitedModeResponse();
                     case SCHEDULED_START_NOT_ALLOWED -> scheduledStartNotAllowedResponse();
                     case DURATION_EXCEEDED -> durationExceededResponse();
                 };
@@ -387,7 +387,7 @@ public class ExperimentsResource {
         final InitDataObject initData = getInitData(request, response);
         final User user = initData.getUser();
         if (!ConfigExperimentUtil.INSTANCE.isExperimentEnabled()) {
-            return featureDisabledResponse();
+            return limitedModeResponse();
         }
         final Experiment endedExperiment = experimentsAPI.end(experimentId, user);
         return Response.ok(new ResponseEntitySingleExperimentView(endedExperiment)).build();
@@ -416,7 +416,7 @@ public class ExperimentsResource {
         final InitDataObject initData = getInitData(request, response);
         final User user = initData.getUser();
         if (!ConfigExperimentUtil.INSTANCE.isExperimentEnabled()) {
-            return featureDisabledResponse();
+            return limitedModeResponse();
         }
         final Experiment cancelledExperiment = experimentsAPI.cancel(experimentId, user);
         return Response.ok(new ResponseEntitySingleExperimentView(cancelledExperiment)).build();
@@ -764,10 +764,11 @@ public class ExperimentsResource {
     }
 
     /**
-     * Builds a {@code 403 FEATURE_DISABLED} gate response used when {@code FEATURE_FLAG_EXPERIMENTS=false}
-     * prevents an operation.
+     * Builds a {@code 403 FEATURE_DISABLED} response used when the instance is running in limited
+     * mode ({@code FEATURE_FLAG_EXPERIMENTS=false}) and the free slot is occupied or the operation
+     * is not available in limited mode.
      */
-    private static Response featureDisabledResponse() {
+    private static Response limitedModeResponse() {
         return Response.status(Response.Status.FORBIDDEN)
                 .entity(new ResponseEntityView<>(
                         List.of(new com.dotcms.rest.ErrorEntity(
