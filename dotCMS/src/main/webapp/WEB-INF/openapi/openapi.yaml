@@ -11091,8 +11091,8 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Feature disabled (FEATURE_DISABLED) — flag=false and slot occupied
-            or scheduled start
+          description: Scheduled start not allowed (SCHEDULED_START_NOT_ALLOWED) —
+            future startDate in limited mode
         "503":
           content:
             application/json: {}
