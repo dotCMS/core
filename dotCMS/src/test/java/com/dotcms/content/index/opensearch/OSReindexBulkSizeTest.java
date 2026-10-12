@@ -68,7 +68,7 @@ public class OSReindexBulkSizeTest {
         verifyNoWarn();
     }
 
-    /** An explicit OS value of -1 or 0 disables the limit and logs a (throttled) WARN naming the key. */
+    /** An explicit OS value of -1 disables the limit and logs a (throttled) WARN naming the key. */
     @Test
     public void test_explicitOsZeroOrNegative_disablesWithOneWarn() {
         assertTrue(resolve(-1, 10) <= 0);
@@ -76,10 +76,12 @@ public class OSReindexBulkSizeTest {
                 contains(OS_KEY), anyInt()), times(1));
     }
 
-    /** OS set to 0 also disables. */
+    /** OS set to 0 also disables, with the same WARN. */
     @Test
     public void test_explicitOsZero_disables() {
         assertTrue(resolve(0, 10) <= 0);
+        logger.verify(() -> Logger.warnEvery(eq(ContentletIndexOperationsOS.class), anyString(),
+                contains(OS_KEY), anyInt()), times(1));
     }
 
     /** OS unset: a positive ES value is inherited. */

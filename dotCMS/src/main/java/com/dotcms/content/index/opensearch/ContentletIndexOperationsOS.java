@@ -129,8 +129,8 @@ public class ContentletIndexOperationsOS implements ContentletIndexOperations {
      * <p>{@code opensearch-java} 3.x does not ship a built-in BulkProcessor equivalent, so
      * this class implements the same behaviour manually: operations accumulate in a pending
      * list and are flushed to OpenSearch whenever the list reaches {@code maxActions} or
-     * {@code maxBytes} of estimated size (as the Elasticsearch {@code BulkProcessor}'s
-     * {@code setBulkSize}, #37905), or when {@link #close()} is called. The supplied {@link IndexBulkListener} receives
+     * {@code maxBytes} of estimated size (analogous to the Elasticsearch
+     * {@code BulkProcessor}'s {@code setBulkSize}, #37905), or when {@link #close()} is called. The supplied {@link IndexBulkListener} receives
      * {@code beforeBulk} / {@code afterBulk} callbacks around each flush, mirroring the
      * contract provided by the Elasticsearch {@code BulkProcessor.Listener} adapter in
      * {@link ContentletIndexOperationsES}.</p>
