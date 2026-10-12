@@ -82,7 +82,7 @@ import {
     STATUS_TOAST_KEY,
     DotJspIframeDialogComponent,
     DotSidePanelHandle,
-    DotSidePanelNavController,
+    DotSidePanelService,
     injectSidePanel
 } from '@dotcms/ui';
 
@@ -254,7 +254,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
     readonly #messageService = inject(MessageService);
     readonly #fileService = inject(DotUploadFileService);
     readonly #dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
-    readonly #sidePanelNav = inject(DotSidePanelNavController);
+    readonly #sidePanels = inject(DotSidePanelService);
     readonly #dotRouterService = inject(DotRouterService);
     readonly #dialogService = inject(DialogService);
     readonly #folderService = inject(DotFolderService);
@@ -489,7 +489,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
         const panelOpen = this.#anyPanelOpen();
 
         untracked(() => {
-            this.#store.setTreeForceCollapsed(panelOpen && this.#sidePanelNav.shouldCollapse());
+            this.#store.setTreeForceCollapsed(panelOpen && this.#sidePanels.collapsesNavigation());
         });
     });
 

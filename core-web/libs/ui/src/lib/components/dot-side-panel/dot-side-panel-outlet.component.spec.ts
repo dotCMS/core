@@ -9,10 +9,10 @@ import { vi } from 'vitest';
 import { Component, Injector, inject, input, output, signal } from '@angular/core';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { GlobalStore } from '@dotcms/store';
 
 import { DotSidePanelOutletComponent } from './dot-side-panel-outlet.component';
 
-import { DotSidePanelNavController } from '../../services/dot-side-panel/dot-side-panel-nav.service';
 import {
     DotSidePanelContent,
     DotSidePanelRef,
@@ -39,10 +39,11 @@ describe('DotSidePanelOutletComponent', () => {
         component: DotSidePanelOutletComponent,
         providers: [
             mockProvider(DotMessageService, { get: (key: string) => key }),
-            mockProvider(DotSidePanelNavController, {
-                isTop: vi.fn().mockReturnValue(true),
-                acquire: vi.fn(),
-                release: vi.fn()
+            // Opening a panel collapses the main navigation.
+            mockProvider(GlobalStore, {
+                isNavigationCollapsed: vi.fn().mockReturnValue(false),
+                collapseNavigation: vi.fn(),
+                expandNavigation: vi.fn()
             })
         ]
     });
@@ -132,6 +133,19 @@ describe('DotSidePanelOutletComponent', () => {
 
         expect(content().requestClose).toHaveBeenCalled();
         expect(all('side-panel')).toHaveLength(1);
+    });
+
+    it('closes only the panel in front on Escape', () => {
+        open();
+        open(TestContentComponent, signal('footer.vtl'));
+        const [behind, inFront] = spectator.queryAll(TestContentComponent);
+
+        document.dispatchEvent(
+            new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })
+        );
+
+        expect(inFront.requestClose).toHaveBeenCalledTimes(1);
+        expect(behind.requestClose).not.toHaveBeenCalled();
     });
 
     it('takes the drawer away when the panel closes', () => {

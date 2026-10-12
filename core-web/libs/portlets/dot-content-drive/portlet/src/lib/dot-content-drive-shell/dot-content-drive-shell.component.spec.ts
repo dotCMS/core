@@ -67,7 +67,6 @@ import {
     STATUS_TOAST_KEY,
     DotJspIframeDialogComponent,
     DotSidePanelConfig,
-    DotSidePanelNavController,
     DotSidePanelService
 } from '@dotcms/ui';
 import { DOT_SYSTEM_CONFIG_SERVICE_MOCK, mockLocales } from '@dotcms/utils-testing';
@@ -165,6 +164,8 @@ const createSidePanelsFake = () => {
 
     return {
         opened,
+        // Wide by default: no panel collapses the main navigation or the tree.
+        collapsesNavigation: vi.fn().mockReturnValue(false),
         open: vi.fn((component: unknown, config: DotSidePanelConfig) => {
             const closed = new Subject<void>();
             const ref = {
@@ -287,11 +288,6 @@ describe('DotContentDriveShellComponent', () => {
                 getCurrentUser: vi.fn().mockReturnValue(of({}))
             }),
             mockProvider(DotHttpErrorManagerService),
-            mockProvider(DotSidePanelNavController, {
-                shouldCollapse: vi.fn().mockReturnValue(false),
-                acquire: vi.fn(),
-                release: vi.fn()
-            }),
             { provide: DotSidePanelService, useFactory: () => sidePanels }
         ],
         componentProviders: [
@@ -5206,8 +5202,6 @@ describe('DotContentDriveShellComponent', () => {
     });
 
     describe('Edit Content side panel', () => {
-        let sidePanelNav: SpyObject<DotSidePanelNavController>;
-
         /**
          * The location the real navigation service derives from a request: the identifier and
          * language for an edit, the content type variable for a create.
@@ -5242,10 +5236,6 @@ describe('DotContentDriveShellComponent', () => {
             languageId: 1,
             title: 'My content'
         };
-
-        beforeEach(() => {
-            sidePanelNav = spectator.inject(DotSidePanelNavController);
-        });
 
         /** The new editor's panel the shell opened last. Its content is loaded lazily. */
         const editPanel = (): OpenedPanel | undefined =>
@@ -5644,7 +5634,7 @@ describe('DotContentDriveShellComponent', () => {
             });
 
             it('forces the tree collapsed on narrow viewports while it is open', () => {
-                sidePanelNav.shouldCollapse.mockReturnValue(true);
+                sidePanels.collapsesNavigation.mockReturnValue(true);
                 spectator.detectChanges();
 
                 setLegacyRequest(LEGACY_REQUEST);
@@ -5659,7 +5649,7 @@ describe('DotContentDriveShellComponent', () => {
 
         describe('folder tree force-collapse (transient, decoupled from the real preference)', () => {
             it('forces the tree visually collapsed while the panel is open on narrow viewports, and clears the override on close', () => {
-                sidePanelNav.shouldCollapse.mockReturnValue(true);
+                sidePanels.collapsesNavigation.mockReturnValue(true);
                 spectator.detectChanges();
 
                 setPanelRequest(EDIT_REQUEST);
@@ -5672,7 +5662,7 @@ describe('DotContentDriveShellComponent', () => {
             });
 
             it('does not force a collapse on wide viewports', () => {
-                sidePanelNav.shouldCollapse.mockReturnValue(false);
+                sidePanels.collapsesNavigation.mockReturnValue(false);
                 spectator.detectChanges();
 
                 setPanelRequest(EDIT_REQUEST);
@@ -5687,7 +5677,7 @@ describe('DotContentDriveShellComponent', () => {
             // identically regardless of the user's real preference.
             it('is independent of the real tree expanded/collapsed preference', () => {
                 store.isTreeExpanded.mockReturnValue(false);
-                sidePanelNav.shouldCollapse.mockReturnValue(true);
+                sidePanels.collapsesNavigation.mockReturnValue(true);
                 spectator.detectChanges();
 
                 setPanelRequest(EDIT_REQUEST);
@@ -5998,11 +5988,6 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
                 getCurrentUser: vi.fn().mockReturnValue(of({}))
             }),
             mockProvider(DotHttpErrorManagerService),
-            mockProvider(DotSidePanelNavController, {
-                shouldCollapse: vi.fn().mockReturnValue(false),
-                acquire: vi.fn(),
-                release: vi.fn()
-            }),
             { provide: DotSidePanelService, useFactory: () => sidePanels }
         ],
         componentProviders: [

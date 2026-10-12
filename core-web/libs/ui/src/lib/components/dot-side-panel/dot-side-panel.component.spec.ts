@@ -8,45 +8,32 @@ import { DotMessageService } from '@dotcms/data-access';
 
 import { DotSidePanelComponent } from './dot-side-panel.component';
 
-import { DotSidePanelNavController } from '../../services/dot-side-panel/dot-side-panel-nav.service';
-
 const EXPANDED_STORAGE_KEY = 'dot-edit-content-side-panel-expanded';
 
 const PANEL = `
-    <dot-side-panel heading="header.vtl">
+    <dot-side-panel heading="header.vtl" [front]="front">
         <p data-testid="panel-body">The source</p>
     </dot-side-panel>`;
 
 describe('DotSidePanelComponent', () => {
-    let spectator: SpectatorHost<DotSidePanelComponent>;
-    let navController: { acquire: Mock; release: Mock; isTop: Mock };
+    let spectator: SpectatorHost<DotSidePanelComponent, { front: boolean }>;
     let closeRequested: Mock;
 
     const createHost = createHostFactory({
         component: DotSidePanelComponent,
-        providers: [
-            mockProvider(DotMessageService, { get: (key: string) => key }),
-            // Read per creation, so each test's controller reaches the panel.
-            { provide: DotSidePanelNavController, useFactory: () => navController }
-        ],
+        providers: [mockProvider(DotMessageService, { get: (key: string) => key })],
         detectChanges: false
     });
 
-    const open = (): void => {
-        spectator = createHost(PANEL);
+    /** Renders the panel, in front of the others unless told otherwise. */
+    const open = ({ front = true }: { front?: boolean } = {}): void => {
+        spectator = createHost(PANEL, { hostProps: { front } });
         closeRequested = vi.fn();
         spectator.output('closeRequested').subscribe(closeRequested);
         spectator.detectChanges();
     };
 
-    beforeEach(() => {
-        localStorage.clear();
-        navController = {
-            acquire: vi.fn(),
-            release: vi.fn(),
-            isTop: vi.fn().mockReturnValue(true)
-        };
-    });
+    beforeEach(() => localStorage.clear());
 
     // `appendTo="body"` teleports the drawer out of the fixture, so DOM queries search from the
     // document root.
@@ -115,8 +102,7 @@ describe('DotSidePanelComponent', () => {
         });
 
         it('consumes the key but leaves a panel that is not frontmost open', () => {
-            open();
-            navController.isTop.mockReturnValue(false);
+            open({ front: false });
 
             const event = pressEscape();
 
@@ -157,8 +143,7 @@ describe('DotSidePanelComponent', () => {
         });
 
         it('ignores a click on its mask when another panel is in front', () => {
-            open();
-            navController.isTop.mockReturnValue(false);
+            open({ front: false });
 
             clickMask({ ownedByPanel: true });
 
@@ -166,23 +151,15 @@ describe('DotSidePanelComponent', () => {
         });
     });
 
-    describe('side-panel stack', () => {
-        it('joins the stack after the first render', () => {
+    describe('when it closes', () => {
+        it('gives Escape and the mask back', () => {
             open();
-
-            expect(navController.acquire).toHaveBeenCalledWith(spectator.component);
-        });
-
-        it('leaves the stack, and gives Escape and the mask back, when destroyed', () => {
-            open();
-            const { component } = spectator;
             const drawer = spectator.query(Drawer);
             const mask = document.createElement('div');
             drawer.mask = mask;
 
             spectator.fixture.destroy();
 
-            expect(navController.release).toHaveBeenCalledWith(component);
             expect(pressEscape().defaultPrevented).toBe(false);
             document.body.appendChild(mask);
             mask.dispatchEvent(new MouseEvent('click', { bubbles: true }));

@@ -1,19 +1,49 @@
-import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
-import { vi } from 'vitest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
+import { Mock, vi } from 'vitest';
 
 import { Component, EnvironmentInjector, createEnvironmentInjector, signal } from '@angular/core';
+
+import { GlobalStore } from '@dotcms/store';
 
 import { DotSidePanelRef, DotSidePanelService } from './dot-side-panel.service';
 
 @Component({ selector: 'dot-test-content', template: '' })
 class TestContentComponent {}
 
+const PREV_NAV_COLLAPSED_KEY = 'dot-edit-content-side-panel-prev-nav-collapsed';
+
+const setViewportWidth = (width: number) =>
+    Object.defineProperty(window, 'innerWidth', { value: width, configurable: true });
+
 describe('DotSidePanelService', () => {
     let spectator: SpectatorService<DotSidePanelService>;
+    let navigation: {
+        isNavigationCollapsed: Mock;
+        collapseNavigation: Mock;
+        expandNavigation: Mock;
+    };
 
-    const createService = createServiceFactory(DotSidePanelService);
+    const createService = createServiceFactory({
+        service: DotSidePanelService,
+        providers: [
+            mockProvider(GlobalStore, {
+                isNavigationCollapsed: vi.fn().mockReturnValue(false),
+                collapseNavigation: vi.fn(),
+                expandNavigation: vi.fn()
+            })
+        ]
+    });
 
-    beforeEach(() => (spectator = createService()));
+    beforeEach(() => {
+        // mockProvider's vi.fn()s are shared across tests: clear their calls and restore defaults.
+        vi.clearAllMocks();
+        sessionStorage.clear();
+        // Narrow by default, so opening a panel collapses the navigation.
+        setViewportWidth(800);
+        spectator = createService();
+        navigation = spectator.inject(GlobalStore) as unknown as typeof navigation;
+        navigation.isNavigationCollapsed.mockReturnValue(false);
+    });
 
     /** An opener's injector, which the test can destroy as if the opener were. */
     const openerInjector = () => {
@@ -127,6 +157,74 @@ describe('DotSidePanelService', () => {
 
         it('lays its content out without padding until the content says otherwise', () => {
             expect(ref.contentStyleClass()).toBe('p-0!');
+        });
+    });
+
+    describe('main navigation', () => {
+        it('collapses an expanded nav when a panel opens and restores it when it closes', () => {
+            const ref = open();
+
+            expect(navigation.collapseNavigation).toHaveBeenCalledTimes(1);
+            expect(sessionStorage.getItem(PREV_NAV_COLLAPSED_KEY)).toBe('false');
+
+            ref.close();
+
+            expect(navigation.expandNavigation).toHaveBeenCalledTimes(1);
+            expect(sessionStorage.getItem(PREV_NAV_COLLAPSED_KEY)).toBeNull();
+        });
+
+        it('keeps an already-collapsed nav collapsed (no collapse, no restore)', () => {
+            navigation.isNavigationCollapsed.mockReturnValue(true);
+
+            const ref = open();
+            expect(navigation.collapseNavigation).not.toHaveBeenCalled();
+            expect(sessionStorage.getItem(PREV_NAV_COLLAPSED_KEY)).toBe('true');
+
+            ref.close();
+            expect(navigation.expandNavigation).not.toHaveBeenCalled();
+        });
+
+        it('collapses once for stacked panels and restores only when the last one closes', () => {
+            const outer = open();
+            const inner = open();
+
+            expect(navigation.collapseNavigation).toHaveBeenCalledTimes(1);
+
+            inner.close();
+            expect(navigation.expandNavigation).not.toHaveBeenCalled();
+
+            outer.close();
+            expect(navigation.expandNavigation).toHaveBeenCalledTimes(1);
+        });
+
+        it('leaves the nav alone on a wide viewport', () => {
+            // The threshold itself counts as wide: the comparison is exclusive (`<`).
+            setViewportWidth(2560);
+
+            const ref = open();
+            expect(spectator.service.collapsesNavigation()).toBe(false);
+            expect(navigation.collapseNavigation).not.toHaveBeenCalled();
+            expect(sessionStorage.getItem(PREV_NAV_COLLAPSED_KEY)).toBeNull();
+
+            ref.close();
+            expect(navigation.expandNavigation).not.toHaveBeenCalled();
+        });
+
+        it('keeps the pre-panel state remembered before a refresh with a panel open', () => {
+            // A refresh: storage already holds the original (expanded) state, and the nav is
+            // collapsed from before the refresh.
+            sessionStorage.setItem(PREV_NAV_COLLAPSED_KEY, 'false');
+            navigation.isNavigationCollapsed.mockReturnValue(true);
+
+            const ref = open();
+
+            expect(sessionStorage.getItem(PREV_NAV_COLLAPSED_KEY)).toBe('false');
+            expect(navigation.collapseNavigation).not.toHaveBeenCalled();
+
+            ref.close();
+
+            expect(navigation.expandNavigation).toHaveBeenCalledTimes(1);
+            expect(sessionStorage.getItem(PREV_NAV_COLLAPSED_KEY)).toBeNull();
         });
     });
 });

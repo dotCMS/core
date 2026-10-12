@@ -73,7 +73,6 @@ export * from './lib/services/dot-keyboard-shortcut/overlay';
 // the root of the app.
 export * from './lib/components/dot-side-panel/dot-side-panel-outlet.component';
 export * from './lib/services/dot-side-panel/dot-side-panel.service';
-export * from './lib/services/dot-side-panel/dot-side-panel-nav.service';
 export * from './lib/services/dot-side-panel/inject-side-panel';
 export * from './lib/components/dot-search-input/constants';
 export * from './lib/components/dot-severity-icon/dot-severity-icon.component';

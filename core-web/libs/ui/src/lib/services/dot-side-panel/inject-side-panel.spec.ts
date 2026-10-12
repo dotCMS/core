@@ -1,7 +1,9 @@
-import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
 import { vi } from 'vitest';
 
 import { Component, signal } from '@angular/core';
+
+import { GlobalStore } from '@dotcms/store';
 
 import { DotSidePanelService } from './dot-side-panel.service';
 import { injectSidePanel } from './inject-side-panel';
@@ -32,7 +34,17 @@ class TestOpenerComponent {
 describe('injectSidePanel', () => {
     let spectator: Spectator<TestOpenerComponent>;
 
-    const createComponent = createComponentFactory(TestOpenerComponent);
+    const createComponent = createComponentFactory({
+        component: TestOpenerComponent,
+        // Opening a panel collapses the main navigation.
+        providers: [
+            mockProvider(GlobalStore, {
+                isNavigationCollapsed: vi.fn().mockReturnValue(false),
+                collapseNavigation: vi.fn(),
+                expandNavigation: vi.fn()
+            })
+        ]
+    });
 
     beforeEach(() => (spectator = createComponent()));
 

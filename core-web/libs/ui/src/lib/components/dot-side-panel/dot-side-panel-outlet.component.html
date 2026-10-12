@@ -1,7 +1,8 @@
-@for (panel of $panels(); track panel.id) {
+@for (panel of $panels(); track panel.id; let last = $last) {
     <dot-side-panel
         [heading]="panel.heading()"
         [contentStyleClass]="panel.ref.contentStyleClass()"
+        [front]="last"
         (closeRequested)="panel.ref.requestClose()">
         @if (panel.component()) {
             <ng-container [dotSidePanelContent]="panel" />

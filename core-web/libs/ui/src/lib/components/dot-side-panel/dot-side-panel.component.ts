@@ -1,14 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import {
-    Component,
-    DestroyRef,
-    afterNextRender,
-    inject,
-    input,
-    output,
-    signal,
-    viewChild
-} from '@angular/core';
+import { Component, DestroyRef, inject, input, output, signal, viewChild } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { Drawer, DrawerModule } from 'primeng/drawer';
@@ -16,7 +7,6 @@ import { Drawer, DrawerModule } from 'primeng/drawer';
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 import { DotKeyboardShortcutService } from '../../services/dot-keyboard-shortcut/dot-keyboard-shortcut.service';
 import { hasOverlayAbove } from '../../services/dot-keyboard-shortcut/overlay';
-import { DotSidePanelNavController } from '../../services/dot-side-panel/dot-side-panel-nav.service';
 
 /**
  * Shared by every side panel, so the author's expanded (full-width) choice carries over between
@@ -46,9 +36,8 @@ function writeExpandedPreference(expanded: boolean): void {
  * The drawer of one open side panel. `DotSidePanelOutletComponent` renders one for each panel
  * `DotSidePanelService` has open, and puts the panel's content inside; nothing else mounts it.
  *
- * It is open for as long as it is mounted: from the moment it exists it claims Escape, listens for
- * clicks on its mask and joins the side-panel stack, which collapses the main navigation. What the
- * panels share lives here:
+ * It is open for as long as it is mounted: from the moment it exists it claims Escape and listens
+ * for clicks on its mask. What the panels share lives here:
  *
  * - **The drawer and its header**: a transparent mask, 80% wide or the full width, the title, and
  *   the expand and close buttons.
@@ -56,12 +45,10 @@ function writeExpandedPreference(expanded: boolean): void {
  *   document listeners cannot arbitrate (`preventDefault` does not stop the other one), so the
  *   portlet behind would act on the same key. Escape is always consumed while the panel is open, and
  *   only asks to close when no overlay sits above the panel and it is the frontmost one.
- * - **A click on its own mask** asks to close too. The mask is matched by identity, not by its
- *   `p-drawer-mask` class, which every modal drawer shares (the UVE block editor sidebar is one); a
- *   click inside the panel, or a drag that starts inside and ends on the mask, resolves to another
- *   node and is ignored.
- * - **The side-panel stack**: joined after the first render (which collapses the main navigation)
- *   and left on destroy.
+ * - **A click on its own mask** asks to close too, when it is the frontmost panel. The mask is
+ *   matched by identity, not by its `p-drawer-mask` class, which every modal drawer shares (the UVE
+ *   block editor sidebar is one); a click inside the panel, or a drag that starts inside and ends on
+ *   the mask, resolves to another node and is ignored.
  * - **Full width**: the expanded preference, shared by every side panel.
  *
  * The page editor's experiments panel (`dot-experiments-panel`) keeps its own copy of these rules,
@@ -74,7 +61,11 @@ function writeExpandedPreference(expanded: boolean): void {
     templateUrl: './dot-side-panel.component.html'
 })
 export class DotSidePanelComponent {
-    readonly #navController = inject(DotSidePanelNavController);
+    /**
+     * Whether this is the frontmost open panel, the only one Escape and a click on the mask close.
+     * The outlet sets it: the last panel opened is in front.
+     */
+    readonly front = input(true);
 
     /**
      * The title in the panel's header. Not `header`: inside the template, the drawer's `#header`
@@ -105,17 +96,13 @@ export class DotSidePanelComponent {
         // component's DOM, so no template binding can hear the mask click.
         const document = inject(DOCUMENT);
         const onDocumentClick = (event: MouseEvent): void => {
-            if (event.target === this.$drawer()?.mask && this.#navController.isTop(this)) {
+            if (event.target === this.$drawer()?.mask && this.front()) {
                 this.closeRequested.emit();
             }
         };
         document.addEventListener('click', onDocumentClick);
 
-        // After the current render, so the store mutation it causes does not land during it.
-        afterNextRender(() => this.#navController.acquire(this));
-
         inject(DestroyRef).onDestroy(() => {
-            this.#navController.release(this);
             withdrawEscape();
             document.removeEventListener('click', onDocumentClick);
         });
@@ -140,7 +127,7 @@ export class DotSidePanelComponent {
             return true;
         }
 
-        if (this.#navController.isTop(this)) {
+        if (this.front()) {
             this.closeRequested.emit();
         }
 

@@ -1,6 +1,63 @@
 import { Observable, Subject } from 'rxjs';
 
-import { DestroyRef, Injectable, Injector, Signal, Type, isSignal, signal } from '@angular/core';
+import {
+    DestroyRef,
+    Injectable,
+    Injector,
+    Signal,
+    Type,
+    inject,
+    isSignal,
+    signal
+} from '@angular/core';
+
+import { GlobalStore } from '@dotcms/store';
+
+/**
+ * sessionStorage key remembering the main navigation's collapsed state from BEFORE the first side
+ * panel opened, so it can be restored when the last panel closes. `sessionStorage` (not
+ * `localStorage`) on purpose: it survives an in-page refresh while a panel is open (e.g. a shared
+ * `?editContent=` link, same tab), but is cleared for a genuinely new session — so a key left
+ * behind by a tab that closed/crashed before the last panel closed self-clears instead of making the
+ * next session wrongly expand a nav the user had chosen to keep collapsed.
+ */
+const PREV_NAV_COLLAPSED_KEY = 'dot-edit-content-side-panel-prev-nav-collapsed';
+
+function readPrevNavCollapsed(): boolean | null {
+    try {
+        const raw = sessionStorage.getItem(PREV_NAV_COLLAPSED_KEY);
+
+        return raw === null ? null : raw === 'true';
+    } catch {
+        return null;
+    }
+}
+
+function writePrevNavCollapsed(collapsed: boolean): void {
+    try {
+        sessionStorage.setItem(PREV_NAV_COLLAPSED_KEY, String(collapsed));
+    } catch {
+        // best-effort: storage failures must not break the panel.
+    }
+}
+
+function clearPrevNavCollapsed(): void {
+    try {
+        sessionStorage.removeItem(PREV_NAV_COLLAPSED_KEY);
+    } catch {
+        // best-effort.
+    }
+}
+
+/**
+ * Collapse the main navigation for a side panel below this viewport width (px).
+ *
+ * Note this makes collapsing the COMMON case, not an edge case: the panel takes 80% of the
+ * viewport, so the strip left beside it only clears the 270px expanded nav by a useful margin on
+ * very wide screens. In practice everything below ultra-wide / native 4K collapses — and since
+ * `innerWidth` is CSS pixels, a scaled or non-maximized 2560 display lands here too.
+ */
+const COLLAPSE_MAX_WIDTH = 2560;
 
 /**
  * What a side panel's content implements to guard its close: unsaved changes, a save under way.
@@ -122,14 +179,31 @@ export interface DotSidePanelEntry {
  * Opens side panels over whatever screen the author is on. Every side panel in the admin opens
  * here and renders in the single `<dot-side-panel-outlet>` at the root of the app, stacked in open
  * order: the last one opened is in front.
+ *
+ * While any panel is open, the main navigation (logo + menus) is collapsed to make room, on
+ * viewports below {@link COLLAPSE_MAX_WIDTH}. It collapses when the first panel opens and is
+ * restored when the last one closes, but only if it was expanded to begin with: a nav the author
+ * had already collapsed stays collapsed. Panels can stack (the relationship field opens one over
+ * another), so the nav stays collapsed until every one has closed. The pre-panel state is kept in
+ * sessionStorage, so it survives a refresh with a panel open but not a new session (see
+ * {@link PREV_NAV_COLLAPSED_KEY}).
  */
 @Injectable({ providedIn: 'root' })
 export class DotSidePanelService {
+    readonly #injector = inject(Injector);
     readonly #panels = signal<readonly DotSidePanelEntry[]>([]);
     #nextId = 0;
 
     /** The open panels, in open order. */
     readonly panels = this.#panels.asReadonly();
+
+    /**
+     * Whether an open panel collapses the main navigation on this viewport. True for most desktop
+     * widths; see {@link COLLAPSE_MAX_WIDTH} for why that is intended.
+     */
+    collapsesNavigation(): boolean {
+        return window.innerWidth < COLLAPSE_MAX_WIDTH;
+    }
 
     /**
      * Opens a panel showing `component`. Pass a promise, such as a dynamic `import()`, to keep the
@@ -145,9 +219,17 @@ export class DotSidePanelService {
         config: DotSidePanelConfig
     ): DotSidePanelRef {
         const loaded = signal<Type<unknown> | null>(isPending(component) ? null : component);
-        const ref: DotSidePanelRef = new DotSidePanelRef(() =>
-            this.#panels.update((panels) => panels.filter((panel) => panel.ref !== ref))
-        );
+        const ref: DotSidePanelRef = new DotSidePanelRef(() => {
+            this.#panels.update((panels) => panels.filter((panel) => panel.ref !== ref));
+
+            if (this.#panels().length === 0) {
+                this.#restoreNavigation();
+            }
+        });
+
+        if (this.#panels().length === 0) {
+            this.#collapseNavigation();
+        }
 
         this.#panels.update((panels) => [
             ...panels,
@@ -181,5 +263,37 @@ export class DotSidePanelService {
         ref.closed.subscribe({ complete: () => stopWatchingOpener?.() });
 
         return ref;
+    }
+
+    /**
+     * Collapses an expanded main navigation as the first panel opens, remembering how it was. The
+     * store is resolved here rather than with the service: openers inject the service up front, and
+     * most never open a panel.
+     */
+    #collapseNavigation(): void {
+        if (!this.collapsesNavigation()) {
+            return;
+        }
+
+        const navigation = this.#injector.get(GlobalStore);
+
+        // Write-if-absent: a refresh while a panel is open must not overwrite the ORIGINAL
+        // pre-panel state with the (already-collapsed) current one.
+        if (readPrevNavCollapsed() === null) {
+            writePrevNavCollapsed(navigation.isNavigationCollapsed());
+        }
+
+        if (!navigation.isNavigationCollapsed()) {
+            navigation.collapseNavigation();
+        }
+    }
+
+    /** Restores the main navigation as the last panel closes, if it was expanded before. */
+    #restoreNavigation(): void {
+        if (readPrevNavCollapsed() === false) {
+            this.#injector.get(GlobalStore).expandNavigation();
+        }
+
+        clearPrevNavCollapsed();
     }
 }
