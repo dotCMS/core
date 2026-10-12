@@ -67,6 +67,11 @@ interface DotConfigurationState {
     adminLocales: DotLoginLanguage[];
     /** Section whose save failed last; cleared when a new save starts. */
     failedSection: DotConfigurationSection | null;
+    /**
+     * The navbar logo override was ticked before a logo was chosen. Kept with the form, so
+     * Cancel and a fresh load untick it along with the rest of the edits.
+     */
+    navBarLogoOverride: boolean;
 }
 
 const initialState: DotConfigurationState = {
@@ -76,7 +81,8 @@ const initialState: DotConfigurationState = {
     keyDigest: '',
     regeneratingKey: false,
     adminLocales: [],
-    failedSection: null
+    failedSection: null,
+    navBarLogoOverride: false
 };
 
 /**
@@ -100,7 +106,7 @@ export const DotConfigurationStore = signalStore(
         const errors = computed(() => {
             const draft = store.draft();
 
-            return draft ? validate(draft) : {};
+            return draft ? validate(draft, store.original()) : {};
         });
         const hasErrors = computed(() => Object.keys(errors()).length > 0);
 
@@ -230,6 +236,7 @@ export const DotConfigurationStore = signalStore(
                             status: ComponentStatus.LOADED,
                             original: draft,
                             draft,
+                            navBarLogoOverride: false,
                             keyDigest: configuration.keyDigest ?? '',
                             adminLocales
                         });
@@ -239,6 +246,21 @@ export const DotConfigurationStore = signalStore(
             /** Edits branding and outbound email values in the form. Nothing is saved. */
             patchBranding(patch: Partial<DotConfigurationBranding>): void {
                 updateDraft((draft) => ({ ...draft, branding: { ...draft.branding, ...patch } }));
+            },
+
+            /**
+             * Ticks or unticks the navbar logo override. Unticking clears the navbar logo, so
+             * the admin top bar goes back to the dotCMS logo on save. Nothing is saved.
+             */
+            setNavBarLogoOverride(override: boolean): void {
+                patchState(store, { navBarLogoOverride: override });
+
+                if (!override) {
+                    updateDraft((draft) => ({
+                        ...draft,
+                        branding: { ...draft.branding, navBarLogo: '' }
+                    }));
+                }
             },
 
             /** Edits the authentication type in the form. Nothing is saved. */
@@ -253,7 +275,11 @@ export const DotConfigurationStore = signalStore(
 
             /** Throws away every edit and goes back to the values last stored on the server. */
             discard(): void {
-                patchState(store, { draft: store.original(), failedSection: null });
+                patchState(store, {
+                    draft: store.original(),
+                    failedSection: null,
+                    navBarLogoOverride: false
+                });
             },
 
             /**

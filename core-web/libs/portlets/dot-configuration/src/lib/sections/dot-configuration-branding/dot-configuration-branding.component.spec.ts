@@ -9,7 +9,11 @@ import { DotConfigurationColorFieldComponent } from '../../components/dot-config
 import { DotConfigurationStore } from '../../store/dot-configuration.store';
 import { createConfigurationStoreSignals } from '../../testing/configuration-store.stub';
 
-const createStoreStub = () => ({ ...createConfigurationStoreSignals(), patchBranding: vi.fn() });
+const createStoreStub = () => ({
+    ...createConfigurationStoreSignals(),
+    patchBranding: vi.fn(),
+    setNavBarLogoOverride: vi.fn()
+});
 
 describe('DotConfigurationBrandingComponent', () => {
     let spectator: Spectator<DotConfigurationBrandingComponent>;
@@ -172,24 +176,48 @@ describe('DotConfigurationBrandingComponent', () => {
             );
         });
 
-        it('reveals the logo picker when ticked', () => {
+        it('records the override in the store when ticked', () => {
             render();
 
-            spectator.triggerEventHandler('p-checkbox', 'ngModelChange', true);
-            spectator.detectChanges();
+            spectator.triggerEventHandler(
+                '[data-testid="configuration-navbar-logo-override"]',
+                'ngModelChange',
+                true
+            );
+
+            expect(store.setNavBarLogoOverride).toHaveBeenCalledWith(true);
+        });
+
+        it('reveals the logo picker while the override is ticked without a logo', () => {
+            store.navBarLogoOverride.set(true);
+            render();
 
             expect(spectator.query(byTestId('configuration-navbar-logo-file'))).toHaveText(
                 'No logo selected'
             );
         });
 
-        it('clears the navbar logo when unticked', () => {
+        it('hides the logo picker once the override is cleared, e.g. by Cancel', () => {
+            store.navBarLogoOverride.set(true);
+            render();
+
+            store.navBarLogoOverride.set(false);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('configuration-navbar-logo-tile'))).not.toExist();
+        });
+
+        it('records the override in the store when unticked', () => {
             patchDraftBranding({ navBarLogo: '/dA/nav-id/asset/nav.png' });
             render();
 
-            spectator.triggerEventHandler('p-checkbox', 'ngModelChange', false);
+            spectator.triggerEventHandler(
+                '[data-testid="configuration-navbar-logo-override"]',
+                'ngModelChange',
+                false
+            );
 
-            expect(store.patchBranding).toHaveBeenCalledWith({ navBarLogo: '' });
+            expect(store.setNavBarLogoOverride).toHaveBeenCalledWith(false);
         });
 
         it('asks the page to open the navbar logo picker', () => {

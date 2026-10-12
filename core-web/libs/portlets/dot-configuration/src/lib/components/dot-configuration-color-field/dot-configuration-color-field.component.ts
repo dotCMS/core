@@ -6,13 +6,33 @@ import { InputTextModule } from 'primeng/inputtext';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
-// The picker only understands six-digit hex; shorter or alpha forms are still valid to type.
-const SIX_DIGIT_HEX = /^#[0-9a-f]{6}$/i;
+const HEX_COLOR = /^#([0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
+
+/**
+ * The six-digit form of a color the server accepts, which is the only form PrimeNG's picker
+ * understands: `#abc` → `#aabbcc`; an alpha channel is dropped, since the picker has none.
+ *
+ * @param value - Color as typed.
+ * @returns The six-digit hex, or `null` when `value` is not a color yet.
+ */
+export function toPickerHex(value: string): string | null {
+    if (!HEX_COLOR.test(value)) {
+        return null;
+    }
+
+    const digits = value.slice(1);
+    const rgb =
+        digits.length <= 4
+            ? [...digits.slice(0, 3)].map((digit) => digit + digit).join('')
+            : digits.slice(0, 6);
+
+    return `#${rgb}`;
+}
 
 /**
  * Color setting: a swatch that opens PrimeNG's color picker, next to an editable hex input.
- * Typing a valid six-digit code moves the picker; picking a color writes its code into the
- * input. Both report through `valueChange`; validation comes from the page store.
+ * Typing any color the server accepts (`#abc`, `#abcd`, `#aabbcc`, `#aabbccdd`) moves the
+ * picker; picking a color writes its six-digit code into the input. Both report through `valueChange`; validation comes from the page store.
  */
 @Component({
     selector: 'dot-configuration-color-field',
@@ -33,8 +53,7 @@ export class DotConfigurationColorFieldComponent {
     /** What the picker shows; it keeps the last valid color while the input holds a partial code. */
     protected readonly $pickerValue = linkedSignal<string, string | null>({
         source: this.value,
-        computation: (value, previous) =>
-            SIX_DIGIT_HEX.test(value) ? value : (previous?.value ?? null)
+        computation: (value, previous) => toPickerHex(value) ?? previous?.value ?? null
     });
     protected readonly $errorId = computed(() => `${this.inputId()}-error`);
 

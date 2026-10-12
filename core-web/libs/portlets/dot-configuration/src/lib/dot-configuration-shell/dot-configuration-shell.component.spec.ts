@@ -316,7 +316,7 @@ describe('DotConfigurationShellComponent', () => {
             expect(dialogService().open).toHaveBeenCalledWith(
                 DotConfigurationTestMailDialogComponent,
                 expect.objectContaining({
-                    width: '500px',
+                    width: '700px',
                     data: { sender: 'Acme <noreply@acme.com>' }
                 })
             );

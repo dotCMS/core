@@ -8,7 +8,7 @@
 
     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div class="field">
-            <label for="configuration-portal-url">
+            <label for="configuration-portal-url" dotFieldRequired>
                 {{ 'configuration.outbound.portal-url' | dm }}
             </label>
             <input
@@ -31,7 +31,9 @@
         </div>
 
         <div class="field">
-            <label for="configuration-email">{{ 'configuration.outbound.email' | dm }}</label>
+            <label for="configuration-email" dotFieldRequired>
+                {{ 'configuration.outbound.email' | dm }}
+            </label>
             <p-inputgroup>
                 <input
                     pInputText

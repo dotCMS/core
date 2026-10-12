@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, output, signal } from '@angular/core';
+import { Component, computed, inject, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -39,9 +39,6 @@ export class DotConfigurationBrandingComponent {
     readonly changeLoginLogo = output<void>();
     readonly changeNavBarLogo = output<void>();
 
-    /** Ticked by the user before a navbar logo has been chosen. */
-    readonly #overrideRequested = signal(false);
-
     protected readonly $branding = computed(() => this.store.draft()?.branding);
     protected readonly $backgroundImage = computed(() => this.$branding()?.backgroundImage ?? '');
     protected readonly $backgroundFileName = computed(() => assetFileName(this.$backgroundImage()));
@@ -52,7 +49,7 @@ export class DotConfigurationBrandingComponent {
     protected readonly $navBarLogo = computed(() => this.$branding()?.navBarLogo ?? '');
     protected readonly $navBarLogoFileName = computed(() => assetFileName(this.$navBarLogo()));
     protected readonly $overrideNavBarLogo = computed(
-        () => !!this.$navBarLogo() || this.#overrideRequested()
+        () => !!this.$navBarLogo() || this.store.navBarLogoOverride()
     );
 
     onPrimaryColorChange(primaryColor: string): void {
@@ -63,15 +60,7 @@ export class DotConfigurationBrandingComponent {
         this.store.patchBranding({ secondaryColor });
     }
 
-    /**
-     * Unticking the override clears the navbar logo, so the admin top bar goes back to the
-     * dotCMS logo on save.
-     */
     onOverrideChange(override: boolean): void {
-        this.#overrideRequested.set(override);
-
-        if (!override) {
-            this.store.patchBranding({ navBarLogo: '' });
-        }
+        this.store.setNavBarLogoOverride(override);
     }
 }

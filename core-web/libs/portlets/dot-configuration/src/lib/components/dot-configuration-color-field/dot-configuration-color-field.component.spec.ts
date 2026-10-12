@@ -5,7 +5,10 @@ import { ColorPicker } from 'primeng/colorpicker';
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
-import { DotConfigurationColorFieldComponent } from './dot-configuration-color-field.component';
+import {
+    DotConfigurationColorFieldComponent,
+    toPickerHex
+} from './dot-configuration-color-field.component';
 
 describe('DotConfigurationColorFieldComponent', () => {
     let spectator: Spectator<DotConfigurationColorFieldComponent>;
@@ -41,7 +44,7 @@ describe('DotConfigurationColorFieldComponent', () => {
     it('labels the hex input', () => {
         render();
 
-        expect(spectator.query('label')).toHaveText('Primary color');
+        expect(spectator.query(byTestId('configuration-color-label'))).toHaveText('Primary color');
         expect(spectator.query(byTestId('configuration-color-input'))).toHaveAttribute(
             'id',
             'primary'
@@ -83,6 +86,13 @@ describe('DotConfigurationColorFieldComponent', () => {
         expect(spectator.query(ColorPicker)?.value).toEqual({ h: 0, s: 100, b: 100 });
     });
 
+    it('moves the picker to a short code the server accepts', async () => {
+        render({ value: '#f00' });
+        await spectator.fixture.whenStable();
+
+        expect(spectator.query(ColorPicker)?.value).toEqual({ h: 0, s: 100, b: 100 });
+    });
+
     it('leaves the picker alone while the typed code is incomplete', async () => {
         render({ value: '#00ff00' });
         await spectator.fixture.whenStable();
@@ -108,5 +118,20 @@ describe('DotConfigurationColorFieldComponent', () => {
         render();
 
         expect(spectator.query(byTestId('configuration-color-error'))).not.toExist();
+    });
+});
+
+describe('toPickerHex', () => {
+    it.each([
+        ['#abc', '#aabbcc'],
+        ['#abcd', '#aabbcc'],
+        ['#aabbcc', '#aabbcc'],
+        ['#aabbccdd', '#aabbcc']
+    ])('turns %s into %s', (value, expected) => {
+        expect(toPickerHex(value)).toBe(expected);
+    });
+
+    it.each(['', '#12', '#12345', 'red'])('returns null for %s', (value) => {
+        expect(toPickerHex(value)).toBeNull();
     });
 });

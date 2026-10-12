@@ -179,6 +179,26 @@ describe('dot-configuration mappers', () => {
             expect(validate(draft).backgroundImage).toBe('configuration.validation.asset-path');
         });
 
+        it('accepts a background saved by an older screen while it is left unchanged', () => {
+            const stored = {
+                ...valid,
+                branding: { ...valid.branding, backgroundImage: '/application/images/login.jpg' }
+            };
+
+            expect(validate(stored, stored).backgroundImage).toBeUndefined();
+        });
+
+        it('rejects that older background once it is typed again as a new value', () => {
+            const draft = {
+                ...valid,
+                branding: { ...valid.branding, backgroundImage: '/application/images/login.jpg' }
+            };
+
+            expect(validate(draft, valid).backgroundImage).toBe(
+                'configuration.validation.asset-path'
+            );
+        });
+
         it('requires language and time zone', () => {
             const draft = { ...valid, locale: { languageId: '', timeZoneId: '' } };
 

@@ -187,9 +187,15 @@ export function dirtySections(
  * Checks every field the page lets the user edit.
  *
  * @param draft - Values currently in the form.
+ * @param original - Values last stored on the server. A login background left as stored is
+ * accepted whatever its shape, as the server does, so one saved by an older screen does not
+ * block saving the rest of the page.
  * @returns The rejected fields, each with the i18n key of its message. Empty when valid.
  */
-export function validate(draft: DotConfigurationDraft): DotConfigurationErrors {
+export function validate(
+    draft: DotConfigurationDraft,
+    original?: DotConfigurationDraft | null
+): DotConfigurationErrors {
     const errors: DotConfigurationErrors = {};
     const { branding, locale } = draft;
 
@@ -219,6 +225,7 @@ export function validate(draft: DotConfigurationDraft): DotConfigurationErrors {
 
     if (
         branding.backgroundImage &&
+        branding.backgroundImage !== original?.branding.backgroundImage &&
         !ASSET_PATH.test(branding.backgroundImage) &&
         !BUNDLED_BACKGROUND.test(branding.backgroundImage)
     ) {

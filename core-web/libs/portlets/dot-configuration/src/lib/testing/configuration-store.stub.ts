@@ -20,6 +20,7 @@ export const createConfigurationStoreSignals = () => ({
     saving: signal(false),
     keyDigest: signal(createFakeCompanyConfiguration().keyDigest ?? ''),
     regeneratingKey: signal(false),
+    navBarLogoOverride: signal(false),
     adminLocales: signal<DotLoginLanguage[]>(FAKE_ADMIN_LOCALES),
     timezones: signal<DotSystemTimezone[]>([
         { id: 'UTC', label: 'Coordinated Universal Time (UTC)', offset: 0 },

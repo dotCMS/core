@@ -11,7 +11,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { catchError, finalize } from 'rxjs/operators';
 
 import { DotCompanyConfigurationService, DotHttpErrorManagerService } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 
 import { isValidSender } from '../../store/dot-configuration.mappers';
 
@@ -29,7 +29,13 @@ export interface DotConfigurationTestMailDialogData {
  */
 @Component({
     selector: 'dot-configuration-test-mail-dialog',
-    imports: [FormsModule, ButtonModule, InputTextModule, DotMessagePipe],
+    imports: [
+        FormsModule,
+        ButtonModule,
+        InputTextModule,
+        DotFieldRequiredDirective,
+        DotMessagePipe
+    ],
     templateUrl: './dot-configuration-test-mail-dialog.component.html',
     styleUrls: ['./dot-configuration-test-mail-dialog.component.scss']
 })

@@ -1,5 +1,7 @@
 <div class="field">
-    <label [for]="inputId()">{{ labelKey() | dm }}</label>
+    <label [for]="inputId()" data-testid="configuration-color-label">
+        {{ labelKey() | dm }}
+    </label>
     <div class="flex items-center gap-2">
         <p-colorpicker
             format="hex"

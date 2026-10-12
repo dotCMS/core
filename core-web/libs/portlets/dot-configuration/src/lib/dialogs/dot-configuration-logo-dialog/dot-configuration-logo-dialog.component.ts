@@ -6,7 +6,7 @@ import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { FileSelectEvent, FileUpload, FileUploadModule } from 'primeng/fileupload';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 
 import { injectImageUpload } from '../../services/dot-configuration-image-upload';
 import { assetFileName } from '../../store/dot-configuration.mappers';
@@ -30,7 +30,14 @@ export const LOGO_ACCEPT = '.svg,.png,image/svg+xml,image/png';
  */
 @Component({
     selector: 'dot-configuration-logo-dialog',
-    imports: [FormsModule, ButtonModule, FileUploadModule, InputTextModule, DotMessagePipe],
+    imports: [
+        FormsModule,
+        ButtonModule,
+        FileUploadModule,
+        InputTextModule,
+        DotFieldRequiredDirective,
+        DotMessagePipe
+    ],
     templateUrl: './dot-configuration-logo-dialog.component.html',
     styleUrls: ['./dot-configuration-logo-dialog.component.scss']
 })

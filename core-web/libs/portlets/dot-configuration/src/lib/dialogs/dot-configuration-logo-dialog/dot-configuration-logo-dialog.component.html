@@ -43,7 +43,9 @@
     </p-fileupload>
 
     <div class="field">
-        <label for="configuration-logo-path">{{ 'configuration.logo-dialog.path' | dm }}</label>
+        <label for="configuration-logo-path" dotFieldRequired>
+            {{ 'configuration.logo-dialog.path' | dm }}
+        </label>
         <input
             pInputText
             id="configuration-logo-path"

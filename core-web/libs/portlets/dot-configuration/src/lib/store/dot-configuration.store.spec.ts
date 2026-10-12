@@ -123,6 +123,25 @@ describe('DotConfigurationStore', () => {
             expect(store.canSave()).toBe(false);
         });
 
+        it('unticking the navbar logo override clears the navbar logo', () => {
+            store.patchBranding({ navBarLogo: '/dA/nav-id/asset/nav.png' });
+            store.setNavBarLogoOverride(true);
+
+            store.setNavBarLogoOverride(false);
+
+            expect(store.navBarLogoOverride()).toBe(false);
+            expect(store.draft()?.branding.navBarLogo).toBe('');
+        });
+
+        it('discard also unticks a navbar logo override with no logo chosen', () => {
+            store.setNavBarLogoOverride(true);
+            store.patchBranding({ primaryColor: '#111111' });
+
+            store.discard();
+
+            expect(store.navBarLogoOverride()).toBe(false);
+        });
+
         it('discard goes back to the values last saved', () => {
             store.patchBranding({ primaryColor: '#111111' });
             store.setAuthType(DotCompanyAuthType.USER_ID);

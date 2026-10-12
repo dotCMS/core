@@ -152,7 +152,7 @@ export class DotConfigurationShellComponent implements DotConfigurationUnsavedWo
         this.#openDialog<string>(
             DotConfigurationTestMailDialogComponent,
             'configuration.test-mail.header',
-            '500px',
+            '700px',
             { sender }
         ).subscribe((sentFrom) => {
             if (sentFrom) {

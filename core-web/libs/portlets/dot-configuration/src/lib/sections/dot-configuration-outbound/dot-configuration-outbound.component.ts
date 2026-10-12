@@ -5,7 +5,7 @@ import { ButtonModule } from 'primeng/button';
 import { InputGroupModule } from 'primeng/inputgroup';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 
 import { DotConfigurationCardComponent } from '../../components/dot-configuration-card/dot-configuration-card.component';
 import { DotConfigurationStore } from '../../store/dot-configuration.store';
@@ -21,6 +21,7 @@ import { DotConfigurationStore } from '../../store/dot-configuration.store';
         ButtonModule,
         InputGroupModule,
         InputTextModule,
+        DotFieldRequiredDirective,
         DotMessagePipe,
         DotConfigurationCardComponent
     ],
