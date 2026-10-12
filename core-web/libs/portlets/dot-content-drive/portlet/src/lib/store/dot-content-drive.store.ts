@@ -21,6 +21,7 @@ import {
     DotFolderBulkDeleteService,
     DotFolderBulkDuplicateService,
     DotLanguagesService,
+    DotSessionStorageService,
     DotUploadFileService
 } from '@dotcms/data-access';
 import {
@@ -74,6 +75,7 @@ import {
     getUserSearchableActive,
     listsFolders,
     parseWorkflowFilter,
+    resolveContentDriveUrlIntent,
     sortedEncodedFilters,
     toRequestLocation,
     withFilterDefaults
@@ -640,6 +642,7 @@ export const DotContentDriveStore = signalStore(
         const route = inject(ActivatedRoute);
         const globalStore = inject(GlobalStore);
         const location = inject(Location);
+        const dotSessionStorageService = inject(DotSessionStorageService);
         let initEffect: EffectRef;
         let searchEffect: EffectRef;
         let locationSub: SubscriptionLike;
@@ -656,11 +659,32 @@ export const DotContentDriveStore = signalStore(
                 // first search DOES wait on this — see the gate in `loadItems`.
                 store.loadDefaultLanguage();
 
+                // The content type last opened in the Content Types editor (#37903). Read once per
+                // Drive entry and forgotten right away, whether or not it ends up applied.
+                let rememberedContentType = dotSessionStorageService.consumeLastContentType();
+
                 initEffect = effect(() => {
                     const queryParams = route.snapshot.queryParams;
                     const currentSite = globalStore.siteDetails();
                     const path = queryParams['path'] || DEFAULT_PATH;
-                    const filters = decodeFilters(queryParams['filters'] || '');
+                    const urlFilters = decodeFilters(queryParams['filters'] || '');
+                    // A URL that already says what to show (valid filters, or an item or folder
+                    // dialog the shell will open) wins; the remembered type is only for opening the
+                    // Drive directly. Both are judged after parsing, so a URL whose filters decode
+                    // to nothing or whose dialog params open nothing doesn't count.
+                    const urlHasInstructions =
+                        Object.keys(urlFilters).length > 0 ||
+                        resolveContentDriveUrlIntent(queryParams).kind !== 'none';
+                    const filters =
+                        rememberedContentType && currentSite && !urlHasInstructions
+                            ? { contentType: [rememberedContentType] }
+                            : urlFilters;
+                    // Used on the first run that has a site only. A run before the site has loaded
+                    // would be followed by one that re-reads the opening URL and loses it; a later
+                    // site change must not bring it back (FR-005).
+                    if (currentSite) {
+                        rememberedContentType = null;
+                    }
                     const queryTreeExpanded =
                         queryParams['isTreeExpanded'] ?? DEFAULT_TREE_EXPANDED.toString();
 

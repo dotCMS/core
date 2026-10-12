@@ -43,6 +43,19 @@ on:
         required: false
         type: boolean
         default: true
+      # generate-docker produces the deployment context AND a throwaway test
+      # image. Test phases need both; release needs only the context. See the
+      # matching inputs in core-cicd/maven-job.
+      generate-test-image:
+        description: 'Build, save and upload the throwaway test image. Only test phases consume it.'
+        required: false
+        type: boolean
+        default: true
+      generate-build-classes:
+        description: 'Upload per-module build classes. Only test phases consume them.'
+        required: false
+        type: boolean
+        default: true
       java-version:
         description: 'Override Java version (SDKMAN format, e.g., 25.0.1-open)'
         required: false
@@ -54,10 +67,15 @@ on:
         type: string
         default: ''
       artifact-suffix:
-        description: 'Artifact suffix without leading separator (e.g., java25, java25-ms). Separators added automatically: dash (-) for Maven artifacts, underscore (_) for Docker tags. If not set, derived from java-version major (e.g., java25).'
+        description: 'Artifact suffix without leading separator (e.g., java-25, java-25-ms). Separators added automatically: dash (-) for Maven artifacts, underscore (_) for Docker tags. If not set, derived from java-version major (e.g., java-25).'
         required: false
         type: string
         default: ''
+      release-build:
+        description: 'Install the Maven coordinates the release phase will publish (applies -Dchangelist for Java variants). Release workflows only.'
+        required: false
+        type: boolean
+        default: false
     secrets:
       # Remote build cache (S3). Absent secrets simply disable the cache, so any
       # caller that does not pass these -- every release workflow -- builds from
@@ -72,6 +90,13 @@ on:
         required: false
       build-cache-bucket:
         required: false
+    outputs:
+      # Single source of the resolved suffix. Downstream jobs (deployment,
+      # release) consume this rather than re-deriving it from java-version;
+      # three independent derivations is how '-java25' and '-java-25' diverged.
+      artifact-suffix:
+        description: 'Resolved artifact suffix without leading separator (e.g. java-25). Empty for the primary build.'
+        value: ${{ jobs.build-jdk11.outputs.artifact-suffix }}
 
 jobs:
   # Initial JDK Build
@@ -84,6 +109,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+    outputs:
+      artifact-suffix: ${{ steps.maven-build.outputs.artifact-suffix }}
     steps:
       # Checkout code based on whether a specific ref is provided
       - name: Checkout code
@@ -147,7 +174,8 @@ jobs:
           save: ${{ github.event_name == 'merge_group' || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
 
       # Run the Maven build job
-      - uses: ./.github/actions/core-cicd/maven-job
+      - id: maven-build
+        uses: ./.github/actions/core-cicd/maven-job
         with:
           stage-name: "Initial Artifact Build"
           # No -Dgithub.event.name: its only effect was activating core-web's is_pr profile,
@@ -159,9 +187,12 @@ jobs:
           cleanup-runner: true
           version: ${{ inputs.version }}
           generate-docker: ${{ inputs.generate-docker }}
+          generate-test-image: ${{ inputs.generate-test-image }}
+          generate-build-classes: ${{ inputs.generate-build-classes }}
           java-version: ${{ inputs.java-version }}
           maven-compiler-release: ${{ inputs.maven-compiler-release }}
           artifact-suffix: ${{ inputs.artifact-suffix }}
+          release-build: ${{ inputs.release-build }}
 
       # Record who produced each cache entry. Nothing in an S3 bucket says which
       # ref wrote a given hash, which is half of what makes a shared build cache
