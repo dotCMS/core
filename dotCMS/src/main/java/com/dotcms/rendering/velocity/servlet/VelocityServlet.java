@@ -11,6 +11,7 @@ import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.UserWebAPIImpl;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.filters.CMSUrlUtil;
 import com.dotmarketing.filters.Constants;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetNotFoundException;
@@ -172,15 +173,8 @@ public class VelocityServlet extends HttpServlet {
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
         } catch (DotSecurityException dse) {
             Logger.warnAndDebug(this.getClass(), dse.getMessage(),dse);
-            if(!response.isCommitted()) {
-                if(user==null || APILocator.getUserAPI().getAnonymousUserNoThrow().equals(user)) {
-                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
-                    return;
-                }else {
-                    response.sendError(HttpServletResponse.SC_FORBIDDEN);
-                    return;
-                }
-            }
+            handleSecurityException(user, request, response);
+            return;
         } catch (HTMLPageAssetNotFoundException hpnfe) {
             Logger.warnAndDebug(this.getClass(), hpnfe.getMessage(),hpnfe);
             if(!response.isCommitted()) {
@@ -239,4 +233,35 @@ public class VelocityServlet extends HttpServlet {
       return false;
   }
 
+
+    /**
+     * Answers a page the current user may not read. A signed-out visitor (no user, or the anonymous user) gets a
+     * 401, and the page's query string is saved in the session ({@link SecurityUtils#rememberLoginQueryString}),
+     * because the 401 error page that runs next can no longer see it and an SSO login needs it to return the
+     * visitor to the full URL. A signed-in user gets a 403, and any saved query string and its path are cleared. Nothing is
+     * written when the response is already committed.
+     *
+     * @param user     the user the page was rendered for, may be {@code null}
+     * @param request  the page request
+     * @param response the page response
+     * @throws IOException when the error cannot be sent
+     */
+    static void handleSecurityException(final User user, final HttpServletRequest request,
+                                        final HttpServletResponse response) throws IOException {
+
+        if (response.isCommitted()) {
+            return;
+        }
+        if (user == null || APILocator.getUserAPI().getAnonymousUserNoThrow().equals(user)) {
+            SecurityUtils.rememberLoginQueryString(request);
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+        } else {
+            final HttpSession session = request.getSession(false);
+            if (session != null) {
+                session.removeAttribute(SecurityUtils.REDIRECT_AFTER_LOGIN_QUERY_STRING);
+                session.removeAttribute(SecurityUtils.REDIRECT_AFTER_LOGIN_QUERY_PATH);
+            }
+            response.sendError(HttpServletResponse.SC_FORBIDDEN);
+        }
+    }
 }
