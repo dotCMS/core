@@ -332,13 +332,36 @@ describe('DotUveIframeComponent', () => {
             expect(options).toEqual(expect.objectContaining({ capture: true }));
         });
 
-        it('should stop propagation for every click, even ones it does not recognize as a link or edit target', () => {
-            // Regression test for dotCMS/core#37961: a click that lands just
-            // outside the real anchor (e.g. a padded/delegate-click wrapper a
-            // page's own navigation theme made clickable) must never reach the
-            // page's own bubble-phase handlers — otherwise that handler can
-            // perform its own `location.href` navigation, silently bypassing
-            // dotCMS and blanking the canvas.
+        it('should stop propagation for a click that resolves to a link', () => {
+            // Confirms the narrowed condition (QA regression fix, see below)
+            // still protects the original scenario (dotCMS/core#37961): a
+            // click that resolves to a real link — including via
+            // resolveClickedAnchor's pointer-events:none descendant fallback,
+            // e.g. a delegate wrapper around a link a page's own router
+            // treats as "this click means navigate" — must never reach the
+            // page's own bubble-phase handlers, or that handler could
+            // perform its own `location.href` navigation and bypass the SPA.
+            (component as any).handleInlineScripts(false);
+
+            const linkTarget = document.createElement('a');
+            linkTarget.setAttribute('href', '/some-page');
+            const clickEvent = createClickWithTarget(linkTarget);
+            const stopPropagationSpy = vi.spyOn(clickEvent, 'stopPropagation');
+
+            captureClickHandler?.(clickEvent);
+
+            expect(stopPropagationSpy).toHaveBeenCalled();
+        });
+
+        it('should not stop propagation for a click that does not resolve to a link or an editable target', () => {
+            // Regression test: QA verification on dotCMS/core#37961 failed
+            // the first version of this fix — stopping every unrecognized
+            // click, not just link clicks, silenced page-owned, non-navigating
+            // UI in the editor preview. Repro'd with a real Usercentrics
+            // cookie-consent dialog: its Accept/Reject buttons stopped
+            // responding, because neither is a link nor one of this iframe's
+            // own four target types. Only a click that resolves to a link
+            // needs stopping.
             (component as any).handleInlineScripts(false);
 
             const plainDiv = document.createElement('div');
@@ -347,23 +370,27 @@ describe('DotUveIframeComponent', () => {
 
             captureClickHandler?.(clickEvent);
 
-            expect(stopPropagationSpy).toHaveBeenCalled();
+            expect(stopPropagationSpy).not.toHaveBeenCalled();
         });
 
-        it('should not stop propagation for clicks on a block-editor inline-edit target', () => {
+        it('should not stop propagation for a link click inside a block-editor inline-edit target', () => {
             // Regression test for the block-editor inline-editing regression
             // introduced while fixing dotCMS/core#37961: the `@dotcms/uve` SDK
             // wires block-editor fields with its own bubble-phase `click`
             // listener directly on the [data-block-editor-content] node. Since
             // this listener runs on `window` during the capture phase — before
-            // the event ever reaches that node — unconditionally stopping
-            // propagation here would prevent the SDK's handler from ever firing,
-            // silently breaking block-editor inline editing.
+            // the event ever reaches that node — stopping propagation here
+            // (even for a click that resolves to a link, e.g. one embedded in
+            // the block's rich content) would prevent the SDK's handler from
+            // ever firing, silently breaking block-editor inline editing.
             (component as any).handleInlineScripts(false);
 
-            const blockEditorTarget = document.createElement('div');
-            blockEditorTarget.setAttribute('data-block-editor-content', '');
-            const clickEvent = createClickWithTarget(blockEditorTarget);
+            const blockEditorWrapper = document.createElement('div');
+            blockEditorWrapper.setAttribute('data-block-editor-content', '');
+            const embeddedLink = document.createElement('a');
+            embeddedLink.setAttribute('href', '/page');
+            blockEditorWrapper.appendChild(embeddedLink);
+            const clickEvent = createClickWithTarget(embeddedLink);
             const stopPropagationSpy = vi.spyOn(clickEvent, 'stopPropagation');
 
             captureClickHandler?.(clickEvent);
@@ -371,19 +398,23 @@ describe('DotUveIframeComponent', () => {
             expect(stopPropagationSpy).not.toHaveBeenCalled();
         });
 
-        it('should not stop propagation for clicks inside a WYSIWYG [data-mode] inline-edit target', () => {
+        it('should not stop propagation for a link click inside a WYSIWYG [data-mode] inline-edit target', () => {
             // Regression test: TinyMCE (configured `inline: true` in
             // inline-edit.service.ts) binds its content click dispatch
             // directly on the editable [data-mode] node itself
-            // (`editor.getBody()`). Unconditionally stopping propagation on
-            // the window capture-phase listener would prevent that native
-            // click from ever reaching the editable element, breaking
-            // selection/click-reactive behavior inside the WYSIWYG field.
+            // (`editor.getBody()`). Stopping propagation here — even for a
+            // click that resolves to a link embedded in the field's rich
+            // text — would prevent that native click from ever reaching the
+            // editable element, breaking selection/click-reactive behavior
+            // inside the WYSIWYG field.
             (component as any).handleInlineScripts(false);
 
-            const wysiwygTarget = document.createElement('div');
-            wysiwygTarget.setAttribute('data-mode', 'edit');
-            const clickEvent = createClickWithTarget(wysiwygTarget);
+            const wysiwygWrapper = document.createElement('div');
+            wysiwygWrapper.setAttribute('data-mode', 'edit');
+            const embeddedLink = document.createElement('a');
+            embeddedLink.setAttribute('href', '/page');
+            wysiwygWrapper.appendChild(embeddedLink);
+            const clickEvent = createClickWithTarget(embeddedLink);
             const stopPropagationSpy = vi.spyOn(clickEvent, 'stopPropagation');
 
             captureClickHandler?.(clickEvent);
@@ -391,7 +422,7 @@ describe('DotUveIframeComponent', () => {
             expect(stopPropagationSpy).not.toHaveBeenCalled();
         });
 
-        it("should not stop propagation for clicks on TinyMCE's own floating toolbar UI", () => {
+        it("should not stop propagation for a link click on TinyMCE's own floating toolbar UI", () => {
             // Regression test: TinyMCE's UI framework (modern skin,
             // classPrefix "mce-") renders every control — toolbar, buttons,
             // menus — with an id prefixed "mceu_", and that floating toolbar
@@ -405,7 +436,10 @@ describe('DotUveIframeComponent', () => {
 
             const toolbarButton = document.createElement('button');
             toolbarButton.setAttribute('id', 'mceu_42');
-            const clickEvent = createClickWithTarget(toolbarButton);
+            const embeddedLink = document.createElement('a');
+            embeddedLink.setAttribute('href', '/page');
+            toolbarButton.appendChild(embeddedLink);
+            const clickEvent = createClickWithTarget(embeddedLink);
             const stopPropagationSpy = vi.spyOn(clickEvent, 'stopPropagation');
 
             captureClickHandler?.(clickEvent);
@@ -413,21 +447,24 @@ describe('DotUveIframeComponent', () => {
             expect(stopPropagationSpy).not.toHaveBeenCalled();
         });
 
-        it('should not stop propagation for clicks on a dotCMS contentlet selection target', () => {
+        it('should not stop propagation for a link click on a dotCMS contentlet selection target', () => {
             // Regression test (CRITICAL): the `@dotcms/uve` SDK's
             // onContentletClicked() binds its own capture-phase click listener
             // on `document.documentElement`, not `window`, to drive contentlet
             // selection (libs/sdk/uve/src/internal/events.ts). Since capture
             // traverses window -> document -> documentElement -> ... -> target,
-            // this component's window-level listener runs first; unconditionally
-            // stopping propagation there would prevent the SDK's listener from
-            // ever seeing the click, breaking contentlet selection on every
-            // traditional (VTL) page.
+            // this component's window-level listener runs first; stopping
+            // propagation there — even for a click that resolves to a link —
+            // would prevent the SDK's listener from ever seeing the click,
+            // breaking contentlet selection on every traditional (VTL) page.
             (component as any).handleInlineScripts(false);
 
-            const contentletTarget = document.createElement('div');
-            contentletTarget.setAttribute('data-dot-object', 'contentlet');
-            const clickEvent = createClickWithTarget(contentletTarget);
+            const contentletWrapper = document.createElement('div');
+            contentletWrapper.setAttribute('data-dot-object', 'contentlet');
+            const embeddedLink = document.createElement('a');
+            embeddedLink.setAttribute('href', '/page');
+            contentletWrapper.appendChild(embeddedLink);
+            const clickEvent = createClickWithTarget(embeddedLink);
             const stopPropagationSpy = vi.spyOn(clickEvent, 'stopPropagation');
 
             captureClickHandler?.(clickEvent);
