@@ -51,17 +51,17 @@ Other decisions:
   **Asynchronous.** After the user confirms, the dialog closes and the import keeps running in the
   Drive's status toast, the one upload and folder copy already use. Like those, it is restored after
   a reload or after leaving the Drive and coming back.
-- Q: Which site does the import write to? → A: **The site the Drive is browsing, sent with the
-  request.** The import endpoint currently takes the site from the server session, which two
-  browser tabs on different sites share, so an import could land on the other tab's site. The
-  endpoint gains an optional site parameter, and the Drive always sends it. Callers that don't send
-  it keep today's behavior.
+- Q: Which site does the import use? → A: **The site the Drive is browsing, sent with the
+  request.** The import endpoint currently takes it from the server session, which two browser tabs
+  on different sites share. The endpoint gains an optional site parameter, and the Drive always
+  sends it. Callers that don't send it keep today's behavior. (Narrowed during planning: see the
+  next session.)
 - **Drag-and-drop import stays out of scope**, as the issue states: its "Out of scope" section
   lists "Drag and drop import", and one of its acceptance criteria says dropping a `.csv` uploads it
   as a file with no import prompt. The reason given there still holds: each row lands where its CSV
   says, not in the folder the file was dropped on, which would be confusing.
-- The preview summary shows **where the rows will land**: how many rows go to each site/folder from
-  the CSV, and how many go to the site root because they have none.
+- The preview summary shows **where the rows will land**: how many rows go to each site/folder.
+  (Corrected during planning: see the next session.)
 - **Language is prefilled with the language the user is working in** in the Drive, not the system
   default language.
 - Warnings and errors in the preview are listed **in line-number order**, so a row's problems can be
@@ -91,6 +91,25 @@ Other decisions:
 - **Retrying means submitting again.** The import endpoint has no retry operation, and the import
   job is never retried by the server. A user retries by fixing the form or the file and previewing
   or importing again.
+
+### Session 2026-10-13 (planning: corrections from the code)
+
+Planning traced the import code and found that the spec described row placement wrongly. The
+developer chose to keep the legacy behavior:
+
+- **Rows are placed exactly as in Content Search today.** A row goes to the site/folder in its
+  CSV's site/folder column. If the CSV has no such column, the row goes to the content type's
+  default site/folder (often System Host), not to the root of any site. A row whose site/folder
+  cell is empty is a row error. The earlier wording ("rows without one go to the site root")
+  was wrong and is replaced throughout.
+- **What the site parameter changes.** The server session's site is not used to place rows. It is
+  used to resolve references inside the row, such as File and Image field values. The site sent by
+  the Drive replaces the session's site for exactly that. This keeps two tabs on different sites
+  from resolving each other's references, without changing where rows land.
+- **Content type selector.** Adapting the Drive's content type filter to single selection proved
+  too costly for a shared component, so the form uses a plain single-select dropdown, as the spec
+  allowed. No existing API lists only the content types a user can write to, so the server gains a
+  way to list them.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -169,8 +188,8 @@ Pick one: only its permitted workflow actions and its indexed, importable fields
 8. **Given** the user opens the file picker, **When** they browse for a file, **Then** only `.csv`
    files can be chosen.
 9. **Given** the form, **When** the user reads it, **Then** it states that each row is placed by
-   the CSV's site/folder column, and rows without one go to the root of the site the Drive is
-   browsing, not the folder the Drive is showing.
+   the CSV's site/folder column, or, when the CSV has no such column, in the content type's default
+   site/folder, and never in the folder the Drive is showing.
 
 ---
 
@@ -185,9 +204,9 @@ including sending rows to the wrong place. It is also the only place that shows 
 row. Content Search shows it as plain text, which is hard to scan.
 
 **Independent Test**: Preview a CSV for any content type with a date field, where line 3 has a bad
-date, the file has an unknown column, and some rows have no site/folder. The summary shows the
-counts and how many rows go to each folder and to the site root, the error names line 3 and the date
-field, and the warning names the unknown column. Nothing is created.
+date and the file has an unknown column, with rows spread over two folders. The summary shows the
+counts and how many rows go to each folder, the error names line 3 and the date field, and the
+warning names the unknown column. Nothing is created.
 
 **Acceptance Scenarios**:
 
@@ -196,8 +215,9 @@ field, and the warning names the unknown column. Nothing is created.
 2. **Given** the preview is ready, **When** the user reads it, **Then** it shows a summary with
    rows read, headers matched, key fields used, items to create and items to update.
 3. **Given** the preview is ready, **When** the user reads the summary, **Then** it shows where the
-   rows will land: how many rows go to each site/folder named in the CSV (for example
-   "12 rows → //demo.dotcms.com/news/"), and how many go to the site root because they name none.
+   rows will land: how many rows go to each site/folder (for example
+   "12 rows → //demo.dotcms.com/news/"), including rows going to the content type's default
+   site/folder because the CSV has no site/folder column.
 4. **Given** the preview has warnings or errors, **When** the user reads them, **Then** warnings and
    errors are shown as separate, clearly distinguished groups with their counts, each listed in
    line-number order, and each entry shows its line number, field and offending value when the
@@ -267,8 +287,12 @@ no data rows, the form is still filled in, and replacing the file lets the user 
 - **No content type to import into.** Since Import CSV is always offered, a user with write
   permission on no content type can open the dialog. Content Type then shows that there is nothing
   they can import into, and no preview can start.
-- **Two tabs on different sites.** Each tab's import writes to the site that tab's Drive is
-  browsing, because the site is sent with the request, not taken from the shared server session.
+- **Two tabs on different sites.** Each tab's import resolves in-row references (such as File and
+  Image field values) against the site that tab's Drive is browsing, because the site is sent with
+  the request, not taken from the shared server session.
+- **CSV without a site/folder column.** Rows go to the content type's default site/folder, as in
+  Content Search, and the preview says so.
+- **Empty site/folder cell.** The row is an error, as in Content Search.
 - **Rows with a folder that doesn't exist.** They land at the site root with no error, as in
   legacy. Tracked separately, not fixed here.
 - **Very large files.** No new size limit; the server's existing upload limit applies. The status
@@ -305,10 +329,9 @@ no data rows, the form is still filled in, and replacing the file lets the user 
   and "Import CSV" instead of opening the file picker straight away.
 - **FR-003**: "Import CSV" MUST open a dialog containing Content Type, Language, Workflow Action,
   Key Fields, a CSV file picker and a sample CSV link.
-- **FR-004**: Content Type MUST be a single selection listing only the content types the user has
-  write permission on, excluding Host. The Drive's existing content type filter SHOULD be reused,
-  adapted to single selection; if that proves too complex, a plain single-select dropdown MUST be
-  used instead.
+- **FR-004**: Content Type MUST be a plain single-select dropdown, with a text filter, listing only
+  the content types the user has write permission on, excluding Host, as Content Search's import
+  does. The server MUST provide that list.
 - **FR-005**: Language MUST list every language plus a "Multilingual file" option, MUST be
   prefilled with the working language, and the chosen language MUST always be sent to the import
   (never left empty).
@@ -322,14 +345,15 @@ no data rows, the form is still filled in, and replacing the file lets the user 
   workflow action or file missing, or with a multilingual file and no key field, no preview MUST
   start and the form MUST show a clear message on each input that needs attention.
 - **FR-010**: The file picker MUST only accept `.csv` files.
-- **FR-011**: The dialog MUST tell the user that rows are placed by the CSV's site/folder column and
-  rows without one go to the root of the site the Drive is browsing.
+- **FR-011**: The dialog MUST tell the user that rows are placed by the CSV's site/folder column, or
+  in the content type's default site/folder when the CSV has no such column, and not in the folder
+  the Drive is showing.
 - **FR-012**: Preview MUST run the import without writing anything and show a summary (rows read,
   headers matched, key fields, items to create, items to update), then warnings and errors as
   separate groups with counts. Each entry MUST show its line number, field and value when known.
 - **FR-013**: The preview summary MUST show where the rows will land: the number of rows per
-  site/folder named in the CSV, and the number of rows that go to the site root because they name
-  none.
+  site/folder, computed the same way the import places them, including rows that go to the content
+  type's default site/folder.
 - **FR-014**: Warnings and errors in the preview MUST be listed in ascending line-number order.
   Messages without a line number MUST come first.
 - **FR-015**: The preview MUST be shown with the Drive's own visual components, not as plain text.
@@ -348,9 +372,10 @@ no data rows, the form is still filled in, and replacing the file lets the user 
 - **FR-021**: When an import ends while the user is in the Drive, the listing MUST refresh.
 - **FR-022**: When the preview fails, or the import can't be started, the dialog MUST show the error
   and keep the form editable with the user's inputs, so the user can retry by submitting again.
-- **FR-023**: The import endpoint MUST accept an optional site, and the rows that don't name a
-  site/folder MUST go to that site's root. Content Drive MUST always send the site it is browsing.
-  When no site is sent, the endpoint MUST behave as today (the session's site). A site that doesn't
+- **FR-023**: The import endpoint MUST accept an optional site. When sent, it MUST be used wherever
+  the import uses the session's site today (resolving in-row references such as File and Image
+  field values); it MUST NOT change where rows are placed. Content Drive MUST always send the site
+  it is browsing. When no site is sent, the endpoint MUST behave as today. A site that doesn't
   exist or that the user can't read MUST be refused.
 - **FR-024**: A new server endpoint MUST return, for a content type, the same sample CSV Content
   Search's import produces, and MUST refuse users who can't read that content type. Content Search
@@ -371,7 +396,7 @@ no data rows, the form is still filled in, and replacing the file lets the user 
   (succeeded or failed). The browser remembers the runs it started so the status toast can be
   restored.
 - **Preview result**: summary counts (rows read, to create, to update), where rows will land (rows
-  per site/folder, rows to the site root), and lists of info, warning and error messages, each with
+  per site/folder), and lists of info, warning and error messages, each with
   line number, field and value when known.
 - **Import summary**: created, updated and failed counts, and the server's message when it failed.
 
@@ -388,7 +413,8 @@ no data rows, the form is still filled in, and replacing the file lets the user 
   sees the import running and, when it ends, its summary.
 - **SC-005**: Every failed preview, failed start or failed import tells the user the server's error;
   no failure ends with a blank or stuck dialog or a toast with no message.
-- **SC-006**: In two tabs browsing different sites, each import lands on its own tab's site.
+- **SC-006**: In two tabs browsing different sites, each import resolves File and Image references
+  against its own tab's site, and rows land where Content Search would place them.
 - **SC-007**: The sample CSV downloaded from the Drive is identical to the one Content Search
   produces for the same content type.
 
@@ -413,8 +439,8 @@ no data rows, the form is still filled in, and replacing the file lets the user 
 
 - The server import runs as a background job and keeps its result; the toast's summary is read
   from there, including after a reload.
-- Where rows will land is worked out from the CSV's site/folder column during the preview. The plan
-  confirms whether the preview result already carries it or the server must add it.
+- Where rows will land is worked out by the server during the preview, using the same placement
+  logic as the import. The preview result doesn't carry it today, so the server adds it.
 - Language stays in the form even though the developer's description didn't mention it, because the
   import always needs one, and leaving it out silently turns on multilingual mode.
 - Out of scope: importing by drag and drop (see Clarifications), cancelling a running import, a full
