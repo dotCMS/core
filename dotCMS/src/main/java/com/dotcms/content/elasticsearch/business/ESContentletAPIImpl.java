@@ -3226,21 +3226,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return noErrors;
     }
 
-    /**
-     * at destroying/deleting time this will take care of removing all metadata entries
-     *
-     * @param contentlets
-     */
-    private void destroyMetadata(final List<Contentlet> contentlets) {
-        for (final Contentlet contentlet : contentlets) {
-            fileMetadataAPI.removeMetadata(contentlet);
-            Logger.debug(ESContentletAPIImpl.class,
-                    String.format("metadata removed for %s", contentlet.getIdentifier()));
-        }
-        Logger.debug(ESContentletAPIImpl.class,
-                String.format("Done removing metadata for %d elements.", contentlets.size()));
-    }
-
     private void forceUnpublishArchiveOnDestroy(final User user, final Contentlet contentlet)
             throws DotSecurityException, DotDataException {
 
@@ -3745,7 +3730,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         deleteBinaryFiles(contentlets, null);
 
-        fileMetadataAPI.removeVersionMetadata(contentlet);
+        // Waits for the commit like the rest of the removal, after it (#37782).
+        BinaryRemovalAfterCommit.schedule("the version metadata of " + contentlet.getInode(),
+                fileMetadataAPI.prepareVersionMetadataRemoval(contentlet));
 
     }
 
@@ -9401,22 +9388,30 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     /**
-     * @param contentlets
-     * @param field
+     * Removes destroyed versions' stored metadata, binary directories and resized-image caches,
+     * once the transaction destroying them commits (#37782).
+     * <p>
+     * What to remove is worked out now, while the content type and the binary directory still
+     * exist; only the removal waits. Removing during the destroy would lose the files for good if
+     * the transaction later rolls back, as a folder delete refused partway through its tree does.
+     * Outside a transaction the removal runs at once, as before.
+     *
+     * @param contentlets the destroyed versions
+     * @param field       the binary field to remove, or null for every binary of each version
      */
-    private void deleteBinaryFiles(List<Contentlet> contentlets, Field field) {
-        this.destroyMetadata(contentlets);
-        contentlets.forEach(con -> {
-
-            String contentletAssetPath = getContentletAssetPath(con, field);
-            String contentletAssetCachePath = getContentletCacheAssetPath(con, field);
-
-            // To delete binary files
-            FileUtil.deltree(new File(contentletAssetPath));
-
-            // To delete resized images
-            FileUtil.deltree(new File(contentletAssetCachePath));
-        });
+    private void deleteBinaryFiles(final List<Contentlet> contentlets, final Field field) {
+        for (final Contentlet contentlet : contentlets) {
+            BinaryRemovalAfterCommit.schedule("the metadata of " + contentlet.getInode(),
+                    fileMetadataAPI.prepareMetadataRemoval(contentlet));
+        }
+        for (final Contentlet contentlet : contentlets) {
+            final File assetDirectory = new File(getContentletAssetPath(contentlet, field));
+            final File cacheDirectory = new File(getContentletCacheAssetPath(contentlet, field));
+            BinaryRemovalAfterCommit.schedule(assetDirectory.getAbsolutePath(),
+                    () -> FileUtil.deltree(assetDirectory));
+            BinaryRemovalAfterCommit.schedule(cacheDirectory.getAbsolutePath(),
+                    () -> FileUtil.deltree(cacheDirectory));
+        }
     }
 
     /**
