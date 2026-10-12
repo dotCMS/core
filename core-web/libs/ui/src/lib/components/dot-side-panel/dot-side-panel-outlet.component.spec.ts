@@ -6,7 +6,18 @@ import {
 } from '@openng/spectator/vitest';
 import { vi } from 'vitest';
 
-import { Component, Injector, inject, input, output, signal } from '@angular/core';
+import {
+    Component,
+    EnvironmentInjector,
+    InjectionToken,
+    Injector,
+    createComponent as createAngularComponent,
+    createEnvironmentInjector,
+    inject,
+    input,
+    output,
+    signal
+} from '@angular/core';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { GlobalStore } from '@dotcms/store';
@@ -29,6 +40,23 @@ class TestContentComponent implements DotSidePanelContent {
     readonly saved = output<string>();
     readonly panel = inject(DotSidePanelRef);
     readonly requestClose = vi.fn();
+}
+
+const ROUTE_SERVICE = new InjectionToken<string>('ROUTE_SERVICE');
+
+/** Content that needs what its opener's route provides, as the Edit Content panel needs the page editor's `MessageService`. */
+@Component({
+    selector: 'dot-test-route-content',
+    template: '<p data-testid="route-content">{{ fromRoute }}</p>'
+})
+class RouteContentComponent {
+    readonly fromRoute = inject(ROUTE_SERVICE);
+}
+
+/** An opener the way the router creates one: with its route's injector as its environment. */
+@Component({ selector: 'dot-test-opener', template: '' })
+class OpenerComponent {
+    readonly injector = inject(Injector);
 }
 
 describe('DotSidePanelOutletComponent', () => {
@@ -146,6 +174,27 @@ describe('DotSidePanelOutletComponent', () => {
 
         expect(inFront.requestClose).toHaveBeenCalledTimes(1);
         expect(behind.requestClose).not.toHaveBeenCalled();
+    });
+
+    it("resolves what the opener's route provides", () => {
+        const routeInjector = createEnvironmentInjector(
+            [{ provide: ROUTE_SERVICE, useValue: 'from the route' }],
+            spectator.inject(EnvironmentInjector)
+        );
+        const opener = createAngularComponent(OpenerComponent, {
+            environmentInjector: routeInjector
+        });
+
+        sidePanels.open(RouteContentComponent, {
+            heading: 'header.vtl',
+            injector: opener.instance.injector
+        });
+        spectator.detectChanges();
+
+        expect(all('route-content')[0]?.textContent).toBe('from the route');
+
+        opener.destroy();
+        routeInjector.destroy();
     });
 
     it('takes the drawer away when the panel closes', () => {

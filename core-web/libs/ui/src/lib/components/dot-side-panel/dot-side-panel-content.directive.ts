@@ -1,5 +1,6 @@
 import {
     Directive,
+    EnvironmentInjector,
     Injector,
     OnInit,
     ViewContainerRef,
@@ -17,8 +18,8 @@ import {
 
 /**
  * Creates a panel's content where it sits, inside the panel's drawer. The content is created with
- * the opener's injector as parent, so it resolves dependencies as if it were in the opener's
- * template, and with the panel's {@link DotSidePanelRef}, so it can close the panel.
+ * the opener's injectors, element and environment, so it resolves dependencies as if it were in the
+ * opener's template, and with the panel's {@link DotSidePanelRef}, so it can close the panel.
  */
 @Directive({ selector: '[dotSidePanelContent]' })
 export class DotSidePanelContentDirective implements OnInit {
@@ -47,6 +48,9 @@ export class DotSidePanelContentDirective implements OnInit {
                 providers: [{ provide: DotSidePanelRef, useValue: ref }],
                 parent: config.injector
             }),
+            // Angular would take the environment from where this outlet sits, the root of the admin,
+            // and miss what the opener's route provides, such as the page editor's MessageService.
+            environmentInjector: config.injector.get(EnvironmentInjector),
             bindings: [...inputs, ...outputs]
         });
 
