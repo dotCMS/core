@@ -419,6 +419,9 @@ public class SamlWebUtils {
         RELAY_STATE_STRATEGY_MAP.remove(siteIdentifier);
     }
 
+    /**
+     * Returns the site's configured {@code auth.relaystate} Velocity template, or null when none is set.
+     */
     private static String relayStateTemplate(final IdentityProviderConfiguration identityProviderConfiguration) {
 
         return null != identityProviderConfiguration &&

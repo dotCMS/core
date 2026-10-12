@@ -191,6 +191,32 @@ public class RedirectUtilTest {
     }
 
     /**
+     * Method to test: {@link RedirectUtil#toSameHostRedirect(String, String)}
+     * Given Scenario: a path whose slash, backslash or dots are double-encoded (%252f, %255c, %252e), which a
+     * second decode by a proxy or the container would turn into a traversal (PR #37984 review)
+     * ExpectedResult: rejected; a double-encoded percent sign or space that hides nothing is still accepted
+     */
+    @Test
+    public void doubleEncodedSeparatorsInPath_areRejected() {
+
+        final String[] rejected = {
+                "/members/..%252f..%252fdotAdmin/",
+                "/members/..%252F..%252FdotAdmin/",
+                "/members/%252e%252e/dotAdmin/",
+                "/a%255cevil.com",
+                "https://site.example.com/members/..%252f..%252fdotAdmin/",
+        };
+        for (final String candidate : rejected) {
+            assertEquals("candidate: " + candidate, Optional.empty(), RedirectUtil.toSameHostRedirect(candidate, HOST));
+            assertEquals("candidate: " + candidate, Optional.of(RedirectUtil.RedirectRejection.FORBIDDEN_CHARACTER),
+                    RedirectUtil.rejectionReason(candidate, HOST));
+        }
+        assertEquals(Optional.of("/report/100%25"), RedirectUtil.toSameHostRedirect("/report/100%25", HOST));
+        assertEquals(Optional.of("/images/my%2520photo.jpg"),
+                RedirectUtil.toSameHostRedirect("/images/my%2520photo.jpg", HOST));
+    }
+
+    /**
      * Method to test: {@link RedirectUtil#toSameHostRedirect(String, java.util.Collection)} and
      * {@link RedirectUtil#rejectionReason(String, java.util.Collection)}
      * Given Scenario: the SAML paths pass the callback host plus the hostname and aliases of the site being

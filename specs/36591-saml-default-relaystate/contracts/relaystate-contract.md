@@ -57,7 +57,7 @@ public enum RedirectRejection {
     OTHER_HOST,          // absolute URL for another host, or with user-info
     NOT_A_PATH,          // neither a path starting with "/" nor an http(s) URL
     PROTOCOL_RELATIVE,   // starts, or would start after decoding or resolving dot segments, with "//"
-    FORBIDDEN_CHARACTER, // control/whitespace char, backslash, quote, angle bracket or backtick (an encoded space is allowed), or an encoded slash (%2F) in the path
+    FORBIDDEN_CHARACTER, // control/whitespace char, backslash, quote, angle bracket or backtick (an encoded space is allowed), an encoded slash (%2F) in the path, or a double-encoded slash, backslash or dot (%252F, %255C, %252E) in the path
     MALFORMED_ENCODING,  // malformed percent-encoding or URL syntax
     ABOVE_ROOT           // ".." segments climb above the root
 }

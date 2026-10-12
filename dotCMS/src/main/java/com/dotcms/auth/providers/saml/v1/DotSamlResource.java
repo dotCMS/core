@@ -199,6 +199,9 @@ public class DotSamlResource implements Serializable {
 		@ApiResponse(responseCode = "401", 
 					description = "Unauthorized - SAML assertion validation failed",
 					content = @Content(mediaType = "text/html")),
+		@ApiResponse(responseCode = "403", 
+					description = "Forbidden - the user signed in through SSO but lacks the back-end role required for the destination",
+					content = @Content(mediaType = "text/html")),
 		@ApiResponse(responseCode = "404", 
 					description = "IDP configuration not found or not enabled",
 					content = @Content(mediaType = "text/html")),
@@ -493,18 +496,22 @@ public class DotSamlResource implements Serializable {
 			this.path = path;
 		}
 
+		/** A redirect to the given destination. */
 		static LoginDestination redirectTo(final String path) {
 			return new LoginDestination(path);
 		}
 
+		/** A denied login: the caller shows the 403 "no access" page. */
 		static LoginDestination deny() {
 			return DENIED;
 		}
 
+		/** True when the login is denied. */
 		boolean isDenied() {
 			return null == this.path;
 		}
 
+		/** The destination to redirect to; null when the login is denied. */
 		String getPath() {
 			return this.path;
 		}

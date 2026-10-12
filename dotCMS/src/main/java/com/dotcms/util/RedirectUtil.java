@@ -155,6 +155,18 @@ public class RedirectUtil {
         return result.isLeft() ? Optional.of(result.getLeft()) : Optional.empty();
     }
 
+    /**
+     * True when the value still contains an encoded slash, backslash or dot ({@code %2F}, {@code %5C},
+     * {@code %2E}, any case): after one decode, that means the original path was double-encoded.
+     */
+    private static boolean hasEncodedSeparator(final String value) {
+        final String lowerCase = value.toLowerCase(Locale.ROOT);
+        return lowerCase.contains("%2f") || lowerCase.contains("%5c") || lowerCase.contains("%2e");
+    }
+
+    /**
+     * Wraps a single request host as the allowed-hosts collection; a null host allows no absolute URL.
+     */
     private static Collection<String> singleHost(final String requestHost) {
         return null == requestHost ? Collections.emptyList() : Collections.singletonList(requestHost);
     }
@@ -172,8 +184,8 @@ public class RedirectUtil {
         /** Starts, or would start after decoding or resolving dot segments, with {@code //}. */
         PROTOCOL_RELATIVE,
         /**
-         * Contains a control or whitespace character, backslash, quote, angle bracket or backtick, or an encoded
-         * slash ({@code %2F}) in its path.
+         * Contains a control or whitespace character, backslash, quote, angle bracket or backtick, an encoded
+         * slash ({@code %2F}) in its path, or a double-encoded slash, backslash or dot in its path.
          */
         FORBIDDEN_CHARACTER,
         /** Malformed percent-encoding or URL syntax. */
@@ -260,6 +272,11 @@ public class RedirectUtil {
         if (rawPath.toLowerCase(Locale.ROOT).contains("%2f")) {
             return Either.left(RedirectRejection.FORBIDDEN_CHARACTER);
         }
+        // The same trick double-encoded ("%252f", "%252e", "%255c") survives the single decode above, and a
+        // second decode by a proxy or the container would turn it into a traversal, so it is never accepted.
+        if (hasEncodedSeparator(decodedPath)) {
+            return Either.left(RedirectRejection.FORBIDDEN_CHARACTER);
+        }
 
         final String normalizedPath = removeDotSegments(rawPath);
         if (null == normalizedPath) {
@@ -272,6 +289,9 @@ public class RedirectUtil {
         return Either.right((null != externalOrigin ? externalOrigin : "") + normalizedPath + suffix);
     }
 
+    /**
+     * True when the host equals, ignoring case, one of the given hosts; false for a null collection.
+     */
     private static boolean matchesAny(final String host, final Collection<String> hosts) {
         return null != hosts && hosts.stream().anyMatch(host::equalsIgnoreCase);
     }
@@ -369,6 +389,10 @@ public class RedirectUtil {
         return false;
     }
 
+    /**
+     * Escapes {@code &}, {@code "}, {@code '}, {@code <} and {@code >} so the value can be safely placed inside
+     * an HTML attribute.
+     */
     private static String encodeHtmlAttribute(final String value) {
 
         if (null == value) {
