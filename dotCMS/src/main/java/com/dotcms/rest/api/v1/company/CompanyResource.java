@@ -5,6 +5,7 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.util.PortletID;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.google.common.annotations.VisibleForTesting;
@@ -71,11 +72,8 @@ public class CompanyResource {
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntityCompanyConfigView.class))),
             @ApiResponse(responseCode = "401",
-                    description = "Unauthorized - authentication required",
-                    content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "403",
-                    description = "Forbidden - CMS Administrator role required",
-                    content = @Content(mediaType = "application/json"))
+                    description = "Unauthorized - not authenticated, or not a CMS Administrator",
+                    content = @Content(mediaType = "text/plain"))
     })
     @GET
     @Path("/branding")
@@ -89,7 +87,7 @@ public class CompanyResource {
         final User user = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredRoles(Role.CMS_ADMINISTRATOR_ROLE)
-                .requiredPortlet("maintenance")
+                .requiredPortlet(PortletID.CONFIGURATION.toString())
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .init()
@@ -116,11 +114,8 @@ public class CompanyResource {
                     description = "Bad request - invalid parameters",
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "401",
-                    description = "Unauthorized - authentication required",
-                    content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "403",
-                    description = "Forbidden - CMS Administrator role required",
-                    content = @Content(mediaType = "application/json"))
+                    description = "Unauthorized - not authenticated, or not a CMS Administrator",
+                    content = @Content(mediaType = "text/plain"))
     })
     @PUT
     @Path("/branding")
@@ -141,7 +136,7 @@ public class CompanyResource {
         final User user = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredRoles(Role.CMS_ADMINISTRATOR_ROLE)
-                .requiredPortlet("maintenance")
+                .requiredPortlet(PortletID.CONFIGURATION.toString())
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .init()
@@ -173,11 +168,8 @@ public class CompanyResource {
                     description = "Bad request - invalid auth type",
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "401",
-                    description = "Unauthorized - authentication required",
-                    content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "403",
-                    description = "Forbidden - CMS Administrator role required",
-                    content = @Content(mediaType = "application/json"))
+                    description = "Unauthorized - not authenticated, or not a CMS Administrator",
+                    content = @Content(mediaType = "text/plain"))
     })
     @PUT
     @Path("/authentication")
@@ -198,7 +190,7 @@ public class CompanyResource {
         final User user = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredRoles(Role.CMS_ADMINISTRATOR_ROLE)
-                .requiredPortlet("maintenance")
+                .requiredPortlet(PortletID.CONFIGURATION.toString())
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .init()
@@ -229,11 +221,8 @@ public class CompanyResource {
                     description = "Invalid locale parameters (e.g. invalid timezone)",
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "401",
-                    description = "Unauthorized - authentication required",
-                    content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "403",
-                    description = "Forbidden - CMS Administrator role required",
-                    content = @Content(mediaType = "application/json"))
+                    description = "Unauthorized - not authenticated, or not a CMS Administrator",
+                    content = @Content(mediaType = "text/plain"))
     })
     @PUT
     @Path("/locale")
@@ -254,7 +243,7 @@ public class CompanyResource {
         final User user = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredRoles(Role.CMS_ADMINISTRATOR_ROLE)
-                .requiredPortlet("maintenance")
+                .requiredPortlet(PortletID.CONFIGURATION.toString())
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .init()
@@ -272,6 +261,44 @@ public class CompanyResource {
     }
 
     /**
+     * Returns the dotCMS license shipped with the running build, for the Configuration
+     * screen's License dialog. Any backend user may read it.
+     */
+    @Operation(
+            summary = "Get the dotCMS license",
+            description = "Returns the title, licensor, change date, change license and full text "
+                    + "of the license shipped with the running build. When the license file "
+                    + "can't be read, returns a short pointer to the published license and null "
+                    + "header values."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "License retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityLicenseInfoView.class))),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - not authenticated, or not a backend user",
+                    content = @Content(mediaType = "text/plain"))
+    })
+    @GET
+    @Path("/license")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public ResponseEntityLicenseInfoView getLicense(
+            @Parameter(hidden = true) @Context final HttpServletRequest request,
+            @Parameter(hidden = true) @Context final HttpServletResponse response) {
+
+        new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+
+        return new ResponseEntityLicenseInfoView(helper.getLicenseInfo());
+    }
+
+    /**
      * Regenerates the company security key.
      * Replaces the legacy POST /api/config/regenerateKey endpoint.
      */
@@ -286,11 +313,8 @@ public class CompanyResource {
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntityStringView.class))),
             @ApiResponse(responseCode = "401",
-                    description = "Unauthorized - authentication required",
-                    content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "403",
-                    description = "Forbidden - CMS Administrator role required",
-                    content = @Content(mediaType = "application/json"))
+                    description = "Unauthorized - not authenticated, or not a CMS Administrator",
+                    content = @Content(mediaType = "text/plain"))
     })
     @POST
     @Path("/_regenerateKey")
@@ -305,7 +329,7 @@ public class CompanyResource {
         final User user = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredRoles(Role.CMS_ADMINISTRATOR_ROLE)
-                .requiredPortlet("maintenance")
+                .requiredPortlet(PortletID.CONFIGURATION.toString())
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .init()

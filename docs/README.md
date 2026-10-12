@@ -106,6 +106,7 @@ Descriptions say **when to load** the doc, not what it contains.
 | [WORKFLOW_PATTERNS.md](claude/WORKFLOW_PATTERNS.md) | Structuring how an assistant approaches a task — context detection, information gathering |
 | [GITHUB_AUTOMATION.md](claude/GITHUB_AUTOMATION.md) | Automating GitHub issue management with dotCMS utilities |
 | [GPG_COMMIT_SIGNING.md](claude/GPG_COMMIT_SIGNING.md) | Setting up signed commits — required so commits made through AI tools are verifiably authorized by you |
+| [BACKEND_GAP_BACKLOG.md](BACKEND_GAP_BACKLOG.md) | Planning next quarter's AI-context work — the drafted backlog of backend and testing gaps (epic #37124) |
 
 Cursor rules live in [`.cursor/rules/`](../.cursor/rules/README.md) (short reminders with globs, linking back to these docs). Slash commands live in `.claude/commands/`, and the skills they call in `.claude/skills/` — see its [CATALOG.md](../.claude/skills/CATALOG.md).
 

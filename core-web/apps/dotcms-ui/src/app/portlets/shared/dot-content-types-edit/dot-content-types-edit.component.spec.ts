@@ -26,7 +26,8 @@ import {
     DotHttpErrorManagerService,
     DotMessageDisplayService,
     DotMessageService,
-    DotRouterService
+    DotRouterService,
+    DotSessionStorageService
 } from '@dotcms/data-access';
 import { LoginService, SiteService } from '@dotcms/dotcms-js';
 import {
@@ -1127,6 +1128,62 @@ describe('DotContentTypesEditComponent', () => {
                 expect(comp.startFormDialog).toHaveBeenCalledTimes(1);
                 expect(comp.show()).toBe(false);
             }));
+        });
+    });
+
+    describe('remembering the content type for Content Drive', () => {
+        const setLastContentType = vi.fn();
+        const removeLastContentType = vi.fn();
+
+        const openEditorWith = (contentType: Partial<DotCMSContentType>) => {
+            const config = getConfig({ contentType });
+
+            TestBed.configureTestingModule({
+                ...config,
+                providers: [
+                    ...config.providers,
+                    {
+                        provide: DotSessionStorageService,
+                        useValue: { setLastContentType, removeLastContentType }
+                    }
+                ]
+            });
+
+            fixture = TestBed.createComponent(DotContentTypesEditComponent);
+            fixture.detectChanges();
+        };
+
+        beforeEach(() => {
+            setLastContentType.mockReset();
+            removeLastContentType.mockReset();
+        });
+
+        it('should remember the content type it opens', () => {
+            openEditorWith(fakeContentType);
+
+            expect(setLastContentType).toHaveBeenCalledWith(fakeContentType.variable);
+            expect(removeLastContentType).not.toHaveBeenCalled();
+        });
+
+        it('should forget the remembered content type when it opens a form', () => {
+            openEditorWith({ ...fakeContentType, baseType: 'FORM' });
+
+            expect(removeLastContentType).toHaveBeenCalled();
+            expect(setLastContentType).not.toHaveBeenCalled();
+        });
+
+        it('should forget the remembered content type when it opens a system type', () => {
+            openEditorWith({ ...fakeContentType, system: true });
+
+            expect(removeLastContentType).toHaveBeenCalled();
+            expect(setLastContentType).not.toHaveBeenCalled();
+        });
+
+        it('should not touch the remembered content type while creating a new one', () => {
+            openEditorWith({ baseType: 'CONTENT' });
+
+            expect(setLastContentType).not.toHaveBeenCalled();
+            expect(removeLastContentType).not.toHaveBeenCalled();
         });
     });
 
