@@ -57,7 +57,7 @@ import {
     isActionableBrowseItem,
     DotCMSContentlet
 } from '@dotcms/dotcms-models';
-import { loadDotEditContentSidePanel } from '@dotcms/edit-content';
+import { loadDotEditContentSidePanel, loadDotSourceEditorSidePanel } from '@dotcms/edit-content';
 import {
     DotContentDriveUploadFiles,
     DotFolderTreeNodeData,
@@ -390,9 +390,28 @@ export class DotContentDriveShellComponent implements OnDestroy {
         closed: () => this.onLegacyPanelClosed()
     });
 
-    /** Whether either side panel is open. */
+    /** The file open in the Edit Source panel, from the store. */
+    protected readonly $sourceEditorRequest = this.#store.sourceEditor;
+
+    /**
+     * The Edit Source panel: a file's source in Monaco, open while the store names a file. Loaded on
+     * its first open, so Monaco stays out of this portlet's chunk.
+     */
+    // eslint-disable-next-line no-unused-private-class-members -- it opens and closes the panel itself
+    readonly #sourceEditorPanel = injectSidePanel(this.$sourceEditorRequest, {
+        component: loadDotSourceEditorSidePanel,
+        heading: (request) => request.title,
+        inputs: (request) => ({ request }),
+        outputs: { saved: () => this.onSourceEditorSaved() },
+        closed: () => this.onSourceEditorClosed()
+    });
+
+    /** Whether any side panel is open. */
     readonly #anyPanelOpen = computed(
-        () => !!this.$editPanelRequest() || !!this.$legacyPanelRequest()
+        () =>
+            !!this.$editPanelRequest() ||
+            !!this.$legacyPanelRequest() ||
+            !!this.$sourceEditorRequest()
     );
 
     /**
@@ -2141,6 +2160,19 @@ export class DotContentDriveShellComponent implements OnDestroy {
         this.#navigationService.closeEditPanel();
         this.#store.reloadContentDrive({ quiet: true });
         this.#dotRouterService.goToEditPage({ url, language_id: languageId });
+    }
+
+    /**
+     * A save in the Edit Source panel changed the file's version and modification date: refresh the
+     * list quietly. The panel closes itself right after.
+     */
+    protected onSourceEditorSaved() {
+        this.#store.reloadContentDrive({ quiet: true });
+    }
+
+    /** The Edit Source panel closed itself: clear its request. */
+    protected onSourceEditorClosed() {
+        this.#store.closeSourceEditor();
     }
 
     /**

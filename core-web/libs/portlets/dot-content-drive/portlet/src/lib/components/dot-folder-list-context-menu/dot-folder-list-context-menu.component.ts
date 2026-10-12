@@ -39,6 +39,7 @@ import {
     DotWorkflowPayload,
     PERMISSIONS_TYPE
 } from '@dotcms/dotcms-models';
+import { toSourceEditorRequest } from '@dotcms/edit-content';
 import { DotJspIframeDialogComponent, DotJspIframeDialogData } from '@dotcms/ui';
 
 import {
@@ -406,6 +407,17 @@ export class DotFolderListViewContextMenuComponent {
                 command: () => {
                     this.#navigationService.editPageProperties(contentlet);
                 }
+            });
+        }
+
+        // The file's source in a code editor, for developers. Same rule as the page editor's VTL
+        // menu, from `toSourceEditorRequest`: a file type it handles, and a lock the user can take.
+        const sourceEditorRequest = toSourceEditorRequest(contentlet, canLockData);
+
+        if (sourceEditorRequest) {
+            actionsMenu.push({
+                label: this.#dotMessageService.get('content-drive.context-menu.edit-source'),
+                command: () => this.#store.openSourceEditor(sourceEditorRequest)
             });
         }
 

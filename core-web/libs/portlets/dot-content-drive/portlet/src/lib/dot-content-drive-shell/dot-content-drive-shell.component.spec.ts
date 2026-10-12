@@ -52,7 +52,7 @@ import {
     DotContentDriveActionableFolder,
     PERMISSIONS_TYPE
 } from '@dotcms/dotcms-models';
-import { EditContentDialogData } from '@dotcms/edit-content';
+import { DotSourceEditorRequest, EditContentDialogData } from '@dotcms/edit-content';
 import {
     DotFolderTreeNodeData,
     DotFolderTreeNodeItem,
@@ -129,6 +129,8 @@ const dialogServiceOpen = vi.fn(() => permissionsDialogRef);
 
 // Backs the mock's `$legacyPanelRequest`: the legacy-editor panel the shell must render (#37759).
 const legacyPanelRequestSignal: WritableSignal<DotLegacyEditorRequest | null> = signal(null);
+// Backs the mock's `sourceEditor`: the file the Edit Source panel shows.
+const sourceEditorSignal: WritableSignal<DotSourceEditorRequest | null> = signal(null);
 // Reset per test rather than re-created, so the store mock never captures a stale one.
 /** Nothing refused by default; the refusal tests set it. */
 const folderDeleteRefusalSignal: WritableSignal<DotFolderBulkDeleteRefusalKind | undefined> =
@@ -331,6 +333,7 @@ describe('DotContentDriveShellComponent', () => {
         editPanelRequestSignal.set(null);
         panelLocationSignal.set(null);
         legacyPanelRequestSignal.set(null);
+        sourceEditorSignal.set(null);
         permissionsDialogClose$ = new Subject<unknown>();
         dialogServiceOpen.mockClear();
         permissionsDialogRef.close.mockClear();
@@ -437,6 +440,8 @@ describe('DotContentDriveShellComponent', () => {
                     selectSystemHost: vi.fn(),
                     sidebarLoading: vi.fn(),
                     closeDialog: vi.fn(),
+                    sourceEditor: sourceEditorSignal,
+                    closeSourceEditor: vi.fn(),
                     patchContextMenu: vi.fn(),
                     resetContextMenu: vi.fn(),
                     setDragItems: vi.fn(),
@@ -1013,6 +1018,20 @@ describe('DotContentDriveShellComponent', () => {
                 expect(store.loadItems).not.toHaveBeenCalled();
 
                 legacyPanelRequestSignal.set(null);
+                spectator.detectChanges();
+
+                expect(store.loadItems).toHaveBeenCalledWith({ quiet: true });
+            });
+
+            it('should hold the reload while the Edit Source panel is open, and run it when it closes', () => {
+                sourceEditorSignal.set({} as DotSourceEditorRequest);
+                spectator.detectChanges();
+
+                settle(backgrounded);
+
+                expect(store.loadItems).not.toHaveBeenCalled();
+
+                sourceEditorSignal.set(null);
                 spectator.detectChanges();
 
                 expect(store.loadItems).toHaveBeenCalledWith({ quiet: true });
@@ -5686,6 +5705,61 @@ describe('DotContentDriveShellComponent', () => {
                 // Never touches the real preference.
                 expect(store.setIsTreeExpanded).not.toHaveBeenCalled();
             });
+        });
+    });
+
+    describe('Edit Source panel', () => {
+        const SOURCE_REQUEST: DotSourceEditorRequest = {
+            inode: 'vtl-inode',
+            title: 'header.vtl',
+            language: 'velocity'
+        };
+
+        /** The Edit Source panel the shell opened last: lazily loaded, on a `request`. */
+        const sourcePanel = (): OpenedPanel | undefined =>
+            sidePanels.opened
+                .filter(
+                    (panel) =>
+                        typeof (panel.component as Promise<unknown>).then === 'function' &&
+                        'request' in (panel.config.inputs ?? {})
+                )
+                .at(-1);
+
+        const openSourcePanel = () => {
+            sourceEditorSignal.set(SOURCE_REQUEST);
+            spectator.detectChanges();
+        };
+
+        it('opens the panel on the requested file, headed with its name', () => {
+            openSourcePanel();
+
+            const panel = sourcePanel();
+            expect((panel?.config.inputs?.['request'] as () => unknown)()).toEqual(SOURCE_REQUEST);
+            expect((panel?.config.heading as () => string)()).toBe('header.vtl');
+        });
+
+        it('opens no panel while no file is open', () => {
+            spectator.detectChanges();
+
+            expect(sourcePanel()).toBeUndefined();
+        });
+
+        // The panel closes itself right after a save, so the save itself only refreshes.
+        it('refreshes the list quietly on save', () => {
+            openSourcePanel();
+
+            (sourcePanel()?.config.outputs?.['saved'] as () => void)();
+
+            expect(store.reloadContentDrive).toHaveBeenCalledWith({ quiet: true });
+            expect(store.closeSourceEditor).not.toHaveBeenCalled();
+        });
+
+        it('clears the request when the panel closes itself', () => {
+            openSourcePanel();
+
+            sourcePanel()?.ref.close();
+
+            expect(store.closeSourceEditor).toHaveBeenCalledTimes(1);
         });
     });
 
