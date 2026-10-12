@@ -6,7 +6,24 @@
         "types": [""],
         "target": "es2020",
         "module": "es2020",
-        "moduleResolution": "bundler"
+        "moduleResolution": "bundler",
+        // TODO(#37120): same Nx limitation as libs/sdk/experiments/tsconfig.lib.json (see the
+        // note there). Nx rewrites each dependency key in `paths` to its output path relative to
+        // the WORKSPACE ROOT and resolves it against `baseUrl`; with none anywhere in the chain it
+        // falls back to this directory and TS2307s. The flag is scoped to this file. Drop both
+        // once Nx resolves dependency outputs against the workspace root.
+        "baseUrl": "../../..",
+        "ignoreDeprecations": "6.0",
+        // Compile against the published declarations of the sibling SDKs, as the Rollup build
+        // (withNx) and every consumer do. Through the base aliases their sources would join this
+        // program and be checked with the options above, which they were not written for. This
+        // list replaces the base paths, so it holds every @dotcms/* module the package reaches.
+        "paths": {
+            "@dotcms/types": ["dist/libs/sdk/types/index.d.ts"],
+            "@dotcms/types/internal": ["dist/libs/sdk/types/internal.d.ts"],
+            "@dotcms/uve": ["dist/libs/sdk/uve/index.d.ts"],
+            "@dotcms/uve/internal": ["dist/libs/sdk/uve/internal.d.ts"]
+        }
     },
     "include": ["src/**/*.ts", "src/**/*.tsx"],
     "exclude": [
