@@ -181,7 +181,7 @@ export const ROUTE_HANDLERS: Record<string, RouteHandlerConfig> = {
                 };
             }
 
-            const lastUrl = (breadcrumbs.at(-1)?.url ?? '').replace(/^.*#/, '');
+            const lastUrl = (breadcrumbs[breadcrumbs.length - 1]?.url ?? '').replace(/^.*#/, '');
 
             if (lastUrl.startsWith('/content-drive')) {
                 return;
