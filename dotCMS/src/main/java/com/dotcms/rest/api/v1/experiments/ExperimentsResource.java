@@ -81,6 +81,9 @@ public class ExperimentsResource {
     private static final String ANALYTICS_NOT_CONFIGURED_CODE = "ANALYTICS_NOT_CONFIGURED";
     private static final String ANALYTICS_NOT_CONFIGURED_MSG =
             "Analytics is not configured for this site. Please configure the Analytics App to use this feature.";
+    private static final String SCHEDULED_START_NOT_ALLOWED_CODE = "SCHEDULED_START_NOT_ALLOWED";
+    private static final String SCHEDULED_START_NOT_ALLOWED_MSG =
+            "Scheduled (future-dated) starts are not allowed in limited mode. Remove the start date to start the experiment immediately.";
 
     public ExperimentsResource() {
         webResource =  new WebResource();
@@ -304,7 +307,7 @@ public class ExperimentsResource {
      * feature-gate checks when {@code FEATURE_FLAG_EXPERIMENTS=false} (limited mode):
      * <ul>
      *   <li>The Analytics App must be configured for the site ({@code 503} otherwise).
-     *   <li>Scheduling with a future {@code startDate} is not allowed ({@code 403 FEATURE_DISABLED}).
+     *   <li>Scheduling with a future {@code startDate} is not allowed ({@code 403 SCHEDULED_START_NOT_ALLOWED}).
      *   <li>The free experiment slot must be available ({@code 403 FEATURE_DISABLED} if occupied).
      *   <li>Duration is capped at {@link ExperimentLimitedModeGate#MAX_DAYS} days ({@code 400} if exceeded).
      *   <li>When no {@code endDate} is set, it is automatically set to
@@ -318,7 +321,9 @@ public class ExperimentsResource {
                             schema = @Schema(implementation = ResponseEntitySingleExperimentView.class))),
             @ApiResponse(responseCode = "400", description = "Duration exceeds the 10-day limited-mode cap",
                     content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "403", description = "Feature disabled (FEATURE_DISABLED) — flag=false and slot occupied or scheduled start",
+            @ApiResponse(responseCode = "403", description = "Feature disabled (FEATURE_DISABLED) — flag=false and free slot occupied",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403", description = "Scheduled start not allowed (SCHEDULED_START_NOT_ALLOWED) — future startDate in limited mode",
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "503", description = "Analytics App not configured for this site (ANALYTICS_NOT_CONFIGURED)",
                     content = @Content(mediaType = "application/json"))
@@ -349,6 +354,7 @@ public class ExperimentsResource {
             if (rejection.isPresent()) {
                 return switch (rejection.get()) {
                     case FEATURE_DISABLED -> featureDisabledResponse();
+                    case SCHEDULED_START_NOT_ALLOWED -> scheduledStartNotAllowedResponse();
                     case DURATION_EXCEEDED -> durationExceededResponse();
                 };
             }
@@ -766,6 +772,18 @@ public class ExperimentsResource {
                 .entity(new ResponseEntityView<>(
                         List.of(new com.dotcms.rest.ErrorEntity(
                                 FEATURE_DISABLED_CODE, FEATURE_DISABLED_MSG))))
+                .build();
+    }
+
+    /**
+     * Builds a {@code 403 SCHEDULED_START_NOT_ALLOWED} response used when a future-dated start
+     * is attempted in limited mode.
+     */
+    private static Response scheduledStartNotAllowedResponse() {
+        return Response.status(Response.Status.FORBIDDEN)
+                .entity(new ResponseEntityView<>(
+                        List.of(new com.dotcms.rest.ErrorEntity(
+                                SCHEDULED_START_NOT_ALLOWED_CODE, SCHEDULED_START_NOT_ALLOWED_MSG))))
                 .build();
     }
 

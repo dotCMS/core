@@ -37,6 +37,8 @@ public class ExperimentLimitedModeGate {
     enum Rejection {
         /** Scheduling or slot constraints prevent this start. Returns {@code 403}. */
         FEATURE_DISABLED,
+        /** The experiment has a future startDate, which is not allowed in limited mode. Returns {@code 403}. */
+        SCHEDULED_START_NOT_ALLOWED,
         /** The experiment's duration exceeds the cap. Returns {@code 400}. */
         DURATION_EXCEEDED
     }
@@ -68,7 +70,7 @@ public class ExperimentLimitedModeGate {
         if (schedulingOpt.isPresent()
                 && schedulingOpt.get().startDate().isPresent()
                 && schedulingOpt.get().startDate().get().isAfter(Instant.now())) {
-            return Optional.of(Rejection.FEATURE_DISABLED);
+            return Optional.of(Rejection.SCHEDULED_START_NOT_ALLOWED);
         }
 
         // Only one free experiment slot is allowed system-wide
