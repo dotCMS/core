@@ -2,7 +2,6 @@ package com.dotcms.experiments.business;
 
 import com.dotcms.experiments.business.ExperimentsAPI;
 import com.dotcms.experiments.model.Scheduling;
-import com.dotcms.rest.api.v1.experiments.ExperimentLimitedModeGate;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;

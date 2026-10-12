@@ -1,9 +1,7 @@
-package com.dotcms.rest.api.v1.experiments;
+package com.dotcms.experiments.business;
 
-import com.dotcms.experiments.business.ExperimentsAPI;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Scheduling;
-import com.dotcms.rest.exception.NotFoundException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -14,10 +12,11 @@ import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 
 /**
- * Evaluates the limited-mode constraints for {@code POST /{id}/_start}.
+ * Evaluates the limited-mode constraints for starting an {@link Experiment}.
  *
- * <p>When {@code FEATURE_FLAG_EXPERIMENTS=false}, only a single immediate experiment within the* {@value MAX_DAYS}-day duration cap is allowed. This class centralises those checks so
- * {@link ExperimentsResource#start} stays focused on request handling.
+ * <p>When {@code FEATURE_FLAG_EXPERIMENTS=false}, only a single immediate experiment within the
+ * {@value MAX_DAYS}-day duration cap is allowed. This class centralises those checks so callers
+ * stay focused on their own responsibilities.
  *
  * <p>{@link #evaluate} is a pure check — it does not mutate state. The caller is responsible
  * for any side-effects (e.g. auto-setting the end date via {@link #defaultEndDate}).
@@ -32,14 +31,14 @@ public class ExperimentLimitedModeGate {
 
     /**
      * Reason why the limited-mode gate blocked a start request. The caller maps each value
-     * to the appropriate HTTP response.
+     * to the appropriate response.
      */
-    enum Rejection {
-        /** Scheduling or slot constraints prevent this start. Returns {@code 403}. */
+    public enum Rejection {
+        /** Scheduling or slot constraints prevent this start. */
         FEATURE_DISABLED,
-        /** The experiment has a future startDate, which is not allowed in limited mode. Returns {@code 403}. */
+        /** The experiment has a future startDate, which is not allowed in limited mode. */
         SCHEDULED_START_NOT_ALLOWED,
-        /** The experiment's duration exceeds the cap. Returns {@code 400}. */
+        /** The experiment's duration exceeds the cap. */
         DURATION_EXCEEDED
     }
 
@@ -52,16 +51,15 @@ public class ExperimentLimitedModeGate {
      * @param experimentId the experiment being started
      * @param user         the authenticated caller
      * @return empty if the start is allowed; the {@link Rejection} reason if it must be blocked
-     * @throws NotFoundException    if the experiment does not exist
-     * @throws DotDataException     on persistence errors
+     * @throws DotDataException     if the experiment does not exist or on persistence errors
      * @throws DotSecurityException on permission errors
      */
-    static Optional<Rejection> evaluate(final String experimentId, final User user)
+    public static Optional<Rejection> evaluate(final String experimentId, final User user)
             throws DotDataException, DotSecurityException {
 
         final ExperimentsAPI experimentsAPI = APILocator.getExperimentsAPI();
         final Experiment experiment = experimentsAPI.find(experimentId, user)
-                .orElseThrow(() -> new NotFoundException(
+                .orElseThrow(() -> new DotDataException(
                         "Experiment not found: " + experimentId));
 
         final Optional<Scheduling> schedulingOpt = experiment.scheduling();

@@ -4,6 +4,7 @@ import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.analytics.helper.AnalyticsHelper;
 import com.dotcms.experiments.business.ConfigExperimentUtil;
 import com.dotcms.experiments.business.ExperimentFilter;
+import com.dotcms.experiments.business.ExperimentLimitedModeGate;
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.jitsu.EventLogRunnable;
 import io.vavr.control.Try;
