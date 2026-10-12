@@ -13,12 +13,12 @@ import { DotSidePanelNavController } from '../../services/dot-side-panel-nav.ser
 const EXPANDED_STORAGE_KEY = 'dot-edit-content-side-panel-expanded';
 
 const PANEL = `
-    <dot-side-panel [visible]="true" heading="header.vtl">
+    <dot-side-panel heading="header.vtl">
         <p data-testid="panel-body">The source</p>
     </dot-side-panel>`;
 
 const PANEL_WITH_FOOTER = `
-    <dot-side-panel [visible]="true" heading="header.vtl">
+    <dot-side-panel heading="header.vtl">
         <p data-testid="panel-body">The source</p>
         <ng-template #footer>
             <button data-testid="panel-save">Save</button>

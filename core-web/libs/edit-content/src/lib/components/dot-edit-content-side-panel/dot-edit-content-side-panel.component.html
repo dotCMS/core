@@ -1,5 +1,4 @@
 <dot-side-panel
-    [visible]="!!data()"
     [heading]="data()?.title ?? ''"
     (closeRequested)="requestClose()">
     @for (item of $items(); track item.contentletInode ?? item.contentTypeId) {

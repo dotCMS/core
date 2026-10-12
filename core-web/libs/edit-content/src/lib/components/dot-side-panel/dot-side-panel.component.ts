@@ -46,7 +46,12 @@ function writeExpandedPreference(expanded: boolean): void {
 /**
  * The drawer every side panel opens in: Edit Content, the legacy editor and Edit Source. A panel
  * puts its content inside, and an optional `<ng-template #footer>`, and handles
- * {@link closeRequested} with its own unsaved-changes guard. It closes by clearing `visible`.
+ * {@link closeRequested} with its own unsaved-changes guard.
+ *
+ * **Mount it only while the panel is open**, behind an `@if` or a `ComponentRef` the owner
+ * destroys, and close it by unmounting it. It has no hidden state: from the moment it exists it
+ * claims Escape, listens for clicks on its mask and joins the side-panel stack, which collapses the
+ * main navigation, so a mounted but hidden panel would swallow Escape across the whole portlet.
  *
  * What the panels share lives here:
  *
@@ -76,9 +81,6 @@ function writeExpandedPreference(expanded: boolean): void {
 export class DotSidePanelComponent {
     readonly #navController = inject(DotSidePanelNavController);
 
-    /** Whether the panel is open. */
-    readonly visible = input(false);
-
     /**
      * The title in the panel's header. Not `header`: inside the template, the drawer's `#header`
      * slot would shadow it.
@@ -90,7 +92,7 @@ export class DotSidePanelComponent {
 
     /**
      * The close button, Escape or a click on the mask. The owner runs its guard, then closes the
-     * panel by clearing `visible`.
+     * panel by unmounting it.
      */
     readonly closeRequested = output<void>();
 
