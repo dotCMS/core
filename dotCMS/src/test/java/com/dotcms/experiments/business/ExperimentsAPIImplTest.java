@@ -1,10 +1,12 @@
 package com.dotcms.experiments.business;
 
+import com.dotcms.experiments.business.ExperimentsAPI;
 import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.rest.api.v1.experiments.ExperimentLimitedModeGate;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.Config;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -120,7 +122,7 @@ public class ExperimentsAPIImplTest {
      * Method to test: {@link ExperimentsAPIImpl#validateScheduling(Scheduling)}
      * Given scenario: Feature flag enabled (normal mode); scheduling carries only a
      *                 {@code startDate} with no {@code endDate}.
-     * Expected result: {@code endDate} is auto-set to the default duration (14 days) from
+     * Expected result: {@code endDate} is auto-set to the configured default duration from
      *                  {@code startDate}, not the limited-mode cap.
      */
     @Test
@@ -132,10 +134,12 @@ public class ExperimentsAPIImplTest {
 
             final Scheduling result = new ExperimentsAPIImpl(experimentsFactory).validateScheduling(input);
 
+            final long expectedDays = Config.getIntProperty(
+                    ExperimentsAPI.EXPERIMENTS_DEFAULT_DURATION_KEY, 14);
             assertTrue(result.endDate().isPresent(), "endDate must be auto-set in normal mode");
-            assertEquals(14L,
+            assertEquals(expectedDays,
                     ChronoUnit.DAYS.between(startDate, result.endDate().get()),
-                    "endDate must be defaultDuration (14) days from startDate in normal mode");
+                    "endDate must be defaultDuration days from startDate in normal mode");
         } finally {
             ConfigExperimentUtil.INSTANCE.setExperimentEnabled(false);
         }
