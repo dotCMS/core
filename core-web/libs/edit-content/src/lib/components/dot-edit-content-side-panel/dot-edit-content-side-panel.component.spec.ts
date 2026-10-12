@@ -1,15 +1,19 @@
-import { createComponentFactory, Spectator, byTestId } from '@openng/spectator/vitest';
-import { MockComponent, MockPipe } from 'ng-mocks';
+import {
+    createComponentFactory,
+    mockProvider,
+    Spectator,
+    byTestId
+} from '@openng/spectator/vitest';
+import { MockComponent } from 'ng-mocks';
 import { Subject } from 'rxjs';
 import { Mock, vi } from 'vitest';
 
-import { ButtonModule } from 'primeng/button';
-import { Drawer, DrawerModule } from 'primeng/drawer';
+import { Drawer } from 'primeng/drawer';
 import { DialogService } from 'primeng/dynamicdialog';
 import { ZIndexUtils } from 'primeng/utils';
 
+import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotEditContentSidePanelComponent } from './dot-edit-content-side-panel.component';
 
@@ -21,6 +25,7 @@ import { EditContentDialogData } from '../../models/dot-edit-content-dialog.inte
 import { DotSidePanelNavController } from '../../services/dot-side-panel-nav.service';
 import { OverlayEditContentHost } from '../../services/host/overlay-edit-content-host';
 import { DotEditContentLayoutComponent } from '../dot-edit-content-layout/dot-edit-content.layout.component';
+import { DotSidePanelComponent } from '../dot-side-panel/dot-side-panel.component';
 
 describe('DotEditContentSidePanelComponent', () => {
     let spectator: Spectator<DotEditContentSidePanelComponent>;
@@ -45,16 +50,15 @@ describe('DotEditContentSidePanelComponent', () => {
                 {
                     set: {
                         imports: [
-                            DrawerModule,
-                            ButtonModule,
-                            MockComponent(DotEditContentLayoutComponent),
-                            MockPipe(DotMessagePipe, (key: string) => key)
+                            DotSidePanelComponent,
+                            MockComponent(DotEditContentLayoutComponent)
                         ],
                         providers: [{ provide: OverlayEditContentHost, useValue: undefined }]
                     }
                 }
             ]
-        ]
+        ],
+        providers: [mockProvider(DotMessageService, { get: (key: string) => key })]
     });
 
     beforeEach(() => {
@@ -122,60 +126,8 @@ describe('DotEditContentSidePanelComponent', () => {
         spectator.click(button as HTMLElement);
     };
 
-    /**
-     * Reads the expand button's icon glyph — the user-visible reflection of `$expanded`
-     * (`open_in_full` when collapsed, `close_fullscreen` when expanded). Asserting on this instead
-     * of the protected signal covers what the user actually sees. `{ root: true }` because
-     * `appendTo="body"` teleports the header out of the fixture.
-     */
-    const expandIcon = (): string | undefined =>
-        spectator
-            .query(byTestId('side-panel-expand'), { root: true })
-            ?.querySelector('i')
-            ?.textContent?.trim();
-
-    /**
-     * Expand button aria-label (i18n key via MockPipe) — user-facing expanded/collapsed cue.
-     *
-     * Read from the DESCENDANT native `<button>`, not the `p-button` host: the accessible name has
-     * to land on the focusable control. Reading the host would also pass with `[attr.aria-label]`,
-     * which leaves the real button unnamed (its only content is an icon glyph).
-     */
-    const expandAriaLabel = (): string | null | undefined =>
-        spectator
-            .query(byTestId('side-panel-expand'), { root: true })
-            ?.querySelector('button')
-            ?.getAttribute('aria-label');
-
-    /**
-     * Drawer width from the `pt.root.style` binding (`80%` collapsed / `100%` expanded). The drawer
-     * is teleported to `document.body`, so query from the document root.
-     */
-    const drawerWidth = (): string =>
-        (spectator.query('.p-drawer', { root: true }) as HTMLElement | null)?.style?.width ?? '';
-
-    it('should toggle expanded state with the expand button and persist it', () => {
-        spectator.setInput('data', EDIT_DATA);
-        spectator.detectChanges();
-
-        expect(expandIcon()).toBe('open_in_full');
-        expect(expandAriaLabel()).toBe('edit.content.side-panel.expand');
-        expect(drawerWidth()).toBe('80%');
-
-        clickButton('side-panel-expand');
-        spectator.detectChanges();
-        expect(expandIcon()).toBe('close_fullscreen');
-        expect(expandAriaLabel()).toBe('edit.content.side-panel.collapse');
-        expect(drawerWidth()).toBe('100%');
-        expect(localStorage.getItem('dot-edit-content-side-panel-expanded')).toBe('true');
-
-        clickButton('side-panel-expand');
-        spectator.detectChanges();
-        expect(expandIcon()).toBe('open_in_full');
-        expect(expandAriaLabel()).toBe('edit.content.side-panel.expand');
-        expect(drawerWidth()).toBe('80%');
-        expect(localStorage.getItem('dot-edit-content-side-panel-expanded')).toBe('false');
-    });
+    // The width toggle and its stored preference belong to `DotSidePanelComponent`, and are tested
+    // there. What this panel adds is its guard on every way of closing.
 
     it('should route close through the editor guard and emit `closed` when it proceeds', () => {
         spectator.setInput('data', EDIT_DATA);
@@ -533,114 +485,9 @@ describe('DotEditContentSidePanelComponent', () => {
 });
 
 /**
- * Construction-time seeding of `$expanded` from the persisted preference. Kept in its own describe
- * with a dedicated factory because it needs a component built AFTER localStorage is seeded — the
- * main describe's shared beforeEach constructs the panel with storage already cleared.
- */
-describe('DotEditContentSidePanelComponent — persisted expanded preference', () => {
-    let spectator: Spectator<DotEditContentSidePanelComponent>;
-
-    const EDIT_DATA: EditContentDialogData = {
-        mode: 'edit',
-        contentletInode: 'inode-1',
-        identifier: 'id-1',
-        title: 'My Content'
-    };
-
-    const createComponent = createComponentFactory({
-        component: DotEditContentSidePanelComponent,
-        overrideComponents: [
-            [
-                DotEditContentSidePanelComponent,
-                {
-                    set: {
-                        imports: [
-                            DrawerModule,
-                            ButtonModule,
-                            MockComponent(DotEditContentLayoutComponent),
-                            MockPipe(DotMessagePipe, (key: string) => key)
-                        ],
-                        providers: [{ provide: OverlayEditContentHost, useValue: undefined }]
-                    }
-                }
-            ]
-        ]
-    });
-
-    afterEach(() => {
-        localStorage.clear();
-    });
-
-    const buildAndAssertOpenState = (expected: {
-        icon: string;
-        ariaLabel: string;
-        width: string;
-    }) => {
-        spectator = createComponent({
-            providers: [
-                {
-                    provide: OverlayEditContentHost,
-                    useValue: {
-                        saved$: new Subject<DotCMSContentlet>().asObservable(),
-                        left$: new Subject<void>().asObservable()
-                    }
-                },
-                {
-                    provide: DotSidePanelNavController,
-                    useValue: {
-                        acquire: vi.fn(),
-                        release: vi.fn(),
-                        isTop: vi.fn().mockReturnValue(true)
-                    }
-                }
-            ],
-            detectChanges: false
-        });
-        spectator.setInput('data', EDIT_DATA);
-        spectator.detectChanges();
-
-        expect(
-            spectator
-                .query(byTestId('side-panel-expand'), { root: true })
-                ?.querySelector('i')
-                ?.textContent?.trim()
-        ).toBe(expected.icon);
-        // Descendant native <button>, not the p-button host — see `expandAriaLabel` above.
-        expect(
-            spectator
-                .query(byTestId('side-panel-expand'), { root: true })
-                ?.querySelector('button')
-                ?.getAttribute('aria-label')
-        ).toBe(expected.ariaLabel);
-        // Width is the user-visible outcome of reading `$expanded` on construction (`pt.root.style`).
-        expect(
-            (spectator.query('.p-drawer', { root: true }) as HTMLElement | null)?.style?.width
-        ).toBe(expected.width);
-    };
-
-    it('opens expanded when the persisted preference is `true`', () => {
-        localStorage.setItem('dot-edit-content-side-panel-expanded', 'true');
-        buildAndAssertOpenState({
-            icon: 'close_fullscreen',
-            ariaLabel: 'edit.content.side-panel.collapse',
-            width: '100%'
-        });
-    });
-
-    it('opens collapsed when there is no persisted preference', () => {
-        localStorage.removeItem('dot-edit-content-side-panel-expanded');
-        buildAndAssertOpenState({
-            icon: 'open_in_full',
-            ariaLabel: 'edit.content.side-panel.expand',
-            width: '80%'
-        });
-    });
-});
-
-/**
  * Regression lock for #37398, as its own top-level suite on purpose.
  *
- * The suites above override this component with `set: { providers: [...] }`, which REPLACES the
+ * The suite above overrides this component with `set: { providers: [...] }`, which REPLACES the
  * component's own `providers` — so `IMAGE_EDITOR_LAUNCHER` would be absent there for a reason that
  * has nothing to do with the component. This factory overrides only `imports` (stubbing the heavy
  * layout), leaving the real provider list intact, so the assertion is about the component rather
@@ -659,16 +506,12 @@ describe('DotEditContentSidePanelComponent — image editor host capability', ()
             [
                 DotEditContentSidePanelComponent,
                 {
-                    remove: { imports: [DotEditContentLayoutComponent, DotMessagePipe] },
-                    add: {
-                        imports: [
-                            MockComponent(DotEditContentLayoutComponent),
-                            MockPipe(DotMessagePipe, (key: string) => key)
-                        ]
-                    }
+                    remove: { imports: [DotEditContentLayoutComponent] },
+                    add: { imports: [MockComponent(DotEditContentLayoutComponent)] }
                 }
             ]
-        ]
+        ],
+        providers: [mockProvider(DotMessageService, { get: (key: string) => key })]
     });
 
     beforeEach(() => {

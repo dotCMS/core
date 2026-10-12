@@ -16,9 +16,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 import { ConfirmationService, ConfirmEventType } from 'primeng/api';
-import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { Drawer, DrawerModule } from 'primeng/drawer';
 
 import {
     DotEventsService,
@@ -33,8 +31,7 @@ import {
     DotFunctionInfo,
     DotPushPublishDialogData
 } from '@dotcms/dotcms-models';
-import { injectSidePanelChrome } from '@dotcms/edit-content';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotSidePanelComponent } from '@dotcms/edit-content';
 import { isSameOriginRelativeUrl } from '@dotcms/utils';
 
 import {
@@ -57,11 +54,11 @@ interface LegacyEditorEventDetail {
 /**
  * Hosts the legacy (JSP) content editor in a side panel over Content Drive (#37759).
  *
- * It looks and behaves like the new-editor side panel (`DotEditContentSidePanelComponent`): the
- * same drawer, and the same width toggle, mask and Escape rules, which both get from
- * `injectSidePanelChrome`. It is kept separate from it so that removing the
- * legacy editor later never touches the new-editor panel. Remove with the legacy editor. Every other piece that goes
- * with it carries the same phrase.
+ * It looks and behaves like the new-editor side panel (`DotEditContentSidePanelComponent`): both
+ * open in `DotSidePanelComponent`, so they share the drawer and its width toggle, mask and Escape
+ * rules. It is kept separate from it so that removing the legacy editor later never touches the
+ * new-editor panel. Remove with the legacy editor. Every other piece that goes with it carries the
+ * same phrase.
  *
  * The panel never navigates. It handles the legacy editor events that need no decision from the
  * opener, and reports the rest through its outputs, so Content Drive decides what a save or a close
@@ -69,7 +66,7 @@ interface LegacyEditorEventDetail {
  */
 @Component({
     selector: 'dot-legacy-editor-side-panel',
-    imports: [DrawerModule, ButtonModule, ConfirmDialogModule, DotMessagePipe],
+    imports: [DotSidePanelComponent, ConfirmDialogModule],
     // Its own instance, so the prompt renders in this panel's `<p-confirmDialog>` and never in
     // another one mounted elsewhere on the page.
     providers: [ConfirmationService],
@@ -116,20 +113,8 @@ export class DotLegacyEditorSidePanelComponent implements OnDestroy {
      */
     readonly languageChanged = output<number>();
 
-    /** This panel's own drawer: its mask and container are what the shared chrome checks. */
-    protected readonly $drawer = viewChild(Drawer);
-
-    /**
-     * Escape, a click on the mask, the side-panel stack and the full-width toggle, shared with the
-     * other side panels. Escape and the mask close through {@link requestClose}, so the
-     * unsaved-changes prompt runs first.
-     */
-    readonly #chrome = injectSidePanelChrome({
-        panel: this,
-        drawer: this.$drawer,
-        requestClose: () => this.requestClose(),
-        escapeLabel: 'edit.content.side-panel.shortcut.close'
-    });
+    /** The side panel this editor opens in; Escape typed inside the iframe is forwarded to it. */
+    protected readonly $sidePanel = viewChild.required(DotSidePanelComponent);
 
     /** The iframe the legacy editor loads in. */
     protected readonly $iframe = viewChild<ElementRef<HTMLIFrameElement>>('iframe');
@@ -145,9 +130,6 @@ export class DotLegacyEditorSidePanelComponent implements OnDestroy {
      * inside the editor. Reset whenever a new request opens.
      */
     readonly #languageId = linkedSignal(() => this.request()?.languageId ?? 0);
-
-    /** Whether the panel is expanded to the full width (vs 80%), seeded from the stored choice. */
-    protected readonly $expanded = this.#chrome.expanded;
 
     /** The legacy editor URL for the request, or `null` when there is nothing valid to load. */
     protected readonly $url = computed<SafeResourceUrl | null>(() => {
@@ -261,7 +243,7 @@ export class DotLegacyEditorSidePanelComponent implements OnDestroy {
         // told apart by having consumed the key.
         const onKeydown = (event: KeyboardEvent) => {
             if (event.key === 'Escape' && !event.defaultPrevented) {
-                this.#zone.run(() => this.#chrome.escape());
+                this.#zone.run(() => this.$sidePanel().escape());
             }
         };
 
@@ -280,12 +262,7 @@ export class DotLegacyEditorSidePanelComponent implements OnDestroy {
         };
     }
 
-    /** Toggles the full-width state and remembers it for the next panel. */
-    protected toggleExpanded(): void {
-        this.#chrome.toggleExpanded();
-    }
-
-    /** Drops the iframe listeners. The chrome releases its own registrations. */
+    /** Drops the iframe listeners. The side panel releases its own registrations. */
     ngOnDestroy(): void {
         this.#detachFrame();
     }

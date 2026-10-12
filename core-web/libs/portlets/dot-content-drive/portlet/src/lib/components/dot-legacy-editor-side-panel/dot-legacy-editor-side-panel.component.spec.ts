@@ -4,15 +4,13 @@ import {
     mockProvider,
     Spectator
 } from '@openng/spectator/vitest';
-import { MockPipe } from 'ng-mocks';
 import { of, Subject } from 'rxjs';
 import { Mock, vi } from 'vitest';
 
 import { NgZone } from '@angular/core';
 
 import { ConfirmationService, ConfirmEventType, Confirmation } from 'primeng/api';
-import { ButtonModule } from 'primeng/button';
-import { Drawer, DrawerModule } from 'primeng/drawer';
+import { Drawer } from 'primeng/drawer';
 
 import {
     DotActionUrlService,
@@ -25,8 +23,7 @@ import {
 } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import { DotFunctionInfo } from '@dotcms/dotcms-models';
-import { DotSidePanelNavController } from '@dotcms/edit-content';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotSidePanelComponent, DotSidePanelNavController } from '@dotcms/edit-content';
 
 import { DotLegacyEditorSidePanelComponent } from './dot-legacy-editor-side-panel.component';
 
@@ -101,11 +98,7 @@ describe('DotLegacyEditorSidePanelComponent', () => {
                 DotLegacyEditorSidePanelComponent,
                 {
                     set: {
-                        imports: [
-                            DrawerModule,
-                            ButtonModule,
-                            MockPipe(DotMessagePipe, (key: string) => key)
-                        ]
+                        imports: [DotSidePanelComponent]
                     }
                 }
             ]
@@ -405,7 +398,7 @@ describe('DotLegacyEditorSidePanelComponent', () => {
 
         /** Every way out of the panel goes through the prompt (FR-017). */
         const CLOSE_TRIGGERS: [string, (doc: Document) => void][] = [
-            ['the close button', () => clickButton('legacy-side-panel-close')],
+            ['the close button', () => clickButton('side-panel-close')],
             [
                 'Escape in the admin page',
                 () =>
@@ -704,37 +697,12 @@ describe('DotLegacyEditorSidePanelComponent', () => {
             open();
 
             expect(
-                spectator.query(byTestId('legacy-side-panel-title'), { root: true })?.textContent
+                spectator.query(byTestId('side-panel-title'), { root: true })?.textContent
             ).toContain('My legacy content');
         });
 
-        it('opens at 80% and expands to the full width, remembering the choice', () => {
-            open();
-            const root = () =>
-                spectator.query<HTMLElement>(byTestId('legacy-editor-side-panel'), {
-                    root: true
-                });
-
-            expect(root()?.style.width).toBe('80%');
-
-            clickButton('legacy-side-panel-expand');
-            spectator.detectChanges();
-
-            expect(root()?.style.width).toBe('100%');
-            // Same key as the new-editor panel, so the author's choice carries over between the two.
-            expect(localStorage.getItem('dot-edit-content-side-panel-expanded')).toBe('true');
-        });
-
-        it('registers with the side-panel stack and leaves it when destroyed', async () => {
-            open();
-            await spectator.fixture.whenStable();
-
-            expect(navController.acquire).toHaveBeenCalledWith(spectator.component);
-
-            spectator.fixture.destroy();
-
-            expect(navController.release).toHaveBeenCalledWith(spectator.component);
-        });
+        // The width toggle and the side-panel stack belong to `DotSidePanelComponent`, and are
+        // tested there.
     });
 
     describe('closing', () => {
@@ -743,7 +711,7 @@ describe('DotLegacyEditorSidePanelComponent', () => {
             const closed = vi.fn();
             spectator.output('closed').subscribe(closed);
 
-            clickButton('legacy-side-panel-close');
+            clickButton('side-panel-close');
 
             expect(closed).toHaveBeenCalledTimes(1);
         });

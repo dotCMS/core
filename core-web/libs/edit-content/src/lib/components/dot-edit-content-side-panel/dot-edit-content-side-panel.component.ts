@@ -14,33 +14,30 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
-import { ButtonModule } from 'primeng/button';
-import { Drawer, DrawerModule } from 'primeng/drawer';
 import { DialogService, DynamicDialogConfig } from 'primeng/dynamicdialog';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { popFormBridge, pushFormBridge } from '@dotcms/edit-content-bridge';
-import { ASSET_PICKER_LAUNCHER, AngularAssetPickerLauncher, DotMessagePipe } from '@dotcms/ui';
+import { ASSET_PICKER_LAUNCHER, AngularAssetPickerLauncher } from '@dotcms/ui';
 
 import {
     AngularImageEditorLauncher,
     IMAGE_EDITOR_LAUNCHER
 } from '../../fields/shared/image-editor-launcher';
 import { EditContentDialogData } from '../../models/dot-edit-content-dialog.interface';
-import { injectSidePanelChrome } from '../../services/dot-side-panel-chrome';
 import { EDIT_CONTENT_HOST } from '../../services/host/edit-content-host.model';
 import { OverlayEditContentHost } from '../../services/host/overlay-edit-content-host';
 import { DotEditContentLayoutComponent } from '../dot-edit-content-layout/dot-edit-content.layout.component';
+import { DotSidePanelComponent } from '../dot-side-panel/dot-side-panel.component';
 
 /**
- * Renders the new Edit Content editor inside a right-to-left slide-in panel (`p-drawer`), as an
+ * Renders the new Edit Content editor in a side panel ({@link DotSidePanelComponent}), as an
  * alternative to the full-screen route or the centered dialog.
  *
  * It reuses the overlay editor plumbing: it provides {@link OverlayEditContentHost} (identity from
  * the dialog config, in-place navigation, chrome no-ops) and, since it is not opened through
  * `DialogService`, supplies the {@link DynamicDialogConfig} the host reads identity from — built
- * from the {@link data} input. The header shows the content title plus an expand toggle (80% ↔
- * full width) and a close button.
+ * from the {@link data} input. The header shows the content title.
  *
  * It also self-provides `DialogService` and {@link IMAGE_EDITOR_LAUNCHER} — the same pair
  * `EditContentShellComponent` provides for the full-screen route. None of this panel's openers
@@ -51,7 +48,7 @@ import { DotEditContentLayoutComponent } from '../dot-edit-content-layout/dot-ed
  */
 @Component({
     selector: 'dot-edit-content-side-panel',
-    imports: [DrawerModule, ButtonModule, DotEditContentLayoutComponent, DotMessagePipe],
+    imports: [DotSidePanelComponent, DotEditContentLayoutComponent],
     providers: [
         OverlayEditContentHost,
         { provide: EDIT_CONTENT_HOST, useExisting: OverlayEditContentHost },
@@ -85,21 +82,6 @@ export class DotEditContentSidePanelComponent implements OnDestroy {
     /** The hosted editor; used to run its unsaved-changes guard before closing. */
     protected readonly $layout = viewChild(DotEditContentLayoutComponent);
 
-    /** This panel's own drawer: its mask and container are what the shared chrome checks. */
-    protected readonly $drawer = viewChild(Drawer);
-
-    /**
-     * Escape, a click on the mask, the side-panel stack and the full-width toggle, shared with the
-     * other side panels. Escape and the mask close through {@link requestClose}, so the editor's
-     * unsaved-changes guard runs first.
-     */
-    readonly #chrome = injectSidePanelChrome({
-        panel: this,
-        drawer: this.$drawer,
-        requestClose: () => this.requestClose(),
-        escapeLabel: 'edit.content.side-panel.shortcut.close'
-    });
-
     /** Identity (and header title) of the content to create/edit, or `null` when closed. */
     readonly data = input<EditContentDialogData | null>(null);
 
@@ -114,12 +96,6 @@ export class DotEditContentSidePanelComponent implements OnDestroy {
      * the language now open in its URL (#37759, FR-020).
      */
     readonly languageChanged = output<number>();
-
-    /**
-     * Whether the panel is expanded to the full viewport width (vs the default ~80%). Seeded from
-     * the user's persisted preference so a panel opens in the mode last chosen.
-     */
-    protected readonly $expanded = this.#chrome.expanded;
 
     /** Last successfully-saved contentlet, forwarded to `data.onContentSaved` when the panel closes. */
     #lastSaved: DotCMSContentlet | null = null;
@@ -165,7 +141,7 @@ export class DotEditContentSidePanelComponent implements OnDestroy {
     }
 
     /**
-     * Close intent (X button, ESC, or browser Back routed by the opener). Routes through the
+     * Close intent (X button, ESC, a mask click, or browser Back routed by the opener). Routes through the
      * editor's unsaved-changes guard so the user is prompted when the form is dirty; only closes
      * once it is safe. On close it fires the `data` callbacks (`onContentSaved` with the last save,
      * then `onCancel`) — mirroring the dialog's contract so dialog-based openers can switch to the
@@ -188,14 +164,6 @@ export class DotEditContentSidePanelComponent implements OnDestroy {
         }
     }
 
-    /**
-     * Toggles the expanded (full-width) state and persists it, so the next panel the user opens
-     * starts in the same mode.
-     */
-    protected toggleExpanded(): void {
-        this.#chrome.toggleExpanded();
-    }
-
     /** Fires the `data` lifecycle callbacks on close, matching {@link DotEditContentDialogComponent}. */
     #fireCloseCallbacks(): void {
         const data = this.data();
@@ -208,7 +176,7 @@ export class DotEditContentSidePanelComponent implements OnDestroy {
     }
 
     ngOnDestroy(): void {
-        // The chrome releases its own registrations; only the form bridge is this panel's.
+        // The side panel releases its own registrations; only the form bridge is this panel's.
         popFormBridge();
     }
 }
