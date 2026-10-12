@@ -1,0 +1,228 @@
+# Publish README Docs
+#
+# Copies the SDK and example READMEs in this repo into their documentation pages
+# (DotcmsDocumentation contentlets) on the dotCMS authoring server, so dev.dotcms.com
+# serves and indexes the same text instead of mirroring it at request time. The README
+# is the single source of truth: each run overwrites the page body. dotCMS keeps the
+# version history.
+#
+# Each page is saved as a working draft (EDIT action) and unlocked. Nothing is published
+# to production here; that is a separate push publish on the authoring server.
+#
+# Runs on every merge that touches one of the READMEs below, and manually
+# (dry run by default). Pages whose body already matches are skipped without a write.
+#
+# Adding a page: add its README path to `on.push.paths` AND a row to PAGES in the sync
+# step. The step fails if the two lists disagree.
+
+name: Publish README Docs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'core-web/libs/sdk/react/README.md'
+      - 'core-web/libs/sdk/angular/README.md'
+      - 'core-web/libs/sdk/client/README.md'
+      - 'core-web/libs/sdk/experiments/README.md'
+      - 'core-web/libs/sdk/analytics/README.md'
+      - 'core-web/libs/sdk/types/README.md'
+      - 'core-web/libs/sdk/uve/README.md'
+      - 'core-web/libs/sdk/events/README.md'
+      - 'core-web/apps/mcp-server/README.md'
+      - 'examples/nextjs/README.md'
+      - 'examples/angular/README.md'
+      - 'examples/astro/README.md'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Compare only and show the diffs in the run summary; write nothing to dotCMS'
+        type: boolean
+        default: true
+      pages:
+        description: 'Space-separated page slugs to sync (empty = all)'
+        type: string
+        default: ''
+
+concurrency:
+  group: publish-readme-docs
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  # GitHub users DMed by dotBot when a sync fails (looked up in .github/data/slack-mappings.json).
+  NOTIFY_GITHUB_USERS: 'jdcmsd'
+
+jobs:
+  sync:
+    name: Sync READMEs to dotCMS
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+
+      - name: Sync pages
+        env:
+          DOTCMS_URL: ${{ vars.AUTODOC_DOTCMS_BASE_URL }}
+          DOTCMS_TOKEN: ${{ secrets.AUTODOC_DOTCMS_API_TOKEN_DRAFTING }}
+          # Empty on push, so merges always write.
+          DRY_RUN: ${{ inputs.dry_run }}
+          PAGES_FILTER: ${{ inputs.pages }}
+        run: |
+          python3 - <<'PY'
+          import difflib, json, os, posixpath, re, sys, urllib.error, urllib.request
+
+          # slug (= DotcmsDocumentation urlTitle) -> (identifier, README path)
+          PAGES = {
+              "sdk-react-library":       ("505be5f36950dcd09855e53c5ff15fdc", "core-web/libs/sdk/react/README.md"),
+              "sdk-angular-library":     ("c7df146a545687ee68fa27d8e904ac73", "core-web/libs/sdk/angular/README.md"),
+              "sdk-client-library":      ("357aab1b5d22b5f887bf7395fcab052d", "core-web/libs/sdk/client/README.md"),
+              "sdk-experiments-library": ("fa2301d8dd30eaea9ccbf12a981c68f2", "core-web/libs/sdk/experiments/README.md"),
+              "sdk-analytics-library":   ("4e61f6d43efa63cab449aba5daf6cd93", "core-web/libs/sdk/analytics/README.md"),
+              "sdk-types-library":       ("93f1ea18fa79355193987a62784eb410", "core-web/libs/sdk/types/README.md"),
+              "sdk-uve-library":         ("3e1afa73c019db121eba23a94c479bc6", "core-web/libs/sdk/uve/README.md"),
+              "sdk-events-library":      ("c7a4a9c7f1c798e6443040b7275c8e62", "core-web/libs/sdk/events/README.md"),
+              "mcp-server":              ("e755fc84ec7745cc3d8f49c7b6bfbadf", "core-web/apps/mcp-server/README.md"),
+              "sdk-nextjs-example":      ("2276c54113d1aba342696c8f612d4c5d", "examples/nextjs/README.md"),
+              "sdk-angular-example":     ("3bbe51b385c95b47191c33cb33c4ad87", "examples/angular/README.md"),
+              "sdk-astro-example":       ("0e874f80-27a3-482c-b240-9f06aee37010", "examples/astro/README.md"),
+          }
+          REPO = "dotCMS/core"
+          LINK_BASE = f"https://github.com/{REPO}/blob/main"
+          ASSET_BASE = f"https://raw.githubusercontent.com/{REPO}/main"
+          WORKFLOW = ".github/workflows/publish_readme-docs.yml"
+
+          base = os.environ["DOTCMS_URL"].rstrip("/")
+          token = os.environ["DOTCMS_TOKEN"]
+          dry_run = os.environ.get("DRY_RUN") == "true"
+          selected = os.environ.get("PAGES_FILTER", "").split()
+          summary = open(os.environ["GITHUB_STEP_SUMMARY"], "a")
+
+          # The push trigger must list exactly the README paths in PAGES.
+          triggers = set(re.findall(r"^      - '([^']+/README\.md)'$", open(WORKFLOW).read(), re.M))
+          if triggers != {p for _, p in PAGES.values()}:
+              sys.exit(f"on.push.paths and PAGES disagree: {sorted(triggers ^ {p for _, p in PAGES.values()})}")
+          unknown = set(selected) - PAGES.keys()
+          if unknown:
+              sys.exit(f"unknown page slug(s): {' '.join(sorted(unknown))}")
+
+          # --- README clean-up, matching the devsite's former live mirror ---
+          NOT_ABSOLUTE = r"(?!https?://)(?!/)(?!#)(?!data:)(?!mailto:)(?!tel:)(?:\./)?"
+
+          def outside_fences(lines):
+              """Indexes of lines not inside ``` / ~~~ code blocks."""
+              fence = None
+              for i, line in enumerate(lines):
+                  m = re.match(r"\s*(```|~~~)", line)
+                  if m:
+                      fence = None if fence == m[1] else (fence or m[1])
+                  elif fence is None:
+                      yield i
+
+          def clean(readme, path):
+              lines = readme.replace("\r\n", "\n").split("\n")
+              # Drop a "Table of Contents" section: its heading up to the next heading.
+              heads = [i for i in outside_fences(lines) if re.match(r"#+\s", lines[i])]
+              toc = next((i for i in heads if re.search(r"table\s+of\s+contents", lines[i], re.I)), None)
+              if toc is not None:
+                  end = next((i for i in heads if i > toc), len(lines))
+                  del lines[toc:end]
+              # Drop the first H1; the page renders its own title.
+              h1 = next((i for i in outside_fences(lines) if re.match(r"#\s", lines[i])), None)
+              if h1 is not None:
+                  del lines[h1]
+              text = "\n".join(lines)
+
+              # Relative links and images would resolve against dev.dotcms.com; point them at GitHub.
+              directory = posixpath.dirname(path)
+              def absolute(ref):
+                  target, sep, anchor = ref.partition("#")
+                  resolved = posixpath.normpath(posixpath.join(directory, target)) if target else directory
+                  return resolved + sep + anchor
+              text = re.sub(r"!\[([^\]]*)\]\(" + NOT_ABSOLUTE + r"([^)]+)\)",
+                            lambda m: f"![{m[1]}]({ASSET_BASE}/{absolute(m[2])})", text)
+              text = re.sub(r"(?<!!)\[([^\]]+)\]\(" + NOT_ABSOLUTE + r"([^)]+)\)",
+                            lambda m: f"[{m[1]}]({LINK_BASE}/{absolute(m[2])})", text)
+              text = re.sub(r"<img([^>]*)\s+src=[\"']" + NOT_ABSOLUTE + r"([^\"']+)[\"']",
+                            lambda m: f'<img{m[1]} src="{ASSET_BASE}/{absolute(m[2])}"', text)
+              return text.strip() + "\n"
+
+          def normalize(text):
+              return "\n".join(l.rstrip() for l in text.replace("\r\n", "\n").strip().split("\n"))
+
+          def call(method, url, payload=None):
+              req = urllib.request.Request(base + url, method=method,
+                                           data=json.dumps(payload).encode() if payload is not None else None)
+              req.add_header("Authorization", f"Bearer {token}")
+              req.add_header("Content-Type", "application/json")
+              try:
+                  with urllib.request.urlopen(req, timeout=60) as resp:
+                      return resp.status, json.loads(resp.read() or b"{}")
+              except urllib.error.HTTPError as e:
+                  return e.code, {"error": e.read().decode(errors="replace")[:300]}
+
+          rows, diffs, failed = [], [], 0
+          for slug, (ident, path) in PAGES.items():
+              if selected and slug not in selected:
+                  continue
+              try:
+                  body = clean(open(path, encoding="utf-8").read(), path)
+                  status, data = call("GET", f"/api/v1/content/{ident}")
+                  if status != 200:
+                      raise RuntimeError(f"read failed: HTTP {status} {data}")
+                  current = data["entity"].get("documentation") or ""
+                  if normalize(current) == normalize(body):
+                      result = "unchanged"
+                  elif dry_run:
+                      result = "would update"
+                      diffs.append((slug, "".join(difflib.unified_diff(
+                          current.splitlines(True), body.splitlines(True), "dotCMS", path))))
+                  else:
+                      status, data = call("PUT", f"/api/v1/workflow/actions/default/fire/EDIT?identifier={ident}",
+                                          {"contentlet": {"identifier": ident, "languageId": 1, "documentation": body,
+                                                          "disabledWYSIWYG": ["documentation"]}})
+                      if status != 200:
+                          raise RuntimeError(f"save failed: HTTP {status} {data}")
+                      # EDIT leaves the page locked to this account; release it.
+                      status, data = call("PUT", f"/api/v1/content/_unlock/{ident}?language=1")
+                      if status != 200 or data.get("entity", {}).get("locked") is not False:
+                          raise RuntimeError(f"draft saved, but unlock failed: HTTP {status} {data}")
+                      result = "updated"
+              except Exception as exc:
+                  failed += 1
+                  result = f"FAILED: {exc}"
+              print(f"{slug:24} {result}")
+              rows.append(f"| `{slug}` | {result} |")
+
+          summary.write(f"## README docs sync{' (dry run)' if dry_run else ''}\n\n| Page | Result |\n|---|---|\n")
+          summary.write("\n".join(rows) + "\n")
+          for slug, diff in diffs:
+              summary.write(f"\n<details><summary>{slug}</summary>\n\n```diff\n{diff}\n```\n</details>\n")
+          sys.exit(1 if failed else 0)
+          PY
+
+      - name: Notify on failure
+        if: failure()
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          text=":x: README docs sync failed. ${RUN_URL}"
+          for user in $NOTIFY_GITHUB_USERS; do
+            slack_id=$(jq -r --arg u "$user" '.[] | select(.github_user == $u) | .slack_id' .github/data/slack-mappings.json)
+            if [ -z "$slack_id" ]; then
+              echo "::warning::No Slack mapping for GitHub user ${user}"
+              continue
+            fi
+            jq -n --arg c "$slack_id" --arg t "$text" '{channel: $c, text: $t}' \
+              | curl -s -X POST https://slack.com/api/chat.postMessage \
+                  -H "Content-type: application/json; charset=utf-8" \
+                  -H "Authorization: Bearer ${SLACK_BOT_TOKEN}" \
+                  --data @- \
+              | jq -e '.ok' > /dev/null || echo "::warning::Slack DM to ${user} failed"
+          done
