@@ -27,6 +27,12 @@ import { UVEStore } from '../../../store/dot-uve.store';
 import { ContentletArea } from '../ema-page-dropzone/types';
 
 /**
+ * An entry of the collapsed actions menu. `symbol` names its Material Symbol, which the menu's
+ * item template draws as text (PrimeNG's own `icon` only takes a class).
+ */
+type DotHoverActionMenuItem = MenuItem & { symbol?: string };
+
+/**
  * @class DotUveContentletToolsComponent
  * @description Show actions for a single contentlet in the UVE editor.
  */
@@ -314,14 +320,15 @@ export class DotUveContentletToolsComponent {
      * included — it lives outside `.actions` (left-center of the border) and
      * stays visible at all sizes. Code is a nested submenu of the
      * contentlet's VTL files (PrimeNG `<p-menu>` honors `items` on a MenuItem).
+     * Each entry carries the toolbar button's Material Symbol as `symbol`.
      */
-    readonly actionsMenuItems = computed<MenuItem[]>(() => {
+    readonly actionsMenuItems = computed<DotHoverActionMenuItem[]>(() => {
         const context = this.contentContext();
-        const items: MenuItem[] = [];
+        const items: DotHoverActionMenuItem[] = [];
 
         items.push({
             label: this.#dotMessageService.get('uve.tooltip.edit.quick'),
-            icon: 'pi pi-bolt',
+            symbol: 'edit',
             disabled: !this.canEditContentlet(),
             command: () => {
                 this.promoteHoverToSelected();
@@ -332,7 +339,7 @@ export class DotUveContentletToolsComponent {
         if (this.showStyleEditorOption()) {
             items.push({
                 label: this.#dotMessageService.get('uve.tooltip.edit.style'),
-                icon: 'pi pi-palette',
+                symbol: 'palette',
                 disabled: !this.canEditContentlet(),
                 command: () => {
                     this.promoteHoverToSelected();
@@ -343,7 +350,7 @@ export class DotUveContentletToolsComponent {
 
         items.push({
             label: this.#dotMessageService.get('uve.tooltip.edit.full'),
-            icon: 'pi pi-pencil',
+            symbol: 'edit_note',
             disabled: !this.canEditContentlet(),
             command: () => this.openFullEditor.emit(context)
         });
@@ -352,14 +359,14 @@ export class DotUveContentletToolsComponent {
         if (vtlSubmenu.length) {
             items.push({
                 label: this.#dotMessageService.get('uve.tooltip.edit.vtl'),
-                icon: 'pi pi-code',
+                symbol: 'code',
                 items: vtlSubmenu
             });
         }
 
         items.push({
             label: this.#dotMessageService.get('uve.tooltip.remove'),
-            icon: 'pi pi-times',
+            symbol: 'close',
             disabled: !this.allowContentDelete(),
             command: () => this.deleteContent.emit(context)
         });
