@@ -126,8 +126,10 @@ import {
     getTargetUrl,
     insertContentletInContainer,
     isAssetPath,
+    isNavigableHref,
     isSamePageNavigation,
     measureCanvasAvailableSize,
+    resolveClickedAnchor,
     scrollIframeToFragment,
     shouldNavigate
 } from '../utils';
@@ -804,20 +806,24 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
      * @param e - The MouseEvent object representing the click event.
      */
     handleInternalNav(e: MouseEvent) {
-        const target = e.target as HTMLAnchorElement;
-        const anchor = target.closest('a');
+        const target = e.target as HTMLElement;
+        const anchor = resolveClickedAnchor(target);
         const rawHref = anchor?.getAttribute('href') ?? '';
 
-        // Same-page anchors (#section) are browser-handled scrolls. Bail
-        // before any URL parsing — for traditional VTL pages the iframe
-        // sits at about:blank, so target.href resolves to "about:blank#section",
-        // whose hostname is "" and would incorrectly trip the external-link
-        // branch below.
-        if (rawHref.startsWith('#')) {
+        // Same-page anchors (#section) are browser-handled scrolls, and
+        // `javascript:…` hrefs never navigate at all — both are a page's own
+        // link-shaped UI (toggles, accordions), not a link to follow. Bail
+        // before any URL parsing: for traditional VTL pages the iframe sits
+        // at about:blank, so anchor.href would resolve `#section` to
+        // "about:blank#section" (hostname "", incorrectly tripping the
+        // external-link branch below) and `javascript:…` to itself (hostname
+        // also "", same false trip — previously opened as an "external"
+        // link in a new tab, dotCMS/core#37961's second QA regression).
+        if (!isNavigableHref(rawHref)) {
             return;
         }
 
-        const href = target.href || rawHref;
+        const href = anchor?.href || rawHref;
         const isInlineEditing = this.uveStore.editorState() === EDITOR_STATE.INLINE_EDITING;
 
         // If the link is not valid or we are in inline editing mode, we do nothing
