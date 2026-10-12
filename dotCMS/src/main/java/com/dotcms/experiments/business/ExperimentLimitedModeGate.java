@@ -76,10 +76,12 @@ public class ExperimentLimitedModeGate {
             return Optional.of(Rejection.FEATURE_DISABLED);
         }
 
-        // Duration cap: if an end date is set, it must not exceed MAX_DAYS from now
+        // Duration cap: end date must not exceed exactly MAX_DAYS from now.
+        // isAfter() compares full instants — avoids the off-by-one that DAYS.between()
+        // introduces by truncating sub-day remainders (e.g. "10d 23h" would count as 10).
         final Optional<Instant> endDateOpt = schedulingOpt.flatMap(Scheduling::endDate);
         if (endDateOpt.isPresent()
-                && ChronoUnit.DAYS.between(Instant.now(), endDateOpt.get()) > MAX_DAYS) {
+                && endDateOpt.get().isAfter(Instant.now().plus(MAX_DAYS, ChronoUnit.DAYS))) {
             return Optional.of(Rejection.DURATION_EXCEEDED);
         }
 
