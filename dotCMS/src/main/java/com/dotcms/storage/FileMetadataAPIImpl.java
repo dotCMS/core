@@ -711,7 +711,8 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
     }
 
     /**
-     * Removes the given metadata keys from storage.
+     * Removes the given metadata keys from storage. A key that fails is logged with its path, so
+     * it can be cleaned up by hand, and the rest are still removed.
      *
      * @param keys               the metadata paths to remove
      * @param storageType        the storage they are kept in
@@ -724,11 +725,11 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
             final StorageType storageType, final String metadataBucketName,
             final boolean versionOnly) {
         final Map<String, Set<String>> removedMetaPaths = new HashMap<>();
-        try {
-            for (final String metadataPath : keys) {
-                final FetchMetadataParams params = new FetchMetadataParams.Builder()
-                        .storageKey(new StorageKey.Builder().group(metadataBucketName)
-                                .path(metadataPath).storage(storageType).build()).build();
+        for (final String metadataPath : keys) {
+            final FetchMetadataParams params = new FetchMetadataParams.Builder()
+                    .storageKey(new StorageKey.Builder().group(metadataBucketName)
+                            .path(metadataPath).storage(storageType).build()).build();
+            try {
                 final boolean removed = versionOnly
                         ? this.fileStorageAPI.removeVersionMetaData(params)
                         : this.fileStorageAPI.removeMetaData(params);
@@ -736,9 +737,12 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
                     removedMetaPaths.computeIfAbsent(metadataBucketName, k -> new HashSet<>())
                             .add(metadataPath);
                 }
+            } catch (final DotDataException e) {
+                Logger.error(FileMetadataAPIImpl.class, String.format(
+                        "Unable to remove metadata [%s] from storage group [%s]; it is left in "
+                                + "place: %s", metadataPath, metadataBucketName, e.getMessage()),
+                        e);
             }
-        } catch (final DotDataException e) {
-            Logger.error(FileMetadataAPIImpl.class, e);
         }
         return removedMetaPaths;
     }

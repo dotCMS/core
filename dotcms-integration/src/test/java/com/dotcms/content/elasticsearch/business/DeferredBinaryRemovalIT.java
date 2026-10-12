@@ -2,6 +2,7 @@ package com.dotcms.content.elasticsearch.business;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -208,6 +209,39 @@ public class DeferredBinaryRemovalIT {
                 "a listener registered after the failing removal must still run");
         assertRemoved(versions.older());
         assertRemoved(versions.working());
+    }
+
+    /**
+     * Method to test: the deferred removal's error handling, on a real I/O failure
+     * Given Scenario: A file asset destroyed inside a transaction, with its binary directory made
+     * read-only so the files under it cannot be removed after the commit
+     * ExpectedResult: The commit returns without an error reaching the caller, the binary
+     * directory is left in place (and its path logged as left behind), and the rest of the
+     * removal still runs: the resized-image cache is gone and the destroy committed
+     */
+    @Test
+    void test_directoryThatCannotBeRemoved_isLeftInPlace_restOfRemovalStillRuns()
+            throws Exception {
+        final Versions versions = fileAssetWithTwoVersions();
+        final File assetDirectory = assetDirectory(versions.working());
+        assertTrue(assetDirectory.setWritable(false, false),
+                "precondition: the binary directory can be made read-only");
+        try {
+            assertDoesNotThrow(() -> LocalTransaction.wrap(() -> contentletAPI.destroy(
+                    List.of(versions.working()), admin, false)));
+
+            assertTrue(assetDirectory.exists(),
+                    "a directory that could not be removed is left in place");
+            // The metadata is not asserted: with file system storage it is kept under the same
+            // read-only directory, so it is left in place too. The cache is a separate directory.
+            assertFalse(cacheDirectory(versions.working()).exists(),
+                    "the rest of the removal still runs: the cache must be gone");
+            assertNull(contentletAPI.find(versions.working().getInode(), admin, false),
+                    "the destroy itself committed");
+        } finally {
+            assetDirectory.setWritable(true, false);
+            com.liferay.util.FileUtil.deltree(assetDirectory);
+        }
     }
 
     /** The two versions of one file asset, re-read from the database. */

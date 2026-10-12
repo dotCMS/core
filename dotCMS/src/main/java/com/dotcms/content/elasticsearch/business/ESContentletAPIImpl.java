@@ -9401,16 +9401,39 @@ public class ESContentletAPIImpl implements ContentletAPI {
      */
     private void deleteBinaryFiles(final List<Contentlet> contentlets, final Field field) {
         for (final Contentlet contentlet : contentlets) {
-            BinaryRemovalAfterCommit.schedule("the metadata of " + contentlet.getInode(),
-                    fileMetadataAPI.prepareMetadataRemoval(contentlet));
+            final Runnable metadataRemoval = fileMetadataAPI.prepareMetadataRemoval(contentlet);
+            BinaryRemovalAfterCommit.schedule("the metadata of " + contentlet.getInode(), () -> {
+                metadataRemoval.run();
+                Logger.debug(ESContentletAPIImpl.class,
+                        String.format("metadata removed for %s", contentlet.getIdentifier()));
+            });
         }
+        BinaryRemovalAfterCommit.schedule("the metadata removal summary",
+                () -> Logger.debug(ESContentletAPIImpl.class, String.format(
+                        "Done removing metadata for %d elements.", contentlets.size())));
         for (final Contentlet contentlet : contentlets) {
             final File assetDirectory = new File(getContentletAssetPath(contentlet, field));
             final File cacheDirectory = new File(getContentletCacheAssetPath(contentlet, field));
             BinaryRemovalAfterCommit.schedule(assetDirectory.getAbsolutePath(),
-                    () -> FileUtil.deltree(assetDirectory));
+                    () -> deleteDirectory(assetDirectory));
             BinaryRemovalAfterCommit.schedule(cacheDirectory.getAbsolutePath(),
-                    () -> FileUtil.deltree(cacheDirectory));
+                    () -> deleteDirectory(cacheDirectory));
+        }
+    }
+
+    /**
+     * Deletes a directory and everything in it, failing when any of it is still there afterwards.
+     * {@link FileUtil#deltree(File)} only logs a file it cannot delete at debug level, so without
+     * this check a removal that failed after commit would leave files on disk without a trace.
+     *
+     * @param directory the directory to delete
+     * @throws IllegalStateException the directory is still on disk after the delete
+     */
+    private static void deleteDirectory(final File directory) {
+        FileUtil.deltree(directory);
+        if (directory.exists()) {
+            throw new IllegalStateException("could not delete everything under "
+                    + directory.getAbsolutePath());
         }
     }
 

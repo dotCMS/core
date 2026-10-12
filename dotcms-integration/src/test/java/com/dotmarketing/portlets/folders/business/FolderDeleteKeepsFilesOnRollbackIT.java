@@ -36,6 +36,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 import java.io.File;
+import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -131,6 +132,82 @@ public class FolderDeleteKeepsFilesOnRollbackIT {
                 () -> APILocator.getFolderAPI().delete(tree.top(), tree.deleter(), false));
 
         assertFileKept(tree);
+    }
+
+    /**
+     * Method to test: {@link FolderAPIImpl#delete(Folder, User, boolean)}
+     * Given Scenario: A folder holding a file asset with two versions, deleted successfully
+     * ExpectedResult: As soon as the delete returns, every version's binary directory,
+     * resized-image cache directory and metadata are gone (AC-003)
+     */
+    @Test
+    void test_singleFolderDelete_succeeds_clearsFilesWhenItReturns() throws Exception {
+        final DeletableFolder deletable = deletableFolder();
+
+        APILocator.getFolderAPI().delete(deletable.folder(), admin, false);
+
+        assertFilesRemoved(deletable);
+    }
+
+    /**
+     * Method to test: {@link FolderBulkDeleteProcessor#process(Job)}
+     * Given Scenario: The same folder, deleted through the bulk folder delete
+     * ExpectedResult: The folder is SUCCESS and every version's binary directory, resized-image
+     * cache directory and metadata are gone once the run returns: the folder's transaction
+     * commits, and the removal runs, before its outcome is recorded (AC-003)
+     */
+    @Test
+    void test_bulkDelete_succeeds_clearsFilesBeforeTheOutcomeIsRecorded() throws Exception {
+        final DeletableFolder deletable = deletableFolder();
+        final String path = String.format("//%s/%s/", site.getHostname(),
+                deletable.folder().getName());
+
+        final Job job = jobFor(path, admin);
+        final FolderBulkDeleteProcessor processor = new FolderBulkDeleteProcessor();
+        processor.process(job);
+
+        assertEquals(BatchItemStatus.SUCCESS,
+                resultFor(processor.getResultMetadata(job), path).status());
+        assertFilesRemoved(deletable);
+    }
+
+    /** A folder holding one file asset with two versions, each with a resized-image cache. */
+    private record DeletableFolder(Folder folder, List<Contentlet> versions) { }
+
+    private DeletableFolder deletableFolder() throws Exception {
+        final Folder folder = new FolderDataGen().site(site).nextPersisted();
+        final Contentlet older = new FileAssetDataGen(folder, "first version").nextPersisted();
+        final Contentlet working = ContentletDataGen.checkin(ContentletDataGen.checkout(older));
+        final List<Contentlet> versions = List.of(
+                APILocator.getContentletAPI().find(older.getInode(), admin, false),
+                APILocator.getContentletAPI().find(working.getInode(), admin, false));
+        for (final Contentlet version : versions) {
+            fileMetadataAPI.generateContentletMetadata(version);
+            final File cache = new File(cacheDirectory(version), FileAssetAPI.BINARY_FIELD);
+            assertTrue(cache.mkdirs() || cache.isDirectory());
+            Files.writeString(new File(cache, "resized.txt").toPath(), "resized");
+            assertTrue(assetDirectory(version).exists() && metadataExists(version),
+                    "precondition: files and metadata in place for " + version.getInode());
+        }
+        return new DeletableFolder(folder, versions);
+    }
+
+    private static void assertFilesRemoved(final DeletableFolder deletable) throws Exception {
+        for (final Contentlet version : deletable.versions()) {
+            assertFalse(assetDirectory(version).exists(),
+                    "binary directory still on disk for " + version.getInode());
+            assertFalse(cacheDirectory(version).exists(),
+                    "resized-image cache directory still on disk for " + version.getInode());
+            assertFalse(metadataExists(version),
+                    "metadata still stored for " + version.getInode());
+        }
+    }
+
+    private static File cacheDirectory(final Contentlet contentlet) {
+        final String inode = contentlet.getInode();
+        return new File(APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator
+                + "cache" + File.separator + inode.charAt(0) + File.separator + inode.charAt(1)
+                + File.separator + inode);
     }
 
     /** The reproduction tree, the walked file's two versions and the user deleting it. */

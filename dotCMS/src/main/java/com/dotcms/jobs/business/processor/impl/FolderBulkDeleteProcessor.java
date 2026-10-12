@@ -214,7 +214,7 @@ public class FolderBulkDeleteProcessor implements JobProcessor, Cancellable {
             final String coveringAncestor = findCoveringAncestor(path, deleted);
             if (coveringAncestor != null) {
                 Logger.info(this, String.format(
-                        "Bulk folder delete job [%s]: [%s] was deleted with selected ancestor [%s], "
+                        "Bulk folder delete job [%s]: [%s] is covered by selected ancestor [%s], "
                                 + "skipping", job.id(), path, coveringAncestor));
                 record(path, BatchItemStatus.SKIPPED, BatchFailureReason.COVERED_BY_PARENT, null);
                 deleted.add(path);
@@ -425,6 +425,10 @@ public class FolderBulkDeleteProcessor implements JobProcessor, Cancellable {
      * the honest answer: this feature cannot tell "a prior attempt deleted the folder" apart from
      * "the path never named a folder at all" once the folder is gone, and FR-030 only asks that the
      * former not be misreported as a failure.
+     *
+     * @param path    the submitted path
+     * @param message why it did not resolve
+     * @return whether the path was recorded {@code SUCCESS}, so paths inside it are covered
      */
     private boolean recordUnresolved(final String path, final String message) {
         if (this.previouslyAbandoned) {
@@ -442,6 +446,12 @@ public class FolderBulkDeleteProcessor implements JobProcessor, Cancellable {
      * to compute rights against afterward. {@code FOLDER_DELETE_FINISHED} fires in every case
      * below, success or a classified failure alike (data-model.md §5) — this is the one method in
      * the class where that finally-equivalent shape matters.
+     *
+     * @param folder the resolved folder
+     * @param path   the submitted path
+     * @param job    the run
+     * @param user   the author, whose rights the delete runs with
+     * @return whether the folder was deleted, so paths inside it are covered
      */
     private boolean announceAndDelete(final Folder folder, final String path, final Job job,
             final User user) {
