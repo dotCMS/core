@@ -9,29 +9,28 @@
 **Type**: New Feature
 
 **Input**: GitHub issue dotCMS/core#37896 (epic #37928), adjusted by the developer's description of
-the flow. Content Drive has no way to import content from a CSV, so users still go to the legacy
-Content Search import. This feature adds an "Import CSV" option to Content Drive's Upload control.
-It opens a dialog with the same capabilities as Content Search's import (content type, language,
-workflow action, key fields, CSV file, sample CSV download), a preview that shows what will be
-created or updated plus every warning and error in Content Drive's own UI, and an import the user
-waits for inside the dialog. Design is not available yet.
+the flow and by the review of PR #37995. Content Drive has no way to import content from a CSV, so
+users still go to the legacy Content Search import. This feature adds an "Import CSV" option to
+Content Drive's Upload control. It opens a dialog with the same capabilities as Content Search's
+import (content type, language, workflow action, key fields, CSV file, sample CSV download) and a
+preview that shows what will be created or updated, where the rows will land, and every warning and
+error, in Content Drive's own UI. The import then runs in the background: its progress shows in the
+Drive's status toast, and when it ends the toast opens the full result. Design is not available
+yet.
 
 ## Clarifications
 
 ### Session 2026-10-12
 
-The developer's description of the flow differs from the issue in four places. The developer's
+The developer's description of the flow differs from the issue in these places. The developer's
 version is the one this spec follows:
 
 - **Non-indexed fields** are not listed as key fields at all. The issue (and legacy) list them
   disabled.
-- **The import is synchronous for the user (proposed, open to review).** The user waits in the
-  dialog until the import finishes, then chooses to close or import more. The issue had the import
-  keep running after the dialog closes, with a toast at the end. See "Open for review: synchronous
-  or asynchronous import" below.
 - **The preview is shown with Content Drive's UI**, not as the plain text lists Content Search
   shows (summary, warnings, errors).
-- **Failures are shown in the dialog**, and the user can fix the form or the file and try again.
+- **Failures are shown to the user with what went wrong**, and the user can fix the form or the
+  file and try again.
 
 Other decisions:
 
@@ -47,39 +46,54 @@ Other decisions:
   `GET /api/v1/workflow/initialactions/contenttype/{id}`, is enough. It returns the actions the user
   may run on new content of that type. No new endpoint is created.
 
-### Open for review: synchronous or asynchronous import
+### Session 2026-10-12 (PR #37995 review)
 
-The server always runs the import as a background job. The question is what the user sees while it
-runs.
-
-- **Proposed: synchronous.** The dialog waits for the job to finish and cannot be closed while it
-  runs. The final result (created, updated and failed counts, plus every row error) is shown in the
-  dialog, where the user can read it, go back to the form and retry. This is what User Story 1 and
-  FR-016 describe.
-- **Alternative: asynchronous.** The user may close the dialog and keep working while the import
-  runs, and is told when it ends. This frees the user on large imports, but it needs a decision this
-  spec does not cover: **where and how the final result is shown when the import had errors**,
-  once the dialog is gone. A toast can carry the counts but not a list of row errors. Options
-  include reopening the result in the dialog from the toast, or a place in the Drive that lists
-  recent imports and their results. None of these is designed yet.
-
-Reviewers are welcome to propose a way to show the final result asynchronously. Until then, this
-spec follows the synchronous proposal.
+- Q: Should the import be synchronous (the user waits in the dialog) or asynchronous? → A:
+  **Asynchronous.** After the user confirms, the dialog closes and the import keeps running. Its
+  progress shows in the Drive's status toast, the one upload and folder copy already use, and like
+  those it is restored after a reload or after leaving the Drive and coming back. The toast offers
+  Cancel while the import runs. When it ends, the toast shows the created, updated and failed
+  counts and a "View results" button that opens the full result, row errors included. The server
+  keeps each import's result, so the result can be opened long after the form is gone. This matches
+  the issue's original direction and needs no "recent imports" page.
+- Q: Which site does the import write to? → A: **The site the Drive is browsing, sent with the
+  request.** The import endpoint currently takes the site from the server session, which two
+  browser tabs on different sites share, so an import could land on the other tab's site. The
+  endpoint gains an optional site parameter, and the Drive always sends it. Callers that don't send
+  it keep today's behavior.
+- **Drag-and-drop import stays out of scope**, as the issue states: its "Out of scope" section
+  lists "Drag and drop import", and one of its acceptance criteria says dropping a `.csv` uploads it
+  as a file with no import prompt. The reason given there still holds: each row lands where its CSV
+  says, not in the folder the file was dropped on, which would be confusing. The scope can change if
+  the reviewers prefer it.
+- The preview summary shows **where the rows will land**: how many rows go to each site/folder from
+  the CSV, and how many go to the site root because they have none.
+- **Language is prefilled with the language the user is working in** in the Drive, not the system
+  default language.
+- **"Import more"** keeps the content type, language, workflow action and key fields. Only the file
+  and the preview are reset.
+- Warnings and errors are listed **in line-number order**, so a row's problems can be found by its
+  line.
+- The sample CSV endpoint is a **REST equivalent** of Content Search's sample download. Content
+  Search keeps its own download unchanged.
 
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Import a CSV from Content Drive (Priority: P1)
 
-An editor has a spreadsheet of blog posts. In Content Drive they open Upload, choose "Import CSV",
-pick Blog, a language and a workflow action, choose key fields, attach the CSV, preview it, and
-import it. They wait in the dialog until it finishes, see how many items were created and updated,
-and close the dialog. The Drive listing shows the new content.
+An editor has a spreadsheet of items for one content type. In Content Drive they open Upload,
+choose "Import CSV", pick the content type, a language and a workflow action, choose key fields,
+attach the CSV, preview it, and confirm the import. The dialog closes and they keep working while
+the status toast shows the import's progress. When it ends, the toast reports how many items were
+created, updated and failed, and they can open the full result. The Drive listing shows the new
+content.
 
 **Why this priority**: This is the feature. It removes the last reason to go back to Content Search
 for bulk loading.
 
-**Independent Test**: In Content Drive, import a valid Blog CSV with two new rows. The dialog
-reports two created, and the listing shows both blogs.
+**Independent Test**: In Content Drive, import a valid CSV with two new rows for any content type.
+The dialog closes, the status toast shows the import running and then two created, and the listing
+shows both items.
 
 **Acceptance Scenarios**:
 
@@ -89,16 +103,26 @@ reports two created, and the listing shows both blogs.
    look at Upload, **Then** "Import CSV" is not available either.
 3. **Given** the user chose "Import CSV", **When** the dialog opens, **Then** it shows Content Type,
    Language, Workflow Action, Key Fields, a CSV file picker, and a link to download a sample CSV.
-4. **Given** a complete form and a valid file, **When** the user previews and then imports,
-   **Then** the dialog shows the import running and cannot be closed until it finishes.
-5. **Given** the import finished, **When** the dialog shows the result, **Then** it reports how
-   many rows were created, updated and failed, and offers "Close" and "Import more".
-6. **Given** the result is shown, **When** the user picks "Import more", **Then** the dialog
-   returns to the form, ready for another import.
-7. **Given** the import finished, **When** the user closes the dialog, **Then** the Drive listing
-   refreshes and shows any new content in the current folder.
-8. **Given** the user drops a `.csv` file onto the Drive, **When** the drop completes, **Then** it
-   is uploaded as a file exactly as today, with no import.
+4. **Given** a complete form and a preview, **When** the user confirms the import and the import
+   starts, **Then** the dialog closes and the status toast shows that the import is running.
+5. **Given** an import is running, **When** the user reloads the page, or leaves the Drive and comes
+   back, **Then** the status toast is shown again with the same import, as it is for upload and
+   folder copy.
+6. **Given** an import is running, **When** the user clicks Cancel on the status toast, **Then** the
+   import stops, and the toast reports it was cancelled along with what was already created or
+   updated before it stopped.
+7. **Given** the import ended, **When** the user looks at the status toast, **Then** it shows the
+   created, updated and failed counts and a "View results" button.
+8. **Given** the import ended, **When** the user clicks "View results", **Then** a dialog opens with
+   the full result: the counts, and every warning and error with its line number, field and value
+   when known. It offers "Close" and "Import more".
+9. **Given** the result dialog is open, **When** the user picks "Import more", **Then** the import
+   form opens with the same content type, language, workflow action and key fields, and with no
+   file and no preview.
+10. **Given** the import ended while the user is in the Drive, **When** the toast reports it,
+    **Then** the Drive listing refreshes and shows any new content in the current folder.
+11. **Given** the user drops a `.csv` file onto the Drive, **When** the drop completes, **Then** it
+    is uploaded as a file exactly as today, with no import.
 
 ---
 
@@ -125,8 +149,9 @@ Pick one: only its permitted workflow actions and its indexed, importable fields
    and layout fields are not shown.
 4. **Given** the user changes the content type, **When** the form updates, **Then** the workflow
    action and key fields are reset to match the new type.
-5. **Given** the dialog is open, **When** the user opens Language, **Then** it lists every language
-   plus a "Multilingual file" option, and defaults to the default language.
+5. **Given** the dialog opens, **When** the user looks at Language, **Then** it is prefilled with the
+   language the user is working in in the Drive, and its list offers every language plus a
+   "Multilingual file" option.
 6. **Given** the user picks "Multilingual file", **When** the form updates, **Then** it explains
    that each row needs `languageCode` and `countryCode` columns and that at least one key field is
    required.
@@ -136,23 +161,25 @@ Pick one: only its permitted workflow actions and its indexed, importable fields
 8. **Given** the user picks a file that doesn't end in `.csv`, **When** it is selected, **Then** the
    form shows an inline error and no preview starts.
 9. **Given** the form, **When** the user reads it, **Then** it states that each row is placed by
-   the CSV's site/folder column, and rows without one go to the site root, not the folder the Drive
-   is showing.
+   the CSV's site/folder column, and rows without one go to the root of the site the Drive is
+   browsing, not the folder the Drive is showing.
 
 ---
 
 ### User Story 3 - Preview shows clearly what will happen (Priority: P1)
 
 Before anything is written, the user previews the import and sees, in a readable layout, a summary
-(rows read, headers matched, key fields, how many items would be created and updated) and every
-warning and error, each with its line number, field and value when known.
+(rows read, headers matched, key fields, how many items would be created and updated, and where the
+rows will land) and every warning and error, each with its line number, field and value when known.
 
-**Why this priority**: The preview is how users catch mistakes before writing hundreds of items.
-Content Search shows it as plain text, which is hard to scan.
+**Why this priority**: The preview is how users catch mistakes before writing hundreds of items,
+including sending rows to the wrong place. Content Search shows it as plain text, which is hard to
+scan.
 
-**Independent Test**: Preview a CSV with one bad date on line 3 and an unknown column. The summary
-shows the counts, the error names line 3 and the date field, and the warning names the unknown
-column. Nothing is created.
+**Independent Test**: Preview a CSV for any content type with a date field, where line 3 has a bad
+date, the file has an unknown column, and some rows have no site/folder. The summary shows the
+counts and how many rows go to each folder and to the site root, the error names line 3 and the date
+field, and the warning names the unknown column. Nothing is created.
 
 **Acceptance Scenarios**:
 
@@ -160,19 +187,23 @@ column. Nothing is created.
    state until the preview is ready, and no content is created.
 2. **Given** the preview is ready, **When** the user reads it, **Then** it shows a summary with
    rows read, headers matched, key fields used, items to create and items to update.
-3. **Given** the preview has warnings or errors, **When** the user reads them, **Then** warnings and
-   errors are shown as separate, clearly distinguished groups with their counts, and each entry
-   shows its line number, field and offending value when the result includes them.
-4. **Given** the preview has no warnings or no errors, **When** the user reads it, **Then** the
+3. **Given** the preview is ready, **When** the user reads the summary, **Then** it shows where the
+   rows will land: how many rows go to each site/folder named in the CSV (for example
+   "12 rows → //demo.dotcms.com/news/"), and how many go to the site root because they name none.
+4. **Given** the preview has warnings or errors, **When** the user reads them, **Then** warnings and
+   errors are shown as separate, clearly distinguished groups with their counts, each listed in
+   line-number order, and each entry shows its line number, field and offending value when the
+   result includes them.
+5. **Given** the preview has no warnings or no errors, **When** the user reads it, **Then** the
    matching group says there are none.
-5. **Given** the preview is ready, **When** the user changes any form input or the file, **Then**
+6. **Given** the preview is ready, **When** the user changes any form input or the file, **Then**
    the preview is discarded and the user must preview again before importing.
-6. **Given** the preview is ready, **When** the user cancels it, **Then** they return to the form
+7. **Given** the preview is ready, **When** the user cancels it, **Then** they return to the form
    with their inputs kept, and no content is created.
-7. **Given** the preview has errors, **When** the user clicks Import, **Then** the import is
+8. **Given** the preview has errors, **When** the user clicks Import, **Then** the import is
    allowed, as in Content Search: the dialog warns that rows with errors will be skipped, and the
    user confirms before it starts.
-8. **Given** the preview has no errors, **When** the user clicks Import, **Then** the import starts
+9. **Given** the preview has no errors, **When** the user clicks Import, **Then** the import starts
    after the same confirmation Content Search asks for.
 
 ---
@@ -185,8 +216,8 @@ fill it in and import it.
 **Why this priority**: It saves guessing column names, but users who already have a file don't need
 it.
 
-**Independent Test**: Pick Blog and click the sample link. A CSV downloads whose header row lists
-Blog's importable fields and whose second row shows example values.
+**Independent Test**: Pick any content type and click the sample link. A CSV downloads whose header
+row lists that type's importable fields and whose second row shows example values.
 
 **Acceptance Scenarios**:
 
@@ -194,8 +225,8 @@ Blog's importable fields and whose second row shows example values.
    disabled.
 2. **Given** a content type is picked, **When** the user clicks the sample link, **Then** a CSV
    downloads with one column per importable field of the content type, whatever key fields are
-   selected (as Content Search produces it), and a second row of placeholder values that show each field's expected format (for example a
-   date pattern for date fields).
+   selected (as Content Search produces it), and a second row of placeholder values that show each
+   field's expected format (for example a date pattern for date fields).
 3. **Given** "Multilingual file" is picked, **When** the user downloads the sample, **Then** it also
    has `languageCode` and `countryCode` columns.
 4. **Given** a user who can't read the content type, **When** they request its sample, **Then** the
@@ -203,14 +234,14 @@ Blog's importable fields and whose second row shows example values.
 
 ---
 
-### User Story 5 - Failures are shown in the dialog and the user can retry (Priority: P2)
+### User Story 5 - Failures are reported and the user can retry (Priority: P2)
 
 When the preview or import can't run (the content type or language no longer exists, the file is
-empty or unreadable, the server fails), the dialog shows what went wrong and keeps the user's
-inputs, so they can fix the form or the file and try again.
+empty or unreadable, the server fails), the user sees what went wrong and can fix the form or the
+file and try again.
 
-**Why this priority**: Without it a failure leaves the user with a blank dialog or a stray toast
-and no way to tell what to fix.
+**Why this priority**: Without it a failure leaves the user with a blank dialog or a toast that
+doesn't say what to fix.
 
 **Independent Test**: Preview with an empty CSV. The dialog shows an error explaining the file has
 no data rows, the form is still filled in, and replacing the file lets the user preview again.
@@ -219,26 +250,31 @@ no data rows, the form is still filled in, and replacing the file lets the user 
 
 1. **Given** the preview fails, **When** the dialog shows the failure, **Then** it shows the
    server's error message and the form stays editable with the user's inputs kept.
-2. **Given** the import fails part way or entirely, **When** it ends, **Then** the dialog shows the
-   result (what was created and updated before the failure, and the errors), and lets the user go
-   back to the form to try again.
-3. **Given** a failure was shown, **When** the user changes inputs or replaces the file and
+2. **Given** the user confirmed the import, **When** the import can't be started, **Then** the
+   dialog stays open, shows the error, and keeps the user's inputs.
+3. **Given** the import started, **When** it fails part way or entirely, **Then** the status toast
+   reports the failure with the server's message, and "View results" shows what was created and
+   updated before the failure and the errors.
+4. **Given** a failed import's result is open, **When** the user picks "Import more", **Then** the
+   form opens with the same choices, so they can attach a corrected file and try again.
+5. **Given** a failure was shown, **When** the user changes inputs or replaces the file and
    previews again, **Then** the new preview runs normally.
 
 ---
 
 ### Edge Cases
 
-- **Closing during the import.** The dialog cannot be closed while the import runs. If the user
-  reloads or leaves the page anyway, the server finishes the import; the user sees its results in
-  the content, not in the dialog.
 - **Closing during the preview.** Allowed; nothing is created.
-- **Drive site differs from the session site.** The import writes into the site the Drive is
-  browsing, not another site the server remembers for the session. This needs checking in the plan.
+- **Closing the result dialog.** The import is already over; closing it loses nothing. The toast
+  can be dismissed once the import has ended.
+- **Two tabs on different sites.** Each tab's import writes to the site that tab's Drive is
+  browsing, because the site is sent with the request, not taken from the shared server session.
 - **Rows with a folder that doesn't exist.** They land at the site root with no error, as in
   legacy. Tracked separately, not fixed here.
-- **Very large files.** No new size limit; the server's existing upload limit applies. The dialog
-  keeps showing that the import is running for as long as it takes.
+- **Very large files.** No new size limit; the server's existing upload limit applies. The status
+  toast keeps showing the import as running for as long as it takes.
+- **Cancel after some rows were saved.** The import saves rows in batches, so rows saved before the
+  cancel stay saved. The toast and the result say how many.
 - **Per-row action column.** A CSV may name a workflow action per row; legacy honors it over the
   form's action, and so does this import.
 - **Identifier column.** A CSV with an `Identifier` column updates the matching content, as in
@@ -256,6 +292,10 @@ no data rows, the form is still filled in, and replacing the file lets the user 
 - **Key fields**: fields used to find existing content to update instead of creating new content.
 - **Multilingual file**: a CSV where each row carries its own language in `languageCode` and
   `countryCode` columns.
+- **Status toast**: the Drive's persistent progress notice that upload and folder copy already use,
+  restored after a reload or after coming back to the Drive.
+- **Working language**: the language the Drive's language filter is set to. When it holds no single
+  language, the default language.
 
 ### Functional Requirements
 
@@ -268,10 +308,12 @@ no data rows, the form is still filled in, and replacing the file lets the user 
   write permission on, excluding Host. The Drive's existing content type filter SHOULD be reused,
   adapted to single selection; if that proves too complex, a plain single-select dropdown MUST be
   used instead.
-- **FR-004**: Language MUST list every language plus a "Multilingual file" option, default to the
-  default language, and always send the chosen language to the import (never leave it empty).
+- **FR-004**: Language MUST list every language plus a "Multilingual file" option, MUST be
+  prefilled with the working language, and the chosen language MUST always be sent to the import
+  (never left empty).
 - **FR-005**: Workflow Action MUST list exactly the actions Content Search's import offers for the
-  selected content type and user, and MUST be required.
+  selected content type and user, using the endpoint Content Search already calls, and MUST be
+  required.
 - **FR-006**: Key Fields MUST list only the selected type's indexed fields that can be used as keys
   (no relationship, file, image or layout fields). Non-indexed fields MUST NOT be shown.
 - **FR-007**: Changing the content type MUST reset the workflow action and key fields.
@@ -279,40 +321,64 @@ no data rows, the form is still filled in, and replacing the file lets the user 
   file are set, and, for a multilingual file, at least one key field.
 - **FR-009**: Picking a file that doesn't end in `.csv` MUST show an inline error.
 - **FR-010**: The dialog MUST tell the user that rows are placed by the CSV's site/folder column and
-  rows without one go to the site root.
+  rows without one go to the root of the site the Drive is browsing.
 - **FR-011**: Preview MUST run the import without writing anything and show a summary (rows read,
   headers matched, key fields, items to create, items to update), then warnings and errors as
   separate groups with counts. Each entry MUST show its line number, field and value when known.
-- **FR-012**: The preview MUST be shown with the Drive's own visual components, not as plain text,
-  and all its text MUST be translatable.
-- **FR-013**: Any change to the form or the file after a preview MUST discard it and require a new
+- **FR-012**: The preview summary MUST show where the rows will land: the number of rows per
+  site/folder named in the CSV, and the number of rows that go to the site root because they name
+  none.
+- **FR-013**: Warnings and errors, in the preview and in the result, MUST be listed in ascending
+  line-number order. Messages without a line number MUST come first.
+- **FR-014**: The preview and the result MUST be shown with the Drive's own visual components, not
+  as plain text.
+- **FR-015**: Any change to the form or the file after a preview MUST discard it and require a new
   preview before importing.
-- **FR-014**: Import MUST use exactly the file and options of the last preview.
-- **FR-015**: Import MUST be allowed whether or not the preview has errors, as in Content Search.
+- **FR-016**: Import MUST use exactly the file and options of the last preview.
+- **FR-017**: Import MUST be allowed whether or not the preview has errors, as in Content Search.
   When it has errors, the dialog MUST warn that rows with errors will be skipped and ask the user to
   confirm.
-- **FR-016**: While the import runs, the dialog MUST show that it is running and MUST NOT be
-  closable. When it ends, the dialog MUST show created, updated and failed counts and any errors,
-  and offer "Close" and "Import more".
-- **FR-017**: "Import more" MUST return to an empty form. "Close" MUST close the dialog and refresh
-  the Drive listing.
-- **FR-018**: When the preview or import fails, the dialog MUST show the error and keep the form
-  editable with the user's inputs, so the user can retry.
-- **FR-019**: A new server endpoint MUST return a sample CSV for a content type, as described in
-  User Story 4, and MUST refuse users who can't read that content type. It replaces the
-  sample download that today exists only inside Content Search.
-- **FR-020**: The import endpoint's documentation MUST state that leaving `language` out, or sending
-  `-1`, means a multilingual file, and the generated API description MUST be updated.
-- **FR-021**: Dropping a `.csv` onto the Drive MUST keep uploading it as a file, as today.
-- **FR-022**: All new visible text MUST be translatable, reusing Content Search's existing
+- **FR-018**: Once the import has started, the dialog MUST close and the import MUST run in the
+  background. Its progress MUST be shown in the status toast, through the same mechanism upload and
+  folder copy use, and MUST be restored after a reload or after leaving the Drive and coming back.
+- **FR-019**: While the import runs, the status toast MUST offer Cancel, which stops the import.
+  The toast MUST then report it as cancelled with the counts saved so far.
+- **FR-020**: When the import ends, whether it succeeded, failed or was cancelled, the status toast
+  MUST show the created, updated and failed counts (and the server's message when it failed) and a
+  "View results" button.
+- **FR-021**: "View results" MUST open a dialog with the full result: the counts, and the warnings
+  and errors as described in FR-011 and FR-013. It MUST be available from the toast after a reload,
+  because the result is read from the server.
+- **FR-022**: The result dialog MUST offer "Close" and "Import more". "Import more" MUST open the
+  form keeping the content type, language, workflow action and key fields, with no file and no
+  preview.
+- **FR-023**: When an import ends while the user is in the Drive, the listing MUST refresh.
+- **FR-024**: When the preview fails, or the import can't be started, the dialog MUST show the error
+  and keep the form editable with the user's inputs, so the user can retry.
+- **FR-025**: The import endpoint MUST accept an optional site, and the rows that don't name a
+  site/folder MUST go to that site's root. Content Drive MUST always send the site it is browsing.
+  When no site is sent, the endpoint MUST behave as today (the session's site). A site that doesn't
+  exist or that the user can't read MUST be refused.
+- **FR-026**: A new server endpoint MUST return a sample CSV for a content type, as described in
+  User Story 4, and MUST refuse users who can't read that content type. It is a REST equivalent of
+  Content Search's sample download; Content Search keeps its own download unchanged.
+- **FR-027**: The import endpoint's documentation MUST state that leaving `language` out, or sending
+  `-1`, means a multilingual file, MUST describe the new site parameter, and the generated API
+  description MUST be updated.
+- **FR-028**: Dropping a `.csv` onto the Drive MUST keep uploading it as a file, as today.
+- **FR-029**: All new visible text MUST be translatable, reusing Content Search's existing
   translation keys where the meaning is the same.
 
 ### Key Entities
 
 - **Import request**: content type, language (or multilingual), workflow action, key fields, CSV
-  file.
+  file, site.
+- **Import run**: a running or finished import, identified by the server's job, with its progress
+  and final state (succeeded, failed, cancelled). The browser remembers the runs it started so the
+  status toast can be restored.
 - **Import result**: summary counts (rows read, to create, to update, created, updated, failed),
-  and lists of info, warning and error messages, each with line number, field and value when known.
+  where rows will land (rows per site/folder, rows to the site root), and lists of info, warning and
+  error messages, each with line number, field and value when known.
 - **Sample CSV**: a header row of the content type's importable fields (plus language columns for a
   multilingual file) and one row of format placeholders.
 
@@ -324,36 +390,40 @@ no data rows, the form is still filled in, and replacing the file lets the user 
   Content Drive.
 - **SC-002**: For the same CSV and options, the preview reports the same counts, warnings and errors
   as Content Search's preview.
-- **SC-003**: A user can find any row error in the preview by line number without reading the full
-  list.
-- **SC-004**: Every failed preview or import leaves the dialog with an error message and the user's
-  inputs intact; no failure ends with a blank or stuck dialog.
-- **SC-005**: A sample CSV filled in by a user and imported with the same options produces no
+- **SC-003**: In every preview and result, warnings and errors appear in ascending line-number order.
+- **SC-004**: A user can keep working in the Drive while an import runs, and after a reload still
+  sees the import's progress and can open its result.
+- **SC-005**: Every failed preview, failed start or failed import tells the user the server's error;
+  no failure ends with a blank or stuck dialog or a toast with no message.
+- **SC-006**: In two tabs browsing different sites, each import lands on its own tab's site.
+- **SC-007**: A sample CSV filled in by a user and imported with the same options produces no
   header errors.
 
 ## Legacy Considerations *(dotCMS-specific — mandatory)*
 
 - **Existing behavior touched**: Content Search's import (the legacy Struts flow and its JSP
-  screens) is the reference. It is not changed or removed. The server's REST import, which already
-  powers both validation and import, is reused; a sample CSV endpoint is added next to it, moving
-  out of the legacy action the logic that only exists there today.
-- **Backward-compatibility expectations**: Content Search's import keeps working unchanged. The
-  REST import's behavior doesn't change; only its documentation of `language` is corrected. Drag and
-  drop and file upload in the Drive keep working as today.
+  screens) is the reference. It is not changed or removed, and it keeps its own sample download.
+  The server's REST import, which already powers both validation and import as background jobs, is
+  reused and gains an optional site parameter. A sample CSV endpoint is added next to it, with the
+  logic that today exists only inside the legacy action made reusable.
+- **Backward-compatibility expectations**: Content Search's import keeps working unchanged. Callers
+  of the REST import that don't send a site keep today's behavior; its documentation of `language`
+  is corrected. Drag and drop and file upload in the Drive keep working as today.
 - **Known related decisions**: Import is one half of the Drive's import/export epic (#37928); the
-  export (#37900) writes CSVs this import must read back. The plan phase will consult
-  `dotCMS/platform-adrs`.
+  export (#37900) writes CSVs this import must read back. The status toast and its restore after a
+  reload already exist for upload and folder copy, and import plugs into them. The plan phase will
+  consult `dotCMS/platform-adrs`.
 
 ## Assumptions
 
-- The server import runs as a background job; "synchronous" here means the user waits in the
-  dialog for that job to finish (see "Open for review: synchronous or asynchronous import"). How the
-  dialog waits is a plan decision.
-- The import writes into the site the Drive is browsing.
+- The server import runs as a background job and keeps its result; the result dialog reads it from
+  there.
+- Where rows will land is worked out from the CSV's site/folder column during the preview. The plan
+  confirms whether the preview result already carries it or the server must add it.
 - Language stays in the form even though the developer's description didn't mention it, because the
   import always needs one, and leaving it out silently turns on multilingual mode.
 - The sample CSV's placeholder values follow Content Search's (date patterns, category key,
   site/folder identifier, and `XXX` for other fields), without its trailing-comma bug.
-- Out of scope: importing by drag and drop, targeting the current folder, fixing rows whose folder
-  doesn't exist, checking who owns an import job on the job endpoints (to be filed separately), and
-  export (#37900).
+- Out of scope: importing by drag and drop (see Clarifications), targeting the current folder,
+  fixing rows whose folder doesn't exist, checking who owns an import job on the job endpoints (to
+  be filed separately), a "recent imports" page, and export (#37900).
