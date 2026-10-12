@@ -51,8 +51,10 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Deque;
 import java.util.List;
 import java.util.Optional;
 
@@ -430,17 +432,52 @@ public class DotSamlResource implements Serializable {
 	/**
 	 * Determines whether the post-login redirect target points at the dotCMS back-end. Only
 	 * back-end logins are subject to the no-access role gate; front-end logins are never denied
-	 * here. The path's dot segments are resolved first, so {@code /members/../dotAdmin/} counts as
-	 * back-end and {@code /dotAdmin/../members/} does not. Reuses
-	 * {@link SamlWebUtils#isBackEndLoginPage(String)} so the back-end path set stays in one place.
+	 * here. The path is percent-decoded first and its dot segments are then resolved, as a browser
+	 * resolves them (a {@code ..} at the root stays at the root). So {@code /members/../dotAdmin/},
+	 * {@code /members/%2e%2e/dotAdmin/} and {@code /members/..%2f..%2fdotAdmin/} count as back-end, and
+	 * {@code /dotAdmin/../members/} does not. This matters for the trusted {@code redirect.after.login}, which
+	 * is not validated. Reuses {@link SamlWebUtils#isBackEndLoginPage(String)} so the back-end path set stays
+	 * in one place.
 	 *
 	 * @param loginPath the post-login destination
 	 * @return true when the destination is a back-end path
 	 */
 	@VisibleForTesting
 	boolean isBackEndLogin(final String loginPath) {
-		final String path = Try.of(() -> URI.create(loginPath).normalize().getPath()).getOrElse(loginPath);
+		final String decodedPath = Try.of(() -> URI.create(loginPath).getPath()).getOrElse(loginPath);
+		final String path = resolveDotSegments(decodedPath);
 		return UtilMethods.isSet(path) && this.samlWebUtils.isBackEndLoginPage(path);
+	}
+
+	/**
+	 * Resolves the {@code .} and {@code ..} segments of an already decoded path the way a browser does: a
+	 * {@code ..} at the root is dropped rather than rejected.
+	 *
+	 * @param path the decoded path, may be null
+	 * @return the resolved path, or null when the path is null
+	 */
+	private static String resolveDotSegments(final String path) {
+
+		if (null == path || !path.startsWith("/")) {
+			return path;
+		}
+		final String[] segments = path.substring(1).split("/", -1);
+		final Deque<String> kept = new ArrayDeque<>();
+		boolean trailingSlash = false;
+		for (int i = 0; i < segments.length; i++) {
+			final boolean last = i == segments.length - 1;
+			if (".".equals(segments[i])) {
+				trailingSlash = last;
+			} else if ("..".equals(segments[i])) {
+				kept.pollLast();
+				trailingSlash = last;
+			} else {
+				kept.addLast(segments[i]);
+				trailingSlash = false;
+			}
+		}
+		final String resolved = "/" + String.join("/", kept);
+		return trailingSlash && !kept.isEmpty() ? resolved + "/" : resolved;
 	}
 
 	/**

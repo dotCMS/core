@@ -150,6 +150,8 @@ public class RedirectUtilTest {
                 {"/\t//evil.com",                     RedirectUtil.RedirectRejection.FORBIDDEN_CHARACTER},
                 {"/x\"><script>",                     RedirectUtil.RedirectRejection.FORBIDDEN_CHARACTER},
                 {"/bad%zz",                            RedirectUtil.RedirectRejection.MALFORMED_ENCODING},
+                {"/members/..%2f..%2fdotAdmin/",       RedirectUtil.RedirectRejection.FORBIDDEN_CHARACTER},
+                {"/members/%2e%2e%2FdotAdmin",         RedirectUtil.RedirectRejection.FORBIDDEN_CHARACTER},
                 {"/page1/../../other-path",            RedirectUtil.RedirectRejection.ABOVE_ROOT},
                 {"/%2e%2e/%2e%2e/other-path",          RedirectUtil.RedirectRejection.ABOVE_ROOT},
         };
@@ -160,6 +162,32 @@ public class RedirectUtilTest {
         }
         assertEquals(Optional.empty(), RedirectUtil.rejectionReason("/members/report?id=42", HOST));
         assertEquals(Optional.empty(), RedirectUtil.rejectionReason("https://site.example.com/a", HOST));
+    }
+
+    /**
+     * Method to test: {@link RedirectUtil#toSameHostRedirect(String, String)}
+     * Given Scenario: a path whose slash is percent-encoded (%2f / %2F), which can hide a ".." segment from the
+     * dot-segment resolution (PR #37984 review): "/members/..%2f..%2fdotAdmin/" decodes to
+     * "/members/../../dotAdmin/"
+     * ExpectedResult: rejected wherever the encoded slash is in the path, also on an absolute URL; an encoded
+     * slash in the query string is still accepted
+     */
+    @Test
+    public void encodedSlashInPath_isRejected() {
+
+        final String[] rejected = {
+                "/members/..%2f..%2fdotAdmin/",
+                "/members/..%2F..%2FdotAdmin/",
+                "/members/%2e%2e%2fdotAdmin",
+                "/a%2fb",
+                "https://site.example.com/members/..%2f..%2fdotAdmin/",
+        };
+        for (final String candidate : rejected) {
+            assertEquals("candidate: " + candidate, Optional.empty(), RedirectUtil.toSameHostRedirect(candidate, HOST));
+            assertEquals("candidate: " + candidate, Optional.of(RedirectUtil.RedirectRejection.FORBIDDEN_CHARACTER),
+                    RedirectUtil.rejectionReason(candidate, HOST));
+        }
+        assertEquals(Optional.of("/search?u=%2Fa%2Fb"), RedirectUtil.toSameHostRedirect("/search?u=%2Fa%2Fb", HOST));
     }
 
     /**

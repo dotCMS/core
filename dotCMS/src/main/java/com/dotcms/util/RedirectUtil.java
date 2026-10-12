@@ -171,7 +171,10 @@ public class RedirectUtil {
         NOT_A_PATH,
         /** Starts, or would start after decoding or resolving dot segments, with {@code //}. */
         PROTOCOL_RELATIVE,
-        /** Contains a control or whitespace character, backslash, quote, angle bracket or backtick. */
+        /**
+         * Contains a control or whitespace character, backslash, quote, angle bracket or backtick, or an encoded
+         * slash ({@code %2F}) in its path.
+         */
         FORBIDDEN_CHARACTER,
         /** Malformed percent-encoding or URL syntax. */
         MALFORMED_ENCODING,
@@ -249,6 +252,12 @@ public class RedirectUtil {
             return Either.left(RedirectRejection.PROTOCOL_RELATIVE);
         }
         if (hasForbiddenDecodedCharacter(decodedPath)) {
+            return Either.left(RedirectRejection.FORBIDDEN_CHARACTER);
+        }
+        // An encoded slash can hide a ".." segment from the dot-segment resolution below
+        // ("/members/..%2f..%2fdotAdmin/" decodes to "/members/../../dotAdmin/"), and servlet containers refuse
+        // such paths anyway, so it is never accepted in the path. It stays allowed in the query string.
+        if (rawPath.toLowerCase(Locale.ROOT).contains("%2f")) {
             return Either.left(RedirectRejection.FORBIDDEN_CHARACTER);
         }
 

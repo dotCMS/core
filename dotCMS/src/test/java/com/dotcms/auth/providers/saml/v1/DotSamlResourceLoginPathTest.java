@@ -198,6 +198,18 @@ public class DotSamlResourceLoginPathTest {
     }
 
     /**
+     * Given Scenario: a front-end-only user whose RelayState hides ".." behind an encoded slash to reach the
+     * back-end: "/members/..%2f..%2fdotAdmin/" (PR #37984 review)
+     * ExpectedResult: the RelayState is not followed; with no other destination the user lands on "/"
+     */
+    @Test
+    public void frontEndUser_encodedSlashIntoBackEnd_isNotFollowed() {
+
+        relayState("/members/..%2f..%2fdotAdmin/");
+        assertRedirect("/", resolve(frontEndOnly()));
+    }
+
+    /**
      * Given Scenario: a front-end-only user whose RelayState starts with /dotAdmin but resolves to a
      * front-end page (AC-005)
      * ExpectedResult: the user is sent to the front-end page, not denied
@@ -431,6 +443,21 @@ public class DotSamlResourceLoginPathTest {
 
         assertTrue(resource.isBackEndLogin("/members/../dotAdmin/"));
         assertFalse(resource.isBackEndLogin("/dotAdmin/../members/report"));
+    }
+
+    /**
+     * Method to test: {@link DotSamlResource#isBackEndLogin(String)}
+     * Given Scenario: a trusted redirect.after.login value whose ".." segments are hidden behind encoded slashes
+     * or encoded dots (PR #37984 review); the decision must follow the decoded, normalized path
+     * ExpectedResult: "/members/..%2f..%2fdotAdmin/" and "/members/%2e%2e/dotAdmin/" count as back-end
+     */
+    @Test
+    public void isBackEndLoginDecodesBeforeNormalizing() {
+
+        assertTrue(resource.isBackEndLogin("/members/..%2f..%2fdotAdmin/"));
+        assertTrue(resource.isBackEndLogin("/members/x/..%2F..%2FdotAdmin/"));
+        assertTrue(resource.isBackEndLogin("/members/%2e%2e/dotAdmin/"));
+        assertFalse(resource.isBackEndLogin("/members/report%2Fid"));
     }
 
     private DotSamlResource.LoginDestination resolve(final User user) {
