@@ -25,7 +25,6 @@ const STATUS_KEYS: Record<DotConfigurationSaveState, string> = {
     selector: 'dot-configuration-action-bar',
     imports: [ButtonModule, DotMessagePipe],
     templateUrl: './dot-configuration-action-bar.component.html',
-    styleUrls: ['./dot-configuration-action-bar.component.scss'],
     host: {
         class: 'flex flex-none items-center justify-between gap-4 border-t border-surface-200 bg-surface-50 px-8 py-3'
     }

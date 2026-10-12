@@ -32,8 +32,7 @@ type LicenseState =
 @Component({
     selector: 'dot-configuration-license-dialog',
     imports: [ButtonModule, SkeletonModule, DotMessagePipe],
-    templateUrl: './dot-configuration-license-dialog.component.html',
-    styleUrls: ['./dot-configuration-license-dialog.component.scss']
+    templateUrl: './dot-configuration-license-dialog.component.html'
 })
 export class DotConfigurationLicenseDialogComponent implements OnInit {
     readonly #ref = inject(DynamicDialogRef);

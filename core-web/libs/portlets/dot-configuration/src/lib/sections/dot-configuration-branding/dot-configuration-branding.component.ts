@@ -26,8 +26,7 @@ import { DotConfigurationStore } from '../../store/dot-configuration.store';
         DotConfigurationCardComponent,
         DotConfigurationColorFieldComponent
     ],
-    templateUrl: './dot-configuration-branding.component.html',
-    styleUrls: ['./dot-configuration-branding.component.scss']
+    templateUrl: './dot-configuration-branding.component.html'
 })
 export class DotConfigurationBrandingComponent {
     protected readonly store = inject(DotConfigurationStore);

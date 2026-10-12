@@ -14,8 +14,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 @Component({
     selector: 'dot-configuration-regenerate-key-dialog',
     imports: [FormsModule, ButtonModule, CheckboxModule, DotMessagePipe],
-    templateUrl: './dot-configuration-regenerate-key-dialog.component.html',
-    styleUrls: ['./dot-configuration-regenerate-key-dialog.component.scss']
+    templateUrl: './dot-configuration-regenerate-key-dialog.component.html'
 })
 export class DotConfigurationRegenerateKeyDialogComponent {
     readonly #ref = inject(DynamicDialogRef);

@@ -25,8 +25,7 @@ import { DotConfigurationStore } from '../../store/dot-configuration.store';
         DotMessagePipe,
         DotConfigurationCardComponent
     ],
-    templateUrl: './dot-configuration-outbound.component.html',
-    styleUrls: ['./dot-configuration-outbound.component.scss']
+    templateUrl: './dot-configuration-outbound.component.html'
 })
 export class DotConfigurationOutboundComponent {
     protected readonly store = inject(DotConfigurationStore);

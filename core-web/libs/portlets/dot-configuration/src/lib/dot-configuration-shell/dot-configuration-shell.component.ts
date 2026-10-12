@@ -60,7 +60,6 @@ const SECTION_NAME_KEYS: Record<DotConfigurationSection, string> = {
     ],
     providers: [DotConfigurationStore, ConfirmationService, DialogService],
     templateUrl: './dot-configuration-shell.component.html',
-    styleUrls: ['./dot-configuration-shell.component.scss'],
     host: {
         class: 'flex h-full min-h-0 flex-col',
         '(window:beforeunload)': 'onBeforeUnload($event)'

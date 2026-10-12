@@ -30,8 +30,7 @@ import { DotConfigurationStore } from '../../store/dot-configuration.store';
         DotMessagePipe,
         DotConfigurationCardComponent
     ],
-    templateUrl: './dot-configuration-security.component.html',
-    styleUrls: ['./dot-configuration-security.component.scss']
+    templateUrl: './dot-configuration-security.component.html'
 })
 export class DotConfigurationSecurityComponent {
     readonly #dotMessageService = inject(DotMessageService);

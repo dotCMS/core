@@ -36,8 +36,7 @@ export interface DotConfigurationTestMailDialogData {
         DotFieldRequiredDirective,
         DotMessagePipe
     ],
-    templateUrl: './dot-configuration-test-mail-dialog.component.html',
-    styleUrls: ['./dot-configuration-test-mail-dialog.component.scss']
+    templateUrl: './dot-configuration-test-mail-dialog.component.html'
 })
 export class DotConfigurationTestMailDialogComponent {
     readonly #ref = inject(DynamicDialogRef);

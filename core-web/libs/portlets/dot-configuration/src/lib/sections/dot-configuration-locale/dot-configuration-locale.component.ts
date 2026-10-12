@@ -62,8 +62,7 @@ export function formatTimeInZone(now: Date, timeZoneId: string, rawOffset: numbe
 @Component({
     selector: 'dot-configuration-locale',
     imports: [FormsModule, SelectModule, TagModule, DotMessagePipe, DotConfigurationCardComponent],
-    templateUrl: './dot-configuration-locale.component.html',
-    styleUrls: ['./dot-configuration-locale.component.scss']
+    templateUrl: './dot-configuration-locale.component.html'
 })
 export class DotConfigurationLocaleComponent {
     protected readonly store = inject(DotConfigurationStore);

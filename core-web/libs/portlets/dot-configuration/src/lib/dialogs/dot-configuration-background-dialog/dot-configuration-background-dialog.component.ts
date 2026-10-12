@@ -32,8 +32,7 @@ interface BackgroundTile {
 @Component({
     selector: 'dot-configuration-background-dialog',
     imports: [ButtonModule, FileUploadModule, DotMessagePipe],
-    templateUrl: './dot-configuration-background-dialog.component.html',
-    styleUrls: ['./dot-configuration-background-dialog.component.scss']
+    templateUrl: './dot-configuration-background-dialog.component.html'
 })
 export class DotConfigurationBackgroundDialogComponent {
     readonly #ref = inject(DynamicDialogRef);

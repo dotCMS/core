@@ -12,8 +12,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 @Component({
     selector: 'dot-configuration-card',
     imports: [PanelModule, DotMessagePipe],
-    templateUrl: './dot-configuration-card.component.html',
-    styleUrls: ['./dot-configuration-card.component.scss']
+    templateUrl: './dot-configuration-card.component.html'
 })
 export class DotConfigurationCardComponent {
     /** Material Symbols name, e.g. `palette`. */

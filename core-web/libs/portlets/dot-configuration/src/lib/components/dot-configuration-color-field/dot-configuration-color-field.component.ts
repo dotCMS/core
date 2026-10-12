@@ -37,8 +37,7 @@ export function toPickerHex(value: string): string | null {
 @Component({
     selector: 'dot-configuration-color-field',
     imports: [FormsModule, ColorPickerModule, InputTextModule, DotMessagePipe],
-    templateUrl: './dot-configuration-color-field.component.html',
-    styleUrls: ['./dot-configuration-color-field.component.scss']
+    templateUrl: './dot-configuration-color-field.component.html'
 })
 export class DotConfigurationColorFieldComponent {
     readonly inputId = input.required<string>();

@@ -38,8 +38,7 @@ export const LOGO_ACCEPT = '.svg,.png,image/svg+xml,image/png';
         DotFieldRequiredDirective,
         DotMessagePipe
     ],
-    templateUrl: './dot-configuration-logo-dialog.component.html',
-    styleUrls: ['./dot-configuration-logo-dialog.component.scss']
+    templateUrl: './dot-configuration-logo-dialog.component.html'
 })
 export class DotConfigurationLogoDialogComponent {
     readonly #ref = inject(DynamicDialogRef);
