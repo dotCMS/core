@@ -224,8 +224,10 @@
                             }
                             <span class="p-tieredmenu-item-label">{{ item.label }}</span>
                             @if (hasSubmenu) {
+                                <!-- `text-sm!`, not `text-lg!`: PrimeNG's submenu-icon class fixes
+                                     this box at the theme's 0.875rem, and a larger glyph overflows it. -->
                                 <span
-                                    class="p-tieredmenu-submenu-icon material-symbols-outlined text-lg! leading-none"
+                                    class="p-tieredmenu-submenu-icon material-symbols-outlined text-sm! leading-none"
                                     aria-hidden="true">
                                     chevron_right
                                 </span>
