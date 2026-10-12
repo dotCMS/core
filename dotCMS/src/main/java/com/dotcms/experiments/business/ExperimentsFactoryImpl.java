@@ -223,4 +223,12 @@ public class ExperimentsFactoryImpl implements
                 .mapToInt(row -> Integer.parseInt(String.valueOf(row.get("total"))))
                 .sum();
     }
+
+    @Override
+    public void acquireFreeSlotLock() throws DotDataException {
+        // nosemgrep: gitlab.find_sec_bugs.CUSTOM_INJECTION-2 -- static SQL, no runtime input
+        new DotConnect()
+                .setSQL("SELECT pg_advisory_xact_lock(hashtext('experiment_free_slot'))")
+                .loadObjectResults();
+    }
 }

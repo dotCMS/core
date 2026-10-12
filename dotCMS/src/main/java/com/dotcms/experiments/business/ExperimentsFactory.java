@@ -60,4 +60,16 @@ public interface ExperimentsFactory {
      * @throws DotDataException on persistence errors
      */
     int countByStatuses(Set<Status> statuses) throws DotDataException;
+
+    /**
+     * Acquires a transaction-scoped Postgres advisory lock that serialises concurrent
+     * free-slot checks across all cluster nodes. The lock is released automatically when
+     * the current transaction commits or rolls back — no manual unlock is needed.
+     *
+     * <p>Must be called inside an active transaction ({@code @WrapInTransaction}) to be
+     * effective; in an auto-commit context the lock is released immediately after this call.
+     *
+     * @throws DotDataException on persistence errors
+     */
+    void acquireFreeSlotLock() throws DotDataException;
 }
