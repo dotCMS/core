@@ -5,14 +5,14 @@ import {
     Spectator,
     SpyObject
 } from '@openng/spectator/vitest';
-import { MockComponent, ngMocks } from 'ng-mocks';
+import { MockComponent } from 'ng-mocks';
 import { NEVER, of, Subject, throwError } from 'rxjs';
 import { Mock, Mocked, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Location } from '@angular/common';
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { signal, Signal, WritableSignal } from '@angular/core';
+import { signal, WritableSignal } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -54,11 +54,7 @@ import {
     DotSite,
     PERMISSIONS_TYPE
 } from '@dotcms/dotcms-models';
-import {
-    DotEditContentSidePanelComponent,
-    DotSidePanelNavController,
-    EditContentDialogData
-} from '@dotcms/edit-content';
+import { EditContentDialogData } from '@dotcms/edit-content';
 import {
     DotFolderTreeNodeData,
     DotFolderTreeNodeItem,
@@ -69,7 +65,10 @@ import {
     DotFolderListViewComponent,
     DotUploadTypeSelectorComponent,
     STATUS_TOAST_KEY,
-    DotJspIframeDialogComponent
+    DotJspIframeDialogComponent,
+    DotSidePanelConfig,
+    DotSidePanelNavController,
+    DotSidePanelService
 } from '@dotcms/ui';
 import { DOT_SYSTEM_CONFIG_SERVICE_MOCK, mockLocales } from '@dotcms/utils-testing';
 
@@ -152,6 +151,39 @@ const systemHostCanReadSignal = signal(true);
 const allSiteContentSelectedSignal = signal(false);
 // The listing on show (#37930). Module-level and reset per test, like the signals above.
 const viewTypeSignal: WritableSignal<'list' | 'card'> = signal('list');
+
+/** A side panel the shell opened, as the fake {@link DotSidePanelService} records it. */
+interface OpenedPanel {
+    component: unknown;
+    config: DotSidePanelConfig;
+    ref: { closed: Subject<void>; close: Mock; requestClose: Mock };
+}
+
+/** Stands in for the root side-panel outlet: records each panel opened, renders none. */
+const createSidePanelsFake = () => {
+    const opened: OpenedPanel[] = [];
+
+    return {
+        opened,
+        open: vi.fn((component: unknown, config: DotSidePanelConfig) => {
+            const closed = new Subject<void>();
+            const ref = {
+                closed,
+                close: vi.fn(() => {
+                    closed.next();
+                    closed.complete();
+                }),
+                requestClose: vi.fn()
+            };
+            opened.push({ component, config, ref });
+
+            return ref;
+        })
+    };
+};
+
+// Module scope, read through a factory: two describes in this file create the shell.
+let sidePanels: ReturnType<typeof createSidePanelsFake>;
 
 describe('DotContentDriveShellComponent', () => {
     let spectator: Spectator<DotContentDriveShellComponent>;
@@ -259,7 +291,8 @@ describe('DotContentDriveShellComponent', () => {
                 shouldCollapse: vi.fn().mockReturnValue(false),
                 acquire: vi.fn(),
                 release: vi.fn()
-            })
+            }),
+            { provide: DotSidePanelService, useFactory: () => sidePanels }
         ],
         componentProviders: [
             DotContentDriveStore,
@@ -269,26 +302,14 @@ describe('DotContentDriveShellComponent', () => {
             // be provided the same way the shell provides it in production.
             provideContentDriveFieldFilterHost()
         ],
-        // The legacy panel hosts a JSP iframe and has its own spec; the shell only needs its
-        // inputs, outputs and `requestClose()`.
         overrideComponents: [
             [
                 DotContentDriveShellComponent,
                 {
                     // The card has its own spec. Rendering real cards here pushed this file past
                     // Node's heap limit.
-                    remove: {
-                        imports: [
-                            DotLegacyEditorSidePanelComponent,
-                            DotContentDriveGridCardComponent
-                        ]
-                    },
-                    add: {
-                        imports: [
-                            MockComponent(DotLegacyEditorSidePanelComponent),
-                            MockComponent(DotContentDriveGridCardComponent)
-                        ]
-                    }
+                    remove: { imports: [DotContentDriveGridCardComponent] },
+                    add: { imports: [MockComponent(DotContentDriveGridCardComponent)] }
                 }
             ]
         ],
@@ -296,6 +317,7 @@ describe('DotContentDriveShellComponent', () => {
     });
 
     beforeEach(() => {
+        sidePanels = createSidePanelsFake();
         canAddChildrenSignal.set(true);
         siteCanAddChildrenSignal.set(undefined);
         systemHostCanReadSignal.set(true);
@@ -5225,32 +5247,60 @@ describe('DotContentDriveShellComponent', () => {
             sidePanelNav = spectator.inject(DotSidePanelNavController);
         });
 
-        it('delegates the panel `closed` output to the navigation service', async () => {
+        /** The new editor's panel the shell opened last. Its content is loaded lazily. */
+        const editPanel = (): OpenedPanel | undefined =>
+            sidePanels.opened
+                .filter((panel) => typeof (panel.component as Promise<unknown>).then === 'function')
+                .at(-1);
+
+        /** The legacy editor's panel the shell opened last. */
+        const legacyPanel = (): OpenedPanel | undefined =>
+            sidePanels.opened
+                .filter((panel) => panel.component === DotLegacyEditorSidePanelComponent)
+                .at(-1);
+
+        /** Fires one of a panel content's outputs, as the content would. */
+        const emit = (panel: OpenedPanel | undefined, output: string, value?: unknown): void =>
+            (panel?.config.outputs?.[output] as (value: unknown) => void)(value);
+
+        it('opens the new editor in a side panel on the request, headed with its title', () => {
             setPanelRequest(EDIT_REQUEST);
             spectator.detectChanges();
-            // The panel is behind `@defer`; its dynamic import resolves as a microtask, so the
-            // element isn't in the DOM until the fixture settles.
-            await spectator.fixture.whenStable();
+
+            const panel = editPanel();
+            expect(panel?.config.heading).toEqual(expect.any(Function));
+            expect((panel?.config.heading as () => string)()).toBe('My content');
+            expect((panel?.config.inputs?.['data'] as () => unknown)()).toEqual(EDIT_REQUEST);
+        });
+
+        it('closes the panel when the request is cleared', () => {
+            setPanelRequest(EDIT_REQUEST);
+            spectator.detectChanges();
+            const panel = editPanel();
+
+            setPanelRequest(null);
             spectator.detectChanges();
 
-            // Drive the real template binding `(closed)="onEditPanelClosed()"`, not the handler
-            // directly — so a removed/renamed binding would fail the test.
-            spectator.triggerEventHandler('dot-edit-content-side-panel', 'closed', undefined);
+            expect(panel?.ref.close).toHaveBeenCalled();
+            // Cleared by the navigation service already: nothing to report back to it.
+            expect(navigationService.closeEditPanel).not.toHaveBeenCalled();
+        });
+
+        it('tells the navigation service when the panel closes itself', () => {
+            setPanelRequest(EDIT_REQUEST);
+            spectator.detectChanges();
+
+            editPanel()?.ref.close();
 
             expect(navigationService.closeEditPanel).toHaveBeenCalledTimes(1);
         });
 
-        it('reloads the list when the panel `saved` output fires', async () => {
+        it('reloads the list when the panel reports a save', () => {
             setPanelRequest(EDIT_REQUEST);
-            spectator.detectChanges();
-            await spectator.fixture.whenStable();
             spectator.detectChanges();
 
             // The panel's `saved` output always carries the saved contentlet.
-            spectator.triggerEventHandler('dot-edit-content-side-panel', 'saved', {
-                identifier: 'id-1',
-                languageId: 1
-            } as DotCMSContentlet);
+            emit(editPanel(), 'saved', { identifier: 'id-1', languageId: 1 } as DotCMSContentlet);
 
             expect(store.reloadContentDrive).toHaveBeenCalledTimes(1);
         });
@@ -5343,27 +5393,22 @@ describe('DotContentDriveShellComponent', () => {
             const getPopstateHandler = () =>
                 (location.subscribe as Mock).mock.calls[0][0] as (event: { url: string }) => void;
 
-            // The panel lives behind `@defer`, so the view child is not resolved synchronously —
-            // the tests stub the signal instead. `$sidePanel` is protected, so it is absent from
-            // the public type `vi.spyOn` infers its keys from; cast to the shape being stubbed.
-            const stubSidePanel = () => {
-                const requestClose = vi.fn();
+            /**
+             * Opens the new editor's panel on `request` and returns its close request, with the URL
+             * writes the open made cleared, so only what Back does is asserted.
+             */
+            const openPanel = (request: EditContentDialogData): Mock => {
+                setPanelRequest(request);
+                spectator.detectChanges();
+                (location.replaceState as Mock).mockClear();
+                (location.go as Mock).mockClear();
+                (router.createUrlTree as Mock).mockClear();
 
-                vi.spyOn(
-                    spectator.component as unknown as {
-                        $sidePanel: Signal<DotEditContentSidePanelComponent | undefined>;
-                    },
-                    '$sidePanel'
-                ).mockReturnValue({
-                    requestClose
-                } as unknown as DotEditContentSidePanelComponent);
-
-                return requestClose;
+                return editPanel()?.ref.requestClose as Mock;
             };
 
             it('routes Back through the panel close guard (does not discard silently)', () => {
-                const requestClose = stubSidePanel();
-                setPanelRequest(EDIT_REQUEST);
+                const requestClose = openPanel(EDIT_REQUEST);
 
                 getPopstateHandler()({ url: '/c/content-drive?path=/foo' });
 
@@ -5375,8 +5420,7 @@ describe('DotContentDriveShellComponent', () => {
             });
 
             it('keeps the panel open when Back preserves the same editContent param', () => {
-                const requestClose = stubSidePanel();
-                setPanelRequest(EDIT_REQUEST);
+                const requestClose = openPanel(EDIT_REQUEST);
 
                 getPopstateHandler()({ url: '/c/content-drive?editContent=id-1' });
 
@@ -5385,8 +5429,11 @@ describe('DotContentDriveShellComponent', () => {
             });
 
             it('routes Back through the guard for an open create panel too (AC8)', () => {
-                const requestClose = stubSidePanel();
-                setPanelRequest({ mode: 'new', contentTypeId: 'ct-1', title: 'New content' });
+                const requestClose = openPanel({
+                    mode: 'new',
+                    contentTypeId: 'ct-1',
+                    title: 'New content'
+                });
 
                 // Back removed `createContent` — the popstate handler must still close the create
                 // panel through the guard, not leave it open with a stale URL.
@@ -5405,8 +5452,11 @@ describe('DotContentDriveShellComponent', () => {
             });
 
             it('keeps a create panel open when Back preserves its createContent param', () => {
-                const requestClose = stubSidePanel();
-                setPanelRequest({ mode: 'new', contentTypeId: 'ct-1', title: 'New content' });
+                const requestClose = openPanel({
+                    mode: 'new',
+                    contentTypeId: 'ct-1',
+                    title: 'New content'
+                });
 
                 getPopstateHandler()({ url: '/c/content-drive?createContent=ct-1' });
 
@@ -5415,8 +5465,11 @@ describe('DotContentDriveShellComponent', () => {
             });
 
             it('closes a create panel when Back only leaves the retired editContent=new marker', () => {
-                const requestClose = stubSidePanel();
-                setPanelRequest({ mode: 'new', contentTypeId: 'ct-1', title: 'New content' });
+                const requestClose = openPanel({
+                    mode: 'new',
+                    contentTypeId: 'ct-1',
+                    title: 'New content'
+                });
 
                 getPopstateHandler()({ url: '/c/content-drive?editContent=new' });
 
@@ -5426,24 +5479,20 @@ describe('DotContentDriveShellComponent', () => {
 
         // A language switch in the new-editor panel moves `editContentLang`, so a refresh or a switch
         // to the old editor reopens that language (#37759, FR-020, FR-028, T124).
-        it("hands the new editor's language switch to the navigation service", async () => {
+        it("hands the new editor's language switch to the navigation service", () => {
             setPanelRequest(EDIT_REQUEST);
             spectator.detectChanges();
-            await spectator.fixture.whenStable();
-            spectator.detectChanges();
 
-            spectator.triggerEventHandler('dot-edit-content-side-panel', 'languageChanged', 2);
+            emit(editPanel(), 'languageChanged', 2);
 
             expect(navigationService.panelLanguageChanged).toHaveBeenCalledWith(2);
         });
 
-        it("hands the new editor's saved content to the navigation service, so a first save can name it", async () => {
+        it("hands the new editor's saved content to the navigation service, so a first save can name it", () => {
             setPanelRequest({ mode: 'new', contentTypeId: 'ct-1', title: 'New content' });
             spectator.detectChanges();
-            await spectator.fixture.whenStable();
-            spectator.detectChanges();
 
-            spectator.triggerEventHandler('dot-edit-content-side-panel', 'saved', {
+            emit(editPanel(), 'saved', {
                 identifier: 'id-9',
                 languageId: 2,
                 inode: 'inode-9'
@@ -5481,34 +5530,30 @@ describe('DotContentDriveShellComponent', () => {
                 );
             };
 
-            const LEGACY_PANEL = 'dot-legacy-editor-side-panel';
-
-            it('renders the legacy panel with the request, and not the new-editor panel', async () => {
+            it('opens the legacy panel on the request, and not the new-editor panel', () => {
                 setLegacyRequest(LEGACY_REQUEST);
                 spectator.detectChanges();
-                await spectator.fixture.whenStable();
 
-                const panel = spectator.debugElement.query(By.css(LEGACY_PANEL));
-
-                expect(panel).not.toBeNull();
-                // Read through ng-mocks: a mocked component holds a signal input as a plain value.
-                expect(ngMocks.input(panel, 'request')).toEqual(LEGACY_REQUEST);
-                expect(spectator.query('dot-edit-content-side-panel')).toBeNull();
+                const panel = legacyPanel();
+                expect((panel?.config.inputs?.['request'] as () => unknown)()).toEqual(
+                    LEGACY_REQUEST
+                );
+                expect((panel?.config.heading as () => string)()).toBe('Legacy content');
+                expect(editPanel()).toBeUndefined();
             });
 
-            it('renders no legacy panel while only the new-editor panel is open', async () => {
+            it('opens no legacy panel while only the new-editor panel is open', () => {
                 setPanelRequest(EDIT_REQUEST);
                 spectator.detectChanges();
-                await spectator.fixture.whenStable();
 
-                expect(spectator.query(LEGACY_PANEL)).toBeNull();
+                expect(legacyPanel()).toBeUndefined();
             });
 
             it('refreshes the list quietly on save and keeps the panel open', () => {
                 setLegacyRequest(LEGACY_REQUEST);
                 spectator.detectChanges();
 
-                spectator.triggerEventHandler(LEGACY_PANEL, 'saved', {
+                emit(legacyPanel(), 'saved', {
                     identifier: 'legacy-id',
                     inode: 'legacy-inode-2',
                     languageId: 1
@@ -5527,16 +5572,16 @@ describe('DotContentDriveShellComponent', () => {
                 setLegacyRequest(LEGACY_REQUEST);
                 spectator.detectChanges();
 
-                spectator.triggerEventHandler(LEGACY_PANEL, 'languageChanged', 3);
+                emit(legacyPanel(), 'languageChanged', 3);
 
                 expect(navigationService.panelLanguageChanged).toHaveBeenCalledWith(3);
             });
 
-            it('closes the panel and refreshes the list quietly on every close', () => {
+            it('clears the request and refreshes the list quietly on every close', () => {
                 setLegacyRequest(LEGACY_REQUEST);
                 spectator.detectChanges();
 
-                spectator.triggerEventHandler(LEGACY_PANEL, 'closed', undefined);
+                legacyPanel()?.ref.close();
 
                 expect(navigationService.closeEditPanel).toHaveBeenCalledTimes(1);
                 expect(store.reloadContentDrive).toHaveBeenCalledWith({ quiet: true });
@@ -5548,7 +5593,7 @@ describe('DotContentDriveShellComponent', () => {
                 setLegacyRequest(LEGACY_REQUEST);
                 spectator.detectChanges();
 
-                spectator.triggerEventHandler(LEGACY_PANEL, 'pageEditorRequested', {
+                emit(legacyPanel(), 'pageEditorRequested', {
                     url: '/blog/new-page',
                     languageId: 2
                 });
@@ -5562,16 +5607,12 @@ describe('DotContentDriveShellComponent', () => {
             });
 
             it('routes browser Back through the legacy panel close guard', () => {
-                const requestClose = vi.fn();
-                vi.spyOn(
-                    spectator.component as unknown as {
-                        $legacyPanel: Signal<DotLegacyEditorSidePanelComponent | undefined>;
-                    },
-                    '$legacyPanel'
-                ).mockReturnValue({
-                    requestClose
-                } as unknown as DotLegacyEditorSidePanelComponent);
                 setLegacyRequest(LEGACY_REQUEST);
+                spectator.detectChanges();
+                const requestClose = legacyPanel()?.ref.requestClose;
+                // Only what Back does is asserted, not the URL writes the open made.
+                (location.replaceState as Mock).mockClear();
+                (router.createUrlTree as Mock).mockClear();
 
                 (location.subscribe as Mock).mock.calls[0][0]({
                     url: '/c/content-drive?path=/foo'
@@ -5596,7 +5637,7 @@ describe('DotContentDriveShellComponent', () => {
                 setLegacyRequest(LEGACY_REQUEST);
                 spectator.detectChanges();
 
-                spectator.triggerEventHandler(LEGACY_PANEL, 'versionRestored', undefined);
+                emit(legacyPanel(), 'versionRestored');
 
                 expect(store.reloadContentDrive).toHaveBeenCalledWith({ quiet: true });
                 expect(navigationService.closeEditPanel).not.toHaveBeenCalled();
@@ -5961,7 +6002,8 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
                 shouldCollapse: vi.fn().mockReturnValue(false),
                 acquire: vi.fn(),
                 release: vi.fn()
-            })
+            }),
+            { provide: DotSidePanelService, useFactory: () => sidePanels }
         ],
         componentProviders: [
             DotContentDriveStore,
@@ -5975,21 +6017,11 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
             // be provided the same way the shell provides it in production.
             provideContentDriveFieldFilterHost()
         ],
-        // The legacy panel hosts a JSP iframe and has its own spec; the shell only needs its
-        // inputs, outputs and `requestClose()`.
-        overrideComponents: [
-            [
-                DotContentDriveShellComponent,
-                {
-                    remove: { imports: [DotLegacyEditorSidePanelComponent] },
-                    add: { imports: [MockComponent(DotLegacyEditorSidePanelComponent)] }
-                }
-            ]
-        ],
         detectChanges: false
     });
 
     beforeEach(() => {
+        sidePanels = createSidePanelsFake();
         openEditByIdentifier.mockClear();
         createContent.mockClear();
         folders.set([]);

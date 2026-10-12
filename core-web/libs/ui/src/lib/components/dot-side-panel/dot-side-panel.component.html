@@ -8,12 +8,12 @@
     `:host ::ng-deep` cannot reach it.
 
     `dismissible` is left OFF even though clicking outside DOES close the panel: PrimeNG's own
-    dismissible hides the drawer immediately, bypassing the owner's unsaved-changes guard and
+    dismissible hides the drawer immediately, bypassing the content's unsaved-changes guard and
     leaving the panel mounted with nothing on screen. The mask click is handled by the component
-    instead.
+    instead. `closeOnEscape` is off for the same reason: Escape goes through the shared shortcut
+    registry.
 
     `visible` is always true: the panel is open for as long as it is mounted.
-    `closeOnEscape` is off for the same reason: Escape goes through the shared shortcut registry.
 
     The header buttons name themselves through PrimeNG's `[ariaLabel]` input, never
     `[attr.aria-label]`: the latter lands on the non-focusable `<p-button>` host, leaving the real
@@ -73,11 +73,4 @@
     </ng-template>
 
     <ng-content />
-
-    <!-- Declared only with a footer to show: the drawer draws its footer bar whenever it has one. -->
-    @if ($footer(); as ownerFooter) {
-        <ng-template #footer>
-            <ng-container [ngTemplateOutlet]="ownerFooter" />
-        </ng-template>
-    }
 </p-drawer>

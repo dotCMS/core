@@ -18,7 +18,12 @@ import { DialogService, DynamicDialogConfig } from 'primeng/dynamicdialog';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { popFormBridge, pushFormBridge } from '@dotcms/edit-content-bridge';
-import { ASSET_PICKER_LAUNCHER, AngularAssetPickerLauncher } from '@dotcms/ui';
+import {
+    ASSET_PICKER_LAUNCHER,
+    AngularAssetPickerLauncher,
+    DotSidePanelContent,
+    DotSidePanelRef
+} from '@dotcms/ui';
 
 import {
     AngularImageEditorLauncher,
@@ -28,16 +33,16 @@ import { EditContentDialogData } from '../../models/dot-edit-content-dialog.inte
 import { EDIT_CONTENT_HOST } from '../../services/host/edit-content-host.model';
 import { OverlayEditContentHost } from '../../services/host/overlay-edit-content-host';
 import { DotEditContentLayoutComponent } from '../dot-edit-content-layout/dot-edit-content.layout.component';
-import { DotSidePanelComponent } from '../dot-side-panel/dot-side-panel.component';
 
 /**
- * Renders the new Edit Content editor in a side panel ({@link DotSidePanelComponent}), as an
- * alternative to the full-screen route or the centered dialog.
+ * The new Edit Content editor as a side panel's content, as an alternative to the full-screen route
+ * or the centered dialog. Openers open it through `DotSidePanelService` (or `injectSidePanel`), with
+ * the content's title as the heading; it closes the panel through its `DotSidePanelRef`.
  *
  * It reuses the overlay editor plumbing: it provides {@link OverlayEditContentHost} (identity from
  * the dialog config, in-place navigation, chrome no-ops) and, since it is not opened through
  * `DialogService`, supplies the {@link DynamicDialogConfig} the host reads identity from — built
- * from the {@link data} input. The header shows the content title.
+ * from the {@link data} input.
  *
  * It also self-provides `DialogService` and {@link IMAGE_EDITOR_LAUNCHER} — the same pair
  * `EditContentShellComponent` provides for the full-screen route. None of this panel's openers
@@ -48,7 +53,9 @@ import { DotSidePanelComponent } from '../dot-side-panel/dot-side-panel.componen
  */
 @Component({
     selector: 'dot-edit-content-side-panel',
-    imports: [DotSidePanelComponent, DotEditContentLayoutComponent],
+    imports: [DotEditContentLayoutComponent],
+    // Fills the drawer, so the editor layout's `height: 100%` resolves against it.
+    host: { class: 'block h-full' },
     providers: [
         OverlayEditContentHost,
         { provide: EDIT_CONTENT_HOST, useExisting: OverlayEditContentHost },
@@ -75,18 +82,16 @@ import { DotSidePanelComponent } from '../dot-side-panel/dot-side-panel.componen
     templateUrl: './dot-edit-content-side-panel.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotEditContentSidePanelComponent implements OnDestroy {
+export class DotEditContentSidePanelComponent implements DotSidePanelContent, OnDestroy {
     readonly #injector = inject(Injector);
     readonly #destroyRef = inject(DestroyRef);
+    readonly #panel = inject(DotSidePanelRef);
 
     /** The hosted editor; used to run its unsaved-changes guard before closing. */
     protected readonly $layout = viewChild(DotEditContentLayoutComponent);
 
-    /** Identity (and header title) of the content to create/edit, or `null` when closed. */
+    /** Identity of the content to create or edit. The editor is created once it is set. */
     readonly data = input<EditContentDialogData | null>(null);
-
-    /** Emitted when the user closes the panel, so the opener can clear its request. */
-    readonly closed = output<void>();
 
     /** Emitted on each successful save, so the opener can refresh its view. */
     readonly saved = output<DotCMSContentlet>();
@@ -131,7 +136,7 @@ export class DotEditContentSidePanelComponent implements OnDestroy {
             host.left$.pipe(takeUntilDestroyed(this.#destroyRef)).subscribe(() => {
                 this.#lastSaved = null;
                 this.#fireCloseCallbacks();
-                this.closed.emit();
+                this.#panel.close();
             });
 
             host.languageChanged$
@@ -141,20 +146,17 @@ export class DotEditContentSidePanelComponent implements OnDestroy {
     }
 
     /**
-     * Close intent (X button, ESC, a mask click, or browser Back routed by the opener). Routes through the
-     * editor's unsaved-changes guard so the user is prompted when the form is dirty; only closes
-     * once it is safe. On close it fires the `data` callbacks (`onContentSaved` with the last save,
-     * then `onCancel`) — mirroring the dialog's contract so dialog-based openers can switch to the
-     * panel unchanged — and emits `closed` for openers that drive it via a signal.
-     *
-     * Public so an opener (e.g. Content Drive on browser Back) can route its own close intent
-     * through the same guard instead of tearing the panel down and losing unsaved edits silently.
+     * Close intent (X button, ESC, a mask click, or browser Back routed by the opener). Routes through
+     * the editor's unsaved-changes guard so the user is prompted when the form is dirty, and closes
+     * the panel only once it is safe. On close it fires the `data` callbacks (`onContentSaved` with
+     * the last save, then `onCancel`), mirroring the dialog's contract so dialog-based openers can
+     * switch to the panel unchanged.
      */
     requestClose(): void {
         const layout = this.$layout();
         const proceed = () => {
             this.#fireCloseCallbacks();
-            this.closed.emit();
+            this.#panel.close();
         };
 
         if (layout) {
@@ -176,7 +178,7 @@ export class DotEditContentSidePanelComponent implements OnDestroy {
     }
 
     ngOnDestroy(): void {
-        // The side panel releases its own registrations; only the form bridge is this panel's.
+        // The drawer releases its own registrations; only the form bridge is this content's.
         popFormBridge();
     }
 }

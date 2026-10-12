@@ -1,3 +1,4 @@
+import { DOCUMENT } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -31,7 +32,7 @@ import {
     DotFunctionInfo,
     DotPushPublishDialogData
 } from '@dotcms/dotcms-models';
-import { DotSidePanelComponent } from '@dotcms/edit-content';
+import { DotSidePanelContent, DotSidePanelRef } from '@dotcms/ui';
 import { isSameOriginRelativeUrl } from '@dotcms/utils';
 
 import {
@@ -52,28 +53,31 @@ interface LegacyEditorEventDetail {
 }
 
 /**
- * Hosts the legacy (JSP) content editor in a side panel over Content Drive (#37759).
+ * The legacy (JSP) content editor as a side panel's content, over Content Drive (#37759).
  *
- * It looks and behaves like the new-editor side panel (`DotEditContentSidePanelComponent`): both
- * open in `DotSidePanelComponent`, so they share the drawer and its width toggle, mask and Escape
- * rules. It is kept separate from it so that removing the legacy editor later never touches the
- * new-editor panel. Remove with the legacy editor. Every other piece that goes with it carries the
- * same phrase.
+ * It opens in the same root side panel as the new editor (`DotEditContentSidePanelComponent`), so
+ * the two share the drawer and its width toggle, mask and Escape rules. It is kept separate from it
+ * so that removing the legacy editor later never touches the new-editor panel. Remove with the
+ * legacy editor. Every other piece that goes with it carries the same phrase.
  *
  * The panel never navigates. It handles the legacy editor events that need no decision from the
- * opener, and reports the rest through its outputs, so Content Drive decides what a save or a close
- * means for the list and the URL.
+ * opener, reports the rest through its outputs, and closes through its `DotSidePanelRef`, so Content
+ * Drive decides what a save or a close means for the list and the URL.
  */
 @Component({
     selector: 'dot-legacy-editor-side-panel',
-    imports: [DotSidePanelComponent, ConfirmDialogModule],
+    imports: [ConfirmDialogModule],
+    // Fills the drawer, so the iframe can take its whole height.
+    host: { class: 'flex flex-1' },
     // Its own instance, so the prompt renders in this panel's `<p-confirmDialog>` and never in
     // another one mounted elsewhere on the page.
     providers: [ConfirmationService],
     templateUrl: './dot-legacy-editor-side-panel.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotLegacyEditorSidePanelComponent implements OnDestroy {
+export class DotLegacyEditorSidePanelComponent implements DotSidePanelContent, OnDestroy {
+    readonly #panel = inject(DotSidePanelRef);
+    readonly #document = inject(DOCUMENT);
     readonly #uiColors = inject(DotUiColorsService);
     readonly #sanitizer = inject(DomSanitizer);
     readonly #zone = inject(NgZone);
@@ -86,14 +90,11 @@ export class DotLegacyEditorSidePanelComponent implements OnDestroy {
     readonly #confirmation = inject(ConfirmationService);
     readonly #messages = inject(DotMessageService);
 
-    /** What to open, or `null` when the panel is closed. */
+    /** What to open. */
     readonly request = input<DotLegacyEditorRequest | null>(null);
 
     /** The legacy editor saved: the opener refreshes its view. */
     readonly saved = output<DotLegacyEditorSaved>();
-
-    /** The panel closed, for any reason: the opener clears its request and refreshes. */
-    readonly closed = output<void>();
 
     /**
      * The legacy editor asked to open a page in the page editor: the first save of a new page. The
@@ -112,9 +113,6 @@ export class DotLegacyEditorSidePanelComponent implements OnDestroy {
      * language and sends no event. The opener updates the URL (#37759, FR-020).
      */
     readonly languageChanged = output<number>();
-
-    /** The side panel this editor opens in; Escape typed inside the iframe is forwarded to it. */
-    protected readonly $sidePanel = viewChild.required(DotSidePanelComponent);
 
     /** The iframe the legacy editor loads in. */
     protected readonly $iframe = viewChild<ElementRef<HTMLIFrameElement>>('iframe');
@@ -159,6 +157,10 @@ export class DotLegacyEditorSidePanelComponent implements OnDestroy {
     #detachFrame: () => void = () => undefined;
 
     constructor() {
+        // No padding, so the editor's own layout reaches the drawer's edges; a flex row, so the
+        // iframe takes the drawer's whole height.
+        this.#panel.contentStyleClass.set('p-0! flex');
+
         // Other admin code asks the legacy editor to run one of its functions through this service:
         // the workflow wizard hands its answer back with `saveAssignCallBackAngular`, which fills
         // the workflow fields and saves (FR-009). The full-page editor's iframe answers it the same
@@ -173,12 +175,12 @@ export class DotLegacyEditorSidePanelComponent implements OnDestroy {
      * Close intent: the X button, ESC, a mask click, or browser Back routed by the opener.
      *
      * With unsaved changes, it asks first, with the new-editor side panel's prompt and wording
-     * (FR-017). Public so the opener can route browser Back through the same prompt as the panel's
-     * own controls (FR-019).
+     * (FR-017), and closes the panel only once the author discards them. Browser Back reaches it
+     * through the opener's handle on the panel (FR-019).
      */
     requestClose(): void {
         if (!this.#dirty()) {
-            this.closed.emit();
+            this.#panel.close();
 
             return;
         }
@@ -196,7 +198,7 @@ export class DotLegacyEditorSidePanelComponent implements OnDestroy {
             reject: (type?: ConfirmEventType) => {
                 if (type === ConfirmEventType.REJECT) {
                     this.#dirty.set(false);
-                    this.closed.emit();
+                    this.#panel.close();
                 }
             }
         });
@@ -238,12 +240,21 @@ export class DotLegacyEditorSidePanelComponent implements OnDestroy {
                 this.#handleLegacyEvent((event as CustomEvent<LegacyEditorEventDetail>).detail)
             );
         // A keydown inside the iframe never reaches the admin page, so the shortcut registry cannot
-        // see it: forward Escape ourselves. Not one the editor already handled: `hasOverlayAbove`
-        // only sees the admin page, so a dialog inside the editor that closes on Escape is only
-        // told apart by having consumed the key.
+        // see it: press Escape again on the admin page, where the side panel's own Escape rules
+        // decide. Not one the editor already handled: `hasOverlayAbove` only sees the admin page,
+        // so a dialog inside the editor that closes on Escape is only told apart by having
+        // consumed the key.
         const onKeydown = (event: KeyboardEvent) => {
             if (event.key === 'Escape' && !event.defaultPrevented) {
-                this.#zone.run(() => this.$sidePanel().escape());
+                this.#zone.run(() =>
+                    this.#document.dispatchEvent(
+                        new KeyboardEvent('keydown', {
+                            key: 'Escape',
+                            bubbles: true,
+                            cancelable: true
+                        })
+                    )
+                );
             }
         };
 
@@ -284,14 +295,14 @@ export class DotLegacyEditorSidePanelComponent implements OnDestroy {
                         languageId: Number(detail.data?.['languageId'])
                     });
                 } else {
-                    this.closed.emit();
+                    this.#panel.close();
                 }
 
                 break;
             }
 
             case 'deleted-page':
-                this.closed.emit();
+                this.#panel.close();
                 break;
 
             case 'workflow-wizard':

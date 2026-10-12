@@ -32,7 +32,6 @@ import { InputGroupModule } from 'primeng/inputgroup';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { PopoverModule } from 'primeng/popover';
 import { ProgressBarModule } from 'primeng/progressbar';
-import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TabsModule } from 'primeng/tabs';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
@@ -63,14 +62,14 @@ import {
 } from '@dotcms/dotcms-models';
 import {
     DotEditContentDialogComponent,
-    DotEditContentSidePanelComponent,
-    EditContentDialogData
+    EditContentDialogData,
+    loadDotEditContentSidePanel
 } from '@dotcms/edit-content';
 import { DotPaletteListStore, DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
 import { DotCMSPage, DotCMSURLContentMap, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
 import { StyleEditorFormSchema, __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
-import { DotCopyContentModalService, DotMessagePipe } from '@dotcms/ui';
+import { DotCopyContentModalService, DotMessagePipe, injectSidePanel } from '@dotcms/ui';
 import { WINDOW, isEqual } from '@dotcms/utils';
 import { getContentletsInContainer } from '@dotcms/uve/internal';
 
@@ -183,9 +182,7 @@ const MESSAGE_KEY = {
         PopoverModule,
         TooltipModule,
         DotMessagePipe,
-        DotUveDeviceControlsComponent,
-        DotEditContentSidePanelComponent,
-        ProgressSpinnerModule
+        DotUveDeviceControlsComponent
     ],
     providers: [
         DotPaletteListStore,
@@ -308,9 +305,22 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
 
     /**
      * Drives the Edit Content side panel: the content to open (create/edit) or `null` when closed.
-     * Only used when {@link $sidePanelEnabled} is on; the template renders the panel while set.
+     * Only used when {@link $sidePanelEnabled} is on; the panel is open while it is set.
      */
     protected readonly $editContentPanel = signal<EditContentDialogData | null>(null);
+
+    /**
+     * The Edit Content side panel, open while {@link $editContentPanel} is set. Post-save work runs
+     * through the request's `onContentSaved`/`onCancel` callbacks; closing clears the request.
+     * Loaded on its first open, so the editor stays out of this portlet's chunk.
+     */
+    // eslint-disable-next-line no-unused-private-class-members -- it opens and closes the panel itself
+    readonly #editContentSidePanel = injectSidePanel(this.$editContentPanel, {
+        component: loadDotEditContentSidePanel,
+        heading: (data) => data.title ?? '',
+        inputs: (data) => ({ data }),
+        closed: () => this.$editContentPanel.set(null)
+    });
 
     /**
      * Feature flag: when on, the editor opens in the side panel; when off, it opens in the centered

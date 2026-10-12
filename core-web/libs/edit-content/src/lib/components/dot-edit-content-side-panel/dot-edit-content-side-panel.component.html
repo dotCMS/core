@@ -1,5 +1,3 @@
-<dot-side-panel [heading]="data()?.title ?? ''" (closeRequested)="requestClose()">
-    @for (item of $items(); track item.contentletInode ?? item.contentTypeId) {
-        <dot-edit-content-form-layout />
-    }
-</dot-side-panel>
+@for (item of $items(); track item.contentletInode ?? item.contentTypeId) {
+    <dot-edit-content-form-layout />
+}

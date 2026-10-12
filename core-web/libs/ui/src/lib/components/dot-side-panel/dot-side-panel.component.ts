@@ -1,10 +1,8 @@
-import { DOCUMENT, NgTemplateOutlet } from '@angular/common';
+import { DOCUMENT } from '@angular/common';
 import {
     Component,
     DestroyRef,
-    TemplateRef,
     afterNextRender,
-    contentChild,
     inject,
     input,
     output,
@@ -15,9 +13,10 @@ import {
 import { ButtonModule } from 'primeng/button';
 import { Drawer, DrawerModule } from 'primeng/drawer';
 
-import { DotKeyboardShortcutService, DotMessagePipe, hasOverlayAbove } from '@dotcms/ui';
-
-import { DotSidePanelNavController } from '../../services/dot-side-panel-nav.service';
+import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
+import { DotKeyboardShortcutService } from '../../services/dot-keyboard-shortcut/dot-keyboard-shortcut.service';
+import { hasOverlayAbove } from '../../services/dot-keyboard-shortcut/overlay';
+import { DotSidePanelNavController } from '../../services/dot-side-panel/dot-side-panel-nav.service';
 
 /**
  * Shared by every side panel, so the author's expanded (full-width) choice carries over between
@@ -44,16 +43,12 @@ function writeExpandedPreference(expanded: boolean): void {
 }
 
 /**
- * The drawer every side panel opens in: Edit Content, the legacy editor and Edit Source. A panel
- * puts its content inside, and an optional `<ng-template #footer>`, and handles
- * {@link closeRequested} with its own unsaved-changes guard.
+ * The drawer of one open side panel. `DotSidePanelOutletComponent` renders one for each panel
+ * `DotSidePanelService` has open, and puts the panel's content inside; nothing else mounts it.
  *
- * **Mount it only while the panel is open**, behind an `@if` or a `ComponentRef` the owner
- * destroys, and close it by unmounting it. It has no hidden state: from the moment it exists it
- * claims Escape, listens for clicks on its mask and joins the side-panel stack, which collapses the
- * main navigation, so a mounted but hidden panel would swallow Escape across the whole portlet.
- *
- * What the panels share lives here:
+ * It is open for as long as it is mounted: from the moment it exists it claims Escape, listens for
+ * clicks on its mask and joins the side-panel stack, which collapses the main navigation. What the
+ * panels share lives here:
  *
  * - **The drawer and its header**: a transparent mask, 80% wide or the full width, the title, and
  *   the expand and close buttons.
@@ -75,7 +70,7 @@ function writeExpandedPreference(expanded: boolean): void {
  */
 @Component({
     selector: 'dot-side-panel',
-    imports: [DrawerModule, ButtonModule, NgTemplateOutlet, DotMessagePipe],
+    imports: [DrawerModule, ButtonModule, DotMessagePipe],
     templateUrl: './dot-side-panel.component.html'
 })
 export class DotSidePanelComponent {
@@ -90,14 +85,8 @@ export class DotSidePanelComponent {
     /** Classes for the content area. No padding by default, for content that lays itself out. */
     readonly contentStyleClass = input('p-0!');
 
-    /**
-     * The close button, Escape or a click on the mask. The owner runs its guard, then closes the
-     * panel by unmounting it.
-     */
+    /** The close button, Escape or a click on the mask: the panel's content decides what follows. */
     readonly closeRequested = output<void>();
-
-    /** The owner's footer. The drawer draws its footer bar only when there is one. */
-    protected readonly $footer = contentChild<TemplateRef<unknown>>('footer');
 
     /** The drawer: its mask and container are what Escape and the mask click check. */
     protected readonly $drawer = viewChild(Drawer);
@@ -109,7 +98,7 @@ export class DotSidePanelComponent {
         const withdrawEscape = inject(DotKeyboardShortcutService).register({
             combination: 'escape',
             label: 'edit.content.side-panel.shortcut.close',
-            handler: () => this.escape()
+            handler: () => this.#escape()
         });
 
         // Document-wide because `appendTo="body"` moves the drawer and its mask out of this
@@ -132,13 +121,20 @@ export class DotSidePanelComponent {
         });
     }
 
+    /** Flips the full-width state and remembers it for the next panel. */
+    protected toggleExpanded(): void {
+        const expanded = !this.$expanded();
+
+        this.$expanded.set(expanded);
+        writeExpandedPreference(expanded);
+    }
+
     /**
-     * Escape, as the panel handles it. Public for keys the shortcut registry cannot see, such as
-     * Escape pressed inside an iframe the panel hosts.
+     * Escape, as the panel handles it.
      *
      * @returns `true`: the key is consumed.
      */
-    escape(): boolean {
+    #escape(): boolean {
         // An overlay above owns the key. Consumed, not declined, so it cannot reach the portlet.
         if (hasOverlayAbove(this.$drawer()?.container)) {
             return true;
@@ -149,13 +145,5 @@ export class DotSidePanelComponent {
         }
 
         return true;
-    }
-
-    /** Flips the full-width state and remembers it for the next panel. */
-    protected toggleExpanded(): void {
-        const expanded = !this.$expanded();
-
-        this.$expanded.set(expanded);
-        writeExpandedPreference(expanded);
     }
 }

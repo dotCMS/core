@@ -8,21 +8,13 @@ import { DotMessageService } from '@dotcms/data-access';
 
 import { DotSidePanelComponent } from './dot-side-panel.component';
 
-import { DotSidePanelNavController } from '../../services/dot-side-panel-nav.service';
+import { DotSidePanelNavController } from '../../services/dot-side-panel/dot-side-panel-nav.service';
 
 const EXPANDED_STORAGE_KEY = 'dot-edit-content-side-panel-expanded';
 
 const PANEL = `
     <dot-side-panel heading="header.vtl">
         <p data-testid="panel-body">The source</p>
-    </dot-side-panel>`;
-
-const PANEL_WITH_FOOTER = `
-    <dot-side-panel heading="header.vtl">
-        <p data-testid="panel-body">The source</p>
-        <ng-template #footer>
-            <button data-testid="panel-save">Save</button>
-        </ng-template>
     </dot-side-panel>`;
 
 describe('DotSidePanelComponent', () => {
@@ -40,8 +32,8 @@ describe('DotSidePanelComponent', () => {
         detectChanges: false
     });
 
-    const open = (template = PANEL): void => {
-        spectator = createHost(template);
+    const open = (): void => {
+        spectator = createHost(PANEL);
         closeRequested = vi.fn();
         spectator.output('closeRequested').subscribe(closeRequested);
         spectator.detectChanges();
@@ -103,20 +95,6 @@ describe('DotSidePanelComponent', () => {
             expect(query('panel-body')?.textContent).toBe('The source');
         });
 
-        it('draws no footer bar without a footer', () => {
-            open();
-
-            expect(spectator.query('.p-drawer-footer', { root: true })).toBeNull();
-        });
-
-        it("draws the owner's footer", () => {
-            open(PANEL_WITH_FOOTER);
-
-            expect(
-                spectator.query('.p-drawer-footer', { root: true })?.contains(query('panel-save'))
-            ).toBe(true);
-        });
-
         it('asks to close from the close button', () => {
             open();
 
@@ -158,13 +136,6 @@ describe('DotSidePanelComponent', () => {
             expect(closeRequested).not.toHaveBeenCalled();
             // Shared global stack: leaving the entry behind would leak into later tests.
             ZIndexUtils.clear(overlay);
-        });
-
-        it('is the same handling when a panel forwards an Escape the registry cannot see', () => {
-            open();
-
-            expect(spectator.component.escape()).toBe(true);
-            expect(closeRequested).toHaveBeenCalledTimes(1);
         });
     });
 

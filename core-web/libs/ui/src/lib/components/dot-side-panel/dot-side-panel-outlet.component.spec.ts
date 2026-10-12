@@ -1,0 +1,158 @@
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
+import { vi } from 'vitest';
+
+import { Component, Injector, inject, input, output, signal } from '@angular/core';
+
+import { DotMessageService } from '@dotcms/data-access';
+
+import { DotSidePanelOutletComponent } from './dot-side-panel-outlet.component';
+
+import { DotSidePanelNavController } from '../../services/dot-side-panel/dot-side-panel-nav.service';
+import {
+    DotSidePanelContent,
+    DotSidePanelRef,
+    DotSidePanelService
+} from '../../services/dot-side-panel/dot-side-panel.service';
+
+/** A panel's content: an input, an output, its ref, and a guard on close. */
+@Component({
+    selector: 'dot-test-content',
+    template: '<p data-testid="panel-content">{{ fileName() }}</p>'
+})
+class TestContentComponent implements DotSidePanelContent {
+    readonly fileName = input('');
+    readonly saved = output<string>();
+    readonly panel = inject(DotSidePanelRef);
+    readonly requestClose = vi.fn();
+}
+
+describe('DotSidePanelOutletComponent', () => {
+    let spectator: Spectator<DotSidePanelOutletComponent>;
+    let sidePanels: DotSidePanelService;
+
+    const createComponent = createComponentFactory({
+        component: DotSidePanelOutletComponent,
+        providers: [
+            mockProvider(DotMessageService, { get: (key: string) => key }),
+            mockProvider(DotSidePanelNavController, {
+                isTop: vi.fn().mockReturnValue(true),
+                acquire: vi.fn(),
+                release: vi.fn()
+            })
+        ]
+    });
+
+    beforeEach(() => {
+        spectator = createComponent();
+        sidePanels = spectator.inject(DotSidePanelService);
+    });
+
+    // The drawers are appended to the body, so DOM queries search from the document root.
+    const all = (testId: string): HTMLElement[] =>
+        spectator.queryAll<HTMLElement>(byTestId(testId), { root: true });
+
+    const open = (
+        component:
+            | TestContentComponentType
+            | Promise<TestContentComponentType> = TestContentComponent,
+        fileName = signal('header.vtl'),
+        saved = vi.fn()
+    ): DotSidePanelRef => {
+        const ref = sidePanels.open(component, {
+            heading: fileName,
+            inputs: { fileName },
+            outputs: { saved },
+            injector: spectator.inject(Injector)
+        });
+        spectator.detectChanges();
+
+        return ref;
+    };
+
+    const content = (): TestContentComponent =>
+        spectator.query(TestContentComponent) as TestContentComponent;
+
+    it('renders nothing while no panel is open', () => {
+        expect(all('side-panel')).toHaveLength(0);
+    });
+
+    it("renders a drawer per open panel, with its heading and its content's inputs", () => {
+        const fileName = signal('header.vtl');
+        open(TestContentComponent, fileName);
+        open(TestContentComponent, signal('footer.vtl'));
+
+        expect(all('side-panel')).toHaveLength(2);
+        expect(all('side-panel-title').map((title) => title.textContent?.trim())).toEqual([
+            'header.vtl',
+            'footer.vtl'
+        ]);
+        expect(all('panel-content')[0].textContent).toBe('header.vtl');
+
+        fileName.set('renamed.vtl');
+        spectator.detectChanges();
+
+        expect(all('side-panel-title')[0].textContent?.trim()).toBe('renamed.vtl');
+        expect(all('panel-content')[0].textContent).toBe('renamed.vtl');
+    });
+
+    it("gives the content its panel's ref and routes its outputs to the opener", () => {
+        const saved = vi.fn();
+        const ref = open(TestContentComponent, signal('header.vtl'), saved);
+
+        content().saved.emit('done');
+
+        expect(content().panel).toBe(ref);
+        expect(saved).toHaveBeenCalledWith('done');
+    });
+
+    it('shows a spinner until lazily loaded content arrives', async () => {
+        let resolve: (type: TestContentComponentType) => void = () => undefined;
+        open(new Promise((done) => (resolve = done)));
+
+        expect(all('side-panel-loading')).toHaveLength(1);
+        expect(all('panel-content')).toHaveLength(0);
+
+        resolve(TestContentComponent);
+        await Promise.resolve();
+        spectator.detectChanges();
+
+        expect(all('side-panel-loading')).toHaveLength(0);
+        expect(all('panel-content')).toHaveLength(1);
+    });
+
+    it("sends the close button to the content's guard", () => {
+        open();
+
+        spectator.click(all('side-panel-close')[0].querySelector('button') as HTMLElement);
+
+        expect(content().requestClose).toHaveBeenCalled();
+        expect(all('side-panel')).toHaveLength(1);
+    });
+
+    it('takes the drawer away when the panel closes', () => {
+        const ref = open();
+
+        ref.close();
+        spectator.detectChanges();
+
+        expect(all('side-panel')).toHaveLength(0);
+    });
+
+    it("lays the content out as the content's ref says", () => {
+        const ref = open();
+
+        ref.contentStyleClass.set('p-0! flex');
+        spectator.detectChanges();
+
+        expect(
+            spectator.query('.p-drawer-content', { root: true })?.classList.contains('flex')
+        ).toBe(true);
+    });
+});
+
+type TestContentComponentType = typeof TestContentComponent;
