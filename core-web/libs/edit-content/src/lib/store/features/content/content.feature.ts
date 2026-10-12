@@ -437,9 +437,10 @@ export function withContent() {
                             const contentlet = store.contentlet();
                             const contentType = store.contentType();
 
-                            // Both are null until the editor has loaded. Nothing to switch to the
-                            // legacy editor before then, and the redirect below needs the inode.
-                            if (!contentlet || !contentType) {
+                            // The content type is null until the editor has loaded. The contentlet
+                            // stays null for a create that was never saved, and the navigation
+                            // override still has to see that case.
+                            if (!contentType) {
                                 return EMPTY;
                             }
 
@@ -461,11 +462,15 @@ export function withContent() {
                                             if (
                                                 navigationOverride?.switchToLegacyEditor(
                                                     host.resolveIdentity(),
-                                                    contentlet ?? null,
-                                                    // Set: the update above already read its id.
-                                                    contentType!.variable
+                                                    contentlet,
+                                                    contentType.variable
                                                 )
                                             ) {
+                                                return;
+                                            }
+
+                                            // An unsaved create has no inode to open.
+                                            if (!contentlet) {
                                                 return;
                                             }
 
