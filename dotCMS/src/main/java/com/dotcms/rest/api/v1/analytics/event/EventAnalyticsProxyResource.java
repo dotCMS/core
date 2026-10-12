@@ -153,8 +153,7 @@ public class EventAnalyticsProxyResource {
                     required = true)
             final String body) {
 
-        // Gate 1 (FR-006): resolve site from request headers — reads Origin/Referer only,
-        // no body inspection — then check App config before ANY payload validation.
+        // Gate 1: resolve site from request headers — reads Origin/Referer only, no body inspection.
         final Host site;
         try {
             site = ContentAnalyticsUtil.getSiteFromRequest(request);
@@ -164,14 +163,9 @@ public class EventAnalyticsProxyResource {
             return;
         }
 
-        if (!ContentAnalyticsUtil.isAppConfigured(site)) {
-            Logger.debug(this, () -> "Analytics App not configured for site '"
-                    + site.getIdentifier() + "' — returning 503 for event ingest");
-            asyncResponse.resume(analyticsNotConfiguredResponse());
-            return;
-        }
-
-        // Gate 2: body and site_auth validation (runs only when App is configured).
+        // Gate 2: body and site_auth validation — runs before the App-config check so that
+        // unauthenticated callers always get 400 (never 503), preventing them from probing
+        // whether analytics is configured for a site by comparing response codes.
         if (body == null || body.isBlank()) {
             resumeWithBadRequest(asyncResponse, ValidationErrorCode.INVALID_JSON.name(),
                     "Request body is required");
@@ -226,6 +220,15 @@ public class EventAnalyticsProxyResource {
             Logger.warn(this, "Malformed body for analytics proxy: " + e.getMessage());
             resumeWithBadRequest(asyncResponse, ValidationErrorCode.INVALID_JSON.name(),
                     e.getMessage());
+            return;
+        }
+
+        // Gate 3: App-config check — runs after site_auth so only authenticated callers can
+        // learn whether analytics is configured for this site.
+        if (!ContentAnalyticsUtil.isAppConfigured(site)) {
+            Logger.debug(this, () -> "Analytics App not configured for site '"
+                    + site.getIdentifier() + "' — returning 503 for event ingest");
+            asyncResponse.resume(analyticsNotConfiguredResponse());
             return;
         }
 
