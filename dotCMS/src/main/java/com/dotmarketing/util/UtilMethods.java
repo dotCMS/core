@@ -3921,3 +3921,5 @@ public class UtilMethods {
    }
 
 }
+
+// CI probe for #37888 (native stack top layer) - do not merge
