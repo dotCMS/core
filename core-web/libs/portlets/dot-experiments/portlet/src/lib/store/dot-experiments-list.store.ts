@@ -68,7 +68,7 @@ export interface DotExperimentsListState extends DotExperimentsListViewState {
     status: ComponentStatus;
     /**
      * Full health response from the experiments gate, `null` until resolved.
-     * Use the `healthStatus`, `isLimitedMode`, `isSlotUsed`, and `showAnalyticsWarning`
+     * Use the `healthStatus`, `isLimitedMode`, and `isSlotUsed`
      * computeds rather than reading this directly.
      */
     healthResponse: ExperimentsHealthResponse | null;
@@ -437,13 +437,7 @@ export const DotExperimentsListStore = signalStore(
             /** `true` when `FEATURE_FLAG_EXPERIMENTS=false` — operator can run one free experiment. */
             isLimitedMode: computed<boolean>(() => store.healthResponse()?.tier === 'limited'),
             /** `true` when the one free experiment slot is already occupied (limited mode only). */
-            isSlotUsed: computed<boolean>(
-                () => store.healthResponse()?.freeExperimentUsed === true
-            ),
-            /** `true` when the Analytics App is not configured for the site. */
-            showAnalyticsWarning: computed<boolean>(
-                () => store.healthResponse()?.warning === 'analytics_disabled'
-            )
+            isSlotUsed: computed<boolean>(() => store.healthResponse()?.freeExperimentUsed === true)
         };
     }),
     withReducer<DotExperimentsListState>(
