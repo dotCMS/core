@@ -1298,8 +1298,10 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
 
     @Override
     public boolean isAnyExperimentRunning(final Host host) throws DotDataException {
-        return ConfigExperimentUtil.INSTANCE.isExperimentEnabled() &&
-                !APILocator.getExperimentsAPI().getRunningExperiments(host).isEmpty();
+        // Do not gate on isExperimentEnabled() — limited-mode experiments are RUNNING in the DB
+        // and must be served to visitors exactly like full-mode experiments. The natural empty
+        // result from getRunningExperiments() acts as the short-circuit when none are running.
+        return !APILocator.getExperimentsAPI().getRunningExperiments(host).isEmpty();
     }
 
     /**

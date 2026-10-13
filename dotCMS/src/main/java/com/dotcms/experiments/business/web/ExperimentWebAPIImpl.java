@@ -335,16 +335,21 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
     public Optional<String> getCode(final Host host, final HttpServletRequest request) {
         final PageMode pageMode = PageMode.get(request);
 
-        if (ConfigExperimentUtil.INSTANCE.isExperimentEnabled() && pageMode == PageMode.LIVE) {
-
+        if (pageMode == PageMode.LIVE) {
             try {
                 final Host currentHost = getCurrentHost(request).orElseThrow();
 
-                final String code = APILocator.getExperimentsAPI().isAnyExperimentRunning(currentHost) ?
-                        getJSCode(host, request) : getNotExperimentRunningJSCode();
-                return Optional.of(code);
+                if (APILocator.getExperimentsAPI().isAnyExperimentRunning(currentHost)) {
+                    // Experiment actively running (full or limited mode) — inject tracking JS.
+                    return Optional.of(getJSCode(host, request));
+                }
+                if (ConfigExperimentUtil.INSTANCE.isExperimentEnabled()) {
+                    // Full mode, no experiment currently running — inject cleanup JS to remove
+                    // stale localStorage artifacts left by a previously-ended experiment.
+                    return Optional.of(getNotExperimentRunningJSCode());
+                }
             } catch (DotDataException e) {
-                Logger.error(ExperimentWebAPIImpl.class, "It is not possible to generate the Experiment JS COde:" + e.getMessage());
+                Logger.error(ExperimentWebAPIImpl.class, "It is not possible to generate the Experiment JS Code:" + e.getMessage());
             }
         }
 
