@@ -1,5 +1,4 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
-import { of } from 'rxjs';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { Mock, MockInstance, vi } from 'vitest';
 
 import { provideLocationMocks } from '@angular/common/testing';
@@ -7,7 +6,7 @@ import { ActivatedRoute, Params, provideRouter, Router } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { DotExperimentsService, DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
+import { DotMessageService } from '@dotcms/data-access';
 import { DotExperiment, DotExperimentStatus } from '@dotcms/dotcms-models';
 import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -81,11 +80,7 @@ describe('DotExperimentsResultsHeaderComponent', () => {
             },
             { provide: DotExperimentsResultsStore, useFactory: () => storeMock },
             { provide: DotMessageService, useValue: messageServiceMock },
-            mockProvider(DotMessageDisplayService),
-            ConfirmationService,
-            mockProvider(DotExperimentsService, {
-                healthCheck: vi.fn().mockReturnValue(of({ health: 'OK', tier: 'full' }))
-            })
+            ConfirmationService
         ],
         detectChanges: false
     });
