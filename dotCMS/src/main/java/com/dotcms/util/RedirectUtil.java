@@ -194,6 +194,17 @@ public class RedirectUtil {
         ABOVE_ROOT
     }
 
+    /**
+     * Single entry point for every redirect check in this class. Runs {@link #sameHostRedirect} and turns any
+     * parsing exception into a {@link RedirectRejection#MALFORMED_ENCODING} rejection, so callers never see
+     * an exception.
+     *
+     * @param candidate     the redirect value to check, may be null
+     * @param siteHosts     the hosts of the current site; a URL on one of them is reduced to its relative path
+     * @param externalHosts other hosts that are explicitly allowed; a URL on one of them is kept absolute. May
+     *                      be null or empty
+     * @return on the right, the safe redirect target; on the left, why the value was rejected
+     */
     private static Either<RedirectRejection, String> evaluate(final String candidate,
                                                               final Collection<String> siteHosts,
                                                               final Collection<String> externalHosts) {
@@ -202,6 +213,20 @@ public class RedirectUtil {
                 .getOrElse(Either.left(RedirectRejection.MALFORMED_ENCODING));
     }
 
+    /**
+     * Decides whether a redirect value is safe to send the browser to. The value must be a single-slash path
+     * ({@code /path?query#fragment}) or an {@code http}/{@code https} URL without user info on a site host or
+     * an allowed external host. Its path is decoded once and must be free of forbidden characters, encoded
+     * slashes and double-encoded separators. Its dot segments must not climb above the root. Only the path is
+     * normalized; the query and fragment are passed through unchanged.
+     *
+     * @param candidate     the redirect value to check, may be null
+     * @param siteHosts     the hosts of the current site, compared ignoring case
+     * @param externalHosts other allowed hosts, compared ignoring case; may be null or empty
+     * @return on the right, the normalized relative path (or the absolute URL for an allowed external host);
+     * on the left, the first rule the value broke
+     * @throws URISyntaxException when an absolute URL cannot be parsed
+     */
     private static Either<RedirectRejection, String> sameHostRedirect(final String candidate,
                                                                       final Collection<String> siteHosts,
                                                                       final Collection<String> externalHosts)
