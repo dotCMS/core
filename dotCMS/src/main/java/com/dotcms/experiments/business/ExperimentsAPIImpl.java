@@ -594,7 +594,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
                 factory.acquireFreeSlotLock();
             }
             if (!ConfigExperimentUtil.INSTANCE.isExperimentEnabled() && isFreeSlotUsed()) {
-                throw new DotStateException("Free experiment slot already in use");
+                throw new FreeSlotOccupiedException();
             }
 
             Experiment toReturn;
