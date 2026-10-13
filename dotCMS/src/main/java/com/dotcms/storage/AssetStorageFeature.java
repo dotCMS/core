@@ -1,6 +1,7 @@
 package com.dotcms.storage;
 
 import com.dotcms.featureflag.FeatureFlagName;
+import com.dotcms.publishing.output.BundleArchiveCleanupProcessor;
 import com.dotcms.storage.binary.BinaryAssetBackfillProcessor;
 import com.dotcms.storage.binary.BinaryAssetCleanupProcessor;
 import com.dotcms.storage.binary.BinaryFieldCleanupProcessor;
@@ -21,7 +22,8 @@ public final class AssetStorageFeature {
 
     /** Job processors that belong to the S3 lifecycle and must not register while it is disabled. */
     private static final Set<Class<?>> JOB_PROCESSORS = Set.of(BinaryAssetBackfillProcessor.class,
-            BinaryAssetCleanupProcessor.class, BinaryFieldCleanupProcessor.class);
+            BinaryAssetCleanupProcessor.class, BinaryFieldCleanupProcessor.class,
+            BundleArchiveCleanupProcessor.class);
 
     private static volatile Boolean enabled;
 

@@ -23,6 +23,21 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class AssetStorageFeatureTest {
+    @Test
+    void disabledPublishingArchivesDoNotInitializeStorage(@org.junit.jupiter.api.io.TempDir Path root) throws Exception {
+        Config.setProperty(AssetStorageFeature.FLAG, false);
+        final var provider = mock(StoragePersistenceAPI.class);
+        final var archives = new com.dotcms.publishing.output.BundleArchiveStorage(provider);
+        try (var paths = mockStatic(ConfigUtils.class)) {
+            paths.when(ConfigUtils::getBundlePath).thenReturn(root.toString());
+            final File file = Files.writeString(root.resolve("Mixed-Bundle.tar.gz"), "filesystem bundle").toFile();
+            assertEquals(file, archives.get("Mixed-Bundle"));
+            archives.store("Mixed-Bundle", file);
+            archives.delete("Mixed-Bundle");
+            assertEquals("filesystem bundle", Files.readString(file.toPath()));
+            verifyNoInteractions(provider);
+        }
+    }
     @TempDir Path root;
     private String previousFlag;
     private String previousRoot;

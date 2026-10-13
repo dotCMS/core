@@ -24,6 +24,11 @@ public enum ManifestReaderFactory {
                 throw new IllegalArgumentException("Manifest not found for: " + bundleID);
             }
 
+            if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+                try (Reader reader = manifestInputStream.get()) {
+                    return new CSVManifestReader(reader);
+                }
+            }
             return new CSVManifestReader(manifestInputStream.get());
         } catch (IOException e) {
             throw new DotRuntimeException(e);
