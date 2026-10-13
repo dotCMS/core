@@ -68,12 +68,18 @@ export class DotTagsImportComponent {
                 this.importing.set(false);
 
                 if (!response.entity?.success) {
+                    const successCount = response.entity?.successCount ?? 0;
+                    const duplicateCount = response.entity?.duplicateCount ?? 0;
+                    const failureCount = response.entity?.failureCount ?? 0;
+
+                    // Sum the counts: the backend's totalRows includes the CSV header line.
                     this.errorMessage.set(
                         this.#dotMessageService.get(
                             'tags.import.partial-success',
-                            `${response.entity?.successCount ?? 0}`,
-                            `${response.entity?.totalRows ?? 0}`,
-                            `${response.entity?.failureCount ?? 0}`
+                            `${successCount}`,
+                            `${successCount + duplicateCount + failureCount}`,
+                            `${failureCount}`,
+                            `${duplicateCount}`
                         )
                     );
 
