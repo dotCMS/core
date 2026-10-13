@@ -580,9 +580,9 @@ describe('DotContentDriveShellComponent — grid view', () => {
                 ['paginate', 'onPaginate', { first: 20, rows: 20, page: 2 }],
                 ['scroll', 'onTableScroll', new Event('scroll')]
             ])('should route the grid %s to the table handler %s', (output, handler, payload) => {
-                const spy = vi
-                    .spyOn(spectator.component as never, handler as never)
-                    .mockImplementation((() => undefined) as never);
+                // The handlers are protected; reached by name, as the template reaches them.
+                const component = spectator.component as unknown as Record<string, () => void>;
+                const spy = vi.spyOn(component, handler).mockImplementation(() => undefined);
 
                 spectator.triggerEventHandler(gridDebug(), output, payload);
 

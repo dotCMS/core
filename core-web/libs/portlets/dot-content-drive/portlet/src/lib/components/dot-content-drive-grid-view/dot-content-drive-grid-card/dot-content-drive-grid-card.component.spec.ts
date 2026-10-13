@@ -1,5 +1,5 @@
 import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 
 import { By } from '@angular/platform-browser';
 
@@ -236,11 +236,11 @@ describe('DotContentDriveGridCardComponent', () => {
     });
 
     describe('opening (US5 #1)', () => {
-        let open: ReturnType<typeof vi.fn>;
+        let open: Mock<(event: MouseEvent) => void>;
 
         beforeEach(() => {
             render(GRID_LOCKED_BLOG);
-            open = vi.fn();
+            open = vi.fn<(event: MouseEvent) => void>();
             spectator.output('open').subscribe(open);
         });
 
