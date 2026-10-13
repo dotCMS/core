@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 
 import { TreeNodeData } from '@dotcms/dotcms-models';
 
@@ -42,10 +42,24 @@ export class DotUploadTypeSelectorComponent {
      */
     $restrictionLabel = input<string>('', { alias: 'restrictionLabel' });
 
+    /**
+     * The upload types to offer, in the default order; both when unset. Content Drive narrows it to
+     * the type a folder pins (#37896); the asset picker never sets it.
+     */
+    $allowedBaseTypes = input<DotUploadBaseType[] | undefined>(undefined, {
+        alias: 'allowedBaseTypes'
+    });
+
     /** Emits the chosen base type plus the upload context when the user picks an option. */
     selectUploadType = output<DotUploadSelection>();
 
-    protected readonly options = UPLOAD_SELECTOR_OPTIONS;
+    protected readonly $options = computed(() => {
+        const allowed = this.$allowedBaseTypes();
+
+        return allowed
+            ? UPLOAD_SELECTOR_OPTIONS.filter((option) => allowed.includes(option.baseType))
+            : UPLOAD_SELECTOR_OPTIONS;
+    });
 
     protected onSelect(baseType: DotUploadBaseType): void {
         this.selectUploadType.emit({

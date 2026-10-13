@@ -162,4 +162,23 @@ describe('DotUploadTypeSelectorComponent', () => {
             expect(emitted?.targetFolder).toEqual(TARGET_FOLDER);
         });
     });
+
+    /**
+     * #37896: Content Drive's Upload menu offers only the upload types the folder allows — the one a
+     * folder pins, or both. The input is optional so the asset picker, which never sets it, keeps
+     * showing both.
+     */
+    describe('allowedBaseTypes', () => {
+        it('shows only the allowed types', () => {
+            spectator.setInput('allowedBaseTypes', ['FILEASSET']);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('upload-selector-option-FILEASSET'))).toBeTruthy();
+            expect(spectator.query(byTestId('upload-selector-option-DOTASSET'))).toBeFalsy();
+        });
+
+        it('shows both types when it is not set', () => {
+            expect(spectator.queryAll('[data-testid^="upload-selector-option-"]').length).toBe(2);
+        });
+    });
 });
