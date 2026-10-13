@@ -768,6 +768,27 @@ describe('DotTagsListComponent', () => {
             });
         });
 
+        it('should treat missing counts as 0 instead of rendering NaN', () => {
+            const onClose = new Subject<unknown>();
+            const dialogService = spectator.inject(DialogService, true);
+            vi.spyOn(dialogService, 'open').mockReturnValue({
+                onClose
+            } as unknown as DynamicDialogRef);
+            const displayService = spectator.inject(DotMessageDisplayService, true);
+
+            spectator.component.openImportDialog();
+            // failureCount is missing; the total must still be 3, not NaN
+            onClose.next({ successCount: 2, duplicateCount: 1, totalRows: 4, success: true });
+            onClose.complete();
+
+            expect(displayService.push).toHaveBeenCalledWith({
+                life: 5000,
+                severity: DotMessageSeverity.INFO,
+                message: 'Imported 2 of 3 tags. 1 already existed and were skipped.',
+                type: DotMessageType.SIMPLE_MESSAGE
+            });
+        });
+
         it('should not push a message when import dialog is cancelled', () => {
             const onClose = new Subject<unknown>();
             const dialogService = spectator.inject(DialogService, true);

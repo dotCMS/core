@@ -243,9 +243,9 @@ export class DotTagsListComponent {
      * backend's `totalRows` includes the CSV header line.
      */
     private notifyImportResult({
-        successCount,
-        duplicateCount,
-        failureCount
+        successCount = 0,
+        duplicateCount = 0,
+        failureCount = 0
     }: DotTagsImportResult): void {
         const total = `${successCount + duplicateCount + failureCount}`;
         let severity = DotMessageSeverity.SUCCESS;
