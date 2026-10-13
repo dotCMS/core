@@ -381,16 +381,18 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
     }
 
     /**
-     * Uploads a file to the group and waits for the upload to finish. With S3 asset storage on, the
-     * upload starts only after this node's per-key lock is held.
+     * Uploads a file to the group and waits for the upload to finish. With S3 asset storage on, no
+     * lock is taken: the process-wide identifier lock is shared with content saves, and holding it
+     * for a long upload would make those saves time out. This provider does not order concurrent
+     * writes of the same key; callers that need ordering must serialize them.
      *
      * @param groupName the group to write to
      * @param path      the object's path
      * @param file      the file to upload
      * @param extraMeta not used by this provider
      * @return the uploaded object's ETag
-     * @throws DotDataException declared by the interface; a failed upload or lock wait is thrown as
-     *                          a {@link DotRuntimeException}
+     * @throws DotDataException declared by the interface; a failed upload, or with the flag off a
+     *                          failed lock wait, is thrown as a {@link DotRuntimeException}
      */
     @Override
     @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
@@ -424,22 +426,15 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
 
         final String pathForS3 = transformReadPath(groupName, path);
         try {
-            return lockManager.tryLock("s3_" + groupName + path, () -> {
-
-                    // Start the upload under the lock so concurrent pushes of one key on this node are
-                    // ordered, and a lock timeout leaves nothing uploading in the background.
-                    final Upload upload = this.storage.uploadFile(new PutObjectRequest(this.bucketName, pathForS3, file));
-                    Logger.debug(this, () -> String.format("Pushing file '%s' to group '%s' with " +
-                            "path '%s' [ %s ]", file.getName(), groupName, pathForS3, path));
-                    final UploadResult result =
-                            Try.of(upload::waitForUploadResult).getOrElseThrow(e -> new DotDataException(e.getMessage(), e));
-                    Logger.debug(this, () -> String.format("File '%s' in group '%s' with path '%s' " +
-                            "[ %s ] was pushed successfully!", file.getName(), groupName,
-                            pathForS3, path));
-                    return result.getETag();
-
-                }
-            );
+            final Upload upload = this.storage.uploadFile(new PutObjectRequest(this.bucketName, pathForS3, file));
+            Logger.debug(this, () -> String.format("Pushing file '%s' to group '%s' with " +
+                    "path '%s' [ %s ]", file.getName(), groupName, pathForS3, path));
+            final UploadResult result =
+                    Try.of(upload::waitForUploadResult).getOrElseThrow(e -> new DotDataException(e.getMessage(), e));
+            Logger.debug(this, () -> String.format("File '%s' in group '%s' with path '%s' " +
+                    "[ %s ] was pushed successfully!", file.getName(), groupName,
+                    pathForS3, path));
+            return result.getETag();
         } catch (final Throwable e) {
             throw new DotRuntimeException(String.format("Failed to push file '%s' to S3 group " +
                     "'%s': %s", path, groupName, ExceptionUtil.getErrorMessage(e)), e);
@@ -526,14 +521,23 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
         return this.pushFileAsync(bucketName, path, file, extraMeta);
     }
 
+    /**
+     * Downloads the object at the path to a local file and waits for the download to finish. With S3
+     * asset storage on, every call downloads to its own new temporary file, whatever
+     * {@code S3_STORAGE_FILE_REPO_TYPE} says, so concurrent downloads of one key never share a file;
+     * the caller hands it back through {@link #releaseRetrievedFile(File)} once it is done with it.
+     *
+     * @param groupName the group to read from
+     * @param path      the object's path
+     * @return the downloaded file, or with the flag on {@code null} when the object does not exist
+     * @throws DotDataException if the download fails
+     */
     @Override
     @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public File pullFile(final String groupName, final String path) throws DotDataException {
         if (AssetStorageFeature.isEnabled()) {
-            final File download = fileRepositoryManager.getOrCreateFile(path);
-            if (download == null) {
-                throw new DotDataException("Unable to allocate an S3 download file");
-            }
+            final File download = Try.of(() -> Files.createTempFile("s3-download-", ".tmp").toFile())
+                    .getOrElseThrow(e -> new DotDataException("Unable to allocate an S3 download file", e));
             try {
                 if (sharesBinaryBytes(groupName)) {
                     if (sharedBytes().retrieve(transformReadPath(groupName, path), download)) return download;
@@ -649,9 +653,16 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
         }
     }
 
+    /**
+     * Deletes a file returned by {@link #pullFile(String, String)} once the caller has copied or read
+     * it. With S3 asset storage off this does nothing, as before.
+     *
+     * @param file the downloaded file
+     * @throws DotDataException if the flag is on and the file cannot be deleted
+     */
     @Override
     public void releaseRetrievedFile(final File file) throws DotDataException {
-        if (AssetStorageFeature.isEnabled() && fileRepositoryManager instanceof com.dotcms.storage.repository.TempFileRepositoryManager) {
+        if (AssetStorageFeature.isEnabled()) {
             try {
                 Files.deleteIfExists(file.toPath());
             } catch (IOException e) {
@@ -807,18 +818,29 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
             try { return sharedBytes().matches(key, file); }
             catch (IOException | RuntimeException failure) { throw new DotDataException("Unable to verify shared asset " + path, failure); }
         }
-        try (final InputStream input = Files.newInputStream(file.toPath())) {
-            final String md5 = DigestUtils.md5Hex(input);
-            final var object = storage.listFirstObject(bucketName, key);
-            if (object != null && key.equals(object.getKey()) && object.getSize() == file.length()) {
-                return md5.equalsIgnoreCase(object.getETag()) || storage.fileContentsMatch(bucketName, key, file);
-            }
+        final var object = storage.listFirstObject(bucketName, key);
+        if (object == null || !key.equals(object.getKey()) || object.getSize() != file.length()) {
             return false;
+        }
+        try (final InputStream input = Files.newInputStream(file.toPath())) {
+            return DigestUtils.md5Hex(input).equalsIgnoreCase(object.getETag())
+                    || storage.fileContentsMatch(bucketName, key, file);
         } catch (final IOException e) {
             throw new DotDataException("Failed to verify durable copy of " + path, e);
         }
     }
 
+    /**
+     * Copies a local file to S3 only if the key is empty. When another writer creates the key first
+     * (S3 answers 412, or 409 when the two conditional writes raced), the stored object is checked
+     * instead and counts as a backfill if it holds the same bytes.
+     *
+     * @param groupName the group to write to
+     * @param path      the object's path
+     * @param file      the local file to copy
+     * @return {@code true} once S3 holds the same bytes; {@code false} if the flag is off
+     * @throws DotDataException if the upload fails or S3 holds different bytes at the key
+     */
     @Override
     public boolean backfillFile(final String groupName, final String path, final File file) throws DotDataException {
         if (!AssetStorageFeature.isEnabled()) {
@@ -837,8 +859,8 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
             }
             try {
                 storage.uploadFileIfAbsent(bucketName, transformReadPath(groupName, path), file);
-            } catch (com.amazonaws.services.s3.model.AmazonS3Exception conflict) {
-                if (conflict.getStatusCode() != 412) {
+            } catch (RuntimeException conflict) {
+                if (!S3ContentAddressedStorage.preconditionFailure(conflict)) {
                     throw conflict;
                 }
             }
@@ -851,6 +873,19 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
         }
     }
 
+    /**
+     * Writes a serialized object to S3 only if the key is empty. When another writer creates the key
+     * first (S3 answers 412, or 409 when the two conditional writes raced), the stored object is read
+     * back instead and counts as a backfill if it reads as an equal object.
+     *
+     * @param groupName the group to write to
+     * @param path      the object's path
+     * @param writer    serializes the object
+     * @param reader    reads the stored object back for comparison
+     * @param object    the object to write
+     * @return {@code true} once S3 holds an equal object; {@code false} if the flag is off
+     * @throws DotDataException if the write fails or S3 holds a different object at the key
+     */
     @Override
     public boolean backfillObject(final String groupName, final String path, final ObjectWriterDelegate writer,
             final ObjectReaderDelegate reader, final Serializable object) throws DotDataException {
@@ -873,8 +908,8 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
             }
             try {
                 storage.uploadFileIfAbsent(bucketName, transformReadPath(groupName, path), file);
-            } catch (com.amazonaws.services.s3.model.AmazonS3Exception conflict) {
-                if (conflict.getStatusCode() != 412) {
+            } catch (RuntimeException conflict) {
+                if (!S3ContentAddressedStorage.preconditionFailure(conflict)) {
                     throw conflict;
                 }
             }

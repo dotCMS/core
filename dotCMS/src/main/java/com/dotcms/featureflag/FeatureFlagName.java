@@ -147,4 +147,16 @@ public interface FeatureFlagName {
      * customer data has been migrated to CAEM.
      */
     String FEATURE_FLAG_CAEM_EXPERIMENT_RESULTS = "FEATURE_FLAG_CAEM_EXPERIMENT_RESULTS";
+
+    /**
+     * Stores binary assets in S3 instead of the filesystem/NFS asset tree. Off by default.
+     *
+     * <p>Read once per process and then kept, so changing it in the properties file or the system
+     * table needs a restart. In-memory overrides made with
+     * {@link com.dotmarketing.util.Config#setProperty(String, Object)}, which tests use to switch
+     * modes, are re-read.</p>
+     *
+     * @see com.dotcms.storage.AssetStorageFeature
+     */
+    String FEATURE_FLAG_S3_ASSET_STORAGE = "FEATURE_FLAG_S3_ASSET_STORAGE";
 }
