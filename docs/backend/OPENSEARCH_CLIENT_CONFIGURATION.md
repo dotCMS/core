@@ -12,6 +12,10 @@ applies a two-step fallback chain:
 Properties with no ES fallback column have no Elasticsearch equivalent; the
 caller default is used directly if the OS key is missing.
 
+> **Migrating a real customer instance?** This page lists the properties. Which ones to set, in what
+> order, and when a restart is needed lives in
+> [`OPENSEARCH_MIGRATION_RUNBOOK.md`](OPENSEARCH_MIGRATION_RUNBOOK.md).
+
 ---
 
 ## Endpoints
