@@ -22,7 +22,9 @@ import {
     DotFolderBulkDuplicateService,
     DotLanguagesService,
     DotSessionStorageService,
-    DotUploadFileService
+    DotUploadFileService,
+    DotActiveImport,
+    DotContentImportService
 } from '@dotcms/data-access';
 import {
     DotBulkUploadActiveRun,
@@ -909,6 +911,7 @@ export const DotContentDriveStore = signalStore(
         const folderBulkDeleteService = inject(DotFolderBulkDeleteService);
         const folderBulkDuplicateService = inject(DotFolderBulkDuplicateService);
         const uploadFileService = inject(DotUploadFileService);
+        const contentImportService = inject(DotContentImportService);
         const currentUserService = inject(DotCurrentUserService);
 
         return {
@@ -953,10 +956,13 @@ export const DotContentDriveStore = signalStore(
                     uploads: uploadFileService
                         .readActiveUploads()
                         .pipe(catchError(() => of([] as DotBulkUploadActiveRun[]))),
+                    imports: contentImportService
+                        .readActiveImports()
+                        .pipe(catchError(() => of([] as DotActiveImport[]))),
                     user: currentUserService.getCurrentUser().pipe(catchError(() => of(null)))
                 })
                     .pipe(take(1), takeUntilDestroyed(destroyRef))
-                    .subscribe(({ duplicates, uploads, user }) => {
+                    .subscribe(({ duplicates, uploads, imports, user }) => {
                         // With no author, no run can be told apart as theirs, so none is restored.
                         // The upload restore still runs, with nothing: it is what stops holding
                         // completions for a claim that would otherwise never come.
@@ -966,6 +972,8 @@ export const DotContentDriveStore = signalStore(
 
                         store.restoreDuplicateRuns(duplicates.filter(isAuthors));
                         store.restoreUploadRuns(uploads.filter(isAuthors));
+                        // CSV imports (#37896) come back the same way: only the author's.
+                        store.restoreImportRuns(imports.filter(isAuthors));
                     });
 
                 /**

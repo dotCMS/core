@@ -23,6 +23,7 @@ import {
     DotBulkUploadCompletedEvent,
     DotFolderBulkDeleteSubmitResponse,
     DotFolderBulkDuplicateCompletedEvent,
+    DotImportCompletedEvent,
     DotJobState
 } from '@dotcms/dotcms-models';
 
@@ -123,6 +124,8 @@ describe('withActionExecution', () => {
      * as a delete result and a test could pass for the wrong reason.
      */
     let duplicateSocketEvents: Subject<DotFolderBulkDuplicateCompletedEvent>;
+    /** Imports get their own stream too, for the same reason as duplication (#37896). */
+    let importSocketEvents: Subject<DotImportCompletedEvent>;
 
     const createService = createServiceFactory({
         service: actionExecutionStoreMock,
@@ -139,7 +142,9 @@ describe('withActionExecution', () => {
                 on: (type: DotSystemEventType) =>
                     type === DotSystemEventType.BULK_FOLDER_DUPLICATE_COMPLETED
                         ? duplicateSocketEvents.asObservable()
-                        : socketEvents.asObservable()
+                        : type === DotSystemEventType.IMPORT_CONTENTLETS_COMPLETED
+                          ? importSocketEvents.asObservable()
+                          : socketEvents.asObservable()
             })
         ]
     });
@@ -147,6 +152,7 @@ describe('withActionExecution', () => {
     const build = () => {
         socketEvents = new Subject<DotBulkRefreshCompletedEvent>();
         duplicateSocketEvents = new Subject<DotFolderBulkDuplicateCompletedEvent>();
+        importSocketEvents = new Subject<DotImportCompletedEvent>();
         spectator = createService();
         store = spectator.service;
     };
@@ -980,6 +986,123 @@ describe('withActionExecution', () => {
      * status indicator was lost on a reload while the run carried on; it is put back from the
      * queues' active listings, and the completion that follows ends it.
      */
+    /**
+     * #37896: a CSV import runs in the background. The status toast shows it while it runs and
+     * reports a summary — created, updated, failed — when its completion event arrives. The Drive
+     * never polls for it.
+     */
+    describe('a CSV import', () => {
+        const importCompleted = (
+            overrides: Partial<DotImportCompletedEvent> = {}
+        ): DotImportCompletedEvent => ({
+            jobId: 'import-1',
+            state: 'SUCCESS',
+            cmd: 'publish',
+            created: 3,
+            updated: 1,
+            failed: 2,
+            ...overrides
+        });
+
+        it('should be reported on the status indicator without locking anything', () => {
+            build();
+
+            store.startImportRun('import-1', 'blogs.csv');
+
+            expect(store.toolbarRun()).toEqual(
+                expect.objectContaining({ labelKey: 'content-drive.import.indicator' })
+            );
+            expect(store.blockingRunCount()).toBe(0);
+        });
+
+        it('should end the report and state the counts when its completion arrives', () => {
+            build();
+            store.startImportRun('import-1', 'blogs.csv');
+
+            importSocketEvents.next(importCompleted());
+
+            expect(store.toolbarRunCount()).toBe(0);
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'blogs.csv',
+                    outcomeKind: 'import',
+                    createdCount: 3,
+                    updatedCount: 1,
+                    successCount: 4,
+                    failedCount: 2,
+                    backgrounded: true
+                })
+            );
+        });
+
+        it('should report a job only once, however many times its completion arrives', () => {
+            build();
+            store.startImportRun('import-1', 'blogs.csv');
+            importSocketEvents.next(importCompleted({ state: 'FAILED' }));
+            store.clearActionExecutionResult();
+
+            importSocketEvents.next(importCompleted({ state: 'FAILED_PERMANENTLY' }));
+
+            expect(store.actionExecutionResult()).toBeUndefined();
+        });
+
+        it('should ignore previews, which belong to the import dialog', () => {
+            build();
+            store.startImportRun('import-1', 'blogs.csv');
+
+            importSocketEvents.next(importCompleted({ cmd: 'preview' }));
+
+            expect(store.toolbarRunCount()).toBe(1);
+            expect(store.actionExecutionResult()).toBeUndefined();
+        });
+
+        it("should carry the server's reason when the import failed outright (US5)", () => {
+            build();
+            store.startImportRun('import-1', 'blogs.csv');
+
+            importSocketEvents.next({
+                jobId: 'import-1',
+                state: 'FAILED_PERMANENTLY',
+                cmd: 'publish',
+                message: 'Content type [Blog] not found'
+            });
+
+            expect(store.toolbarRunCount()).toBe(0);
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    outcomeKind: 'import',
+                    successCount: 0,
+                    failedCount: 0,
+                    message: 'Content type [Blog] not found'
+                })
+            );
+        });
+
+        it('should ignore imports this page is not tracking', () => {
+            build();
+
+            importSocketEvents.next(importCompleted({ jobId: 'someone-else' }));
+
+            expect(store.actionExecutionResult()).toBeUndefined();
+        });
+
+        it('should come back on the indicator after a reload, and settle as before', () => {
+            build();
+
+            store.restoreImportRuns([{ id: 'import-7', fileName: 'news.csv' }]);
+            expect(store.toolbarRun()).toEqual(
+                expect.objectContaining({ labelKey: 'content-drive.import.indicator' })
+            );
+
+            importSocketEvents.next(importCompleted({ jobId: 'import-7' }));
+
+            expect(store.toolbarRunCount()).toBe(0);
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({ actionName: 'news.csv', outcomeKind: 'import' })
+            );
+        });
+    });
+
     describe('restoring runs in progress after a reload', () => {
         const ALPHA = '//demo.dotcms.com/blogs/alpha/';
         const BETA = '//demo.dotcms.com/blogs/beta/';

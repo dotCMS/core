@@ -1395,6 +1395,82 @@ describe('DotContentDriveShellComponent', () => {
          * A duplication's outcome reads the way a bulk folder delete's does (developer decision,
          * 2026-09-28): the same toast levels and the same layout, in duplication's own words.
          */
+        /**
+         * #37896: an import runs in the background and reports in the status toast's place with a
+         * summary — created, updated and failed — or the server's reason when it failed outright.
+         */
+        describe('CSV import outcome', () => {
+            const imported = (
+                overrides: Partial<DotContentDriveActionExecutionResult> = {}
+            ): DotContentDriveActionExecutionResult => ({
+                actionName: 'blogs.csv',
+                outcomeKind: 'import',
+                successCount: 4,
+                createdCount: 3,
+                updatedCount: 1,
+                failedCount: 0,
+                skippedCount: 0,
+                backgrounded: true,
+                ...overrides
+            });
+
+            const messageGet = () => spectator.inject(DotMessageService).get as unknown as Mock;
+
+            it('should announce the created, updated and failed counts and reload the listing', () => {
+                settle(imported());
+
+                expect(messageService.add).toHaveBeenCalledWith(
+                    expect.objectContaining({ severity: 'success' })
+                );
+                expect(messageGet()).toHaveBeenCalledWith(
+                    'content-drive.import.toast.summary',
+                    'blogs.csv',
+                    '3',
+                    '1',
+                    '0'
+                );
+                expect(store.loadItems).toHaveBeenCalled();
+            });
+
+            it('should warn when some rows failed', () => {
+                settle(
+                    imported({ successCount: 3, createdCount: 3, updatedCount: 0, failedCount: 2 })
+                );
+
+                expect(messageService.add).toHaveBeenCalledWith(
+                    expect.objectContaining({ severity: 'warn' })
+                );
+                expect(messageGet()).toHaveBeenCalledWith(
+                    'content-drive.import.toast.summary',
+                    'blogs.csv',
+                    '3',
+                    '0',
+                    '2'
+                );
+            });
+
+            it("should show the server's reason when the import failed outright", () => {
+                settle(
+                    imported({
+                        successCount: 0,
+                        createdCount: 0,
+                        updatedCount: 0,
+                        failedCount: 0,
+                        message: 'Content type [Blog] not found'
+                    })
+                );
+
+                expect(messageService.add).toHaveBeenCalledWith(
+                    expect.objectContaining({ severity: 'error' })
+                );
+                expect(messageGet()).toHaveBeenCalledWith(
+                    'content-drive.import.toast.failed',
+                    'blogs.csv',
+                    'Content type [Blog] not found'
+                );
+            });
+        });
+
         describe('folder duplication outcome', () => {
             const DIAGNOSTIC = 'java.lang.IllegalStateException: for the log only';
 
@@ -3822,7 +3898,9 @@ describe('DotContentDriveShellComponent', () => {
                 { currentTarget: document.createElement('button'), stopPropagation: vi.fn() }
             );
 
-        it('should skip the prompt and open the file picker when the folder pins a base type', () => {
+        // #37896 changed this: Upload also holds Import CSV now, so a pinned folder opens the menu
+        // with only its own type instead of going straight to the file picker.
+        it('should offer only the pinned type, in the menu, when the folder pins a base type', () => {
             store.selectedNode.mockReturnValue({
                 data: { ...TARGET_FOLDER_DATA, defaultBaseType: 'DOTASSET' }
             } as DotFolderTreeNodeItem);
@@ -3832,8 +3910,10 @@ describe('DotContentDriveShellComponent', () => {
             upload();
             spectator.detectChanges();
 
-            expect(clickSpy).toHaveBeenCalled();
-            expect(spectator.query(DotUploadTypeSelectorComponent)).toBeFalsy();
+            expect(clickSpy).not.toHaveBeenCalled();
+            expect(spectator.query(DotUploadTypeSelectorComponent)?.$allowedBaseTypes()).toEqual([
+                'DOTASSET'
+            ]);
         });
 
         it('should upload with the folder base type after the picker returns (button flow)', () => {
@@ -3850,6 +3930,12 @@ describe('DotContentDriveShellComponent', () => {
             const fileInput = spectator.query('input[type="file"]') as HTMLInputElement;
 
             upload();
+            spectator.detectChanges();
+            spectator.click(
+                spectator.query(byTestId('upload-selector-option-DOTASSET'), {
+                    root: true
+                }) as HTMLElement
+            );
             Object.defineProperty(fileInput, 'files', {
                 value: [file],
                 writable: true,
@@ -4960,6 +5046,85 @@ describe('DotContentDriveShellComponent', () => {
             }
 
             expect(store.setShowAddToBundle).toHaveBeenCalledWith(false);
+        });
+    });
+
+    /**
+     * #37896 FR-001/FR-002: Upload is always offered, and always holds Import CSV, because an import
+     * places rows by its CSV rather than in the browsed folder. The upload types it lists still
+     * follow the folder: none without CAN_ADD_CHILDREN, only the pinned one when the folder pins one.
+     */
+    describe('upload menu — Import CSV', () => {
+        beforeEach(() => {
+            spectator.detectChanges();
+        });
+
+        const openViaButton = (targetFolder?: DotFolderTreeNodeData) => {
+            store.selectedNode.mockReturnValue({ data: targetFolder } as DotFolderTreeNodeItem);
+            spectator.triggerEventHandler(
+                spectator.debugElement.query(By.css('[data-testid="toolbar"]')),
+                'upload',
+                { currentTarget: document.createElement('button'), stopPropagation: vi.fn() }
+            );
+            spectator.detectChanges();
+        };
+
+        const importEntry = () =>
+            spectator.query(byTestId('upload-selector-import-csv'), { root: true });
+
+        it('should offer both upload types and Import CSV where the user can add children', () => {
+            openViaButton(TARGET_FOLDER_DATA);
+
+            expect(
+                spectator.query(DotUploadTypeSelectorComponent)?.$allowedBaseTypes()
+            ).toBeUndefined();
+            expect(importEntry()).toBeTruthy();
+        });
+
+        it('should offer only Import CSV where the user cannot add children', () => {
+            canAddChildrenSignal.set(false);
+
+            openViaButton(TARGET_FOLDER_DATA);
+
+            expect(spectator.query(DotUploadTypeSelectorComponent)).toBeFalsy();
+            expect(
+                spectator.query(byTestId('upload-selector-settings-hint'), { root: true })
+            ).toBeFalsy();
+            expect(importEntry()).toBeTruthy();
+        });
+
+        it('should offer the pinned type and Import CSV in a folder that pins one', () => {
+            openViaButton({
+                ...TARGET_FOLDER_DATA,
+                defaultBaseType: 'FILEASSET'
+            } as DotFolderTreeNodeData);
+
+            expect(spectator.query(DotUploadTypeSelectorComponent)?.$allowedBaseTypes()).toEqual([
+                'FILEASSET'
+            ]);
+            expect(importEntry()).toBeTruthy();
+        });
+
+        it('should open the import dialog from Import CSV', () => {
+            openViaButton(TARGET_FOLDER_DATA);
+
+            spectator.click(importEntry() as HTMLElement);
+
+            expect(store.setDialog).toHaveBeenCalledWith(
+                expect.objectContaining({ type: DIALOG_TYPE.IMPORT })
+            );
+        });
+
+        it('should not offer Import CSV for dropped files, which always upload', () => {
+            spectator.triggerEventHandler(
+                spectator.debugElement.query(By.css('[data-testid="dropzone"]')),
+                'uploadFiles',
+                { files: createFileList([createFile()]), targetFolder: TARGET_FOLDER_DATA }
+            );
+            spectator.detectChanges();
+
+            expect(spectator.query(DotUploadTypeSelectorComponent)).toBeTruthy();
+            expect(importEntry()).toBeFalsy();
         });
     });
 

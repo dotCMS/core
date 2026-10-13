@@ -11,25 +11,21 @@
 
             <div class="col-start-3 flex items-center gap-2 justify-self-end">
                 @if ($displayButton()) {
-                    <!-- Both create children in the browsed folder, and the server refuses without
-                         CAN_ADD_CHILDREN on it, so they are offered disabled with the reason rather
-                         than left to fail after the user has picked a file or filled in a dialog.
+                    <!-- Upload is always offered (#37896): it also holds Import CSV, which places
+                         rows by its CSV rather than in this folder. Which upload types it lists is
+                         decided by the shell from CAN_ADD_CHILDREN.
 
-                         The tooltip sits on a wrapper, not on the buttons: a disabled button
-                         computes `pointer-events: none` (measured), so no hover reaches it and a
-                         tooltip bound there would never fire — which is the whole point here. -->
-                    <span
-                        [pTooltip]="$addChildrenTooltip() | dm"
-                        data-testid="upload-asset-tooltip"
-                        class="inline-flex">
-                        <dot-upload-button
-                            animate.enter="toolbar-enter"
-                            animate.leave="toolbar-leave"
-                            [defaultBaseType]="$uploadBaseType()"
-                            [disabled]="!$canAddChildren()"
-                            data-testid="upload-asset-button"
-                            (upload)="$upload.emit($event)" />
-                    </span>
+                         Add New still creates children in the browsed folder, and the server
+                         refuses without CAN_ADD_CHILDREN on it, so it is offered disabled with the
+                         reason. Its tooltip sits on a wrapper: a disabled button computes
+                         `pointer-events: none` (measured), so a tooltip bound on it would never
+                         fire. -->
+                    <dot-upload-button
+                        animate.enter="toolbar-enter"
+                        animate.leave="toolbar-leave"
+                        [defaultBaseType]="$uploadBaseType()"
+                        data-testid="upload-asset-button"
+                        (upload)="$upload.emit($event)" />
 
                     <span
                         [pTooltip]="$addChildrenTooltip() | dm"

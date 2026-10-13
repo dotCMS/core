@@ -884,6 +884,25 @@ describe('DotContentDriveToolbarComponent', () => {
             expect(spectator.component.$canAddChildren()).toBe(true);
         });
 
+        // #37896: Upload now also holds "Import CSV", and an import places rows by its CSV, not in
+        // this folder, so Upload is offered whatever the folder allows. Which upload types it then
+        // lists is the shell's call (see the shell's Upload menu tests).
+        it('should keep Upload enabled without CAN_ADD_CHILDREN', async () => {
+            await withPermissions(['READ', 'EDIT']);
+
+            const upload = spectator
+                .query(byTestId('upload-asset-button'))
+                ?.querySelector('button');
+
+            expect(upload?.disabled).toBe(false);
+        });
+
+        it('should not explain Upload with the add-children tooltip', async () => {
+            await withPermissions(['READ', 'EDIT']);
+
+            expect(spectator.query(byTestId('upload-asset-tooltip'))).toBeNull();
+        });
+
         // All site content spans every folder in the site, which for a while was read as "there is
         // nowhere to put anything" and closed the affordances. It now behaves as the site root
         // does: content added here lands on the site, and the indicator names the site so the

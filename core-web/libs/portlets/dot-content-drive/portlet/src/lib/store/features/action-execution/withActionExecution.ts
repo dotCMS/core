@@ -17,6 +17,7 @@ import { catchError, take } from 'rxjs/operators';
 
 import {
     AddToBundleService,
+    DotActiveImport,
     DotBulkRefreshService,
     DotFolderBulkDuplicateRefusal,
     DotFolderBulkDuplicateRefusalKind,
@@ -40,6 +41,7 @@ import {
     DotBulkUploadActiveRun,
     DotBundle,
     DotFolderBulkDuplicateCompletedEvent,
+    DotImportCompletedEvent,
     DotFolderBulkDuplicateSubmitResponse,
     DotFolderDuplicateActiveRun,
     DotWorkflowPushPublishValue
@@ -105,6 +107,17 @@ interface WithActionExecutionState {
      * by the time the event lands the author may be looking somewhere else entirely.
      */
     uploadJobs: Record<string, DotContentDriveUploadJob>;
+    /**
+     * CSV imports this store started or restored, by job id (#37896): the run each belongs to and
+     * the name the outcome is reported under. Same reasoning as {@link uploadJobs}: the completion
+     * reaches every tab of the submitting user, and only ids in here are acted on.
+     */
+    importJobs: Record<string, { runId: string; fileName: string }>;
+    /**
+     * CSV imports already reported, by job id. A failed job is announced twice (failed, then
+     * permanently failed), so this is what keeps the outcome from being shown twice.
+     */
+    settledImportJobs: string[];
     /**
      * Bulk folder deletes this store submitted, by job id, valued by the run they belong to.
      *
@@ -211,6 +224,8 @@ export function withActionExecution() {
             actionExecutionResults: [],
             refreshJobIds: [],
             uploadJobs: {},
+            importJobs: {},
+            settledImportJobs: [],
             folderDeleteJobs: {},
             settledFolderDeleteJobs: [],
             folderDeleteRefusal: undefined,
@@ -872,6 +887,30 @@ export function withActionExecution() {
                     run.assetPaths.length > 0 && !isKnownDuplicate(run.id);
 
                 /** Puts back one running duplicate's status, tracked as a fresh submission is. */
+                /**
+                 * Shows a CSV import on the status indicator and remembers it, so its completion
+                 * event can end the run and name the file (#37896). An import already tracked or
+                 * already reported is left alone: a reload can list a job that this page started,
+                 * or one whose completion arrived while the listing was being read.
+                 */
+                const trackImportRun = (jobId: string, fileName: string): void => {
+                    if (store.importJobs()[jobId] || store.settledImportJobs().includes(jobId)) {
+                        return;
+                    }
+
+                    const runId = startRun({
+                        operation: `import:${jobId}`,
+                        total: 1,
+                        targets: [],
+                        labelKey: 'content-drive.import.indicator',
+                        backgrounded: true
+                    });
+
+                    patchState(store, {
+                        importJobs: { ...store.importJobs(), [jobId]: { runId, fileName } }
+                    });
+                };
+
                 const restoreDuplicateRun = (run: DotFolderDuplicateActiveRun): void => {
                     const runId = startDuplicateRun(run.id, run.assetPaths.length);
 
@@ -1646,6 +1685,54 @@ export function withActionExecution() {
                      *
                      * @param runs the author's own batches from the queue's active listing
                      */
+                    /**
+                     * Shows a CSV import the import dialog just started on the status indicator
+                     * until its completion arrives (#37896).
+                     */
+                    startImportRun: (jobId: string, fileName: string): void =>
+                        trackImportRun(jobId, fileName),
+                    /** Puts back the status of CSV imports still running after a reload (#37896). */
+                    restoreImportRuns: (runs: DotActiveImport[]): void =>
+                        runs.forEach((run) => trackImportRun(run.id, run.fileName ?? '')),
+                    /**
+                     * Ends an import's run with its created, updated and failed counts, or the
+                     * server's reason when it failed outright (#37896). Previews, imports this page
+                     * doesn't track, and a job already reported are ignored: a failed job is
+                     * announced twice (failed, then permanently failed).
+                     */
+                    reportImportCompleted: (event: DotImportCompletedEvent): void => {
+                        const tracked = store.importJobs()[event.jobId];
+
+                        if (
+                            event.cmd !== 'publish' ||
+                            !tracked ||
+                            store.settledImportJobs().includes(event.jobId)
+                        ) {
+                            return;
+                        }
+
+                        const remaining = { ...store.importJobs() };
+                        delete remaining[event.jobId];
+                        patchState(store, {
+                            importJobs: remaining,
+                            settledImportJobs: [...store.settledImportJobs(), event.jobId]
+                        });
+
+                        const created = event.created ?? 0;
+                        const updated = event.updated ?? 0;
+
+                        onSettled(tracked.runId, {
+                            actionName: tracked.fileName,
+                            outcomeKind: OUTCOME_KIND.IMPORT,
+                            successCount: created + updated,
+                            createdCount: created,
+                            updatedCount: updated,
+                            failedCount: event.failed ?? 0,
+                            skippedCount: 0,
+                            message: event.message,
+                            backgrounded: true
+                        });
+                    },
                     restoreUploadRuns: (runs: DotBulkUploadActiveRun[]): void => {
                         runs.forEach(reportEarlyUploadCompletion);
                         runs.filter(isRestorableUpload).forEach(restoreUploadRun);
@@ -1728,6 +1815,12 @@ export function withActionExecution() {
                             event
                         );
                     });
+
+                // A CSV import reports the same way (#37896); previews go to the import dialog.
+                eventsSocket
+                    .on<DotImportCompletedEvent>(DotSystemEventType.IMPORT_CONTENTLETS_COMPLETED)
+                    .pipe(takeUntilDestroyed(destroyRef))
+                    .subscribe((event) => store.reportImportCompleted(event));
 
                 // Duplication reports the same way: the run settles itself, nothing here polls.
                 eventsSocket
