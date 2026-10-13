@@ -1,0 +1,190 @@
+# Temporary live test only; deliberately excluded from implementation PR #38015.
+name: LICENSE Date Sandbox Test
+
+on:
+  push:
+    branches: [test-38014-license-date-workflow]
+    paths:
+      - '.github/workflows/test_license-date-sandbox.yml'
+      - '.github/workflows/tests/license-sandbox.test.py'
+
+permissions:
+  contents: read
+
+jobs:
+  sandbox:
+    name: Live sandbox (${{ matrix.mode }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [direct, pr]
+    env:
+      TZ: UTC
+      LC_ALL: C
+      MODE: ${{ matrix.mode }}
+      DEFAULT_BRANCH: sandbox/license-date-38014-${{ github.run_id }}-${{ matrix.mode }}
+      PR_BRANCH: sandbox/license-date-38014-${{ github.run_id }}-${{ matrix.mode }}-update
+      CI_MACHINE_USER: ${{ secrets.CI_MACHINE_USER || 'dotcmsmachineuser' }}
+      SCRIPT_DIR: /tmp/license-sandbox
+      SOURCE_SHA: ${{ github.sha }}
+    steps:
+      - name: Checkout exact sandbox test commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          token: ${{ secrets.CI_MACHINE_TOKEN }}
+
+      - name: Validate sandbox boundaries before any writes
+        id: validate-sandbox
+        shell: bash
+        env:
+          CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
+        run: |
+          [[ "$GITHUB_REF_NAME" == 'test-38014-license-date-workflow' ]]
+          [[ "$MODE" == 'direct' || "$MODE" == 'pr' ]]
+          [[ "$DEFAULT_BRANCH" =~ ^sandbox/license-date-38014-[0-9]+-(direct|pr)$ ]]
+          [[ "$DEFAULT_BRANCH" == *"-${MODE}" ]]
+          [[ "$PR_BRANCH" == "${DEFAULT_BRANCH}-update" ]]
+          [[ -n "$CI_MACHINE_TOKEN" ]]
+
+      - name: Run offline production and sandbox safety tests
+        run: |
+          python3 .github/workflows/tests/update-license-date.test.py
+          python3 .github/workflows/tests/license-sandbox.test.py
+
+      - name: Extract the actual production shell steps
+        shell: bash
+        run: |
+          mkdir -p "$SCRIPT_DIR"
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          import runpy
+          step_script = runpy.run_path(".github/workflows/tests/update-license-date.test.py")["step_script"]
+          scripts = Path(os.environ["SCRIPT_DIR"])
+          (scripts / "update.sh").write_text(step_script("update-license") + "\n")
+          (scripts / "publish.sh").write_text(step_script("publish") + "\n")
+          (scripts / "check-token.sh").write_text(step_script("check-pr-token") + "\n")
+          PY
+
+      - name: Seed a disposable branch with a stale date
+        shell: bash
+        run: |
+          git config user.name "$CI_MACHINE_USER"
+          git config user.email "${CI_MACHINE_USER}@users.noreply.github.com"
+          git checkout -b "$DEFAULT_BRANCH"
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          path = Path("LICENSE")
+          content, count = re.subn(rb"(?m)^Change Date:.*$", b"Change Date:     Four years from January 01, 2000", path.read_bytes())
+          assert count == 1
+          path.write_bytes(content)
+          PY
+          git add -- LICENSE
+          git commit -m 'test: seed stale LICENSE date on disposable sandbox branch'
+          git push origin "HEAD:refs/heads/${DEFAULT_BRANCH}"
+
+      - name: Update using the production shell step
+        shell: bash
+        run: bash -euo pipefail "$SCRIPT_DIR/update.sh"
+
+      - name: Deliberately reject the fallback-case push locally
+        if: matrix.mode == 'pr'
+        shell: bash
+        run: |
+          # This models a rejection without changing repository protection rules.
+          HOOK_DIR=$(git rev-parse --git-path hooks)
+          mkdir -p "$HOOK_DIR"
+          printf '#!/bin/sh\necho "Intentional sandbox push rejection" >&2\nexit 1\n' > "$HOOK_DIR/pre-push"
+          chmod +x "$HOOK_DIR/pre-push"
+
+      - name: Publish using the production shell step
+        id: publish
+        shell: bash
+        run: bash -euo pipefail "$SCRIPT_DIR/publish.sh"
+
+      - name: Assert the expected publishing path and remove test hook
+        shell: bash
+        env:
+          CREATE_PR: ${{ steps.publish.outputs.create_pr }}
+        run: |
+          if [[ "$MODE" == 'direct' ]]; then
+            [[ "$CREATE_PR" == 'false' ]]
+          else
+            [[ "$CREATE_PR" == 'true' ]]
+            rm -f "$(git rev-parse --git-path hooks)/pre-push"
+          fi
+
+      - name: Validate fallback token using production shell step
+        if: steps.publish.outputs.create_pr == 'true'
+        shell: bash
+        env:
+          CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
+        run: bash -euo pipefail "$SCRIPT_DIR/check-token.sh"
+
+      - name: Create a real machine-user PR against the sandbox only
+        id: create-pr
+        if: steps.publish.outputs.create_pr == 'true'
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          token: ${{ secrets.CI_MACHINE_TOKEN }}
+          base: ${{ env.DEFAULT_BRANCH }}
+          branch: ${{ env.PR_BRANCH }}
+          add-paths: LICENSE
+          commit-message: 'test: LICENSE date PR fallback on disposable sandbox'
+          author: '${{ env.CI_MACHINE_USER }} <${{ env.CI_MACHINE_USER }}@users.noreply.github.com>'
+          committer: '${{ env.CI_MACHINE_USER }} <${{ env.CI_MACHINE_USER }}@users.noreply.github.com>'
+          title: '[Sandbox only] LICENSE date PR fallback test'
+          body: |
+            Temporary live test for #38014 and #38015. Do not merge.
+            Targets only a disposable sandbox branch, not main.
+            Push rejection was simulated with a local pre-push hook; PR creation is real.
+
+      - name: Verify remote date, unchanged terms, and PR author
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
+          PR_URL: ${{ steps.create-pr.outputs.pull-request-url }}
+        run: |
+          TARGET_BRANCH="$DEFAULT_BRANCH"
+          if [[ "$MODE" == 'pr' ]]; then
+            [[ -n "$PR_URL" ]]
+            EXPECTED_AUTHOR=$(gh api user --jq '.login')
+            gh pr view "$PR_URL" --json baseRefName,headRefName,author,files > "$SCRIPT_DIR/pr.json"
+            export EXPECTED_AUTHOR
+            python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          pr = json.loads((Path(os.environ["SCRIPT_DIR"]) / "pr.json").read_text())
+          assert pr["baseRefName"] == os.environ["DEFAULT_BRANCH"]
+          assert pr["headRefName"] == os.environ["PR_BRANCH"]
+          assert pr["author"]["login"] == os.environ["EXPECTED_AUTHOR"]
+          assert [file["path"] for file in pr["files"]] == ["LICENSE"]
+          print("Verified PR author:", pr["author"]["login"])
+          PY
+            TARGET_BRANCH="$PR_BRANCH"
+          fi
+          git fetch origin "$TARGET_BRANCH"
+          git show FETCH_HEAD:LICENSE > "$SCRIPT_DIR/remote-license"
+          git show "${SOURCE_SHA}:LICENSE" > "$SCRIPT_DIR/original-license"
+          python3 - <<'PY'
+          from datetime import datetime, timezone
+          import os, re
+          from pathlib import Path
+          scripts = Path(os.environ["SCRIPT_DIR"])
+          original = (scripts / "original-license").read_bytes()
+          remote = (scripts / "remote-license").read_bytes()
+          line = f"Change Date:     Four years from {datetime.now(timezone.utc):%B %d, %Y}".encode()
+          expected, count = re.subn(rb"(?m)^Change Date:.*$", line, original)
+          assert count == 1 and remote == expected
+          print("Verified remote LICENSE date and unchanged surrounding text")
+          PY
+          {
+            echo "### Sandbox ${MODE}: passed"
+            echo "Verified remote branch: ${TARGET_BRANCH}"
+            echo "PR: ${PR_URL:-none}"
+            echo 'main and the production automation branch were not targeted.'
+          } >> "$GITHUB_STEP_SUMMARY"
