@@ -40,6 +40,17 @@ describe('DotSidePanelComponent', () => {
     const query = (testId: string): HTMLElement | null =>
         spectator.query<HTMLElement>(byTestId(testId), { root: true });
 
+    /** The PrimeNG drawer the panel renders. */
+    const drawer = (): Drawer => {
+        const found = spectator.query(Drawer);
+
+        if (!found) {
+            throw new Error('The panel rendered no drawer');
+        }
+
+        return found;
+    };
+
     const clickButton = (testId: string): void => {
         spectator.click(query(testId)?.querySelector('button') as HTMLElement);
     };
@@ -65,7 +76,7 @@ describe('DotSidePanelComponent', () => {
         document.body.appendChild(mask);
 
         if (ownedByPanel) {
-            spectator.query(Drawer).mask = mask;
+            drawer().mask = mask;
         }
 
         mask.dispatchEvent(new MouseEvent('click', { bubbles: true }));
@@ -154,9 +165,8 @@ describe('DotSidePanelComponent', () => {
     describe('when it closes', () => {
         it('gives Escape and the mask back', () => {
             open();
-            const drawer = spectator.query(Drawer);
             const mask = document.createElement('div');
-            drawer.mask = mask;
+            drawer().mask = mask;
 
             spectator.fixture.destroy();
 
