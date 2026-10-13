@@ -330,10 +330,13 @@ public class RedirectUtil {
     }
 
     /**
-     * Percent-decodes a value once, as UTF-8. Unlike form decoding, {@code +} is left as is.
-     * Returns null when an escape is malformed.
+     * Percent-decodes a URL path once, as UTF-8. Unlike form decoding, {@code +} is left as is. Strict: a
+     * {@code %} not followed by two hex digits makes the whole value invalid instead of being kept as is.
+     *
+     * @param value the raw path, not null
+     * @return the decoded path, or null when an escape is malformed
      */
-    private static String percentDecode(final String value) {
+    public static String percentDecode(final String value) {
 
         final ByteArrayOutputStream bytes = new ByteArrayOutputStream(value.length());
         for (int i = 0; i < value.length(); i++) {

@@ -49,7 +49,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.Serializable;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayDeque;
 import java.util.Arrays;
@@ -435,11 +434,15 @@ public class DotSamlResource implements Serializable {
 	/**
 	 * Determines whether the post-login redirect target points at the dotCMS back-end. Only
 	 * back-end logins are subject to the no-access role gate; front-end logins are never denied
-	 * here. The path is percent-decoded first and its dot segments are then resolved, as a browser
-	 * resolves them (a {@code ..} at the root stays at the root). So {@code /members/../dotAdmin/},
-	 * {@code /members/%2e%2e/dotAdmin/} and {@code /members/..%2f..%2fdotAdmin/} count as back-end, and
-	 * {@code /dotAdmin/../members/} does not. This matters for the trusted {@code redirect.after.login}, which
-	 * is not validated. Letter case is ignored, so {@code /DotAdmin/} counts as back-end too. Reuses
+	 * here. Only the path decides: the value is cut at the first {@code ?} or {@code #}, as
+	 * {@link RedirectUtil} does, so a query or fragment can never change the answer. The path is
+	 * percent-decoded once and its dot segments are then resolved, as a browser resolves them (a
+	 * {@code ..} at the root stays at the root). So {@code /members/../dotAdmin/},
+	 * {@code /members/%2e%2e/dotAdmin/}, {@code /members/..%2f..%2fdotAdmin/} and
+	 * {@code /dotAdmin?/../x} count as back-end, and {@code /dotAdmin/../members/} does not. Letter
+	 * case is ignored, so {@code /DotAdmin/} counts as back-end too. A path with a broken
+	 * percent-escape counts as back-end (fail closed), so the role check still runs. This matters for
+	 * the trusted {@code redirect.after.login}, which is not validated. Reuses
 	 * {@link SamlWebUtils#isBackEndLoginPageIgnoreCase(String)} so the back-end path set stays in one place.
 	 *
 	 * @param loginPath the post-login destination
@@ -447,7 +450,15 @@ public class DotSamlResource implements Serializable {
 	 */
 	@VisibleForTesting
 	boolean isBackEndLogin(final String loginPath) {
-		final String decodedPath = Try.of(() -> URI.create(loginPath).getPath()).getOrElse(loginPath);
+
+		if (!UtilMethods.isSet(loginPath)) {
+			return false;
+		}
+		final String rawPath = loginPath.split("[?#]", 2)[0];
+		final String decodedPath = RedirectUtil.percentDecode(rawPath);
+		if (null == decodedPath) {
+			return true;
+		}
 		final String path = resolveDotSegments(decodedPath);
 		return UtilMethods.isSet(path) && this.samlWebUtils.isBackEndLoginPageIgnoreCase(path);
 	}

@@ -222,6 +222,18 @@ public class DotSamlResourceLoginPathTest {
     }
 
     /**
+     * Given Scenario: a front-end-only user whose RelayState is a back-end path followed by a query that
+     * holds ".." segments and a stray "%" (PR #37984 review)
+     * ExpectedResult: the path is back-end, so the login is denied
+     */
+    @Test
+    public void frontEndUser_queryHidesBackEndPath_isDenied() {
+
+        relayState("/dotAdmin?/../%");
+        assertTrue(resolve(frontEndOnly()).isDenied());
+    }
+
+    /**
      * Given Scenario: a front-end-only user whose RelayState starts with /dotAdmin but resolves to a
      * front-end page (AC-005)
      * ExpectedResult: the user is sent to the front-end page, not denied
@@ -486,6 +498,34 @@ public class DotSamlResourceLoginPathTest {
         assertTrue(resource.isBackEndLogin("/members/../dotadmin/"));
         assertTrue(resource.isBackEndLogin("/C/Portal/Logout"));
         assertFalse(resource.isBackEndLogin("/members/DotAdmin/"));
+    }
+
+    /**
+     * Method to test: {@link DotSamlResource#isBackEndLogin(String)}
+     * Given Scenario: a back-end path followed by a query or fragment that holds ".." segments, including one
+     * whose stray "%" made the old parser fall back to the raw string (PR #37984 review)
+     * ExpectedResult: only the path decides; the query and fragment never make a path back-end or front-end
+     */
+    @Test
+    public void isBackEndLoginIgnoresQueryAndFragment() {
+
+        assertTrue(resource.isBackEndLogin("/dotAdmin?/../%"));
+        assertTrue(resource.isBackEndLogin("/dotAdmin#/../%"));
+        assertTrue(resource.isBackEndLogin("/dotAdmin/?x=/../../members"));
+        assertFalse(resource.isBackEndLogin("/members?next=/dotAdmin/"));
+    }
+
+    /**
+     * Method to test: {@link DotSamlResource#isBackEndLogin(String)}
+     * Given Scenario: a path with a broken percent-escape (only a trusted redirect.after.login can carry one;
+     * RelayState and session values are rejected earlier as MALFORMED_ENCODING)
+     * ExpectedResult: treated as back-end, so the role check applies (fail closed)
+     */
+    @Test
+    public void isBackEndLoginMalformedPath_failsClosed() {
+
+        assertTrue(resource.isBackEndLogin("/members/report%"));
+        assertTrue(resource.isBackEndLogin("/members/%zz"));
     }
 
     private DotSamlResource.LoginDestination resolve(final User user) {
