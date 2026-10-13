@@ -177,19 +177,19 @@ class S3StorageConfigurationTest {
             when(upload.waitForUploadResult()).thenAnswer(call -> executor.submit(() -> {
                 try {
                     return DotConcurrentFactory.getInstance().getIdentifierStripedLock()
-                            .tryLock("s3_binary-assets/a/b/file", () -> result);
+                            .tryLock("s3_dotmetadata/a/b/file", () -> result);
                 } catch (Throwable lockTimeout) {
                     throw new Exception(lockTimeout);
                 }
             }).get(10, TimeUnit.SECONDS));
-            assertEquals("etag", provider.pushFile("binary-assets", "/a/b/file", file, Map.of()));
+            assertEquals("etag", provider.pushFile("dotmetadata", "/a/b/file", file, Map.of()));
         }
     }
 
     @Test
     void enabledDownloadsUseTheirOwnFileWhateverTheRepositoryAndAreDeletedOnRelease(@TempDir Path root) throws Exception {
         final var storage = mock(Storage.class);
-        when(storage.downloadFile(eq("bucket"), eq("binary-assets/a/b/file"), any(File.class))).thenAnswer(call -> {
+        when(storage.downloadFile(eq("bucket"), eq("dotmetadata/a/b/file"), any(File.class))).thenAnswer(call -> {
             Files.writeString(call.<File>getArgument(2).toPath(), "remote");
             return mock(Download.class);
         });
@@ -202,8 +202,8 @@ class S3StorageConfigurationTest {
         field.setAccessible(true);
         field.set(provider, new LocalFileRepositoryManager(repository.toString()) { });
 
-        final File first = provider.pullFile("binary-assets", "/a/b/file");
-        final File second = provider.pullFile("binary-assets", "/a/b/file");
+        final File first = provider.pullFile("dotmetadata", "/a/b/file");
+        final File second = provider.pullFile("dotmetadata", "/a/b/file");
         assertNotEquals(first, second, "Concurrent downloads of one key must not share a file");
         assertEquals("remote", Files.readString(first.toPath()));
         assertEquals("remote", Files.readString(second.toPath()));
@@ -228,11 +228,11 @@ class S3StorageConfigurationTest {
 
         final File file = Files.writeString(root.resolve("source"), "contents").toFile();
         final var written = new S3ObjectSummary();
-        written.setKey("binary-assets/a/b/file");
+        written.setKey("dotmetadata/a/b/file");
         written.setSize(file.length());
         written.setETag(DigestUtils.md5Hex("contents"));
-        when(storage.listFirstObject("bucket", "binary-assets/a/b/file")).thenReturn(null, written);
-        assertTrue(provider.backfillFile("binary-assets", "/a/b/file", file));
+        when(storage.listFirstObject("bucket", "dotmetadata/a/b/file")).thenReturn(null, written);
+        assertTrue(provider.backfillFile("dotmetadata", "/a/b/file", file));
 
         final var missing = new AmazonS3Exception("missing");
         missing.setStatusCode(404);
