@@ -23,10 +23,25 @@ final class SharedExtractedMetadata {
     static SharedExtractedMetadata getInstance() { return Holder.INSTANCE; }
     SharedExtractedMetadata(StoragePersistenceAPI storage) { this.storage = storage; }
 
+    /**
+     * Returns the byte-derived metadata for a file, sharing one extraction across every copy of the
+     * same bytes when S3 asset storage is on. Extracts directly, without the shared cache, when the
+     * feature is off or the extractor version is unknown, because unknown parser bundles must not
+     * share one cached result.
+     *
+     * @param source           the file to extract from
+     * @param extractorVersion the Tika bundle version, or {@code null} when it cannot be determined
+     * @param schemaVersion    the metadata schema version, part of the cache key
+     * @param textLimit        the maximum extracted text length, part of the cache key
+     * @param extract          the extraction to run on a cache miss
+     * @return the extracted metadata, as a mutable map
+     * @throws Exception when copying, hashing, or publishing the extraction fails
+     */
     @SuppressWarnings("unchecked")
     Map<String, Serializable> get(File source, String extractorVersion, int schemaVersion, int textLimit,
             Function<File, Map<String, Serializable>> extract) throws Exception {
         if (!AssetStorageFeature.isEnabled()) return extract.apply(source);
+        if (extractorVersion == null || extractorVersion.isBlank()) return extract.apply(source);
         final var snapshot = Files.createTempFile("asset-extraction-", ".tmp");
         try {
             Files.copy(source.toPath(), snapshot, StandardCopyOption.REPLACE_EXISTING);
