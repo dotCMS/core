@@ -29,6 +29,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.DotStateException;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
@@ -361,8 +362,19 @@ public class ExperimentsResource {
             }
         }
 
-        final Experiment startedExperiment = experimentsAPI.start(experimentId, user);
-        return Response.ok(new ResponseEntitySingleExperimentView(startedExperiment)).build();
+        try {
+            final Experiment startedExperiment = experimentsAPI.start(experimentId, user);
+            return Response.ok(new ResponseEntitySingleExperimentView(startedExperiment)).build();
+        } catch (final DotStateException e) {
+            // Two concurrent starts raced past the pre-check gate and both reached
+            // experimentsAPI.start(). The loser — whose isFreeSlotUsed() re-check returned true
+            // under the advisory lock — threw DotStateException. Return the same 403 the gate
+            // would have returned so the UI sees a consistent FEATURE_DISABLED response.
+            if (!ConfigExperimentUtil.INSTANCE.isExperimentEnabled()) {
+                return limitedModeResponse();
+            }
+            throw e;
+        }
     }
 
     /**
