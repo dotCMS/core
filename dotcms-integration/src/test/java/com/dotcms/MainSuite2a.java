@@ -19,6 +19,7 @@ import com.dotcms.inference.rest.InferenceTestsAreRegisteredTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.rest.api.v1.maintenance.MaintenanceResourceIntegrationTest;
 import com.dotmarketing.portlets.containers.business.ContainerStructureFinderStrategyResolverTest;
+import com.dotmarketing.webdav.DotWebdavHelperTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite.SuiteClasses;
 
@@ -102,7 +103,8 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.AuditPublishingResourceTest.class,
         MaintenanceResourceIntegrationTest.class,
         FolderHandlerTest.class,
-        ContentAnalyticsPersistenceModeIT.class
+        ContentAnalyticsPersistenceModeIT.class,
+        DotWebdavHelperTest.class
 })
 public class MainSuite2a {
 

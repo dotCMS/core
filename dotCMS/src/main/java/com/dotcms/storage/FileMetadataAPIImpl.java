@@ -24,12 +24,14 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.image.focalpoint.FocalPointAPIImpl;
 import com.dotmarketing.portlets.contentlet.business.MetadataCache;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.UUIDUtil;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.util.StringPool;
@@ -1065,19 +1067,93 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
         return ConfigUtils.getAssetTempPath() + File.separator + tempResourceId + File.separator +  tempResourceId + META_TMP;
     }
 
+    private StorageKey temporaryMetadataKey(final String id, final boolean legacy) {
+        if (!TemporaryAssetStorage.validId(id)) {
+            throw new IllegalArgumentException("Invalid temporary resource id");
+        }
+        return new StorageKey.Builder().group(Config.getStringProperty(METADATA_GROUP_NAME, DOT_METADATA))
+                .path(legacy ? tempResourcePath(id) : TemporaryAssetStorage.metadataPath(id))
+                .storage(legacy ? StorageType.FILE_SYSTEM : StoragePersistenceProvider.remoteStorageType()).build();
+    }
+
+    /**
+     * Tells whether metadata for a temporary id is kept in S3 with the upload it describes.
+     *
+     * <p>An id made of {@code temp_} and a content inode does not name an upload.
+     * {@code FocalPointImageFilter} uses it to hold a focal point for existing content until the
+     * image editor saves. It never gets an upload receipt, so the S3 temporary-upload cleanup would
+     * never find it. Its metadata therefore stays in the local temporary directory, where
+     * {@code BinaryCleanupJob} ages it out, exactly as with the flag off.
+     *
+     * @param id the temporary resource id
+     * @return {@code false} for an inode-based id, {@code true} otherwise
+     */
+    private static boolean isSharedTemporaryId(final String id) {
+        return id == null || !(id.startsWith(FocalPointAPIImpl.TMP)
+                && UUIDUtil.isUUID(id.substring(FocalPointAPIImpl.TMP.length())));
+    }
+
+    /**
+     * Reads the metadata of a temporary resource with the flag on.
+     *
+     * <p>Upload metadata is mutable, so it is read from S3 directly and another node's edits are
+     * visible. Only a genuine absence falls back to the local metadata file, never a storage
+     * failure. Inode-based ids (see {@link #isSharedTemporaryId(String)}) are read from the local
+     * file only.
+     *
+     * @param id the temporary resource id
+     * @return the stored metadata, or {@code null} if there is none
+     * @throws DotDataException if S3 cannot be read
+     */
+    private Map<String, Serializable> temporaryMetadata(final String id) throws DotDataException {
+        final Map<String, Serializable> shared = isSharedTemporaryId(id)
+                ? fileStorageAPI.retrieveRawMetaData(temporaryMetadataKey(id, false)) : null;
+        return shared != null ? shared : fileStorageAPI.retrieveRawMetaData(temporaryMetadataKey(id, true));
+    }
+
     /**
      * {@inheritDoc}
-     * @param tempResourceId
-     * @param customAttributesByField
-     * @throws DotDataException
+     *
+     * <p>With S3 asset storage on, metadata for an upload is merged and written to S3, so every node
+     * sees it and the temporary-upload cleanup removes it with the upload. Inode-based ids (see
+     * {@link #isSharedTemporaryId(String)}) and the flag-off mode write the local metadata file.
+     *
+     * @param tempResourceId the temporary resource id
+     * @param customAttributesByField custom attributes to set, by field; an empty map for a field
+     *                                clears its custom attributes
+     * @throws DotDataException if the S3 metadata cannot be read or written
      */
     public void putCustomMetadataAttributes(final String tempResourceId,
             final Map<String, Map<String,Serializable>> customAttributesByField) throws DotDataException {
 
+        if (AssetStorageFeature.isEnabled() && isSharedTemporaryId(tempResourceId)) {
+            if (customAttributesByField.isEmpty()) {
+                return;
+            }
+            final Map<String, Serializable> previous = temporaryMetadata(tempResourceId);
+            final Map<String, Serializable> updated = new HashMap<>(previous == null ? Map.of() : previous);
+            for (final Map<String, Serializable> attributes : customAttributesByField.values()) {
+                if (attributes.isEmpty()) {
+                    updated.keySet().removeIf(key -> key.startsWith(Metadata.CUSTOM_PROP_PREFIX));
+                } else {
+                    attributes.forEach((key, value) -> updated.put(Metadata.CUSTOM_PROP_PREFIX + key, value));
+                }
+            }
+            // Retain a nonempty record after clearing custom attributes, so a legacy local copy
+            // cannot resurrect an earlier focal point on the next read.
+            updated.put("tempResourceId", tempResourceId);
+            if (!fileStorageAPI.setMetadata(new FetchMetadataParams.Builder().cache(false)
+                    .storageKey(temporaryMetadataKey(tempResourceId, false)).build(), updated)) {
+                throw new DotDataException("Unable to save temporary binary metadata for " + tempResourceId);
+            }
+            return;
+        }
+
         final String metadataBucketName = Config
                 .getStringProperty(METADATA_GROUP_NAME, DOT_METADATA);
 
-        customAttributesByField.forEach((fieldName, customAttributes) -> {
+        for (final var entry : customAttributesByField.entrySet()) {
+            final Map<String, Serializable> customAttributes = entry.getValue();
 
             try {
                 final String tempResourcePath = tempResourcePath(tempResourceId);
@@ -1094,17 +1170,26 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
             }catch (Exception e){
                 Logger.error(FileMetadataAPIImpl.class, "Error saving custom attributes", e);
             }
-        });
+        }
     }
 
     /**
      * {@inheritDoc}
-     * @param tempResourceId
-     * @return
-     * @throws DotDataException
+     *
+     * <p>With S3 asset storage on, the metadata is read as described in
+     * {@link #temporaryMetadata(String)}, bypassing node caches.
+     *
+     * @param tempResourceId the temporary resource id
+     * @return the metadata, or empty if there is none
+     * @throws DotDataException if the metadata cannot be read
      */
     public Optional<Metadata> getMetadata(final String tempResourceId)
             throws DotDataException {
+
+            if (AssetStorageFeature.isEnabled()) {
+                return Optional.ofNullable(temporaryMetadata(tempResourceId))
+                        .map(values -> new Metadata(tempResourceId, values));
+            }
 
             final StorageType storageType = StoragePersistenceProvider.getStorageType();
             final String metadataBucketName = Config

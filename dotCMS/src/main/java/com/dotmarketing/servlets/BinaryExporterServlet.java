@@ -460,6 +460,9 @@ public class BinaryExporterServlet extends HttpServlet {
         if (temp.metadata == null && temp.file.exists()) {
           temp = new DotTempFile(temp.id, temp.file);
         }
+        if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+          temp = tempFileAPI.completeTempFile(temp);
+        }
 		copyMetadata(uuid, fieldVarName, temp);
         // The focal point is authoritative in the request URL. Write it straight onto the saved
         // temp AFTER copyMetadata, so it persists even when the image exporter served the rendition

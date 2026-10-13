@@ -169,6 +169,34 @@ class BinaryS3StorageTest {
         } finally { secondClient.shutdownTransferManager(); }
     }
 
+    @Test
+    void namespaceCoversHashedMetadataAndConditionalStagingRecords() throws Exception {
+        final var first = namespaced("Prod", AmazonS3StoragePersistenceAPIImpl.PathEncryptionMode.SHA256, storage);
+        final var second = namespaced("prod", AmazonS3StoragePersistenceAPIImpl.PathEncryptionMode.SHA256, storage);
+        final String path = "/a/b/abc123/HeroImage-metadata.json";
+        first.pushObject("dotmetadata", path, new JsonWriterDelegate(), "first editorial value", Map.of());
+        second.pushObject("dotmetadata", path, new JsonWriterDelegate(), "second editorial value", Map.of());
+        assertEquals(List.of(path), first.listObjectPaths("dotmetadata", "/a/b/abc123/"));
+        assertEquals("first editorial value", first.pullObject("dotmetadata", path, new JsonReaderDelegate<>(String.class)));
+        first.deleteObjectAndReferences("dotmetadata", path);
+        assertEquals("second editorial value", second.pullObject("dotmetadata", path, new JsonReaderDelegate<>(String.class)));
+
+        final var stagingA = namespaced("Prod", AmazonS3StoragePersistenceAPIImpl.PathEncryptionMode.NONE, storage);
+        final var stagingB = namespaced("prod", AmazonS3StoragePersistenceAPIImpl.PathEncryptionMode.NONE, storage);
+        final String record = "entries/Mixed-Case.json";
+        final String firstVersion = stagingA.writeObjectIfMatch("webdav-temporary", record, "first upload", null);
+        final String secondVersion = stagingB.writeObjectIfMatch("webdav-temporary", record, "second upload", null);
+        assertNotNull(firstVersion);
+        assertNotNull(secondVersion, "Same logical path can be created independently in another namespace");
+        assertNull(stagingB.writeObjectIfMatch("webdav-temporary", record, "stale edit", firstVersion));
+        assertEquals(record, stagingA.listObjectSnapshots("webdav-temporary", "entries/").get(0).path());
+        stagingA.deleteObjectReference("webdav-temporary", record);
+        assertEquals("second upload", stagingB.readObjectSnapshot("webdav-temporary", record,
+                new JsonReaderDelegate<>(String.class)).value());
+        assertFalse(stagingA.existsObject("webdav-temporary", record));
+        assertTrue(stagingB.existsObject("webdav-temporary", record));
+    }
+
     private AmazonS3StoragePersistenceAPIImpl namespaced(String namespace,
             AmazonS3StoragePersistenceAPIImpl.PathEncryptionMode mode,
             com.dotcms.enterprise.publishing.storage.Storage backing) {
@@ -184,6 +212,252 @@ class BinaryS3StorageTest {
         assertNotNull(file);
         try { return Files.readString(file.toPath()); }
         finally { remote.releaseRetrievedFile(file); }
+    }
+
+    @Test
+    void versionInventoryFailurePropagatesAsCheckedStorageFailure() {
+        final var failedStorage = spy(storage);
+        final var outage = new com.dotmarketing.exception.DotRuntimeException("S3 listing unavailable");
+        doThrow(outage).when(failedStorage).listObjects(bucket, "webdav-temporary/data/");
+        final var failed = new AmazonS3StoragePersistenceAPIImpl(failedStorage, bucket,
+                AmazonS3StoragePersistenceAPIImpl.PathEncryptionMode.NONE);
+        final var failure = assertThrows(com.dotmarketing.exception.DotDataException.class,
+                () -> failed.listObjectSnapshots(WebdavTemporaryStorage.GROUP, "data/"));
+        assertSame(outage, failure.getCause());
+    }
+
+    @Test
+    void webdavStagingSurvivesColdNodesOverwriteCopyAndDelete() throws Exception {
+        final var remote = spy(s3);
+        final var first = new WebdavTemporaryStorage(remote, root.resolve("dav-a"));
+        final var second = new WebdavTemporaryStorage(s3, root.resolve("dav-b"));
+        final File directory = first.file("example.com/(Mixed-Staging)");
+        final String path = "example.com/(Mixed-Staging)/Hero-Mixed.GIF";
+        final File source = Files.writeString(root.resolve("completed-upload"), "first complete bytes").toFile();
+        first.mkdir(directory);
+        first.mkdir(first.file("example.com/(Mixed-Staging)/Empty"));
+        first.store(first.file(path), source);
+        final var snapshot = second.stat(second.file(path));
+        assertEquals("Hero-Mixed.GIF", second.materialize(snapshot).getName());
+        assertEquals("first complete bytes", Files.readString(second.materialize(snapshot).toPath()));
+        assertFalse(second.file(path).exists(), "Logical lookup must not rely on local pathname files");
+        assertEquals(2, second.children(second.file("example.com/(Mixed-Staging)")).size(),
+                "S3 entries: " + s3.listObjectPaths(WebdavTemporaryStorage.GROUP, "entries/")
+                        + "; keys: " + client.listObjectsV2(bucket).getObjectSummaries().stream().map(o -> o.getKey()).toList());
+        assertNull(second.stat(second.file(path.toLowerCase(java.util.Locale.ROOT))));
+        assertThrows(java.io.IOException.class, () -> first.store(directory, source));
+
+        Files.writeString(source.toPath(), "replacement bytes");
+        doReturn(false).when(remote).backfillFile(anyString(), anyString(), any());
+        assertThrows(java.io.IOException.class, () -> first.store(first.file(path), source));
+        assertEquals(snapshot.dataKey(), second.stat(second.file(path)).dataKey());
+        doCallRealMethod().when(remote).backfillFile(anyString(), anyString(), any());
+        first.store(first.file(path), source);
+        assertNotEquals(snapshot.dataKey(), second.stat(second.file(path)).dataKey());
+        Files.delete(second.materialize(snapshot).toPath());
+        assertEquals("first complete bytes", Files.readString(second.materialize(snapshot).toPath()));
+        assertEquals("replacement bytes", Files.readString(second.materialize(second.stat(second.file(path))).toPath()));
+
+        final File copied = second.file("example.com/(Copy)");
+        second.copy(second.file("example.com/(Mixed-Staging)"), copied);
+        assertTrue(second.stat(new File(copied, "Empty")).directory());
+        assertEquals("replacement bytes", Files.readString(second.materialize(second.stat(new File(copied, "Hero-Mixed.GIF"))).toPath()));
+        second.copy(copied, copied);
+        assertNotNull(second.stat(copied));
+        assertThrows(java.io.IOException.class, () -> second.copy(copied, new File(copied, "Nested")));
+        final File sibling = first.file("example.com/(Copy)-neighbor.TXT");
+        first.store(sibling, source);
+        // Stale local bytes cannot resurrect a remotely deleted resource.
+        Files.createDirectories(copied.toPath());
+        Files.writeString(copied.toPath().resolve("Hero-Mixed.GIF"), "stale local bytes");
+        first.delete(first.file("example.com/(Copy)"));
+        assertNull(second.stat(new File(copied, "Hero-Mixed.GIF")));
+        assertNull(second.stat(copied));
+        assertNotNull(second.stat(second.file("example.com/(Copy)-neighbor.TXT")));
+        first.delete(directory);
+        assertNull(second.stat(second.file(path)));
+        assertTrue(second.children(second.file("example.com/(Mixed-Staging)")).isEmpty());
+
+        Files.createDirectories(root.resolve("dav-a"));
+        Files.createSymbolicLink(root.resolve("dav-a/alias"), root.resolve("dav-a/elsewhere"));
+        assertThrows(java.io.IOException.class, () -> first.file("alias/file"));
+        assertThrows(java.io.IOException.class, () -> first.file("../escape"));
+        assertThrows(java.io.IOException.class, () -> first.file(".webdav-cache/data/fake"));
+        clearInvocations(remote);
+        Config.setProperty(AssetStorageFeature.FLAG, false);
+        assertThrows(com.dotmarketing.exception.DotDataException.class, () -> first.mkdir(directory));
+        verifyNoInteractions(remote);
+    }
+
+    @Test
+    void conditionalS3RecordsRejectStaleWritesAndTombstoneRaces() throws Exception {
+        final String group = WebdavTemporaryStorage.GROUP;
+        s3.createGroup(group);
+        final String path = "conditional/Record.json";
+        final var first = new java.util.HashMap<String, java.io.Serializable>(Map.of("value", "first"));
+        final var second = new java.util.HashMap<String, java.io.Serializable>(Map.of("value", "second"));
+        final String version = s3.writeObjectIfMatch(group, path, first, null);
+        assertNotNull(version);
+        assertNull(s3.writeObjectIfMatch(group, path, second, null));
+        assertNotNull(s3.writeObjectIfMatch(group, path, second, version));
+        assertNull(s3.writeObjectIfMatch(group, path, first, version));
+        final var tombstone = new java.util.HashMap<String, java.io.Serializable>(Map.of("deleted", UUID.randomUUID().toString()));
+        assertNull(s3.writeObjectIfMatch(group, path, tombstone, version));
+        final var current = s3.readObjectSnapshot(group, path, new JsonReaderDelegate<>(Map.class));
+        assertEquals(second, current.value());
+        assertTrue(current.modified() > 0);
+        assertNotNull(s3.writeObjectIfMatch(group, path, tombstone, current.version()));
+        assertNull(s3.writeObjectIfMatch(group, path, first, current.version()), "A late writer cannot resurrect a tombstoned reservation");
+        assertEquals(tombstone, s3.readObjectSnapshot(group, path, new JsonReaderDelegate<>(Map.class)).value());
+    }
+
+    @Test
+    void webdavCleanupRetainsReferencedOldPayloadThenExpiresTheRecordAndBytes() throws Exception {
+        final var delayed = spy(s3);
+        final var dav = new WebdavTemporaryStorage(delayed, root.resolve("dav"));
+        final File logical = dav.file("example.com/(Temporary)/Mixed%2E.GIF");
+        final File source = Files.writeString(root.resolve("completed"), "referenced bytes").toFile();
+        doAnswer(call -> {
+            final boolean uploaded = (boolean) call.callRealMethod();
+            Thread.sleep(1100); // Make payload older than the subsequently published record at S3's timestamp precision.
+            return uploaded;
+        }).when(delayed).backfillFile(anyString(), anyString(), any());
+        dav.store(logical, source);
+        final var current = dav.stat(logical);
+        final var cleanupTime = new java.util.concurrent.atomic.AtomicLong(
+                s3.listObjectSnapshots(WebdavTemporaryStorage.GROUP, "entries/").get(0).modified() / 1000 * 1000);
+        pinWebdavCleanupClock(delayed, cleanupTime);
+        cleanWebdavNow(dav);
+        assertEquals("referenced bytes", Files.readString(dav.materialize(current).toPath()));
+        assertNotNull(dav.stat(logical), "An aged payload remains protected by its newer completed record");
+        Thread.sleep(1100);
+        cleanupTime.set(0);
+        cleanWebdavNow(dav);
+        assertNull(dav.stat(logical));
+        assertWebdavTombstones();
+        assertTrue(s3.listObjectPaths(WebdavTemporaryStorage.GROUP, "data/").isEmpty());
+        assertTrue(s3.listObjectPaths(WebdavTemporaryStorage.GROUP, "maintenance/").isEmpty());
+    }
+
+    @Test
+    void webdavCleanupFencesAnExpiredUploadBeforeItCanPublish() throws Exception {
+        final var delayed = spy(s3);
+        final var writer = new WebdavTemporaryStorage(delayed, root.resolve("writer"));
+        final var cleaner = new WebdavTemporaryStorage(s3, root.resolve("cleaner"));
+        final File logical = writer.file("example.com/(Temporary)/Late.TXT");
+        final File source = Files.writeString(root.resolve("late-upload"), "late bytes").toFile();
+        doAnswer(call -> {
+            final boolean uploaded = (boolean) call.callRealMethod();
+            Thread.sleep(1100);
+            cleanWebdavNow(cleaner);
+            return uploaded;
+        }).when(delayed).backfillFile(anyString(), anyString(), any());
+        assertThrows(com.dotmarketing.exception.DotDataException.class, () -> writer.store(logical, source));
+        assertNull(writer.stat(logical));
+        assertEquals("late bytes", Files.readString(source.toPath()), "A rejected publication retains the caller's source");
+        assertWebdavTombstones();
+        assertTrue(s3.listObjectPaths(WebdavTemporaryStorage.GROUP, "data/").isEmpty());
+    }
+
+    @Test
+    void webdavCleanupAbortsIfAWriterReplacesTheInspectedRecord() throws Exception {
+        final var cleanupRemote = spy(s3);
+        final var writer = new WebdavTemporaryStorage(s3, root.resolve("writer"));
+        final var cleaner = new WebdavTemporaryStorage(cleanupRemote, root.resolve("cleaner"));
+        final File logical = writer.file("example.com/(Temporary)/Replaced.TXT");
+        final File source = Files.writeString(root.resolve("before-cleanup"), "old bytes").toFile();
+        writer.store(logical, source);
+        Thread.sleep(1100);
+        final var raced = new java.util.concurrent.atomic.AtomicBoolean();
+        doAnswer(call -> {
+            final String path = call.getArgument(1);
+            if (path.startsWith("entries/") && raced.compareAndSet(false, true)) {
+                Files.writeString(source.toPath(), "new bytes");
+                writer.store(logical, source);
+            }
+            return call.callRealMethod();
+        }).when(cleanupRemote).writeObjectIfMatch(anyString(), anyString(), any(), anyString());
+        assertThrows(com.dotmarketing.exception.DotDataException.class, () -> cleanWebdavNow(cleaner));
+        assertTrue(raced.get());
+        assertEquals("new bytes", Files.readString(writer.materialize(writer.stat(logical)).toPath()));
+        // The failed pass must not have collected any payloads using its stale reference inventory.
+        assertEquals(2, s3.listObjectPaths(WebdavTemporaryStorage.GROUP, "data/").size());
+        pinWebdavCleanupClock(cleanupRemote, new java.util.concurrent.atomic.AtomicLong(
+                s3.listObjectSnapshots(WebdavTemporaryStorage.GROUP, "entries/").get(0).modified() / 1000 * 1000));
+        cleanWebdavNow(cleaner);
+        assertEquals("new bytes", Files.readString(writer.materialize(writer.stat(logical)).toPath()));
+        assertEquals(1, s3.listObjectPaths(WebdavTemporaryStorage.GROUP, "data/").size());
+    }
+
+    private void assertWebdavTombstones() throws Exception {
+        for (String path : s3.listObjectPaths(WebdavTemporaryStorage.GROUP, "entries/")) {
+            final var value = (Map<?, ?>) s3.readObjectSnapshot(WebdavTemporaryStorage.GROUP, path,
+                    new JsonReaderDelegate<>(Map.class)).value();
+            assertFalse(value.containsKey("dataKey"));
+            assertFalse(value.containsKey("pending"));
+            assertTrue(value.containsKey("mutation"), "Retain the fencing token for delayed writers");
+        }
+    }
+
+    private static void pinWebdavCleanupClock(AmazonS3StoragePersistenceAPIImpl remote,
+            java.util.concurrent.atomic.AtomicLong time) throws Exception {
+        doAnswer(call -> {
+            final var actual = (ObjectSnapshot) call.callRealMethod();
+            if (actual != null && actual.path().startsWith("maintenance/") && time.get() != 0) {
+                return new ObjectSnapshot(actual.path(), actual.value(), actual.version(), time.get());
+            }
+            return actual;
+        }).when(remote).readObjectSnapshot(anyString(), anyString(), any());
+    }
+
+    private static void cleanWebdavNow(WebdavTemporaryStorage dav) throws Exception {
+        final String previous = Config.getStringProperty("CLEANUP_TMP_FILES_OLDER_THAN_HOURS", null);
+        try {
+            Config.setProperty("CLEANUP_TMP_FILES_OLDER_THAN_HOURS", 0);
+            dav.cleanupExpired();
+        } finally {
+            Config.setProperty("CLEANUP_TMP_FILES_OLDER_THAN_HOURS", previous);
+        }
+    }
+
+    @Test
+    void temporaryUploadsSurviveColdCacheAndExpireWithTheirAccessRecord() throws Exception {
+        TemporaryAssetStorageTest.assertRoundTrip(s3, root);
+    }
+
+    @Test
+    void temporaryMetadataUsesPortableS3KeysAndBypassesNodeCaches() throws Exception {
+        final var remote = new AmazonS3StoragePersistenceAPIImpl(storage, bucket,
+                AmazonS3StoragePersistenceAPIImpl.PathEncryptionMode.SHA256);
+        final var providers = mock(StoragePersistenceProvider.class);
+        when(providers.getStorage(StorageType.S3)).thenReturn(remote);
+        when(providers.getStorage(StorageType.FILE_SYSTEM)).thenReturn(fs);
+        fs.addGroupMapping(FileMetadataAPI.DOT_METADATA, root.toFile());
+        final var cache = mock(com.dotmarketing.portlets.contentlet.business.MetadataCache.class);
+        when(cache.getMetadataMap(anyString())).thenReturn(Map.of("dot:focalPoint", "stale"));
+        final var files = new FileStorageAPIImpl(new JsonReaderDelegate<>(Map.class), new JsonWriterDelegate(),
+                mock(MetadataGenerator.class), providers, cache);
+        try (var locator = mockStatic(com.dotmarketing.business.APILocator.class);
+             var caches = mockStatic(com.dotmarketing.business.CacheLocator.class)) {
+            locator.when(com.dotmarketing.business.APILocator::getFileStorageAPI).thenReturn(files);
+            caches.when(com.dotmarketing.business.CacheLocator::getMetadataCache).thenReturn(cache);
+            configUtils.when(ConfigUtils::getAssetTempPath).thenReturn(root.resolve("node-a/tmp_upload").toString());
+            final var nodeA = new FileMetadataAPIImpl();
+            final String id = "temp_Mixed-Case";
+            nodeA.putCustomMetadataAttributes(id, Map.of("HeroImage", Map.of("credit", "Author", "focalPoint", "0.25,0.5")));
+            configUtils.when(ConfigUtils::getAssetTempPath).thenReturn(root.resolve("node-b/other/tmp_upload").toString());
+            final var nodeB = new FileMetadataAPIImpl();
+            assertEquals("0.25,0.5", nodeB.getMetadata(id).orElseThrow().getCustomMeta().get("focalPoint"));
+            nodeB.putCustomMetadataAttributes(id, Map.of("HeroImage", Map.of("focalPoint", "0.75,0.5")));
+            assertEquals(Map.of("credit", "Author", "focalPoint", "0.75,0.5"),
+                    nodeA.getMetadata(id).orElseThrow().getCustomMeta());
+            nodeB.putCustomMetadataAttributes(id, Map.of("HeroImage", Map.of()));
+            assertTrue(nodeA.getMetadata(id).orElseThrow().getCustomMeta().isEmpty());
+            verify(cache, never()).getMetadataMap(anyString());
+            remote.deleteObjectAndReferences(FileMetadataAPI.DOT_METADATA,
+                    "/tmp_upload/" + id + "/" + id + FileMetadataAPI.META_TMP);
+            assertTrue(nodeA.getMetadata(id).isEmpty());
+        }
     }
 
     @Test

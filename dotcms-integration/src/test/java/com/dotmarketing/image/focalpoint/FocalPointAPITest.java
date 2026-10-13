@@ -163,10 +163,13 @@ public class FocalPointAPITest {
         assertEquals(focalPoint2.get(),focalPointSrc);
 
         final HttpServletRequest request = mockHttpServletRequest();
-        final DotTempFile dotTempFile = APILocator.getTempFileAPI().createEmptyTempFile("temp", request);
+        DotTempFile dotTempFile = APILocator.getTempFileAPI().createEmptyTempFile("temp", request);
         assertTrue(dotTempFile.file.createNewFile());
         assertTrue(dotTempFile.file.setLastModified(System.currentTimeMillis()));
         assertTrue(dotTempFile.file.exists());
+        // Finish the upload as the upload API and image editor do; with S3 asset storage enabled an
+        // unfinished upload is not yet a usable temp resource.
+        dotTempFile = APILocator.getTempFileAPI().completeTempFile(dotTempFile);
 
         focalPointAPI.writeFocalPoint(dotTempFile.id,"fileAsset", focalPointSrc);
         assertTrue(focalPointAPI.readFocalPoint(dotTempFile.id, "fileAsset").isPresent());
@@ -203,9 +206,11 @@ public class FocalPointAPITest {
 
         // 2. A temp file is generated for the edited image.
         final HttpServletRequest request = mockHttpServletRequest();
-        final DotTempFile dotTempFile = APILocator.getTempFileAPI().createEmptyTempFile("temp", request);
+        DotTempFile dotTempFile = APILocator.getTempFileAPI().createEmptyTempFile("temp", request);
         assertTrue(dotTempFile.file.createNewFile());
         assertTrue(dotTempFile.file.setLastModified(System.currentTimeMillis()));
+        // The servlet completes the temp before writing the focal point onto it.
+        dotTempFile = APILocator.getTempFileAPI().completeTempFile(dotTempFile);
 
         // 3. The servlet writes the focal point straight onto that temp (independent of the filter).
         focalPointAPI.writeFocalPoint(dotTempFile.id, fieldVar, parsed.get());

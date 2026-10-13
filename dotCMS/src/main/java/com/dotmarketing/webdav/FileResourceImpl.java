@@ -111,6 +111,15 @@ public class FileResourceImpl implements FileResource, LockableResource {
 	}
 
 	public Long getContentLength() {
+		if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+			try {
+				final long length = DotWebdavHelper.storedBinaryLength((Contentlet) file);
+				if (length < 0) throw new IOException("Missing WebDAV asset");
+				return length;
+			} catch (IOException e) {
+				throw new DotRuntimeException("Unable to read WebDAV asset length", e);
+			}
+		}
 		java.io.File workingFile;
 		try {
 			workingFile = ((Contentlet)file).getBinary(FileAssetAPI.BINARY_FIELD);
@@ -156,6 +165,12 @@ public class FileResourceImpl implements FileResource, LockableResource {
 	}
 
 	public void sendContent(OutputStream out, Range arg1, Map<String, String> arg2, String arg3) throws IOException {
+		if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+			try (InputStream input = ((Contentlet) file).getBinaryStream(FileAssetAPI.BINARY_FIELD)) {
+				input.transferTo(out);
+			}
+			return;
+		}
 		java.io.File f;
 		try {
 			f = ((Contentlet)file).getBinary(FileAssetAPI.BINARY_FIELD);

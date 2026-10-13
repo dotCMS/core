@@ -92,8 +92,15 @@ public abstract class BasicFolderResourceImpl implements FolderResource {
         try {
 
             this.originalPath = (!this.originalPath.endsWith("/"))? this.originalPath + "/":this.originalPath;
-            final File tempFile = this.dotDavHelper.createTempFile("/" + this.host.getHostname() + this.originalPath + newName);
-            FileUtils.copyStreamToFile(tempFile, in, null);
+            final String temporaryPath = com.dotcms.storage.AssetStorageFeature.isEnabled()
+                    ? this.dotDavHelper.stripMapping(this.originalPath) + newName
+                    : "/" + this.host.getHostname() + this.originalPath + newName;
+            final File tempFile = this.dotDavHelper.createTempFile(temporaryPath);
+            if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+                DotWebdavHelper.writeCompletedTempFile(tempFile, in);
+            } else {
+                FileUtils.copyStreamToFile(tempFile, in, null);
+            }
             final Resource tempFileResource = new TempFileResourceImpl(tempFile, this.originalPath + newName, this.isAutoPub);
             return tempFileResource;
         } catch (Exception e){
