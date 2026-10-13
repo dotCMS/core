@@ -210,7 +210,12 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -9400,17 +9405,25 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @param field       the binary field to remove, or null for every binary of each version
      */
     private void deleteBinaryFiles(final List<Contentlet> contentlets, final Field field) {
-        for (final Contentlet contentlet : contentlets) {
+        final int count = contentlets.size();
+        for (int index = 0; index < count; index++) {
+            final Contentlet contentlet = contentlets.get(index);
             final Runnable metadataRemoval = fileMetadataAPI.prepareMetadataRemoval(contentlet);
+            // Only strings are captured: the part is held until commit, and a folder delete
+            // destroys its whole subtree in one transaction, so capturing the Contentlet would
+            // keep every destroyed version in memory until the end.
+            final String identifier = contentlet.getIdentifier();
+            final boolean last = index == count - 1;
             BinaryRemovalAfterCommit.schedule("the metadata of " + contentlet.getInode(), () -> {
                 metadataRemoval.run();
                 Logger.debug(ESContentletAPIImpl.class,
-                        String.format("metadata removed for %s", contentlet.getIdentifier()));
+                        String.format("metadata removed for %s", identifier));
+                if (last) {
+                    Logger.debug(ESContentletAPIImpl.class,
+                            String.format("Done removing metadata for %d elements.", count));
+                }
             });
         }
-        BinaryRemovalAfterCommit.schedule("the metadata removal summary",
-                () -> Logger.debug(ESContentletAPIImpl.class, String.format(
-                        "Done removing metadata for %d elements.", contentlets.size())));
         for (final Contentlet contentlet : contentlets) {
             final File assetDirectory = new File(getContentletAssetPath(contentlet, field));
             final File cacheDirectory = new File(getContentletCacheAssetPath(contentlet, field));
@@ -9422,19 +9435,89 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     /**
-     * Deletes a directory and everything in it, failing when any of it is still there afterwards.
-     * {@link FileUtil#deltree(File)} only logs a file it cannot delete at debug level, so without
-     * this check a removal that failed after commit would leave files on disk without a trace.
+     * Deletes a directory and everything in it, deepest first, failing once at the end with every
+     * entry that could not be deleted.
+     * <p>
+     * Kept local rather than reusing {@link FileUtil#deltree(File)}, which only logs a file it
+     * cannot delete at debug level, so a removal that failed after commit would leave files on
+     * disk without a trace. Failures are detected during the delete rather than by checking the
+     * directory again afterwards, which on a networked asset store would cost an extra round
+     * trip per directory on the committing thread. A directory that does not exist, the usual
+     * case for the resized-image cache, costs a single attribute read. Like {@code deltree}, it
+     * keeps deleting after a failure; unlike it, it does not follow symbolic links.
      *
      * @param directory the directory to delete
-     * @throws IllegalStateException the directory is still on disk after the delete
+     * @throws IllegalStateException naming each entry left on disk and why
      */
     private static void deleteDirectory(final File directory) {
-        FileUtil.deltree(directory);
-        if (directory.exists()) {
-            throw new IllegalStateException("could not delete everything under "
-                    + directory.getAbsolutePath());
+        final Path root = directory.toPath();
+        final List<String> failures = new ArrayList<>();
+        try {
+            Files.walkFileTree(root, new SimpleFileVisitor<>() {
+
+                @Override
+                public FileVisitResult visitFile(final Path file,
+                        final BasicFileAttributes attributes) {
+                    deleteEntry(file, failures);
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult visitFileFailed(final Path file, final IOException e) {
+                    // Missing means nothing to remove, including the root itself.
+                    if (!(e instanceof NoSuchFileException)) {
+                        failures.add(describe(file, e));
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult postVisitDirectory(final Path dir, final IOException e) {
+                    if (e != null) {
+                        failures.add(describe(dir, e));
+                    }
+                    deleteEntry(dir, failures);
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (final IOException e) {
+            failures.add(describe(root, e));
         }
+        if (!failures.isEmpty()) {
+            throw new IllegalStateException(String.format(
+                    "could not delete %d entr%s under %s: %s", failures.size(),
+                    failures.size() == 1 ? "y" : "ies", root,
+                    String.join(", ", failures.subList(0, Math.min(failures.size(), 20)))
+                            + (failures.size() > 20 ? ", ..." : "")));
+        }
+    }
+
+    /**
+     * Deletes one file or empty directory, recording why when it cannot be deleted. Already gone
+     * counts as deleted.
+     *
+     * @param path     the entry to delete
+     * @param failures where a failure is recorded
+     */
+    private static void deleteEntry(final Path path, final List<String> failures) {
+        try {
+            Files.delete(path);
+        } catch (final NoSuchFileException e) {
+            // Already gone.
+        } catch (final IOException e) {
+            failures.add(describe(path, e));
+        }
+    }
+
+    /**
+     * An entry left on disk and why, for the failure message.
+     *
+     * @param path the entry
+     * @param e    why it was left
+     * @return the entry and the exception's type
+     */
+    private static String describe(final Path path, final IOException e) {
+        return path + " (" + e.getClass().getSimpleName() + ")";
     }
 
     /**
