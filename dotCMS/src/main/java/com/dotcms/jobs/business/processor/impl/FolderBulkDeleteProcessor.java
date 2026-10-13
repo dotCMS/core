@@ -18,10 +18,9 @@ import com.dotcms.jobs.business.processor.Cancellable;
 import com.dotcms.jobs.business.processor.JobProcessor;
 import com.dotcms.jobs.business.processor.ProgressTracker;
 import com.dotcms.jobs.business.processor.Queue;
-import com.dotcms.rest.api.v1.asset.WebAssetHelper;
+import com.dotcms.rest.api.v1.asset.AssetPathResolver;
+import com.dotcms.rest.api.v1.asset.ResolvedAssetAndPath;
 import com.dotcms.rest.api.v1.asset.bulkdelete.FolderBulkDeleteHelper;
-import com.dotcms.rest.api.v1.asset.view.FolderView;
-import com.dotcms.rest.api.v1.asset.view.WebAssetView;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -36,6 +35,8 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -61,16 +62,19 @@ import javax.enterprise.context.Dependent;
  * decided from the resolution result itself, before any delete is attempted;
  * {@link BatchFailureReason#PERMISSION_DENIED} and {@link BatchFailureReason#IN_USE} are decided
  * from the exception *type* {@code FolderAPI.delete} throws, never from its message.
- * {@link BatchFailureReason#COVERED_BY_PARENT} is decided up front, from the submitted paths alone,
- * before any resolution happens for the covered path at all (FR-013).
+ * {@link BatchFailureReason#COVERED_BY_PARENT} is decided when a path is reached, and only when a
+ * selected folder containing it was actually deleted; a path under a folder that was refused or
+ * failed is deleted on its own (FR-013, amended by #37782). Paths run in submission order, except
+ * that a path comes after every selected folder that contains it, so that is always known.
  * <p>
  * Cancellable between top-level folders only, never mid-subtree (FR-026): the cancellation flag is
  * checked once per loop iteration, before a path is either dedup-skipped or handed to
  * {@link #deleteOne}, so whichever folder is already inside {@code FolderAPI.delete} when
  * cancellation lands always finishes normally — that is what makes FR-023's "fully deleted or fully
  * untouched, never partial" guarantee free, rather than something this class has to engineer. Paths
- * not reached are recorded {@code SKIPPED} with no reason (FR-027), and the first of them is kept
- * as {@code stoppedAt} so the outcome says where the run stopped (FR-028).
+ * not reached are recorded {@code SKIPPED} with no reason (FR-027), unless a deleted folder covers
+ * them, and the first of the rest in run order is kept as {@code stoppedAt} so the outcome says
+ * where the run stopped (FR-028).
  * <p>
  * <b>Per-folder announcements</b> (FR-035a, FR-035b): {@code FOLDER_DELETE_STARTED} immediately
  * before, {@code FOLDER_DELETE_FINISHED} immediately after each top-level delete attempt —
@@ -145,6 +149,7 @@ public class FolderBulkDeleteProcessor implements JobProcessor, Cancellable {
     private final AtomicBoolean cancellationRequested = new AtomicBoolean();
     private final List<BatchItemResult> results = new CopyOnWriteArrayList<>();
     private final SystemEventsAPI systemEventsAPI;
+    private final FolderAPI folderAPI;
     private volatile String stoppedAt;
     private volatile boolean previouslyAbandoned;
     private int total;
@@ -164,7 +169,19 @@ public class FolderBulkDeleteProcessor implements JobProcessor, Cancellable {
      * subject (see {@code FolderBulkDeleteAnnouncementIT}'s own note on why).
      */
     public FolderBulkDeleteProcessor(final SystemEventsAPI systemEventsAPI) {
+        this(systemEventsAPI, APILocator.getFolderAPI());
+    }
+
+    /**
+     * Visible for testing: lets a test pass a folder API whose delete fails in a way no real
+     * folder can be set up to fail, to prove what happens to the folders under it.
+     *
+     * @param systemEventsAPI pushes the per-folder announcements
+     * @param folderAPI       deletes each folder
+     */
+    FolderBulkDeleteProcessor(final SystemEventsAPI systemEventsAPI, final FolderAPI folderAPI) {
         this.systemEventsAPI = systemEventsAPI;
+        this.folderAPI = folderAPI;
     }
 
     @Override
@@ -180,27 +197,29 @@ public class FolderBulkDeleteProcessor implements JobProcessor, Cancellable {
                 "Bulk folder delete job [%s]: deleting %d path(s) for user [%s]",
                 job.id(), submittedPaths.size(), user.getUserId()));
 
-        // FR-013: decided up front, from the submitted paths alone — a descendant of another
-        // selected path is never resolved, never attempted, and never charged to the folder that
-        // covers it. Order-independent by construction: every path is checked against every
-        // other, not against what has been processed so far.
-        final WebAssetHelper webAssetHelper = WebAssetHelper.newInstance();
-        for (int i = 0; i < submittedPaths.size(); i++) {
+        // FR-013, amended by #37782: a path is covered only by a selected folder that was actually
+        // deleted, since only then is it gone with that folder. A path under a folder that was
+        // refused, failed or never reached is handled on its own. Selected folders run before the
+        // paths inside them, so their outcome is known when a path inside them is reached.
+        final List<String> runOrder = ancestorsFirst(submittedPaths);
+        final List<String> deleted = new ArrayList<>();
+        for (int i = 0; i < runOrder.size(); i++) {
 
             if (this.cancellationRequested.get()) {
-                recordRemainderAsSkipped(job, submittedPaths, i);
+                recordRemainderAsSkipped(job, runOrder.subList(i, runOrder.size()), deleted);
                 break;
             }
 
-            final String path = submittedPaths.get(i);
-            final String coveringAncestor = findCoveringAncestor(path, submittedPaths);
+            final String path = runOrder.get(i);
+            final String coveringAncestor = findCoveringAncestor(path, deleted);
             if (coveringAncestor != null) {
                 Logger.info(this, String.format(
                         "Bulk folder delete job [%s]: [%s] is covered by selected ancestor [%s], "
                                 + "skipping", job.id(), path, coveringAncestor));
                 record(path, BatchItemStatus.SKIPPED, BatchFailureReason.COVERED_BY_PARENT, null);
-            } else {
-                deleteOne(webAssetHelper, path, job, user);
+                deleted.add(path);
+            } else if (deleteOne(path, job, user)) {
+                deleted.add(path);
             }
 
             // FR-024/FR-025: the only honest denominator is completed top-level folders — nothing
@@ -218,22 +237,55 @@ public class FolderBulkDeleteProcessor implements JobProcessor, Cancellable {
     }
 
     /**
-     * Records every path from {@code fromIndex} onward as {@code SKIPPED} with no reason — they
-     * were never attempted because cancellation landed first, a distinct meaning from
-     * {@code COVERED_BY_PARENT} (FR-027) — and keeps the first of them as {@code stoppedAt} so the
-     * outcome tells the author exactly where the run stopped (FR-028).
+     * Records the paths a cancelled run never reached. One inside a folder that was deleted is
+     * {@code COVERED_BY_PARENT}, since it went with that folder. Every other one is {@code SKIPPED}
+     * with no reason, never attempted because cancellation landed first, a distinct meaning from
+     * {@code COVERED_BY_PARENT} (FR-027); the first of those in run order is kept as
+     * {@code stoppedAt} so the outcome tells the author where the run stopped (FR-028).
+     *
+     * @param job       the run
+     * @param unreached the paths not reached, in run order
+     * @param deleted   the paths deleted, or covered by a deleted folder, before the cancellation
      */
-    private void recordRemainderAsSkipped(final Job job, final List<String> allPaths,
-            final int fromIndex) {
+    private void recordRemainderAsSkipped(final Job job, final List<String> unreached,
+            final List<String> deleted) {
 
-        this.stoppedAt = allPaths.get(fromIndex);
-        for (int i = fromIndex; i < allPaths.size(); i++) {
-            final String path = allPaths.get(i);
+        for (final String path : unreached) {
+            if (findCoveringAncestor(path, deleted) != null) {
+                record(path, BatchItemStatus.SKIPPED, BatchFailureReason.COVERED_BY_PARENT, null);
+                continue;
+            }
+            if (this.stoppedAt == null) {
+                this.stoppedAt = path;
+            }
             Logger.info(this, String.format(
                     "Bulk folder delete job [%s]: cancelled, [%s] was never attempted",
                     job.id(), path));
             record(path, BatchItemStatus.SKIPPED, null, null);
         }
+    }
+
+    /**
+     * The submitted paths in the order the run deletes them: submission order, except that each
+     * path comes after every other submitted path that contains it, so whether a containing folder
+     * was deleted is known when the path is reached (#37782).
+     *
+     * @param submittedPaths the paths, in submission order
+     * @return the same paths in run order
+     */
+    static List<String> ancestorsFirst(final List<String> submittedPaths) {
+        // A stable sort on the number of selected folders containing each path, so paths at the
+        // same depth within the selection keep submission order. Counted once per path, not on
+        // every comparison.
+        final Map<String, Long> containingCount = new HashMap<>();
+        for (final String path : submittedPaths) {
+            containingCount.put(path, submittedPaths.stream()
+                    .filter(other -> findCoveringAncestor(path, List.of(other)) != null)
+                    .count());
+        }
+        return submittedPaths.stream()
+                .sorted(Comparator.comparingLong(containingCount::get))
+                .toList();
     }
 
     /**
@@ -267,10 +319,10 @@ public class FolderBulkDeleteProcessor implements JobProcessor, Cancellable {
     }
 
     /**
-     * The first other submitted path that is a proper ancestor of {@code path}, or {@code null} if
+     * The first of {@code candidates} that is a proper ancestor of {@code path}, or {@code null} if
      * none is. Comparison is a normalized string-prefix check (both sides forced to end with
      * {@code /}), which is exactly what "ancestor" means for a site-qualified path — no folder
-     * lookup involved, so a descendant is skipped without ever being resolved (FR-013).
+     * lookup involved, so a covered path is skipped without ever being resolved (FR-013).
      * <p>
      * <b>A site root is never a covering ancestor</b>, even though every path in that site is a
      * string-prefix match against it. FR-013's premise is that deleting the ancestor removes the
@@ -281,11 +333,11 @@ public class FolderBulkDeleteProcessor implements JobProcessor, Cancellable {
      * runs") — caught by
      * {@code test_process_siteRootPath_recordedAsProtectedFolder_restOfSelectionStillRuns}.
      */
-    private static String findCoveringAncestor(final String path, final List<String> allPaths) {
+    private static String findCoveringAncestor(final String path, final List<String> candidates) {
         // Lowercased because folder resolution ignores case: "//host/A/" still contains
         // "//host/a/b/" (#37685 review).
         final String normalizedPath = normalize(path).toLowerCase();
-        for (final String other : allPaths) {
+        for (final String other : candidates) {
             if (other.equals(path)) {
                 continue;
             }
@@ -318,19 +370,22 @@ public class FolderBulkDeleteProcessor implements JobProcessor, Cancellable {
      * Resolves and deletes one top-level folder. Any failure is caught here rather than propagated:
      * a bad path or a permission refusal on one folder is that folder's own outcome, and failing
      * the whole run over it would discard every folder already deleted (FR-008).
+     *
+     * @param path the submitted path
+     * @param job  the run
+     * @param user the author, whose rights the delete runs with
+     * @return whether the path was recorded {@code SUCCESS}, so paths inside it are covered
      */
-    private void deleteOne(final WebAssetHelper webAssetHelper, final String path, final Job job,
-            final User user) {
+    private boolean deleteOne(final String path, final Job job, final User user) {
 
         final Folder folder;
         try {
-            folder = resolve(webAssetHelper, path, user);
+            folder = resolve(path, user);
         } catch (final NotAFolderException | NotFoundInDbException | NotFoundException e) {
             // The only case FR-030's "already gone" reasoning actually applies to: the path
             // genuinely does not resolve to anything (or resolves to a file, not a folder) — a
             // prior, abandoned attempt could honestly have caused exactly that (#37685 review).
-            recordUnresolved(path, e.getMessage());
-            return;
+            return recordUnresolved(path, e.getMessage());
         } catch (final DotSecurityException e) {
             // A rights refusal is never "already deleted" — recording it as SUCCESS on a
             // re-queued run would hide a folder nothing ever touched, and recording it as
@@ -338,14 +393,14 @@ public class FolderBulkDeleteProcessor implements JobProcessor, Cancellable {
             // review).
             record(path, BatchItemStatus.FAILED, BatchFailureReason.PERMISSION_DENIED,
                     e.getMessage());
-            return;
+            return false;
         } catch (final Exception e) {
             // Anything else (a malformed path, a transient DB error) is not "not found" either —
             // same reasoning as the DotSecurityException branch above.
             Logger.warn(this, String.format("Unable to resolve path [%s]: %s",
                     path, e.getMessage()), e);
             record(path, BatchItemStatus.FAILED, BatchFailureReason.UNCLASSIFIED, e.getMessage());
-            return;
+            return false;
         }
 
         if (FolderAPI.SYSTEM_FOLDER.equals(folder.getInode())) {
@@ -356,10 +411,10 @@ public class FolderBulkDeleteProcessor implements JobProcessor, Cancellable {
             // "entering a deleted" to honestly describe.
             record(path, BatchItemStatus.FAILED, BatchFailureReason.PROTECTED_FOLDER,
                     "the system folder is never deleted");
-            return;
+            return false;
         }
 
-        announceAndDelete(folder, path, job, user);
+        return announceAndDelete(folder, path, job, user);
     }
 
     /**
@@ -370,13 +425,18 @@ public class FolderBulkDeleteProcessor implements JobProcessor, Cancellable {
      * the honest answer: this feature cannot tell "a prior attempt deleted the folder" apart from
      * "the path never named a folder at all" once the folder is gone, and FR-030 only asks that the
      * former not be misreported as a failure.
+     *
+     * @param path    the submitted path
+     * @param message why it did not resolve
+     * @return whether the path was recorded {@code SUCCESS}, so paths inside it are covered
      */
-    private void recordUnresolved(final String path, final String message) {
+    private boolean recordUnresolved(final String path, final String message) {
         if (this.previouslyAbandoned) {
             record(path, BatchItemStatus.SUCCESS, null, null);
-        } else {
-            record(path, BatchItemStatus.FAILED, BatchFailureReason.PATH_NOT_FOUND, message);
+            return true;
         }
+        record(path, BatchItemStatus.FAILED, BatchFailureReason.PATH_NOT_FOUND, message);
+        return false;
     }
 
     /**
@@ -386,8 +446,14 @@ public class FolderBulkDeleteProcessor implements JobProcessor, Cancellable {
      * to compute rights against afterward. {@code FOLDER_DELETE_FINISHED} fires in every case
      * below, success or a classified failure alike (data-model.md §5) — this is the one method in
      * the class where that finally-equivalent shape matters.
+     *
+     * @param folder the resolved folder
+     * @param path   the submitted path
+     * @param job    the run
+     * @param user   the author, whose rights the delete runs with
+     * @return whether the folder was deleted, so paths inside it are covered
      */
-    private void announceAndDelete(final Folder folder, final String path, final Job job,
+    private boolean announceAndDelete(final Folder folder, final String path, final Job job,
             final User user) {
 
         final Set<Role> readers = readerRolesOf(folder, path);
@@ -397,8 +463,9 @@ public class FolderBulkDeleteProcessor implements JobProcessor, Cancellable {
         // returns — on any exit path, including cancellation and every catch below.
         final ScheduledExecutorService heartbeat = startHeartbeat(job);
         try {
-            APILocator.getFolderAPI().delete(folder, user, false);
+            this.folderAPI.delete(folder, user, false);
             record(path, BatchItemStatus.SUCCESS, null, null);
+            return true;
         } catch (final DotSecurityException e) {
             // The one case that reaches here unwrapped: the root folder's own PERMISSION_EDIT
             // check, thrown before FolderAPIImpl.delete's try block. Everything else it can fail
@@ -409,6 +476,7 @@ public class FolderBulkDeleteProcessor implements JobProcessor, Cancellable {
             // themselves that far up).
             record(path, BatchItemStatus.FAILED, BatchFailureReason.PERMISSION_DENIED,
                     e.getMessage());
+            return false;
         } catch (final Exception e) {
             final BatchFailureReason reason = classifyWrappedDeleteFailure(e);
             if (reason == BatchFailureReason.UNCLASSIFIED) {
@@ -416,6 +484,7 @@ public class FolderBulkDeleteProcessor implements JobProcessor, Cancellable {
                         path, e.getMessage()), e);
             }
             record(path, BatchItemStatus.FAILED, reason, e.getMessage());
+            return false;
         } finally {
             heartbeat.shutdownNow();
             announce(SystemEventType.FOLDER_DELETE_FINISHED, job, path, user, readers);
@@ -530,10 +599,13 @@ public class FolderBulkDeleteProcessor implements JobProcessor, Cancellable {
     }
 
     /**
-     * Resolves a path to the {@link Folder} it names, exactly the way the shipped single-folder
-     * delete does ({@code WebAssetHelper#deleteFolder}) — reused here rather than called directly
-     * because classification needs the intermediate facts (is this even a folder? which one?) that
-     * {@code deleteFolder}'s all-in-one method does not expose.
+     * Resolves a path to the {@link Folder} it names, as the author.
+     * <p>
+     * {@link AssetPathResolver} alone finds the site and the folder by path and nothing more.
+     * {@code WebAssetHelper.getAssetInfo}, used before #37782, also listed the folder's whole
+     * contents only for them to be thrown away here, which is costly for a large folder and ran
+     * before the run reported any progress. The folder is then read again as the author, so a
+     * folder they cannot read is still refused as it was before.
      * <p>
      * The caller ({@link #deleteOne}) classifies by exception type, not by catching everything the
      * same way (#37685 review): a genuinely missing path
@@ -543,18 +615,22 @@ public class FolderBulkDeleteProcessor implements JobProcessor, Cancellable {
      * {@link DotSecurityException} is a rights refusal, never a deletion; anything else
      * (a malformed path, a transient {@code DotDataException}) is neither.
      *
+     * @param path the submitted path
+     * @param user the author
+     * @return the folder the path names
      * @throws NotAFolderException the path resolves, but not to a folder (a file) — FR-010
      */
-    private Folder resolve(final WebAssetHelper webAssetHelper, final String path, final User user)
+    private Folder resolve(final String path, final User user)
             throws NotAFolderException, DotDataException, DotSecurityException {
 
-        final WebAssetView assetInfo = webAssetHelper.getAssetInfo(path, user);
-        if (!(assetInfo instanceof FolderView)) {
+        final ResolvedAssetAndPath resolved = AssetPathResolver.newInstance().resolve(path, user);
+        if (UtilMethods.isSet(resolved.asset()) || resolved.resolvedFolder() == null) {
+            // A path naming a file resolves to the file's folder plus the file's name.
             throw new NotAFolderException(path);
         }
 
-        final FolderView folderView = (FolderView) assetInfo;
-        final Folder folder = APILocator.getFolderAPI().find(folderView.inode(), user, false);
+        final Folder folder = APILocator.getFolderAPI()
+                .find(resolved.resolvedFolder().getInode(), user, false);
         if (folder == null || !UtilMethods.isSet(folder.getInode())) {
             throw new NotAFolderException(path);
         }
