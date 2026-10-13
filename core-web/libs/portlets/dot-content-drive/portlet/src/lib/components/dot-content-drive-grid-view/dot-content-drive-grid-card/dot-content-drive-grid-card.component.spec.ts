@@ -235,32 +235,6 @@ describe('DotContentDriveGridCardComponent', () => {
         });
     });
 
-    describe('pointer cursor', () => {
-        it('should show the card can be clicked', () => {
-            render(GRID_IMAGE);
-
-            expect(spectator.element.classList).toContain('cursor-pointer');
-        });
-
-        it.each([
-            ['read-only', { readOnly: true }],
-            ['busy', { busy: true }]
-        ])('should not when the card is %s, since a click does nothing', (_case, inputs) => {
-            render(GRID_IMAGE, inputs);
-
-            expect(spectator.element.classList).not.toContain('cursor-pointer');
-        });
-
-        it.each(['grid-card-avatar', 'grid-card-lock'])(
-            'should not over %s, which only shows a tooltip',
-            (testId) => {
-                render(GRID_IMAGE);
-
-                expect(spectator.query(byTestId(testId))?.classList).toContain('cursor-default');
-            }
-        );
-    });
-
     describe('opening (US5 #1)', () => {
         let open: Mock<(event: MouseEvent) => void>;
 

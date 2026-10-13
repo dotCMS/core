@@ -74,8 +74,6 @@ function displayName(name: string | null | undefined): string | null {
         // positioned card they anchor to the drop zone outside the grid's scroll box and stretch it,
         // which drew a second scrollbar.
         class: 'group relative block min-w-0 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-(--p-primary-color) focus-visible:ring-offset-2',
-        // A click opens the item, so the card says so; not where a click does nothing.
-        '[class.cursor-pointer]': '!$readOnly() && !$busy()',
         '[class.opacity-60]': '$busy()',
         '[class.pointer-events-none]': '$busy()',
         '[attr.aria-busy]': '$busy() ? "true" : null',

@@ -47,7 +47,7 @@
                 class="absolute top-3 left-3 flex items-center gap-1.5"
                 data-testid="grid-card-overlay">
                 <span
-                    class="inline-flex cursor-default rounded-full"
+                    class="inline-flex rounded-full"
                     tabindex="-1"
                     [pTooltip]="
                         'content-drive.grid-view.edited-by'
@@ -138,7 +138,7 @@
                         : ('content-drive.grid-view.locked' | dm)
                     : ('content-drive.grid-view.unlocked' | dm);
             <i
-                class="pi shrink-0 cursor-default text-(--p-text-muted-color)"
+                class="pi shrink-0 text-(--p-text-muted-color)"
                 [class.pi-lock]="contentlet.locked"
                 [class.pi-lock-open]="!contentlet.locked"
                 tabindex="-1"
