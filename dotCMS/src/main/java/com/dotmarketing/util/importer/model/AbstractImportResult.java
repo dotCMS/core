@@ -115,6 +115,15 @@ public interface AbstractImportResult extends Serializable {
     Optional<Integer> stoppedOnErrorAtLine();
 
     /**
+     * Where the rows land: one entry per site/folder and reason, in the order first seen (#37896).
+     * Empty when no row was placed. Content Search's legacy preview doesn't read it.
+     *
+     * @return the destinations of the placed rows
+     */
+    @JsonInclude(Include.NON_EMPTY)
+    List<ImportDestination> destinations();
+
+    /**
      * Represents the type of operation being performed during an import process. This enum is used
      * to differentiate between different kinds of operations that can be performed, such as
      * publishing or previewing content.

@@ -367,6 +367,23 @@ public enum SystemEventType {
 	 * ({@code DotSystemEventType.BULK_FOLDER_DUPLICATE_COMPLETED}), so do not rename it on this side
 	 * alone.
 	 */
-	BULK_FOLDER_DUPLICATE_COMPLETED
+	BULK_FOLDER_DUPLICATE_COMPLETED,
+
+	/**
+	 * A content import job ({@code POST /api/v1/content/_import} or its {@code /_validate} preview,
+	 * #37896) reached a terminal state, successful or failed.
+	 * <p>
+	 * Content Drive waits on this instead of polling the job: the import dialog for a preview, the
+	 * status toast for an import. Carries the job id, its state, whether it was a {@code preview} or
+	 * a {@code publish}, the created / updated / failed counts when the job produced a result, and
+	 * the first error message when it failed. Pushed with {@link Visibility#USER} scoped to whoever
+	 * submitted the job. The same job can be reported more than once (a failed job moves to its
+	 * permanent failed state), so clients de-duplicate by job id.
+	 * <p>
+	 * <b>This exact name is shared with the frontend</b>
+	 * ({@code DotSystemEventType.IMPORT_CONTENTLETS_COMPLETED}), so do not rename it on this side
+	 * alone.
+	 */
+	IMPORT_CONTENTLETS_COMPLETED
 
 }

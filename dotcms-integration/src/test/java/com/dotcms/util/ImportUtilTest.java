@@ -88,6 +88,8 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.dotmarketing.util.importer.ImportResultConverter;
+import com.dotmarketing.util.importer.model.AbstractImportDestination;
+import com.dotmarketing.util.importer.model.ImportDestination;
 import com.dotmarketing.util.importer.model.ImportResult;
 import com.dotmarketing.util.importer.model.ResultData;
 import com.dotmarketing.util.importer.model.ValidationMessage;
@@ -5807,6 +5809,189 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
             }
         } catch (Exception e) {
             Logger.warn(ImportUtilTest.class, "Error listing tags for cleanup", e);
+        }
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Where rows land (#37896, FR-013): ImportResult.destinations, in preview and in publish.
+    // ---------------------------------------------------------------------------------------------
+
+    /**
+     * Runs {@code ImportUtil.importFileResult} on a CSV for the destination tests.
+     *
+     * @param contentType the type to import into
+     * @param keyField    the key field, or {@code null} for none
+     * @param csv         the CSV content, header line included
+     * @param site        the site the import runs against
+     * @param preview     whether this is a preview (nothing is written) or a publish
+     * @return the import result
+     */
+    private ImportResult importForDestinations(final ContentType contentType,
+            final com.dotcms.contenttype.model.field.Field keyField, final String csv,
+            final Host site, final boolean preview) throws IOException, DotDataException {
+        final CsvReader csvReader = new CsvReader(createTempFile(csv));
+        csvReader.setSafetySwitch(false);
+        final String[] headers = csvReader.getHeaders();
+        final ImmutableImportFileParams.Builder params = ImmutableImportFileParams.builder()
+                .importId(0L)
+                .siteId(site.getIdentifier())
+                .contentTypeInode(contentType.inode())
+                .user(user)
+                .language(defaultLanguage.getId())
+                .csvHeaders(headers)
+                .csvReader(csvReader)
+                .request(getHttpRequest())
+                .preview(preview)
+                .keyFields(keyField == null ? new String[0] : new String[]{keyField.id()});
+        return ImportUtil.importFileResult(params.build());
+    }
+
+    /**
+     * Finds the destination bucket for a path and source in a result.
+     *
+     * @return the bucket, or {@code null} when the result has none
+     */
+    private static ImportDestination destination(final ImportResult result, final String path,
+            final AbstractImportDestination.Source source) {
+        return result.destinations().stream()
+                .filter(d -> path.equals(d.path()) && source == d.source())
+                .findFirst().orElse(null);
+    }
+
+    /**
+     * Given scenario: a CSV whose site/folder column sends two rows to folder {@code a}, one row to
+     * folder {@code b}, and one row to a site that doesn't exist.
+     * Expected result: in preview and in publish, the destinations count 2 rows for {@code //site/a/}
+     * and 1 for {@code //site/b/}, both from the CSV; the row with the bad location is an error and
+     * is not counted.
+     */
+    @Test
+    public void testDestinations_countRowsPerCsvLocation_inPreviewAndPublish() throws Exception {
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder folderA = new FolderDataGen().site(site).name("a").nextPersisted();
+        final Folder folderB = new FolderDataGen().site(site).name("b").nextPersisted();
+        com.dotcms.contenttype.model.field.Field titleField = new FieldDataGen()
+                .name("title").velocityVarName("title").type(TextField.class).next();
+        com.dotcms.contenttype.model.field.Field hostField = new FieldDataGen()
+                .name("location").velocityVarName("location").type(HostFolderField.class).next();
+        final ContentType contentType = new ContentTypeDataGen()
+                .field(titleField).field(hostField).nextPersisted();
+        try {
+            final String pathA = "//" + site.getHostname() + folderA.getPath();
+            final String pathB = "//" + site.getHostname() + folderB.getPath();
+            final String csv = "title,location\r\n"
+                    + "one," + pathA + "\r\n"
+                    + "two," + pathA + "\r\n"
+                    + "three," + pathB + "\r\n"
+                    + "four,//no-such-site-" + System.currentTimeMillis() + "/x/\r\n";
+
+            for (final boolean preview : new boolean[]{true, false}) {
+                final ImportResult result =
+                        importForDestinations(contentType, null, csv, site, preview);
+
+                final ImportDestination a =
+                        destination(result, pathA, AbstractImportDestination.Source.CSV);
+                final ImportDestination b =
+                        destination(result, pathB, AbstractImportDestination.Source.CSV);
+                assertNotNull("Rows sent to folder a should be counted (preview=" + preview + ")", a);
+                assertNotNull("Rows sent to folder b should be counted (preview=" + preview + ")", b);
+                assertEquals(2, a.rows());
+                assertEquals(1, b.rows());
+                assertEquals("A row with errors is not counted anywhere (preview=" + preview + ")",
+                        3, result.destinations().stream().mapToInt(ImportDestination::rows).sum());
+            }
+        } finally {
+            ContentTypeDataGen.remove(contentType);
+        }
+    }
+
+    /**
+     * Given scenario: a content type whose default location is folder {@code a} of a site, and a CSV
+     * with no site/folder column that creates two new items.
+     * Expected result: both rows are counted under that folder, with source CONTENT_TYPE_DEFAULT.
+     */
+    @Test
+    public void testDestinations_newContentWithoutLocationColumn_usesContentTypeDefault()
+            throws Exception {
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder folderA = new FolderDataGen().site(site).name("a").nextPersisted();
+        com.dotcms.contenttype.model.field.Field titleField = new FieldDataGen()
+                .name("title").velocityVarName("title").type(TextField.class).next();
+        final ContentType contentType = new ContentTypeDataGen()
+                .host(site).folder(folderA).field(titleField).nextPersisted();
+        try {
+            final ImportResult result = importForDestinations(contentType, null,
+                    "title\r\nfirst\r\nsecond\r\n", site, true);
+
+            final ImportDestination bucket = destination(result,
+                    "//" + site.getHostname() + folderA.getPath(),
+                    AbstractImportDestination.Source.CONTENT_TYPE_DEFAULT);
+            assertNotNull("New rows without a location column go to the content type's default",
+                    bucket);
+            assertEquals(2, bucket.rows());
+        } finally {
+            ContentTypeDataGen.remove(contentType);
+        }
+    }
+
+    /**
+     * Given scenario: an item already lives in folder {@code b}; the content type's default is folder
+     * {@code a}; a CSV with no site/folder column updates that item by its key field.
+     * Expected result: the row is counted under folder {@code b}, its current place, with source
+     * EXISTING.
+     */
+    @Test
+    public void testDestinations_updatedContentWithoutLocationColumn_keepsItsPlace()
+            throws Exception {
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder folderA = new FolderDataGen().site(site).name("a").nextPersisted();
+        final Folder folderB = new FolderDataGen().site(site).name("b").nextPersisted();
+        com.dotcms.contenttype.model.field.Field titleField = new FieldDataGen()
+                .name("title").velocityVarName("title").type(TextField.class).next();
+        final ContentType contentType = new ContentTypeDataGen()
+                .host(site).folder(folderA).field(titleField).nextPersisted();
+        titleField = fieldAPI.byContentTypeAndVar(contentType, titleField.variable());
+        try {
+            final String title = "existing-" + System.currentTimeMillis();
+            new ContentletDataGen(contentType).host(site).folder(folderB)
+                    .setProperty("title", title).nextPersisted();
+
+            final ImportResult result = importForDestinations(contentType, titleField,
+                    "title\r\n" + title + "\r\n", site, true);
+
+            final ImportDestination bucket = destination(result,
+                    "//" + site.getHostname() + folderB.getPath(),
+                    AbstractImportDestination.Source.EXISTING);
+            assertNotNull("An updated item without a location column keeps its place", bucket);
+            assertEquals(1, bucket.rows());
+        } finally {
+            ContentTypeDataGen.remove(contentType);
+        }
+    }
+
+    /**
+     * Given scenario: a preview result that carries destinations.
+     * Expected result: the legacy Content Search preview built from it is identical to the one built
+     * from the same result without destinations, so the JSP screens don't change.
+     */
+    @Test
+    public void testDestinations_doNotChangeLegacyPreview() throws Exception {
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder folderA = new FolderDataGen().site(site).name("a").nextPersisted();
+        com.dotcms.contenttype.model.field.Field titleField = new FieldDataGen()
+                .name("title").velocityVarName("title").type(TextField.class).next();
+        final ContentType contentType = new ContentTypeDataGen()
+                .host(site).folder(folderA).field(titleField).nextPersisted();
+        try {
+            final ImportResult result = importForDestinations(contentType, null,
+                    "title\r\nfirst\r\n", site, true);
+            assertFalse("The result should carry destinations", result.destinations().isEmpty());
+
+            assertEquals(
+                    ImportResultConverter.toLegacyFormat(result.withDestinations(List.of()), user),
+                    ImportResultConverter.toLegacyFormat(result, user));
+        } finally {
+            ContentTypeDataGen.remove(contentType);
         }
     }
 
