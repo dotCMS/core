@@ -217,6 +217,21 @@ describe('DotContentDriveGridCardComponent', () => {
             expect(open).not.toHaveBeenCalled();
         });
 
+        it('should let the ⋮ click reach the page, so a second click closes the menu', () => {
+            // The menu closes on PrimeNG's document click listener. Stopping the click on the card
+            // left the menu open on a second ⋮ click, where the table's closes it.
+            render(GRID_IMAGE);
+            const reachedDocument = vi.fn();
+            document.addEventListener('click', reachedDocument);
+
+            spectator.click(
+                spectator.query(byTestId('grid-card-menu'))?.querySelector('button') as Element
+            );
+            document.removeEventListener('click', reachedDocument);
+
+            expect(reachedDocument).toHaveBeenCalled();
+        });
+
         it('should label the ⋮ button', () => {
             render(GRID_IMAGE);
 

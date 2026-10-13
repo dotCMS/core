@@ -183,10 +183,16 @@ export class DotContentDriveGridCardComponent {
      * belong to selecting. The second click of a double-click is ignored too, so one double-click
      * opens the item once.
      *
+     * A click on the ⋮ button reaches here too (see {@link onMenuClick}) and is ignored.
+     *
      * @param event The click that reached the card.
      */
     protected onCardClick(event: MouseEvent): void {
         if (event.detail > 1 || event.shiftKey || event.ctrlKey || event.metaKey || event.altKey) {
+            return;
+        }
+
+        if ((event.target as Element | null)?.closest('[data-testid="grid-card-menu"]')) {
             return;
         }
 
@@ -205,12 +211,15 @@ export class DotContentDriveGridCardComponent {
     }
 
     /**
-     * Reports a ⋮ click. Kept off the card so it never opens the item.
+     * Reports a ⋮ click.
+     *
+     * The click is left to bubble, unlike the checkbox's: the actions menu closes on PrimeNG's
+     * document click listener, and stopping it here left the menu open on a second click, where the
+     * table's ⋮ closes it. {@link onCardClick} ignores it on the way up, so it never opens the item.
      *
      * @param event The click on the button.
      */
     protected onMenuClick(event: MouseEvent): void {
-        event.stopPropagation();
         this.menu.emit(event);
     }
 
