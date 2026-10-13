@@ -288,8 +288,8 @@ public class DotSamlResource implements Serializable {
 					this.samlHelper.doLogin(httpServletRequest, httpServletResponse,
 							identityProviderConfiguration, authorizedUser, APILocator.getLoginServiceAPI());
 
-					Logger.debug(this, ()-> "Final, LoginPath: " + destination.getPath());
-					RedirectUtil.sendRedirectHTML(httpServletResponse, destination.getPath());
+					Logger.debug(this, ()-> "Final, LoginPath: " + destination.path());
+					RedirectUtil.sendRedirectHTML(httpServletResponse, destination.path());
 					return;
 				}
 			} finally {
@@ -439,8 +439,8 @@ public class DotSamlResource implements Serializable {
 	 * resolves them (a {@code ..} at the root stays at the root). So {@code /members/../dotAdmin/},
 	 * {@code /members/%2e%2e/dotAdmin/} and {@code /members/..%2f..%2fdotAdmin/} count as back-end, and
 	 * {@code /dotAdmin/../members/} does not. This matters for the trusted {@code redirect.after.login}, which
-	 * is not validated. Reuses {@link SamlWebUtils#isBackEndLoginPage(String)} so the back-end path set stays
-	 * in one place.
+	 * is not validated. Letter case is ignored, so {@code /DotAdmin/} counts as back-end too. Reuses
+	 * {@link SamlWebUtils#isBackEndLoginPageIgnoreCase(String)} so the back-end path set stays in one place.
 	 *
 	 * @param loginPath the post-login destination
 	 * @return true when the destination is a back-end path
@@ -449,7 +449,7 @@ public class DotSamlResource implements Serializable {
 	boolean isBackEndLogin(final String loginPath) {
 		final String decodedPath = Try.of(() -> URI.create(loginPath).getPath()).getOrElse(loginPath);
 		final String path = resolveDotSegments(decodedPath);
-		return UtilMethods.isSet(path) && this.samlWebUtils.isBackEndLoginPage(path);
+		return UtilMethods.isSet(path) && this.samlWebUtils.isBackEndLoginPageIgnoreCase(path);
 	}
 
 	/**
@@ -485,16 +485,12 @@ public class DotSamlResource implements Serializable {
 
 	/**
 	 * The outcome of {@link #resolveLoginPath}: a destination to redirect to, or a denial.
+	 *
+	 * @param path the destination to redirect to; null when the login is denied
 	 */
-	static final class LoginDestination {
+	record LoginDestination(String path) {
 
 		private static final LoginDestination DENIED = new LoginDestination(null);
-
-		private final String path;
-
-		private LoginDestination(final String path) {
-			this.path = path;
-		}
 
 		/** A redirect to the given destination. */
 		static LoginDestination redirectTo(final String path) {
@@ -509,11 +505,6 @@ public class DotSamlResource implements Serializable {
 		/** True when the login is denied. */
 		boolean isDenied() {
 			return null == this.path;
-		}
-
-		/** The destination to redirect to; null when the login is denied. */
-		String getPath() {
-			return this.path;
 		}
 	}
 

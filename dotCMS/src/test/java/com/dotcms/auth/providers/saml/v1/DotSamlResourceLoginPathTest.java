@@ -146,7 +146,7 @@ public class DotSamlResourceLoginPathTest {
         sessionRedirect("https://evil.com");
         final DotSamlResource.LoginDestination destination = resolve(admin());
         assertFalse(destination.isDenied());
-        assertFalse(destination.getPath(), destination.getPath().contains("evil.com"));
+        assertFalse(destination.path(), destination.path().contains("evil.com"));
         verify(session).removeAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
     }
 
@@ -207,6 +207,18 @@ public class DotSamlResourceLoginPathTest {
 
         relayState("/members/..%2f..%2fdotAdmin/");
         assertRedirect("/", resolve(frontEndOnly()));
+    }
+
+    /**
+     * Given Scenario: a front-end-only user whose RelayState names the back-end with different letter case
+     * (PR #37984 review); a proxy or CDN that normalizes case would still route it to the back-end
+     * ExpectedResult: the path counts as back-end and the login is denied
+     */
+    @Test
+    public void frontEndUser_caseVariedBackEndPath_isDenied() {
+
+        relayState("/DotAdmin/");
+        assertTrue(resolve(frontEndOnly()).isDenied());
     }
 
     /**
@@ -460,6 +472,22 @@ public class DotSamlResourceLoginPathTest {
         assertFalse(resource.isBackEndLogin("/members/report%2Fid"));
     }
 
+    /**
+     * Method to test: {@link DotSamlResource#isBackEndLogin(String)}
+     * Given Scenario: back-end paths written with different letter case (PR #37984 review)
+     * ExpectedResult: they count as back-end, so the no-access role check applies; a front-end page whose
+     * name merely contains a back-end segment does not
+     */
+    @Test
+    public void isBackEndLoginIgnoresCase() {
+
+        assertTrue(resource.isBackEndLogin("/DotAdmin/"));
+        assertTrue(resource.isBackEndLogin("/DOTADMIN/#/c/content"));
+        assertTrue(resource.isBackEndLogin("/members/../dotadmin/"));
+        assertTrue(resource.isBackEndLogin("/C/Portal/Logout"));
+        assertFalse(resource.isBackEndLogin("/members/DotAdmin/"));
+    }
+
     private DotSamlResource.LoginDestination resolve(final User user) {
         return resource.resolveLoginPath(request, session, idpConfig, user);
     }
@@ -479,7 +507,7 @@ public class DotSamlResourceLoginPathTest {
 
     private static void assertRedirect(final String expected, final DotSamlResource.LoginDestination destination) {
         assertFalse("expected a redirect to " + expected + " but the login was denied", destination.isDenied());
-        assertEquals(expected, destination.getPath());
+        assertEquals(expected, destination.path());
     }
 
     private static User admin() {

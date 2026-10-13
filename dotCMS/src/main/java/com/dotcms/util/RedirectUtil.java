@@ -401,14 +401,14 @@ public class RedirectUtil {
         final StringBuilder encoded = new StringBuilder(value.length());
         for (int i = 0; i < value.length(); i++) {
             final char c = value.charAt(i);
-            switch (c) {
-                case '&':  encoded.append("&amp;");  break;
-                case '"':  encoded.append("&quot;"); break;
-                case '\'': encoded.append("&#39;");  break;
-                case '<':  encoded.append("&lt;");   break;
-                case '>':  encoded.append("&gt;");   break;
-                default:   encoded.append(c);
-            }
+            encoded.append(switch (c) {
+                case '&'  -> "&amp;";
+                case '"'  -> "&quot;";
+                case '\'' -> "&#39;";
+                case '<'  -> "&lt;";
+                case '>'  -> "&gt;";
+                default   -> String.valueOf(c);
+            });
         }
         return encoded.toString();
     }

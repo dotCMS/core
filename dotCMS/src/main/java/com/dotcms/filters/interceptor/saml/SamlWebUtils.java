@@ -67,6 +67,10 @@ public class SamlWebUtils {
      */
     public static final String AUTH_RELAYSTATE_ALLOWED_HOSTS_KEY = "auth.relaystate.allowed.hosts";
 
+    /** Path prefixes of the dotCMS back-end login and logout pages. */
+    private static final List<String> BACK_END_LOGIN_PREFIXES = List.of("/dotAdmin", "/html/portal/login",
+            "/c/public/login", "/c/portal_public/login", "/c/portal/logout");
+
     protected     final UserWebAPI userWebAPI;
 
     public SamlWebUtils() {
@@ -164,8 +168,23 @@ public class SamlWebUtils {
      */
     public boolean isBackEndLoginPage(final String uri) {
 
-        return uri.startsWith("/dotAdmin") || uri.startsWith("/html/portal/login") || uri.startsWith("/c/public/login")
-                || uri.startsWith("/c/portal_public/login") || uri.startsWith("/c/portal/logout");
+        return BACK_END_LOGIN_PREFIXES.stream().anyMatch(uri::startsWith);
+    }
+
+    /**
+     * Same check as {@link #isBackEndLoginPage(String)}, ignoring letter case. Used by the post-login redirect
+     * check, where a case-varied path such as {@code /DotAdmin/} must still get the back-end role check because
+     * a proxy or CDN in front of dotCMS may normalize its case. The interceptor keeps the case-sensitive check,
+     * so the sign-in flow a request gets is unchanged.
+     *
+     * @param uri The post-login destination path.
+     *
+     * @return {@code true} when the path starts with a back-end login or logout prefix in any letter case.
+     */
+    public boolean isBackEndLoginPageIgnoreCase(final String uri) {
+
+        return BACK_END_LOGIN_PREFIXES.stream()
+                .anyMatch(prefix -> uri.regionMatches(true, 0, prefix, 0, prefix.length()));
     }
 
     protected boolean isFrontEndLoginPage(final String uri){

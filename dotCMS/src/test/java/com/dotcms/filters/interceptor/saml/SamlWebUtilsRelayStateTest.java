@@ -16,6 +16,7 @@ import javax.servlet.http.HttpSession;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -177,6 +178,20 @@ public class SamlWebUtilsRelayStateTest {
 
         allowedHostsProperty("*.example.org, https://x.org, x.org/path, a b, user@x.org, x.org:8443, ok.example.org");
         assertEquals(List.of("ok.example.org"), SamlWebUtils.configuredAllowedHosts(idpConfig));
+    }
+
+    /**
+     * Method to test: {@link SamlWebUtils#isBackEndLoginPage(String)}
+     * Given Scenario: a request URI naming the back-end with different letter case
+     * ExpectedResult: the interceptor's check stays case-sensitive, so which sign-in flow a request gets is
+     * unchanged; only the post-login redirect check ignores case (PR #37984 review)
+     */
+    @Test
+    public void isBackEndLoginPage_staysCaseSensitive() {
+
+        assertTrue(samlWebUtils.isBackEndLoginPage("/dotAdmin/"));
+        assertFalse(samlWebUtils.isBackEndLoginPage("/DotAdmin/"));
+        assertFalse(samlWebUtils.isBackEndLoginPage("/C/Portal/Logout"));
     }
 
     private void allowedHostsProperty(final String value) {
