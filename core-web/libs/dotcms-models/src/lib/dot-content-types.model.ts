@@ -14,6 +14,8 @@ export const DotCMSClazzes = {
     COLUMN: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
     TAB_DIVIDER: 'com.dotcms.contenttype.model.field.ImmutableTabDividerField',
     LINE_DIVIDER: 'com.dotcms.contenttype.model.field.ImmutableLineDividerField',
+    RELATIONSHIPS_TAB: 'com.dotcms.contenttype.model.field.ImmutableRelationshipsTabField',
+    PERMISSION_TAB: 'com.dotcms.contenttype.model.field.ImmutablePermissionTabField',
     COLUMN_BREAK: 'contenttype.column.break',
     // Content Type Fields
     BINARY: 'com.dotcms.contenttype.model.field.ImmutableBinaryField',
