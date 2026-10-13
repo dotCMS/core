@@ -6,6 +6,23 @@ the filesystem/NFS behavior is unchanged.
 
 This page describes what is in the code today. It grows as the remaining parts land.
 
+## Target deployment
+
+The feature exists so a cluster can scale out without a shared NFS volume (#37868). S3 holds
+the only durable copy of each asset and is what the nodes share. Each node keeps its own
+node-local asset directory as a disposable cache: a missing local file is restored from S3 on
+the next read. The intended setup is one node-local asset directory per node. Cache eviction,
+which keeps that directory bounded, arrives in a later PR of this stack.
+
+Running with the flag on over a shared NFS asset directory is not the target and is not
+supported. Eviction, once it lands, deletes local files on the assumption that only its own
+node uses them, so on a shared directory one node would remove files that other nodes are
+serving.
+
+Serving directly from S3 is out of scope today. A read that misses the local cache downloads
+the whole object to the local directory before serving it, including a range request on a
+large file. Nothing streams from S3 or reads part of an object.
+
 ## Behavior with the flag off
 
 With the flag off, the storage chain, its providers, metadata and static push publishing run
@@ -22,6 +39,9 @@ the same code paths as before. Two details are worth knowing:
   failing over to the instance role, and an OSGi plugin that builds its own
   `DefaultAWSCredentialsProviderChain` now gets the web identity step.
 - The flag is logged at INFO only when it is on. With it off, the first read logs at debug.
+
+The release notes for the release that ships this feature should call out the STS packaging
+change, because it can change which credentials an existing setup resolves.
 
 ## Feature flag
 
@@ -48,6 +68,13 @@ off reads those revision keys (the reader falls back to the legacy field folder)
 binaries resolve as stale or missing. Leaving the flag off, the default, changes nothing. Keeping
 a legacy-path copy for rollback is not implemented; treat enabling the flag as requiring a
 forward-only recovery plan.
+
+The S3 layout is one-way as well. With a namespace set (see below), objects written with the
+flag on live under `asset-namespaces/<namespace>/`, and binaries are stored as a JSON reference
+at the owner key with the bytes under `asset-blobs/sha256/...`. A release without this feature
+reads neither, and the flag-off path of this release ignores the namespace too. Do not roll back
+below the release that ships this feature without first migrating those assets back to the
+previous layout.
 
 ## Storage layer behavior with the flag on
 
@@ -259,14 +286,35 @@ With the flag on, `storage.file-metadata.s3.namespace` (Docker:
 bucket. Owned keys become `asset-namespaces/<namespace>/<group>/<existing-key>`. Two prefixes
 stay at the bucket root and are shared by every namespace: content-addressed blobs
 (`asset-blobs/`), so identical bytes are stored once, and shared extracted metadata
-(`extracted-metadata/`), so identical bytes are extracted once. Use the same
-value for all nodes in one cluster and distinct values for independent installations. Values
-are 1 to 64 letters, digits, underscores or hyphens, starting with a letter or digit. Empty is
-the default and keeps the existing layout.
+(`extracted-metadata/`), so identical bytes are extracted once. Independent installations
+use distinct values. Values are 1 to 64 letters, digits, underscores or hyphens, starting with
+a letter or digit. Empty is the default and keeps the existing layout.
+
+Every node of one installation, meaning every node that uses the same database, must use the
+same value for the life of the installation. The S3 provider adds the prefix when it talks to
+S3, and the database stores keys without it (the later slices that store binaries record a
+`storageKey` per binary, also without the prefix). A node with a different value, or none,
+reads and writes under another prefix, so content looks missing on that node.
+
+Set the namespace the same way as the flag, in the environment or
+`dotmarketing-config.properties`, not only in the system table. `Config` gives a `DOT_`
+environment variable precedence. Otherwise a system-table value overrides the properties file,
+but only after the system-table source has been initialized during startup. The provider reads
+the namespace once, when it is built, and keeps it. If it is built before that point, a value
+set only in the system table is not seen, and a later change in the table is ignored until
+restart.
 
 Set the namespace before the installation first stores assets. Changing it later does not
 migrate existing records. It separates application keys only; it does not restrict what the
 bucket credentials can access.
+
+Copying one installation's database into another does not work on its own. Suppose staging
+gets a copy of production's database. If staging uses its own namespace, which it needs so its
+cleanup jobs cannot delete production's objects, its rows point at keys that exist only under
+production's prefix, and staging sees no binaries. If staging uses production's namespace,
+staging's deletions remove production's binaries. The supported path is starter export and
+import, which lands in #37773: it publishes the assets under the target installation's
+namespace before the import commits.
 
 ## Static push publishing
 
@@ -286,12 +334,20 @@ and removes its own schema. `BinaryS3StorageTest` is skipped unless `s3.test.end
 the PostgreSQL cases are skipped unless `s3.test.jdbc` is set. The credentials below are disposable
 local test values.
 
+MinIO no longer publishes community images, so `minio/minio:latest` can no longer be pulled.
+The command uses Chainguard's free MinIO image instead. Its free tier publishes only the
+`latest` tag, so the command pins the multi-architecture digest that `latest` resolved to on
+2026-10-13; update the digest when you need a newer build. Any S3-compatible server can stand
+in, but it must support conditional PUTs (`If-None-Match: *` and `If-Match`), because the
+backfill operations and the content-addressed store rely on them.
+
 ```sh
 docker run -d --rm --name binary-s3-test \
   -p 127.0.0.1:19002:9000 \
   -e MINIO_ROOT_USER=binary-storage-test \
   -e MINIO_ROOT_PASSWORD=binary-storage-test \
-  minio/minio:latest server /data
+  cgr.dev/chainguard/minio@sha256:dc455cdd4db6e390b1b26514f15ff37681a777bf8dab41aac445a0259f751e56 \
+  server /data
 
 docker run -d --rm --name binary-cleanup-postgres-test \
   -p 127.0.0.1:19003:5432 \
@@ -317,3 +373,4 @@ stack:
 ```
 
 CI does not yet provide the MinIO service, so `BinaryS3StorageTest` does not run there.
+Wiring MinIO into the CI build is planned before the feature is enabled for customers.

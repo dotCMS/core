@@ -303,6 +303,47 @@ class AssetStorageFeatureTest {
     }
 
     @Test
+    void failedLocalWriteAfterDurableWriteServesTheDurableFile() throws Exception {
+        var local = spy(filesystem());
+        Path destination = root.resolve(KEY.toLowerCase());
+        Files.createDirectories(destination.getParent());
+        Files.writeString(destination, "previous version");
+        File upload = Files.writeString(root.resolve("upload"), "replacement").toFile();
+        File download = Files.writeString(root.resolve("download.tmp"), "replacement").toFile();
+        var remote = mock(StoragePersistenceAPI.class);
+        when(remote.pullFile(GROUP, KEY)).thenReturn(download);
+        doThrow(new DotDataException("disk full")).doCallRealMethod()
+                .when(local).pushFile(eq(GROUP), eq(KEY), any(), any());
+        var chain = chain(local, remote);
+
+        assertThrows(DotDataException.class, () -> chain.pushFile(GROUP, KEY, upload, Map.of()),
+                "The local failure reaches the caller");
+        verify(remote).pushFile(GROUP, KEY, upload, Map.of());
+        assertEquals("replacement", Files.readString(chain.pullFile(GROUP, KEY).toPath()),
+                "The next read restores the durable copy instead of serving the stale local one");
+    }
+
+    @Test
+    void failedLocalObjectWriteAfterDurableWriteServesTheDurableValue() throws Exception {
+        var local = spy(filesystem());
+        var reader = new JsonReaderDelegate<>(String.class);
+        local.pushObject(GROUP, KEY, new JsonWriterDelegate(), "Original", Map.of());
+        var remote = mock(StoragePersistenceAPI.class);
+        when(remote.pullObject(GROUP, KEY, reader)).thenReturn("Replacement");
+        // The filesystem provider reports object write failures as unchecked exceptions.
+        doThrow(new RuntimeException("disk full")).doCallRealMethod()
+                .when(local).pushObject(eq(GROUP), eq(KEY), any(), any(), any());
+        var chain = chain(local, remote);
+
+        assertThrows(RuntimeException.class,
+                () -> chain.pushObject(GROUP, KEY, new JsonWriterDelegate(), "Replacement", Map.of()),
+                "The local failure reaches the caller");
+        assertEquals("Replacement", chain.pullObject(GROUP, KEY, reader),
+                "The next read returns the durable value instead of the stale local one");
+        assertEquals("Replacement", local.pullObject(GROUP, KEY, reader), "The local copy is restored");
+    }
+
+    @Test
     void asyncWriteReportsRemoteFailureAndDoesNotPublishLocalReplacement() throws Exception {
         var fs = filesystem();
         Path destination = root.resolve(KEY);
@@ -412,6 +453,42 @@ class AssetStorageFeatureTest {
     }
 
     @Test
+    void sameKeyIsLockedAcrossChainInstancesAndLetterCase() throws Exception {
+        var remote = mock(StoragePersistenceAPI.class);
+        File snapshot = Files.writeString(root.resolve("download.tmp"), "remote").toFile();
+        var fetching = new CountDownLatch(1);
+        var finishFetch = new CountDownLatch(1);
+        when(remote.pullFile(GROUP, KEY)).thenAnswer(call -> {
+            fetching.countDown();
+            assertTrue(finishFetch.await(10, TimeUnit.SECONDS));
+            return snapshot;
+        });
+        // Re-initializing the storage provider builds a new chain while the old one may still be in use.
+        var readingChain = chain(filesystem(), remote);
+        var deletingChain = chain(filesystem(), remote);
+        try (var executor = Executors.newFixedThreadPool(2)) {
+            var read = executor.submit(() -> readingChain.pullFile(GROUP, KEY));
+            assertTrue(fetching.await(5, TimeUnit.SECONDS));
+            var deleting = new CountDownLatch(1);
+            // The filesystem keeps one file for both spellings, so they must share a lock.
+            var delete = executor.submit(() -> {
+                deleting.countDown();
+                return deletingChain.deleteObjectAndReferences(GROUP, KEY.toUpperCase());
+            });
+            assertTrue(deleting.await(5, TimeUnit.SECONDS));
+            try {
+                assertThrows(TimeoutException.class, () -> delete.get(100, TimeUnit.MILLISECONDS),
+                        "A delete through another chain, spelled differently, must wait for the restore");
+            } finally {
+                finishFetch.countDown();
+            }
+            read.get(5, TimeUnit.SECONDS);
+            delete.get(5, TimeUnit.SECONDS);
+            assertFalse(Files.exists(root.resolve(KEY.toLowerCase())), "The deleted file must not come back locally");
+        }
+    }
+
+    @Test
     void unreadableLocalMetadataIsReplacedFromADurableCopyAndOtherwiseFails() throws Exception {
         // Metadata keeps lowercased keys in every slice; the binary groups later become case-preserving.
         final String group = "dotmetadata";
@@ -434,6 +511,33 @@ class AssetStorageFeatureTest {
         assertThrows(DotRuntimeException.class, () -> chain(fs, empty).pullObject(group, KEY, reader),
                 "Without a readable durable copy the read fails instead of reporting the object as absent");
         assertEquals("\"dura", Files.readString(local), "An unreadable copy without a replacement is kept");
+    }
+
+    @Test
+    void localMetadataNotInTheConfiguredCompressionIsReplacedFromADurableCopy() throws Exception {
+        final String group = "dotmetadata";
+        final String previousCompressor = Config.getStringProperty("CONTENT_METADATA_COMPRESSOR", null);
+        var reader = new JsonReaderDelegate<>(String.class);
+        Path local = root.resolve(KEY.toLowerCase());
+        Files.createDirectories(local.getParent());
+        try {
+            for (String compressor : List.of("gzip", "bzip2")) {
+                Config.setProperty("CONTENT_METADATA_COMPRESSOR", compressor);
+                // The provider reads the compressor once, so it is created after setting it.
+                var fs = new FileSystemStoragePersistenceAPIImpl();
+                fs.addGroupMapping(group, root.toFile());
+                Files.writeString(local, "\"durable\"");
+                var remote = mock(StoragePersistenceAPI.class);
+                when(remote.pullObject(group, KEY, reader)).thenReturn("durable");
+
+                assertEquals("durable", chain(fs, remote).pullObject(group, KEY, reader),
+                        "A " + compressor + " file that cannot be decoded is replaced, not a failed read");
+                assertEquals("durable", fs.pullObject(group, KEY, reader),
+                        "The local copy is replaced in the " + compressor + " format");
+            }
+        } finally {
+            Config.setProperty("CONTENT_METADATA_COMPRESSOR", previousCompressor);
+        }
     }
 
     @Test

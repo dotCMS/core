@@ -7,6 +7,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.Config;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.util.concurrent.Striped;
 import io.vavr.control.Try;
 
 import java.io.File;
@@ -14,10 +15,13 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
 
 /**
  * This API implements a chainable pattern that encapsulates a list of {@link StoragePersistenceAPI}
@@ -35,8 +39,21 @@ public class ChainableStoragePersistenceAPI implements StoragePersistenceAPI {
     private final List<StoragePersistenceAPI> storagePersistenceAPIList;
     private final ObjectWriterDelegate defaultWriterDelegate;
     private final Chainable404StorageCache cache;
-    private final com.google.common.util.concurrent.Striped<java.util.concurrent.locks.Lock> assetLocks =
-            com.google.common.util.concurrent.Striped.lock(256);
+
+    /**
+     * Per-key locks used with S3 asset storage on, so reads, writes and deletes of one key do not
+     * interleave. They are shared by the whole process because they protect the key, not a chain:
+     * re-initializing the storage provider builds a new chain while the old one may still be in use.
+     * Each stripe is a {@link java.util.concurrent.locks.ReentrantLock}, so a thread can take the
+     * lock of a key it already holds. Code holding one of these locks must not take another one
+     * (for example by calling another locked operation of a chain for a different key): two keys
+     * can map to different stripes, and two threads taking them in opposite order deadlock until
+     * {@link #ASSET_LOCK_TIMEOUT_MINUTES} runs out.
+     */
+    private static final Striped<Lock> ASSET_LOCKS = Striped.lock(256);
+
+    /** How long to wait for a key's lock. Generous because large binaries are transferred under it. */
+    private static final long ASSET_LOCK_TIMEOUT_MINUTES = 15;
 
     private static final String SUBMITTER_NAME = Config.getStringProperty("COMPOSITE_STORAGE_SUBMITTER_NAME", "SubmitterCompositeStoragePersistenceAPI");
 
@@ -60,6 +77,55 @@ public class ChainableStoragePersistenceAPI implements StoragePersistenceAPI {
     @VisibleForTesting
     public Chainable404StorageCache getCache() {
         return cache;
+    }
+
+    /**
+     * Takes the lock of a storage key, waiting at most {@link #ASSET_LOCK_TIMEOUT_MINUTES}. The key
+     * is lowercased because the filesystem provider stores keys that differ only by case in the same
+     * file; variants that a provider keeps apart merely wait for each other.
+     *
+     * @param groupName the group the key belongs to
+     * @param path      the storage key
+     * @return the held lock, which the caller must unlock
+     * @throws DotDataException if the wait times out or the thread is interrupted
+     */
+    private static Lock lockKey(final String groupName, final String path) throws DotDataException {
+        final Lock lock = ASSET_LOCKS.get((groupName + "/" + path).toLowerCase(Locale.ROOT));
+        try {
+            if (!lock.tryLock(ASSET_LOCK_TIMEOUT_MINUTES, TimeUnit.MINUTES)) {
+                throw new DotDataException("Timed out waiting for storage key " + groupName + "/" + path);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new DotDataException("Interrupted waiting for storage key " + groupName + "/" + path, e);
+        }
+        return lock;
+    }
+
+    /**
+     * Called when the provider at {@code failedIndex} rejects a write. Writes go from the last
+     * provider to the first, so every provider after it already holds the new value while it and
+     * the providers before it still hold the previous one, and reads, which start at the first
+     * provider, would keep serving that stale copy. Deletes those copies, best effort, so the next
+     * read restores the new value from a later provider. Does nothing when the last provider, the
+     * first one written, failed, because then nothing has changed.
+     *
+     * @param groupName   the group of the key being written
+     * @param path        the key being written
+     * @param failedIndex the position in the chain of the provider whose write failed
+     */
+    private void dropCopiesOlderThanAcceptedWrite(final String groupName, final String path,
+                                                  final int failedIndex) {
+        if (failedIndex == storagePersistenceAPIList.size() - 1) {
+            return;
+        }
+        for (int i = failedIndex; i >= 0; i--) {
+            final StoragePersistenceAPI storage = storagePersistenceAPIList.get(i);
+            Try.run(() -> storage.deleteObjectAndReferences(groupName, path))
+                    .onFailure(e -> Logger.error(this, "Stale copy of " + groupName + "/" + path
+                            + " left in " + storage + "; reads may serve it", e));
+        }
+        cache.remove(groupName, path);
     }
 
     @Override
@@ -137,12 +203,21 @@ public class ChainableStoragePersistenceAPI implements StoragePersistenceAPI {
         return deleteCount;
     }
 
+    /**
+     * Deletes the object from every provider. With S3 asset storage on, this happens under the key's
+     * lock, from the last provider to the first, so the local copy goes only after the durable
+     * providers accepted the deletion.
+     *
+     * @param groupName the group of the object
+     * @param path      the object's path
+     * @return {@code true} if every provider reported the object deleted
+     * @throws DotDataException if a provider fails, or the key's lock cannot be taken in time
+     */
     @Override
     public boolean deleteObjectAndReferences(final String groupName, final String path) throws DotDataException {
 
         if (AssetStorageFeature.isEnabled()) {
-            final var lock = assetLocks.get(groupName + "/" + path);
-            lock.lock();
+            final Lock lock = lockKey(groupName, path);
             try {
                 // Keep the local copy until all durable providers accept the deletion.
                 boolean deleted = !storagePersistenceAPIList.isEmpty();
@@ -245,18 +320,36 @@ public class ChainableStoragePersistenceAPI implements StoragePersistenceAPI {
         return durable;
     }
 
+    /**
+     * Stores the file in every provider. With S3 asset storage on, this happens under the key's lock,
+     * from the last provider to the first, so durable storage holds the file before the local copy
+     * changes. If a provider fails after a later one accepted the file, the now-stale copies of it
+     * and the providers before it are deleted, so the next read restores the new file, and the
+     * failure is rethrown.
+     *
+     * @param groupName the group to store into
+     * @param path      the file's key
+     * @param file      the file to store
+     * @param extraMeta extra metadata for providers that keep it
+     * @return the result of the first provider in the chain
+     * @throws DotDataException if a provider fails, or the key's lock cannot be taken in time
+     */
     @Override
     public Object pushFile(final String groupName, final String path, final File file,
                            final Map<String, Serializable> extraMeta) throws DotDataException {
 
         if (AssetStorageFeature.isEnabled()) {
-            final var lock = assetLocks.get(groupName + "/" + path);
-            lock.lock();
+            final Lock lock = lockKey(groupName, path);
             try {
                 Object result = null;
                 // Publish durably before exposing the new local cache contents.
                 for (int i = storagePersistenceAPIList.size() - 1; i >= 0; i--) {
-                    result = storagePersistenceAPIList.get(i).pushFile(groupName, path, file, extraMeta);
+                    try {
+                        result = storagePersistenceAPIList.get(i).pushFile(groupName, path, file, extraMeta);
+                    } catch (DotDataException | RuntimeException failure) {
+                        dropCopiesOlderThanAcceptedWrite(groupName, path, i);
+                        throw failure;
+                    }
                 }
                 cache.remove(groupName, path);
                 return result;
@@ -279,17 +372,34 @@ public class ChainableStoragePersistenceAPI implements StoragePersistenceAPI {
         return object;
     }
 
+    /**
+     * Stores the object in every provider. With S3 asset storage on, this behaves like
+     * {@link #pushFile(String, String, File, Map)}: under the key's lock, durable providers first,
+     * and stale copies are deleted when a provider fails after a later one accepted the object.
+     *
+     * @param groupName      the group to store into
+     * @param path           the object's key
+     * @param writerDelegate serializes the object
+     * @param objectIn       the object to store
+     * @param extraMeta      extra metadata for providers that keep it
+     * @return the result of the first provider in the chain
+     * @throws DotDataException if a provider fails, or the key's lock cannot be taken in time
+     */
     @Override
     public Object pushObject(final String groupName, final String path,
                              final ObjectWriterDelegate writerDelegate, final Serializable objectIn,
                              final Map<String, Serializable> extraMeta) throws DotDataException {
         if (AssetStorageFeature.isEnabled()) {
-            final var lock = assetLocks.get(groupName + "/" + path);
-            lock.lock();
+            final Lock lock = lockKey(groupName, path);
             try {
                 Object result = null;
                 for (int i = storagePersistenceAPIList.size() - 1; i >= 0; i--) {
-                    result = storagePersistenceAPIList.get(i).pushObject(groupName, path, writerDelegate, objectIn, extraMeta);
+                    try {
+                        result = storagePersistenceAPIList.get(i).pushObject(groupName, path, writerDelegate, objectIn, extraMeta);
+                    } catch (DotDataException | RuntimeException failure) {
+                        dropCopiesOlderThanAcceptedWrite(groupName, path, i);
+                        throw failure;
+                    }
                 }
                 cache.remove(groupName, path);
                 return result;
@@ -367,12 +477,21 @@ public class ChainableStoragePersistenceAPI implements StoragePersistenceAPI {
         return futures.get(0); // well we return the first one at least
     }
 
+    /**
+     * Returns the file from the first provider that has it. With S3 asset storage on, this happens
+     * under the key's lock, providers before the one that had it are refilled with the file, and
+     * read failures propagate instead of being reported as absence.
+     *
+     * @param groupName the group to read from
+     * @param path      the file's key
+     * @return the file, or {@code null} if no provider has it
+     * @throws DotDataException if a provider fails, or the key's lock cannot be taken in time
+     */
     @Override
     public File pullFile(final String groupName, final String path) throws DotDataException {
 
         if (AssetStorageFeature.isEnabled()) {
-            final var lock = assetLocks.get(groupName + "/" + path);
-            lock.lock();
+            final Lock lock = lockKey(groupName, path);
             try {
                 final List<StoragePersistenceAPI> missing = new ArrayList<>();
                 for (StoragePersistenceAPI storage : storagePersistenceAPIList) {
@@ -468,8 +587,12 @@ public class ChainableStoragePersistenceAPI implements StoragePersistenceAPI {
         if (AssetStorageFeature.isEnabled()) {
             final List<StoragePersistenceAPI> missing = new ArrayList<>();
             UnreadableStoredObjectException unreadable = null;
-            final var lock = assetLocks.get(groupName + "/" + path);
-            lock.lock();
+            final Lock lock;
+            try {
+                lock = lockKey(groupName, path);
+            } catch (DotDataException e) {
+                throw new DotRuntimeException("Unable to retrieve stored object " + path, e);
+            }
             try {
                 for (StoragePersistenceAPI storage : storagePersistenceAPIList) {
                     Object object;
