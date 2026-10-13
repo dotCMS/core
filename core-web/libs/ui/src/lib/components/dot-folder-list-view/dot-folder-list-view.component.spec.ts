@@ -3950,4 +3950,74 @@ describe('DotFolderListViewComponent', () => {
             expect(tabStopCount()).toBe(mockItems.length);
         });
     });
+
+    describe('rows (#37930)', () => {
+        // The Drive's grid has its own paginator, and a page size picked there has to show here too
+        // when the user switches back. Unbound, the table keeps today's 20.
+        it('should page by 20 when no rows are given', () => {
+            expect(spectator.component.dataTable()?.rows).toBe(20);
+        });
+
+        it('should page by the rows it is given', () => {
+            spectator.setInput('rows', 40);
+            spectator.detectChanges();
+
+            expect(spectator.component.dataTable()?.rows).toBe(40);
+        });
+    });
+
+    describe('activeKey (#37930)', () => {
+        // Content Drive hands the item focused in its grid to the table on a switch, and the other
+        // way round. Pickers bind neither side, and nothing changes for them.
+        const rowsOf = () => spectator.queryAll<HTMLTableRowElement>(byTestId('item-row'));
+        const tabIndexes = () => rowsOf().map((row) => row.getAttribute('tabindex'));
+        const keyOf = (index: number) => mockItems[index].identifier;
+
+        beforeEach(() => {
+            spectator.setInput('items', mockItems);
+            spectator.detectChanges();
+        });
+
+        it('should keep the first row as the tab stop when no key is given', () => {
+            expect(tabIndexes()[0]).toBe('0');
+        });
+
+        it('should move the tab stop and the anchor to the row it is given', () => {
+            spectator.setInput('activeKey', keyOf(2));
+            spectator.detectChanges();
+
+            expect(tabIndexes().indexOf('0')).toBe(2);
+            expect(spectator.component.dataTable()?.anchorRowIndex).toBe(2);
+        });
+
+        it('should stay on the first row when the key is not on the page', () => {
+            spectator.setInput('activeKey', 'not-here');
+            spectator.detectChanges();
+
+            expect(tabIndexes().indexOf('0')).toBe(0);
+        });
+
+        it('should report the row that takes focus', () => {
+            const activeKey = vi.fn();
+            spectator.output('activeKeyChange').subscribe(activeKey);
+            const row = rowsOf()[0];
+
+            row.focus();
+            row.dispatchEvent(new KeyboardEvent('keydown', { code: 'ArrowDown', bubbles: true }));
+            spectator.detectChanges();
+
+            expect(activeKey).toHaveBeenLastCalledWith(keyOf(1));
+        });
+
+        it('should scroll the tab-stop row into view when asked', () => {
+            spectator.setInput('activeKey', keyOf(2));
+            spectator.detectChanges();
+            const scroll = vi.fn();
+            rowsOf()[2].scrollIntoView = scroll;
+
+            spectator.component.revealActive();
+
+            expect(scroll).toHaveBeenCalledWith({ block: 'nearest' });
+        });
+    });
 });

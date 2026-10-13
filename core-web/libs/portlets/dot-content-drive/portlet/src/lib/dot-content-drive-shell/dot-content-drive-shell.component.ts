@@ -4,12 +4,14 @@ import { forkJoin, Observable, of, SubscriptionLike } from 'rxjs';
 import { Location, NgTemplateOutlet } from '@angular/common';
 import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 import {
+    afterNextRender,
     ChangeDetectionStrategy,
     Component,
     computed,
     effect,
     ElementRef,
     inject,
+    Injector,
     OnDestroy,
     signal,
     untracked,
@@ -87,6 +89,7 @@ import {
 import { DotContentDriveActionCenterComponent } from '../components/dialogs/dot-content-drive-action-center/dot-content-drive-action-center.component';
 import { DotContentDriveDialogContentTypeSelectorComponent } from '../components/dialogs/dot-content-drive-dialog-content-type-selector/dot-content-drive-dialog-content-type-selector.component';
 import { DotContentDriveDialogFolderComponent } from '../components/dialogs/dot-content-drive-dialog-folder/dot-content-drive-dialog-folder.component';
+import { DotContentDriveGridViewComponent } from '../components/dot-content-drive-grid-view/dot-content-drive-grid-view.component';
 import { DotContentDriveScopeBarComponent } from '../components/dot-content-drive-scope-bar/dot-content-drive-scope-bar.component';
 import { DotContentDriveSidebarComponent } from '../components/dot-content-drive-sidebar/dot-content-drive-sidebar.component';
 import { DotContentDriveToolbarComponent } from '../components/dot-content-drive-toolbar/dot-content-drive-toolbar.component';
@@ -96,6 +99,7 @@ import {
     ACTION_CENTER_DIALOG_CONTENT_STYLE,
     ACTION_CENTER_DIALOG_CLASS,
     CONTENT_DRIVE_URL_PARAM,
+    CONTENT_DRIVE_VIEW_PARAM,
     DIALOG_TYPE,
     SORT_ORDER,
     SUCCESS_MESSAGE_LIFE,
@@ -119,7 +123,8 @@ import {
     DotContentDriveUploadSelection,
     DotContentDriveUploadSelectorPayload,
     OUTCOME_KIND,
-    DotContentDriveFolderPermissionsPayload
+    DotContentDriveFolderPermissionsPayload,
+    DOT_CONTENT_DRIVE_VIEW_TYPE
 } from '../shared/models';
 import {
     DotContentDriveNavigationService,
@@ -166,6 +171,7 @@ type DotFolderUserAccess = { canEdit: boolean; canEditPermissions: boolean };
     selector: 'dot-content-drive-shell',
     imports: [
         DotFolderListViewComponent,
+        DotContentDriveGridViewComponent,
         DotContentDriveToolbarComponent,
         DotFolderListViewContextMenuComponent,
         DotAddToBundleComponent,
@@ -717,6 +723,66 @@ export class DotContentDriveShellComponent implements OnDestroy {
     });
 
     readonly $loading = computed(() => this.#store.status() === DotContentDriveStatus.LOADING);
+
+    /** Whether the grid of cards is showing instead of the table (#37930). */
+    protected readonly $isGridView = computed(
+        () => this.#store.viewType() === DOT_CONTENT_DRIVE_VIEW_TYPE.CARD
+    );
+
+    /**
+     * Results per page, bound to both views so a page size picked in one is the one the other shows.
+     */
+    protected readonly $rows = computed(() => this.#store.pagination().limit);
+
+    /** Languages by id, for the grid's locale tags. The table looks its own up. */
+    protected readonly $languagesMap = computed(
+        () => new Map(this.#store.languages().map((language) => [language.id, language]))
+    );
+
+    /**
+     * The item holding the listing's tab stop and anchor, by `inode`. Each view reports it and the
+     * other picks it up, so a switch keeps the user's place (FR-002, US7 #12).
+     */
+    protected readonly $activeListingKey = signal<string | null>(null);
+
+    protected readonly $listView = viewChild(DotFolderListViewComponent);
+    protected readonly $gridView = viewChild(DotContentDriveGridViewComponent);
+
+    readonly #injector = inject(Injector);
+
+    /**
+     * After a switch, scrolls the item the user was on into view in the view now showing. Skips the
+     * first run: on load there is no place to keep.
+     */
+    // eslint-disable-next-line no-unused-private-class-members -- effect() runs for its side effects; the field only holds the EffectRef
+    #revealOnSwitchEffect = effect(() => {
+        const isGrid = this.$isGridView();
+
+        untracked(() => {
+            if (this.#lastViewWasGrid === undefined || this.#lastViewWasGrid === isGrid) {
+                this.#lastViewWasGrid = isGrid;
+
+                return;
+            }
+
+            this.#lastViewWasGrid = isGrid;
+            afterNextRender(() => (isGrid ? this.$gridView() : this.$listView())?.revealActive(), {
+                injector: this.#injector
+            });
+        });
+    });
+
+    /** The view shown on the last run of the reveal effect, `undefined` before the first. */
+    #lastViewWasGrid: boolean | undefined;
+
+    /**
+     * Keeps the item the showing view reports as its tab stop.
+     *
+     * @param key The item's `inode`, or `null` when the listing has none.
+     */
+    protected onActiveListingKeyChange(key: string | null): void {
+        this.$activeListingKey.set(key);
+    }
 
     /**
      * Whether the last search failed to run, as opposed to running and matching nothing.
@@ -1559,6 +1625,10 @@ export class DotContentDriveShellComponent implements OnDestroy {
         const queryParams: Record<string, string | null> = {};
 
         queryParams['isTreeExpanded'] = isTreeExpanded.toString();
+        // Always written, so a copied link opens in the view it was copied from, whatever the
+        // person opening it remembered (#37930, US4 #2). A view switch replaces the entry; only
+        // panel opens and folder moves push one, below.
+        queryParams[CONTENT_DRIVE_VIEW_PARAM.VIEW_TYPE] = this.#store.viewType();
 
         if (path && path.length) {
             queryParams['path'] = path;

@@ -522,6 +522,13 @@ export interface DotContentDriveState extends DotContentDriveInit {
      * a non-admin fire with no heads-up at all.
      */
     currentUserIsAdmin: boolean;
+    /**
+     * Which listing is showing: the table (`list`) or the grid of cards (`card`).
+     *
+     * Decided once when the Drive opens (see `resolveViewType`) and changed by the view switcher.
+     * Mirrored into the URL as `viewType`, so a copied link opens in the same view.
+     */
+    viewType: DotContentDriveViewType;
 }
 
 /**
@@ -656,3 +663,15 @@ export interface DotContentDriveRevealedLevel {
     page: DotContentDriveFolderPage | undefined;
     pinned: DotFolder | undefined;
 }
+
+/**
+ * The two listings Content Drive can show. The values are the ones the URL, the browser storage and
+ * a custom tool's `dataViewMode` all use, so one parser serves every source.
+ */
+export const DOT_CONTENT_DRIVE_VIEW_TYPE = {
+    LIST: 'list',
+    CARD: 'card'
+} as const;
+
+export type DotContentDriveViewType =
+    (typeof DOT_CONTENT_DRIVE_VIEW_TYPE)[keyof typeof DOT_CONTENT_DRIVE_VIEW_TYPE];

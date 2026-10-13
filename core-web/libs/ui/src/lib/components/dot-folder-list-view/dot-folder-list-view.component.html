@@ -16,7 +16,7 @@
     [showPageLinks]="false"
     [showCurrentPageReport]="true"
     [totalRecords]="$recordCount()"
-    [rows]="MIN_ROWS_PER_PAGE"
+    [rows]="$rows()"
     [rowsPerPageOptions]="rowsPerPageOptions"
     paginatorDropdownAppendTo="body"
     [lazy]="$lazy()"

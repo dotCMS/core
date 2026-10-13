@@ -17,6 +17,7 @@ import {
     output,
     Renderer2,
     signal,
+    untracked,
     viewChild
 } from '@angular/core';
 
@@ -126,6 +127,17 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
     private readonly dotLanguagesService = inject(DotLanguagesService);
 
     dataTable = viewChild<Table>('dataTable');
+
+    /**
+     * Rows per page. Unbound, the table pages by {@link MIN_ROWS_PER_PAGE} as it always has.
+     *
+     * Content Drive binds its stored page size here because its grid view has a paginator of its
+     * own (#37930): a page size picked there must be the one this paginator shows when the user
+     * switches back. Changing it in this paginator still reports through `paginate`, as before.
+     *
+     * @alias rows
+     */
+    $rows = input<number>(20, { alias: 'rows' });
 
     /**
      * A signal that takes an array of DotContentDriveItem objects.
@@ -327,6 +339,29 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      * @alias readOnly
      */
     $readOnly = input<boolean>(false, { alias: 'readOnly' });
+
+    /**
+     * Key (by `dataKey`) of the row that should hold the tab stop and the selection anchor.
+     *
+     * Content Drive passes the item its grid view had focused when the user switches back to the
+     * table (#37930), so focus and ranges pick up where they were. Ignored when that row is not on
+     * the page, and when it is the row this table itself just reported. Unbound, the table keeps
+     * its own tab stop exactly as before.
+     *
+     * @alias activeKey
+     */
+    $activeKey = input<string | null>(null, { alias: 'activeKey' });
+
+    /**
+     * Key of the row that took the tab stop, reported so another view of the same listing can pick
+     * it up (#37930).
+     *
+     * @alias activeKeyChange
+     */
+    activeKeyChange = output<string | null>();
+
+    /** The last key reported through `activeKeyChange`, so its echo back in is not acted on. */
+    #lastReportedKey: string | null = null;
 
     /** Flagged inodes as a set — one lookup per row instead of a scan. */
     protected readonly $lockedByOthersSet = computed(() => new Set(this.$lockedByOthers()));
@@ -922,6 +957,7 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
         }
 
         this.$activeRowIndex.set(index);
+        this.#reportActiveRow(index);
 
         // Both non-default intents leave the anchor alone — that is the whole difference between
         // extending a range and moving through the listing. They differ only in who emits: an arrow
@@ -983,6 +1019,8 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
         // Both register render-phase work whose only purpose is the side effect, so they are called
         // rather than assigned: a private field nothing reads is exactly what the lint rule is for.
         this.#seedRovingTabStop();
+        // After the seed, so a requested row wins over the seed's reset to the top.
+        this.#followActiveKey();
         this.#applyRovingTabStop();
         this.#trackFocusIntent();
 
@@ -993,6 +1031,65 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
                 this.#pageChangeAccepted.set(false);
             }
         });
+    }
+
+    /**
+     * Moves the tab stop and the anchor to the row named by `activeKey` (#37930).
+     *
+     * Skips the echo of this table's own report — the shell hands every reported key straight back —
+     * because re-anchoring there would collapse a Shift range in progress onto its far end.
+     */
+    #followActiveKey(): void {
+        effect(() => {
+            const key = this.$activeKey();
+            const items = this.$items();
+            const offset = this.$offset();
+
+            untracked(() => {
+                if (key === null) {
+                    return;
+                }
+
+                const dataKey = this.$dataKey() as keyof DotContentDriveBrowseItem;
+                const index = items.findIndex((item) => item[dataKey] === key);
+
+                if (index === -1) {
+                    return;
+                }
+
+                if (key === this.#lastReportedKey && index === this.$activeRowIndex()) {
+                    return;
+                }
+
+                this.$activeRowIndex.set(index);
+
+                const table = this.dataTable();
+
+                if (table && !this.$disabled() && !this.$readOnly()) {
+                    table.anchorRowIndex = offset + index;
+                }
+            });
+        });
+    }
+
+    /** Reports the row at `index` as the one holding the tab stop, once per change. */
+    #reportActiveRow(index: number): void {
+        const item = this.$items()[index];
+        const key = item
+            ? (item[this.$dataKey() as keyof DotContentDriveBrowseItem] as string)
+            : null;
+
+        if (key === this.#lastReportedKey) {
+            return;
+        }
+
+        this.#lastReportedKey = key;
+        this.activeKeyChange.emit(key);
+    }
+
+    /** Scrolls the row that holds the tab stop into view, if it is off screen (#37930). */
+    revealActive(): void {
+        this.#rowElements()[this.$activeRowIndex()]?.scrollIntoView({ block: 'nearest' });
     }
 
     readonly #onKeydownCapture = (event: KeyboardEvent): void => {
@@ -1069,6 +1166,7 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
             // extends from the row the user last chose deliberately rather than from wherever the
             // anchor happened to be seeded.
             this.$activeRowIndex.set(pageIndex);
+            this.#reportActiveRow(pageIndex);
 
             const table = this.dataTable();
 

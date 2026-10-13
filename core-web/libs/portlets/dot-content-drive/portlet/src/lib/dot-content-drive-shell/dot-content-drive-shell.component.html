@@ -120,7 +120,37 @@
         (dragEnd)="onDragEnd()"
         (drop)="onTableDrop($event)"
         (scroll)="onTableScroll()"
+        [rows]="$rows()"
+        [activeKey]="$activeListingKey()"
+        (activeKeyChange)="onActiveListingKeyChange($event)"
+        [style.display]="$isGridView() ? 'none' : null"
         #listView />
+
+    <!-- The grid (#37930). The table above stays mounted while it shows, hidden: destroying it
+         would re-run its lazy load on the way back, a fresh search with the page size reset to 20.
+         Both are wired to the same handlers, so a card does what a row does. -->
+    @if ($isGridView()) {
+        <dot-content-drive-grid-view
+            [items]="$items()"
+            [selection]="$selectedItems()"
+            [loading]="$loading()"
+            [busyRows]="$busyRows()"
+            [totalItems]="$totalItems()"
+            [offset]="$offset()"
+            [rows]="$rows()"
+            [languagesMap]="$languagesMap()"
+            [activeKey]="$activeListingKey()"
+            data-testid="grid-view"
+            (selectionChange)="onSelectItems($event)"
+            (paginate)="onPaginate($event)"
+            (open)="onDoubleClick($event)"
+            (rightClick)="onContextMenu($event)"
+            (dragStart)="onDragStart($event)"
+            (dragEnd)="onDragEnd()"
+            (drop)="onTableDrop($event)"
+            (scroll)="onTableScroll()"
+            (activeKeyChange)="onActiveListingKeyChange($event)" />
+    }
 </dot-upload-dropzone>
 <dot-folder-list-context-menu />
 
