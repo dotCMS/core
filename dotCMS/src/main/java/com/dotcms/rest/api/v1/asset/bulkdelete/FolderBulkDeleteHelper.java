@@ -70,7 +70,8 @@ public class FolderBulkDeleteHelper {
     /**
      * Validates the submission and enqueues the run.
      *
-     * @param form the submitted paths
+     * @param form the submitted paths; null when the request had no body, which is refused as an
+     *             empty selection
      * @param user the submitting author; the run executes with their permissions and the completion
      *             is addressed to them
      * @return the run's handle. No folder has been deleted yet.
@@ -82,7 +83,7 @@ public class FolderBulkDeleteHelper {
     public FolderBulkDeleteSubmitResponse submit(final FolderBulkDeleteForm form, final User user)
             throws DotDataException {
 
-        if (form.assetPaths().isEmpty()) {
+        if (form == null || form.assetPaths().isEmpty()) {
             throw new FolderBulkDeleteRefusedException(
                     "EMPTY_SELECTION", "assetPaths", Response.Status.BAD_REQUEST,
                     "no folder paths were submitted");
