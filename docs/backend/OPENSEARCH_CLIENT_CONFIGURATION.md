@@ -98,6 +98,12 @@ caller default is used directly if the OS key is missing.
 |---|---|---|---|---|
 | `OS_BULK_TIMEOUT` | `ES_BULK_TIMEOUT` | `int` (milliseconds) | `30000` | Timeout for bulk indexing requests. |
 | `OS_BULK_BATCH_SIZE` | `ES_BULK_BATCH_SIZE` | `int` | `100` | Maximum number of documents per bulk request. |
+| `OS_REINDEX_BULK_SIZE_MB` | `REINDEX_THREAD_ELASTICSEARCH_BULK_SIZE` | `int` (MB) | `10` | Maximum estimated size of one **reindex** bulk request to OpenSearch; the batch is also closed at `REINDEX_THREAD_ELASTICSEARCH_BULK_ACTIONS` documents, whichever comes first. A document larger than the limit is sent alone. The fallback is used only when it is positive: an Elasticsearch `-1` ("disabled") is **not** inherited and 10 MB applies. Setting this key to `0` or less disables the size limit on purpose and logs a WARN (at most hourly). Sizes are estimates (each document's JSON characters counted as bytes), so keep the value well below the server's `http.max_content_length` (100 MB by default; lower on some managed services). |
+
+> **Before #37905** the OpenSearch reindex processor closed a batch by document count only, so a
+> few large documents could make a request that OpenSearch rejects with HTTP 413 (failing every
+> document in it) and exhaust the heap while it was built. On a build without the fix, lower
+> `REINDEX_THREAD_ELASTICSEARCH_BULK_ACTIONS` (shipped value 250) to keep requests small.
 
 ---
 
