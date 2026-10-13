@@ -58,9 +58,9 @@ that mock `Config` statically must call `AssetStorageFeature.reset()` themselves
 Turning the flag on is a one-way operational decision. With a namespace set (see below), the
 objects written with the flag on live under `asset-namespaces/<namespace>/`, which a release
 without this feature does not read. The flag-off path of this release ignores the namespace
-too, so turning the flag off again hides those objects in the same way. The later slices that
-store binaries in S3 add a layout that an older release cannot read either: a JSON reference at
-the owner key and the bytes under `asset-blobs/sha256/...`. Once assets are written that way,
+too, so turning the flag off again hides those objects in the same way. Binaries are stored in
+a layout that an older release cannot read either: a JSON reference at the owner key and the
+bytes under `asset-blobs/sha256/...`. Once assets are written that way,
 do not roll back below the release that ships this feature without first migrating those
 assets back to the previous layout.
 
