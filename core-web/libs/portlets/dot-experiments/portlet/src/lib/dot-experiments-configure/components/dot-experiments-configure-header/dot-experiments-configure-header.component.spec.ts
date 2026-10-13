@@ -5,7 +5,6 @@ import {
     mockProvider,
     Spectator
 } from '@openng/spectator/vitest';
-import { of } from 'rxjs';
 import { Mock, MockInstance, vi } from 'vitest';
 
 import { provideLocationMocks } from '@angular/common/testing';
@@ -14,7 +13,7 @@ import { ActivatedRoute, Params, provideRouter, Router } from '@angular/router';
 
 import { Confirmation, ConfirmationService, ConfirmEventType, MenuItem } from 'primeng/api';
 
-import { DotExperimentsService, DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
+import { DotMessageService } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import {
     CONFIGURATION_CONFIRM_DIALOG_KEY,
@@ -149,11 +148,7 @@ describe('DotExperimentsConfigureHeaderComponent', () => {
             { provide: DotExperimentsConfigureStore, useFactory: () => storeMock },
             { provide: DotMessageService, useValue: messageServiceMock },
             mockProvider(DotPushPublishDialogService),
-            mockProvider(DotMessageDisplayService),
-            ConfirmationService,
-            mockProvider(DotExperimentsService, {
-                healthCheck: vi.fn().mockReturnValue(of({ health: 'OK', tier: 'full' }))
-            })
+            ConfirmationService
         ],
         detectChanges: false
     });
