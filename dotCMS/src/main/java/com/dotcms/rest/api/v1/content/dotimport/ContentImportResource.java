@@ -3,6 +3,13 @@ package com.dotcms.rest.api.v1.content.dotimport;
 import static com.dotcms.rest.api.v1.content.dotimport.ContentImportHelper.CMD_PREVIEW;
 import static com.dotcms.rest.api.v1.content.dotimport.ContentImportHelper.CMD_PUBLISH;
 
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.cache.FieldsCache;
+import com.dotmarketing.util.UtilMethods;
+import java.nio.charset.StandardCharsets;
+import javax.ws.rs.BadRequestException;
+import javax.ws.rs.core.StreamingOutput;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
 import com.dotcms.jobs.business.job.JobView;
@@ -13,9 +20,11 @@ import com.dotcms.rest.ResponseEntityJobView;
 import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.rest.api.v1.job.SSEMonitorUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.swagger.v3.oas.annotations.Operation;
@@ -227,6 +236,195 @@ public class ContentImportResource {
         return importHelper.handleJobCreation(
                 CMD_PREVIEW, params, initDataObject, request
         );
+    }
+
+    /**
+     * Lists the content types the current user can import content into: those they have WRITE
+     * permission on, except Host, sorted by name. This is the list Content Search's import offers,
+     * and the one Content Drive's import form uses (#37896).
+     *
+     * @param request  the HTTP servlet request
+     * @param response the HTTP servlet response
+     * @return the content types the user can import into
+     * @throws DotDataException     if the content types or their permissions can't be read
+     * @throws DotSecurityException if the user can't list content types
+     */
+    @GET
+    @Path("/contenttypes")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(
+            operationId = "getImportableContentTypes",
+            summary = "Lists the content types the user can import into",
+            description = "Returns every content type the current user has WRITE permission on, "
+                    + "except Host, sorted by name. These are the content types a CSV import can "
+                    + "target, the same list Content Search's import offers.",
+            tags = {"Content Import"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "The content types the user can import into (possibly empty).",
+                            content = @Content(
+                                    mediaType = MediaType.APPLICATION_JSON,
+                                    schema = @Schema(implementation = ResponseEntityImportContentTypeListView.class)
+                            )
+                    ),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized: Invalid or missing user authentication."),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error: The content types could not be read.")
+            }
+    )
+    public ResponseEntityImportContentTypeListView getWritableContentTypes(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response)
+            throws DotDataException, DotSecurityException {
+
+        final var initDataObject = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+
+        return new ResponseEntityImportContentTypeListView(
+                importHelper.getWritableContentTypes(initDataObject.getUser()));
+    }
+
+    /**
+     * Downloads the sample CSV for a content type: a header row of its importable fields and a row
+     * of placeholders showing each field's format. It is the same file Content Search's import
+     * offers (#37896).
+     *
+     * @param request     the HTTP servlet request
+     * @param response    the HTTP servlet response
+     * @param contentType the content type's id or variable
+     * @return the CSV as an attachment named {@code CSV_Template.csv}
+     * @throws DotDataException     if the content type can't be read (404 when it doesn't exist)
+     * @throws DotSecurityException if the user can't read the content type (403)
+     */
+    @GET
+    @Path("/_sample")
+    @Produces("text/csv")
+    @NoCache
+    @Operation(
+            operationId = "downloadContentImportSample",
+            summary = "Downloads a sample CSV for importing a content type",
+            description = "Returns the sample CSV Content Search's import offers: a header row of "
+                    + "the content type's importable fields, in their order on the type, and a row "
+                    + "of placeholders showing each field's expected format (for example "
+                    + "MM/dd/yyyy for date fields).",
+            tags = {"Content Import"},
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "The sample CSV.",
+                            content = @Content(mediaType = "text/csv",
+                                    schema = @Schema(type = "string", format = "binary",
+                                            description = "Two CSV lines: field variables, then "
+                                                    + "placeholders."))),
+                    @ApiResponse(responseCode = "400", description = "Bad Request: contentType is missing."),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized: Invalid or missing user authentication."),
+                    @ApiResponse(responseCode = "403", description = "Forbidden: The user can't read the content type."),
+                    @ApiResponse(responseCode = "404", description = "Not Found: The content type doesn't exist.")
+            }
+    )
+    public Response downloadSample(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @QueryParam("contentType")
+            @Parameter(
+                    name = "contentType",
+                    in = ParameterIn.QUERY,
+                    required = true,
+                    description = "The content type's identifier or variable name.",
+                    schema = @Schema(type = "string", example = "Blog")
+            )
+            final String contentType
+    ) throws DotDataException, DotSecurityException {
+
+        final var initDataObject = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+
+        if (!UtilMethods.isSet(contentType)) {
+            throw new BadRequestException("The contentType query parameter is required");
+        }
+
+        // Checks READ for the backend user (frontend roles don't count here, as in the writable
+        // types list) and throws NotFoundInDbException for an unknown type
+        final ContentType type = APILocator.getContentTypeAPI(initDataObject.getUser(), false)
+                .find(contentType);
+        final String csv = ContentImportTemplateGenerator.generate(
+                FieldsCache.getFieldsByStructureInode(type.inode()));
+
+        final StreamingOutput body = output ->
+                output.write(csv.getBytes(StandardCharsets.ISO_8859_1));
+        return Response.ok(body, "text/csv")
+                .header("Content-Disposition", "attachment; filename=\"CSV_Template.csv\"")
+                .build();
+    }
+
+    /**
+     * Previews a content import in the same request: a dry run of the CSV against the content
+     * type, language, workflow action and key fields that writes nothing, answered with the
+     * finished job and its result. It is what Content Search's preview does; unlike
+     * {@code /_validate}, nothing is queued, so the answer doesn't wait on the job queue (#37896).
+     *
+     * @param request  the HTTP servlet request
+     * @param response the HTTP servlet response
+     * @param params   the CSV file and the import form
+     * @return 200 with the finished preview job, or 400 with a failed job naming the error
+     * @throws DotDataException if the import data can't be read
+     * @throws IOException      if the file can't be read
+     */
+    @POST
+    @Path("/_preview")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(
+            operationId = "previewContentImport",
+            summary = "Previews a content import from a CSV file, in the same request",
+            description = "Runs the import of the CSV in preview mode and answers with the finished "
+                    + "job: what would be created and updated, where the rows would land, and every "
+                    + "warning and error, without writing anything. Unlike /_validate, no job is "
+                    + "queued, so the answer doesn't wait on the job queue.",
+            tags = {"Content Import"},
+            requestBody = @RequestBody(
+                    required = true,
+                    description = ContentImportDocs.FORM_FIELD_DOC,
+                    content = @Content(
+                            mediaType = MediaType.MULTIPART_FORM_DATA,
+                            schema = @Schema(implementation = ContentImportParamsSchema.class)
+                    )
+            ),
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "The finished preview: the job, in state SUCCESS, with the import result.",
+                            content = @Content(
+                                    mediaType = MediaType.APPLICATION_JSON,
+                                    schema = @Schema(implementation = ResponseEntityJobView.class)
+                            )
+                    ),
+                    @ApiResponse(responseCode = "400", description = "Bad Request: Invalid parameters, an unknown site, or a file that can't be previewed; the body is a failed job naming the error."),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized: Invalid or missing user authentication."),
+                    @ApiResponse(responseCode = "403", description = "Forbidden: The user can't read the requested site."),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error: An unexpected error occurred while previewing.")
+            }
+    )
+    public Response previewContentImport(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @BeanParam final ContentImportParams params)
+            throws DotDataException, IOException {
+
+        final var initDataObject = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+
+        return importHelper.handlePreview(params, initDataObject, request);
     }
 
     /**

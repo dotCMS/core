@@ -9,10 +9,29 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dotcms.Junit5WeldBaseTest;
+import com.dotcms.jobs.business.job.JobState;
+import java.util.Map;
+import com.dotcms.jobs.business.job.JobResult;
+import com.dotcms.jobs.business.job.JobView;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.cache.FieldsCache;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
+import javax.ws.rs.core.StreamingOutput;
+import javax.ws.rs.BadRequestException;
+import java.nio.charset.StandardCharsets;
+import java.io.ByteArrayOutputStream;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.rest.exception.ForbiddenException;
+import com.dotcms.datagen.SiteDataGen;
+import java.util.stream.Collectors;
+import java.util.Arrays;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.beans.Permission;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobViewPaginatedResult;
 import com.dotcms.jobs.business.util.JobUtil;
@@ -548,6 +567,354 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
         assertBadRequestResponse(importResource.validateContentImport(request, response, params));
     }
 
+    /**
+     * Given scenario: a limited backend user has READ and EDIT on one new content type and only READ
+     * on another, and asks for the content types they can import into.
+     * Expected result: the list holds the first type, not the read-only one and never Host, and is
+     * sorted by name. Each item carries id, variable, name and base type (#37896, FR-004).
+     */
+    @Test
+    void test_writable_content_types_only_lists_types_the_user_can_write() throws Exception {
+        final ContentType writable = new ContentTypeDataGen()
+                .name("ImportWritable" + System.currentTimeMillis()).nextPersisted();
+        final ContentType readOnly = new ContentTypeDataGen()
+                .name("ImportReadOnly" + System.currentTimeMillis()).nextPersisted();
+        try {
+            final User limitedUser = new UserDataGen()
+                    .roles(TestUserUtils.getBackendRole()).nextPersisted();
+            addPermission(writable, limitedUser, PermissionAPI.PERMISSION_READ,
+                    PermissionAPI.PERMISSION_EDIT);
+            addPermission(readOnly, limitedUser, PermissionAPI.PERMISSION_READ);
+            final HttpServletRequest limitedRequest =
+                    JobUtil.generateMockRequest(limitedUser, defaultSite.getHostname());
+
+            final List<ImportContentTypeView> types = importResource
+                    .getWritableContentTypes(limitedRequest, response).getEntity();
+
+            assertNotNull(types, "The list of writable content types should not be null");
+            final List<String> variables = types.stream()
+                    .map(ImportContentTypeView::variable).collect(Collectors.toList());
+            assertTrue(variables.contains(writable.variable()),
+                    "A type the user can edit should be listed");
+            assertFalse(variables.contains(readOnly.variable()),
+                    "A type the user can only read should not be listed");
+            assertFalse(variables.stream().anyMatch(Host.HOST_VELOCITY_VAR_NAME::equalsIgnoreCase),
+                    "Host should never be listed");
+
+            final ImportContentTypeView item = types.stream()
+                    .filter(type -> writable.variable().equals(type.variable()))
+                    .findFirst().orElseThrow();
+            assertEquals(writable.id(), item.id());
+            assertEquals(writable.name(), item.name());
+            assertEquals(writable.baseType().name(), item.baseType());
+
+            final List<String> names = types.stream()
+                    .map(ImportContentTypeView::name).collect(Collectors.toList());
+            final List<String> sorted = names.stream()
+                    .sorted(String.CASE_INSENSITIVE_ORDER).collect(Collectors.toList());
+            assertEquals(sorted, names, "Types should be sorted by name");
+        } finally {
+            ContentTypeDataGen.remove(writable);
+            ContentTypeDataGen.remove(readOnly);
+        }
+    }
+
+    /**
+     * Given scenario: an admin asks for the content types they can import into.
+     * Expected result: the suite's own content type is listed and Host is not (#37896, FR-004).
+     */
+    @Test
+    void test_writable_content_types_for_admin_excludes_host() throws Exception {
+        final List<ImportContentTypeView> types =
+                importResource.getWritableContentTypes(request, response).getEntity();
+
+        final List<String> variables = types.stream()
+                .map(ImportContentTypeView::variable).collect(Collectors.toList());
+        assertTrue(variables.contains(contentType.variable()),
+                "The admin should be able to import into the test content type");
+        assertFalse(variables.stream().anyMatch(Host.HOST_VELOCITY_VAR_NAME::equalsIgnoreCase),
+                "Host should never be listed");
+    }
+
+    /**
+     * Given scenario: a preview is requested with {@code site} set to another site's identifier.
+     * Expected result: the job runs against that site, not the session's (#37896, FR-023).
+     */
+    @Test
+    void test_validate_with_site_id_uses_that_site() throws Exception {
+        final Host otherSite = new SiteDataGen().nextPersisted();
+        final ContentImportForm form = createContentImportForm(contentType.name(),
+                String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID,
+                List.of(fieldId), otherSite.getIdentifier());
+
+        final Response result = importResource.validateContentImport(request, response,
+                createContentImportParams(csvFile, form));
+
+        final Job job = jobOf(result);
+        assertEquals(otherSite.getIdentifier(), job.parameters().get("siteIdentifier"));
+        assertEquals(otherSite.getHostname(), job.parameters().get("siteName"));
+    }
+
+    /**
+     * Given scenario: an import is requested with {@code site} set to another site's hostname.
+     * Expected result: the hostname resolves, and the job runs against that site (#37896, FR-023).
+     */
+    @Test
+    void test_import_with_site_hostname_uses_that_site() throws Exception {
+        final Host otherSite = new SiteDataGen().nextPersisted();
+        final ContentImportForm form = createContentImportForm(contentType.name(),
+                String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID,
+                List.of(fieldId), otherSite.getHostname());
+
+        final Response result = importResource.importContent(request, response,
+                createContentImportParams(csvFile, form));
+
+        assertEquals(otherSite.getIdentifier(), jobOf(result).parameters().get("siteIdentifier"));
+    }
+
+    /**
+     * Given scenario: {@code site} names a site that doesn't exist.
+     * Expected result: the request is refused with 400 and no job runs (#37896, FR-023).
+     */
+    @Test
+    void test_validate_with_unknown_site_is_refused() throws Exception {
+        final ContentImportForm form = createContentImportForm(contentType.name(),
+                String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID,
+                List.of(fieldId), "no-such-site-" + System.currentTimeMillis() + ".example");
+
+        assertBadRequestResponse(importResource.validateContentImport(request, response,
+                createContentImportParams(csvFile, form)));
+    }
+
+    /**
+     * Given scenario: a limited backend user names a site they have no permission to read.
+     * Expected result: the request is refused as forbidden, which the REST layer answers with 403
+     * (#37896, FR-023).
+     */
+    @Test
+    void test_validate_with_unreadable_site_is_forbidden() throws Exception {
+        final Host privateSite = new SiteDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen()
+                .roles(TestUserUtils.getBackendRole()).nextPersisted();
+        final HttpServletRequest limitedRequest =
+                JobUtil.generateMockRequest(limitedUser, defaultSite.getHostname());
+        final ContentImportForm form = createContentImportForm(contentType.name(),
+                String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID,
+                List.of(fieldId), privateSite.getIdentifier());
+
+        assertThrows(ForbiddenException.class, () -> importResource.validateContentImport(
+                limitedRequest, response, createContentImportParams(csvFile, form)));
+    }
+
+    /**
+     * Given scenario: an import job is created from an uploaded CSV.
+     * Expected result: the job records the CSV's original file name, so Content Drive can name the
+     * import in its status toast after a reload (#37896).
+     */
+    @Test
+    void test_import_job_records_the_file_name() throws Exception {
+        final ContentImportForm form = createContentImportForm(contentType.name(),
+                String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID,
+                List.of(fieldId));
+
+        final Response result = importResource.importContent(request, response,
+                createContentImportParams(csvFile, form));
+
+        assertEquals(csvFile.getName(), jobOf(result).parameters().get("fileName"));
+    }
+
+    /**
+     * Given scenario: the sample CSV for the suite's content type is requested.
+     * Expected result: 200 {@code text/csv} named {@code CSV_Template.csv}, whose body is what the
+     * template generator writes for that type's fields — the same file Content Search offers
+     * (#37896, FR-024).
+     */
+    @Test
+    void test_sample_csv_is_the_content_search_template() throws Exception {
+        final Response result =
+                importResource.downloadSample(request, response, contentType.variable());
+
+        assertEquals(Response.Status.OK.getStatusCode(), result.getStatus());
+        assertTrue(String.valueOf(result.getMediaType()).startsWith("text/csv"));
+        assertEquals("attachment; filename=\"CSV_Template.csv\"",
+                result.getHeaderString("Content-Disposition"));
+
+        final ByteArrayOutputStream body = new ByteArrayOutputStream();
+        ((StreamingOutput) result.getEntity()).write(body);
+        assertEquals(ContentImportTemplateGenerator.generate(
+                        FieldsCache.getFieldsByStructureInode(contentType.inode())),
+                body.toString(StandardCharsets.UTF_8));
+    }
+
+    /**
+     * Given scenario: the sample CSV is requested with no content type.
+     * Expected result: the request is refused as a bad request (400).
+     */
+    @Test
+    void test_sample_csv_without_content_type_is_refused() {
+        assertThrows(BadRequestException.class,
+                () -> importResource.downloadSample(request, response, null));
+    }
+
+    /**
+     * Given scenario: the sample CSV is requested for a content type that doesn't exist.
+     * Expected result: not found (404).
+     */
+    @Test
+    void test_sample_csv_for_unknown_type_is_not_found() {
+        assertThrows(NotFoundInDbException.class, () -> importResource.downloadSample(request,
+                response, "noSuchType" + System.currentTimeMillis()));
+    }
+
+    /**
+     * Given scenario: a limited backend user asks for the sample of a type they can't read.
+     * Expected result: refused (403), so the endpoint doesn't reveal a type's fields.
+     */
+    @Test
+    void test_sample_csv_for_unreadable_type_is_forbidden() throws Exception {
+        final ContentType privateType = new ContentTypeDataGen()
+                .name("ImportPrivate" + System.currentTimeMillis()).nextPersisted();
+        // Individual permissions for the admin only, so the type stops inheriting the site's
+        // permissions and the limited user really can't read it
+        APILocator.getPermissionAPI().save(new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                        privateType.getPermissionId(),
+                        APILocator.getRoleAPI().loadRoleByKey(adminUser.getUserId()).getId(),
+                        PermissionAPI.PERMISSION_READ, true),
+                privateType, APILocator.systemUser(), false);
+        try {
+            final User limitedUser = new UserDataGen()
+                    .roles(TestUserUtils.getBackendRole()).nextPersisted();
+            final HttpServletRequest limitedRequest =
+                    JobUtil.generateMockRequest(limitedUser, defaultSite.getHostname());
+
+            assertThrows(DotSecurityException.class, () -> importResource.downloadSample(
+                    limitedRequest, response, privateType.variable()));
+        } finally {
+            ContentTypeDataGen.remove(privateType);
+        }
+    }
+
+    /**
+     * Given scenario: a preview is requested for a CSV that has a header and no data rows.
+     * Expected result: 400 with a failed job whose result carries an error message the Drive's
+     * import dialog can show (#37896, US5).
+     */
+    @Test
+    @SuppressWarnings("unchecked")
+    void test_validate_empty_csv_explains_the_failure() throws Exception {
+        final File headerOnly = File.createTempFile("header-only", ".csv");
+        try {
+            Files.write(headerOnly.toPath(), "title,body\n".getBytes());
+            final ContentImportForm form = createContentImportForm(contentType.name(),
+                    String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID,
+                    List.of(fieldId));
+
+            final Response result = importResource.validateContentImport(request, response,
+                    createContentImportParams(headerOnly, form));
+
+            assertBadRequestResponse(result);
+            final JobView job = ((ResponseEntityView<JobView>) result.getEntity()).getEntity();
+            final Map<String, Object> metadata =
+                    job.result().flatMap(JobResult::metadata).orElseThrow();
+            final List<Map<String, Object>> errors =
+                    (List<Map<String, Object>>) metadata.get("error");
+            assertFalse(errors.isEmpty(), "The failed job should explain why");
+            assertFalse(String.valueOf(errors.get(0).get("message")).isBlank(),
+                    "The first error should carry a message");
+        } finally {
+            headerOnly.delete();
+        }
+    }
+
+    /**
+     * Given scenario: a preview is requested through the synchronous preview endpoint.
+     * Expected result: 200 with an already finished job — state SUCCESS, type PREVIEW and the
+     * summary of the two CSV rows — answered in the same request, with no job left in the queue
+     * (#37896: Content Search's preview is instantaneous, and the Drive's must be too).
+     */
+    @Test
+    @SuppressWarnings("unchecked")
+    void test_preview_runs_in_the_request() throws Exception {
+        final int activeBefore = importResource.activeJobs(request, response, 1, 100)
+                .getEntity().jobs().size();
+        final ContentImportForm form = createContentImportForm(contentType.name(),
+                String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID,
+                List.of(fieldId));
+
+        final Response result = importResource.previewContentImport(request, response,
+                createContentImportParams(csvFile, form));
+
+        assertEquals(Response.Status.OK.getStatusCode(), result.getStatus());
+        final JobView job = ((ResponseEntityView<JobView>) result.getEntity()).getEntity();
+        assertEquals(JobState.SUCCESS, job.state());
+        final Map<String, Object> metadata =
+                job.result().flatMap(JobResult::metadata).orElseThrow();
+        assertEquals("PREVIEW", String.valueOf(metadata.get("type")));
+        final Map<String, Object> summary = (Map<String, Object>)
+                ((Map<String, Object>) metadata.get("data")).get("summary");
+        assertEquals(2, ((Number) summary.get("created")).intValue(),
+                "Both CSV rows would be created");
+        assertEquals(activeBefore, importResource.activeJobs(request, response, 1, 100)
+                .getEntity().jobs().size(), "A synchronous preview leaves no job in the queue");
+    }
+
+    /**
+     * Given scenario: the synchronous preview is requested without a file.
+     * Expected result: 400, as the job-based validate endpoint answers.
+     */
+    @Test
+    void test_preview_without_file_is_refused() throws Exception {
+        final ContentImportParams params = new ContentImportParams();
+        params.setJsonForm(mapper.writeValueAsString(createContentImportForm(contentType.name(),
+                String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID,
+                List.of(fieldId))));
+
+        assertBadRequestResponse(importResource.previewContentImport(request, response, params));
+    }
+
+    /**
+     * Given scenario: the synchronous preview names a site that doesn't exist.
+     * Expected result: 400, with the reason in the failed job's errors.
+     */
+    @Test
+    void test_preview_with_unknown_site_is_refused() throws Exception {
+        final ContentImportForm form = createContentImportForm(contentType.name(),
+                String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID,
+                List.of(fieldId), "no-such-site-" + System.currentTimeMillis() + ".example");
+
+        assertBadRequestResponse(importResource.previewContentImport(request, response,
+                createContentImportParams(csvFile, form)));
+    }
+
+    /**
+     * Reads the job a successful create/validate response refers to.
+     *
+     * @param result the endpoint's response
+     * @return the job
+     */
+    private Job jobOf(final Response result) throws DotDataException {
+        assertEquals(Response.Status.OK.getStatusCode(), result.getStatus());
+        final ResponseEntityJobStatusView view = (ResponseEntityJobStatusView) result.getEntity();
+        return contentImportHelper.getJob(view.getEntity().jobId());
+    }
+
+    /**
+     * Grants a limited user's individual role the given permissions on a permissionable.
+     *
+     * @param permissionable what the permissions apply to
+     * @param limitedUser    the user whose personal role receives them
+     * @param permissions    the permission bits to add together
+     * @throws Exception if the permission can't be saved
+     */
+    private static void addPermission(final Permissionable permissionable, final User limitedUser,
+            final int... permissions) throws Exception {
+        final Permission permission = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                permissionable.getPermissionId(),
+                APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
+                Arrays.stream(permissions).sum(), true);
+        APILocator.getPermissionAPI().save(permission, permissionable, APILocator.systemUser(), false);
+    }
+
     private void validateJobPaginatedResult(ResponseEntityView<JobViewPaginatedResult> result, long expectedTotalJobs) {
         assertNotNull(result, "Response should not be null");
 
@@ -693,6 +1060,17 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
     private ContentImportForm createContentImportForm(String contentType, String language,
             String workflowActionId, List<String> fields) {
         return new ContentImportForm(contentType, language, workflowActionId, fields, null, null);
+    }
+
+    /**
+     * Creates a ContentImportForm that names the site the import runs against (#37896).
+     *
+     * @param site the site's identifier or hostname
+     */
+    private ContentImportForm createContentImportForm(String contentType, String language,
+            String workflowActionId, List<String> fields, String site) {
+        return new ContentImportForm(contentType, language, workflowActionId, fields, null, null,
+                site);
     }
 
     /**

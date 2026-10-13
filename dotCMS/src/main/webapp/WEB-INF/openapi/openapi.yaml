@@ -6780,11 +6780,12 @@ paths:
           | **Property**         | **Type**   | **Required** | **Default** | **Description** |
           |----------------------|------------|--------------|-------------|-----------------|
           | `contentType`        | String     | ✅ Yes        | –           | Content Type variable or ID to import data into. |
-          | `language`           | String     | ❌ No         | Default language | Language code (e.g., `en-US`) or language ID. |
+          | `language`           | String     | ❌ No         | Multilingual | Language code (e.g., `en-US`) or language ID. Leaving it out, or sending `-1`, imports a multilingual file: each row carries its language in `languageCode` and `countryCode` columns, and at least one key field is required. |
           | `workflowActionId`   | String     | ✅ Yes        | –           | Workflow Action UUID to apply to imported content. |
           | `fields`             | String[]   | ❌ No         | –           | List of field variables or IDs used as keys for content updates. |
           | `stopOnError`        | Boolean    | ❌ No         | `false`     | Whether to stop import on first validation error. |
           | `commitGranularity`  | Integer    | ❌ No         | `100`       | Number of rows to commit in each transaction batch. |
+          | `site`               | String     | ❌ No         | Session site | Site identifier or hostname the import runs against, in place of the session's site. It resolves in-row references such as File and Image values; it does not change where rows are placed. An unknown site is refused with 400, a site the user can't read with 403. |
 
           **Example `form` value:**
 
@@ -6795,7 +6796,8 @@ paths:
             "workflowActionId": "b9d89c80-3d88-4311-8365-187323c96436",
             "fields": ["title"],
             "stopOnError": false,
-            "commitGranularity": 100
+            "commitGranularity": 100,
+            "site": "demo.dotcms.com"
           }
           ```
         required: true
@@ -6824,6 +6826,110 @@ paths:
       tags:
       - Content Import
       - Content
+  /v1/content/_import/_preview:
+    post:
+      description: "Runs the import of the CSV in preview mode and answers with the\
+        \ finished job: what would be created and updated, where the rows would land,\
+        \ and every warning and error, without writing anything. Unlike /_validate,\
+        \ no job is queued, so the answer doesn't wait on the job queue."
+      operationId: previewContentImport
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/ContentImportParamsSchema"
+        description: |-
+          This endpoint accepts a `multipart/form-data` request with two fields:
+
+          | **Field** | **Type** | **Required** | **Description** |
+          |-----------|----------|--------------|-----------------|
+          | `file`    | File     | ✅ Yes        | The CSV file to import. Must contain content rows and match the expected structure for the content type. |
+          | `form`    | String   | ✅ Yes        | A JSON string containing the import parameters. See structure below. |
+
+          **`form` field structure:**
+
+          | **Property**         | **Type**   | **Required** | **Default** | **Description** |
+          |----------------------|------------|--------------|-------------|-----------------|
+          | `contentType`        | String     | ✅ Yes        | –           | Content Type variable or ID to import data into. |
+          | `language`           | String     | ❌ No         | Multilingual | Language code (e.g., `en-US`) or language ID. Leaving it out, or sending `-1`, imports a multilingual file: each row carries its language in `languageCode` and `countryCode` columns, and at least one key field is required. |
+          | `workflowActionId`   | String     | ✅ Yes        | –           | Workflow Action UUID to apply to imported content. |
+          | `fields`             | String[]   | ❌ No         | –           | List of field variables or IDs used as keys for content updates. |
+          | `stopOnError`        | Boolean    | ❌ No         | `false`     | Whether to stop import on first validation error. |
+          | `commitGranularity`  | Integer    | ❌ No         | `100`       | Number of rows to commit in each transaction batch. |
+          | `site`               | String     | ❌ No         | Session site | Site identifier or hostname the import runs against, in place of the session's site. It resolves in-row references such as File and Image values; it does not change where rows are placed. An unknown site is refused with 400, a site the user can't read with 403. |
+
+          **Example `form` value:**
+
+          ```json
+          {
+            "contentType": "webPageContent",
+            "language": "en-US",
+            "workflowActionId": "b9d89c80-3d88-4311-8365-187323c96436",
+            "fields": ["title"],
+            "stopOnError": false,
+            "commitGranularity": 100,
+            "site": "demo.dotcms.com"
+          }
+          ```
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityJobView"
+          description: "The finished preview: the job, in state SUCCESS, with the\
+            \ import result."
+        "400":
+          description: "Bad Request: Invalid parameters, an unknown site, or a file\
+            \ that can't be previewed; the body is a failed job naming the error."
+        "401":
+          description: "Unauthorized: Invalid or missing user authentication."
+        "403":
+          description: "Forbidden: The user can't read the requested site."
+        "500":
+          description: "Internal Server Error: An unexpected error occurred while\
+            \ previewing."
+      summary: "Previews a content import from a CSV file, in the same request"
+      tags:
+      - Content Import
+      - Content
+  /v1/content/_import/_sample:
+    get:
+      description: "Returns the sample CSV Content Search's import offers: a header\
+        \ row of the content type's importable fields, in their order on the type,\
+        \ and a row of placeholders showing each field's expected format (for example\
+        \ MM/dd/yyyy for date fields)."
+      operationId: downloadContentImportSample
+      parameters:
+      - description: The content type's identifier or variable name.
+        in: query
+        name: contentType
+        required: true
+        schema:
+          type: string
+          example: Blog
+      responses:
+        "200":
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+                description: "Two CSV lines: field variables, then placeholders."
+          description: The sample CSV.
+        "400":
+          description: "Bad Request: contentType is missing."
+        "401":
+          description: "Unauthorized: Invalid or missing user authentication."
+        "403":
+          description: "Forbidden: The user can't read the content type."
+        "404":
+          description: "Not Found: The content type doesn't exist."
+      summary: Downloads a sample CSV for importing a content type
+      tags:
+      - Content Import
+      - Content
   /v1/content/_import/_validate:
     post:
       description: "Creates and enqueues a content import job in preview mode. This\
@@ -6848,11 +6954,12 @@ paths:
           | **Property**         | **Type**   | **Required** | **Default** | **Description** |
           |----------------------|------------|--------------|-------------|-----------------|
           | `contentType`        | String     | ✅ Yes        | –           | Content Type variable or ID to import data into. |
-          | `language`           | String     | ❌ No         | Default language | Language code (e.g., `en-US`) or language ID. |
+          | `language`           | String     | ❌ No         | Multilingual | Language code (e.g., `en-US`) or language ID. Leaving it out, or sending `-1`, imports a multilingual file: each row carries its language in `languageCode` and `countryCode` columns, and at least one key field is required. |
           | `workflowActionId`   | String     | ✅ Yes        | –           | Workflow Action UUID to apply to imported content. |
           | `fields`             | String[]   | ❌ No         | –           | List of field variables or IDs used as keys for content updates. |
           | `stopOnError`        | Boolean    | ❌ No         | `false`     | Whether to stop import on first validation error. |
           | `commitGranularity`  | Integer    | ❌ No         | `100`       | Number of rows to commit in each transaction batch. |
+          | `site`               | String     | ❌ No         | Session site | Site identifier or hostname the import runs against, in place of the session's site. It resolves in-row references such as File and Image values; it does not change where rows are placed. An unknown site is refused with 400, a site the user can't read with 403. |
 
           **Example `form` value:**
 
@@ -6863,7 +6970,8 @@ paths:
             "workflowActionId": "b9d89c80-3d88-4311-8365-187323c96436",
             "fields": ["title"],
             "stopOnError": false,
-            "commitGranularity": 100
+            "commitGranularity": 100,
+            "site": "demo.dotcms.com"
           }
           ```
         required: true
@@ -7059,6 +7167,27 @@ paths:
           description: "Internal Server Error: An unexpected error occurred while\
             \ retrieving jobs."
       summary: Retrieves completed content import jobs
+      tags:
+      - Content Import
+      - Content
+  /v1/content/_import/contenttypes:
+    get:
+      description: "Returns every content type the current user has WRITE permission\
+        \ on, except Host, sorted by name. These are the content types a CSV import\
+        \ can target, the same list Content Search's import offers."
+      operationId: getImportableContentTypes
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityImportContentTypeListView"
+          description: The content types the user can import into (possibly empty).
+        "401":
+          description: "Unauthorized: Invalid or missing user authentication."
+        "500":
+          description: "Internal Server Error: The content types could not be read."
+      summary: Lists the content types the user can import into
       tags:
       - Content Import
       - Content
@@ -27601,6 +27730,8 @@ components:
             type: string
         language:
           type: string
+        site:
+          type: string
         stopOnError:
           type: boolean
         workflowActionId:
@@ -27619,10 +27750,9 @@ components:
         form:
           type: string
           description: JSON string representing import settings.
-          example: "{\n  \"contentType\": \"activity\",\n  \"language\": \"en-US\"\
-            ,\n  \"workflowActionId\": \"b9d89c80-3d88-4311-8365-187323c96436\",\n\
-            \  \"fields\": [\"title\"]\n  \"stopOnError\":false \n  \"commitGranularity\"\
-            : 100\n}"
+          example: "{\"contentType\":\"activity\",\"language\":\"en-US\",\"workflowActionId\"\
+            :\"b9d89c80-3d88-4311-8365-187323c96436\",\"fields\":[\"title\"],\"stopOnError\"\
+            :false,\"commitGranularity\":100,\"site\":\"demo.dotcms.com\"}"
       required:
       - file
       - form
@@ -31796,6 +31926,19 @@ components:
         empty:
           type: boolean
       uniqueItems: true
+    ImportContentTypeView:
+      type: object
+      properties:
+        baseType:
+          type: string
+        icon:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+        variable:
+          type: string
     InferenceErrorView:
       type: object
       description: Error response in the OpenAI-compatible error shape
@@ -35318,6 +35461,31 @@ components:
       properties:
         entity:
           $ref: "#/components/schemas/Host"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityImportContentTypeListView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImportContentTypeView"
         errors:
           type: array
           items:
