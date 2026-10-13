@@ -116,9 +116,13 @@ public class CropImageFilter extends ImageFilter {
     protected Optional<Point> calcFocalPoint(final BufferedImage src, final Map<String, String[]> parameters) {
 
         final Dimension current = new Dimension(src.getWidth(), src.getHeight());
-		Optional<FocalPoint> optPoint = new FocalPointAPIImpl().parseFocalPointFromParams(parameters);
+		final boolean resolved = com.dotcms.storage.AssetStorageFeature.isEnabled()
+                && parameters.containsKey(RESOLVED_CROP_FOCAL_POINT);
+        Optional<FocalPoint> optPoint = resolved
+                ? new FocalPointAPIImpl().parseFocalPoint(parameters.get(RESOLVED_CROP_FOCAL_POINT)[0])
+                : new FocalPointAPIImpl().parseFocalPointFromParams(parameters);
         
-        if (optPoint.isEmpty()) {
+        if (optPoint.isEmpty() && !resolved) {
             final String inode = parameters.get("assetInodeOrIdentifier")[0];
             final String fieldVar = parameters.get("fieldVarName")[0];
             optPoint = new FocalPointAPIImpl().readFocalPoint(inode, fieldVar);

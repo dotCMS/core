@@ -116,6 +116,37 @@ class BinaryAssetReferenceTest {
         }
     }
 
+    @Test void replacementRenditionsHaveDistinctKeysAndStayInTheAssetShard() throws Exception {
+        String previous = Config.getStringProperty(AssetStorageFeature.FLAG, null);
+        try (var paths = mockStatic(ConfigUtils.class)) {
+            Config.setProperty(AssetStorageFeature.FLAG, true);
+            paths.when(ConfigUtils::getAssetPath).thenReturn(root.toString());
+            paths.when(ConfigUtils::getDotGeneratedPath).thenReturn(root.resolve("generated").toString());
+            File first = BinaryAssetReference.localFile("abc123", "HeroImage", "a/b/abc123/HeroImage/.revisions/" + UUID.randomUUID() + "/Friday.PNG");
+            File second = BinaryAssetReference.localFile("abc123", "HeroImage", "a/b/abc123/HeroImage/.revisions/" + UUID.randomUUID() + "/Friday.PNG");
+            Map<String, String[]> params = new HashMap<>();
+            params.put("resize_w", new String[]{"32"});
+            params.put("fieldVarName", new String[]{"HeroImage"});
+            params.put("assetInodeOrIdentifier", new String[]{"abc123"});
+            var filter = new com.dotmarketing.image.filter.ResizeImageFilter();
+            File oldRendition = filter.getResultsFile(first, params);
+            File newRendition = filter.getResultsFile(second, params);
+            assertNotEquals(oldRendition, newRendition);
+            assertEquals(root.resolve("generated/a/b/abc123").toFile().getCanonicalFile(), newRendition.getParentFile());
+            assertEquals(newRendition, filter.getResultsFile(second, params));
+            assertEquals(newRendition.getParentFile(), filter.getResultsFile(newRendition, params).getParentFile());
+            File uploadedName = BinaryAssetReference.localFile("abc123", "HeroImage",
+                    "a/b/abc123/HeroImage/.revisions/" + UUID.randomUUID() + "/dotGenerated_upload.PNG");
+            assertEquals(newRendition.getParentFile(), filter.getResultsFile(uploadedName, params).getParentFile(),
+                    "An uploaded filename alone must not be mistaken for a generated cache file");
+            Config.setProperty(AssetStorageFeature.FLAG, false);
+            assertEquals(root.resolve("generated/a/b").toFile().getCanonicalFile(),
+                    filter.getResultsFile(root.resolve("Original.PNG").toFile(), params).getParentFile());
+        } finally {
+            Config.setProperty(AssetStorageFeature.FLAG, previous);
+        }
+    }
+
     @Test void metadataEditsHaveIndependentReferencesAndSurviveJsonAndColdRestoration() throws Exception {
         final String previous = Config.getStringProperty(AssetStorageFeature.FLAG, null);
         try (var paths = mockStatic(ConfigUtils.class)) {

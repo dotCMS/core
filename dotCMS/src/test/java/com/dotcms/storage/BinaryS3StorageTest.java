@@ -897,6 +897,129 @@ class BinaryS3StorageTest {
         }
     }
 
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"PNG", "gif"})
+    void generatedImageRoundTripsWithoutRegenerationAndInvalidatesRemoteOnlyCopies(final String extension) throws Exception {
+        final String previousMode = Config.getStringProperty("BINARY_ASSET_STORAGE_TYPE", null);
+        Config.setProperty("BINARY_ASSET_STORAGE_TYPE", "BINARY_CHAIN");
+        final File source = root.resolve("Upload." + extension).toFile();
+        final var image = new java.awt.image.BufferedImage(80, 60, java.awt.image.BufferedImage.TYPE_INT_RGB);
+        javax.imageio.ImageIO.write(image, extension, source);
+        api.storeBinary("abc123", "HeroImage", "Photo." + extension, source);
+        final var imageAPI = mock(com.dotmarketing.image.filter.ImageFilterAPI.class);
+        when(imageAPI.resolveFilters(any())).thenReturn(Map.of("resize", CountingResizeImageFilter.class));
+        CountingResizeImageFilter.generations = 0;
+        try (var locator = mockStatic(com.dotmarketing.business.APILocator.class);
+             var engine = mockStatic(com.dotmarketing.image.ImageEngine.class)) {
+            locator.when(com.dotmarketing.business.APILocator::getBinaryAssetStorageAPI).thenReturn(api);
+            engine.when(com.dotmarketing.image.ImageEngine::resolve).thenReturn(imageAPI);
+            final var exporter = new com.dotmarketing.portlets.contentlet.business.exporter.ImageFilterExporter();
+            final Map<String, String[]> params = new java.util.HashMap<>();
+            params.put("resize_w", new String[]{"32"});
+            params.put("fieldVarName", new String[]{"HeroImage"});
+            params.put("assetInodeOrIdentifier", new String[]{"abc123"});
+            File original = api.getBinaryFile("abc123", "HeroImage", "Photo." + extension);
+            final File rendition = exporter.exportContent(original, params).getDataFile();
+            assertEquals(32, javax.imageio.ImageIO.read(rendition).getWidth());
+            assertEquals(1, CountingResizeImageFilter.generations);
+            final String key = BinaryAssetStorageAPI.GENERATED_ASSETS_GROUP + "/"
+                    + root.resolve("dotGenerated").toRealPath().relativize(rendition.toPath());
+            assertTrue(client.doesObjectExist(bucket, key));
+            final byte[] expected = Files.readAllBytes(rendition.toPath());
+            assertTrue(api.evictLocalFile(original));
+            assertTrue(api.evictLocalFile(rendition));
+            original = api.getBinaryFile("abc123", "HeroImage", "Photo." + extension);
+            final File restored = exporter.exportContent(original, params).getDataFile();
+            assertArrayEquals(expected, Files.readAllBytes(restored.toPath()));
+            assertEquals(1, CountingResizeImageFilter.generations, "Cold rendition comes from S3, not pixel work");
+
+            // Warm reads must not resurrect an object invalidated by another node.
+            client.deleteObject(bucket, key);
+            exporter.exportContent(original, params);
+            assertFalse(client.doesObjectExist(bucket, key));
+            assertEquals(1, CountingResizeImageFilter.generations);
+            assertFalse(api.evictLocalFile(restored), "No durable copy: retain the local rendition");
+            api.deleteGeneratedFiles("abc123");
+            assertFalse(client.doesObjectExist(bucket, key));
+            assertNull(api.getGeneratedFile(restored), "Invalidated renditions must not return from S3");
+            exporter.exportContent(original, params);
+            assertEquals(2, CountingResizeImageFilter.generations);
+            api.deleteBinary("abc123", "HeroImage");
+            assertFalse(client.doesObjectExist(bucket, key), "Deleting the source also invalidates S3 renditions");
+        } finally {
+            Config.setProperty("BINARY_ASSET_STORAGE_TYPE", previousMode);
+        }
+    }
+
+    @Test
+    void chainedCropPinsSnapshotFocalPointAndRestoresChangedCropFromS3() throws Exception {
+        final File source = root.resolve("MixedCase.PNG").toFile();
+        final var pixels = new java.awt.image.BufferedImage(80, 60, java.awt.image.BufferedImage.TYPE_INT_RGB);
+        for (int x = 0; x < 80; x++) {
+            for (int y = 0; y < 60; y++) {
+                pixels.setRGB(x, y, (x < 40 ? java.awt.Color.RED : java.awt.Color.BLUE).getRGB());
+            }
+        }
+        javax.imageio.ImageIO.write(pixels, "PNG", source);
+        final File original = api.storeRevision("abc123", "HeroImage", source.getName(), source);
+        final var metadataAPI = mock(FileMetadataAPI.class);
+        final var point = new java.util.concurrent.atomic.AtomicReference<String>("0.25,0.5");
+        when(metadataAPI.getMetadata(any(), eq("HeroImage"))).thenAnswer(call -> {
+            final com.dotmarketing.portlets.contentlet.model.Contentlet snapshot = call.getArgument(0);
+            assertEquals("abc123", snapshot.getInode());
+            assertEquals(original, snapshot.get("HeroImage"), "Use the requested revision, not the current DB version");
+            final var metadata = mock(com.dotcms.storage.model.Metadata.class);
+            when(metadata.getCustomMeta()).thenReturn(point.get() == null ? Map.of()
+                    : Map.of("focalPoint", point.get()));
+            return metadata;
+        });
+        final var imageAPI = mock(com.dotmarketing.image.filter.ImageFilterAPI.class);
+        final Map<String, Class<? extends com.dotmarketing.image.filter.ImageFilter>> filters = new java.util.LinkedHashMap<>();
+        filters.put("resize", CountingResizeImageFilter.class);
+        filters.put("crop", com.dotmarketing.image.filter.CropImageFilter.class);
+        when(imageAPI.resolveFilters(any())).thenReturn(filters);
+        try (var locator = mockStatic(com.dotmarketing.business.APILocator.class);
+             var engine = mockStatic(com.dotmarketing.image.ImageEngine.class)) {
+            locator.when(com.dotmarketing.business.APILocator::getBinaryAssetStorageAPI).thenReturn(api);
+            locator.when(com.dotmarketing.business.APILocator::getFileMetadataAPI).thenReturn(metadataAPI);
+            engine.when(com.dotmarketing.image.ImageEngine::resolve).thenReturn(imageAPI);
+            final var exporter = new com.dotmarketing.portlets.contentlet.business.exporter.ImageFilterExporter();
+            final Map<String, String[]> params = new java.util.LinkedHashMap<>();
+            params.put("resize_w", new String[]{"40"});
+            params.put("crop_w", new String[]{"10"});
+            params.put("crop_h", new String[]{"10"});
+            params.put("fieldVarName", new String[]{"HeroImage"});
+            params.put("assetInodeOrIdentifier", new String[]{"abc123"});
+            final File red = exporter.exportContent(original, params).getDataFile();
+            assertEquals(java.awt.Color.RED.getRGB(), javax.imageio.ImageIO.read(red).getRGB(5, 5));
+            assertFalse(params.containsKey("fp"));
+            assertFalse(params.containsKey(com.dotmarketing.image.filter.ImageFilter.RESOLVED_CROP_FOCAL_POINT));
+            verify(metadataAPI, times(1)).getMetadata(any(), eq("HeroImage"));
+
+            point.set("0.75,0.5");
+            final File blue = exporter.exportContent(original, params).getDataFile();
+            assertNotEquals(red, blue, "A changed focal point must select a different crop after resize");
+            assertEquals(java.awt.Color.BLUE.getRGB(), javax.imageio.ImageIO.read(blue).getRGB(5, 5));
+            final byte[] expected = Files.readAllBytes(blue.toPath());
+            assertTrue(api.evictLocalFile(blue));
+            assertArrayEquals(expected, Files.readAllBytes(exporter.exportContent(original, params).getDataFile().toPath()));
+            verify(metadataAPI, times(3)).getMetadata(any(), eq("HeroImage"));
+
+            params.put("fp", new String[]{"0.25,0.5"});
+            assertEquals(red, exporter.exportContent(original, params).getDataFile(), "Explicit fp overrides stored metadata");
+            verify(metadataAPI, times(3)).getMetadata(any(), eq("HeroImage"));
+            params.remove("fp");
+            point.set(null);
+            final File noPoint = exporter.exportContent(original, params).getDataFile();
+            assertEquals(java.awt.Color.RED.getRGB(), javax.imageio.ImageIO.read(noPoint).getRGB(5, 5));
+            verify(metadataAPI, times(4)).getMetadata(any(), eq("HeroImage"));
+            when(metadataAPI.getMetadata(any(), eq("HeroImage")))
+                    .thenThrow(new com.dotmarketing.exception.DotDataException("metadata unavailable"));
+            assertThrows(com.dotmarketing.portlets.contentlet.business.BinaryContentExporterException.class,
+                    () -> exporter.exportContent(original, params), "Do not cache a crop with an unknown focal point");
+        }
+    }
+
     @Test
     void generatedEvictionRetainsUnbackedFilesAndRejectsOutsidePaths() throws Exception {
         final Path rendition = root.resolve("dotGenerated/a/b/abc123/dotGenerated_resize_0123456789abcdef.PNG");

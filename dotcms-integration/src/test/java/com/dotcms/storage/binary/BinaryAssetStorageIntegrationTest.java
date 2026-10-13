@@ -773,6 +773,95 @@ public class BinaryAssetStorageIntegrationTest {
                         .path(path).storage(com.dotcms.storage.StorageType.DEFAULT_CHAIN).build()).build();
     }
 
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(booleans = {false, true})
+    void s3CmsImageUsesItsOwnRenditionDirectoryAndRestoresAfterEviction(final boolean legacy,
+            @org.junit.jupiter.api.io.TempDir java.nio.file.Path uploads) throws Exception {
+        org.junit.jupiter.api.Assumptions.assumeTrue(Boolean.getBoolean("s3.cms.enabled"));
+        final Folder folder = new FolderDataGen().nextPersisted();
+        try {
+            final File upload = uploads.resolve("dotGenerated_UserUpload.PNG").toFile();
+            final java.awt.image.BufferedImage pixels = new java.awt.image.BufferedImage(64, 48,
+                    java.awt.image.BufferedImage.TYPE_INT_RGB);
+            for (int x = 0; x < 64; x++) {
+                for (int y = 0; y < 48; y++) {
+                    pixels.setRGB(x, y, (x < 32 ? java.awt.Color.RED : java.awt.Color.BLUE).getRGB());
+                }
+            }
+            javax.imageio.ImageIO.write(pixels, "PNG", upload);
+            Contentlet asset = new FileAssetDataGen(folder, upload).nextPersisted();
+            final String inode = asset.getInode();
+            if (legacy) {
+                // Model a pre-feature binary without changing the runtime feature flag.
+                final String field = FileAssetAPI.BINARY_FIELD;
+                final File local = new BinaryAssetReference.StoredBinary(null, null, upload.getName())
+                        .localFile(inode, field);
+                Files.createDirectories(local.toPath().getParent());
+                Files.copy(upload.toPath(), local.toPath());
+                final var mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                final var json = (com.fasterxml.jackson.databind.node.ObjectNode) mapper.readTree(
+                        new com.dotmarketing.common.db.DotConnect()
+                                .setSQL("select contentlet_as_json from contentlet where inode = ?")
+                                .addParam(inode).getString("contentlet_as_json"));
+                final var binary = (com.fasterxml.jackson.databind.node.ObjectNode) json.path("fields").path(field);
+                binary.remove("storageKey");
+                binary.remove("metadataStorageKey");
+                new com.dotmarketing.common.db.DotConnect()
+                        .setSQL("update contentlet set contentlet_as_json = ?::jsonb where inode = ?")
+                        .addParam(mapper.writeValueAsString(json)).addParam(inode).loadResult();
+                com.dotmarketing.business.CacheLocator.getContentletCache().remove(inode);
+                asset = contentletAPI.find(inode, user, false);
+                assertNull(BinaryAssetReference.find(inode, field));
+                assertTrue(binaryAssetStorageAPI.backfillBinary(inode, field, local));
+            }
+            final java.util.Map<String, String[]> parameters = new java.util.HashMap<>();
+            parameters.put("filter", new String[]{"resize"});
+            parameters.put("resize_w", new String[]{"24"});
+            parameters.put("fieldVarName", new String[]{FileAssetAPI.BINARY_FIELD});
+            parameters.put("assetInodeOrIdentifier", new String[]{inode});
+            final var exporter = new com.dotmarketing.portlets.contentlet.business.exporter.ImageFilterExporter();
+            final File original = asset.getBinary(FileAssetAPI.BINARY_FIELD);
+            final File rendition = exporter.exportContent(original, parameters).getDataFile();
+            assertEquals(24, javax.imageio.ImageIO.read(rendition).getWidth());
+            assertEquals(java.nio.file.Path.of(com.dotmarketing.util.ConfigUtils.getDotGeneratedPath(),
+                    inode.substring(0, 1), inode.substring(1, 2), inode).toFile().getCanonicalFile(),
+                    rendition.getParentFile());
+            final byte[] expected = Files.readAllBytes(rendition.toPath());
+            assertTrue(binaryAssetStorageAPI.evictLocalFile(original));
+            assertTrue(binaryAssetStorageAPI.evictLocalFile(rendition));
+            final File restored = exporter.exportContent(contentletAPI.find(inode, user, false)
+                    .getBinary(FileAssetAPI.BINARY_FIELD), parameters).getDataFile();
+            assertArrayEquals(expected, Files.readAllBytes(restored.toPath()));
+            parameters.put("filter", new String[]{"resize", "crop"});
+            parameters.put("crop_w", new String[]{"6"});
+            parameters.put("crop_h", new String[]{"6"});
+            APILocator.getFileMetadataAPI().putCustomMetadataAttributes(asset,
+                    java.util.Map.of(FileAssetAPI.BINARY_FIELD, java.util.Map.of("focalPoint", "0.25,0.5")));
+            final File redSource = asset.getBinary(FileAssetAPI.BINARY_FIELD);
+            final File red = exporter.exportContent(redSource, parameters).getDataFile();
+            assertEquals(java.awt.Color.RED.getRGB(), javax.imageio.ImageIO.read(red).getRGB(3, 3));
+            APILocator.getFileMetadataAPI().putCustomMetadataAttributes(asset,
+                    java.util.Map.of(FileAssetAPI.BINARY_FIELD, java.util.Map.of("focalPoint", "0.75,0.5")));
+            final File blueSource = contentletAPI.find(inode, user, false).getBinary(FileAssetAPI.BINARY_FIELD);
+            final File blue = exporter.exportContent(blueSource, parameters).getDataFile();
+            assertNotEquals(red, blue, "A focal edit must change the chained crop cache key");
+            assertEquals(java.awt.Color.BLUE.getRGB(), javax.imageio.ImageIO.read(blue).getRGB(3, 3));
+            final byte[] cropBytes = Files.readAllBytes(blue.toPath());
+            assertTrue(binaryAssetStorageAPI.evictLocalFile(blue));
+            assertArrayEquals(cropBytes, Files.readAllBytes(exporter.exportContent(blueSource, parameters).getDataFile().toPath()));
+            assertTrue(binaryAssetStorageAPI.evictLocalFile(red));
+            assertEquals(red, exporter.exportContent(redSource, parameters).getDataFile(),
+                    "An older metadata snapshot must retain its focal crop after a later edit");
+            assertEquals(java.awt.Color.RED.getRGB(), javax.imageio.ImageIO.read(red).getRGB(3, 3));
+            assertFalse(parameters.containsKey("fp"), "An export must not pin metadata in the caller's reusable parameters");
+            APILocator.getFileAssetAPI().cleanThumbnailsFromFileAsset(APILocator.getFileAssetAPI().fromContentlet(asset));
+            assertFalse(restored.exists());
+            assertNull(binaryAssetStorageAPI.getGeneratedFile(restored), "CMS invalidation must delete the S3 rendition");
+        } finally {
+            FolderDataGen.remove(folder);
+        }
+    }
+
     private void assertBinaryMetadataLength(final Contentlet contentlet, final long expected) throws Exception {
         final com.dotcms.storage.model.Metadata metadata = APILocator.getFileMetadataAPI()
                 .getOrGenerateMetadata(contentlet, "heroImage");

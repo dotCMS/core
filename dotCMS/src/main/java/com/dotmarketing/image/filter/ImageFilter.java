@@ -25,6 +25,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 
 public abstract class ImageFilter implements ImageFilterIf {
+    public static final String RESOLVED_CROP_FOCAL_POINT = "_resolvedCropFocalPoint";
 	protected static final String FILE_EXT = "png";
 	public    static final String CROP     = "crop";
 
@@ -82,8 +83,12 @@ public abstract class ImageFilter implements ImageFilterIf {
 			}
 			
             if (CROP.equals(thisFilter)) {
-                Optional<FocalPoint> optPoint = new FocalPointAPIImpl().parseFocalPointFromParams(parameters);
-                if(optPoint.isEmpty()) {
+                final boolean resolved = com.dotcms.storage.AssetStorageFeature.isEnabled()
+                        && parameters.containsKey(RESOLVED_CROP_FOCAL_POINT);
+                Optional<FocalPoint> optPoint = resolved
+                        ? new FocalPointAPIImpl().parseFocalPoint(parameters.get(RESOLVED_CROP_FOCAL_POINT)[0])
+                        : new FocalPointAPIImpl().parseFocalPointFromParams(parameters);
+                if(optPoint.isEmpty() && !resolved) {
                     String fieldVar = parameters.get("fieldVarName")[0];
                     optPoint =new FocalPointAPIImpl().readFocalPoint(inode, fieldVar);
                 }
@@ -96,6 +101,12 @@ public abstract class ImageFilter implements ImageFilterIf {
 
 
 			MessageDigest digest = java.security.MessageDigest.getInstance("MD5");
+			if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+				final String revision = com.dotcms.storage.binary.BinaryAssetReference.keyOf(file);
+				if (revision != null) {
+					digest.update(revision.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+				}
+			}
 			digest.update((inode + sb.toString() + this.getClass() + file.getName()).getBytes());
 
 			StringBuilder ret = new StringBuilder();
@@ -193,20 +204,33 @@ public abstract class ImageFilter implements ImageFilterIf {
 
 		String inode =null;
 
-        if (file.getName().startsWith(WebKeys.GENERATED_FILE)) {
+        final boolean s3Assets = com.dotcms.storage.AssetStorageFeature.isEnabled();
+        final boolean generated = file.getName().startsWith(WebKeys.GENERATED_FILE)
+                && (!s3Assets || Try.of(() -> file.getCanonicalFile().toPath().startsWith(
+                        new File(ConfigUtils.getDotGeneratedPath()).getCanonicalFile().toPath())).getOrElse(false));
+        if (generated) {
             inode = file.getName();
             String fileNameNoExt = this.getUniqueFileName(file, parameters, inode);
             String resultFilePath = fileFolderPath + File.separator + fileNameNoExt + "." + fileExt;
             return new File(resultFilePath);
         } else {
             try {
-                inode = RegEX.find(file.getCanonicalPath(), "[\\w]{8}(-[\\w]{4}){3}-[\\w]{12}").get(0).getMatch();
+                final String revision = com.dotcms.storage.AssetStorageFeature.isEnabled()
+                        ? com.dotcms.storage.binary.BinaryAssetReference.keyOf(file) : null;
+                inode = revision != null ? revision.split("/")[2]
+                        : RegEX.find(file.getCanonicalPath(), "[\\w]{8}(-[\\w]{4}){3}-[\\w]{12}").get(0).getMatch();
             } catch (Exception e) {
                 inode = parameters.get("assetInodeOrIdentifier")[0];
             }
 
+            if (s3Assets && (inode == null || !inode.matches("[A-Za-z0-9_-]{2,}"))) {
+                throw new IllegalArgumentException("Invalid rendition inode");
+            }
             File dirs = new File(ConfigUtils.getDotGeneratedPath() + File.separator + inode.charAt(0) + File.separator
                             + inode.charAt(1));
+            if (s3Assets) {
+                dirs = new File(dirs, inode);
+            }
             if (!dirs.exists()) {
                 dirs.mkdirs();
             }

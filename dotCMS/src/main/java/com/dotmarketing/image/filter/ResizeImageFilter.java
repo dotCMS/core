@@ -20,6 +20,14 @@ public class ResizeImageFilter extends ImageFilter {
                 "minh (int) specifies minHeight"
 		};
 	}
+    @Override
+    public File getResultsFile(final File file, final Map<String, String[]> parameters) {
+        // Match the GIF delegate's cache key so a remote rendition can be found without regenerating it.
+        return com.dotcms.storage.AssetStorageFeature.isEnabled() && file.getName().endsWith(".gif")
+                ? new ResizeGifImageFilter().getResultsFile(file, parameters)
+                : super.getResultsFile(file, parameters);
+    }
+
 	public File runFilter(final File file,    Map<String, String[]> parameters) {
 
         final int w = Try.of(()-> Integer.parseInt(parameters.getOrDefault(getPrefix() + "w", new String[]{"0"})[0])).getOrElse(0);

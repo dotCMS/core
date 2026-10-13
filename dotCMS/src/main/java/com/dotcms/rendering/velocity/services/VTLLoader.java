@@ -80,7 +80,36 @@ public class VTLLoader implements DotLoader {
 
     }
 
-    InputStream streamFile(String filePath) throws IOException {
+    /**
+     * Tells whether a file is under the asset root, the only place S3 asset storage can restore
+     * a missing file from.
+     *
+     * @param file the file to check
+     * @return {@code true} if its canonical path is under the canonical asset root
+     * @throws IOException if a canonical path cannot be resolved
+     */
+    private static boolean underAssetRoot(final File file) throws IOException {
+        final String assetRoot = ConfigUtils.getAssetPath();
+        return UtilMethods.isSet(assetRoot) && file.getCanonicalFile().toPath()
+                .startsWith(new File(assetRoot).getCanonicalFile().toPath());
+    }
+
+    /**
+     * Opens a VTL, macro or legacy VL file from the Velocity root, the dynamic content path or
+     * the asset directories, refusing paths outside them.
+     *
+     * <p>With S3 asset storage on, the file is opened through the binary asset API, so a file
+     * whose local copy was evicted is restored first. A missing file outside the asset root
+     * cannot be restored and is reported as not found, as with the flag off.
+     *
+     * @param filePath the file path from the Velocity resource key
+     * @return the file contents
+     * @throws IOException if the file cannot be read
+     * @throws DotDataException if restoring the file from storage fails
+     * @throws ResourceNotFoundException if the file is missing or outside the allowed roots
+     */
+    InputStream streamFile(String filePath) throws IOException, DotDataException {
+        final boolean s3 = com.dotcms.storage.AssetStorageFeature.isEnabled();
         boolean serveFile = false;
         Logger.debug(this, "Not a CMS Velocity File : " + filePath);
 
@@ -96,13 +125,20 @@ public class VTLLoader implements DotLoader {
         if (!f.exists()) {
             f = new java.io.File(filePath);
         }
-        if (!f.exists()) {
+        // A missing file can only be restored from storage when it is under the asset root.
+        if (!f.exists() && (!s3 || !underAssetRoot(f))) {
             throw new ResourceNotFoundException("cannot find resource");
         }
         String canon = f.getCanonicalPath();
         File dynamicContent = new File(ConfigUtils.getDynamicContentPath());
 
-        if (assetRealCanoncalPath != null && canon.startsWith(assetRealCanoncalPath)) {
+        if (s3) {
+            final java.nio.file.Path path = f.getCanonicalFile().toPath();
+            serveFile = (assetRealCanoncalPath != null && path.startsWith(assetRealCanoncalPath))
+                    || (velocityCanoncalPath != null && path.startsWith(velocityCanoncalPath))
+                    || (assetCanoncalPath != null && path.startsWith(assetCanoncalPath))
+                    || path.startsWith(dynamicContent.getCanonicalFile().toPath());
+        } else if (assetRealCanoncalPath != null && canon.startsWith(assetRealCanoncalPath)) {
             serveFile = true;
         } else if (velocityCanoncalPath != null && canon.startsWith(velocityCanoncalPath)) {
             serveFile = true;
@@ -115,7 +151,9 @@ public class VTLLoader implements DotLoader {
             Logger.warn(this, "POSSIBLE HACK ATTACK DotResourceLoader: " + lookingFor);
             throw new ResourceNotFoundException("cannot find resource");
         }
-        return new BufferedInputStream(Files.newInputStream(f.toPath()));
+        return new BufferedInputStream(s3
+                ? com.dotmarketing.business.APILocator.getBinaryAssetStorageAPI().openLocalFile(f)
+                : Files.newInputStream(f.toPath()));
 
     }
 

@@ -62,6 +62,20 @@ public class DotLibSassCompiler extends DotCSSCompiler {
         this.sourceMap = sourceMap;
     }
 
+    /**
+     * Compiles the SCSS or Sass file into {@link #getOutput()}.
+     *
+     * <p>With S3 asset storage on, a compiled CSS output stored under a key that covers the source
+     * bytes, site, mode, options and build is reused, locally or restored from S3, without running
+     * Dart Sass. A new output is written locally and uploaded. If storing it fails, the compiled
+     * CSS is still returned and a warning is logged. A cache lease is held only while the sources
+     * are copied and while a stored output is read, not while Dart Sass runs.
+     *
+     * @throws DotSecurityException if a source cannot be read by the system user
+     * @throws DotStateException if the dotCMS state is inconsistent
+     * @throws DotDataException if a source or its version information cannot be loaded
+     * @throws IOException if the compile directory cannot be prepared
+     */
     @Override
     public void compile() throws DotSecurityException, DotStateException, DotDataException, IOException {
 
@@ -88,7 +102,9 @@ public class DotLibSassCompiler extends DotCSSCompiler {
             }
 
             final FileAsset mainFile = APILocator.getFileAssetAPI()
-                .fromContentlet(APILocator.getContentletAPI().find(info.get().getWorkingInode(),
+                .fromContentlet(APILocator.getContentletAPI().find(
+                        com.dotcms.storage.AssetStorageFeature.isEnabled() && live
+                                ? info.get().getLiveInode() : info.get().getWorkingInode(),
                         APILocator.systemUser(), true));
 
             // build directories to build scss
@@ -102,10 +118,31 @@ public class DotLibSassCompiler extends DotCSSCompiler {
             }
             final File compileDestinationFile = new File(compileTargetFile.getAbsoluteFile() + ".css");
             final CompilerOptions options = new CompilerOptions.Builder().sourceMap(this.sourceMap).build();
+            // Source maps remain request-private and uncached, as in the servlet's existing contract.
+            final File storedCSS = com.dotcms.storage.AssetStorageFeature.isEnabled() && !sourceMap
+                    ? compiledCacheFile(mainFile.getInode(), options) : null;
+            if (storedCSS != null) {
+                try (var lease = APILocator.getBinaryAssetStorageAPI().acquireCacheLease()) {
+                    final File cached = APILocator.getBinaryAssetStorageAPI().getGeneratedFile(storedCSS);
+                    if (cached != null && (req == null || req.getParameter("recompile") == null)) {
+                        this.output = java.nio.file.Files.readAllBytes(cached.toPath());
+                        return;
+                    }
+                }
+            }
             final DartSassCompiler compiler = new DartSassCompiler(options, compileTargetFile, compileDestinationFile);
             final Optional<String> out = compiler.compile();
             handleOutput(compiler.terminalOutput());
             this.output = out.isPresent() ? out.get().getBytes() : null;
+            if (storedCSS != null && this.output != null && compiler.terminalOutput().exitValue() == 0) {
+                try {
+                    storeCompiledOutput(storedCSS);
+                } catch (final Exception e) {
+                    // Availability first: the CSS is compiled, so a storage failure must not fail the request.
+                    Logger.warnAndDebug(DotLibSassCompiler.class, "Unable to store compiled CSS for " + inputHost
+                            + ":" + inputURI + "; serving the compiled output: " + e.getMessage(), e);
+                }
+            }
         } catch (final Exception ex) {
             final String errorMsg = String.format("Unable to compile SASS code in %s:%s [ live:%s ]: %s", inputHost,
                     inputURI, inputLive, ex.getMessage());
@@ -116,6 +153,46 @@ public class DotLibSassCompiler extends DotCSSCompiler {
           DotConcurrentFactory.getInstance().getSubmitter().submit(() -> {
             FileUtil.deltree(compileDir);
           });
+        }
+    }
+
+    private File compiledCacheFile(final String inode, final CompilerOptions options) {
+        final StringBuilder identity = new StringBuilder("css-v1:")
+                .append(com.liferay.portal.util.ReleaseInfo.getVersion()).append(':')
+                .append(com.liferay.portal.util.ReleaseInfo.getBuildNumber()).append(':')
+                .append(inputHost.getIdentifier()).append(':').append(inputURI).append(':')
+                .append(live).append(':').append(options.generate());
+        sourceDigests.forEach((path, digest) -> identity.append(':').append(path.length())
+                .append(':').append(path).append(':').append(digest));
+        final String hash = org.apache.commons.codec.digest.DigestUtils.md5Hex(identity.toString());
+        return new File(com.dotmarketing.util.ConfigUtils.getDotGeneratedPath(),
+                inode.charAt(0) + "/" + inode.charAt(1) + "/" + inode + "/dotGenerated_css_" + hash + ".css");
+    }
+
+    /**
+     * Writes the compiled CSS atomically to its local {@code dotGenerated} path and uploads it.
+     * If the upload fails, the local file is kept: later requests on this node serve it, and
+     * eviction never removes it because it has no durable copy.
+     *
+     * @param target the local path of the compiled CSS
+     * @throws IOException if the local file cannot be written
+     * @throws DotDataException if the upload fails
+     */
+    private void storeCompiledOutput(final File target) throws IOException, DotDataException {
+        final java.nio.file.Path path = target.toPath();
+        java.nio.file.Files.createDirectories(path.getParent());
+        final java.nio.file.Path temporary = java.nio.file.Files.createTempFile(path.getParent(), "css-", ".tmp");
+        try {
+            java.nio.file.Files.write(temporary, this.output);
+            try {
+                java.nio.file.Files.move(temporary, path, java.nio.file.StandardCopyOption.ATOMIC_MOVE,
+                        java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            } catch (java.nio.file.AtomicMoveNotSupportedException e) {
+                java.nio.file.Files.move(temporary, path, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            }
+            APILocator.getBinaryAssetStorageAPI().storeGeneratedFile(target);
+        } finally {
+            java.nio.file.Files.deleteIfExists(temporary);
         }
     }
 

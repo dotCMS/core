@@ -95,8 +95,12 @@ public class VipsCropImageFilter extends VipsImageFilter {
     /** Resolve the focal point (from params or stored field metadata) to pixel coordinates. */
     protected Optional<Point> calcFocalPoint(final Dimension current, final Map<String, String[]> parameters) {
         final FocalPointAPIImpl api = new FocalPointAPIImpl();
-        Optional<FocalPoint> optPoint = api.parseFocalPointFromParams(parameters);
-        if (optPoint.isEmpty() && parameters.get("assetInodeOrIdentifier") != null
+        final boolean resolved = com.dotcms.storage.AssetStorageFeature.isEnabled()
+                && parameters.containsKey(RESOLVED_CROP_FOCAL_POINT);
+        Optional<FocalPoint> optPoint = resolved
+                ? api.parseFocalPoint(parameters.get(RESOLVED_CROP_FOCAL_POINT)[0])
+                : api.parseFocalPointFromParams(parameters);
+        if (optPoint.isEmpty() && !resolved && parameters.get("assetInodeOrIdentifier") != null
                 && parameters.get("fieldVarName") != null) {
             final String inode = parameters.get("assetInodeOrIdentifier")[0];
             final String fieldVar = parameters.get("fieldVarName")[0];
