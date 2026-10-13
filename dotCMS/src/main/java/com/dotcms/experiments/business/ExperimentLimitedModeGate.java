@@ -3,6 +3,7 @@ package com.dotcms.experiments.business;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Scheduling;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
@@ -51,7 +52,8 @@ public class ExperimentLimitedModeGate {
      * @param experimentId the experiment being started
      * @param user         the authenticated caller
      * @return empty if the start is allowed; the {@link Rejection} reason if it must be blocked
-     * @throws DotDataException     if the experiment does not exist or on persistence errors
+     * @throws DoesNotExistException if the experiment does not exist (unchecked, maps to 404)
+     * @throws DotDataException      on persistence errors from {@code find} or {@code isFreeSlotUsed}
      * @throws DotSecurityException on permission errors
      */
     public static Optional<Rejection> evaluate(final String experimentId, final User user)
@@ -59,7 +61,7 @@ public class ExperimentLimitedModeGate {
 
         final ExperimentsAPI experimentsAPI = APILocator.getExperimentsAPI();
         final Experiment experiment = experimentsAPI.find(experimentId, user)
-                .orElseThrow(() -> new DotDataException(
+                .orElseThrow(() -> new DoesNotExistException(
                         "Experiment not found: " + experimentId));
 
         final Optional<Scheduling> schedulingOpt = experiment.scheduling();

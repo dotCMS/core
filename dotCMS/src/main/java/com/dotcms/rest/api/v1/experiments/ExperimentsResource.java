@@ -322,9 +322,9 @@ public class ExperimentsResource {
                             schema = @Schema(implementation = ResponseEntitySingleExperimentView.class))),
             @ApiResponse(responseCode = "400", description = "Duration exceeds the 10-day limited-mode cap",
                     content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "403", description = "Feature disabled (FEATURE_DISABLED) — flag=false and free slot occupied",
-                    content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "403", description = "Scheduled start not allowed (SCHEDULED_START_NOT_ALLOWED) — future startDate in limited mode",
+            @ApiResponse(responseCode = "403", description = "Limited-mode gate rejected the start. "
+                    + "errorCode FEATURE_DISABLED: flag=false and the free experiment slot is already occupied. "
+                    + "errorCode SCHEDULED_START_NOT_ALLOWED: flag=false and the experiment has a future startDate.",
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "503", description = "Analytics App not configured for this site (ANALYTICS_NOT_CONFIGURED)",
                     content = @Content(mediaType = "application/json"))
@@ -366,16 +366,18 @@ public class ExperimentsResource {
     }
 
     /**
-     * Ends an already started {@link Experiment}. Gated on {@code FEATURE_FLAG_EXPERIMENTS}:
-     * when {@code false}, returns {@code 403 FEATURE_DISABLED}. App configuration has no effect
-     * on this endpoint because {@code _end} does not interact with the analytics backend.
+     * Ends an already started {@link Experiment}. Allowed in both full and limited mode:
+     * {@code ENDED} still counts as the free slot being used (see
+     * {@link com.dotcms.experiments.business.ExperimentsAPIImpl#isFreeSlotUsed}), so ending early
+     * does not open any loophole to start another free experiment. This lets users stop a running
+     * experiment early if something goes wrong (wrong page, bad variant, etc.) instead of waiting
+     * for the 10-day cap to expire. App configuration has no effect on this endpoint because
+     * {@code _end} does not interact with the analytics backend.
      */
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Experiment ended successfully",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntitySingleExperimentView.class))),
-            @ApiResponse(responseCode = "403", description = "Feature disabled (FEATURE_DISABLED) — flag=false",
-                    content = @Content(mediaType = "application/json"))
+                            schema = @Schema(implementation = ResponseEntitySingleExperimentView.class)))
     })
     @POST
     @Path("/{experimentId}/_end")
@@ -387,9 +389,6 @@ public class ExperimentsResource {
             @PathParam("experimentId") final String experimentId) throws DotDataException, DotSecurityException {
         final InitDataObject initData = getInitData(request, response);
         final User user = initData.getUser();
-        if (!ConfigExperimentUtil.INSTANCE.isExperimentEnabled()) {
-            return limitedModeResponse();
-        }
         final Experiment endedExperiment = experimentsAPI.end(experimentId, user);
         return Response.ok(new ResponseEntitySingleExperimentView(endedExperiment)).build();
     }

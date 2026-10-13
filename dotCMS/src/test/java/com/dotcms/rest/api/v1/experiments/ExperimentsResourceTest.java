@@ -261,8 +261,9 @@ public class ExperimentsResourceTest {
     /**
      * Method to test: {@link ExperimentsResource#start}
      * Given scenario: flag=false, App configured, start has a future startDate (scheduled start).
-     * Expected result: {@code 403} with {@code errorCode="FEATURE_DISABLED"} — scheduling is not
-     *   allowed in limited mode.
+     * Expected result: {@code 403} with {@code errorCode="SCHEDULED_START_NOT_ALLOWED"} —
+     *   scheduling is not allowed in limited mode; this code is distinct from
+     *   {@code FEATURE_DISABLED} (slot occupied) so the UI can display the right message.
      */
     @Test
     void start_flagFalse_futureStartDate_returns403() throws Exception {
@@ -282,21 +283,23 @@ public class ExperimentsResourceTest {
                     resource -> resource.start(request, response, "exp-id"));
             assertEquals(403, result.getStatus(),
                     "Future startDate (scheduled start) in limited mode must return 403");
-            assertFeatureDisabledErrorCode(result);
+            assertScheduledStartNotAllowedErrorCode(result);
         }
     }
 
     /**
      * Method to test: {@link ExperimentsResource#end}
-     * Given scenario: flag=false (App configuration irrelevant for end).
-     * Expected result: {@code 403} with {@code errorCode="FEATURE_DISABLED"}.
+     * Given scenario: flag=false — {@code _end} is allowed in limited mode because ENDED still
+     *   counts as the free slot being used, so ending early opens no loophole.
+     * Expected result: The call reaches {@link ExperimentsAPI#end} — no gate fires.
      */
     @Test
-    void end_flagFalse_returns403() throws Exception {
+    void end_flagFalse_proceedsToApi() throws Exception {
+        when(experimentsAPI.end("exp-id", user)).thenReturn(experiment);
         final Response result = withAuthenticatedUserRaw(
                 resource -> resource.end(request, response, "exp-id"));
-        assertEquals(403, result.getStatus(), "flag=false must gate end() with 403");
-        assertFeatureDisabledErrorCode(result);
+        assertEquals(200, result.getStatus(), "flag=false must NOT gate end() — ENDED keeps the slot occupied");
+        verify(experimentsAPI).end("exp-id", user);
     }
 
     /**
@@ -578,6 +581,17 @@ public class ExperimentsResourceTest {
                 && !errors.isEmpty() && errors.get(0) instanceof ErrorEntity err) {
             assertEquals("FEATURE_DISABLED", err.getErrorCode(),
                     "Gate response must carry errorCode=FEATURE_DISABLED");
+        }
+    }
+
+    /** Asserts the response entity carries {@code errorCode="SCHEDULED_START_NOT_ALLOWED"}. */
+    @SuppressWarnings("unchecked")
+    private static void assertScheduledStartNotAllowedErrorCode(final Response response) {
+        final Object entity = response.getEntity();
+        if (entity instanceof ResponseEntityView<?> rev && rev.getErrors() instanceof List<?> errors
+                && !errors.isEmpty() && errors.get(0) instanceof ErrorEntity err) {
+            assertEquals("SCHEDULED_START_NOT_ALLOWED", err.getErrorCode(),
+                    "Gate response must carry errorCode=SCHEDULED_START_NOT_ALLOWED for future startDate in limited mode");
         }
     }
 }
