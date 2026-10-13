@@ -1,5 +1,6 @@
 package com.dotcms.storage;
 
+import com.dotcms.featureflag.FeatureFlagName;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 
@@ -11,9 +12,14 @@ import com.dotmarketing.util.Logger;
  * node half-enabled. Set it through the environment or properties file and restart.</p>
  */
 public final class AssetStorageFeature {
-    public static final String FLAG = "FEATURE_FLAG_S3_ASSET_STORAGE";
+    public static final String FLAG = FeatureFlagName.FEATURE_FLAG_S3_ASSET_STORAGE;
 
     private static volatile Boolean enabled;
+
+    static {
+        // Registered before the first isEnabled() can latch, since that call loads this class.
+        Config.onOverride(FLAG, AssetStorageFeature::reset);
+    }
 
     private AssetStorageFeature() { }
 
@@ -45,8 +51,9 @@ public final class AssetStorageFeature {
 
     /**
      * Forgets the value read at first use, so the next {@link #isEnabled()} reads the configuration
-     * again. Called by {@link Config#setProperty(String, Object)} for in-memory overrides of the flag,
-     * which tests use to switch modes.
+     * again. Registered with {@link Config#onOverride(String, Runnable)}, so in-memory overrides of the
+     * flag made with {@link Config#setProperty(String, Object)}, which tests use to switch modes, are
+     * re-read. Property reloads and the system table do not trigger it.
      */
     public static void reset() {
         enabled = null;

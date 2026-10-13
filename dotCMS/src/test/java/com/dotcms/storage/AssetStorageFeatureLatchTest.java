@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mockStatic;
 
 import com.dotmarketing.util.Config;
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,5 +44,22 @@ class AssetStorageFeatureLatchTest {
         assertTrue(AssetStorageFeature.isEnabled());
         Config.setProperty(AssetStorageFeature.FLAG, false);
         assertFalse(AssetStorageFeature.isEnabled());
+    }
+
+    @Test
+    void overrideCallbacksRunOnlyForTheirKeyAfterTheValueIsSet() {
+        final String key = "ASSET_STORAGE_LATCH_TEST_HOOKED_KEY";
+        final String otherKey = "ASSET_STORAGE_LATCH_TEST_OTHER_KEY";
+        final List<String> seen = new ArrayList<>();
+        Config.onOverride(key, () -> seen.add(Config.getStringProperty(key, null)));
+        try {
+            Config.setProperty(otherKey, "ignored");
+            assertTrue(seen.isEmpty(), "Overriding another key must not run the callback");
+            Config.setProperty(key, "updated");
+            assertEquals(List.of("updated"), seen, "The callback runs once and sees the new value");
+        } finally {
+            Config.setProperty(key, null);
+            Config.setProperty(otherKey, null);
+        }
     }
 }

@@ -45,6 +45,19 @@ final class S3ContentAddressedStorage {
         return HexFormat.of().formatHex(digest.digest());
     }
 
+    /**
+     * Stores the file's bytes once under their SHA-256 and writes a small reference to them at the
+     * owner's key. A new blob is uploaded with a create-only write and is not downloaded again. A
+     * blob that already existed, or that another writer created first, is downloaded once and
+     * compared byte for byte. The method finishes by reading back the reference it published.
+     *
+     * @param ownerKey the content-owned key that will hold the reference
+     * @param source   the file to store; a private copy is hashed and uploaded
+     * @param backfill {@code true} to convert an existing raw object or keep an existing matching
+     *                 reference instead of overwriting it, failing if either conflicts
+     * @return the SHA-256 of the stored bytes
+     * @throws DotDataException if the bytes or the reference cannot be stored or verified
+     */
     String store(String ownerKey, File source, boolean backfill) throws DotDataException {
         Path snapshot = null;
         Path reference = null;
@@ -76,14 +89,19 @@ final class S3ContentAddressedStorage {
                     }
                 }
             }
-            if (!blobMatches(blob, snapshot.toFile())) {
+            // The SDK checks the MD5 of each upload request against S3's response, and the key is the
+            // SHA-256 of the snapshot we sent, so only a blob someone else wrote needs a full comparison.
+            final var existing = storage.listFirstObject(bucket, blob);
+            boolean writtenElsewhere = existing != null && blob.equals(existing.getKey());
+            if (!writtenElsewhere) {
                 try { storage.uploadFileIfAbsent(bucket, blob, snapshot.toFile()); }
                 catch (RuntimeException conflict) {
                     if (!preconditionFailure(conflict)) throw conflict;
+                    writtenElsewhere = true;
                 }
-                if (!blobMatches(blob, snapshot.toFile())) {
-                    throw new DotDataException("Shared asset bytes do not match their SHA-256 key");
-                }
+            }
+            if (writtenElsewhere && !blobMatches(blob, snapshot.toFile())) {
+                throw new DotDataException("Shared asset bytes do not match their SHA-256 key");
             }
             reference = Files.createTempFile("s3-asset-reference-", ".json");
             Files.writeString(reference, "{\"sha256\":\"" + hash + "\",\"length\":" + Files.size(snapshot) + "}");
@@ -105,7 +123,6 @@ final class S3ContentAddressedStorage {
                 }
                 consumeReference(published);
             }
-            if (!matches(ownerKey, snapshot.toFile())) throw new DotDataException("Shared asset bytes were not verified after publication");
             return hash;
         } catch (Exception failure) {
             if (failure instanceof InterruptedException) Thread.currentThread().interrupt();
@@ -116,7 +133,15 @@ final class S3ContentAddressedStorage {
         }
     }
 
-    private static boolean preconditionFailure(Throwable failure) {
+    /**
+     * Reports whether a failed S3 write was a conditional write that lost to an existing object:
+     * HTTP 412 when the condition was false, or 409 {@code ConditionalRequestConflict} when two
+     * conditional writes of one key raced. Causes are checked too, since callers may wrap the error.
+     *
+     * @param failure the error thrown by the write
+     * @return {@code true} if the write was refused because another write got there first
+     */
+    static boolean preconditionFailure(Throwable failure) {
         for (Throwable cause = failure; cause != null; cause = cause.getCause()) {
             if (cause instanceof com.amazonaws.services.s3.model.AmazonS3Exception s3
                     && (s3.getStatusCode() == 412 || s3.getStatusCode() == 409)) return true;
