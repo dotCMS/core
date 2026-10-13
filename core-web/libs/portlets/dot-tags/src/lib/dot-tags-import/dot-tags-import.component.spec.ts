@@ -172,6 +172,51 @@ describe('DotTagsImportComponent', () => {
             expect(ref.close).toHaveBeenCalledWith(allDuplicates);
         });
 
+        it('should close dialog when only duplicates were skipped even if success is false', () => {
+            const tagsService = spectator.inject(DotTagsService);
+            const ref = spectator.inject(DynamicDialogRef);
+            const allDuplicates = {
+                totalRows: 4,
+                successCount: 0,
+                duplicateCount: 3,
+                failureCount: 0,
+                success: false
+            };
+
+            (tagsService.importTags as Mock).mockReturnValue(of({ entity: allDuplicates }));
+
+            component.onFileSelect({ files: [mockFile] } as FileSelectEvent);
+            component.importFile();
+
+            expect(ref.close).toHaveBeenCalledWith(allDuplicates);
+            expect(component.errorMessage()).toBeNull();
+        });
+
+        it('should keep dialog open when rows failed even if success is true', () => {
+            const tagsService = spectator.inject(DotTagsService);
+            const ref = spectator.inject(DynamicDialogRef);
+
+            (tagsService.importTags as Mock).mockReturnValue(
+                of({
+                    entity: {
+                        totalRows: 3,
+                        successCount: 1,
+                        duplicateCount: 0,
+                        failureCount: 1,
+                        success: true
+                    }
+                })
+            );
+
+            component.onFileSelect({ files: [mockFile] } as FileSelectEvent);
+            component.importFile();
+
+            expect(component.errorMessage()).toBe(
+                'Imported 1 of 2 tags. 0 already existed. 1 failed.'
+            );
+            expect(ref.close).not.toHaveBeenCalled();
+        });
+
         it('should show inline error and keep dialog open when API returns success:false', () => {
             const tagsService = spectator.inject(DotTagsService);
             const ref = spectator.inject(DynamicDialogRef);

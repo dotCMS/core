@@ -29,7 +29,12 @@ const MOCK_TAGS: DotTag[] = [
     { id: '2', label: 'tag2', siteId: 'site2', siteName: 'Site 2', persona: false }
 ];
 
-function createImportResult(overrides: Partial<DotTagsImportResult> = {}): DotTagsImportResult {
+/** Builds an import result from its counts; totalRows and success are derived like the backend does. */
+function createImportResult(
+    overrides: Partial<
+        Pick<DotTagsImportResult, 'successCount' | 'duplicateCount' | 'failureCount'>
+    > = {}
+): DotTagsImportResult {
     const counts = { successCount: 0, duplicateCount: 0, failureCount: 0, ...overrides };
 
     return {
@@ -730,8 +735,9 @@ describe('DotTagsListComponent', () => {
             const displayService = spectator.inject(DotMessageDisplayService, true);
 
             spectator.component.openImportDialog();
-            // totalRows counts the CSV header, so the message total comes from the counts
-            onClose.next(createImportResult({ duplicateCount: 3, totalRows: 4 }));
+            // createImportResult reports totalRows as 4 (header line included, like the
+            // backend); the message must still say "of 3"
+            onClose.next(createImportResult({ duplicateCount: 3 }));
             onClose.complete();
 
             expect(displayService.push).toHaveBeenCalledWith({

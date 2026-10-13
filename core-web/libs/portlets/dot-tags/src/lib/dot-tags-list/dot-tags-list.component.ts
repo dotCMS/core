@@ -237,9 +237,10 @@ export class DotTagsListComponent {
     }
 
     /**
-     * Shows the import outcome. Rows skipped as duplicates get an INFO toast so an
-     * import that added nothing is not reported as a success. The total is the sum of
-     * the counts because the backend's `totalRows` includes the CSV header line.
+     * Shows the import outcome. If any row was skipped as a duplicate (and none failed)
+     * the toast is INFO, even when other rows were created, so skipped tags are never
+     * reported as a plain success. The total is the sum of the counts because the
+     * backend's `totalRows` includes the CSV header line.
      */
     private notifyImportResult({
         successCount,
