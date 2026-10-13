@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
+import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
@@ -410,9 +411,11 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
 
     /**
      * Reads and deserializes the stored object for the path. With S3 asset storage on, an unmapped
-     * group or a missing file returns {@code null}. A zero-length or truncated file is kept and
-     * reported as {@link UnreadableStoredObjectException}, so the chain can replace it from durable
-     * storage and nothing treats it as absent and regenerates it. Other read failures throw.
+     * group or a missing file returns {@code null}. A file that opens but cannot be decoded, such as
+     * a zero-length or truncated file or one not in the configured {@code CONTENT_METADATA_COMPRESSOR}
+     * format, is kept and reported as {@link UnreadableStoredObjectException}, so the chain can
+     * replace it from durable storage and nothing treats it as absent and regenerates it. A file
+     * that cannot be opened throws {@link DotDataException}.
      * With the flag off, a corrupt file is deleted and an empty map is returned, and a missing group
      * or file throws {@link IllegalArgumentException}, as before.
      *
@@ -432,19 +435,23 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
             if (groupDir == null) {
                 return null;
             }
+            final Path file;
             try {
-                final Path file = Paths.get(groupDir.getCanonicalPath(), normalizePath(groupName, path));
-                final String compressor = Config.getStringProperty("CONTENT_METADATA_COMPRESSOR", "none");
-                try (InputStream input = FileUtil.createInputStream(file, compressor)) {
-                    return readerDelegate.read(input);
-                }
-            } catch (NoSuchFileException absent) {
-                return null;
-            } catch (com.fasterxml.jackson.core.JsonProcessingException | java.io.EOFException corrupt) {
-                // Keep the file: the chain replaces it from durable storage, or the read fails.
-                throw new UnreadableStoredObjectException("Unable to read stored object " + path, corrupt);
+                file = Paths.get(groupDir.getCanonicalPath(), normalizePath(groupName, path));
             } catch (IOException e) {
                 throw new DotDataException("Unable to read stored object " + path, e);
+            }
+            try (InputStream input = FileUtil.createInputStream(file, contentMetadataCompressor.get())) {
+                return readerDelegate.read(input);
+            } catch (NoSuchFileException absent) {
+                return null;
+            } catch (FileSystemException e) {
+                // Opening the file failed (permissions, too many open files, ...): an I/O problem, not corruption.
+                throw new DotDataException("Unable to read stored object " + path, e);
+            } catch (IOException corrupt) {
+                // The file opened but could not be decoded (bad compression header, truncated or invalid
+                // contents). Keep it: the chain replaces it from durable storage, or the read fails.
+                throw new UnreadableStoredObjectException("Unable to read stored object " + path, corrupt);
             }
         }
 
