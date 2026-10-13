@@ -1,17 +1,39 @@
 package com.dotcms.storage;
 
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.AmazonS3Exception;
+import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
+import com.amazonaws.services.s3.transfer.Download;
+import com.amazonaws.services.s3.transfer.Upload;
+import com.amazonaws.services.s3.transfer.model.UploadResult;
+import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Configuration;
 import com.dotcms.enterprise.publishing.storage.AWSS3Storage;
+import com.dotcms.enterprise.publishing.storage.Storage;
+import com.dotcms.storage.repository.LocalFileRepositoryManager;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class S3StorageConfigurationTest {
     private final Map<String, String> previous = new HashMap<>();
@@ -138,6 +160,91 @@ class S3StorageConfigurationTest {
             assertEquals("test-bucket.s3.amazonaws.com", client(legacy).getUrl("test-bucket", "file").getHost());
             assertEquals("S3SignerType", signerOverride(legacy));
         } finally { legacy.shutdownTransferManager(); }
+    }
+
+    @Test
+    void enabledUploadsDoNotHoldTheSharedIdentifierLock(@TempDir Path root) throws Exception {
+        // The identifier lock is shared with content saves; an upload must not make them time out.
+        final var storage = mock(Storage.class);
+        final var upload = mock(Upload.class);
+        final var result = new UploadResult();
+        result.setETag("etag");
+        when(storage.uploadFile(any(PutObjectRequest.class))).thenReturn(upload);
+        final var provider = new AmazonS3StoragePersistenceAPIImpl(storage, "bucket",
+                AmazonS3StoragePersistenceAPIImpl.PathEncryptionMode.NONE);
+        final File file = Files.writeString(root.resolve("upload.tmp"), "contents").toFile();
+        try (var executor = Executors.newSingleThreadExecutor()) {
+            when(upload.waitForUploadResult()).thenAnswer(call -> executor.submit(() -> {
+                try {
+                    return DotConcurrentFactory.getInstance().getIdentifierStripedLock()
+                            .tryLock("s3_binary-assets/a/b/file", () -> result);
+                } catch (Throwable lockTimeout) {
+                    throw new Exception(lockTimeout);
+                }
+            }).get(10, TimeUnit.SECONDS));
+            assertEquals("etag", provider.pushFile("binary-assets", "/a/b/file", file, Map.of()));
+        }
+    }
+
+    @Test
+    void enabledDownloadsUseTheirOwnFileWhateverTheRepositoryAndAreDeletedOnRelease(@TempDir Path root) throws Exception {
+        final var storage = mock(Storage.class);
+        when(storage.downloadFile(eq("bucket"), eq("binary-assets/a/b/file"), any(File.class))).thenAnswer(call -> {
+            Files.writeString(call.<File>getArgument(2).toPath(), "remote");
+            return mock(Download.class);
+        });
+        final var provider = new AmazonS3StoragePersistenceAPIImpl(storage, "bucket",
+                AmazonS3StoragePersistenceAPIImpl.PathEncryptionMode.NONE);
+        // S3_STORAGE_FILE_REPO_TYPE=LOCAL maps every download of a key to one fixed path.
+        final Path repository = root.resolve("local-repo");
+        Files.createDirectories(repository.resolve("a/b"));
+        final var field = AmazonS3StoragePersistenceAPIImpl.class.getDeclaredField("fileRepositoryManager");
+        field.setAccessible(true);
+        field.set(provider, new LocalFileRepositoryManager(repository.toString()) { });
+
+        final File first = provider.pullFile("binary-assets", "/a/b/file");
+        final File second = provider.pullFile("binary-assets", "/a/b/file");
+        assertNotEquals(first, second, "Concurrent downloads of one key must not share a file");
+        assertEquals("remote", Files.readString(first.toPath()));
+        assertEquals("remote", Files.readString(second.toPath()));
+        provider.releaseRetrievedFile(first);
+        provider.releaseRetrievedFile(second);
+        assertFalse(first.exists());
+        assertFalse(second.exists());
+        try (var files = Files.walk(repository)) {
+            assertEquals(0, files.filter(Files::isRegularFile).count(), "Downloads are not kept in the local repository");
+        }
+    }
+
+    @Test
+    void backfillTreatsAConflictingConcurrentWriteLikeAnExistingObject(@TempDir Path root) throws Exception {
+        // AWS answers 409 ConditionalRequestConflict, not 412, when two conditional writes race.
+        final var conflict = new AmazonS3Exception("ConditionalRequestConflict");
+        conflict.setStatusCode(409);
+        final var storage = mock(Storage.class);
+        doThrow(conflict).when(storage).uploadFileIfAbsent(eq("bucket"), anyString(), any(File.class));
+        final var provider = new AmazonS3StoragePersistenceAPIImpl(storage, "bucket",
+                AmazonS3StoragePersistenceAPIImpl.PathEncryptionMode.NONE);
+
+        final File file = Files.writeString(root.resolve("source"), "contents").toFile();
+        final var written = new S3ObjectSummary();
+        written.setKey("binary-assets/a/b/file");
+        written.setSize(file.length());
+        written.setETag(DigestUtils.md5Hex("contents"));
+        when(storage.listFirstObject("bucket", "binary-assets/a/b/file")).thenReturn(null, written);
+        assertTrue(provider.backfillFile("binary-assets", "/a/b/file", file));
+
+        final var missing = new AmazonS3Exception("missing");
+        missing.setStatusCode(404);
+        missing.setErrorCode("NoSuchKey");
+        when(storage.downloadFile(eq("bucket"), eq("dotmetadata/a/b/meta.json"), any(File.class)))
+                .thenThrow(missing)
+                .thenAnswer(call -> {
+                    Files.writeString(call.<File>getArgument(2).toPath(), "\"value\"");
+                    return mock(Download.class);
+                });
+        assertTrue(provider.backfillObject("dotmetadata", "/a/b/meta.json", new JsonWriterDelegate(),
+                new JsonReaderDelegate<>(String.class), "value"));
     }
 
     private static String signerOverride(AWSS3Storage storage) throws Exception {
