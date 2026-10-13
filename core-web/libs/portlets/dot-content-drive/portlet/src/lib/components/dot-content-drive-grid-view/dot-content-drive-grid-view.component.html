@@ -2,8 +2,10 @@
      stretched evenly to fill the row; below 240px one column that shrinks instead of overflowing
      (FR-012). Pixels, not rem: the app's root font is 14px, so 15rem would be 210px. -->
 @let gridClass = 'grid grid-cols-[repeat(auto-fill,minmax(min(240px,100%),1fr))] gap-[20px]';
+<!-- `relative` keeps anything absolutely positioned inside the cards within this scroll box, so the
+     drop zone around the grid never gets a scrollbar of its own. -->
 <div
-    class="min-h-0 flex-1 overflow-auto p-4"
+    class="relative min-h-0 flex-1 overflow-auto p-4"
     data-testid="grid-scroll"
     (scroll)="scroll.emit($event)">
     @if ($loading()) {

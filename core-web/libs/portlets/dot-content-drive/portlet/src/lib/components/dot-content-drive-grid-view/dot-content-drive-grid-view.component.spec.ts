@@ -117,6 +117,13 @@ describe('DotContentDriveGridViewComponent', () => {
     describe('US2 — tidy layout', () => {
         beforeEach(() => render());
 
+        it('should keep everything inside the cards within its own scroll box', () => {
+            // Without a positioned ancestor, the cards' absolutely positioned screen reader labels
+            // anchored to the drop zone outside, stretched it, and drew a second scrollbar.
+            expect(spectator.query(byTestId('grid-scroll'))?.classList).toContain('relative');
+            expect(cards().every((card) => card.classList.contains('relative'))).toBe(true);
+        });
+
         it('should lay cards out at least 240px wide with a 20px gap', () => {
             const list = spectator.query(byTestId('grid-list')) as HTMLElement;
 
