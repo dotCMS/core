@@ -126,6 +126,12 @@ class LicenseWorkflowTests(unittest.TestCase):
         self.assertIn("base: ${{ github.event.repository.default_branch }}", workflow)
         self.assertIn("secrets.CI_MACHINE_USER || 'dotcmsmachineuser'", workflow)
 
+    def test_generated_pr_references_license_tracking_issue(self):
+        workflow = WORKFLOW.read_text()
+        pr_body = workflow.split("          body: |\n", 1)[1]
+        self.assertIn("Refs #31844", pr_body)
+        self.assertNotIn("Closes #31844", pr_body)
+
     def test_missing_fallback_token_fails_with_clear_error(self):
         result = subprocess.run(
             ["bash", "-euo", "pipefail", "-c", step_script("check-pr-token")],

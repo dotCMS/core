@@ -91,6 +91,8 @@ jobs:
           committer: '${{ env.CI_MACHINE_USER }} <${{ env.CI_MACHINE_USER }}@users.noreply.github.com>'
           title: 'chore: update LICENSE change date'
           body: |
+            Refs #31844 — automate BSL license-date updates.
+
             Weekly update of the LICENSE Change Date to the current UTC date.
             Preserves "Four years from" and leaves all other license terms unchanged.
             Direct push to the default branch was rejected; this PR requires normal review.
