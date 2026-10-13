@@ -1,12 +1,17 @@
 import { Dispatcher } from '@ngrx/signals/events';
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
 import { MockInstance, vi } from 'vitest';
 
-import { ConfirmationService } from 'primeng/api';
-
 import { provideLocationMocks } from '@angular/common/testing';
 import { provideRouter } from '@angular/router';
+
+import { ConfirmationService } from 'primeng/api';
 
 import { DotExperimentsService, DotMessageService } from '@dotcms/data-access';
 import { DotExperimentStatus } from '@dotcms/dotcms-models';
@@ -194,6 +199,77 @@ describe('DotExperimentsConfigureFooterComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('experiments-configure-start-btn'))).toBeNull();
+        });
+    });
+
+    /**
+     * Limited-mode paths for the Start button. The outer describe uses tier:'full' throughout,
+     * so $startDisabled and the slot-free direct-dispatch path never ran in a test — reverting
+     * them would leave the suite green. These are the regression guards.
+     */
+    describe('in limited mode', () => {
+        /**
+         * Creates a factory with the given limited-tier health response. The store mock is
+         * provided via closure so it picks up the instance created in each beforeEach.
+         */
+        const makeComponent = (freeExperimentUsed: boolean) =>
+            createComponentFactory({
+                component: DotExperimentsConfigureFooterComponent,
+                providers: [
+                    provideRouter([{ path: 'experiments', children: [] }]),
+                    provideLocationMocks(),
+                    { provide: DotExperimentsConfigureStore, useFactory: () => storeMock },
+                    { provide: DotMessageService, useValue: messageServiceMock },
+                    mockProvider(DotExperimentsService, {
+                        healthCheck: vi
+                            .fn()
+                            .mockReturnValue(
+                                of({ health: 'OK', tier: 'limited', freeExperimentUsed })
+                            )
+                    }),
+                    mockProvider(ConfirmationService)
+                ],
+                detectChanges: false
+            });
+
+        describe('slot free (freeExperimentUsed=false)', () => {
+            const createLimited = makeComponent(false);
+
+            beforeEach(() => {
+                storeMock = createStoreMock();
+                spectator = createLimited();
+                dispatch = vi.spyOn(spectator.inject(Dispatcher), 'dispatch');
+                spectator.detectChanges();
+            });
+
+            it('should keep Start enabled', () => {
+                expect(startButton().disabled).toBe(false);
+            });
+
+            it('should dispatch startRequested directly — no confirmation dialog', () => {
+                // The pre-start confirmation was removed: ENDED keeps the slot occupied so
+                // there is no loophole, and the warning was no longer accurate.
+                clickButton('experiments-configure-start-btn');
+
+                expect(dispatchedEvents()).toContainEqual(
+                    dotExperimentsConfigurePageEvents.startRequested()
+                );
+            });
+        });
+
+        describe('slot used (freeExperimentUsed=true)', () => {
+            const createLimited = makeComponent(true);
+
+            beforeEach(() => {
+                storeMock = createStoreMock();
+                spectator = createLimited();
+                dispatch = vi.spyOn(spectator.inject(Dispatcher), 'dispatch');
+                spectator.detectChanges();
+            });
+
+            it('should disable Start so the operator cannot exceed the one-experiment limit', () => {
+                expect(startButton().disabled).toBe(true);
+            });
         });
     });
 });
