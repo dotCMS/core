@@ -58,10 +58,23 @@ on:
         type: string
         default: ''
       artifact-suffix:
-        description: 'Artifact suffix without leading separator (e.g., java25, java25-ms). Separators added automatically: dash (-) for Maven artifacts, underscore (_) for Docker tags. If not set, derived from java-version major (e.g., java25).'
+        description: 'Artifact suffix without leading separator (e.g., java-25, java-25-ms). Separators added automatically: dash (-) for Maven artifacts, underscore (_) for Docker tags. If not set, derived from java-version major (e.g., java-25).'
         required: false
         type: string
         default: ''
+      reuse-build-artifacts:
+        description: |
+          Publish the Maven outputs restored from artifact_run_id instead of
+          running a second full reactor install first. The caller must have built
+          them with the build phase release-build input, so the restored
+          repository already holds release_version (+ any Java variant suffix).
+          The restored repository is validated before anything is published, and
+          it is cleared before restoring so a warm runner cannot contribute
+          artifacts to a release. Default false keeps the legacy
+          "rebuild, then publish" behaviour for callers that have not opted in.
+        required: false
+        type: boolean
+        default: false
     secrets:
       MAVEN_BUNNY_RW_USERNAME:
         required: false
@@ -100,40 +113,45 @@ jobs:
         shell: bash
         run: |
           # Naming Convention for Java Variants:
-          # - User input: suffix without leading separator (e.g., "java25" or "java25-ms")
-          # - Maven artifacts: use dash separator (e.g., "-java25")
-          # - Docker tags: use underscore separator (e.g., "_java25")
+          # - User input: suffix without leading separator (e.g., "java-25" or "java-25-ms")
+          # - Maven artifacts: use dash separator (e.g., "-java-25")
+          # - Docker tags: use underscore separator (e.g., "_java-25")
           #
           # Note: Underscore in Docker tags is non-standard but follows existing dotCMS convention.
           # Docker typically uses dash or no separator, but we use underscore to distinguish from
-          # version dashes (e.g., "25.02.16-01_java25_abc123" vs "25.02.16-01-java25-abc123").
+          # version dashes (e.g., "25.02.16-01_java-25_abc123" vs "25.02.16-01-java-25-abc123").
           # This convention may be revisited in future.
+          #
+          # Derived form is "java-<major>", matching RELEASE_JAVA_VARIANT_SUFFIX
+          # and cicd_comp_deployment-phase.
 
-          if [ -n "${{ inputs.java-version }}" ]; then
-            # Priority: explicit artifact-suffix > derived from java-version major
-            if [ -n "${{ inputs.artifact-suffix }}" ]; then
-              RAW_SUFFIX="${{ inputs.artifact-suffix }}"
-              echo "Using explicit artifact suffix: ${RAW_SUFFIX}"
-            else
-              JAVA_MAJOR=$(echo "${{ inputs.java-version }}" | grep -oE '^[0-9]+')
-              RAW_SUFFIX="java${JAVA_MAJOR}"
-              echo "Using derived artifact suffix: ${RAW_SUFFIX}"
-            fi
+          # Resolved independently of java-version, exactly as maven-job and
+          # cicd_comp_deployment-phase do: an explicit artifact-suffix wins
+          # outright, otherwise derive java-<major> from an explicit java-version,
+          # otherwise no suffix (a primary release).
+          if [ -n "${{ inputs.artifact-suffix }}" ]; then
+            RAW_SUFFIX="${{ inputs.artifact-suffix }}"
+            echo "Using explicit artifact suffix: ${RAW_SUFFIX}"
+          elif [ -n "${{ inputs.java-version }}" ]; then
+            JAVA_MAJOR=$(echo "${{ inputs.java-version }}" | grep -oE '^[0-9]+')
+            RAW_SUFFIX="java-${JAVA_MAJOR}"
+            echo "Using derived artifact suffix: ${RAW_SUFFIX}"
+          else
+            RAW_SUFFIX=""
+          fi
 
-            # Normalize: strip any leading separators, then add appropriate separator
+          if [ -n "${RAW_SUFFIX}" ]; then
+            # Normalize: strip any leading separators, then add the dash separator
             while [[ "${RAW_SUFFIX}" =~ ^[-_] ]]; do
               RAW_SUFFIX="${RAW_SUFFIX:1}"
             done
-
-            # For Maven artifacts: use dash separator
             MAVEN_SUFFIX="-${RAW_SUFFIX}"
-
-            echo "Raw suffix: '${RAW_SUFFIX}'"
-            echo "Maven suffix: '${MAVEN_SUFFIX}'"
           else
-            RAW_SUFFIX=""
             MAVEN_SUFFIX=""
           fi
+
+          echo "Raw suffix: '${RAW_SUFFIX}'"
+          echo "Maven suffix: '${MAVEN_SUFFIX}'"
           echo "suffix=${MAVEN_SUFFIX}" >> "$GITHUB_OUTPUT"
           echo "raw_suffix=${RAW_SUFFIX}" >> "$GITHUB_OUTPUT"
 
@@ -143,10 +161,23 @@ jobs:
         with:
           java-version: ${{ inputs.java-version }}
 
+      # In reuse mode the restored repository IS the publication source, so start
+      # from an empty directory: a warm runner or a half-populated cache must not
+      # be able to contribute artifacts to a release. Without reuse, the install
+      # below overwrites whatever is here and this is unnecessary.
+      - name: Prepare Maven Repository
+        if: inputs.reuse-build-artifacts == true
+        shell: bash
+        run: rm -rf "$HOME/.m2/repository"
+
       - name: Restore Maven Repository
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           digest-mismatch: error
+          # Pinned to the selected run rather than implicitly to this one, so the
+          # source of the published artifacts is always explicit.
+          run-id: ${{ inputs.artifact_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           name: maven-repo${{ steps.java-suffix.outputs.suffix }}
           path: ~/.m2/repository
 
@@ -161,7 +192,12 @@ jobs:
       # Publish locally (install) instead of deploying. The maven-deploy-plugin
       # no longer has an Artifactory target; the S3 publish step below uploads the
       # artifacts from ~/.m2/repository, preserving the Maven layout.
+      #
+      # Skipped in reuse mode: the build phase already installed these
+      # coordinates (release-build applies the changelist), so this second full
+      # reactor build is what made the release slow. See #37607.
       - name: Install Release Artifacts
+        if: inputs.deploy_artifact == true && !inputs.reuse-build-artifacts
         run: |
           # Add changelist suffix for alternate Java versions
           CHANGELIST_ARG=""
@@ -178,7 +214,72 @@ jobs:
             -DskipTests=true \
             ${CHANGELIST_ARG} \
             install
+
+      # Fail closed BEFORE publishing, and AFTER Install: in legacy mode it is
+      # Install's `-Dchangelist` that creates the suffixed coordinates, so
+      # validating any earlier would reject every Java-variant release. In reuse
+      # mode the build already installed them and Install is skipped.
+      #
+      # `publish.sh maven` publishes whatever versions it finds under com/dotcms
+      # and exits 0 when it finds none, so without this a partial maven-repo
+      # would "succeed" by publishing an incomplete release - and would have
+      # already rewritten the shared maven-metadata.xml.
+      - name: Validate Release Artifacts
+        id: validate-release-artifacts
         if: inputs.deploy_artifact == true
+        shell: bash
+        env:
+          VERSION: ${{ inputs.release_version }}${{ steps.java-suffix.outputs.suffix }}
+          # The built-in coordinates below are always required; the repo variable
+          # only ADDS to them, so it cannot weaken the guard. Space or comma
+          # separated groupId:artifactId.
+          REQUIRED_COORDINATES: com.dotcms:dotcms-core com.dotcms:dotcms-core-web ${{ vars.RELEASE_REQUIRED_COORDINATES }}
+        run: |
+          set -uo pipefail
+
+          repo="${MAVEN_REPO:-$HOME/.m2/repository}"
+          version="${VERSION:?VERSION is required}"
+          # dotcms-core packages a jar and dotcms-core-web a war; a release
+          # shipping one without the other is partial.
+          coords="${REQUIRED_COORDINATES:-com.dotcms:dotcms-core com.dotcms:dotcms-core-web}"
+          coords="${coords//,/ }"
+
+          rc=0
+          for coord in $coords; do
+            group="${coord%%:*}"
+            artifact="${coord##*:}"
+            if [[ "$coord" != *:* || -z "$group" || -z "$artifact" ]]; then
+              echo "::error::'$coord' is not groupId:artifactId"
+              rc=1
+              continue
+            fi
+            group_path="$(printf '%s' "$group" | tr '.' '/')"
+            dir="$repo/$group_path/$artifact/$version"
+
+            if [[ ! -d "$dir" ]]; then
+              echo "::error::$coord has no $version directory at $dir"
+              rc=1
+              continue
+            fi
+            # Match the exact primary artifact. A pom alone means the module
+            # installed but its archive did not, and a -sources.jar or
+            # -javadoc.jar must not stand in for the real archive.
+            if [[ ! -f "$dir/$artifact-$version.pom" ]]; then
+              echo "::error::$coord: no $artifact-$version.pom in $dir"
+              rc=1
+              continue
+            fi
+            if [[ ! -f "$dir/$artifact-$version.jar" && ! -f "$dir/$artifact-$version.war" ]]; then
+              echo "::error::$coord: no $artifact-$version.jar or .war in $dir"
+              rc=1
+            fi
+          done
+
+          if [[ $rc -ne 0 ]]; then
+            echo "::error::refusing to publish $version: the Maven repository is incomplete"
+            exit 1
+          fi
+          echo "Validated release artifacts for $version in $repo"
 
       - name: Publish Release Artifacts to S3
         if: inputs.deploy_artifact == true
@@ -189,7 +290,7 @@ jobs:
           MAVEN_S3_REGION: ${{ vars.MAVEN_S3_REGION }}
           MAVEN_S3_BUCKET: ${{ vars.MAVEN_S3_BUCKET }}
           MAVEN_S3_PREFIX: ${{ vars.MAVEN_S3_PREFIX }}
-          # Alternate Java variants append their changelist (e.g. -java25) to the version.
+          # Alternate Java variants append their changelist (e.g. -java-25) to the version.
           VERSION: ${{ inputs.release_version }}${{ steps.java-suffix.outputs.suffix }}
         run: |
           echo "::group::Publish Release Artifacts to S3"
