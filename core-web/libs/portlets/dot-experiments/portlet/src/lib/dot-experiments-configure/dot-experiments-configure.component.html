@@ -89,7 +89,8 @@
             <dot-experiments-configure-scheduling
                 [field]="formTree.scheduling"
                 [bounds]="$schedulingBounds()"
-o                [gated]="$isGated()"
+                o
+                [gated]="$isGated()"
                 [limitedMode]="$isLimitedMode()" />
         </form>
     </div>
@@ -106,11 +107,4 @@ o                [gated]="$isGated()"
         [draggable]="false"
         [position]="'center'"
         [style]="{ width: '500px' }" />
-
-    <p-confirmDialog
-        [key]="LIMITED_MODE_START_CONFIRM_KEY"
-        [draggable]="false"
-        [position]="'center'"
-        [style]="{ width: '500px' }"
-        data-testid="limited-mode-start-confirm-dialog" />
 }
