@@ -18,6 +18,20 @@ which cannot arbitrate between two surfaces that want the same key.
 | `↑` `↓` | Move focus between rows | the shared listing |
 | `Shift + ↑` `Shift + ↓` | Extend the selection | the shared listing |
 | `Shift + click` | Extend the selection to the clicked row | the shared listing |
+| `←` `→` | Move focus one card, wrapping onto the row before or after | Content Drive grid view |
+| `↑` `↓` | Move focus one row of cards (to the last card of a shorter last row) | Content Drive grid view |
+| `Home` `End` | Move focus to the first or last card of the page | Content Drive grid view |
+| `Shift` + any of the above | Extend the selection from the anchor card | Content Drive grid view |
+| `Enter` `Space` | Select or unselect the focused card | Content Drive grid view |
+| `Shift + F10`, `ContextMenu` | Open the focused card's actions menu | Content Drive grid view |
+| `Shift + click` (checkbox) | Extend the selection to the clicked card | Content Drive grid view |
+
+The grid view (#37930) is one tab stop, like the table. Its arrows are handled on the grid itself
+(`dot-content-drive-grid-view`), not through the registry: they only mean something while focus is
+on a card. Up and Down measure the rendered rows, so they follow the layout after a resize or the
+folder tree toggling. Busy cards are skipped by every move and left out of every range. A plain
+click on a card opens it; the checkbox is the mouse way to select. `Escape`, `/`, `Mod + K` and
+`Mod + B` are the shell's and the search box's claims, so they work the same in both views.
 
 `Mod` is the platform's primary modifier: Command on macOS, Control on Windows and Linux. One
 registration covers both.

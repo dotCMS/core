@@ -87,6 +87,7 @@ import {
 import { DotContentDriveActionCenterComponent } from '../components/dialogs/dot-content-drive-action-center/dot-content-drive-action-center.component';
 import { DotContentDriveDialogContentTypeSelectorComponent } from '../components/dialogs/dot-content-drive-dialog-content-type-selector/dot-content-drive-dialog-content-type-selector.component';
 import { DotContentDriveDialogFolderComponent } from '../components/dialogs/dot-content-drive-dialog-folder/dot-content-drive-dialog-folder.component';
+import { DotContentDriveGridCardComponent } from '../components/dot-content-drive-grid-card/dot-content-drive-grid-card.component';
 import { DotContentDriveScopeBarComponent } from '../components/dot-content-drive-scope-bar/dot-content-drive-scope-bar.component';
 import { DotContentDriveSidebarComponent } from '../components/dot-content-drive-sidebar/dot-content-drive-sidebar.component';
 import { DotContentDriveToolbarComponent } from '../components/dot-content-drive-toolbar/dot-content-drive-toolbar.component';
@@ -96,6 +97,7 @@ import {
     ACTION_CENTER_DIALOG_CONTENT_STYLE,
     ACTION_CENTER_DIALOG_CLASS,
     CONTENT_DRIVE_URL_PARAM,
+    CONTENT_DRIVE_VIEW_PARAM,
     DIALOG_TYPE,
     SORT_ORDER,
     SUCCESS_MESSAGE_LIFE,
@@ -119,7 +121,8 @@ import {
     DotContentDriveUploadSelection,
     DotContentDriveUploadSelectorPayload,
     OUTCOME_KIND,
-    DotContentDriveFolderPermissionsPayload
+    DotContentDriveFolderPermissionsPayload,
+    DOT_CONTENT_DRIVE_VIEW_TYPE
 } from '../shared/models';
 import {
     DotContentDriveNavigationService,
@@ -166,6 +169,7 @@ type DotFolderUserAccess = { canEdit: boolean; canEditPermissions: boolean };
     selector: 'dot-content-drive-shell',
     imports: [
         DotFolderListViewComponent,
+        DotContentDriveGridCardComponent,
         DotContentDriveToolbarComponent,
         DotFolderListViewContextMenuComponent,
         DotAddToBundleComponent,
@@ -717,6 +721,25 @@ export class DotContentDriveShellComponent implements OnDestroy {
     });
 
     readonly $loading = computed(() => this.#store.status() === DotContentDriveStatus.LOADING);
+
+    /** Whether the grid of cards is showing instead of the table (#37930). */
+    protected readonly $isGridView = computed(
+        () => this.#store.viewType() === DOT_CONTENT_DRIVE_VIEW_TYPE.CARD
+    );
+
+    /**
+     * Results per page, as the store holds them. The listing rebuilds its table when the layout
+     * switches back to it, and the rebuilt table must page by what the user picked.
+     */
+    protected readonly $rows = computed(() => this.#store.pagination().limit);
+
+    /** The sort the store holds, for the same reason: a rebuilt table shows it. */
+    protected readonly $sort = computed(() => this.#store.sort());
+
+    /** The sort direction in the table's terms: `1` ascending, `-1` descending. */
+    protected readonly $sortOrder = computed(() =>
+        this.$sort().order === DotContentDriveSortOrder.ASC ? 1 : -1
+    );
 
     /**
      * Whether the last search failed to run, as opposed to running and matching nothing.
@@ -1559,6 +1582,10 @@ export class DotContentDriveShellComponent implements OnDestroy {
         const queryParams: Record<string, string | null> = {};
 
         queryParams['isTreeExpanded'] = isTreeExpanded.toString();
+        // Always written, so a copied link opens in the view it was copied from, whatever the
+        // person opening it remembered (#37930, US4 #2). A view switch replaces the entry; only
+        // panel opens and folder moves push one, below.
+        queryParams[CONTENT_DRIVE_VIEW_PARAM.VIEW_TYPE] = this.#store.viewType();
 
         if (path && path.length) {
             queryParams['path'] = path;
@@ -1622,8 +1649,17 @@ export class DotContentDriveShellComponent implements OnDestroy {
             const isOpeningPanel =
                 (panelOpen && !this.#editPanelUrlWasSet) ||
                 (folderDialogOpen && !this.#folderDialogUrlWasSet);
+            //
+            // A folder the URL already names is not navigation: Back put it there. The write that
+            // follows only corrects `viewType`, which Back leaves as the user last picked it
+            // (#37930); pushing it would cut off Forward.
+            const urlPath = new URLSearchParams(this.#location.path(true).split('?')[1] ?? '').get(
+                'path'
+            );
             const isFolderNavigation =
-                this.#lastWrittenPath !== undefined && path !== this.#lastWrittenPath;
+                this.#lastWrittenPath !== undefined &&
+                path !== this.#lastWrittenPath &&
+                (path || null) !== urlPath;
 
             if (isOpeningPanel || isFolderNavigation) {
                 this.#location.go(newUrl);
