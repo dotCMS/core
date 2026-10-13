@@ -316,11 +316,10 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
      *   <li>If at least one {@link com.dotcms.experiments.model.Experiment} is RUNNING on the
      *       current host — regardless of whether {@code FEATURE_FLAG_EXPERIMENTS} is on or off —
      *       the full tracking JS is returned so that visitors can be assigned to a variant.</li>
-     *   <li>If no experiment is running <em>and</em> the flag is {@code true} (full mode), a
-     *       cleanup snippet is returned to remove stale localStorage artifacts left by a
-     *       previously-ended experiment.</li>
-     *   <li>If no experiment is running <em>and</em> the flag is {@code false} (limited mode),
-     *       {@link Optional#empty()} is returned — no JS is injected.</li>
+     *   <li>If no experiment is running, a cleanup snippet is returned to remove stale
+     *       localStorage artifacts left by a previously-ended experiment. This applies in both
+     *       full and limited mode, because this method is only called when auto-injection is
+     *       enabled or explicitly via the viewtool — both contexts require the cleanup.</li>
      *   <li>Outside LIVE mode {@link Optional#empty()} is always returned.</li>
      * </ul>
      *
@@ -340,11 +339,10 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
                     // Experiment actively running (full or limited mode) — inject tracking JS.
                     return Optional.of(getJSCode(host, request));
                 }
-                if (ConfigExperimentUtil.INSTANCE.isExperimentEnabled()) {
-                    // Full mode, no experiment currently running — inject cleanup JS to remove
-                    // stale localStorage artifacts left by a previously-ended experiment.
-                    return Optional.of(getNotExperimentRunningJSCode());
-                }
+                // No experiment running — inject cleanup JS to remove stale localStorage artifacts
+                // left by a previously-ended experiment. getCode() is only reached when auto-
+                // injection is on or the viewtool explicitly called it, so cleanup always applies.
+                return Optional.of(getNotExperimentRunningJSCode());
             } catch (DotDataException e) {
                 Logger.error(ExperimentWebAPIImpl.class, "It is not possible to generate the Experiment JS Code:" + e.getMessage());
             }
