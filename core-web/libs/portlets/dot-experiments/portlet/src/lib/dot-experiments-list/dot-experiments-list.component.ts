@@ -20,11 +20,11 @@ import { Params } from '@angular/router';
 import { ConfirmationService, MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { MessageModule } from 'primeng/message';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 import { MenuModule } from 'primeng/menu';
+import { MessageModule } from 'primeng/message';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TableLazyLoadEvent, TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
@@ -754,15 +754,14 @@ export class DotExperimentsListComponent {
                 id: 'experiments-end',
                 label: this.#dotMessageService.get('experiments.action.end-experiment'),
                 visible: isAllowed('end', status),
+                // _end is allowed in limited mode (ENDED keeps the slot occupied — no loophole).
                 command: () =>
-                    this.store.isLimitedMode()
-                        ? this.#notifyLimitedModeAction()
-                        : this.#confirm({
-                              headerKey: 'experiments.action.end-experiment',
-                              messageKey: 'experiments.action.stop.delete-confirm',
-                              acceptLabelKey: 'experiments.action.end',
-                              accept: () => this.#dispatch.endExperiment(experiment)
-                          })
+                    this.#confirm({
+                        headerKey: 'experiments.action.end-experiment',
+                        messageKey: 'experiments.action.stop.delete-confirm',
+                        acceptLabelKey: 'experiments.action.end',
+                        accept: () => this.#dispatch.endExperiment(experiment)
+                    })
             },
             {
                 id: 'experiments-abort',
