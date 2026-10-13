@@ -595,9 +595,14 @@ export class DotExperimentsConfigureComponent {
      * Clears both scheduling dates when in limited mode so the autosave PATCH never persists
      * a scheduling that would cause ExperimentsAPIImpl.emptyScheduling() to return false,
      * which would route the experiment to SCHEDULED instead of RUNNING on _start.
+     *
+     * Only runs for DRAFT experiments: RUNNING, ENDED, and SCHEDULED experiments already have
+     * real dates committed by startLimitedScheduling(). Blanking them would hide the actual
+     * run window in the UI and — because $hasUnsavedChanges is not gated by the lock — would
+     * trigger a false "unsaved changes" prompt when the user tries to leave a read-only screen.
      */
     protected readonly clearSchedulingInLimitedModeEffect = effect(() => {
-        if (!this.$isLimitedMode()) {
+        if (!this.$isLimitedMode() || this.store.$isLocked()) {
             return;
         }
 
