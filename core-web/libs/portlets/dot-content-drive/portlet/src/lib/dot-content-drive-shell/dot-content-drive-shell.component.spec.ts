@@ -75,7 +75,7 @@ import { DOT_SYSTEM_CONFIG_SERVICE_MOCK, mockLocales } from '@dotcms/utils-testi
 
 import { DotContentDriveShellComponent } from './dot-content-drive-shell.component';
 
-import { DotContentDriveGridViewComponent } from '../components/dot-content-drive-grid-view/dot-content-drive-grid-view.component';
+import { DotContentDriveGridCardComponent } from '../components/dot-content-drive-grid-card/dot-content-drive-grid-card.component';
 import { DotLegacyEditorSidePanelComponent } from '../components/dot-legacy-editor-side-panel/dot-legacy-editor-side-panel.component';
 import {
     ACTION_CENTER_DIALOG_CONTENT_STYLE,
@@ -275,18 +275,18 @@ describe('DotContentDriveShellComponent', () => {
             [
                 DotContentDriveShellComponent,
                 {
-                    // The grid has its own spec; here only its bindings matter. Rendering real
-                    // cards in every grid test pushed this file past Node's heap limit.
+                    // The card has its own spec. Rendering real cards here pushed this file past
+                    // Node's heap limit.
                     remove: {
                         imports: [
                             DotLegacyEditorSidePanelComponent,
-                            DotContentDriveGridViewComponent
+                            DotContentDriveGridCardComponent
                         ]
                     },
                     add: {
                         imports: [
                             MockComponent(DotLegacyEditorSidePanelComponent),
-                            MockComponent(DotContentDriveGridViewComponent)
+                            MockComponent(DotContentDriveGridCardComponent)
                         ]
                     }
                 }

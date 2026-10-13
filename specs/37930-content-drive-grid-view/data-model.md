@@ -26,7 +26,8 @@ Result: the first usable value, else `list`.
 
 | Field | Type | Notes |
 |-------|------|-------|
-| `viewType` | `DotContentDriveViewType` | Set at init from `resolveViewType`; changed by the switcher; re-read on Back/Forward when the URL carries a usable `viewType` |
+| `viewType` | `DotContentDriveViewType` | Set at init from `resolveViewType`; changed by the switcher; left alone by Back/Forward (FR-019a) |
+| `viewTypeStorageKey` | `string` | Worked out once at init from the hosting portlet's id; every remembered-view read and write uses it |
 
 Methods: `setViewType(viewType, { remember?: boolean })` — `remember: true` (the switcher only)
 also writes the storage key; failures are swallowed.

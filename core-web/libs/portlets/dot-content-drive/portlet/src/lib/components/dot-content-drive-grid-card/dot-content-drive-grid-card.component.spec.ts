@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 
 import { By } from '@angular/platform-browser';
 
+import { Avatar } from 'primeng/avatar';
+import { Card } from 'primeng/card';
 import { Tooltip } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -15,7 +17,6 @@ import {
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentDriveGridCardComponent } from './dot-content-drive-grid-card.component';
-
 import {
     GRID_FOLDER,
     GRID_IMAGE,
@@ -23,7 +24,7 @@ import {
     GRID_LOCKED_BLOG,
     GRID_MESSAGES,
     GRID_ORPHAN_PAGE
-} from '../grid-view.mocks';
+} from './grid-card.mocks';
 
 describe('DotContentDriveGridCardComponent', () => {
     let spectator: Spectator<DotContentDriveGridCardComponent>;
@@ -38,7 +39,7 @@ describe('DotContentDriveGridCardComponent', () => {
 
     const render = (item: DotContentDriveItem, inputs: Record<string, unknown> = {}) => {
         spectator = createComponent({
-            props: { item, languagesMap: GRID_LANGUAGES, ...inputs } as never
+            props: { item, cardId: 'card-7', languagesMap: GRID_LANGUAGES, ...inputs } as never
         });
         spectator.detectChanges();
     };
@@ -74,8 +75,15 @@ describe('DotContentDriveGridCardComponent', () => {
             expect(text('grid-card-type')).toBe('Image');
         });
 
-        it('should feed the editor name to the Gravatar directive', () => {
-            expect(spectator.query(DotGravatarDirective)?.$email()).toBe('Luca Romano');
+        it("should show the editor's initial and make no Gravatar request", () => {
+            expect(spectator.query(Avatar)?.label).toBe('L');
+            expect(spectator.query(DotGravatarDirective)).toBeNull();
+        });
+
+        it('should mark the preview as the drag picture', () => {
+            expect(
+                spectator.query(byTestId('grid-card-thumbnail'))?.hasAttribute('data-drag-preview')
+            ).toBe(true);
         });
 
         it('should name the editor for screen readers and on hover', () => {
@@ -84,6 +92,46 @@ describe('DotContentDriveGridCardComponent', () => {
 
         it('should show no date', () => {
             expect(spectator.query(byTestId('grid-card-date'))).toBeNull();
+        });
+    });
+
+    describe('accessible name (FR-031)', () => {
+        it('should give the title the id the grid labels the card by', () => {
+            render(GRID_LOCKED_BLOG);
+
+            expect(spectator.query('#card-7-label')?.textContent?.trim()).toBe(
+                GRID_LOCKED_BLOG.title
+            );
+        });
+
+        it('should sum up the rest under the id the grid describes the card by', () => {
+            render(GRID_LOCKED_BLOG);
+
+            const description = spectator.query('#card-7-description')?.textContent ?? '';
+
+            ['Draft', 'es-ES', 'Blog', 'Edited by: Maya Chen', 'Locked by: Maya Chen'].forEach(
+                (part) => expect(description).toContain(part)
+            );
+        });
+
+        it('should describe a folder by its type and owner only', () => {
+            render(GRID_FOLDER);
+
+            const description = spectator.query('#card-7-description')?.textContent ?? '';
+
+            expect(description).toContain('Folder');
+            expect(description).toContain('Edited by: Daniel Ortiz');
+            expect(description).not.toContain('Unlocked');
+        });
+    });
+
+    describe('spacing (design)', () => {
+        it("should set the body's padding and gap through the card's design tokens", () => {
+            render(GRID_IMAGE);
+
+            expect(spectator.query(Card)?.dt()).toEqual({
+                body: { padding: '1rem 1rem 0.875rem', gap: '0.375rem' }
+            });
         });
     });
 
@@ -117,9 +165,19 @@ describe('DotContentDriveGridCardComponent', () => {
         it('should show a neutral placeholder and say the editor is unknown', () => {
             render(GRID_ORPHAN_PAGE);
 
-            expect(spectator.query(DotGravatarDirective)).toBeNull();
-            expect(spectator.query(byTestId('grid-card-avatar'))).toBeTruthy();
+            expect(spectator.query(Avatar)?.icon).toBe('pi pi-user');
             expect(text('grid-card-editor-label')).toBe('Edited by: Unknown');
+        });
+    });
+
+    describe('editor named by an email (privacy)', () => {
+        it('should show the initial and never ask Gravatar for the address', () => {
+            // A user with no first or last name is named after their email. Hashing it to fetch a
+            // picture would send it to gravatar.com from every card they edited.
+            render({ ...GRID_IMAGE, modUserName: 'luca@example.com' } as DotContentDriveItem);
+
+            expect(spectator.query(Avatar)?.label).toBe('L');
+            expect(spectator.query('img')?.getAttribute('src') ?? '').not.toContain('gravatar');
         });
     });
 
@@ -127,13 +185,17 @@ describe('DotContentDriveGridCardComponent', () => {
         beforeEach(() => render(GRID_FOLDER));
 
         it('should show the folder icon instead of a preview', () => {
-            expect(spectator.query(byTestId('grid-card-folder-icon'))).toBeTruthy();
+            expect(
+                spectator
+                    .query(byTestId('grid-card-folder-icon'))
+                    ?.hasAttribute('data-drag-preview')
+            ).toBe(true);
             expect(spectator.query(DotContentThumbnailComponent)).toBeNull();
         });
 
         it('should show its name, its owner and the word Folder', () => {
             expect(text('grid-card-title')).toBe('activities');
-            expect(spectator.query(DotGravatarDirective)?.$email()).toBe('Daniel Ortiz');
+            expect(spectator.query(Avatar)?.label).toBe('D');
             expect(text('grid-card-type')).toBe('Folder');
         });
 

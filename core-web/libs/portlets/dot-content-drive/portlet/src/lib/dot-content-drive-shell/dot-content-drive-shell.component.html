@@ -101,8 +101,14 @@
 
     <!-- `dataKey="inode"`: the language filter is multi-select, so one identifier can occupy
          several rows here. On the component's `identifier` default, ticking one language version
-         ticked them all. The search service already backfills folder inodes for exactly this. -->
+         ticked them all. The search service already backfills folder inodes for exactly this.
+
+         `layout` switches between the table and the grid of cards (#37930). It is one listing, so
+         the selection, the page, the focus and the paging lock carry across a switch; the card is
+         the Drive's, handed over as the `#card` template. `rows`, `sortField` and `sortOrder`
+         come from the store because a switch back rebuilds the table, which must show them. -->
     <dot-folder-list-view
+        [layout]="$isGridView() ? 'grid' : 'table'"
         [items]="$items()"
         [selection]="$selectedItems()"
         [loading]="$loading()"
@@ -111,6 +117,9 @@
         [totalItems]="$totalItems()"
         [extraColumns]="$extraColumns()"
         [offset]="$offset()"
+        [rows]="$rows()"
+        [sortField]="$sort().field"
+        [sortOrder]="$sortOrder()"
         (paginate)="onPaginate($event)"
         (sort)="onSort($event)"
         (selectionChange)="onSelectItems($event)"
@@ -120,37 +129,32 @@
         (dragEnd)="onDragEnd()"
         (drop)="onTableDrop($event)"
         (scroll)="onTableScroll()"
-        [rows]="$rows()"
-        [activeKey]="$activeListingKey()"
-        (activeKeyChange)="onActiveListingKeyChange($event)"
-        [style.display]="$isGridView() ? 'none' : null"
-        #listView />
-
-    <!-- The grid (#37930). The table above stays mounted while it shows, hidden: destroying it
-         would re-run its lazy load on the way back, a fresh search with the page size reset to 20.
-         Both are wired to the same handlers, so a card does what a row does. -->
-    @if ($isGridView()) {
-        <dot-content-drive-grid-view
-            [items]="$items()"
-            [selection]="$selectedItems()"
-            [loading]="$loading()"
-            [busyRows]="$busyRows()"
-            [totalItems]="$totalItems()"
-            [offset]="$offset()"
-            [rows]="$rows()"
-            [languagesMap]="$languagesMap()"
-            [activeKey]="$activeListingKey()"
-            data-testid="grid-view"
-            (selectionChange)="onSelectItems($event)"
-            (paginate)="onPaginate($event)"
-            (open)="onDoubleClick($event)"
-            (rightClick)="onContextMenu($event)"
-            (dragStart)="onDragStart($event)"
-            (dragEnd)="onDragEnd()"
-            (drop)="onTableDrop($event)"
-            (scroll)="onTableScroll()"
-            (activeKeyChange)="onActiveListingKeyChange($event)" />
-    }
+        #listView>
+        <ng-template
+            #card
+            let-item
+            let-id="id"
+            let-selected="selected"
+            let-busy="busy"
+            let-dragOver="dragOver"
+            let-readOnly="readOnly"
+            let-languagesMap="languagesMap"
+            let-toggle="toggle"
+            let-open="open"
+            let-menu="menu">
+            <dot-content-drive-grid-card
+                [item]="item"
+                [cardId]="id"
+                [selected]="selected"
+                [busy]="busy"
+                [dragOver]="dragOver"
+                [readOnly]="readOnly"
+                [languagesMap]="languagesMap"
+                (toggleSelect)="toggle($event)"
+                (open)="open($event)"
+                (menu)="menu($event)" />
+        </ng-template>
+    </dot-folder-list-view>
 </dot-upload-dropzone>
 <dot-folder-list-context-menu />
 

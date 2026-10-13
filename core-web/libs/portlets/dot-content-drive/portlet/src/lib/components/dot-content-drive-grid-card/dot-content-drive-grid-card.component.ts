@@ -17,16 +17,12 @@ import {
 import {
     DotContentletStatusBadgeComponent,
     DotContentThumbnailComponent,
-    DotGravatarDirective,
     DotLocaleTagPipe,
     DotMessagePipe
 } from '@dotcms/ui';
 
 /** What the backend puts in a user's name field when the user cannot be resolved. */
 const UNRESOLVED_NAME = 'N/A';
-
-/** Gives each card's described-by targets ids no other card on the page can share. */
-let nextCardId = 0;
 
 /**
  * Returns a usable display name, or `null` for the values the backend uses to say it has none.
@@ -44,11 +40,14 @@ function displayName(name: string | null | undefined): string | null {
  * the status over its top-left corner and the selection checkbox over its top-right corner; the
  * title below; then the language, the content type, the lock state and the "more actions" button.
  *
- * Presentational only. The grid owns the selection, the keyboard and the drag, and sets the card's
- * role, tab stop and `aria-selected` on its host. The card reports three gestures:
+ * The body of a card in `dot-folder-list-view`'s grid layout, which the shell hands over as the
+ * listing's `#card` template. Presentational only: the listing owns the selection, the keyboard and
+ * the drag, and draws the element the card sits in (role, tab stop, `aria-selected`), which it
+ * labels by `{cardId}-label` and describes by `{cardId}-description`. The card reports three
+ * gestures:
  *
  * - `open` — a plain click anywhere that is not one of the card's own controls.
- * - `toggleSelect` — a click on the checkbox (the grid reads Shift off the event for ranges).
+ * - `toggleSelect` — a click on the checkbox (the listing reads Shift off the event for ranges).
  * - `menu` — a click on the ⋮ button.
  */
 @Component({
@@ -60,7 +59,6 @@ function displayName(name: string | null | undefined): string | null {
         CheckboxModule,
         DotContentletStatusBadgeComponent,
         DotContentThumbnailComponent,
-        DotGravatarDirective,
         DotLocaleTagPipe,
         DotMessagePipe,
         FormsModule,
@@ -70,21 +68,19 @@ function displayName(name: string | null | undefined): string | null {
     templateUrl: './dot-content-drive-grid-card.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
-        // `relative`: the card's visually hidden labels are absolutely positioned, and without a
-        // positioned card they anchor to the drop zone outside the grid's scroll box and stretch it,
-        // which drew a second scrollbar.
-        class: 'group relative block min-w-0 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-(--p-primary-color) focus-visible:ring-offset-2',
-        '[class.opacity-60]': '$busy()',
-        '[class.pointer-events-none]': '$busy()',
-        '[attr.aria-busy]': '$busy() ? "true" : null',
-        '[attr.aria-label]': '$title()',
-        '[attr.aria-describedby]': '$describedBy()',
+        class: 'block h-full',
         '(click)': 'onCardClick($event)'
     }
 })
 export class DotContentDriveGridCardComponent {
     /** The folder or content item the card shows. */
     $item = input.required<DotContentDriveItem>({ alias: 'item' });
+
+    /**
+     * The id the listing gave this card. The title and the summary take ids built from it, which
+     * is how the listing names and describes the card to screen readers.
+     */
+    $cardId = input.required<string>({ alias: 'cardId' });
 
     /** Whether the item is in the Drive's selection. */
     $selected = input(false, { alias: 'selected' });
@@ -109,9 +105,6 @@ export class DotContentDriveGridCardComponent {
 
     /** A click on the ⋮ button: the item's actions menu should open. */
     menu = output<MouseEvent>();
-
-    /** Prefix for the ids the card's description points at. */
-    protected readonly id = `dot-grid-card-${nextCardId++}`;
 
     protected readonly $isFolder = computed(() => this.$item().type === 'folder');
 
@@ -142,6 +135,15 @@ export class DotContentDriveGridCardComponent {
     });
 
     /**
+     * The avatar's letter: the first of the editor's name. Drawn by PrimeNG's avatar alone, never
+     * through the Gravatar directive: the listing carries a name, and when a user has no first or
+     * last name that name is their email, which the directive would hash and send to gravatar.com.
+     */
+    protected readonly $editorInitial = computed(
+        () => this.$editorName()?.charAt(0).toUpperCase() ?? null
+    );
+
+    /**
      * Who holds the lock, when the listing can name them. Drive results carry `lockedBy` as an
      * object with the holder's names; some other sources carry only their id, which cannot be shown.
      */
@@ -161,19 +163,6 @@ export class DotContentDriveGridCardComponent {
         }
 
         return displayName(contentlet.lockedByName);
-    });
-
-    /**
-     * What a screen reader reads after the title: status, language, type, editor and lock, in the
-     * order they sit on the card. Points at the visible elements where they have text, and at
-     * visually hidden labels for the avatar and the lock, which are pictures.
-     */
-    protected readonly $describedBy = computed(() => {
-        const ids = this.$isFolder()
-            ? ['type', 'editor']
-            : ['status', 'language', 'type', 'editor', 'lock'];
-
-        return ids.map((part) => `${this.id}-${part}`).join(' ');
     });
 
     /**

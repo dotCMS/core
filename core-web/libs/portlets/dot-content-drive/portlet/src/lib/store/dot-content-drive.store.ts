@@ -86,24 +86,11 @@ import {
 } from '../utils/functions';
 import {
     browserStorage,
-    parseViewType,
     readStoredViewType,
     resolveViewType,
     viewTypeStorageKey,
     writeStoredViewType
 } from '../utils/view-type';
-
-/**
- * The id of the screen hosting the Drive, which keys its remembered view. Empty when the router
- * cannot say, which falls back to the Drive's own key.
- */
-function hostPortletId(dotRouterService: DotRouterService): string {
-    try {
-        return dotRouterService.currentPortlet?.id ?? '';
-    } catch {
-        return '';
-    }
-}
 
 const initialState: DotContentDriveState = {
     currentSite: undefined, // So we have the actual site selected on start
@@ -127,7 +114,8 @@ const initialState: DotContentDriveState = {
     // Pessimistic default: until `getCurrentUser` answers, the user is treated as a non-admin. See
     // `DotContentDriveState.currentUserIsAdmin` for why over-warning is the right way to fail here.
     currentUserIsAdmin: false,
-    viewType: DEFAULT_VIEW_TYPE
+    viewType: DEFAULT_VIEW_TYPE,
+    viewTypeStorageKey: viewTypeStorageKey('')
 };
 
 export const DotContentDriveStore = signalStore(
@@ -258,7 +246,6 @@ export const DotContentDriveStore = signalStore(
     ),
     withMethods((store) => {
         const dotContentDriveService = inject(DotContentDriveService);
-        const dotRouterService = inject(DotRouterService);
         const dotCurrentUserService = inject(DotCurrentUserService);
         const dotLanguagesService = inject(DotLanguagesService);
         return {
@@ -412,11 +399,7 @@ export const DotContentDriveStore = signalStore(
                 patchState(store, { viewType });
 
                 if (options?.remember) {
-                    writeStoredViewType(
-                        browserStorage(),
-                        viewTypeStorageKey(hostPortletId(dotRouterService)),
-                        viewType
-                    );
+                    writeStoredViewType(browserStorage(), store.viewTypeStorageKey(), viewType);
                 }
             },
             /**
@@ -713,13 +696,12 @@ export const DotContentDriveStore = signalStore(
                 // effect: that one re-runs when the site changes, and switching site must not undo
                 // a view the user picked since.
                 const openingParams = route.snapshot.queryParams;
+                const storageKey = viewTypeStorageKey(dotRouterService.currentPortlet?.id ?? '');
                 patchState(store, {
+                    viewTypeStorageKey: storageKey,
                     viewType: resolveViewType({
                         urlViewType: openingParams[CONTENT_DRIVE_VIEW_PARAM.VIEW_TYPE],
-                        storedViewType: readStoredViewType(
-                            browserStorage(),
-                            viewTypeStorageKey(hostPortletId(dotRouterService))
-                        ),
+                        storedViewType: readStoredViewType(browserStorage(), storageKey),
                         defaultViewType: openingParams[CONTENT_DRIVE_VIEW_PARAM.DEFAULT_VIEW_TYPE]
                     })
                 });
@@ -774,18 +756,9 @@ export const DotContentDriveStore = signalStore(
                  * turns into a fresh load.
                  */
                 locationSub = location.subscribe((event) => {
+                    // `viewType` is not read here: the view is a preference, so Back and Forward
+                    // keep the one showing rather than the one the entry was saved with (#37930).
                     const params = new URLSearchParams(event.url?.split('?')[1] ?? '');
-
-                    // The view follows the URL on Back/Forward. Showing it needs no reload, so it is
-                    // applied before the check below, which re-runs the search only when what is
-                    // being browsed changed.
-                    const restoredViewType = parseViewType(
-                        params.get(CONTENT_DRIVE_VIEW_PARAM.VIEW_TYPE)
-                    );
-
-                    if (restoredViewType && restoredViewType !== store.viewType()) {
-                        patchState(store, { viewType: restoredViewType });
-                    }
                     const path = params.get('path') || DEFAULT_PATH;
                     const filtersRaw = params.get('filters') || '';
                     const isTreeExpanded =

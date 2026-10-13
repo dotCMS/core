@@ -1,10 +1,11 @@
 import {
+    byTestId,
     createComponentFactory,
     mockProvider,
     Spectator,
     SpyObject
 } from '@openng/spectator/vitest';
-import { MockComponent, ngMocks } from 'ng-mocks';
+import { MockComponent } from 'ng-mocks';
 import { of, Subject } from 'rxjs';
 import { Mocked, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -12,7 +13,6 @@ import { Location } from '@angular/common';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal, WritableSignal } from '@angular/core';
-import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
@@ -48,7 +48,7 @@ import { DOT_SYSTEM_CONFIG_SERVICE_MOCK, mockLocales } from '@dotcms/utils-testi
 
 import { DotContentDriveShellComponent } from './dot-content-drive-shell.component';
 
-import { DotContentDriveGridViewComponent } from '../components/dot-content-drive-grid-view/dot-content-drive-grid-view.component';
+import { DotContentDriveGridCardComponent } from '../components/dot-content-drive-grid-card/dot-content-drive-grid-card.component';
 import { DotLegacyEditorSidePanelComponent } from '../components/dot-legacy-editor-side-panel/dot-legacy-editor-side-panel.component';
 import { DEFAULT_PAGE, DEFAULT_PAGINATION } from '../shared/constants';
 import { DotLegacyEditorRequest } from '../shared/legacy-editor.models';
@@ -113,6 +113,8 @@ const systemHostCanReadSignal = signal(true);
 const allSiteContentSelectedSignal = signal(false);
 // The listing on show (#37930). Module-level and reset per test, like the signals above.
 const viewTypeSignal: WritableSignal<'list' | 'card'> = signal('list');
+// The folder on show, so a test can play Back across a folder change.
+const pathSignal: WritableSignal<string> = signal('/');
 
 /**
  * The shell's wiring of the grid view (#37930). In its own file because the main shell spec sits at
@@ -237,18 +239,8 @@ describe('DotContentDriveShellComponent — grid view', () => {
                 {
                     // The grid has its own spec; here only its bindings matter. Rendering real
                     // cards in every grid test pushed this file past Node's heap limit.
-                    remove: {
-                        imports: [
-                            DotLegacyEditorSidePanelComponent,
-                            DotContentDriveGridViewComponent
-                        ]
-                    },
-                    add: {
-                        imports: [
-                            MockComponent(DotLegacyEditorSidePanelComponent),
-                            MockComponent(DotContentDriveGridViewComponent)
-                        ]
-                    }
+                    remove: { imports: [DotLegacyEditorSidePanelComponent] },
+                    add: { imports: [MockComponent(DotLegacyEditorSidePanelComponent)] }
                 }
             ]
         ],
@@ -261,6 +253,7 @@ describe('DotContentDriveShellComponent — grid view', () => {
         systemHostCanReadSignal.set(true);
         allSiteContentSelectedSignal.set(false);
         viewTypeSignal.set('list');
+        pathSignal.set('/');
         filtersSignal = signal({});
         statusSignal = signal(DotContentDriveStatus.LOADING);
         dialogSignal = signal<DotContentDriveDialog | undefined>(undefined);
@@ -319,13 +312,14 @@ describe('DotContentDriveShellComponent — grid view', () => {
                     isTreeVisuallyExpanded: vi.fn().mockReturnValue(false),
                     isTreeForceCollapsed: vi.fn().mockReturnValue(false),
                     setTreeForceCollapsed: vi.fn(),
-                    path: vi.fn().mockReturnValue('/test/path'),
+                    path: pathSignal,
                     filters: filtersSignal,
                     clearFilters: vi.fn(),
                     status: statusSignal,
-                    sort: vi
-                        .fn()
-                        .mockReturnValue({ field: 'modDate', order: DotContentDriveSortOrder.ASC }),
+                    sort: vi.fn().mockReturnValue({
+                        field: 'title',
+                        order: DotContentDriveSortOrder.ASC
+                    }),
                     pages: vi.fn().mockReturnValue([DEFAULT_PAGE]),
                     setItems: vi.fn(),
                     setStatus: vi.fn(),
@@ -482,64 +476,51 @@ describe('DotContentDriveShellComponent — grid view', () => {
     });
 
     describe('grid view (#37930)', () => {
-        // Mocked (see `overrideComponents`), so its inputs are read through ng-mocks.
-        const gridDebug = () => spectator.debugElement.query(By.css('dot-content-drive-grid-view'));
-        const gridInput = (name: string) => ngMocks.input(gridDebug(), name);
-        const tableHost = () => spectator.query<HTMLElement>('dot-folder-list-view');
+        const listing = () => spectator.query(DotFolderListViewComponent);
+        const cards = () => spectator.queryAll(DotContentDriveGridCardComponent);
 
         const showGrid = () => {
             viewTypeSignal.set('card');
             spectator.detectChanges();
         };
 
-        describe('US1 — which listing shows', () => {
-            it('should show only the table in the list view', () => {
+        beforeEach(() => statusSignal.set(DotContentDriveStatus.LOADED));
+
+        describe('US1 — one listing, two layouts', () => {
+            it('should lay the listing out as a table in the list view', () => {
                 spectator.detectChanges();
 
-                expect(gridDebug()).toBeNull();
-                expect(tableHost()?.style.display).not.toBe('none');
+                expect(listing()?.$layout()).toBe('table');
+                expect(cards().length).toBe(0);
             });
 
-            it('should show the grid and keep the table mounted but hidden in the card view', () => {
-                // Destroying the table would re-run its lazy load on the way back: a fresh search
-                // and the page size reset to 20 (research R2).
+            it('should lay the same listing out as Drive cards in the card view', () => {
                 spectator.detectChanges();
                 showGrid();
 
-                expect(gridDebug()).toBeTruthy();
-                expect(spectator.query(DotFolderListViewComponent)).toBeTruthy();
-                expect(tableHost()?.style.display).toBe('none');
+                expect(spectator.queryAll(DotFolderListViewComponent).length).toBe(1);
+                expect(listing()?.$layout()).toBe('grid');
+                expect(spectator.query('p-table')).toBeNull();
+                expect(cards().map((card) => card.$item())).toEqual(MOCK_ITEMS);
             });
 
-            it('should feed the grid the same page the table gets', () => {
-                selectedItemsSignal.set([MOCK_ITEMS[1]]);
-                spectator.detectChanges();
-                showGrid();
-
-                expect(gridInput('items')).toEqual(MOCK_ITEMS);
-                expect(gridInput('selection')).toEqual([MOCK_ITEMS[1]]);
-                expect(gridInput('rows')).toBe(DEFAULT_PAGINATION.limit);
-                expect(gridInput('offset')).toBe(DEFAULT_PAGINATION.offset);
-                expect(
-                    (gridInput('languagesMap') as Map<number, unknown>).get(mockLocales[0].id)
-                ).toEqual(mockLocales[0]);
-            });
-
-            it('should give the table the stored page size, so both views page alike', () => {
+            it('should give the listing the stored page size and sort, which a rebuilt table shows', () => {
                 spectator.detectChanges();
 
-                expect(spectator.query(DotFolderListViewComponent)?.$rows()).toBe(
-                    DEFAULT_PAGINATION.limit
-                );
+                expect(listing()?.$rows()).toBe(DEFAULT_PAGINATION.limit);
+                expect(listing()?.$sortField()).toBe('title');
+                expect(listing()?.$sortOrder()).toBe(1);
             });
         });
 
-        describe('US3 — one selection for both views', () => {
-            it('should store what the grid selects, like the table', () => {
+        describe('US3 — one selection for both layouts', () => {
+            it('should store what a card checkbox selects, like a row checkbox', () => {
                 spectator.detectChanges();
                 showGrid();
 
-                spectator.triggerEventHandler(gridDebug(), 'selectionChange', [MOCK_ITEMS[0]]);
+                spectator.click(
+                    spectator.queryAll(byTestId('grid-card-checkbox'))[0] as HTMLElement
+                );
 
                 expect(store.setSelectedItems).toHaveBeenCalledWith([MOCK_ITEMS[0]]);
             });
@@ -559,59 +540,42 @@ describe('DotContentDriveShellComponent — grid view', () => {
                 );
                 expect(location.go).not.toHaveBeenCalled();
             });
+
+            it('should keep the view on Back, and not stack a history entry for it', () => {
+                // Folder B was opened in the table, then the user switched to the grid. Back
+                // restores folder A's URL, which still says `list`; the grid stays (the view is a
+                // preference) and the URL is corrected in place, so Forward still reaches B.
+                pathSignal.set('/B/');
+                spectator.detectChanges();
+                showGrid();
+                location.go.mockClear();
+                location.replaceState.mockClear();
+                location.path.mockReturnValue('?isTreeExpanded=true&viewType=list&path=%2FA%2F');
+
+                pathSignal.set('/A/');
+                spectator.detectChanges();
+
+                expect(location.go).not.toHaveBeenCalled();
+                expect(location.replaceState).toHaveBeenLastCalledWith(
+                    expect.stringContaining('viewType=card')
+                );
+            });
         });
 
         describe('US5 — a card does what a row does', () => {
-            beforeEach(() => {
+            it('should open a clicked card the way a double-clicked row opens', () => {
                 spectator.detectChanges();
                 showGrid();
-            });
-
-            it.each([
-                ['open', 'onDoubleClick', MOCK_ITEMS[0]],
-                [
-                    'rightClick',
-                    'onContextMenu',
-                    { event: new MouseEvent('contextmenu'), contentlet: MOCK_ITEMS[0] }
-                ],
-                ['dragStart', 'onDragStart', [MOCK_ITEMS[0]]],
-                ['dragEnd', 'onDragEnd', undefined],
-                ['drop', 'onTableDrop', MOCK_ITEMS[1]],
-                ['paginate', 'onPaginate', { first: 20, rows: 20, page: 2 }],
-                ['scroll', 'onTableScroll', new Event('scroll')]
-            ])('should route the grid %s to the table handler %s', (output, handler, payload) => {
-                // The handlers are protected; reached by name, as the template reaches them.
                 const component = spectator.component as unknown as Record<string, () => void>;
-                const spy = vi.spyOn(component, handler).mockImplementation(() => undefined);
+                const open = vi
+                    .spyOn(component, 'onDoubleClick')
+                    .mockImplementation(() => undefined);
 
-                spectator.triggerEventHandler(gridDebug(), output, payload);
+                spectator
+                    .queryAll(byTestId('grid-card-title'))[1]
+                    ?.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 }));
 
-                expect(spy).toHaveBeenCalled();
-            });
-        });
-
-        describe('US7 — focus and anchor survive a switch', () => {
-            it('should hand the item the grid was on to the table', () => {
-                spectator.detectChanges();
-                showGrid();
-
-                spectator.triggerEventHandler(gridDebug(), 'activeKeyChange', 'inode-456');
-                spectator.detectChanges();
-
-                expect(spectator.query(DotFolderListViewComponent)?.$activeKey()).toBe('inode-456');
-                expect(gridInput('activeKey')).toBe('inode-456');
-            });
-
-            it('should hand the item the table was on to the grid', () => {
-                spectator.detectChanges();
-                const table = spectator.debugElement.query(
-                    By.directive(DotFolderListViewComponent)
-                );
-
-                spectator.triggerEventHandler(table, 'activeKeyChange', 'inode-123');
-                showGrid();
-
-                expect(gridInput('activeKey')).toBe('inode-123');
+                expect(open).toHaveBeenCalledWith(MOCK_ITEMS[1]);
             });
         });
     });

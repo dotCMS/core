@@ -526,9 +526,16 @@ export interface DotContentDriveState extends DotContentDriveInit {
      * Which listing is showing: the table (`list`) or the grid of cards (`card`).
      *
      * Decided once when the Drive opens (see `resolveViewType`) and changed by the view switcher.
-     * Mirrored into the URL as `viewType`, so a copied link opens in the same view.
+     * Mirrored into the URL as `viewType`, so a copied link opens in the same view. Back and Forward
+     * leave it alone: it is a preference, not a place.
      */
     viewType: DotContentDriveViewType;
+    /**
+     * Where the view picked with the switcher is remembered, keyed by the screen the Drive opened
+     * on. Worked out once when the Drive opens, so the view it opened with and the switches saved
+     * later always use the same key, even once one Drive serves several tools (#37931).
+     */
+    viewTypeStorageKey: string;
 }
 
 /**

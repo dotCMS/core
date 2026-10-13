@@ -3585,12 +3585,22 @@ describe('DotContentDriveStore - view type', () => {
         setItem.mockRestore();
     });
 
-    it('should follow the view in the URL on Back and Forward', () => {
+    it('should keep remembering under the screen the Drive opened on', () => {
+        buildStore({}, 'c_blogs');
+        portlet.id = 'c_news';
+
+        store.setViewType('card', { remember: true });
+
+        expect(localStorage.getItem('dotcms.content-drive.view-type.c_blogs')).toBe('card');
+        expect(localStorage.getItem('dotcms.content-drive.view-type.c_news')).toBeNull();
+    });
+
+    it('should keep the current view on Back and Forward, as the view is a preference (FR-020)', () => {
         buildStore();
 
         popstate('/c/content-drive?viewType=card');
 
-        expect(store.viewType()).toBe('card');
+        expect(store.viewType()).toBe('list');
     });
 
     it('should not reload the results when Back only changes the view', () => {

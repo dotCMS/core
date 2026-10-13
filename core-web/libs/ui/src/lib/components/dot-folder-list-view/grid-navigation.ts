@@ -1,6 +1,6 @@
 /**
- * Keyboard maths for the Content Drive grid (#37930, US7). Pure, so the rules can be tested without
- * a layout engine: the grid measures the page and hands the numbers in.
+ * Keyboard maths for the folder list view's grid layout (#37930, US7). Pure, so the rules can be
+ * tested without a layout engine: the grid measures the page and hands the numbers in.
  */
 
 /** Keys that move the grid's tab stop. Everything else is left alone. */

@@ -125,6 +125,24 @@ spec was written, so the design is the reference for the card's look and its cli
   tools. The choice is stored under the portlet's id. Only a click on the view switcher saves it;
   opening a link with `viewType` does not change what is remembered.
 
+### Session 2026-10-13 (PR #38009 review)
+
+These answers replace earlier ones where they conflict.
+
+- Q: Does the avatar ask Gravatar for a picture? → A: No. The Drive's results carry the editor's
+  name, not their email, and a user with no first or last name is named after their email; hashing
+  that and sending it to gravatar.com from every card is a privacy leak. The avatar shows the first
+  letter of the editor's name. This replaces "the Gravatar, found from their email" and "the first
+  letter of the email".
+- Q: What do Back and Forward do to the view? → A: Nothing. The view is a preference, not a place:
+  Back and Forward change the folder and filters they restore and keep the view showing. The URL is
+  corrected in place to say so, without adding a history entry.
+- Q: Where does a drag show it can drop? → A: Over folders only, in both views. Elsewhere the drop
+  would do nothing, so nothing is highlighted and no "move" cursor is shown.
+- Q: Is the grid a separate listing beside a hidden table? → A: No. The table and the grid are two
+  layouts of the one shared listing, so the selection, the page, the focus and the paging lock are
+  the same object in both views (implementation note; no user-visible change intended).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Browse the Drive as a grid of cards (Priority: P1)
@@ -457,11 +475,8 @@ below.
   the same marker on their card.
 - **Missing user**: An item whose editor cannot be resolved (deleted user, system user) shows a
   neutral placeholder instead of a broken avatar.
-- **No Gravatar or Gravatar unreachable**: The avatar shows the first letter of the user's email; the
-  card never shows a broken image or waits on the Gravatar service to finish drawing. Servers with no internet access
-  get letters for everyone.
-- **Many cards by the same user**: Each user's Gravatar is looked up once per page, not once per
-  card.
+- **Editor named after an email**: A user with no first or last name is named after their email;
+  the avatar shows its first letter and nothing is sent to Gravatar.
 - **Preview too large or slow**: Cards show their icon until the preview loads; a slow image never
   changes the card's size.
 - **Unknown content type icon**: A content type with no icon of its own uses the generic content
@@ -509,9 +524,8 @@ below.
 - **FR-006**: The editor MUST be shown as a small avatar. Hovering it, or tapping it on a touch screen,
   MUST reveal the same name the table shows in its Edited By column, and the name MUST be part of
   the card's screen reader label. The card MUST NOT show a date.
-- **FR-007**: The avatar MUST show the editor's Gravatar, found from their email the same way the
-  toolbar does, looked up at most once per user per page; when they have none, or Gravatar cannot be
-  reached, it MUST show what the existing Gravatar directive shows (the first letter of the email).
+- **FR-007**: The avatar MUST show the first letter of the editor's name, and MUST NOT send anything
+  about the editor to Gravatar or any other outside service.
 - **FR-008**: The image area MUST show the same preview the table's thumbnail shows (image, SVG, PDF
   page), cropped to fill the area without distortion; for videos it MUST show a still frame with no
   player controls.
@@ -539,6 +553,9 @@ below.
   separately for each screen that hosts it (stored under the portlet's id), and use it on later
   visits to that screen when the URL has no `viewType`. Opening a URL with `viewType` MUST NOT change
   what is remembered.
+- **FR-019a**: Back and Forward MUST NOT change the view. They restore the folder and filters of the
+  history entry and keep the view showing, and the URL MUST be corrected to the view showing without
+  adding a history entry.
 - **FR-020**: When there is no usable `viewType`, remembered view or tool default, the Drive MUST open
   in the table view.
 - **FR-021**: Dragging cards onto a folder card or a folder in the tree MUST move them exactly as
@@ -583,7 +600,7 @@ below.
 ### Key Entities
 
 - **Drive item**: anything the Drive lists, either a folder or a content item (including pages,
-  images and files). Carries a title or name, an editor (whose name the table already shows, and whose email the card needs for the Gravatar), a content type, and for content
+  images and files). Carries a title or name, an editor (whose name the table already shows, and whose first letter the card's avatar shows), a content type, and for content
   only, a language, a status and possibly a preview.
 - **View preference**: the user's remembered choice of table or grid, per browser and per screen
   that hosts the Drive.
@@ -646,10 +663,8 @@ below.
 - The card's preview is the one the table already shows as its thumbnail; this feature adds no new
   rule for choosing which image represents a content item. The only difference is that videos show a
   still frame instead of a player.
-- Drive items already carry the editor's name. The editor's email, needed for the Gravatar, may not
-  be on them: whether the Drive search must return it is an open question for the plan. Whatever the
-  answer, editor details MUST be resolved in one batch per page, never one request per card, and
-  MUST NOT hold up drawing the cards; until they arrive, cards show the letter or the placeholder.
+- Drive items already carry the editor's name, which is all the avatar needs (FR-007). No editor
+  details are fetched per card.
 - No keyboard way to open an item exists in the table today, and the grid does not add one. Adding
   it to both views is a follow-up.
 - A reload resets the sort in both views; keeping the sort across reloads is not part of this
