@@ -350,6 +350,12 @@ export const DotConfigurationStore = signalStore(
              * re-encrypted.
              */
             regenerateKey(): void {
+                // The key cannot be restored, so a second request while one is running is
+                // dropped rather than rotating the key twice.
+                if (store.regeneratingKey()) {
+                    return;
+                }
+
                 patchState(store, { regeneratingKey: true });
 
                 service

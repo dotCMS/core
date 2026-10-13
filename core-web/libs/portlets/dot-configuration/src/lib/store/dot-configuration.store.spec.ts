@@ -1,5 +1,5 @@
 import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
-import { of, throwError } from 'rxjs';
+import { Subject, of, throwError } from 'rxjs';
 import { Mocked } from 'vitest';
 
 import { signal } from '@angular/core';
@@ -318,6 +318,16 @@ describe('DotConfigurationStore', () => {
     });
 
     describe('regenerateKey', () => {
+        it('ignores a second request while one is running', () => {
+            service.regenerateKey.mockReturnValue(new Subject<string>());
+
+            store.regenerateKey();
+            store.regenerateKey();
+
+            expect(service.regenerateKey).toHaveBeenCalledTimes(1);
+            expect(store.regeneratingKey()).toBe(true);
+        });
+
         it('shows the digest of the new key', () => {
             service.regenerateKey.mockReturnValue(of('new-digest'));
 
