@@ -421,7 +421,8 @@ public class SamlWebInterceptor implements WebInterceptor {
 
     /**
      * True for the login pages and the logout paths (built-in ones plus any configured in
-     * {@code logout.path.values}). {@code /dotAdmin} itself is never one of them.
+     * {@code logout.path.values}), ignoring letter case, since a proxy or CDN in front of dotCMS may normalize
+     * the case. {@code /dotAdmin} itself is never one of them.
      */
     private boolean isLoginOrLogoutPage(final String path,
                                         final IdentityProviderConfiguration identityProviderConfiguration) {
@@ -432,7 +433,7 @@ public class SamlWebInterceptor implements WebInterceptor {
         if (null != configuredLogoutPaths) {
             Arrays.stream(configuredLogoutPaths).map(String::trim).filter(UtilMethods::isSet).forEach(pages::add);
         }
-        return pages.stream().anyMatch(path::startsWith);
+        return pages.stream().anyMatch(page -> path.regionMatches(true, 0, page, 0, page.length()));
     }
 
     /**

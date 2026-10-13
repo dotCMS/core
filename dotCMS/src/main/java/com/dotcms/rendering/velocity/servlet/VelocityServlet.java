@@ -114,6 +114,16 @@ public class VelocityServlet extends HttpServlet {
         return referer != null && referer.contains("/dotAdmin");
     }
 
+    /**
+     * Renders the page, file or redirect that the request's URI resolves to. A {@link DotSecurityException}
+     * raised while rendering is handed to {@link #handleSecurityException}, which answers 401 to a signed-out
+     * visitor and 403 to a signed-in user.
+     *
+     * @param req      the incoming request
+     * @param response the response to render into
+     * @throws ServletException when rendering fails
+     * @throws IOException      when writing the response fails
+     */
     @Override
     @CloseDB
     // Not final: Weld's Tomcat InstanceManager (WELD-ENV-001100) processes all servlets

@@ -252,6 +252,22 @@ public class SamlWebInterceptorDefaultRelayStateTest {
     }
 
     /**
+     * Given Scenario: a signed-out visitor opens a login or logout page written with different letter case,
+     * including a configured logout.path.values entry (PR #37984 review)
+     * ExpectedResult: no default RelayState, so the user is not sent back to that page after signing in
+     */
+    @Test
+    public void caseVariedLoginAndLogoutPages_sendNoDefault() throws Exception {
+
+        for (final String uri : new String[] {"/DotCMS/Login", "/APPLICATION/login", "/C/Portal/Logout", "/Custom/Logout"}) {
+            setUp();
+            when(samlConfig.getConfigAsString(any(), eq(SamlName.DOT_SAML_LOGOUT_PATH_VALUES))).thenReturn("/custom/logout");
+            request(uri, null);
+            assertNull(uri, defaultRelayStateSent());
+        }
+    }
+
+    /**
      * Given Scenario: a signed-out visitor opens a login page with no referrer (analysis C1)
      * ExpectedResult: no default RelayState; the existing fallbacks apply after the callback
      */
