@@ -82,6 +82,10 @@ public interface ExperimentsAPI {
      * goes to the database rather than an in-memory cache because cluster nodes may start or end
      * experiments independently; only the DB provides a cluster-shared, authoritative answer.
      *
+     * <p>This method is a plain read — it does not acquire any advisory lock. Callers that need
+     * TOCTOU protection (i.e. {@code start()}) must acquire the lock themselves before calling
+     * this method inside a {@code @WrapInTransaction} context.
+     *
      * <p>This method is only called from inside the {@code flag=false} branch — it is never
      * invoked on the fully-enabled happy path, so its DB round-trip adds no cost to normal
      * operations.

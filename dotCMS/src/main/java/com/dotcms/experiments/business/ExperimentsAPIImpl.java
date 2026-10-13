@@ -522,7 +522,6 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
             throw new IllegalStateException(
                     "isFreeSlotUsed() must only be called in limited mode (FEATURE_FLAG_EXPERIMENTS=false)");
         }
-        factory.acquireFreeSlotLock();
         return factory.countByStatuses(Set.of(RUNNING, SCHEDULED, ENDED)) > 0;
     }
 
@@ -586,9 +585,14 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
                         DotStateException.class);
             }
 
-            // In limited mode, re-check the free slot under the advisory lock that
-            // isFreeSlotUsed() acquires — this closes the TOCTOU gap between the gate
-            // pre-check and the actual save (lock is held for the whole @WrapInTransaction).
+            // In limited mode, acquire the transaction-scoped advisory lock and re-check the
+            // free slot. The lock must be taken here — inside @WrapInTransaction — so it is held
+            // until the transaction commits, closing the TOCTOU gap between the pre-check in
+            // ExperimentLimitedModeGate and the actual save. Callers that only need a read
+            // (healthcheck, the gate pre-check) call isFreeSlotUsed() directly without the lock.
+            if (!ConfigExperimentUtil.INSTANCE.isExperimentEnabled()) {
+                factory.acquireFreeSlotLock();
+            }
             if (!ConfigExperimentUtil.INSTANCE.isExperimentEnabled() && isFreeSlotUsed()) {
                 throw new DotStateException("Free experiment slot already in use");
             }
