@@ -210,6 +210,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.nio.file.FileSystemException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
@@ -9510,14 +9511,21 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     /**
-     * An entry left on disk and why, for the failure message.
+     * An entry left on disk and why, for the failure message. On a networked mount the cause is
+     * often only in the text of a generic {@link FileSystemException} ("Stale file handle"), so
+     * that text is kept: {@link FileSystemException#getReason()}, which leaves out the path
+     * already printed, or the message of any other {@link IOException}.
      *
      * @param path the entry
      * @param e    why it was left
-     * @return the entry and the exception's type
+     * @return the entry, the exception's type and its reason when there is one
      */
     private static String describe(final Path path, final IOException e) {
-        return path + " (" + e.getClass().getSimpleName() + ")";
+        final String reason = e instanceof FileSystemException
+                ? ((FileSystemException) e).getReason()
+                : e.getMessage();
+        return path + " (" + e.getClass().getSimpleName()
+                + (UtilMethods.isSet(reason) ? ": " + reason : "") + ")";
     }
 
     /**
