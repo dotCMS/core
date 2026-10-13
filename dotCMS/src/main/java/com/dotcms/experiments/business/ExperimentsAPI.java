@@ -221,13 +221,12 @@ public interface ExperimentsAPI {
             throws DotDataException, DotSecurityException;
 
     /**
-     * Return true if Any {@link Experiment} is running right now and Experiment are enabled.
-     * Otherwise return false.
+     * Returns {@code true} if any {@link Experiment} is currently in RUNNING state on the given
+     * {@link Host}, regardless of whether the {@code FEATURE_FLAG_EXPERIMENTS} flag is on or off.
+     * Limited-mode experiments must be served to visitors just like full-mode experiments.
      *
-     * @return
-     *
-     * @see ConfigExperimentUtil#isExperimentEnabled()
-     *
+     * @param host the site to check
+     * @return {@code true} if at least one experiment is RUNNING on the host
      */
     boolean isAnyExperimentRunning(final Host host) throws DotDataException;
 
