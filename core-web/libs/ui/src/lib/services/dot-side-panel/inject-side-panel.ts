@@ -1,4 +1,14 @@
-import { Injector, Signal, Type, computed, effect, inject, signal, untracked } from '@angular/core';
+import {
+    DestroyRef,
+    Injector,
+    Signal,
+    Type,
+    computed,
+    effect,
+    inject,
+    signal,
+    untracked
+} from '@angular/core';
 
 import { take } from 'rxjs/operators';
 
@@ -19,7 +29,7 @@ export interface DotSidePanelBinding<R> {
     outputs?: Record<string, (value: never) => void>;
     /**
      * The panel closed itself: the author closed it, or its content did. Clear the request here. Not
-     * called when the panel closes because the request was cleared.
+     * called when the panel closes because the request was cleared or the opener was destroyed.
      */
     closed?: () => void;
 }
@@ -59,6 +69,15 @@ export function injectSidePanel<R>(
     // their last value while the panel closes, instead of reading a cleared request.
     const shown = signal<R | null>(null);
     const panel = signal<DotSidePanelRef | null>(null);
+
+    // The opener is going away: forget the panel before closing it, so the close is not reported to
+    // a screen that no longer exists. Registered before any panel opens, so it runs before the
+    // service closes the panel for the same reason.
+    inject(DestroyRef).onDestroy(() => {
+        const closing = panel();
+        panel.set(null);
+        closing?.close();
+    });
 
     const open = (value: R): DotSidePanelRef => {
         const current = () => shown() as R;

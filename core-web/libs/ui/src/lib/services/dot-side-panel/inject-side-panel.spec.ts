@@ -112,12 +112,14 @@ describe('injectSidePanel', () => {
         expect(requestClose).toHaveBeenCalled();
     });
 
-    it('closes the panel with the opener', () => {
+    it('closes the panel with the opener, without reporting a close', () => {
         request({ title: 'header.vtl', id: 'a' });
         const [panel] = panels();
 
         spectator.fixture.destroy();
 
         expect(panel.ref.isClosed).toBe(true);
+        // The opener is going away: its handler would act on a screen that no longer exists.
+        expect(spectator.component.closed).not.toHaveBeenCalled();
     });
 });
