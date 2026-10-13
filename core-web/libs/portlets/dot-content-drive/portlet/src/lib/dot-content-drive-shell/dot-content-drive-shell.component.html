@@ -238,12 +238,12 @@
                 [allowedBaseTypes]="payload.allowedBaseTypes"
                 (selectUploadType)="onUploadTypeSelected($event)" />
         }
-        <!-- Import CSV (#37896) only from the Upload button: dropped files always upload. Styled as
-             one more option of the selector above, so the menu reads as a single list. -->
+        <!-- Import CSV (#37896) only from the Upload button: dropped files always upload. It is not
+             an upload type, so a top border sets it apart from the selector above. -->
         @if (payload.fromButton) {
             <button
                 type="button"
-                class="flex w-full cursor-pointer items-start gap-4 border-0 border-t border-gray-200 bg-transparent px-5 py-4 text-left transition-colors hover:bg-primary/5"
+                class="flex w-full cursor-pointer items-start gap-4 border-t border-gray-200 bg-transparent px-5 py-4 text-left transition-colors hover:bg-primary/5"
                 data-testid="upload-selector-import-csv"
                 (click)="openImportDialog()">
                 <i class="material-symbols-outlined text-[1.5rem]! leading-none text-primary">

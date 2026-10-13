@@ -99,7 +99,8 @@
                             [value]="$previewWarnings().length"
                             data-testid="import-warnings-count" />
                     </header>
-                    <ul class="m-0 flex list-none flex-col divide-y divide-surface-100 p-0">
+                    <ul
+                        class="m-0 flex max-h-60 list-none flex-col divide-y divide-surface-100 overflow-y-auto p-0">
                         @for (warning of $previewWarnings(); track $index) {
                             <li
                                 class="flex items-start gap-4 px-4 py-3 text-sm"
@@ -144,7 +145,8 @@
                             [value]="$previewErrors().length"
                             data-testid="import-errors-count" />
                     </header>
-                    <ul class="m-0 flex list-none flex-col divide-y divide-surface-100 p-0">
+                    <ul
+                        class="m-0 flex max-h-60 list-none flex-col divide-y divide-surface-100 overflow-y-auto p-0">
                         @for (error of $previewErrors(); track $index) {
                             <li
                                 class="flex items-start gap-4 px-4 py-3 text-sm"
@@ -206,79 +208,74 @@
     }
     @default {
         <form [formGroup]="importForm" (ngSubmit)="preview()">
-            <div class="grid grid-cols-2 gap-x-4 gap-y-5">
-                <div class="flex flex-col gap-2">
-                    <label
-                        for="import-content-type"
-                        [checkIsRequiredControl]="'contentType'"
-                        dotFieldRequired>
-                        {{ 'content-drive.import.content-type.label' | dm }}
-                    </label>
-                    <!-- appendTo="body" keeps the options panel out of the dialog's scrolling
+            <div class="flex flex-col gap-2">
+                <label
+                    for="import-content-type"
+                    [checkIsRequiredControl]="'contentType'"
+                    dotFieldRequired>
+                    {{ 'content-drive.import.content-type.label' | dm }}
+                </label>
+                <!-- appendTo="body" keeps the options panel out of the dialog's scrolling
                          content, which otherwise clips it and swallows the wheel events. -->
-                    <p-select
-                        inputId="import-content-type"
-                        formControlName="contentType"
-                        appendTo="body"
-                        data-testid="import-content-type"
-                        [options]="$contentTypeGroups()"
-                        [group]="true"
-                        optionGroupLabel="label"
-                        optionGroupChildren="items"
-                        optionLabel="name"
-                        optionValue="variable"
-                        [filter]="true"
-                        filterBy="name,variable"
-                        [placeholder]="'content-drive.import.content-type.placeholder' | dm"
-                        [attr.aria-label]="'content-drive.import.content-type.label' | dm">
-                        <ng-template let-group #group>
-                            <span class="text-xs font-bold tracking-wide text-gray-500 uppercase">
-                                {{ group.label }}
-                            </span>
-                        </ng-template>
-                    </p-select>
-                    @if ($contentTypesLoaded() && !$contentTypes().length) {
-                        <small data-testid="import-content-type-empty">
-                            {{ 'content-drive.import.content-type.empty' | dm }}
-                        </small>
-                    }
-                    @if ($fieldErrors().contentType) {
-                        <small class="text-sm text-red-500" data-testid="import-error-contentType">
-                            {{ 'content-drive.import.required.content-type' | dm }}
-                        </small>
-                    }
-                </div>
+                <p-select
+                    inputId="import-content-type"
+                    formControlName="contentType"
+                    appendTo="body"
+                    data-testid="import-content-type"
+                    [options]="$contentTypeGroups()"
+                    [group]="true"
+                    optionGroupLabel="label"
+                    optionGroupChildren="items"
+                    optionLabel="name"
+                    optionValue="variable"
+                    [filter]="true"
+                    filterBy="name,variable"
+                    [placeholder]="'content-drive.import.content-type.placeholder' | dm"
+                    [attr.aria-label]="'content-drive.import.content-type.label' | dm">
+                    <ng-template let-group #group>
+                        <span class="text-xs font-bold tracking-wide text-gray-500 uppercase">
+                            {{ group.label }}
+                        </span>
+                    </ng-template>
+                </p-select>
+                @if ($contentTypesLoaded() && !$contentTypes().length) {
+                    <small data-testid="import-content-type-empty">
+                        {{ 'content-drive.import.content-type.empty' | dm }}
+                    </small>
+                }
+                @if ($fieldErrors().contentType) {
+                    <small class="text-sm text-red-500" data-testid="import-error-contentType">
+                        {{ 'content-drive.import.required.content-type' | dm }}
+                    </small>
+                }
+            </div>
 
-                <div class="flex flex-col gap-2">
-                    <label
-                        for="import-language"
-                        [checkIsRequiredControl]="'language'"
-                        dotFieldRequired>
-                        {{ 'content-drive.import.language.label' | dm }}
-                    </label>
-                    <p-select
-                        inputId="import-language"
-                        formControlName="language"
-                        optionLabel="label"
-                        optionValue="value"
-                        appendTo="body"
-                        data-testid="import-language"
-                        [options]="$languageOptions()"
-                        [placeholder]="'content-drive.import.language.placeholder' | dm"
-                        [attr.aria-label]="'content-drive.import.language.label' | dm" />
-                    @if ($isMultilingual()) {
-                        <small data-testid="import-multilingual-note">
-                            {{ 'In-order-to-import-correctly-a-multilingual-file' | dm }}
-                            {{ 'There-CSV-file-must-have-two-extra-fields' | dm }}
-                            {{ 'A-key-field-must-be-selected' | dm }}
-                        </small>
-                    }
-                    @if ($fieldErrors().language) {
-                        <small class="text-sm text-red-500" data-testid="import-error-language">
-                            {{ 'content-drive.import.required.language' | dm }}
-                        </small>
-                    }
-                </div>
+            <div class="mt-5 flex flex-col gap-2">
+                <label for="import-language" [checkIsRequiredControl]="'language'" dotFieldRequired>
+                    {{ 'content-drive.import.language.label' | dm }}
+                </label>
+                <p-select
+                    inputId="import-language"
+                    formControlName="language"
+                    optionLabel="label"
+                    optionValue="value"
+                    appendTo="body"
+                    data-testid="import-language"
+                    [options]="$languageOptions()"
+                    [placeholder]="'content-drive.import.language.placeholder' | dm"
+                    [attr.aria-label]="'content-drive.import.language.label' | dm" />
+                @if ($isMultilingual()) {
+                    <small data-testid="import-multilingual-note">
+                        {{ 'In-order-to-import-correctly-a-multilingual-file' | dm }}
+                        {{ 'There-CSV-file-must-have-two-extra-fields' | dm }}
+                        {{ 'A-key-field-must-be-selected' | dm }}
+                    </small>
+                }
+                @if ($fieldErrors().language) {
+                    <small class="text-sm text-red-500" data-testid="import-error-language">
+                        {{ 'content-drive.import.required.language' | dm }}
+                    </small>
+                }
             </div>
 
             <div class="mt-5 flex flex-col gap-2">
@@ -346,7 +343,7 @@
                             $selectedTypeName()
                                 ? ('content-drive.import.file.sample-download'
                                   | dm: [$selectedTypeName()!])
-                                : ('Click-here-to-download-a-csv-sample-file' | dm)
+                                : ('content-drive.import.file.sample-download.no-type' | dm)
                         "
                         [disabled]="!$value().contentType"
                         (onClick)="downloadSample()" />
