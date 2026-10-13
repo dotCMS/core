@@ -9,6 +9,7 @@ import { FormsModule } from '@angular/forms';
 import { ConfirmationService, ConfirmEventType } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { MessageModule } from 'primeng/message';
 
 import { catchError, filter, switchMap, take, tap } from 'rxjs/operators';
 
@@ -23,7 +24,7 @@ import {
     ensureDotVelocityLanguageRegistered
 } from '@dotcms/ui';
 
-import { DotSourceEditorService } from './dot-source-editor.service';
+import { DotSourceEditorService, DotSourceEditorUploadError } from './dot-source-editor.service';
 
 import { DotSourceEditorRequest } from '../../models/dot-source-editor.model';
 
@@ -47,7 +48,14 @@ interface DotSourceEditorInstance {
  */
 @Component({
     selector: 'dot-source-editor-side-panel',
-    imports: [ButtonModule, ConfirmDialogModule, FormsModule, MonacoEditorModule, DotMessagePipe],
+    imports: [
+        ButtonModule,
+        ConfirmDialogModule,
+        FormsModule,
+        MessageModule,
+        MonacoEditorModule,
+        DotMessagePipe
+    ],
     // Its own prompt instance, so the prompt renders in this panel's `<p-confirmDialog>`.
     providers: [ConfirmationService, DotSourceEditorService],
     templateUrl: './dot-source-editor-side-panel.component.html',
@@ -69,6 +77,12 @@ export class DotSourceEditorSidePanelComponent implements DotSidePanelContent {
     readonly saved = output<void>();
 
     protected readonly $status = signal<ComponentStatus>(ComponentStatus.LOADING);
+
+    /**
+     * Why the last save failed, shown above the buttons when the shared HTTP handler cannot explain
+     * it: the server's reason, or an empty string when it gave none. `null` with nothing to report.
+     */
+    protected readonly $saveError = signal<string | null>(null);
 
     /** The source as it stands in the editor. */
     protected readonly $source = signal('');
@@ -144,8 +158,9 @@ export class DotSourceEditorSidePanelComponent implements DotSidePanelContent {
      * Saves the source as the file's working version, then closes the panel. A no-op without changes or
      * while a save runs.
      *
-     * On failure the panel stays open with the edits, and a server error goes through the shared
-     * handler.
+     * On failure the panel stays open with the edits. A server error goes through the shared
+     * handler; any other failure, such as a file the server refused to stage, shows above the
+     * buttons.
      */
     save(): void {
         const request = this.request();
@@ -156,6 +171,7 @@ export class DotSourceEditorSidePanelComponent implements DotSidePanelContent {
 
         const source = this.$source();
 
+        this.$saveError.set(null);
         this.$status.set(ComponentStatus.SAVING);
 
         this.#sourceEditor
@@ -176,6 +192,12 @@ export class DotSourceEditorSidePanelComponent implements DotSidePanelContent {
                 error: (error: unknown) => {
                     this.$status.set(ComponentStatus.LOADED);
                     this.#reportServerError(error);
+
+                    if (!(error instanceof HttpErrorResponse)) {
+                        this.$saveError.set(
+                            error instanceof DotSourceEditorUploadError ? (error.reason ?? '') : ''
+                        );
+                    }
                 }
             });
     }
@@ -227,9 +249,9 @@ export class DotSourceEditorSidePanelComponent implements DotSidePanelContent {
     /**
      * Hands a server error to the shared handler, which explains it to the author.
      *
-     * Anything else (a version with no file to load, say) has no status for the handler to explain,
-     * so it is only logged: the panel already shows the failure itself, as the load error or as a
-     * Save button that is enabled again.
+     * Anything else (a version with no file to load, a file the server refused to stage) has no
+     * status for the handler to explain, so it is only logged: the panel shows the failure itself,
+     * as the load error or as the save error above the buttons.
      *
      * @param error what the request failed with
      */

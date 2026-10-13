@@ -29,6 +29,14 @@
     }
 }
 
+@if ($saveError() !== null) {
+    <!-- A failed save the shared HTTP handler cannot explain, such as a file the server refused to
+         stage. The edits are still in the editor above. -->
+    <p-message severity="error" data-testid="source-editor-save-error">
+        {{ 'edit.content.source-editor.save-error' | dm }} {{ $saveError() }}
+    </p-message>
+}
+
 <div class="flex items-center justify-end gap-2" data-testid="source-editor-actions">
     <p-button
         [label]="'dot.common.cancel' | dm"

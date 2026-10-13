@@ -16,12 +16,17 @@ import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/f
 import { Confirmation, ConfirmationService, ConfirmEventType } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { MessageModule } from 'primeng/message';
 
 import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 import { DOT_VELOCITY_LANGUAGE_ID, DotMessagePipe, DotSidePanelRef } from '@dotcms/ui';
 
 import { DotSourceEditorSidePanelComponent } from './dot-source-editor-side-panel.component';
-import { DotSourceEditorFile, DotSourceEditorService } from './dot-source-editor.service';
+import {
+    DotSourceEditorFile,
+    DotSourceEditorService,
+    DotSourceEditorUploadError
+} from './dot-source-editor.service';
 
 import { DotSourceEditorRequest } from '../../models/dot-source-editor.model';
 
@@ -102,6 +107,7 @@ describe('DotSourceEditorSidePanelComponent', () => {
                             ButtonModule,
                             ConfirmDialogModule,
                             FormsModule,
+                            MessageModule,
                             MonacoEditorStubComponent,
                             MockPipe(DotMessagePipe, (key: string) => key)
                         ]
@@ -161,6 +167,10 @@ describe('DotSourceEditorSidePanelComponent', () => {
         spectator
             .query(byTestId(testId), { root: true })
             ?.querySelector('button') as HTMLButtonElement;
+
+    /** The message a save failure leaves above the buttons, if any. */
+    const saveError = (): HTMLElement | null =>
+        spectator.query<HTMLElement>(byTestId('source-editor-save-error'), { root: true });
 
     /** Types in the editor and renders the result. */
     const typeInEditor = (value: string) => {
@@ -313,6 +323,42 @@ describe('DotSourceEditorSidePanelComponent', () => {
             expect(closed).not.toHaveBeenCalled();
             expect(editor()?.value).toBe('#set($title = "Bye")');
             expect(button('source-editor-save').disabled).toBe(false);
+            // The shared handler already explains it: no second message in the panel.
+            expect(saveError()).toBeNull();
+        });
+
+        it('says why on screen when the server refuses the file, keeping the edits', async () => {
+            vi.spyOn(console, 'error').mockImplementation(() => undefined);
+            save.mockReturnValue(
+                throwError(() => new DotSourceEditorUploadError('File too large'))
+            );
+            await open();
+            typeInEditor('#set($title = "Bye")');
+
+            spectator.click(button('source-editor-save'));
+            spectator.detectChanges();
+
+            expect(saveError()?.textContent).toContain('edit.content.source-editor.save-error');
+            expect(saveError()?.textContent).toContain('File too large');
+            expect(spectator.inject(DotHttpErrorManagerService).handle).not.toHaveBeenCalled();
+            expect(panel.close).not.toHaveBeenCalled();
+            expect(editor()?.value).toBe('#set($title = "Bye")');
+            expect(button('source-editor-save').disabled).toBe(false);
+        });
+
+        it('clears the message when the author saves again', async () => {
+            vi.spyOn(console, 'error').mockImplementation(() => undefined);
+            save.mockReturnValueOnce(throwError(() => new DotSourceEditorUploadError()));
+            save.mockReturnValueOnce(NEVER);
+            await open();
+            typeInEditor('#set($title = "Bye")');
+            spectator.click(button('source-editor-save'));
+            spectator.detectChanges();
+
+            spectator.click(button('source-editor-save'));
+            spectator.detectChanges();
+
+            expect(saveError()).toBeNull();
         });
 
         it('makes the editor read-only while the save runs', async () => {

@@ -10,7 +10,7 @@ import { vi } from 'vitest';
 import { DotContentletService, DotWorkflowActionsFireService } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
-import { DotSourceEditorService } from './dot-source-editor.service';
+import { DotSourceEditorService, DotSourceEditorUploadError } from './dot-source-editor.service';
 
 const FILE_VERSION_URL = '/dA/vtl-inode/fileAsset/header.vtl';
 
@@ -39,6 +39,9 @@ describe('DotSourceEditorService', () => {
     });
 
     beforeEach(() => (spectator = createHttp()));
+
+    // The factory's mocks are shared across tests: drop their calls.
+    afterEach(() => vi.clearAllMocks());
 
     describe('load', () => {
         it("downloads the version's own file as text, with the name the save must keep", () => {
@@ -108,6 +111,24 @@ describe('DotSourceEditorService', () => {
                 spectator.inject(DotWorkflowActionsFireService).saveContentlet
             ).toHaveBeenCalledWith({ inode: 'vtl-inode', fileAsset: 'temp_123' });
             expect(result).toHaveBeenCalledWith(expect.objectContaining({ inode: 'new-inode' }));
+        });
+
+        it('fails without saving when the server refuses the file, with its reason', () => {
+            const error = vi.fn();
+
+            spectator.service
+                .save({ inode: 'vtl-inode', fileName: 'header.vtl', source: '#set($x = 2)' })
+                .subscribe({ error });
+
+            // A refused file still answers 200, with the reason where the staged file would be.
+            spectator
+                .expectOne('/api/v1/temp', HttpMethod.POST)
+                .flush({ tempFiles: [{ errorCode: '400', message: 'File too large' }] });
+
+            expect(
+                spectator.inject(DotWorkflowActionsFireService).saveContentlet
+            ).not.toHaveBeenCalled();
+            expect(error).toHaveBeenCalledWith(new DotSourceEditorUploadError('File too large'));
         });
     });
 });

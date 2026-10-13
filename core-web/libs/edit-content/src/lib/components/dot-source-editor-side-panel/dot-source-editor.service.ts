@@ -30,6 +30,17 @@ export interface DotSourceEditorSave {
  *
  * Provided on the panel rather than in root: nothing else edits source this way yet.
  */
+/** One file in `POST /api/v1/temp`'s answer: the staged file, or the reason it was refused. */
+type DotTempFileUpload = Partial<DotCMSTempFile> & { message?: string };
+
+/** The server refused to stage the source, with its reason when it gave one. */
+export class DotSourceEditorUploadError extends Error {
+    constructor(readonly reason?: string) {
+        super(reason ?? 'The server refused the file');
+        this.name = 'DotSourceEditorUploadError';
+    }
+}
+
 @Injectable()
 export class DotSourceEditorService {
     readonly #http = inject(HttpClient);
@@ -84,13 +95,22 @@ export class DotSourceEditorService {
 
         // Posted directly rather than through `DotTempFileUploadService`: that service reports a
         // failed upload as a status string in `next`, which would read here as a successful one.
-        return this.#http.post<{ tempFiles: DotCMSTempFile[] }>('/api/v1/temp', formData).pipe(
-            switchMap(({ tempFiles }) =>
-                this.#workflowActionsFire.saveContentlet<DotCMSContentlet>({
+        return this.#http.post<{ tempFiles?: DotTempFileUpload[] }>('/api/v1/temp', formData).pipe(
+            switchMap(({ tempFiles }) => {
+                const [upload] = tempFiles ?? [];
+
+                // A refused file (too large, say) still answers 200, with the reason where the
+                // staged file would be. Saving anyway would check in the unchanged version and
+                // report the edits as saved.
+                if (!upload?.id) {
+                    return throwError(() => new DotSourceEditorUploadError(upload?.message));
+                }
+
+                return this.#workflowActionsFire.saveContentlet<DotCMSContentlet>({
                     inode,
-                    [SOURCE_EDITOR_BINARY_FIELD]: tempFiles[0].id
-                })
-            )
+                    [SOURCE_EDITOR_BINARY_FIELD]: upload.id
+                });
+            })
         );
     }
 }
