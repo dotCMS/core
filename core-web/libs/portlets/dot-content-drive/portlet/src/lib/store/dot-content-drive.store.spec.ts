@@ -10,7 +10,8 @@ import { Mock, Mocked, describe, expect, vi } from 'vitest';
 import { Location } from '@angular/common';
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { fakeAsync, tick } from '@angular/core/testing';
+import { signal, WritableSignal } from '@angular/core';
+import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 
 import {
@@ -27,6 +28,7 @@ import {
     DotFolderService,
     DotHttpErrorManagerService,
     DotPropertiesService,
+    DotSessionStorageService,
     DotUploadFileService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
@@ -41,7 +43,8 @@ import {
     DotFolderDeleteActiveRun,
     DotLanguage,
     DotSite,
-    DotWorkflowPushPublishValue
+    DotWorkflowPushPublishValue,
+    FeaturedFlags
 } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { createFakeTagField, createFakeTextField, mockLocales } from '@dotcms/utils-testing';
@@ -49,6 +52,7 @@ import { createFakeTagField, createFakeTextField, mockLocales } from '@dotcms/ut
 import { DotContentDriveStore } from './dot-content-drive.store';
 
 import {
+    CONTENT_DRIVE_URL_PARAM,
     DEFAULT_PAGINATION,
     DEFAULT_PATH,
     DEFAULT_SORT,
@@ -165,6 +169,19 @@ describe('DotContentDriveStore', () => {
             expect(store.status()).toBe(DotContentDriveStatus.LOADING);
             expect(store.isTreeExpanded()).toBe(DEFAULT_TREE_EXPANDED);
             expect(store.sort()).toEqual(DEFAULT_SORT);
+        });
+    });
+
+    // Content Drive stopped reading the side-panel flag: both editors always open in a panel
+    // (#37759, FR-006). The flag keeps working outside Content Drive; this store just never asks.
+    describe('side-panel flag', () => {
+        it('does not fetch the side-panel flag', () => {
+            const properties = spectator.inject(DotPropertiesService);
+            const askedFor = (properties.getFeatureFlags as Mock).mock.calls.flatMap(
+                ([keys]) => keys ?? []
+            );
+
+            expect(askedFor).not.toContain(FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL);
         });
     });
 
@@ -1476,6 +1493,216 @@ describe('DotContentDriveStore - onInit', () => {
     });
 });
 
+/** Everything the store needs except session storage, which each block decides. */
+/** An identifier in the shape the Drive accepts from its URL. */
+const A_URL_IDENTIFIER = '6f2f0f56-6c7e-4c11-9f3a-0c7c1a7f2b11';
+
+const rememberedContentTypeProviders = (
+    routeSnapshot: { queryParams: Record<string, string> },
+    siteDetails: WritableSignal<DotSite | null>
+) => [
+    mockProvider(ActivatedRoute, { snapshot: routeSnapshot }),
+    mockProvider(GlobalStore, { siteDetails }),
+    mockProvider(DotCurrentUserService, {
+        getCurrentUser: vi.fn().mockReturnValue(of({ admin: false } as DotCurrentUser))
+    }),
+    mockProvider(DotContentDriveService, {
+        search: vi.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
+    }),
+    mockProvider(DotFolderService, {
+        getFolders: vi.fn().mockReturnValue(of([]))
+    }),
+    mockProvider(DotWorkflowActionsFireService),
+    mockProvider(AddToBundleService),
+    mockProvider(PushPublishService, { getEnvironments: vi.fn(() => of([])) }),
+    mockProvider(DotBulkRefreshService),
+    mockProvider(DotFolderBulkDeleteService, {
+        readActiveRuns: vi.fn(() => of([]))
+    }),
+    mockProvider(DotHttpErrorManagerService),
+    mockProvider(Location, {
+        subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() })
+    }),
+    mockProvider(DotPropertiesService, {
+        getFeatureFlags: vi.fn().mockReturnValue(of({}))
+    }),
+    mockProvider(DotLanguagesService, {
+        get: vi.fn().mockReturnValue(of(mockLocales))
+    }),
+    provideHttpClient()
+];
+
+/**
+ * The content type last opened in the Content Types editor, handed to Content Drive once through
+ * session storage (#37903).
+ */
+describe('DotContentDriveStore - remembered content type', () => {
+    let spectator: SpectatorService<InstanceType<typeof DotContentDriveStore>>;
+    let store: InstanceType<typeof DotContentDriveStore>;
+
+    /** Mutated per test before the store is built: `onInit` reads it straight away. */
+    const routeSnapshot: { queryParams: Record<string, string> } = { queryParams: {} };
+    const consumeLastContentType = vi.fn();
+    /** A real signal, so a test can switch site and re-run the store's init effect. */
+    const siteDetails = signal<DotSite | null>(MOCK_SITES[2]);
+
+    const sharedProviders = rememberedContentTypeProviders(routeSnapshot, siteDetails);
+
+    const createService = createServiceFactory({
+        service: DotContentDriveStore,
+        providers: [
+            ...sharedProviders,
+            mockProvider(DotSessionStorageService, { consumeLastContentType })
+        ]
+    });
+
+    const buildStore = (
+        queryParams: Record<string, string>,
+        remembered: string | null,
+        site: DotSite | null = MOCK_SITES[2]
+    ) => {
+        routeSnapshot.queryParams = queryParams;
+        siteDetails.set(site);
+        consumeLastContentType.mockReset();
+        consumeLastContentType.mockReturnValue(remembered);
+        spectator = createService();
+        store = spectator.service;
+        spectator.flushEffects();
+    };
+
+    it('should filter by the remembered content type when the Drive opens with no instructions', () => {
+        buildStore({}, 'anyContentType');
+
+        expect(store.filters()).toEqual(
+            withSeeded({ contentType: ['anyContentType'], languageId: ['1'] })
+        );
+    });
+
+    it('should keep the folder from the URL and still filter by the remembered content type', () => {
+        buildStore({ path: '/a/folder/' }, 'anyContentType');
+
+        expect(store.path()).toBe('/a/folder/');
+        expect(store.filters()).toEqual(
+            withSeeded({ contentType: ['anyContentType'], languageId: ['1'] })
+        );
+    });
+
+    it('should filter by the remembered content type when the URL filters decode to nothing', () => {
+        buildStore({ filters: 'status:BOGUS' }, 'anyContentType');
+
+        expect(store.filters()).toEqual(
+            withSeeded({ contentType: ['anyContentType'], languageId: ['1'] })
+        );
+    });
+
+    it('should keep the remembered content type when the site loads after the Drive', () => {
+        buildStore({}, 'anyContentType', null);
+
+        siteDetails.set(MOCK_SITES[2]);
+        spectator.flushEffects();
+
+        expect(store.currentSite()).toBe(MOCK_SITES[2]);
+        expect(store.filters()).toEqual(
+            withSeeded({ contentType: ['anyContentType'], languageId: ['1'] })
+        );
+        expect(consumeLastContentType).toHaveBeenCalledTimes(1);
+    });
+
+    it.each([
+        ['the retired create marker', { [CONTENT_DRIVE_URL_PARAM.EDIT_CONTENT]: 'new' }],
+        ['a folder dialog switched off', { [CONTENT_DRIVE_URL_PARAM.CREATE_FOLDER]: 'false' }],
+        ['a malformed folder id', { [CONTENT_DRIVE_URL_PARAM.EDIT_FOLDER]: 'not-an-id' }],
+        ['a language with no item', { [CONTENT_DRIVE_URL_PARAM.EDIT_CONTENT_LANG]: '1' }]
+    ])(
+        'should filter by the remembered content type when the URL asks for nothing (%s)',
+        (_case, queryParams) => {
+            buildStore(queryParams, 'anyContentType');
+
+            expect(store.filters()).toEqual(
+                withSeeded({ contentType: ['anyContentType'], languageId: ['1'] })
+            );
+        }
+    );
+
+    it('should open as today when no content type is remembered', () => {
+        buildStore({}, null);
+
+        expect(store.filters()).toEqual(withSeeded({ languageId: ['1'] }));
+    });
+
+    it('should read the remembered content type once per Drive open', () => {
+        buildStore({}, 'anyContentType');
+
+        expect(consumeLastContentType).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not apply the remembered content type again when the site changes', () => {
+        buildStore({}, 'anyContentType');
+
+        siteDetails.set(MOCK_SITES[1]);
+        spectator.flushEffects();
+
+        expect(store.currentSite()).toBe(MOCK_SITES[1]);
+        expect(store.filters()).toEqual(withSeeded({ languageId: ['1'] }));
+        expect(consumeLastContentType).toHaveBeenCalledTimes(1);
+    });
+
+    describe('when the Drive opens with its own instructions', () => {
+        it('should apply only the filters from the URL', () => {
+            buildStore({ filters: 'baseType:4' }, 'anyContentType');
+
+            expect(store.filters()).toEqual(withSeeded({ baseType: ['4'], languageId: ['1'] }));
+            expect(consumeLastContentType).toHaveBeenCalledTimes(1);
+        });
+
+        it.each([
+            [CONTENT_DRIVE_URL_PARAM.EDIT_CONTENT, A_URL_IDENTIFIER],
+            [CONTENT_DRIVE_URL_PARAM.CREATE_CONTENT, 'aContentType'],
+            [CONTENT_DRIVE_URL_PARAM.CREATE_FOLDER, 'true'],
+            [CONTENT_DRIVE_URL_PARAM.EDIT_FOLDER, A_URL_IDENTIFIER],
+            [CONTENT_DRIVE_URL_PARAM.FOLDER_PERMISSIONS, A_URL_IDENTIFIER]
+        ])('should not apply the remembered content type with %s in the URL', (param, value) => {
+            buildStore({ [param]: value }, 'anyContentType');
+
+            expect(store.filters()).toEqual(withSeeded({ languageId: ['1'] }));
+            expect(consumeLastContentType).toHaveBeenCalledTimes(1);
+        });
+    });
+});
+
+/**
+ * The same handoff with the real session storage: the first Drive visit empties it, so the next
+ * visit finds nothing to apply (#37903, User Story 2).
+ */
+describe('DotContentDriveStore - remembered content type, next visit', () => {
+    const routeSnapshot: { queryParams: Record<string, string> } = { queryParams: {} };
+    const siteDetails = signal<DotSite | null>(MOCK_SITES[2]);
+
+    const createService = createServiceFactory({
+        service: DotContentDriveStore,
+        providers: rememberedContentTypeProviders(routeSnapshot, siteDetails)
+    });
+
+    beforeEach(() => sessionStorage.clear());
+
+    it('should not filter the next Drive visit, because the first one emptied session storage', () => {
+        TestBed.inject(DotSessionStorageService).setLastContentType('anyContentType');
+
+        const firstVisit = createService();
+        firstVisit.flushEffects();
+
+        expect(firstVisit.service.filters()).toEqual(
+            withSeeded({ contentType: ['anyContentType'], languageId: ['1'] })
+        );
+
+        const nextVisit = TestBed.runInInjectionContext(() => new DotContentDriveStore());
+        TestBed.tick();
+
+        expect(nextVisit.filters()).toEqual(withSeeded({ languageId: ['1'] }));
+        expect(sessionStorage.length).toBe(0);
+    });
+});
+
 /**
  * Runs still going when Content Drive opens (developer decision, 2026-09-28: FR-015 amended). One
  * read of every queue's active listing, routed to whichever part of the store owns each: delete
@@ -1879,6 +2106,18 @@ describe('DotContentDriveStore - default language resolution', () => {
         expect(store.defaultLanguageId()).toBeUndefined();
         expect(store.filters()).toEqual(withSeeded({}));
         expect(contentDriveService.search).toHaveBeenCalledTimes(1);
+    });
+
+    it('should keep a filter changed before the default language resolves', () => {
+        // The init effect used to re-run when the default language landed, re-reading the page's
+        // original URL and wiping any filter a chip had already corrected in between.
+        spectator.flushEffects();
+        store.patchFilters({ contentType: ['Blog'] });
+
+        languages$.next(mockLocales);
+        spectator.flushEffects();
+
+        expect(store.filters()).toEqual(withSeeded({ contentType: ['Blog'], languageId: ['1'] }));
     });
 
     it('should expose the environment languages for the Locale filter to render', () => {

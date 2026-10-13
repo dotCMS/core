@@ -45,6 +45,18 @@ describe('DotActionUrlService', () => {
         );
     });
 
+    // The variable can come from a URL (Content Drive's `createContent`), so it is encoded into the
+    // path rather than allowed to rewrite it (Constitution III, #37759 T111).
+    it('should encode the content type variable into the path', () => {
+        httpClientMock.get.mockReturnValue(of({ entity: 'testUrl' }));
+
+        spectator.service.getCreateContentletUrl('a/b c', 2).subscribe();
+
+        expect(httpClientMock.get).toHaveBeenCalledWith(
+            '/api/v1/portlet/_actionurl/a%2Fb%20c?language_id=2'
+        );
+    });
+
     it('should propagate the error when the request fails', () =>
         new Promise<void>((done) => {
             const error = new Error('Not Found');
