@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Service } from '@angular/core';
 
 import { EDITOR_DOTMARKETING_CONFIG } from '@dotcms/dotcms-models';
 
@@ -6,9 +6,7 @@ export const INITIAL_STATE = {
     SHOW_VIDEO_THUMBNAIL: true
 };
 
-@Injectable({
-    providedIn: 'root'
-})
+@Service()
 export class DotMarketingConfigService {
     private config: EDITOR_DOTMARKETING_CONFIG = INITIAL_STATE;
 

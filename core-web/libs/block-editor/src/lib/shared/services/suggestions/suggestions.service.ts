@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
@@ -20,7 +20,7 @@ const LUCENE_SPECIAL_CHARS = /[+\-!(){}[\]^"~*?:\\/&|]/g;
 
 const escapeLucene = (value: string): string => value.replace(LUCENE_SPECIAL_CHARS, '\\$&');
 
-@Injectable()
+@Service({ autoProvided: false })
 export class SuggestionsService {
     private readonly http = inject(HttpClient);
 
