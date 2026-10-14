@@ -4106,7 +4106,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"siteAuth\":    { \"hidden\": false, \"value\": \"DOT.SYSTEM_HOST.test_dummy\" },\n    \"bearerToken\": { \"hidden\": true,  \"value\": \"dummy_test_bearer_token\" }\n}",
+									"raw": "{\"siteAuth\":{\"value\":\"ci-test-site-auth\"},\"bearerToken\":{\"value\":\"ci-test-bearer-token\"},\"persistenceMode\":{\"value\":\"readwrite\"}}",
 									"options": {
 										"raw": {
 											"language": "json"
