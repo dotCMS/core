@@ -16,6 +16,7 @@ export * from './lib/unknown-block.util';
 export * from './lib/dot-bulk-actions.model';
 export * from './lib/dot-bundle';
 export * from './lib/dot-categories.model';
+export * from './lib/dot-cluster-node.model';
 export * from './lib/dot-container.model';
 export * from './lib/dot-content-analytics.model';
 export * from './lib/dot-content-compare.model';
