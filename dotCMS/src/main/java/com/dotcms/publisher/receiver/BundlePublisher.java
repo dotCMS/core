@@ -47,6 +47,7 @@ import com.dotcms.system.event.local.type.pushpublish.receiver.PushPublishFailur
 import com.dotcms.system.event.local.type.pushpublish.receiver.PushPublishStartOnReceiverEvent;
 import com.dotcms.system.event.local.type.pushpublish.receiver.PushPublishSuccessOnReceiverEvent;
 import com.dotcms.util.CloseUtils;
+import com.dotcms.util.PathContainmentUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -304,7 +305,8 @@ public class BundlePublisher extends Publisher {
     }
 
     /**
-     * Untars the given bundle file in order process its contents.
+     * Untars the given bundle file in order process its contents. An entry that does not resolve to
+     * a location inside the bundles directory makes the process fail.
      *
      * @param bundle   - The {@link InputStream} containing the bundle.
      * @param path     - The location where the bundle will be uncompressed.
@@ -340,7 +342,7 @@ public class BundlePublisher extends Publisher {
                 File fileOrDir = new File(pathWithoutName + entry.getName());
 
                 // if the logFile is outside of of the logFolder, die
-                if ( !fileOrDir.getCanonicalPath().startsWith(baseBundlePath.getCanonicalPath())) {
+                if ( !PathContainmentUtil.isContainedIn(baseBundlePath, fileOrDir)) {
 
                     SecurityLogger.logInfo(this.getClass(),  "Invalid Bundle writing file outside of bundlePath"  );
                     SecurityLogger.logInfo(this.getClass(),  " Bundle path "  + baseBundlePath );
