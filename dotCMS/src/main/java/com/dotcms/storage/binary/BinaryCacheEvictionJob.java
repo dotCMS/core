@@ -151,6 +151,13 @@ public class BinaryCacheEvictionJob implements Runnable {
             }
         }
 
+        if (evictedCount == 0 && totalBytes > thresholdBytes) {
+            Logger.warn(this, String.format(
+                    "BinaryCacheEvictionJob: cache is over its limit but all %d candidates were kept "
+                            + "(too recent, in use, changed, or without a verified S3 copy); it is not shrinking",
+                    files.size()));
+        }
+
         final long durationMs = System.currentTimeMillis() - startTime;
         Logger.info(this, String.format(
                 "BinaryCacheEvictionJob complete: evicted=%d freedMB=%d remainingMB=%d thresholdMB=%d durationMs=%d",
