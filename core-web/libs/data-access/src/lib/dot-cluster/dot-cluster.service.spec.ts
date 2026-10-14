@@ -1,18 +1,38 @@
-import { provideHttpClient } from '@angular/common/http';
+import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
 import { DotClusterNodes } from '@dotcms/dotcms-models';
 
-import { DOT_CLUSTER_NODES_MOCK } from './dot-cluster.mock';
 import { DotClusterService } from './dot-cluster.service';
+
+const URL = '/api/v1/cluster/nodes';
+
+/** A minimal `entity`, shaped as in the backend spec (#38032). */
+const ENTITY: DotClusterNodes = {
+    currentServerId: 'ed54e574-717a-4b47-ba6c-758ff23b3e1b',
+    nodes: [
+        {
+            serverId: '1c2d3e4f-0000-4000-8000-000000000002',
+            displayServerId: '1c2d3e4f',
+            name: 'dotcms-node-2',
+            ipAddress: '172.17.0.6',
+            version: '26.10.01',
+            lastContactSeconds: 302,
+            responded: false,
+            status: 'DOWN',
+            cache: null,
+            search: null,
+            assets: null
+        }
+    ]
+};
 
 describe('DotClusterService', () => {
     let service: DotClusterService;
     let httpMock: HttpTestingController;
 
     beforeEach(() => {
-        vi.useFakeTimers();
         TestBed.configureTestingModule({
             providers: [provideHttpClient(), provideHttpClientTesting()]
         });
@@ -21,41 +41,25 @@ describe('DotClusterService', () => {
         httpMock = TestBed.inject(HttpTestingController);
     });
 
-    afterEach(() => {
-        httpMock.verify();
-        vi.useRealTimers();
-    });
+    afterEach(() => httpMock.verify());
 
-    it('should serve the mocked cluster without any HTTP call', () => {
+    it('should load the cluster with one GET to /api/v1/cluster/nodes and return its entity', () => {
         let result: DotClusterNodes | undefined;
         service.getNodes().subscribe((nodes) => (result = nodes));
 
-        expect(result).toBeUndefined();
-        vi.runAllTimers();
+        const req = httpMock.expectOne(URL);
+        expect(req.request.method).toBe('GET');
+        req.flush({ entity: ENTITY, errors: [], messages: [] });
 
-        expect(result).toBe(DOT_CLUSTER_NODES_MOCK);
-    });
-});
-
-describe('DOT_CLUSTER_NODES_MOCK', () => {
-    const { nodes, currentServerId } = DOT_CLUSTER_NODES_MOCK;
-
-    it('should contain the node serving the request', () => {
-        expect(nodes.some((node) => node.serverId === currentServerId)).toBe(true);
+        expect(result).toEqual(ENTITY);
     });
 
-    it('should cover every node status', () => {
-        expect(new Set(nodes.map((node) => node.status))).toEqual(
-            new Set(['UP', 'LAGGING', 'DOWN'])
-        );
-    });
+    it('should propagate an error response', () => {
+        let error: HttpErrorResponse | undefined;
+        service.getNodes().subscribe({ error: (e) => (error = e) });
 
-    it('should send null sections for a node that did not answer, as the backend does', () => {
-        const down = nodes.find((node) => !node.responded);
+        httpMock.expectOne(URL).flush(null, { status: 401, statusText: 'Unauthorized' });
 
-        expect(down?.status).toBe('DOWN');
-        expect(down?.cache).toBeNull();
-        expect(down?.search).toBeNull();
-        expect(down?.assets).toBeNull();
+        expect(error?.status).toBe(401);
     });
 });

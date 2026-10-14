@@ -1,37 +1,28 @@
-import { Observable, of } from 'rxjs';
+import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
 
-import { delay } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
-import { DotClusterNodes } from '@dotcms/dotcms-models';
-
-import { DOT_CLUSTER_NODES_MOCK } from './dot-cluster.mock';
-
-/**
- * Simulated server time. The real call blocks for up to `CLUSTER_SERVER_THREAD_SLEEP` (2 s or
- * more) while it waits for the nodes to answer, so the loading and refreshing states matter.
- */
-const MOCK_LATENCY_MS = 600;
+import { DotCMSResponse, DotClusterNodes } from '@dotcms/dotcms-models';
 
 /**
  * Reads the status of every node in the cluster for the Network portlet.
  *
- * Coded against the typed `GET /api/v1/cluster/nodes` proposed by the Network spike (#37802,
- * §2.8). That endpoint does not exist yet, so the response is served from
- * `DOT_CLUSTER_NODES_MOCK`. When it ships, inject `HttpClient` and replace the body of
- * `getNodes` with:
- *
- * ```ts
- * return this.#http
- *     .get<DotCMSResponse<DotClusterNodes>>('/api/v1/cluster/nodes')
- *     .pipe(map((response) => response.entity));
- * ```
+ * Backed by `GET /api/v1/cluster/nodes` (contract in the backend spec, #38032). The call waits on
+ * the server while the nodes answer — at least 2 s, and longer when a node does not answer — and
+ * each call makes every node write a test file to the shared assets volume, so callers must not
+ * issue overlapping requests.
  */
 @Injectable({ providedIn: 'root' })
 export class DotClusterService {
+    readonly #http = inject(HttpClient);
+
     /** Every node seen in the last heartbeat window, including the ones that did not answer. */
     getNodes(): Observable<DotClusterNodes> {
-        return of(DOT_CLUSTER_NODES_MOCK).pipe(delay(MOCK_LATENCY_MS));
+        return this.#http
+            .get<DotCMSResponse<DotClusterNodes>>('/api/v1/cluster/nodes')
+            .pipe(map((response) => response.entity));
     }
 }
