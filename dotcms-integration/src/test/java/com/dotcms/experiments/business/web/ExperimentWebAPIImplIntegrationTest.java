@@ -36,6 +36,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.rules.model.LogicalOperator;
 import com.dotmarketing.portlets.templates.model.Template;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
