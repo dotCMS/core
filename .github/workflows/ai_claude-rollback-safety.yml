@@ -20,7 +20,7 @@ jobs:
   # TROUBLESHOOTING: If blocked, visit https://github.com/orgs/dotCMS/people
   # and ensure your membership is public (click "Make public" if needed)
   security-check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     permissions:
       contents: read           # Allow repository checkout
       # Note: Organization membership checking uses fine-grained token
@@ -62,7 +62,7 @@ jobs:
       needs.security-check.outputs.authorized == 'true' &&
       !contains(github.event.pull_request.labels.*.name, 'Human: Safe To Rollback') &&
       !contains(github.event.pull_request.labels.*.name, 'Human: Not Safe To Rollback')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     permissions:
       pull-requests: write
       issues: write
@@ -140,5 +140,5 @@ jobs:
         Be specific: quote actual file names and code lines, not generic descriptions.
       claude_args: '--allowedTools "Bash(git diff*),Bash(git log*),Bash(cat docs/core/ROLLBACK_UNSAFE_CATEGORIES.md),Bash(gh pr comment*),Bash(gh pr edit*)"'
       timeout_minutes: 15
-      runner: ubuntu-latest
+      runner: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
       enable_mention_detection: false

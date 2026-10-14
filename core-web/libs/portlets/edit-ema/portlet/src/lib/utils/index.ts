@@ -164,6 +164,25 @@ export function resolveClickedAnchor(target: HTMLElement): HTMLAnchorElement | n
 }
 
 /**
+ * Whether an `href` points somewhere the browser would actually navigate to.
+ *
+ * `#…` (same-page scroll) and `javascript:…` (a page's own click handler,
+ * invoked via the pseudo-protocol instead of a real `onclick`/listener) never
+ * navigate anywhere — a page's own UI commonly uses both as an `<a>`-shaped
+ * button (accordions, tabs, Bootstrap-style `data-toggle` collapses). Treating
+ * them as a real link caused dotCMS/core#37961's second QA regression: the
+ * editor took over (and thus `stopPropagation()`-blocked) clicks on these
+ * non-navigating anchors, so the page's own handler for them never ran.
+ */
+export function isNavigableHref(href: string | null | undefined): boolean {
+    if (!href) {
+        return false;
+    }
+
+    return !href.startsWith('#') && !/^\s*javascript:/i.test(href);
+}
+
+/**
  * Ensure the rendered HTML has a `<base>` tag so relative links resolve properly inside iframes.
  *
  * If a `<base>` tag already exists, this is a no-op.
