@@ -3,6 +3,7 @@ package com.dotcms.storage;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.lock.IdentifierStripedLock;
 import com.dotcms.enterprise.achecker.parsing.EmptyIterable;
+import com.dotcms.storage.binary.BinaryAssetStorageAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
@@ -99,8 +100,8 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
      */
     private String normalizePath(final String groupName, final String path) {
         return AssetStorageFeature.isEnabled()
-                && (com.dotcms.storage.binary.BinaryAssetStorageAPI.BINARY_ASSETS_GROUP.equalsIgnoreCase(groupName)
-                || com.dotcms.storage.binary.BinaryAssetStorageAPI.GENERATED_ASSETS_GROUP.equalsIgnoreCase(groupName))
+                && (BinaryAssetStorageAPI.BINARY_ASSETS_GROUP.equals(groupName)
+                || BinaryAssetStorageAPI.GENERATED_ASSETS_GROUP.equals(groupName))
                 ? path : path.toLowerCase();
     }
 
