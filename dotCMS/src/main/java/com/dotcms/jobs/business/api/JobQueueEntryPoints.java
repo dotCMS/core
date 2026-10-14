@@ -38,7 +38,8 @@ import org.jboss.jandex.MethodInfo;
  * names comes from the annotated method's own {@code @Path}, never from a copied string.
  * <p>
  * A queue whose processor is not in the index (a plugin, or one registered by name at runtime) is
- * treated as generic, with one warning per queue, so existing plugins keep working. When there is
+ * treated as generic, with one warning per queue, so existing plugins keep working. A core queue
+ * that declares neither entry point is refused, with one error logged per queue. When there is
  * no index at all the registry fails closed: only queues that declare {@code genericEntry = true}
  * are generic.
  */
@@ -139,7 +140,8 @@ public class JobQueueEntryPoints {
     }
 
     /**
-     * Decides how a queue is entered.
+     * Decides how a queue is entered. A core queue that declares no entry point is refused, so a
+     * forgotten declaration fails closed instead of leaving the queue open on the generic endpoint.
      *
      * @param queueName the queue
      * @param processor the processor class registered for it; {@code null} when none is
@@ -154,11 +156,22 @@ public class JobQueueEntryPoints {
         if (route != null) {
             return new EntryPoint(false, route);
         }
-        if (!coreQueues.contains(queueName) && warned.add(queueName)) {
-            Logger.warn(this, String.format("Queue [%s] is not in the core index and declares no"
-                    + " entry point; the generic job endpoint will accept it", queueName));
+        if (!coreQueues.contains(queueName)) {
+            if (warned.add(queueName)) {
+                Logger.warn(this, String.format("Queue [%s] is not in the core index and declares"
+                        + " no entry point; the generic job endpoint will accept it", queueName));
+            }
+            return EntryPoint.GENERIC;
         }
-        return EntryPoint.GENERIC;
+        if (genericCoreQueues.contains(queueName)) {
+            return EntryPoint.GENERIC;
+        }
+        if (warned.add(queueName)) {
+            Logger.error(this, String.format("Core queue [%s] declares no entry point: add"
+                    + " @JobQueueEntryPoint to its REST method or @Queue(genericEntry = true)."
+                    + " The generic job endpoint refuses it", queueName));
+        }
+        return new EntryPoint(false, null);
     }
 
     private static boolean declaresGenericEntry(final Class<?> processor) {
