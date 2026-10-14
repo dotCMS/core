@@ -54,6 +54,11 @@ public class JobQueueEntryPointsTest {
     public static class ThingProcessor {
     }
 
+    /** A core processor that forgot to declare any entry point: no REST method names its queue. */
+    @Queue("orphanQueue")
+    public static class OrphanProcessor {
+    }
+
     /** A processor a plugin registers: present in the runtime, absent from the core index. */
     @Queue("pluginQueue")
     public static class PluginProcessor {
@@ -72,7 +77,7 @@ public class JobQueueEntryPointsTest {
 
     private static JobQueueEntryPoints coreRegistry() throws IOException {
         return new JobQueueEntryPoints(indexOf(ThingResource.class, OddSlashResource.class,
-                GenericProcessor.class, ThingProcessor.class));
+                GenericProcessor.class, ThingProcessor.class, OrphanProcessor.class));
     }
 
     /**
@@ -128,6 +133,22 @@ public class JobQueueEntryPointsTest {
                 coreRegistry().resolve("pluginQueue", PluginProcessor.class);
 
         assertTrue(entry.generic());
+    }
+
+    /**
+     * Given a core queue (present in the index) that declares no entry point: no
+     * {@code @JobQueueEntryPoint} method and no {@code genericEntry = true}.
+     * When the registry resolves it.
+     * Then it is refused, with no route to name: a forgotten declaration must never leave the queue
+     * open on the generic endpoint.
+     */
+    @Test
+    public void coreQueueDeclaringNoEntryPointIsRefusedWithoutARoute() throws IOException {
+        final JobQueueEntryPoints.EntryPoint entry =
+                coreRegistry().resolve("orphanQueue", OrphanProcessor.class);
+
+        assertFalse(entry.generic());
+        assertFalse(entry.route().isPresent());
     }
 
     /**
