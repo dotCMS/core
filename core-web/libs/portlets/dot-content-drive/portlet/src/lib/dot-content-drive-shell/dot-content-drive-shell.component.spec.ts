@@ -1634,6 +1634,7 @@ describe('DotContentDriveShellComponent', () => {
                     editContent: null,
                     editContentLang: null,
                     createContent: null,
+                    editSource: null,
                     createFolder: null,
                     editFolder: null,
                     folderPermissions: null
@@ -1738,6 +1739,7 @@ describe('DotContentDriveShellComponent', () => {
                     editContent: null,
                     editContentLang: null,
                     createContent: null,
+                    editSource: null,
                     createFolder: null,
                     editFolder: null,
                     folderPermissions: null
@@ -1761,6 +1763,7 @@ describe('DotContentDriveShellComponent', () => {
                     editContent: null,
                     editContentLang: null,
                     createContent: null,
+                    editSource: null,
                     createFolder: null,
                     editFolder: null,
                     folderPermissions: null
@@ -5760,6 +5763,62 @@ describe('DotContentDriveShellComponent', () => {
             sourcePanel()?.ref.close();
 
             expect(store.closeSourceEditor).toHaveBeenCalledTimes(1);
+        });
+
+        // A history entry of its own, so Back pops the panel instead of leaving Content Drive.
+        it('names the open file in the URL with a new history entry, and removes it on close', () => {
+            spectator.detectChanges();
+            (location.go as Mock).mockClear();
+
+            openSourcePanel();
+
+            expect(location.go).toHaveBeenCalledTimes(1);
+            expect(router.createUrlTree).toHaveBeenLastCalledWith(
+                [],
+                expect.objectContaining({
+                    queryParams: expect.objectContaining({ editSource: 'vtl-inode' })
+                })
+            );
+
+            (location.go as Mock).mockClear();
+            (location.replaceState as Mock).mockClear();
+            sourceEditorSignal.set(null);
+            spectator.detectChanges();
+
+            expect(location.go).not.toHaveBeenCalled();
+            expect(location.replaceState).toHaveBeenCalledTimes(1);
+            expect(router.createUrlTree).toHaveBeenLastCalledWith(
+                [],
+                expect.objectContaining({
+                    queryParams: expect.objectContaining({ editSource: null })
+                })
+            );
+        });
+
+        it('routes browser Back through its own unsaved-changes prompt', () => {
+            openSourcePanel();
+            (location.replaceState as Mock).mockClear();
+
+            (location.subscribe as Mock).mock.calls[0][0]({ url: '/c/content-drive?path=/foo' });
+
+            expect(sourcePanel()?.ref.requestClose).toHaveBeenCalledTimes(1);
+            expect(store.closeSourceEditor).not.toHaveBeenCalled();
+            // The param is put back while the prompt decides, so the URL matches the open panel.
+            expect(location.replaceState).toHaveBeenCalledTimes(1);
+            expect(router.createUrlTree).toHaveBeenLastCalledWith(
+                [],
+                expect.objectContaining({ queryParams: { editSource: 'vtl-inode' } })
+            );
+        });
+
+        it('stays open when Back keeps its param', () => {
+            openSourcePanel();
+
+            (location.subscribe as Mock).mock.calls[0][0]({
+                url: '/c/content-drive?editSource=vtl-inode'
+            });
+
+            expect(sourcePanel()?.ref.requestClose).not.toHaveBeenCalled();
         });
     });
 
