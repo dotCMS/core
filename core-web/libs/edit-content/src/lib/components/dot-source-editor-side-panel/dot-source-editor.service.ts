@@ -1,7 +1,7 @@
 import { Observable, throwError } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map, switchMap } from 'rxjs/operators';
 
@@ -25,11 +25,6 @@ export interface DotSourceEditorSave {
     source: string;
 }
 
-/**
- * Reads and writes a File Asset's source for the Edit Source panel.
- *
- * Provided on the panel rather than in root: nothing else edits source this way yet.
- */
 /** One file in `POST /api/v1/temp`'s answer: the staged file, or the reason it was refused. */
 type DotTempFileUpload = Partial<DotCMSTempFile> & { message?: string };
 
@@ -41,7 +36,13 @@ export class DotSourceEditorUploadError extends Error {
     }
 }
 
-@Injectable()
+/**
+ * Reads and writes a File Asset's source for the Edit Source panel.
+ *
+ * Not auto-provided: the panel lists it in its own providers, since nothing else edits source this
+ * way yet.
+ */
+@Service({ autoProvided: false })
 export class DotSourceEditorService {
     readonly #http = inject(HttpClient);
     readonly #contentletService = inject(DotContentletService);
