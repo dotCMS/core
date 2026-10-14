@@ -253,8 +253,9 @@ public final class BinaryAssetReference {
     }
 
     /**
-     * Creates a new metadata revision key for a binary: the binary's revision key, or the field's
-     * directory for an older-layout file, followed by a random UUID and {@code -metadata.json}.
+     * Creates a new metadata revision key for a binary: the binary's revision key when it is owned
+     * by this inode and field, otherwise the field's directory, followed by {@code .}, a random UUID
+     * and {@code -metadata.json}.
      *
      * @param file  the binary the metadata describes
      * @param inode the contentlet inode that owns the binary
@@ -270,14 +271,14 @@ public final class BinaryAssetReference {
 
     /**
      * Pins a metadata revision key to a binary file. The key must have the form produced by
-     * {@link #newMetadataKey} for this binary, and an older-layout file must sit exactly at the
+     * {@link #newMetadataKey} for this binary, and an older-layout file must sit directly in the
      * field's directory in the asset root; any other key or file is rejected.
      *
      * @param file  the binary file
      * @param inode the contentlet inode that owns the binary
      * @param field the field variable name
      * @param key   the metadata revision key
-     * @return a file carrying the key, or {@code file} unchanged when either argument is {@code null}
+     * @return a file carrying the key, or {@code file} unchanged when file or key is {@code null}
      * @throws IllegalArgumentException if the file or key does not belong to this owner
      */
     public static File withMetadata(final File file, final String inode, final String field, final String key) {
