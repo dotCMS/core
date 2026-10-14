@@ -1,19 +1,21 @@
 # Publish README Docs
 #
-# Copies the SDK and example READMEs in this repo into their documentation pages
-# (DotcmsDocumentation contentlets) on the dotCMS authoring server, so dev.dotcms.com
-# serves and indexes the same text instead of mirroring it at request time. The README
-# is the single source of truth: each run overwrites the page body. dotCMS keeps the
-# version history.
+# Copies markdown files from this repo (mostly SDK and example READMEs) into their
+# documentation pages (DotcmsDocumentation contentlets) on the dotCMS authoring server, so
+# dev.dotcms.com serves and indexes the same text instead of mirroring it at request time.
+# The file is the single source of truth: each run overwrites the page body. dotCMS keeps
+# the version history.
+#
+# Which pages: every DotcmsDocumentation page whose `readmeSource` field holds a URL of the
+# form https://github.com/dotCMS/core/blob/main/<path>.md. Pages are added or removed by
+# editing that field in dotCMS; no change to this workflow is needed. URLs pointing anywhere
+# else are left alone.
 #
 # Each page is saved as a working draft (EDIT action) and unlocked. Nothing is published
 # to production here; that is a separate push publish on the authoring server.
 #
-# Runs on every merge that touches one of the READMEs below, and manually
-# (dry run by default). Pages whose body already matches are skipped without a write.
-#
-# Adding a page: add its README path to `on.push.paths` AND a row to PAGES in the sync
-# step. The step fails if the two lists disagree.
+# Runs on every merge that touches a markdown file, and manually (dry run by default).
+# Every run checks all mapped pages and writes only those whose body differs.
 
 name: Publish README Docs
 
@@ -21,18 +23,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'core-web/libs/sdk/react/README.md'
-      - 'core-web/libs/sdk/angular/README.md'
-      - 'core-web/libs/sdk/client/README.md'
-      - 'core-web/libs/sdk/experiments/README.md'
-      - 'core-web/libs/sdk/analytics/README.md'
-      - 'core-web/libs/sdk/types/README.md'
-      - 'core-web/libs/sdk/uve/README.md'
-      - 'core-web/libs/sdk/events/README.md'
-      - 'core-web/apps/mcp-server/README.md'
-      - 'examples/nextjs/README.md'
-      - 'examples/angular/README.md'
-      - 'examples/astro/README.md'
+      - '**/*.md'
   workflow_dispatch:
     inputs:
       dry_run:
@@ -40,7 +31,7 @@ on:
         type: boolean
         default: true
       pages:
-        description: 'Space-separated page slugs to sync (empty = all)'
+        description: 'Space-separated page urlTitles to sync (empty = all mapped pages)'
         type: string
         default: ''
 
@@ -77,39 +68,19 @@ jobs:
           python3 - <<'PY'
           import difflib, json, os, posixpath, re, sys, urllib.error, urllib.request
 
-          # slug (= DotcmsDocumentation urlTitle) -> (identifier, README path)
-          PAGES = {
-              "sdk-react-library":       ("505be5f36950dcd09855e53c5ff15fdc", "core-web/libs/sdk/react/README.md"),
-              "sdk-angular-library":     ("c7df146a545687ee68fa27d8e904ac73", "core-web/libs/sdk/angular/README.md"),
-              "sdk-client-library":      ("357aab1b5d22b5f887bf7395fcab052d", "core-web/libs/sdk/client/README.md"),
-              "sdk-experiments-library": ("fa2301d8dd30eaea9ccbf12a981c68f2", "core-web/libs/sdk/experiments/README.md"),
-              "sdk-analytics-library":   ("4e61f6d43efa63cab449aba5daf6cd93", "core-web/libs/sdk/analytics/README.md"),
-              "sdk-types-library":       ("93f1ea18fa79355193987a62784eb410", "core-web/libs/sdk/types/README.md"),
-              "sdk-uve-library":         ("3e1afa73c019db121eba23a94c479bc6", "core-web/libs/sdk/uve/README.md"),
-              "sdk-events-library":      ("c7a4a9c7f1c798e6443040b7275c8e62", "core-web/libs/sdk/events/README.md"),
-              "mcp-server":              ("e755fc84ec7745cc3d8f49c7b6bfbadf", "core-web/apps/mcp-server/README.md"),
-              "sdk-nextjs-example":      ("2276c54113d1aba342696c8f612d4c5d", "examples/nextjs/README.md"),
-              "sdk-angular-example":     ("3bbe51b385c95b47191c33cb33c4ad87", "examples/angular/README.md"),
-              "sdk-astro-example":       ("0e874f80-27a3-482c-b240-9f06aee37010", "examples/astro/README.md"),
-          }
           REPO = "dotCMS/core"
+          SOURCE_PREFIX = f"https://github.com/{REPO}/blob/main/"
           LINK_BASE = f"https://github.com/{REPO}/blob/main"
           ASSET_BASE = f"https://raw.githubusercontent.com/{REPO}/main"
-          WORKFLOW = ".github/workflows/publish_readme-docs.yml"
+          # Working versions of mapped pages. size is well above the number of pages.
+          PAGE_QUERY = ("+contenttype:dotcmsdocumentation +working:true +languageid:1 +deleted:false "
+                        "+dotcmsdocumentation.readmesource:*")
 
           base = os.environ["DOTCMS_URL"].rstrip("/")
           token = os.environ["DOTCMS_TOKEN"]
           dry_run = os.environ.get("DRY_RUN") == "true"
-          selected = os.environ.get("PAGES_FILTER", "").split()
+          selected = set(os.environ.get("PAGES_FILTER", "").split())
           summary = open(os.environ["GITHUB_STEP_SUMMARY"], "a")
-
-          # The push trigger must list exactly the README paths in PAGES.
-          triggers = set(re.findall(r"^      - '([^']+/README\.md)'$", open(WORKFLOW).read(), re.M))
-          if triggers != {p for _, p in PAGES.values()}:
-              sys.exit(f"on.push.paths and PAGES disagree: {sorted(triggers ^ {p for _, p in PAGES.values()})}")
-          unknown = set(selected) - PAGES.keys()
-          if unknown:
-              sys.exit(f"unknown page slug(s): {' '.join(sorted(unknown))}")
 
           # --- README clean-up, matching the devsite's former live mirror ---
           NOT_ABSOLUTE = r"(?!https?://)(?!/)(?!#)(?!data:)(?!mailto:)(?!tel:)(?:\./)?"
@@ -155,6 +126,17 @@ jobs:
           def normalize(text):
               return "\n".join(l.rstrip() for l in text.replace("\r\n", "\n").strip().split("\n"))
 
+          def source_path(url):
+              """Repo path from a readmeSource URL; None if the URL is not for this repo."""
+              if not url.startswith(SOURCE_PREFIX):
+                  return None
+              path = url[len(SOURCE_PREFIX):]
+              if (posixpath.normpath(path) != path or path.startswith(("/", "..")) or not path.lower().endswith(".md")):
+                  raise RuntimeError(f"readmeSource is not a markdown file path: {url}")
+              if not os.path.isfile(path):
+                  raise RuntimeError(f"readmeSource file not found on main: {path}")
+              return path
+
           def call(method, url, payload=None):
               req = urllib.request.Request(base + url, method=method,
                                            data=json.dumps(payload).encode() if payload is not None else None)
@@ -166,40 +148,63 @@ jobs:
               except urllib.error.HTTPError as e:
                   return e.code, {"error": e.read().decode(errors="replace")[:300]}
 
+          def save(ident, body):
+              payload = {"contentlet": {"identifier": ident, "languageId": 1, "documentation": body,
+                                        "disabledWYSIWYG": ["documentation"]}}
+              url = f"/api/v1/workflow/actions/default/fire/EDIT?identifier={ident}"
+              status, data = call("PUT", url, payload)
+              if status >= 500:  # dotCMS intermittently fails a save; a retry has always gone through
+                  status, data = call("PUT", url, payload)
+              # EDIT leaves the page locked to this account (a failed save can too); release it.
+              unlock_status, unlock = call("PUT", f"/api/v1/content/_unlock/{ident}?language=1")
+              if status != 200:
+                  raise RuntimeError(f"save failed: HTTP {status} {data}")
+              if unlock_status != 200 or unlock.get("entity", {}).get("locked") is not False:
+                  raise RuntimeError(f"draft saved, but unlock failed: HTTP {unlock_status} {unlock}")
+
+          # A bad token still reads the public pages as anonymous, so check it before anything else.
+          status, data = call("GET", "/api/v1/users/current/")
+          if status != 200:
+              sys.exit(f"dotCMS token rejected: HTTP {status} {data}")
+
+          status, data = call("POST", "/api/es/search", {"query": {"query_string": {"query": PAGE_QUERY}}, "size": 1000})
+          pages = data.get("contentlets") if status == 200 else None
+          if not pages:
+              # Never a valid state; most likely a token, permission or search index problem.
+              sys.exit(f"no mapped pages found (HTTP {status}): {data if status != 200 else 'empty result'}")
+          unknown = selected - {p.get("urlTitle") for p in pages}
+          if unknown:
+              sys.exit(f"not a mapped page urlTitle: {' '.join(sorted(unknown))}")
+
           rows, diffs, failed = [], [], 0
-          for slug, (ident, path) in PAGES.items():
+          for page in sorted(pages, key=lambda p: p.get("urlTitle") or ""):
+              slug, ident, url = page.get("urlTitle"), page["identifier"], page.get("readmeSource", "").strip()
               if selected and slug not in selected:
                   continue
+              path = None
               try:
-                  body = clean(open(path, encoding="utf-8").read(), path)
-                  status, data = call("GET", f"/api/v1/content/{ident}")
-                  if status != 200:
-                      raise RuntimeError(f"read failed: HTTP {status} {data}")
-                  current = data["entity"].get("documentation") or ""
-                  if normalize(current) == normalize(body):
-                      result = "unchanged"
-                  elif dry_run:
-                      result = "would update"
-                      diffs.append((slug, "".join(difflib.unified_diff(
-                          current.splitlines(True), body.splitlines(True), "dotCMS", path))))
+                  path = source_path(url)
+                  if path is None:
+                      result = "other source, skipped"
                   else:
-                      status, data = call("PUT", f"/api/v1/workflow/actions/default/fire/EDIT?identifier={ident}",
-                                          {"contentlet": {"identifier": ident, "languageId": 1, "documentation": body,
-                                                          "disabledWYSIWYG": ["documentation"]}})
-                      if status != 200:
-                          raise RuntimeError(f"save failed: HTTP {status} {data}")
-                      # EDIT leaves the page locked to this account; release it.
-                      status, data = call("PUT", f"/api/v1/content/_unlock/{ident}?language=1")
-                      if status != 200 or data.get("entity", {}).get("locked") is not False:
-                          raise RuntimeError(f"draft saved, but unlock failed: HTTP {status} {data}")
-                      result = "updated"
+                      body = clean(open(path, encoding="utf-8").read(), path)
+                      current = page.get("documentation") or ""
+                      if normalize(current) == normalize(body):
+                          result = "unchanged"
+                      elif dry_run:
+                          result = "would update"
+                          diffs.append((slug, "".join(difflib.unified_diff(
+                              current.splitlines(True), body.splitlines(True), "dotCMS", path))))
+                      else:
+                          save(ident, body)
+                          result = "updated"
               except Exception as exc:
                   failed += 1
                   result = f"FAILED: {exc}"
               print(f"{slug:24} {result}")
-              rows.append(f"| `{slug}` | {result} |")
+              rows.append(f"| `{slug}` | {f'`{path}`' if path else url} | {result} |")
 
-          summary.write(f"## README docs sync{' (dry run)' if dry_run else ''}\n\n| Page | Result |\n|---|---|\n")
+          summary.write(f"## README docs sync{' (dry run)' if dry_run else ''}\n\n| Page | Source | Result |\n|---|---|---|\n")
           summary.write("\n".join(rows) + "\n")
           for slug, diff in diffs:
               summary.write(f"\n<details><summary>{slug}</summary>\n\n```diff\n{diff}\n```\n</details>\n")
