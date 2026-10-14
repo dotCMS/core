@@ -36,7 +36,7 @@ The epic and the design describe the current tab in several places. Some of thos
 |---|---|---|---|
 | 1 | The tab has two display bugs: Timed Out and Number of Data Nodes | There are **five**. Timed Out shows the search cluster *name*; Number of Data Nodes shows the *total* node count; the row labelled "Received/Sent" shows only received bytes; Read and Write are drawn in one cell that reads `true/true` (the read flag arrives with a trailing slash); and the Assets row labelled "Cluster Address" shows the shared *path* | All five are fixed, not copied. See FR-021, FR-027, FR-031, FR-032 |
 | 2 | The tab's "Server ID" column shows the server ID | It shows the **license ID** (a masked license serial). The real short server ID only appears in the floating panel's title | The new list shows the real server ID. The license ID is intentionally not displayed — see FR-019 |
-| 3 | On installs whose license does not allow cluster data, node data comes back as empty maps | On those installs the cache transport has no cluster support, its cluster check returns nothing, and the status request **fails with a server error**. The tab shows "An unexpected error occurred" | The portlet cannot tell "unlicensed" from "broken" by itself. The backend must say so explicitly (#37875). See FR-045 |
+| 3 | On installs whose license does not allow cluster data, node data comes back as empty maps | Every install reports the `PLATFORM` license level: `LicenseUtil.getLevel()` has returned it unconditionally since Feb 2025 (`7189abfb60`), so no install is refused cluster data. The status request fails with a server error only when the cache transport is configured as `NullTransport` | There is no unlicensed state to show (FR-045 and FR-046 removed). The `NullTransport` case is a backend fix: every node is reported as not answering (#38032) |
 | 4 | "Every node in the cluster is listed" | Only servers that wrote a heartbeat in the last heartbeat timeout (600 seconds by default) are considered. A server silent for longer is not listed, not even as Down | "Every node" means "every node seen in the heartbeat window". See FR-008 and Assumptions |
 | 5 | The design's Version tile may need a new backend field | The value the tab shows as "Version" is already the dotCMS release version of each node | No backend work. See FR-016 |
 | 6 | Each node has a status (green / red) | The per-node status reflects **only** the shared assets check, not whether the node is reachable. There is no "Lagging" state anywhere | Up / Lagging / Down must come from new backend work. See FR-011 and Dependencies |
@@ -73,7 +73,7 @@ Every feature of the old tab, where it lands in the new portlet, and the require
 | "An unexpected error occurred: …" (English only) | Error state with retry, translated | Fix | FR-044 |
 | Loading spinner | Loading placeholders | Carry | FR-042 |
 | Hidden when the heartbeat feature is off | Available, with a notice | Changed | FR-047 |
-| Orphaned Clustering upsell page (never shown) | Unlicensed state | New | FR-045, FR-046 |
+| Orphaned Clustering upsell page (never shown) | — | Drop | — (no install is unlicensed; see State of the code row 3) |
 | Decorative server icon column | — | Drop | — |
 | "Servers Not in Cache" dialog (never opened) | — | Drop | — |
 | License ID as "Server ID" | — | Drop | FR-019 |
@@ -162,19 +162,18 @@ While watching a recovering cluster, the administrator presses Refresh to get cu
 
 ### User Story 5 - Understand why there is nothing to show (Priority: P3)
 
-When the portlet cannot show cluster data — the first load is still running, no nodes were found, the request failed, or the license does not include clustering — the administrator sees a clear message saying which of these happened, instead of empty cards. When the heartbeat feature is switched off, they see the data with a notice explaining what that means.
+When the portlet cannot show cluster data — the first load is still running, no nodes were found, or the request failed — the administrator sees a clear message saying which of these happened, instead of empty cards. When the heartbeat feature is switched off, they see the data with a notice explaining what that means.
 
 **Why this priority**: These are uncommon states, but empty or broken-looking cards on a health screen are misleading during an incident.
 
-**Independent Test**: Exercise each state — slow first load, no nodes, failed request, unlicensed install, heartbeat feature off — and confirm each shows its own message.
+**Independent Test**: Exercise each state — slow first load, no nodes, failed request, heartbeat feature off — and confirm each shows its own message.
 
 **Acceptance Scenarios**:
 
 1. **Given** data is loading for the first time, **When** the portlet opens, **Then** it shows placeholders in the shape of the list and the detail, not empty cards.
 2. **Given** no nodes are reported, **When** the portlet loads, **Then** it shows "No nodes found" with a way to try again.
 3. **Given** the first load fails, **When** the portlet loads, **Then** it shows an error message with a way to try again, and trying again reloads the data.
-4. **Given** the install's license does not include cluster data, **When** the portlet loads, **Then** it shows the Clustering upsell — what the feature does, that it is available in the Enterprise edition, a contact link and a way to request a trial license — and no cluster data.
-5. **Given** the server heartbeat feature is switched off, **When** the portlet loads, **Then** cluster data shows as usual and a notice explains that the heartbeat feature is disabled and dead servers are not removed from the cluster automatically.
+4. **Given** the server heartbeat feature is switched off, **When** the portlet loads, **Then** cluster data shows as usual and a notice explains that the heartbeat feature is disabled and dead servers are not removed from the cluster automatically.
 
 ---
 
@@ -203,9 +202,8 @@ If the Beta misbehaves, an administrator can go back to the Configuration portle
 - **A refresh that fails** after data was shown reports the failure and keeps the last good data (FR-041).
 - **The selected node disappears** after a refresh; the selection falls back to the node serving the request (FR-037).
 - **An install where OpenSearch serves reads**: the Search Cluster section names OpenSearch and shows OpenSearch's values (FR-025).
-- **The license does not include cluster data**: the upsell shows; no request failure or empty list is shown instead (FR-045).
 - **The heartbeat feature is off**: the data shows, plus the notice (FR-047).
-- **The admin lacks access** to the Network, Configuration or administrator role: the data is refused by the backend and the portlet shows its error state (FR-003).
+- **The admin lacks access** to the Network (Beta) or Configuration portlet and is not a CMS Administrator: the backend refuses the data (401) and the portlet shows its error state (FR-003).
 
 ## Requirements *(mandatory)*
 
@@ -213,7 +211,7 @@ If the Beta misbehaves, an administrator can go back to the Configuration portle
 
 - **FR-001**: The system MUST offer a portlet named "Network (Beta)" that an administrator can add to a navigation section through the usual Add Portlet flow. It MUST be served at `/#/c/network-beta`.
 - **FR-002**: The portlet MUST NOT be added to any default layout and MUST NOT be added to existing layouts on upgrade; admins opt in.
-- **FR-003**: Cluster data MUST be available only to backend users who have the Network portlet, the Network (Beta) portlet or the Configuration portlet in a layout, and to CMS Administrators. Anyone else MUST be refused.
+- **FR-003**: Cluster data MUST be available only to backend users who have the Network (Beta) portlet or the Configuration portlet in a layout, and to CMS Administrators. Anyone else MUST be refused. The primary Network portlet joins this list when the Beta is promoted (#37805).
 - **FR-004**: The Configuration portlet's Network tab, and the cluster status service it uses, MUST keep working unchanged.
 - **FR-005**: The portlet MUST NOT offer any action that changes the cluster (such as removing a server); it is read-only.
 
@@ -232,7 +230,7 @@ If the Beta misbehaves, an administrator can go back to the Configuration portle
 ### Node detail — header and summary
 
 - **FR-015**: The detail header MUST show the selected node's short server ID, its status, a "This node" marker when it applies, and its host name.
-- **FR-016**: Below the header, a summary MUST show the node's short server ID, cluster name (the cache transport's cluster name), IP address and the dotCMS release version it runs.
+- **FR-016**: Below the header, a summary MUST show the node's short server ID, its cluster name, its IP address and the dotCMS release version it runs. These come from the node's own record, so they show for a node that did not answer too.
 - **FR-017**: The Refresh control MUST be in the detail header.
 - **FR-018**: *(Removed 2026-10-08: sections no longer show health — see FR-034.)*
 - **FR-019**: The license ID MUST NOT be displayed. The old tab showed it under a "Server ID" heading; the real server ID replaces it. This is a signed-off drop.
@@ -262,7 +260,7 @@ If the Beta misbehaves, an administrator can go back to the Configuration portle
 
 ### Section health and nodes that did not answer
 
-- **FR-034**: Sections MUST NOT show a health indicator, matching the design. This intentionally drops the old tab's per-section status dots and the epic acceptance criterion "Each section (Cache Transport, Search Cluster, Assets) shows its health status" — a signed-off drop, **pending the epic owner's sign-off** (see [Deviations from the epic](#deviations-from-the-epic)). Node health stays visible through the node status (FR-011).
+- **FR-034**: Sections MUST NOT show a health indicator, matching the design. This intentionally drops the old tab's per-section status dots and the epic acceptance criterion "Each section (Cache Transport, Search Cluster, Assets) shows its health status" — a signed-off drop (see [Deviations from the epic](#deviations-from-the-epic)). Node health stays visible through the node status (FR-011).
 - **FR-035**: For a node that did not answer, the detail MUST show the node's identity (FR-015, FR-016), a notice that the node did not answer and its values are unavailable, and the "no value" placeholder for every section value. It MUST NOT show an error.
 
 ### Refresh
@@ -279,10 +277,10 @@ If the Beta misbehaves, an administrator can go back to the Configuration portle
 - **FR-042**: During the first load the portlet MUST show placeholders in the shape of the node list and the detail. The placeholders MUST stay until the load finishes, however long it takes.
 - **FR-043**: When the backend reports no nodes, the portlet MUST show "No nodes found", a short explanation, and a way to try again.
 - **FR-044**: When the first load fails, the portlet MUST show an error message, a short explanation and a way to try again. The message MUST be translated.
-- **FR-045**: When the backend reports that the license does not include cluster data, the portlet MUST show the unlicensed state and no cluster data. The backend reports it as a dedicated license refusal (a 403 marked as a license error). The portlet MUST NOT treat any other failure, or an empty list, as unlicensed.
-- **FR-046**: The unlicensed state MUST show the Clustering upsell: what the feature does, that it is available in the Enterprise edition, a link to contact dotCMS and a way to request a trial license. It reuses the copy of the old tab's unused unlicensed page.
+- **FR-045**: *(Removed 2026-10-15: every install reports the `PLATFORM` license, so no install is refused cluster data and there is no unlicensed state. See State of the code row 3.)*
+- **FR-046**: *(Removed 2026-10-15: no unlicensed state, so no Clustering upsell.)*
 - **FR-047**: When the backend reports that the server heartbeat feature is switched off, the portlet MUST stay available, show cluster data as usual, and show a notice that the heartbeat feature is disabled and dead servers are not removed from the cluster automatically.
-- **FR-048**: Exactly one of these states MUST show at a time: first-load placeholders, unlicensed, error, empty, or the node list with detail.
+- **FR-048**: Exactly one of these states MUST show at a time: first-load placeholders, error, empty, or the node list with detail.
 
 ### Cross-cutting
 
@@ -305,7 +303,7 @@ If the Beta misbehaves, an administrator can go back to the Configuration portle
 
 ### Key Entities
 
-- **Cluster status**: one snapshot for the whole cluster — which node served the request and the list of nodes. Two install-wide facts accompany it: whether the license allows cluster data, and whether the heartbeat feature is on.
+- **Cluster status**: one snapshot for the whole cluster — which node served the request and the list of nodes. One install-wide fact accompanies it: whether the heartbeat feature is on.
 - **Node**: one dotCMS server seen in the last heartbeat window — server ID (full and short), friendly name, host name, IP address, dotCMS version, seconds since last heartbeat, whether it answered the status request, and its status (Up, Lagging, Down).
 - **Cache transport info** (per node): cluster name, transport type and provider, number of nodes, channel open, transport address, port, received and sent bytes and messages.
 - **Search cluster info** (per node): engine (Elasticsearch or OpenSearch), cluster name, timed out, node and data-node counts, shard counts (active primary, active, relocating, initializing, unassigned, delayed unassigned), pending tasks, unfinished fetches, maximum task queue wait, active shards percent.
@@ -320,7 +318,7 @@ If the Beta misbehaves, an administrator can go back to the Configuration portle
 - **SC-003**: An admin can identify every node that is not Up from the node list alone, without opening any detail.
 - **SC-004**: In 100% of refreshes where the selected node is still reported, it stays selected.
 - **SC-005**: Pressing Refresh repeatedly during one refresh produces exactly one status request.
-- **SC-006**: No screen state shows empty cards or a raw placeholder value (`undefined`, `null`, `-1`, blank) — verified for each of: first load, empty, error, unlicensed, heartbeat off, a node that did not answer, and a normal node.
+- **SC-006**: No screen state shows empty cards or a raw placeholder value (`undefined`, `null`, `-1`, blank) — verified for each of: first load, empty, error, heartbeat off, a node that did not answer, and a normal node.
 - **SC-007**: A node that did not answer is listed and selectable in 100% of loads where the backend reports it, and selecting it never shows an error.
 - **SC-008**: Every state and every label in the portlet appears in the admin's selected language when a translation exists.
 - **SC-009**: An admin can move through the node list and select a node using only the keyboard.
@@ -337,7 +335,7 @@ If the Beta misbehaves, an administrator can go back to the Configuration portle
 
 | Epic #37801 says | This spec | Status |
 |---|---|---|
-| "Each section (Cache Transport, Search Cluster, Assets) shows its health status" | No section health indicators, matching the design (FR-034). The backend has no real per-node cache health (the per-node flag is hard-coded), and the node status already conveys whether a node is healthy | **Pending the epic owner's sign-off** |
+| "Each section (Cache Transport, Search Cluster, Assets) shows its health status" | No section health indicators, matching the design (FR-034). The backend has no real per-node cache health (the per-node flag is hard-coded), and the node status already conveys whether a node is healthy | Signed off by the epic owner (spec re-approved on #37927, 2026-10-14) |
 
 ## Dependencies
 
@@ -345,15 +343,15 @@ The data this portlet needs is not fully served by the backend today. The spike 
 
 | Needed by this feature | Requirement | Covered by |
 |---|---|---|
-| Network and Network (Beta) users allowed to load cluster data | FR-003 | #37875 |
-| An explicit "unlicensed" answer (a license 403) instead of a server error | FR-045 | #37875 |
-| Search health that works when OpenSearch serves reads, and the engine name | FR-025, SC-011 | #37876 |
-| The node serving the request never reported as not answering because of its own slow search check; concurrent refreshes not wiping each other's results | FR-013, FR-035 | #37877 |
-| Whether the heartbeat feature is switched off | FR-047 | Requested on #37875; proposed as an install-wide setting in the app configuration (pending approval) |
-| Server-computed Up / Lagging / Down status | FR-011 | **Not yet filed** — typed cluster status service |
-| Whether each node answered the status request | FR-035 | **Not yet filed** — typed cluster status service |
-| One consistent shape for nodes that answered and nodes that did not | FR-008, FR-052 | **Not yet filed** — typed cluster status service |
-| The real cache transport address (overwritten by the node's IP today) | FR-024 | **Not yet filed** — typed cluster status service |
+| `GET /api/v1/cluster/nodes`: one node shape, `responded`, server-computed Up / Lagging / Down, typed sections, `@Schema` | FR-008, FR-011, FR-035, FR-052 | Backend spec #38032 (fixes #37875) |
+| Network (Beta) users allowed to load cluster data | FR-003 | #38032 |
+| Search health that works when OpenSearch serves reads, and the engine name | FR-025, SC-011 | #38032 (covers #37876) |
+| Concurrent refreshes not wiping each other's results | FR-039 | #38032 (request id, from #37877) |
+| Whether the heartbeat feature is switched off | FR-047 | #38032: `cluster.heartbeatEnabled` in `GET /api/v1/appconfiguration` |
+| The node's cluster name even when it did not answer | FR-016 | #38032 (per-node `clusterName` from the server record) |
+| The real cache transport address (`null` for transports without one) | FR-024 | #38032 |
+
+Not covered, and not needed for this feature: the serving node building its own report in-process (rest of #37877). Without it, a slow search check can still make the serving node show as not answering; the portlet shows whatever the backend reports.
 
 ## Assumptions
 
@@ -378,4 +376,4 @@ The design ("Network Portlet", variant 1d, 1-node and 3-node toggles) is the vis
 | No "This node" marker | Marker on the node serving the request (FR-012) | Epic acceptance criterion |
 | Only Up and Lagging nodes | Down nodes too, with the not-answering notice (FR-035) | Epic acceptance criterion |
 | "Search Cluster" with no engine | Engine named beside the title (FR-025) | Elasticsearch and OpenSearch both possible |
-| No loading, empty, error, unlicensed or heartbeat-off states; no Refresh in progress | All of them (FR-039, FR-042 – FR-047) | Epic acceptance criteria and the product decisions on the unlicensed and heartbeat-off states |
+| No loading, empty, error or heartbeat-off states; no Refresh in progress | All of them (FR-039, FR-042 – FR-044, FR-047) | Epic acceptance criteria and the product decision on the heartbeat-off state |
