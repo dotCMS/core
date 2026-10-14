@@ -29,7 +29,7 @@ on:
         type: string
 jobs:
   link-issue:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     permissions:
       pull-requests: write
       issues: write
