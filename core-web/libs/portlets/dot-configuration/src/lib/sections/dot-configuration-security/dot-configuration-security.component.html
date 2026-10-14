@@ -41,9 +41,11 @@
                         [tooltipText]="'configuration.security.key-digest.copy' | dm"
                         tooltipPosition="top"
                         data-testid="configuration-key-digest-copy" />
+                    <!-- Styled like the Copy button next to it; the confirmation dialog carries
+                         the warning. -->
                     <p-button
-                        [outlined]="true"
-                        severity="danger"
+                        variant="text"
+                        size="small"
                         [loading]="store.regeneratingKey()"
                         [disabled]="store.saving()"
                         [attr.aria-label]="'configuration.security.regenerate' | dm"
@@ -52,7 +54,8 @@
                         (onClick)="regenerateKey.emit()"
                         data-testid="configuration-regenerate-key-btn">
                         <ng-template #icon>
-                            <span class="material-symbols-outlined" aria-hidden="true">
+                            <!-- `!`: the icon font sets its own size outside Tailwind's layers. -->
+                            <span class="material-symbols-outlined text-base!" aria-hidden="true">
                                 autorenew
                             </span>
                         </ng-template>

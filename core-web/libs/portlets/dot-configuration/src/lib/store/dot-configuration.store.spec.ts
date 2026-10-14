@@ -2,6 +2,7 @@ import { createServiceFactory, mockProvider, SpectatorService } from '@openng/sp
 import { Subject, of, throwError } from 'rxjs';
 import { Mocked } from 'vitest';
 
+import { HttpErrorResponse } from '@angular/common/http';
 import { signal } from '@angular/core';
 
 import {
@@ -42,7 +43,8 @@ describe('DotConfigurationStore', () => {
                 saveBranding: vi.fn(),
                 saveAuthType: vi.fn(),
                 saveLocale: vi.fn(),
-                regenerateKey: vi.fn()
+                regenerateKey: vi.fn(),
+                getDotcmsLogo: vi.fn()
             }),
             mockProvider(DotHttpErrorManagerService, { handle: vi.fn() }),
             mockProvider(DotMessageDisplayService, { push: vi.fn() }),
@@ -175,14 +177,65 @@ describe('DotConfigurationStore', () => {
             expect(store.draft()?.authType).toBe(DotCompanyAuthType.EMAIL_ADDRESS);
         });
 
-        it('restore defaults puts the default colors and background in the form', () => {
-            store.restoreDefaults();
+        describe('restore defaults', () => {
+            const STOCK_LOGO = '/dA/stock-id/asset/dotcms-logo.png';
 
-            expect(store.draft()?.branding).toEqual(
-                expect.objectContaining(DOT_CONFIGURATION_DEFAULTS)
-            );
-            expect(store.draft()?.branding.loginScreenLogo).toBe(configuration.loginScreenLogo);
-            expect(service.saveBranding).not.toHaveBeenCalled();
+            it('puts the default colors, background and both logos in the form', () => {
+                service.getDotcmsLogo.mockReturnValue(of(STOCK_LOGO));
+                store.patchBranding({ navBarLogo: '/dA/nav-id/asset/nav.png' });
+                store.setNavBarLogoOverride(true);
+
+                store.restoreDefaults();
+
+                expect(store.draft()?.branding).toEqual(
+                    expect.objectContaining({
+                        ...DOT_CONFIGURATION_DEFAULTS,
+                        navBarLogo: '',
+                        loginScreenLogo: STOCK_LOGO
+                    })
+                );
+                expect(store.navBarLogoOverride()).toBe(false);
+                expect(service.saveBranding).not.toHaveBeenCalled();
+            });
+
+            it('keeps the login logo and says so when the instance has no stock logo', () => {
+                service.getDotcmsLogo.mockReturnValue(
+                    throwError(() => new HttpErrorResponse({ status: 404 }))
+                );
+
+                store.restoreDefaults();
+
+                expect(store.draft()?.branding.loginScreenLogo).toBe(configuration.loginScreenLogo);
+                expect(store.draft()?.branding.primaryColor).toBe(
+                    DOT_CONFIGURATION_DEFAULTS.primaryColor
+                );
+                expect(spectator.inject(DotMessageDisplayService).push).toHaveBeenCalledWith(
+                    expect.objectContaining({ severity: DotMessageSeverity.INFO })
+                );
+                expect(httpErrorManager.handle).not.toHaveBeenCalled();
+            });
+
+            it('reports any other failure looking up the stock logo', () => {
+                const error = new HttpErrorResponse({ status: 500 });
+                service.getDotcmsLogo.mockReturnValue(throwError(() => error));
+
+                store.restoreDefaults();
+
+                expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
+                expect(store.draft()?.branding.loginScreenLogo).toBe(configuration.loginScreenLogo);
+            });
+
+            it('drops a stock logo that arrives after Cancel', () => {
+                const stockLogo = new Subject<string>();
+                service.getDotcmsLogo.mockReturnValue(stockLogo);
+
+                store.restoreDefaults();
+                store.discard();
+                stockLogo.next(STOCK_LOGO);
+
+                expect(store.dirty()).toBe(false);
+                expect(store.draft()?.branding.loginScreenLogo).toBe(configuration.loginScreenLogo);
+            });
         });
     });
 

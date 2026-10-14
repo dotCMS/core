@@ -8,6 +8,7 @@ import {
 } from '@ngrx/signals';
 import { EMPTY, Observable, forkJoin, from, throwError } from 'rxjs';
 
+import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 import { DOCUMENT, computed, inject } from '@angular/core';
 
 import { catchError, concatMap, finalize, take, tap } from 'rxjs/operators';
@@ -173,6 +174,12 @@ export const DotConfigurationStore = signalStore(
             globalStore.loadSystemConfig();
         }
 
+        /**
+         * Bumped whenever the form is replaced wholesale (load, Cancel, Restore Defaults), so a
+         * late answer that belongs to an earlier version of the form can tell and be dropped.
+         */
+        let formVersion = 0;
+
         function updateDraft(patch: (draft: DotConfigurationDraft) => DotConfigurationDraft): void {
             const draft = store.draft();
 
@@ -242,6 +249,7 @@ export const DotConfigurationStore = signalStore(
                     .subscribe(({ configuration, adminLocales }) => {
                         const draft = toDraft(configuration);
 
+                        formVersion++;
                         patchState(store, {
                             status: ComponentStatus.LOADED,
                             original: draft,
@@ -285,6 +293,7 @@ export const DotConfigurationStore = signalStore(
 
             /** Throws away every edit and goes back to the values last stored on the server. */
             discard(): void {
+                formVersion++;
                 patchState(store, {
                     draft: store.original(),
                     failedSection: null,
@@ -293,14 +302,53 @@ export const DotConfigurationStore = signalStore(
             },
 
             /**
-             * Puts the default colors and login background back in the form. Nothing is saved
-             * until Save Changes; logos are not touched.
+             * Puts the dotCMS defaults back in the form: the starter colors and login background,
+             * no navbar logo override, and the stock dotCMS login logo. Nothing is saved until
+             * Save Changes.
+             *
+             * The stock logo is looked up on the server. When the instance has none, the login
+             * logo is kept (it cannot be left empty) and the user is told; any other failure is
+             * reported as an error.
              */
             restoreDefaults(): void {
+                const version = ++formVersion;
+
+                patchState(store, { navBarLogoOverride: false });
                 updateDraft((draft) => ({
                     ...draft,
-                    branding: { ...draft.branding, ...DOT_CONFIGURATION_DEFAULTS }
+                    branding: { ...draft.branding, ...DOT_CONFIGURATION_DEFAULTS, navBarLogo: '' }
                 }));
+
+                service
+                    .getDotcmsLogo()
+                    .pipe(
+                        take(1),
+                        catchError((error: HttpErrorResponse) => {
+                            if (error.status === HttpStatusCode.NotFound) {
+                                messageDisplayService.push({
+                                    life: 5000,
+                                    severity: DotMessageSeverity.INFO,
+                                    message: dotMessageService.get(
+                                        'configuration.restore-defaults.login-logo-kept'
+                                    ),
+                                    type: DotMessageType.SIMPLE_MESSAGE
+                                });
+                            } else {
+                                httpErrorManager.handle(error);
+                            }
+
+                            return EMPTY;
+                        })
+                    )
+                    .subscribe((loginScreenLogo) => {
+                        // Cancel or a reload may have replaced the form while this was in flight.
+                        if (version === formVersion) {
+                            updateDraft((draft) => ({
+                                ...draft,
+                                branding: { ...draft.branding, loginScreenLogo }
+                            }));
+                        }
+                    });
             },
 
             /**

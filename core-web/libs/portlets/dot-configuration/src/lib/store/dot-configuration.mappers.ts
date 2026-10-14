@@ -76,8 +76,9 @@ export const FIELD_SECTION: Record<DotConfigurationField, DotConfigurationSectio
 export type DotConfigurationErrors = Partial<Record<DotConfigurationField, string>>;
 
 /**
- * Values Restore Defaults puts back in the form. They are the ones dotCMS ships in its starter
- * data. Logos are left alone: the starter logo is an asset that may not exist on this instance.
+ * Colors and login background Restore Defaults puts back in the form: the ones dotCMS ships in
+ * its starter data. The logos are restored separately, since the stock login logo is an asset
+ * looked up on the server (see the store's `restoreDefaults`).
  */
 export const DOT_CONFIGURATION_DEFAULTS: Pick<
     DotConfigurationBranding,

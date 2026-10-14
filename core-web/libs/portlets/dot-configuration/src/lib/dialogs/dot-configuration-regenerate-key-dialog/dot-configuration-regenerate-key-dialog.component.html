@@ -26,7 +26,6 @@
             (onClick)="cancel()"
             data-testid="configuration-regenerate-key-cancel-btn" />
         <p-button
-            severity="danger"
             [label]="'configuration.regenerate-key.confirm' | dm"
             [disabled]="!$acknowledged()"
             (onClick)="confirm()"

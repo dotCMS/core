@@ -102,7 +102,7 @@ export class DotConfigurationShellComponent implements DotConfigurationUnsavedWo
         return section ? SECTION_NAME_KEYS[section] : null;
     });
 
-    /** Asks before putting the default colors and login background back in the form. */
+    /** Asks before putting the dotCMS defaults (colors, background, logos) back in the form. */
     onRestoreDefaults(): void {
         this.confirmationService.confirm({
             key: this.confirmKey,
