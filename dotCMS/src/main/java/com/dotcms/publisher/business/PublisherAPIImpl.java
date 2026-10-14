@@ -834,7 +834,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 						ids.subList(from, Math.min(from + COUNT_BY_BUNDLE_IDS_BATCH_SIZE, ids.size()));
 				final DotConnect dc = new DotConnect();
 				dc.setSQL("SELECT bundle_id, COUNT(*) AS asset_count FROM publishing_queue"
-						+ " WHERE bundle_id IN (" + String.join(",", Collections.nCopies(batch.size(), "?"))
+						+ " WHERE bundle_id IN (" + DotConnect.createParametersPlaceholder(batch.size())
 						+ ") GROUP BY bundle_id");
 				batch.forEach(dc::addParam);
 				for (final Map<String, Object> row : dc.loadObjectResults()) {
