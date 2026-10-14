@@ -1,7 +1,6 @@
 import { Component, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { BadgeModule } from 'primeng/badge';
 import { ListboxModule } from 'primeng/listbox';
 import { TagModule } from 'primeng/tag';
 
@@ -14,14 +13,7 @@ import { NODE_STATUS_TAGS } from '../../../utils/dot-network.utils';
 /** Left pane: every cluster node in a single-selection `p-listbox`. */
 @Component({
     selector: 'dot-network-node-list',
-    imports: [
-        FormsModule,
-        BadgeModule,
-        ListboxModule,
-        TagModule,
-        DotMessagePipe,
-        DotNetworkElapsedPipe
-    ],
+    imports: [FormsModule, ListboxModule, TagModule, DotMessagePipe, DotNetworkElapsedPipe],
     templateUrl: './dot-network-node-list.component.html',
     host: { class: 'flex min-h-0 flex-col' }
 })

@@ -2,7 +2,7 @@ import { createServiceFactory, mockProvider, SpectatorService } from '@openng/sp
 import { of, Subject, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 
 import { DotClusterService, DotHttpErrorManagerService } from '@dotcms/data-access';
 import { DotClusterNodes } from '@dotcms/dotcms-models';
@@ -16,10 +16,8 @@ const OTHER = createNode({ serverId: 'other', displayServerId: 'other' });
 const DOWN = createDownNode({ serverId: 'down', displayServerId: 'down' });
 
 const RESPONSE: DotClusterNodes = {
-    licensed: true,
     heartbeatEnabled: true,
     currentServerId: 'current',
-    clusterHealth: 'RED',
     nodes: [OTHER, DOWN, CURRENT]
 };
 
@@ -120,10 +118,8 @@ describe('DotNetworkStore', () => {
     it('should show the empty state when no node is listed', () => {
         vi.mocked(clusterService.getNodes).mockReturnValue(
             of({
-                licensed: true,
                 heartbeatEnabled: true,
                 currentServerId: 'x',
-                clusterHealth: 'GREEN',
                 nodes: []
             })
         );
@@ -132,23 +128,6 @@ describe('DotNetworkStore', () => {
 
         expect(store.showEmpty()).toBe(true);
         expect(store.showUnlicensed()).toBe(false);
-    });
-
-    it('should show the unlicensed state', () => {
-        vi.mocked(clusterService.getNodes).mockReturnValue(
-            of({
-                licensed: false,
-                heartbeatEnabled: true,
-                currentServerId: '',
-                clusterHealth: 'GREEN',
-                nodes: []
-            })
-        );
-
-        store.load();
-
-        expect(store.showUnlicensed()).toBe(true);
-        expect(store.showEmpty()).toBe(false);
     });
 
     describe('heartbeat notice (FR-047)', () => {
@@ -166,15 +145,9 @@ describe('DotNetworkStore', () => {
             expect(store.showHeartbeatNotice()).toBe(false);
         });
 
-        it('should not show the notice when there are no nodes or the install is unlicensed', () => {
+        it('should not show the notice when there are no nodes', () => {
             vi.mocked(clusterService.getNodes).mockReturnValue(
                 of({ ...RESPONSE, heartbeatEnabled: false, nodes: [] })
-            );
-            store.load();
-            expect(store.showHeartbeatNotice()).toBe(false);
-
-            vi.mocked(clusterService.getNodes).mockReturnValue(
-                of({ ...RESPONSE, heartbeatEnabled: false, licensed: false, nodes: [] })
             );
             store.load();
             expect(store.showHeartbeatNotice()).toBe(false);
@@ -193,6 +166,37 @@ describe('DotNetworkStore', () => {
             expect(store.status()).toBe('ERROR');
             expect(store.nodes()).toHaveLength(3);
             expect(store.showError()).toBe(false);
+        });
+    });
+
+    describe('license refusal (FR-045)', () => {
+        const licenseError = new HttpErrorResponse({
+            status: 403,
+            headers: new HttpHeaders({ 'error-key': 'dotcms.api.error.license.required' })
+        });
+
+        it('should show the unlicensed state on a license 403, without the shared error handler', () => {
+            vi.mocked(clusterService.getNodes).mockReturnValue(throwError(() => licenseError));
+
+            store.load();
+
+            expect(store.showUnlicensed()).toBe(true);
+            expect(store.showError()).toBe(false);
+            expect(store.nodes()).toEqual([]);
+            expect(spectator.inject(DotHttpErrorManagerService).handle).not.toHaveBeenCalled();
+        });
+
+        it('should treat a 403 without the license error key as an error, not as unlicensed', () => {
+            const forbidden = new HttpErrorResponse({ status: 403 });
+            vi.mocked(clusterService.getNodes).mockReturnValue(throwError(() => forbidden));
+
+            store.load();
+
+            expect(store.showUnlicensed()).toBe(false);
+            expect(store.status()).toBe('ERROR');
+            expect(spectator.inject(DotHttpErrorManagerService).handle).toHaveBeenCalledWith(
+                forbidden
+            );
         });
     });
 });

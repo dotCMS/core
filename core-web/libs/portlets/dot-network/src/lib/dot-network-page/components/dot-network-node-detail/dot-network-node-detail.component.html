@@ -62,21 +62,18 @@
     <dot-network-section
         titleKey="network.cache.title"
         [subtitle]="$cacheSubtitle()"
-        [health]="current.cache.health"
         [rows]="$cacheRows()"
         data-testid="network-section-cache" />
 
     <dot-network-section
         titleKey="network.search.title"
         [subtitle]="$searchSubtitle()"
-        [health]="current.search.health"
         [rows]="$searchRows()"
         data-testid="network-section-search" />
 
     <dot-network-section
         titleKey="network.assets.title"
         [subtitle]="'network.assets.subtitle' | dm"
-        [health]="current.assets.health"
         [rows]="$assetsRows()"
         data-testid="network-section-assets" />
 </div>

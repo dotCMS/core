@@ -8,10 +8,7 @@ import { DotNetworkSectionComponent } from './dot-network-section.component';
 const MESSAGES = {
     'network.assets.title': 'Assets',
     'network.assets.read': 'Read',
-    'network.assets.shared-path': 'Shared path',
-    'network.health.green': 'Healthy',
-    'network.health.yellow': 'Degraded',
-    'network.health.unknown': 'Unknown'
+    'network.assets.shared-path': 'Shared path'
 };
 
 describe('DotNetworkSectionComponent', () => {
@@ -26,7 +23,6 @@ describe('DotNetworkSectionComponent', () => {
         spectator = createComponent({
             props: {
                 titleKey: 'network.assets.title',
-                health: 'GREEN',
                 rows: [
                     { labelKey: 'network.assets.shared-path', value: '/data/assets', mono: true },
                     { labelKey: 'network.assets.read', value: null }
@@ -35,18 +31,10 @@ describe('DotNetworkSectionComponent', () => {
         });
     });
 
-    it('should render the title and the health tag', () => {
+    it('should render the title and no health indicator (FR-034)', () => {
         expect(spectator.query(byTestId('network-section-title'))).toHaveText('Assets');
-        expect(spectator.query(byTestId('network-section-health'))).toHaveText('Healthy');
-    });
-
-    it.each([
-        ['YELLOW', 'Degraded'],
-        ['UNKNOWN', 'Unknown']
-    ] as const)('should label %s health as %s', (health, label) => {
-        spectator.setInput('health', health);
-
-        expect(spectator.query(byTestId('network-section-health'))).toHaveText(label);
+        expect(spectator.query(byTestId('network-section-health'))).toBeNull();
+        expect(spectator.query('p-tag')).toBeNull();
     });
 
     it('should render every row and an em dash for a missing value', () => {
