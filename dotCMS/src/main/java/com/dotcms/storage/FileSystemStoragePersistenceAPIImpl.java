@@ -3,6 +3,7 @@ package com.dotcms.storage;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.lock.IdentifierStripedLock;
 import com.dotcms.enterprise.achecker.parsing.EmptyIterable;
+import com.dotcms.storage.binary.BinaryAssetStorageAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
@@ -90,14 +91,18 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
     }
 
     /**
-     * Maps a storage key to its path on disk. Keys are lowercased, as they always have been.
+     * Maps a storage key to its path on disk. Keys are lowercased, as they always have been, except
+     * in the groups that keep mixed-case names while S3 asset storage is enabled.
      *
      * @param groupName the group the key belongs to
      * @param path      the storage key
      * @return the path to use under the group's folder
      */
     private String normalizePath(final String groupName, final String path) {
-        return path.toLowerCase();
+        return AssetStorageFeature.isEnabled()
+                && (BinaryAssetStorageAPI.BINARY_ASSETS_GROUP.equals(groupName)
+                || BinaryAssetStorageAPI.GENERATED_ASSETS_GROUP.equals(groupName))
+                ? path : path.toLowerCase();
     }
 
     @Override

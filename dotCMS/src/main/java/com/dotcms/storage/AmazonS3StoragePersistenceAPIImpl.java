@@ -14,6 +14,7 @@ import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Configuration;
 import com.dotcms.enterprise.publishing.storage.AWSS3Storage;
 import com.dotcms.enterprise.publishing.storage.Storage;
 import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.storage.binary.BinaryAssetStorageAPI;
 import com.dotcms.storage.repository.FileRepositoryManager;
 import com.dotcms.storage.repository.HashedLocalFileRepositoryManager;
 import com.dotcms.storage.repository.LocalFileRepositoryManager;
@@ -74,6 +75,13 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
     private final Storage storage;
     private final String namespace = configuredNamespace();
 
+    private boolean sharesBinaryBytes(final String group) {
+        return AssetStorageFeature.isEnabled() && pathEncryptionMode == PathEncryptionMode.NONE
+                && (BinaryAssetStorageAPI.BINARY_ASSETS_GROUP.equals(group)
+                || BinaryAssetStorageAPI.GENERATED_ASSETS_GROUP.equals(group));
+    }
+
+    private S3ContentAddressedStorage sharedBytes() { return new S3ContentAddressedStorage(storage, bucketName); }
     private final FileRepositoryManager fileRepositoryManager = this.getFileRepository();
     private MessageDigest sha256;
     private final Set<String> groups = ConcurrentHashMap.newKeySet();
@@ -391,6 +399,9 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
     @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public Object pushFile(final String groupName, final String path, final File file,
                            final Map<String, Serializable> extraMeta) throws DotDataException {
+        if (sharesBinaryBytes(groupName)) {
+            return sharedBytes().store(transformReadPath(groupName, path), file, false);
+        }
         if (!AssetStorageFeature.isEnabled()) {
         final String pathForS3 = transformWritePath(groupName, path, file.getName());
         final Upload upload = this.storage.uploadFile(this.bucketName, pathForS3,
@@ -531,6 +542,13 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
             final File download = Try.of(() -> Files.createTempFile("s3-download-", ".tmp").toFile())
                     .getOrElseThrow(e -> new DotDataException("Unable to allocate an S3 download file", e));
             try {
+                if (sharesBinaryBytes(groupName)) {
+                    if (sharedBytes().retrieve(transformReadPath(groupName, path), download)) {
+                        return download;
+                    }
+                    releaseRetrievedFile(download);
+                    return null;
+                }
                 storage.downloadFile(bucketName, transformReadPath(groupName, path), download).waitForCompletion();
                 return download;
             } catch (Exception e) {
@@ -801,6 +819,13 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
             return false;
         }
         final String key = transformReadPath(groupName, path);
+        if (sharesBinaryBytes(groupName)) {
+            try {
+                return sharedBytes().matches(key, file);
+            } catch (IOException | RuntimeException failure) {
+                throw new DotDataException("Unable to verify shared asset " + path, failure);
+            }
+        }
         final var object = storage.listFirstObject(bucketName, key);
         if (object == null || !key.equals(object.getKey()) || object.getSize() != file.length()) {
             return false;
@@ -831,6 +856,10 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
         }
         if (!Files.isRegularFile(file.toPath(), java.nio.file.LinkOption.NOFOLLOW_LINKS)) {
             throw new DotDataException("Backfill requires a regular source file: " + file);
+        }
+        if (sharesBinaryBytes(groupName)) {
+            sharedBytes().store(transformReadPath(groupName, path), file, true);
+            return true;
         }
         try {
             if (hasDurableCopy(groupName, path, file)) {
