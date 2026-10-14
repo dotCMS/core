@@ -131,7 +131,9 @@ logged in as a CMS Administrator.
     - `UP`: responded, and `lastContactSeconds` ≤ threshold;
     - `LAGGING`: responded with `lastContactSeconds` > threshold, or not responded with
       `lastContactSeconds` ≤ threshold;
-    - `DOWN`: not responded, and `lastContactSeconds` > threshold.
+    - `DOWN`: not responded, and `lastContactSeconds` > threshold; or responded with a failed
+      assets check (`assetsStatus` red), whatever the heartbeat. The legacy Network tab shows
+      that server red, so the new screen must not show it as up.
   - **Typed sections:**
     - `cache`: `clusterName`, `transport`, `numberOfNodes`, `open`, `address`, `port`,
       `receivedBytes`, `sentBytes`.
@@ -157,16 +159,17 @@ logged in as a CMS Administrator.
   - one new `default` read method, overridden in `ESIndexAPI`, `OSIndexAPIImpl` and
     `IndexAPIImpl`;
   - routed with `router.read(...)` like other reads;
-  - both engines ask for whole-cluster health with no index filter, matching today's call
+  - both engines ask for whole-cluster health with no index filter, matching the previous call
     (Elasticsearch keeps the same `ES_INDEX_OPERATIONS_TIMEOUT` parameter);
   - each engine names itself in its result and throws on failure.
 - **`ClusterUtil.getNodeInfo`:**
   - uses that method;
-  - on a search failure, empties only the search keys (`esEngine` included) and sets
-    `esStatus=red`;
-  - adds `esEngine` and a numeric milliseconds key. Existing keys and values are unchanged.
-- **`CLUSTER_REQ` handler:** builds the report once. Its fallback still replies, carrying the
-  server's own id.
+  - on a search failure, empties only the search keys (`esEngine` included), sets
+    `esStatus=red` and logs a warning;
+  - adds `esEngine` and `esTaskMaxWaitingTimeMillis` (milliseconds). Existing keys and values
+    are unchanged.
+- **`CLUSTER_REQ` handler:** builds the report once. If building fails, the failure is logged
+  and no reply is sent, so the requester lists the server as not responding, as it always has.
 - **Request id:** each status request carries one, and replies are collected by it.
   - A server only collects replies for request ids it registered before sending. Replies with no
     id or an unknown id are dropped.
@@ -182,12 +185,9 @@ logged in as a CMS Administrator.
   `esTaskMaxWaitingInQueueMillis` (`"0s"`). The old tab reads them.
 - **A license check** and an unlicensed state.
 - **`PortletID.NETWORK`** and accepting `network`. Added when the Network portlet is promoted.
-- **A time limit on the search health call.** It needs per-request limits inside the search
-  clients, which belong to the migration.
-- **Building the report off the cache-update thread.**
-- **The serving server reporting on itself without its own broadcast.** With the default JDBC
-  pub/sub provider it already answers itself (see Assumptions for the Redis provider).
-- **The `startup` report value.**
+- **The rest of #37877:** a time limit on the search health call, building the report off the
+  pub/sub listener thread, the serving server reporting on itself in-process, and the `startup`
+  report value. The Network portlet doesn't need them, and the legacy tab behaves the same.
 - **Data the frontend spec doesn't show:**
   - `licenseId`, `host`, `clusterHealth`;
   - per-section status;
@@ -211,7 +211,7 @@ logged in as a CMS Administrator.
   - `PortletAPIImpl.isCustomContentPortlet`.
 - **Backward compatibility**:
   - **Old endpoint:** same access and the same keys and values. Each answered server's entry
-    gains `esEngine`, the numeric milliseconds key and the request id (a reply carries the
+    gains `esEngine`, `esTaskMaxWaitingTimeMillis` and `clusterRequestId` (a reply carries the
     request's payload, as it already carries the pub/sub keys `t`, `top` and `o`). The old tab
     reads keys by name and ignores them.
   - **`CacheTransport.validateCacheInCluster(int)`:** keeps its signature and return shape.
@@ -242,10 +242,10 @@ logged in as a CMS Administrator.
   - `lastContactSeconds` is never negative.
 - **AC-004**: `responded` is `true` only when the server's reply to this call's request arrived
   within the wait window.
-- **AC-005**: `status` follows the rule in Fix Scope at its boundaries. Section values never
-  change it.
+- **AC-005**: `status` follows the rule in Fix Scope at its boundaries. A server that answered
+  with a failed assets check is `DOWN`; no other report value changes `status`.
 - **AC-006**: The sections have the fields and types in Fix Scope.
-  - A server that didn't answer has every section value `null`.
+  - A server that didn't answer has `cache`, `search` and `assets` set to `null`.
   - A server that answered never has an empty string or `-1`.
   - `cache.transport` is `PubSub` on the PubSub transport.
   - `cache.address` and `cache.port` are `null` on PubSub; `cache.address` is never the node IP.
@@ -288,7 +288,7 @@ logged in as a CMS Administrator.
   - Phases 2 and 3: OpenSearch.
   - Elasticsearch when the phase 2 fallback answered.
 
-  Both engines report whole-cluster health with no index filter, as today's call does.
+  Both engines report whole-cluster health with no index filter, as the previous call did.
   `DotRestHighLevelClientProvider` is no longer used by `ClusterUtil`.
 - **AC-017**: In phase 3 with `ES_ENDPOINTS` unset, every server answers, with search values
   from OpenSearch.
@@ -296,12 +296,14 @@ logged in as a CMS Administrator.
   - only the search keys are emptied, `esEngine` included, and `esStatus` is `red`;
   - the cache and assets keys are filled;
   - the server still answers.
-- **AC-019**: The migration code listed in the non-goals is unchanged in behaviour, the new
-  `IndexAPI` method is a `default`, and no new logging is added.
-- **AC-020**: The existing report keys keep their names and values. Only `esEngine` and the
-  numeric milliseconds key are added to the report.
-- **AC-021**: The `CLUSTER_REQ` handler builds the report once. If building fails, a reply is
-  still sent with the server's own full `serverId`.
+- **AC-019**: The migration code listed in the non-goals is unchanged in behaviour, and the new
+  `IndexAPI` method is a `default`. The only new log line is one warning in the status report
+  when the search health call fails (the failure used to be logged when it escaped the report).
+- **AC-020**: The existing report keys keep their names and values. Only `esEngine` and
+  `esTaskMaxWaitingTimeMillis` are added to the report.
+- **AC-021**: The `CLUSTER_REQ` handler builds the report once and its reply echoes the request
+  id. If building fails, the failure is logged and no reply is sent, so the server is listed as
+  not responding on both screens.
 - **AC-022**: If a pub/sub topic handler throws, `JDBCPubSubImpl` still processes the rest of the
   batch, including cache invalidations.
 - **AC-023**: `NodeStatusServerAction` and the `x-dot-server` header keep working.
@@ -327,7 +329,7 @@ logged in as a CMS Administrator.
   responding.
 - **AC-028**: Otherwise it returns the same structure (`myServerId`, `clusterHealth`,
   `serverInfo`) with every existing key and value unchanged. Each answered server's entry only
-  gains `esEngine`, the numeric milliseconds key and the request id.
+  gains `esEngine`, `esTaskMaxWaitingTimeMillis` and `clusterRequestId`.
 - **AC-029**: Its access rule (`configuration` portlet) is unchanged. The other `/api/cluster`
   endpoints are untouched.
 - **AC-030**: `CacheTransport.validateCacheInCluster(int)` keeps its signature and return shape.
@@ -335,14 +337,14 @@ logged in as a CMS Administrator.
 **Verification method**:
 
 - **Unit tests** for:
-  - the status rule at its boundaries (AC-005);
+  - the status rule at its boundaries, including the failed-assets case (AC-005);
   - the conversion of current and old-format reports (AC-006 to AC-008);
   - the answered and unanswered node shape, and one status request per call (AC-002 to AC-004,
     AC-009);
-  - search routing per phase, the phase 2 fallback, and the OpenSearch mapping (AC-016). That
-    `IndexAPIImpl` never calls the Elasticsearch implementation in phase 3 proves AC-017 without
-    `ES_ENDPOINTS`;
-  - the handler fallback (AC-021);
+  - the phase 2 fallback, and OpenSearch failures surfacing as unchecked exceptions so the
+    fallback can fire (AC-016). That `IndexAPIImpl` never calls the Elasticsearch implementation
+    in phase 3 proves AC-017 without `ES_ENDPOINTS`;
+  - the handler: one build, the request id echoed, and no reply when the report fails (AC-021);
   - the per-notification guard (AC-022);
   - request id collection, and two status checks under 1.5 s apart answered the way an
     older-version server answers (AC-024 to AC-026).
@@ -361,7 +363,7 @@ logged in as a CMS Administrator.
 - **CI OpenAPI check** for AC-010.
 - **Code review** for:
   - AC-014 and AC-015: only `network-beta` is added;
-  - AC-019: the migration code is unchanged;
+  - AC-019: the migration code is unchanged, and only the one warning is added;
   - AC-028 to AC-030: the old endpoint is unchanged;
   - AC-023: the other callers.
 
@@ -375,7 +377,8 @@ logged in as a CMS Administrator.
   when it is promoted.
 - A reply keeps being built from its request (`new DotPubSubEvent.Builder(event)`), so older
   servers echo the request id.
-- The default JDBC pub/sub provider delivers a server's own messages to itself, so the serving
-  server answers its own request. With the Redis provider (`DOT_PUBSUB_PROVIDER_OVERRIDE`) it
-  never sees its own request, so it always shows `responded=false` (`LAGGING` or `DOWN`), as the
-  old tab does today. That stays as it is in this change.
+- The default JDBC pub/sub provider and `RedisPubSubImpl` deliver a server's own messages to
+  itself, so the serving server answers its own request. Only `RedisStreamsPubSubImpl` filters out
+  its own messages: with it (`DOT_PUBSUB_PROVIDER_OVERRIDE`), the serving server never sees its own
+  request, so it always shows `responded=false` (`LAGGING` or `DOWN`), as the old tab does today.
+  That stays as it is in this change.
