@@ -2,6 +2,7 @@ package com.dotmarketing.common.reindex;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.cdi.CDIUtils;
@@ -21,6 +22,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -185,6 +187,44 @@ public class BulkBatchDiscardTest {
     public void test_twoLanguages_oneOversized_otherIndexed_failureKept_rejectedLast()
             throws Exception {
         twoLanguagesOneOversized(false);
+    }
+
+    /**
+     * Given Scenario: {@value #HEALTHY_COUNT} healthy contentlets and one whose {@code body}
+     * exceeds Jackson's string limit are indexed directly with a FORCE policy, without the
+     * reindex queue — the path of WAIT_FOR/FORCE saves, related content and list callers such
+     * as {@code ESContentFactoryImpl.reindexReplacedUserContent}.
+     * Expected Result: Every healthy contentlet is in the index the ambient phase reads from (and
+     * in OpenSearch too in a dual-write phase), the oversized one is in no index, and the call
+     * throws one {@link DotRuntimeException} naming the oversized inode, the field and its real
+     * length.
+     */
+    @Test
+    public void test_directIndex_oversizedDocument_healthyIndexed_exceptionNamesIt()
+            throws Exception {
+        final Contentlet oversized = newContentlet("x".repeat(OVERSIZED_LENGTH));
+        final List<Contentlet> healthyContent = new ArrayList<>();
+        for (int i = 0; i < HEALTHY_COUNT; i++) {
+            healthyContent.add(newContentlet("healthy direct body " + i));
+        }
+        final List<Contentlet> all = new ArrayList<>(healthyContent);
+        all.add(HEALTHY_COUNT / 2, oversized);
+        all.forEach(contentlet -> contentlet.setIndexPolicy(IndexPolicy.FORCE));
+
+        final DotRuntimeException thrown = assertThrows(DotRuntimeException.class,
+                () -> indexAPI.addContentToIndex(all));
+
+        final String message = thrown.getMessage();
+        assertTrue("message must name the oversized inode: " + message,
+                message.contains(oversized.getInode()));
+        assertTrue("message must name the field and its real length: " + message,
+                FIELD_AND_LENGTH.matcher(message).find());
+        for (final Contentlet contentlet : healthyContent) {
+            assertIndexed(contentlet.getIdentifier());
+        }
+        assertAbsent("+inode:" + oversized.getInode(),
+                "the oversized contentlet must not be indexed: " + oversized.getInode());
+        assertInShadowWhenDualWrite(healthyContent);
     }
 
     /**

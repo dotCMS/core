@@ -2428,40 +2428,87 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                         contentlet -> contentlet.getIndexPolicy() == IndexPolicy.WAIT_FOR,
                         contentlet -> contentlet.getIndexPolicy() == IndexPolicy.FORCE);
 
+        final List<IndexDocumentViolation> withheld = new ArrayList<>();
         if (UtilMethods.isSet(partitions.get(0))) {
-            this.indexContentListDefer(partitions.get(0));
+            withheld.addAll(this.indexContentListDefer(partitions.get(0)));
         }
 
         if (UtilMethods.isSet(partitions.get(1))) {
-            this.indexContentListWaitFor(partitions.get(1));
+            withheld.addAll(this.indexContentListWaitFor(partitions.get(1)));
         }
 
         if (UtilMethods.isSet(partitions.get(2))) {
-            this.indexContentListNow(partitions.get(2));
+            withheld.addAll(this.indexContentListNow(partitions.get(2)));
         }
 
+        // Every healthy document has been sent by now; only then report the withheld ones, so a
+        // single oversized document no longer costs the rest of the list its indexing (#37269).
+        throwIfWithheld(withheld);
     }
 
-    private void indexContentListNow(final List<Contentlet> contentToIndex) {
-        final IndexBulkRequest bulkRequest = createBulkRequest(contentToIndex);
+    /**
+     * Sends the list to the index with an immediate refresh.
+     *
+     * @return the documents left out because the engine clients' parser would refuse them
+     */
+    private List<IndexDocumentViolation> indexContentListNow(final List<Contentlet> contentToIndex) {
+        final List<IndexDocumentViolation> withheld = new ArrayList<>();
+        final IndexBulkRequest bulkRequest = createBulkRequest(contentToIndex, withheld);
         this.setRefreshPolicy(bulkRequest, IndexBulkRequest.RefreshPolicy.IMMEDIATE);
         putToIndex(bulkRequest);
         CacheLocator.getESQueryCache().clearCache();
         CacheLocator.getOSQueryCache().clearCache();
+        return withheld;
     } // indexContentListNow.
 
-    private void indexContentListWaitFor(final List<Contentlet> contentToIndex) {
-        final IndexBulkRequest bulkRequest = createBulkRequest(contentToIndex);
+    /**
+     * Sends the list to the index and waits for the refresh.
+     *
+     * @return the documents left out because the engine clients' parser would refuse them
+     */
+    private List<IndexDocumentViolation> indexContentListWaitFor(
+            final List<Contentlet> contentToIndex) {
+        final List<IndexDocumentViolation> withheld = new ArrayList<>();
+        final IndexBulkRequest bulkRequest = createBulkRequest(contentToIndex, withheld);
         this.setRefreshPolicy(bulkRequest, IndexBulkRequest.RefreshPolicy.WAIT_FOR);
         putToIndex(bulkRequest);
         CacheLocator.getESQueryCache().clearCache();
         CacheLocator.getOSQueryCache().clearCache();
+        return withheld;
     } // indexContentListWaitFor.
 
-    private void indexContentListDefer(final List<Contentlet> contentToIndex) {
-        final IndexBulkRequest bulkRequest = createBulkRequest(contentToIndex);
+    /**
+     * Sends the list to the index with the default refresh.
+     *
+     * @return the documents left out because the engine clients' parser would refuse them
+     */
+    private List<IndexDocumentViolation> indexContentListDefer(
+            final List<Contentlet> contentToIndex) {
+        final List<IndexDocumentViolation> withheld = new ArrayList<>();
+        final IndexBulkRequest bulkRequest = createBulkRequest(contentToIndex, withheld);
         putToIndex(bulkRequest);
+        return withheld;
     } // indexContentListDefer.
+
+    /**
+     * Fails the direct indexing call when documents were withheld, naming each one.
+     *
+     * <p>Called only after the healthy documents of the call were sent, so the caller still gets
+     * an exception, as before #37269, without losing the rest of the list.</p>
+     *
+     * @param withheld the documents left out of the request
+     * @throws DotRuntimeException listing every withheld document, one per line
+     */
+    private void throwIfWithheld(final List<IndexDocumentViolation> withheld) {
+        if (withheld.isEmpty()) {
+            return;
+        }
+        final String reasons = withheld.stream().map(IndexDocumentViolation::toFailureReason)
+                .collect(Collectors.joining("\n"));
+        Logger.warn(this, "Withheld " + withheld.size()
+                + " index document(s) the engine clients' parser would reject:\n" + reasons);
+        throw new DotRuntimeException(reasons);
+    }
 
     /**
      * Sets the refresh policy on the batch.
@@ -2543,10 +2590,34 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         }
     }
 
+    /**
+     * Builds a bulk request for the given contentlets.
+     *
+     * <p>A document the engine clients' parser would refuse makes this method throw, naming it,
+     * and the request is not returned (#37269). Internal callers use
+     * {@link #createBulkRequest(List, List)} instead, so they can send the healthy documents
+     * first.</p>
+     */
     @Override
     public IndexBulkRequest createBulkRequest(final List<Contentlet> contentToIndex) {
+        final List<IndexDocumentViolation> withheld = new ArrayList<>();
+        final IndexBulkRequest req = createBulkRequest(contentToIndex, withheld);
+        throwIfWithheld(withheld);
+        return req;
+    }
+
+    /**
+     * Builds a bulk request for the given contentlets, leaving out any document the engine
+     * clients' parser would refuse.
+     *
+     * @param contentToIndex the contentlets to index
+     * @param withheld       receives the documents left out of the request
+     * @return the request holding every healthy document
+     */
+    private IndexBulkRequest createBulkRequest(final List<Contentlet> contentToIndex,
+            final List<IndexDocumentViolation> withheld) {
         final IndexBulkRequest req = createBulkRequest();
-        this.appendBulkRequestFromContentlets(req, contentToIndex);
+        withheld.addAll(this.addBulkRequest(req, contentToIndex, false));
         return req;
     }
 
@@ -2712,11 +2783,20 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     private void appendBulkRequestInternal(final IndexBulkRequest req, final ReindexEntry idx)
             throws DotDataException {
         try {
+            final List<String> rejections = new ArrayList<>();
             for (final Contentlet contentlet : loadVersionInodes(idx).values()) {
                 Logger.debug(this, String.format("Indexing id: '%s', priority: '%s'",
                         contentlet.getInode(), idx.getPriority()));
                 contentlet.setIndexPolicy(IndexPolicy.DEFER);
-                addBulkRequest(req, List.of(contentlet), idx.isReindex());
+                addBulkRequest(req, List.of(contentlet), idx.isReindex()).forEach(
+                        violation -> rejections.add(violation.toFailureReason()));
+            }
+            if (!rejections.isEmpty()) {
+                // The healthy versions stay in the request; the entry records the withheld one.
+                final String rejectionReason = String.join("; ", rejections);
+                Logger.warn(this, "Withholding index document(s) for identifier '"
+                        + idx.getIdentToIndex() + "': " + rejectionReason);
+                APILocator.getReindexQueueAPI().markAsFailed(idx, rejectionReason);
             }
         } catch (final Exception e) {
             // An error occurred when trying to reindex the Contentlet. Flag it as "failed"
@@ -2818,106 +2898,73 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         return documents;
     }
 
-    private void appendBulkRequestFromContentlets(final IndexBulkRequest req,
-            final List<Contentlet> contentToIndex) {
-        this.addBulkRequest(req, contentToIndex, false);
+    /**
+     * One write provider together with the native request and index names it writes into.
+     */
+    private record ProviderTarget(ContentletIndexOperations ops, IndexBulkRequest req,
+                                  ProviderIndices indices) {
     }
 
     /**
-     * Appends index operations for a single provider into its native bulk request.
+     * Appends one mapped document to a provider's native bulk request, once per index it belongs
+     * to: working and/or live, plus the reindex counterparts while a full reindex is running.
      *
-     * <p>Uses the provided {@code ops} and {@code indices} so that the caller controls
-     * which provider and which index names receive the operations. Each contentlet in
-     * {@code contentToIndex} is processed exactly once (duplicates are expected to have
-     * already been removed by the caller).</p>
+     * @param target     the provider, its request and its index names
+     * @param document   the mapped, already checked document
+     * @param forReindex {@code true} when the document goes only to the reindex indices when they
+     *                   exist
      */
-    private void addBulkRequestToProvider(
-            final IndexBulkRequest req,
-            final ContentletIndexOperations ops,
-            final ProviderIndices indices,
-            final Set<Contentlet> contentToIndex,
-            final boolean forReindex) {
-
-        for (final Contentlet contentlet : contentToIndex) {
-            final String id = contentlet.getIdentifier() + "_" + contentlet.getLanguageId()
-                    + "_" + contentlet.getVariantId();
-            String mapping = null;
-            try {
-                if (this.isWorking(contentlet)) {
-                    mapping = Try.of(
-                                    () -> objectMapper.writeValueAsString(
-                                            getMappingAPI().toMap(contentlet)))
-                            .getOrElseThrow(DotRuntimeException::new);
-                    if (indices.working != null && (!forReindex || indices.reindexWorking == null)) {
-                        ops.addIndexOp(req, indices.working, id, mapping);
-                    }
-                    if (indices.reindexWorking != null) {
-                        ops.addIndexOp(req, indices.reindexWorking, id, mapping);
-                    }
-                }
-                if (this.isLive(contentlet)) {
-                    if (mapping == null) {
-                        mapping = Try.of(
-                                        () -> objectMapper.writeValueAsString(
-                                                getMappingAPI().toMap(contentlet)))
-                                .getOrElseThrow(DotRuntimeException::new);
-                    }
-                    if (indices.live != null && (!forReindex || indices.reindexLive == null)) {
-                        ops.addIndexOp(req, indices.live, id, mapping);
-                    }
-                    if (indices.reindexLive != null) {
-                        ops.addIndexOp(req, indices.reindexLive, id, mapping);
-                    }
-                }
-                contentlet.markAsReindexed();
-            } catch (Exception ex) {
-                // Identity only: the content map can be many MB and may hold sensitive values.
-                Logger.error(this,
-                        "Can't get a mapping for contentlet with id_lang:" + id
-                                + " (inode " + contentlet.getInode() + ")", ex);
-                throw ex;
+    private static void addDocumentToProvider(final ProviderTarget target,
+            final MappedDocument document, final boolean forReindex) {
+        final ContentletIndexOperations ops = target.ops();
+        final IndexBulkRequest req = target.req();
+        final ProviderIndices indices = target.indices();
+        final String id = document.id();
+        final String mapping = document.mapping();
+        if (document.isWorking()) {
+            if (indices.working != null && (!forReindex || indices.reindexWorking == null)) {
+                ops.addIndexOp(req, indices.working, id, mapping);
+            }
+            if (indices.reindexWorking != null) {
+                ops.addIndexOp(req, indices.reindexWorking, id, mapping);
+            }
+        }
+        if (document.isLive()) {
+            if (indices.live != null && (!forReindex || indices.reindexLive == null)) {
+                ops.addIndexOp(req, indices.live, id, mapping);
+            }
+            if (indices.reindexLive != null) {
+                ops.addIndexOp(req, indices.reindexLive, id, mapping);
             }
         }
     }
 
     /**
-     * Adds document index operations to {@code req} for every active write provider.
+     * Resolves, for every active write provider, the native request it writes into and its index
+     * names.
      *
      * <p>In dual-write phases, {@code req} is a {@link DualIndexBulkRequest}; each provider
-     * receives its own native sub-request populated with its own index names.  In single-provider
-     * phases, {@code req} belongs to the sole write provider and is used directly.</p>
+     * receives its own native sub-request populated with its own index names. In single-provider
+     * phases, {@code req} belongs to the sole write provider and is used directly. A provider
+     * whose index names cannot be loaded (OS record not yet initialized) is skipped.</p>
      */
-    private void addBulkRequest(final IndexBulkRequest req, final List<Contentlet> contentToIndex,
-            final boolean forReindex) {
-        if (contentToIndex == null || contentToIndex.isEmpty()) {
-            return;
-        }
-        Logger.debug(this.getClass(),
-                "Indexing " + contentToIndex.size() + " contents, starting with identifier [ "
-                        + contentToIndex.get(0).getIdentifier() + "]");
-
-        final Set<Contentlet> deduped = new HashSet<>(contentToIndex);
-        // Detect whether this is a dual-write batch so we can dispatch each provider's
-        // ops to its own native sub-request (with its own index names).
+    private List<ProviderTarget> resolveRequestTargets(final IndexBulkRequest req) {
         final DualIndexBulkRequest dualReq =
                 req instanceof DualIndexBulkRequest ? (DualIndexBulkRequest) req : null;
-
-        // Fan-out: iterate over 1 provider (phases 0/3) or 2 providers (phases 1/2).
+        final List<ProviderTarget> targets = new ArrayList<>(2);
+        // Fan-out: 1 provider (phases 0/3) or 2 providers (phases 1/2).
         for (final ContentletIndexOperations ops : router.writeProviders()) {
             final ProviderIndices indices = loadProviderIndicesQuietly(ops);
             if (indices == null) {
                 // OS record not yet initialized — skip silently (logged inside loadProviderIndices)
                 continue;
             }
-            // Resolve which native batch this provider should write into.
-            // In dual-write the batch is split; in single-provider phases req IS the batch.
             final IndexBulkRequest providerReq;
             if (dualReq != null) {
                 providerReq = (ops == operationsES) ? dualReq.esReq : dualReq.osReq;
             } else {
                 providerReq = req;
             }
-
             Logger.debug(this,
                     () -> "\n*********----------- Indexing via " + ops.getClass().getSimpleName()
                             + " on thread " + Thread.currentThread().getName());
@@ -2927,9 +2974,44 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                     + ExceptionUtil.getCurrentStackTraceAsString(
                             Config.getIntProperty("stacktracelimit", 10))
                     + "\n");
-
-            addBulkRequestToProvider(providerReq, ops, indices, deduped, forReindex);
+            targets.add(new ProviderTarget(ops, providerReq, indices));
         }
+        return targets;
+    }
+
+    /**
+     * Adds document index operations to {@code req} for every active write provider.
+     *
+     * <p>Each contentlet is mapped and checked once and its document is added to every provider
+     * before the next contentlet is mapped, so only one serialized document is held outside the
+     * requests at a time. A document the engine clients' parser would refuse is left out of the
+     * request for every provider and returned, so the caller can send the healthy ones and then
+     * report it (#37269).</p>
+     *
+     * @return the documents left out of the request; empty when every document was added
+     */
+    private List<IndexDocumentViolation> addBulkRequest(final IndexBulkRequest req,
+            final List<Contentlet> contentToIndex, final boolean forReindex) {
+        if (contentToIndex == null || contentToIndex.isEmpty()) {
+            return List.of();
+        }
+        Logger.debug(this.getClass(),
+                "Indexing " + contentToIndex.size() + " contents, starting with identifier [ "
+                        + contentToIndex.get(0).getIdentifier() + "]");
+
+        final List<ProviderTarget> targets = resolveRequestTargets(req);
+        final List<IndexDocumentViolation> withheld = new ArrayList<>();
+        for (final Contentlet contentlet : new HashSet<>(contentToIndex)) {
+            final Optional<MappedDocument> mapped = mapContentletForProcessor(contentlet);
+            if (mapped.isPresent() && mapped.get().isRejected()) {
+                withheld.add(mapped.get().rejection());
+                continue;
+            }
+            mapped.ifPresent(document -> targets.forEach(
+                    target -> addDocumentToProvider(target, document, forReindex)));
+            contentlet.markAsReindexed();
+        }
+        return withheld;
     }
 
     /**
