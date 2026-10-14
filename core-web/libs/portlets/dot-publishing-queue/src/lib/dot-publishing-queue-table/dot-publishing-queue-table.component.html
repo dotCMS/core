@@ -204,7 +204,8 @@
                     <td
                         class="text-color-secondary whitespace-nowrap"
                         data-testid="pq-bundles-modified">
-                        @if (row.isNew) {
+                        <!-- A New bundle whose id isn't a ULID has no known date. -->
+                        @if (row.isNew && !row.createDate) {
                             —
                         } @else {
                             {{

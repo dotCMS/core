@@ -252,7 +252,25 @@ describe('DotPublishingQueueTableComponent', () => {
             expect(newRowEl()?.querySelector('[data-testid="pq-status-chip"]')).toHaveText('New');
         });
 
-        it('shows a dash for the item count and dates the endpoint does not return', () => {
+        it('shows Date Entered and Last Update when the id carried a date', () => {
+            const createDate = '2026-06-08T10:00:00Z';
+            tableRows.set([
+                { ...newRow('n1'), createDate },
+                { ...row('b1'), createDate, statusUpdated: null }
+            ]);
+            spectator.detectChanges();
+
+            const [newEl, auditEl] = spectator.queryAll(byTestId('pq-bundles-row'));
+            const cell = (el: Element, testId: string) =>
+                el.querySelector(`[data-testid="${testId}"]`)?.textContent?.trim();
+
+            expect(cell(newEl, 'pq-bundles-created')).toContain('2026');
+            // Same date, same rendering as an audit row that has no status update yet.
+            expect(cell(newEl, 'pq-bundles-created')).toBe(cell(auditEl, 'pq-bundles-created'));
+            expect(cell(newEl, 'pq-bundles-modified')).toBe(cell(auditEl, 'pq-bundles-modified'));
+        });
+
+        it('shows a dash for the item count, and for dates when the id carried none', () => {
             const el = newRowEl();
             expect(el?.querySelector('[data-testid="pq-bundles-items-btn"]')).toBeFalsy();
             expect(el?.querySelector('[data-testid="pq-bundles-items"]')).toHaveText('—');

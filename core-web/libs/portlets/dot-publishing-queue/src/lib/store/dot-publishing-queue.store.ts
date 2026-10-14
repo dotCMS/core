@@ -32,6 +32,8 @@ import {
     RetryBundleResultView
 } from '@dotcms/dotcms-models';
 
+import { ulidTimestamp } from '../util/ulid.util';
+
 type LoadStatus = 'init' | 'loading' | 'loaded' | 'error';
 
 /** Statuses targeted by the dialog's "SUCCESS" scope — matches legacy
@@ -710,8 +712,12 @@ export const DotPublishingQueueStore = signalStore(
     })
 );
 
-/** Builds a "New" row for an unsent bundle. The endpoint only returns its id and
- * name, so every other column renders as empty. */
+/**
+ * Builds a "New" row for an unsent bundle. The endpoint only returns its id and
+ * name. The creation date is decoded from the id (a ULID) and doubles as the
+ * last update, since nothing records changes to an unsent bundle — the same
+ * fallback audit rows use when they have no `statusUpdated`.
+ */
 function toNewRow(bundleId: string, bundleName: string): PublishingQueueRow {
     return {
         bundleId,
@@ -722,7 +728,7 @@ function toNewRow(bundleId: string, bundleName: string): PublishingQueueRow {
         assetCount: 0,
         assetPreview: [],
         environmentCount: 0,
-        createDate: '',
+        createDate: ulidTimestamp(bundleId) ?? '',
         statusUpdated: null,
         numTries: 0,
         isNew: true

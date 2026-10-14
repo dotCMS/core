@@ -269,6 +269,24 @@ describe('DotPublishingQueueStore', () => {
             );
         });
 
+        it('dates a New row from its ULID id, and leaves a non-ULID id undated', () => {
+            (service.getUnsendBundles as Mock).mockReturnValueOnce(
+                of({
+                    ...UNSENT_BUNDLES_RESPONSE,
+                    items: [
+                        // Minted by dotCMS's ULID class for 2026-06-12T10:00:00Z.
+                        { id: '01KTXMCC8095W38EQCB7P14XP5', name: 'Minted' },
+                        { id: 'draft-1', name: 'Uploaded' }
+                    ]
+                })
+            );
+
+            store.loadNewBundles();
+
+            expect(store.newBundles()[0].createDate).toBe('2026-06-12T10:00:00.000Z');
+            expect(store.newBundles()[1].createDate).toBe('');
+        });
+
         it('reuses the cached user id instead of re-resolving the current user', () => {
             (currentUserService.getCurrentUser as Mock).mockClear();
             store.loadNewBundles();
