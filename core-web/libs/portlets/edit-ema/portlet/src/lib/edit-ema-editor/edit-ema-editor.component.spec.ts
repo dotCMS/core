@@ -60,7 +60,12 @@ import { DotPaletteListStore, DotResultsSeoToolComponent } from '@dotcms/portlet
 import { GlobalStore } from '@dotcms/store';
 import { DotCMSURLContentMap, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
-import { DotCopyContentModalService, SafeUrlPipe } from '@dotcms/ui';
+import {
+    DotCopyContentModalService,
+    DotSidePanelRef,
+    DotSidePanelService,
+    SafeUrlPipe
+} from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
 import {
     CONTENT_TYPE_MOCK_FOR_EDITOR,
@@ -2649,6 +2654,55 @@ describe('EditEmaEditorComponent', () => {
                             contentletInode: 'contentlet-inode-123'
                         })
                     );
+                });
+
+                it('opens the new editor in the side panel when its flag is on, and clears the request when the panel closes', () => {
+                    const dotContentTypeService =
+                        spectator.debugElement.injector.get(DotContentTypeService);
+                    vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                        of(
+                            createFakeContentType({
+                                variable: 'test',
+                                name: 'Test',
+                                metadata: {
+                                    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true
+                                }
+                            })
+                        )
+                    );
+                    const closed = new Subject<void>();
+                    const openSpy = vi
+                        .spyOn(spectator.inject(DotSidePanelService), 'open')
+                        .mockReturnValue({ closed } as unknown as DotSidePanelRef);
+                    patchState(store, {
+                        flags: {
+                            ...store.flags(),
+                            [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: true
+                        }
+                    });
+
+                    store.setSelected({
+                        bounds: { x: 0, y: 0, width: 0, height: 0 },
+                        payload: EDIT_ACTION_PAYLOAD_MOCK
+                    });
+                    spectator.detectChanges();
+                    spectator.component['handleOpenFullEditor']();
+                    spectator.detectChanges();
+
+                    expect(openSpy).toHaveBeenCalledTimes(1);
+                    const [, config] = openSpy.mock.calls[0];
+                    expect((config.heading as () => string)()).toBe('Hello World');
+                    expect((config.inputs?.['data'] as () => unknown)()).toEqual(
+                        expect.objectContaining({
+                            mode: 'edit',
+                            contentletInode: 'contentlet-inode-123'
+                        })
+                    );
+
+                    closed.next();
+                    closed.complete();
+
+                    expect(spectator.component['$editContentPanel']()).toBeNull();
                 });
 
                 it('should fall back to legacy dialog when getContentType throws', () => {

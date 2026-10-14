@@ -305,22 +305,10 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
 
     /**
      * Drives the Edit Content side panel: the content to open (create/edit) or `null` when closed.
-     * Only used when {@link $sidePanelEnabled} is on; the panel is open while it is set.
+     * Only used when {@link $sidePanelEnabled} is on; the panel is open while it is set (see the
+     * constructor).
      */
     protected readonly $editContentPanel = signal<EditContentDialogData | null>(null);
-
-    /**
-     * The Edit Content side panel, open while {@link $editContentPanel} is set. Post-save work runs
-     * through the request's `onContentSaved`/`onCancel` callbacks; closing clears the request.
-     * Loaded on its first open, so the editor stays out of this portlet's chunk.
-     */
-    // eslint-disable-next-line no-unused-private-class-members -- it opens and closes the panel itself
-    readonly #editContentSidePanel = injectSidePanel(this.$editContentPanel, {
-        component: loadDotEditContentSidePanel,
-        heading: (data) => data.title ?? '',
-        inputs: (data) => ({ data }),
-        closed: () => this.$editContentPanel.set(null)
-    });
 
     /**
      * Feature flag: when on, the editor opens in the side panel; when off, it opens in the centered
@@ -612,6 +600,18 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             this.uveStore.viewSetIframeSize({ width, height });
         });
     });
+
+    constructor() {
+        // The Edit Content side panel, open while `$editContentPanel` is set. Post-save work runs
+        // through the request's `onContentSaved`/`onCancel` callbacks; closing clears the request.
+        // Loaded on its first open, so the editor stays out of this portlet's chunk.
+        injectSidePanel(this.$editContentPanel, {
+            component: loadDotEditContentSidePanel,
+            heading: (data) => data.title ?? '',
+            inputs: (data) => ({ data }),
+            closed: () => this.$editContentPanel.set(null)
+        });
+    }
 
     /**
      * Handle right sidebar tab changes
