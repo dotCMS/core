@@ -4,6 +4,9 @@ import static com.dotcms.datagen.TestDataUtils.getEmployeeLikeContentType;
 import static com.dotcms.rest.api.v1.vtl.RequestBodyVelocityReader.EMBEDDED_VELOCITY_KEY_NAME;
 import static com.dotcms.rest.api.v1.vtl.VTLResource.VTL_PATH;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -28,6 +31,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -177,6 +181,12 @@ public class VTLResourceIntegrationTest {
         final Host site = new SiteDataGen().nextPersisted();
 
         final Folder vtlFolder = createVTLFolder(testCase.getFolderName(), site);
+        // the anonymous cases expect READ globally (other tests may leave it changed) and the
+        // scripting opt-in for the file endpoint; authenticated cases are unaffected
+        final String originalGlobal = Config.getStringProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, null);
+        final String originalScripting = Config.getStringProperty(AnonymousAccess.SCRIPTING_APIS_ALLOW_ANONYMOUS, null);
+        Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, "READ");
+        Config.setProperty(AnonymousAccess.SCRIPTING_APIS_ALLOW_ANONYMOUS, true);
 
         try {
             final Response response = getResponseFromVTLResource(testCase, vtlFolder,
@@ -186,6 +196,8 @@ public class VTLResourceIntegrationTest {
             final String actualOutput = actualOutput(testCase, response);
             assertEquals(expectedOutput, actualOutput);
         } finally {
+            Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, originalGlobal);
+            Config.setProperty(AnonymousAccess.SCRIPTING_APIS_ALLOW_ANONYMOUS, originalScripting);
             APILocator.getFolderAPI().delete(vtlFolder, APILocator.systemUser(), false);
         }
     }
@@ -255,8 +267,8 @@ public class VTLResourceIntegrationTest {
                 APILocator.systemUser(), false);
 
         final WebResource webResource = spy(WebResource.class);
-        doReturn(requestingUser).when(webResource).getCurrentUser(request, response,
-                WebResource.buildParamsMap(testCase.getPathParameter()), AnonymousAccess.systemSetting());
+        doReturn(requestingUser).when(webResource).getCurrentUser(eq(request), eq(response),
+                anyMap(), any(AnonymousAccess.class), any(WebResource.AuthCheckOptions[].class));
         return webResource;
     }
 

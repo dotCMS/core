@@ -121,6 +121,19 @@ public Response secureEndpoint(HttpServletRequest request, HttpServletResponse r
 }
 ```
 
+### Anonymous Access to REST APIs
+
+Two config keys decide whether a request with no credentials (the anonymous user) may reach a REST endpoint.
+
+- `CONTENT_APIS_ALLOW_ANONYMOUS` (`NONE | READ | WRITE`, default `READ`) is the global setting. Endpoints that opt in to anonymous callers through `WebResource.InitBuilder.requiredAnonAccess(...)` or the deprecated `init(..., rejectWhenNoUser=false, ...)` overloads follow it: the content API (legacy and v1), GraphQL, the Elasticsearch search API, tags, languages, content types and fields, widgets (`/api/widget`), and content relationships (`/api/v1/contentrelationships`). Anonymous writes (workflow fire, temp-file upload, legacy content save) also call `requiredAnonAccess(AnonymousAccess.WRITE)`, so they need `WRITE`; `READ` is not enough.
+- `SCRIPTING_APIS_ALLOW_ANONYMOUS` (`true | false`, default `false`) covers only the file-based scripting endpoints, `/api/vtl/{folder}` (`VTLResource`) and `/api/js/{folder}` (`JsResource`). When `true`, anonymous callers can reach them even if the global key is `NONE`; when the global key already allows anonymous reads, they are reachable as before. Anonymous requests get `401` only when the global key is `NONE` and this key is `false`. The script runs as the anonymous user, so permission-checked tools such as `$dotcontent` see only what that user can read; tools that do not check permissions behave as they would for any caller, so review what an endpoint outputs before opening it. This lets a site keep the built-in APIs closed while serving its own published endpoints.
+
+The `/api/vtl/dynamic` and `/api/js/dynamic` endpoints run code the caller sends, so the scripting key does not cover them; they follow the global key like every other endpoint. Authenticated users are unaffected by either key.
+
+There is no `REST_API_REJECT_WITH_NO_USER` setting. An endpoint that must never accept anonymous callers says so in code with `.rejectWhenNoUser(true)` on the `InitBuilder` (as in the pattern above); `InitBuilder` already defaults to rejecting anonymous callers unless `requiredAnonAccess(...)` is set.
+
+> **TODO (Velocity Secrets):** a note on how Velocity Secrets behave in anonymous `/api/vtl` and `/api/js` requests goes here.
+
 ### Permission Validation Pattern
 ```java
 import com.dotmarketing.business.APILocator;
