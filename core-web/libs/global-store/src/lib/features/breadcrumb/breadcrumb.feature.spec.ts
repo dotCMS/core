@@ -923,6 +923,147 @@ describe('withBreadcrumbs Feature', () => {
             TestBed.flushEffects();
         });
 
+        /**
+         * Content Drive is reached by links that carry query params and no `mId`: Part 1 of #37759
+         * redirects Content Search and Site Browser links there, and a Content Drive URL can be
+         * shared. The trail must still say where the author is.
+         */
+        describe('Content Drive links (#37759)', () => {
+            const item = (
+                id: string,
+                label: string,
+                menuLink: string,
+                parentMenuId: string,
+                parentMenuLabel: string
+            ) =>
+                ({
+                    id,
+                    label,
+                    labelParent: parentMenuLabel,
+                    menuLink,
+                    url: menuLink,
+                    angular: true,
+                    active: false,
+                    ajax: false,
+                    parentMenuId,
+                    parentMenuLabel,
+                    parentMenuIcon: 'pi pi-file'
+                }) as MenuItemEntity;
+
+            const labels = () =>
+                storeWithRouter.breadcrumbs().map((crumb: MenuItem) => crumb.label);
+
+            beforeEach(() => {
+                menuItemsSignal.update((items) => [
+                    ...items,
+                    item(
+                        'content-drive',
+                        'Content Drive',
+                        '/content-drive',
+                        'content-parent',
+                        'Content'
+                    ),
+                    item(
+                        'query-tool',
+                        'Query Tool',
+                        '/c/query-tool',
+                        'devtools-parent',
+                        'Dev Tools'
+                    ),
+                    item(
+                        'content-types-angular',
+                        'Content Types',
+                        '/content-types-angular',
+                        'model-parent',
+                        'Content Model'
+                    )
+                ]);
+                storeWithRouter.clearBreadcrumbs();
+                TestBed.flushEffects();
+            });
+
+            it('names Content Drive when a shared link opens it in a new tab', () => {
+                routerMock.triggerNavigationEnd(
+                    '/content-drive?path=/blog/&editContent=id-1&editContentLang=1'
+                );
+                TestBed.flushEffects();
+
+                expect(labels()).toEqual(['Home', 'Content', 'Content Drive']);
+                expect(storeWithRouter.selectLastBreadcrumbLabel()).toBe('Content Drive');
+            });
+
+            it('keeps the Query Tool trail when one of its results opens in Content Drive', () => {
+                routerMock.triggerNavigationEnd('/c/query-tool?mId=devtools');
+                TestBed.flushEffects();
+
+                // The guard redirects `/c/content/<inode>` here; NavigationEnd carries the target.
+                routerMock.triggerNavigationEnd(
+                    '/content-drive?editContent=id-1&editContentLang=1'
+                );
+                TestBed.flushEffects();
+
+                expect(labels()).toEqual(['Home', 'Dev Tools', 'Query Tool', 'Content Drive']);
+            });
+
+            it('keeps the Content Types trail when its "View" link opens in Content Drive', () => {
+                routerMock.triggerNavigationEnd('/content-types-angular?mId=model');
+                TestBed.flushEffects();
+
+                routerMock.triggerNavigationEnd('/content-drive?filters=contentType:Blog');
+                TestBed.flushEffects();
+
+                expect(labels()).toEqual([
+                    'Home',
+                    'Content Model',
+                    'Content Types',
+                    'Content Drive'
+                ]);
+            });
+
+            // The crumb keeps the folder but not the panel the link opened. Once another crumb
+            // follows it, a click on it goes back to that folder and truncates the trail there.
+            it('goes back to the folder, not the panel, from a Content Drive crumb', () => {
+                routerMock.triggerNavigationEnd('/c/query-tool?mId=devtools');
+                TestBed.flushEffects();
+                routerMock.triggerNavigationEnd(
+                    '/content-drive?path=/blog/&editContent=id-1&editContentLang=1'
+                );
+                TestBed.flushEffects();
+                storeWithRouter.addNewBreadcrumb({
+                    label: 'Blog Page',
+                    url: '/dotAdmin/#/edit-page/content?url=/blog/page'
+                });
+
+                const contentDriveCrumb = storeWithRouter.breadcrumbs().at(-2);
+                expect(contentDriveCrumb?.url).toBe('/dotAdmin/#/content-drive?path=/blog/');
+
+                routerMock.triggerNavigationEnd('/content-drive?path=/blog/');
+                TestBed.flushEffects();
+
+                expect(labels()).toEqual(['Home', 'Dev Tools', 'Query Tool', 'Content Drive']);
+            });
+
+            it('does not add a second Content Drive crumb for another Content Drive URL', () => {
+                routerMock.triggerNavigationEnd('/content-drive?path=/blog/');
+                TestBed.flushEffects();
+
+                routerMock.triggerNavigationEnd('/content-drive?path=/news/');
+                TestBed.flushEffects();
+
+                expect(labels()).toEqual(['Home', 'Content', 'Content Drive']);
+            });
+
+            it('still resets the trail from the menu on a menu click', () => {
+                routerMock.triggerNavigationEnd('/c/query-tool?mId=devtools');
+                TestBed.flushEffects();
+
+                routerMock.triggerNavigationEnd('/content-drive?mId=content');
+                TestBed.flushEffects();
+
+                expect(labels()).toEqual(['Home', 'Content', 'Content Drive']);
+            });
+        });
+
         it('should create breadcrumbs with Home when navigating to a menu link', () => {
             routerMock.triggerNavigationEnd('/c/content');
             TestBed.flushEffects();

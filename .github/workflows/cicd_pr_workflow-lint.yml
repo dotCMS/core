@@ -1,0 +1,106 @@
+name: 'Workflow Lint — PR validate'
+
+# Validates first-party CI logic on PRs that change it. Two jobs:
+#
+#   tests      — every suite under .github/workflows/tests/. These extract the
+#                real `run:` blocks out of the workflow/action YAML and execute
+#                them with their external commands (maven, docker, gh, aws)
+#                stubbed, so they test the shell that actually ships.
+#   actionlint — the workflow files this PR changed.
+#
+# Composite action files (.github/actions/**/action.yml) are covered by the test
+# suites only: actionlint does not support them — it parses action.yml as a
+# workflow and fails on the missing `on:`/`jobs:` sections.
+#
+# Pre-existing findings in files this PR happens to touch are ignored by name in
+# .github/actionlint.yaml, not by muting actionlint repo-wide, so a NEW problem
+# in the same file still fails the build.
+#
+# Why standalone rather than a job in cicd_1-pr.yml: same reason as
+# cicd_pr_skill-lint.yml — it keeps the PR entry workflow untouched and can be
+# folded in later. There was previously no CI at all for .github/**: the
+# area_cicd path filter feeds only the area labeller.
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/**'
+      - '.github/actions/**'
+      - '.github/actionlint.yaml'
+      - '.github/filters.yaml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: workflow-lint-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: Test suites
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Full checkout, not sparse: the suites read .sdkmanrc and the workflow
+      # YAML as fixtures. Dependencies are bash, awk, sed, grep, cut and jq, all
+      # already on the runner. Each suite is expected to be green — a non-zero
+      # exit is a regression, not a "not implemented yet" signal.
+      - name: Run every test suite
+        run: |
+          set -uo pipefail
+          status=0
+          for suite in .github/workflows/tests/*.test.sh; do
+            echo "::group::$suite"
+            if bash "$suite"; then
+              echo "::endgroup::"
+            else
+              echo "::error::$suite failed"
+              echo "::endgroup::"
+              status=1
+            fi
+          done
+          if (( status != 0 )); then
+            echo "::error::one or more workflow test suites failed"
+            exit 1
+          fi
+
+  actionlint:
+    name: actionlint
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The base commit is needed to compute the changed-file list.
+          fetch-depth: 0
+
+      # Scoped to the changed files on purpose. Repo-wide actionlint is far from
+      # clean today, so a whole-tree run would be red for reasons unrelated to
+      # any one PR. Trade-off: an error introduced in a file the PR did not
+      # touch is not caught here.
+      #
+      # Pinned by manifest-list digest, not the tag: a tag can be repointed by
+      # the image owner, the same supply-chain reason the actions in this repo
+      # are pinned to SHAs.
+      - name: Lint changed workflow files
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -uo pipefail
+          mapfile -t changed < <(
+            git diff --name-only --diff-filter=d "$BASE_SHA"...HEAD -- \
+              '.github/workflows/*.yml' '.github/workflows/*.yaml'
+          )
+          if (( ${#changed[@]} == 0 )); then
+            echo "No workflow files changed."
+            exit 0
+          fi
+          echo "Linting ${#changed[@]} changed workflow file(s):"
+          printf '  %s\n' "${changed[@]}"
+          docker run --rm -v "$PWD":/repo -w /repo \
+            rhysd/actionlint:1.7.7@sha256:887a259a5a534f3c4f36cb02dca341673c6089431057242cdc931e9f133147e9 \
+            "${changed[@]}"

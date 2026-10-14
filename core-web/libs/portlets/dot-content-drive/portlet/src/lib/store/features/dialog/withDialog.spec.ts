@@ -68,6 +68,26 @@ describe('withDialog', () => {
             store.closeDialog();
             expect(store.dialog()).toEqual(undefined);
         });
+
+        // Edit Permissions goes through the store like the other folder dialogs, so the URL can
+        // name it while it is open (#37759, FR-030). Spelled out rather than read from the
+        // constant, so a missing constant cannot pass as `undefined`.
+        it('should hold an Edit Permissions dialog for a folder identifier', () => {
+            const permissionsDialog = {
+                type: 'FOLDER_PERMISSIONS' as const,
+                header: 'Edit-Permissions',
+                payload: { identifier: 'folder-1' }
+            };
+
+            store.setDialog(permissionsDialog);
+            expect(store.dialog()).toEqual(permissionsDialog);
+            expect(DIALOG_TYPE).toEqual(
+                expect.objectContaining({ FOLDER_PERMISSIONS: 'FOLDER_PERMISSIONS' })
+            );
+
+            store.closeDialog();
+            expect(store.dialog()).toEqual(undefined);
+        });
     });
 
     /**

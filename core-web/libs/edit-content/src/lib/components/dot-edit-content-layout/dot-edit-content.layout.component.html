@@ -180,6 +180,13 @@
         (workflowActionFired)="onWorkflowActionFired($event)"
         data-testId="edit-content-layout__sidebar"
         class="edit-content-layout__sidebar min-w-0 overflow-x-hidden [grid-area:sidebar]" />
+} @else if ($store.isLoading()) {
+    <!-- The first load, before there is any content to show: the same spinner as a reload. -->
+    <div
+        class="edit-content-layout__loading flex items-center justify-center"
+        data-testId="edit-content-layout__loading">
+        <i class="pi pi-spin pi-spinner text-4xl text-gray-500"></i>
+    </div>
 }
 
 <p-confirmDialog />

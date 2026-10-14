@@ -21,7 +21,7 @@ import { SafeUrlPipe } from '@dotcms/ui';
 import { InlineEditService } from '../../../services/inline-edit/inline-edit.service';
 import { UVEStore } from '../../../store/dot-uve.store';
 import { PageType } from '../../../store/models';
-import { scrollIframeToFragment } from '../../../utils';
+import { isNavigableHref, resolveClickedAnchor, scrollIframeToFragment } from '../../../utils';
 import { addEditorPageScript } from '../../../utils/ema-legacy-script-injection';
 
 /**
@@ -195,6 +195,57 @@ export class DotUveIframeComponent {
     }
 
     /**
+     * Classifies a click target against the markers dotCMS's own in-iframe
+     * editing machinery relies on. Shared by both click listeners in
+     * {@link handleInlineScripts} so the two stay in agreement about which
+     * clicks belong to that machinery.
+     * @param {HTMLElement} target - The click event's target element.
+     * @returns Classification flags for the target.
+     */
+    private classifyUveClickTarget(target: HTMLElement): {
+        isInlineEditTarget: boolean;
+        isTinyMceUiTarget: boolean;
+        isBlockEditorTarget: boolean;
+        isContentSelectionTarget: boolean;
+    } {
+        // [data-mode] (WYSIWYG inline edit): TinyMCE (configured `inline: true`
+        // in inline-edit.service.ts) binds its content click dispatch directly
+        // on this node — it's `editor.getBody()` — to drive selection/
+        // image-select and other click-reactive behavior.
+        const isInlineEditTarget = !!target.closest('[data-mode]') || !!target.dataset?.['mode'];
+
+        // [id^="mceu_"]: every control TinyMCE's UI framework renders
+        // (toolbar, buttons, menus) gets this id prefix. Its floating toolbar
+        // is appended to <body> as a *sibling* of the editable node, not a
+        // descendant of it, and wires its own native click listener directly
+        // on each control's element.
+        const isTinyMceUiTarget = !!target.closest('[id^="mceu_"]');
+
+        // The `@dotcms/uve` SDK script injected into every rendered page
+        // (dot-uve.js) wires block-editor inline editing with a plain
+        // bubble-phase `click` listener registered directly on the
+        // [data-block-editor-content] node (see libs/sdk/uve/src/script/utils.ts).
+        const isBlockEditorTarget = !!target.closest('[data-block-editor-content]');
+
+        // The same SDK script also wires contentlet *selection* —
+        // onContentletClicked() binds its own capture-phase listener on
+        // `document.documentElement` (libs/sdk/uve/src/internal/events.ts),
+        // not on `window`. findDotCMSElement() (dom.utils.ts) walks ancestors
+        // for the nearest `data-dot-object`, so any element carrying it is a
+        // target that selection logic needs to see — matching broadly here
+        // (vs. replicating that function's contentlet/empty-container
+        // nuance) only widens what's let through, never narrows it.
+        const isContentSelectionTarget = !!target.closest('[data-dot-object]');
+
+        return {
+            isInlineEditTarget,
+            isTinyMceUiTarget,
+            isBlockEditorTarget,
+            isContentSelectionTarget
+        };
+    }
+
+    /**
      * Subscribes to filtered click events and injects or removes inline-edit scripts.
      * @param {boolean} enableInlineEdit - Whether to inject inline-edit scripts.
      * @returns {void}
@@ -208,12 +259,65 @@ export class DotUveIframeComponent {
 
         this.iframeClickListener$.next();
 
-        fromEvent<MouseEvent>(win, 'click')
+        // Bound on the capture phase so this fires before ANY bubble-phase
+        // listener the page's own content registered (e.g. a docs-theme's
+        // client-side router delegating clicks on `document`), and before any
+        // capture-phase listener on a node closer to the click target. Capture
+        // traverses window → document → … → target, so a listener on `window`
+        // is always first; bubble traverses the reverse, so a page-owned
+        // listener on `document` would otherwise fire *before* a same-phase
+        // listener on `window` ever could, regardless of registration order.
+        // That ordering alone — not stopPropagation() — is what closes the
+        // original gap (dotCMS/core#37961): a page's own unrelated bubble-phase
+        // code (e.g. a sidebar's `onclick="event.stopPropagation()"`, confirmed
+        // in QA's repro) could stop a click from ever reaching the OLD
+        // bubble-phase listener on `window`, so preventDefault() never ran and
+        // the anchor's native navigation went through unimpeded. Running on
+        // capture means preventDefault() (below, via handleInternalNav) always
+        // fires before any later node gets a chance to interfere, regardless of
+        // what that node does with the event afterward.
+        fromEvent<MouseEvent>(win, 'click', { capture: true })
             .pipe(
                 filter((e) => {
                     const target = e.target as HTMLElement;
-                    const linkElement = target.closest('a');
+                    const {
+                        isInlineEditTarget,
+                        isTinyMceUiTarget,
+                        isBlockEditorTarget,
+                        isContentSelectionTarget
+                    } = this.classifyUveClickTarget(target);
+
+                    const linkElement = resolveClickedAnchor(target);
                     const href = linkElement?.getAttribute('href');
+                    const isNavigatingLink = isNavigableHref(href);
+
+                    // stopPropagation() is scoped to clicks that resolve to a
+                    // link that actually navigates somewhere — the only kind of
+                    // click a page's own code could still react to in a way
+                    // that bypasses the SPA (e.g. a delegate router on a padded
+                    // wrapper around a `pointer-events: none` anchor,
+                    // resolveClickedAnchor's fallback above already covers that
+                    // case). Stopping every click regardless of whether it
+                    // resolves to a link was tried first and failed QA
+                    // (dotCMS/core#37961): it also silenced page-owned,
+                    // non-navigating UI — a Usercentrics cookie-consent
+                    // dialog's Accept/Reject buttons stopped responding,
+                    // along with any other accordion/tab/carousel control —
+                    // because none of those clicks are links and none of this
+                    // iframe's own four target types. Narrowing to `hasLink`
+                    // still failed a second QA round: `#…` and `javascript:…`
+                    // anchors never navigate either, yet are a common
+                    // link-shaped toggle pattern (Bootstrap collapses, inline
+                    // `onclick` accordions) — `isNavigableHref` excludes both.
+                    if (
+                        isNavigatingLink &&
+                        !isInlineEditTarget &&
+                        !isTinyMceUiTarget &&
+                        !isBlockEditorTarget &&
+                        !isContentSelectionTarget
+                    ) {
+                        e.stopPropagation();
+                    }
 
                     // Hash-only anchors (#section) are same-page scrolls. The
                     // browser can't do it here: the srcdoc's base URL is the
@@ -228,10 +332,74 @@ export class DotUveIframeComponent {
                         return false;
                     }
 
-                    const hasLink = !!href;
-                    const hasInlineEditTarget =
-                        !!target.closest('[data-mode]') || !!target.dataset?.mode;
-                    return hasLink || hasInlineEditTarget;
+                    // A plain link inside a contentlet (not also an inline-edit
+                    // or block-editor target) is the SDK's to decide first: its
+                    // document.documentElement capture listener (events.ts)
+                    // selects the contentlet on the first click — calling its
+                    // own preventDefault()+stopPropagation() — and only lets a
+                    // second click on the already-selected contentlet continue.
+                    // That listener runs right after this one (window is its
+                    // ancestor), so emitting internalNav here unconditionally
+                    // would navigate on the first click instead of letting the
+                    // SDK select. Defer entirely to the bubble-phase listener
+                    // below, which — being bubble-phase on `window` — only ever
+                    // runs once the SDK has already made that call, exactly as
+                    // it did before this listener moved to the capture phase.
+                    if (
+                        isNavigatingLink &&
+                        isContentSelectionTarget &&
+                        !isInlineEditTarget &&
+                        !isBlockEditorTarget
+                    ) {
+                        return false;
+                    }
+
+                    return isNavigatingLink || isInlineEditTarget;
+                }),
+                takeUntil(this.iframeClickListener$),
+                takeUntilDestroyed(this.destroyRef)
+            )
+            .subscribe((e) => {
+                this.internalNav.emit(e);
+                this.inlineEditing.emit(e);
+            });
+
+        // Bubble phase (default, no capture): the last listener to run in the
+        // whole dispatch. For a contentlet-wrapped link, this only fires once
+        // the SDK's document.documentElement capture listener has already
+        // decided the click isn't selecting a (new) contentlet — i.e. a
+        // second click on the already-selected one, the same "let the page
+        // handle it natively" case events.ts hands off, converted here into a
+        // proper SPA navigation instead of a real iframe navigation. See the
+        // capture-phase filter above for why this is deferred instead of
+        // handled there directly.
+        //
+        // Residual gap: `window` is the LAST node in the bubble path, so a
+        // page-owned router bound on `document` (bubble, no capture) — the
+        // exact pattern #37961 is about — still runs before this listener on
+        // that second click, and could still navigate the iframe natively
+        // first. This isn't new: the single pre-PR bubble listener had the
+        // same ordering for every link, contentlet-wrapped or not; the
+        // capture-phase fix above closes it everywhere except here, because
+        // this listener can only safely emit *after* the SDK's own capture
+        // listener has decided to let the click through, and that decision
+        // can't be observed any earlier than bubble without assuming
+        // something about the SDK's listener registration order.
+
+        fromEvent<MouseEvent>(win, 'click')
+            .pipe(
+                filter((e) => {
+                    const target = e.target as HTMLElement;
+                    const { isInlineEditTarget, isBlockEditorTarget, isContentSelectionTarget } =
+                        this.classifyUveClickTarget(target);
+                    const href = resolveClickedAnchor(target)?.getAttribute('href');
+
+                    return (
+                        isNavigableHref(href) &&
+                        isContentSelectionTarget &&
+                        !isInlineEditTarget &&
+                        !isBlockEditorTarget
+                    );
                 }),
                 takeUntil(this.iframeClickListener$),
                 takeUntilDestroyed(this.destroyRef)
