@@ -1248,14 +1248,12 @@ public class ExperimentWebAPIImplIntegrationTest {
         final Template template = new TemplateDataGen().nextPersisted();
         final HTMLPageAsset page = new HTMLPageDataGen(site, template).nextPersisted();
 
-        // Create the experiment directly in RUNNING state to bypass the limited-mode gate —
-        // isFreeSlotUsed() counts ENDED experiments globally, so prior tests would block start().
-        // This test is verifying JS injection behavior, not the start gate itself.
+        // Start via the API (flag is true at class level from @BeforeClass) so the experiment
+        // has valid scheduling. The flag is disabled below only for the getCode() assertion.
         final Experiment started = new ExperimentDataGen()
                 .page(page)
                 .trafficAllocation(100)
-                .status(Status.RUNNING)
-                .nextPersisted();
+                .nextPersistedAndStart();
 
         ConfigExperimentUtil.INSTANCE.setExperimentEnabled(false);
 
