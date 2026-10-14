@@ -132,7 +132,7 @@ The `/api/vtl/dynamic` and `/api/js/dynamic` endpoints run code the caller sends
 
 There is no `REST_API_REJECT_WITH_NO_USER` setting. An endpoint that must never accept anonymous callers says so in code with `.rejectWhenNoUser(true)` on the `InitBuilder` (as in the pattern above); `InitBuilder` already defaults to rejecting anonymous callers unless `requiredAnonAccess(...)` is set.
 
-> **TODO (Velocity Secrets):** a note on how Velocity Secrets behave in anonymous `/api/vtl` and `/api/js` requests goes here.
+**Velocity Secrets in scripting endpoints:** Velocity Secrets (`$dotsecrets`) can be read from the file-based `/api/vtl` and `/api/js` endpoints, including by anonymous callers, when the user who last edited the endpoint's script file (for example `get.vtl` or `get.js`) has the Scripting Developer role. This matches how secrets work in page content. If the file's last editor doesn't have that role, the requesting user must have it instead, so anonymous calls can't read secrets. Code posted to the `/dynamic` endpoints comes from the caller, so there only the requesting user's role counts, and setting `secrets.scripting.enabled=false` still turns secrets off everywhere.
 
 ### Permission Validation Pattern
 ```java
