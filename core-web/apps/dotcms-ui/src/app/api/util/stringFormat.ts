@@ -1,5 +1,5 @@
-import { Injectable } from '@angular/core';
-@Injectable()
+import { Service } from '@angular/core';
+@Service({ autoProvided: false })
 export class StringFormat {
     public formatMessage(s: string, ...args: string[]): string {
         if (s) {

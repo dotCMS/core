@@ -1,7 +1,7 @@
 import { TinyColor } from '@ctrl/tinycolor';
 import { palette, updatePrimaryPalette } from '@primeuix/themes';
 
-import { Injectable } from '@angular/core';
+import { Service } from '@angular/core';
 
 import { DotUiColors } from '@dotcms/dotcms-js';
 
@@ -55,7 +55,7 @@ export const DEFAULT_COLORS = {
  *
  * Color source: `/api/v1/appconfiguration` (user-defined), falling back to `DEFAULT_COLORS`.
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class DotUiColorsService {
     #currentColors: DotUiColors = DEFAULT_COLORS;
 

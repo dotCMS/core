@@ -1,6 +1,6 @@
 import { Observable, Subject } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Service } from '@angular/core';
 
 import { filter } from 'rxjs/operators';
 
@@ -10,7 +10,7 @@ import { DotEvent } from '@dotcms/dotcms-models';
  * Provide a Global service to Subscribe to custom events and notify subscribers when those events occur.
  * @DotEventsService
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class DotEventsService {
     private subject: Subject<DotEvent<unknown>> = new Subject();
 

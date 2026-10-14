@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { Router } from '@angular/router';
 /**
  * Router service with common routing methods
@@ -7,7 +7,7 @@ import { Router } from '@angular/router';
  * @class DotRouterService
  * @deprecated Please use @services/dot-router/dot-router.service
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class DotRouterService {
     private router = inject(Router);
 

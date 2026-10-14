@@ -1,9 +1,9 @@
-import { Injectable, NgModule } from '@angular/core';
+import { NgModule, Service } from '@angular/core';
 
 /**
  * LocalStoreService. Basic wraper for localStorage
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class LocalStoreService {
     /**
      * Stores Value in localstorage

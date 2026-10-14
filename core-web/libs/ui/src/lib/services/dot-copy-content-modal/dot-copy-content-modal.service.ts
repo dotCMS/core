@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
@@ -17,7 +17,7 @@ export interface ModelCopyContentResponse {
     shouldCopy: boolean;
 }
 
-@Injectable()
+@Service({ autoProvided: false })
 export class DotCopyContentModalService {
     private dialogService = inject(DialogService);
     private dotMessageService = inject(DotMessageService);

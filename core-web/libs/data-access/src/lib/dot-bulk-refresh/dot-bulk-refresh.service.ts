@@ -1,7 +1,7 @@
 import { Observable, of } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
@@ -17,9 +17,7 @@ const BULK_REFRESH_URL = '/api/v1/content/_bulkrefresh';
  * over the websocket the admin UI already holds open — so there is deliberately nothing here that polls a
  * status endpoint. Asking every 1.5 seconds for up to five minutes is what this replaced.
  */
-@Injectable({
-    providedIn: 'root'
-})
+@Service()
 export class DotBulkRefreshService {
     readonly #http = inject(HttpClient);
 

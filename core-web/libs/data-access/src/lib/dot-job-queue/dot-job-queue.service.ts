@@ -1,7 +1,7 @@
 import { Observable, of } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { catchError, map } from 'rxjs/operators';
 
@@ -22,7 +22,7 @@ const ACTIVE_JOBS_PAGE_SIZE = 100;
  * to its queue: the submit endpoint and the refusals it maps. What every queue answers the same
  * way lives here once, so the three cannot drift apart.
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class DotJobQueueService {
     readonly #http = inject(HttpClient);
 

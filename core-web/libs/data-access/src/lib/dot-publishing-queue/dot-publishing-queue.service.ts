@@ -1,7 +1,7 @@
 import { Observable, of } from 'rxjs';
 
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { catchError, map } from 'rxjs/operators';
 
@@ -71,9 +71,7 @@ export interface RetryBundlesPayload {
  * with the user-picked filter + operation and triggers a browser download.
  * No bespoke generate endpoint lives here either.
  */
-@Injectable({
-    providedIn: 'root'
-})
+@Service()
 export class DotPublishingQueueService {
     readonly #http = inject(HttpClient);
 

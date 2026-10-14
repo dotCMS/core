@@ -1,7 +1,7 @@
 import { BehaviorSubject, Observable } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { SelectItem, SelectItemGroup } from 'primeng/api';
 
@@ -10,7 +10,7 @@ import { catchError, map, take } from 'rxjs/operators';
 import { DotHttpErrorManagerService, DotWorkflowsActionsService } from '@dotcms/data-access';
 import { DotCMSWorkflow, DotCMSWorkflowAction } from '@dotcms/dotcms-models';
 
-@Injectable()
+@Service({ autoProvided: false })
 export class DotWorkflowsActionsSelectorFieldService {
     private dotWorkflowsActionsService = inject(DotWorkflowsActionsService);
     private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);

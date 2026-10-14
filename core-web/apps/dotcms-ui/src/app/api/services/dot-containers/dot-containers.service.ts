@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { catchError, map, take } from 'rxjs/operators';
 
@@ -22,7 +22,7 @@ export const CONTAINER_API_URL = '/api/v1/containers/';
  * @class DotContainersService
  * @deprecated use DotContainersService from the data-access lib instead
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class DotContainersService {
     private http = inject(HttpClient);
     private httpErrorManagerService = inject(DotHttpErrorManagerService);

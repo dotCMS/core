@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { catchError, map, take } from 'rxjs/operators';
 
@@ -14,7 +14,7 @@ interface DotTempFileResponse {
     tempFiles: DotCMSTempFile[];
 }
 
-@Injectable()
+@Service({ autoProvided: false })
 export class DotTempFileUploadService {
     private http = inject(HttpClient);
     private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);

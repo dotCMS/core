@@ -1,7 +1,7 @@
 import { Observable, of, BehaviorSubject } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map, switchMap, filter } from 'rxjs/operators';
 
@@ -32,9 +32,7 @@ interface DefaultContainerSubject {
  * @export
  * @class DotContainersService
  */
-@Injectable({
-    providedIn: 'root'
-})
+@Service()
 export class DotContainersService {
     readonly #http = inject(HttpClient);
     readonly #dotConfigurationService = inject(DotPropertiesService);

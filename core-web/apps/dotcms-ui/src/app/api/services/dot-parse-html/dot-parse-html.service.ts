@@ -1,4 +1,4 @@
-import { Injectable, Renderer2, RendererFactory2, inject } from '@angular/core';
+import { Renderer2, RendererFactory2, inject, Service } from '@angular/core';
 
 /**
  * Parse html and execute scripts
@@ -6,7 +6,7 @@ import { Injectable, Renderer2, RendererFactory2, inject } from '@angular/core';
  * @export
  * @class DotParseHtmlService
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class DotParseHtmlService {
     private renderer: Renderer2;
 

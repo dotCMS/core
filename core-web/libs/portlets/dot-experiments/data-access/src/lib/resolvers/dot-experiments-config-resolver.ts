@@ -1,11 +1,11 @@
 import { Observable } from 'rxjs';
 
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { ActivatedRouteSnapshot, Resolve } from '@angular/router';
 
 import { DotPropertiesService } from '@dotcms/data-access';
 
-@Injectable()
+@Service({ autoProvided: false })
 export class DotExperimentsConfigResolver implements Resolve<Record<
     string,
     string | boolean

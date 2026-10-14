@@ -1,11 +1,11 @@
 import { Observable, throwError } from 'rxjs';
 
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { ESSearchParams, ESSearchResponse } from '@dotcms/dotcms-models';
 
-@Injectable({ providedIn: 'root' })
+@Service()
 export class DotEsSearchService {
     readonly #http = inject(HttpClient);
 

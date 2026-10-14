@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 
@@ -12,9 +12,7 @@ const FAVORITE_CONTENT_TYPES_KEY = 'dot-favorite-content-types';
  * @export
  * @class DotFavoriteContentTypeService
  */
-@Injectable({
-    providedIn: 'root'
-})
+@Service()
 export class DotFavoriteContentTypeService {
     private localStorageService = inject(DotLocalstorageService);
 

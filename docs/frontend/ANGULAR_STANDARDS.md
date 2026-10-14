@@ -400,7 +400,10 @@ expect(spectator.query(byTestId('error-message'))).toBeVisible();
 
 ## Services
 - Design services around a single responsibility
-- Use `providedIn: 'root'` for singleton services
+- Declare services with `@Service()` (Angular 22.1+), the shorthand for `@Injectable({ providedIn: 'root' })`, for singleton services
+- Use `@Service({ autoProvided: false })` for a service that must be named in a `providers` array (route, component or store) instead of living in the root injector
+- A service that extends a base class from a library that uses constructor injection (for example NgRx `ComponentStore`, or the Router's `TitleStrategy`) must stay `@Injectable`: the compiler rejects `@Service` there (`NG2028`) and the migration schematic cannot see into `node_modules`. Prefer a SignalStore for new stores
+- Do not write new `@Injectable` classes in `core-web`. The one exception is `libs/sdk/angular`, which is published with `@angular/core >=21.2.0` as a peer and must keep `@Injectable` until that range is raised
 - Use the `inject()` function instead of constructor injection
 - Handle errors with `catchError` — rethrow a typed error or return a safe fallback, never swallow it
 

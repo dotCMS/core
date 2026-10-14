@@ -1,7 +1,7 @@
 import { EMPTY, Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { catchError, map } from 'rxjs/operators';
 
@@ -56,7 +56,7 @@ export interface GetPersonasResponse {
     pagination: DotPagination;
 }
 
-@Injectable()
+@Service({ autoProvided: false })
 export class DotPageApiService {
     private http = inject(HttpClient);
 

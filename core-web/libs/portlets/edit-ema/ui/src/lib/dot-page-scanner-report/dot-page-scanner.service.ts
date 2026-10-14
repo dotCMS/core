@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 /**
  * Severity reported by axe-core for a rule/node.
@@ -94,7 +94,7 @@ export interface PageScannerGeoResponse {
     topIssues: PageScannerGeoIssue[];
 }
 
-@Injectable()
+@Service({ autoProvided: false })
 export class DotPageScannerService {
     private http = inject(HttpClient);
 

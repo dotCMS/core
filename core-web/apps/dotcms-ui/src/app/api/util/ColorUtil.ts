@@ -1,9 +1,9 @@
-import { Injectable } from '@angular/core';
+import { Service } from '@angular/core';
 
 /**
  * Miscellaneous Color utility methods.
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class ColorUtil {
     /**
      * Check color brightness.

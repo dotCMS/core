@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { mergeMap, map } from 'rxjs/operators';
 
@@ -53,7 +53,7 @@ const MAX_RESULTS_SIZE = 20;
  * table rows. Changing the queries here should be weighed against that service — the two are meant
  * to be folded into one page-access layer in `data-access`.
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class DotPageSelectorService {
     private http = inject(HttpClient);
 

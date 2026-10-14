@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
@@ -20,9 +20,7 @@ export const FOLDER_SEARCH_URL = '/api/v1/folder/search';
 export const DEFAULT_FOLDER_SEARCH_PAGE = 1;
 export const DEFAULT_FOLDER_SEARCH_PER_PAGE = 40;
 
-@Injectable({
-    providedIn: 'root'
-})
+@Service()
 export class DotFolderService {
     readonly #http = inject(HttpClient);
 

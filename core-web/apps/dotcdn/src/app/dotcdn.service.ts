@@ -2,7 +2,7 @@ import { format, subDays } from 'date-fns';
 import { Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map, mergeMap } from 'rxjs/operators';
 
@@ -11,9 +11,7 @@ import { DotCMSResponse } from '@dotcms/dotcms-models';
 
 import { DotCDNStats, PurgeReturnData, PurgeUrlOptions } from './app.models';
 
-@Injectable({
-    providedIn: 'root'
-})
+@Service()
 export class DotCDNService {
     private http = inject(HttpClient);
     private siteService = inject(SiteService);

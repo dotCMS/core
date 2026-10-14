@@ -1,7 +1,7 @@
 import { from as observableFrom, EMPTY, Subject, Observable } from 'rxjs';
 
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { mergeMap, reduce, catchError, map } from 'rxjs/operators';
 
@@ -32,7 +32,7 @@ interface ActionResponseJson {
     id: string;
 }
 
-@Injectable()
+@Service({ autoProvided: false })
 export class ActionService {
     private http = inject(HttpClient);
     private loggerService = inject(LoggerService);

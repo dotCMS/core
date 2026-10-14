@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
@@ -29,9 +29,7 @@ export interface DotLanguageVariableEntry {
  * @export
  * @class DotLanguagesService
  */
-@Injectable({
-    providedIn: 'root'
-})
+@Service()
 export class DotLanguagesService {
     private httpClient: HttpClient = inject(HttpClient);
 

@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { ActivatedRouteSnapshot, Resolve, RouterStateSnapshot } from '@angular/router';
 
 import { tap } from 'rxjs/operators';
@@ -10,7 +10,7 @@ import { GlobalStore } from '@dotcms/store';
 
 import { DotContainersService } from '../../../../api/services/dot-containers/dot-containers.service';
 
-@Injectable()
+@Service({ autoProvided: false })
 export class DotContainerEditResolver implements Resolve<DotContainerEntity> {
     private service = inject(DotContainersService);
     private globalStore = inject(GlobalStore);

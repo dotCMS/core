@@ -1,7 +1,7 @@
 import { Observable, Subscription, defer, shareReplay } from 'rxjs';
 import { Editor } from 'tinymce';
 
-import { DestroyRef, Injectable, NgZone, OnDestroy, inject } from '@angular/core';
+import { DestroyRef, NgZone, OnDestroy, inject, Service } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
@@ -31,7 +31,7 @@ import { DotEditContentStore } from '../../../store/edit-content.store';
  * @export
  * @class DotWysiwygPluginService
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class DotWysiwygPluginService implements OnDestroy {
     private readonly dialogService: DialogService = inject(DialogService);
     private readonly dotUploadFileService: DotUploadFileService = inject(DotUploadFileService);

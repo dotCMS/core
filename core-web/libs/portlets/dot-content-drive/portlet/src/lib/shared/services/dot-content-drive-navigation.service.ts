@@ -1,7 +1,7 @@
 import { EMPTY, Observable, of } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Injectable, Provider, computed, inject, signal } from '@angular/core';
+import { Provider, computed, inject, signal, Service } from '@angular/core';
 
 import { catchError, map, switchMap, take } from 'rxjs/operators';
 
@@ -42,7 +42,7 @@ const CONTENT_DRIVE_PORTLET_ID = 'content-drive';
 // Provided at the Content Drive shell level (not `root`) so it can inject the shell-scoped
 // DotContentDriveStore and read the list's language filter and default language from it.
 // `EditContentNavigationOverride` and its methods: Remove with the legacy editor.
-@Injectable()
+@Service({ autoProvided: false })
 export class DotContentDriveNavigationService implements EditContentNavigationOverride {
     readonly #dotContentTypeService = inject(DotContentTypeService);
     readonly #dotRouterService = inject(DotRouterService);

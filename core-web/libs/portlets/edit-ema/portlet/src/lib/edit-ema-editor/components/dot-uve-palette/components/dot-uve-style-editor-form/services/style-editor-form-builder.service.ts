@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { AbstractControl, FormBuilder, FormControl, FormGroup } from '@angular/forms';
 
 import { StyleEditorProperties } from '@dotcms/types';
@@ -15,9 +15,7 @@ import { STYLE_EDITOR_FIELD_TYPES } from '../../../../../../shared/consts';
  * Service responsible for building reactive forms from style editor schemas.
  * Handles form control creation using initial values from styleProperties or empty values.
  */
-@Injectable({
-    providedIn: 'root'
-})
+@Service()
 export class StyleEditorFormBuilderService {
     readonly #fb = inject(FormBuilder);
 

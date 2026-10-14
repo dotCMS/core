@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { ActivatedRouteSnapshot, Resolve } from '@angular/router';
 
 import { map, take } from 'rxjs/operators';
@@ -14,7 +14,7 @@ import { DotContentletEditorService } from '../../services/dot-contentlet-editor
  * @class DotCreateContentletResolver
  * @implements {Resolve<Observable<string>>}
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class DotCreateContentletResolver implements Resolve<Observable<string>> {
     private dotContentletEditorService = inject(DotContentletEditorService);
 

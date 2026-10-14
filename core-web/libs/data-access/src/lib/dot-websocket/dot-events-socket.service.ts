@@ -1,6 +1,6 @@
 import { BehaviorSubject, Observable, Subject, Subscription, timer } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Service } from '@angular/core';
 
 import { distinctUntilChanged, filter, map } from 'rxjs/operators';
 
@@ -17,7 +17,7 @@ export type WebSocketStatus = 'connecting' | 'reconnecting' | 'connected' | 'clo
  * - `status$()` — reactive connection state for UI indicators
  * - `on<T>(eventType)` — typed event subscription
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class DotEventsSocket {
     readonly #socketURL = (() => {
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';

@@ -1,7 +1,7 @@
 import { Observable, throwError } from 'rxjs';
 
 import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { catchError, map, switchMap } from 'rxjs/operators';
 
@@ -28,7 +28,7 @@ const headers = new HttpHeaders({
  * Split out of the former `DotAiService`; its configuration half now lives in
  * `DotAiConfigService`.
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class DotAiContentService {
     #http: HttpClient = inject(HttpClient);
 

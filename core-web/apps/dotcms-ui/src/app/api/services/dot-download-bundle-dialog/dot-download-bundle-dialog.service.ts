@@ -1,8 +1,8 @@
 import { Observable, Subject } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Service } from '@angular/core';
 
-@Injectable()
+@Service({ autoProvided: false })
 export class DotDownloadBundleDialogService {
     private data: Subject<string> = new Subject<string>();
 

@@ -86,6 +86,12 @@ Is this component/service used by multiple portlets?
 data = input<string>();                      // NOT @Input()
 onChange = output<string>();                  // NOT @Output()
 
+// Services
+@Service()                                   // NOT @Injectable({ providedIn: 'root' })
+@Service({ autoProvided: false })            // NOT bare @Injectable() — named in a providers array
+// Exceptions: ComponentStore / TitleStrategy subclasses (base uses constructor DI, NG2028) and
+// libs/sdk/angular keep @Injectable (published peer is @angular/core >=21.2.0)
+
 // Testing selectors
 <button data-testid="submit-btn">Submit</button>
 spectator.query('[data-testid="submit-btn"]');

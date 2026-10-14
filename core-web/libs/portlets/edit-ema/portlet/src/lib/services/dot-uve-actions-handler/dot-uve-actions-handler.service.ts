@@ -1,7 +1,7 @@
 import { tapResponse } from '@ngrx/operators';
 import { Observable, of } from 'rxjs';
 
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
 
@@ -54,7 +54,7 @@ export interface ActionsHandlerDependencies {
     onSectionOffset?: (payload: { sectionIndex: number; offsetTop: number }) => void;
 }
 
-@Injectable()
+@Service({ autoProvided: false })
 export class DotUveActionsHandlerService {
     private readonly dotMessageService = inject(DotMessageService);
     private readonly messageService = inject(MessageService);

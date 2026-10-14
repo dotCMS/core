@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
@@ -17,7 +17,7 @@ interface DotContentSearchResponse<T> {
  * @export
  * @class DotPersonasService
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class DotPersonasService {
     private http = inject(HttpClient);
 

@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
@@ -23,9 +23,7 @@ interface DotSourceLinksByInodeProps {
     inode: string;
 }
 
-@Injectable({
-    providedIn: 'root'
-})
+@Service()
 export class DotResourceLinksService {
     private readonly basePath = '/api/v1/content/resourcelinks/field';
     private readonly httpClient = inject(HttpClient);

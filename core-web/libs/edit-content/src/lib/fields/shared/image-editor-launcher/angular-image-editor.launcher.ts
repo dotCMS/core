@@ -1,6 +1,6 @@
 import { Observable, map, take } from 'rxjs';
 
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
@@ -18,7 +18,7 @@ import {
  * launcher is injected. The binary field falls back to the legacy Dojo editor only when
  * no launcher is present (i.e. the field renders outside the new Edit Content).
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class AngularImageEditorLauncher implements DotImageEditorLauncher {
     readonly #dialogService = inject(DialogService);
 

@@ -1,6 +1,6 @@
 import { Observable, of } from 'rxjs';
 
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { ActivatedRouteSnapshot, Resolve } from '@angular/router';
 
 import { map } from 'rxjs/operators';
@@ -17,7 +17,7 @@ import { DotExperiment } from '@dotcms/dotcms-models';
  * @implements {Resolve<DotRenderedPageState>}
  *
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class DotExperimentExperimentResolver implements Resolve<Observable<DotExperiment | null>> {
     private readonly dotExperimentsService = inject(DotExperimentsService);
 

@@ -1,7 +1,7 @@
 import { BehaviorSubject, Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { filter, map, take } from 'rxjs/operators';
 
@@ -115,9 +115,7 @@ interface DotAppConfigResponse {
  * private systemConfigService = inject(DotSystemConfigService);
  * ```
  */
-@Injectable({
-    providedIn: 'root'
-})
+@Service()
 export class DotcmsConfigService {
     private http = inject(HttpClient);
     private loggerService = inject(LoggerService);

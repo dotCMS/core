@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
@@ -17,9 +17,7 @@ import {
  * @export
  * @class DotTagsService
  */
-@Injectable({
-    providedIn: 'root'
-})
+@Service()
 export class DotTagsService {
     readonly #http = inject(HttpClient);
 

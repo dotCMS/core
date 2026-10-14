@@ -1,7 +1,7 @@
 import { DragulaService } from 'ng2-dragula';
 import { merge, Observable } from 'rxjs';
 
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { filter, map, tap } from 'rxjs/operators';
 
@@ -49,7 +49,7 @@ export interface DropFieldData {
     };
 }
 
-@Injectable()
+@Service({ autoProvided: false })
 export class FieldDragDropService {
     private dragulaService = inject(DragulaService);
     private dotAlertConfirmService = inject(DotAlertConfirmService);

@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { catchError, map, take } from 'rxjs/operators';
 
@@ -31,7 +31,7 @@ export const DEFAULT_ARCHIVE = false;
  * @export
  * @class DotTemplatesService
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class DotTemplatesService {
     private http = inject(HttpClient);
     private httpErrorManagerService = inject(DotHttpErrorManagerService);

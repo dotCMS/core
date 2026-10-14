@@ -1,6 +1,6 @@
 import { forkJoin, Observable, of } from 'rxjs';
 
-import { inject, Injectable, signal } from '@angular/core';
+import { inject, signal, Service } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -63,7 +63,7 @@ interface DotPermissions {
  * data needed to render the menu synchronously, then delete this service and simplify callers.
  *
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class DotPageActionsService {
     readonly #dotMessageService = inject(DotMessageService);
     readonly #dotActionsService = inject(DotWorkflowsActionsService);

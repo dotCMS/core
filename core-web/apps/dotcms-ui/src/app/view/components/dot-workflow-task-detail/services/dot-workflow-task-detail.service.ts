@@ -1,6 +1,6 @@
 import { BehaviorSubject, Observable, of } from 'rxjs';
 
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map, mergeMap } from 'rxjs/operators';
 
@@ -17,7 +17,7 @@ export interface DotTaskAction {
  * @export
  * @class DotWorkflowTaskDetailService
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class DotWorkflowTaskDetailService {
     private dotMenuService = inject(DotMenuService);
 

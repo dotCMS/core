@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Service } from '@angular/core';
 
 import { DotCMSTempFile, DotHttpErrorResponse } from '@dotcms/dotcms-models';
 
@@ -16,7 +16,7 @@ export interface ErrorResponse {
     message: string;
     errors: { message: string }[];
 }
-@Injectable({ providedIn: 'root' })
+@Service()
 export class DotUploadService {
     /**
      * Upload a file to the server

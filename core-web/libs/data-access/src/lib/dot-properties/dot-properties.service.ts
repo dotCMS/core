@@ -1,15 +1,13 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map, shareReplay, take } from 'rxjs/operators';
 
 import { DotCMSResponse, FEATURE_FLAG_NOT_FOUND, FeaturedFlags } from '@dotcms/dotcms-models';
 
-@Injectable({
-    providedIn: 'root'
-})
+@Service()
 export class DotPropertiesService {
     private readonly http = inject(HttpClient);
     // Process-lifetime cache so multiple components asking for the same flag during a single

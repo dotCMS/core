@@ -1,7 +1,7 @@
 import { Observable, Subject, BehaviorSubject, of } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map, take, tap } from 'rxjs/operators';
 
@@ -82,7 +82,7 @@ const enterprisePorlets: DotUnlicensedPortletData[] = [
  * @export
  * @class DotLicenseService
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class DotLicenseService {
     private readonly http = inject(HttpClient);
 

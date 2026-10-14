@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { ActivatedRouteSnapshot, Resolve } from '@angular/router';
 
 import { take, tap } from 'rxjs/operators';
@@ -16,7 +16,7 @@ import { GlobalStore } from '@dotcms/store';
  * @class DotAppsPageResolver
  * @implements {Resolve<Observable<DotApp>>}
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class DotAppsConfigurationResolver implements Resolve<Observable<DotApp>> {
     private dotAppsService = inject(DotAppsService);
     readonly #globalStore = inject(GlobalStore);

@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map, take } from 'rxjs/operators';
 
@@ -41,7 +41,7 @@ enum ActionToFire {
     EDIT = 'EDIT'
 }
 
-@Injectable()
+@Service({ autoProvided: false })
 export class DotWorkflowActionsFireService {
     private readonly BASE_URL = '/api/v1/workflow';
     private readonly httpClient = inject(HttpClient);

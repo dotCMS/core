@@ -1,6 +1,6 @@
 import { merge, Observable, Subject } from 'rxjs';
 
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { filter, takeUntil } from 'rxjs/operators';
 
@@ -15,7 +15,7 @@ import { DotEventsSocket } from '../dot-websocket/dot-events-socket.service';
  * @export
  * @class DotMessageDisplayService
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class DotMessageDisplayService {
     private dotRouterService = inject(DotRouterService);
     private dotEventsSocket = inject(DotEventsSocket);

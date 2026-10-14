@@ -94,10 +94,10 @@ import {
     selector: 'dot-asset-picker',
     templateUrl: './dot-asset-picker.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    // `DotContentTypeService` (the toolbar's content-type filter) is `@Injectable()` with no
-    // `providedIn: 'root'` and is only provided by the main app shell, so the picker provides it
-    // itself — otherwise it throws `NullInjectorError` and renders blank in any other host, notably
-    // the legacy Dojo binary-field builder the File/Image field still runs inside.
+    // `DotContentTypeService` (the toolbar's content-type filter) is
+    // `@Service({ autoProvided: false })` and is only provided by the main app shell, so the picker
+    // provides it itself — otherwise it throws `NullInjectorError` and renders blank in any other
+    // host, notably the legacy Dojo binary-field builder the File/Image field still runs inside.
     //
     // `DotHttpErrorManagerService` deliberately does NOT appear here. Providing it would only move
     // the failure: it transitively needs `DotAlertConfirmService`, `DotRouterService` -> `Router` and

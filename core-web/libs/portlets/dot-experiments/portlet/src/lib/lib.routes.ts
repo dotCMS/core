@@ -51,7 +51,7 @@ export const dotExperimentsPortletRoutes: Routes = [
     {
         path: '',
         title: 'experiment.container.list.title',
-        // `DotPushPublishEnvironmentsResolver` is `@Injectable()` without `providedIn: 'root'`,
+        // `DotPushPublishEnvironmentsResolver` is `@Service({ autoProvided: false })`,
         // so referencing it in `resolve` is not enough — it has to be provided on the route or
         // the router throws NG0201 on activation.
         providers: [DotPushPublishEnvironmentsResolver],
@@ -70,7 +70,7 @@ export const dotExperimentsPortletRoutes: Routes = [
         // work is lost. The guard lets through the one navigation the screen makes itself, off
         // `new` once the draft exists.
         canDeactivate: [experimentsUnsavedChangesGuard],
-        // Both resolvers are `@Injectable()` without `providedIn: 'root'` — see the list route.
+        // Both resolvers are `@Service({ autoProvided: false })` — see the list route.
         providers: [DotExperimentsConfigResolver, DotPushPublishEnvironmentsResolver],
         resolve: {
             config: DotExperimentsConfigResolver,
@@ -98,9 +98,9 @@ export const dotExperimentsPortletRoutes: Routes = [
         path: `:experimentId/${RESULTS_SEGMENT}`,
         title: 'experiment.container.report.title',
         // `dotAnalyticsHealthCheckResolver` is a standalone `ResolveFn`, so it needs no provider of
-        // its own — but it injects `DotExperimentsService`, which is `@Injectable()` without
-        // `providedIn: 'root'`. Resolvers run in the route's injector, not the component's, so
-        // providing it on the screen alone would still throw NG0201 before the screen exists.
+        // its own — but it injects `DotExperimentsService`, which is
+        // `@Service({ autoProvided: false })`. Resolvers run in the route's injector, not the
+        // component's, so providing it on the screen alone would still throw NG0201 before the screen exists.
         providers: [DotExperimentsService],
         resolve: {
             // Deliberately a plain resolve rather than a guard: it does not redirect, it reports.

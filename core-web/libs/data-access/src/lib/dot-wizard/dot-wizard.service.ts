@@ -1,14 +1,12 @@
 import { Observable, Subject } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Service } from '@angular/core';
 
 import { DotWizardInput } from '@dotcms/dotcms-models';
 
 type WizardOutput = { [key: string]: string | string[] };
 
-@Injectable({
-    providedIn: 'root'
-})
+@Service()
 export class DotWizardService {
     private input: Subject<DotWizardInput> = new Subject<DotWizardInput>();
     private currentOutput: Subject<WizardOutput> | null = null;

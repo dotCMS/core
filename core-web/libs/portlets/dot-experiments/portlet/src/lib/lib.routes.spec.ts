@@ -75,8 +75,8 @@ describe('dotExperimentsPortletRoutes', () => {
 
         it('should provide the service the health resolver injects', () => {
             // The resolver is a standalone `ResolveFn` and needs no provider of its own, but it
-            // runs in the route's injector — where `DotExperimentsService`, `@Injectable()` with
-            // no `providedIn`, has to exist before the screen does.
+            // runs in the route's injector — where `DotExperimentsService`,
+            // `@Service({ autoProvided: false })`, has to exist before the screen does.
             expect(resultsRoute.providers).toContain(DotExperimentsService);
         });
 
@@ -88,7 +88,7 @@ describe('dotExperimentsPortletRoutes', () => {
             ['list', () => listRoute],
             ['configure', () => configureRoute]
         ])('should provide every class resolver the %s route references', (_name, routeOf) => {
-            // Both resolvers are `@Injectable()` with no `providedIn`, so a `resolve` entry
+            // Both resolvers are `@Service({ autoProvided: false })`, so a `resolve` entry
             // without a matching `providers` entry compiles and builds fine and then throws
             // NG0201 the moment a user opens the screen.
             const route = routeOf();

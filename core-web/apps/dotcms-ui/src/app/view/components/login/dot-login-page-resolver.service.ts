@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { Resolve } from '@angular/router';
 
 import { DotLoginInformation } from '@dotcms/dotcms-models';
@@ -13,7 +13,7 @@ import { DotLoginPageStateService } from './shared/services/dot-login-page-state
  * @class DotLoginPageResolver
  * @implements {Resolve<any>}
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class DotLoginPageResolver implements Resolve<DotLoginInformation> {
     private dotLoginPageStateService = inject(DotLoginPageStateService);
 

@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Service } from '@angular/core';
 
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 
@@ -8,7 +8,7 @@ import { DotCMSContentType } from '@dotcms/dotcms-models';
  * @export
  * @class DotEditContentTypeCacheService
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class DotEditContentTypeCacheService {
     private currentContentType: DotCMSContentType;
 

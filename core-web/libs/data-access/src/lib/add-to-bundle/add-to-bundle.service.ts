@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map, mergeMap } from 'rxjs/operators';
 
@@ -9,7 +9,7 @@ import { DotAjaxActionResponseView, DotBundle, DotCurrentUser } from '@dotcms/do
 
 import { DotCurrentUserService } from '../dot-current-user/dot-current-user.service';
 
-@Injectable()
+@Service({ autoProvided: false })
 export class AddToBundleService {
     private http = inject(HttpClient);
     private currentUser = inject(DotCurrentUserService);

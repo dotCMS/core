@@ -1,6 +1,6 @@
 import { Observable, of } from 'rxjs';
 
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { catchError, map } from 'rxjs/operators';
 
@@ -23,7 +23,7 @@ interface ResolveInput {
  * that semantic exactly, just with caching to avoid the duplicate fetches a customer
  * would notice when editing multiple contentlets of the same type in one session.
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class ContentletEditUrlService {
     private readonly contentTypeService = inject(DotContentTypeService);
 

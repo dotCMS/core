@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map, switchMap } from 'rxjs/operators';
 
@@ -75,9 +75,7 @@ export interface DotRoleUserResult {
     readonly emailAddress?: string;
 }
 
-@Injectable({
-    providedIn: 'root'
-})
+@Service()
 export class DotRolesService {
     private dotMessageService = inject(DotMessageService);
     private http = inject(HttpClient);

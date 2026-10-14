@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
@@ -71,9 +71,7 @@ export interface ContentByFolderParams {
 export const BASE_SITE_URL = '/api/v1/site';
 export const DEFAULT_PER_PAGE = 10;
 export const DEFAULT_PAGE = 1;
-@Injectable({
-    providedIn: 'root'
-})
+@Service()
 export class DotSiteService {
     #defaultParams: SiteParams = {
         archived: false,

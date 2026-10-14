@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { DotRouterService } from '@dotcms/data-access';
@@ -13,7 +13,7 @@ import { GlobalStore } from '@dotcms/store';
  * the current site via WebSocket; future app-initialization/lifecycle concerns
  * belong here too.
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class DotAppLifecycleEffect {
     readonly #dotRouterService = inject(DotRouterService);
 

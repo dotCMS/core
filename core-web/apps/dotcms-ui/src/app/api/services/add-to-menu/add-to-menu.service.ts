@@ -1,7 +1,7 @@
 import { Observable, of } from 'rxjs';
 
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { catchError, map, take } from 'rxjs/operators';
 
@@ -27,7 +27,7 @@ export interface DotCustomToolToLayout {
  * @export
  * @class DotAddToMenuService
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class DotAddToMenuService {
     private http = inject(HttpClient);
     private httpErrorManagerService = inject(DotHttpErrorManagerService);

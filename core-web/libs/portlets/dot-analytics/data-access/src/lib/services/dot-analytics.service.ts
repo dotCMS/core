@@ -1,7 +1,7 @@
 import { Observable, of } from 'rxjs';
 
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { catchError, map } from 'rxjs/operators';
 
@@ -84,9 +84,7 @@ function toSessionEngagementData(row: Record<string, string | number>): SessionE
  * );
  * ```
  */
-@Injectable({
-    providedIn: 'root'
-})
+@Service()
 export class DotAnalyticsService {
     readonly #BASE_URL = '/api/v1/analytics/content/_query/cube';
     readonly #HEALTH_URL = '/api/v1/analytics/health';

@@ -123,7 +123,7 @@ import {
     ],
     templateUrl: './dot-experiments-list.component.html',
     styleUrls: ['./dot-experiments-list.component.scss'],
-    // `DotExperimentsService` is `@Injectable()` with no `providedIn` and is not in the app-wide
+    // `DotExperimentsService` is `@Service({ autoProvided: false })` and is not in the app-wide
     // `providers.ts`, so the store cannot inject it unless this component provides it. The legacy
     // screens do the same in `old/dot-experiments-shell`.
     providers: [

@@ -1,6 +1,6 @@
 import { Observable, from, of } from 'rxjs';
 
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { catchError, map, switchMap } from 'rxjs/operators';
 
@@ -23,7 +23,7 @@ import {
 import { DotMessageService } from '../dot-messages/dot-messages.service';
 import { DotUploadService } from '../dot-upload/dot-upload.service';
 
-@Injectable()
+@Service({ autoProvided: false })
 export class DotSeoMetaTagsUtilService {
     private dotMessageService = inject(DotMessageService);
     private dotUploadService = inject(DotUploadService);

@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { DotGlobalMessage } from '@dotcms/dotcms-models';
 
@@ -10,7 +10,7 @@ import { DotMessageService } from '../dot-messages/dot-messages.service';
  * @export
  * @class DotGlobalMessageService
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class DotGlobalMessageService {
     private dotMessageService = inject(DotMessageService);
     private dotEventsService = inject(DotEventsService);

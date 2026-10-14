@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { ActivatedRouteSnapshot, Resolve } from '@angular/router';
 
 import { take } from 'rxjs/operators';
@@ -15,7 +15,7 @@ import { DotApp } from '@dotcms/dotcms-models';
  * @class DotAppsConfigurationDetailResolver
  * @implements {Resolve<DotAppsResolverData>}
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class DotAppsConfigurationDetailResolver implements Resolve<DotApp> {
     private dotAppsService = inject(DotAppsService);
 

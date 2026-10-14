@@ -1,4 +1,4 @@
-import { inject, Injectable, Type } from '@angular/core';
+import { inject, Type, Service } from '@angular/core';
 import { Route, Router } from '@angular/router';
 
 import { LoggerService } from '@dotcms/dotcms-js';
@@ -244,7 +244,7 @@ function loadRemoteEntry(remoteEntry: string, remoteName: string): Promise<void>
  *     loadComponent: () => import('./my-portlet.component').then(m => m.MyPortletComponent)
  * });
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class DynamicRouteService {
     private readonly router = inject(Router);
     private readonly logger = inject(LoggerService);

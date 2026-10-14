@@ -1,4 +1,4 @@
-import { Injectable, NgZone, inject, signal } from '@angular/core';
+import { NgZone, inject, signal, Service } from '@angular/core';
 
 export type PopoverId =
     | 'image-properties'
@@ -82,7 +82,7 @@ interface ActivePopover {
  * Sibling to {@link EditorModalService}, which owns centered modal dialogs (AI content,
  * AI image, image picker, video picker).
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class EditorPopoverService {
     private readonly zone = inject(NgZone);
 

@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 export interface DotContentletLockResponse {
     id: string;
@@ -16,7 +16,7 @@ export interface DotContentletLockResponse {
  * @class DotContentletLockerService
  * @deprecated Use DotContentletService.lockContent and DotContentletService.unlockContent instead.
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class DotContentletLockerService {
     private http = inject(HttpClient);
 

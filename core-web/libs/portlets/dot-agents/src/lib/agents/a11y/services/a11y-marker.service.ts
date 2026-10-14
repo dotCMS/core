@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Service } from '@angular/core';
 
 import { A11yGroup } from '@dotcms/portlets/dot-ema/ui';
 
@@ -46,7 +46,7 @@ const COLOR = {
  * `/dot-page` dev proxy / the BE origin in prod). If `contentDocument` is null
  * (cross-origin / not yet loaded) the methods no-op safely.
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class A11yMarkerService {
     /** Remove any markers previously injected, then draw one per flagged element. */
     render(iframe: HTMLIFrameElement | null | undefined, groups: A11yGroup[]): void {

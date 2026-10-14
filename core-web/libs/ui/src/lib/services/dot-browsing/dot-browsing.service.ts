@@ -1,6 +1,6 @@
 import { EMPTY, Observable, of } from 'rxjs';
 
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { expand, filter, map, reduce, switchMap } from 'rxjs/operators';
 
@@ -72,9 +72,7 @@ export function normalizeHostFolderBrowsePath(path: string): string {
  * @export
  * @class DotBrowsingService
  */
-@Injectable({
-    providedIn: 'root'
-})
+@Service()
 export class DotBrowsingService {
     readonly #siteService = inject(DotSiteService);
     readonly #folderService = inject(DotFolderService);

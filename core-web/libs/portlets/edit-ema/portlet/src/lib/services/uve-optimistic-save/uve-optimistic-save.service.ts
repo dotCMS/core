@@ -1,4 +1,4 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { DotCMSPageAsset } from '@dotcms/types';
 
@@ -19,7 +19,7 @@ import { UveIframeMessengerService } from '../iframe-messenger/uve-iframe-messen
  * (style editor form, quick edit form). Encapsulates the clone/update/send and strip/extract
  * logic so it is not duplicated across components.
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class UveOptimisticSaveService {
     readonly #uveStore = inject(UVEStore);
     readonly #iframeMessenger = inject(UveIframeMessengerService);

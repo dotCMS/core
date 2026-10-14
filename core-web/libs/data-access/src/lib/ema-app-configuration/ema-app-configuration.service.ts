@@ -1,7 +1,7 @@
 import { EMPTY, Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { catchError, defaultIfEmpty, map } from 'rxjs/operators';
@@ -17,7 +17,7 @@ interface EmaAppOptions {
     [key: string]: string;
 }
 
-@Injectable()
+@Service({ autoProvided: false })
 export class EmaAppConfigurationService {
     http = inject(HttpClient);
     router = inject(Router);

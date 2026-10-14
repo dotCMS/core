@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map, shareReplay } from 'rxjs/operators';
 
@@ -14,7 +14,7 @@ import {
 } from '@dotcms/dotcms-models';
 import { formatMessage } from '@dotcms/utils';
 
-@Injectable()
+@Service({ autoProvided: false })
 export class DotCurrentUserService {
     readonly #http = inject(HttpClient);
 

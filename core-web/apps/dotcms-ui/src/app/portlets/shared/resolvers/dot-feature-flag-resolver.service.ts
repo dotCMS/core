@@ -1,6 +1,6 @@
 import { Observable, of } from 'rxjs';
 
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { ActivatedRouteSnapshot, Resolve } from '@angular/router';
 
 import { DotPropertiesService } from '@dotcms/data-access';
@@ -18,7 +18,7 @@ import { DotPropertiesService } from '@dotcms/data-access';
  *      featuredFlag: FEATURED_FLAG_STRING
  *  }
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class DotFeatureFlagResolver implements Resolve<
     Observable<Record<string, boolean | string>> | Observable<boolean | string>
 > {

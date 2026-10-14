@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
@@ -15,7 +15,7 @@ import { DotCMSResponse } from '@dotcms/dotcms-models';
  * @export
  * @class CrudService
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class DotCrudService {
     private http = inject(HttpClient);
 

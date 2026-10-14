@@ -1,6 +1,6 @@
 import { Observable, of } from 'rxjs';
 
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { catchError, map } from 'rxjs/operators';
 
@@ -83,7 +83,7 @@ import { DotContentTypeService } from '../dot-content-type/dot-content-type.serv
  * }
  * ```
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class DotContentletEditUrlService {
     readonly #contentTypeService = inject(DotContentTypeService);
 

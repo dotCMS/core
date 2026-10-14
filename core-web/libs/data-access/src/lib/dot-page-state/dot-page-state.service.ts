@@ -1,7 +1,7 @@
 import { BehaviorSubject, forkJoin, Observable, of, Subject } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { catchError, map, switchMap, take, tap } from 'rxjs/operators';
 
@@ -33,7 +33,7 @@ import { DotMessageService } from '../dot-messages/dot-messages.service';
 import { DotPageRenderService } from '../dot-page-render/dot-page-render.service';
 import { DotRouterService } from '../dot-router/dot-router.service';
 
-@Injectable()
+@Service({ autoProvided: false })
 export class DotPageStateService {
     private dotContentletLockerService = inject(DotContentletLockerService);
     private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);

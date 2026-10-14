@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { ActivatedRouteSnapshot, Resolve, RouterStateSnapshot } from '@angular/router';
 
 import { DotLicenseService } from '@dotcms/data-access';
@@ -11,7 +11,7 @@ import { DotLicenseService } from '@dotcms/data-access';
  * @class DotIframePortletLegacyResolver
  * @implements {Resolve<boolean>}
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class DotIframePortletLegacyResolver implements Resolve<boolean> {
     private dotLicenseService = inject(DotLicenseService);
 

@@ -1,6 +1,6 @@
 import { fromEvent, Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Service } from '@angular/core';
 
 import { map, filter } from 'rxjs/operators';
 
@@ -24,9 +24,7 @@ const getValue = <T>(item: string): T => {
  * @export
  * @class DotSessionstorageService
  */
-@Injectable({
-    providedIn: 'root'
-})
+@Service()
 export class DotSessionstorageService {
     /**
      * Save an item to SessionStorage

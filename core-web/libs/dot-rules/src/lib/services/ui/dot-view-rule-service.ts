@@ -1,8 +1,8 @@
 import { Subject, Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Service } from '@angular/core';
 
-@Injectable()
+@Service({ autoProvided: false })
 export class RuleViewService {
     private _message: Subject<DotRuleMessage> = new Subject();
 

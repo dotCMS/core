@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { Params } from '@angular/router';
 
 import { map } from 'rxjs/operators';
@@ -25,7 +25,7 @@ import { DotSessionStorageService } from '../dot-session-storage/dot-session-sto
  * @export
  * @class DotPageRenderService
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class DotPageRenderService {
     private http = inject(HttpClient);
     private readonly dotSessionStorageService = inject(DotSessionStorageService);

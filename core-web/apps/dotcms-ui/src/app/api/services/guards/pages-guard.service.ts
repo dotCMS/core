@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { CanActivate } from '@angular/router';
 
 import { DotPropertiesService } from '@dotcms/data-access';
@@ -9,7 +9,7 @@ import { FeaturedFlags } from '@dotcms/dotcms-models';
 /**
  * Route Guard that based on DOTFAVORITEPAGE_FEATURE_ENABLE flag allows/denies access to Pages portlet.
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class PagesGuardService implements CanActivate {
     private dotConfigurationService = inject(DotPropertiesService);
 

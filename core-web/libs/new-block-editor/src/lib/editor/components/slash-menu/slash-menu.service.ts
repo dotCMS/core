@@ -1,4 +1,4 @@
-import { Injectable, NgZone, computed, inject, signal } from '@angular/core';
+import { NgZone, computed, inject, signal, Service } from '@angular/core';
 
 import type { Editor } from '@tiptap/core';
 
@@ -34,7 +34,7 @@ const SUBMENU_SEARCH_DEBOUNCE_MS = 250;
  * sub-menu loading for content types, keyboard navigation, and editor focus
  * so the suggestion session stays valid when picking from the overlay.
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class SlashMenuService {
     private readonly zone = inject(NgZone);
     private readonly store = inject(EditorStore);

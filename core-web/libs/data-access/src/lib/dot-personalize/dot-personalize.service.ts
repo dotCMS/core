@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
@@ -9,7 +9,7 @@ import { DotCMSPersonalizedItem, DotCMSResponse } from '@dotcms/dotcms-models';
 
 import { DotSessionStorageService } from '../dot-session-storage/dot-session-storage.service';
 
-@Injectable()
+@Service({ autoProvided: false })
 export class DotPersonalizeService {
     private http = inject(HttpClient);
     private dotSessionStorageService = inject(DotSessionStorageService);

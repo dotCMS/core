@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { ActivatedRouteSnapshot, Resolve, RouterStateSnapshot } from '@angular/router';
 
 import { map } from 'rxjs/operators';
@@ -10,7 +10,7 @@ import { DotTemplate } from '@dotcms/dotcms-models';
 
 import { DotTemplatesService } from '../../../../api/services/dot-templates/dot-templates.service';
 
-@Injectable()
+@Service({ autoProvided: false })
 export class DotTemplateCreateEditResolver implements Resolve<DotTemplate> {
     private service = inject(DotTemplatesService);
     private dotRouterService = inject(DotRouterService);

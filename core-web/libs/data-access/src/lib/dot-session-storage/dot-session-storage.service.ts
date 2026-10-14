@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Service } from '@angular/core';
 
 import { SESSION_STORAGE_VARIATION_KEY } from '@dotcms/dotcms-models';
 
@@ -6,7 +6,7 @@ import { SESSION_STORAGE_VARIATION_KEY } from '@dotcms/dotcms-models';
 const LAST_CONTENT_TYPE_KEY = 'dotcms.content-drive.lastContentType';
 
 //TODO: set a proper name for this
-@Injectable({ providedIn: 'root' })
+@Service()
 export class DotSessionStorageService {
     /**
      * Remembers the content type last opened in the Content Types editor, replacing any earlier

@@ -1,7 +1,7 @@
 import { Observable, of } from 'rxjs';
 
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
@@ -46,7 +46,7 @@ interface DotESSearchResponse<T> {
  * layer in `data-access` is worth doing, but it is a refactor of the legacy picker rather than
  * part of the Experiments Configure screen, so it belongs in its own issue.
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class DotPagesBrowserService {
     readonly #http = inject(HttpClient);
 

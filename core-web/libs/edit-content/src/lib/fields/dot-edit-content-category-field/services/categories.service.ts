@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
@@ -36,7 +36,7 @@ const DEFAULT_PARAMS: Omit<GetChildrenParams, 'inode'> = {
  *
  * This service is responsible for retrieving the children of a given inode.
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class CategoriesService {
     readonly #http = inject(HttpClient);
 

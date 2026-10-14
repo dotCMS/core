@@ -1,6 +1,6 @@
 import { Observable, of } from 'rxjs';
 
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
@@ -30,7 +30,7 @@ const CONSTRAINED_QUERY_LIMIT = 5000;
  * living on its own: it is one query with one job, and folding it into the picker's store would
  * have mixed a relationship-integrity rule into a browse store that knows nothing about parents.
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class ConstrainedIdentifiersService {
     readonly #contentSearchService = inject(DotContentSearchService);
 

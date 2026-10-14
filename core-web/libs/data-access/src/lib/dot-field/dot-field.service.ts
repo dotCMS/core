@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
@@ -19,9 +19,7 @@ export type DotFieldFilter =
     | 'USER_SEARCHABLE'
     | 'SYSTEM_INDEXED'
     | 'UNIQUE';
-@Injectable({
-    providedIn: 'root'
-})
+@Service()
 export class DotFieldService {
     readonly #http = inject(HttpClient);
 

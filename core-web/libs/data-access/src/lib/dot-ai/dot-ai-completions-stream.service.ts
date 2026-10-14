@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { inject, Injectable, Injector } from '@angular/core';
+import { inject, Injector, Service } from '@angular/core';
 
 import { HttpCode, LoginService, LOGOUT_URL } from '@dotcms/dotcms-js';
 import { DotAiCompletionsForm } from '@dotcms/dotcms-models';
@@ -45,7 +45,7 @@ const EMPTY_STREAM_KEY = 'dotai.chat.error.empty';
  * closed union and would drop every one of these. That service is prior art for the
  * technique, not a dependency.
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class DotAiCompletionsStreamService {
     // Resolved lazily, exactly as `serverErrorInterceptor` does it: this service is provided
     // by the dotAI route, and `LoginService` pulls in the whole auth graph.

@@ -1,7 +1,7 @@
 import { forkJoin, Observable, of, throwError } from 'rxjs';
 
 import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { ActivatedRouteSnapshot, Resolve } from '@angular/router';
 
 import { catchError, filter, map, switchMap } from 'rxjs/operators';
@@ -21,7 +21,7 @@ import { DotSessionStorageService } from '../dot-session-storage/dot-session-sto
  * @class EditContentResolver
  * @implements {Resolve<DotRenderedPageState>}
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class DotEditPageResolver implements Resolve<DotPageRenderState | null> {
     private dotPageStateService = inject(DotPageStateService);
     private dotRouterService = inject(DotRouterService);

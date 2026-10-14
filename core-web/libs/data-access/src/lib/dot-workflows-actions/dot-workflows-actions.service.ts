@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
@@ -26,7 +26,7 @@ export enum DotRenderMode {
     NEW = 'NEW',
     EDITING = 'EDITING'
 }
-@Injectable()
+@Service({ autoProvided: false })
 export class DotWorkflowsActionsService {
     private readonly BASE_URL = '/api/v1/workflow';
     private readonly httpClient = inject(HttpClient);

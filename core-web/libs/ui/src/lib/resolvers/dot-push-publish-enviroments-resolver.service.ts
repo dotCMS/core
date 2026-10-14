@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { Resolve } from '@angular/router';
 
 import { map } from 'rxjs/operators';
@@ -15,7 +15,7 @@ import { DotEnvironment } from '@dotcms/dotcms-models';
  * @class DotPushPublishEnvironmentsResolver
  * @implements {Resolve<Observable<DotEnvironment[]>>}
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class DotPushPublishEnvironmentsResolver implements Resolve<Observable<DotEnvironment[]>> {
     private readonly pushPublishService = inject(PushPublishService);
 

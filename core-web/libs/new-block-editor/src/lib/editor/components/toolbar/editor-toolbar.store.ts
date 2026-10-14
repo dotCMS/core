@@ -1,11 +1,11 @@
-import { Injectable, NgZone, inject, signal } from '@angular/core';
+import { NgZone, inject, signal, Service } from '@angular/core';
 
 import { Editor } from '@tiptap/core';
 import { NodeSelection } from '@tiptap/pm/state';
 
 import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/contentlet.extension';
 
-@Injectable()
+@Service({ autoProvided: false })
 export class EditorToolbarStore {
     private readonly zone = inject(NgZone);
 

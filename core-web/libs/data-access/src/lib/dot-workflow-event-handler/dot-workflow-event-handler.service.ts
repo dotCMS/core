@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { catchError, map, take } from 'rxjs/operators';
 
@@ -52,7 +52,7 @@ export const WORKFLOW_STEP_MAP: { [key in DotWizardComponentEnum]: boolean } = {
     commentAndAssign: true,
     pushPublish: true
 };
-@Injectable()
+@Service({ autoProvided: false })
 export class DotWorkflowEventHandlerService {
     private pushPublishService = inject(PushPublishService);
     private dotMessageDisplayService = inject(DotMessageDisplayService);

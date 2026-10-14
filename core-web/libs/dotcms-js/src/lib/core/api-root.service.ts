@@ -1,9 +1,9 @@
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { LoggerService } from './logger.service';
 import { UserModel } from './shared/user.model';
 
-@Injectable()
+@Service({ autoProvided: false })
 export class ApiRoot {
     private loggerService = inject(LoggerService);
 

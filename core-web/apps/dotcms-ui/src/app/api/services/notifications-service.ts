@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { DotCMSResponse } from '@dotcms/dotcms-models';
 
@@ -14,7 +14,7 @@ interface DotNotificationServiceUrls {
     markAsReadNotificationsUrl: string;
 }
 
-@Injectable()
+@Service({ autoProvided: false })
 export class NotificationsService {
     private http = inject(HttpClient);
 

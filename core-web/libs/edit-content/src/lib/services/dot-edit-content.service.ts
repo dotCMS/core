@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
@@ -33,7 +33,7 @@ import {
 } from '../models/dot-edit-content.model';
 import { attachOrderedFields, parsePreservingKeyOrder } from '../utils/key-value-order.util';
 
-@Injectable()
+@Service({ autoProvided: false })
 export class DotEditContentService {
     readonly #dotContentTypeService = inject(DotContentTypeService);
     readonly #dotBrowsingService = inject(DotBrowsingService);

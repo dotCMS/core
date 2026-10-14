@@ -1,6 +1,6 @@
 import { firstValueFrom } from 'rxjs';
 
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { DotUploadFileService } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
@@ -56,7 +56,7 @@ export interface UploadedAudio {
  * The two-step temp upload + workflow publish chain itself lives in `DotUploadFileService`,
  * not here.
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class DotUploadService {
     private readonly uploadFileService = inject(DotUploadFileService);
 

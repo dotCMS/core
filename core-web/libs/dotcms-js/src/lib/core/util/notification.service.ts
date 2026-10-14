@@ -1,4 +1,4 @@
-import { Inject, Injectable, NgModule, inject } from '@angular/core';
+import { NgModule, inject, Service } from '@angular/core';
 
 import { AppConfig } from './app.config';
 
@@ -14,8 +14,7 @@ declare class Notification {
  * https://developer.mozilla.org/en-US/docs/Web/API/notification
  * Can change icons by setting iconPath in the AppConfig if needed
  */
-@Injectable()
-@Inject('config')
+@Service({ autoProvided: false })
 export class NotificationService {
     private config = inject(AppConfig);
     iconPath = this.config.iconPath;

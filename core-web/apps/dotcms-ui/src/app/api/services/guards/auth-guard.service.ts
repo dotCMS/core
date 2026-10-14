@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivate, RouterStateSnapshot } from '@angular/router';
 
 import { map } from 'rxjs/operators';
@@ -11,7 +11,7 @@ import { LoginService } from '@dotcms/dotcms-js';
 /**
  * Route Guard that checks if a User is logged in.
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class AuthGuardService implements CanActivate {
     private dotRouterService = inject(DotRouterService);
     private loginService = inject(LoginService);

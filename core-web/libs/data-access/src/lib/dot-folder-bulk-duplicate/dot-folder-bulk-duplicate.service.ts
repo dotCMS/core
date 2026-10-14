@@ -1,7 +1,7 @@
 import { Observable, of, throwError } from 'rxjs';
 
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { catchError, map } from 'rxjs/operators';
 
@@ -59,9 +59,7 @@ interface ActiveRunParameters {
  * immediately; the outcome arrives by push, as a `BULK_FOLDER_DUPLICATE_COMPLETED` system event, so
  * nothing here follows the run.
  */
-@Injectable({
-    providedIn: 'root'
-})
+@Service()
 export class DotFolderBulkDuplicateService {
     readonly #http = inject(HttpClient);
     readonly #jobQueueService = inject(DotJobQueueService);

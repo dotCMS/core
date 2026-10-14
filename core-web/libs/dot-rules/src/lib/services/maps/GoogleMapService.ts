@@ -1,6 +1,6 @@
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { switchMap, take, takeUntil } from 'rxjs/operators';
 
@@ -13,7 +13,7 @@ window['mapsApiReady'] = () => {
     window['mapsApi$'].complete();
 };
 
-@Injectable()
+@Service({ autoProvided: false })
 export class GoogleMapService {
     private siteService = inject(SiteService);
 

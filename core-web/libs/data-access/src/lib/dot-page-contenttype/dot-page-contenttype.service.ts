@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map, take } from 'rxjs/operators';
 
@@ -61,9 +61,7 @@ export interface DotPageContentTypeQueryParams extends DotContentTypeQueryParams
  * @export
  * @class DotPageContentTypeService
  */
-@Injectable({
-    providedIn: 'root'
-})
+@Service()
 export class DotPageContentTypeService {
     private http = inject(HttpClient);
 

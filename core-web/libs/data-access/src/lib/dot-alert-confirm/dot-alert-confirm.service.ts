@@ -1,6 +1,6 @@
 import { Observable, Subject } from 'rxjs';
 
-import { Injectable, inject, signal } from '@angular/core';
+import { inject, signal, Service } from '@angular/core';
 
 import { ConfirmationService } from 'primeng/api';
 
@@ -14,7 +14,7 @@ import { DotMessageService } from '../dot-messages/dot-messages.service';
  * @class DotAlertConfirmService
  */
 
-@Injectable()
+@Service({ autoProvided: false })
 export class DotAlertConfirmService {
     confirmationService = inject(ConfirmationService);
     private dotMessageService = inject(DotMessageService);

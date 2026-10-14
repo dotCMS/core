@@ -1,6 +1,6 @@
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import {
     ActivatedRoute,
     Event,
@@ -15,9 +15,7 @@ import { filter } from 'rxjs/operators';
 import { LOGOUT_URL } from '@dotcms/dotcms-js';
 import { DotAppsSite, DotNavigateToOptions, PortletNav } from '@dotcms/dotcms-models';
 
-@Injectable({
-    providedIn: 'root'
-})
+@Service()
 export class DotRouterService {
     private router = inject(Router);
     private route = inject(ActivatedRoute);

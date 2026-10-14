@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient, HttpResponse } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { take, map } from 'rxjs/operators';
 
@@ -33,7 +33,7 @@ interface PaginatiorServiceParams {
  * @export
  * @class PaginatorService
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class PaginatorService {
     private readonly http = inject(HttpClient);
 

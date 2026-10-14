@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Service } from '@angular/core';
 
 import { DialogService, DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
@@ -18,7 +18,7 @@ import { DotAssetPickerComponent } from './dot-asset-picker.component';
  * `buildAssetPickerDialogConfig`. Three entry points used to do it themselves, which is how the
  * Story Block and the File field drift into looking like different features.
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class AngularAssetPickerLauncher implements DotAssetPickerLauncher {
     open(
         dialogService: DialogService,

@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
@@ -38,9 +38,7 @@ export interface DotContentSearchResponse {
         resultsSize: number;
     };
 }
-@Injectable({
-    providedIn: 'root'
-})
+@Service()
 export class DotContentSearchService {
     readonly #http = inject(HttpClient);
 

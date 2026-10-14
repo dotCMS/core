@@ -1,7 +1,7 @@
 import { Observable, Subject } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
@@ -11,7 +11,7 @@ import { DotRouterService } from './dot-router.service';
 import { DotcmsEventsService } from './dotcms-events.service';
 import { LoginService } from './login.service';
 
-@Injectable()
+@Service({ autoProvided: false })
 export class RoutingService {
     private router = inject(DotRouterService);
     private http = inject(HttpClient);

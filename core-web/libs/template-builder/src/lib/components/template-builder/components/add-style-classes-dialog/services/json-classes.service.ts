@@ -1,13 +1,13 @@
 import { Observable, of } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { catchError, map } from 'rxjs/operators';
 
 export const STYLE_CLASSES_FILE_URL = '/application/templates/classes.json';
 
-@Injectable()
+@Service({ autoProvided: false })
 export class JsonClassesService {
     readonly #http = inject(HttpClient);
 

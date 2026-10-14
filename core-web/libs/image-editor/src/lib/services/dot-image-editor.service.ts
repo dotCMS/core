@@ -2,7 +2,7 @@ import { Observable, forkJoin, of } from 'rxjs';
 
 import { DOCUMENT } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { catchError, map } from 'rxjs/operators';
 
@@ -20,7 +20,7 @@ import {
  * the edited image into a temp file. All read-only/metadata calls are non-fatal and
  * never throw.
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class DotImageEditorService {
     readonly #http = inject(HttpClient);
     readonly #document = inject(DOCUMENT);

@@ -1,6 +1,6 @@
 import { fromEvent } from 'rxjs';
 
-import { Injectable, inject, DestroyRef, ElementRef } from '@angular/core';
+import { inject, DestroyRef, ElementRef, Service } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { filter } from 'rxjs/operators';
@@ -22,7 +22,7 @@ export interface DragDropHandlers {
     onDragStart: (event: DragEvent) => void;
 }
 
-@Injectable()
+@Service({ autoProvided: false })
 export class DotUveDragDropService {
     private readonly window = inject(WINDOW);
     private readonly destroyRef = inject(DestroyRef);

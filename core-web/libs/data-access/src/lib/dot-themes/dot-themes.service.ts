@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
@@ -25,9 +25,7 @@ export interface DotThemeOptions {
  * @export
  * @class DotThemesService
  */
-@Injectable({
-    providedIn: 'root'
-})
+@Service()
 export class DotThemesService {
     private readonly http = inject(HttpClient);
 

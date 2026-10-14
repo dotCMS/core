@@ -1,13 +1,11 @@
-import { Injectable } from '@angular/core';
+import { Service } from '@angular/core';
 
 import { CONTAINER_SOURCE, DotContainer, DotContainerMap } from '@dotcms/dotcms-models';
 
 /**
  * Save into cache the containers used by the current template
  */
-@Injectable({
-    providedIn: 'root'
-})
+@Service()
 export class DotTemplateContainersCacheService {
     private containers: DotContainerMap;
 

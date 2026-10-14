@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Service } from '@angular/core';
 
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
 
@@ -22,7 +22,7 @@ interface ImageEditorTempFileDetail {
  * The session completes (without emitting) when the editor dispatches
  * `binaryField-close-image-editor-{variable}`.
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class LegacyDojoImageEditorLauncher implements ImageEditorLauncher {
     open({ inode, tempId, variable }: ImageEditorOpenParams): Observable<DotCMSTempFile> {
         return new Observable<DotCMSTempFile>((subscriber) => {

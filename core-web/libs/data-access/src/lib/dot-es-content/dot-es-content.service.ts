@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { take, map } from 'rxjs/operators';
 
@@ -25,7 +25,7 @@ export interface queryEsParams {
  * @export
  * @class DotESContentService
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class DotESContentService {
     private http = inject(HttpClient);
 

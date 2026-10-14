@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivate, Router, RouterStateSnapshot } from '@angular/router';
 
 import { map } from 'rxjs/operators';
@@ -16,7 +16,7 @@ import { DynamicRouteService } from '../dynamic-route.service';
  * whether to redirect. This prevents a race condition where dynamic portlet
  * routes aren't registered yet on page refresh.
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class DefaultGuardService implements CanActivate {
     private dotRouterService = inject(DotRouterService);
     private router = inject(Router);

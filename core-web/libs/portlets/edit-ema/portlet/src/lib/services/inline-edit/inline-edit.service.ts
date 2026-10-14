@@ -1,4 +1,4 @@
-import { ElementRef, Injectable, signal } from '@angular/core';
+import { ElementRef, signal, Service } from '@angular/core';
 
 import { DotCMSUVEAction } from '@dotcms/types';
 
@@ -43,9 +43,7 @@ export const INLINE_EDIT_TINYMCE_BASE_OPTIONS = {
     powerpaste_html_import: 'clean'
 } as const;
 
-@Injectable({
-    providedIn: 'root'
-})
+@Service()
 export class InlineEditService {
     $iframeWindow = signal<Window | null>(null);
     $isInlineEditingEnable = signal(true);

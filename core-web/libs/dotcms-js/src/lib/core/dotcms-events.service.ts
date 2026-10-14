@@ -1,6 +1,6 @@
 import { Observable, Subject } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Service } from '@angular/core';
 
 import { DotEventTypeWrapper } from './models';
 
@@ -13,7 +13,7 @@ import { DotEventTypeWrapper } from './models';
  *
  * start() and destroy() are intentional no-ops — DotEventsSocket owns the connection.
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class DotcmsEventsService {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     #subjects: Record<string, Subject<any>> = {};

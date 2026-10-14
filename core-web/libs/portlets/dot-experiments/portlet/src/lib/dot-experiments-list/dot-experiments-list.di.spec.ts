@@ -5,7 +5,7 @@
  * which is the opposite of `dot-experiments-list.component.spec.ts`. Its whole purpose is to build
  * the same injector chain the router builds at runtime and let it fail if a provider is missing.
  *
- * Why it exists: dotCMS has many `@Injectable()` services with no `providedIn: 'root'`, kept alive
+ * Why it exists: dotCMS has many `@Service({ autoProvided: false })` services, kept alive
  * by the app-level `apps/dotcms-ui/src/app/providers.ts`. A lazily loaded standalone portlet
  * inherits none of them automatically, so anything the portlet injects but does not provide throws
  * `NG0201: No provider found` on real route activation — a failure neither the store-mocking specs

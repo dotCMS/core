@@ -1,6 +1,6 @@
 import { Observable, of } from 'rxjs';
 
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map, switchMap } from 'rxjs/operators';
 
@@ -37,9 +37,7 @@ import {
  *   });
  * ```
  */
-@Injectable({
-    providedIn: 'root'
-})
+@Service()
 export class RelationshipFieldService {
     readonly #dotContentTypeService = inject(DotContentTypeService);
     readonly #dotFieldService = inject(DotFieldService);

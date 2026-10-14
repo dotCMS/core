@@ -1,7 +1,7 @@
 import { Observable, of } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { catchError, map } from 'rxjs/operators';
 
@@ -24,7 +24,7 @@ interface DotCMSResponseExperiment<T> extends DotCMSResponse<T> {
     entity: T;
 }
 
-@Injectable()
+@Service({ autoProvided: false })
 export class DotExperimentsService {
     private readonly http = inject(HttpClient);
 

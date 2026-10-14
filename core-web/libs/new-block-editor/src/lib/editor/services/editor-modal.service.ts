@@ -1,6 +1,6 @@
 import { Observable, defer, shareReplay } from 'rxjs';
 
-import { DestroyRef, Injectable, NgZone, OnDestroy, inject, signal } from '@angular/core';
+import { DestroyRef, NgZone, OnDestroy, inject, signal, Service } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
@@ -57,7 +57,7 @@ const INSERT_BY_MODE: Record<
  * Provided at the editor component scope so each editor instance has its own modal refs
  * and per-instance teardown via {@link ngOnDestroy}.
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class EditorModalService implements OnDestroy {
     private readonly zone = inject(NgZone);
     private readonly dialogService = inject(DialogService);

@@ -1,13 +1,13 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { defaultIfEmpty, filter, find, map, mergeMap, shareReplay } from 'rxjs/operators';
 
 import { DotCMSResponse, DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
 
-@Injectable()
+@Service({ autoProvided: false })
 export class DotMenuService {
     menu$: Observable<DotMenu[]>;
 

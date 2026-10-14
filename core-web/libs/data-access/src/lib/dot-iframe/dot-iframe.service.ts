@@ -1,6 +1,6 @@
 import { Observable, Subject } from 'rxjs';
 
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { filter } from 'rxjs/operators';
 
@@ -8,7 +8,7 @@ import { DotFunctionInfo } from '@dotcms/dotcms-models';
 
 import { DotRouterService } from '../dot-router/dot-router.service';
 
-@Injectable()
+@Service({ autoProvided: false })
 export class DotIframeService {
     private dotRouterService = inject(DotRouterService);
 

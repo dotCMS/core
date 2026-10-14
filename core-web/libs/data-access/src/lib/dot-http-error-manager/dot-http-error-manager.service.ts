@@ -1,7 +1,7 @@
 import { Observable, of } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { HttpCode } from '@dotcms/dotcms-js';
 import { DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
@@ -21,7 +21,7 @@ export interface DotHttpErrorHandled {
  * @export
  * @class DotHttpErrorManagerService
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class DotHttpErrorManagerService {
     private dotDialogService = inject(DotAlertConfirmService);
     private dotMessageDisplayService = inject(DotMessageDisplayService);

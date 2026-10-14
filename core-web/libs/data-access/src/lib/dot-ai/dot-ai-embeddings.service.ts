@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
@@ -35,7 +35,7 @@ const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
  * Note `getIndexes` and `rebuildEmbeddingsDb` require CMS_ADMINISTRATOR_ROLE server-side; a
  * 403 here is a normal state for a non-admin, not an error to surface as a dialog.
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class DotAiEmbeddingsService {
     #http: HttpClient = inject(HttpClient);
 

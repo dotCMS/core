@@ -1,4 +1,4 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { GlobalStore } from '@dotcms/store';
 
@@ -59,7 +59,7 @@ const COLLAPSE_MAX_WIDTH = 2560;
  * sessionStorage so it is remembered across a refresh that happens while a panel is open, but not
  * leaked into a new session (see {@link PREV_NAV_COLLAPSED_KEY}).
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class DotSidePanelNavController {
     readonly #globalStore = inject(GlobalStore);
 

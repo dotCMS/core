@@ -1,7 +1,7 @@
 import { Observable, of } from 'rxjs';
 
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { catchError, map } from 'rxjs/operators';
 
@@ -37,7 +37,7 @@ const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
  * generation and a workflow fire in one class. Its content-side half now lives in
  * `DotAiContentService`.
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class DotAiConfigService {
     #http: HttpClient = inject(HttpClient);
 

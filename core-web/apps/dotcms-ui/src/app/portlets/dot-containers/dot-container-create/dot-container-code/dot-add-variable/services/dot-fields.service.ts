@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { DotMessageService } from '@dotcms/data-access';
 
@@ -6,7 +6,7 @@ import { FieldTypes, DotFieldContent, GetFieldsFunction } from '../dot-add-varia
 
 export const DOT_CONTENT_MAP = 'dotContentMap';
 
-@Injectable()
+@Service({ autoProvided: false })
 export class DotFieldsService {
     private dotMessage = inject(DotMessageService);
 

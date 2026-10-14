@@ -1,7 +1,7 @@
 import { Observable, throwError } from 'rxjs';
 
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { catchError, map } from 'rxjs/operators';
 
@@ -63,7 +63,7 @@ const asRecords = (value: unknown): Record<string, unknown>[] =>
  * deliberately not reused here, because the request side is not shared and an SDK-facing
  * change should not be able to break an internal admin screen.
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class DotAiSearchService {
     #http: HttpClient = inject(HttpClient);
 

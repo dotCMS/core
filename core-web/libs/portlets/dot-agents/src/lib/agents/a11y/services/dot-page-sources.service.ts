@@ -1,7 +1,7 @@
 import { forkJoin, Observable, of } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { catchError, map, switchMap } from 'rxjs/operators';
 
@@ -30,7 +30,7 @@ import {
  * and `/dA` to :8080), so no dev-only path prefix is needed here — unlike the
  * run screen's iframes, which render pages via the `/dot-page` proxy sentinel.
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class DotPageSourcesService {
     readonly #http = inject(HttpClient);
 

@@ -1,4 +1,4 @@
-import { Injectable, inject, OnDestroy } from '@angular/core';
+import { inject, OnDestroy, Service } from '@angular/core';
 
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
@@ -34,7 +34,7 @@ interface ImageEditorOpenDetail {
  * modal dialog with the editor iframe, and relays `postMessage` results back as
  * `binaryField-tempfile-{variable}` and `binaryField-close-image-editor-{variable}` events.
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class DotLegacyImageEditorLauncherService implements OnDestroy {
     readonly #dialogService = inject(DialogService);
 

@@ -1,5 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import { DestroyRef, inject, Injectable } from '@angular/core';
+import { DestroyRef, inject, Service } from '@angular/core';
 
 import { DotKeyboardShortcut, DotKeyboardShortcutUnregister } from './models';
 
@@ -155,7 +155,7 @@ function isTyping(event: KeyboardEvent): boolean {
  * **Browser defaults are suppressed only for a combination something actually claims**, so the
  * registry can never eat a browser or assistive-technology key it does not own.
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class DotKeyboardShortcutService {
     readonly #document = inject(DOCUMENT);
 

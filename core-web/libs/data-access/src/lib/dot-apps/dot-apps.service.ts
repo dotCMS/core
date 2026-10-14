@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { catchError, map, take } from 'rxjs/operators';
 
@@ -27,7 +27,7 @@ const API_URL = '/api/v1/apps';
  * @export
  * @class DotAppsService
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class DotAppsService {
     private readonly http = inject(HttpClient);
     private readonly httpErrorManagerService = inject(DotHttpErrorManagerService);

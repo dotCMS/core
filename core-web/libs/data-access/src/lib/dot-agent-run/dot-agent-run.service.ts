@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { AgentRunStep, AgentStreamEvent } from '@dotcms/dotcms-models';
 
@@ -33,7 +33,7 @@ import { AgentRunStep, AgentStreamEvent } from '@dotcms/dotcms-models';
  * that runs a stream, so it lives and dies with that screen instead of being
  * retained app-wide by every consumer of `@dotcms/data-access`.
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class DotAgentRunService {
     readonly #http = inject(HttpClient);
 

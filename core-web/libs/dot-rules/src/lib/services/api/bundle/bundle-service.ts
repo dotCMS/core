@@ -1,7 +1,7 @@
 import { of as observableOf, Observable, Subject } from 'rxjs';
 
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { mergeMap, map } from 'rxjs/operators';
 
@@ -24,7 +24,7 @@ export interface IPublishEnvironment {
     id?: string;
 }
 
-@Injectable()
+@Service({ autoProvided: false })
 export class BundleService {
     _apiRoot = inject(ApiRoot);
     private http = inject(HttpClient);

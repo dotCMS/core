@@ -1,12 +1,12 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { BaseAnalyticsEvent, EVENT_TYPES } from '@dotcms/dotcms-models';
 import { WINDOW } from '@dotcms/utils';
 
 export const CONTENT_ANALYTICS_EVENT_API = '/api/v1/analytics/content/event';
 export const DOT_ANALYTICS_SRC = 'dotAnalytics';
-@Injectable()
+@Service({ autoProvided: false })
 export class DotAnalyticsTrackerService {
     #http = inject(HttpClient);
     #window = inject(WINDOW);

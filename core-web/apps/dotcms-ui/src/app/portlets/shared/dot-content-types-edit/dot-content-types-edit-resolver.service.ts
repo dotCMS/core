@@ -1,7 +1,7 @@
 import { Observable, of } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { ActivatedRouteSnapshot, Resolve } from '@angular/router';
 
 import { catchError, map, take } from 'rxjs/operators';
@@ -23,7 +23,7 @@ import { DotCMSContentType } from '@dotcms/dotcms-models';
  * @class DotContentTypeEditResolver
  * @implements {Resolve<ContentType>}
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class DotContentTypeEditResolver implements Resolve<DotCMSContentType> {
     private contentTypesInfoService = inject(DotContentTypesInfoService);
     private crudService = inject(DotCrudService);

@@ -1,4 +1,4 @@
-import { Injectable, Type, inject } from '@angular/core';
+import { Type, inject, Service } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ValidationErrors } from '@angular/forms';
 
@@ -23,7 +23,7 @@ import { FieldType } from '../models';
 /**
  * Provide method to handle with the Field Types's properties
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class FieldPropertyService {
     /**
      * Map of field types keyed by their class name

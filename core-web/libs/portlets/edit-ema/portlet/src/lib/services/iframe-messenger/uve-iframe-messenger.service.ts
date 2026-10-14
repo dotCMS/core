@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Service } from '@angular/core';
 
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 
@@ -12,9 +12,7 @@ export interface IframeMessage {
  * Service to manage communication with the UVE editor iframe.
  * Centralizes all postMessage calls to the iframe window.
  */
-@Injectable({
-    providedIn: 'root'
-})
+@Service()
 export class UveIframeMessengerService {
     private iframeWindow: Window | null = null;
     private readonly host = '*';

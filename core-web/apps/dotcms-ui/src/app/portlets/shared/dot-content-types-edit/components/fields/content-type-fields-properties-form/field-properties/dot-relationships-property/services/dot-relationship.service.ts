@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map, take } from 'rxjs/operators';
 
@@ -15,7 +15,7 @@ import { DotRelationshipCardinality } from '../model/dot-relationship-cardinalit
  * @export
  * @class DotRelationshipService
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class DotRelationshipService {
     private http = inject(HttpClient);
 

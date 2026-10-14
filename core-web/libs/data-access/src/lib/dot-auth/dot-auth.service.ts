@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient, HttpResponse } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
@@ -17,9 +17,7 @@ import {
 /**
  * Client for the dotAuth REST surface at /api/v1/dotauth.
  */
-@Injectable({
-    providedIn: 'root'
-})
+@Service()
 export class DotAuthService {
     readonly #http = inject(HttpClient);
     readonly #base = '/api/v1/dotauth/sites';

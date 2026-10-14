@@ -1,7 +1,7 @@
 import { Observable, Subject, merge, of } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { filter, map, skip, startWith, switchMap, take, tap } from 'rxjs/operators';
 
@@ -24,9 +24,7 @@ interface DotContentSearchResponse<T> {
  * Provide methods and data to hable the sites.
  * @export
  */
-@Injectable({
-    providedIn: 'root'
-})
+@Service()
 export class SiteService {
     private http = inject(HttpClient);
     private loggerService = inject(LoggerService);

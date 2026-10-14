@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { Params, Router } from '@angular/router';
 
 import { take } from 'rxjs/operators';
@@ -31,9 +31,7 @@ export const COMPARE_CUSTOM_EVENT = 'compare-contentlet';
  * @export
  * @class DotCustomEventHandlerService
  */
-@Injectable({
-    providedIn: 'root'
-})
+@Service()
 export class DotCustomEventHandlerService {
     private dotLoadingIndicatorService = inject(DotLoadingIndicatorService);
     private dotRouterService = inject(DotRouterService);

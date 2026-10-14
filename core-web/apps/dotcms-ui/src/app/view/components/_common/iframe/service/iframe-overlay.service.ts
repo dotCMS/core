@@ -1,8 +1,8 @@
 import { BehaviorSubject, Observable } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Service } from '@angular/core';
 
-@Injectable()
+@Service({ autoProvided: false })
 export class IframeOverlayService {
     public $overlay: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
 

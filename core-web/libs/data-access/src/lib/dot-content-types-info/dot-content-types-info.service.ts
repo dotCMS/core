@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Service } from '@angular/core';
 
 import { DotCMSClazz } from '@dotcms/dotcms-models';
 
@@ -7,7 +7,7 @@ import { DotCMSClazz } from '@dotcms/dotcms-models';
  * @DotContentTypesInfoService
  * @class CrudService
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class DotContentTypesInfoService {
     private contentTypeInfoCollection = [
         {

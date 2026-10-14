@@ -2,7 +2,7 @@
 import { Observable, of, Subject } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map, tap } from 'rxjs/operators';
 
@@ -28,9 +28,7 @@ export const LOGOUT_URL = '/dotAdmin/logout';
  * This Service get the server configuration to display in the login component
  * and execute the login and forgot password routines
  */
-@Injectable({
-    providedIn: 'root'
-})
+@Service()
 export class LoginService {
     private http = inject(HttpClient);
     private dotcmsEventsService = inject(DotcmsEventsService);

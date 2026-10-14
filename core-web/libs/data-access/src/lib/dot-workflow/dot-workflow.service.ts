@@ -1,7 +1,7 @@
 import { Observable, of } from 'rxjs';
 
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map, switchMap, take } from 'rxjs/operators';
 
@@ -17,7 +17,7 @@ import {
  * @export
  * @class DotWorkflowService
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class DotWorkflowService {
     private readonly WORKFLOW_URL = '/api/v1/workflow';
     private readonly httpClient: HttpClient = inject(HttpClient);

@@ -1,11 +1,11 @@
 import { lastValueFrom } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { Product } from './Product.interface';
 
-@Injectable()
+@Service({ autoProvided: false })
 export class ProductService {
     private http = inject(HttpClient);
 

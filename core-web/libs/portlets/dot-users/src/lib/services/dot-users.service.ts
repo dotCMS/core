@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
@@ -218,7 +218,7 @@ export interface DotUsersPaginatedParams {
     includeRoles?: boolean;
 }
 
-@Injectable({ providedIn: 'root' })
+@Service()
 export class DotUsersService {
     readonly #http = inject(HttpClient);
 

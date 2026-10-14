@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
@@ -33,7 +33,7 @@ import {
 /** dotCMS proxy resource — the browser's same-origin entry point. */
 const AGENT_BASE = '/api/v1/agents/a11y';
 
-@Injectable()
+@Service({ autoProvided: false })
 export class DotA11yAgentService {
     readonly #runService = inject(DotAgentRunService);
 

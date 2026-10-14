@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { Event, NavigationEnd, Router } from '@angular/router';
 
@@ -14,7 +14,7 @@ import { GlobalStore } from '@dotcms/store';
 import { DotMenuService } from '../../../../api/services/dot-menu.service';
 import { DynamicRouteService } from '../../../../api/services/dynamic-route.service';
 
-@Injectable()
+@Service({ autoProvided: false })
 export class DotNavigationService {
     private dotIframeService = inject(DotIframeService);
     private dotMenuService = inject(DotMenuService);

@@ -1,7 +1,7 @@
 import { Observable, of } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import {
     ActivatedRouteSnapshot,
     CanActivate,
@@ -49,7 +49,7 @@ type ReplacedUrl =
 /**
  * Route Guard that checks if a User have access to the specified Menu portlet.
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class MenuGuardService implements CanActivate {
     private dotMenuService = inject(DotMenuService);
     private dotRouterService = inject(DotRouterService);

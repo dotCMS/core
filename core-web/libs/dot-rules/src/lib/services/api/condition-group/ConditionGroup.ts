@@ -1,7 +1,7 @@
 import { from as observableFrom, EMPTY, Subject, Observable } from 'rxjs';
 
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { reduce, mergeMap, catchError, map } from 'rxjs/operators';
 
@@ -20,7 +20,7 @@ interface ConditionGroupResponseJson {
     id: string;
 }
 
-@Injectable()
+@Service({ autoProvided: false })
 export class ConditionGroupService {
     private http = inject(HttpClient);
     private loggerService = inject(LoggerService);

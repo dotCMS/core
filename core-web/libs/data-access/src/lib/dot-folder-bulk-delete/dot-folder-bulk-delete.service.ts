@@ -1,7 +1,7 @@
 import { Observable, throwError } from 'rxjs';
 
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { catchError, map } from 'rxjs/operators';
 
@@ -75,7 +75,7 @@ const QUEUE_NAME = 'folderBulkDelete';
  * `specs/37063-bulk-folder-delete-frontend/contracts/client-requirements.md`. That feature's
  * `quickstart.md` carries the first-contact checklist for the day the real endpoint answers.
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class DotFolderBulkDeleteService {
     readonly #http = inject(HttpClient);
     readonly #jobQueueService = inject(DotJobQueueService);

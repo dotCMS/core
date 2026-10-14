@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
@@ -10,7 +10,7 @@ import { DotCMSContentTypeField, DotCMSResponse, DotFieldVariable } from '@dotcm
 /**
  * Provide method to handle with the Field Variables
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class DotFieldVariablesService {
     private http = inject(HttpClient);
 

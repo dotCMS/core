@@ -1,7 +1,7 @@
 import { defer as observableDefer, Observer, Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { catchError } from 'rxjs/operators';
 
@@ -92,7 +92,7 @@ export class TreeNode {
     }
 }
 
-@Injectable()
+@Service({ autoProvided: false })
 export class I18nService {
     private http = inject(HttpClient);
     private loggerService = inject(LoggerService);

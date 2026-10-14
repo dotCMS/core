@@ -1,7 +1,7 @@
 import { BehaviorSubject, Observable, from as observableFrom, Subject } from 'rxjs';
 
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map, mergeMap, reduce, tap } from 'rxjs/operators';
 // tslint:disable-next-line:max-file-line-count
@@ -252,7 +252,7 @@ export const DEFAULT_RULE: IRule = {
 };
 
 // @dynamic
-@Injectable()
+@Service({ autoProvided: false })
 export class RuleService {
     _apiRoot = inject(ApiRoot);
     private _resources = inject(I18nService);

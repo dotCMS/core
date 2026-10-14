@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { catchError, map, take } from 'rxjs/operators';
 
@@ -23,7 +23,7 @@ export interface DotAccountUser {
     email: string;
 }
 
-@Injectable()
+@Service({ autoProvided: false })
 export class DotAccountService {
     private http = inject(HttpClient);
     private httpErrorManagerService = inject(DotHttpErrorManagerService);

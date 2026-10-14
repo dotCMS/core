@@ -1,7 +1,7 @@
 import { Observable, of } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map, shareReplay, take, tap } from 'rxjs/operators';
 
@@ -19,9 +19,7 @@ const LANGUAGE_LOCALSTORAGE_KEY = 'dotMessagesKeys-lang';
 const MESSAGES_LOCALSTORAGE_KEY = 'dotMessagesKeys';
 const BUILDATE_LOCALSTORAGE_KEY = 'buildDate';
 
-@Injectable({
-    providedIn: 'root'
-})
+@Service()
 export class DotMessageService {
     private readonly http = inject(HttpClient);
     private readonly dotLocalstorageService = inject(DotLocalstorageService);

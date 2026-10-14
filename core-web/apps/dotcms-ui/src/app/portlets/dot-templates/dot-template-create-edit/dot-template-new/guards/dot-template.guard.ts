@@ -1,9 +1,9 @@
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { CanLoad, Route, UrlSegment } from '@angular/router';
 
 import { DotRouterService } from '@dotcms/data-access';
 
-@Injectable()
+@Service({ autoProvided: false })
 export class DotTemplateGuard implements CanLoad {
     private dotRouterService = inject(DotRouterService);
 

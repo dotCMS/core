@@ -8,7 +8,7 @@ import {
     parse
 } from 'date-fns';
 
-import { inject, Injectable, Signal } from '@angular/core';
+import { inject, Signal, Service } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 
 import { DotcmsConfigService, DotTimeZone, LoginService } from '@dotcms/dotcms-js';
@@ -21,9 +21,7 @@ const INVALID_DATE_MSG = 'Invalid date';
 export function _isValid(date: string, formatPattern: string) {
     return isValid(parse(date, formatPattern, new Date()));
 }
-@Injectable({
-    providedIn: 'root'
-})
+@Service()
 export class DotFormatDateService {
     private loginService = inject(LoginService);
     private dotcmsConfigService = inject(DotcmsConfigService);

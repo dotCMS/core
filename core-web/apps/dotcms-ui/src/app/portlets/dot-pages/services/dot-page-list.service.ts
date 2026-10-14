@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
@@ -19,7 +19,7 @@ export interface ListPagesParams {
     archived: boolean;
 }
 
-@Injectable()
+@Service({ autoProvided: false })
 export class DotPageListService {
     readonly #http = inject(HttpClient);
     readonly #url = '/api/content/_search';

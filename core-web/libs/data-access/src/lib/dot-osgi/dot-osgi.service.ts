@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { DotCMSAPIResponse } from '@dotcms/dotcms-models';
 
@@ -9,9 +9,7 @@ import { BundleMap } from './bundle-map.model';
 
 const OSGI_BASE = '/api/v1/osgi';
 
-@Injectable({
-    providedIn: 'root'
-})
+@Service()
 export class DotOsgiService {
     readonly #http = inject(HttpClient);
 

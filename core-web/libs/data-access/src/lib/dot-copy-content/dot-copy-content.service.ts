@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map, shareReplay } from 'rxjs/operators';
 
@@ -11,9 +11,7 @@ export const DEFAULT_PERSONALIZATION = 'dot:default';
 
 const API_ENDPOINT = `/api/v1/page/copyContent`;
 
-@Injectable({
-    providedIn: 'root'
-})
+@Service()
 export class DotCopyContentService {
     private readonly http = inject(HttpClient);
 

@@ -1,4 +1,4 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { filter, take } from 'rxjs/operators';
 
@@ -18,7 +18,7 @@ import { DynamicRouteService } from './dynamic-route.service';
  * const count = await this.dynamicRouteInitializer.initialize();
  * console.log(`Registered ${count} dynamic routes`);
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class DynamicRouteInitializerService {
     private readonly menuService = inject(DotMenuService);
     private readonly dynamicRouteService = inject(DynamicRouteService);

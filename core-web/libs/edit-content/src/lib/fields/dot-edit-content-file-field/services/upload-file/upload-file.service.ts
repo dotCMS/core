@@ -1,6 +1,6 @@
 import { from, Observable } from 'rxjs';
 
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map, switchMap, tap } from 'rxjs/operators';
 
@@ -18,7 +18,7 @@ export type UploadFileProps = {
     abortSignal?: AbortSignal;
 };
 
-@Injectable()
+@Service({ autoProvided: false })
 export class DotFileFieldUploadService {
     readonly #fileService = inject(DotUploadFileService);
     readonly #tempFileService = inject(DotUploadService);

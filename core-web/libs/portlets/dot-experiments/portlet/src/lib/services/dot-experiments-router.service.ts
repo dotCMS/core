@@ -1,4 +1,4 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { ActivatedRoute, Params, Router } from '@angular/router';
 
 import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
@@ -41,7 +41,7 @@ import {
  * screens rather than a move between them, it suspends the panel on the way, and the return is the
  * toolbar's. Folding it in would make this the place where two unrelated ideas meet.
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class DotExperimentsRouter {
     readonly #panel = inject(DotExperimentsPanelStore, { optional: true });
     readonly #router = inject(Router);

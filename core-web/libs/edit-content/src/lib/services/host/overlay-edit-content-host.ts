@@ -1,6 +1,6 @@
 import { Subject } from 'rxjs';
 
-import { Injectable, OnDestroy, computed, inject, signal } from '@angular/core';
+import { OnDestroy, computed, inject, signal, Service } from '@angular/core';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
@@ -37,7 +37,7 @@ import {
  * Presentation-agnostic across overlays: the same host backs both the dialog and a
  * side panel — only the chrome (the component that provides it) differs.
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class OverlayEditContentHost implements EditContentHost, OnDestroy {
     readonly #relatedNav = inject(DotRelatedContentNavigationStore);
     readonly #config = inject(DynamicDialogConfig, { optional: true });

@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
@@ -11,7 +11,7 @@ interface SearchEnvelope {
     entity: QueryToolSearchResponse;
 }
 
-@Injectable({ providedIn: 'root' })
+@Service()
 export class DotQueryToolService {
     readonly #http = inject(HttpClient);
 

@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { filter, mergeMap, toArray } from 'rxjs/operators';
 
@@ -22,7 +22,7 @@ import { DotFormatDateService } from '../dot-format-date/dot-format-date.service
  * @export
  * @class PushPublishService
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class PushPublishService {
     _apiRoot = inject(ApiRoot);
     private http = inject(HttpClient);

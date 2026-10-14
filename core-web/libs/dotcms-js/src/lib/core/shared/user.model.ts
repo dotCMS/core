@@ -1,8 +1,8 @@
-import { Injectable, LOCALE_ID, inject } from '@angular/core';
+import { LOCALE_ID, inject, Service } from '@angular/core';
 
 import { LoggerService } from '../logger.service';
 
-@Injectable()
+@Service({ autoProvided: false })
 export class UserModel {
     private loggerService = inject(LoggerService);
 

@@ -1,9 +1,7 @@
 import { BehaviorSubject } from 'rxjs';
 
-import { Injectable } from '@angular/core';
-@Injectable({
-    providedIn: 'root'
-})
+import { Service } from '@angular/core';
+@Service()
 export class DotNavLogoService {
     navBarLogo$: BehaviorSubject<string> = new BehaviorSubject('');
 

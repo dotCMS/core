@@ -1,8 +1,8 @@
 import { Observable, Subject } from 'rxjs';
 
-import { Injectable } from '@angular/core';
+import { Service } from '@angular/core';
 
-@Injectable()
+@Service({ autoProvided: false })
 export class DotGenerateSecurePasswordService {
     private data: Subject<{ [key: string]: string }> = new Subject<{ [key: string]: string }>();
 

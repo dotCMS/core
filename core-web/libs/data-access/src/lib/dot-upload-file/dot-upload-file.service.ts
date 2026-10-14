@@ -1,7 +1,7 @@
 import { from, Observable, of, throwError } from 'rxjs';
 
 import { HttpClient, HttpEventType, HttpResponse } from '@angular/common/http';
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { catchError, filter, map, switchMap } from 'rxjs/operators';
 
@@ -41,7 +41,7 @@ interface PublishContentProps {
  * @export
  * @class DotImageService
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class DotUploadFileService {
     readonly #BASE_URL = '/api/v1/workflow/actions/default';
     /** The batch endpoint. Job-backed, so it answers a handle rather than a contentlet. */

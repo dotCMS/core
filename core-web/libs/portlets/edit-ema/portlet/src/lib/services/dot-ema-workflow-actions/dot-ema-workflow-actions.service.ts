@@ -1,7 +1,7 @@
 import { Observable, of } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
 
@@ -50,7 +50,7 @@ export const WORKFLOW_STEP_MAP: { [key in DotWizardComponentEnum]: boolean } = {
     pushPublish: true
 };
 
-@Injectable()
+@Service({ autoProvided: false })
 export class DotEmaWorkflowActionsService {
     private pushPublishService = inject(PushPublishService);
     private dotMessageService = inject(DotMessageService);

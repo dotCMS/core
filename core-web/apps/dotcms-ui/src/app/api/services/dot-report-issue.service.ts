@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
@@ -64,7 +64,7 @@ export interface DotReportIssueContentlet extends DotCMSContentlet {
 /**
  * Client service for creating issue reports through the core backend endpoint.
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class DotReportIssueService {
     private readonly http = inject(HttpClient);
 

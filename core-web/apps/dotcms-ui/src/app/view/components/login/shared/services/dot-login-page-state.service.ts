@@ -1,6 +1,6 @@
 import { BehaviorSubject, Observable } from 'rxjs';
 
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map, take, tap } from 'rxjs/operators';
 
@@ -34,7 +34,7 @@ export const LOGIN_LABELS = [
     'message.successfully.logout'
 ];
 
-@Injectable()
+@Service({ autoProvided: false })
 export class DotLoginPageStateService {
     private loginService = inject(LoginService);
 

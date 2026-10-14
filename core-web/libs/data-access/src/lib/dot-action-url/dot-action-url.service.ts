@@ -1,11 +1,11 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
-@Injectable({ providedIn: 'root' })
+@Service()
 export class DotActionUrlService {
     private http = inject(HttpClient);
 

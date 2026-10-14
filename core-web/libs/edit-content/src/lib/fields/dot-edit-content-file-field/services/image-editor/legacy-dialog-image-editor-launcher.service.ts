@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
@@ -32,7 +32,7 @@ interface ImageEditorMessage {
  * web component inside the Dojo `edit_field.jsp`), the new editor has no global
  * `binaryField-open-image-editor` listener, so it embeds the editor itself.
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class LegacyDialogImageEditorLauncher implements ImageEditorLauncher {
     readonly #dialogService = inject(DialogService);
     readonly #dotMessageService = inject(DotMessageService);

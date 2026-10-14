@@ -1,7 +1,7 @@
 import { Observable, of, Subject } from 'rxjs';
 
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { catchError, filter, map, mergeMap, take } from 'rxjs/operators';
 
@@ -27,9 +27,7 @@ export interface DotEditorAction {
  * @export
  * @class DotContentletEditorService
  */
-@Injectable({
-    providedIn: 'root'
-})
+@Service()
 export class DotContentletEditorService {
     private http = inject(HttpClient);
     private httpErrorManagerService = inject(DotHttpErrorManagerService);

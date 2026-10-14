@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { StringUtils } from './string-utils.service';
 import { HttpRequestUtils } from './util/http-request-utils';
@@ -10,7 +10,7 @@ const DEV_MODE_PARAM = 'devMode';
  * LoggerService to log.  Allows logger to be changed at runtime
  * To set the logger level in the console run logger.level=logger.Level.DEBUG
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class LoggerService {
     private stringUtils = inject(StringUtils);
 

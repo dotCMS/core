@@ -2,7 +2,7 @@ import { JsonObject } from '@angular-devkit/core';
 import { Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
@@ -11,7 +11,7 @@ import { AnalyticsQueryType } from '@dotcms/dotcms-models';
 /**
  * Service for performing analytics search operations.
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class DotAnalyticsSearchService {
     /**
      * URL for analytics content search with DotCMS standards.

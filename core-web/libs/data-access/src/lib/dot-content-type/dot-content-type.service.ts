@@ -3,7 +3,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { defaultIfEmpty, filter, mergeMap, map, take, toArray } from 'rxjs/operators';
 
@@ -36,7 +36,7 @@ const generateContentTypeFilter = (type: string, baseParams?: HttpParams): HttpP
     return params;
 };
 
-@Injectable()
+@Service({ autoProvided: false })
 export class DotContentTypeService {
     readonly #httpClient = inject(HttpClient);
 

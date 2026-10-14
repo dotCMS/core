@@ -1,8 +1,8 @@
-import { Injectable } from '@angular/core';
+import { Service } from '@angular/core';
 /**
  * Encapsulate string utils methods.
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class StringUtils {
     /**
      * Get from text, the line number (indexLine), null if it does not exists.

@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
@@ -13,7 +13,7 @@ export interface DotCMSPageWorkflowState {
     actions: DotCMSWorkflowAction[];
     page: DotCMSContentlet;
 }
-@Injectable()
+@Service({ autoProvided: false })
 export class DotPageWorkflowsActionsService {
     private http = inject(HttpClient);
 

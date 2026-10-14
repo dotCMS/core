@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { catchError, map } from 'rxjs/operators';
 
@@ -68,9 +68,7 @@ export interface UsageErrorResponse {
     readonly statusText?: string;
 }
 
-@Injectable({
-    providedIn: 'root'
-})
+@Service()
 export class DotUsageService {
     #BASE_URL = '/api/v1/usage';
     #http = inject(HttpClient);

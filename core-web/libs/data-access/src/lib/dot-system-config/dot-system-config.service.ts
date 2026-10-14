@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
@@ -25,7 +25,7 @@ import { DotSystemConfig, SystemConfigResponse } from '@dotcms/dotcms-models';
  * });
  * ```
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class DotSystemConfigService {
     private readonly http = inject(HttpClient);
 

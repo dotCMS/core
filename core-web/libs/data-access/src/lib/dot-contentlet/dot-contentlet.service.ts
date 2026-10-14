@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map, switchMap } from 'rxjs/operators';
 
@@ -14,9 +14,7 @@ import {
 
 import { DotUploadFileService } from '../dot-upload-file/dot-upload-file.service';
 
-@Injectable({
-    providedIn: 'root'
-})
+@Service()
 export class DotContentletService {
     readonly #http = inject(HttpClient);
     readonly #dotUploadFileService = inject(DotUploadFileService);

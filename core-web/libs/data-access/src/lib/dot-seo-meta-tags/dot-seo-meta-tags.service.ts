@@ -1,6 +1,6 @@
 import { forkJoin, Observable, of } from 'rxjs';
 
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { map, switchMap } from 'rxjs/operators';
 
@@ -20,7 +20,7 @@ import {
 import { DotMessageService } from '../dot-messages/dot-messages.service';
 import { DotSeoMetaTagsUtilService } from '../dot-seo-meta-tags-utils/dot-seo-meta-tags-util.service';
 
-@Injectable()
+@Service({ autoProvided: false })
 export class DotSeoMetaTagsService {
     private dotMessageService = inject(DotMessageService);
     private dotSeoMetaTagsUtilService = inject(DotSeoMetaTagsUtilService);

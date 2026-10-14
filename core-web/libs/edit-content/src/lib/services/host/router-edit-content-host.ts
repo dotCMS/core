@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable, inject } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { NavigationEnd, Router } from '@angular/router';
 
@@ -30,7 +30,7 @@ const DEFAULT_TITLE_PLATFORM = 'dotcms.content.management.platform.title';
  * Provided by the edit-content shell so it is inherited by the layout component
  * and its store.
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class RouterEditContentHost implements EditContentHost {
     readonly #router = inject(Router);
     readonly #title = inject(Title);

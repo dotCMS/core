@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Service } from '@angular/core';
 
 /**
  * Clipboard utils
@@ -6,7 +6,7 @@ import { Injectable } from '@angular/core';
  * @export
  * @class DotClipboardUtil
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class DotClipboardUtil {
     /**
      * Copy the passed string to the clipboard
