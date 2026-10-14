@@ -572,12 +572,12 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 return labels(component.$items());
             };
 
-            it('should offer Edit Source right after Edit Content on a Velocity file', async () => {
+            it('should offer Edit Code right after Edit Content on a Velocity file', async () => {
                 const items = await openMenuFor(velocityFile());
 
                 expect(items.slice(1, 3)).toEqual([
                     'content-drive.context-menu.edit-content',
-                    'content-drive.context-menu.edit-source'
+                    'content-drive.context-menu.edit-code'
                 ]);
             });
 
@@ -585,7 +585,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 const file = velocityFile();
                 await openMenuFor(file);
 
-                invoke(component.$items(), 'content-drive.context-menu.edit-source');
+                invoke(component.$items(), 'content-drive.context-menu.edit-code');
 
                 expect(store.sourceEditor()).toEqual({
                     inode: file.inode,
@@ -594,38 +594,38 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 });
             });
 
-            it('should not offer Edit Source on a file type it does not edit yet', async () => {
+            it('should not offer Edit Code on a file type it does not edit yet', async () => {
                 const items = await openMenuFor(velocityFile({ extension: 'png' }));
 
-                expect(items).not.toContain('content-drive.context-menu.edit-source');
+                expect(items).not.toContain('content-drive.context-menu.edit-code');
             });
 
-            it('should not offer Edit Source on content that is not a file', async () => {
+            it('should not offer Edit Code on content that is not a file', async () => {
                 const items = await openMenuFor(createFakeContentlet({ permissions: everything }));
 
-                expect(items).not.toContain('content-drive.context-menu.edit-source');
+                expect(items).not.toContain('content-drive.context-menu.edit-code');
             });
 
             // Edit permission is the server's half of `canLock`, so the menu reads it from there,
             // the same answer the page editor gets.
-            it('should not offer Edit Source when the user cannot edit the file', async () => {
+            it('should not offer Edit Code when the user cannot edit the file', async () => {
                 dotContentletService.canLock.mockReturnValueOnce(
                     of(createMockCanLock(false, false))
                 );
 
                 const items = await openMenuFor(velocityFile());
 
-                expect(items).not.toContain('content-drive.context-menu.edit-source');
+                expect(items).not.toContain('content-drive.context-menu.edit-code');
             });
 
-            it('should not offer Edit Source on a file another user has locked', async () => {
+            it('should not offer Edit Code on a file another user has locked', async () => {
                 dotContentletService.canLock.mockReturnValueOnce(
                     of(createMockCanLock(false, true))
                 );
 
                 const items = await openMenuFor(velocityFile());
 
-                expect(items).not.toContain('content-drive.context-menu.edit-source');
+                expect(items).not.toContain('content-drive.context-menu.edit-code');
             });
         });
 

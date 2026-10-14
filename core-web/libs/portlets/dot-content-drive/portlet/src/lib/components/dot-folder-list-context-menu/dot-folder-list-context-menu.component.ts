@@ -416,7 +416,7 @@ export class DotFolderListViewContextMenuComponent {
 
         if (sourceEditorRequest) {
             actionsMenu.push({
-                label: this.#dotMessageService.get('content-drive.context-menu.edit-source'),
+                label: this.#dotMessageService.get('content-drive.context-menu.edit-code'),
                 command: () => this.#store.openSourceEditor(sourceEditorRequest)
             });
         }
