@@ -10,23 +10,14 @@
 
 **Related GitHub Issue**: [#37900](https://github.com/dotCMS/core/issues/37900)
 
-**Input**: User description: "https://github.com/dotCMS/core/issues/37900 — Content Drive: Add content export. Open points to capture from the previous analysis: (1) zip entries can't be interleaved and scroll runs in batches, so the same content type can appear in several batches — writing strategy (sort by contentType vs temp CSV per type) is a plan decision, but the spec must require one CSV per type with no duplicate headers; (2) the zip filename `<name>_export_<M_d_yyyy>.zip` doesn't define `<name>` for a mixed selection; (3) the rule \"readable contentlet inside unreadable folder is exported when selected directly\" has not been reproduced with a limited user yet; (4) the legacy writer does N+1 lookups per row (categories, tags, relationships, identifiers) — parity is required, performance is not in scope but should be noted."
-
-**Refined with the developer and the team (2026-10-14)**:
-
-- **Feature parity with Content Search comes first.** Whatever the Content Search export supports,
-  Drive must support (filter mode). With the listing filtered to exactly one content type, Export
-  downloads every result of the listing's filters (site or folder, language, workflow, status,
-  text, Include System Host), without paging, as one CSV.
-- **Selection is a new, additional capability** (selection mode): folders and contentlets of
-  several content types, exported as a zip with one CSV per content type.
-- Both are in scope, delivered parity first, then selection.
-- The Content Search CSV format and file name are reused: `<ContentType>_contents_<M_d_yyyy>.csv`.
-  The zip is `<SiteName>_export_<M_d_yyyy>.zip`.
-- The 100,000-row limit is kept in both modes, but a bigger export is refused with a clear message
-  instead of truncated.
-- When there is a selection, the selection wins over the filter.
-- A selection can hold at most 60 items (folders and contentlets together).
+**Input**: [#37900](https://github.com/dotCMS/core/issues/37900) — Content Drive: Add content export.
+Bring the Content Search CSV export to Drive with feature parity first (filter mode: exactly one
+content type, every result of the listing's location and filters, as one CSV), then add selection
+as new capability (selection mode: up to 60 folders and contentlets of any content types, as a zip
+with one CSV per content type). Both reuse the Content Search CSV writer and file names
+(`<ContentType>_contents_<M_d_yyyy>.csv`; the zip is `<SiteName>_export_<M_d_yyyy>.zip`), keep the
+100,000-row limit but refuse bigger exports instead of truncating them, and let the selection win
+over the filter.
 
 ## Context
 
