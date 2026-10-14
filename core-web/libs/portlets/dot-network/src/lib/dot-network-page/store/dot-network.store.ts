@@ -17,13 +17,13 @@ import { exhaustMap, tap } from 'rxjs/operators';
 
 import { DotClusterService, DotHttpErrorManagerService } from '@dotcms/data-access';
 import { ComponentStatus, DotClusterNode, DotClusterNodes } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 
 interface DotNetworkState {
     nodes: DotClusterNode[];
     currentServerId: string;
     selectedServerId: string | null;
     licensed: boolean;
-    heartbeatEnabled: boolean;
     status: ComponentStatus;
 }
 
@@ -32,7 +32,6 @@ const initialState: DotNetworkState = {
     currentServerId: '',
     selectedServerId: null,
     licensed: true,
-    heartbeatEnabled: true,
     status: ComponentStatus.INIT
 };
 
@@ -73,7 +72,7 @@ function currentNodeFirst(nodes: DotClusterNode[], currentServerId: string): Dot
 
 export const DotNetworkStore = signalStore(
     withState<DotNetworkState>(initialState),
-    withComputed((store) => {
+    withComputed((store, globalStore = inject(GlobalStore)) => {
         const hasNodes = computed(() => store.nodes().length > 0);
         const isLoading = computed(() => store.status() === ComponentStatus.LOADING);
         const isLoaded = computed(() => store.status() === ComponentStatus.LOADED);
@@ -97,8 +96,13 @@ export const DotNetworkStore = signalStore(
              * Follows the data on screen, including while refreshing or after a failed refresh.
              * Never shown on its own: no nodes or no license have their own state.
              */
+            // The flag comes from the app configuration (`cluster.heartbeatEnabled`), not from
+            // the node response. Absent on older instances, which counts as on.
             showHeartbeatNotice: computed(
-                () => store.licensed() && hasNodes() && !store.heartbeatEnabled()
+                () =>
+                    store.licensed() &&
+                    hasNodes() &&
+                    globalStore.systemCluster()?.heartbeatEnabled === false
             )
         };
     }),
@@ -124,7 +128,6 @@ export const DotNetworkStore = signalStore(
                                         nodes: result.nodes,
                                         currentServerId: result.currentServerId,
                                         licensed: true,
-                                        heartbeatEnabled: result.heartbeatEnabled,
                                         selectedServerId: resolveSelection(
                                             store.selectedServerId(),
                                             result

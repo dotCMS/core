@@ -3,9 +3,11 @@ import { of, Subject, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
+import { signal } from '@angular/core';
 
 import { DotClusterService, DotHttpErrorManagerService } from '@dotcms/data-access';
-import { DotClusterNodes } from '@dotcms/dotcms-models';
+import { DotCluster, DotClusterNodes } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 
 import { DotNetworkStore } from './dot-network.store';
 
@@ -16,10 +18,16 @@ const OTHER = createNode({ serverId: 'other', displayServerId: 'other' });
 const DOWN = createDownNode({ serverId: 'down', displayServerId: 'down' });
 
 const RESPONSE: DotClusterNodes = {
-    heartbeatEnabled: true,
     currentServerId: 'current',
     nodes: [OTHER, DOWN, CURRENT]
 };
+
+/** `appconfiguration` → `cluster`, as the GlobalStore exposes it (#38032 AC-012). */
+const systemCluster = signal<(DotCluster & { heartbeatEnabled?: boolean }) | null>({
+    clusterId: 'c1',
+    companyKeyDigest: 'k',
+    heartbeatEnabled: true
+});
 
 describe('DotNetworkStore', () => {
     let spectator: SpectatorService<InstanceType<typeof DotNetworkStore>>;
@@ -28,10 +36,19 @@ describe('DotNetworkStore', () => {
 
     const createService = createServiceFactory({
         service: DotNetworkStore,
-        providers: [mockProvider(DotHttpErrorManagerService)]
+        providers: [
+            mockProvider(DotHttpErrorManagerService),
+            // A getter, so the store reads the live signal (same shape as dot-ai.store.spec).
+            mockProvider(GlobalStore, {
+                get systemCluster() {
+                    return systemCluster;
+                }
+            })
+        ]
     });
 
     beforeEach(() => {
+        systemCluster.set({ clusterId: 'c1', companyKeyDigest: 'k', heartbeatEnabled: true });
         // Fresh mocks per test: call counts and return values must not leak between tests.
         spectator = createService({
             providers: [
@@ -130,13 +147,9 @@ describe('DotNetworkStore', () => {
         expect(store.showUnlicensed()).toBe(false);
     });
 
-    describe('heartbeat notice (FR-047)', () => {
-        it('should show the notice when the heartbeat feature is off and nodes are shown', () => {
-            vi.mocked(clusterService.getNodes).mockReturnValue(
-                of({ ...RESPONSE, heartbeatEnabled: false })
-            );
-
-            store.load();
+    describe('heartbeat notice (FR-047), read from the app configuration', () => {
+        it('should show the notice when the app configuration reports the heartbeat feature off', () => {
+            systemCluster.set({ clusterId: 'c1', companyKeyDigest: 'k', heartbeatEnabled: false });
 
             expect(store.showHeartbeatNotice()).toBe(true);
         });
@@ -145,11 +158,28 @@ describe('DotNetworkStore', () => {
             expect(store.showHeartbeatNotice()).toBe(false);
         });
 
-        it('should not show the notice when there are no nodes', () => {
+        it('should treat a missing flag (older instance) as on', () => {
+            systemCluster.set({ clusterId: 'c1', companyKeyDigest: 'k' });
+
+            expect(store.showHeartbeatNotice()).toBe(false);
+        });
+
+        it('should ignore any heartbeat value in the node response', () => {
             vi.mocked(clusterService.getNodes).mockReturnValue(
-                of({ ...RESPONSE, heartbeatEnabled: false, nodes: [] })
+                of({ ...RESPONSE, heartbeatEnabled: false } as DotClusterNodes)
             );
+
             store.load();
+
+            expect(store.showHeartbeatNotice()).toBe(false);
+        });
+
+        it('should not show the notice when there are no nodes', () => {
+            systemCluster.set({ clusterId: 'c1', companyKeyDigest: 'k', heartbeatEnabled: false });
+            vi.mocked(clusterService.getNodes).mockReturnValue(of({ ...RESPONSE, nodes: [] }));
+
+            store.load();
+
             expect(store.showHeartbeatNotice()).toBe(false);
         });
     });
@@ -210,7 +240,12 @@ describe('DotNetworkStore — first load fails', () => {
                     .fn()
                     .mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })))
             }),
-            mockProvider(DotHttpErrorManagerService)
+            mockProvider(DotHttpErrorManagerService),
+            mockProvider(GlobalStore, {
+                get systemCluster() {
+                    return systemCluster;
+                }
+            })
         ]
     });
 

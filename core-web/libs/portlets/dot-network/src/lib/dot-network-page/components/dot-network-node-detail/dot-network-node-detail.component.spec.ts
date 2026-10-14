@@ -190,5 +190,31 @@ describe('DotNetworkNodeDetailComponent', () => {
                 true
             );
         });
+
+        it('should show placeholders when its sections are null, as the backend sends them (#38032)', () => {
+            spectator.setInput('node', createDownNode({ cache: null, search: null, assets: null }));
+
+            expect(spectator.query(byTestId('network-detail-not-responding'))).toExist();
+            for (const section of [
+                'network-section-cache',
+                'network-section-search',
+                'network-section-assets'
+            ]) {
+                const values = sectionValues(spectator, section);
+                expect(values.length).toBeGreaterThan(0);
+                expect(values.every((value) => value === '—')).toBe(true);
+            }
+        });
+    });
+
+    it('should show a placeholder for a missing name, IP address or version (FR-052)', () => {
+        spectator.setInput('node', createNode({ name: null, ipAddress: null, version: null }));
+
+        expect(spectator.query(byTestId('network-detail-name'))).toHaveText('—');
+        const tiles = spectator
+            .queryAll(byTestId('network-tile-value'))
+            .map((el) => el.textContent?.trim());
+        expect(tiles[2]).toBe('—');
+        expect(tiles[3]).toBe('—');
     });
 });

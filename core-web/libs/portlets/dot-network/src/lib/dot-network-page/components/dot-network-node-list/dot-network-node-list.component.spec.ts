@@ -108,6 +108,12 @@ describe('DotNetworkNodeListComponent', () => {
         expect(emitted).toBe(false);
     });
 
+    it('should show a placeholder when a node has no name (FR-052)', () => {
+        spectator.setInput('nodes', [createNode({ name: null })]);
+
+        expect(spectator.query(byTestId('network-node-name'))).toHaveText('—');
+    });
+
     it('should say when a node never wrote a heartbeat', () => {
         spectator.setInput('nodes', [createDownNode({ lastContactSeconds: null })]);
 

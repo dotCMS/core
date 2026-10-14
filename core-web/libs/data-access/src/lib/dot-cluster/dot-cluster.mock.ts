@@ -58,7 +58,6 @@ function answeringNode(
 }
 
 export const DOT_CLUSTER_NODES_MOCK: DotClusterNodes = {
-    heartbeatEnabled: true,
     currentServerId: '10b10fa5-7d2c-4c51-9a3e-2f6c1b8e0d41',
     nodes: [
         answeringNode({
@@ -94,34 +93,9 @@ export const DOT_CLUSTER_NODES_MOCK: DotClusterNodes = {
             lastContactSeconds: 540,
             responded: false,
             status: 'DOWN',
-            cache: {
-                clusterName: null,
-                transport: null,
-                numberOfNodes: null,
-                open: null,
-                address: null,
-                port: null,
-                receivedBytes: null,
-                sentBytes: null
-            },
-            search: {
-                engine: null,
-                clusterName: null,
-                timedOut: null,
-                numberOfNodes: null,
-                numberOfDataNodes: null,
-                activePrimaryShards: null,
-                activeShards: null,
-                relocatingShards: null,
-                initializingShards: null,
-                unassignedShards: null,
-                delayedUnassignedShards: null,
-                numberOfPendingTasks: null,
-                numberOfInFlightFetch: null,
-                taskMaxWaitingInQueueMillis: null,
-                activeShardsPercent: null
-            },
-            assets: { path: null, canRead: null, canWrite: null }
+            cache: null,
+            search: null,
+            assets: null
         }
     ]
 };

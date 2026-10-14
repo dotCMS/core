@@ -49,8 +49,6 @@ export function createNode(overrides: Partial<DotClusterNode> = {}): DotClusterN
 
 /** A node that did not answer: identity only, every section value empty. */
 export function createDownNode(overrides: Partial<DotClusterNode> = {}): DotClusterNode {
-    const base = createNode();
-
     return createNode({
         serverId: 'e93aa517-full-id',
         displayServerId: 'e93aa517',
@@ -60,34 +58,9 @@ export function createDownNode(overrides: Partial<DotClusterNode> = {}): DotClus
         lastContactSeconds: 720,
         responded: false,
         status: 'DOWN',
-        cache: {
-            ...base.cache,
-            clusterName: null,
-            transport: null,
-            numberOfNodes: null,
-            open: null,
-            address: null,
-            receivedBytes: null,
-            sentBytes: null
-        },
-        search: {
-            engine: null,
-            clusterName: null,
-            timedOut: null,
-            numberOfNodes: null,
-            numberOfDataNodes: null,
-            activePrimaryShards: null,
-            activeShards: null,
-            relocatingShards: null,
-            initializingShards: null,
-            unassignedShards: null,
-            delayedUnassignedShards: null,
-            numberOfPendingTasks: null,
-            numberOfInFlightFetch: null,
-            taskMaxWaitingInQueueMillis: null,
-            activeShardsPercent: null
-        },
-        assets: { path: null, canRead: null, canWrite: null },
+        cache: null,
+        search: null,
+        assets: null,
         ...overrides
     });
 }
