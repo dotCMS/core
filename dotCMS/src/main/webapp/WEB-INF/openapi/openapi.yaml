@@ -11897,12 +11897,8 @@ paths:
         "401":
           content:
             application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - CMS Administrator role and Maintenance portlet
-            access required
+          description: "Unauthorized - not authenticated, or the user lacks the CMS\
+            \ Administrator role or access to the Maintenance portlet"
       summary: List failed reindex records
       tags:
       - Search Index
@@ -29434,13 +29430,16 @@ components:
           example: d5edd758f166259247356e7ea2deca4e
         inode:
           type: string
-          description: Inode of the version resolved for display; null if the content
-            no longer exists
+          description: "Inode of a version of the content, resolved only to show it;\
+            \ not necessarily the version that failed. The withheld version's inode\
+            \ is in violation.inode. Null if the content no longer exists"
           nullable: true
         languageId:
           type: integer
           format: int64
-          description: Language of the resolved version; null if unknown
+          description: Language of the version resolved for display; not necessarily
+            the version that failed. The withheld version's language is in violation.languageId.
+            Null if unknown
           example: 1
           nullable: true
         lastFailureReason:
@@ -29461,7 +29460,8 @@ components:
           example: 505
         title:
           type: string
-          description: Content title; null if the content no longer exists
+          description: Stored title of the version resolved for display; null if the
+            content no longer exists or no title is stored
           nullable: true
         violation:
           $ref: "#/components/schemas/ViolationView"
@@ -42276,7 +42276,8 @@ components:
           $ref: "#/components/schemas/Visitor"
     ViolationView:
       type: object
-      description: A document limit exceeded by the index document
+      description: "A document limit exceeded by the index document, and the version\
+        \ withheld for it"
       nullable: true
       properties:
         actual:
@@ -42293,6 +42294,15 @@ components:
           type: string
           description: Path of the offending field in the index document
           example: catchall
+        inode:
+          type: string
+          description: Inode of the withheld version
+          example: 9f8e7d6c-1111-2222-3333-444455556666
+        languageId:
+          type: integer
+          format: int64
+          description: Language of the withheld version
+          example: 1
         limit:
           type: string
           description: Which limit was exceeded

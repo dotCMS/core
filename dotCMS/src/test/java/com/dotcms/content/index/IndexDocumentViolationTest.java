@@ -10,26 +10,30 @@ import java.util.Optional;
 import org.junit.Test;
 
 /**
- * Unit tests for reading a {@link Violation} back from the journal reason written by
- * {@link IndexDocumentViolation#toFailureReason()} (#37269, AC-007).
+ * Unit tests for reading an {@link IndexDocumentViolation} back from the journal reason written
+ * by {@link IndexDocumentViolation#toFailureReason()} (#37269, AC-007).
  *
- * <p>The reindex journal stores the failure reason as text only, so the failed-records endpoint
- * recovers the field, length and limit from it. Writing and reading the format live in the same
- * class, and these tests pin the round trip.</p>
+ * <p>The reindex journal stores the failure reason as text only and keys its rows by identifier,
+ * so the reason is the only place that records which version was withheld. The failed-records
+ * endpoint recovers the identifier, inode, language, field, length and limit from it. Writing and
+ * reading the format live in the same class, and these tests pin the round trip.</p>
  */
 public class IndexDocumentViolationTest {
 
     /**
      * Given Scenario: The reason of a string-length violation.
-     * Expected Result: Reading it back yields the same kind, field, actual length and limit.
+     * Expected Result: Reading it back yields the same identifier, inode, language, kind, field,
+     * actual length and limit.
      */
     @Test
     public void test_stringLengthReason_roundTrips() {
-        final Violation written = new Violation(Kind.STRING_LENGTH, "catchall", 42_000_792L,
-                20_000_000L);
+        final IndexDocumentViolation written = new IndexDocumentViolation(
+                "d5edd758f166259247356e7ea2deca4e", "9f8e7d6c-1111-2222-3333-444455556666",
+                4_791_063L, new Violation(Kind.STRING_LENGTH, "catchall", 42_000_792L,
+                        20_000_000L));
 
-        final Optional<Violation> read = IndexDocumentViolation.violationOf(
-                new IndexDocumentViolation("id", "inode", 1L, written).toFailureReason());
+        final Optional<IndexDocumentViolation> read =
+                IndexDocumentViolation.violationOf(written.toFailureReason());
 
         assertEquals(Optional.of(written), read);
     }
@@ -40,11 +44,11 @@ public class IndexDocumentViolationTest {
      */
     @Test
     public void test_nestingDepthReason_roundTrips() {
-        final Violation written = new Violation(Kind.NESTING_DEPTH, "blocks.content[0].attrs", 1001L,
-                1000L);
+        final IndexDocumentViolation written = new IndexDocumentViolation("id", "inode", 1L,
+                new Violation(Kind.NESTING_DEPTH, "blocks.content[0].attrs", 1001L, 1000L));
 
-        final Optional<Violation> read = IndexDocumentViolation.violationOf(
-                new IndexDocumentViolation("id", "inode", 1L, written).toFailureReason());
+        final Optional<IndexDocumentViolation> read =
+                IndexDocumentViolation.violationOf(written.toFailureReason());
 
         assertEquals(Optional.of(written), read);
     }
@@ -56,11 +60,27 @@ public class IndexDocumentViolationTest {
      */
     @Test
     public void test_reasonWithTrailingError_stillReadsViolation() {
-        final Violation written = new Violation(Kind.STRING_LENGTH, "body", 25_000_000L, 20_000_000L);
-        final String reason = new IndexDocumentViolation("id", "inode", 1L, written).toFailureReason()
-                + "; primary rejected document";
+        final IndexDocumentViolation written = new IndexDocumentViolation("id", "inode", 1L,
+                new Violation(Kind.STRING_LENGTH, "body", 25_000_000L, 20_000_000L));
+        final String reason = written.toFailureReason() + "; primary rejected document";
 
         assertEquals(Optional.of(written), IndexDocumentViolation.violationOf(reason));
+    }
+
+    /**
+     * Given Scenario: The reason of an entry whose working and live versions were both withheld,
+     * joined with {@code "; "} as the reindex thread writes it.
+     * Expected Result: The first withheld version is read, with its own inode and language.
+     */
+    @Test
+    public void test_twoWithheldVersions_readsTheFirst() {
+        final IndexDocumentViolation first = new IndexDocumentViolation("id", "inode-working", 2L,
+                new Violation(Kind.STRING_LENGTH, "body", 25_000_000L, 20_000_000L));
+        final IndexDocumentViolation second = new IndexDocumentViolation("id", "inode-live", 1L,
+                new Violation(Kind.STRING_LENGTH, "catchall", 30_000_000L, 20_000_000L));
+        final String reason = first.toFailureReason() + "; " + second.toFailureReason();
+
+        assertEquals(Optional.of(first), IndexDocumentViolation.violationOf(reason));
     }
 
     /**

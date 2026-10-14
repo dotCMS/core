@@ -4,12 +4,9 @@ import com.dotcms.content.index.IndexDocumentConstraints.Kind;
 import com.dotcms.content.index.IndexDocumentConstraints.Violation;
 import com.dotcms.content.index.IndexDocumentViolation;
 import com.dotmarketing.common.reindex.ReindexEntry;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.vavr.control.Try;
 import javax.annotation.Nullable;
 
 /**
@@ -23,11 +20,15 @@ import javax.annotation.Nullable;
  * present; a value that is not known is an explicit {@code null}.</p>
  *
  * @param identifier          the contentlet identifier of the journal entry
- * @param inode               the inode of the version resolved for display; {@code null} when the
- *                            content no longer exists
- * @param title               the content title; {@code null} when the content no longer exists
+ * @param inode               the inode of a version of the content, resolved only to show it; it
+ *                            is not necessarily the version that failed (the journal is keyed by
+ *                            identifier). The withheld version's own inode is in
+ *                            {@code violation}. {@code null} when the content no longer exists
+ * @param title               the stored title of that version; {@code null} when the content no
+ *                            longer exists or no title is stored
  * @param contentTypeVariable the content type variable; {@code null} when it cannot be resolved
- * @param languageId          the language of the resolved version; {@code null} when unknown
+ * @param languageId          the language of the version resolved for display, not necessarily
+ *                            the one that failed; {@code null} when unknown
  * @param pendingOperation    what the index still owes for the identifier: {@code reindex}, or
  *                            {@code delete} for a removal that could not be applied
  * @param failedAttempts      how many times indexing the entry failed
@@ -42,16 +43,19 @@ import javax.annotation.Nullable;
 public record FailedReindexRecordView(
         @Schema(description = "Contentlet identifier", example = "d5edd758f166259247356e7ea2deca4e")
         String identifier,
-        @Schema(description = "Inode of the version resolved for display; null if the content no longer exists",
-                nullable = true)
+        @Schema(description = "Inode of a version of the content, resolved only to show it; not"
+                + " necessarily the version that failed. The withheld version's inode is in"
+                + " violation.inode. Null if the content no longer exists", nullable = true)
         @Nullable String inode,
-        @Schema(description = "Content title; null if the content no longer exists", nullable = true)
+        @Schema(description = "Stored title of the version resolved for display; null if the content"
+                + " no longer exists or no title is stored", nullable = true)
         @Nullable String title,
         @Schema(description = "Content type variable; null if it cannot be resolved",
                 example = "Blog", nullable = true)
         @Nullable String contentTypeVariable,
-        @Schema(description = "Language of the resolved version; null if unknown", example = "1",
-                nullable = true)
+        @Schema(description = "Language of the version resolved for display; not necessarily the"
+                + " version that failed. The withheld version's language is in"
+                + " violation.languageId. Null if unknown", example = "1", nullable = true)
         @Nullable Long languageId,
         @Schema(description = "What the index still owes for the identifier",
                 allowableValues = {"reindex", "delete"})
@@ -68,15 +72,18 @@ public record FailedReindexRecordView(
         @Nullable ViolationView violation) {
 
     /**
-     * A document limit that the entry's index document exceeded, so it was withheld (#37269).
+     * A document limit that one version of the entry exceeded, and which version that was, so its
+     * index document was withheld (#37269).
      *
      * @param limit     which limit: {@code maxStringLength} or {@code maxNestingDepth}
      * @param fieldPath the path of the offending field in the index document
      * @param actual    the document's value, in {@code unit}
      * @param allowed   the limit, in {@code unit}
      * @param unit      {@code chars} for a string length, {@code levels} for a nesting depth
+     * @param inode      the inode of the withheld version, as recorded when it was withheld
+     * @param languageId the language of the withheld version, as recorded when it was withheld
      */
-    @Schema(description = "A document limit exceeded by the index document")
+    @Schema(description = "A document limit exceeded by the index document, and the version withheld for it")
     public record ViolationView(
             @Schema(description = "Which limit was exceeded",
                     allowableValues = {"maxStringLength", "maxNestingDepth"})
@@ -88,46 +95,45 @@ public record FailedReindexRecordView(
             @Schema(description = "The limit, in unit", example = "20000000")
             long allowed,
             @Schema(description = "Unit of actual and allowed", allowableValues = {"chars", "levels"})
-            String unit) {
+            String unit,
+            @Schema(description = "Inode of the withheld version", example = "9f8e7d6c-1111-2222-3333-444455556666")
+            String inode,
+            @Schema(description = "Language of the withheld version", example = "1")
+            long languageId) {
 
         /**
-         * Builds the view of a violation read from the journal.
+         * Builds the view of a withheld document read from the journal.
          *
-         * @param violation the violation
+         * @param withheld the withheld document and the limit it exceeded
          * @return its view
          */
-        static ViolationView of(final Violation violation) {
+        static ViolationView of(final IndexDocumentViolation withheld) {
+            final Violation violation = withheld.violation();
             final boolean length = violation.kind() == Kind.STRING_LENGTH;
             return new ViolationView(length ? "maxStringLength" : "maxNestingDepth",
                     violation.fieldPath(), violation.actual(), violation.limit(),
-                    length ? "chars" : "levels");
+                    length ? "chars" : "levels", withheld.inode(), withheld.languageId());
         }
     }
 
     /**
      * Builds the view of a failed journal entry.
      *
-     * @param row        the failed journal entry
-     * @param contentlet a version of the entry's contentlet used for display, or {@code null} when
-     *                   none exists (e.g. a removal whose content was destroyed)
-     * @return the view, never carrying the contentlet's field values
+     * @param row     the failed journal entry
+     * @param display the display data of a version of the entry's content, or {@code null} when
+     *                none exists (e.g. a removal whose content was destroyed, or archived content)
+     * @return the view, which never carries the content's field values
      */
     public static FailedReindexRecordView from(final ReindexEntry row,
-            @Nullable final Contentlet contentlet) {
-        final boolean found = contentlet != null && contentlet.getInode() != null;
-        final String contentTypeVariable = found
-                ? Try.of(() -> contentlet.getContentType().variable())
-                        .onFailure(e -> Logger.debug(FailedReindexRecordView.class, e.getMessage()))
-                        .getOrNull()
-                : null;
+            @Nullable final DisplayVersion display) {
         // markAsFailed stores a missing message as "": report it the same as no reason at all.
         final String reason = UtilMethods.isSet(row.getLastResult()) ? row.getLastResult() : null;
         return new FailedReindexRecordView(
                 row.getIdentToIndex(),
-                found ? contentlet.getInode() : null,
-                found ? Try.of(contentlet::getTitle).getOrNull() : null,
-                contentTypeVariable,
-                found ? contentlet.getLanguageId() : null,
+                display != null ? display.inode() : null,
+                display != null ? display.title() : null,
+                display != null ? display.contentTypeVariable() : null,
+                display != null ? display.languageId() : null,
                 row.isDelete() ? "delete" : "reindex",
                 row.errorCount(),
                 row.getPriority(),

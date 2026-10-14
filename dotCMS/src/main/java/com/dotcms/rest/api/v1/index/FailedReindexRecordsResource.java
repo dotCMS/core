@@ -7,10 +7,9 @@ import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotmarketing.common.reindex.ReindexEntry;
 import com.dotmarketing.common.reindex.ReindexQueueFactory;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.util.Logger;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -18,8 +17,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import io.vavr.control.Try;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -72,9 +71,8 @@ public class FailedReindexRecordsResource {
             @ApiResponse(responseCode = "200", description = "Failed records listed",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                             schema = @Schema(implementation = ResponseEntityFailedReindexRecordsView.class))),
-            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON)),
-            @ApiResponse(responseCode = "403", description = "Forbidden - CMS Administrator role and Maintenance portlet access required",
+            @ApiResponse(responseCode = "401", description = "Unauthorized - not authenticated, or the"
+                    + " user lacks the CMS Administrator role or access to the Maintenance portlet",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON))
     })
     @CloseDBIfOpened
@@ -90,26 +88,16 @@ public class FailedReindexRecordsResource {
                 .requiredRoles(Role.CMS_ADMINISTRATOR_ROLE)
                 .requiredPortlet("maintenance")
                 .init();
-        final List<FailedReindexRecordView> records = APILocator.getReindexQueueAPI()
-                .getFailedReindexRecords().stream()
-                .map(row -> FailedReindexRecordView.from(row, findForDisplay(row.getIdentToIndex())))
+        final List<ReindexEntry> rows = APILocator.getReindexQueueAPI().getFailedReindexRecords();
+        // One column-only query per batch instead of loading every failed contentlet, which are
+        // often the oversized ones (review of #37924).
+        final Map<String, DisplayVersion> displays = new DisplayVersionFinder().find(
+                rows.stream().map(ReindexEntry::getIdentToIndex).collect(Collectors.toList()));
+        final List<FailedReindexRecordView> records = rows.stream()
+                .map(row -> FailedReindexRecordView.from(row, displays.get(row.getIdentToIndex())))
                 .collect(Collectors.toList());
         return new ResponseEntityFailedReindexRecordsView(FailedReindexRecordsView.of(records,
                 DOCUMENT_CONSTRAINTS.maxStringLength(), DOCUMENT_CONSTRAINTS.maxNestingDepth(),
                 ReindexQueueFactory.REINDEX_MAX_FAILURE_ATTEMPTS));
-    }
-
-    /**
-     * Resolves a version of the contentlet to show its title, type and language.
-     *
-     * @param identifier the contentlet identifier
-     * @return any language's version, or {@code null} when the content no longer exists
-     */
-    private static Contentlet findForDisplay(final String identifier) {
-        return Try.of(() -> APILocator.getContentletAPI()
-                        .findContentletByIdentifierAnyLanguage(identifier))
-                .onFailure(e -> Logger.debug(FailedReindexRecordsResource.class,
-                        "Unable to resolve contentlet " + identifier + ": " + e.getMessage()))
-                .getOrNull();
     }
 }

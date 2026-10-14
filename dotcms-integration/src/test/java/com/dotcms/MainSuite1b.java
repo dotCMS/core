@@ -109,6 +109,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.content.elasticsearch.business.ContentletDestroyIndexRemovalTest.class,
         com.dotcms.content.elasticsearch.business.ContentletIndexPartialFailurePhaseTest.class,
         com.dotmarketing.common.reindex.BulkBatchDiscardTest.class,
+        com.dotcms.rest.api.v1.index.DisplayVersionFinderTest.class,
         com.dotcms.content.elasticsearch.business.ContentletIndexProviderSkipTest.class
 })
 

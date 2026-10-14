@@ -30,24 +30,28 @@ public record IndexDocumentViolation(String identifier, String inode, long langu
     private static final String LEVELS_DEEP = "levels deep";
 
     /**
-     * Reads the violation part of {@link #toFailureReason()}: field path, actual value, unit and
-     * limit. Kept next to the writer so the two cannot drift apart.
+     * Reads a reason written by {@link #toFailureReason()}: identifier, language, inode, field
+     * path, actual value, unit and limit. Kept next to the writer so the two cannot drift apart.
+     * The identifier is matched greedily up to the last {@code _<digits>}, which is the language.
      */
     private static final Pattern REASON = Pattern.compile(
-            "field '([^']*)' is ([0-9,]+) (" + CHARS + "|" + LEVELS_DEEP + "); limit ([0-9,]+)");
+            "document (\\S+)_(\\d+) \\(inode ([^)]*)\\) field '([^']*)' is ([0-9,]+) ("
+                    + CHARS + "|" + LEVELS_DEEP + "); limit ([0-9,]+)");
 
     /**
-     * Reads back the violation recorded in a reindex journal reason.
+     * Reads back the withheld document recorded in a reindex journal reason.
      *
-     * <p>The journal stores the reason as text only, so this is how the failed-records listing
-     * recovers which limit was exceeded, where, and by how much. Only the first violation is read
-     * when several documents of the entry were withheld; text that follows it (such as a later
-     * queueing error) is ignored.</p>
+     * <p>The journal stores the reason as text only and keys its rows by identifier, so this is
+     * the only way the failed-records listing can tell which version was withheld — its inode and
+     * language — and which limit it exceeded, where, and by how much. Only the first withheld
+     * document is read when several documents of the entry were withheld; text that follows it
+     * (such as a later queueing error) is ignored.</p>
      *
      * @param failureReason a journal reason, possibly {@code null} or unrelated to document limits
-     * @return the violation, or empty when the reason was not written by {@link #toFailureReason()}
+     * @return the withheld document, or empty when the reason was not written by
+     *         {@link #toFailureReason()}
      */
-    public static Optional<Violation> violationOf(final String failureReason) {
+    public static Optional<IndexDocumentViolation> violationOf(final String failureReason) {
         if (failureReason == null || failureReason.isEmpty()) {
             return Optional.empty();
         }
@@ -55,10 +59,12 @@ public record IndexDocumentViolation(String identifier, String inode, long langu
         if (!matcher.find()) {
             return Optional.empty();
         }
-        final Kind kind = CHARS.equals(matcher.group(3)) ? Kind.STRING_LENGTH : Kind.NESTING_DEPTH;
-        return Optional.of(new Violation(kind, matcher.group(1),
-                Long.parseLong(matcher.group(2).replace(",", "")),
-                Long.parseLong(matcher.group(4).replace(",", ""))));
+        final Kind kind = CHARS.equals(matcher.group(6)) ? Kind.STRING_LENGTH : Kind.NESTING_DEPTH;
+        return Optional.of(new IndexDocumentViolation(matcher.group(1),
+                matcher.group(3), Long.parseLong(matcher.group(2)),
+                new Violation(kind, matcher.group(4),
+                        Long.parseLong(matcher.group(5).replace(",", "")),
+                        Long.parseLong(matcher.group(7).replace(",", "")))));
     }
 
     /**
