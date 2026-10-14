@@ -15,7 +15,7 @@ on:
 
 jobs:
   add-labels:
-    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    runs-on: ubuntu-latest
     
     steps:
       - name: Checkout Repository
