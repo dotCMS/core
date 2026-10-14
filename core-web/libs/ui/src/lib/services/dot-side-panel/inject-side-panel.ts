@@ -10,8 +10,6 @@ import {
     untracked
 } from '@angular/core';
 
-import { take } from 'rxjs/operators';
-
 import { DotSidePanelRef, DotSidePanelService } from './dot-side-panel.service';
 
 /** What {@link injectSidePanel} opens for a request, and how it reports back. */
@@ -23,7 +21,11 @@ export interface DotSidePanelBinding<R> {
     component: () => Type<unknown> | Promise<Type<unknown>>;
     /** The title in the panel's header, for the current request. */
     heading: (request: R) => string;
-    /** The content's inputs, by public name, for the current request. They follow the request. */
+    /**
+     * The content's inputs, by public name, for the current request. Their values follow the
+     * request, but the names are read once, when the panel opens: return the same names for every
+     * request, since one added later is never bound.
+     */
     inputs?: (request: R) => Record<string, unknown>;
     /** Handlers for the content's outputs, by public name. */
     outputs?: Record<string, (value: never) => void>;
@@ -91,7 +93,7 @@ export function injectSidePanel<R>(
             injector
         });
 
-        ref.closed.pipe(take(1)).subscribe(() => {
+        ref.closed.subscribe(() => {
             if (panel() === ref) {
                 panel.set(null);
                 binding.closed?.();
