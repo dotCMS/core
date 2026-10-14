@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { Component, computed, input } from '@angular/core';
 
 import { TagModule } from 'primeng/tag';
 
@@ -42,6 +42,12 @@ const BUCKETS: Record<PublishAuditStatus, StatusBucket> = {
     [PublishAuditStatus.RECEIVED_BUNDLE]: 'warn'
 };
 
+/** Pseudo-status of an unsent bundle. It has no `publish_audit` row, so it has
+ * no `PublishAuditStatus`; the table passes this value instead. */
+export const NEW_BUNDLE_STATUS = 'NEW';
+
+export type PublishingRowStatus = PublishAuditStatus | typeof NEW_BUNDLE_STATUS;
+
 /** Pure mapping function — exported for direct testing without component instantiation. */
 export function publishingStatusBucket(status: PublishAuditStatus): StatusBucket {
     return BUCKETS[status] ?? 'info';
@@ -56,15 +62,17 @@ export function publishingStatusBucket(status: PublishAuditStatus): StatusBucket
 @Component({
     selector: 'dot-publishing-status-chip',
     imports: [TagModule, DotMessagePipe],
-    templateUrl: './dot-publishing-status-chip.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    templateUrl: './dot-publishing-status-chip.component.html'
 })
 export class DotPublishingStatusChipComponent {
-    readonly $status = input<PublishAuditStatus | null>(null, { alias: 'status' });
+    readonly $status = input<PublishingRowStatus | null>(null, { alias: 'status' });
+
+    /** "New" uses a primary tint (no PrimeNG severity has it), set in the template. */
+    readonly $isNew = computed(() => this.$status() === NEW_BUNDLE_STATUS);
 
     readonly $bucket = computed<StatusBucket | null>(() => {
         const s = this.$status();
-        return s ? publishingStatusBucket(s) : null;
+        return s && s !== NEW_BUNDLE_STATUS ? publishingStatusBucket(s) : null;
     });
 
     /** Uses portlet-scoped keys (`publishing-queue.status.*`) so the chip labels

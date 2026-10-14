@@ -48,9 +48,9 @@ const BUNDLES_RESPONSE: PublishingJobsResponse = {
 };
 
 /** Shape returned by the legacy `/api/bundle/getunsendbundles` endpoint. Three
- * drafts, so `draftBundlesTotal` should settle on 3 — note `numRows` is
- * deliberately wrong here (the real BE reports the page size, not the total) to
- * pin that the store counts `items` rather than trusting `numRows`. */
+ * unsent bundles — note `numRows` is deliberately wrong here (the real BE reports
+ * the page size, not the total) to pin that the store reads `items` rather than
+ * trusting `numRows`. */
 const UNSENT_BUNDLES_RESPONSE: UnsentBundlesResponse = {
     identifier: 'id',
     label: 'name',
@@ -239,47 +239,127 @@ describe('DotPublishingQueueStore', () => {
             expect(service.listPublishingJobs).toHaveBeenCalledTimes(1);
         });
 
-        it('also reloads the draft count — pushing/deleting moves rows in and out of the unsent set', () => {
+        it('also reloads the New rows — pushing/deleting moves rows in and out of the unsent set', () => {
             (service.getUnsendBundles as Mock).mockClear();
             store.refresh();
             expect(service.getUnsendBundles).toHaveBeenCalledTimes(1);
         });
     });
 
-    describe('loadDraftBundlesCount', () => {
-        it('counts the drafts on init, resolving the user and asking for the list unbounded', () => {
+    describe('loadNewBundles', () => {
+        it('loads every unsent bundle on init, resolving the user and asking for the list unbounded', () => {
             expect(currentUserService.getCurrentUser).toHaveBeenCalled();
-            // count = -1 → BundleResource forwards it as an unlimited `maxRows`,
-            // so the response holds every draft and `items.length` is the total.
+            // count = -1 → BundleResource forwards it as an unlimited `maxRows`.
             expect(service.getUnsendBundles).toHaveBeenCalledWith('user-1', '*', 0, -1);
-            expect(store.draftBundlesTotal()).toBe(3);
+            expect(store.newBundles().map((row) => row.bundleId)).toEqual([
+                'draft-1',
+                'draft-2',
+                'draft-3'
+            ]);
         });
 
-        it('counts `items` rather than the BE `numRows` (which is only the page size)', () => {
-            // UNSENT_BUNDLES_RESPONSE carries numRows: 1 with 3 items on purpose.
-            expect(store.draftBundlesTotal()).toBe(3);
+        it('maps each unsent bundle to a New row with only its id and name', () => {
+            expect(store.newBundles()[0]).toEqual(
+                expect.objectContaining({
+                    bundleId: 'draft-1',
+                    bundleName: 'Draft One',
+                    status: null,
+                    isNew: true
+                })
+            );
         });
 
         it('reuses the cached user id instead of re-resolving the current user', () => {
             (currentUserService.getCurrentUser as Mock).mockClear();
-            store.loadDraftBundlesCount();
+            store.loadNewBundles();
             expect(currentUserService.getCurrentUser).not.toHaveBeenCalled();
             expect(service.getUnsendBundles).toHaveBeenCalledWith('user-1', '*', 0, -1);
         });
 
-        it('keeps the last known count and shows no toast when a refresh fails', () => {
-            expect(store.draftBundlesTotal()).toBe(3);
+        it('narrows the unsent list by name when the search changes', () => {
+            (service.getUnsendBundles as Mock).mockClear();
+            store.setSearch('news');
+            spectator.flushEffects();
+            expect(service.getUnsendBundles).toHaveBeenCalledWith('user-1', '*news*', 0, -1);
+        });
+
+        it('reports a failed load and keeps the current rows', () => {
+            (service.getUnsendBundles as Mock).mockReturnValueOnce(
+                throwError(() => new Error('boom'))
+            );
+
+            store.loadNewBundles();
+
+            expect(httpErrorManager.handle).toHaveBeenCalled();
+            expect(store.newBundles().length).toBe(3);
+        });
+
+        it('stays quiet when a silent (tab refocus) load fails', () => {
             (httpErrorManager.handle as Mock).mockClear();
             (service.getUnsendBundles as Mock).mockReturnValueOnce(
                 throwError(() => new Error('boom'))
             );
 
-            store.loadDraftBundlesCount();
+            store.loadNewBundles(true);
 
-            // A failed count must not blank out a good number, and must not
-            // nag the user about decoration they never asked for.
-            expect(store.draftBundlesTotal()).toBe(3);
             expect(httpErrorManager.handle).not.toHaveBeenCalled();
+            expect(store.newBundles().length).toBe(3);
+        });
+    });
+
+    describe('tableRows', () => {
+        it('pins the New rows above the audit rows on page 1', () => {
+            expect(store.tableRows().map((row) => [row.bundleId, row.isNew])).toEqual([
+                ['draft-1', true],
+                ['draft-2', true],
+                ['draft-3', true],
+                ['bundle-A', false],
+                ['bundle-B', false]
+            ]);
+        });
+
+        it('leaves the New rows out of the paginator total', () => {
+            expect(store.bundlesTotal()).toBe(2);
+        });
+
+        it('drops the New rows on later pages', () => {
+            store.setBundlesPage(2);
+            spectator.flushEffects();
+            expect(store.tableRows().some((row) => row.isNew)).toBe(false);
+        });
+
+        it('shows only New rows, without calling the audit endpoint, when "New" is the only filter', () => {
+            (service.listPublishingJobs as Mock).mockClear();
+            store.setStatusFilter([], true);
+            spectator.flushEffects();
+
+            expect(service.listPublishingJobs).not.toHaveBeenCalled();
+            expect(store.tableRows().every((row) => row.isNew)).toBe(true);
+            expect(store.tableRows().length).toBe(3);
+            expect(store.bundlesTotal()).toBe(0);
+        });
+
+        it('hides the New rows when only audit statuses are filtered', () => {
+            store.setStatusFilter([PublishAuditStatus.SUCCESS]);
+            spectator.flushEffects();
+            expect(store.tableRows().some((row) => row.isNew)).toBe(false);
+        });
+
+        it('shows both when "New" and audit statuses are filtered together', () => {
+            store.setStatusFilter([PublishAuditStatus.SUCCESS], true);
+            spectator.flushEffects();
+            expect(store.tableRows().filter((row) => row.isNew).length).toBe(3);
+            expect(store.tableRows().filter((row) => !row.isNew).length).toBe(2);
+        });
+    });
+
+    describe('openSetup / closeSetup', () => {
+        it('tracks which New bundle has its Set Up dialog open', () => {
+            store.openSetup('draft-2');
+            expect(store.setupBundleId()).toBe('draft-2');
+
+            store.closeSetup();
+            expect(store.setupBundleId()).toBeNull();
         });
     });
 
@@ -606,6 +686,7 @@ describe('DotPublishingQueueStore', () => {
             // `onInit` already started polling — reset the counter and simulate
             // the tab going hidden then visible.
             (service.listPublishingJobs as Mock).mockClear();
+            (service.getUnsendBundles as Mock).mockClear();
             Object.defineProperty(document, 'hidden', {
                 configurable: true,
                 get: () => false
@@ -614,6 +695,8 @@ describe('DotPublishingQueueStore', () => {
             document.dispatchEvent(new Event('visibilitychange'));
 
             expect(service.listPublishingJobs).toHaveBeenCalledTimes(1);
+            // Picks up bundles created in another tab while this one was hidden.
+            expect(service.getUnsendBundles).toHaveBeenCalledTimes(1);
         });
 
         it('does NOT fetch on visibilitychange while the tab is still hidden', () => {

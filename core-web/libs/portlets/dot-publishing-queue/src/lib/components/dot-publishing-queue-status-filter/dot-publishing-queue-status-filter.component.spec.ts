@@ -18,6 +18,7 @@ import { DotPublishingQueueStatusFilterComponent } from './dot-publishing-queue-
 import { DotPublishingQueueStore } from '../../store/dot-publishing-queue.store';
 
 const GROUP_LABELS: Record<string, string> = {
+    'publishing-queue.filter.status.new': 'New',
     'publishing-queue.filter.status.scheduled': 'Scheduled',
     'publishing-queue.filter.status.pending': 'Pending',
     'publishing-queue.filter.status.in-progress': 'In progress',
@@ -59,6 +60,7 @@ describe('DotPublishingQueueStatusFilterComponent', () => {
     let spectator: Spectator<DotPublishingQueueStatusFilterComponent>;
 
     const statusFilter = signal<PublishAuditStatus[]>([]);
+    const newFilter = signal(false);
     const groups = DotPublishingQueueStatusFilterComponent.STATUS_FILTER_GROUPS;
 
     const createComponent = createComponentFactory({
@@ -66,7 +68,11 @@ describe('DotPublishingQueueStatusFilterComponent', () => {
         componentProviders: [
             mockProvider(DotPublishingQueueStore, {
                 statusFilter,
-                setStatusFilter: vi.fn((codes: PublishAuditStatus[]) => statusFilter.set(codes))
+                newFilter,
+                setStatusFilter: vi.fn((codes: PublishAuditStatus[], isNew = false) => {
+                    statusFilter.set(codes);
+                    newFilter.set(isNew);
+                })
             })
         ],
         providers: [
@@ -106,6 +112,7 @@ describe('DotPublishingQueueStatusFilterComponent', () => {
 
     beforeEach(() => {
         statusFilter.set([]);
+        newFilter.set(false);
         spectator = createComponent();
     });
 
@@ -132,10 +139,11 @@ describe('DotPublishingQueueStatusFilterComponent', () => {
     });
 
     describe('options', () => {
-        it('renders the 7 groups in lifecycle order with translated labels', () => {
+        it('renders "New" and the 7 groups in lifecycle order with translated labels', () => {
             openPanel();
 
             expect(renderedOptionLabels()).toEqual([
+                'New',
                 'Scheduled',
                 'Pending',
                 'In progress',
@@ -185,14 +193,36 @@ describe('DotPublishingQueueStatusFilterComponent', () => {
             expect([...statusFilter()].sort()).toEqual(codesOf('failed').sort());
         });
 
+        it('flags "New" without adding any status code when it is picked', async () => {
+            openPanel();
+
+            await clickOption('new');
+
+            expect(newFilter()).toBe(true);
+            expect(statusFilter()).toEqual([]);
+        });
+
+        it('keeps "New" alongside the statuses of other picked options', async () => {
+            openPanel();
+
+            await clickOption('new');
+            await clickOption('scheduled');
+
+            expect(newFilter()).toBe(true);
+            expect(statusFilter()).toEqual([PublishAuditStatus.SCHEDULED]);
+        });
+
         it('empties the store filter when the chip is cleared', async () => {
             openPanel();
             await clickOption('scheduled');
             await clickOption('failed');
 
+            await clickOption('new');
+
             spectator.click(byTestId('chip-remove'));
 
             expect(statusFilter()).toEqual([]);
+            expect(newFilter()).toBe(false);
         });
     });
 
@@ -204,6 +234,13 @@ describe('DotPublishingQueueStatusFilterComponent', () => {
             expect(spectator.query(byTestId('chip-values'))).toHaveText(
                 'Scheduled, Partially failed'
             );
+        });
+
+        it('shows "New" while the store flags it', () => {
+            newFilter.set(true);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('chip-values'))).toHaveText('New');
         });
 
         it('shows a group only when all of its statuses are in the store filter', () => {
