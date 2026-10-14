@@ -390,21 +390,11 @@ export class DotContentDriveShellComponent implements OnDestroy {
         closed: () => this.onLegacyPanelClosed()
     });
 
-    /** The file open in the Edit Source panel, from the store. */
-    protected readonly $sourceEditorRequest = this.#store.sourceEditor;
-
     /**
-     * The Edit Source panel: a file's source in Monaco, open while the store names a file. Loaded on
-     * its first open, so Monaco stays out of this portlet's chunk.
+     * The file open in the Edit Source panel, from the store. The panel is open while it names a
+     * file (see the constructor).
      */
-    // eslint-disable-next-line no-unused-private-class-members -- it opens and closes the panel itself
-    readonly #sourceEditorPanel = injectSidePanel(this.$sourceEditorRequest, {
-        component: loadDotSourceEditorSidePanel,
-        heading: (request) => request.title,
-        inputs: (request) => ({ request }),
-        outputs: { saved: () => this.onSourceEditorSaved() },
-        closed: () => this.onSourceEditorClosed()
-    });
+    protected readonly $sourceEditorRequest = this.#store.sourceEditor;
 
     /** Whether any side panel is open. */
     readonly #anyPanelOpen = computed(
@@ -672,6 +662,16 @@ export class DotContentDriveShellComponent implements OnDestroy {
         // Called rather than assigned: its only purpose is the side effect, and a private field
         // nothing reads is exactly what `no-unused-private-class-members` is for.
         this.#registerShortcuts();
+
+        // The Edit Source panel: a file's source in Monaco, open while the store names a file.
+        // Loaded on its first open, so Monaco stays out of this portlet's chunk.
+        injectSidePanel(this.$sourceEditorRequest, {
+            component: loadDotSourceEditorSidePanel,
+            heading: (request) => request.title,
+            inputs: (request) => ({ request }),
+            outputs: { saved: () => this.onSourceEditorSaved() },
+            closed: () => this.onSourceEditorClosed()
+        });
 
         this.#syncDialog(this.#store.dialog);
         // Each of these reacts to its one signal only; whatever else it reads is a snapshot.
