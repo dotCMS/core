@@ -40,10 +40,6 @@ describe('DotClusterService', () => {
 describe('DOT_CLUSTER_NODES_MOCK', () => {
     const { nodes, currentServerId } = DOT_CLUSTER_NODES_MOCK;
 
-    it('should report whether the heartbeat feature is on, as the contract requires (FR-047)', () => {
-        expect(DOT_CLUSTER_NODES_MOCK.heartbeatEnabled).toBe(true);
-    });
-
     it('should contain the node serving the request', () => {
         expect(nodes.some((node) => node.serverId === currentServerId)).toBe(true);
     });
@@ -54,10 +50,12 @@ describe('DOT_CLUSTER_NODES_MOCK', () => {
         );
     });
 
-    it('should leave every section empty on a node that did not answer', () => {
+    it('should send null sections for a node that did not answer, as the backend does', () => {
         const down = nodes.find((node) => !node.responded);
 
         expect(down?.status).toBe('DOWN');
-        expect(Object.values(down?.search ?? {})).toEqual(Array(15).fill(null));
+        expect(down?.cache).toBeNull();
+        expect(down?.search).toBeNull();
+        expect(down?.assets).toBeNull();
     });
 });

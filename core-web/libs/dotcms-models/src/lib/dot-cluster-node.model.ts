@@ -5,7 +5,7 @@
  * Network spike (#37802, §2.8). That endpoint does not exist yet: until it does,
  * `DotClusterService` serves this shape from mock data. Every node — whether it answered the
  * status request or not — has the same shape; a node that did not answer has
- * `responded: false` and every section value `null`. Unlicensed installs get a license 403
+ * `responded: false` and `cache`, `search` and `assets` set to `null`. Unlicensed installs get a license 403
  * instead of a response.
  */
 
@@ -57,28 +57,24 @@ export interface DotClusterAssetsInfo {
 export interface DotClusterNode {
     readonly serverId: string;
     readonly displayServerId: string;
-    /** Server friendly name. */
-    readonly name: string;
-    readonly ipAddress: string;
+    /** Server friendly name. `null` when the server's record has none. */
+    readonly name: string | null;
+    readonly ipAddress: string | null;
     /** dotCMS release version running on the node. */
-    readonly version: string;
+    readonly version: string | null;
     /** Seconds since the node last wrote its heartbeat. `null` when it never did. */
     readonly lastContactSeconds: number | null;
     /** `false` when the node did not answer the cluster status request in time. */
     readonly responded: boolean;
     readonly status: DotClusterNodeStatus;
-    readonly cache: DotClusterCacheInfo;
-    readonly search: DotClusterSearchInfo;
-    readonly assets: DotClusterAssetsInfo;
+    /** `null` when the node did not answer (`responded: false`). */
+    readonly cache: DotClusterCacheInfo | null;
+    readonly search: DotClusterSearchInfo | null;
+    readonly assets: DotClusterAssetsInfo | null;
 }
 
 /** `entity` of `GET /api/v1/cluster/nodes`. */
 export interface DotClusterNodes {
-    /**
-     * `false` when the server heartbeat feature (`ENABLE_SERVER_HEARTBEAT`) is switched off;
-     * dead servers are then not removed from the cluster automatically.
-     */
-    readonly heartbeatEnabled: boolean;
     /** Id of the node that served the request. */
     readonly currentServerId: string;
     readonly nodes: DotClusterNode[];

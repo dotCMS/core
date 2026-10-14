@@ -6,7 +6,12 @@ import { MessageModule } from 'primeng/message';
 import { TagModule } from 'primeng/tag';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotClusterNode } from '@dotcms/dotcms-models';
+import {
+    DotClusterAssetsInfo,
+    DotClusterCacheInfo,
+    DotClusterNode,
+    DotClusterSearchInfo
+} from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { NODE_STATUS_TAGS } from '../../../utils/dot-network.utils';
@@ -19,6 +24,41 @@ const SEARCH_ENGINE_LABEL_KEYS = {
     ELASTICSEARCH: 'network.search.engine.elasticsearch',
     OPENSEARCH: 'network.search.engine.opensearch'
 } as const;
+
+/**
+ * Stand-ins for the sections of a node that did not answer, which the backend sends as `null`.
+ * Every value is unknown, so every row renders the "no value" placeholder.
+ */
+const NO_CACHE: DotClusterCacheInfo = {
+    clusterName: null,
+    transport: null,
+    numberOfNodes: null,
+    open: null,
+    address: null,
+    port: null,
+    receivedBytes: null,
+    sentBytes: null
+};
+
+const NO_SEARCH: DotClusterSearchInfo = {
+    engine: null,
+    clusterName: null,
+    timedOut: null,
+    numberOfNodes: null,
+    numberOfDataNodes: null,
+    activePrimaryShards: null,
+    activeShards: null,
+    relocatingShards: null,
+    initializingShards: null,
+    unassignedShards: null,
+    delayedUnassignedShards: null,
+    numberOfPendingTasks: null,
+    numberOfInFlightFetch: null,
+    taskMaxWaitingInQueueMillis: null,
+    activeShardsPercent: null
+};
+
+const NO_ASSETS: DotClusterAssetsInfo = { path: null, canRead: null, canWrite: null };
 
 function text(value: string | number | boolean | null): string | null {
     return value === null ? null : String(value);
@@ -57,20 +97,25 @@ export class DotNetworkNodeDetailComponent {
 
         return [
             { labelKey: 'network.tile.server-id', value: node.displayServerId, mono: true },
-            { labelKey: 'network.tile.cluster', value: node.cache.clusterName, mono: false },
+            {
+                labelKey: 'network.tile.cluster',
+                value: node.cache?.clusterName ?? null,
+                mono: false
+            },
             { labelKey: 'network.tile.ip-address', value: node.ipAddress, mono: true },
             { labelKey: 'network.tile.version', value: node.version, mono: false }
         ];
     });
 
     protected readonly $cacheSubtitle = computed(() => {
-        const clusterName = this.node().cache.clusterName;
+        const clusterName = this.node().cache?.clusterName;
 
         return clusterName ? this.#messageService.get('network.cache.subtitle', clusterName) : null;
     });
 
     protected readonly $cacheRows = computed<DotNetworkSectionRow[]>(() => {
-        const { cache, responded } = this.node();
+        const { responded } = this.node();
+        const cache = this.node().cache ?? NO_CACHE;
         const traffic =
             cache.receivedBytes === null && cache.sentBytes === null
                 ? null
@@ -97,13 +142,13 @@ export class DotNetworkNodeDetailComponent {
     });
 
     protected readonly $searchSubtitle = computed(() => {
-        const engine = this.node().search.engine;
+        const engine = this.node().search?.engine;
 
         return engine ? this.#messageService.get(SEARCH_ENGINE_LABEL_KEYS[engine]) : null;
     });
 
     protected readonly $searchRows = computed<DotNetworkSectionRow[]>(() => {
-        const search = this.node().search;
+        const search = this.node().search ?? NO_SEARCH;
         const percent =
             search.activeShardsPercent === null
                 ? null
@@ -155,7 +200,7 @@ export class DotNetworkNodeDetailComponent {
     });
 
     protected readonly $assetsRows = computed<DotNetworkSectionRow[]>(() => {
-        const assets = this.node().assets;
+        const assets = this.node().assets ?? NO_ASSETS;
 
         return [
             { labelKey: 'network.assets.shared-path', value: assets.path, mono: true },
