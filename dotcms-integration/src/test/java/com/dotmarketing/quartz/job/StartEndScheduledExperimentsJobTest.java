@@ -2,6 +2,7 @@ package com.dotmarketing.quartz.job;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.datagen.ExperimentDataGen;
+import com.dotcms.experiments.business.ConfigExperimentUtil;
 import com.dotcms.experiments.business.ExperimentsAPI;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
@@ -52,6 +53,10 @@ public class StartEndScheduledExperimentsJobTest extends IntegrationTestBase {
         // Short windows: validateScheduling only requires dates after now-1min, so seconds
         // are enough — the old 1/2-minute windows forced a 2-minute Thread.sleep
         final Instant NOW_PLUS_TWENTY_SECONDS = Instant.now().plus(20, ChronoUnit.SECONDS);
+
+        // Ensure full mode so the free-slot gate (added by the analytics-gate feature) does not
+        // block start() when another experiment is already RUNNING.
+        ConfigExperimentUtil.INSTANCE.setExperimentEnabled(true);
 
         // create experiment that will end soon
         Experiment scheduledToEndExperiment = new ExperimentDataGen()
@@ -108,6 +113,7 @@ public class StartEndScheduledExperimentsJobTest extends IntegrationTestBase {
                 experimentsAPI.end(shouldBeEnded.id().orElseThrow(), APILocator.systemUser());
             }
 
+            ConfigExperimentUtil.INSTANCE.setExperimentEnabled(false);
         }
     }
 
