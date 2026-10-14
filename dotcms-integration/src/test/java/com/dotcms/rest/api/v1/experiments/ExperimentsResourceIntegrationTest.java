@@ -72,6 +72,15 @@ public class ExperimentsResourceIntegrationTest {
         resource = new ExperimentsResource();
         adminUser = TestUserUtils.getAdminUser();
         response = new MockHttpResponse();
+
+        // Tests call start() with multiple experiments; full mode is required since the
+        // flag now defaults to false (limited mode).
+        ConfigExperimentUtil.INSTANCE.setExperimentEnabled(true);
+    }
+
+    @AfterClass
+    public static void afterClass() {
+        ConfigExperimentUtil.INSTANCE.setExperimentEnabled(false);
     }
 
     // ---------------------------------------------------------------------------------------------

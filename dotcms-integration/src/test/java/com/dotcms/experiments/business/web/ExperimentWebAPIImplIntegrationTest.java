@@ -63,6 +63,14 @@ public class ExperimentWebAPIImplIntegrationTest {
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
+        // Most tests in this class start multiple experiments concurrently or sequentially,
+        // which requires full mode. The flag now defaults to false (limited mode).
+        ConfigExperimentUtil.INSTANCE.setExperimentEnabled(true);
+    }
+
+    @AfterClass
+    public static void afterClass() {
+        ConfigExperimentUtil.INSTANCE.setExperimentEnabled(false);
     }
 
     /**
@@ -1239,16 +1247,18 @@ public class ExperimentWebAPIImplIntegrationTest {
         final Template template = new TemplateDataGen().nextPersisted();
         final HTMLPageAsset page = new HTMLPageDataGen(site, template).nextPersisted();
 
-        final Experiment experiment = new ExperimentDataGen()
+        // Create the experiment directly in RUNNING state to bypass the limited-mode gate —
+        // isFreeSlotUsed() counts ENDED experiments globally, so prior tests would block start().
+        // This test is verifying JS injection behavior, not the start gate itself.
+        final Experiment started = new ExperimentDataGen()
                 .page(page)
                 .trafficAllocation(100)
+                .status(Status.RUNNING)
                 .nextPersisted();
 
         ConfigExperimentUtil.INSTANCE.setExperimentEnabled(false);
 
         try {
-            final Experiment started = ExperimentDataGen.start(experiment);
-
             final HttpServletRequest request = mock(HttpServletRequest.class);
             when(request.getParameter("host_id")).thenReturn(site.getIdentifier());
             // No user on the request → PageMode.get() returns LIVE (the default for front-end visitors).
@@ -1260,8 +1270,8 @@ public class ExperimentWebAPIImplIntegrationTest {
             assertTrue("Injected JS must reference the running experiment's ID",
                     code.get().contains(started.id().get()));
         } finally {
-            ConfigExperimentUtil.INSTANCE.setExperimentEnabled(false); // restore default
-            ExperimentDataGen.end(experiment);
+            ConfigExperimentUtil.INSTANCE.setExperimentEnabled(true); // restore class-level state
+            ExperimentDataGen.end(started);
         }
     }
 }
