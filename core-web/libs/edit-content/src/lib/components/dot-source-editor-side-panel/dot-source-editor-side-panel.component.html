@@ -1,9 +1,10 @@
 @switch ($status()) {
     @case (ComponentStatus.LOADING) {
+        <!-- The spinner the drawer shows while this panel's code loads, so it is not swapped. -->
         <div
             class="flex size-full flex-1 items-center justify-center"
             data-testid="source-editor-loading">
-            <i class="pi pi-spin pi-spinner text-4xl text-gray-500"></i>
+            <p-progressSpinner styleClass="h-8! w-8!" strokeWidth="4" ariaLabel="Loading" />
         </div>
     }
     @case (ComponentStatus.ERROR) {
@@ -33,7 +34,11 @@
     <!-- A failed save the shared HTTP handler cannot explain, such as a file the server refused to
          stage. The edits are still in the editor above. -->
     <p-message severity="error" data-testid="source-editor-save-error">
-        {{ 'edit.content.source-editor.save-error' | dm }} {{ $saveError() }}
+        @if ($saveError(); as reason) {
+            {{ 'edit.content.source-editor.save-error-reason' | dm: [reason] }}
+        } @else {
+            {{ 'edit.content.source-editor.save-error' | dm }}
+        }
     </p-message>
 }
 

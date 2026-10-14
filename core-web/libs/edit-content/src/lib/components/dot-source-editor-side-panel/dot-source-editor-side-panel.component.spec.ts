@@ -17,6 +17,7 @@ import { Confirmation, ConfirmationService, ConfirmEventType } from 'primeng/api
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { MessageModule } from 'primeng/message';
+import { ProgressSpinner, ProgressSpinnerModule } from 'primeng/progressspinner';
 
 import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 import { DOT_VELOCITY_LANGUAGE_ID, DotMessagePipe, DotSidePanelRef } from '@dotcms/ui';
@@ -109,7 +110,11 @@ describe('DotSourceEditorSidePanelComponent', () => {
                             FormsModule,
                             MessageModule,
                             MonacoEditorStubComponent,
-                            MockPipe(DotMessagePipe, (key: string) => key)
+                            ProgressSpinnerModule,
+                            // The key, then any arguments, so a test can see what was passed in.
+                            MockPipe(DotMessagePipe, (key: string, args: string[] = []) =>
+                                [key, ...args].join(' ')
+                            )
                         ]
                     }
                 }
@@ -229,6 +234,8 @@ describe('DotSourceEditorSidePanelComponent', () => {
             expect(
                 spectator.query(byTestId('source-editor-loading'), { root: true })
             ).not.toBeNull();
+            // The drawer's own spinner, so the one it shows while the panel loads is not swapped.
+            expect(spectator.query(ProgressSpinner)).not.toBeNull();
             expect(editor()).toBeNull();
         });
 
@@ -338,12 +345,25 @@ describe('DotSourceEditorSidePanelComponent', () => {
             spectator.click(button('source-editor-save'));
             spectator.detectChanges();
 
-            expect(saveError()?.textContent).toContain('edit.content.source-editor.save-error');
-            expect(saveError()?.textContent).toContain('File too large');
+            expect(saveError()?.textContent?.trim()).toBe(
+                'edit.content.source-editor.save-error-reason File too large'
+            );
             expect(spectator.inject(DotHttpErrorManagerService).handle).not.toHaveBeenCalled();
             expect(panel.close).not.toHaveBeenCalled();
             expect(editor()?.value).toBe('#set($title = "Bye")');
             expect(button('source-editor-save').disabled).toBe(false);
+        });
+
+        it('says only that the save failed when the server gives no reason', async () => {
+            vi.spyOn(console, 'error').mockImplementation(() => undefined);
+            save.mockReturnValue(throwError(() => new DotSourceEditorUploadError()));
+            await open();
+            typeInEditor('#set($title = "Bye")');
+
+            spectator.click(button('source-editor-save'));
+            spectator.detectChanges();
+
+            expect(saveError()?.textContent?.trim()).toBe('edit.content.source-editor.save-error');
         });
 
         it('clears the message when the author saves again', async () => {

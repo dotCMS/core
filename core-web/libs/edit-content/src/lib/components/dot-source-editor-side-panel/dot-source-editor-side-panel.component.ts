@@ -10,6 +10,7 @@ import { ConfirmationService, ConfirmEventType } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { MessageModule } from 'primeng/message';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 import { catchError, filter, switchMap, take, tap } from 'rxjs/operators';
 
@@ -54,6 +55,7 @@ interface DotSourceEditorInstance {
         FormsModule,
         MessageModule,
         MonacoEditorModule,
+        ProgressSpinnerModule,
         DotMessagePipe
     ],
     // Its own prompt instance, so the prompt renders in this panel's `<p-confirmDialog>`.
