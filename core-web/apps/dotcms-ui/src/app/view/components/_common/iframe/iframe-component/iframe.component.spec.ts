@@ -202,6 +202,13 @@ describe('IframeComponent', () => {
         expect<any>(dotUiColorsService.setColors).toHaveBeenCalledWith(fakeHtmlEl);
     });
 
+    it('should ignore a colors reload while no iframe is rendered', () => {
+        comp.iframeElement = undefined;
+
+        expect(() => dotIframeService.reloadColors()).not.toThrow();
+        expect(dotUiColorsService.setColors).not.toHaveBeenCalled();
+    });
+
     describe('bind iframe events', () => {
         beforeEach(() => {
             comp.iframeElement.nativeElement = {
