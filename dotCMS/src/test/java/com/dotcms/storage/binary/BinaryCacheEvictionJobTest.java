@@ -10,6 +10,8 @@ import org.mockito.MockedStatic;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributeView;
+import java.nio.file.attribute.FileTime;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -66,7 +68,7 @@ class BinaryCacheEvictionJobTest {
                     .thenReturn(true);
             configUtils.when(com.dotmarketing.util.ConfigUtils::getAssetPath).thenReturn(assetRoot.toString());
             configUtils.when(com.dotmarketing.util.ConfigUtils::getDotGeneratedPath).thenReturn(generatedRoot.toString());
-            job.execute(null);
+            job.run();
             assertFalse(Files.exists(complete));
             assertTrue(Files.exists(unbacked));
             assertTrue(Files.exists(transientFile));
@@ -88,11 +90,11 @@ class BinaryCacheEvictionJobTest {
             config.when(() -> Config.getBooleanProperty(com.dotcms.storage.AssetStorageFeature.FLAG, false))
                     .thenReturn(true);
             configUtils.when(com.dotmarketing.util.ConfigUtils::getAssetPath).thenReturn(assetRoot.toString());
-            job.execute(null);
+            job.run();
             assertTrue(Files.exists(file), "Configured chain with no durable provider must retain files");
             when(storage.hasDurableCopy(anyString(), anyString(), any(File.class)))
                     .thenThrow(new com.dotmarketing.exception.DotDataException("S3 unavailable"));
-            job.execute(null);
+            job.run();
             assertTrue(Files.exists(file), "An S3 error must never authorize eviction");
         }
     }
@@ -236,12 +238,12 @@ class BinaryCacheEvictionJobTest {
             }
             config.when(() -> Config.getLongProperty(BinaryCacheEvictionJob.BINARY_CACHE_MAX_SIZE_MB_PROP,
                     BinaryCacheEvictionJob.BINARY_CACHE_MAX_SIZE_MB_DEFAULT)).thenReturn(1L);
-            job.execute(null);
+            job.run();
             verifyNoInteractions(storage);
             assertTrue(Files.exists(original), "Protected bytes must not cause budget pressure");
             config.when(() -> Config.getLongProperty(BinaryCacheEvictionJob.BINARY_CACHE_MAX_SIZE_MB_PROP,
                     BinaryCacheEvictionJob.BINARY_CACHE_MAX_SIZE_MB_DEFAULT)).thenReturn(0L);
-            job.execute(null);
+            job.run();
             for (Path file : java.util.List.of(original, version, rendition)) {
                 assertFalse(Files.exists(file), file.toString());
             }
@@ -253,7 +255,7 @@ class BinaryCacheEvictionJobTest {
             com.dotcms.storage.AssetStorageFeature.reset(); // The flag is latched; model a restart with it off.
             Files.writeString(original, "disabled");
             assertFalse(api.evictLocalFile(original.toFile()));
-            job.execute(null);
+            job.run();
             verifyNoInteractions(storage);
             assertTrue(Files.exists(original));
         }
@@ -310,7 +312,7 @@ class BinaryCacheEvictionJobTest {
 
     /**
      * Creates a file in the inode directory structure: {assetRoot}/{c1}/{c2}/{inode}/{field}/{fileName}
-     * and sets its lastModified to the given timestamp.
+     * and sets its modification and access times to the given timestamp.
      */
     private Path createInodeFile(String inode, String field, String fileName,
                                   byte[] content, long lastModified) throws Exception {
@@ -323,8 +325,50 @@ class BinaryCacheEvictionJobTest {
         Files.createDirectories(fieldDir);
         final Path file = fieldDir.resolve(fileName);
         Files.write(file, content);
-        file.toFile().setLastModified(lastModified);
+        final FileTime time = FileTime.fromMillis(lastModified);
+        Files.getFileAttributeView(file, BasicFileAttributeView.class).setTimes(time, time, null);
         return file;
+    }
+
+    /**
+     * A file read through the API moves behind unread files in the eviction order and is protected by
+     * the minimum age, even when its contents are older. Its modification time is left alone.
+     */
+    @Test
+    void recentlyReadFileIsEvictedLastAndProtectedByMinimumAge() throws Exception {
+        final long twoHoursAgo = System.currentTimeMillis() - 7_200_000;
+        final byte[] oneMB = new byte[1024 * 1024];
+        final Path read = createInodeFile("abc123", "fileAsset", "read.pdf", oneMB, twoHoursAgo - 60_000);
+        final Path unread = createInodeFile("def456", "fileAsset", "unread.pdf", oneMB, twoHoursAgo);
+        final com.dotcms.storage.StoragePersistenceAPI storage = mock(com.dotcms.storage.StoragePersistenceAPI.class);
+        when(storage.existsGroup(BinaryAssetStorageAPI.BINARY_ASSETS_GROUP)).thenReturn(true);
+        when(storage.pullFile(BinaryAssetStorageAPI.BINARY_ASSETS_GROUP, "a/b/abc123/fileAsset/read.pdf"))
+                .thenReturn(read.toFile());
+        when(storage.hasDurableCopy(anyString(), anyString(), any(File.class))).thenReturn(true);
+        final BinaryAssetStorageAPIImpl api = new BinaryAssetStorageAPIImpl(storage);
+        job = new BinaryCacheEvictionJob(() -> api);
+        try (MockedStatic<com.dotmarketing.util.ConfigUtils> configUtils =
+                     mockStatic(com.dotmarketing.util.ConfigUtils.class)) {
+            configUtils.when(com.dotmarketing.util.ConfigUtils::getAssetPath).thenReturn(assetRoot.toString());
+            assertEquals(read.toFile(), api.getBinaryFile("abc123", "fileAsset", "read.pdf"));
+            assertEquals(twoHoursAgo - 60_000, Files.getLastModifiedTime(read).toMillis());
+
+            // 2 MB cached against a 1 MB limit: one eviction is enough, so only the unread file goes.
+            Config.setProperty(BinaryCacheEvictionJob.BINARY_CACHE_MAX_SIZE_MB_PROP, 1);
+            Config.setProperty(BinaryCacheEvictionJob.BINARY_CACHE_EVICTION_MIN_AGE_MINUTES_PROP, 0);
+            job.run();
+            assertTrue(Files.exists(read));
+            assertFalse(Files.exists(unread));
+
+            // With no size headroom, the minimum age still protects the file that was just read.
+            Config.setProperty(BinaryCacheEvictionJob.BINARY_CACHE_MAX_SIZE_MB_PROP, 0);
+            Config.setProperty(BinaryCacheEvictionJob.BINARY_CACHE_EVICTION_MIN_AGE_MINUTES_PROP, 60);
+            job.run();
+            assertTrue(Files.exists(read));
+        } finally {
+            Config.setProperty(BinaryCacheEvictionJob.BINARY_CACHE_MAX_SIZE_MB_PROP, null);
+            Config.setProperty(BinaryCacheEvictionJob.BINARY_CACHE_EVICTION_MIN_AGE_MINUTES_PROP, null);
+        }
     }
 
     @Test
@@ -359,7 +403,7 @@ class BinaryCacheEvictionJobTest {
             configUtils.when(com.dotmarketing.util.ConfigUtils::getAssetPath)
                     .thenReturn(assetRoot.toString());
 
-            job.execute(null);
+            job.run();
 
             // Oldest and middle should be evicted (both > 1hr old)
             assertFalse(oldest.toFile().exists(), "Oldest file should be evicted");
@@ -397,7 +441,7 @@ class BinaryCacheEvictionJobTest {
             configUtils.when(com.dotmarketing.util.ConfigUtils::getAssetPath)
                     .thenReturn(assetRoot.toString());
 
-            job.execute(null);
+            job.run();
 
             // Old file evicted, recent file protected by min age
             assertFalse(oldFile.toFile().exists(), "Old file should be evicted");
@@ -417,7 +461,7 @@ class BinaryCacheEvictionJobTest {
             config.when(() -> Config.getBooleanProperty(com.dotcms.storage.AssetStorageFeature.FLAG, false))
                     .thenReturn(false);
 
-            job.execute(null);
+            job.run();
 
             // File should still exist — job is no-op in FILE_SYSTEM mode
             assertTrue(file.toFile().exists(), "File should not be evicted in FILE_SYSTEM mode");
@@ -450,7 +494,7 @@ class BinaryCacheEvictionJobTest {
             configUtils.when(com.dotmarketing.util.ConfigUtils::getAssetPath)
                     .thenReturn(assetRoot.toString());
 
-            job.execute(null);
+            job.run();
 
             // File should still exist — under threshold
             assertTrue(file.toFile().exists(), "File should not be evicted when under threshold");
