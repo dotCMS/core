@@ -179,6 +179,82 @@ logged in as a CMS Administrator.
 - **Old endpoint:** a `null` from `validateCacheInCluster` is treated as no replies.
 - **Docs and tests:** `openapi.yaml` regenerated; unit, integration and Postman tests.
 
+**Response contract** (`GET /api/v1/cluster/nodes`, standard `ResponseEntityView` envelope):
+
+```json
+{
+  "entity": {
+    "currentServerId": "ed54e574-717a-4b47-ba6c-758ff23b3e1b",
+    "nodes": [
+      {
+        "serverId": "ed54e574-717a-4b47-ba6c-758ff23b3e1b",
+        "displayServerId": "ed54e574",
+        "name": "dotcms-node-1",
+        "clusterName": "79bd147f91",
+        "ipAddress": "172.17.0.5",
+        "version": "26.10.01",
+        "lastContactSeconds": 34,
+        "responded": true,
+        "status": "UP",
+        "cache": {
+          "clusterName": "79bd147f91", "transport": "PubSub", "numberOfNodes": 2, "open": true,
+          "address": null, "port": null, "receivedBytes": 2275, "sentBytes": 2275
+        },
+        "search": {
+          "engine": "OPENSEARCH", "clusterName": "os-cluster", "timedOut": false,
+          "numberOfNodes": 1, "numberOfDataNodes": 1, "activePrimaryShards": 2, "activeShards": 2,
+          "relocatingShards": 0, "initializingShards": 0, "unassignedShards": 0,
+          "delayedUnassignedShards": 0, "numberOfPendingTasks": 0, "numberOfInFlightFetch": 0,
+          "taskMaxWaitingInQueueMillis": 0, "activeShardsPercent": 100.0
+        },
+        "assets": { "path": "/data/shared/assets", "canRead": true, "canWrite": true }
+      },
+      {
+        "serverId": "1c2d3e4f-0000-4000-8000-000000000002",
+        "displayServerId": "1c2d3e4f",
+        "name": "dotcms-node-2",
+        "clusterName": "79bd147f91",
+        "ipAddress": "172.17.0.6",
+        "version": "26.10.01",
+        "lastContactSeconds": 302,
+        "responded": false,
+        "status": "DOWN",
+        "cache": null,
+        "search": null,
+        "assets": null
+      }
+    ]
+  },
+  "errors": [], "i18nMessagesMap": {}, "messages": [], "pagination": null, "permissions": []
+}
+```
+
+| Field | Type | Null? |
+|---|---|---|
+| `currentServerId` | string | never |
+| `nodes` | array, alive servers in database order | never (may be empty) |
+| `serverId`, `displayServerId` | string | never |
+| `name`, `clusterName`, `ipAddress`, `version` | string | when the database row has none |
+| `lastContactSeconds` | integer (seconds, ≥ 0) | never |
+| `responded` | boolean | never |
+| `status` | `UP` / `LAGGING` / `DOWN` | never |
+| `cache`, `search`, `assets` | object | when `responded` is `false` |
+| `cache.clusterName`, `cache.transport`, `cache.address` | string | yes; `address` is always `null` on PubSub |
+| `cache.numberOfNodes`, `cache.port` | integer | yes; `port` is always `null` on PubSub |
+| `cache.open` | boolean | yes |
+| `cache.receivedBytes`, `cache.sentBytes` | integer | yes |
+| `search.engine` | `ELASTICSEARCH` / `OPENSEARCH` | yes (unknown, or the search check failed) |
+| `search.clusterName` | string | yes |
+| `search.timedOut` | boolean | yes |
+| `search` shard and node counts, `numberOfPendingTasks`, `numberOfInFlightFetch` | integer | yes |
+| `search.taskMaxWaitingInQueueMillis` | integer (milliseconds) | yes |
+| `search.activeShardsPercent` | number (0–100) | yes |
+| `assets.path` | string | yes |
+| `assets.canRead`, `assets.canWrite` | boolean | yes |
+
+Inside a section, `null` means unknown; when a server answered but its search check failed, every
+`search` value is `null`. Errors: 401 for a caller without access.
+
 **Explicitly out of scope / non-goals**:
 
 - **The old endpoint's response:** its types, keys and id algorithms stay as they are, including
