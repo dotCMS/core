@@ -336,29 +336,27 @@ logged in as a CMS Administrator.
 
 - **Unit tests** for:
   - the status rule at its boundaries (AC-005);
-  - the conversion of old-format values (AC-008);
-  - search routing and failure handling (AC-016, AC-018), including that in phase 3
-    `IndexAPIImpl` never calls the Elasticsearch implementation, which proves AC-017 without
+  - the conversion of current and old-format reports (AC-006 to AC-008);
+  - the answered and unanswered node shape, and one status request per call (AC-002 to AC-004,
+    AC-009);
+  - search routing per phase, the phase 2 fallback, and the OpenSearch mapping (AC-016). That
+    `IndexAPIImpl` never calls the Elasticsearch implementation in phase 3 proves AC-017 without
     `ES_ENDPOINTS`;
   - the handler fallback (AC-021);
   - the per-notification guard (AC-022);
-  - request id collection, including two requests under 1.5 s apart and replies from older
-    servers (AC-024 to AC-026).
+  - request id collection, and two status checks under 1.5 s apart answered the way an
+    older-version server answers (AC-024 to AC-026).
 - **Integration tests**, appended to a `MainSuite` free of `Config.CONTEXT` leakers:
-  - each access case (AC-011);
-  - the endpoint's shape for an answered and an unanswered server (AC-001 to AC-004, AC-006);
-  - `heartbeatEnabled` with the other `cluster` keys unchanged (AC-012, AC-013);
-  - `getNodeInfo` in phase 0 (AC-016), and with the search engine unreachable (AC-018);
+  - access for an admin, a `network-beta` user, a user with neither portlet, and an anonymous
+    caller (AC-011);
+  - the endpoint's shape for a server that didn't answer (AC-001, AC-003, AC-006);
+  - `heartbeatEnabled` for back-end users only (AC-012, AC-013);
+  - `getNodeInfo` in phase 0 (AC-016, AC-020), and with the search engine unreachable (AC-018);
   - the old endpoint with `NullTransport` (AC-027).
-- **Integration test in `OpenSearchUpgradeSuite`**, the suite CI runs with an OpenSearch
-  container: `getNodeInfo` in phase 3 reports `esEngine=OPENSEARCH` with filled search values
-  (AC-016, AC-017). The default `MainSuite` run has no OpenSearch, so it can't prove this. Every
-  test that changes the migration phase restores it afterwards.
 
-  The test environment uses `NullTransport` and doesn't run the heartbeat job. Tests refresh the
-  heartbeat in setup, and fake servers use a later `startup_time` and are removed afterwards. If
-  starting the transport in a test isn't practical, the answered shape is covered by unit tests.
-  The test environment's `HEARTBEAT_TIMEOUT` is 1800 s, not 600 s.
+  In the integration environment no server answers status requests (its cache transport is never
+  started), and this server has no `cluster_server` row until a test creates it the way a
+  running server does. Tests that change the migration phase restore it afterwards.
 - **Postman** collection for `GET /api/v1/cluster/nodes`.
 - **CI OpenAPI check** for AC-010.
 - **Code review** for:
