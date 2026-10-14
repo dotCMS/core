@@ -41,6 +41,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.dotmarketing.util.WebKeys.DOTCMS_DISABLE_WEBSOCKET_PROTOCOL;
@@ -66,6 +67,7 @@ public class DotInitScheduler {
 				return thread;
 			});
 	private static final AtomicReference<ScheduledFuture<?>> BINARY_CACHE_EVICTION_RUN = new AtomicReference<>();
+	private static final AtomicLong BINARY_CACHE_EVICTION_GENERATION = new AtomicLong();
 
 	private static void deleteOldJobs() throws DotDataException {
 		// remove unused old jobs
@@ -618,12 +620,13 @@ private static void addDeleteOldSiteSearchIndicesJob (final Scheduler scheduler)
 	 * @param cron  the parsed {@code BINARY_CACHE_EVICTION_CRON} expression
 	 * @param first the time after which the first run may start
 	 */
-	private static synchronized void startBinaryCacheEviction(final CronExpression cron, final Date first) {
-		final ScheduledFuture<?> previous = BINARY_CACHE_EVICTION_RUN.getAndSet(null);
+	private static void startBinaryCacheEviction(final CronExpression cron, final Date first) {
+		final long generation = BINARY_CACHE_EVICTION_GENERATION.incrementAndGet();
+		final ScheduledFuture<?> previous = BINARY_CACHE_EVICTION_RUN.getAndSet(
+				scheduleBinaryCacheEviction(cron, first, generation));
 		if (previous != null) {
 			previous.cancel(false);
 		}
-		scheduleBinaryCacheEviction(cron, first, null);
 	}
 
 	/**
@@ -631,34 +634,35 @@ private static void addDeleteOldSiteSearchIndicesJob (final Scheduler scheduler)
 	 * first time the cron expression allows after {@code after}. A run can take minutes, so it has its own
 	 * thread instead of a slot in the shared scheduled pool. Each run schedules the following one when it
 	 * finishes, so runs never overlap, and fire times missed during a long run are skipped rather than
-	 * queued. A chain whose run is no longer the current one, because the schedule was restarted, stops.
+	 * queued. A chain from an earlier generation, because the schedule was restarted, stops.
 	 *
-	 * @param cron     the parsed {@code BINARY_CACHE_EVICTION_CRON} expression
-	 * @param after    the time after which the next run may start
-	 * @param finished the run that just finished, or {@code null} when starting a new chain
+	 * @param cron       the parsed {@code BINARY_CACHE_EVICTION_CRON} expression
+	 * @param after      the time after which the next run may start
+	 * @param generation the generation of the chain this run belongs to
+	 * @return the scheduled run, or {@code null} when the chain has stopped
 	 */
-	private static synchronized void scheduleBinaryCacheEviction(final CronExpression cron, final Date after,
-			final ScheduledFuture<?> finished) {
-		if (BINARY_CACHE_EVICTION_RUN.get() != finished) {
-			return;
+	private static ScheduledFuture<?> scheduleBinaryCacheEviction(final CronExpression cron, final Date after,
+			final long generation) {
+		if (BINARY_CACHE_EVICTION_GENERATION.get() != generation) {
+			return null;
 		}
 		final Date next = cron.getNextValidTimeAfter(after);
 		if (next == null) {
 			Logger.warn(DotInitScheduler.class, "BinaryCacheEvictionJob cron expression has no future run: " + cron);
-			return;
+			return null;
 		}
-		final AtomicReference<ScheduledFuture<?>> self = new AtomicReference<>();
-		self.set(BINARY_CACHE_EVICTION_EXECUTOR.schedule(() -> {
+		return BINARY_CACHE_EVICTION_EXECUTOR.schedule(() -> {
 			try {
 				new BinaryCacheEvictionJob().run();
 			} catch (final Exception e) {
 				Logger.warnAndDebug(DotInitScheduler.class, e);
 			} finally {
-				// Synchronized, so this waits until self and BINARY_CACHE_EVICTION_RUN have been set.
-				scheduleBinaryCacheEviction(cron, new Date(), self.get());
+				final ScheduledFuture<?> following = scheduleBinaryCacheEviction(cron, new Date(), generation);
+				if (following != null) {
+					BINARY_CACHE_EVICTION_RUN.set(following);
+				}
 			}
-		}, Math.max(0, next.getTime() - System.currentTimeMillis()), TimeUnit.MILLISECONDS));
-		BINARY_CACHE_EVICTION_RUN.set(self.get());
+		}, Math.max(0, next.getTime() - System.currentTimeMillis()), TimeUnit.MILLISECONDS);
 	}
 
    private static void addServerHeartbeatJob () {

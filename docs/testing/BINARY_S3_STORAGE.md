@@ -129,11 +129,18 @@ the job runs on every node from its own node-local thread (`binary-cache-evictio
 clustered Quartz scheduler, which would fire it on only one node per run. The first run is at least
 ten minutes after startup, and each run schedules the next one when it finishes, so runs never
 overlap. Because a run can take minutes, it does not use the shared scheduled pool. Once the
-cache exceeds `BINARY_CACHE_MAX_SIZE_MB` (default 5000), it evicts the least recently read files
-first, skipping files read or written within `BINARY_CACHE_EVICTION_MIN_AGE_MINUTES` (default 60).
-The order comes from each file's access time. The binary API sets the access time explicitly
-whenever it hands a cached file to a reader, so the order holds on `noatime` mounts. It does not
-touch the modification time, because HTTP ETags and Last-Modified headers are built from it.
+cache exceeds `BINARY_CACHE_MAX_SIZE_MB` (default 5000), it evicts the files least recently read by
+anything first, with API reads always recorded, skipping files read or written within
+`BINARY_CACHE_EVICTION_MIN_AGE_MINUTES` (default 60). The order comes from each file's access time.
+The binary API sets the access time explicitly when it hands a cached file to a reader, at most once
+a minute per file, so API reads count on `noatime` mounts too. Other reads count only where the
+mount updates access times: on default `relatime` mounts the kernel also records a read once the
+access time is over 24 hours old, which includes backup scans and the job's own verification of a
+file it then keeps. The API does not touch the modification time, because HTTP ETags and
+Last-Modified headers are built from it.
+
+If a run ends with the cache still over its limit and no file evicted, the job logs a warning with
+the number of candidates it kept.
 
 A file is evicted only when S3 holds a verified copy under the exact key. For `binary-assets` and
 `generated-assets`, the key must hold a reference whose SHA-256 matches the local file, and the

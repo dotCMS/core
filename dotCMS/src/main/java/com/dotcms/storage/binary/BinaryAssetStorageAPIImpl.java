@@ -43,6 +43,8 @@ public class BinaryAssetStorageAPIImpl implements BinaryAssetStorageAPI {
 
     // Regular I/O remains concurrent, including NFS. Only eviction needs exclusive access.
     private final ReentrantReadWriteLock evictionLock = new ReentrantReadWriteLock();
+    // Coarser than any useful eviction ordering, and keeps hot reads from writing attributes each time.
+    private static final long READ_MARK_INTERVAL_MILLIS = 60_000L;
     private final StoragePersistenceAPI storagePersistenceAPI;
     private final boolean resolveContentReferences;
     private volatile boolean groupInitialized = false;
@@ -252,8 +254,9 @@ public class BinaryAssetStorageAPIImpl implements BinaryAssetStorageAPI {
      * Records that a cached file was handed to a reader, so the eviction job, which evicts the
      * least-recently-read files first, keeps it longer. The access time is set explicitly because
      * {@code noatime} mounts never update it on reads; the modification time is left alone because
-     * HTTP ETags and Last-Modified headers are built from it. Best effort: a failure is only logged.
-     * Does nothing with the flag off.
+     * HTTP ETags and Last-Modified headers are built from it. The access time is written at most once a
+     * minute per file, so hot reads on an NFS-backed cache do not each cost a synchronous attribute
+     * write. Best effort: a failure is only logged. Does nothing with the flag off.
      *
      * @param file the file being read, or {@code null}
      * @return the same file
@@ -263,8 +266,12 @@ public class BinaryAssetStorageAPIImpl implements BinaryAssetStorageAPI {
             return file;
         }
         try {
-            Files.getFileAttributeView(file.toPath(), BasicFileAttributeView.class)
-                    .setTimes(null, FileTime.fromMillis(System.currentTimeMillis()), null);
+            final BasicFileAttributeView view = Files.getFileAttributeView(file.toPath(), BasicFileAttributeView.class);
+            final BasicFileAttributes attributes = view.readAttributes();
+            final long now = System.currentTimeMillis();
+            if (now - attributes.lastAccessTime().toMillis() > READ_MARK_INTERVAL_MILLIS) {
+                view.setTimes(attributes.lastModifiedTime(), FileTime.fromMillis(now), null);
+            }
         } catch (final IOException e) {
             Logger.debug(this, () -> "Unable to record read of cached binary " + file + ": " + e.getMessage());
         }
