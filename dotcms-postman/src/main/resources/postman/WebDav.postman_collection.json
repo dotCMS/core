@@ -750,6 +750,492 @@
 				}
 			],
 			"description": "Deletes the created folder and validate"
+		},
+		{
+			"name": "Copy and move in temp storage",
+			"item": [
+				{
+					"name": "Create the folder",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "MKCOL",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/webdav/live/1/{{hostName}}/webdavtemp",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"webdav",
+								"live",
+								"1",
+								"{{hostName}}",
+								"webdavtemp"
+							]
+						},
+						"description": "Creates the folder that holds the temp storage used by the requests below."
+					},
+					"response": []
+				},
+				{
+					"name": "Create a temp folder",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "MKCOL",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/webdav/live/1/{{hostName}}/webdavtemp/.tempdir",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"webdav",
+								"live",
+								"1",
+								"{{hostName}}",
+								"webdavtemp",
+								".tempdir"
+							]
+						},
+						"description": "A dot-prefixed folder name goes to WebDAV temp storage, the way clients store their transient files."
+					},
+					"response": []
+				},
+				{
+					"name": "Upload a file into the temp folder",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "temp content",
+							"options": {
+								"raw": {
+									"language": "text"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/webdav/live/1/{{hostName}}/webdavtemp/.tempdir/source.txt",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"webdav",
+								"live",
+								"1",
+								"{{hostName}}",
+								"webdavtemp",
+								".tempdir",
+								"source.txt"
+							]
+						},
+						"description": "Uploads the file that the copy and move requests below use as their source."
+					},
+					"response": []
+				},
+				{
+					"name": "Copy to a dot-dot destination is rejected",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "COPY",
+						"header": [
+							{
+								"key": "Destination",
+								"value": "{{serverURL}}/webdav/live/1/{{hostName}}/webdavtemp/.tempdir/..",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/webdav/live/1/{{hostName}}/webdavtemp/.tempdir/source.txt",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"webdav",
+								"live",
+								"1",
+								"{{hostName}}",
+								"webdavtemp",
+								".tempdir",
+								"source.txt"
+							]
+						},
+						"description": "A destination whose last segment is `..` is not a valid name and is rejected with 400."
+					},
+					"response": []
+				},
+				{
+					"name": "Move to a dot-dot destination is rejected",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "MOVE",
+						"header": [
+							{
+								"key": "Destination",
+								"value": "{{serverURL}}/webdav/live/1/{{hostName}}/webdavtemp/.tempdir/..",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/webdav/live/1/{{hostName}}/webdavtemp/.tempdir/source.txt",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"webdav",
+								"live",
+								"1",
+								"{{hostName}}",
+								"webdavtemp",
+								".tempdir",
+								"source.txt"
+							]
+						},
+						"description": "A destination whose last segment is `..` is not a valid name and is rejected with 400."
+					},
+					"response": []
+				},
+				{
+					"name": "Validate the source is still in place",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 207\", function () {",
+									"    pm.response.to.have.status(207);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PROPFIND",
+						"header": [
+							{
+								"key": "Depth",
+								"value": "0",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<D:propfind xmlns:D=\"DAV:\">\n  <D:allprop/>\n</D:propfind>",
+							"options": {
+								"raw": {
+									"language": "text"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/webdav/live/1/{{hostName}}/webdavtemp/.tempdir/source.txt",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"webdav",
+								"live",
+								"1",
+								"{{hostName}}",
+								"webdavtemp",
+								".tempdir",
+								"source.txt"
+							]
+						},
+						"description": "The rejected copy and move left the source file where it was."
+					},
+					"response": []
+				},
+				{
+					"name": "Copy to a plain name",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "COPY",
+						"header": [
+							{
+								"key": "Destination",
+								"value": "{{serverURL}}/webdav/live/1/{{hostName}}/webdavtemp/.tempdir/copy.txt",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/webdav/live/1/{{hostName}}/webdavtemp/.tempdir/source.txt",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"webdav",
+								"live",
+								"1",
+								"{{hostName}}",
+								"webdavtemp",
+								".tempdir",
+								"source.txt"
+							]
+						},
+						"description": "Copying within temp storage to a plain name still works."
+					},
+					"response": []
+				},
+				{
+					"name": "Validate the copy has the source content",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Body is the source content\", function () {",
+									"    pm.expect(pm.response.text()).to.eql(\"temp content\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/webdav/live/1/{{hostName}}/webdavtemp/.tempdir/copy.txt",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"webdav",
+								"live",
+								"1",
+								"{{hostName}}",
+								"webdavtemp",
+								".tempdir",
+								"copy.txt"
+							]
+						},
+						"description": "The copied file holds the content uploaded to the source."
+					},
+					"response": []
+				},
+				{
+					"name": "Move to a plain name",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "MOVE",
+						"header": [
+							{
+								"key": "Destination",
+								"value": "{{serverURL}}/webdav/live/1/{{hostName}}/webdavtemp/.tempdir/moved.txt",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/webdav/live/1/{{hostName}}/webdavtemp/.tempdir/copy.txt",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"webdav",
+								"live",
+								"1",
+								"{{hostName}}",
+								"webdavtemp",
+								".tempdir",
+								"copy.txt"
+							]
+						},
+						"description": "Moving within temp storage to a plain name still works."
+					},
+					"response": []
+				},
+				{
+					"name": "Validate the moved file exists",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 207\", function () {",
+									"    pm.response.to.have.status(207);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PROPFIND",
+						"header": [
+							{
+								"key": "Depth",
+								"value": "0",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n<D:propfind xmlns:D=\"DAV:\">\n  <D:allprop/>\n</D:propfind>",
+							"options": {
+								"raw": {
+									"language": "text"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/webdav/live/1/{{hostName}}/webdavtemp/.tempdir/moved.txt",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"webdav",
+								"live",
+								"1",
+								"{{hostName}}",
+								"webdavtemp",
+								".tempdir",
+								"moved.txt"
+							]
+						},
+						"description": "The moved file is found under its new name."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete the folder",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 204\", function () {",
+									"    pm.response.to.have.status(204);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/webdav/live/1/{{hostName}}/webdavtemp",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"webdav",
+								"live",
+								"1",
+								"{{hostName}}",
+								"webdavtemp"
+							]
+						},
+						"description": "Removes the folder created for these requests."
+					},
+					"response": []
+				}
+			],
+			"description": "Copy and move a file in WebDAV temp storage with a real Destination header: a destination that is not a single plain name is rejected with 400 and leaves the source untouched, while plain names keep working."
 		}
 	],
 	"auth": {

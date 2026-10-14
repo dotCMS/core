@@ -75,6 +75,7 @@ import { DOT_SYSTEM_CONFIG_SERVICE_MOCK, mockLocales } from '@dotcms/utils-testi
 
 import { DotContentDriveShellComponent } from './dot-content-drive-shell.component';
 
+import { DotContentDriveGridCardComponent } from '../components/dot-content-drive-grid-card/dot-content-drive-grid-card.component';
 import { DotLegacyEditorSidePanelComponent } from '../components/dot-legacy-editor-side-panel/dot-legacy-editor-side-panel.component';
 import {
     ACTION_CENTER_DIALOG_CONTENT_STYLE,
@@ -149,6 +150,8 @@ const canAddChildrenSignal: WritableSignal<boolean> = signal(true);
 const siteCanAddChildrenSignal: WritableSignal<boolean | undefined> = signal(undefined);
 const systemHostCanReadSignal = signal(true);
 const allSiteContentSelectedSignal = signal(false);
+// The listing on show (#37930). Module-level and reset per test, like the signals above.
+const viewTypeSignal: WritableSignal<'list' | 'card'> = signal('list');
 
 describe('DotContentDriveShellComponent', () => {
     let spectator: Spectator<DotContentDriveShellComponent>;
@@ -272,8 +275,20 @@ describe('DotContentDriveShellComponent', () => {
             [
                 DotContentDriveShellComponent,
                 {
-                    remove: { imports: [DotLegacyEditorSidePanelComponent] },
-                    add: { imports: [MockComponent(DotLegacyEditorSidePanelComponent)] }
+                    // The card has its own spec. Rendering real cards here pushed this file past
+                    // Node's heap limit.
+                    remove: {
+                        imports: [
+                            DotLegacyEditorSidePanelComponent,
+                            DotContentDriveGridCardComponent
+                        ]
+                    },
+                    add: {
+                        imports: [
+                            MockComponent(DotLegacyEditorSidePanelComponent),
+                            MockComponent(DotContentDriveGridCardComponent)
+                        ]
+                    }
                 }
             ]
         ],
@@ -285,6 +300,7 @@ describe('DotContentDriveShellComponent', () => {
         siteCanAddChildrenSignal.set(undefined);
         systemHostCanReadSignal.set(true);
         allSiteContentSelectedSignal.set(false);
+        viewTypeSignal.set('list');
         filtersSignal = signal({});
         statusSignal = signal(DotContentDriveStatus.LOADING);
         dialogSignal = signal<DotContentDriveDialog | undefined>(undefined);
@@ -423,7 +439,9 @@ describe('DotContentDriveShellComponent', () => {
                     setUserSearchableFields: vi.fn(),
                     setShowInListFields: vi.fn(),
                     addUserSearchableField: vi.fn(),
-                    clearUserSearchableFilters: vi.fn()
+                    clearUserSearchableFilters: vi.fn(),
+                    viewType: viewTypeSignal,
+                    setViewType: vi.fn()
                 }),
                 mockProvider(Router, {
                     createUrlTree: vi.fn(
@@ -1577,6 +1595,8 @@ describe('DotContentDriveShellComponent', () => {
             expect(router.createUrlTree).toHaveBeenCalledWith([], {
                 queryParams: {
                     isTreeExpanded: 'false',
+                    // Always written (#37930), so a copied link keeps the view.
+                    viewType: 'list',
                     path: '/another/path',
                     filters: 'contentType:Blog;baseType:1,2,3',
                     editContent: null,
@@ -1679,6 +1699,8 @@ describe('DotContentDriveShellComponent', () => {
             expect(router.createUrlTree).toHaveBeenCalledWith([], {
                 queryParams: {
                     isTreeExpanded: 'false',
+                    // Always written (#37930), so a copied link keeps the view.
+                    viewType: 'list',
                     path: '/another/path',
                     filters: 'contentType:Blog;baseType:1,2,3',
                     editContent: null,
@@ -1700,6 +1722,8 @@ describe('DotContentDriveShellComponent', () => {
             expect(router.createUrlTree).toHaveBeenCalledWith([], {
                 queryParams: {
                     isTreeExpanded: 'false',
+                    // Always written (#37930), so a copied link keeps the view.
+                    viewType: 'list',
                     path: '/another/path',
                     filters: null, // With merge, null removes the param
                     editContent: null,
@@ -6083,7 +6107,9 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
                     setUserSearchableFields: vi.fn(),
                     setShowInListFields: vi.fn(),
                     addUserSearchableField: vi.fn(),
-                    clearUserSearchableFilters: vi.fn()
+                    clearUserSearchableFilters: vi.fn(),
+                    viewType: viewTypeSignal,
+                    setViewType: vi.fn()
                 }),
                 mockProvider(Router, {
                     createUrlTree: vi.fn().mockReturnValue({ toString: () => '' })

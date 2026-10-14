@@ -35,7 +35,7 @@ jobs:
   # TROUBLESHOOTING: If blocked, visit https://github.com/orgs/dotCMS/people
   # and ensure your membership is public (click "Make public" if needed)
   security-check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     permissions:
       contents: read           # Allow repository checkout
       # Note: Organization membership checking uses fine-grained token
@@ -99,7 +99,7 @@ jobs:
       trigger_mode: interactive
       claude_args: '--allowedTools "Bash(git status),Bash(git diff)"'
       timeout_minutes: 15
-      runner: ubuntu-latest
+      runner: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
       enable_mention_detection: true  # Uses built-in @claude mention detection
       # custom_trigger_condition: |    # Optional: Override default mention detection
       #   your custom condition here
@@ -121,7 +121,7 @@ jobs:
       !contains(github.event.pull_request.body, '@claude') &&
       !contains(github.event.pull_request.body, '@Claude') &&
       !contains(github.event.pull_request.body, '@CLAUDE')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     permissions:
       contents: read
       issues: read
@@ -198,7 +198,7 @@ jobs:
       # yields a genuine boolean — sticky by default, off only when the var is exactly "false".
       use_sticky_comment: ${{ vars.AI_REVIEW_STICKY_COMMENTS != 'false' }}
       timeout_minutes: 20
-      runner: ubuntu-latest
+      runner: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
       enable_mention_detection: false
     secrets:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
