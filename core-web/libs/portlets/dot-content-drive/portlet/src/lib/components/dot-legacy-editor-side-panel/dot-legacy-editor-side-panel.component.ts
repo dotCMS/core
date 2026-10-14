@@ -1,6 +1,5 @@
 import { DOCUMENT } from '@angular/common';
 import {
-    ChangeDetectionStrategy,
     Component,
     ElementRef,
     NgZone,
@@ -72,8 +71,7 @@ interface LegacyEditorEventDetail {
     // Its own instance, so the prompt renders in this panel's `<p-confirmDialog>` and never in
     // another one mounted elsewhere on the page.
     providers: [ConfirmationService],
-    templateUrl: './dot-legacy-editor-side-panel.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    templateUrl: './dot-legacy-editor-side-panel.component.html'
 })
 export class DotLegacyEditorSidePanelComponent implements DotSidePanelContent, OnDestroy {
     readonly #panel = inject(DotSidePanelRef);
