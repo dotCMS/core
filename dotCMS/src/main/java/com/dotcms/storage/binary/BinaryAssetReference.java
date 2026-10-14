@@ -1,11 +1,21 @@
 package com.dotcms.storage.binary;
 
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.storage.AssetStorageFeature;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.ConfigUtils;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 /** Immutable object references stored with the binary field in the content transaction. */
 public final class BinaryAssetReference {
@@ -14,13 +24,13 @@ public final class BinaryAssetReference {
     private BinaryAssetReference() { }
 
     /** Stored binaries, including old Image/File filename values with an actual owned file. */
-    public static java.util.Map<String, StoredBinary> fromContentJson(final String json, final String inode)
+    public static Map<String, StoredBinary> fromContentJson(final String json, final String inode)
             throws DotDataException {
-        if (!com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+        if (!AssetStorageFeature.isEnabled()) {
             throw new IllegalStateException("S3 asset storage is disabled");
         }
-        final java.util.Map<String, StoredBinary> references = new java.util.LinkedHashMap<>();
-        java.util.Set<String> inventory = null;
+        final Map<String, StoredBinary> references = new LinkedHashMap<>();
+        Set<String> inventory = null;
         try {
             final var fields = JSON.readTree(json).path("fields").fields();
             while (fields.hasNext()) {
@@ -33,22 +43,28 @@ public final class BinaryAssetReference {
                 } else if ("Image".equals(type) || "File".equals(type)) {
                     final String name = value.path("value").asText("");
                     if (name.isBlank() || name.contains("/") || name.contains("\\")
-                            || name.equals(".") || name.equals("..")) continue;
+                            || name.equals(".") || name.equals("..")) {
+                        continue;
+                    }
                     final String path = ownerPrefix(inode, entry.getKey()) + "/" + name;
                     if (inventory == null) {
-                        inventory = new java.util.HashSet<>(com.dotmarketing.business.APILocator
+                        inventory = new HashSet<>(APILocator
                                 .getBinaryAssetStorageAPI().listBinaryPaths(inode));
                     }
                     // Modern linked asset IDs have no physical file owned by this field.
-                    if (!inventory.contains(path)) continue;
+                    if (!inventory.contains(path)) {
+                        continue;
+                    }
                     reference = new StoredBinary(null, null, name);
                 } else {
                     continue;
                 }
-                if (reference != null) references.put(entry.getKey(), reference);
+                if (reference != null) {
+                    references.put(entry.getKey(), reference);
+                }
             }
             return references;
-        } catch (java.io.IOException failure) {
+        } catch (IOException failure) {
             throw new DotDataException("Invalid content asset references for " + inode, failure);
         }
     }
@@ -83,7 +99,7 @@ public final class BinaryAssetReference {
      * @return the JSON text, or {@code null} when the row is missing or the column is null or blank
      * @throws DotDataException if the query fails
      */
-    @com.dotcms.business.CloseDBIfOpened
+    @CloseDBIfOpened
     static String contentJson(final String inode) throws DotDataException {
         final String json = new DotConnect()
                 .setSQL("select contentlet_as_json from contentlet where inode = ?")
@@ -104,12 +120,24 @@ public final class BinaryAssetReference {
             throws DotDataException {
         try {
             return fromJson(JSON.readTree(json).path("fields").path(field), inode, field);
-        } catch (java.io.IOException e) {
+        } catch (IOException e) {
             throw new DotDataException("Invalid binary reference for " + inode, e);
         }
     }
 
-    public static StoredBinary fromJson(final com.fasterxml.jackson.databind.JsonNode binary,
+    /**
+     * Builds the stored reference for one binary field from its node in {@code contentlet_as_json}.
+     * The file name must be a single path segment and must match the last segment of the storage
+     * key, and the resulting local path must stay inside the field's directory; anything else is
+     * rejected.
+     *
+     * @param binary the field's JSON node
+     * @param inode  the contentlet inode that owns the field
+     * @param field  the field variable name
+     * @return the reference, or {@code null} when the node has no file name
+     * @throws IllegalArgumentException if the file name, storage key, metadata key or owner is not valid
+     */
+    public static StoredBinary fromJson(final JsonNode binary,
                                         final String inode, final String field) {
         final String name = binary.path("value").asText("");
         if (name.isBlank()) {
@@ -128,6 +156,17 @@ public final class BinaryAssetReference {
     }
 
     public record StoredBinary(String storageKey, String metadataStorageKey, String fileName) {
+        /**
+         * Resolves this reference to its file in the local asset cache. A reference without a
+         * storage key maps to the older {@code <inode>/<field>/<fileName>} layout; one with a key
+         * must be a revision key owned by the given inode and field, and a metadata key, if present,
+         * must belong to that binary. Keys owned by anyone else are rejected.
+         *
+         * @param inode the contentlet inode that owns the field
+         * @param field the field variable name
+         * @return the local file, carrying the metadata key when the reference has one
+         * @throws IllegalArgumentException if the owner, storage key or metadata key is not valid
+         */
         public File localFile(final String inode, final String field) {
             final File file = storageKey == null
                     ? new File(ConfigUtils.getAssetPath(), ownerPrefix(inode, field) + "/" + fileName)
@@ -180,10 +219,27 @@ public final class BinaryAssetReference {
         }
     }
 
+    /**
+     * Returns the metadata revision key pinned to a file by {@link #withMetadata}. Any other file,
+     * including {@code null}, has no key.
+     *
+     * @param file the file to inspect
+     * @return the metadata key, or {@code null} when the file carries none
+     */
     public static String metadataKeyOf(final File file) {
         return file instanceof MetadataFile ? ((MetadataFile) file).metadataKey : null;
     }
 
+    /**
+     * Returns the metadata revision key pinned to a file only when that key belongs to the given
+     * owner. A key that fails the {@link #withMetadata} checks for this inode and field, such as
+     * one copied from another contentlet, is ignored rather than rejected.
+     *
+     * @param file  the file to inspect
+     * @param inode the contentlet inode expected to own the key
+     * @param field the field variable name expected to own the key
+     * @return the metadata key, or {@code null} when the file carries none or it belongs elsewhere
+     */
     public static String metadataKeyOf(final File file, final String inode, final String field) {
         final String key = metadataKeyOf(file);
         if (key != null) {
@@ -196,12 +252,35 @@ public final class BinaryAssetReference {
         return key;
     }
 
+    /**
+     * Creates a new metadata revision key for a binary: the binary's revision key when it is owned
+     * by this inode and field, otherwise the field's directory, followed by {@code .}, a random UUID
+     * and {@code -metadata.json}.
+     *
+     * @param file  the binary the metadata describes
+     * @param inode the contentlet inode that owns the binary
+     * @param field the field variable name
+     * @return the new metadata key, starting with {@code /}
+     * @throws IllegalArgumentException if the inode or field cannot name a directory in the asset layout
+     */
     public static String newMetadataKey(final File file, final String inode, final String field) {
         final String binaryKey = keyOf(file, inode, field);
         return "/" + (binaryKey == null ? ownerPrefix(inode, field) : binaryKey)
-                + "." + java.util.UUID.randomUUID() + "-metadata.json";
+                + "." + UUID.randomUUID() + "-metadata.json";
     }
 
+    /**
+     * Pins a metadata revision key to a binary file. The key must have the form produced by
+     * {@link #newMetadataKey} for this binary, and an older-layout file must sit directly in the
+     * field's directory in the asset root; any other key or file is rejected.
+     *
+     * @param file  the binary file
+     * @param inode the contentlet inode that owns the binary
+     * @param field the field variable name
+     * @param key   the metadata revision key
+     * @return a file carrying the key, or {@code file} unchanged when file or key is {@code null}
+     * @throws IllegalArgumentException if the file or key does not belong to this owner
+     */
     public static File withMetadata(final File file, final String inode, final String field, final String key) {
         if (file == null || key == null) {
             return file;
