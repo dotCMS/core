@@ -119,10 +119,18 @@ describe('DotConfigurationLogoDialogComponent', () => {
         });
     });
 
-    it('accepts only SVG and PNG files', () => {
+    it('lets the picker offer the common web image formats', () => {
         open('/dA/logo-id/asset/logo.svg');
 
         expect(spectator.query(FileUpload)?.accept).toBe(LOGO_ACCEPT);
+    });
+
+    it.each(['.svg', '.png', '.jpg', '.jpeg', '.gif', '.webp'])('accepts %s', (extension) => {
+        expect(LOGO_ACCEPT.split(',')).toContain(extension);
+    });
+
+    it('does not accept files that are not images', () => {
+        expect(LOGO_ACCEPT).not.toMatch(/pdf|zip/);
     });
 
     it('starts with the current logo selected', async () => {

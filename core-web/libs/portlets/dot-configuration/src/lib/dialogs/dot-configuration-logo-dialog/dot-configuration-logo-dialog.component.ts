@@ -26,11 +26,28 @@ export interface DotConfigurationLogoDialogData {
 // checked, as the server does.
 const ASSET_PATH = /^\/dA\/.+$/;
 
-/** File types the login page renders well as a logo. */
-export const LOGO_ACCEPT = '.svg,.png,image/svg+xml,image/png';
+/**
+ * Image formats a logo can be uploaded in: the common web formats every browser renders, both as
+ * the login page image and as the navbar's CSS background. SVG and PNG are recommended, for their
+ * transparent background, but not required. Anything that is not an image is refused, since it
+ * would show as a broken logo.
+ */
+export const LOGO_ACCEPT = [
+    '.svg',
+    '.png',
+    '.jpg',
+    '.jpeg',
+    '.gif',
+    '.webp',
+    'image/svg+xml',
+    'image/png',
+    'image/jpeg',
+    'image/gif',
+    'image/webp'
+].join(',');
 
 /**
- * Picks a logo, for the login screen or the admin navbar: upload an SVG or PNG, type the path of
+ * Picks a logo, for the login screen or the admin navbar: upload an image, type the path of
  * an existing asset or, for the login screen, go back to the stock dotCMS logo. Closes with the
  * `/dA/...` path on Apply and with nothing on Cancel; nothing is saved until Save Changes. A logo
  * cannot be left empty, as in the previous screen.
