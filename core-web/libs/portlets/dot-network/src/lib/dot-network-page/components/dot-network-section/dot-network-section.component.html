@@ -1,5 +1,3 @@
-@let tag = $healthTag();
-
 <p-panel data-testid="network-section">
     <ng-template #header>
         <div class="flex w-full items-center gap-2">
@@ -11,11 +9,6 @@
                     {{ subtitle() }}
                 </span>
             }
-            <p-tag
-                class="ml-auto"
-                [severity]="tag.severity"
-                [value]="tag.labelKey | dm"
-                data-testid="network-section-health" />
         </div>
     </ng-template>
 

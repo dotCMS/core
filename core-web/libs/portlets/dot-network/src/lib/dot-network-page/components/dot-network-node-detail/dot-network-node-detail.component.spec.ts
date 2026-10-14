@@ -82,6 +82,18 @@ describe('DotNetworkNodeDetailComponent', () => {
         });
     });
 
+    it('should show no health indicator on any section (FR-034)', () => {
+        for (const section of [
+            'network-section-cache',
+            'network-section-search',
+            'network-section-assets'
+        ]) {
+            const el = spectator.query(byTestId(section)) as HTMLElement;
+            expect(el).toExist();
+            expect(el.querySelector('[data-testid="network-section-health"]')).toBeNull();
+        }
+    });
+
     it('should show the four summary tiles', () => {
         expect(
             spectator.queryAll(byTestId('network-tile-value')).map((el) => el.textContent?.trim())

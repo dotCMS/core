@@ -58,11 +58,6 @@ describe('DOT_CLUSTER_NODES_MOCK', () => {
         const down = nodes.find((node) => !node.responded);
 
         expect(down?.status).toBe('DOWN');
-        expect(down?.cache.health).toBe('UNKNOWN');
-        expect(down?.search.health).toBe('UNKNOWN');
-        expect(down?.assets.health).toBe('UNKNOWN');
-        expect(Object.values(down?.search ?? {}).filter((v) => v !== 'UNKNOWN')).toEqual(
-            Array(15).fill(null)
-        );
+        expect(Object.values(down?.search ?? {})).toEqual(Array(15).fill(null));
     });
 });

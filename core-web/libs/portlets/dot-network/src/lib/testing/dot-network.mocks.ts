@@ -5,30 +5,23 @@ export function createNode(overrides: Partial<DotClusterNode> = {}): DotClusterN
     return {
         serverId: '10b10fa5-full-id',
         displayServerId: '10b10fa5',
-        licenseId: 'xxxx-xxxx-4f2a',
         name: 'dotcms-demo-56cc78659b-kgzws',
-        host: 'dotcms-demo-host',
         ipAddress: '10.2.66.19',
         version: '26.09.18-01',
         lastContactSeconds: 4,
         responded: true,
         status: 'UP',
         cache: {
-            health: 'GREEN',
             clusterName: 'dotcms-demo',
             transport: 'PubSub',
-            provider: 'JDBCPubSubImpl',
             numberOfNodes: 3,
             open: true,
             address: null,
             port: null,
             receivedBytes: 181314,
-            sentBytes: 175002,
-            receivedMessages: 1204,
-            sentMessages: 1187
+            sentBytes: 175002
         },
         search: {
-            health: 'YELLOW',
             engine: null,
             clusterName: 'opensearch-ovh-east',
             timedOut: false,
@@ -46,7 +39,6 @@ export function createNode(overrides: Partial<DotClusterNode> = {}): DotClusterN
             activeShardsPercent: 100
         },
         assets: {
-            health: 'GREEN',
             path: '/data/shared/assets',
             canRead: true,
             canWrite: true
@@ -70,20 +62,15 @@ export function createDownNode(overrides: Partial<DotClusterNode> = {}): DotClus
         status: 'DOWN',
         cache: {
             ...base.cache,
-            health: 'UNKNOWN',
             clusterName: null,
             transport: null,
-            provider: null,
             numberOfNodes: null,
             open: null,
             address: null,
             receivedBytes: null,
-            sentBytes: null,
-            receivedMessages: null,
-            sentMessages: null
+            sentBytes: null
         },
         search: {
-            health: 'UNKNOWN',
             engine: null,
             clusterName: null,
             timedOut: null,
@@ -100,7 +87,7 @@ export function createDownNode(overrides: Partial<DotClusterNode> = {}): DotClus
             taskMaxWaitingInQueueMillis: null,
             activeShardsPercent: null
         },
-        assets: { health: 'UNKNOWN', path: null, canRead: null, canWrite: null },
+        assets: { path: null, canRead: null, canWrite: null },
         ...overrides
     });
 }

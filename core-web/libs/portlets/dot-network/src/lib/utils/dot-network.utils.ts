@@ -1,4 +1,4 @@
-import { DotClusterHealth, DotClusterNodeStatus } from '@dotcms/dotcms-models';
+import { DotClusterNodeStatus } from '@dotcms/dotcms-models';
 
 export type DotNetworkTagSeverity = 'success' | 'warn' | 'danger' | 'secondary';
 
@@ -11,13 +11,6 @@ export const NODE_STATUS_TAGS: Record<DotClusterNodeStatus, DotNetworkTag> = {
     UP: { severity: 'success', labelKey: 'network.status.up' },
     LAGGING: { severity: 'warn', labelKey: 'network.status.lagging' },
     DOWN: { severity: 'danger', labelKey: 'network.status.down' }
-};
-
-export const HEALTH_TAGS: Record<DotClusterHealth, DotNetworkTag> = {
-    GREEN: { severity: 'success', labelKey: 'network.health.green' },
-    YELLOW: { severity: 'warn', labelKey: 'network.health.yellow' },
-    RED: { severity: 'danger', labelKey: 'network.health.red' },
-    UNKNOWN: { severity: 'secondary', labelKey: 'network.health.unknown' }
 };
 
 /** A message key and its argument, resolved by `DotMessageService`. */

@@ -57,8 +57,9 @@ describe('DotNetworkNodeListComponent', () => {
         );
     });
 
-    it('should show the node count', () => {
-        expect(spectator.query(byTestId('network-node-count'))).toHaveText('2');
+    it('should show the "Nodes" heading without a node count (FR-007 removed)', () => {
+        expect(spectator.query('#network-nodes-heading')).toHaveText('Nodes');
+        expect(spectator.query(byTestId('network-node-count'))).toBeNull();
     });
 
     it('should keep a truncated host name readable in full (FR-050)', () => {

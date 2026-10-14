@@ -37,6 +37,16 @@ const initialState: DotNetworkState = {
 };
 
 /**
+ * `error-key` the backend sets on a license refusal (`InvalidLicenseExceptionMapper`). It tells
+ * "this install's license does not cover cluster data" apart from any other 403.
+ */
+const LICENSE_ERROR_KEY = 'dotcms.api.error.license.required';
+
+function isLicenseRefusal(error: HttpErrorResponse): boolean {
+    return error.status === 403 && error.headers?.get('error-key') === LICENSE_ERROR_KEY;
+}
+
+/**
  * Keeps the node the user picked when it is still in the list. Otherwise falls back to the node
  * that served the request, then to the first node.
  */
@@ -113,7 +123,7 @@ export const DotNetworkStore = signalStore(
                                     patchState(store, {
                                         nodes: result.nodes,
                                         currentServerId: result.currentServerId,
-                                        licensed: result.licensed,
+                                        licensed: true,
                                         heartbeatEnabled: result.heartbeatEnabled,
                                         selectedServerId: resolveSelection(
                                             store.selectedServerId(),
@@ -122,6 +132,21 @@ export const DotNetworkStore = signalStore(
                                         status: ComponentStatus.LOADED
                                     }),
                                 error: (error: HttpErrorResponse) => {
+                                    // A license refusal is a state the page renders (the
+                                    // Clustering upsell), not an error: the shared handler would
+                                    // add a generic "license required" toast on top of it.
+                                    if (isLicenseRefusal(error)) {
+                                        patchState(store, {
+                                            nodes: [],
+                                            currentServerId: '',
+                                            selectedServerId: null,
+                                            licensed: false,
+                                            status: ComponentStatus.LOADED
+                                        });
+
+                                        return;
+                                    }
+
                                     httpErrorManager.handle(error);
                                     patchState(store, { status: ComponentStatus.ERROR });
                                 }
