@@ -40,6 +40,32 @@ describe('DotCompanyConfigurationService', () => {
         spectator = createHttp();
     });
 
+    describe('getDotcmsLogo', () => {
+        it('reads the stock logo path', () => {
+            let result: string | undefined;
+
+            spectator.service.getDotcmsLogo().subscribe((value) => (result = value));
+            spectator
+                .expectOne('/api/v1/configuration/dotcmsLogo', HttpMethod.GET)
+                .flush({ entity: '/dA/stock-id/asset/dotcms-logo.png' });
+
+            expect(result).toBe('/dA/stock-id/asset/dotcms-logo.png');
+        });
+
+        it('fails when the instance has no stock logo', () => {
+            let status: number | undefined;
+
+            spectator.service.getDotcmsLogo().subscribe({
+                error: (error) => (status = error.status)
+            });
+            spectator
+                .expectOne('/api/v1/configuration/dotcmsLogo', HttpMethod.GET)
+                .flush(null, { status: 404, statusText: 'Not Found' });
+
+            expect(status).toBe(404);
+        });
+    });
+
     describe('getLicense', () => {
         it('reads the license from the license endpoint', () => {
             const license: DotLicenseInfo = {

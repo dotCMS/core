@@ -36,8 +36,10 @@ import {
     DOT_CONFIGURATION_DEFAULTS,
     DotConfigurationBranding,
     DotConfigurationDraft,
+    DotConfigurationField,
     DotConfigurationLocale,
     DotConfigurationSection,
+    FIELD_SECTION,
     SECTION_SAVE_ORDER,
     dirtySections,
     toBrandingForm,
@@ -109,6 +111,14 @@ export const DotConfigurationStore = signalStore(
             return draft ? validate(draft, store.original()) : {};
         });
         const hasErrors = computed(() => Object.keys(errors()).length > 0);
+        /** An invalid field in a section that Save would send; other sections do not block it. */
+        const hasBlockingErrors = computed(() => {
+            const sections = dirtyBySection();
+
+            return (Object.keys(errors()) as DotConfigurationField[]).some(
+                (field) => sections[FIELD_SECTION[field]]
+            );
+        });
 
         return {
             dirtyBySection,
@@ -118,7 +128,7 @@ export const DotConfigurationStore = signalStore(
             /** True while Save Changes is running; the form is read-only meanwhile. */
             saving: computed(() => store.status() === ComponentStatus.SAVING),
             canSave: computed(
-                () => dirty() && !hasErrors() && store.status() !== ComponentStatus.SAVING
+                () => dirty() && !hasBlockingErrors() && store.status() !== ComponentStatus.SAVING
             ),
             saveState: computed<DotConfigurationSaveState>(() => {
                 if (store.status() === ComponentStatus.SAVING) {

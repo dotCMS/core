@@ -38,8 +38,16 @@ describe('DotConfigurationCardComponent', () => {
         );
     });
 
-    it('projects header-end content and the body', () => {
+    const slotOf = (testId: string) =>
+        spectator.query(byTestId(testId))?.closest('[data-testid^="configuration-card-"]');
+
+    it('projects header-end content into the header, outside the body', () => {
         expect(spectator.query(byTestId('header-end'))).toHaveText('14:20 UTC');
+        expect(slotOf('header-end')).toHaveAttribute('data-testid', 'configuration-card-header');
+    });
+
+    it('projects everything else into the form body', () => {
         expect(spectator.query(byTestId('body'))).toHaveText('Body');
+        expect(slotOf('body')).toHaveAttribute('data-testid', 'configuration-card-body');
     });
 });

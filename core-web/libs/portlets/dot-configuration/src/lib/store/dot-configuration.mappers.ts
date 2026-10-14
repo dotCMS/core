@@ -53,6 +53,25 @@ export type DotConfigurationField =
     | keyof DotConfigurationLocale
     | 'authType';
 
+/**
+ * The section each field is saved with. Save only checks the sections being sent: a stored value
+ * the form rejects (e.g. a login logo that is not a `/dA/...` path) must not keep the user from
+ * saving a time zone, which goes through its own endpoint and never sends the logo.
+ */
+export const FIELD_SECTION: Record<DotConfigurationField, DotConfigurationSection> = {
+    portalURL: DotConfigurationSection.BRANDING,
+    emailAddress: DotConfigurationSection.BRANDING,
+    primaryColor: DotConfigurationSection.BRANDING,
+    secondaryColor: DotConfigurationSection.BRANDING,
+    backgroundColor: DotConfigurationSection.BRANDING,
+    backgroundImage: DotConfigurationSection.BRANDING,
+    loginScreenLogo: DotConfigurationSection.BRANDING,
+    navBarLogo: DotConfigurationSection.BRANDING,
+    authType: DotConfigurationSection.AUTHENTICATION,
+    languageId: DotConfigurationSection.LOCALE,
+    timeZoneId: DotConfigurationSection.LOCALE
+};
+
 /** Field name → i18n key of the message explaining why the value is rejected. */
 export type DotConfigurationErrors = Partial<Record<DotConfigurationField, string>>;
 

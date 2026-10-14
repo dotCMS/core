@@ -33,6 +33,19 @@ import { DotConfigurationSecurityComponent } from '../sections/dot-configuration
 import { DotConfigurationSection } from '../store/dot-configuration.mappers';
 import { DotConfigurationStore } from '../store/dot-configuration.store';
 
+const HTML_ESCAPES: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;' };
+
+/**
+ * Makes text safe to show in a toast, which renders its message as HTML: without this, the
+ * `<address>` part of `Name <address>` is read as a tag and dropped.
+ *
+ * @param value - Plain text.
+ * @returns The text with `&`, `<` and `>` escaped.
+ */
+function escapeHtml(value: string): string {
+    return value.replace(/[&<>]/g, (character) => HTML_ESCAPES[character]);
+}
+
 const SECTION_NAME_KEYS: Record<DotConfigurationSection, string> = {
     branding: 'configuration.section.branding',
     authentication: 'configuration.section.security',
@@ -125,7 +138,10 @@ export class DotConfigurationShellComponent implements DotConfigurationUnsavedWo
             DotConfigurationLogoDialogComponent,
             'configuration.logo-dialog.login-header',
             '700px',
-            { current: this.store.draft()?.branding.loginScreenLogo ?? '' }
+            {
+                current: this.store.draft()?.branding.loginScreenLogo ?? '',
+                offerDotcmsLogo: true
+            }
         ).subscribe((loginScreenLogo) => {
             if (loginScreenLogo) {
                 this.store.patchBranding({ loginScreenLogo });
@@ -160,7 +176,7 @@ export class DotConfigurationShellComponent implements DotConfigurationUnsavedWo
                     severity: DotMessageSeverity.INFO,
                     message: this.#dotMessageService.get(
                         'configuration.test-mail.queued',
-                        sentFrom
+                        escapeHtml(sentFrom)
                     ),
                     type: DotMessageType.SIMPLE_MESSAGE
                 });

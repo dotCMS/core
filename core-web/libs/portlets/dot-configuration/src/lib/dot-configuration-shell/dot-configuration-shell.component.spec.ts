@@ -66,7 +66,12 @@ describe('DotConfigurationShellComponent', () => {
     const createComponent = createComponentFactory({
         component: DotConfigurationShellComponent,
         providers: [
-            { provide: DotMessageService, useValue: new MockDotMessageService({}) },
+            {
+                provide: DotMessageService,
+                useValue: new MockDotMessageService({
+                    'configuration.test-mail.queued': 'A test email from {0} is on its way.'
+                })
+            },
             mockProvider(DotMessageDisplayService, { push: vi.fn() }),
             { provide: ActivatedRoute, useValue: { snapshot: { data: { isEnterprise: true } } } }
         ],
@@ -283,7 +288,9 @@ describe('DotConfigurationShellComponent', () => {
 
             expect(dialogService().open).toHaveBeenCalledWith(
                 DotConfigurationLogoDialogComponent,
-                expect.anything()
+                expect.objectContaining({
+                    data: expect.objectContaining({ offerDotcmsLogo: true })
+                })
             );
             expect(store().patchBranding).toHaveBeenCalledWith({
                 loginScreenLogo: '/dA/new-id/asset/logo.svg'
@@ -320,7 +327,12 @@ describe('DotConfigurationShellComponent', () => {
                     data: { sender: 'Acme <noreply@acme.com>' }
                 })
             );
-            expect(spectator.inject(DotMessageDisplayService).push).toHaveBeenCalled();
+            // The toast renders HTML, so the address must be escaped or it is dropped as a tag.
+            expect(spectator.inject(DotMessageDisplayService).push).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    message: 'A test email from Acme &lt;noreply@acme.com&gt; is on its way.'
+                })
+            );
         });
 
         it('regenerates the key only after the dialog confirms', () => {

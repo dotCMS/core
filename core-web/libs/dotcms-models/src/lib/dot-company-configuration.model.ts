@@ -13,8 +13,9 @@ export type DotCompanyAuthType = (typeof DotCompanyAuthType)[keyof typeof DotCom
  * company configuration `PUT`, mirroring the backend `CompanyConfigView`.
  *
  * `languageId` and `timeZoneId` belong to the system default user, not to the company record;
- * the backend reads them from there. Image fields come back as `null` unless the stored value is
- * a `/dA/...` asset path.
+ * the backend reads them from there. The two logos come back as `null` unless the stored value
+ * is a `/dA/...` asset path; `backgroundImage` comes back as stored (a `/dA/...` path, a bundled
+ * `/html/images/backgrounds/bg-N.jpg`, or a value saved by an older screen).
  */
 export interface DotCompanyConfiguration {
     companyId: string;

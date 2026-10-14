@@ -1,4 +1,7 @@
 <div class="form">
+    <!-- Advanced mode draws its own bordered, padded frame around the content. The drop zone
+         below is the frame here, so the `pt` overrides need `!` to beat PrimeNG's component
+         styles. Advanced mode is kept because it is the one that accepts dropped files. -->
     <p-fileupload
         #fileUpload
         mode="advanced"
@@ -26,6 +29,7 @@
                 [disabled]="$uploading()"
                 (click)="fileUpload.choose()"
                 data-testid="configuration-logo-dropzone">
+                <!-- `!`: .material-symbols-outlined sets its own font-size outside Tailwind's layers. -->
                 <span class="material-symbols-outlined text-3xl! text-gray-600" aria-hidden="true">
                     {{ $uploading() ? 'progress_activity' : 'cloud_upload' }}
                 </span>
@@ -78,16 +82,36 @@
     }
 </div>
 
-<div class="mt-6 flex justify-end gap-2">
-    <p-button
-        [outlined]="true"
-        severity="secondary"
-        [label]="'configuration.action-bar.cancel' | dm"
-        (onClick)="cancel()"
-        data-testid="configuration-logo-cancel-btn" />
-    <p-button
-        [label]="'configuration.dialog.apply' | dm"
-        [disabled]="$pathInvalid() || $uploading()"
-        (onClick)="apply()"
-        data-testid="configuration-logo-apply-btn" />
+<div class="mt-6 flex items-center justify-between gap-2">
+    @if (offerDotcmsLogo) {
+        <!-- A disabled button gets no pointer events, so the tooltip sits on a wrapper. -->
+        <span
+            [pTooltip]="
+                $dotcmsLogoUnavailable()
+                    ? ('configuration.logo-dialog.dotcms-logo.unavailable' | dm)
+                    : null
+            "
+            tooltipPosition="top">
+            <p-button
+                [text]="true"
+                severity="secondary"
+                [label]="'configuration.logo-dialog.dotcms-logo' | dm"
+                [disabled]="!$dotcmsLogo() || $uploading()"
+                (onClick)="useDotcmsLogo()"
+                data-testid="configuration-logo-dotcms-btn" />
+        </span>
+    }
+    <div class="ml-auto flex gap-2">
+        <p-button
+            [outlined]="true"
+            severity="secondary"
+            [label]="'configuration.action-bar.cancel' | dm"
+            (onClick)="cancel()"
+            data-testid="configuration-logo-cancel-btn" />
+        <p-button
+            [label]="'configuration.dialog.apply' | dm"
+            [disabled]="$pathInvalid() || $uploading()"
+            (onClick)="apply()"
+            data-testid="configuration-logo-apply-btn" />
+    </div>
 </div>

@@ -123,6 +123,29 @@ describe('DotConfigurationStore', () => {
             expect(store.canSave()).toBe(false);
         });
 
+        describe('with a stored login logo the form rejects', () => {
+            beforeEach(() => {
+                service.getConfiguration.mockReturnValueOnce(
+                    of(createFakeCompanyConfiguration({ loginScreenLogo: null }))
+                );
+                store.load();
+            });
+
+            it('still saves a section that does not send the logo', () => {
+                store.patchLocale({ timeZoneId: 'Europe/Madrid' });
+
+                expect(store.errors().loginScreenLogo).toBe('configuration.validation.required');
+                expect(store.canSave()).toBe(true);
+            });
+
+            it('blocks Save once branding, which sends the logo, is edited', () => {
+                store.patchLocale({ timeZoneId: 'Europe/Madrid' });
+                store.patchBranding({ primaryColor: '#111111' });
+
+                expect(store.canSave()).toBe(false);
+            });
+        });
+
         it('unticking the navbar logo override clears the navbar logo', () => {
             store.patchBranding({ navBarLogo: '/dA/nav-id/asset/nav.png' });
             store.setNavBarLogoOverride(true);

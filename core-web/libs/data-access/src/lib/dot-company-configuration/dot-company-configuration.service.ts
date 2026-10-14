@@ -87,6 +87,18 @@ export class DotCompanyConfigurationService {
     }
 
     /**
+     * Looks up the stock dotCMS login logo shipped with the starter.
+     *
+     * @returns Its `/dA/...` path. Fails with 404 when the instance has no published, publicly
+     * readable stock logo; nothing is created or changed either way.
+     */
+    getDotcmsLogo(): Observable<string> {
+        return this.#http
+            .get<DotCMSAPIResponse<string>>(`${CONFIGURATION_URL}/dotcmsLogo`)
+            .pipe(map((response) => response.entity));
+    }
+
+    /**
      * Loads the license shipped with the running build.
      *
      * @returns Its title, header values and full text.
