@@ -445,16 +445,15 @@ Inside a section, `null` means unknown; when a server answered but its search ch
 
 ## Assumptions
 
-- Every install reports `PLATFORM`, so no license gate is needed. If licensing is restored, this
-  endpoint gets a license check in a later change.
-- `CLUSTER_NODE_STALE_HEARTBEAT_SECONDS` is set below `HEARTBEAT_TIMEOUT` (600 s). Otherwise
-  `DOWN` can never happen.
-- The Network portlet will be registered as `network-beta` during the Beta. `network` is added
-  when it is promoted.
-- A reply keeps being built from its request (`new DotPubSubEvent.Builder(event)`), so older
-  servers echo the request id.
-- The default JDBC pub/sub provider and `RedisPubSubImpl` deliver a server's own messages to
-  itself, so the serving server answers its own request. Only `RedisStreamsPubSubImpl` filters out
-  its own messages: with it (`DOT_PUBSUB_PROVIDER_OVERRIDE`), the serving server never sees its own
-  request, so it always shows `responded=false` (`LAGGING` or `DOWN`), as the old tab does today.
-  That stays as it is in this change.
+- Every install reports `PLATFORM` (`LicenseUtil.getLevel()`), so the endpoint has no license
+  check. If licensing is restored, this needs revisiting.
+- `CLUSTER_NODE_STALE_HEARTBEAT_SECONDS` is configured below `HEARTBEAT_TIMEOUT` (default 600 s), the
+  age after which a server leaves the alive list. Otherwise a server that stops answering never
+  becomes `DOWN`.
+- The wait window for replies is the one the legacy endpoint already uses:
+  `CLUSTER_SERVER_THREAD_SLEEP`, default `max(2000 ms, 1000 ms × alive servers)`. A call returns
+  early once it has as many replies as there are alive servers.
+- The Network portlet ships as `network-beta` during the Beta; `network` is added when it is
+  promoted.
+- A reply keeps being built from its request (`new DotPubSubEvent.Builder(event)`), so servers
+  on the previous version echo the request id during a rolling upgrade.
