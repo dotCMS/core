@@ -1,4 +1,4 @@
-import { patchState } from '@ngrx/signals';
+import { patchState, WritableStateSource } from '@ngrx/signals';
 import {
     SpectatorRouting,
     byTestId,
@@ -115,7 +115,7 @@ import {
 import { ActionPayload, ContentletPayload, VTLFile } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
 import { WithPageApiMethods } from '../store/features/page-api/withPageApi';
-import { IframeAccessMode, PageType } from '../store/models';
+import { IframeAccessMode, PageType, UVEState } from '../store/models';
 
 global.URL.createObjectURL = vi.fn(
     () => 'blob:http://localhost:3000/12345678-1234-1234-1234-123456789012'
@@ -2674,7 +2674,8 @@ describe('EditEmaEditorComponent', () => {
                     const openSpy = vi
                         .spyOn(spectator.inject(DotSidePanelService), 'open')
                         .mockReturnValue({ closed } as unknown as DotSidePanelRef);
-                    patchState(store, {
+                    // The store's type does not expose its state as writable signals.
+                    patchState(store as unknown as WritableStateSource<UVEState>, {
                         flags: {
                             ...store.flags(),
                             [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: true
