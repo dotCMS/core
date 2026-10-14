@@ -82,6 +82,7 @@ import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestClient;
 import com.dotcms.content.index.domain.ClusterIndexHealth;
 import com.dotcms.content.index.domain.CreateIndexStatus;
+import com.dotcms.content.index.domain.SearchClusterHealth;
 import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.client.indices.CreateIndexResponse;
 import org.elasticsearch.client.indices.GetIndexRequest;
@@ -520,6 +521,42 @@ public class ESIndexAPI implements IndexAPI {
                 .collect(Collectors
                         .toMap(x -> removeClusterIdFromName(x.getKey()),
                                x -> ClusterIndexHealth.from(x.getValue())));
+    }
+
+    /**
+     * Returns the whole-cluster health of Elasticsearch, with no index filter: the same call the
+     * cluster status report has always made, with the same server-side timeout. A failure to reach
+     * Elasticsearch propagates instead of being answered with an empty result.
+     *
+     * @return the Elasticsearch cluster health, stamped as {@link SearchClusterHealth.Engine#ELASTICSEARCH}
+     */
+    @Override
+    public SearchClusterHealth getClusterHealthSummary() {
+        final ClusterHealthRequest request = new ClusterHealthRequest();
+        request.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
+
+        final ClusterHealthResponse response = Sneaky.sneak(() ->
+                RestHighLevelClientProvider.getInstance().getClient()
+                        .cluster().health(request, RequestOptions.DEFAULT));
+
+        return SearchClusterHealth.builder()
+                .engine(SearchClusterHealth.Engine.ELASTICSEARCH)
+                .clusterName(response.getClusterName())
+                .status(response.getStatus().toString().toLowerCase())
+                .timedOut(response.isTimedOut())
+                .numberOfNodes(response.getNumberOfNodes())
+                .numberOfDataNodes(response.getNumberOfDataNodes())
+                .activePrimaryShards(response.getActivePrimaryShards())
+                .activeShards(response.getActiveShards())
+                .relocatingShards(response.getRelocatingShards())
+                .initializingShards(response.getInitializingShards())
+                .unassignedShards(response.getUnassignedShards())
+                .delayedUnassignedShards(response.getDelayedUnassignedShards())
+                .numberOfPendingTasks(response.getNumberOfPendingTasks())
+                .numberOfInFlightFetch(response.getNumberOfInFlightFetch())
+                .taskMaxWaitingInQueueMillis(response.getTaskMaxWaitingTime().millis())
+                .activeShardsPercent(response.getActiveShardsPercent())
+                .build();
     }
 
 	/**

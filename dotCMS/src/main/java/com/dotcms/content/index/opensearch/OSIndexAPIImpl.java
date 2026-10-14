@@ -13,6 +13,7 @@ import org.apache.commons.lang.StringUtils;
 import com.dotcms.content.index.domain.ClusterIndexHealth;
 import com.dotcms.content.index.domain.ClusterStats;
 import com.dotcms.content.index.domain.CreateIndexStatus;
+import com.dotcms.content.index.domain.SearchClusterHealth;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
@@ -533,6 +534,47 @@ public class OSIndexAPIImpl implements IndexAPI {
             Logger.error(this.getClass(), "Error fetching OS cluster health: " + e.getMessage(), e);
             return new HashMap<>();
         }
+    }
+
+    /**
+     * Returns the whole-cluster health of OpenSearch, with no index filter and the
+     * {@link #INDEX_OPERATIONS_TIMEOUT} server-side timeout. Unlike {@link #getClusterHealth()},
+     * which lists this cluster's indices and answers an empty map on failure, an unreachable
+     * cluster is reported as an unchecked exception: {@code PhaseRouter} only falls back to
+     * Elasticsearch in phase 2 on a {@link RuntimeException}, and the client signals a refused
+     * connection with a checked {@link IOException}.
+     *
+     * @return the OpenSearch cluster health, stamped as {@link SearchClusterHealth.Engine#OPENSEARCH}
+     * @throws DotRuntimeException if OpenSearch can't be asked
+     */
+    @Override
+    public SearchClusterHealth getClusterHealthSummary() {
+        final org.opensearch.client.opensearch.cluster.HealthResponse response;
+        try {
+            response = clientProvider.getClient().cluster()
+                    .health(r -> r.timeout(t -> t.time(INDEX_OPERATIONS_TIMEOUT)));
+        } catch (final IOException e) {
+            throw new DotRuntimeException("Could not read OpenSearch cluster health: " + e.getMessage(), e);
+        }
+
+        return SearchClusterHealth.builder()
+                .engine(SearchClusterHealth.Engine.OPENSEARCH)
+                .clusterName(response.clusterName())
+                .status(response.status().name().toLowerCase())
+                .timedOut(response.timedOut())
+                .numberOfNodes(response.numberOfNodes())
+                .numberOfDataNodes(response.numberOfDataNodes())
+                .activePrimaryShards(response.activePrimaryShards())
+                .activeShards(response.activeShards())
+                .relocatingShards(response.relocatingShards())
+                .initializingShards(response.initializingShards())
+                .unassignedShards(response.unassignedShards())
+                .delayedUnassignedShards(response.delayedUnassignedShards())
+                .numberOfPendingTasks(response.numberOfPendingTasks())
+                .numberOfInFlightFetch(response.numberOfInFlightFetch())
+                .taskMaxWaitingInQueueMillis(response.taskMaxWaitingInQueueMillis())
+                .activeShardsPercent(response.activeShardsPercentAsNumber())
+                .build();
     }
 
     private static String toHumanReadableSize(final long bytes) {

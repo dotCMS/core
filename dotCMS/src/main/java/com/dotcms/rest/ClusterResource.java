@@ -44,7 +44,10 @@ public class ClusterResource {
     private final WebResource webResource = new WebResource();
 
     /**
-     * Returns a Map of the Cache Cluster Nodes Status
+     * Returns the status of every alive server in the cluster, for the old Configuration → Network
+     * tab. Servers that didn't answer the cluster status request within the wait window are listed
+     * with a "not responding" placeholder. A cache transport that returns no replies at all
+     * ({@code null}, as {@code NullTransport} does) is treated as "no server answered".
      *
      * @param request
      * @param params
@@ -77,7 +80,8 @@ public class ClusterResource {
         final int maxWaitTime =  Config.getIntProperty("CLUSTER_SERVER_THREAD_SLEEP", Math.max(2000, pendingServers.size()*1000)) ;
         final Map<String, Serializable> info = new HashMap<>();
         info.put("myServerId", myServerId);
-        final Map<String, Serializable> members = CacheLocator.getCacheAdministrator().getTransport().validateCacheInCluster(maxWaitTime);
+        final Map<String, Serializable> replies = CacheLocator.getCacheAdministrator().getTransport().validateCacheInCluster(maxWaitTime);
+        final Map<String, Serializable> members = replies != null ? replies : Map.of();
         final ArrayList<Serializable> arrayOfServerResponses = new ArrayList<>();
         
         // if we got a response, remove from pending servers

@@ -1,6 +1,10 @@
 package com.dotcms.rest.api.v1.system;
 
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.business.APILocator;
+import com.liferay.portal.model.User;
+import java.util.Map;
+import java.util.Set;
 import com.dotmarketing.exception.DotDataException;
 import io.vavr.Tuple2;
 import org.junit.Assert;
@@ -65,4 +69,22 @@ public class ConfigurationHelperTest {
         Assert.assertNull(mailAndSender._2);
     }
 
+    /**
+     * Method to test {@link ConfigurationHelper#clusterMap(User)}
+     * Given Scenario: a back-end user, then an anonymous user
+     * Expected Result: the back-end user's cluster section adds heartbeatEnabled, taken from
+     * ENABLE_SERVER_HEARTBEAT (on in this environment), next to the keys it had; the anonymous
+     * section is unchanged, with only clusterId (issue #37875)
+     */
+    @Test
+    public void Test_Cluster_Map_HeartbeatEnabled_For_Backend_Users_Only() throws Exception {
+        final Map<String, Object> backend = instance.clusterMap(APILocator.getUserAPI().loadByUserByEmail(
+                "admin@dotcms.com", APILocator.getUserAPI().getSystemUser(), false));
+        Assert.assertEquals(Set.of(ConfigurationHelper.CLUSTER_ID, ConfigurationHelper.KEY_DIGEST, "heartbeatEnabled"),
+                backend.keySet());
+        Assert.assertEquals(Boolean.TRUE, backend.get("heartbeatEnabled"));
+
+        final Map<String, Object> anonymous = instance.clusterMap(APILocator.getUserAPI().getAnonymousUser());
+        Assert.assertEquals(Set.of(ConfigurationHelper.CLUSTER_ID), anonymous.keySet());
+    }
 }
