@@ -1,4 +1,3 @@
-import { DOCUMENT } from '@angular/common';
 import { Component, DestroyRef, inject, input, output, signal, viewChild } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -58,7 +57,12 @@ function writeExpandedPreference(expanded: boolean): void {
 @Component({
     selector: 'dot-side-panel',
     imports: [DrawerModule, ButtonModule, DotMessagePipe],
-    templateUrl: './dot-side-panel.component.html'
+    templateUrl: './dot-side-panel.component.html',
+    // On the document because `appendTo="body"` moves the drawer and its mask out of this
+    // component's DOM, so no template binding can hear the mask click.
+    host: {
+        '(document:click)': 'onDocumentClick($event)'
+    }
 })
 export class DotSidePanelComponent {
     /**
@@ -92,20 +96,19 @@ export class DotSidePanelComponent {
             handler: () => this.#escape()
         });
 
-        // Document-wide because `appendTo="body"` moves the drawer and its mask out of this
-        // component's DOM, so no template binding can hear the mask click.
-        const document = inject(DOCUMENT);
-        const onDocumentClick = (event: MouseEvent): void => {
-            if (event.target === this.$drawer()?.mask && this.front()) {
-                this.closeRequested.emit();
-            }
-        };
-        document.addEventListener('click', onDocumentClick);
+        inject(DestroyRef).onDestroy(withdrawEscape);
+    }
 
-        inject(DestroyRef).onDestroy(() => {
-            withdrawEscape();
-            document.removeEventListener('click', onDocumentClick);
-        });
+    /**
+     * Any click on the page: asks to close when it lands on this panel's own mask and this is the
+     * frontmost panel.
+     *
+     * @param event the click
+     */
+    protected onDocumentClick(event: MouseEvent): void {
+        if (event.target === this.$drawer()?.mask && this.front()) {
+            this.closeRequested.emit();
+        }
     }
 
     /** Flips the full-width state and remembers it for the next panel. */
