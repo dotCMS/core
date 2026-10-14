@@ -233,12 +233,22 @@ implementation and the all-version deletion hooks. With the flag off it stays a 
 
 With the flag on, the local asset directory is a cache that `BinaryCacheEvictionJob` can trim.
 The job is scheduled only when `BINARY_CACHE_EVICTION_CRON` is set. Each node has its own cache, so
-the job runs on every node from the node-local scheduled thread pool, not from the clustered Quartz
-scheduler, which would fire it on only one node per run. The first run is at least ten minutes after
-startup, and each run schedules the next one when it finishes, so runs never overlap. A run holds
-one thread of the shared scheduled pool (`SCHEDULER_COREPOOLSIZE`, default 5) while it works. It
-evicts the oldest files once the cache exceeds `BINARY_CACHE_MAX_SIZE_MB` (default 5000), skipping
-files newer than `BINARY_CACHE_EVICTION_MIN_AGE_MINUTES` (default 60).
+the job runs on every node from its own node-local thread (`binary-cache-eviction`), not from the
+clustered Quartz scheduler, which would fire it on only one node per run. The first run is at least
+ten minutes after startup, and each run schedules the next one when it finishes, so runs never
+overlap. Because a run can take minutes, it does not use the shared scheduled pool. Once the
+cache exceeds `BINARY_CACHE_MAX_SIZE_MB` (default 5000), it evicts the files least recently read by
+anything first, with API reads always recorded, skipping files read or written within
+`BINARY_CACHE_EVICTION_MIN_AGE_MINUTES` (default 60). The order comes from each file's access time.
+The binary API sets the access time explicitly when it hands a cached file to a reader, at most once
+a minute per file, so API reads count on `noatime` mounts too. Other reads count only where the
+mount updates access times: on default `relatime` mounts the kernel also records a read once the
+access time is over 24 hours old, which includes backup scans and the job's own verification of a
+file it then keeps. The API does not touch the modification time, because HTTP ETags and
+Last-Modified headers are built from it.
+
+If a run ends with the cache still over its limit and no file evicted, the job logs a warning with
+the number of candidates it kept.
 
 A file is evicted only when S3 holds a verified copy under the exact key. For `binary-assets` and
 `generated-assets`, the key must hold a reference whose SHA-256 matches the local file, and the
@@ -254,7 +264,9 @@ never enter the budget. Files without a verified S3 copy stay local, so the cach
 limit safely; eviction does not backfill.
 
 Callers that hold a `File` across a read must take `acquireCacheLease()` before resolving it and
-close the lease on the same thread after use. Verification runs with no lock held, so readers never
+close the lease on the same thread after use. If a lease or storage operation is active when the job
+reaches a file, verification is skipped entirely and the file is kept, so a busy node does not
+download objects it cannot evict. Otherwise verification runs with no lock held, so readers never
 wait for it. Only the final check and delete take the eviction lock, and they do not wait for it: if
 a lease or storage operation is active at that moment, or the file changed during verification, the
 file is kept for a later run. Sustained activity can therefore defer eviction on that node.
