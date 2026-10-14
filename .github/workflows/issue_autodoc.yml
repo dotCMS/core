@@ -211,7 +211,9 @@ jobs:
 
           Run one or more dotCMS AI semantic searches to assess current documentation
           coverage. Use the Bash tool to run the `autodoc-search` command, which queries the
-          dotCMS documentation search and prints its JSON results:
+          dotCMS documentation search and prints a ranked list of matching pages with
+          excerpts. It also saves each listed page's full text to the path shown; use the
+          Read tool on that path when you need the whole page:
 
             autodoc-search "<your query here>"
 
@@ -562,7 +564,7 @@ jobs:
     permissions:
       id-token: write
       contents: read
-    uses: dotCMS/ai-workflows/.github/workflows/autodoc-executor.yml@v3.6.0-rc1  # TODO: repin to v3.6.0 before merge
+    uses: dotCMS/ai-workflows/.github/workflows/autodoc-executor.yml@v3.6.0-rc2  # TODO: repin to v3.6.0 before merge
     secrets:
       AUTODOC_DOTCMS_API_TOKEN_AISEARCH: ${{ secrets.AUTODOC_DOTCMS_API_TOKEN_AISEARCH }}
       AUTODOC_CONTEXT_KEY: ${{ secrets.AUTODOC_CONTEXT_KEY }}
