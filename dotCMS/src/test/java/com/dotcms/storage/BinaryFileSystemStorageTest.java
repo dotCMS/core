@@ -12,6 +12,7 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -83,6 +84,30 @@ class BinaryFileSystemStorageTest {
             }
         } finally {
             Config.setProperty("ROOT_GROUP_FOLDER_PATH", previousRoot);
+            Config.setProperty(AssetStorageFeature.FLAG, previousFlag);
+        }
+    }
+
+    /**
+     * Only the exact binary group names keep mixed-case keys, matching how the S3 layer decides
+     * which groups share binary bytes. A differently cased group name falls back to lowercased keys.
+     */
+    @Test
+    void differentlyCasedBinaryGroupNameIsLowercased() throws Exception {
+        final String previousFlag = Config.getStringProperty(AssetStorageFeature.FLAG, null);
+        Config.setProperty(AssetStorageFeature.FLAG, true);
+        try {
+            final Path groupDir = Files.createDirectories(root.resolve("group"));
+            final FileSystemStoragePersistenceAPIImpl storage = new FileSystemStoragePersistenceAPIImpl();
+            storage.createGroup(BinaryAssetStorageAPI.BINARY_ASSETS_GROUP,
+                    Map.of(FileSystemStoragePersistenceAPIImpl.GROUP_DIRECTORY, groupDir.toFile()));
+            final File source = Files.writeString(root.resolve("Upload.tmp"), "payload").toFile();
+
+            storage.pushFile("Binary-Assets", "Mixed/Name.PDF", source, Map.of());
+
+            assertEquals(List.of("mixed"), List.of(groupDir.toFile().list()));
+            assertEquals(List.of("name.pdf"), List.of(groupDir.resolve("mixed").toFile().list()));
+        } finally {
             Config.setProperty(AssetStorageFeature.FLAG, previousFlag);
         }
     }
