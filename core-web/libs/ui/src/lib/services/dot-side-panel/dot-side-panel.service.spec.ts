@@ -3,6 +3,8 @@ import { Mock, vi } from 'vitest';
 
 import { Component, EnvironmentInjector, createEnvironmentInjector, signal } from '@angular/core';
 
+import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
+import { DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
 import { DotSidePanelRef, DotSidePanelService } from './dot-side-panel.service';
@@ -30,7 +32,9 @@ describe('DotSidePanelService', () => {
                 isNavigationCollapsed: vi.fn().mockReturnValue(false),
                 collapseNavigation: vi.fn(),
                 expandNavigation: vi.fn()
-            })
+            }),
+            mockProvider(DotMessageDisplayService),
+            mockProvider(DotMessageService, { get: (key: string) => key })
         ]
     });
 
@@ -94,13 +98,20 @@ describe('DotSidePanelService', () => {
             expect(spectator.service.panels()[0].component()).toBe(TestContentComponent);
         });
 
-        it('closes the panel when its content fails to load', async () => {
+        it('tells the author and closes the panel when its content fails to load', async () => {
             const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
             const ref = open(Promise.reject(new Error('chunk failed')));
 
             await Promise.resolve();
             await Promise.resolve();
 
+            expect(spectator.inject(DotMessageDisplayService).push).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    message: 'edit.content.side-panel.load-error',
+                    severity: DotMessageSeverity.ERROR,
+                    type: DotMessageType.SIMPLE_MESSAGE
+                })
+            );
             expect(ref.isClosed).toBe(true);
             expect(spectator.service.panels()).toHaveLength(0);
             error.mockRestore();

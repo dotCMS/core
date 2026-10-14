@@ -2,8 +2,8 @@ import { Observable, Subject } from 'rxjs';
 
 import {
     DestroyRef,
-    Injectable,
     Injector,
+    Service,
     Signal,
     Type,
     inject,
@@ -11,6 +11,8 @@ import {
     signal
 } from '@angular/core';
 
+import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
+import { DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
 /**
@@ -58,6 +60,9 @@ function clearPrevNavCollapsed(): void {
  * `innerWidth` is CSS pixels, a scaled or non-maximized 2560 display lands here too.
  */
 const COLLAPSE_MAX_WIDTH = 2560;
+
+/** How long the toast saying a panel's content could not load stays up (ms). */
+const LOAD_ERROR_LIFE = 5000;
 
 /**
  * What a side panel's content implements to guard its close: unsaved changes, a save under way.
@@ -188,7 +193,7 @@ export interface DotSidePanelEntry {
  * sessionStorage, so it survives a refresh with a panel open but not a new session (see
  * {@link PREV_NAV_COLLAPSED_KEY}).
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class DotSidePanelService {
     readonly #injector = inject(Injector);
     readonly #panels = signal<readonly DotSidePanelEntry[]>([]);
@@ -208,7 +213,7 @@ export class DotSidePanelService {
     /**
      * Opens a panel showing `component`. Pass a promise, such as a dynamic `import()`, to keep the
      * content out of the opener's bundle: the panel opens at once and shows a spinner until it
-     * loads.
+     * loads. If it fails to load, a toast says so and the panel closes.
      *
      * @param component the content, or a promise of it
      * @param config the heading, the content's inputs and outputs, and the opener's injector
@@ -251,6 +256,7 @@ export class DotSidePanelService {
                 },
                 (error: unknown) => {
                     console.error('Side panel content failed to load', error);
+                    this.#reportLoadError();
                     ref.close();
                 }
             );
@@ -263,6 +269,22 @@ export class DotSidePanelService {
         ref.closed.subscribe({ complete: () => stopWatchingOpener?.() });
 
         return ref;
+    }
+
+    /**
+     * Tells the author a panel's content could not load (after a deploy, say, or while offline).
+     * Through the admin's shared toast rather than PrimeNG's `MessageService`, which not every
+     * screen provides. Resolved here, as the store is, since most panels load fine.
+     */
+    #reportLoadError(): void {
+        this.#injector.get(DotMessageDisplayService, null)?.push({
+            life: LOAD_ERROR_LIFE,
+            message: this.#injector
+                .get(DotMessageService)
+                .get('edit.content.side-panel.load-error'),
+            severity: DotMessageSeverity.ERROR,
+            type: DotMessageType.SIMPLE_MESSAGE
+        });
     }
 
     /**
