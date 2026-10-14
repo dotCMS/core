@@ -175,20 +175,17 @@
                              passive badge, so users didn't discover it opens the
                              bundle's contents. Empty bundles have nothing to
                              open, so they render as plain text. -->
-                        @if (row.isNew) {
-                            <!-- The unsent-bundles endpoint doesn't return an
-                                 item count; Set up lists the items. -->
+                        @if (row.assetCount === null) {
+                            <!-- Only a New row whose count the server didn't send. -->
                             <span class="text-color-secondary">—</span>
-                        } @else if ((row.assetCount ?? 0) > 0) {
+                        } @else if (row.assetCount > 0) {
                             <button
                                 type="button"
                                 class="cursor-pointer border-none bg-transparent p-0 text-inherit underline-offset-2 hover:underline"
                                 [pTooltip]="'publishing-queue.column.items.view' | dm"
                                 tooltipPosition="top"
                                 [attr.aria-label]="'publishing-queue.column.items.view' | dm"
-                                (click)="
-                                    $event.stopPropagation(); store.openAssetList(row.bundleId)
-                                "
+                                (click)="$event.stopPropagation(); onItemsClick(row)"
                                 data-testid="pq-bundles-items-btn">
                                 {{ itemsLabel(row.assetCount ?? 0) }}
                             </button>

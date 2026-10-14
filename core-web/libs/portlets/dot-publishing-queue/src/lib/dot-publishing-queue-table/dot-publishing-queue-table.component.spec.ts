@@ -54,7 +54,7 @@ const newRow = (bundleId: string): PublishingQueueRow => ({
     status: null,
     filterName: null,
     filterKey: null,
-    assetCount: 0,
+    assetCount: null,
     assetPreview: [],
     environmentCount: 0,
     createDate: '',
@@ -270,7 +270,31 @@ describe('DotPublishingQueueTableComponent', () => {
             expect(cell(newEl, 'pq-bundles-modified')).toBe(cell(auditEl, 'pq-bundles-modified'));
         });
 
-        it('shows a dash for the item count, and for dates when the id carried none', () => {
+        it('shows the item count as a link that opens Set up, not the asset list', () => {
+            tableRows.set([{ ...newRow('n1'), assetCount: 3 }]);
+            spectator.detectChanges();
+
+            const link = newRowEl()?.querySelector('[data-testid="pq-bundles-items-btn"]');
+            expect(link).toHaveText('3 items');
+
+            spectator.click(link as HTMLElement);
+
+            expect(store.openSetup).toHaveBeenCalledWith('n1');
+            expect(store.openAssetList).not.toHaveBeenCalled();
+            expect(store.openDetail).not.toHaveBeenCalled();
+        });
+
+        it('shows "0 items" as plain text for an empty New bundle', () => {
+            tableRows.set([{ ...newRow('n1'), assetCount: 0 }]);
+            spectator.detectChanges();
+
+            expect(newRowEl()?.querySelector('[data-testid="pq-bundles-items-btn"]')).toBeFalsy();
+            expect(newRowEl()?.querySelector('[data-testid="pq-bundles-items"]')).toHaveText(
+                '0 items'
+            );
+        });
+
+        it('shows a dash when the item count is unknown, and for dates when the id carried none', () => {
             const el = newRowEl();
             expect(el?.querySelector('[data-testid="pq-bundles-items-btn"]')).toBeFalsy();
             expect(el?.querySelector('[data-testid="pq-bundles-items"]')).toHaveText('—');

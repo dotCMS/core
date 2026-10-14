@@ -289,6 +289,21 @@ export class DotPublishingQueueTableComponent {
         this.store.setBundlesSelection(rows.map((r) => r.bundleId));
     }
 
+    /**
+     * Opens a row's items: the Set Up dialog for a New row (it lists and edits
+     * the items), the asset list dialog for any other row.
+     *
+     * @param row the row whose "N items" link was clicked
+     */
+    onItemsClick(row: PublishingQueueRow): void {
+        if (row.isNew) {
+            this.store.openSetup(row.bundleId);
+            return;
+        }
+
+        this.store.openAssetList(row.bundleId);
+    }
+
     /** A New row opens its Set Up dialog; any other row opens the bundle details. */
     onRowClick(row: PublishingQueueRow): void {
         if (row.isNew) {

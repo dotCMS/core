@@ -816,6 +816,39 @@ public class PublisherAPIImpl extends PublisherAPI{
 		}
 	}
 
+	/** Upper bound of bind parameters per {@link #countQueueElementsByBundleIds} query. */
+	private static final int COUNT_BY_BUNDLE_IDS_BATCH_SIZE = 500;
+
+	@Override
+	@CloseDBIfOpened
+	public Map<String, Integer> countQueueElementsByBundleIds(final Collection<String> bundleIds)
+			throws DotPublisherException {
+		final Map<String, Integer> counts = new HashMap<>();
+		if (bundleIds == null || bundleIds.isEmpty()) {
+			return counts;
+		}
+		try {
+			final List<String> ids = new ArrayList<>(bundleIds);
+			for (int from = 0; from < ids.size(); from += COUNT_BY_BUNDLE_IDS_BATCH_SIZE) {
+				final List<String> batch =
+						ids.subList(from, Math.min(from + COUNT_BY_BUNDLE_IDS_BATCH_SIZE, ids.size()));
+				final DotConnect dc = new DotConnect();
+				dc.setSQL("SELECT bundle_id, COUNT(*) AS asset_count FROM publishing_queue"
+						+ " WHERE bundle_id IN (" + String.join(",", Collections.nCopies(batch.size(), "?"))
+						+ ") GROUP BY bundle_id");
+				batch.forEach(dc::addParam);
+				for (final Map<String, Object> row : dc.loadObjectResults()) {
+					counts.put(String.valueOf(row.get("bundle_id")),
+							Integer.parseInt(String.valueOf(row.get("asset_count"))));
+				}
+			}
+			return counts;
+		} catch (final Exception e) {
+			Logger.error(PublisherUtil.class, e.getMessage(), e);
+			throw new DotPublisherException("Unable to count queue elements by bundle: " + e.getMessage(), e);
+		}
+	}
+
 	private static final String GETENTRY="select * from publishing_queue where asset = ?";
 
 	@CloseDBIfOpened

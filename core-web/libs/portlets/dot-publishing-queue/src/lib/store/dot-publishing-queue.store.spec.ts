@@ -258,6 +258,26 @@ describe('DotPublishingQueueStore', () => {
             ]);
         });
 
+        it('carries the item count the server sends', () => {
+            (service.getUnsendBundles as Mock).mockReturnValueOnce(
+                of({
+                    ...UNSENT_BUNDLES_RESPONSE,
+                    items: [
+                        { id: 'draft-1', name: 'Two items', assetCount: 2 },
+                        { id: 'draft-2', name: 'Empty', assetCount: 0 }
+                    ]
+                })
+            );
+
+            store.loadNewBundles();
+
+            expect(store.newBundles().map((row) => row.assetCount)).toEqual([2, 0]);
+        });
+
+        it('marks the item count unknown when the server leaves it out', () => {
+            expect(store.newBundles()[0].assetCount).toBeNull();
+        });
+
         it('maps each unsent bundle to a New row with only its id and name', () => {
             expect(store.newBundles()[0]).toEqual(
                 expect.objectContaining({

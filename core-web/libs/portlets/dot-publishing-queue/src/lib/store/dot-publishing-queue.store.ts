@@ -64,9 +64,11 @@ const NEW_BUNDLES_UNBOUNDED = -1;
 /**
  * A row of the bundles table. Rows from `/api/v1/publishing` carry `isNew: false`;
  * unsent bundles from `/api/bundle/getunsendbundles` carry `isNew: true` and only
- * know their id and name, so every other column is empty.
+ * know their id, name and item count, so most other columns are empty.
  */
-export interface PublishingQueueRow extends PublishingJobView {
+export interface PublishingQueueRow extends Omit<PublishingJobView, 'assetCount'> {
+    /** `null` when the item count is unknown (a New row whose count the server didn't send). */
+    assetCount: number | null;
     isNew: boolean;
 }
 
@@ -293,7 +295,7 @@ export const DotPublishingQueueStore = signalStore(
                 .subscribe((response) => {
                     patchState(store, {
                         newBundles: (response.items ?? []).map((item) =>
-                            toNewRow(item.id, item.name)
+                            toNewRow(item.id, item.name, item.assetCount)
                         )
                     });
                 });
@@ -713,19 +715,23 @@ export const DotPublishingQueueStore = signalStore(
 );
 
 /**
- * Builds a "New" row for an unsent bundle. The endpoint only returns its id and
- * name. The creation date is decoded from the id (a ULID) and doubles as the
- * last update, since nothing records changes to an unsent bundle — the same
+ * Builds a "New" row for an unsent bundle. The endpoint returns its id, name and
+ * item count. The creation date is decoded from the id (a ULID) and doubles as
+ * the last update, since nothing records changes to an unsent bundle — the same
  * fallback audit rows use when they have no `statusUpdated`.
+ *
+ * @param bundleId   the bundle id
+ * @param bundleName the bundle name
+ * @param assetCount the number of queued assets, if the server sent it
  */
-function toNewRow(bundleId: string, bundleName: string): PublishingQueueRow {
+function toNewRow(bundleId: string, bundleName: string, assetCount?: number): PublishingQueueRow {
     return {
         bundleId,
         bundleName,
         status: null,
         filterName: null,
         filterKey: null,
-        assetCount: 0,
+        assetCount: assetCount ?? null,
         assetPreview: [],
         environmentCount: 0,
         createDate: ulidTimestamp(bundleId) ?? '',
