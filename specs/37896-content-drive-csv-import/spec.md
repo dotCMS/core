@@ -128,6 +128,14 @@ developer chose to keep the legacy behavior:
   errors there is no box at all. The preview scrolls as a whole, with a single scrollbar, however
   many messages there are.
 
+### Session 2026-10-15 (convergence)
+
+- **A row whose folder doesn't exist is a row error.** The spec said such rows land at the site root
+  with no error. A preview against a running instance showed the importer, unchanged from Content
+  Search, reports them as errors ("The provided inode/path does not exist or is not associated with
+  a valid Site or Folder."). The edge case now says so, and fixing those rows is no longer listed as
+  out of scope, since there is nothing to fix.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Import a CSV from Content Drive (Priority: P1)
@@ -316,8 +324,8 @@ no data rows, the form is still filled in, and replacing the file lets the user 
 - **CSV without a site/folder column.** Rows go to the content type's default site/folder, as in
   Content Search, and the preview says so.
 - **Empty site/folder cell.** The row is an error, as in Content Search.
-- **Rows with a folder that doesn't exist.** They land at the site root with no error, as in
-  legacy. Tracked separately, not fixed here.
+- **Rows with a folder that doesn't exist.** The row is an error, as in Content Search: the
+  preview names the line and the site/folder value, and the import skips it.
 - **Very large files.** No new size limit; the server's existing upload limit applies. The status
   toast keeps showing the import as running for as long as it takes.
 - **Per-row action column.** A CSV may name a workflow action per row; legacy honors it over the
@@ -470,6 +478,5 @@ no data rows, the form is still filled in, and replacing the file lets the user 
 - Language stays in the form even though the developer's description didn't mention it, because the
   import always needs one, and leaving it out silently turns on multilingual mode.
 - Out of scope: importing by drag and drop (see Clarifications), cancelling a running import, a full
-  row-by-row report after the import, targeting the current folder, fixing rows whose folder doesn't
-  exist, checking who owns an import job on the job endpoints (to be filed separately), a "recent
+  row-by-row report after the import, targeting the current folder, checking who owns an import job on the job endpoints (to be filed separately), a "recent
   imports" page, and export (#37900).
