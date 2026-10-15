@@ -98,6 +98,22 @@ public class IndexDocumentViolationTest {
     }
 
     /**
+     * Given Scenario: The reason of a withheld document whose field path contains a line break,
+     * followed by a second withheld document's reason, as the journal joins them.
+     * Expected Result: The first document is read, whole, and not the second one.
+     */
+    @Test
+    public void test_fieldPathWithLineBreak_readsTheFirst() {
+        final IndexDocumentViolation first = new IndexDocumentViolation("id", "inode-1", 1L,
+                new Violation(Kind.NESTING_DEPTH, "metadata.line\nbreak.value", 1001L, 1000L));
+        final IndexDocumentViolation second = new IndexDocumentViolation("id", "inode-2", 1L,
+                new Violation(Kind.STRING_LENGTH, "body", 25_000_000L, 20_000_000L));
+
+        assertEquals(Optional.of(first), IndexDocumentViolation.violationOf(
+                first.toFailureReason() + "; " + second.toFailureReason()));
+    }
+
+    /**
      * Given Scenario: Reasons that are not document-limit violations, and no reason at all.
      * Expected Result: Nothing is read.
      */

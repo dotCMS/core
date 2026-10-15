@@ -3546,11 +3546,13 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         final List<IndexDocumentViolation> withheld = new ArrayList<>();
         try {
             reindexRelatedContent(contentlet, relationships, indexPolicy, withheld);
-        } catch (final RuntimeException sendFailure) {
+        } catch (final Exception failure) {
+            // Checked failures too (e.g. searching a later relationship's content): documents
+            // withheld for earlier relationships travel with the error instead of being lost.
             if (!withheld.isEmpty()) {
-                sendFailure.addSuppressed(withheldException(withheld));
+                failure.addSuppressed(withheldException(withheld));
             }
-            throw sendFailure;
+            throw failure;
         }
         // Related documents the engine clients' parser would refuse were left out and are only
         // logged: reindexing related content is clean-up after a removal, and throwing here would

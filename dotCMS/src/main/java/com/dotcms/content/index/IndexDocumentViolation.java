@@ -34,11 +34,11 @@ public record IndexDocumentViolation(String identifier, String inode, long langu
      * path, actual value, unit and limit. Kept next to the writer so the two cannot drift apart.
      * The identifier is matched greedily up to the last {@code _<digits>}, which is the language;
      * the field path is matched lazily up to the size that follows it, so a path holding an
-     * apostrophe (a user-defined key/value or JSON key) is still read whole.
+     * apostrophe or a line break (a user-defined key/value or JSON key) is still read whole.
      */
     private static final Pattern REASON = Pattern.compile(
             "document (\\S+)_(\\d+) \\(inode ([^)]*)\\) field '(.*?)' is ([0-9,]+) ("
-                    + CHARS + "|" + LEVELS_DEEP + "); limit ([0-9,]+)");
+                    + CHARS + "|" + LEVELS_DEEP + "); limit ([0-9,]+)", Pattern.DOTALL);
 
     /**
      * Reads back the withheld document recorded in a reindex journal reason.

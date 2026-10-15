@@ -3,10 +3,13 @@ package com.dotcms.content.elasticsearch.business;
 import static com.dotcms.content.index.IndexConfigHelper.MigrationPhase.FLAG_KEY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.mock;
@@ -30,6 +33,7 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.common.reindex.ReindexEntry;
 import com.dotmarketing.common.reindex.ReindexQueueAPI;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -37,6 +41,7 @@ import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -363,49 +368,26 @@ public class ContentletIndexAPIImplDirectPathRejectionTest {
      * Given Scenario: Phase 0. A contentlet is removed from the index with a FORCE policy; it has
      * one relationship, and the related content found for it is one healthy contentlet and one
      * whose document is oversized.
-     * Expected Result: The healthy related document is reindexed, the oversized one is not, the
-     * removal of the deleted contentlet is still sent, and nothing is thrown — reindexing related
-     * content is clean-up and must not block the removal.
+     * Expected Result: The healthy related document is reindexed, the oversized one is not and is
+     * named in a warning, the removal of the deleted contentlet is still sent, and nothing is
+     * thrown — reindexing related content is clean-up and must not block the removal, nor drop a
+     * withheld document silently.
      */
     @Test
     public void test_removeFromIndex_oversizedRelated_loggedAndRemovalStillSent() throws Exception {
         setPhase(0);
-        final Contentlet healthyRelated = contentlet("id-related-1", "inode-r1", "small body");
-        final Contentlet oversizedRelated = contentlet("id-related-2", "inode-r2",
+        final Contentlet healthyRelated = relatedContentlet("id-related-1", "inode-r1", "small body");
+        final Contentlet oversizedRelated = relatedContentlet("id-related-2", "inode-r2",
                 "x".repeat(OVERSIZED_LENGTH));
-        when(healthyRelated.getIndexPolicy()).thenReturn(IndexPolicy.FORCE);
-        when(oversizedRelated.getIndexPolicy()).thenReturn(IndexPolicy.FORCE);
+        final Relationship relationship = relationship("Parent-Child");
 
-        final ContentType type = mock(ContentType.class);
-        final Contentlet deleted = mock(Contentlet.class);
-        when(deleted.getIdentifier()).thenReturn("id-deleted");
-        when(deleted.getInode()).thenReturn("inode-deleted");
-        when(deleted.getLanguageId()).thenReturn(1L);
-        when(deleted.getVariantId()).thenReturn("DEFAULT");
-        when(deleted.getContentType()).thenReturn(type);
-        when(deleted.getIndexPolicy()).thenReturn(IndexPolicy.FORCE);
-        when(deleted.getIndexPolicyDependencies()).thenReturn(IndexPolicy.FORCE);
+        try (MockedStatic<Logger> logger = mockStatic(Logger.class)) {
+            removeFromIndex(List.of(relationship),
+                    query -> List.of(healthyRelated, oversizedRelated));
 
-        final Relationship relationship = mock(Relationship.class);
-        when(relationship.getRelationTypeValue()).thenReturn("Parent-Child");
-        final RelationshipAPI relationshipAPI = mock(RelationshipAPI.class);
-        when(relationshipAPI.byContentType(type)).thenReturn(List.of(relationship));
-        when(relationshipAPI.sameParentAndChild(relationship)).thenReturn(false);
-        final User systemUser = mock(User.class);
-        final UserAPI userAPI = mock(UserAPI.class);
-        when(userAPI.getSystemUser()).thenReturn(systemUser);
-        final ContentletAPI contentletAPI = mock(ContentletAPI.class);
-        when(contentletAPI.search(anyString(), eq(-1), eq(0), isNull(), eq(systemUser), eq(false)))
-                .thenReturn(List.of(healthyRelated, oversizedRelated));
-
-        try (MockedStatic<APILocator> apiLocator = mockStatic(APILocator.class);
-                MockedStatic<CacheLocator> cacheLocator = mockStatic(CacheLocator.class,
-                        RETURNS_DEEP_STUBS)) {
-            apiLocator.when(APILocator::getContentMappingAPI).thenReturn(mappingAPI);
-            apiLocator.when(APILocator::getRelationshipAPI).thenReturn(relationshipAPI);
-            apiLocator.when(APILocator::getContentletAPI).thenReturn(contentletAPI);
-            apiLocator.when(APILocator::getUserAPI).thenReturn(userAPI);
-            api.removeContentFromIndex(deleted, false);
+            logger.verify(() -> Logger.warn(any(Object.class),
+                    argThat((String message) -> message != null
+                            && message.contains("(inode inode-r2)"))));
         }
 
         final List<String> sent = es.sentIds();
@@ -415,6 +397,44 @@ public class ContentletIndexAPIImplDirectPathRejectionTest {
                 sent.contains(docId(oversizedRelated)));
         assertTrue("the removal of the deleted contentlet must still be sent: " + sent,
                 sent.contains("delete:id-deleted_1_DEFAULT"));
+    }
+
+    /**
+     * Given Scenario: Phase 0. The deleted contentlet has two relationships; the first one's
+     * related content includes an oversized document, and searching the second one's related
+     * content fails with a {@link DotDataException}.
+     * Expected Result: The search failure reaches the caller as before (wrapped by
+     * {@code removeContentFromIndex}), carrying, as a suppressed exception, one naming the
+     * document withheld for the first relationship.
+     */
+    @Test
+    public void test_removeFromIndex_checkedFailureAfterWithheld_withheldTravelsWithIt()
+            throws Exception {
+        setPhase(0);
+        final Contentlet oversizedRelated = relatedContentlet("id-related-2", "inode-r2",
+                "x".repeat(OVERSIZED_LENGTH));
+        final Relationship first = relationship("First-Rel");
+        final Relationship second = relationship("Second-Rel");
+
+        final Exception thrown = assertThrows(Exception.class,
+                () -> removeFromIndex(List.of(first, second), query -> {
+                    if (query.contains("Second-Rel")) {
+                        throw new DotDataException("related search failed");
+                    }
+                    return List.of(oversizedRelated);
+                }));
+
+        // removeContentFromIndex wraps it in a DotHibernateException, itself a DotDataException
+        // with the same message: look for the original by its exact type.
+        Throwable failure = thrown;
+        while (failure != null && failure.getClass() != DotDataException.class) {
+            failure = failure.getCause();
+        }
+        assertNotNull("the search failure must still reach the caller: " + thrown, failure);
+        assertEquals("related search failed", failure.getMessage());
+        assertEquals("the withheld document must travel with the failure",
+                1, failure.getSuppressed().length);
+        assertNamesOffender(failure.getSuppressed()[0].getMessage(), oversizedRelated);
     }
 
     // -------------------------------------------------------------------------------------------
@@ -443,6 +463,62 @@ public class ContentletIndexAPIImplDirectPathRejectionTest {
         document.put("body", body);
         when(mappingAPI.toMap(contentlet)).thenReturn(document);
         return contentlet;
+    }
+
+    /** Related content found for a deleted contentlet, mapped as {@code {"body": <body>}}. */
+    private Contentlet relatedContentlet(final String identifier, final String inode,
+            final String body) throws Exception {
+        final Contentlet contentlet = contentlet(identifier, inode, body);
+        when(contentlet.getIndexPolicy()).thenReturn(IndexPolicy.FORCE);
+        return contentlet;
+    }
+
+    private static Relationship relationship(final String typeValue) {
+        final Relationship relationship = mock(Relationship.class);
+        when(relationship.getRelationTypeValue()).thenReturn(typeValue);
+        return relationship;
+    }
+
+    /** Answers the related-content search for a relationship query. */
+    @FunctionalInterface
+    private interface RelatedSearch {
+        List<Contentlet> find(String query) throws Exception;
+    }
+
+    /**
+     * Removes a working contentlet ({@code id-deleted}, FORCE policy) from the index with the
+     * given relationships, the related content returned by {@code search}, and the APIs mocked.
+     */
+    private void removeFromIndex(final List<Relationship> relationships,
+            final RelatedSearch search) throws Exception {
+        final ContentType type = mock(ContentType.class);
+        final Contentlet deleted = mock(Contentlet.class);
+        when(deleted.getIdentifier()).thenReturn("id-deleted");
+        when(deleted.getInode()).thenReturn("inode-deleted");
+        when(deleted.getLanguageId()).thenReturn(1L);
+        when(deleted.getVariantId()).thenReturn("DEFAULT");
+        when(deleted.getContentType()).thenReturn(type);
+        when(deleted.getIndexPolicy()).thenReturn(IndexPolicy.FORCE);
+        when(deleted.getIndexPolicyDependencies()).thenReturn(IndexPolicy.FORCE);
+
+        final RelationshipAPI relationshipAPI = mock(RelationshipAPI.class);
+        when(relationshipAPI.byContentType(type)).thenReturn(relationships);
+        final User systemUser = mock(User.class);
+        final UserAPI userAPI = mock(UserAPI.class);
+        when(userAPI.getSystemUser()).thenReturn(systemUser);
+        final ContentletAPI contentletAPI = mock(ContentletAPI.class);
+        when(contentletAPI.search(anyString(), eq(-1), eq(0), isNull(), eq(systemUser), eq(false)))
+                .thenAnswer(invocation -> search.find(invocation.getArgument(0)));
+
+        try (MockedStatic<APILocator> apiLocator = mockStatic(APILocator.class);
+                MockedStatic<CacheLocator> cacheLocator = mockStatic(CacheLocator.class,
+                        RETURNS_DEEP_STUBS)) {
+            apiLocator.when(APILocator::getContentMappingAPI).thenReturn(mappingAPI);
+            apiLocator.when(APILocator::getRelationshipAPI).thenReturn(relationshipAPI);
+            apiLocator.when(APILocator::getContentletAPI).thenReturn(contentletAPI);
+            apiLocator.when(APILocator::getUserAPI).thenReturn(userAPI);
+            api.removeContentFromIndex(deleted, false);
+        }
     }
 
     /** Runs {@link ContentletIndexAPIImpl#addContentToIndex(List)} with the mapping API mocked. */
