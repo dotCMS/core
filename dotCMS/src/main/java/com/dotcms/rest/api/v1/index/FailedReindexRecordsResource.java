@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.index;
 
 import com.dotcms.content.index.IndexDocumentConstraints;
+import com.dotcms.content.index.IndexDocumentViolation;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.annotation.SwaggerCompliant;
@@ -17,6 +18,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -89,12 +91,23 @@ public class FailedReindexRecordsResource {
                 .requiredPortlet("maintenance")
                 .init();
         final List<ReindexEntry> rows = APILocator.getReindexQueueAPI().getFailedReindexRecords();
-        // One column-only query per batch instead of loading every failed contentlet, which are
-        // often the oversized ones (review of #37924).
-        final Map<String, DisplayVersion> displays = new DisplayVersionFinder().find(
-                rows.stream().map(ReindexEntry::getIdentToIndex).collect(Collectors.toList()));
+        // A document-limit failure names the version it withheld: show that exact version. Any
+        // other failure only names the identifier: show a version of it. Column-only queries,
+        // batched, instead of loading every failed contentlet (review of #37924).
+        // Identity, not equals: ReindexEntry equality ignores the row id, and one identifier can
+        // have several failed rows.
+        final Map<ReindexEntry, String> withheldInodes = new IdentityHashMap<>();
+        rows.forEach(row -> IndexDocumentViolation.violationOf(row.getLastResult())
+                .ifPresent(withheld -> withheldInodes.put(row, withheld.inode())));
+        final DisplayVersionFinder finder = new DisplayVersionFinder();
+        final Map<String, DisplayVersion> byInode = finder.findByInodes(withheldInodes.values());
+        final Map<String, DisplayVersion> byIdentifier = finder.find(rows.stream()
+                .filter(row -> !withheldInodes.containsKey(row))
+                .map(ReindexEntry::getIdentToIndex).collect(Collectors.toList()));
         final List<FailedReindexRecordView> records = rows.stream()
-                .map(row -> FailedReindexRecordView.from(row, displays.get(row.getIdentToIndex())))
+                .map(row -> FailedReindexRecordView.from(row, withheldInodes.containsKey(row)
+                        ? byInode.get(withheldInodes.get(row))
+                        : byIdentifier.get(row.getIdentToIndex())))
                 .collect(Collectors.toList());
         return new ResponseEntityFailedReindexRecordsView(FailedReindexRecordsView.of(records,
                 DOCUMENT_CONSTRAINTS.maxStringLength(), DOCUMENT_CONSTRAINTS.maxNestingDepth(),

@@ -88,22 +88,50 @@ public class DisplayVersionFinderTest {
     }
 
     /**
-     * Given Scenario: An archived contentlet and an identifier that does not exist.
-     * Expected Result: Neither is returned, as {@code findContentletByIdentifierAnyLanguage}
-     * returns nothing for them today.
+     * Given Scenario: An archived contentlet, a published one, and an identifier that does not
+     * exist.
+     * Expected Result: The archived one is resolved and flagged {@code archived}; the published
+     * one is not flagged; the missing identifier is absent.
      */
     @Test
-    public void test_find_archivedOrMissing_notReturned() throws Exception {
+    public void test_find_archivedFlagged_missingAbsent() throws Exception {
         final Contentlet archived = newContentlet("Archived");
         ContentletDataGen.archive(archived);
+        final Contentlet active = newContentlet("Active");
         final String missing = UUIDGenerator.generateUuid();
 
         final Map<String, DisplayVersion> found = new DisplayVersionFinder()
-                .find(List.of(archived.getIdentifier(), missing));
+                .find(List.of(archived.getIdentifier(), active.getIdentifier(), missing));
 
-        assertFalse("an archived contentlet is not resolved",
-                found.containsKey(archived.getIdentifier()));
+        assertTrue("an archived contentlet is resolved and flagged",
+                found.get(archived.getIdentifier()).archived());
+        assertEquals("Archived", found.get(archived.getIdentifier()).title());
+        assertFalse(found.get(active.getIdentifier()).archived());
         assertFalse("a missing identifier is not resolved", found.containsKey(missing));
+    }
+
+    /**
+     * Given Scenario: An identifier whose default-language version is archived and whose
+     * translation is not.
+     * Expected Result: The non-archived translation is resolved, not flagged.
+     */
+    @Test
+    public void test_find_prefersNonArchivedLanguage() throws Exception {
+        final Contentlet base = newContentlet("Archived base");
+        final Language secondLanguage = new LanguageDataGen().nextPersisted();
+        final Contentlet translation = ContentletDataGen.checkout(base);
+        translation.setLanguageId(secondLanguage.getId());
+        translation.setProperty("title", "Active translation");
+        final Contentlet savedTranslation = ContentletDataGen.checkin(translation, IndexPolicy.DEFER);
+        new DotConnect().setSQL("update contentlet_version_info set deleted = true"
+                        + " where identifier = ? and lang = ?")
+                .addParam(base.getIdentifier()).addParam(base.getLanguageId()).loadResult();
+
+        final DisplayVersion display = new DisplayVersionFinder()
+                .find(List.of(base.getIdentifier())).get(base.getIdentifier());
+
+        assertEquals(savedTranslation.getInode(), display.inode());
+        assertFalse(display.archived());
     }
 
     /**
@@ -188,6 +216,39 @@ public class DisplayVersionFinderTest {
 
         assertFalse("a version outside the default variant is not resolved",
                 found.containsKey(inVariant.getIdentifier()));
+    }
+
+    /**
+     * Given Scenario: The exact versions named by withheld documents: a translation (not the
+     * lowest language of its identifier) and a version whose content was archived since; plus an
+     * inode that does not exist.
+     * Expected Result: Each existing inode resolves to its own language, title and type — whatever
+     * other versions or the archived flag say — and the missing one is absent.
+     */
+    @Test
+    public void test_findByInodes_resolvesThoseExactVersions() throws Exception {
+        final Contentlet base = newContentlet("Base language");
+        final Language secondLanguage = new LanguageDataGen().nextPersisted();
+        final Contentlet translation = ContentletDataGen.checkout(base);
+        translation.setLanguageId(secondLanguage.getId());
+        translation.setProperty("title", "Withheld translation");
+        final Contentlet savedTranslation = ContentletDataGen.checkin(translation, IndexPolicy.DEFER);
+        final Contentlet archived = newContentlet("Archived withheld");
+        ContentletDataGen.archive(archived);
+        final String missing = UUIDGenerator.generateUuid();
+
+        final Map<String, DisplayVersion> found = new DisplayVersionFinder().findByInodes(
+                List.of(savedTranslation.getInode(), archived.getInode(), missing));
+
+        final DisplayVersion withheld = found.get(savedTranslation.getInode());
+        assertEquals(savedTranslation.getInode(), withheld.inode());
+        assertEquals(secondLanguage.getId(), withheld.languageId());
+        assertEquals("Withheld translation", withheld.title());
+        assertEquals(contentType.variable(), withheld.contentTypeVariable());
+        assertEquals("Archived withheld", found.get(archived.getInode()).title());
+        assertTrue("the archived version is flagged", found.get(archived.getInode()).archived());
+        assertFalse(withheld.archived());
+        assertFalse("a missing inode is not resolved", found.containsKey(missing));
     }
 
     /**

@@ -38,14 +38,16 @@ public record FailedReindexRecordsView(
     /**
      * How the reindex journal retries an entry.
      *
-     * @param maxFailedAttempts the failures after which an entry stops being retried and is listed
-     *                          here
+     * @param maxRetries how many times a failed entry is retried after its first attempt
+     *                   ({@code RETRY_FAILED_INDEX_TIMES}); an entry listed here as exhausted
+     *                   failed {@code maxRetries + 1} times
      */
     @Schema(description = "How the reindex journal retries an entry")
     public record RetryPolicy(
-            @Schema(description = "Failures after which an entry stops being retried",
-                    example = "5")
-            int maxFailedAttempts) {
+            @Schema(description = "Retries after the first attempt before an entry stops being"
+                    + " retried (RETRY_FAILED_INDEX_TIMES); an exhausted entry failed"
+                    + " maxRetries + 1 times", example = "5")
+            int maxRetries) {
     }
 
     /**
@@ -54,12 +56,12 @@ public record FailedReindexRecordsView(
      * @param failedRecords     the failed records
      * @param maxStringLength   the string-length limit in force
      * @param maxNestingDepth   the nesting-depth limit in force
-     * @param maxFailedAttempts the configured retry limit
+     * @param maxRetries        the configured number of retries
      * @return the listing
      */
     public static FailedReindexRecordsView of(final List<FailedReindexRecordView> failedRecords,
-            final int maxStringLength, final int maxNestingDepth, final int maxFailedAttempts) {
+            final int maxStringLength, final int maxNestingDepth, final int maxRetries) {
         return new FailedReindexRecordsView(new DocumentLimits(maxStringLength, maxNestingDepth),
-                new RetryPolicy(maxFailedAttempts), failedRecords.size(), List.copyOf(failedRecords));
+                new RetryPolicy(maxRetries), failedRecords.size(), List.copyOf(failedRecords));
     }
 }

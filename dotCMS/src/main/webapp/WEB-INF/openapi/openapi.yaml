@@ -29414,6 +29414,11 @@ components:
       description: "A reindex journal entry that exhausted its retries, without content\
         \ values"
       properties:
+        archived:
+          type: boolean
+          description: True when every version of the content is archived; null if
+            the content could not be resolved
+          nullable: true
         contentTypeVariable:
           type: string
           description: Content type variable; null if it cannot be resolved
@@ -29423,23 +29428,21 @@ components:
           type: integer
           format: int32
           description: How many times indexing the entry failed
-          example: 5
+          example: 6
         identifier:
           type: string
           description: Contentlet identifier
           example: d5edd758f166259247356e7ea2deca4e
         inode:
           type: string
-          description: "Inode of a version of the content, resolved only to show it;\
-            \ not necessarily the version that failed. The withheld version's inode\
-            \ is in violation.inode. Null if the content no longer exists"
+          description: Inode of the withheld version when the failure is a document-limit
+            violation; otherwise of a version of the content resolved only to show
+            it. Null if unknown
           nullable: true
         languageId:
           type: integer
           format: int64
-          description: Language of the version resolved for display; not necessarily
-            the version that failed. The withheld version's language is in violation.languageId.
-            Null if unknown
+          description: Language of that version; null if unknown
           example: 1
           nullable: true
         lastFailureReason:
@@ -29447,7 +29450,7 @@ components:
           description: "Last failure recorded for the entry, as stored by the reindex\
             \ journal (truncated to 300 characters); null if no message was recorded"
           nullable: true
-        pendingOperation:
+        operation:
           type: string
           description: What the index still owes for the identifier
           enum:
@@ -29460,8 +29463,8 @@ components:
           example: 505
         title:
           type: string
-          description: Stored title of the version resolved for display; null if the
-            content no longer exists or no title is stored
+          description: Stored title of that version; null if unknown or no title is
+            stored
           nullable: true
         violation:
           $ref: "#/components/schemas/ViolationView"
@@ -38525,10 +38528,12 @@ components:
       type: object
       description: How the reindex journal retries an entry
       properties:
-        maxFailedAttempts:
+        maxRetries:
           type: integer
           format: int32
-          description: Failures after which an entry stops being retried
+          description: Retries after the first attempt before an entry stops being
+            retried (RETRY_FAILED_INDEX_TIMES); an exhausted entry failed maxRetries
+            + 1 times
           example: 5
     Role:
       type: object
@@ -42276,45 +42281,25 @@ components:
           $ref: "#/components/schemas/Visitor"
     ViolationView:
       type: object
-      description: "A document limit exceeded by the index document, and the version\
-        \ withheld for it"
+      description: A document limit exceeded by the index document
       nullable: true
       properties:
         actual:
           type: integer
           format: int64
-          description: "The document's value, in unit"
+          description: "The field's length in characters, or the nesting depth reached"
           example: 42000792
-        allowed:
-          type: integer
-          format: int64
-          description: "The limit, in unit"
-          example: 20000000
         fieldPath:
           type: string
           description: Path of the offending field in the index document
           example: catchall
-        inode:
-          type: string
-          description: Inode of the withheld version
-          example: 9f8e7d6c-1111-2222-3333-444455556666
-        languageId:
-          type: integer
-          format: int64
-          description: Language of the withheld version
-          example: 1
         limit:
           type: string
-          description: Which limit was exceeded
+          description: "Which limit was exceeded: maxStringLength (characters) or\
+            \ maxNestingDepth (levels), as in the root documentLimits"
           enum:
           - maxStringLength
           - maxNestingDepth
-        unit:
-          type: string
-          description: Unit of actual and allowed
-          enum:
-          - chars
-          - levels
     Visitor:
       type: object
       properties:
