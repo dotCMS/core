@@ -234,6 +234,7 @@
                         formControlName="contentType"
                         data-testid="import-content-type"
                         [pageLoader]="contentTypePageLoader"
+                        [emptyMessage]="'content-drive.import.content-type.empty' | dm"
                         [placeholder]="'content-drive.import.content-type.placeholder' | dm" />
                     @if ($fieldErrors().contentType) {
                         <small class="text-sm text-red-500" data-testid="import-error-contentType">

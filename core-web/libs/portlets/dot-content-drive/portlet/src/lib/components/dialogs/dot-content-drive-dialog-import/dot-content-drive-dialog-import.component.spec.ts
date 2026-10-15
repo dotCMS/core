@@ -210,6 +210,13 @@ describe('DotContentDriveDialogImportComponent', () => {
             expect(importService.getWritableContentTypes).toHaveBeenCalled();
         });
 
+        /** Spec Edge Cases: a user who can write to no content type is told so. */
+        it('says there is nothing to import into when the list is empty', () => {
+            setup();
+
+            expect(selector()?.emptyMessage()).toBe('content-drive.import.content-type.empty');
+        });
+
         it('puts the picked type in the form', () => {
             setup();
 
