@@ -129,7 +129,7 @@ const dialogServiceOpen = vi.fn(() => permissionsDialogRef);
 
 // Backs the mock's `$legacyPanelRequest`: the legacy-editor panel the shell must render (#37759).
 const legacyPanelRequestSignal: WritableSignal<DotLegacyEditorRequest | null> = signal(null);
-// Backs the mock's `sourceEditor`: the file the Edit Source panel shows.
+// Backs the mock's `sourceEditor`: the file the Edit Code panel shows.
 const sourceEditorSignal: WritableSignal<DotSourceEditorRequest | null> = signal(null);
 // Reset per test rather than re-created, so the store mock never captures a stale one.
 /** Nothing refused by default; the refusal tests set it. */
@@ -1023,7 +1023,7 @@ describe('DotContentDriveShellComponent', () => {
                 expect(store.loadItems).toHaveBeenCalledWith({ quiet: true });
             });
 
-            it('should hold the reload while the Edit Source panel is open, and run it when it closes', () => {
+            it('should hold the reload while the Edit Code panel is open, and run it when it closes', () => {
                 sourceEditorSignal.set({} as DotSourceEditorRequest);
                 spectator.detectChanges();
 
@@ -1634,7 +1634,7 @@ describe('DotContentDriveShellComponent', () => {
                     editContent: null,
                     editContentLang: null,
                     createContent: null,
-                    editSource: null,
+                    editCode: null,
                     createFolder: null,
                     editFolder: null,
                     folderPermissions: null
@@ -1739,7 +1739,7 @@ describe('DotContentDriveShellComponent', () => {
                     editContent: null,
                     editContentLang: null,
                     createContent: null,
-                    editSource: null,
+                    editCode: null,
                     createFolder: null,
                     editFolder: null,
                     folderPermissions: null
@@ -1763,7 +1763,7 @@ describe('DotContentDriveShellComponent', () => {
                     editContent: null,
                     editContentLang: null,
                     createContent: null,
-                    editSource: null,
+                    editCode: null,
                     createFolder: null,
                     editFolder: null,
                     folderPermissions: null
@@ -5711,14 +5711,14 @@ describe('DotContentDriveShellComponent', () => {
         });
     });
 
-    describe('Edit Source panel', () => {
+    describe('Edit Code panel', () => {
         const SOURCE_REQUEST: DotSourceEditorRequest = {
             inode: 'vtl-inode',
             title: 'header.vtl',
             language: 'velocity'
         };
 
-        /** The Edit Source panel the shell opened last: lazily loaded, on a `request`. */
+        /** The Edit Code panel the shell opened last: lazily loaded, on a `request`. */
         const sourcePanel = (): OpenedPanel | undefined =>
             sidePanels.opened
                 .filter(
@@ -5776,7 +5776,7 @@ describe('DotContentDriveShellComponent', () => {
             expect(router.createUrlTree).toHaveBeenLastCalledWith(
                 [],
                 expect.objectContaining({
-                    queryParams: expect.objectContaining({ editSource: 'vtl-inode' })
+                    queryParams: expect.objectContaining({ editCode: 'vtl-inode' })
                 })
             );
 
@@ -5790,7 +5790,7 @@ describe('DotContentDriveShellComponent', () => {
             expect(router.createUrlTree).toHaveBeenLastCalledWith(
                 [],
                 expect.objectContaining({
-                    queryParams: expect.objectContaining({ editSource: null })
+                    queryParams: expect.objectContaining({ editCode: null })
                 })
             );
         });
@@ -5807,7 +5807,7 @@ describe('DotContentDriveShellComponent', () => {
             expect(location.replaceState).toHaveBeenCalledTimes(1);
             expect(router.createUrlTree).toHaveBeenLastCalledWith(
                 [],
-                expect.objectContaining({ queryParams: { editSource: 'vtl-inode' } })
+                expect.objectContaining({ queryParams: { editCode: 'vtl-inode' } })
             );
         });
 
@@ -5815,7 +5815,7 @@ describe('DotContentDriveShellComponent', () => {
             openSourcePanel();
 
             (location.subscribe as Mock).mock.calls[0][0]({
-                url: '/c/content-drive?editSource=vtl-inode'
+                url: '/c/content-drive?editCode=vtl-inode'
             });
 
             expect(sourcePanel()?.ref.requestClose).not.toHaveBeenCalled();

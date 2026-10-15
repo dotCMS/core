@@ -5,12 +5,12 @@ import { DotSourceEditorRequest } from '@dotcms/edit-content';
 import { DotContentDriveState } from '../../../shared/models';
 
 interface WithSourceEditorState {
-    /** The file open in the Edit Source panel, or `null` when the panel is closed. */
+    /** The file open in the Edit Code panel, or `null` when the panel is closed. */
     sourceEditor: DotSourceEditorRequest | null;
 }
 
 /**
- * Which file the Edit Source panel shows. Data only: the panel loads and saves the source itself,
+ * Which file the Edit Code panel shows. Data only: the panel loads and saves the source itself,
  * because a failed save has to leave the author's edits on screen.
  */
 export function withSourceEditor() {

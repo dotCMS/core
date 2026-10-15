@@ -314,7 +314,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     protected readonly $editContentPanel = signal<EditContentDialogData | null>(null);
 
     /**
-     * Drives the Edit Source side panel: the VTL file whose source is open in Monaco, or `null`
+     * Drives the Edit Code side panel: the VTL file whose source is open in Monaco, or `null`
      * when closed. Set from the contentlet tools' VTL menu (see {@link handleEditVTL}); the panel is
      * open while it is set (see the constructor).
      */
@@ -622,7 +622,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             closed: () => this.$editContentPanel.set(null)
         });
 
-        // The Edit Source side panel, open while `$sourceEditorPanel` is set. A save writes the
+        // The Edit Code side panel, open while `$sourceEditorPanel` is set. A save writes the
         // file's working version, which edit mode renders, so the page reloads to show it; the
         // panel then closes itself. Loaded on its first open, so Monaco stays out of this
         // portlet's chunk.
@@ -1734,7 +1734,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     }
 
     /**
-     * Handles the edit of a VTL file: opens its source in Monaco, in the Edit Source side panel.
+     * Handles the edit of a VTL file: opens its source in Monaco, in the Edit Code side panel.
      *
      * `VTLFile` only carries `inode`/`name` (it comes from the client's postMessage payload), so the
      * full contentlet is resolved by inode first: `toSourceEditorRequest` needs its type, extension

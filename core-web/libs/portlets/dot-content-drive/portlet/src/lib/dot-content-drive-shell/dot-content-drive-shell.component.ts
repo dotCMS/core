@@ -98,7 +98,7 @@ import { DotLegacyEditorSidePanelComponent } from '../components/dot-legacy-edit
 import {
     ACTION_CENTER_DIALOG_CONTENT_STYLE,
     ACTION_CENTER_DIALOG_CLASS,
-    CONTENT_DRIVE_EDIT_SOURCE_PARAM,
+    CONTENT_DRIVE_EDIT_CODE_PARAM,
     CONTENT_DRIVE_URL_PARAM,
     CONTENT_DRIVE_VIEW_PARAM,
     DIALOG_TYPE,
@@ -391,11 +391,11 @@ export class DotContentDriveShellComponent implements OnDestroy {
         closed: () => this.onLegacyPanelClosed()
     });
 
-    /** The file open in the Edit Source panel, from the store. */
+    /** The file open in the Edit Code panel, from the store. */
     protected readonly $sourceEditorRequest = this.#store.sourceEditor;
 
     /**
-     * The Edit Source panel: a file's source in Monaco, open while the store names a file. Loaded on
+     * The Edit Code panel: a file's source in Monaco, open while the store names a file. Loaded on
      * its first open, so Monaco stays out of this portlet's chunk. Kept so browser Back can route
      * its close through the panel's unsaved-changes prompt.
      */
@@ -712,7 +712,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
 
         // Browser Back/Forward: the open panel's params are written via `Location.go` (no router
         // navigation), so nothing else reacts to popstate. When Back removes or changes the param
-        // that names the open panel (an edit, a create, or Edit Source's file), route the close
+        // that names the open panel (an edit, a create, or Edit Code's file), route the close
         // through the panel's unsaved-changes guard — a direct `closeEditPanel()` would tear the
         // editor down and discard unsaved edits silently.
         const locationSubscription = this.#location.subscribe((event) => {
@@ -732,7 +732,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
             const sourceEditor = this.#store.sourceEditor();
             const location = this.#navigationService.$panelLocation();
             const panelParam = sourceEditor
-                ? { key: CONTENT_DRIVE_EDIT_SOURCE_PARAM, value: sourceEditor.inode }
+                ? { key: CONTENT_DRIVE_EDIT_CODE_PARAM, value: sourceEditor.inode }
                 : location && panelParamOf(location);
 
             if (!panelParam) {
@@ -1656,11 +1656,11 @@ export class DotContentDriveShellComponent implements OnDestroy {
             isEdit && panelLocation.editContentLang ? String(panelLocation.editContentLang) : null;
         queryParams[CONTENT_DRIVE_URL_PARAM.CREATE_CONTENT] =
             panelLocation?.kind === 'create' ? panelLocation.createContent : null;
-        // Edit Source names its file the same way, so Back pops the panel through its prompt
+        // Edit Code names its file the same way, so Back pops the panel through its prompt
         // instead of leaving Content Drive. Only for Back: a URL carrying it opens nothing, and
         // this write removes it.
         const sourceEditor = this.#store.sourceEditor();
-        queryParams[CONTENT_DRIVE_EDIT_SOURCE_PARAM] = sourceEditor?.inode ?? null;
+        queryParams[CONTENT_DRIVE_EDIT_CODE_PARAM] = sourceEditor?.inode ?? null;
         const panelOpen = panelLocation !== null || sourceEditor !== null;
 
         // The open folder dialog, the same way (#37759, FR-030).
@@ -2176,14 +2176,14 @@ export class DotContentDriveShellComponent implements OnDestroy {
     }
 
     /**
-     * A save in the Edit Source panel changed the file's version and modification date: refresh the
+     * A save in the Edit Code panel changed the file's version and modification date: refresh the
      * list quietly. The panel closes itself right after.
      */
     protected onSourceEditorSaved() {
         this.#store.reloadContentDrive({ quiet: true });
     }
 
-    /** The Edit Source panel closed itself: clear its request. */
+    /** The Edit Code panel closed itself: clear its request. */
     protected onSourceEditorClosed() {
         this.#store.closeSourceEditor();
     }

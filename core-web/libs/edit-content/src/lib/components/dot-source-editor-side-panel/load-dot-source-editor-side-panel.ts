@@ -1,7 +1,7 @@
 import { Type } from '@angular/core';
 
 /**
- * Loads the Edit Source panel's content, for `DotSidePanelService` or `injectSidePanel`. Monaco and
+ * Loads the Edit Code panel's content, for `DotSidePanelService` or `injectSidePanel`. Monaco and
  * the editor arrive in their own chunk on the first open, so the portlets that open it stay light.
  *
  * The import lives here, inside the library, so openers never import this library dynamically:

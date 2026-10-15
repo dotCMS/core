@@ -552,7 +552,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
             });
         });
 
-        describe('edit source', () => {
+        describe('edit code', () => {
             const everything = [1, 2, 4, 8, 16] as unknown as DotCMSContentlet['permissions'];
             const velocityFile = (overrides: Partial<DotCMSContentlet> = {}) =>
                 createFakeContentlet({

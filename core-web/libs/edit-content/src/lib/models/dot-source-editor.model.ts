@@ -1,5 +1,5 @@
 /**
- * What the Edit Source panel is asked to open: one file's source, in a code editor.
+ * What the Edit Code panel is asked to open: one file's source, in a code editor.
  */
 export interface DotSourceEditorRequest {
     /**

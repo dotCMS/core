@@ -297,6 +297,6 @@ export class DotSourceEditorSidePanelComponent implements DotSidePanelContent {
             return;
         }
 
-        console.error('Edit Source request failed', error);
+        console.error('Edit Code request failed', error);
     }
 }

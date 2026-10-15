@@ -7,7 +7,7 @@ export * from './lib/models/dot-edit-content-dialog.interface';
 export * from './lib/services/dot-edit-content.service';
 // The Edit Content side panel's content, loaded on demand: open it with DotSidePanelService.
 export { loadDotEditContentSidePanel } from './lib/components/dot-edit-content-side-panel/load-dot-edit-content-side-panel';
-// Edit Source: a file's source in Monaco, in a side panel, loaded on demand. Opened from Content
+// Edit Code: a file's source in Monaco, in a side panel, loaded on demand. Opened from Content
 // Drive's row menu and from the page editor's VTL menu, both deciding with `toSourceEditorRequest`.
 export { loadDotSourceEditorSidePanel } from './lib/components/dot-source-editor-side-panel/load-dot-source-editor-side-panel';
 export type { DotSourceEditorRequest } from './lib/models/dot-source-editor.model';

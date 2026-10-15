@@ -338,11 +338,11 @@ export const CONTENT_DRIVE_URL_PARAM = {
 } as const;
 
 /**
- * Inode of the file open in Edit Source (#37965). Unlike {@link CONTENT_DRIVE_URL_PARAM}, not an
+ * Inode of the file open in Edit Code (#37965). Unlike {@link CONTENT_DRIVE_URL_PARAM}, not an
  * entry point: it is written so that browser Back pops the panel through its unsaved-changes prompt
  * instead of leaving Content Drive, and a URL that carries it opens nothing.
  */
-export const CONTENT_DRIVE_EDIT_SOURCE_PARAM = 'editSource';
+export const CONTENT_DRIVE_EDIT_CODE_PARAM = 'editCode';
 
 /**
  * URL params that choose the listing (#37930). Kept apart from {@link CONTENT_DRIVE_URL_PARAM}: those

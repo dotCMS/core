@@ -286,7 +286,7 @@ const createRouting = () =>
                 provide: DotContentletService,
                 useValue: {
                     getContentletByInode: () => of(URL_MAP_CONTENTLET),
-                    // The VTL menu asks before opening Edit Source; by default the user may edit.
+                    // The VTL menu asks before opening Edit Code; by default the user may edit.
                     canLock: () =>
                         of({ canLock: true, locked: false, id: '', inode: '', lockedBy: '' })
                 }
@@ -2831,7 +2831,7 @@ describe('EditEmaEditorComponent', () => {
                     );
                 });
 
-                describe('Edit Source panel', () => {
+                describe('Edit Code panel', () => {
                     /** The side panels the editor opened, recorded instead of rendered. */
                     let opened: {
                         config: DotSidePanelConfig;

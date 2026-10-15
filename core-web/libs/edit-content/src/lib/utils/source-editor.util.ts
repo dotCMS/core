@@ -8,7 +8,7 @@ import { DOT_VELOCITY_LANGUAGE_ID } from '@dotcms/ui';
 import { DotSourceEditorRequest } from '../models/dot-source-editor.model';
 
 /**
- * File extensions Edit Source opens, each with the Monaco language that highlights it.
+ * File extensions Edit Code opens, each with the Monaco language that highlights it.
  *
  * Velocity only for now. Every other code file dotCMS stores (css, js, html, json, scss…) is one
  * more entry here: Monaco ships those languages, so nothing else has to change. A `Map` rather than
@@ -25,7 +25,7 @@ const SOURCE_EDITOR_LANGUAGES: ReadonlyMap<string, string> = new Map([
 export const SOURCE_EDITOR_BINARY_FIELD = 'fileAsset';
 
 /**
- * What to open a file in Edit Source with, or `null` when Edit Source does not apply to it.
+ * What to open a file in Edit Code with, or `null` when Edit Code does not apply to it.
  *
  * The one rule every opener follows (Content Drive's row menu, the page editor's VTL menu), so they
  * cannot disagree about who may edit what:

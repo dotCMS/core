@@ -37,7 +37,7 @@ export class DotSourceEditorUploadError extends Error {
 }
 
 /**
- * Reads and writes a File Asset's source for the Edit Source panel.
+ * Reads and writes a File Asset's source for the Edit Code panel.
  *
  * Not auto-provided: the panel lists it in its own providers, since nothing else edits source this
  * way yet.

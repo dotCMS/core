@@ -13,7 +13,7 @@ Introduced with [#32591](https://github.com/dotCMS/core/issues/32591). Before it
 | `Mod + B` | Show or hide the sidebar (the folder tree and the entries around it) | `dot-content-drive-shell` |
 | `Escape` | Clear the selection | `dot-content-drive-shell` |
 | `Escape` | Close the frontmost side panel (wins while open) | `dot-side-panel`, the drawer every side panel opens in |
-| `Mod + S` | Save the file open in Edit Source | `dot-source-editor-side-panel` |
+| `Mod + S` | Save the file open in Edit Code | `dot-source-editor-side-panel` |
 | `↑` `↓` | Move focus between rows | the shared listing |
 | `Shift + ↑` `Shift + ↓` | Extend the selection | the shared listing |
 | `Shift + click` | Extend the selection to the clicked row | the shared listing |
@@ -42,7 +42,7 @@ click on a card opens it; the checkbox is the mouse way to select. `Escape`, `/`
 
 `Escape` clears the selection and stops there. An earlier revision also cleared every active filter once nothing was selected; that put a destructive, hard-to-undo action behind the most-reached-for key on the keyboard. Clearing filters stays on the visible **Clear all** control.
 
-`Mod + S` is claimed only while Edit Source is open, and always consumed there, so the browser's "Save page" dialog never opens over the editor, even when there is nothing to save. It works with focus inside the code editor, because it carries a modifier and the typing rule below does not apply to it. `Escape` typed inside that editor is different: Monaco handles it and marks it handled, so it never reaches the registry and the panel stays open, as in any IDE (see [The rules](#the-rules)).
+`Mod + S` is claimed only while Edit Code is open, and always consumed there, so the browser's "Save page" dialog never opens over the editor, even when there is nothing to save. It works with focus inside the code editor, because it carries a modifier and the typing rule below does not apply to it. `Escape` typed inside that editor is different: Monaco handles it and marks it handled, so it never reaches the registry and the panel stays open, as in any IDE (see [The rules](#the-rules)).
 
 ### Bare printable keys and typing
 
