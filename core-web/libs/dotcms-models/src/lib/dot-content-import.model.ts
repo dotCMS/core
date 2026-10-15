@@ -99,6 +99,8 @@ export interface DotImportJobParameters {
     contentType?: string;
     /** Original name of the uploaded CSV, when the server recorded it. */
     fileName?: string;
+    /** The stored CSV, which an import can reuse instead of uploading it again. */
+    tempFileId?: string;
 }
 
 /** A content type the user can import into (`GET /api/v1/content/_import/contenttypes`). */

@@ -452,13 +452,20 @@ export class DotContentDriveDialogImportComponent {
     /**
      * Starts the import with exactly the previewed file and options, then hands the run to the
      * status toast and closes: the import runs in the background (#37896, FR-019).
+     *
+     * The preview already stored the CSV on the server, so the import names it by its temp file id
+     * rather than uploading it again; only a preview that didn't report one falls back to the file.
      */
     #startImport(): void {
         const { file } = this.importForm.getRawValue();
+        const tempFileId = this.$preview()?.parameters?.tempFileId;
+        const form = this.#requestForm();
 
         this.$error.set(null);
-        this.#importService
-            .importContent(file as File, this.#requestForm())
+        (tempFileId
+            ? this.#importService.importPreviewed(tempFileId, form)
+            : this.#importService.importContent(file as File, form)
+        )
             .pipe(takeUntilDestroyed(this.#destroyRef))
             .subscribe({
                 next: ({ jobId }) => {

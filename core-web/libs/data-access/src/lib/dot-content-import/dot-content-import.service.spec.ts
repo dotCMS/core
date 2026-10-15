@@ -105,6 +105,28 @@ describe('DotContentImportService', () => {
     });
 
     /**
+     * PR #38054 review: the import reuses the file the preview already uploaded, by its temp file
+     * id, so the CSV goes up once and the import reads exactly what was previewed.
+     */
+    describe('importPreviewed', () => {
+        it("posts the preview's temp file id and the form, without the CSV", async () => {
+            let jobId: string | undefined;
+            spectator.service
+                .importPreviewed('temp_123', FORM)
+                .subscribe((created) => (jobId = created.jobId));
+
+            const req = spectator.expectOne(IMPORT_URL, HttpMethod.POST);
+            const body = req.request.body as FormData;
+            expect(body.get('file')).toBeNull();
+            expect(body.get('tempFileId')).toBe('temp_123');
+            expect(JSON.parse(await (body.get('form') as Blob).text())).toEqual(FORM);
+
+            req.flush({ entity: { jobId: 'job-3' } });
+            expect(jobId).toBe('job-3');
+        });
+    });
+
+    /**
      * #37896 FR-019: a running import is restored after a reload from the server's job queue, like
      * uploads are. Previews belong to an open dialog and are never restored.
      */

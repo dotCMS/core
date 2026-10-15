@@ -109,6 +109,7 @@ describe('DotContentDriveDialogImportComponent', () => {
                 getWritableContentTypes: vi.fn().mockReturnValue(of(CONTENT_TYPES_PAGE)),
                 preview: vi.fn(),
                 importContent: vi.fn(),
+                importPreviewed: vi.fn(),
                 downloadSample: vi.fn()
             }),
             mockProvider(DotAlertConfirmService, { confirm: vi.fn() }),
@@ -684,6 +685,31 @@ describe('DotContentDriveDialogImportComponent', () => {
                 fields: [],
                 site: spectator.inject(DotContentDriveStore).currentSite().identifier
             });
+        });
+
+        /** PR #38054 review: the CSV goes up once, and the import reads what was previewed. */
+        it('imports the previewed file by its temp file id, without uploading it again', () => {
+            // The service mocks are shared by every test; start this one clean.
+            importService.importContent.mockClear();
+            importService.importPreviewed.mockReturnValue(of({ jobId: 'import-2' }));
+            importService.preview.mockReturnValue(
+                of({ ...PREVIEWED, parameters: { cmd: 'preview', tempFileId: 'temp_123' } })
+            );
+            // A new preview for the new answer.
+            form().fields.setValue(['title']);
+            spectator.detectChanges();
+            clickTestId('import-preview-btn');
+
+            clickTestId('import-confirm-btn');
+
+            expect(importService.importPreviewed).toHaveBeenCalledWith('temp_123', {
+                contentType: 'Blog',
+                language: '1',
+                workflowActionId: 'publish',
+                fields: ['title'],
+                site: spectator.inject(DotContentDriveStore).currentSite().identifier
+            });
+            expect(importService.importContent).not.toHaveBeenCalled();
         });
 
         it('hands the run to the status toast and closes the dialog', () => {

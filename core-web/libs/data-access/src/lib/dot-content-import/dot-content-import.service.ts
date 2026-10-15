@@ -108,6 +108,27 @@ export class DotContentImportService {
     }
 
     /**
+     * Starts an import of a CSV the server already holds, by its temp file id: the one a preview
+     * stored. The CSV isn't uploaded again, and the import reads exactly the file that was
+     * previewed. The server refuses an id that doesn't exist or isn't this user's.
+     *
+     * @param tempFileId the preview job's `tempFileId`
+     * @param form the import options; `language` and `site` are always sent
+     */
+    importPreviewed(
+        tempFileId: string,
+        form: DotContentImportForm
+    ): Observable<DotImportJobCreated> {
+        const body = new FormData();
+        body.append('tempFileId', tempFileId);
+        body.append('form', new Blob([JSON.stringify(form)], { type: 'application/json' }));
+
+        return this.#http
+            .post<DotCMSAPIResponse<DotImportJobCreated>>(DOT_CONTENT_IMPORT_URL, body)
+            .pipe(map((response) => response.entity));
+    }
+
+    /**
      * The imports still running on the server, so the status toast can come back after a reload.
      * Previews are left out: they belong to an import dialog, which a reload closes.
      */
