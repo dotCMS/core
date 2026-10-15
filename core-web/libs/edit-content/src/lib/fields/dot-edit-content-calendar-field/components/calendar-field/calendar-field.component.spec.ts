@@ -174,6 +174,57 @@ describe('DotCalendarFieldComponent', () => {
         expect(spectator.component).toBeTruthy();
     });
 
+    /**
+     * On open, PrimeNG writes the input's width as an inline `min-width` on the popup's wrapper
+     * (the `p-motion` element around `.p-datepicker-panel`), so a full-width field produced a
+     * full-width calendar (#37958). PrimeNG emits `onShow` with that wrapper right after writing
+     * the value; the component clears it there and re-aligns the now narrower popup.
+     *
+     * jsdom never runs the wrapper's enter hook, so PrimeNG's write doesn't happen in a test:
+     * these drive `onShow` with a wrapper that carries the value, the way the browser hands it
+     * over. The resulting width needs a layout engine and is checked in the browser.
+     */
+    describe('Popup width', () => {
+        const showPopupStretchedTo = (width: string) => {
+            const picker = spectator.query(DatePicker) as DatePicker;
+            const overlay = document.createElement('div');
+            overlay.style.minWidth = width;
+            const minWidthAtAlign: string[] = [];
+            vi.spyOn(picker, 'alignOverlay').mockImplementation(() => {
+                minWidthAtAlign.push(overlay.style.minWidth);
+            });
+
+            picker.onShow.emit(overlay);
+
+            return { overlay, minWidthAtAlign };
+        };
+
+        it.each([...ALL_TYPES])(
+            'should not let the %s popup stretch to the input width',
+            (fieldType) => {
+                spectator = buildHost(fieldType);
+                spectator.detectChanges();
+
+                const { overlay } = showPopupStretchedTo('581px');
+
+                expect(overlay.style.minWidth).toBe('');
+            }
+        );
+
+        /**
+         * PrimeNG aligned the popup while it still had the input's width; the narrower popup has
+         * to be placed again (above/below, inside the viewport).
+         */
+        it('should re-align the popup after its width is released', () => {
+            spectator = buildHost(DotCMSFieldTypes.DATE);
+            spectator.detectChanges();
+
+            const { minWidthAtAlign } = showPopupStretchedTo('581px');
+
+            expect(minWidthAtAlign).toEqual(['']);
+        });
+    });
+
     describe('Default value versus an explicit clear (FR-017)', () => {
         const NOW_DEFAULT = { ...DATE_FIELD_MOCK, defaultValue: 'now' } as DotCMSContentTypeField;
 

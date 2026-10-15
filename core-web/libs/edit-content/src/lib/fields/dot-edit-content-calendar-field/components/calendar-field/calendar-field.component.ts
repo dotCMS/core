@@ -269,6 +269,22 @@ export class DotCalendarFieldComponent extends BaseControlValueAccessor<number |
     });
 
     /**
+     * Lets the popup keep the date picker's own width instead of the input's.
+     *
+     * On open, PrimeNG writes the host's width as an inline `min-width` on the popup's wrapper,
+     * so with `fluid` a full-width field gave a full-width calendar. No input reaches that wrapper
+     * (`panelStyleClass` lands on the panel inside it), so the value is cleared here, right after
+     * PrimeNG writes it. PrimeNG has already positioned the popup at the wider size; aligning it
+     * again places the narrower popup above or below the field and inside the viewport.
+     *
+     * @param overlay the popup wrapper PrimeNG emits with `onShow`
+     */
+    onPopupShow(overlay: HTMLElement): void {
+        overlay.style.minWidth = '';
+        this.$picker()?.alignOverlay();
+    }
+
+    /**
      * Handles calendar value changes from user selection
      * Converts the selected date appropriately based on field type
      */
