@@ -141,6 +141,18 @@ describe('DotRouterService', () => {
         expect(router.navigate).toHaveBeenCalledWith(['/c/content']);
     });
 
+    it('should go to Site Browser', () => {
+        service.goToSiteBrowser();
+        expect(router.navigate).toHaveBeenCalledWith(['/c/site-browser'], {});
+    });
+
+    it('should go to Site Browser with the folder path', () => {
+        service.goToSiteBrowser('//demo.dotcms.com/application/containers/default/');
+        expect(router.navigate).toHaveBeenCalledWith(['/c/site-browser'], {
+            queryParams: { path: '//demo.dotcms.com/application/containers/default/' }
+        });
+    });
+
     it('should go to edit page', () => {
         service.goToEditTemplate('123');
         expect(router.navigate).toHaveBeenCalledWith(['/templates/edit/123']);

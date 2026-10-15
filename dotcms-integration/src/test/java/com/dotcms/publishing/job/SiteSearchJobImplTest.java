@@ -1194,6 +1194,12 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
         // a positive threshold, and a migration that has actually started. Only the check itself is
         // invoked — deliberately not a whole crawl, because running one under a non-zero migration
         // phase pulls OpenSearch into a test that has nothing to do with it.
+        // Restore the previous values afterwards rather than clearing them: the phased suites pin
+        // the phase through DOT_FEATURE_FLAG_OPEN_SEARCH_PHASE, and Config.setProperty writes to
+        // that key, so clearing it would drop every later test in the JVM out of its phase (#37901).
+        final String previousMinIndexed =
+                Config.getStringProperty(SiteSearchJobImpl.MIN_CONTENT_INDEXED_KEY, null);
+        final String previousPhase = Config.getStringProperty(MigrationPhase.FLAG_KEY, null);
         Config.setProperty(SiteSearchJobImpl.MIN_CONTENT_INDEXED_KEY, "1");
         Config.setProperty(MigrationPhase.FLAG_KEY, "1");
         try {
@@ -1212,8 +1218,8 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
                             + "that connection instead of leasing a fresh one (issue #37321)",
                     DbConnectionFactory.connectionExists());
         } finally {
-            Config.setProperty(SiteSearchJobImpl.MIN_CONTENT_INDEXED_KEY, null);
-            Config.setProperty(MigrationPhase.FLAG_KEY, null);
+            Config.setProperty(SiteSearchJobImpl.MIN_CONTENT_INDEXED_KEY, previousMinIndexed);
+            Config.setProperty(MigrationPhase.FLAG_KEY, previousPhase);
             HibernateUtil.closeSessionSilently();
             DbConnectionFactory.closeSilently();
         }

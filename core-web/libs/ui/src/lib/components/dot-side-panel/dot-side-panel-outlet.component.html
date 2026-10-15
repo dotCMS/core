@@ -1,0 +1,17 @@
+@for (panel of $panels(); track panel.id; let last = $last) {
+    <dot-side-panel
+        [heading]="panel.heading()"
+        [contentStyleClass]="panel.ref.contentStyleClass()"
+        [front]="last"
+        (closeRequested)="panel.ref.requestClose()">
+        @if (panel.component()) {
+            <ng-container [dotSidePanelContent]="panel" />
+        } @else {
+            <div
+                class="flex flex-1 items-center justify-center p-8"
+                data-testid="side-panel-loading">
+                <p-progressSpinner styleClass="h-8! w-8!" strokeWidth="4" ariaLabel="Loading" />
+            </div>
+        }
+    </dot-side-panel>
+}

@@ -138,36 +138,17 @@ describe('DotContentDriveDialogContentTypeSelectorComponent', () => {
             spectator.detectChanges();
         });
 
-        it('should create the content in the current folder and close the dialog when Create is clicked', () => {
+        // Where the new content goes is the navigation service's call, shared with `createContent`
+        // links (#37759); the selector only names the type.
+        it('should ask the navigation service to create the chosen type and close the dialog', () => {
             const createButton = spectator
                 .query(byTestId('content-type-selector-create'))
                 ?.querySelector('button');
 
             spectator.click(createButton);
 
-            // folderPath = hostname + current path (new editor); folderInode = current folder (legacy editor)
-            expect(navigationService.createContent).toHaveBeenCalledWith(SELECTED_VARIABLE, {
-                folderPath: 'demo.dotcms.com/about-us/',
-                folderInode: 'inode-1'
-            });
+            expect(navigationService.createContent).toHaveBeenCalledWith(SELECTED_VARIABLE);
             expect(store.closeDialog).toHaveBeenCalled();
-        });
-
-        it('should fall back to the current site (no folder) when browsing the root', () => {
-            // Root: no path selected and the root node carries an empty inode.
-            store.path.mockReturnValue(undefined);
-            store.selectedNode.mockReturnValue({ data: { inode: '' } });
-
-            const createButton = spectator
-                .query(byTestId('content-type-selector-create'))
-                ?.querySelector('button');
-
-            spectator.click(createButton);
-
-            expect(navigationService.createContent).toHaveBeenCalledWith(SELECTED_VARIABLE, {
-                folderPath: 'demo.dotcms.com',
-                folderInode: undefined
-            });
         });
     });
 
