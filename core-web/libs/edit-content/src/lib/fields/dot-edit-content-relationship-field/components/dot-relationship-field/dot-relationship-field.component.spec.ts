@@ -1,25 +1,9 @@
-// Stub the side panel so the flag-on "create new" branch can create it via `ViewContainerRef`
-// without pulling in the real editor (and its module cycle). Placed before the imports so Vitest
-// hoists it ahead of the dynamic `import()` the component performs. Kept as a real standalone
-// component so `createComponent`/`setInput('data')`/`instance.closed` all work.
+// Stub the side panel's content so the dynamic `import()` the component performs never pulls in the
+// real editor (and its module cycle). Placed before the imports so Vitest hoists it. The panel
+// itself is opened through a fake DotSidePanelService below.
 vi.mock(
     '../../../../components/dot-edit-content-side-panel/dot-edit-content-side-panel.component',
-    async () => {
-        const { Component, Input, output } = await vi.importActual('@angular/core');
-
-        // `data` is a decorated property, not a signal input like the real panel's: these tests
-        // run in JIT mode, where the compiler does not see a bare `data = input(...)` field, so
-        // `ComponentRef.setInput('data')` would leave it at its initial value and any assertion on
-        // what the panel was opened with would be vacuous.
-        @Component({ selector: 'dot-edit-content-side-panel', standalone: true, template: '' })
-        class MockDotEditContentSidePanelComponent {
-            @Input() data: EditContentDialogData | null = null;
-            closed = output();
-            saved = output();
-        }
-
-        return { DotEditContentSidePanelComponent: MockDotEditContentSidePanelComponent };
-    }
+    () => ({ DotEditContentSidePanelComponent: class MockDotEditContentSidePanelComponent {} })
 );
 
 import {
@@ -39,6 +23,7 @@ import { DialogService } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet, FeaturedFlags } from '@dotcms/dotcms-models';
+import { DotSidePanelConfig, DotSidePanelService } from '@dotcms/ui';
 import {
     createFakeContentlet,
     createFakeLanguage,
@@ -47,8 +32,6 @@ import {
 
 import { DotRelationshipFieldComponent } from './dot-relationship-field.component';
 
-// Resolves to the mock declared in the vi.mock above (same module path the component imports).
-import { DotEditContentSidePanelComponent } from '../../../../components/dot-edit-content-side-panel/dot-edit-content-side-panel.component';
 import { EditContentDialogData } from '../../../../models/dot-edit-content-dialog.interface';
 import { EDIT_CONTENT_HOST } from '../../../../services/host/edit-content-host.model';
 import { DotEditContentStore } from '../../../../store/edit-content.store';
@@ -202,6 +185,16 @@ describe('DotRelationshipFieldComponent', () => {
 
     let storeMock: ReturnType<typeof createStoreMock>;
 
+    /** The side panels this field opened, as the fake service records them. */
+    let sidePanels: { open: Mock };
+
+    /** What the last panel was opened with. */
+    const openedConfig = (): DotSidePanelConfig => sidePanels.open.mock.calls.at(-1)?.[1];
+
+    /** The content the last panel was opened on. */
+    const openedData = (): EditContentDialogData =>
+        openedConfig().inputs?.['data'] as EditContentDialogData;
+
     const createComponent = createComponentFactory({
         component: DotRelationshipFieldComponent,
         detectChanges: false,
@@ -229,11 +222,14 @@ describe('DotRelationshipFieldComponent', () => {
                 // of view, which is what "opened and not yet closed" means here.
                 open: vi.fn().mockReturnValue({ onClose: EMPTY })
             }),
-            { provide: EDIT_CONTENT_HOST, useFactory: () => hostStub }
+            { provide: EDIT_CONTENT_HOST, useFactory: () => hostStub },
+            // Read per creation, so each test starts with no panels opened.
+            { provide: DotSidePanelService, useFactory: () => sidePanels }
         ]
     });
 
     const setup = (storeOverrides: Record<string, unknown> = {}) => {
+        sidePanels = { open: vi.fn(() => ({ close: vi.fn() })) };
         storeMock = createStoreMock(storeOverrides);
         spectator = createComponent({
             providers: [{ provide: RelationshipFieldStore, useValue: storeMock }],
@@ -350,7 +346,7 @@ describe('DotRelationshipFieldComponent', () => {
 
             // Flag on → the side panel is created imperatively, NOT the centered dialog.
             expect(dialogService.open).not.toHaveBeenCalled();
-            expect(spectator.query('dot-edit-content-side-panel')).toBeTruthy();
+            expect(sidePanels.open).toHaveBeenCalledTimes(1);
         });
 
         it('falls back to the centered dialog when the flag slice has not resolved', async () => {
@@ -388,7 +384,7 @@ describe('DotRelationshipFieldComponent', () => {
                 language: undefined,
                 languageId: 1
             });
-            spectator.query(DotEditContentSidePanelComponent)?.data?.onContentSaved?.(created);
+            openedData().onContentSaved?.(created);
 
             expect(storeMock.setData).toHaveBeenCalledWith([
                 expect.objectContaining({
@@ -398,23 +394,20 @@ describe('DotRelationshipFieldComponent', () => {
             ]);
         });
 
-        it('destroys the side panel when it emits `closed`', async () => {
+        it('opens the panel headed with the new content, in its own injection context', async () => {
             storeMock.flags.mockReturnValue({
                 [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: true
             });
 
             await spectator.component.showCreateNewContentDialog();
-            spectator.detectChanges();
 
-            const panel = spectator.query(DotEditContentSidePanelComponent);
-            expect(panel).toBeTruthy();
-
-            // Emitting `closed` must tear the panel down: its subscription calls #closeSidePanel,
-            // which destroys the ComponentRef. A broken/missing subscription would leave it mounted.
-            panel?.closed.emit();
-            spectator.detectChanges();
-
-            expect(spectator.query('dot-edit-content-side-panel')).toBeFalsy();
+            expect(openedData()).toEqual(
+                expect.objectContaining({ mode: 'new', contentTypeId: 'ct-1' })
+            );
+            expect(openedConfig().heading).toBe(openedData().title ?? '');
+            // The field's injector: the panel closes with the field, as it did when the field
+            // created it in its own view.
+            expect(openedConfig().injector).toBeTruthy();
         });
     });
 
@@ -665,7 +658,7 @@ describe('DotRelationshipFieldComponent', () => {
                 // from this field — survives. No unsaved-changes prompt needed.
                 expect(host.goToRelatedContent).not.toHaveBeenCalled();
                 expect(host.goToCrumb).not.toHaveBeenCalled();
-                expect(spectator.query('dot-edit-content-side-panel')).toBeTruthy();
+                expect(sidePanels.open).toHaveBeenCalledTimes(1);
             });
 
             it('opens the panel on the clicked content, in edit mode', async () => {
@@ -674,7 +667,7 @@ describe('DotRelationshipFieldComponent', () => {
                 await spectator.component.openRelated(RELATED);
                 spectator.detectChanges();
 
-                expect(spectator.query(DotEditContentSidePanelComponent)?.data).toEqual(
+                expect(openedData()).toEqual(
                     expect.objectContaining({
                         mode: 'edit',
                         contentletInode: 'related-inode',
@@ -698,7 +691,7 @@ describe('DotRelationshipFieldComponent', () => {
 
                 expect(control.dirty).toBe(false);
                 expect(host.goToRelatedContent).not.toHaveBeenCalled();
-                expect(spectator.query('dot-edit-content-side-panel')).toBeTruthy();
+                expect(sidePanels.open).toHaveBeenCalledTimes(1);
             });
 
             it('navigates instead when the side panel flag is off', async () => {
@@ -710,7 +703,7 @@ describe('DotRelationshipFieldComponent', () => {
                 // No panel to open without the flag, so the previous behavior must stand rather
                 // than the click becoming a silent no-op.
                 expect(host.goToRelatedContent).toHaveBeenCalledTimes(1);
-                expect(spectator.query('dot-edit-content-side-panel')).toBeFalsy();
+                expect(sidePanels.open).not.toHaveBeenCalled();
             });
         });
 
@@ -727,21 +720,21 @@ describe('DotRelationshipFieldComponent', () => {
                     { inode: 'current-inode', title: 'Current content' },
                     { inode: 'related-inode', title: 'Related content' }
                 );
-                expect(spectator.query('dot-edit-content-side-panel')).toBeFalsy();
+                expect(sidePanels.open).not.toHaveBeenCalled();
             });
         });
 
         describe('the panel it opens', () => {
             beforeEach(() => setupIn({ inPlaceNavigation: false }));
 
-            it('is destroyed when it emits `closed`', async () => {
+            it('replaces a panel the field already has open', async () => {
                 await spectator.component.openRelated(RELATED);
-                spectator.detectChanges();
+                const [first] = sidePanels.open.mock.results.map((result) => result.value);
 
-                spectator.query(DotEditContentSidePanelComponent)?.closed.emit();
-                spectator.detectChanges();
+                await spectator.component.openRelated({ ...RELATED, inode: 'other-inode' });
 
-                expect(spectator.query('dot-edit-content-side-panel')).toBeFalsy();
+                expect(first.close).toHaveBeenCalled();
+                expect(sidePanels.open).toHaveBeenCalledTimes(2);
             });
 
             it('refreshes the edited row by identifier when it reports a save', async () => {
@@ -753,7 +746,7 @@ describe('DotRelationshipFieldComponent', () => {
                     identifier: 'related-id',
                     title: 'Related content (edited)'
                 });
-                spectator.query(DotEditContentSidePanelComponent)?.data?.onContentSaved?.(saved);
+                openedData().onContentSaved?.(saved);
 
                 // Handed to the store's in-place replace — which keeps the current page and does
                 // not dirty the form — rather than setData, which resets pagination to page 1.
@@ -774,7 +767,7 @@ describe('DotRelationshipFieldComponent', () => {
                     language: undefined,
                     languageId: 2
                 });
-                spectator.query(DotEditContentSidePanelComponent)?.data?.onContentSaved?.(saved);
+                openedData().onContentSaved?.(saved);
 
                 expect(storeMock.refreshItem).toHaveBeenCalledWith(
                     expect.objectContaining({
@@ -793,7 +786,7 @@ describe('DotRelationshipFieldComponent', () => {
                     language: ENGLISH_LANGUAGE,
                     languageId: 1
                 });
-                spectator.query(DotEditContentSidePanelComponent)?.data?.onContentSaved?.(saved);
+                openedData().onContentSaved?.(saved);
 
                 expect(storeMock.refreshItem).toHaveBeenCalledWith(
                     expect.objectContaining({ language: ENGLISH_LANGUAGE })
@@ -809,7 +802,7 @@ describe('DotRelationshipFieldComponent', () => {
                     language: undefined,
                     languageId: 999
                 });
-                spectator.query(DotEditContentSidePanelComponent)?.data?.onContentSaved?.(saved);
+                openedData().onContentSaved?.(saved);
 
                 // Blank column beats a wrong locale.
                 expect(storeMock.refreshItem).toHaveBeenCalledWith(
@@ -823,9 +816,7 @@ describe('DotRelationshipFieldComponent', () => {
 
                 // Whether the row exists is the store's call (covered in its own spec); the
                 // component's job is only to resolve the language and hand it over.
-                spectator
-                    .query(DotEditContentSidePanelComponent)
-                    ?.data?.onContentSaved?.(buildItem({ identifier: 'someone-else' }));
+                openedData().onContentSaved?.(buildItem({ identifier: 'someone-else' }));
 
                 expect(storeMock.refreshItem).toHaveBeenCalledWith(
                     expect.objectContaining({ identifier: 'someone-else' })

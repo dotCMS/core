@@ -5,8 +5,8 @@ export * from './lib/fields/dot-edit-content-file-field/components/dot-file-fiel
 export * from './lib/fields/dot-edit-content-tag-field/components/tag-field/tag-field.component';
 export * from './lib/models/dot-edit-content-dialog.interface';
 export * from './lib/services/dot-edit-content.service';
-export * from './lib/components/dot-edit-content-side-panel/dot-edit-content-side-panel.component';
-export { DotSidePanelNavController } from './lib/services/dot-side-panel-nav.service';
+// The Edit Content side panel's content, loaded on demand: open it with DotSidePanelService.
+export { loadDotEditContentSidePanel } from './lib/components/dot-edit-content-side-panel/load-dot-edit-content-side-panel';
 export * from './lib/utils/functions.util';
 export * from './lib/models/dot-edit-content-field.constant';
 
