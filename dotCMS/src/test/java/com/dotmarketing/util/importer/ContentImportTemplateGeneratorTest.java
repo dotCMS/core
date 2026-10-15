@@ -1,4 +1,4 @@
-package com.dotcms.rest.api.v1.content.dotimport;
+package com.dotmarketing.util.importer;
 
 import static org.junit.Assert.assertEquals;
 

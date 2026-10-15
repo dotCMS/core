@@ -80,7 +80,7 @@ import com.dotmarketing.util.importer.model.FileInfo;
 import com.dotmarketing.util.importer.model.FileInfo.Builder;
 import com.dotmarketing.util.importer.model.HeaderInfo;
 import com.dotmarketing.util.importer.model.HeaderValidationResult;
-import com.dotcms.rest.api.v1.content.dotimport.ContentImportTemplateGenerator;
+import com.dotmarketing.util.importer.ContentImportTemplateGenerator;
 import com.dotmarketing.util.importer.model.AbstractImportDestination.Source;
 import com.dotmarketing.util.importer.model.ImportDestination;
 import com.dotmarketing.util.importer.model.ImportResult;

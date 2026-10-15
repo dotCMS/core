@@ -19,7 +19,7 @@ import java.lang.reflect.Method;
 import java.io.ByteArrayOutputStream;
 import com.liferay.portlet.ActionResponseImpl;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotcms.rest.api.v1.content.dotimport.ContentImportTemplateGenerator;
+import com.dotmarketing.util.importer.ContentImportTemplateGenerator;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.jobs.business.util.JobUtil;
 import com.dotcms.repackage.com.csvreader.CsvReader;
