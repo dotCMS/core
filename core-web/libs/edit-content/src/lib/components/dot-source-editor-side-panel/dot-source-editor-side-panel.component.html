@@ -1,6 +1,7 @@
 @switch ($status()) {
     @case (ComponentStatus.LOADING) {
-        <!-- The spinner the drawer shows while this panel's code loads, so it is not swapped. -->
+        <!-- The drawer's own spinner stops once this panel's code is in; this one covers loading the
+             file's source. The same spinner, so the hand-over between them does not show. -->
         <div
             class="flex size-full flex-1 items-center justify-center"
             data-testid="source-editor-loading">
@@ -30,19 +31,22 @@
     }
 }
 
-@if ($saveError() !== null) {
-    <!-- A failed save the shared HTTP handler cannot explain, such as a file the server refused to
-         stage. The edits are still in the editor above. -->
-    <p-message severity="error" data-testid="source-editor-save-error">
-        @if ($saveError(); as reason) {
-            {{ 'edit.content.source-editor.save-error-reason' | dm: [reason] }}
-        } @else {
-            {{ 'edit.content.source-editor.save-error' | dm }}
-        }
-    </p-message>
-}
-
 <div class="flex items-center justify-end gap-2" data-testid="source-editor-actions">
+    @if ($saveError() !== null) {
+        <!-- A failed save the shared HTTP handler cannot explain, such as a file the server refused
+             to stage, to the left of the buttons. The edits are still in the editor above. -->
+        <p-message
+            class="mr-auto min-w-0"
+            severity="error"
+            size="small"
+            data-testid="source-editor-save-error">
+            @if ($saveError(); as reason) {
+                {{ 'edit.content.source-editor.save-error-reason' | dm: [reason] }}
+            } @else {
+                {{ 'edit.content.source-editor.save-error' | dm }}
+            }
+        </p-message>
+    }
     <p-button
         [label]="'dot.common.cancel' | dm"
         severity="secondary"

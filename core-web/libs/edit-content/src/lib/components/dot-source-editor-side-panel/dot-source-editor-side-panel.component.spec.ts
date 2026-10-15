@@ -348,6 +348,11 @@ describe('DotSourceEditorSidePanelComponent', () => {
             expect(saveError()?.textContent?.trim()).toBe(
                 'edit.content.source-editor.save-error-reason File too large'
             );
+            // In the bar with the buttons, to their left.
+            expect(
+                spectator.query(byTestId('source-editor-actions'), { root: true })
+                    ?.firstElementChild
+            ).toBe(saveError());
             expect(spectator.inject(DotHttpErrorManagerService).handle).not.toHaveBeenCalled();
             expect(panel.close).not.toHaveBeenCalled();
             expect(editor()?.value).toBe('#set($title = "Bye")');
