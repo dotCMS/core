@@ -43,7 +43,7 @@ env:
 
 jobs:
   get-starter:
-    runs-on: macos-${{ vars.MACOS_RUNNER_VERSION || 'latest' }}
+    runs-on: macos-${{ vars.MACOS_RUNNER_VERSION || '15' }}
     if: github.repository == 'dotcms/core'
     environment: starter
     steps:

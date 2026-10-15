@@ -52,7 +52,7 @@ jobs:
       github.event.issue.type.name == 'Epic' ||
       contains(github.event.issue.labels.*.name, 'Doc : Needs Doc') ||
       contains(github.event.issue.labels.*.name, 'Changelog: Needs Doc')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     permissions:
       issues: read
     outputs:
@@ -102,7 +102,7 @@ jobs:
     name: Build evaluation context
     needs: preflight
     if: needs.preflight.outputs.should_run == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     permissions:
       contents: read
       issues: read
@@ -355,7 +355,7 @@ jobs:
     name: Post report and apply to dotCMS
     needs: claude
     if: always() && needs.claude.result != 'skipped'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     permissions:
       issues: write
       contents: read
