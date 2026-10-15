@@ -17,7 +17,10 @@ import { DotExperimentsService, DotMessageService } from '@dotcms/data-access';
 import { DotExperimentStatus } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
-import { DotExperimentsConfigureFooterComponent } from './dot-experiments-configure-footer.component';
+import {
+    DotExperimentsConfigureFooterComponent,
+    LIMITED_MODE_START_CONFIRM_KEY
+} from './dot-experiments-configure-footer.component';
 
 import { dotExperimentsConfigurePageEvents } from '../../../store/dot-experiments-configure-page.events';
 import { DotExperimentsConfigureStore } from '../../../store/dot-experiments-configure.store';
@@ -41,7 +44,11 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.configure.footer.validation.one': VALIDATION_ONE_COPY,
     'experiments.configure.footer.validation.many': VALIDATION_MANY_COPY,
     'experiments.action.start-experiment': START_COPY,
-    'experiments.action.schedule-experiment': SCHEDULE_COPY
+    'experiments.action.schedule-experiment': SCHEDULE_COPY,
+    'experiments.limited-mode.start.confirm.header': 'Start your free experiment',
+    'experiments.limited-mode.start.confirm.message': 'You are about to use your one free experiment.',
+    'experiments.limited-mode.start.confirm.accept': 'Continue',
+    'dot.common.dialog.reject': 'Cancel'
 });
 
 const createStoreMock = () => ({
@@ -246,12 +253,15 @@ describe('DotExperimentsConfigureFooterComponent', () => {
                 expect(startButton().disabled).toBe(false);
             });
 
-            it('should dispatch startRequested directly — no confirmation dialog', () => {
-                // The pre-start confirmation was removed: ENDED keeps the slot occupied so
-                // there is no loophole, and the warning was no longer accurate.
+            it('should show a confirmation dialog before dispatching startRequested', () => {
+                const confirm = vi.spyOn(spectator.inject(ConfirmationService), 'confirm');
+
                 clickButton('experiments-configure-start-btn');
 
-                expect(dispatchedEvents()).toContainEqual(
+                expect(confirm).toHaveBeenCalledWith(
+                    expect.objectContaining({ key: LIMITED_MODE_START_CONFIRM_KEY })
+                );
+                expect(dispatchedEvents()).not.toContainEqual(
                     dotExperimentsConfigurePageEvents.startRequested()
                 );
             });

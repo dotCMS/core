@@ -64,7 +64,10 @@ import { GlobalStore } from '@dotcms/store';
 import { DotEmptyContainerComponent, DotMessagePipe, PrincipalConfiguration } from '@dotcms/ui';
 
 import { DotExperimentsConfigureDetailsComponent } from './components/dot-experiments-configure-details/dot-experiments-configure-details.component';
-import { DotExperimentsConfigureFooterComponent } from './components/dot-experiments-configure-footer/dot-experiments-configure-footer.component';
+import {
+    DotExperimentsConfigureFooterComponent,
+    LIMITED_MODE_START_CONFIRM_KEY
+} from './components/dot-experiments-configure-footer/dot-experiments-configure-footer.component';
 import { DotExperimentsConfigureGoalComponent } from './components/dot-experiments-configure-goal/dot-experiments-configure-goal.component';
 import { DotExperimentsConfigureHeaderComponent } from './components/dot-experiments-configure-header/dot-experiments-configure-header.component';
 import { DotExperimentsConfigurePageComponent } from './components/dot-experiments-configure-page/dot-experiments-configure-page.component';
@@ -186,6 +189,7 @@ export class DotExperimentsConfigureComponent {
     readonly store = inject(DotExperimentsConfigureStore);
 
     readonly CONFIRM_KEY = CONFIGURATION_CONFIRM_DIALOG_KEY;
+    readonly LIMITED_MODE_START_CONFIRM_KEY = LIMITED_MODE_START_CONFIRM_KEY;
 
     /**
      * Whether the install is in limited mode (`FEATURE_FLAG_EXPERIMENTS=false`).
