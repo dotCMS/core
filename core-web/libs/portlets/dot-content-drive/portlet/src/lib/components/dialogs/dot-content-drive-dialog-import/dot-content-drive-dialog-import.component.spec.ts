@@ -16,11 +16,13 @@ vi.mock('@dotcms/utils', async (importOriginal) => ({
 
 import { HttpErrorResponse } from '@angular/common/http';
 
+import { Accordion, AccordionHeader } from 'primeng/accordion';
 import { FileUpload } from 'primeng/fileupload';
 
 import {
     DotAlertConfirmService,
     DotContentImportService,
+    DotContentTypeService,
     DotFieldService,
     DotMessageService,
     DotWorkflowsActionsService
@@ -28,10 +30,12 @@ import {
 import {
     DotCMSClazzes,
     DotCMSContentletWorkflowActions,
+    DotCMSContentType,
     DotCMSContentTypeField,
-    DotImportContentType,
-    DotImportJob
+    DotImportJob,
+    DotPagination
 } from '@dotcms/dotcms-models';
+import { DotContentTypeComponent } from '@dotcms/ui';
 import { getDownloadLink } from '@dotcms/utils';
 import {
     createFakeLanguage,
@@ -47,11 +51,16 @@ import { DotContentDriveStore } from '../../../store/dot-content-drive.store';
 const ENGLISH = createFakeLanguage({ id: 1, language: 'English', countryCode: 'US' });
 const SPANISH = createFakeLanguage({ id: 2, language: 'Spanish', countryCode: 'ES' });
 
-const CONTENT_TYPES: DotImportContentType[] = [
+const CONTENT_TYPES = [
     { id: 'ct-blog', variable: 'Blog', name: 'Blog', baseType: 'CONTENT' },
     { id: 'ct-doc', variable: 'Document', name: 'Document', baseType: 'FILEASSET' },
     { id: 'ct-news', variable: 'News', name: 'News', baseType: 'CONTENT' }
-];
+] as DotCMSContentType[];
+
+const CONTENT_TYPES_PAGE: { contentTypes: DotCMSContentType[]; pagination: DotPagination } = {
+    contentTypes: CONTENT_TYPES,
+    pagination: { currentPage: 1, perPage: 40, totalEntries: CONTENT_TYPES.length }
+};
 
 const workflowAction = (id: string, name: string, scheme: string) =>
     ({
@@ -97,12 +106,19 @@ describe('DotContentDriveDialogImportComponent', () => {
         component: DotContentDriveDialogImportComponent,
         providers: [
             mockProvider(DotContentImportService, {
-                getWritableContentTypes: vi.fn().mockReturnValue(of(CONTENT_TYPES)),
+                getWritableContentTypes: vi.fn().mockReturnValue(of(CONTENT_TYPES_PAGE)),
                 preview: vi.fn(),
                 importContent: vi.fn(),
                 downloadSample: vi.fn()
             }),
             mockProvider(DotAlertConfirmService, { confirm: vi.fn() }),
+            // The shared selector reads the picked type back by variable to pin it in the list.
+            mockProvider(DotContentTypeService, {
+                getContentType: vi.fn((variable: string) =>
+                    of(CONTENT_TYPES.find((type) => type.variable === variable))
+                ),
+                getContentTypesWithPagination: vi.fn()
+            }),
             mockProvider(DotWorkflowsActionsService, {
                 getDefaultActions: vi.fn((contentType: string) =>
                     of(
@@ -153,44 +169,55 @@ describe('DotContentDriveDialogImportComponent', () => {
 
     const csv = () => new File(['title\nHello'], 'blogs.csv', { type: 'text/csv' });
 
+    /**
+     * #37896 FR-004: Content Type is the shared selector from the UI library (paged, lazy loaded,
+     * searched on the server), fed by the import's own list: only the types the user can write
+     * to, never Host. The general content type listing is never asked.
+     */
     describe('content type (FR-004)', () => {
-        it('offers exactly the types the server says the user can write to', () => {
+        const selector = () => spectator.query(DotContentTypeComponent);
+
+        it('uses the shared content type selector', () => {
             setup();
 
-            expect(importService.getWritableContentTypes).toHaveBeenCalledTimes(1);
-            expect(spectator.component.$contentTypes()).toEqual(CONTENT_TYPES);
+            expect(selector()).toBeTruthy();
+            expect(spectator.query(byTestId('import-content-type'))).toBeTruthy();
         });
 
-        it('groups the types under their base type, in the order they arrive', () => {
+        it('feeds the selector pages of the types the user can write to', () => {
             setup();
+            importService.getWritableContentTypes.mockClear();
 
-            expect(spectator.component.$contentTypeGroups()).toEqual([
-                {
-                    label: 'content-drive.base-type.content',
-                    value: 'CONTENT',
-                    items: [CONTENT_TYPES[0], CONTENT_TYPES[2]]
-                },
-                {
-                    label: 'content-drive.base-type.fileasset',
-                    value: 'FILEASSET',
-                    items: [CONTENT_TYPES[1]]
-                }
-            ]);
-        });
+            let page: unknown;
+            selector()
+                ?.pageLoader()?.({ page: 2, per_page: 40, filter: 'blo' })
+                .subscribe((value) => (page = value));
 
-        it('says there is nothing to import into when the list is empty', () => {
-            spectator = createComponent({
-                providers: [
-                    mockProvider(DotContentDriveStore, storeMock(['1'])),
-                    mockProvider(DotContentImportService, {
-                        getWritableContentTypes: vi.fn().mockReturnValue(of([])),
-                        preview: vi.fn()
-                    })
-                ]
+            expect(importService.getWritableContentTypes).toHaveBeenCalledWith({
+                page: 2,
+                per_page: 40,
+                filter: 'blo'
             });
+            expect(page).toEqual(CONTENT_TYPES_PAGE);
+        });
+
+        it('never asks the general content type listing', () => {
+            setup();
+
+            expect(
+                spectator.inject(DotContentTypeService).getContentTypesWithPagination
+            ).not.toHaveBeenCalled();
+            expect(importService.getWritableContentTypes).toHaveBeenCalled();
+        });
+
+        it('puts the picked type in the form', () => {
+            setup();
+
+            selector()?.onContentTypeChange(CONTENT_TYPES[0]);
+            // The selector reports its value to the form from an effect.
             spectator.detectChanges();
 
-            expect(spectator.query(byTestId('import-content-type-empty'))).toBeTruthy();
+            expect(form().contentType.value).toBe('Blog');
         });
     });
 
@@ -496,7 +523,7 @@ describe('DotContentDriveDialogImportComponent', () => {
 
             expect(text('import-warnings-count')).toContain('1');
             expect(text('import-errors-count')).toContain('3');
-            // Warnings open the card, Errors close it.
+            // Warnings come first, Errors after.
             const preview = spectator.query(byTestId('import-preview')) as HTMLElement;
             expect(preview.innerHTML.indexOf('import-warnings-group')).toBeLessThan(
                 preview.innerHTML.indexOf('import-errors-group')
@@ -512,14 +539,47 @@ describe('DotContentDriveDialogImportComponent', () => {
             expect(errors[2]).toContain('13/40');
         });
 
-        it('says so when there are no warnings or no errors', () => {
+        /** #37896 FR-012 (UI review): collapsible sections, both open when the preview appears. */
+        it('shows warnings and errors as sections that both start open', () => {
+            runPreview();
+
+            const accordion = spectator.query(Accordion);
+            expect(accordion?.multiple()).toBe(true);
+            expect(accordion?.value()).toEqual(['warnings', 'errors']);
+        });
+
+        it('collapses and expands each section on its own', () => {
+            runPreview();
+            const [warningsHeader, errorsHeader] = spectator.queryAll(AccordionHeader);
+
+            warningsHeader.onClick();
+            spectator.detectChanges();
+            expect(spectator.query(Accordion)?.value()).toEqual(['errors']);
+
+            errorsHeader.onClick();
+            spectator.detectChanges();
+            expect(spectator.query(Accordion)?.value()).toEqual([]);
+
+            warningsHeader.onClick();
+            spectator.detectChanges();
+            expect(spectator.query(Accordion)?.value()).toEqual(['warnings']);
+        });
+
+        it('hides a section that has no entries', () => {
+            runPreview({ ...PREVIEW, result: { ...PREVIEW.result, warning: [] } });
+
+            expect(spectator.query(byTestId('import-warnings-group'))).toBeFalsy();
+            expect(spectator.query(byTestId('import-errors-group'))).toBeTruthy();
+        });
+
+        it('shows no warnings and errors box when there are neither', () => {
             runPreview({
                 ...PREVIEW,
                 result: { ...PREVIEW.result, warning: [], error: [] }
             });
 
-            expect(spectator.query(byTestId('import-warnings-empty'))).toBeTruthy();
-            expect(spectator.query(byTestId('import-errors-empty'))).toBeTruthy();
+            expect(spectator.query(byTestId('import-messages'))).toBeFalsy();
+            expect(spectator.query(byTestId('import-summary'))).toBeTruthy();
         });
 
         it('discards the preview when an input changes', () => {
@@ -628,18 +688,26 @@ describe('DotContentDriveDialogImportComponent', () => {
         });
     });
 
-    /** #37896 US4 (FR-025): the sample CSV link needs a content type to know which file to give. */
+    /**
+     * #37896 US4 (FR-025): the sample needs a content type to know which columns to list, so its
+     * download is only offered once one is picked.
+     */
     describe('sample CSV', () => {
-        const sampleLink = () => {
+        const sampleButton = () => {
             const host = spectator.query(byTestId('import-sample-link'));
 
-            return (host?.querySelector('button') ?? host) as HTMLButtonElement;
+            return (host?.querySelector('button') ?? host) as HTMLButtonElement | null;
         };
 
-        it('is disabled until a content type is picked', () => {
+        it('is not offered until a content type is picked', () => {
             setup();
 
-            expect(sampleLink().disabled).toBe(true);
+            expect(sampleButton()).toBeFalsy();
+
+            pickContentType('Blog');
+
+            expect(sampleButton()).toBeTruthy();
+            expect(sampleButton()?.disabled).toBe(false);
         });
 
         it("downloads the picked type's sample as CSV_Template.csv", () => {
@@ -648,7 +716,7 @@ describe('DotContentDriveDialogImportComponent', () => {
             importService.downloadSample.mockReturnValue(of(blob));
             pickContentType('Blog');
 
-            spectator.click(sampleLink());
+            spectator.click(sampleButton() as HTMLButtonElement);
 
             expect(importService.downloadSample).toHaveBeenCalledWith('Blog');
             expect(getDownloadLink).toHaveBeenCalledWith(blob, 'CSV_Template.csv');

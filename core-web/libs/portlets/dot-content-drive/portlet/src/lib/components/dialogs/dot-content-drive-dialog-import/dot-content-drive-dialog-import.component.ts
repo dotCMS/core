@@ -12,16 +12,17 @@ import {
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
-import { BadgeModule } from 'primeng/badge';
+import { AccordionModule } from 'primeng/accordion';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { FileSelectEvent, FileUploadModule } from 'primeng/fileupload';
 import { MessageModule } from 'primeng/message';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { SelectModule } from 'primeng/select';
+import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { catchError, finalize, map, switchMap } from 'rxjs/operators';
+import { catchError, distinctUntilChanged, finalize, map, switchMap } from 'rxjs/operators';
 
 import {
     DotAlertConfirmService,
@@ -34,11 +35,15 @@ import {
     DotCMSClazzes,
     DotCMSContentTypeField,
     DotContentImportForm,
-    DotImportContentType,
     DotImportJob,
     DotImportValidationMessage
 } from '@dotcms/dotcms-models';
-import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
+import {
+    DotContentTypeComponent,
+    DotContentTypePageLoader,
+    DotFieldRequiredDirective,
+    DotMessagePipe
+} from '@dotcms/ui';
 import { getDownloadLink } from '@dotcms/utils';
 
 import { DotContentDriveStore } from '../../../store/dot-content-drive.store';
@@ -84,7 +89,8 @@ interface DotImportOption {
 /**
  * Imports content from a CSV into the Drive (#37896).
  *
- * The form offers only what an import can actually use: the content types the user can write to,
+ * The form offers only what an import can actually use: the content types the user can write to
+ * (in the shared content type selector, paged by the server),
  * the workflow actions Content Search's import offers for that type, and its indexed fields as key
  * fields. Preview is never disabled; trying it with something missing says what is missing instead.
  */
@@ -92,14 +98,16 @@ interface DotImportOption {
     selector: 'dot-content-drive-dialog-import',
     imports: [
         ReactiveFormsModule,
-        BadgeModule,
+        AccordionModule,
         ButtonModule,
         CardModule,
         FileUploadModule,
         MessageModule,
         MultiSelectModule,
         SelectModule,
+        TagModule,
         TooltipModule,
+        DotContentTypeComponent,
         DotFieldRequiredDirective,
         DotMessagePipe
     ],
@@ -129,26 +137,20 @@ export class DotContentDriveDialogImportComponent {
         file: this.#formBuilder.control<File | null>(null, Validators.required)
     });
 
-    /** The content types the user can import into, once loaded. */
-    readonly $contentTypes = signal<DotImportContentType[]>([]);
     /**
-     * The content types grouped under their base type, in the order the server sorted them, for a
-     * single-select dropdown that keeps the Drive filter's base type → content type reading.
+     * Pages of the content types the user can import into, for the shared content type selector:
+     * only those they can write to, never Host, as Content Search's import (FR-004).
      */
-    readonly $contentTypeGroups = computed(() => {
-        const groups = new Map<string, DotImportContentType[]>();
-        for (const type of this.$contentTypes()) {
-            groups.set(type.baseType, [...(groups.get(type.baseType) ?? []), type]);
-        }
-
-        return [...groups.entries()].map(([baseType, items]) => ({
-            label: this.#dotMessageService.get(`content-drive.base-type.${baseType.toLowerCase()}`),
-            value: baseType,
-            items
-        }));
-    });
-    /** Whether the content type list has arrived, so an empty list can be told from a loading one. */
-    readonly $contentTypesLoaded = signal(false);
+    readonly contentTypePageLoader: DotContentTypePageLoader = (options) =>
+        this.#importService.getWritableContentTypes(options);
+    /**
+     * Keeps Key Fields as tall as the other selects whatever it holds. With chips, the theme halves
+     * the label's padding and the chip sets the height, so the field shrank once a chip was added
+     * and grew back when the last one was removed; this floor is the empty label's own height.
+     */
+    readonly keyFieldsLabelClass = 'min-h-[calc(2*var(--p-multiselect-padding-y)+1lh)]';
+    /** The preview's warning and error sections, both open when it appears (FR-012). */
+    readonly openSections = ['warnings', 'errors'];
     /** The picked type's workflow actions, labelled "action ( scheme )" as in Content Search. */
     readonly $workflowActions = signal<DotImportOption[]>([]);
     /** The picked type's fields that can serve as key fields. */
@@ -275,13 +277,6 @@ export class DotContentDriveDialogImportComponent {
     /** The picked CSV's name, shown in the drop area. */
     readonly $fileName = computed(() => this.$value().file?.name ?? null);
 
-    /** The picked content type's name, for the "Download {name} sample" link. */
-    readonly $selectedTypeName = computed(
-        () =>
-            this.$contentTypes().find((type) => type.variable === this.$value().contentType)
-                ?.name ?? null
-    );
-
     /**
      * The picked CSV's size, row and column counts, as "12 KB · 2 rows · 10 columns". Counts come
      * from reading the file in the browser, so they arrive a moment after the pick; when the file
@@ -310,19 +305,11 @@ export class DotContentDriveDialogImportComponent {
     });
 
     constructor() {
-        this.#importService
-            .getWritableContentTypes()
-            .pipe(
-                catchError(() => of([] as DotImportContentType[])),
-                takeUntilDestroyed(this.#destroyRef)
-            )
-            .subscribe((types) => {
-                this.$contentTypes.set(types);
-                this.$contentTypesLoaded.set(true);
-            });
-
         this.importForm.controls.contentType.valueChanges
             .pipe(
+                // The shared selector hands back the value it is given, so showing the form again
+                // after a preview reports the same type; only a different one is a change.
+                distinctUntilChanged(),
                 switchMap((contentType) => {
                     // A workflow action or key field picked for the previous type means nothing
                     // for this one, so they go before the new type's options arrive.
