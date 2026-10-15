@@ -54,3 +54,4 @@ Release-25.07.10 LTS
 48. https://github.com/dotCMS/core/issues/34435 : [DEFECT] Portlet cache throws an error when using the Redis cache provider #34435
 49. https://github.com/dotCMS/core/issues/37252 : Backport private-issues/issues/668 into 25.07 #37252
 50. https://github.com/dotCMS/core/issues/37603 : Binary field stuck on infinite loading spinner when creating new content (legacy Dojo/JSP editor) #37603
+51. https://github.com/dotCMS/core/issues/35996 : security(deps): upgrade bundled DOMPurify in TinyMCE / Monaco / Swagger UI assets (CVE-2025-26791 follow-up) #35996
