@@ -1,8 +1,11 @@
-# Issue Resolution Specification: New Edit Contentlet UI polish — header divider, date picker width, drag handle, copy button, button icons
+# Issue Resolution Specification: New Edit Contentlet UI polish — header divider, date picker width, relationship table icons, copy button
 
 **Feature Branch**: `issue-37958-edit-content-ui-polish`
 
 **Created**: 2026-10-13
+
+**Updated**: 2026-10-15 — scope narrowed: no general icon migration; only the icons shown in the
+issue's screenshots change (the relationship field table). See "Scope change" below.
 
 **Status**: Draft
 
@@ -12,9 +15,18 @@
 
 **Input**: User description: "Fix New Edit Contentlet UI polish: header divider, date picker width, drag handle, copy button, button icons. Scope is ONLY the 5 points in the issue (the error-banner request from the Slack thread is deferred, out of this spec)."
 
+## Scope change (2026-10-15)
+
+The requirement changed after implementation started: this PR does **not** migrate every
+PrimeIcon in the New Edit Contentlet editor to Material Symbols. Only the icons shown in the
+issue's screenshots change, which means the relationship field's table: its drag handle, add
+(`+`) and remove (`×`) buttons, and its empty-state folder. Every other button, the date
+picker trigger, the Add Relationships site chip and the shared `dot-chip-filter` keep their
+PrimeIcons, exactly as on `main`.
+
 ## Problem Statement *(mandatory)*
 
-A visual review of the New Edit Contentlet editor found five places where it drifts from the
+A visual review of the New Edit Contentlet editor found these places where it drifts from the
 design system:
 
 1. **Header divider** — in the side-panel editor there is no divider line between the header
@@ -22,13 +34,11 @@ design system:
    tabs and the command bar. The two rows run into each other.
 2. **Date picker width** — the Date, Time and Date and Time picker popup opens as wide as its
    input. A full-width field produces a full-width calendar, with day cells spread far apart.
-3. **Drag handle size** — the relationship field's drag handle is visibly larger than the
-   field's other icons (the header's `+` add icon and the row's `×` remove icon).
+3. **Relationship table icons** — the relationship field's drag handle is visibly larger than
+   the field's other icons (the header's `+` add icon and the row's `×` remove icon), and the
+   table mixes PrimeIcons with the editor's Material Symbols.
 4. **Copy button** — the Host / Folder field's copy button does not match the standard
    icon-only button: the button is too small and its icon is too big.
-5. **Button icons** — several buttons in the editor still draw their icon with PrimeIcons
-   (`pi pi-*`) instead of Material Symbols, so icons in the same screen come from two
-   different icon sets with different weights and sizes.
 
 **Severity / Impact**: Low. Cosmetic only — no data, save, or workflow behavior is affected.
 Every author using the New Edit Contentlet editor sees these on every visit, so the editor
@@ -49,14 +59,10 @@ The PrimeNG version installed in `core-web` is 21.x.
    → The `⋮⋮` handle is larger than the `+` and `×` icons (issue screenshot 3).
 4. Edit content with a Host / Folder field. → The copy button next to the field is small
    while its glyph is large (issue screenshot 4).
-5. Look at the command bar's `⋮` menu, the sidebar's history/close buttons, the workflow
-   pencil/replay buttons, the file field's actions, the category chip `×`, etc.
-   → These show PrimeIcons glyphs, while the side panel's expand/close buttons show
-   Material Symbols.
 
 **Expected Behavior**: One divider under the header; a calendar popup of the date picker's
-standard width; a drag handle the same size as the field's other icons; a copy button that
-looks like every other icon-only button; Material Symbols on every button icon in the editor.
+standard width; relationship table icons that are all Material Symbols of the same size; a
+copy button that looks like every other icon-only button.
 
 **Actual Behavior**: As described in the Problem Statement.
 
@@ -65,17 +71,15 @@ looks like every other icon-only button; Material Symbols on every button icon i
 ## Scope of Investigation *(mandatory)*
 
 - **Affected area**: Content editing — the New Edit Contentlet Angular editor
-  (`core-web/libs/edit-content`), specifically its side panel, calendar field, relationship
-  field, host/folder field, sidebar, command bar, file field, category field, custom (iframe)
-  field and the editor layout's top-bar banners.
-- **Suspected surface**: Frontend only (Angular templates, one util, their specs). No Java,
-  no `com.dotmarketing.*`, no REST, no DB or index changes. The legacy (old) Edit Content
-  screen is not touched.
+  (`core-web/libs/edit-content`): its side panel, calendar field, relationship field and
+  host/folder field.
+- **Suspected surface**: Frontend only (Angular templates, one component method, their specs).
+  No Java, no `com.dotmarketing.*`, no REST, no DB or index changes. The legacy (old) Edit
+  Content screen is not touched.
 - **Related known decisions**:
   - [Angular Standards → Icons](../../docs/frontend/ANGULAR_STANDARDS.md#icons-material-symbols)
     says new markup uses Material Symbols and that existing PrimeIcons must **not** be
-    mass-migrated. Point 5 is a deliberate, scoped exception approved in the issue: it covers
-    only the icons on `<p-button>`s (plus the date picker trigger) inside `libs/edit-content`.
+    mass-migrated. This spec follows it: only the relationship field's table changes icon set.
   - The same doc puts icons drawn internally by PrimeNG out of scope, which this spec keeps.
   - The plan formally consults `dotCMS/platform-adrs`.
 
@@ -86,24 +90,24 @@ looks like every other icon-only button; Material Symbols on every button icon i
    already draws `border-b border-surface-200`, but only under its own width.
 2. **Date picker** — in the installed PrimeNG `DatePicker`, `showOverlay()` records the host
    element's `offsetWidth`, and `onOverlayBeforeEnter()` writes it as an **inline**
-   `min-width` on the popup for every non-inline picker. Because the calendar field is
-   `[fluid]="true"`, the host is as wide as the field, so the popup is too.
+   `min-width` on the popup's wrapper (the `p-motion` element around `.p-datepicker-panel`)
+   for every non-inline picker. Because the calendar field is `[fluid]="true"`, the host is as
+   wide as the field, so the popup is too.
    *Correction to the issue text*: the issue ties this to `[appendTo]="'body'"`, but the code
    applies the `min-width` regardless of `appendTo`, so removing `appendTo` would not fix it.
-   Because the value is written inline after the template's `panelStyle` is applied, the fix
-   has to win over an inline style; the plan confirms the exact mechanism.
-3. **Drag handle** — drawn as two overlapping `pi pi-ellipsis-v` glyphs at `text-[14px]`
-   (`dot-relationship-field.component.html:123-124`), which together read larger and heavier
-   than the single-glyph `+` and `×`.
+   No PrimeNG input reaches the wrapper (`panelStyleClass` / `panelStyle` land on the panel
+   inside it), so the fix clears the value when PrimeNG emits `onShow` and re-aligns the popup.
+3. **Relationship table icons** — the drag handle is drawn as two overlapping
+   `pi pi-ellipsis-v` glyphs at `text-[14px]`, which together read larger and heavier than the
+   single-glyph `+` and `×`. The `+` and `×` are small `p-button`s with PrimeIcons, and the
+   empty state uses `pi pi-folder-open`
+   (`dot-relationship-field.component.html`).
 4. **Copy button** — the `<p-button>` is declared with `size="small"`
    (`host-folder-field.component.html:80-97`), which shrinks the button around its glyph, so the
    glyph looks too big for it. Without `size="small"` the button takes the default icon-only
    size and the glyph is in proportion. The glyph also carries a `text-lg` class
    (`host-folder-field.component.html:93`) that the issue asks to remove; removing it does
    not change the glyph's rendered size.
-5. **Button icons** — ~30 `icon="pi pi-*"` usages on `<p-button>` across 12 templates (list in
-   the issue's Additional Context), plus `pi pi-calendar` / `pi pi-clock` set as the date
-   picker trigger in `calendar-field.util.ts`.
 
 ## Fix Scope & Non-Goals *(mandatory)*
 
@@ -112,55 +116,38 @@ looks like every other icon-only button; Material Symbols on every button icon i
 - A full-width 1px `surface-200` divider under the side-panel header, in both the 80% and
   expanded (100%) panel.
 - Date / Time / Date and Time popups rendered at the date picker's standard content width,
-  independent of the input's width, still anchored to the field and inside the viewport.
-- The relationship drag handle drawn as one `drag_indicator` Material Symbol, the same size
-  as the field's add and remove icons, with its current hover/focus/keyboard/drag/disabled
-  behavior unchanged.
+  independent of the input's width, still anchored to the field.
+- The relationship field's table icons as Material Symbols at the default icon size: the drag
+  handle as one `drag_indicator` (hover/focus/keyboard/drag/disabled behavior unchanged), the
+  add and remove buttons as `add` / `close` at the default, rounded icon-only button size, and
+  the empty-state folder as `folder_open`.
 - The Host / Folder copy button at the default icon-only `p-button` size (removing
   `size="small"`), its glyph at the default button icon size (removing `text-lg`), and
   `check` the same size as `content_copy`.
-- Every `<p-button icon="pi pi-*">` in `core-web/libs/edit-content/src` switched to a Material
-  Symbol in an `<ng-template #icon>`, keeping `<p-button>`, `ariaLabel` and `data-testid`.
-  Buttons that are small today (`size="small"` or the `p-button-sm` class) move to the default
-  button size, so the default-size Material Symbol fits them the way it now fits the copy
-  button (developer decision 2026-10-13).
-- The category field's remove button (`<button pButton icon="pi pi-times">`, not a
-  `<p-button>`) gets the same treatment, keeping the `pButton` directive.
-- The relationship site chip's `pi pi-folder` switched to a Material Symbol. The icon is drawn
-  by the shared `dot-chip-filter` (`libs/ui`), which today only accepts an icon class; it is
-  adapted to draw a Material Symbol. The site chip is the only consumer of that input, so no
-  other screen changes (developer decision 2026-10-13).
-- The date picker trigger icon switched from `pi pi-calendar` / `pi pi-clock` to Material
-  Symbols.
-- Unit specs updated where they assert `pi pi-*` classes, and new spec assertions for each
-  point.
+- Unit specs for each point.
 
 **Explicitly out of scope / non-goals**:
 
+- Migrating any other PrimeIcon in the editor to Material Symbols: other buttons (command
+  bar, sidebar, history, workflow, file field, category field, custom field, banners), the
+  date picker trigger (`pi pi-calendar` / `pi pi-clock`), the Add Relationships site chip and
+  the shared `dot-chip-filter` (scope change 2026-10-15).
 - Replacing `<p-button>` with another button component.
-- PrimeIcons that are not button icons: loading spinners (`pi-spin`), status and info glyphs
-  (e.g. the banners' `pi-info-circle` / `pi-times-circle`), and field prefixes such as
-  `pi pi-globe`.
 - Icons PrimeNG draws internally (date picker month arrows and time spinners, drawer, etc.).
-- PrimeIcons outside `libs/edit-content`, and any global/theme change that would alter
-  buttons in other portlets. The `dot-chip-filter` change above is the one exception outside
-  `libs/edit-content`, and it changes nothing for its other consumers.
 - The legacy (old) Edit Content screen.
 - The Slack-thread request to clear the "form invalid" error banner once the author fixes the
   fields — a behavior change, tracked separately (deferred by the developer).
 
 ## Regression Risk *(mandatory)*
 
-- **Blast radius**: `libs/edit-content` templates, plus the `icon` input of the shared
-  `dot-chip-filter` (`libs/ui`), whose only user is the relationship site chip. The calendar field is used by every
-  Date / Time / Date and Time field in the editor; the icon change touches the command bar,
-  sidebar (history, workflow, compare/historical banners), file field, category field,
-  relationship field (and its site chip), custom iframe field and the layout's beta banner.
-  Risks: an icon-only button losing its accessible name or `data-testid`; a popup clipped by
-  the viewport; the drag handle losing its keyboard focus or its `pReorderableRowHandle`.
+- **Blast radius**: four `libs/edit-content` components. The calendar field is used by every
+  Date / Time / Date and Time field in the editor; the relationship field by every
+  relationship. Risks: a popup misplaced after its width changes; the drag handle losing its
+  keyboard focus or its `pReorderableRowHandle`; the add/remove buttons losing their
+  `data-testid`.
 - **Backward compatibility**: No API, content, serialized-state, DB or index change; nothing
-  rollback-unsafe. External tests (e2e) that select buttons by `icon="pi pi-…"` attributes or
-  `.pi-*` classes would break — the plan checks `core-web/apps/*-e2e` for such selectors.
+  rollback-unsafe. External tests (e2e) that select the relationship add/remove buttons by
+  `icon="pi pi-…"` or `.pi-*` would break — none exist in `core-web/apps/*-e2e`.
 - **Data considerations**: None.
 
 ## Acceptance & Verification *(mandatory)*
@@ -180,9 +167,13 @@ looks like every other icon-only button; Material Symbols on every button icon i
 - **AC-005**: The popup uses the date picker's standard content width and never stretches to
   the input's width.
 - **AC-006**: The popup still opens attached to its field (below it, or above when there is
-  no room below) and stays fully inside the viewport.
+  no room below) and stays fully inside the viewport. *Accepted limit*: when the popup fits
+  neither above nor below the field (e.g. a 1000px-tall window with the field mid-panel),
+  PrimeNG pins it to the top of the viewport and its 2px offset from the field leaves it 2px
+  past the top edge. This is PrimeNG's positioning, identical before and after this change,
+  and is not addressed here.
 
-**3. Relationship drag handle**
+**3. Relationship table icons**
 
 - **AC-007**: The drag handle shows a single `drag_indicator` Material Symbol instead of two
   stacked `pi pi-ellipsis-v` glyphs.
@@ -190,6 +181,10 @@ looks like every other icon-only button; Material Symbols on every button icon i
   (`+`) icons.
 - **AC-009**: Hover and focus still reveal the handle, it is still keyboard-reachable,
   drag-to-reorder still works, and a disabled field still shows no handle.
+- **AC-014**: The add (`+`) and remove (`×`) buttons show the `add` / `close` Material Symbols
+  at the default icon size, at the default (not small), rounded icon-only button size, and
+  keep their `data-testid`.
+- **AC-015**: The empty-state folder is the `folder_open` Material Symbol.
 
 **4. Host / Folder copy button**
 
@@ -199,60 +194,32 @@ looks like every other icon-only button; Material Symbols on every button icon i
 - **AC-012**: The copied state (`check`) is the same size as `content_copy`.
 - **AC-013**: Tooltip, accessible name and disabled state behave as today.
 
-**5. Button icons use Material Symbols**
-
-- **AC-014**: Every `<p-button>` in `libs/edit-content` that used `icon="pi pi-*"` shows an
-  equivalent Material Symbol through `<ng-template #icon>`; `<p-button>` stays.
-- **AC-015**: The date picker trigger (`pi pi-calendar` / `pi pi-clock` from
-  `calendar-field.util.ts`) is replaced by an equivalent Material Symbol.
-- **AC-016**: Every icon-only button that gets a new icon keeps its `ariaLabel` and
-  `data-testid`.
-- **AC-017**: Every icon-only button that gets a new icon renders it at the same size as the
-  other icon-only buttons in the editor.
-- **AC-018**: Searching `core-web/libs/edit-content/src` for `icon="pi pi-` returns no
-  matches.
-- **AC-021**: Every button that gets a new icon uses the default button size — no
-  `size="small"` and no `p-button-sm` class.
-- **AC-019**: PrimeIcons that are not button icons (spinners, status/info glyphs, field
-  prefixes) are unchanged.
-
 **Regression**
 
-- **AC-020**: The `edit-content` unit tests pass, with assertions on `pi pi-*` classes updated
-  to the new Material Symbols (known: `iframe-field.component.spec.ts`,
-  `dot-edit-content-calendar-field.component.spec.ts`).
+- **AC-020**: The `edit-content` unit tests pass.
+
+**Retired by the scope change (2026-10-15)**: AC-016, AC-017, AC-018, AC-019 and AC-021, which
+covered migrating every button icon in `libs/edit-content`, and the original AC-014 / AC-015
+(all `<p-button>` icons; the date picker trigger), whose IDs are reused above for the
+relationship table.
 
 **Verification method**:
 
-- Unit (Vitest + Spectator), written first and confirmed Red, per point: header carries the
-  divider classes; the date picker gets the width override; the drag handle renders one
-  `drag_indicator` and still has `pReorderableRowHandle` / is absent when disabled; the copy
-  button has no `size="small"` and its glyph has no `text-lg`; each migrated button renders
-  the expected Material Symbol and keeps `ariaLabel` / `data-testid`; the calendar util
-  returns the new trigger icons.
-  Run: `pnpm nx test edit-content` (targeted with `--testPathPatterns=` while iterating).
-- Static check: `grep -rn 'icon="pi pi-' core-web/libs/edit-content/src` returns nothing
-  (AC-018).
+- Unit (Vitest + Spectator), written first and confirmed Red, per point: the drawer header
+  carries the divider classes; on `onShow` the popup wrapper's inline `min-width` is cleared
+  and the popup re-aligned; the drag handle renders one `drag_indicator` and still has
+  `pReorderableRowHandle` / is absent when disabled; the add/remove buttons render `add` /
+  `close`, not small, rounded; the empty state renders `folder_open`; the copy button has no
+  `size="small"` and its glyph has no `text-lg`.
+  Run: `pnpm nx test edit-content` (`-- <file>` while iterating).
 - Manual, in the browser against the local instance (widths, viewport placement and pixel
-  sizes can't be proven in jsdom): AC-001–AC-006, AC-008, AC-011/AC-012, AC-017, plus
+  sizes can't be proven in jsdom): AC-001–AC-006, AC-008, AC-011/AC-012, AC-014, plus
   drag-to-reorder and keyboard focus for AC-009. Compare with the four issue screenshots.
 
 ## Assumptions
 
-- Icon mapping (PrimeIcons → Material Symbols), refined in the plan if a closer glyph exists:
-  `pi-times` → `close`, `pi-plus` → `add`, `pi-ellipsis-v` → `more_vert`, `pi-history` →
-  `history`, `pi-pencil` → `edit`, `pi-replay` → `replay`, `pi-trash` → `delete`,
-  `pi-download` → `download`, `pi-info` → `info`, `pi-link` → `link`, `pi-file` →
-  `description`, `pi-code` → `code`, `pi-folder` → `folder`, `pi-calendar` →
-  `calendar_today`, `pi-clock` → `schedule`.
 - Material Symbols Outlined (`material-symbols-outlined`), already loaded globally, is the
-  icon family used — it is the only family `libs/edit-content` uses today; no new font or
-  dependency.
-- Migrated button icons and the drag handle use the default icon size. Making the small
-  buttons default-size changes their footprint (relationship table add/remove column,
-  sidebar banners, history menus, file field actions and preview, category chip, beta banner
-  close); that is accepted as part of this fix.
+  icon family used; no new font or dependency.
+- The relationship table's icons use the default icon size (24px), with no size class.
 - "Standard content width" of the date picker means the width PrimeNG's theme gives the
   calendar content when nothing forces a `min-width`.
-- The layout's beta-banner close button (`pi pi-times`) counts as a button icon and is in
-  scope, even though it sits inside a banner.
