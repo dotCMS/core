@@ -87,7 +87,8 @@ Other decisions:
   missing or invalid input.
 - **The file picker only accepts `.csv` files**, so there's no error for other file types.
 - **The sample CSV reuses the existing behavior** as it is, so this spec doesn't restate its
-  content. It only requires the link to be disabled until a content type is picked.
+  content. It only requires the link to be disabled until a content type is picked. (Changed in
+  the UI review: see the 2026-10-14 session.)
 - **Retrying means submitting again.** The import endpoint has no retry operation, and the import
   job is never retried by the server. A user retries by fixing the form or the file and previewing
   or importing again.
@@ -109,7 +110,23 @@ developer chose to keep the legacy behavior:
 - **Content type selector.** Adapting the Drive's content type filter to single selection proved
   too costly for a shared component, so the form uses a plain single-select dropdown, as the spec
   allowed. No existing API lists only the content types a user can write to, so the server gains a
-  way to list them.
+  way to list them. (Changed in the UI review: see the next session.)
+
+### Session 2026-10-14 (UI review)
+
+- **Content type selector.** The form reuses the shared single-select content type selector the
+  rest of the UI already uses, so it copes with any number of content types: it loads them page by
+  page as the user scrolls and searches on the server. The list keeps the rule above (only the
+  content types the user can write to, never Host, as Content Search), so the shared selector is
+  fed by the server's list of those types, which gains paging and search. The list is no longer
+  grouped by base type.
+- **Language is labelled "Locale"** in the form. It is the same input and the same value.
+- **The sample download appears once a content type is picked**, as a "Download CSV File" button,
+  instead of a link that is disabled until then.
+- **Warnings and errors are collapsible sections**, each opened and closed on its own, both open
+  when the preview appears. A section with no entries is not shown, and with neither warnings nor
+  errors there is no box at all. The preview scrolls as a whole, with a single scrollbar, however
+  many messages there are.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -137,7 +154,8 @@ shows both items.
 3. **Given** a folder that pins a default file type, **When** the user opens Upload, **Then** it
    offers that file type and "Import CSV", instead of opening the file picker straight away.
 4. **Given** the user chose "Import CSV", **When** the dialog opens, **Then** it shows Content Type,
-   Language, Workflow Action, Key Fields, a CSV file picker, and a link to download a sample CSV.
+   Language, Workflow Action, Key Fields, a CSV file picker and, once a content type is picked, a
+   button to download a sample CSV.
 5. **Given** a complete form and a preview, **When** the user confirms the import and the import
    starts, **Then** the dialog closes and the status toast shows the import running with an
    indefinite loading state.
@@ -167,7 +185,9 @@ Pick one: only its permitted workflow actions and its indexed, importable fields
 **Acceptance Scenarios**:
 
 1. **Given** the dialog is open, **When** the user opens Content Type, **Then** it lists only the
-   content types they have write permission on, never Host, and lets them pick exactly one.
+   content types they have write permission on, never Host, and lets them pick exactly one. It
+   loads them page by page and searches them on the server, so it works with any number of
+   content types.
 2. **Given** a content type is picked, **When** the user opens Workflow Action, **Then** it lists
    only the actions Content Search's import offers for that type and user, labelled with the action
    and its workflow scheme.
@@ -222,16 +242,19 @@ warning names the unknown column. Nothing is created.
    errors are shown as separate, clearly distinguished groups with their counts, each listed in
    line-number order, and each entry shows its line number, field and offending value when the
    result includes them.
-5. **Given** the preview has no warnings or no errors, **When** the user reads it, **Then** the
-   matching group says there are none.
-6. **Given** the preview is ready, **When** the user changes any form input or the file, **Then**
+5. **Given** the preview has no warnings, or no errors, **When** the user reads it, **Then** that
+   group is not shown; with neither warnings nor errors, no warnings and errors box is shown.
+6. **Given** the preview shows warnings and errors, **When** the user reads it, **Then** both groups
+   start open, each can be collapsed and expanded on its own, and the whole preview scrolls with a
+   single scrollbar however many messages there are.
+7. **Given** the preview is ready, **When** the user changes any form input or the file, **Then**
    the preview is discarded and the user must preview again before importing.
-7. **Given** the preview is ready, **When** the user cancels it, **Then** they return to the form
+8. **Given** the preview is ready, **When** the user cancels it, **Then** they return to the form
    with their inputs kept, and no content is created.
-8. **Given** the preview has errors, **When** the user clicks Import, **Then** the import is
+9. **Given** the preview has errors, **When** the user clicks Import, **Then** the import is
    allowed, as in Content Search: the dialog warns that rows with errors will be skipped, and the
    user confirms before it starts.
-9. **Given** the preview has no errors, **When** the user clicks Import, **Then** the import starts
+10. **Given** the preview has no errors, **When** the user clicks Import, **Then** the import starts
    after the same confirmation Content Search asks for.
 
 ---
@@ -244,15 +267,15 @@ fill it in and import it. The file is the same one Content Search's import offer
 **Why this priority**: It saves guessing column names, but users who already have a file don't need
 it.
 
-**Independent Test**: Pick any content type and click the sample link. The CSV that downloads is
-the same one Content Search's import produces for that type.
+**Independent Test**: Pick any content type and click "Download CSV File". The CSV that downloads
+is the same one Content Search's import produces for that type.
 
 **Acceptance Scenarios**:
 
-1. **Given** no content type is picked, **When** the user looks at the sample link, **Then** it is
-   disabled.
-2. **Given** a content type is picked, **When** the user clicks the sample link, **Then** the same
-   sample CSV Content Search's import produces for that type downloads.
+1. **Given** no content type is picked, **When** the user looks at the dialog, **Then** no sample
+   download is offered.
+2. **Given** a content type is picked, **When** the user clicks "Download CSV File", **Then** the
+   same sample CSV Content Search's import produces for that type downloads.
 
 ---
 
@@ -328,10 +351,11 @@ no data rows, the form is still filled in, and replacing the file lets the user 
   into the current folder. In a folder that pins a default file type, Upload MUST offer that type
   and "Import CSV" instead of opening the file picker straight away.
 - **FR-003**: "Import CSV" MUST open a dialog containing Content Type, Language, Workflow Action,
-  Key Fields, a CSV file picker and a sample CSV link.
-- **FR-004**: Content Type MUST be a plain single-select dropdown, with a text filter, listing only
-  the content types the user has write permission on, excluding Host, as Content Search's import
-  does. The server MUST provide that list.
+  Key Fields, a CSV file picker and, once a content type is picked, a sample CSV download.
+- **FR-004**: Content Type MUST use the shared single-select content type selector, which loads
+  content types page by page and searches them on the server. It MUST list only the content types
+  the user has write permission on, excluding Host, as Content Search's import does. The server MUST
+  provide that list, paged and searchable.
 - **FR-005**: Language MUST list every language plus a "Multilingual file" option, MUST be
   prefilled with the working language, and the chosen language MUST always be sent to the import
   (never left empty).
@@ -351,6 +375,8 @@ no data rows, the form is still filled in, and replacing the file lets the user 
 - **FR-012**: Preview MUST run the import without writing anything and show a summary (rows read,
   headers matched, key fields, items to create, items to update), then warnings and errors as
   separate groups with counts. Each entry MUST show its line number, field and value when known.
+  Each group MUST be collapsible on its own and start open; a group with no entries MUST NOT be
+  shown. The preview MUST scroll as a whole, with a single scrollbar.
 - **FR-013**: The preview summary MUST show where the rows will land: the number of rows per
   site/folder, computed the same way the import places them, including rows that go to the content
   type's default site/folder.
@@ -380,7 +406,7 @@ no data rows, the form is still filled in, and replacing the file lets the user 
 - **FR-024**: A new server endpoint MUST return, for a content type, the same sample CSV Content
   Search's import produces, and MUST refuse users who can't read that content type. Content Search
   keeps its own download unchanged.
-- **FR-025**: The sample CSV link MUST be disabled until a content type is picked.
+- **FR-025**: The sample CSV download MUST only be offered once a content type is picked.
 - **FR-026**: The import endpoint's documentation MUST state that leaving `language` out, or sending
   `-1`, means a multilingual file, MUST describe the new site parameter, and the generated API
   description MUST be updated.
