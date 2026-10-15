@@ -85,9 +85,13 @@ copy button that looks like every other icon-only button.
 
 ## Root-Cause Hypothesis
 
-1. **Divider** — the drawer's `#header` template in
-   `dot-edit-content-side-panel.component.html` has no bottom border; the tab list right below
-   already draws `border-b border-surface-200`, but only under its own width.
+1. **Divider** — the side panel's drawer header (since #37965 the shared `dot-side-panel` in
+   `libs/ui`, used by every side panel in the admin) has no bottom border, and neither does
+   the Edit Content area under it; the tab list right below already draws
+   `border-b border-surface-200`, but only under its own width. The Edit Content panel sets
+   its content area's classes through `DotSidePanelRef.contentStyleClass` (as the legacy
+   editor panel does), so the divider is that area's top border and other panels are
+   unaffected.
 2. **Date picker** — in the installed PrimeNG `DatePicker`, `showOverlay()` records the host
    element's `offsetWidth`, and `onOverlayBeforeEnter()` writes it as an **inline**
    `min-width` on the popup's wrapper (the `p-motion` element around `.p-datepicker-panel`)

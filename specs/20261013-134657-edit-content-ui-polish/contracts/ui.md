@@ -9,7 +9,7 @@ working; the only removed selectors are the relationship table's PrimeIcons attr
   `relationship-delete-button`), the drag handle (`relationship-drag-handle`), the empty state
   (`relationship-field-empty`), the copy button (`host-folder-copy`, `host-folder-copy-icon`),
   the calendar (`calendar-input-<variable>`, `calendar-clear-button`) and the side panel
-  (`edit-content-side-panel`, `side-panel-*`).
+  (`side-panel`, `side-panel-*`).
 - New glyphs are `aria-hidden="true"`, so they add nothing to a button's accessible name.
 - `pReorderableRowHandle` and `tabindex="0"` on the drag handle; no handle when disabled.
 - The date picker trigger keeps `[icon]` with `pi pi-calendar` / `pi pi-clock`.
@@ -23,4 +23,4 @@ working; the only removed selectors are the relationship table's PrimeIcons attr
 | Drag handle | two `i.pi.pi-ellipsis-v` | one `span.material-symbols-outlined` = `drag_indicator` |
 | Date picker overlay | inline `min-width` = input width wins | `(onShow)` → `onPopupShow()` clears it and re-aligns |
 | Copy button | `size="small"`, glyph `text-lg` | default size, glyph without `text-lg` |
-| Side-panel drawer header | no border | `pt.header.class` = `border-b border-surface-200` |
+| Side-panel content area (Edit Content only) | `contentStyleClass` = `p-0!` | `p-0! border-t border-surface-200` |
