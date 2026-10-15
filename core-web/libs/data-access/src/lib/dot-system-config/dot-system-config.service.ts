@@ -79,6 +79,7 @@ export class DotSystemConfigService {
             colors: config.colors,
             releaseInfo: config.releaseInfo,
             systemTimezone: config.systemTimezone,
+            timezones: config.timezones,
             languages: config.languages,
             license: config.license,
             cluster: config.cluster,

@@ -3,7 +3,7 @@ import { BehaviorSubject } from 'rxjs';
 import { Service } from '@angular/core';
 @Service()
 export class DotNavLogoService {
-    navBarLogo$: BehaviorSubject<string> = new BehaviorSubject('');
+    navBarLogo$ = new BehaviorSubject<string | null>('');
 
     /**
      * Sets a logo for the nav bar
