@@ -28,6 +28,7 @@ import {
     DotFolderService,
     DotHttpErrorManagerService,
     DotPropertiesService,
+    DotRouterService,
     DotSessionStorageService,
     DotUploadFileService,
     DotWorkflowActionsFireService
@@ -3457,5 +3458,177 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
             expect(store.actionExecutionResult()).toBeUndefined();
         });
+    });
+});
+
+/**
+ * Which view opens (#37930, US4): `viewType` in the URL, then the view remembered for this screen,
+ * then a custom tool's `defaultViewType`, then the table.
+ */
+describe('DotContentDriveStore - view type', () => {
+    let spectator: SpectatorService<InstanceType<typeof DotContentDriveStore>>;
+    let store: InstanceType<typeof DotContentDriveStore>;
+
+    const routeSnapshot: { queryParams: Record<string, string> } = { queryParams: {} };
+    const siteDetails = signal<DotSite | null>(MOCK_SITES[2]);
+    const portlet = { id: 'content-drive' };
+    const DRIVE_KEY = 'dotcms.content-drive.view-type.content-drive';
+
+    const createService = createServiceFactory({
+        service: DotContentDriveStore,
+        providers: [
+            ...rememberedContentTypeProviders(routeSnapshot, siteDetails),
+            mockProvider(DotSessionStorageService, {
+                consumeLastContentType: vi.fn().mockReturnValue(null)
+            }),
+            {
+                provide: DotRouterService,
+                useValue: {
+                    get currentPortlet() {
+                        return { id: portlet.id, url: '', parentMenuId: '' };
+                    }
+                }
+            }
+        ]
+    });
+
+    const buildStore = (queryParams: Record<string, string> = {}, portletId = 'content-drive') => {
+        routeSnapshot.queryParams = queryParams;
+        portlet.id = portletId;
+        spectator = createService();
+        store = spectator.service;
+        spectator.flushEffects();
+    };
+
+    const popstate = (url: string) => {
+        const subscribe = spectator.inject(Location).subscribe as Mock;
+        const handler = subscribe.mock.lastCall?.[0] as (event: { url: string }) => void;
+        handler({ url });
+    };
+
+    beforeEach(() => localStorage.clear());
+
+    it('should open the table when nothing says otherwise (US4 #6)', () => {
+        buildStore();
+
+        expect(store.viewType()).toBe('list');
+    });
+
+    it('should open the view remembered for this screen (US4 #1)', () => {
+        localStorage.setItem(DRIVE_KEY, 'card');
+
+        buildStore();
+
+        expect(store.viewType()).toBe('card');
+    });
+
+    it('should let the URL win over the remembered view (US4 #3)', () => {
+        localStorage.setItem(DRIVE_KEY, 'card');
+
+        buildStore({ viewType: 'List' });
+
+        expect(store.viewType()).toBe('list');
+    });
+
+    it('should not remember a view that came from the URL (US4 #3)', () => {
+        buildStore({ viewType: 'card' });
+
+        expect(localStorage.getItem(DRIVE_KEY)).toBeNull();
+    });
+
+    it('should use the tool default when this screen remembers nothing (US4 #5)', () => {
+        buildStore({ defaultViewType: 'card' });
+
+        expect(store.viewType()).toBe('card');
+    });
+
+    it('should let the remembered view win over the tool default (US4 #5)', () => {
+        localStorage.setItem(DRIVE_KEY, 'list');
+
+        buildStore({ defaultViewType: 'card' });
+
+        expect(store.viewType()).toBe('list');
+    });
+
+    it('should not use a view remembered for another screen (US4 #4)', () => {
+        localStorage.setItem('dotcms.content-drive.view-type.c_blogs', 'card');
+
+        buildStore({}, 'content-drive');
+
+        expect(store.viewType()).toBe('list');
+    });
+
+    it('should open the table when the remembered value is unreadable (US4 #8)', () => {
+        localStorage.setItem(DRIVE_KEY, 'mosaic');
+
+        buildStore();
+
+        expect(store.viewType()).toBe('list');
+    });
+
+    it('should show and remember a view picked with the switcher (FR-019)', () => {
+        buildStore();
+
+        store.setViewType('card', { remember: true });
+
+        expect(store.viewType()).toBe('card');
+        expect(localStorage.getItem(DRIVE_KEY)).toBe('card');
+    });
+
+    it('should remember it for this screen only', () => {
+        buildStore({}, 'c_blogs');
+
+        store.setViewType('card', { remember: true });
+
+        expect(localStorage.getItem('dotcms.content-drive.view-type.c_blogs')).toBe('card');
+        expect(localStorage.getItem(DRIVE_KEY)).toBeNull();
+    });
+
+    it('should show a view without remembering it when not asked to', () => {
+        buildStore();
+
+        store.setViewType('card');
+
+        expect(store.viewType()).toBe('card');
+        expect(localStorage.getItem(DRIVE_KEY)).toBeNull();
+    });
+
+    it('should still switch when the browser refuses to store the choice (US4 #7)', () => {
+        buildStore();
+        const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+            throw new Error('QuotaExceededError');
+        });
+
+        expect(() => store.setViewType('card', { remember: true })).not.toThrow();
+        expect(store.viewType()).toBe('card');
+
+        setItem.mockRestore();
+    });
+
+    it('should keep remembering under the screen the Drive opened on', () => {
+        buildStore({}, 'c_blogs');
+        portlet.id = 'c_news';
+
+        store.setViewType('card', { remember: true });
+
+        expect(localStorage.getItem('dotcms.content-drive.view-type.c_blogs')).toBe('card');
+        expect(localStorage.getItem('dotcms.content-drive.view-type.c_news')).toBeNull();
+    });
+
+    it('should keep the current view on Back and Forward, as the view is a preference (FR-020)', () => {
+        buildStore();
+
+        popstate('/c/content-drive?viewType=card');
+
+        expect(store.viewType()).toBe('list');
+    });
+
+    it('should not reload the results when Back only changes the view', () => {
+        buildStore();
+        const status = store.status();
+
+        popstate('/c/content-drive?viewType=card');
+
+        expect(store.status()).toBe(status);
     });
 });

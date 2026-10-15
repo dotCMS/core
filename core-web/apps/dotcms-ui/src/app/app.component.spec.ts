@@ -17,11 +17,11 @@ import {
     DotAlertConfirmService,
     DotLicenseService,
     DotMessageService,
+    DotNavLogoService,
     DotUiColorsService
 } from '@dotcms/data-access';
 import { DotcmsConfigService, LoggerService, StringUtils } from '@dotcms/dotcms-js';
 
-import { DotNavLogoService } from './api/services/dot-nav-logo/dot-nav-logo.service';
 import { AppComponent } from './app.component';
 
 describe('AppComponent', () => {

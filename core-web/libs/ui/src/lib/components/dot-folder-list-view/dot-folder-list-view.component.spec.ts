@@ -2226,6 +2226,11 @@ describe('DotFolderListViewComponent', () => {
     describe('Drag Events', () => {
         const firstItem = mockItems[0];
         const secondItem = mockItems[1];
+        // Only a folder takes a drop, so the drag-over and drop tests drag over folders.
+        const folderItems = mockItems.map(
+            (item) => ({ ...item, type: 'folder' }) as unknown as DotContentDriveItem
+        );
+        const [firstFolder, secondFolder] = folderItems;
         let dragStartSpy: ReturnType<typeof vi.spyOn>;
 
         beforeEach(() => {
@@ -2451,9 +2456,32 @@ describe('DotFolderListViewComponent', () => {
 
         describe('onDragOver', () => {
             beforeEach(() => {
-                spectator.setInput('items', mockItems);
+                spectator.setInput('items', folderItems);
                 spectator.setInput('loading', false);
                 spectator.detectChanges();
+            });
+
+            it('should neither accept nor highlight a drag over a content row', () => {
+                spectator.setInput('items', mockItems);
+                spectator.detectChanges();
+                const dragOverEvent = createDragOverEvent();
+                const preventDefaultSpy = vi.spyOn(dragOverEvent, 'preventDefault');
+
+                spectator.query(byTestId('item-row'))?.dispatchEvent(dragOverEvent);
+
+                expect(spectator.component.state.dragOverRowId()).toBeNull();
+                expect(preventDefaultSpy).not.toHaveBeenCalled();
+            });
+
+            it('should clear the highlight when the drag leaves the row', () => {
+                const row = spectator.query(byTestId('item-row')) as HTMLElement;
+
+                row.dispatchEvent(createDragOverEvent());
+                expect(spectator.component.state.dragOverRowId()).toBe(firstFolder.identifier);
+
+                row.dispatchEvent(new DragEvent('dragleave'));
+
+                expect(spectator.component.state.dragOverRowId()).toBeNull();
             });
 
             it('should set dragOverRowId when dragging over a row with internal drag', () => {
@@ -2464,7 +2492,7 @@ describe('DotFolderListViewComponent', () => {
                 row.dispatchEvent(dragOverEvent);
                 spectator.detectChanges();
 
-                expect(spectator.component.state.dragOverRowId()).toBe(firstItem.identifier);
+                expect(spectator.component.state.dragOverRowId()).toBe(firstFolder.identifier);
                 expect(preventDefaultSpy).toHaveBeenCalled();
             });
 
@@ -2500,7 +2528,7 @@ describe('DotFolderListViewComponent', () => {
                 row.dispatchEvent(dragOverEvent);
                 spectator.detectChanges();
 
-                expect(spectator.component.state.dragOverRowId()).toBe(firstItem.identifier);
+                expect(spectator.component.state.dragOverRowId()).toBe(firstFolder.identifier);
             });
 
             it('should update dragOverRowId when dragging over different rows', () => {
@@ -2512,13 +2540,13 @@ describe('DotFolderListViewComponent', () => {
                 spectator.detectChanges();
 
                 // dragOverRowId should be set to the second item
-                expect(spectator.component.state.dragOverRowId()).toBe(secondItem.identifier);
+                expect(spectator.component.state.dragOverRowId()).toBe(secondFolder.identifier);
             });
         });
 
         describe('onDrop', () => {
             beforeEach(() => {
-                spectator.setInput('items', mockItems);
+                spectator.setInput('items', folderItems);
                 spectator.setInput('loading', false);
                 spectator.detectChanges();
             });
@@ -2541,14 +2569,14 @@ describe('DotFolderListViewComponent', () => {
                 const dragOverEvent = createDragOverEvent();
                 row.dispatchEvent(dragOverEvent);
                 spectator.detectChanges();
-                expect(spectator.component.state.dragOverRowId()).toBe(firstItem.identifier);
+                expect(spectator.component.state.dragOverRowId()).toBe(firstFolder.identifier);
 
                 // Now drop
                 row.dispatchEvent(dropEvent);
                 spectator.detectChanges();
 
                 expect(spectator.component.state.dragOverRowId()).toBeNull();
-                expect(dropSpy).toHaveBeenCalledWith(firstItem);
+                expect(dropSpy).toHaveBeenCalledWith(firstFolder);
             });
 
             it('should not handle file drops and let them bubble up', () => {
@@ -2615,7 +2643,7 @@ describe('DotFolderListViewComponent', () => {
 
         describe('onDragEnd', () => {
             beforeEach(() => {
-                spectator.setInput('items', mockItems);
+                spectator.setInput('items', folderItems);
                 spectator.setInput('loading', false);
                 spectator.detectChanges();
             });
@@ -2627,7 +2655,7 @@ describe('DotFolderListViewComponent', () => {
                 // Set dragOverRowId first
                 row.dispatchEvent(dragOverEvent);
                 spectator.detectChanges();
-                expect(spectator.component.state.dragOverRowId()).toBe(firstItem.identifier);
+                expect(spectator.component.state.dragOverRowId()).toBe(firstFolder.identifier);
 
                 // End drag
                 spectator.dispatchFakeEvent(row, 'dragend');
@@ -2650,7 +2678,7 @@ describe('DotFolderListViewComponent', () => {
                 spectator.detectChanges();
 
                 expect(spectator.component.state.isDragging()).toBe(true);
-                expect(spectator.component.state.dragOverRowId()).toBe(firstItem.identifier);
+                expect(spectator.component.state.dragOverRowId()).toBe(firstFolder.identifier);
 
                 // End drag
                 spectator.dispatchFakeEvent(row, 'dragend');
@@ -2663,7 +2691,7 @@ describe('DotFolderListViewComponent', () => {
 
         describe('dragOverRowId state management', () => {
             beforeEach(() => {
-                spectator.setInput('items', mockItems);
+                spectator.setInput('items', folderItems);
                 spectator.setInput('loading', false);
                 spectator.detectChanges();
             });
@@ -2679,12 +2707,12 @@ describe('DotFolderListViewComponent', () => {
                 // Drag over first item
                 rows[0].dispatchEvent(dragOverEvent);
                 spectator.detectChanges();
-                expect(spectator.component.state.dragOverRowId()).toBe(firstItem.identifier);
+                expect(spectator.component.state.dragOverRowId()).toBe(firstFolder.identifier);
 
                 // Drag over second item
                 rows[1].dispatchEvent(dragOverEvent);
                 spectator.detectChanges();
-                expect(spectator.component.state.dragOverRowId()).toBe(secondItem.identifier);
+                expect(spectator.component.state.dragOverRowId()).toBe(secondFolder.identifier);
             });
 
             it('should reflect dragOverRowId state changes immediately', () => {
@@ -2698,7 +2726,7 @@ describe('DotFolderListViewComponent', () => {
                 row.dispatchEvent(dragOverEvent);
                 spectator.detectChanges();
 
-                expect(spectator.component.state.dragOverRowId()).toBe(firstItem.identifier);
+                expect(spectator.component.state.dragOverRowId()).toBe(firstFolder.identifier);
             });
         });
     });
@@ -3956,6 +3984,21 @@ describe('DotFolderListViewComponent', () => {
             spectator.detectChanges();
 
             expect(tabStopCount()).toBe(mockItems.length);
+        });
+    });
+
+    describe('rows (#37930)', () => {
+        // The Drive's grid has its own paginator, and a page size picked there has to show here too
+        // when the user switches back. Unbound, the table keeps today's 20.
+        it('should page by 20 when no rows are given', () => {
+            expect(spectator.component.dataTable()?.rows).toBe(20);
+        });
+
+        it('should page by the rows it is given', () => {
+            spectator.setInput('rows', 40);
+            spectator.detectChanges();
+
+            expect(spectator.component.dataTable()?.rows).toBe(40);
         });
     });
 });

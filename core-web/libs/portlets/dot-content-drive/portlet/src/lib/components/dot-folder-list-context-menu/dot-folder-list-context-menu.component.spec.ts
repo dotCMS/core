@@ -24,6 +24,7 @@ import {
     DotHttpErrorManagerService,
     DotMessageService,
     DotRenderMode,
+    DotRouterService,
     DotSiteService,
     DotSystemConfigService,
     DotWizardService,
@@ -138,6 +139,10 @@ describe('DotFolderListViewContextMenuComponent', () => {
         component: DotFolderListViewContextMenuComponent,
         componentProviders: [DotContentDriveStore, DialogService],
         providers: [
+            // The real store reads the hosting portlet once, to key the remembered view (#37930).
+            mockProvider(DotRouterService, {
+                currentPortlet: { id: 'content-drive', url: '', parentMenuId: '' }
+            }),
             mockProvider(DotContentDriveService, {
                 search: vi
                     .fn()

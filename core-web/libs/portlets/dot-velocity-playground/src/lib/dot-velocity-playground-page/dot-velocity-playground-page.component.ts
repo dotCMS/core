@@ -31,11 +31,13 @@ import { ComponentStatus } from '@dotcms/dotcms-models';
 import {
     DOT_MONACO_BASE_OPTIONS,
     DOT_MONACO_RAW_OPTIONS,
+    DOT_VELOCITY_LANGUAGE_ID,
     DotClipboardUtil,
     DotEmptyContainerComponent,
     DotMessagePipe,
     DotMonacoRunShortcutEditor,
     DotSpinnerComponent,
+    ensureDotVelocityLanguageRegistered,
     getDotMonacoRunShortcutLabel,
     PrincipalConfiguration,
     registerDotMonacoRunShortcut
@@ -52,10 +54,6 @@ import {
     getDownloadParams,
     VELOCITY_HELP_EXAMPLES
 } from '../dot-velocity-playground.utils';
-import {
-    ensureVelocityLanguageRegistered,
-    VELOCITY_LANGUAGE_ID
-} from '../monaco/register-velocity';
 
 @Component({
     selector: 'dot-velocity-playground-page',
@@ -105,7 +103,7 @@ export class DotVelocityPlaygroundPageComponent {
     // 3. Computed signals — $ prefix
     readonly $editorOptions = computed(() => ({
         ...DOT_MONACO_BASE_OPTIONS,
-        language: VELOCITY_LANGUAGE_ID,
+        language: DOT_VELOCITY_LANGUAGE_ID,
         wordWrap: this.store.wrapCode() ? ('on' as const) : ('off' as const)
     }));
 
@@ -189,7 +187,7 @@ export class DotVelocityPlaygroundPageComponent {
                 filter((isLoaded) => isLoaded),
                 take(1)
             )
-            .subscribe(() => ensureVelocityLanguageRegistered());
+            .subscribe(() => ensureDotVelocityLanguageRegistered());
     }
 
     // 6. Public methods
@@ -200,7 +198,7 @@ export class DotVelocityPlaygroundPageComponent {
      * @param editor the Monaco editor instance emitted by `ngx-monaco-editor`
      */
     onEditorInit(editor: DotMonacoRunShortcutEditor): void {
-        ensureVelocityLanguageRegistered();
+        ensureDotVelocityLanguageRegistered();
         registerDotMonacoRunShortcut(editor, () => this.onRun(), {
             label: this.#messageService.get('velocityPlayground.action.run')
         });

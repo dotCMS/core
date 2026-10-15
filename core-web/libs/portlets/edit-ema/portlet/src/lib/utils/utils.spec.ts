@@ -33,6 +33,7 @@ import {
     escapeHtmlAttributeValue,
     isSamePageNavigation,
     isAssetPath,
+    isNavigableHref,
     resolveClickedAnchor,
     scrollIframeToFragment
 } from '.';
@@ -1333,6 +1334,31 @@ describe('utils functions', () => {
             div.textContent = 'Not a link';
 
             expect(resolveClickedAnchor(div)).toBeNull();
+        });
+    });
+
+    describe('isNavigableHref', () => {
+        it('should return true for a relative path', () => {
+            expect(isNavigableHref('/some-page')).toBe(true);
+        });
+
+        it('should return true for an absolute URL', () => {
+            expect(isNavigableHref('https://example.com/page')).toBe(true);
+        });
+
+        it('should return false for a hash-only anchor', () => {
+            expect(isNavigableHref('#section')).toBe(false);
+        });
+
+        it('should return false for a javascript: href, regardless of whitespace or case', () => {
+            expect(isNavigableHref('javascript:void(0)')).toBe(false);
+            expect(isNavigableHref('  JavaScript:doStuff()')).toBe(false);
+        });
+
+        it('should return false for null, undefined or empty href', () => {
+            expect(isNavigableHref(null)).toBe(false);
+            expect(isNavigableHref(undefined)).toBe(false);
+            expect(isNavigableHref('')).toBe(false);
         });
     });
 
