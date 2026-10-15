@@ -38,7 +38,7 @@ import javax.annotation.Nullable;
  *                            {@code delete} for a removal that could not be applied
  * @param failedAttempts      how many times indexing the entry failed
  * @param priority            the raw journal priority, which encodes the attempts
- * @param lastFailureReason   the last failure recorded for the entry; {@code null} when none was
+ * @param failureReason       the last failure recorded for the entry; {@code null} when none was
  *                            recorded
  * @param violation           the document limit that was exceeded; {@code null} when the failure
  *                            was not a document-limit violation
@@ -73,29 +73,28 @@ public record FailedReindexRecordView(
         int priority,
         @Schema(description = "Last failure recorded for the entry, as stored by the reindex journal"
                 + " (truncated to 300 characters); null if no message was recorded", nullable = true)
-        @Nullable String lastFailureReason,
+        @Nullable String failureReason,
         @Schema(description = "The document limit that was exceeded; null if the failure was not a"
                 + " document-limit violation", nullable = true)
         @Nullable ViolationView violation) {
 
     /**
      * A document limit that the withheld version's index document exceeded (#37269). The limit
-     * in force is the root's {@code documentLimits} entry named by {@code limit}.
+     * in force, and its unit, is the root's {@code limits} entry named by {@code type}.
      *
-     * @param limit     which limit: {@code maxStringLength} (in characters) or
-     *                  {@code maxNestingDepth} (in levels)
+     * @param type      which limit: {@code maxStringLength} or {@code maxNestingDepth}
      * @param fieldPath the path of the offending field in the index document
-     * @param actual    the document's value: the field's length, or the depth reached
+     * @param actual    the document's value, in the unit of that limit
      */
     @Schema(description = "A document limit exceeded by the index document")
     public record ViolationView(
-            @Schema(description = "Which limit was exceeded: maxStringLength (characters) or"
-                    + " maxNestingDepth (levels), as in the root documentLimits",
+            @Schema(description = "Which limit was exceeded; names the root limits entry"
+                    + " that holds its value and unit",
                     allowableValues = {"maxStringLength", "maxNestingDepth"})
-            String limit,
+            String type,
             @Schema(description = "Path of the offending field in the index document", example = "catchall")
             String fieldPath,
-            @Schema(description = "The field's length in characters, or the nesting depth reached",
+            @Schema(description = "The document's value, in the unit of limits[type]",
                     example = "42000792")
             long actual) {
 

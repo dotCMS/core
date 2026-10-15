@@ -10,6 +10,7 @@ import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.common.reindex.ReindexEntry;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -37,9 +38,9 @@ public class FailedReindexRecordViewTest {
 
     private static final Set<String> RECORD_KEYS = new TreeSet<>(Set.of("identifier", "inode",
             "title", "contentTypeVariable", "languageId", "archived", "operation", "failedAttempts",
-            "priority", "lastFailureReason", "violation"));
+            "priority", "failureReason", "violation"));
 
-    private static final Set<String> VIOLATION_KEYS = new TreeSet<>(Set.of("limit", "fieldPath",
+    private static final Set<String> VIOLATION_KEYS = new TreeSet<>(Set.of("type", "fieldPath",
             "actual"));
 
     private static final ObjectMapper MAPPER = DotObjectMapperProvider.createDefaultMapper();
@@ -74,11 +75,11 @@ public class FailedReindexRecordViewTest {
         assertEquals("parked after its 6th failure: 5 counted errors + the final one",
                 6, node.get("failedAttempts").asInt());
         assertEquals(705, node.get("priority").asInt());
-        assertEquals(VIOLATION_REASON, node.get("lastFailureReason").asText());
+        assertEquals(VIOLATION_REASON, node.get("failureReason").asText());
 
         final JsonNode violation = node.get("violation");
         assertEquals(VIOLATION_KEYS, keys(violation));
-        assertEquals("maxStringLength", violation.get("limit").asText());
+        assertEquals("maxStringLength", violation.get("type").asText());
         assertEquals("catchall", violation.get("fieldPath").asText());
         assertEquals(42_000_792L, violation.get("actual").asLong());
 
@@ -193,7 +194,7 @@ public class FailedReindexRecordViewTest {
                 FailedReindexRecordView.from(row, display("Large 0"))));
 
         assertEquals(RECORD_KEYS, keys(node));
-        assertEquals(reason, node.get("lastFailureReason").asText());
+        assertEquals(reason, node.get("failureReason").asText());
         assertTrue("violation must be an explicit null", node.get("violation").isNull());
     }
 
@@ -218,7 +219,7 @@ public class FailedReindexRecordViewTest {
         assertTrue(node.get("title").isNull());
         assertTrue(node.get("contentTypeVariable").isNull());
         assertTrue(node.get("languageId").isNull());
-        assertTrue(node.get("lastFailureReason").isNull());
+        assertTrue(node.get("failureReason").isNull());
         assertTrue(node.get("violation").isNull());
     }
 
@@ -245,7 +246,7 @@ public class FailedReindexRecordViewTest {
         assertTrue(node.get("title").isNull());
         assertTrue(node.get("contentTypeVariable").isNull());
         assertTrue(node.get("languageId").isNull());
-        assertTrue(node.get("lastFailureReason").isNull());
+        assertTrue(node.get("failureReason").isNull());
         assertTrue(node.get("violation").isNull());
     }
 
@@ -262,7 +263,7 @@ public class FailedReindexRecordViewTest {
         final JsonNode node = MAPPER.readTree(MAPPER.writeValueAsString(
                 FailedReindexRecordView.from(row, null)));
 
-        assertTrue(node.get("lastFailureReason").isNull());
+        assertTrue(node.get("failureReason").isNull());
         assertTrue(node.get("violation").isNull());
     }
 
@@ -282,10 +283,13 @@ public class FailedReindexRecordViewTest {
         final JsonNode node = MAPPER.readTree(MAPPER.writeValueAsString(
                 FailedReindexRecordsView.of(List.of(first, second), 10, 3, 5)));
 
-        assertEquals(new TreeSet<>(Set.of("documentLimits", "retryPolicy", "failedRecordCount",
+        assertEquals(new TreeSet<>(Set.of("limits", "retryPolicy", "failedRecordCount",
                 "failedRecords")), keys(node));
-        assertEquals(10, node.get("documentLimits").get("maxStringLength").asInt());
-        assertEquals(3, node.get("documentLimits").get("maxNestingDepth").asInt());
+        final JsonNode limits = node.get("limits");
+        assertEquals(10, limits.get("maxStringLength").get("value").asInt());
+        assertEquals("chars", limits.get("maxStringLength").get("unit").asText());
+        assertEquals(3, limits.get("maxNestingDepth").get("value").asInt());
+        assertEquals("levels", limits.get("maxNestingDepth").get("unit").asText());
         assertEquals(5, node.get("retryPolicy").get("maxRetries").asInt());
         assertEquals(2, node.get("failedRecordCount").asInt());
         assertEquals(2, node.get("failedRecords").size());
@@ -296,6 +300,23 @@ public class FailedReindexRecordViewTest {
                 .priority(priority).build();
         return MAPPER.readTree(MAPPER.writeValueAsString(FailedReindexRecordView.from(row, null)))
                 .get("failedAttempts").asInt();
+    }
+
+    /**
+     * Given Scenario: The listing serialized by the REST object mapper, which sorts properties
+     * alphabetically by default.
+     * Expected Result: The root keys come in reading order: what the records are measured
+     * against first ({@code limits}, {@code retryPolicy}), then {@code failedRecordCount} and
+     * {@code failedRecords}.
+     */
+    @Test
+    public void test_listing_rootKeysInReadingOrder() throws Exception {
+        final JsonNode node = MAPPER.readTree(MAPPER.writeValueAsString(
+                FailedReindexRecordsView.of(List.of(), 10, 3, 5)));
+
+        final List<String> order = new ArrayList<>();
+        node.fieldNames().forEachRemaining(order::add);
+        assertEquals(List.of("limits", "retryPolicy", "failedRecordCount", "failedRecords"), order);
     }
 
     /** Display data of a default-language version with inode {@code inode-1}. */

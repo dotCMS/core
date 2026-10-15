@@ -28606,15 +28606,9 @@ components:
         engine
       properties:
         maxNestingDepth:
-          type: integer
-          format: int32
-          description: Maximum nesting of maps and lists
-          example: 1000
+          $ref: "#/components/schemas/Limit"
         maxStringLength:
-          type: integer
-          format: int32
-          description: Maximum characters of a single string value
-          example: 20000000
+          $ref: "#/components/schemas/Limit"
     DoesNotExistException:
       type: object
       properties:
@@ -29429,6 +29423,11 @@ components:
           format: int32
           description: How many times indexing the entry failed
           example: 6
+        failureReason:
+          type: string
+          description: "Last failure recorded for the entry, as stored by the reindex\
+            \ journal (truncated to 300 characters); null if no message was recorded"
+          nullable: true
         identifier:
           type: string
           description: Contentlet identifier
@@ -29444,11 +29443,6 @@ components:
           format: int64
           description: Language of that version; null if unknown
           example: 1
-          nullable: true
-        lastFailureReason:
-          type: string
-          description: "Last failure recorded for the entry, as stored by the reindex\
-            \ journal (truncated to 300 characters); null if no message was recorded"
           nullable: true
         operation:
           type: string
@@ -29472,8 +29466,6 @@ components:
       type: object
       description: Failed reindex records with the limits they are measured against
       properties:
-        documentLimits:
-          $ref: "#/components/schemas/DocumentLimits"
         failedRecordCount:
           type: integer
           format: int32
@@ -29483,6 +29475,8 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/FailedReindexRecordView"
+        limits:
+          $ref: "#/components/schemas/DocumentLimits"
         retryPolicy:
           $ref: "#/components/schemas/RetryPolicy"
     FailedResultView:
@@ -32427,6 +32421,21 @@ components:
       required:
       - text
       - title
+    Limit:
+      type: object
+      description: A limit and the unit it is measured in
+      properties:
+        unit:
+          type: string
+          description: Unit of the limit
+          enum:
+          - chars
+          - levels
+        value:
+          type: integer
+          format: int32
+          description: The limit
+          example: 20000000
     LineDividerField:
       type: object
       allOf:
@@ -42287,16 +42296,16 @@ components:
         actual:
           type: integer
           format: int64
-          description: "The field's length in characters, or the nesting depth reached"
+          description: "The document's value, in the unit of limits[type]"
           example: 42000792
         fieldPath:
           type: string
           description: Path of the offending field in the index document
           example: catchall
-        limit:
+        type:
           type: string
-          description: "Which limit was exceeded: maxStringLength (characters) or\
-            \ maxNestingDepth (levels), as in the root documentLimits"
+          description: Which limit was exceeded; names the root limits entry that
+            holds its value and unit
           enum:
           - maxStringLength
           - maxNestingDepth
