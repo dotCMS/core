@@ -72,20 +72,23 @@ CSV.
    none the user can read), **When** the toolbar renders, **Then** the Export button is disabled.
 3. **Given** nothing is selected and the listing is filtered to no content type or to more than one,
    **When** the toolbar renders, **Then** the Export button is not shown.
-4. **Given** the listing is filtered to one content type plus language, workflow, status, text or
+4. **Given** a filter-mode request names a content type that does not exist or that the user
+   cannot read, **When** it reaches the server, **Then** it is refused with the same bad-request
+   message in both cases, and no other content type is exported in its place.
+5. **Given** the listing is filtered to one content type plus language, workflow, status, text or
    Include System Host, **When** the user exports, **Then** the CSV holds exactly the contentlets
    the listing shows with those filters, across every page.
-5. **Given** the user is in All Site Content, **When** the user exports, **Then** matching
+6. **Given** the user is in All Site Content, **When** the user exports, **Then** matching
    contentlets from the whole site, at any depth, are exported, plus System Host content when the
    listing includes it.
-6. **Given** the user is inside a folder, **When** the user exports, **Then** only the matching
+7. **Given** the user is inside a folder, **When** the user exports, **Then** only the matching
    contentlets directly in that folder are exported, as the listing shows them and as Content
    Search's folder filter does.
-7. **Given** the user is in the site-root view or the System Host view, **When** the user exports,
+8. **Given** the user is in the site-root view or the System Host view, **When** the user exports,
    **Then** exactly the matching contentlets that view lists are exported.
-8. **Given** a filter-mode export, **When** it finishes, **Then** a single CSV (not a zip) named
+9. **Given** a filter-mode export, **When** it finishes, **Then** a single CSV (not a zip) named
    `<ContentType>_contents_<M_d_yyyy>.csv` downloads, and a toast reports the number of rows.
-9. **Given** an export is running, **When** the user looks at the Export button, **Then** it shows a
+10. **Given** an export is running, **When** the user looks at the Export button, **Then** it shows a
    loading state and cannot be clicked again until the export ends.
 
 ---
@@ -185,10 +188,17 @@ nor Z. Neither response gives a count of skipped items.
    **Then** no content from that subfolder or anything below it is exported.
 3. **Given** a contentlet the user can read lives in a folder the user cannot read, **When** the
    user selects it directly and exports, **Then** it is exported.
-4. **Given** the request names a folder the user cannot read, **When** it is submitted, **Then** it
-   is refused as forbidden and no file is produced.
-5. **Given** some items were skipped for permissions, **When** the export finishes, **Then** neither
+4. **Given** the request names a folder the user cannot read, or a folder that does not exist,
+   **When** it is submitted, **Then** both are refused with the same "not found" response, so a
+   limited user cannot tell whether the folder exists, and no file is produced.
+5. **Given** a hand-built request names a folder from a site other than the one being browsed, or
+   a contentlet that is neither in that site nor in System Host, **When** it is submitted, **Then**
+   it is refused with the same "not found" response.
+6. **Given** some items were skipped for permissions, **When** the export finishes, **Then** neither
    the file, the counts, nor the toast reveals how many were skipped.
+7. **Given** a contentlet stops being readable between the moment the export counts it and the
+   moment its row is written, **When** the export runs, **Then** that row is skipped, the export
+   still succeeds, and the reported row count matches the rows actually written.
 
 ---
 
@@ -282,8 +292,13 @@ file.
 - **60 items selected, one of them a large folder.** The 60-item limit counts what the user selected,
   not what is below it: a folder is one item. The 100,000-row limit still applies to what the
   selection expands to (FR-010).
+- **Published contentlet edited afterwards.** It has a live and a working version in the same
+  language. Only the working version is exported, so the file never holds two rows with the same
+  Identifier and language (FR-017a).
 - **Selected folder deleted between selection and export.** The path no longer resolves and the
-  request is rejected as invalid.
+  request is refused with the same "not found" response as an unreadable folder (FR-014).
+- **Permissions change while the export runs.** A contentlet that stops being readable after it was
+  counted is skipped, not turned into an error (FR-026a).
 - **Failure halfway through.** The user gets an error status, not a truncated file, and no temporary
   file stays on the server (FR-031, FR-032).
 
@@ -298,22 +313,32 @@ file.
   type. Any Drive view is accepted: All Site Content, the site root, a folder, or System Host.
 - **FR-002**: The system MUST export in **selection mode** when the request carries a selection: a
   list of site-qualified folder paths (`//site/path/`, the form Drive sends for bulk duplicate)
-  and/or a list of the selected contentlet versions, each naming one contentlet in one language.
+  and/or a list of the selected contentlet versions, each naming one contentlet in one language. The
+  request MUST also name the site being browsed in Drive.
+- **FR-002a**: Every selected folder MUST belong to the site being browsed, and every selected
+  contentlet MUST belong to that site or to System Host (which All Site Content can list). Any other
+  entry MUST be refused with the same "not found" response as an unreadable folder (FR-014).
 - **FR-003**: When a request carries both a selection and a listing query, the selection MUST win
   and the listing query MUST be ignored.
 - **FR-004**: A filter-mode request whose listing query names no content type or more than one MUST
   be refused as a bad request. Filter mode with several content types is not supported, so that the
-  Content Search behavior it mirrors is not changed.
+  Content Search behavior it mirrors is not changed. The check MUST be made on the content type as
+  resolved for the user, before any content is read: a content type that does not exist and one the
+  user cannot read MUST both be refused, with the same bad-request message. An unresolved type MUST
+  never fall through to a query with no content type restriction.
 - **FR-004a**: A selection MUST hold at most 60 items, counting folders and contentlets together. A
   folder counts as one item, whatever it contains. A request whose selection has more than 60
   entries MUST be refused as a bad request.
 
 **What gets exported**
 
-- **FR-005**: In filter mode, the export MUST hold exactly the contentlets the Drive listing returns
-  for the same location and filters, across every page and with no paging limit. This includes the
-  listing's location rules: All Site Content spans the whole site at any depth; a folder, the site
-  root and System Host give only the contentlets that view lists.
+- **FR-005**: In filter mode, the export MUST hold the complete set of readable contentlets that the
+  same query the Drive listing uses would return, with the listing's location rules: All Site
+  Content spans the whole site at any depth; a folder, the site root and System Host give only the
+  contentlets that view lists. The export MUST obtain that set through an operation that guarantees
+  it is complete. It MUST NOT depend on how the listing pages its results for the screen (page
+  sizes, cursors, scan budgets), so that a change to the listing's paging cannot silently drop
+  rows from an export.
 - **FR-006**: In selection mode, a selected folder MUST export the contentlets directly in it and in
   every subfolder at any depth, in every language version and including archived contentlets, each
   version as its own row. Folders MUST never be rows.
@@ -338,7 +363,9 @@ file.
 - **FR-012**: A contentlet the user cannot read MUST NOT be exported in either mode.
 - **FR-013**: In selection mode, content in a subfolder the user cannot read MUST NOT be exported, at
   any depth below that subfolder.
-- **FR-014**: A request naming a folder the user cannot read MUST be refused as forbidden.
+- **FR-014**: A request naming a folder the user cannot read, or a folder that does not exist, MUST
+  be refused with the same "not found" (404) response and message, so the response never reveals
+  whether a folder exists.
 - **FR-015**: The response MUST NOT reveal how many items were skipped for permissions. The row
   count given when refusing an export over the limit (FR-010) MUST count only rows the user can
   read.
@@ -351,6 +378,9 @@ file.
 - **FR-017**: Each contentlet version (inode) MUST appear at most once. This applies when a
   contentlet is selected and also inside a selected folder, when nested folders are both selected,
   and when the same version is sent twice.
+- **FR-017a**: Every row MUST be the working version of its contentlet in its language, in both
+  modes, as the Content Search export does. There MUST be at most one row per identifier and
+  language. A live version that differs from the working one MUST NOT be exported.
 - **FR-018**: The zip MUST hold exactly one CSV per content type found, with exactly one header row.
 - **FR-019**: Every CSV, alone or inside the zip, MUST be named
   `<ContentType>_contents_<M_d_yyyy>.csv`, the name the Content Search export uses, where
@@ -381,11 +411,15 @@ file.
 - **FR-026**: On success the system MUST return the file as a download, with headers giving the
   number of rows exported (`X-Export-Contentlets`), the number of CSV files (`X-Export-Files`) and
   the file's size (`Content-Length`), all matching the file.
+- **FR-026a**: A contentlet that was counted for the export but cannot be read when its row is
+  written (its permissions changed in between) MUST be skipped, not turned into an error. The
+  row count in `X-Export-Contentlets` and in the toast MUST be the number of rows actually written.
 - **FR-027**: When there is nothing the user can read to export, the system MUST return "no
   content" (204) and no file.
-- **FR-028**: An empty selection with no listing query, a malformed or unresolvable folder path, a
-  filter-mode query not naming exactly one content type, a selection of more than 60 entries, and an
-  export over 100,000 rows MUST return "bad request" (400) with a message the UI can show.
+- **FR-028**: An empty selection with no listing query, a malformed folder path, a filter-mode query
+  not naming exactly one readable content type, a selection of more than 60 entries, and an export
+  over 100,000 rows MUST return "bad request" (400) with a message the UI can show. A folder that
+  does not resolve is "not found" (404), as an unreadable one is (FR-014).
 - **FR-029**: When the export fails, the system MUST return a server error (500) with a JSON error
   body carrying a message the UI can show.
 - **FR-030**: The endpoint MUST be documented in the generated API documentation.
@@ -417,11 +451,11 @@ file.
 
 - **Listing query**: The Drive listing's location (All Site Content, site root, a folder, System
   Host) and filters, restricted to one content type.
-- **Export selection**: The folders (as site-qualified paths) and contentlet versions (each one
-  contentlet in one language) the user selected in Drive.
+- **Export selection**: The site being browsed, plus the folders (as site-qualified paths) and
+  contentlet versions (each one contentlet in one language) the user selected in Drive.
 - **Readable folder set**: In selection mode, the selected folders plus every subfolder the user can
   read, reached only through folders the user can read, without duplicates.
-- **Export row**: One version of one contentlet in one language, written once.
+- **Export row**: The working version of one contentlet in one language, written once.
 - **Content-type CSV**: All export rows of one content type, with one header row, named
   `<ContentType>_contents_<M_d_yyyy>.csv`.
 - **Export file**: A single content-type CSV (filter mode) or a zip of content-type CSVs (selection
@@ -454,12 +488,12 @@ file.
   (`EditContentletAction`, `cmd=export`, written by `downloadToExcel`). Its row formatting is moved
   into a reusable piece so Drive and Content Search write the same CSV (FR-020). Content Search
   itself keeps its filters, single-type limit, silent 100,000-row cut and websocket messages
-  (FR-023). Drive's toolbar gains the Export button. Filter mode reuses the Drive listing's own
-  search, so it exports what the listing shows rather than reimplementing its filters.
+  (FR-023). Drive's toolbar gains the Export button. Filter mode uses the same query as the Drive
+  listing, so it exports what the listing shows rather than reimplementing its filters, but reads it
+  through an operation that returns the complete set (FR-005).
 - **Backward-compatibility expectations**: The Content Search export's file name, columns, values
   and messages stay the same. The new endpoint is additive. No database schema or index mapping
-  changes. The Drive listing's search keeps its current behavior; filter mode only reads every page
-  of it.
+  changes. The Drive listing's search keeps its current behavior for the screen.
 - **Known related decisions**:
   - Feature parity with Content Search is the first goal; selection is additional (team decision,
     2026-10-14).
@@ -494,17 +528,23 @@ file.
   because it is parity. Selection mode (User Stories 2 and 3, and the selection cases of 4 and 5)
   follows. They can ship as separate implementation PRs against this one spec.
 - **Direction for the plan: resolve before writing, in both modes.** First, gather the distinct
-  contentlet versions the user can read, each with its content type: in filter mode by reading every
-  page of the listing, in selection mode by resolving the folders (recursively) and identifiers.
-  That gives the row count, so "nothing to export" (FR-027) and "over the limit" (FR-010) are
-  decided before any file is written. Then write one content type at a time, handing each type's
-  versions to the reused Content Search writer, which already works from a content type and a list
-  of versions. In selection mode this also avoids interleaving zip entries. The plan confirms or
-  changes this; the spec only fixes the outcomes.
-- **Reading every page of the listing is the main risk of filter mode.** The listing combines
-  database and index results behind cursors, in pages of 2,000. Reusing it guarantees filter mode
-  matches what the user sees; the plan must confirm it can be walked to the end (or past 100,000)
-  correctly.
+  contentlet versions the user can read, each with its content type: in filter mode from the
+  complete result of the listing's query (FR-005), in selection mode by resolving the folders
+  (recursively) and the selected versions. Keep this step light: only identifiers, languages and
+  content types, with permissions checked in batches (`permissionAPI.filterCollection`), and no
+  loading or formatting of contentlets. That gives the row count, so "nothing to export" (FR-027)
+  and "over the limit" (FR-010) are decided before any file is written. Then write one content type
+  at a time, handing each type's versions to the reused Content Search writer, which already works
+  from a content type and a list of versions. In selection mode this also avoids interleaving zip
+  entries. The plan confirms or changes this; the spec only fixes the outcomes.
+- **A complete listing result is the main risk of filter mode.** The listing's search is built to
+  serve the screen. Walking its pages to the end is not safe: past the database scan budget
+  (`BROWSER_DB_MAX_SCAN_ROWS`, 50,000 by default, compared against the absolute offset in
+  `BrowserAPIImpl.getContentByChunks`) nearly every page comes back short while still reporting more
+  results, so an exporter that stops on a short page would drop rows silently. The existing
+  fetch-everything path (`maxRows <= 0`) only covers searches without a text filter. The plan must
+  choose an operation that returns the complete set for the same query and hides the chunking, for
+  example a dedicated `BrowserAPI` method.
 - **Readable contentlet in an unreadable folder (FR-009) comes from reading the code, not from a
   reproduction.** A contentlet whose own permissions allow reading can show up in Drive's site-wide
   listing, so it can be selected, and what is selected is exported. This has not yet been
