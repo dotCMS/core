@@ -32,6 +32,7 @@ import java.nio.file.Paths;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.stream.Stream;
@@ -193,6 +194,19 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         return new ImmutableList.Builder<String>().addAll(groups.keySet()).build();
     }
 
+    /**
+     * Copies a file into the group's folder under the given path. With S3 asset storage enabled the
+     * copy is staged in a uniquely named sibling file and atomically moved into place. The staged
+     * file is created with an ordinary write, so it gets the process umask exactly like the
+     * flag-off path; a temp file would be owner-only and lock out group readers.
+     *
+     * @param groupName the group to write into
+     * @param path      the storage key inside the group
+     * @param file      the file to copy
+     * @param extraMeta unused by this implementation
+     * @return {@code true} once the file is stored
+     * @throws DotDataException if the copy fails
+     */
     @Override
     public Object pushFile(final String groupName,
             final String path,
@@ -216,7 +230,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
                 } else if (!file.getCanonicalFile().equals(destBucketFile.getCanonicalFile())) {
                     final Path destination = destBucketFile.toPath();
                     Files.createDirectories(destination.getParent());
-                    final Path staged = Files.createTempFile(destination.getParent(), ".restore-", ".tmp");
+                    final Path staged = destination.resolveSibling(".restore-" + UUID.randomUUID() + ".tmp");
                     try {
                         Files.copy(file.toPath(), staged, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
                         try {
@@ -243,6 +257,20 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         return true;
     }
 
+    /**
+     * Writes an object into the group's folder under the given path using the writer delegate. With
+     * S3 asset storage enabled the object is written to a uniquely named sibling file and atomically
+     * moved into place, always replacing what is there. The staged file is created with an ordinary
+     * output stream, so it gets the process umask exactly like the flag-off path.
+     *
+     * @param groupName      the group to write into
+     * @param path           the storage key inside the group
+     * @param writerDelegate writes the object to the stream
+     * @param object         the object to write
+     * @param extraMeta      unused by this implementation
+     * @return {@code true} once the object is stored
+     * @throws DotDataException if the write fails
+     */
     @Override
     public Object pushObject(final String groupName, final String path,
             final ObjectWriterDelegate writerDelegate,
@@ -267,7 +295,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
                             if (AssetStorageFeature.isEnabled()) {
                                 final Path destination = destBucketFile.toPath();
                                 Files.createDirectories(destination.getParent());
-                                final Path staged = Files.createTempFile(destination.getParent(), ".metadata-", ".tmp");
+                                final Path staged = destination.resolveSibling(".metadata-" + UUID.randomUUID() + ".tmp");
                                 try {
                                     try (OutputStream outputStream = FileUtil.createOutputStream(staged, contentMetadataCompressor.get())) {
                                         writerDelegate.write(outputStream, object);
