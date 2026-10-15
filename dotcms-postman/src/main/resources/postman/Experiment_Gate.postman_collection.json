@@ -356,14 +356,14 @@
       "name": "Analytics App Configuration Gate",
       "item": [
         {
-          "name": "POST /analytics/content/event — App not configured → 503 (skip if App configured)",
+          "name": "POST /analytics/content/event — App not configured → 503 (site_auth validated first)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
                   "// Only assert 503 when App is not configured.",
-                  "// If App is configured the gate passes and site_auth validation runs instead.",
+                  "// site_auth fires first; the App-config gate only applies to authenticated callers.",
                   "if (pm.response.code === 503) {",
                   "    pm.test(\"Status is 503 when Analytics App not configured\", function () {",
                   "        pm.response.to.have.status(503);",
@@ -397,7 +397,7 @@
               "host": ["{{serverURL}}"],
               "path": ["api", "v1", "analytics", "content", "event"]
             },
-            "description": "App-config gate fires before site_auth validation. No App secrets → 503 even with a valid site_auth token."
+            "description": "site_auth validation fires before the App-config gate. With a valid site_auth token and no App configured → 503."
           },
           "response": []
         },

@@ -1,7 +1,13 @@
 package com.dotcms.rest.api.v1.experiments;
 
+import com.dotcms.analytics.app.AnalyticsApp;
+import com.dotcms.analytics.helper.AnalyticsHelper;
 import com.dotcms.experiments.business.ConfigExperimentUtil;
 import com.dotcms.experiments.business.ExperimentFilter;
+import com.dotcms.experiments.business.ExperimentLimitedModeGate;
+import com.dotcms.http.CircuitBreakerUrl;
+import com.dotcms.jitsu.EventLogRunnable;
+import io.vavr.control.Try;
 import com.dotcms.rest.api.v1.analytics.content.util.ContentAnalyticsUtil;
 import com.dotcms.experiments.business.ExperimentsAPI;
 import com.dotcms.experiments.business.ExperimentsAPI.Health;
@@ -23,6 +29,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotcms.experiments.business.FreeSlotOccupiedException;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
@@ -72,10 +79,13 @@ public class ExperimentsResource {
     private static final String HEALTH_KEY = "health";
     private static final String FEATURE_DISABLED_CODE = "FEATURE_DISABLED";
     private static final String FEATURE_DISABLED_MSG =
-            "The Experiments feature is currently disabled. Please contact dotCMS to enable it.";
+            "This instance is running in limited mode. The free experiment slot is already in use or this operation requires a full license. Please contact dotCMS to upgrade.";
     private static final String ANALYTICS_NOT_CONFIGURED_CODE = "ANALYTICS_NOT_CONFIGURED";
     private static final String ANALYTICS_NOT_CONFIGURED_MSG =
             "Analytics is not configured for this site. Please configure the Analytics App to use this feature.";
+    private static final String SCHEDULED_START_NOT_ALLOWED_CODE = "SCHEDULED_START_NOT_ALLOWED";
+    private static final String SCHEDULED_START_NOT_ALLOWED_MSG =
+            "Scheduled (future-dated) starts are not allowed in limited mode. Remove the start date to start the experiment immediately.";
 
     public ExperimentsResource() {
         webResource =  new WebResource();
@@ -193,7 +203,7 @@ public class ExperimentsResource {
         final InitDataObject initData = getInitData(request, response);
         final User user = initData.getUser();
         if (!ConfigExperimentUtil.INSTANCE.isExperimentEnabled()) {
-            return featureDisabledResponse();
+            return limitedModeResponse();
         }
         final Experiment archivedExperiment = experimentsAPI.archive(experimentId, user);
         return Response.ok(
@@ -299,7 +309,7 @@ public class ExperimentsResource {
      * feature-gate checks when {@code FEATURE_FLAG_EXPERIMENTS=false} (limited mode):
      * <ul>
      *   <li>The Analytics App must be configured for the site ({@code 503} otherwise).
-     *   <li>Scheduling with a future {@code startDate} is not allowed ({@code 403 FEATURE_DISABLED}).
+     *   <li>Scheduling with a future {@code startDate} is not allowed ({@code 403 SCHEDULED_START_NOT_ALLOWED}).
      *   <li>The free experiment slot must be available ({@code 403 FEATURE_DISABLED} if occupied).
      *   <li>Duration is capped at {@link ExperimentLimitedModeGate#MAX_DAYS} days ({@code 400} if exceeded).
      *   <li>When no {@code endDate} is set, it is automatically set to
@@ -313,7 +323,9 @@ public class ExperimentsResource {
                             schema = @Schema(implementation = ResponseEntitySingleExperimentView.class))),
             @ApiResponse(responseCode = "400", description = "Duration exceeds the 10-day limited-mode cap",
                     content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "403", description = "Feature disabled (FEATURE_DISABLED) — flag=false and slot occupied or scheduled start",
+            @ApiResponse(responseCode = "403", description = "Limited-mode gate rejected the start. "
+                    + "errorCode FEATURE_DISABLED: flag=false and the free experiment slot is already occupied. "
+                    + "errorCode SCHEDULED_START_NOT_ALLOWED: flag=false and the experiment has a future startDate.",
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "503", description = "Analytics App not configured for this site (ANALYTICS_NOT_CONFIGURED)",
                     content = @Content(mediaType = "application/json"))
@@ -343,27 +355,38 @@ public class ExperimentsResource {
                     ExperimentLimitedModeGate.evaluate(experimentId, user);
             if (rejection.isPresent()) {
                 return switch (rejection.get()) {
-                    case FEATURE_DISABLED -> featureDisabledResponse();
+                    case FEATURE_DISABLED -> limitedModeResponse();
+                    case SCHEDULED_START_NOT_ALLOWED -> scheduledStartNotAllowedResponse();
                     case DURATION_EXCEEDED -> durationExceededResponse();
                 };
             }
         }
 
-        final Experiment startedExperiment = experimentsAPI.start(experimentId, user);
-        return Response.ok(new ResponseEntitySingleExperimentView(startedExperiment)).build();
+        try {
+            final Experiment startedExperiment = experimentsAPI.start(experimentId, user);
+            return Response.ok(new ResponseEntitySingleExperimentView(startedExperiment)).build();
+        } catch (final FreeSlotOccupiedException e) {
+            // Two concurrent starts raced past the pre-check gate and both reached
+            // experimentsAPI.start(). The loser throws FreeSlotOccupiedException after the
+            // advisory lock re-check. Return the same 403 the gate would have returned so
+            // the UI sees a consistent FEATURE_DISABLED response.
+            return limitedModeResponse();
+        }
     }
 
     /**
-     * Ends an already started {@link Experiment}. Gated on {@code FEATURE_FLAG_EXPERIMENTS}:
-     * when {@code false}, returns {@code 403 FEATURE_DISABLED}. App configuration has no effect
-     * on this endpoint because {@code _end} does not interact with the analytics backend.
+     * Ends an already started {@link Experiment}. Allowed in both full and limited mode:
+     * {@code ENDED} still counts as the free slot being used (see
+     * {@link com.dotcms.experiments.business.ExperimentsAPIImpl#isFreeSlotUsed}), so ending early
+     * does not open any loophole to start another free experiment. This lets users stop a running
+     * experiment early if something goes wrong (wrong page, bad variant, etc.) instead of waiting
+     * for the 10-day cap to expire. App configuration has no effect on this endpoint because
+     * {@code _end} does not interact with the analytics backend.
      */
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Experiment ended successfully",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntitySingleExperimentView.class))),
-            @ApiResponse(responseCode = "403", description = "Feature disabled (FEATURE_DISABLED) — flag=false",
-                    content = @Content(mediaType = "application/json"))
+                            schema = @Schema(implementation = ResponseEntitySingleExperimentView.class)))
     })
     @POST
     @Path("/{experimentId}/_end")
@@ -375,9 +398,6 @@ public class ExperimentsResource {
             @PathParam("experimentId") final String experimentId) throws DotDataException, DotSecurityException {
         final InitDataObject initData = getInitData(request, response);
         final User user = initData.getUser();
-        if (!ConfigExperimentUtil.INSTANCE.isExperimentEnabled()) {
-            return featureDisabledResponse();
-        }
         final Experiment endedExperiment = experimentsAPI.end(experimentId, user);
         return Response.ok(new ResponseEntitySingleExperimentView(endedExperiment)).build();
     }
@@ -405,7 +425,7 @@ public class ExperimentsResource {
         final InitDataObject initData = getInitData(request, response);
         final User user = initData.getUser();
         if (!ConfigExperimentUtil.INSTANCE.isExperimentEnabled()) {
-            return featureDisabledResponse();
+            return limitedModeResponse();
         }
         final Experiment cancelledExperiment = experimentsAPI.cancel(experimentId, user);
         return Response.ok(new ResponseEntitySingleExperimentView(cancelledExperiment)).build();
@@ -633,14 +653,17 @@ public class ExperimentsResource {
      *
      * <p>Returns an {@link ExperimentsHealthView} with:
      * <ul>
-     *   <li>{@code health} — evaluated by {@link ContentAnalyticsUtil#resolveAnalyticsHealth}.
-     *   <li>{@link ExperimentsHealthView.Tier} — {@code FULL} when {@code FEATURE_FLAG_EXPERIMENTS=true},
-     *       {@code LIMITED} when {@code false}. Reflects flag state only; App configuration
+     *   <li>{@code health} — when {@code FEATURE_FLAG_CAEM_EXPERIMENT_RESULTS=true}, evaluated by
+     *       {@link ContentAnalyticsUtil#resolveAnalyticsHealth} (CAEM / dotContentAnalytics-config
+     *       path). When {@code false}, evaluated via the legacy dotExperiments-config path.
+     *   <li>{@link ExperimentsHealthView.Tier} — {@code "full"} when {@code FEATURE_FLAG_EXPERIMENTS=true},
+     *       {@code "limited"} when {@code false}. Reflects flag state only; App configuration
      *       does not affect this field.
-     *   <li>{@code freeExperimentUsed} — present only when {@code tier=LIMITED}: {@code true}
+     *   <li>{@code freeExperimentUsed} — present (non-null) only when {@code tier="limited"}: {@code true}
      *       if any experiment is in {@code {RUNNING, SCHEDULED, ENDED}}.
-     *   <li>{@code warning} — {@code "analytics_disabled"} when the App is not configured;
-     *       absent otherwise.
+     *   <li>{@code warning} — {@code "analytics_disabled"} when the CAEM App is not configured for
+     *       this site; absent when configured or when {@code FEATURE_FLAG_CAEM_EXPERIMENT_RESULTS=false}
+     *       (warning is CAEM-specific and does not apply on the legacy path).
      * </ul>
      */
     @GET
@@ -658,13 +681,42 @@ public class ExperimentsResource {
         final boolean fullMode = ConfigExperimentUtil.INSTANCE.isExperimentEnabled();
         final ExperimentsHealthView.Tier tier =
                 fullMode ? ExperimentsHealthView.Tier.FULL : ExperimentsHealthView.Tier.LIMITED;
-        final Health health = ContentAnalyticsUtil.resolveAnalyticsHealth(host);
-        final boolean appConfigured = ContentAnalyticsUtil.isAppConfigured(host);
-        final ExperimentsHealthView.Warning warning =
-                appConfigured ? null : ExperimentsHealthView.Warning.ANALYTICS_DISABLED;
         final Boolean freeExperimentUsed = fullMode ? null : experimentsAPI.isFreeSlotUsed();
 
+        final Health health;
+        final ExperimentsHealthView.Warning warning;
+        if (ConfigExperimentUtil.INSTANCE.isCaemExperimentResultsEnabled()) {
+            health = ContentAnalyticsUtil.resolveAnalyticsHealth(host);
+            warning = ContentAnalyticsUtil.isAppConfigured(host)
+                    ? null : ExperimentsHealthView.Warning.ANALYTICS_DISABLED;
+        } else {
+            health = legacyAnalyticsHealth(host);
+            warning = null;
+        }
+
         return new ResponseEntityView<>(new ExperimentsHealthView(health, tier, freeExperimentUsed, warning));
+    }
+
+    /**
+     * Evaluates analytics health via the legacy dotExperiments-config path.
+     * Used when {@code FEATURE_FLAG_CAEM_EXPERIMENT_RESULTS=false}.
+     */
+    private Health legacyAnalyticsHealth(final Host host) {
+        final AnalyticsApp analyticsApp = Try.of(() -> AnalyticsHelper.get().appFromHost(host))
+                .getOrNull();
+        if (analyticsApp == null) {
+            return Health.NOT_CONFIGURED;
+        }
+        try {
+            final EventLogRunnable eventLogRunnable = new EventLogRunnable(host);
+            final Optional<CircuitBreakerUrl.Response<String>> responseOptional =
+                    eventLogRunnable.sendTestEvent();
+            return responseOptional.isPresent()
+                    && UtilMethods.isSet(responseOptional.get().getResponse())
+                    ? Health.OK : Health.CONFIGURATION_ERROR;
+        } catch (final IllegalStateException e) {
+            return Health.CONFIGURATION_ERROR;
+        }
     }
 
     private Experiment patchExperiment(final Experiment experimentToUpdate,
@@ -721,14 +773,27 @@ public class ExperimentsResource {
     }
 
     /**
-     * Builds a {@code 403 FEATURE_DISABLED} gate response used when {@code FEATURE_FLAG_EXPERIMENTS=false}
-     * prevents an operation.
+     * Builds a {@code 403 FEATURE_DISABLED} response used when the instance is running in limited
+     * mode ({@code FEATURE_FLAG_EXPERIMENTS=false}) and the free slot is occupied or the operation
+     * is not available in limited mode.
      */
-    private static Response featureDisabledResponse() {
+    private static Response limitedModeResponse() {
         return Response.status(Response.Status.FORBIDDEN)
                 .entity(new ResponseEntityView<>(
                         List.of(new com.dotcms.rest.ErrorEntity(
                                 FEATURE_DISABLED_CODE, FEATURE_DISABLED_MSG))))
+                .build();
+    }
+
+    /**
+     * Builds a {@code 403 SCHEDULED_START_NOT_ALLOWED} response used when a future-dated start
+     * is attempted in limited mode.
+     */
+    private static Response scheduledStartNotAllowedResponse() {
+        return Response.status(Response.Status.FORBIDDEN)
+                .entity(new ResponseEntityView<>(
+                        List.of(new com.dotcms.rest.ErrorEntity(
+                                SCHEDULED_START_NOT_ALLOWED_CODE, SCHEDULED_START_NOT_ALLOWED_MSG))))
                 .build();
     }
 

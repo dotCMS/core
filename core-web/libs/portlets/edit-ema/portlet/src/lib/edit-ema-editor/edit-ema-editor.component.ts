@@ -32,7 +32,6 @@ import { InputGroupModule } from 'primeng/inputgroup';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { PopoverModule } from 'primeng/popover';
 import { ProgressBarModule } from 'primeng/progressbar';
-import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TabsModule } from 'primeng/tabs';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
@@ -63,14 +62,14 @@ import {
 } from '@dotcms/dotcms-models';
 import {
     DotEditContentDialogComponent,
-    DotEditContentSidePanelComponent,
-    EditContentDialogData
+    EditContentDialogData,
+    loadDotEditContentSidePanel
 } from '@dotcms/edit-content';
 import { DotPaletteListStore, DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
 import { DotCMSPage, DotCMSURLContentMap, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
 import { StyleEditorFormSchema, __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
-import { DotCopyContentModalService, DotMessagePipe } from '@dotcms/ui';
+import { DotCopyContentModalService, DotMessagePipe, injectSidePanel } from '@dotcms/ui';
 import { WINDOW, isEqual } from '@dotcms/utils';
 import { getContentletsInContainer } from '@dotcms/uve/internal';
 
@@ -126,6 +125,7 @@ import {
     getTargetUrl,
     insertContentletInContainer,
     isAssetPath,
+    isNavigableHref,
     isSamePageNavigation,
     measureCanvasAvailableSize,
     resolveClickedAnchor,
@@ -182,9 +182,7 @@ const MESSAGE_KEY = {
         PopoverModule,
         TooltipModule,
         DotMessagePipe,
-        DotUveDeviceControlsComponent,
-        DotEditContentSidePanelComponent,
-        ProgressSpinnerModule
+        DotUveDeviceControlsComponent
     ],
     providers: [
         DotPaletteListStore,
@@ -307,7 +305,8 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
 
     /**
      * Drives the Edit Content side panel: the content to open (create/edit) or `null` when closed.
-     * Only used when {@link $sidePanelEnabled} is on; the template renders the panel while set.
+     * Only used when {@link $sidePanelEnabled} is on; the panel is open while it is set (see the
+     * constructor).
      */
     protected readonly $editContentPanel = signal<EditContentDialogData | null>(null);
 
@@ -602,6 +601,18 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         });
     });
 
+    constructor() {
+        // The Edit Content side panel, open while `$editContentPanel` is set. Post-save work runs
+        // through the request's `onContentSaved`/`onCancel` callbacks; closing clears the request.
+        // Loaded on its first open, so the editor stays out of this portlet's chunk.
+        injectSidePanel(this.$editContentPanel, {
+            component: loadDotEditContentSidePanel,
+            heading: (data) => data.title ?? '',
+            inputs: (data) => ({ data }),
+            closed: () => this.$editContentPanel.set(null)
+        });
+    }
+
     /**
      * Handle right sidebar tab changes
      */
@@ -809,12 +820,16 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         const anchor = resolveClickedAnchor(target);
         const rawHref = anchor?.getAttribute('href') ?? '';
 
-        // Same-page anchors (#section) are browser-handled scrolls. Bail
-        // before any URL parsing — for traditional VTL pages the iframe
-        // sits at about:blank, so anchor.href resolves to "about:blank#section",
-        // whose hostname is "" and would incorrectly trip the external-link
-        // branch below.
-        if (rawHref.startsWith('#')) {
+        // Same-page anchors (#section) are browser-handled scrolls, and
+        // `javascript:…` hrefs never navigate at all — both are a page's own
+        // link-shaped UI (toggles, accordions), not a link to follow. Bail
+        // before any URL parsing: for traditional VTL pages the iframe sits
+        // at about:blank, so anchor.href would resolve `#section` to
+        // "about:blank#section" (hostname "", incorrectly tripping the
+        // external-link branch below) and `javascript:…` to itself (hostname
+        // also "", same false trip — previously opened as an "external"
+        // link in a new tab, dotCMS/core#37961's second QA regression).
+        if (!isNavigableHref(rawHref)) {
             return;
         }
 

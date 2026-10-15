@@ -393,12 +393,13 @@ public class EventAnalyticsProxyResourceTest {
     /**
      * Method to test: {@link EventAnalyticsProxyResource#proxyEventRequest}
      * Given scenario: The Analytics App is NOT configured. The request body is missing
-     *   {@code site_auth}. The App check fires BEFORE {@code site_auth} parsing.
-     * Expected result: {@code 503 Service Unavailable} — not {@code 400 Bad Request}.
-     *   This test is RED until the App-config check is moved before {@code site_auth} validation.
+     *   {@code site_auth}. Gate 2 (body/site_auth validation) fires BEFORE Gate 3 (App-config
+     *   check), so an unauthenticated caller cannot probe whether analytics is configured for a
+     *   site by comparing response codes.
+     * Expected result: {@code 400 Bad Request} — Gate 2 fires first regardless of App config state.
      */
     @Test
-    public void proxyEventRequest_appNotConfigured_siteAuthMissing_returns503NotBadRequest() {
+    public void proxyEventRequest_appNotConfigured_siteAuthMissing_returns400() {
         final Host site = mock(Host.class);
         when(site.getIdentifier()).thenReturn("site-id");
 
@@ -406,7 +407,6 @@ public class EventAnalyticsProxyResourceTest {
         final HttpServletResponse response = mock(HttpServletResponse.class);
         final AsyncResponse asyncResponse = mock(AsyncResponse.class);
         final UriInfo uriInfo = mock(UriInfo.class);
-        // Body with no site_auth — currently causes 400; after gate added, causes 503
         final String bodyNoSiteAuth = "{\"context\":{},\"events\":[]}";
 
         try (MockedStatic<ContentAnalyticsUtil> contentAnalyticsUtilMock =
@@ -427,8 +427,9 @@ public class EventAnalyticsProxyResourceTest {
             final ArgumentCaptor<Object> resumed = ArgumentCaptor.forClass(Object.class);
             verify(asyncResponse).resume(resumed.capture());
             assertInstanceOf(Response.class, resumed.getValue());
-            assertEquals(503, ((Response) resumed.getValue()).getStatus(),
-                    "App not configured must return 503 regardless of site_auth presence");
+            assertEquals(400, ((Response) resumed.getValue()).getStatus(),
+                    "Missing site_auth must return 400 — Gate 2 fires before Gate 3 (App-config) "
+                            + "so unauthenticated callers cannot probe whether analytics is configured");
         }
     }
 

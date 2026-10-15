@@ -1,0 +1,54 @@
+@if (store.status() === ComponentStatus.ERROR) {
+    <div
+        class="flex flex-1 flex-col items-center justify-center gap-4 p-6"
+        data-testid="configuration-error">
+        <p-message severity="error" [text]="'configuration.load.error' | dm" />
+        <p-button
+            [outlined]="true"
+            severity="secondary"
+            [label]="'configuration.load.retry' | dm"
+            (onClick)="onRetry()"
+            data-testid="configuration-retry-btn" />
+    </div>
+} @else if (store.draft()) {
+    <div class="min-h-0 flex-1 overflow-y-auto" data-testid="configuration-page">
+        <div
+            class="mx-auto flex w-full max-w-content flex-col gap-6 p-6"
+            data-testid="configuration-sections">
+            <dot-configuration-branding
+                [isEnterprise]="isEnterprise"
+                (changeBackground)="onChangeBackground()"
+                (changeLoginLogo)="onChangeLoginLogo()"
+                (changeNavBarLogo)="onChangeNavBarLogo()" />
+            <dot-configuration-locale />
+            <dot-configuration-outbound (sendTestMail)="onSendTestMail($event)" />
+            <dot-configuration-security (regenerateKey)="onRegenerateKey()" />
+            <p-button
+                [link]="true"
+                styleClass="self-start p-0"
+                [label]="'configuration.license.link' | dm"
+                (onClick)="onOpenLicense()"
+                data-testid="configuration-license-link" />
+        </div>
+    </div>
+
+    <dot-configuration-action-bar
+        [saveState]="store.saveState()"
+        [failedSectionKey]="$failedSectionKey()"
+        [canSave]="store.canSave()"
+        [dirty]="store.dirty()"
+        (restoreDefaults)="onRestoreDefaults()"
+        (discard)="onCancel()"
+        (save)="onSave()"
+        data-testid="configuration-action-bar" />
+} @else {
+    <div
+        class="mx-auto flex w-full max-w-content flex-col gap-6 p-6"
+        data-testid="configuration-loading">
+        @for (section of skeletonSections; track section) {
+            <p-skeleton height="10rem" borderRadius="0.375rem" />
+        }
+    </div>
+}
+
+<p-confirmDialog [key]="confirmKey" [draggable]="false" [style]="{ width: '500px' }" />

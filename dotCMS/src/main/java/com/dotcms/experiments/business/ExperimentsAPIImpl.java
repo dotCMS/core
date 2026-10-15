@@ -45,7 +45,6 @@ import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.experiments.model.TargetingCondition;
 import com.dotcms.experiments.model.TrafficProportion;
 
-import com.dotcms.rest.api.v1.experiments.ExperimentLimitedModeGate;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotcms.util.CollectionsUtils;
@@ -523,10 +522,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
             throw new IllegalStateException(
                     "isFreeSlotUsed() must only be called in limited mode (FEATURE_FLAG_EXPERIMENTS=false)");
         }
-        final ExperimentFilter filter = ExperimentFilter.builder()
-                .statuses(Set.of(RUNNING, SCHEDULED, ENDED))
-                .build();
-        return !factory.list(filter).isEmpty();
+        return factory.countByStatuses(Set.of(RUNNING, SCHEDULED, ENDED)) > 0;
     }
 
     @Override
@@ -587,6 +583,18 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
                                 + "Overlapping with Experiment: "
                                 + runningExperiment.name(),
                         DotStateException.class);
+            }
+
+            // In limited mode, acquire the transaction-scoped advisory lock and re-check the
+            // free slot. The lock must be taken here — inside @WrapInTransaction — so it is held
+            // until the transaction commits, closing the TOCTOU gap between the pre-check in
+            // ExperimentLimitedModeGate and the actual save. Callers that only need a read
+            // (healthcheck, the gate pre-check) call isFreeSlotUsed() directly without the lock.
+            if (!ConfigExperimentUtil.INSTANCE.isExperimentEnabled()) {
+                factory.acquireFreeSlotLock();
+            }
+            if (!ConfigExperimentUtil.INSTANCE.isExperimentEnabled() && isFreeSlotUsed()) {
+                throw new FreeSlotOccupiedException();
             }
 
             Experiment toReturn;
@@ -1290,8 +1298,10 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
 
     @Override
     public boolean isAnyExperimentRunning(final Host host) throws DotDataException {
-        return ConfigExperimentUtil.INSTANCE.isExperimentEnabled() &&
-                !APILocator.getExperimentsAPI().getRunningExperiments(host).isEmpty();
+        // Do not gate on isExperimentEnabled() — limited-mode experiments are RUNNING in the DB
+        // and must be served to visitors exactly like full-mode experiments. The natural empty
+        // result from getRunningExperiments() acts as the short-circuit when none are running.
+        return !APILocator.getExperimentsAPI().getRunningExperiments(host).isEmpty();
     }
 
     /**
@@ -1731,7 +1741,10 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
                     .orElseThrow(() -> new IllegalStateException("Invalid Scheduling. Start date is missing"));
             DotPreconditions.checkState(startDate.isAfter(now), "Invalid Scheduling. Start date is in the past");
 
-            toReturn = scheduling.withEndDate(startDate.plus(defaultDuration.get(), ChronoUnit.DAYS));
+            final long durationDays = ConfigExperimentUtil.INSTANCE.isExperimentEnabled()
+                    ? defaultDuration.get()
+                    : ExperimentLimitedModeGate.MAX_DAYS;
+            toReturn = scheduling.withEndDate(startDate.plus(durationDays, ChronoUnit.DAYS));
         } else if (scheduling.startDate().isEmpty() && scheduling.endDate().isPresent()) {
             final Instant endDate = scheduling
                     .endDate()

@@ -38,6 +38,7 @@ import java.util.Locale;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -72,6 +73,15 @@ public class ExperimentsResourceIntegrationTest {
         resource = new ExperimentsResource();
         adminUser = TestUserUtils.getAdminUser();
         response = new MockHttpResponse();
+
+        // Tests call start() with multiple experiments; full mode is required since the
+        // flag now defaults to false (limited mode).
+        ConfigExperimentUtil.INSTANCE.setExperimentEnabled(true);
+    }
+
+    @AfterClass
+    public static void afterClass() {
+        ConfigExperimentUtil.INSTANCE.setExperimentEnabled(false);
     }
 
     // ---------------------------------------------------------------------------------------------

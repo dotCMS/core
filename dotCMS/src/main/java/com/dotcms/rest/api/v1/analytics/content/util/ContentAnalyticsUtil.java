@@ -272,7 +272,15 @@ public class ContentAnalyticsUtil {
      * @return {@code true} if the app is configured with usable credentials; {@code false} otherwise
      */
     public static boolean isAppConfigured(final Host host) {
-        final Map<String, Secret> secrets = getAppSecrets(host);
+        return hasUsableCredentials(getAppSecrets(host));
+    }
+
+    /**
+     * Returns {@code true} when both {@code siteAuth} and {@code bearerToken} are present and
+     * non-blank in the given secrets map. Single source of truth used by
+     * {@link #isAppConfigured(Host)} and {@link #resolveAnalyticsHealth(Host)}.
+     */
+    private static boolean hasUsableCredentials(final Map<String, Secret> secrets) {
         if (secrets.isEmpty()) {
             return false;
         }
@@ -307,11 +315,7 @@ public class ContentAnalyticsUtil {
         if (secrets.isEmpty()) {
             return ExperimentsAPI.Health.NOT_CONFIGURED;
         }
-        final Secret siteAuth = secrets.get(SITE_AUTH_KEY);
-        final Secret bearerToken = secrets.get(BEARER_TOKEN_KEY);
-        final boolean configured = siteAuth != null && UtilMethods.isSet(siteAuth.getString())
-                && bearerToken != null && UtilMethods.isSet(bearerToken.getString());
-        if (!configured) {
+        if (!hasUsableCredentials(secrets)) {
             return ExperimentsAPI.Health.CONFIGURATION_ERROR;
         }
         return EventAnalyticsProxyHelper.healthCheck()

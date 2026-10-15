@@ -1,4 +1,4 @@
-import { patchState } from '@ngrx/signals';
+import { patchState, WritableStateSource } from '@ngrx/signals';
 import {
     SpectatorRouting,
     byTestId,
@@ -60,7 +60,12 @@ import { DotPaletteListStore, DotResultsSeoToolComponent } from '@dotcms/portlet
 import { GlobalStore } from '@dotcms/store';
 import { DotCMSURLContentMap, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
-import { DotCopyContentModalService, SafeUrlPipe } from '@dotcms/ui';
+import {
+    DotCopyContentModalService,
+    DotSidePanelRef,
+    DotSidePanelService,
+    SafeUrlPipe
+} from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
 import {
     CONTENT_TYPE_MOCK_FOR_EDITOR,
@@ -110,7 +115,7 @@ import {
 import { ActionPayload, ContentletPayload, VTLFile } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
 import { WithPageApiMethods } from '../store/features/page-api/withPageApi';
-import { IframeAccessMode, PageType } from '../store/models';
+import { IframeAccessMode, PageType, UVEState } from '../store/models';
 
 global.URL.createObjectURL = vi.fn(
     () => 'blob:http://localhost:3000/12345678-1234-1234-1234-123456789012'
@@ -2651,6 +2656,56 @@ describe('EditEmaEditorComponent', () => {
                     );
                 });
 
+                it('opens the new editor in the side panel when its flag is on, and clears the request when the panel closes', () => {
+                    const dotContentTypeService =
+                        spectator.debugElement.injector.get(DotContentTypeService);
+                    vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                        of(
+                            createFakeContentType({
+                                variable: 'test',
+                                name: 'Test',
+                                metadata: {
+                                    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true
+                                }
+                            })
+                        )
+                    );
+                    const closed = new Subject<void>();
+                    const openSpy = vi
+                        .spyOn(spectator.inject(DotSidePanelService), 'open')
+                        .mockReturnValue({ closed } as unknown as DotSidePanelRef);
+                    // The store's type does not expose its state as writable signals.
+                    patchState(store as unknown as WritableStateSource<UVEState>, {
+                        flags: {
+                            ...store.flags(),
+                            [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: true
+                        }
+                    });
+
+                    store.setSelected({
+                        bounds: { x: 0, y: 0, width: 0, height: 0 },
+                        payload: EDIT_ACTION_PAYLOAD_MOCK
+                    });
+                    spectator.detectChanges();
+                    spectator.component['handleOpenFullEditor']();
+                    spectator.detectChanges();
+
+                    expect(openSpy).toHaveBeenCalledTimes(1);
+                    const [, config] = openSpy.mock.calls[0];
+                    expect((config.heading as () => string)()).toBe('Hello World');
+                    expect((config.inputs?.['data'] as () => unknown)()).toEqual(
+                        expect.objectContaining({
+                            mode: 'edit',
+                            contentletInode: 'contentlet-inode-123'
+                        })
+                    );
+
+                    closed.next();
+                    closed.complete();
+
+                    expect(spectator.component['$editContentPanel']()).toBeNull();
+                });
+
                 it('should fall back to legacy dialog when getContentType throws', () => {
                     const dotContentTypeService =
                         spectator.debugElement.injector.get(DotContentTypeService);
@@ -3717,6 +3772,24 @@ describe('EditEmaEditorComponent', () => {
 
                     expect(pageLoadSpy).not.toHaveBeenCalled();
                     expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+                });
+
+                it('should not do anything for a javascript:-href anchor', () => {
+                    // Regression test: a `javascript:…` href never navigates —
+                    // it's a page's own click handler invoked via the href
+                    // itself, not a link. `anchor.href` for such an anchor
+                    // resolves to the literal string back (hostname ""),
+                    // which — before this bailed early alongside the
+                    // hash-only case — wrongly tripped the external-link
+                    // branch below and tried to open it in a new tab.
+                    const mockEvent = createMockEvent('javascript:void(0)');
+
+                    spectator.component.handleInternalNav(mockEvent);
+
+                    expect(pageLoadSpy).not.toHaveBeenCalled();
+                    expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+                    expect(windowOpenSpy).not.toHaveBeenCalled();
+                    expect(openedLink.click).not.toHaveBeenCalled();
                 });
 
                 it('should open external URL in new tab', () => {

@@ -82,6 +82,10 @@ public interface ExperimentsAPI {
      * goes to the database rather than an in-memory cache because cluster nodes may start or end
      * experiments independently; only the DB provides a cluster-shared, authoritative answer.
      *
+     * <p>This method is a plain read — it does not acquire any advisory lock. Callers that need
+     * TOCTOU protection (i.e. {@code start()}) must acquire the lock themselves before calling
+     * this method inside a {@code @WrapInTransaction} context.
+     *
      * <p>This method is only called from inside the {@code flag=false} branch — it is never
      * invoked on the fully-enabled happy path, so its DB round-trip adds no cost to normal
      * operations.
@@ -217,13 +221,12 @@ public interface ExperimentsAPI {
             throws DotDataException, DotSecurityException;
 
     /**
-     * Return true if Any {@link Experiment} is running right now and Experiment are enabled.
-     * Otherwise return false.
+     * Returns {@code true} if any {@link Experiment} is currently in RUNNING state on the given
+     * {@link Host}, regardless of whether the {@code FEATURE_FLAG_EXPERIMENTS} flag is on or off.
+     * Limited-mode experiments must be served to visitors just like full-mode experiments.
      *
-     * @return
-     *
-     * @see ConfigExperimentUtil#isExperimentEnabled()
-     *
+     * @param host the site to check
+     * @return {@code true} if at least one experiment is RUNNING on the host
      */
     boolean isAnyExperimentRunning(final Host host) throws DotDataException;
 

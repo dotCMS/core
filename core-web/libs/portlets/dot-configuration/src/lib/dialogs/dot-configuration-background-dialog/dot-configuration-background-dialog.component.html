@@ -1,0 +1,83 @@
+<div
+    class="grid grid-cols-2 gap-3 sm:grid-cols-4"
+    role="group"
+    [attr.aria-label]="'configuration.background-dialog.gallery' | dm"
+    data-testid="configuration-background-gallery">
+    @for (tile of bundled; track tile.value) {
+        <button
+            type="button"
+            class="flex flex-col gap-1 rounded-md border-2 p-1 text-left"
+            [class.border-primary]="$selected() === tile.value"
+            [class.border-transparent]="$selected() !== tile.value"
+            [attr.aria-pressed]="$selected() === tile.value"
+            (click)="select(tile.value)"
+            data-testid="configuration-background-tile">
+            <img
+                class="h-20 w-full rounded-sm object-cover"
+                [src]="tile.thumbnail"
+                [alt]="tile.label" />
+            <span class="text-sm">{{ tile.label }}</span>
+        </button>
+    }
+
+    @if ($custom(); as custom) {
+        <button
+            type="button"
+            class="flex flex-col gap-1 rounded-md border-2 p-1 text-left"
+            [class.border-primary]="$selected() === custom"
+            [class.border-transparent]="$selected() !== custom"
+            [attr.aria-pressed]="$selected() === custom"
+            (click)="select(custom)"
+            data-testid="configuration-background-custom-tile">
+            <img
+                class="h-20 w-full rounded-sm object-cover"
+                [src]="custom"
+                [alt]="assetFileName(custom)" />
+            <span class="truncate text-sm">{{ assetFileName(custom) }}</span>
+        </button>
+    }
+
+    <button
+        type="button"
+        class="flex flex-col gap-1 rounded-md border-2 p-1 text-left"
+        [class.border-primary]="$selected() === ''"
+        [class.border-transparent]="$selected() !== ''"
+        [attr.aria-pressed]="$selected() === ''"
+        (click)="select('')"
+        data-testid="configuration-background-none-tile">
+        <span
+            class="flex h-20 w-full items-center justify-center rounded-sm border border-surface bg-surface-50">
+            <span class="material-symbols-outlined text-gray-500" aria-hidden="true">
+                hide_image
+            </span>
+        </span>
+        <span class="text-sm">{{ 'configuration.branding.background.none' | dm }}</span>
+    </button>
+</div>
+
+<div class="mt-6 flex items-center justify-between gap-2">
+    <p-fileupload
+        #fileUpload
+        mode="basic"
+        accept="image/*"
+        [auto]="false"
+        [customUpload]="true"
+        [chooseLabel]="'configuration.background-dialog.upload' | dm"
+        [disabled]="$uploading()"
+        (onSelect)="onFileSelect($event)"
+        data-testid="configuration-background-upload" />
+
+    <div class="flex gap-2">
+        <p-button
+            [outlined]="true"
+            severity="secondary"
+            [label]="'configuration.action-bar.cancel' | dm"
+            (onClick)="cancel()"
+            data-testid="configuration-background-cancel-btn" />
+        <p-button
+            [label]="'configuration.dialog.apply' | dm"
+            [loading]="$uploading()"
+            (onClick)="apply()"
+            data-testid="configuration-background-apply-btn" />
+    </div>
+</div>
