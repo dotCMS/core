@@ -12306,7 +12306,8 @@ paths:
           description: "Unauthorized: Invalid or missing user authentication."
         "403":
           description: "Forbidden: User lacks permission to enqueue jobs in the specified\
-            \ queue."
+            \ queue, or the queue has a dedicated endpoint (the message names it)\
+            \ and does not accept jobs through this one."
         "404":
           description: "Not Found: Queue with the specified name does not exist."
         "500":
@@ -12418,7 +12419,8 @@ paths:
           description: "Unauthorized: Invalid or missing user authentication."
         "403":
           description: "Forbidden: User lacks permission to enqueue jobs in the specified\
-            \ queue."
+            \ queue, or the queue has a dedicated endpoint (the message names it)\
+            \ and does not accept jobs through this one."
         "404":
           description: "Not Found: Queue with the specified name does not exist."
         "500":
