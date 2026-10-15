@@ -234,15 +234,19 @@ An editor exports content, edits a CSV, and imports it back to update the same c
 moves the CSV writer and changes one column (host/folder), and neither may break importing. It is
 checked as part of this ticket, without waiting for the Drive import ticket (#37896).
 
-**Independent Test**: Export a filter-mode CSV and a selection-mode zip. Import one CSV of each with
-Identifier as the key field and no language (multilingual file). The same contentlets are updated
-with no row errors.
+**Independent Test**: Export a filter-mode CSV and a selection-mode zip that together hold content in
+a folder, content at a site root and content in System Host. Import one CSV of each with Identifier
+as the key field and no language (multilingual file). The same contentlets are updated with no row
+errors, and each one is still on the same site and in the same folder.
 
 **Acceptance Scenarios**:
 
 1. **Given** a CSV from either mode, **When** it is imported back with Identifier as the key field
    and no language, **Then** the same contentlets are updated with no row errors.
-2. **Given** the same content exported by the Content Search export and by Drive, **When** the two
+2. **Given** a CSV holding a contentlet in a folder, one at a site root and one in System Host,
+   **When** it is imported back, **Then** each contentlet ends up on the same site and in the same
+   folder it was exported from. A missing row error is not enough: the location itself is checked.
+3. **Given** the same content exported by the Content Search export and by Drive, **When** the two
    CSVs are compared, **Then** the columns and values match, except for the host/folder column
    (FR-022).
 
@@ -293,6 +297,9 @@ file.
 - **60 items selected, one of them a large folder.** The 60-item limit counts what the user selected,
   not what is below it: a folder is one item. The 100,000-row limit still applies to what the
   selection expands to (FR-010).
+- **Content at a site root.** Its host/folder column is the bare hostname, not `//site/`. Written as
+  `//site/`, the import would resolve the path `/` to the system folder and silently move the
+  contentlet to System Host, with no row error (FR-022).
 - **Published contentlet edited afterwards.** It has a live and a working version in the same
   language. Only the working version is exported, so the file never holds two rows with the same
   Identifier and language (FR-017a).
@@ -382,8 +389,10 @@ file.
   contentlet is selected and also inside a selected folder, when nested folders are both selected,
   and when the same version is sent twice.
 - **FR-017a**: Every row MUST be the working version of its contentlet in its language, in both
-  modes, as the Content Search export does. There MUST be at most one row per identifier and
-  language. A live version that differs from the working one MUST NOT be exported.
+  modes, as the Content Search export does (its search adds `+working:true`,
+  `ContentletAjax.java:1049`). There MUST be at most one row per identifier and language. A live
+  version that differs from the working one MUST NOT be exported. This MUST be proven with a
+  contentlet that was published and then edited: the export holds one row with the edited values.
 - **FR-018**: The zip MUST hold exactly one CSV per content type found, with exactly one header row.
 - **FR-019**: Every CSV, alone or inside the zip, MUST be named
   `<ContentType>_contents_<M_d_yyyy>.csv`, the name the Content Search export uses, where
@@ -398,6 +407,17 @@ file.
   system messages. Today `downloadToExcel` pushes the "A total of N…" and error messages itself, so
   the extraction moves them to its caller: Content Search keeps sending them (FR-023), and Drive
   does not (FR-033).
+- **FR-020a**: The shared writer MUST change how `downloadToExcel` handles failures today, while
+  keeping its output:
+  - A failure of the whole file MUST propagate to the caller, not be caught and followed by a
+    success message. Drive turns it into a server error (FR-029); Content Search's caller keeps
+    catching it and pushing its messages (FR-023).
+  - A failure formatting one field MUST still leave that cell empty and continue, as today.
+  - A contentlet that can no longer be read when its row is written MUST be skipped, not abort the
+    export (FR-026a).
+  - It MUST write to an output it is given, not to the HTTP response, so the file is complete before
+    anything is sent (FR-031).
+  - It MUST report the number of rows it wrote, which is the count Drive returns (FR-026a).
 - **FR-021**: Each CSV's columns MUST be Identifier, languageCode, countryCode, then the content
   type's exportable fields in field order, the same columns the Content Search export writes for the
   same content type.
@@ -405,7 +425,18 @@ file.
   keys, tag names, related identifiers, key-value fields as JSON, a page's URL as its path, image
   paths, binary fields as a download URL, the legacy import/export date, datetime and time formats,
   and the legacy quoting and line-ending rules), with one change: the host/folder field MUST be
-  written as `//site/path/` instead of the raw identifier.
+  written as a readable location instead of the raw identifier, in the form the existing import
+  already resolves correctly for each case:
+  - content in a folder: `//site/path/`;
+  - content at a site root: the bare hostname, for example `demo.dotcms.com`;
+  - content in System Host: `SYSTEM_HOST`.
+
+  The column is deliberately not uniform, and MUST NOT be "normalized" to `//site/path/` for every
+  row. The import splits `//site/` into the site and the path `/`, and resolving `/` always gives
+  the system folder, whose host is System Host (`ImportUtil.getSiteAndFolderFromIdOrName`,
+  `FolderFactoryImpl.findFolderByPath`). Content at a site root written that way would be moved to
+  System Host on re-import, with no row error. A bare hostname is resolved by name, and
+  `SYSTEM_HOST` by identifier, with no folder lookup. This ticket does not change the import.
 - **FR-023**: The Content Search export MUST keep producing the same output it does today, including
   its file name, its 100,000-row cut and its messages.
 - **FR-024**: The relationship column MUST list every related identifier, without filtering by the
@@ -479,7 +510,8 @@ file.
 - **SC-003**: For the same content, 100% of columns and values in a Drive CSV match the Content
   Search export, except the host/folder column.
 - **SC-004**: A CSV from either mode, imported back with Identifier as key and no language, updates
-  the same contentlets with 0 row errors.
+  the same contentlets with 0 row errors, and 100% of them stay on the same site and in the same
+  folder, for content in a folder, at a site root and in System Host.
 - **SC-005**: With a limited user, 0 items the user cannot read appear in any export, across every
   permission scenario in User Story 4.
 - **SC-006**: In every export, each contentlet version appears exactly once and each content type
