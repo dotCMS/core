@@ -440,7 +440,9 @@ file.
 - **FR-023**: The Content Search export MUST keep producing the same output it does today, including
   its file name, its 100,000-row cut and its messages.
 - **FR-024**: The relationship column MUST list every related identifier, without filtering by the
-  user's permissions, as legacy does.
+  user's permissions, as legacy does. This is an explicit feature-parity decision, not inherited
+  behavior: filtering related identifiers by read permission changes the Content Search export too,
+  so it is handled in #38055, together with keeping hidden relationships on re-import.
 
 **Endpoint contract**
 
@@ -538,7 +540,11 @@ file.
   - The Export button sits in the toolbar, beside the workflow actions when there is a selection,
     not in the Action Center. This was decided in the team meeting.
   - The relationship column keeps legacy behavior and is not filtered by the user's permissions
-    (FR-024).
+    (FR-024). This was decided explicitly in the spec review, as feature parity: today's Content
+    Search export already writes every related identifier unchecked (`loadRelationships`, with
+    records from `getFieldValue`, which takes no user). Filtering by read permission, and keeping
+    relationships the importing user cannot read on re-import, is tracked in #38055, which builds on
+    the shared writer this ticket creates.
   - Content Search's folder filter and Drive's folder view both give only what sits directly in the
     folder (`conFolder`). The Drive listing never treats a named folder as recursive
     (`ContentDriveHelper.skipsFolderConstraint`), so filter mode in a folder matches Content Search
@@ -554,6 +560,8 @@ file.
   equivalent, because Drive always works inside one site.
 - **Recursive filter mode in a folder.** Content Search's folder filter is not recursive either.
   Selecting the folder exports everything below it.
+- **Filtering related identifiers by read permission** in the relationship column, and keeping
+  hidden relationships on re-import (#38055). This ticket keeps the legacy behavior (FR-024).
 - Import (separate ticket, #37896).
 - Background-job exports with a download link, for exports too large to hold in browser memory.
 - Exporting file contents. Binary fields export as a download URL, as in legacy, so a folder of
