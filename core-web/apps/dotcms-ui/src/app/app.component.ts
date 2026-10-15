@@ -9,12 +9,12 @@ import {
     DEFAULT_COLORS,
     DotLicenseService,
     DotMessageService,
+    DotNavLogoService,
     DotUiColorsService
 } from '@dotcms/data-access';
 import { ConfigParams, DotcmsConfigService, DotUiColors } from '@dotcms/dotcms-js';
 import { DotLicense } from '@dotcms/dotcms-models';
 
-import { DotNavLogoService } from './api/services/dot-nav-logo/dot-nav-logo.service';
 import { DotAlertConfirmComponent } from './view/components/_common/dot-alert-confirm/dot-alert-confirm';
 
 @Component({
