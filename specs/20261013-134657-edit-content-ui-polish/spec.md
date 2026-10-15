@@ -185,39 +185,34 @@ copy button that looks like every other icon-only button.
   (`+`) icons.
 - **AC-009**: Hover and focus still reveal the handle, it is still keyboard-reachable,
   drag-to-reorder still works, and a disabled field still shows no handle.
-- **AC-014**: The add (`+`) and remove (`×`) buttons show the `add` / `close` Material Symbols
+- **AC-010**: The add (`+`) and remove (`×`) buttons show the `add` / `close` Material Symbols
   at the default icon size, at the default (not small), rounded icon-only button size, and
   keep their `data-testid`.
-- **AC-015**: The empty-state folder is the `folder_open` Material Symbol.
+- **AC-011**: The empty-state folder is the `folder_open` Material Symbol.
 
 **4. Host / Folder copy button**
 
-- **AC-010**: The copy button uses the default icon-only `p-button` size (no `size="small"`).
-- **AC-011**: Its glyph renders at the default button icon size, with no per-instance size
+- **AC-012**: The copy button uses the default icon-only `p-button` size (no `size="small"`).
+- **AC-013**: Its glyph renders at the default button icon size, with no per-instance size
   override such as `text-lg`.
-- **AC-012**: The copied state (`check`) is the same size as `content_copy`.
-- **AC-013**: Tooltip, accessible name and disabled state behave as today.
+- **AC-014**: The copied state (`check`) is the same size as `content_copy`.
+- **AC-015**: Tooltip, accessible name and disabled state behave as today.
 
 **Regression**
 
-- **AC-020**: The `edit-content` unit tests pass.
-
-**Retired by the scope change (2026-10-15)**: AC-016, AC-017, AC-018, AC-019 and AC-021, which
-covered migrating every button icon in `libs/edit-content`, and the original AC-014 / AC-015
-(all `<p-button>` icons; the date picker trigger), whose IDs are reused above for the
-relationship table.
+- **AC-016**: The `edit-content` unit tests pass.
 
 **Verification method**:
 
-- Unit (Vitest + Spectator), written first and confirmed Red, per point: the drawer header
-  carries the divider classes; on `onShow` the popup wrapper's inline `min-width` is cleared
+- Unit (Vitest + Spectator), written first and confirmed Red, per point: the Edit Content panel
+  sets its content area's top border (`border-t border-surface-200`); on `onShow` the popup wrapper's inline `min-width` is cleared
   and the popup re-aligned; the drag handle renders one `drag_indicator` and still has
   `pReorderableRowHandle` / is absent when disabled; the add/remove buttons render `add` /
   `close`, not small, rounded; the empty state renders `folder_open`; the copy button has no
   `size="small"` and its glyph has no `text-lg`.
   Run: `pnpm nx test edit-content` (`-- <file>` while iterating).
 - Manual, in the browser against the local instance (widths, viewport placement and pixel
-  sizes can't be proven in jsdom): AC-001–AC-006, AC-008, AC-011/AC-012, AC-014, plus
+  sizes can't be proven in jsdom): AC-001–AC-006, AC-008, AC-010, AC-013/AC-014, plus
   drag-to-reorder and keyboard focus for AC-009. Compare with the four issue screenshots.
 
 ## Assumptions
