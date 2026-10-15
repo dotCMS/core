@@ -422,12 +422,18 @@ public class ContentImportHelper {
     }
 
     /**
-     * Processes the file upload and adds the file-related parameters to the job.
+     * Adds the CSV to the job's parameters: either the uploaded file, stored as a new temp file, or
+     * the temp file the caller names by id, such as the one its preview stored (#37896). A named
+     * temp file must exist and must have been uploaded by this same user. The temp file API on its
+     * own also accepts a matching session or browser fingerprint, which two users behind the same
+     * browser or proxy can share; matching the user only keeps one user from importing another
+     * user's CSV by its id.
      *
      * @param params        The content import parameters.
      * @param jobParameters The map of job parameters.
      * @param request       The HTTP request containing the uploaded file.
-     * @throws DotDataException If there is an error processing the file upload.
+     * @throws DotDataException    If there is an error processing the file upload.
+     * @throws ValidationException If the named temp file doesn't exist or can't be used (400).
      */
     private void processFileUpload(
             final ContentImportParams params,
@@ -435,14 +441,24 @@ public class ContentImportHelper {
             final HttpServletRequest request) throws DotDataException {
 
         try {
-            final DotTempFile tempFile = APILocator.getTempFileAPI().createTempFile(
-                    params.getContentDisposition().getFileName(),
-                    request,
-                    params.getFileInputStream()
-            );
+            final DotTempFile tempFile;
+            final String fileName;
+            if (UtilMethods.isSet(params.getTempFileId())) {
+                tempFile = APILocator.getTempFileAPI()
+                        .getTempFile(List.of(String.valueOf(jobParameters.get("userId"))),
+                                params.getTempFileId())
+                        .orElseThrow(() -> new ValidationException(
+                                "The temporary file doesn't exist or can't be used: "
+                                        + params.getTempFileId()));
+                fileName = tempFile.fileName;
+            } else {
+                fileName = params.getContentDisposition().getFileName();
+                tempFile = APILocator.getTempFileAPI().createTempFile(
+                        fileName, request, params.getFileInputStream());
+            }
             jobParameters.put("tempFileId", tempFile.id);
             // Lets Content Drive name a running import after a reload (#37896).
-            jobParameters.put("fileName", params.getContentDisposition().getFileName());
+            jobParameters.put("fileName", fileName);
             jobParameters.put("requestFingerPrint",
                     APILocator.getTempFileAPI().getRequestFingerprint(request));
         } catch (DotSecurityException e) {

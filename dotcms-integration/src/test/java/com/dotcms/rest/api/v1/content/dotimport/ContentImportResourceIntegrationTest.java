@@ -54,6 +54,7 @@ import com.liferay.portal.model.User;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.List;
 import javax.inject.Inject;
@@ -990,6 +991,88 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
 
         assertBadRequestResponse(importResource.previewContentImport(request, response,
                 createContentImportParams(csvFile, form)));
+    }
+
+    /**
+     * Given scenario: a preview runs, and the import is then started with the preview's
+     * {@code tempFileId} instead of uploading the CSV again.
+     * Expected result: the import job reads the very file that was previewed (same temp file id)
+     * and keeps its original name (#37896, FR-017; PR #38054 review).
+     */
+    @Test
+    @SuppressWarnings("unchecked")
+    void test_import_reuses_the_previewed_file() throws Exception {
+        final ContentImportForm form = createContentImportForm(contentType.name(),
+                String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID,
+                List.of(fieldId));
+        final JobView preview = ((ResponseEntityView<JobView>) importResource
+                .previewContentImport(request, response, createContentImportParams(csvFile, form))
+                .getEntity()).getEntity();
+        final String tempFileId = String.valueOf(preview.parameters().get("tempFileId"));
+
+        final ContentImportParams params = new ContentImportParams();
+        params.setJsonForm(mapper.writeValueAsString(form));
+        params.setTempFileId(tempFileId);
+        final Job job = jobOf(importResource.importContent(request, response, params));
+
+        assertEquals(tempFileId, job.parameters().get("tempFileId"));
+        assertEquals(csvFile.getName(), job.parameters().get("fileName"));
+    }
+
+    /**
+     * Given scenario: an import names a temp file id that doesn't exist.
+     * Expected result: 400, and no job is created.
+     */
+    @Test
+    void test_import_with_unknown_temp_file_is_refused() throws Exception {
+        final ContentImportParams params = new ContentImportParams();
+        params.setJsonForm(mapper.writeValueAsString(createContentImportForm(contentType.name(),
+                String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID,
+                List.of(fieldId))));
+        params.setTempFileId("temp_" + System.currentTimeMillis());
+
+        assertBadRequestResponse(importResource.importContent(request, response, params));
+    }
+
+    /**
+     * Given scenario: another backend user uploaded a temp file, and the admin's import names it.
+     * Expected result: 400. A temp file can only be used by whoever uploaded it, so one user can't
+     * import another user's CSV by its id.
+     */
+    @Test
+    void test_import_with_another_users_temp_file_is_refused() throws Exception {
+        final User otherUser = new UserDataGen().roles(TestUserUtils.getBackendRole())
+                .nextPersisted();
+        final HttpServletRequest otherRequest =
+                JobUtil.generateMockRequest(otherUser, defaultSite.getHostname());
+        final String othersTempFileId;
+        try (final InputStream csv = new FileInputStream(csvFile)) {
+            othersTempFileId = APILocator.getTempFileAPI()
+                    .createTempFile(csvFile.getName(), otherRequest, csv).id;
+        }
+
+        final ContentImportParams params = new ContentImportParams();
+        params.setJsonForm(mapper.writeValueAsString(createContentImportForm(contentType.name(),
+                String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID,
+                List.of(fieldId))));
+        params.setTempFileId(othersTempFileId);
+
+        assertBadRequestResponse(importResource.importContent(request, response, params));
+    }
+
+    /**
+     * Given scenario: an import sends both a CSV and a temp file id.
+     * Expected result: 400, since it is ambiguous which file should be imported.
+     */
+    @Test
+    void test_import_with_file_and_temp_file_is_refused() throws Exception {
+        final ContentImportParams params = createContentImportParams(csvFile,
+                createContentImportForm(contentType.name(),
+                        String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID,
+                        List.of(fieldId)));
+        params.setTempFileId("temp_" + System.currentTimeMillis());
+
+        assertBadRequestResponse(importResource.importContent(request, response, params));
     }
 
     /**
