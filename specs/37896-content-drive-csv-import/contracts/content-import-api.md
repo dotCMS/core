@@ -31,9 +31,15 @@ there is at least one placed row. Additive; existing clients ignore it.
 
 ## GET `/contenttypes` (new)
 
-- Query: none (the dialog filters client-side).
-- 200: `{entity: [{id, variable, name, baseType, icon}]}` — WRITE-permitted types, Host excluded,
-  sorted by name. Empty list when none.
+- Query: `filter` (optional; kept when the type's name or variable contains it, ignoring case),
+  `page` (default 1), `per_page` (default 40, as `/api/v1/contenttype`).
+- 200: `{entity: [{id, variable, name, baseType, icon}], pagination: {currentPage, perPage,
+  totalEntries}}` — one page of the WRITE-permitted types, Host excluded, sorted by name. The
+  permission rule and Host are applied before paging, so `totalEntries` counts matching types
+  exactly. Empty page when none.
+- 400: `page` or `per_page` below 1.
+- Consumer: the shared `dot-content-type` selector, through its optional `pageLoader` input
+  (UI review, 2026-10-14).
 
 ## GET `/_sample?contentType={idOrVar}` (new)
 

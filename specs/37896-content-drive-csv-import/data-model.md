@@ -53,7 +53,10 @@ Terminal for the Drive: `SUCCESS`, `FAILED`, `FAILED_PERMANENTLY`, `ABANDONED*`,
 
 ## ImportContentType (**new**, list item of `GET /_import/contenttypes`)
 
-`{ id, variable, name, baseType, icon }`, sorted by name; only WRITE-permitted; never Host.
+`{ id, variable, name, baseType, icon }`, sorted by name; only WRITE-permitted; never Host. Served
+a page at a time with `pagination` (see contracts/content-import-api.md). The Drive hands each page
+to the shared `dot-content-type` selector as `DotCMSContentType[]`: these are the only fields that
+selector reads.
 
 ## IMPORT_CONTENTLETS_COMPLETED event payload (**new**) — see contracts/import-completed-event.md
 
