@@ -24,7 +24,7 @@
         <ngx-monaco-editor
             class="min-h-0 flex-1 overflow-hidden rounded-md border border-surface"
             [ngModel]="$source()"
-            (ngModelChange)="$source.set($event)"
+            (ngModelChange)="onSourceChange($event)"
             [options]="$editorOptions()"
             (init)="onEditorInit($event)"
             data-testid="source-editor-monaco" />

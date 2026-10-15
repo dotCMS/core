@@ -1,8 +1,9 @@
 import { MonacoEditorLoaderService, MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
+import { patchState, signalState } from '@ngrx/signals';
 import { EMPTY } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, DestroyRef, computed, inject, input, output, signal } from '@angular/core';
+import { Component, DestroyRef, computed, inject, input, output } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
@@ -32,6 +33,24 @@ import { DotSourceEditorRequest } from '../../models/dot-source-editor.model';
 /** The minimal Monaco editor surface this panel uses. */
 interface DotSourceEditorInstance {
     focus(): void;
+}
+
+/** What the panel holds while it is open. */
+interface DotSourceEditorState {
+    /** Loading the file, showing it (`LOADED`), saving it, or failed to load it. */
+    status: ComponentStatus;
+    /** The source as it stands in the editor. */
+    source: string;
+    /** The source as it was last loaded or saved; the editor differs from it when dirty. */
+    savedSource: string;
+    /** The file's name, kept on save so the asset is not renamed. Known once the file loads. */
+    fileName: string;
+    /**
+     * Why the last save failed, shown beside the buttons when the shared HTTP handler cannot
+     * explain it: the server's reason, or an empty string when it gave none. `null` with nothing to
+     * report.
+     */
+    saveError: string | null;
 }
 
 /**
@@ -78,25 +97,20 @@ export class DotSourceEditorSidePanelComponent implements DotSidePanelContent {
     /** A save landed: the opener refreshes its view. The panel closes straight after. */
     readonly saved = output<void>();
 
-    protected readonly $status = signal<ComponentStatus>(ComponentStatus.LOADING);
+    readonly #state = signalState<DotSourceEditorState>({
+        status: ComponentStatus.LOADING,
+        source: '',
+        savedSource: '',
+        fileName: '',
+        saveError: null
+    });
 
-    /**
-     * Why the last save failed, shown above the buttons when the shared HTTP handler cannot explain
-     * it: the server's reason, or an empty string when it gave none. `null` with nothing to report.
-     */
-    protected readonly $saveError = signal<string | null>(null);
-
-    /** The source as it stands in the editor. */
-    protected readonly $source = signal('');
-
-    /** The source as it was last loaded or saved; the editor differs from it when dirty. */
-    readonly #savedSource = signal('');
-
-    /** The file's name, kept on save so the asset is not renamed. Known once the file loads. */
-    #fileName = '';
+    protected readonly $status = this.#state.status;
+    protected readonly $source = this.#state.source;
+    protected readonly $saveError = this.#state.saveError;
 
     /** Whether the editor holds changes that have not been saved. */
-    protected readonly $dirty = computed(() => this.$source() !== this.#savedSource());
+    protected readonly $dirty = computed(() => this.#state.source() !== this.#state.savedSource());
 
     /** Whether Save would do anything: a loaded file, with changes, and no save already running. */
     protected readonly $canSave = computed(
@@ -135,12 +149,12 @@ export class DotSourceEditorSidePanelComponent implements DotSidePanelContent {
         toObservable(this.request)
             .pipe(
                 filter((request): request is DotSourceEditorRequest => !!request),
-                tap(() => this.$status.set(ComponentStatus.LOADING)),
+                tap(() => patchState(this.#state, { status: ComponentStatus.LOADING })),
                 switchMap(({ inode }) =>
                     this.#sourceEditor.load(inode).pipe(
                         catchError((error: unknown) => {
                             this.#reportServerError(error);
-                            this.$status.set(ComponentStatus.ERROR);
+                            patchState(this.#state, { status: ComponentStatus.ERROR });
 
                             return EMPTY;
                         })
@@ -148,12 +162,14 @@ export class DotSourceEditorSidePanelComponent implements DotSidePanelContent {
                 ),
                 takeUntilDestroyed()
             )
-            .subscribe(({ fileName, source }) => {
-                this.#fileName = fileName;
-                this.#savedSource.set(source);
-                this.$source.set(source);
-                this.$status.set(ComponentStatus.LOADED);
-            });
+            .subscribe(({ fileName, source }) =>
+                patchState(this.#state, {
+                    fileName,
+                    source,
+                    savedSource: source,
+                    status: ComponentStatus.LOADED
+                })
+            );
     }
 
     /**
@@ -161,7 +177,7 @@ export class DotSourceEditorSidePanelComponent implements DotSidePanelContent {
      * while a save runs.
      *
      * On failure the panel stays open with the edits. A server error goes through the shared
-     * handler; any other failure, such as a file the server refused to stage, shows above the
+     * handler; any other failure, such as a file the server refused to stage, shows beside the
      * buttons.
      */
     save(): void {
@@ -171,37 +187,40 @@ export class DotSourceEditorSidePanelComponent implements DotSidePanelContent {
             return;
         }
 
-        const source = this.$source();
+        const { source, fileName } = this.#state();
 
-        this.$saveError.set(null);
-        this.$status.set(ComponentStatus.SAVING);
+        patchState(this.#state, { saveError: null, status: ComponentStatus.SAVING });
 
         this.#sourceEditor
-            .save({
-                inode: request.inode,
-                fileName: this.#fileName,
-                source
-            })
+            .save({ inode: request.inode, fileName, source })
             .pipe(takeUntilDestroyed(this.#destroyRef))
             .subscribe({
                 next: () => {
-                    this.#savedSource.set(source);
-                    this.$status.set(ComponentStatus.LOADED);
+                    patchState(this.#state, {
+                        savedSource: source,
+                        status: ComponentStatus.LOADED
+                    });
                     this.saved.emit();
                     // Nothing is left unsaved, so no prompt: straight out.
                     this.#panel.close();
                 },
                 error: (error: unknown) => {
-                    this.$status.set(ComponentStatus.LOADED);
                     this.#reportServerError(error);
-
-                    if (!(error instanceof HttpErrorResponse)) {
-                        this.$saveError.set(
-                            error instanceof DotSourceEditorUploadError ? (error.reason ?? '') : ''
-                        );
-                    }
+                    patchState(this.#state, {
+                        status: ComponentStatus.LOADED,
+                        saveError: this.#saveErrorOf(error)
+                    });
                 }
             });
+    }
+
+    /**
+     * Keeps the state in step with what is typed in the editor.
+     *
+     * @param source the editor's content
+     */
+    protected onSourceChange(source: string): void {
+        patchState(this.#state, { source });
     }
 
     /**
@@ -246,6 +265,20 @@ export class DotSourceEditorSidePanelComponent implements DotSidePanelContent {
      */
     protected onEditorInit(editor: DotSourceEditorInstance): void {
         editor.focus();
+    }
+
+    /**
+     * What a failed save shows beside the buttons: nothing for a server error, which the shared
+     * handler explains, otherwise the server's reason, or an empty string when it gave none.
+     *
+     * @param error what the save failed with
+     */
+    #saveErrorOf(error: unknown): string | null {
+        if (error instanceof HttpErrorResponse) {
+            return null;
+        }
+
+        return error instanceof DotSourceEditorUploadError ? (error.reason ?? '') : '';
     }
 
     /**
