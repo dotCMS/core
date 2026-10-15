@@ -117,6 +117,11 @@ export class DotEditContentSidePanelComponent implements DotSidePanelContent, On
     });
 
     constructor() {
+        // No padding, so the editor's own layout reaches the drawer's edges; a top border, so a
+        // full-width divider separates the panel's header from the editor's tabs and command bar,
+        // in the colour of the tab list's own bottom border.
+        this.#panel.contentStyleClass.set('p-0! border-t border-surface-200');
+
         // Give the editor a clean form-bridge slot; restore the previous one on close.
         pushFormBridge();
 
