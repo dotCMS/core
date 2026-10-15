@@ -123,7 +123,8 @@ describe('DotPublishingStatusChipComponent', () => {
     });
 
     it('renders an unsent bundle as "New" with a primary tint instead of a severity', () => {
-        spectator = createComponent({ props: { status: NEW_BUNDLE_STATUS } });
+        spectator = createComponent();
+        spectator.setInput('status', NEW_BUNDLE_STATUS);
         spectator.detectChanges();
         const chip = spectator.query(byTestId('pq-status-chip'));
         expect(chip).toHaveText('New');

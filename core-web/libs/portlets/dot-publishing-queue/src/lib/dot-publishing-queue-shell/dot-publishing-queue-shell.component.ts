@@ -163,23 +163,28 @@ export class DotPublishingQueueShellComponent {
                 bundleName: row?.bundleName ?? bundleId
             };
 
-            this.#setupRef = this.#dialogService.open(
-                DotPublishingQueueSetupBundleDialogComponent,
-                {
-                    // Header is rendered inside the dialog body so its title can
-                    // swap between the bundle name, "Configure & Send" and
-                    // "Download" as the user moves through the steps.
-                    showHeader: false,
-                    width: 'min(95vw, 900px)',
-                    contentStyle: { height: '70vh', padding: '0' },
-                    closable: true,
-                    closeOnEscape: true,
-                    draggable: false,
-                    position: 'center',
-                    data
-                }
-            );
-            this.#setupRef.onClose.pipe(take(1)).subscribe(() => {
+            const ref = this.#dialogService.open(DotPublishingQueueSetupBundleDialogComponent, {
+                // Header is rendered inside the dialog body so its title can
+                // swap between the bundle name, "Configure & Send" and
+                // "Download" as the user moves through the steps.
+                showHeader: false,
+                width: 'min(95vw, 900px)',
+                contentStyle: { height: '70vh', padding: '0' },
+                closable: true,
+                closeOnEscape: true,
+                draggable: false,
+                position: 'center',
+                data
+            });
+            // `open` returns null when the dialog can't be created; clear the
+            // store so the same bundle can be set up again.
+            if (!ref) {
+                this.#store.closeSetup();
+                return;
+            }
+
+            this.#setupRef = ref;
+            ref.onClose.pipe(take(1)).subscribe(() => {
                 this.#setupRef = null;
                 this.#store.closeSetup();
                 // Sending, removing or editing the bundle inside the dialog moves
