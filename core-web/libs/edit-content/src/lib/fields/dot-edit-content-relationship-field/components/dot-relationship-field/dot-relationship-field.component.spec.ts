@@ -291,6 +291,16 @@ describe('DotRelationshipFieldComponent', () => {
             })
         );
 
+        /** The table's icons are Material Symbols (#37958). */
+        it('should draw the empty-state folder as a Material Symbol', () => {
+            const emptyState = spectator.query(byTestId('relationship-field-empty'));
+            const glyph = emptyState?.querySelector('.material-symbols-outlined');
+
+            expect(emptyState?.querySelector('.pi')).toBeNull();
+            expect(glyph).toHaveText('folder_open');
+            expect(glyph).toHaveAttribute('aria-hidden', 'true');
+        });
+
         it('should render the empty-state message and relate link', () => {
             const emptyState = spectator.query(byTestId('relationship-field-empty'));
             expect(emptyState).toBeTruthy();
@@ -983,6 +993,57 @@ describe('DotRelationshipFieldComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('relationship-drag-handle'))).toBeNull();
+        });
+    });
+
+    /**
+     * The handle is a single `drag_indicator` glyph, sized like the row's other icons, instead of
+     * two overlapping `pi-ellipsis-v` glyphs that read larger than the add and remove icons
+     * (#37958). The drag and keyboard hooks on the wrapper must survive the swap.
+     */
+    describe('the drag handle glyph', () => {
+        it('shows one drag_indicator Material Symbol and no PrimeIcons', () => {
+            setup();
+
+            const handle = spectator.query(byTestId('relationship-drag-handle'));
+            const glyphs = handle?.querySelectorAll('.material-symbols-outlined');
+
+            expect(glyphs).toHaveLength(1);
+            expect(glyphs?.[0]).toHaveText('drag_indicator');
+            expect(glyphs?.[0]).toHaveAttribute('aria-hidden', 'true');
+            expect(handle?.querySelector('.pi')).toBeNull();
+        });
+
+        /**
+         * The add and remove buttons it is measured against: Material Symbols at the default size,
+         * like the handle, so all three glyphs match (#37958). Rounded, like the editor's other
+         * icon-only buttons — only a rounded icon-only button is as tall as it is wide.
+         */
+        it.each([
+            ['relationship-add-button', 'add'],
+            ['relationship-delete-button', 'close']
+        ])('draws %s with the %s Material Symbol at the default size', (testId, symbol) => {
+            setup();
+
+            const host = spectator.query(byTestId(testId));
+            const glyph = host?.querySelector('.material-symbols-outlined');
+
+            expect(host).toBeTruthy();
+            expect(host?.hasAttribute('icon')).toBe(false);
+            expect(host?.querySelector('.pi')).toBeNull();
+            expect(glyph).toHaveText(symbol);
+            expect(glyph).toHaveAttribute('aria-hidden', 'true');
+            expect(host?.querySelector('button')).not.toHaveClass('p-button-sm');
+            expect(host?.querySelector('button')).toHaveClass('p-button-rounded');
+        });
+
+        it('keeps the reorder hook and keyboard focus on the handle', () => {
+            setup();
+
+            const handle = spectator.query(byTestId('relationship-drag-handle'));
+
+            expect(handle).toHaveAttribute('preorderablerowhandle');
+            expect(handle).toHaveAttribute('tabindex', '0');
         });
     });
 
