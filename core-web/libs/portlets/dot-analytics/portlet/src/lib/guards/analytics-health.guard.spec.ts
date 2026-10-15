@@ -103,7 +103,7 @@ describe('analyticsHealthGuard', () => {
                 const result = analyticsHealthGuard(mockRouteSnapshot, mockStateSnapshot);
 
                 if (result && typeof result === 'object' && 'subscribe' in result) {
-                    result.subscribe((canActivate) => {
+                    result.subscribe((_canActivate) => {
                         expect(mockRouter.createUrlTree).toHaveBeenCalledWith(
                             ['/analytics/error'],
                             {

@@ -1,8 +1,8 @@
 import { type } from '@ngrx/signals';
 import { eventGroup } from '@ngrx/signals/events';
 
-import { DotExperiment } from '@dotcms/dotcms-models';
 import { ExperimentsHealthResponse } from '@dotcms/data-access';
+import { DotExperiment } from '@dotcms/dotcms-models';
 
 import { DotExperimentPageInfo } from '../shared/models';
 
