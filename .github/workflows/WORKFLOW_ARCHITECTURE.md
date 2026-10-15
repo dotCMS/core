@@ -792,7 +792,7 @@ run without a pull request. Keep each default in the code equal to the variable'
 
 | Variable | Value | Runner | Used by |
 |---|---|---|---|
-| `UBUNTU_RUNNER_VERSION` | `24.04` | `ubuntu-24.04` | Ubuntu jobs, including the `runner` input passed to the AI workflows (only `legacy-release_sbom-generator.yaml` still pins `ubuntu-24.04`) |
+| `UBUNTU_RUNNER_VERSION` | `24.04` | `ubuntu-24.04` | Ubuntu jobs, including the `runner` input passed to the AI workflows (a few workflows still hardcode the label and are being migrated) |
 | `MACOS_SILICON_RUNNER_VERSION` | `15` | `macos-15` (arm64) | CLI native build |
 | `MACOS_INTEL_RUNNER_VERSION` | `15-intel` | `macos-15-intel` | CLI native build (GitHub ends hosted Intel macOS runners in fall 2027) |
 | `MACOS_RUNNER_VERSION` | `15` | `macos-15` | Publish Starter |

@@ -353,7 +353,7 @@ jobs:
       claude_args: >-
         --allowedTools "Bash(gh pr diff*),Bash(gh issue view*),Bash(gh issue comment*)"
       timeout_minutes: 20
-      runner: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+      runner: ubuntu-latest
       enable_mention_detection: false
     secrets:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
