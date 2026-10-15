@@ -30,6 +30,7 @@ import com.dotcms.rest.api.v1.asset.bulkupload.BulkUploadResourceIT;
 import com.dotcms.rest.api.v1.asset.bulkupload.BulkUploadSecurityIT;
 import com.dotcms.rest.api.v1.content.bulkrefresh.BulkRefreshResourceIntegrationTest;
 import com.dotcms.rest.api.v1.content.dotimport.ContentImportResourceIntegrationTest;
+import com.dotcms.rest.api.v1.job.JobQueueDomainQueuesBypassIntegrationTest;
 import com.dotcms.rest.api.v1.job.JobQueueHelperIntegrationTest;
 import com.dotmarketing.portlets.folders.business.FolderDeleteKeepsFilesOnRollbackIT;
 import org.junit.platform.suite.api.SelectClasses;
@@ -52,6 +53,7 @@ import org.junit.platform.suite.api.Suite;
         JobQueueManagerAPICDITest.class,
         PostgresJobQueueIntegrationTest.class,
         JobQueueManagerAPIIntegrationTest.class,
+        JobQueueDomainQueuesBypassIntegrationTest.class,
         JobQueueHelperIntegrationTest.class,
         ImportContentletsProcessorIntegrationTest.class,
         ContentImportResourceIntegrationTest.class,

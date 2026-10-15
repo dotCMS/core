@@ -5,7 +5,6 @@ import {
     Spectator,
     SpyObject
 } from '@openng/spectator/vitest';
-import { MockComponent } from 'ng-mocks';
 import { of, Subject } from 'rxjs';
 import { Mocked, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -41,7 +40,7 @@ import {
 } from '@dotcms/data-access';
 import { LoggerService, StringUtils } from '@dotcms/dotcms-js';
 import { DotCMSContentTypeField, DotContentDriveItem } from '@dotcms/dotcms-models';
-import { DotSidePanelNavController, EditContentDialogData } from '@dotcms/edit-content';
+import { EditContentDialogData } from '@dotcms/edit-content';
 import { GlobalStore } from '@dotcms/store';
 import { DotFolderListViewComponent } from '@dotcms/ui';
 import { DOT_SYSTEM_CONFIG_SERVICE_MOCK, mockLocales } from '@dotcms/utils-testing';
@@ -49,7 +48,6 @@ import { DOT_SYSTEM_CONFIG_SERVICE_MOCK, mockLocales } from '@dotcms/utils-testi
 import { DotContentDriveShellComponent } from './dot-content-drive-shell.component';
 
 import { DotContentDriveGridCardComponent } from '../components/dot-content-drive-grid-card/dot-content-drive-grid-card.component';
-import { DotLegacyEditorSidePanelComponent } from '../components/dot-legacy-editor-side-panel/dot-legacy-editor-side-panel.component';
 import { DEFAULT_PAGE, DEFAULT_PAGINATION } from '../shared/constants';
 import { DotLegacyEditorRequest } from '../shared/legacy-editor.models';
 import {
@@ -216,12 +214,7 @@ describe('DotContentDriveShellComponent — grid view', () => {
             mockProvider(DotCurrentUserService, {
                 getCurrentUser: vi.fn().mockReturnValue(of({}))
             }),
-            mockProvider(DotHttpErrorManagerService),
-            mockProvider(DotSidePanelNavController, {
-                shouldCollapse: vi.fn().mockReturnValue(false),
-                acquire: vi.fn(),
-                release: vi.fn()
-            })
+            mockProvider(DotHttpErrorManagerService)
         ],
         componentProviders: [
             DotContentDriveStore,
@@ -230,19 +223,6 @@ describe('DotContentDriveShellComponent — grid view', () => {
             // The toolbar renders for real here, "More" overflow included, so its own seam has to
             // be provided the same way the shell provides it in production.
             provideContentDriveFieldFilterHost()
-        ],
-        // The legacy panel hosts a JSP iframe and has its own spec; the shell only needs its
-        // inputs, outputs and `requestClose()`.
-        overrideComponents: [
-            [
-                DotContentDriveShellComponent,
-                {
-                    // The grid has its own spec; here only its bindings matter. Rendering real
-                    // cards in every grid test pushed this file past Node's heap limit.
-                    remove: { imports: [DotLegacyEditorSidePanelComponent] },
-                    add: { imports: [MockComponent(DotLegacyEditorSidePanelComponent)] }
-                }
-            ]
         ],
         detectChanges: false
     });
