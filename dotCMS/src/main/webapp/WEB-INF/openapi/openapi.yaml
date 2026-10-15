@@ -7172,17 +7172,43 @@ paths:
       - Content
   /v1/content/_import/contenttypes:
     get:
-      description: "Returns every content type the current user has WRITE permission\
-        \ on, except Host, sorted by name. These are the content types a CSV import\
-        \ can target, the same list Content Search's import offers."
+      description: "Returns, a page at a time, the content types the current user\
+        \ has WRITE permission on, except Host, sorted by name. These are the content\
+        \ types a CSV import can target, the same list Content Search's import offers.\
+        \ The response carries the page, its size and the total number of matching\
+        \ types."
       operationId: getImportableContentTypes
+      parameters:
+      - description: "Text the content type's name or variable must contain, ignoring\
+          \ case."
+        in: query
+        name: filter
+        schema:
+          type: string
+      - description: "The page to return, starting at 1."
+        in: query
+        name: page
+        schema:
+          type: integer
+          format: int64
+          default: 1
+      - description: How many content types a page holds.
+        in: query
+        name: per_page
+        schema:
+          type: integer
+          format: int64
+          default: 40
       responses:
         "200":
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityImportContentTypeListView"
-          description: The content types the user can import into (possibly empty).
+          description: A page of the content types the user can import into (possibly
+            empty).
+        "400":
+          description: "Bad Request: page or per_page is below 1."
         "401":
           description: "Unauthorized: Invalid or missing user authentication."
         "500":

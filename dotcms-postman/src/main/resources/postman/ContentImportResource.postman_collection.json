@@ -4666,7 +4666,7 @@
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
-									"pm.test(\"Lists the collection's content type and never Host\", function () {",
+									"pm.test(\"Finds the collection's content type when searched for, and never Host\", function () {",
 									"    const types = pm.response.json().entity;",
 									"    pm.expect(types).to.be.an('array');",
 									"    const variables = types.map((type) => type.variable);",
@@ -4682,6 +4682,13 @@
 									"        pm.expect(type).to.have.property('name');",
 									"        pm.expect(type).to.have.property('baseType');",
 									"    });",
+									"});",
+									"",
+									"pm.test(\"Carries the page, the page size and the total\", function () {",
+									"    const pagination = pm.response.json().pagination;",
+									"    pm.expect(pagination.currentPage).to.eql(1);",
+									"    pm.expect(pagination.perPage).to.eql(40);",
+									"    pm.expect(pagination.totalEntries).to.be.at.least(1);",
 									"});"
 								],
 								"type": "text/javascript",
@@ -4693,7 +4700,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/content/_import/contenttypes",
+							"raw": "{{serverURL}}/api/v1/content/_import/contenttypes?filter={{contentType}}&page=1&per_page=40",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -4703,6 +4710,20 @@
 								"content",
 								"_import",
 								"contenttypes"
+							],
+							"query": [
+								{
+									"key": "filter",
+									"value": "{{contentType}}"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "per_page",
+									"value": "40"
+								}
 							]
 						}
 					},
