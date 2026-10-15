@@ -68,6 +68,7 @@
                     [text]="true"
                     [rounded]="true"
                     [disabled]="isDisabled"
+                    [ariaLabel]="'add' | dm"
                     data-testid="relationship-add-button">
                     <ng-template #icon>
                         <span class="material-symbols-outlined" aria-hidden="true">add</span>
@@ -217,6 +218,7 @@
                     [text]="true"
                     [rounded]="true"
                     [disabled]="isDisabled"
+                    [ariaLabel]="'dot.common.remove' | dm"
                     (onClick)="deleteItem(item.inode)"
                     styleClass="opacity-0 group-hover:opacity-100 transition-opacity"
                     data-testid="relationship-delete-button">

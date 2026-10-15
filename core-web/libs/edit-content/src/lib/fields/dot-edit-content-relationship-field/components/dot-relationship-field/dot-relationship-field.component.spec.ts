@@ -1037,6 +1037,22 @@ describe('DotRelationshipFieldComponent', () => {
             expect(host?.querySelector('button')).toHaveClass('p-button-rounded');
         });
 
+        /**
+         * Icon-only, with an aria-hidden glyph: the name has to come from PrimeNG's `ariaLabel`,
+         * which lands on the focusable `<button>` — `[attr.aria-label]` would only reach the
+         * `<p-button>` host and leave the real button unnamed.
+         */
+        it.each([
+            ['relationship-add-button', 'add'],
+            ['relationship-delete-button', 'dot.common.remove']
+        ])('gives %s the accessible name %s on its focusable button', (testId, name) => {
+            setup();
+
+            const button = spectator.query(byTestId(testId))?.querySelector('button');
+
+            expect(button).toHaveAttribute('aria-label', name);
+        });
+
         it('keeps the reorder hook and keyboard focus on the handle', () => {
             setup();
 
