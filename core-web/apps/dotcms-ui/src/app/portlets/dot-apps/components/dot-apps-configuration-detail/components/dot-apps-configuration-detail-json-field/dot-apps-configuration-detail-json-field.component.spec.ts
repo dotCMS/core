@@ -112,10 +112,10 @@ describe('DotAppsConfigurationDetailJsonFieldComponent', () => {
         });
     });
 
-    it('should give the wrapper the field id so the label points at it', () => {
+    it('should give the editor the field id so the label points at it', () => {
         spectator.detectChanges();
 
-        expect(spectator.query(byTestId('json-field-editor-wrapper'))?.id).toBe('configuration');
+        expect(spectator.query(byTestId('json-field-editor'))?.id).toBe('configuration');
     });
 
     it('should show the valid message for valid JSON', () => {

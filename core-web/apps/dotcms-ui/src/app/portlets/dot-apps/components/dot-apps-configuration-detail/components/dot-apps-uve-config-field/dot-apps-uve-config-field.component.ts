@@ -19,7 +19,10 @@ import {
 } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
+import { InputGroupModule } from 'primeng/inputgroup';
+import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { InputTextModule } from 'primeng/inputtext';
+import { MessageModule } from 'primeng/message';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
@@ -67,7 +70,10 @@ interface UveRouteTitle {
     imports: [
         FormsModule,
         ButtonModule,
+        InputGroupModule,
+        InputGroupAddonModule,
         InputTextModule,
+        MessageModule,
         SelectButtonModule,
         TagModule,
         TooltipModule,
@@ -78,6 +84,13 @@ interface UveRouteTitle {
     ],
     templateUrl: './dot-apps-uve-config-field.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        class: 'flex flex-col gap-3',
+        role: 'group',
+        // No host id: a <label for> can't name a group (aria-label does), and fieldId still builds
+        // the ids of the inputs inside.
+        '[attr.aria-label]': '$label() || null'
+    },
     providers: [
         {
             provide: NG_VALUE_ACCESSOR,

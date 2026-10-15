@@ -32,7 +32,7 @@
 
     .p-field-hint markdown code {
         font-family: fonts.$font-code;
-        font-size: fonts.$font-size-sm;
+        font-size: inherit; // match the hint text around it
         background-color: colors.$color-palette-gray-100;
         border-radius: $border-radius-sm;
         padding: 0 spacing.$spacing-0;
@@ -51,7 +51,7 @@
     .p-field-hint markdown pre code {
         background: none;
         color: colors.$color-palette-gray-800;
-        font-size: fonts.$font-size-sm;
+        font-size: fonts.$font-size-md;
         line-height: 1.6;
         padding: 0;
         white-space: pre;
@@ -91,7 +91,7 @@
     .dot-code-block__language {
         color: colors.$color-palette-primary-700;
         font-family: fonts.$font-code;
-        font-size: fonts.$font-size-sm;
+        font-size: fonts.$font-size-md;
         font-weight: fonts.$font-weight-semi-bold;
         text-transform: uppercase;
     }

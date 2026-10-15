@@ -64,6 +64,7 @@ export function getJsonParseError(value: string | null | undefined): string | nu
     imports: [MonacoEditorModule, ButtonModule, DotMessagePipe],
     templateUrl: './dot-apps-configuration-detail-json-field.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
+    host: { class: 'flex flex-col gap-2' },
     providers: [
         {
             provide: NG_VALUE_ACCESSOR,
