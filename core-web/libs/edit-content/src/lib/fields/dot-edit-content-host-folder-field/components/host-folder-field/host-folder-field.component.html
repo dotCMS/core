@@ -80,7 +80,6 @@
         <p-button
             [text]="true"
             [rounded]="true"
-            size="small"
             severity="secondary"
             type="button"
             data-testid="host-folder-copy"
@@ -90,7 +89,7 @@
             tooltipPosition="bottom"
             (onClick)="copyPath()">
             <ng-template #icon>
-                <span class="material-symbols-outlined text-lg" data-testid="host-folder-copy-icon">
+                <span class="material-symbols-outlined" data-testid="host-folder-copy-icon">
                     {{ $pathCopied() ? 'check' : 'content_copy' }}
                 </span>
             </ng-template>
