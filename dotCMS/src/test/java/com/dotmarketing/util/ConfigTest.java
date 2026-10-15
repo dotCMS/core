@@ -65,6 +65,22 @@ public class ConfigTest {
         assertEquals(value, Config.getStringProperty("testing.String.with_comma"));
     }
 
+    /**
+     * The admin UI must not offer to edit a value that comes from an environment variable or a JVM
+     * system property, because a save there would not take effect. It asks this rather than calling
+     * System.getenv, which would also miss a -DDOT_FOO=bar JVM system property.
+     */
+    @Test
+    public void isSetByEnvironment_reports_environment_sourced_keys() {
+
+        assertTrue("a DOT_ env key reports as set by the environment",
+                Config.isSetByEnvironment("TESTING_STRING"));
+        assertTrue("the DOT_ prefixed name behaves the same",
+                Config.isSetByEnvironment(DOT_TESTING_STRING));
+        assertFalse("a key nobody set does not report as set by the environment",
+                Config.isSetByEnvironment("SOME_KEY_THAT_NOBODY_SET"));
+    }
+
     @Test
     public void Test_Multiple_Calls_To_AddProperty_On_The_Same_Key() {
         Config.props.addProperty("anyKey", "anyValue");

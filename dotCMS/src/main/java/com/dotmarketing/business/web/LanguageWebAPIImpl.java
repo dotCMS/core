@@ -12,13 +12,11 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
-import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.struts.MultiMessageResources;
 import com.liferay.portal.struts.MultiMessageResourcesFactory;
-
+import java.util.Locale;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-import java.util.Locale;
 
 /**
  * Implement LanguageWebAPI methods to manage language cache and language struts
@@ -133,19 +131,25 @@ public class LanguageWebAPIImpl implements LanguageWebAPI {
         if(!current.equals(future)){
             sessionOpt = httpRequest.getSession(true);
         }
-        if(sessionOpt!=null){
-            //only set in session if we are not in a timemachine
-            if(sessionOpt.getAttribute("tm_lang")==null){
-                sessionOpt.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, String.valueOf(future.getId()));
-                boolean ADMIN_MODE =   PageMode.get(httpRequest).isAdmin;
-
-                if (ADMIN_MODE == false || httpRequest.getParameter("leftMenu") == null) {
-                    sessionOpt.setAttribute(WebKeys.Globals_FRONTEND_LOCALE_KEY, locale);
-                    httpRequest.setAttribute(WebKeys.Globals_FRONTEND_LOCALE_KEY, locale);
-                }
-                sessionOpt.setAttribute(WebKeys.LOCALE, locale);
-            }
+        if (sessionOpt == null || sessionOpt.getAttribute("tm_lang") != null) {
+            return future;
         }
+
+        if (current.getId() != future.getId()) {
+            sessionOpt.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, String.valueOf(future.getId()));
+        }
+        boolean ADMIN_MODE = PageMode.get(httpRequest).isAdmin;
+
+        if (ADMIN_MODE == false || httpRequest.getParameter("leftMenu") == null) {
+            if (!locale.equals(sessionOpt.getAttribute(WebKeys.Globals_FRONTEND_LOCALE_KEY))) {
+                sessionOpt.setAttribute(WebKeys.Globals_FRONTEND_LOCALE_KEY, locale);
+            }
+            httpRequest.setAttribute(WebKeys.Globals_FRONTEND_LOCALE_KEY, locale);
+        }
+        if (!locale.equals(sessionOpt.getAttribute(WebKeys.LOCALE))) {
+            sessionOpt.setAttribute(WebKeys.LOCALE, locale);
+        }
+
         return future;
 
     }

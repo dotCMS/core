@@ -12,6 +12,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TreeMap;
 import javax.servlet.AsyncContext;
 import javax.servlet.DispatcherType;
 import javax.servlet.ReadListener;
@@ -38,7 +39,9 @@ public class DotCMSMockRequest implements HttpServletRequest {
     private String remoteHost;
     private String queryString;
     private Map<String, String[]> paramMap = new HashMap<>();
-    final private Map<String, String> headers = new HashMap<>();
+    // header names are case-insensitive per the servlet spec, so a plain HashMap made lookups
+    // such as getHeader("host") miss a header that was stored as "Host"
+    final private Map<String, String> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     private String servletPath;
     final private Map<String, Object> attributes = new HashMap<>();
     protected byte[] content;

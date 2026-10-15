@@ -18,7 +18,10 @@ import com.dotcms.inference.rest.InferenceSiteResolutionTest;
 import com.dotcms.inference.rest.InferenceTestsAreRegisteredTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.rest.api.v1.maintenance.MaintenanceResourceIntegrationTest;
+import com.dotmarketing.business.AdminSitePermissionCacheTest;
 import com.dotmarketing.portlets.containers.business.ContainerStructureFinderStrategyResolverTest;
+import com.liferay.portal.ejb.CompanyUtilTest;
+import com.liferay.portal.model.UserTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite.SuiteClasses;
 
@@ -102,7 +105,10 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.AuditPublishingResourceTest.class,
         MaintenanceResourceIntegrationTest.class,
         FolderHandlerTest.class,
-        ContentAnalyticsPersistenceModeIT.class
+        ContentAnalyticsPersistenceModeIT.class,
+        CompanyUtilTest.class,
+        UserTest.class,
+        AdminSitePermissionCacheTest.class
 })
 public class MainSuite2a {
 

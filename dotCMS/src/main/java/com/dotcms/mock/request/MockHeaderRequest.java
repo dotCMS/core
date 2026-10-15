@@ -1,8 +1,8 @@
 package com.dotcms.mock.request;
 
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.Vector;
 
 import javax.servlet.http.HttpServletRequest;
@@ -15,7 +15,9 @@ import javax.servlet.http.HttpServletRequestWrapper;
  * See an example here: {@link MockHttpRequest#MockHttpRequest(String, String)}
  */
 public class MockHeaderRequest extends HttpServletRequestWrapper implements MockRequest {
-  final Map<String, String> headers = new HashMap<>();
+  // header names are case-insensitive per the servlet spec, so a plain HashMap made lookups
+  // such as getHeader("host") miss a header that was stored as "Host"
+  final Map<String, String> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
 
   public MockHeaderRequest(HttpServletRequest request) {

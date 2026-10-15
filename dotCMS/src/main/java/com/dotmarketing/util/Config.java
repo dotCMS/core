@@ -343,6 +343,24 @@ public class Config {
     }
 
     /**
+     * Whether the value for the given key comes from an environment variable or a JVM system property, i.e.
+     * a source that cannot be changed from the admin UI.
+     * <p>
+     * Both sources are {@code DOT_} prefixed and both are treated as an environment source by the getters
+     * below, which is why they take precedence over the system table. Use this rather than
+     * {@code System.getenv} to decide whether a value is UI-editable: {@code System.getenv} does not see a
+     * {@code -DDOT_FOO=bar} JVM system property, which is a supported configuration source.
+     *
+     * @param name the property name, with or without the {@code DOT_} prefix
+     * @return true if the key is set by an environment variable or a JVM system property
+     */
+    public static boolean isSetByEnvironment(final String name) {
+
+        final String envKey = envKey(name);
+        return environmentSetKeys.contains(envKey) || environmentSetKeys.contains(name);
+    }
+
+    /**
      * Returns a list of properties that contains the given String.
      * Also gives priority to the System Env over the ones in the properties file.
      * @param containsString

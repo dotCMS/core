@@ -121,12 +121,6 @@
 			value="/portlet/admin/change_user_portrait.jsp" />
 	</definition>
 
-	<definition name="portlet.admin.default_email_notification"
-		extends="portlet.admin">
-		<put name="content"
-			value="/portlet/admin/default_email_notification.jsp" />
-	</definition>
-
 	<definition name="portlet.admin.default_groups_and_roles"
 		extends="portlet.admin">
 		<put name="content"
