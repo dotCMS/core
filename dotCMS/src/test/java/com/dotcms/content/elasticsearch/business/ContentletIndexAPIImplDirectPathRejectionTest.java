@@ -6,6 +6,9 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
@@ -13,6 +16,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.content.business.ContentMappingAPI;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImplPhaseTest.FakeContentletIndexOperations;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImplPhaseTest.FakeIndexAPI;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImplPhaseTest.FakeIndiciesAPI;
@@ -20,6 +24,9 @@ import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImplPhaseTest
 import com.dotcms.content.index.VersionedIndices;
 import com.dotcms.content.index.domain.IndexBulkRequest;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.RelationshipAPI;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.common.reindex.ReindexEntry;
 import com.dotmarketing.common.reindex.ReindexQueueAPI;
@@ -28,7 +35,9 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Config;
+import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -87,7 +96,7 @@ public class ContentletIndexAPIImplDirectPathRejectionTest {
     }
 
     /** Provider operations that record what is added to and sent from each request. */
-    private static final class RecordingOperations extends FakeContentletIndexOperations {
+    private static class RecordingOperations extends FakeContentletIndexOperations {
 
         /** Document ids of every request sent with {@code putToIndex}, in order. */
         final List<List<String>> sent = new ArrayList<>();
@@ -101,6 +110,12 @@ public class ContentletIndexAPIImplDirectPathRejectionTest {
         public void addIndexOp(final IndexBulkRequest req, final String index, final String docId,
                 final String json) {
             ((RecordingBulkRequest) req).documentIds.add(docId);
+        }
+
+        @Override
+        public void addDeleteOp(final IndexBulkRequest req, final String index,
+                final String docId) {
+            ((RecordingBulkRequest) req).documentIds.add("delete:" + docId);
         }
 
         @Override
@@ -291,6 +306,115 @@ public class ContentletIndexAPIImplDirectPathRejectionTest {
         verify(queueAPI, never()).markAsFailed(eq(entry),
                 org.mockito.ArgumentMatchers.argThat(reason -> reason != null
                         && reason.contains("inode-live")));
+    }
+
+    /**
+     * Given Scenario: Phase 3 with no OpenSearch index record yet, so no write provider can take
+     * the documents.
+     * Expected Result: Nothing is mapped and no contentlet is marked as reindexed — as before the
+     * change, when the provider loop never ran.
+     */
+    @Test
+    public void test_directIndex_noWriteProvider_nothingMappedOrMarked() throws Exception {
+        setPhase(3);
+        final FakeVersionedIndicesAPI noOsRecord = new FakeVersionedIndicesAPI();
+        api = new ContentletIndexAPIImpl(es, os, new FakeIndexAPI(List.of()), new FakeIndiciesAPI(),
+                noOsRecord);
+        final Contentlet contentlet = contentlet("id-1", "inode-1", "small body");
+
+        addContentToIndex(List.of(contentlet));
+
+        verify(mappingAPI, never()).toMap(contentlet);
+        verify(contentlet, never()).markAsReindexed();
+    }
+
+    /**
+     * Given Scenario: Phase 0. A list with one oversized document is indexed directly and the
+     * engine then rejects the request of the healthy ones.
+     * Expected Result: The caller sees the engine's error, and the withheld document is still
+     * reported: the error carries, as a suppressed exception, one naming it.
+     */
+    @Test
+    public void test_directIndex_sendFails_withheldStillReported() throws Exception {
+        setPhase(0);
+        final RecordingOperations failing = new RecordingOperations() {
+            @Override
+            public void putToIndex(final IndexBulkRequest req) {
+                throw new DotRuntimeException("bulk write rejected");
+            }
+        };
+        final FakeIndiciesAPI indicies = new FakeIndiciesAPI();
+        indicies.setWorking(ES_WORKING);
+        api = new ContentletIndexAPIImpl(failing, os, new FakeIndexAPI(List.of()), indicies,
+                new FakeVersionedIndicesAPI());
+        final Contentlet healthy = contentlet("id-1", "inode-1", "small body");
+        final Contentlet oversized = contentlet("id-2", "inode-2", "x".repeat(OVERSIZED_LENGTH));
+
+        final DotRuntimeException thrown = assertThrows(DotRuntimeException.class,
+                () -> addContentToIndex(List.of(healthy, oversized)));
+
+        assertEquals("bulk write rejected", thrown.getMessage());
+        assertEquals("the withheld document must travel with the engine's error",
+                1, thrown.getSuppressed().length);
+        assertNamesOffender(thrown.getSuppressed()[0].getMessage(), oversized);
+    }
+
+    /**
+     * Given Scenario: Phase 0. A contentlet is removed from the index with a FORCE policy; it has
+     * one relationship, and the related content found for it is one healthy contentlet and one
+     * whose document is oversized.
+     * Expected Result: The healthy related document is reindexed, the oversized one is not, the
+     * removal of the deleted contentlet is still sent, and nothing is thrown — reindexing related
+     * content is clean-up and must not block the removal.
+     */
+    @Test
+    public void test_removeFromIndex_oversizedRelated_loggedAndRemovalStillSent() throws Exception {
+        setPhase(0);
+        final Contentlet healthyRelated = contentlet("id-related-1", "inode-r1", "small body");
+        final Contentlet oversizedRelated = contentlet("id-related-2", "inode-r2",
+                "x".repeat(OVERSIZED_LENGTH));
+        when(healthyRelated.getIndexPolicy()).thenReturn(IndexPolicy.FORCE);
+        when(oversizedRelated.getIndexPolicy()).thenReturn(IndexPolicy.FORCE);
+
+        final ContentType type = mock(ContentType.class);
+        final Contentlet deleted = mock(Contentlet.class);
+        when(deleted.getIdentifier()).thenReturn("id-deleted");
+        when(deleted.getInode()).thenReturn("inode-deleted");
+        when(deleted.getLanguageId()).thenReturn(1L);
+        when(deleted.getVariantId()).thenReturn("DEFAULT");
+        when(deleted.getContentType()).thenReturn(type);
+        when(deleted.getIndexPolicy()).thenReturn(IndexPolicy.FORCE);
+        when(deleted.getIndexPolicyDependencies()).thenReturn(IndexPolicy.FORCE);
+
+        final Relationship relationship = mock(Relationship.class);
+        when(relationship.getRelationTypeValue()).thenReturn("Parent-Child");
+        final RelationshipAPI relationshipAPI = mock(RelationshipAPI.class);
+        when(relationshipAPI.byContentType(type)).thenReturn(List.of(relationship));
+        when(relationshipAPI.sameParentAndChild(relationship)).thenReturn(false);
+        final User systemUser = mock(User.class);
+        final UserAPI userAPI = mock(UserAPI.class);
+        when(userAPI.getSystemUser()).thenReturn(systemUser);
+        final ContentletAPI contentletAPI = mock(ContentletAPI.class);
+        when(contentletAPI.search(anyString(), eq(-1), eq(0), isNull(), eq(systemUser), eq(false)))
+                .thenReturn(List.of(healthyRelated, oversizedRelated));
+
+        try (MockedStatic<APILocator> apiLocator = mockStatic(APILocator.class);
+                MockedStatic<CacheLocator> cacheLocator = mockStatic(CacheLocator.class,
+                        RETURNS_DEEP_STUBS)) {
+            apiLocator.when(APILocator::getContentMappingAPI).thenReturn(mappingAPI);
+            apiLocator.when(APILocator::getRelationshipAPI).thenReturn(relationshipAPI);
+            apiLocator.when(APILocator::getContentletAPI).thenReturn(contentletAPI);
+            apiLocator.when(APILocator::getUserAPI).thenReturn(userAPI);
+            api.removeContentFromIndex(deleted, false);
+        }
+
+        final List<String> sent = es.sentIds();
+        assertTrue("the healthy related document must be reindexed: " + sent,
+                sent.contains(docId(healthyRelated)));
+        assertFalse("the oversized related document must not be sent: " + sent,
+                sent.contains(docId(oversizedRelated)));
+        assertTrue("the removal of the deleted contentlet must still be sent: " + sent,
+                sent.contains("delete:id-deleted_1_DEFAULT"));
     }
 
     // -------------------------------------------------------------------------------------------

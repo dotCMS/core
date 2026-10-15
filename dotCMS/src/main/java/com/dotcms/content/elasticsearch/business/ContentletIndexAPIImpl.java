@@ -2429,16 +2429,25 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                         contentlet -> contentlet.getIndexPolicy() == IndexPolicy.FORCE);
 
         final List<IndexDocumentViolation> withheld = new ArrayList<>();
-        if (UtilMethods.isSet(partitions.get(0))) {
-            withheld.addAll(this.indexContentListDefer(partitions.get(0)));
-        }
+        try {
+            if (UtilMethods.isSet(partitions.get(0))) {
+                this.indexContentListDefer(partitions.get(0), withheld);
+            }
 
-        if (UtilMethods.isSet(partitions.get(1))) {
-            withheld.addAll(this.indexContentListWaitFor(partitions.get(1)));
-        }
+            if (UtilMethods.isSet(partitions.get(1))) {
+                this.indexContentListWaitFor(partitions.get(1), withheld);
+            }
 
-        if (UtilMethods.isSet(partitions.get(2))) {
-            withheld.addAll(this.indexContentListNow(partitions.get(2)));
+            if (UtilMethods.isSet(partitions.get(2))) {
+                this.indexContentListNow(partitions.get(2), withheld);
+            }
+        } catch (final RuntimeException sendFailure) {
+            // The engine's error is what the caller has always seen; the documents withheld so
+            // far travel with it instead of being lost (#37269).
+            if (!withheld.isEmpty()) {
+                sendFailure.addSuppressed(withheldException(withheld));
+            }
+            throw sendFailure;
         }
 
         // Every healthy document has been sent by now; only then report the withheld ones, so a
@@ -2449,45 +2458,43 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     /**
      * Sends the list to the index with an immediate refresh.
      *
-     * @return the documents left out because the engine clients' parser would refuse them
+     * @param withheld receives the documents left out because the engine clients' parser would
+     *                 refuse them, before the request is sent
      */
-    private List<IndexDocumentViolation> indexContentListNow(final List<Contentlet> contentToIndex) {
-        final List<IndexDocumentViolation> withheld = new ArrayList<>();
+    private void indexContentListNow(final List<Contentlet> contentToIndex,
+            final List<IndexDocumentViolation> withheld) {
         final IndexBulkRequest bulkRequest = createBulkRequest(contentToIndex, withheld);
         this.setRefreshPolicy(bulkRequest, IndexBulkRequest.RefreshPolicy.IMMEDIATE);
         putToIndex(bulkRequest);
         CacheLocator.getESQueryCache().clearCache();
         CacheLocator.getOSQueryCache().clearCache();
-        return withheld;
     } // indexContentListNow.
 
     /**
      * Sends the list to the index and waits for the refresh.
      *
-     * @return the documents left out because the engine clients' parser would refuse them
+     * @param withheld receives the documents left out because the engine clients' parser would
+     *                 refuse them, before the request is sent
      */
-    private List<IndexDocumentViolation> indexContentListWaitFor(
-            final List<Contentlet> contentToIndex) {
-        final List<IndexDocumentViolation> withheld = new ArrayList<>();
+    private void indexContentListWaitFor(final List<Contentlet> contentToIndex,
+            final List<IndexDocumentViolation> withheld) {
         final IndexBulkRequest bulkRequest = createBulkRequest(contentToIndex, withheld);
         this.setRefreshPolicy(bulkRequest, IndexBulkRequest.RefreshPolicy.WAIT_FOR);
         putToIndex(bulkRequest);
         CacheLocator.getESQueryCache().clearCache();
         CacheLocator.getOSQueryCache().clearCache();
-        return withheld;
     } // indexContentListWaitFor.
 
     /**
      * Sends the list to the index with the default refresh.
      *
-     * @return the documents left out because the engine clients' parser would refuse them
+     * @param withheld receives the documents left out because the engine clients' parser would
+     *                 refuse them, before the request is sent
      */
-    private List<IndexDocumentViolation> indexContentListDefer(
-            final List<Contentlet> contentToIndex) {
-        final List<IndexDocumentViolation> withheld = new ArrayList<>();
+    private void indexContentListDefer(final List<Contentlet> contentToIndex,
+            final List<IndexDocumentViolation> withheld) {
         final IndexBulkRequest bulkRequest = createBulkRequest(contentToIndex, withheld);
         putToIndex(bulkRequest);
-        return withheld;
     } // indexContentListDefer.
 
     /**
@@ -2503,11 +2510,31 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         if (withheld.isEmpty()) {
             return;
         }
+        throw withheldException(withheld);
+    }
+
+    /**
+     * Logs the withheld documents and builds the exception that names them.
+     *
+     * @param withheld the documents left out of the request, at least one
+     * @return an exception whose message lists every withheld document, one per line
+     */
+    private DotRuntimeException withheldException(final List<IndexDocumentViolation> withheld) {
+        return new DotRuntimeException(logWithheld(withheld));
+    }
+
+    /**
+     * Logs, as a warning, every withheld document.
+     *
+     * @param withheld the documents left out of the request, at least one
+     * @return the withheld documents' reasons, one per line
+     */
+    private String logWithheld(final List<IndexDocumentViolation> withheld) {
         final String reasons = withheld.stream().map(IndexDocumentViolation::toFailureReason)
                 .collect(Collectors.joining("\n"));
         Logger.warn(this, "Withheld " + withheld.size()
                 + " index document(s) the engine clients' parser would reject:\n" + reasons);
-        throw new DotRuntimeException(reasons);
+        return reasons;
     }
 
     /**
@@ -2594,9 +2621,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      * Builds a bulk request for the given contentlets.
      *
      * <p>A document the engine clients' parser would refuse makes this method throw, naming it,
-     * and the request is not returned (#37269). Internal callers use
-     * {@link #createBulkRequest(List, List)} instead, so they can send the healthy documents
-     * first.</p>
+     * and the request is not returned (#37269). The healthy contentlets have already been marked
+     * as reindexed by then, as they were before when the client failed part-way through. Internal
+     * callers use {@link #createBulkRequest(List, List)} instead, so they can send the healthy
+     * documents first.</p>
      */
     @Override
     public IndexBulkRequest createBulkRequest(final List<Contentlet> contentToIndex) {
@@ -3000,6 +3028,13 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                         + contentToIndex.get(0).getIdentifier() + "]");
 
         final List<ProviderTarget> targets = resolveRequestTargets(req);
+        if (targets.isEmpty()) {
+            // No provider can take the documents (e.g. Phase 3 before the OpenSearch index record
+            // exists): map nothing and mark nothing as reindexed, as nothing is sent.
+            Logger.debug(this, "No write provider has index names; skipping "
+                    + contentToIndex.size() + " contents");
+            return List.of();
+        }
         final List<IndexDocumentViolation> withheld = new ArrayList<>();
         for (final Contentlet contentlet : new HashSet<>(contentToIndex)) {
             final Optional<MappedDocument> mapped = mapContentletForProcessor(contentlet);
@@ -3508,6 +3543,34 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             final IndexPolicy indexPolicy)
             throws DotDataException, DotSecurityException, DotMappingException {
 
+        final List<IndexDocumentViolation> withheld = new ArrayList<>();
+        try {
+            reindexRelatedContent(contentlet, relationships, indexPolicy, withheld);
+        } catch (final RuntimeException sendFailure) {
+            if (!withheld.isEmpty()) {
+                sendFailure.addSuppressed(withheldException(withheld));
+            }
+            throw sendFailure;
+        }
+        // Related documents the engine clients' parser would refuse were left out and are only
+        // logged: reindexing related content is clean-up after a removal, and throwing here would
+        // stop the removal itself — still unsent — from reaching the index (#37269).
+        if (!withheld.isEmpty()) {
+            logWithheld(withheld);
+        }
+    }
+
+    /**
+     * Reindexes, directly, the content related to a deleted contentlet through each relationship.
+     *
+     * @param withheld receives the related documents left out because the engine clients' parser
+     *                 would refuse them
+     */
+    private void reindexRelatedContent(final Contentlet contentlet,
+            final List<Relationship> relationships, final IndexPolicy indexPolicy,
+            final List<IndexDocumentViolation> withheld)
+            throws DotDataException, DotSecurityException {
+
         for (final Relationship relationship : relationships) {
 
             final boolean isSameStructRelationship = APILocator.getRelationshipAPI()
@@ -3529,13 +3592,13 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             switch (indexPolicy) {
 
                 case WAIT_FOR:
-                    indexContentListWaitFor(related);
+                    indexContentListWaitFor(related, withheld);
                     break;
                 case FORCE:
-                    indexContentListNow(related);
+                    indexContentListNow(related, withheld);
                     break;
                 default: // DEFER
-                    indexContentListDefer(related);
+                    indexContentListDefer(related, withheld);
             }
         }
     }

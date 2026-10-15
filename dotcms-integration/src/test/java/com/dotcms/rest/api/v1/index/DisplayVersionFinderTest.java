@@ -10,11 +10,15 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.LanguageDataGen;
+import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.UUIDGenerator;
 import java.util.ArrayList;
 import java.util.List;
@@ -140,6 +144,50 @@ public class DisplayVersionFinderTest {
         for (final Contentlet contentlet : contentlets) {
             assertEquals(contentlet.getInode(), found.get(contentlet.getIdentifier()).inode());
         }
+    }
+
+    /**
+     * Given Scenario: An identifier with a default-language version and a translation in a newer
+     * language, both working and not archived.
+     * Expected Result: The lowest language id is resolved, so the result is stable across calls.
+     */
+    @Test
+    public void test_find_twoLanguages_resolvesLowestLanguage() throws Exception {
+        final Contentlet base = newContentlet("Base language");
+        final Language secondLanguage = new LanguageDataGen().nextPersisted();
+        final Contentlet translation = ContentletDataGen.checkout(base);
+        translation.setLanguageId(secondLanguage.getId());
+        translation.setProperty("title", "Translation");
+        final Contentlet savedTranslation = ContentletDataGen.checkin(translation, IndexPolicy.DEFER);
+        final long lowest = Math.min(base.getLanguageId(), savedTranslation.getLanguageId());
+
+        final DisplayVersion display = new DisplayVersionFinder()
+                .find(List.of(base.getIdentifier())).get(base.getIdentifier());
+
+        assertEquals(lowest, display.languageId());
+        assertEquals(lowest == base.getLanguageId() ? base.getInode() : savedTranslation.getInode(),
+                display.inode());
+    }
+
+    /**
+     * Given Scenario: An identifier whose only version lives in a non-default variant.
+     * Expected Result: It is not resolved, as {@code findContentletByIdentifierAnyLanguage} only
+     * looks at the default variant.
+     */
+    @Test
+    public void test_find_onlyNonDefaultVariant_notReturned() throws Exception {
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final Contentlet inVariant = new ContentletDataGen(contentType)
+                .setProperty("title", "Variant only")
+                .variant(variant)
+                .setPolicy(IndexPolicy.DEFER)
+                .nextPersisted();
+
+        final Map<String, DisplayVersion> found = new DisplayVersionFinder()
+                .find(List.of(inVariant.getIdentifier()));
+
+        assertFalse("a version outside the default variant is not resolved",
+                found.containsKey(inVariant.getIdentifier()));
     }
 
     /**

@@ -84,6 +84,20 @@ public class IndexDocumentViolationTest {
     }
 
     /**
+     * Given Scenario: The reason of a nesting-depth violation whose field path contains an
+     * apostrophe, as a user-defined key of a key/value or JSON field can.
+     * Expected Result: The round trip still recovers the whole path and the withheld version.
+     */
+    @Test
+    public void test_fieldPathWithApostrophe_roundTrips() {
+        final IndexDocumentViolation written = new IndexDocumentViolation("id", "inode", 1L,
+                new Violation(Kind.NESTING_DEPTH, "metadata.o'brien[0].value", 1001L, 1000L));
+
+        assertEquals(Optional.of(written),
+                IndexDocumentViolation.violationOf(written.toFailureReason()));
+    }
+
+    /**
      * Given Scenario: Reasons that are not document-limit violations, and no reason at all.
      * Expected Result: Nothing is read.
      */
