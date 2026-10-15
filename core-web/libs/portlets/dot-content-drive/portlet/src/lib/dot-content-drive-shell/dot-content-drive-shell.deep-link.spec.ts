@@ -306,6 +306,8 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
                     sidebarLoading,
                     defaultLanguageLoaded,
                     closeDialog: vi.fn(),
+                    sourceEditor: signal(null),
+                    closeSourceEditor: vi.fn(),
                     patchContextMenu: vi.fn(),
                     resetContextMenu: vi.fn(),
                     setDragItems: vi.fn(),
