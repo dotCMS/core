@@ -468,6 +468,55 @@ public class BundlePublisherTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Method to Test: {@link BundlePublisher#process(PublishStatus)}
+     * When: the bundle name carries extra dots right before the {@code .tar.gz} extension, so the
+     * part before the extension is {@code .} or {@code ..}
+     * Should: throw a DotPublishingException before updating the audit table or touching the
+     * bundles directory, instead of resolving a working folder outside of it.
+     *
+     * <p>Deliberately NOT run against the pre-fix code: a pre-fix run would resolve the working
+     * folder to the bundles directory itself (for {@code .}) or its parent (for {@code ..}), and
+     * delete it. The derivation that makes this possible was verified separately, without
+     * touching the filesystem, by {@link com.dotcms.util.PathContainmentUtilTest}.
+     */
+    @Test
+    public void test_process_rejectsABundleNameWhoseIdIsADotOrDotDot() throws Exception {
+        LicenseTestUtil.getLicense();
+        final PublishAuditAPI realAuditAPI = PublishAuditAPI.getInstance();
+
+        for (final String bundleName : new String[] {"..tar.gz", "...tar.gz"}) {
+            final String bundleId = bundleName.substring(0, bundleName.length() - ".tar.gz".length());
+
+            final PublishAuditStatus publishAuditStatus = new PublishAuditStatus(bundleId);
+            final PublishAuditHistory history = new PublishAuditHistory();
+            history.addOrUpdateEndpoint("endpoint1", "endpoint1", null);
+            publishAuditStatus.setStatusPojo(history);
+
+            final PushPublisherConfig config = new PushPublisherConfig();
+            config.setId(bundleName);
+            config.setPublishAuditStatus(publishAuditStatus);
+            config.setAssets(new ArrayList<>());
+
+            final BundlePublisher bundlePublisher = new BundlePublisher();
+            bundlePublisher.init(config);
+
+            try {
+                bundlePublisher.process(new PublishStatus());
+                fail("Expected DotPublishingException for bundle name " + bundleName);
+            } catch (DotPublishingException e) {
+                assertEquals("no audit status must be inserted for bundle id '" + bundleId + "'",
+                        null, realAuditAPI.getPublishAuditStatus(bundleId));
+            } finally {
+                try {
+                    realAuditAPI.deletePublishAuditStatus(bundleId);
+                } catch (Exception ex) {
+                    // Ignore cleanup errors
+                }
+            }
+        }
+    }
+
     private byte[] tarGzWithEntry(final String entryName) throws IOException {
         final byte[] content = "content".getBytes(java.nio.charset.StandardCharsets.UTF_8);
         final ByteArrayOutputStream bytes = new ByteArrayOutputStream();

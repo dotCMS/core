@@ -7,7 +7,9 @@ import org.junit.rules.TemporaryFolder;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.Optional;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -129,5 +131,65 @@ public class PathContainmentUtilTest {
 
         assertFalse(PathContainmentUtil.isContainedIn(null, new File(root, "a")));
         assertFalse(PathContainmentUtil.isContainedIn(root, null));
+    }
+
+    /**
+     * Method to test: {@link PathContainmentUtil#plainSegmentBeforeSuffix(String, String)}
+     * When: the name ends with the suffix and what comes before it is a plain segment
+     * Should: return that part.
+     */
+    @Test
+    public void test_plainSegmentBeforeSuffix_returnsTheStem() {
+        assertEquals(Optional.of("bundle123"),
+                PathContainmentUtil.plainSegmentBeforeSuffix("bundle123.tar.gz", ".tar.gz"));
+        assertEquals(Optional.of("6f1c2d3e-0a4b-4c5d-8e9f-a1b2c3d4e5f6"), PathContainmentUtil
+                .plainSegmentBeforeSuffix("6f1c2d3e-0a4b-4c5d-8e9f-a1b2c3d4e5f6.tar.gz", ".tar.gz"));
+    }
+
+    /**
+     * Method to test: {@link PathContainmentUtil#plainSegmentBeforeSuffix(String, String)}
+     * When: what comes before the suffix is exactly {@code .} or {@code ..}, because the name has
+     * extra dots immediately before the suffix (for example {@code "..tar.gz"} or
+     * {@code "...tar.gz"})
+     * Should: return empty, even though the full name is itself a plain segment.
+     */
+    @Test
+    public void test_plainSegmentBeforeSuffix_rejectsADotOrDotDotStem() {
+        assertTrue(PathContainmentUtil.isPlainSegment("..tar.gz"));
+        assertTrue(PathContainmentUtil.isPlainSegment("...tar.gz"));
+
+        assertEquals(Optional.empty(),
+                PathContainmentUtil.plainSegmentBeforeSuffix("..tar.gz", ".tar.gz"));
+        assertEquals(Optional.empty(),
+                PathContainmentUtil.plainSegmentBeforeSuffix("...tar.gz", ".tar.gz"));
+    }
+
+    /**
+     * Method to test: {@link PathContainmentUtil#plainSegmentBeforeSuffix(String, String)}
+     * When: the name does not end with the suffix, is exactly the suffix, or the stem contains a
+     * separator or a NUL
+     * Should: return empty.
+     */
+    @Test
+    public void test_plainSegmentBeforeSuffix_rejectsOtherInvalidForms() {
+        assertEquals(Optional.empty(),
+                PathContainmentUtil.plainSegmentBeforeSuffix("bundle123.zip", ".tar.gz"));
+        assertEquals(Optional.empty(),
+                PathContainmentUtil.plainSegmentBeforeSuffix(".tar.gz", ".tar.gz"));
+        assertEquals(Optional.empty(),
+                PathContainmentUtil.plainSegmentBeforeSuffix("a/b.tar.gz", ".tar.gz"));
+        assertEquals(Optional.empty(),
+                PathContainmentUtil.plainSegmentBeforeSuffix("a\\b.tar.gz", ".tar.gz"));
+    }
+
+    /**
+     * Method to test: {@link PathContainmentUtil#plainSegmentBeforeSuffix(String, String)}
+     * When: either argument is null
+     * Should: return empty.
+     */
+    @Test
+    public void test_plainSegmentBeforeSuffix_rejectsNullArguments() {
+        assertEquals(Optional.empty(), PathContainmentUtil.plainSegmentBeforeSuffix(null, ".tar.gz"));
+        assertEquals(Optional.empty(), PathContainmentUtil.plainSegmentBeforeSuffix("bundle.tar.gz", null));
     }
 }

@@ -13,6 +13,7 @@ import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.util.EnterpriseFeature;
 import com.dotcms.util.PathContainmentUtil;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.FileUtil;
@@ -46,7 +47,7 @@ public class BundlePublisherResource {
 
 	public static String MY_TEMP = "";
 
-	private static final String BUNDLE_EXTENSION = ".tar.gz";
+	public static final String BUNDLE_EXTENSION = ".tar.gz";
 
 	/**
 	 * Receives a Bundle from another sending dotCMS instance with the intention of publishing it.
@@ -152,7 +153,10 @@ public class BundlePublisherResource {
 		try (InputStream bundleStream = request.getInputStream()) {
 
 			final String bundlePath         = ConfigUtils.getBundlePath()+ File.separator + MY_TEMP;
-			final String bundleFolder       = fileName.substring(0, fileName.indexOf(".tar.gz"));
+			final String bundleFolder       = PathContainmentUtil
+					.plainSegmentBeforeSuffix(fileName, BUNDLE_EXTENSION)
+					.orElseThrow(() -> new DotRuntimeException(
+							"Bundle file name is not a valid plain file name: " + fileName));
 			final PublishAuditStatus status = PublishAuditAPI.getInstance().updateAuditTable(
 					remoteIP, remoteIP, bundleFolder, true);
 
@@ -196,7 +200,8 @@ public class BundlePublisherResource {
 
 	/**
 	 * Checks that the file name sent with a bundle can be used as it is: a single plain file name
-	 * that ends in {@code .tar.gz}, has something before that extension, and resolves to a file
+	 * that ends in {@code .tar.gz}, has something before that extension which is itself a plain
+	 * segment (so it can be used on its own as the bundle identifier), and resolves to a file
 	 * located directly inside the bundles directory.
 	 *
 	 * @param fileName The file name received in the request.
@@ -204,9 +209,7 @@ public class BundlePublisherResource {
 	 * @return {@code true} if the file name is acceptable, {@code false} otherwise.
 	 */
 	private boolean isValidBundleFileName(final String fileName) {
-		if (!PathContainmentUtil.isPlainSegment(fileName)
-				|| !fileName.endsWith(BUNDLE_EXTENSION)
-				|| fileName.length() == BUNDLE_EXTENSION.length()) {
+		if (PathContainmentUtil.plainSegmentBeforeSuffix(fileName, BUNDLE_EXTENSION).isEmpty()) {
 			return false;
 		}
 		final File bundlesDir = new File(ConfigUtils.getBundlePath());

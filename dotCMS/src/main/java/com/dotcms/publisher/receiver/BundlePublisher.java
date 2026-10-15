@@ -140,11 +140,16 @@ public class BundlePublisher extends Publisher {
     /**
      * Processes the contents of a bundle. The process consists of uncompressing
      * the bundle file, and having each {@link IHandler} class analyze and
-     * process the corresponding data files.
+     * process the corresponding data files. The bundle identifier, taken from
+     * {@link PublisherConfig#getId()}, must be a plain file name ending in
+     * {@code .tar.gz} whose stem is itself a plain segment; otherwise this method fails before
+     * updating the audit table or touching the bundles directory, since that stem is later used
+     * on its own to build the bundle's working folder.
      *
      * @param status - Current status of the publishing process.
      * @return This bundle configuration ({@link PublisherConfig}).
-     * @throws DotPublishingException An error occurred when handling the contents of this bundle.
+     * @throws DotPublishingException An error occurred when handling the contents of this bundle,
+     * or the bundle identifier is not a plain file name.
      */
     @Override
     public PublisherConfig process ( final PublishStatus status ) throws DotPublishingException {
@@ -156,7 +161,13 @@ public class BundlePublisher extends Publisher {
         final LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
         boolean hasWarnings = false;
         String bundleName = config.getId();
-        String bundleID = bundleName.substring(0, bundleName.indexOf(".tar.gz"));
+        String bundleID = PathContainmentUtil
+                .plainSegmentBeforeSuffix(bundleName, BundlePublisherResource.BUNDLE_EXTENSION)
+                .orElseThrow(() -> {
+                    SecurityLogger.logWarn(BundlePublisher.class,
+                            () -> "Rejected a bundle identifier that is not a plain file name");
+                    return new DotPublishingException("Invalid bundle file name");
+                });
         String bundlePath =
                 ConfigUtils.getBundlePath() + File.separator + BundlePublisherResource.MY_TEMP;
 

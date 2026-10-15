@@ -221,6 +221,34 @@ public class BundlePublisherResourceTest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link BundlePublisherResource#publish}
+     * When: the bundle file name is two leading dots followed by the extension, so the part
+     * before the extension is {@code .}
+     * Should: reject the request and not create a bundle record for {@code .}.
+     */
+    @Test
+    public void test_publish_rejectsNameWhoseIdIsADot() throws Exception {
+        final Response response = publish("..tar.gz");
+
+        assertNull(bundleRecord("."));
+        assertEquals(400, response.getStatus());
+    }
+
+    /**
+     * Method to test: {@link BundlePublisherResource#publish}
+     * When: the bundle file name is three leading dots followed by the extension, so the part
+     * before the extension is {@code ..}
+     * Should: reject the request and not create a bundle record for {@code ..}.
+     */
+    @Test
+    public void test_publish_rejectsNameWhoseIdIsDotDot() throws Exception {
+        final Response response = publish("...tar.gz");
+
+        assertNull(bundleRecord(".."));
+        assertEquals(400, response.getStatus());
+    }
+
+    /**
+     * Method to test: {@link BundlePublisherResource#publish}
      * When: the bundle file name is a plain id followed by .tar.gz, as senders send it
      * Should: accept the bundle and register it.
      */
