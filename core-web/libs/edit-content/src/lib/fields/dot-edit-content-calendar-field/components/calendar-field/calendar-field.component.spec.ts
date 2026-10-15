@@ -185,16 +185,26 @@ describe('DotCalendarFieldComponent', () => {
      * over. The resulting width needs a layout engine and is checked in the browser.
      */
     describe('Popup width', () => {
-        const showPopupStretchedTo = (width: string) => {
+        /**
+         * Opens the popup through PrimeNG's own enter hook, the method the `p-motion` wrapper calls
+         * in the browser (jsdom never fires it). It writes the input's width as the wrapper's inline
+         * `min-width`, aligns it and emits `onShow` with whatever it emits there — so these tests
+         * break if PrimeNG stops writing the value or changes the `onShow` payload.
+         */
+        const openPopupStretchedTo = (inputWidth: number) => {
             const picker = spectator.query(DatePicker) as DatePicker;
             const overlay = document.createElement('div');
-            overlay.style.minWidth = width;
             const minWidthAtAlign: string[] = [];
+            const align = picker.alignOverlay.bind(picker);
             vi.spyOn(picker, 'alignOverlay').mockImplementation(() => {
                 minWidthAtAlign.push(overlay.style.minWidth);
+                align();
             });
 
-            picker.onShow.emit(overlay);
+            picker.overlayMinWidth = inputWidth;
+            picker.onOverlayBeforeEnter({ element: overlay } as Parameters<
+                DatePicker['onOverlayBeforeEnter']
+            >[0]);
 
             return { overlay, minWidthAtAlign };
         };
@@ -205,23 +215,23 @@ describe('DotCalendarFieldComponent', () => {
                 spectator = buildHost(fieldType);
                 spectator.detectChanges();
 
-                const { overlay } = showPopupStretchedTo('581px');
+                const { overlay } = openPopupStretchedTo(581);
 
                 expect(overlay.style.minWidth).toBe('');
             }
         );
 
         /**
-         * PrimeNG aligned the popup while it still had the input's width; the narrower popup has
-         * to be placed again (above/below, inside the viewport).
+         * PrimeNG aligns the popup while it still has the input's width; the narrower popup has to
+         * be placed again (above/below, inside the viewport) once the width is released.
          */
         it('should re-align the popup after its width is released', () => {
             spectator = buildHost(DotCMSFieldTypes.DATE);
             spectator.detectChanges();
 
-            const { minWidthAtAlign } = showPopupStretchedTo('581px');
+            const { minWidthAtAlign } = openPopupStretchedTo(581);
 
-            expect(minWidthAtAlign).toEqual(['']);
+            expect(minWidthAtAlign).toEqual(['581px', '']);
         });
     });
 
