@@ -1101,6 +1101,39 @@ describe('withActionExecution', () => {
                 expect.objectContaining({ actionName: 'news.csv', outcomeKind: 'import' })
             );
         });
+
+        /**
+         * PR #38054 review: after a reload the active imports are read, then restored. An import
+         * that ends in between reports its completion before it is tracked. It must not come back
+         * as running (nothing would end it), and its outcome is still the author's to see.
+         */
+        it('should report an import that ended before its restore, instead of restoring it as running', () => {
+            build();
+
+            importSocketEvents.next(importCompleted({ jobId: 'import-7' }));
+            store.restoreImportRuns([{ id: 'import-7', fileName: 'news.csv' }]);
+
+            expect(store.toolbarRunCount()).toBe(0);
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'news.csv',
+                    outcomeKind: 'import',
+                    createdCount: 3,
+                    updatedCount: 1,
+                    failedCount: 2
+                })
+            );
+        });
+
+        it('should not report an early completion that no restore claims', () => {
+            build();
+
+            importSocketEvents.next(importCompleted({ jobId: 'someone-else' }));
+            store.restoreImportRuns([{ id: 'import-7', fileName: 'news.csv' }]);
+
+            expect(store.actionExecutionResult()).toBeUndefined();
+            expect(store.toolbarRunCount()).toBe(1);
+        });
     });
 
     describe('restoring runs in progress after a reload', () => {

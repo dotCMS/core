@@ -119,6 +119,17 @@ interface WithActionExecutionState {
      */
     settledImportJobs: string[];
     /**
+     * Completions of CSV imports this page doesn't track yet, by job id (PR #38054 review).
+     *
+     * After a reload the running imports are read, then restored. One that ends in between reports
+     * its completion before it is tracked; held here, the restore reports it instead of putting
+     * back a status nothing would end. Same lifetime as {@link unclaimedUploadCompletions}: held
+     * only until that restore has run.
+     */
+    unclaimedImportCompletions: Record<string, DotImportCompletedEvent>;
+    /** Whether the imports' restore on load has run, after which no completion is held for it. */
+    importRunsRestored: boolean;
+    /**
      * Bulk folder deletes this store submitted, by job id, valued by the run they belong to.
      *
      * Same reasoning as {@link uploadJobs}: the completion is scoped to the submitting *user*, so a
@@ -226,6 +237,8 @@ export function withActionExecution() {
             uploadJobs: {},
             importJobs: {},
             settledImportJobs: [],
+            unclaimedImportCompletions: {},
+            importRunsRestored: false,
             folderDeleteJobs: {},
             settledFolderDeleteJobs: [],
             folderDeleteRefusal: undefined,
@@ -909,6 +922,49 @@ export function withActionExecution() {
                     patchState(store, {
                         importJobs: { ...store.importJobs(), [jobId]: { runId, fileName } }
                     });
+                };
+
+                /**
+                 * Ends a tracked import's run with its created, updated and failed counts, or the
+                 * server's reason when it failed outright, and remembers it as reported.
+                 */
+                const settleImportRun = (event: DotImportCompletedEvent): void => {
+                    const tracked = store.importJobs()[event.jobId];
+                    const remaining = { ...store.importJobs() };
+                    delete remaining[event.jobId];
+                    patchState(store, {
+                        importJobs: remaining,
+                        settledImportJobs: [...store.settledImportJobs(), event.jobId]
+                    });
+
+                    const created = event.created ?? 0;
+                    const updated = event.updated ?? 0;
+
+                    onSettled(tracked.runId, {
+                        actionName: tracked.fileName,
+                        outcomeKind: OUTCOME_KIND.IMPORT,
+                        successCount: created + updated,
+                        createdCount: created,
+                        updatedCount: updated,
+                        failedCount: event.failed ?? 0,
+                        skippedCount: 0,
+                        message: event.message,
+                        backgrounded: true
+                    });
+                };
+
+                /**
+                 * Puts back one running import after a reload, or reports it at once when its
+                 * completion already arrived while the running imports were being read.
+                 */
+                const restoreImportRun = (run: DotActiveImport): void => {
+                    const early = store.unclaimedImportCompletions()[run.id];
+
+                    trackImportRun(run.id, run.fileName ?? '');
+
+                    if (early && store.importJobs()[run.id]) {
+                        settleImportRun(early);
+                    }
                 };
 
                 const restoreDuplicateRun = (run: DotFolderDuplicateActiveRun): void => {
@@ -1692,46 +1748,47 @@ export function withActionExecution() {
                     startImportRun: (jobId: string, fileName: string): void =>
                         trackImportRun(jobId, fileName),
                     /** Puts back the status of CSV imports still running after a reload (#37896). */
-                    restoreImportRuns: (runs: DotActiveImport[]): void =>
-                        runs.forEach((run) => trackImportRun(run.id, run.fileName ?? '')),
+                    restoreImportRuns: (runs: DotActiveImport[]): void => {
+                        runs.forEach(restoreImportRun);
+                        // Nothing claims a completion after the restore: drop what is left (other
+                        // tabs' imports) and stop holding new ones.
+                        patchState(store, {
+                            unclaimedImportCompletions: {},
+                            importRunsRestored: true
+                        });
+                    },
                     /**
                      * Ends an import's run with its created, updated and failed counts, or the
-                     * server's reason when it failed outright (#37896). Previews, imports this page
-                     * doesn't track, and a job already reported are ignored: a failed job is
-                     * announced twice (failed, then permanently failed).
+                     * server's reason when it failed outright (#37896). Previews and a job already
+                     * reported are ignored: a failed job is announced twice (failed, then
+                     * permanently failed). An import this page doesn't track is held until the
+                     * restore on load, which reports it if it is this page's.
                      */
                     reportImportCompleted: (event: DotImportCompletedEvent): void => {
-                        const tracked = store.importJobs()[event.jobId];
-
                         if (
                             event.cmd !== 'publish' ||
-                            !tracked ||
                             store.settledImportJobs().includes(event.jobId)
                         ) {
                             return;
                         }
 
-                        const remaining = { ...store.importJobs() };
-                        delete remaining[event.jobId];
-                        patchState(store, {
-                            importJobs: remaining,
-                            settledImportJobs: [...store.settledImportJobs(), event.jobId]
-                        });
+                        if (!store.importJobs()[event.jobId]) {
+                            // Not tracked: another tab's import, or one of this author's ending
+                            // before the restore has placed it. Held until that restore, which
+                            // reports it if it is this page's; ignored once the restore has run.
+                            if (!store.importRunsRestored()) {
+                                patchState(store, {
+                                    unclaimedImportCompletions: {
+                                        ...store.unclaimedImportCompletions(),
+                                        [event.jobId]: event
+                                    }
+                                });
+                            }
 
-                        const created = event.created ?? 0;
-                        const updated = event.updated ?? 0;
+                            return;
+                        }
 
-                        onSettled(tracked.runId, {
-                            actionName: tracked.fileName,
-                            outcomeKind: OUTCOME_KIND.IMPORT,
-                            successCount: created + updated,
-                            createdCount: created,
-                            updatedCount: updated,
-                            failedCount: event.failed ?? 0,
-                            skippedCount: 0,
-                            message: event.message,
-                            backgrounded: true
-                        });
+                        settleImportRun(event);
                     },
                     restoreUploadRuns: (runs: DotBulkUploadActiveRun[]): void => {
                         runs.forEach(reportEarlyUploadCompletion);
