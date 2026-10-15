@@ -345,10 +345,24 @@ describe('DotPublishingQueueTableComponent', () => {
         });
 
         it('widens the actions column only while a New row is on screen', () => {
-            expect(spectator.component.$actionsColumnWidth()).toBe('9rem');
+            expect(spectator.component.$actionsColumnWidth()).toBe('9.5rem');
 
             tableRows.set([row('b1')]);
             expect(spectator.component.$actionsColumnWidth()).toBe('3rem');
+        });
+
+        it('holds the actions cell open with a content min-width on every row', () => {
+            // The <th> width alone gets squeezed (the table is `width: auto`), so
+            // the cell contents carry the minimum.
+            const wrappers = spectator.queryAll<HTMLElement>(byTestId('pq-bundles-actions'));
+            expect(wrappers.length).toBe(2);
+            wrappers.forEach((el) => expect(el.style.minWidth).toBe('7.5rem'));
+
+            tableRows.set([row('b1')]);
+            spectator.detectChanges();
+            expect(
+                spectator.query<HTMLElement>(byTestId('pq-bundles-actions'))?.style.minWidth
+            ).toBe('');
         });
 
         it('leaves rows with an audit status without a Set up button', () => {

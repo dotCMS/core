@@ -119,7 +119,20 @@ export class DotPublishingQueueTableComponent {
     /** Wide enough for the "Set up" button only while a New row is on screen;
      * otherwise just the kebab, so the other columns keep their room. */
     readonly $actionsColumnWidth = computed(() =>
-        this.store.tableRows().some((row) => row.isNew) ? '9rem' : '3rem'
+        this.store.tableRows().some((row) => row.isNew) ? '9.5rem' : '3rem'
+    );
+
+    /**
+     * Minimum width of the actions cell contents while a New row is on screen.
+     *
+     * The `<th>` width alone doesn't hold: `$ptConfig` gives the table
+     * `width: auto`, which makes the browser ignore `table-layout: fixed` and
+     * treat column widths as preferences, so a table wider than the portlet
+     * squeezes every column to fit. A cell's content min-width is the one thing
+     * that squeezing has to respect. The `<th>` width is this plus the cell padding.
+     */
+    readonly $actionsContentMinWidth = computed(() =>
+        this.store.tableRows().some((row) => row.isNew) ? '7.5rem' : null
     );
 
     readonly $selectedRows = computed(() => {

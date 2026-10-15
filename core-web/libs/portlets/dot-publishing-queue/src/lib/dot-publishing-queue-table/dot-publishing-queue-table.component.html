@@ -228,7 +228,10 @@
                             hideTransitionOptions="0ms"
                             (onHide)="onKebabHide(kebab)"
                             data-testid="pq-bundles-kebab-menu" />
-                        <div class="flex items-center justify-end gap-1">
+                        <div
+                            class="flex items-center justify-end gap-1"
+                            [style.min-width]="$actionsContentMinWidth()"
+                            data-testid="pq-bundles-actions">
                             @if (row.isNew) {
                                 <p-button
                                     [label]="'publishing-queue.row.set-up' | dm"
