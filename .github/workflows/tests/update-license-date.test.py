@@ -34,6 +34,14 @@ class LicenseWorkflowTests(unittest.TestCase):
         self.assertIn("ref: ${{ github.event.repository.default_branch }}", workflow)
         self.assertIn("cancel-in-progress: false", workflow)
 
+    def test_direct_push_uses_job_token_not_machine_token(self):
+        workflow = WORKFLOW.read_text()
+        checkout = workflow.split("      - name: Checkout default branch\n", 1)[1].split("      - name:", 1)[0]
+        self.assertIn("token: ${{ github.token }}", checkout)
+        self.assertNotIn("CI_MACHINE_TOKEN", checkout)
+        self.assertNotIn("pull-requests: write", workflow)
+        self.assertIn("token: ${{ secrets.CI_MACHINE_TOKEN }}", workflow)
+
     def test_update_only_changes_date_and_is_idempotent(self):
         script = step_script("update-license")
         with tempfile.TemporaryDirectory() as directory:
@@ -45,17 +53,19 @@ class LicenseWorkflowTests(unittest.TestCase):
             license_file = repo / "LICENSE"
             original = (ROOT / "LICENSE").read_bytes()
             license_file.write_bytes(original)
-            env = dict(os.environ, TZ="UTC", LC_ALL="C")
-            today = subprocess.check_output(
-                ["date", "-u", "+%B %d, %Y"], env=env, text=True
-            ).strip()
+            # Freeze only this test's clock; the real script inherits the exported
+            # bash function. This also exercises leap-day formatting without racing
+            # a second date call at UTC midnight or altering the production script.
+            today = "February 29, 2024"
+            env = dict(os.environ, TZ="UTC", LC_ALL="C", FIXED_DATE=today)
+            clock_stub = 'date() { printf "%s\\n" "$FIXED_DATE"; }; export -f date;\n'
             expected = re.sub(
                 rb"(?m)^Change Date:.*$",
                 f"Change Date:     Four years from {today}".encode(),
                 original,
             )
             for _ in range(2):
-                subprocess.run(["bash", "-euo", "pipefail", "-c", script], cwd=repo, env=env, check=True)
+                subprocess.run(["bash", "-euo", "pipefail", "-c", clock_stub + script], cwd=repo, env=env, check=True)
                 self.assertEqual(license_file.read_bytes(), expected)
 
     def run_publish(self, changed=True, push_succeeds=True):
@@ -115,6 +125,12 @@ class LicenseWorkflowTests(unittest.TestCase):
         self.assertIn("add-paths: LICENSE", workflow)
         self.assertIn("base: ${{ github.event.repository.default_branch }}", workflow)
         self.assertIn("secrets.CI_MACHINE_USER || 'dotcmsmachineuser'", workflow)
+
+    def test_generated_pr_references_license_tracking_issue(self):
+        workflow = WORKFLOW.read_text()
+        pr_body = workflow.split("          body: |\n", 1)[1]
+        self.assertIn("Refs #31844", pr_body)
+        self.assertNotIn("Closes #31844", pr_body)
 
     def test_missing_fallback_token_fails_with_clear_error(self):
         result = subprocess.run(

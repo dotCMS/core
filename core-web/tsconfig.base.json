@@ -39,9 +39,6 @@
             "@dotcms/edit-content": ["libs/edit-content/src/index.ts"],
             "@dotcms/edit-content-bridge": ["libs/edit-content-bridge/src/index.ts"],
             "@dotcms/edit-content/*": ["libs/edit-content/src/lib/*"],
-            "@dotcms/edit-content/custom-languages/*": [
-                "./libs/edit-content/src/lib/custom-languages/*"
-            ],
             "@dotcms/events": ["libs/sdk/events/src/index.ts"],
             "@dotcms/experiments": ["libs/sdk/experiments/src/index.ts"],
             "@dotcms/portlets/content-drive/portlet": [
