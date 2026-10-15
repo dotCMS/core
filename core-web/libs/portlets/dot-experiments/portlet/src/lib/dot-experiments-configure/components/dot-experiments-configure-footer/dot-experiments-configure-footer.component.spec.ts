@@ -46,7 +46,8 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.action.start-experiment': START_COPY,
     'experiments.action.schedule-experiment': SCHEDULE_COPY,
     'experiments.limited-mode.start.confirm.header': 'Start your free experiment',
-    'experiments.limited-mode.start.confirm.message': 'You are about to use your one free experiment.',
+    'experiments.limited-mode.start.confirm.message':
+        'You are about to use your one free experiment.',
     'experiments.limited-mode.start.confirm.accept': 'Continue',
     'dot.common.dialog.reject': 'Cancel'
 });

@@ -7,7 +7,6 @@ import { catchError, map } from 'rxjs/operators';
 
 import { DotCMSResponse, HealthStatusTypes } from '@dotcms/dotcms-models';
 
-
 import {
     ANALYTICS_CONTENT_URL,
     ANALYTICS_EVENTS_URL,
