@@ -1,17 +1,20 @@
 import { Observable } from 'rxjs';
 
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
 import {
     DotCMSAPIResponse,
+    DotCMSContentType,
     DotContentImportForm,
+    DotContentTypePaginationOptions,
     DotImportContentType,
     DotImportJob,
     DotImportJobCreated,
-    DotImportJobParameters
+    DotImportJobParameters,
+    DotPagination
 } from '@dotcms/dotcms-models';
 
 import { DotJobQueueService } from '../dot-job-queue/dot-job-queue.service';
@@ -37,15 +40,42 @@ export class DotContentImportService {
     readonly #jobQueue = inject(DotJobQueueService);
 
     /**
-     * The content types the current user can import into: those they can write to, except Host,
-     * sorted by name. The server applies the permission rule; this only unwraps the answer.
+     * One page of the content types the current user can import into: those they can write to,
+     * except Host, sorted by name, optionally narrowed by a search on name or variable. The server
+     * applies the permission rule and pages it.
+     *
+     * The answer has the shape the shared content type selector reads, so it can be handed to that
+     * selector as its page loader. The endpoint sends only each type's id, variable, name, base type
+     * and icon, which are all the selector uses.
+     *
+     * @param options the page, its size and the search
      */
-    getWritableContentTypes(): Observable<DotImportContentType[]> {
+    getWritableContentTypes(
+        options: DotContentTypePaginationOptions
+    ): Observable<{ contentTypes: DotCMSContentType[]; pagination: DotPagination }> {
+        let params = new HttpParams();
+        if (options.page !== undefined) {
+            params = params.set('page', options.page);
+        }
+
+        if (options.per_page !== undefined) {
+            params = params.set('per_page', options.per_page);
+        }
+
+        if (options.filter) {
+            params = params.set('filter', options.filter);
+        }
+
         return this.#http
             .get<
-                DotCMSAPIResponse<DotImportContentType[]>
-            >(`${DOT_CONTENT_IMPORT_URL}/contenttypes`)
-            .pipe(map((response) => response.entity));
+                DotCMSAPIResponse<DotImportContentType[]> & { pagination: DotPagination }
+            >(`${DOT_CONTENT_IMPORT_URL}/contenttypes`, { params })
+            .pipe(
+                map((response) => ({
+                    contentTypes: response.entity as unknown as DotCMSContentType[],
+                    pagination: response.pagination
+                }))
+            );
     }
 
     /**
