@@ -209,14 +209,15 @@ leaves the user with a file that looks complete and is not. In selection mode a 
 drop arbitrary rows.
 
 **Independent Test**: Filter to a content type with 100,001 readable contentlets and export. Nothing
-downloads, and the toast says the export has 100,001 rows and the limit is 100,000, and asks the
-user to narrow the filters. Repeat with a selection of folders holding 100,001 readable rows.
+downloads, and the toast says the export has more than 100,000 rows, that 100,000 is the limit, and
+asks the user to narrow the filters. Repeat with a selection of folders holding 100,001 readable
+rows.
 
 **Acceptance Scenarios**:
 
 1. **Given** a filter-mode export producing more than 100,000 rows the user can read, **When** it is
-   exported, **Then** it is refused, no file downloads, and the message gives the row count and the
-   limit.
+   exported, **Then** it is refused, no file downloads, and the message says the export has more
+   than 100,000 rows and that 100,000 is the limit.
 2. **Given** a selection producing more than 100,000 readable rows, **When** it is exported,
    **Then** it is refused in the same way.
 3. **Given** an export of 1 to 100,000 rows, in either mode, **When** it is exported, **Then** it
@@ -354,7 +355,10 @@ file.
 
 - **FR-010**: An export MUST hold at most 100,000 rows. In both modes, an export of more than
   100,000 rows the user can read MUST be refused before any file is produced, with a bad-request
-  response whose message states the row count and the limit.
+  response whose message says the export has more than 100,000 rows and that 100,000 is the limit.
+  The message MUST NOT need the exact total: counting MAY stop at the first row past the limit, so
+  rejecting a very large export (for example a content type with millions of contentlets) costs no
+  more than resolving 100,001 rows.
 - **FR-011**: Any export of 1 to 100,000 rows MUST include every row, including exports of more than
   10,000 rows.
 
@@ -366,9 +370,8 @@ file.
 - **FR-014**: A request naming a folder the user cannot read, or a folder that does not exist, MUST
   be refused with the same "not found" (404) response and message, so the response never reveals
   whether a folder exists.
-- **FR-015**: The response MUST NOT reveal how many items were skipped for permissions. The row
-  count given when refusing an export over the limit (FR-010) MUST count only rows the user can
-  read.
+- **FR-015**: The response MUST NOT reveal how many items were skipped for permissions. Only rows
+  the user can read count toward the 100,000 limit (FR-010).
 
 **Files and names**
 
@@ -391,7 +394,10 @@ file.
 **CSV format**
 
 - **FR-020**: The CSV MUST be written by the same code as the Content Search export, moved into a
-  reusable piece that both call.
+  reusable piece that both call. The shared piece MUST only write the CSV and MUST NOT push websocket
+  system messages. Today `downloadToExcel` pushes the "A total of N…" and error messages itself, so
+  the extraction moves them to its caller: Content Search keeps sending them (FR-023), and Drive
+  does not (FR-033).
 - **FR-021**: Each CSV's columns MUST be Identifier, languageCode, countryCode, then the content
   type's exportable fields in field order, the same columns the Content Search export writes for the
   same content type.
@@ -479,7 +485,7 @@ file.
 - **SC-006**: In every export, each contentlet version appears exactly once and each content type
   has exactly one CSV with one header row.
 - **SC-007**: 0 exports are silently truncated. Every export over 100,000 rows is refused with a
-  message giving the count and the limit.
+  message saying it has more than 100,000 rows and that 100,000 is the limit.
 - **SC-008**: After any export, successful or failed, 0 temporary export files remain on the server.
 
 ## Legacy Considerations *(dotCMS-specific — mandatory)*
@@ -532,8 +538,9 @@ file.
   complete result of the listing's query (FR-005), in selection mode by resolving the folders
   (recursively) and the selected versions. Keep this step light: only identifiers, languages and
   content types, with permissions checked in batches (`permissionAPI.filterCollection`), and no
-  loading or formatting of contentlets. That gives the row count, so "nothing to export" (FR-027)
-  and "over the limit" (FR-010) are decided before any file is written. Then write one content type
+  loading or formatting of contentlets, and stop as soon as the count passes 100,000. That gives
+  the row count, so "nothing to export" (FR-027) and "over the limit" (FR-010) are decided before
+  any file is written. Then write one content type
   at a time, handing each type's versions to the reused Content Search writer, which already works
   from a content type and a list of versions. In selection mode this also avoids interleaving zip
   entries. The plan confirms or changes this; the spec only fixes the outcomes.
