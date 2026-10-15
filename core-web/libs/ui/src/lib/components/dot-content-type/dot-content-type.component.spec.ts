@@ -1023,6 +1023,58 @@ describe('DotContentTypeComponent', () => {
             expect(options.find((ct) => ct.variable === 'Custom')).toBeTruthy();
         }));
     });
+
+    /**
+     * A consumer that lists content types under its own rule (#37896: Content Drive's CSV import
+     * offers only the types the user can write to) hands the selector a page loader. Paging,
+     * search and the dropdown stay the selector's; only where the pages come from changes.
+     */
+    describe('Custom page loader', () => {
+        const writableTypes: DotCMSContentType[] = [
+            { id: '10', name: 'Writable Blog', variable: 'WritableBlog' } as DotCMSContentType,
+            { id: '11', name: 'Writable News', variable: 'WritableNews' } as DotCMSContentType
+        ];
+        let pageLoader: ReturnType<typeof vi.fn>;
+
+        beforeEach(() => {
+            pageLoader = vi.fn().mockReturnValue(
+                of({
+                    contentTypes: writableTypes,
+                    pagination: { currentPage: 1, perPage: 40, totalEntries: 100 }
+                })
+            );
+            spectator.setInput('pageLoader', pageLoader);
+        });
+
+        it('loads the first page from the loader instead of the content type service', () => {
+            spectator.detectChanges();
+
+            expect(pageLoader).toHaveBeenCalledWith({ page: 1, per_page: 40 });
+            expect(contentTypeService.getContentTypesWithPagination).not.toHaveBeenCalled();
+            expect(spectator.component.$options()).toEqual(writableTypes);
+        });
+
+        it('asks the loader for the next page on lazy load', () => {
+            spectator.detectChanges();
+            pageLoader.mockClear();
+
+            spectator.triggerEventHandler(Select, 'onLazyLoad', { first: 40, last: 79 });
+
+            expect(pageLoader).toHaveBeenCalledWith({ page: 2, per_page: 40 });
+            expect(contentTypeService.getContentTypesWithPagination).not.toHaveBeenCalled();
+        });
+
+        it('sends the search to the loader', fakeAsync(() => {
+            spectator.detectChanges();
+            pageLoader.mockClear();
+
+            spectator.component.onFilterChange('blog');
+            tick(300);
+
+            expect(pageLoader).toHaveBeenCalledWith({ page: 1, per_page: 40, filter: 'blog' });
+            expect(contentTypeService.getContentTypesWithPagination).not.toHaveBeenCalled();
+        }));
+    });
 });
 
 describe('DotContentTypeComponent - ControlValueAccessor Integration', () => {
