@@ -1025,6 +1025,37 @@ describe('DotContentTypeComponent', () => {
     });
 
     /**
+     * A consumer whose list can legitimately be empty says why (#37896: an author who can write to
+     * no content type). Only for the list itself: while the author searches, an empty list means
+     * the search found nothing, so the selector's usual message stays.
+     */
+    describe('Empty message', () => {
+        it('keeps the default empty message when none is given', () => {
+            spectator.detectChanges();
+
+            expect(spectator.query(Select).emptyMessage).toBeFalsy();
+        });
+
+        it('shows the given message when there is no search', () => {
+            spectator.setInput('emptyMessage', 'Nothing you can import into');
+            spectator.detectChanges();
+
+            expect(spectator.query(Select).emptyMessage).toBe('Nothing you can import into');
+        });
+
+        it('keeps the default message while searching', fakeAsync(() => {
+            spectator.setInput('emptyMessage', 'Nothing you can import into');
+            spectator.detectChanges();
+
+            spectator.component.onFilterChange('zzz');
+            tick(300);
+            spectator.detectChanges();
+
+            expect(spectator.query(Select).emptyMessage).toBeFalsy();
+        }));
+    });
+
+    /**
      * A consumer that lists content types under its own rule (#37896: Content Drive's CSV import
      * offers only the types the user can write to) hands the selector a page loader. Paging,
      * search and the dropdown stay the selector's; only where the pages come from changes.

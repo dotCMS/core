@@ -168,6 +168,14 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit, On
     pageLoader = input<DotContentTypePageLoader | null>(null);
 
     /**
+     * What the list says when it has no content types at all, for a consumer whose list can
+     * legitimately be empty. Not shown while the user searches: there an empty list means the
+     * search found nothing, and the select's own message says so. When not set, the select's
+     * default empty message is used.
+     */
+    emptyMessage = input<string | null>(null);
+
+    /**
      * Reactive state of the component including loaded types, loading status, total results, and active filter.
      * Readonly to prevent accidental re-assignment.
      */
