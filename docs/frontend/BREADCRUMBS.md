@@ -155,9 +155,9 @@ myFeatureTab: {
 ## Persistence and router
 
 - **Session storage**: The store persists `breadcrumbs` to `sessionStorage` on every change and restores them on init via `loadBreadcrumbs()`.  
-- **Router**: On `NavigationEnd`, the store runs `_processUrl(url)` to sync the trail (menu match, special routes, or truncate when navigating back to an existing URL).  
+- **Router**: On `NavigationEnd`, the store runs `_processUrl(url)` to sync the trail (menu match, special routes, or truncate when navigating back to an existing URL). The menu match is `resolveMenuItem`, the same rule the sidebar highlight and the document title use (see [Menu feature](../../core-web/libs/global-store/README.md#navigation-menu-withmenu)), so the three always agree on the item.  
 - **Special routes**: Handlers in `breadcrumb.utils.ts` (e.g. templates edit, content filter) can set or append breadcrumbs; see `ROUTE_HANDLERS` and `processSpecialRoute`.
-  A URL with query params but no `mId` never matches a menu item, so a portlet reached that way needs a handler. Content Drive has one (`contentDrive`). It handles three cases:
+  A URL with query params but no `mId` never matches a menu item (it is not a bookmark), so a portlet reached that way needs a handler. Content Drive has one (`contentDrive`). It handles three cases:
   - a new tab: the trail starts from Content Drive's place in the menu;
   - a redirect from another portlet (Part 1 of #37759 sends Content Search and Site Browser links there): Content Drive is appended to that portlet's trail;
   - a trail that already ends on Content Drive: the trail is left alone.
