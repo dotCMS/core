@@ -1,5 +1,9 @@
 export interface DotMenuItem {
-    active: boolean;
+    /**
+     * @deprecated The menu resource does not send it. The highlight is the store's `activeKey`;
+     * do not use this flag as state.
+     */
+    active?: boolean;
     ajax: boolean;
     angular: boolean;
     id: string;

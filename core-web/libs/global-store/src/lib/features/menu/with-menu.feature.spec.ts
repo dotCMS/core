@@ -1,13 +1,15 @@
-import { signalStore, withState } from '@ngrx/signals';
+import { patchState, signalStore, withState } from '@ngrx/signals';
+import { setAllEntities } from '@ngrx/signals/entities';
 import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { DotMenu } from '@dotcms/dotcms-models';
+import { DotMenu, getMenuItemKey } from '@dotcms/dotcms-models';
 
 import { DOT_MENU_ROUTES_REGISTRAR } from './menu-routes-registrar.token';
+import { menuConfig } from './menu.slice';
 import { withMenu } from './with-menu.feature';
 
 describe('withMenu Feature', () => {
@@ -15,6 +17,13 @@ describe('withMenu Feature', () => {
     const TestStore = signalStore(withState({}), withMenu());
 
     let store: InstanceType<typeof TestStore>;
+    let httpMock: HttpTestingController;
+
+    /** Puts a menu in the store the way the app does: one request, answered by the backend. */
+    const seedMenu = (menus: DotMenu[]) => {
+        store.reload();
+        httpMock.expectOne('/api/v1/menu').flush({ entity: menus });
+    };
 
     const mockMenuItems: DotMenu[] = [
         {
@@ -100,10 +109,11 @@ describe('withMenu Feature', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            providers: [TestStore]
+            providers: [TestStore, provideHttpClient(), provideHttpClientTesting()]
         });
 
         store = TestBed.inject(TestStore);
+        httpMock = TestBed.inject(HttpTestingController);
     });
 
     describe('Initial State', () => {
@@ -129,13 +139,13 @@ describe('withMenu Feature', () => {
 
     describe('Load Menu', () => {
         it('should load menu items and transform them to entities', () => {
-            store.loadMenu(mockMenuItems);
+            seedMenu(mockMenuItems);
             const items = store.menuItemsEntities();
             expect(items.length).toBe(4); // 1 + 1 + 2 menu items
         });
 
         it('should add parentMenuId, parentMenuLabel, and parentMenuIcon to entities', () => {
-            store.loadMenu(mockMenuItems);
+            seedMenu(mockMenuItems);
             const items = store.menuItemsEntities();
             const firstItem = items[0];
             expect(firstItem.parentMenuId).toBe('1');
@@ -144,7 +154,7 @@ describe('withMenu Feature', () => {
         });
 
         it('should replace existing menu items when loading new menu', () => {
-            store.loadMenu(mockMenuItems);
+            seedMenu(mockMenuItems);
             const newItems: DotMenu[] = [
                 {
                     active: false,
@@ -170,14 +180,14 @@ describe('withMenu Feature', () => {
                     url: '/new'
                 }
             ];
-            store.loadMenu(newItems);
+            seedMenu(newItems);
             const items = store.menuItemsEntities();
             expect(items.length).toBe(1);
             expect(items[0].id).toBe('100-1');
         });
 
         it('should generate menuLink for angular items', () => {
-            store.loadMenu(mockMenuItems);
+            seedMenu(mockMenuItems);
             const items = store.menuItemsEntities();
             const angularItem = items.find((item) => item.angular);
             expect(angularItem?.menuLink).toBe('/');
@@ -209,7 +219,7 @@ describe('withMenu Feature', () => {
                     url: '/legacy'
                 }
             ];
-            store.loadMenu(legacyMenu);
+            seedMenu(legacyMenu);
             const items = store.menuItemsEntities();
             expect(items[0].menuLink).toBe('/c/legacy-portlet');
         });
@@ -217,7 +227,7 @@ describe('withMenu Feature', () => {
 
     describe('Menu Group', () => {
         beforeEach(() => {
-            store.loadMenu(mockMenuItems);
+            seedMenu(mockMenuItems);
         });
 
         it('should group menu items by parentMenuId', () => {
@@ -247,7 +257,7 @@ describe('withMenu Feature', () => {
 
     describe('Active Menu Item', () => {
         beforeEach(() => {
-            store.loadMenu(mockMenuItems);
+            seedMenu(mockMenuItems);
         });
 
         it('should activate a menu item by composite key', () => {
@@ -255,7 +265,6 @@ describe('withMenu Feature', () => {
             const activeItem = store.activeMenuItem();
             expect(activeItem).toBeDefined();
             expect(activeItem?.id).toBe('1-1');
-            expect(activeItem?.active).toBe(true);
         });
 
         it('should deactivate previous item when activating new one', () => {
@@ -263,9 +272,6 @@ describe('withMenu Feature', () => {
             store.activateMenuItem('2-1__2');
             const activeItem = store.activeMenuItem();
             expect(activeItem?.id).toBe('2-1');
-            const allItems = store.menuItemsEntities();
-            const firstItem = allItems.find((item) => item.id === '1-1');
-            expect(firstItem?.active).toBe(false);
         });
 
         it('should activate item and open parent menu group', () => {
@@ -290,7 +296,7 @@ describe('withMenu Feature', () => {
 
     describe('Toggle Parent Menu', () => {
         beforeEach(() => {
-            store.loadMenu(mockMenuItems);
+            seedMenu(mockMenuItems);
         });
 
         it('should open a parent menu group', () => {
@@ -313,7 +319,7 @@ describe('withMenu Feature', () => {
 
     describe('Close All Parents', () => {
         beforeEach(() => {
-            store.loadMenu(mockMenuItems);
+            seedMenu(mockMenuItems);
             store.toggleParent('1');
         });
 
@@ -326,7 +332,7 @@ describe('withMenu Feature', () => {
 
     describe('Toggle Navigation', () => {
         beforeEach(() => {
-            store.loadMenu(mockMenuItems);
+            seedMenu(mockMenuItems);
         });
 
         it('should toggle navigation from collapsed to expanded', () => {
@@ -357,7 +363,7 @@ describe('withMenu Feature', () => {
 
     describe('Collapse Navigation', () => {
         beforeEach(() => {
-            store.loadMenu(mockMenuItems);
+            seedMenu(mockMenuItems);
             store.toggleNavigation(); // Expand first
         });
 
@@ -375,7 +381,7 @@ describe('withMenu Feature', () => {
 
     describe('Expand Navigation', () => {
         beforeEach(() => {
-            store.loadMenu(mockMenuItems);
+            seedMenu(mockMenuItems);
         });
 
         it('should expand navigation', () => {
@@ -395,311 +401,9 @@ describe('withMenu Feature', () => {
         });
     });
 
-    describe('Set Active Menu', () => {
-        beforeEach(() => {
-            store.loadMenu(mockMenuItems);
-        });
-
-        it('should set active menu item by portletId and parentMenuId', () => {
-            // Expand navigation first so parent menu can be opened
-            store.expandNavigation();
-            store.setActiveMenu({ portletId: '1-1', shortParentMenuId: '1' });
-            const activeItem = store.activeMenuItem();
-            expect(activeItem?.id).toBe('1-1');
-            expect(store.openParentMenuId()).toBe('1');
-        });
-
-        it('should activate parent menu when navigation is collapsed', () => {
-            store.collapseNavigation();
-            store.setActiveMenu({ portletId: '1-1', shortParentMenuId: '1' });
-            const activeItem = store.activeMenuItem();
-            expect(activeItem?.id).toBe('1-1');
-        });
-
-        it('should not activate if portletId is empty', () => {
-            const initialActive = store.activeMenuItem();
-            store.setActiveMenu({ portletId: '', shortParentMenuId: '1' });
-            const finalActive = store.activeMenuItem();
-            expect(finalActive).toEqual(initialActive);
-        });
-
-        it('should resolve multi-segment portlet IDs correctly', () => {
-            // Add items that match the multi-segment portlets
-            const menuWithMultiSegmentPortlets: DotMenu[] = [
-                ...mockMenuItems,
-                {
-                    active: false,
-                    id: 'MARKETING',
-                    label: 'Marketing',
-                    isOpen: false,
-                    menuItems: [
-                        {
-                            active: false,
-                            ajax: true,
-                            angular: true,
-                            id: 'analytics-dashboard',
-                            label: 'Analytics Dashboard',
-                            url: '/c/analytics-dashboard',
-                            menuLink: '/c/analytics-dashboard',
-                            parentMenuId: 'MARKETING'
-                        },
-                        {
-                            active: false,
-                            ajax: true,
-                            angular: true,
-                            id: 'analytics-search',
-                            label: 'Analytics Search',
-                            url: '/c/analytics-search',
-                            menuLink: '/c/analytics-search',
-                            parentMenuId: 'MARKETING'
-                        }
-                    ],
-                    name: 'Marketing',
-                    tabDescription: 'Marketing',
-                    tabIcon: 'pi pi-chart-bar',
-                    tabName: 'Marketing',
-                    url: '/marketing'
-                }
-            ];
-
-            store.loadMenu(menuWithMultiSegmentPortlets);
-
-            // Test analytics-dashboard ID works directly
-            // getPortletId() now resolves /analytics/dashboard → analytics-dashboard directly
-            store.setActiveMenu({ portletId: 'analytics-dashboard', shortParentMenuId: 'MARK' });
-            expect(store.activeMenuItem()?.id).toBe('analytics-dashboard');
-
-            // Test analytics-search ID works directly
-            store.setActiveMenu({ portletId: 'analytics-search', shortParentMenuId: 'MARK' });
-            expect(store.activeMenuItem()?.id).toBe('analytics-search');
-        });
-
-        it('should activate menu item using breadcrumbs when bookmark is true', () => {
-            const breadcrumbs = [
-                { label: 'Home', url: '/' },
-                { label: 'About', url: '/about' }
-            ];
-
-            store.setActiveMenu({
-                portletId: 'non-existent-id',
-                shortParentMenuId: '',
-                bookmark: true,
-                breadcrumbs
-            });
-
-            const activeItem = store.activeMenuItem();
-            expect(activeItem?.id).toBe('1-1');
-            expect(activeItem?.label).toBe('Home');
-            expect(store.openParentMenuId()).toBe('1');
-        });
-
-        it('should use first breadcrumb with URL when matching menu items', () => {
-            const breadcrumbs = [
-                { label: 'No URL Item' }, // No URL
-                { label: 'About', url: '/about' }, // Should match this
-                { label: 'Home', url: '/' }
-            ];
-
-            store.setActiveMenu({
-                portletId: 'non-existent-id',
-                shortParentMenuId: '',
-                bookmark: true,
-                breadcrumbs
-            });
-
-            const activeItem = store.activeMenuItem();
-            expect(activeItem?.id).toBe('2-1');
-            expect(activeItem?.label).toBe('About');
-        });
-
-        it('should fallback to ID matching when breadcrumbs do not match', () => {
-            const breadcrumbs = [{ label: 'Non-existent Label', url: '/non-existent' }];
-
-            store.setActiveMenu({
-                portletId: '2-1',
-                shortParentMenuId: '',
-                bookmark: true,
-                breadcrumbs
-            });
-
-            const activeItem = store.activeMenuItem();
-            expect(activeItem?.id).toBe('2-1');
-            expect(store.openParentMenuId()).toBe('2');
-        });
-
-        it('should not activate if bookmark is false and shortParentMenuId is missing', () => {
-            const initialActive = store.activeMenuItem();
-
-            store.setActiveMenu({
-                portletId: 'some-id',
-                shortParentMenuId: '',
-                bookmark: false
-            });
-
-            const finalActive = store.activeMenuItem();
-            expect(finalActive).toEqual(initialActive);
-        });
-
-        it('should handle empty breadcrumbs array when bookmark is true', () => {
-            store.setActiveMenu({
-                portletId: '1-1',
-                shortParentMenuId: '',
-                bookmark: true,
-                breadcrumbs: []
-            });
-
-            const activeItem = store.activeMenuItem();
-            expect(activeItem?.id).toBe('1-1');
-        });
-
-        it('should handle breadcrumbs with no URLs when bookmark is true', () => {
-            const breadcrumbs = [
-                { label: 'Home' }, // No URL
-                { label: 'About' } // No URL
-            ];
-
-            store.setActiveMenu({
-                portletId: '2-1',
-                shortParentMenuId: '',
-                bookmark: true,
-                breadcrumbs
-            });
-
-            const activeItem = store.activeMenuItem();
-            expect(activeItem?.id).toBe('2-1');
-        });
-
-        it('should not activate non-existent menu item even with breadcrumbs', () => {
-            const breadcrumbs = [{ label: 'Non-existent', url: '/non-existent' }];
-
-            const initialActive = store.activeMenuItem();
-
-            store.setActiveMenu({
-                portletId: 'non-existent-portlet-id',
-                shortParentMenuId: '',
-                bookmark: true,
-                breadcrumbs
-            });
-
-            const finalActive = store.activeMenuItem();
-            expect(finalActive).toEqual(initialActive);
-        });
-
-        it('should activate menu item using breadcrumbs when bookmark is true', () => {
-            const breadcrumbs = [
-                { label: 'Home', url: '/' },
-                { label: 'About', url: '/about' }
-            ];
-
-            store.setActiveMenu({
-                portletId: 'non-existent-id',
-                shortParentMenuId: '',
-                bookmark: true,
-                breadcrumbs
-            });
-
-            const activeItem = store.activeMenuItem();
-            expect(activeItem?.id).toBe('1-1');
-            expect(activeItem?.label).toBe('Home');
-            expect(store.openParentMenuId()).toBe('1');
-        });
-
-        it('should use first breadcrumb with URL when matching menu items', () => {
-            const breadcrumbs = [
-                { label: 'No URL Item' }, // No URL
-                { label: 'About', url: '/about' }, // Should match this
-                { label: 'Home', url: '/' }
-            ];
-
-            store.setActiveMenu({
-                portletId: 'non-existent-id',
-                shortParentMenuId: '',
-                bookmark: true,
-                breadcrumbs
-            });
-
-            const activeItem = store.activeMenuItem();
-            expect(activeItem?.id).toBe('2-1');
-            expect(activeItem?.label).toBe('About');
-        });
-
-        it('should fallback to ID matching when breadcrumbs do not match', () => {
-            const breadcrumbs = [{ label: 'Non-existent Label', url: '/non-existent' }];
-
-            store.setActiveMenu({
-                portletId: '2-1',
-                shortParentMenuId: '',
-                bookmark: true,
-                breadcrumbs
-            });
-
-            const activeItem = store.activeMenuItem();
-            expect(activeItem?.id).toBe('2-1');
-            expect(store.openParentMenuId()).toBe('2');
-        });
-
-        it('should not activate if bookmark is false and shortParentMenuId is missing', () => {
-            const initialActive = store.activeMenuItem();
-
-            store.setActiveMenu({
-                portletId: 'some-id',
-                shortParentMenuId: '',
-                bookmark: false
-            });
-
-            const finalActive = store.activeMenuItem();
-            expect(finalActive).toEqual(initialActive);
-        });
-
-        it('should handle empty breadcrumbs array when bookmark is true', () => {
-            store.setActiveMenu({
-                portletId: '1-1',
-                shortParentMenuId: '',
-                bookmark: true,
-                breadcrumbs: []
-            });
-
-            const activeItem = store.activeMenuItem();
-            expect(activeItem?.id).toBe('1-1');
-        });
-
-        it('should handle breadcrumbs with no URLs when bookmark is true', () => {
-            const breadcrumbs = [
-                { label: 'Home' }, // No URL
-                { label: 'About' } // No URL
-            ];
-
-            store.setActiveMenu({
-                portletId: '2-1',
-                shortParentMenuId: '',
-                bookmark: true,
-                breadcrumbs
-            });
-
-            const activeItem = store.activeMenuItem();
-            expect(activeItem?.id).toBe('2-1');
-        });
-
-        it('should not activate non-existent menu item even with breadcrumbs', () => {
-            const breadcrumbs = [{ label: 'Non-existent', url: '/non-existent' }];
-
-            const initialActive = store.activeMenuItem();
-
-            store.setActiveMenu({
-                portletId: 'non-existent-portlet-id',
-                shortParentMenuId: '',
-                bookmark: true,
-                breadcrumbs
-            });
-
-            const finalActive = store.activeMenuItem();
-            expect(finalActive).toEqual(initialActive);
-        });
-    });
-
     describe('Entity Map', () => {
         beforeEach(() => {
-            store.loadMenu(mockMenuItems);
+            seedMenu(mockMenuItems);
         });
 
         it('should provide entity map for direct lookups', () => {
@@ -719,7 +423,7 @@ describe('withMenu Feature', () => {
 
     describe('Flatten Menu Items', () => {
         beforeEach(() => {
-            store.loadMenu(mockMenuItems);
+            seedMenu(mockMenuItems);
         });
 
         it('should return all menu items as flat array', () => {
@@ -740,7 +444,7 @@ describe('withMenu Feature', () => {
 
     describe('Complex Scenarios', () => {
         beforeEach(() => {
-            store.loadMenu(mockMenuItems);
+            seedMenu(mockMenuItems);
         });
 
         it('should handle full menu workflow', () => {
@@ -775,9 +479,8 @@ describe('withMenu Feature', () => {
             store.activateMenuItem('2-1__2');
             store.activateMenuItem('1-1__1');
 
-            const activeItems = store.menuItemsEntities().filter((item) => item.active);
-            expect(activeItems.length).toBe(1);
-            expect(activeItems[0].id).toBe('1-1');
+            expect(store.activeKey()).toBe('1-1__1');
+            expect(store.activeMenuItem()?.id).toBe('1-1');
         });
 
         it('should maintain single open parent constraint', () => {
@@ -1215,15 +918,22 @@ describe('withMenu loading', () => {
             expect(store.activeMenuItem()).toBeNull();
         });
 
-        it('returns an empty string for an Angular item or an unknown id', () => {
+        it('answers an Angular item with an empty string without sending a request', () => {
             const urls: string[] = [];
 
             store.loadFreshPortletUrl('pages').subscribe((value) => urls.push(value));
-            httpMock.expectOne(MENU_URL).flush({ entity: menuA });
+
+            httpMock.expectNone(MENU_URL);
+            expect(urls).toEqual(['']);
+        });
+
+        it('returns an empty string for an id that is not in the menu, after asking', () => {
+            const urls: string[] = [];
+
             store.loadFreshPortletUrl('nope').subscribe((value) => urls.push(value));
             httpMock.expectOne(MENU_URL).flush({ entity: menuA });
 
-            expect(urls).toEqual(['', '']);
+            expect(urls).toEqual(['']);
         });
 
         it('falls back to the url already in the snapshot when the request fails', () => {
@@ -1233,6 +943,311 @@ describe('withMenu loading', () => {
             httpMock.expectOne(MENU_URL).flush('x', { status: 500, statusText: 'Server Error' });
 
             expect(url).toBe('/c/legacy?r=1');
+        });
+    });
+});
+
+/**
+ * Identity, order and highlight of the menu entities (issue #38078). An item is identified by its
+ * portlet id plus the FULL layout id; the 4-character `mId` is only a lookup field. The highlight is
+ * the `activeKey` of an item, never a flag written on the entity, so replacing the snapshot does not
+ * erase it by itself.
+ */
+describe('withMenu identity and highlight', () => {
+    const MENU_URL = '/api/v1/menu';
+    const IdentityStore = signalStore(withState({}), withMenu());
+
+    const SITE = 'aaaa1111-0000-4000-8000-000000000001';
+    const SITE_CLONE = 'aaaa9999-0000-4000-8000-000000000002';
+    const CONTENT = 'bbbb2222-0000-4000-8000-000000000003';
+
+    const group = (id: string, items: string[]) =>
+        ({
+            id,
+            name: id,
+            tabName: id,
+            tabIcon: 'icon',
+            url: `/${items[0]}`,
+            menuItems: items.map((portlet) => ({
+                id: portlet,
+                label: portlet,
+                url: `/${portlet}`,
+                angular: true,
+                ajax: false
+            }))
+        }) as unknown as DotMenu;
+
+    let store: InstanceType<typeof IdentityStore>;
+    let httpMock: HttpTestingController;
+
+    const seed = (menus: DotMenu[]) => {
+        store.reload();
+        httpMock.expectOne(MENU_URL).flush({ entity: menus });
+    };
+
+    beforeEach(() => {
+        TestBed.resetTestingModule();
+        TestBed.configureTestingModule({
+            providers: [IdentityStore, provideHttpClient(), provideHttpClientTesting()]
+        });
+        store = TestBed.inject(IdentityStore);
+        httpMock = TestBed.inject(HttpTestingController);
+        localStorage.clear();
+    });
+
+    describe('entity key', () => {
+        it('is the portlet id plus the full layout id', () => {
+            seed([group(SITE, ['pages'])]);
+
+            expect(Object.keys(store.entityMap())).toEqual([`pages__${SITE}`]);
+        });
+
+        it('keeps both items when two layouts share the first 4 characters and a portlet id', () => {
+            seed([group(SITE, ['pages']), group(SITE_CLONE, ['pages'])]);
+
+            expect(store.menuItemsEntities()).toHaveLength(2);
+            expect(Object.keys(store.entityMap()).sort()).toEqual(
+                [`pages__${SITE}`, `pages__${SITE_CLONE}`].sort()
+            );
+        });
+
+        it('is the one getMenuItemKey builds', () => {
+            seed([group(SITE, ['pages'])]);
+
+            expect(getMenuItemKey(store.menuItemsEntities()[0])).toBe(`pages__${SITE}`);
+        });
+    });
+
+    describe('entity fields', () => {
+        it('stamps the short layout id, the group position and the item position', () => {
+            seed([group(SITE, ['pages', 'templates']), group(CONTENT, ['content-drive'])]);
+
+            const byId = (id: string) => store.menuItemsEntities().find((item) => item.id === id);
+
+            expect(byId('pages')).toMatchObject({
+                shortLayoutId: 'aaaa',
+                tabOrder: 0,
+                itemIndex: 0,
+                parentMenuId: SITE
+            });
+            expect(byId('templates')).toMatchObject({ tabOrder: 0, itemIndex: 1 });
+            expect(byId('content-drive')).toMatchObject({
+                shortLayoutId: 'bbbb',
+                tabOrder: 1,
+                itemIndex: 0
+            });
+        });
+
+        it('keeps the raw url for the iframe and builds menuLink with the same rule as before', () => {
+            seed([
+                {
+                    ...group(SITE, ['pages']),
+                    menuItems: [
+                        { id: 'pages', label: 'Pages', url: '/pages', angular: true, ajax: false },
+                        { id: 'old', label: 'Old', url: '/c/old?r=1', angular: false, ajax: false }
+                    ]
+                } as unknown as DotMenu
+            ]);
+
+            const entities = store.menuItemsEntities();
+            expect(entities.find((i) => i.id === 'pages')).toMatchObject({
+                url: '/pages',
+                menuLink: '/pages'
+            });
+            expect(entities.find((i) => i.id === 'old')).toMatchObject({
+                url: '/c/old?r=1',
+                menuLink: '/c/old'
+            });
+        });
+    });
+
+    describe('group order', () => {
+        it('follows the position of each group in the response', () => {
+            seed([group(CONTENT, ['content-drive']), group(SITE, ['pages'])]);
+
+            expect(store.menuGroup().map((g) => g.id)).toEqual([CONTENT, SITE]);
+            expect(store.menuGroup().map((g) => g.tabOrder)).toEqual([0, 1]);
+        });
+
+        it('does not depend on the order the entities are stored in', () => {
+            seed([group(SITE, ['pages', 'templates', 'containers']), group(CONTENT, ['drive'])]);
+
+            patchState(store, setAllEntities([...store.menuItemsEntities()].reverse(), menuConfig));
+
+            expect(store.menuGroup().map((g) => g.id)).toEqual([SITE, CONTENT]);
+            expect(store.menuGroup()[0].menuItems.map((item) => item.id)).toEqual([
+                'pages',
+                'templates',
+                'containers'
+            ]);
+            expect(store.firstMenuItem()?.id).toBe('pages');
+        });
+    });
+
+    describe('activeKey', () => {
+        beforeEach(() => seed([group(SITE, ['pages', 'templates']), group(CONTENT, ['drive'])]));
+
+        it('starts empty, as it does after a browser reload', () => {
+            expect(store.activeKey()).toBeNull();
+            expect(store.activeMenuItem()).toBeNull();
+            expect(store.isGroupActive()).toBe(false);
+        });
+
+        it('is set with the item and opens its group', () => {
+            store.activateMenuItemWithParent(`templates__${SITE}`, SITE);
+
+            expect(store.activeKey()).toBe(`templates__${SITE}`);
+            expect(store.activeMenuItem()?.id).toBe('templates');
+            expect(store.openParentMenuId()).toBe(SITE);
+            expect(store.isGroupActive()).toBe(true);
+        });
+
+        it('only one item is active at a time', () => {
+            store.activateMenuItemWithParent(`pages__${SITE}`, SITE);
+            store.activateMenuItemWithParent(`drive__${CONTENT}`, CONTENT);
+
+            expect(store.activeMenuItem()?.id).toBe('drive');
+        });
+
+        it('ignores a key that is not in the menu', () => {
+            store.activateMenuItemWithParent(`pages__${SITE}`, SITE);
+
+            store.activateMenuItemWithParent('ghost__nowhere', 'nowhere');
+
+            expect(store.activeKey()).toBe(`pages__${SITE}`);
+        });
+
+        it('never writes an active flag on the entities', () => {
+            store.activateMenuItemWithParent(`pages__${SITE}`, SITE);
+
+            expect(store.menuItemsEntities().every((item) => item.active === undefined)).toBe(true);
+        });
+
+        it('survives replacing the snapshot while the item still exists', () => {
+            store.activateMenuItemWithParent(`templates__${SITE}`, SITE);
+
+            seed([group(SITE, ['pages', 'templates', 'containers'])]);
+
+            expect(store.activeKey()).toBe(`templates__${SITE}`);
+            expect(store.activeMenuItem()?.id).toBe('templates');
+        });
+
+        it('is cleared when the replacement no longer has the item', () => {
+            store.activateMenuItemWithParent(`templates__${SITE}`, SITE);
+
+            seed([group(SITE, ['pages'])]);
+
+            expect(store.activeKey()).toBeNull();
+            expect(store.activeMenuItem()).toBeNull();
+        });
+
+        it('is kept by a failed reload together with the entities', () => {
+            store.activateMenuItemWithParent(`templates__${SITE}`, SITE);
+
+            store.reload();
+            httpMock.expectOne(MENU_URL).flush('x', { status: 500, statusText: 'Server Error' });
+
+            expect(store.activeMenuItem()?.id).toBe('templates');
+        });
+
+        it('leaves the open group and the collapsed state alone when it is cleared', () => {
+            store.expandNavigation();
+            store.activateMenuItemWithParent(`templates__${SITE}`, SITE);
+
+            seed([group(CONTENT, ['drive'])]);
+
+            expect(store.isNavigationCollapsed()).toBe(false);
+            expect(store.openParentMenuId()).toBe(SITE);
+        });
+    });
+
+    describe('queries over the snapshot', () => {
+        const legacyGroup = {
+            ...group(CONTENT, ['workflow', 'drive']),
+            menuItems: [
+                {
+                    id: 'workflow',
+                    label: 'Workflow',
+                    url: '/c/workflow',
+                    angular: false,
+                    ajax: false
+                },
+                { id: 'drive', label: 'Drive', url: '/drive', angular: true, ajax: false }
+            ]
+        } as unknown as DotMenu;
+
+        beforeEach(() => seed([group(SITE, ['pages', 'locales']), legacyGroup]));
+
+        it('hasPortlet is true for a portlet in any layout and false for one that is not', () => {
+            expect(store.hasPortlet('pages')).toBe(true);
+            expect(store.hasPortlet('drive')).toBe(true);
+            expect(store.hasPortlet('ghost')).toBe(false);
+        });
+
+        it('hasPortlet with jspOnly only counts a portlet that is not an Angular one', () => {
+            expect(store.hasPortlet('workflow', { jspOnly: true })).toBe(true);
+            expect(store.hasPortlet('pages', { jspOnly: true })).toBe(false);
+            expect(store.hasPortlet('ghost', { jspOnly: true })).toBe(false);
+        });
+
+        it('hasPortlet is false while the menu is empty', () => {
+            TestBed.resetTestingModule();
+            TestBed.configureTestingModule({
+                providers: [IdentityStore, provideHttpClient(), provideHttpClientTesting()]
+            });
+
+            expect(TestBed.inject(IdentityStore).hasPortlet('pages')).toBe(false);
+        });
+
+        it('layoutIdForPortlet is the full id of the layout that holds the portlet', () => {
+            expect(store.layoutIdForPortlet('workflow')).toBe(CONTENT);
+            expect(store.layoutIdForPortlet('pages')).toBe(SITE);
+        });
+
+        it('layoutIdForPortlet is null for a portlet that is not in the menu', () => {
+            expect(store.layoutIdForPortlet('ghost')).toBeNull();
+        });
+
+        it('both answers follow a later reload', () => {
+            expect(store.hasPortlet('locales')).toBe(true);
+
+            seed([group(SITE, ['pages'])]);
+
+            expect(store.hasPortlet('locales')).toBe(false);
+            expect(store.layoutIdForPortlet('workflow')).toBeNull();
+        });
+    });
+
+    describe('page title', () => {
+        beforeEach(() =>
+            seed([group(SITE, ['pages', 'templates']), group(CONTENT, ['content-types'])])
+        );
+
+        it('is the label of the item the url resolves to', () => {
+            expect(store.getPageTitleByUrl('/templates?mId=aaaa')).toBe('templates');
+        });
+
+        it('is empty when the url resolves to nothing', () => {
+            expect(store.getPageTitleByUrl('/nothing')).toBe('');
+        });
+
+        it('does not let a shorter menu link claim a longer path', () => {
+            seed([
+                {
+                    ...group(SITE, ['content']),
+                    menuItems: [
+                        {
+                            id: 'content',
+                            label: 'Content Search',
+                            url: '/c/content',
+                            angular: false,
+                            ajax: false
+                        }
+                    ]
+                } as unknown as DotMenu
+            ]);
+
+            expect(store.getPageTitleByUrl('/c/content-types')).toBe('');
         });
     });
 });

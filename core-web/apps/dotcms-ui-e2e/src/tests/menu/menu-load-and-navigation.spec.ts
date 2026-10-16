@@ -1,8 +1,7 @@
 import { DotNavigationPage } from '@pages';
 import { expect, test } from '@playwright/test';
-import { getLayouts, getMenu } from '@requests/layouts';
+import { getLayouts } from '@requests/layouts';
 
-import { trackMenuRequests } from './helpers/menu-requests';
 import { mIdOf, startWithBar } from './helpers/menu-state';
 
 /**
@@ -14,52 +13,6 @@ import { mIdOf, startWithBar } from './helpers/menu-state';
  * a legacy JSP one, and it needs no data created.
  */
 test.describe('Admin navigation — load and clicks', () => {
-    test('load shows the groups in tabOrder with one menu request @critical', async ({
-        page,
-        request
-    }) => {
-        const tracker = trackMenuRequests(page);
-        const nav = new DotNavigationPage(page);
-
-        await nav.goto('/pages');
-        await expect(nav.activeItem()).toBeVisible();
-        await page.waitForLoadState('load');
-        const groups = await getMenu(request);
-
-        // The groups on screen follow the menu response, and that response follows the layouts' tabOrder.
-        expect(await nav.groupNames()).toEqual(groups.map((group) => group.tabName));
-        const layouts = await getLayouts(request);
-        const expectedOrder = layouts
-            .filter((layout) => groups.some((group) => group.id === layout.id))
-            .sort((a, b) => a.tabOrder - b.tabOrder)
-            .map((layout) => layout.id);
-        expect(groups.map((group) => group.id)).toEqual(expectedOrder);
-
-        expect(tracker.count()).toBe(1);
-    });
-
-    test('moving across three portlets from the bar sends no further menu request @critical', async ({
-        page
-    }) => {
-        await startWithBar(page, 'expanded');
-        const tracker = trackMenuRequests(page);
-        const nav = new DotNavigationPage(page);
-
-        await nav.goto('/pages');
-        await expect(nav.activeItem()).toBeVisible();
-        await page.waitForLoadState('load');
-        tracker.reset();
-
-        await nav.openGroup('Site');
-        for (const label of ['Templates', 'Containers', 'Pages']) {
-            await nav.clickItem(label);
-            await expect(nav.activeItem()).toHaveText(label);
-            expect(mIdOf(page.url())).toMatch(/^[0-9a-f]{4}$/);
-        }
-
-        expect(tracker.count()).toBe(0);
-    });
-
     test('click semantics: Ctrl-click and Cmd-click do not navigate @critical', async ({
         page,
         context

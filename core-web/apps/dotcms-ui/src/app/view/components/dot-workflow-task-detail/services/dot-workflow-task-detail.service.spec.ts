@@ -1,31 +1,40 @@
-import { of as observableOf } from 'rxjs';
+import { of } from 'rxjs';
 import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { DotWorkflowTaskDetailService } from './dot-workflow-task-detail.service';
+import { DotCurrentUserService, DotSystemConfigService } from '@dotcms/data-access';
+import { LoginService } from '@dotcms/dotcms-js';
+import { GlobalStore } from '@dotcms/store';
+import { DotCurrentUserServiceMock, LoginServiceMock } from '@dotcms/utils-testing';
 
-import { DotMenuService } from '../../../../api/services/dot-menu.service';
+import { DotWorkflowTaskDetailService } from './dot-workflow-task-detail.service';
 
 describe('DotWorkflowTaskDetailService', () => {
     let service: DotWorkflowTaskDetailService;
-    let dotMenuService: DotMenuService;
+    let globalStore: {
+        ensureLoaded: ReturnType<typeof vi.fn>;
+        layoutIdForPortlet: ReturnType<typeof vi.fn>;
+    };
 
     beforeEach(() => {
         TestBed.configureTestingModule({
             providers: [
-                provideHttpClient(),
-                provideHttpClientTesting(),
-                DotMenuService,
+                {
+                    provide: GlobalStore,
+                    useValue: {
+                        ensureLoaded: vi.fn().mockReturnValue(of(undefined)),
+                        layoutIdForPortlet: vi.fn().mockReturnValue('456')
+                    }
+                },
                 DotWorkflowTaskDetailService
             ]
         });
 
         service = TestBed.inject(DotWorkflowTaskDetailService);
-        dotMenuService = TestBed.inject(DotMenuService);
-        vi.spyOn(dotMenuService, 'getDotMenuId').mockReturnValue(observableOf('456'));
+        globalStore = TestBed.inject(GlobalStore) as unknown as typeof globalStore;
     });
 
     it('should set data to view', () =>
@@ -49,8 +58,8 @@ describe('DotWorkflowTaskDetailService', () => {
                     ].join('')
                 );
 
-                expect(dotMenuService.getDotMenuId).toHaveBeenCalledWith('workflow');
-                expect(dotMenuService.getDotMenuId).toHaveBeenCalledTimes(1);
+                expect(globalStore.layoutIdForPortlet).toHaveBeenCalledWith('workflow');
+                expect(globalStore.layoutIdForPortlet).toHaveBeenCalledTimes(1);
                 done();
             });
 
@@ -109,7 +118,10 @@ describe('DotWorkflowTaskDetailService p_l_id', () => {
             providers: [
                 provideHttpClient(),
                 provideHttpClientTesting(),
-                DotMenuService,
+                { provide: DotCurrentUserService, useClass: DotCurrentUserServiceMock },
+                { provide: DotSystemConfigService, useValue: { getSystemConfig: () => of({}) } },
+                { provide: LoginService, useClass: LoginServiceMock },
+                GlobalStore,
                 DotWorkflowTaskDetailService
             ]
         });
@@ -117,11 +129,7 @@ describe('DotWorkflowTaskDetailService p_l_id', () => {
         httpMock = TestBed.inject(HttpTestingController);
     });
 
-    afterEach(() => {
-        httpMock.verify();
-    });
-
-    it('uses the id of the layout that contains the workflow portlet', () => {
+    it('waits for the menu and then uses the id of the layout that contains the workflow portlet', () => {
         let url = '';
         service.viewUrl$.subscribe((value) => (url = value));
 

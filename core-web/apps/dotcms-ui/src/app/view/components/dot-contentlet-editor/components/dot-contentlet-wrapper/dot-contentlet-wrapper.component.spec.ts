@@ -32,7 +32,6 @@ import {
 import { DotContentletWrapperComponent } from './dot-contentlet-wrapper.component';
 
 import { DotCustomEventHandlerService } from '../../../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
-import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { MockDotUiColorsService } from '../../../../../test/dot-test-bed';
 import { IframeOverlayService } from '../../../_common/iframe/service/iframe-overlay.service';
 import { DotIframeDialogComponent } from '../../../dot-iframe-dialog/dot-iframe-dialog.component';
@@ -88,14 +87,6 @@ describe('DotContentletWrapperComponent', () => {
                 {
                     provide: LoginService,
                     useClass: LoginServiceMock
-                },
-                {
-                    provide: DotMenuService,
-                    useValue: {
-                        getDotMenuId() {
-                            return of('999');
-                        }
-                    }
                 },
                 {
                     provide: DotMessageService,

@@ -9,4 +9,6 @@ export interface MenuGroup {
     icon: string;
     menuItems: MenuItemEntity[];
     isOpen: boolean;
+    /** Position of the group in the user's menu (the backend already sorts by `tabOrder`). */
+    tabOrder: number;
 }

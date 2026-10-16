@@ -8,7 +8,8 @@ import { of } from 'rxjs';
 import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
 
@@ -32,9 +33,14 @@ import { DotNavigationComponent } from './dot-navigation.component';
 import { DotNavigationService } from './services/dot-navigation.service';
 import { dotMenuMock, dotMenuMock1 } from './services/dot-navigation.service.spec';
 
-import { DotMenuService } from '../../../api/services/dot-menu.service';
 import { DotRandomIconPipe } from '../../pipes/dot-radom-icon/dot-random-icon.pipe';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
+
+/** Puts a menu in the store the way the app does: one request, answered by the backend. */
+const seedMenu = (store: InstanceType<typeof GlobalStore>, menus: DotMenu[]) => {
+    store.reload();
+    TestBed.inject(HttpTestingController).expectOne('/api/v1/menu').flush({ entity: menus });
+};
 
 describe('DotNavigationComponent collapsed', () => {
     let spectator: Spectator<DotNavigationComponent>;
@@ -53,7 +59,6 @@ describe('DotNavigationComponent collapsed', () => {
         ],
         providers: [
             provideRouter([]),
-            DotMenuService,
             { provide: DotCurrentUserService, useClass: DotCurrentUserServiceMock },
             mockProvider(IframeOverlayService),
             mockProvider(DotNavigationService),
@@ -85,7 +90,7 @@ describe('DotNavigationComponent collapsed', () => {
         dotRouterService = spectator.inject(DotRouterService);
 
         // Load menu items in the GlobalStore instead of using service's items$
-        globalStore.loadMenu([dotMenuMock(), dotMenuMock1()]);
+        seedMenu(globalStore, [dotMenuMock(), dotMenuMock1()]);
     });
 
     it('should have all menus closed', () => {
@@ -119,7 +124,10 @@ describe('DotNavigationComponent collapsed', () => {
                     menuLink: 'url/one',
                     parentMenuId: '123',
                     parentMenuLabel: 'Name',
-                    parentMenuIcon: 'icon'
+                    parentMenuIcon: 'icon',
+                    shortLayoutId: '123',
+                    tabOrder: 0,
+                    itemIndex: 0
                 },
                 {
                     active: false,
@@ -131,10 +139,14 @@ describe('DotNavigationComponent collapsed', () => {
                     menuLink: 'url/two',
                     parentMenuId: '123',
                     parentMenuLabel: 'Name',
-                    parentMenuIcon: 'icon'
+                    parentMenuIcon: 'icon',
+                    shortLayoutId: '123',
+                    tabOrder: 0,
+                    itemIndex: 1
                 }
             ],
-            isOpen: false
+            isOpen: false,
+            tabOrder: 0
         };
         expect(items[0].$data()).toEqual(expectedMenu1);
         // For the second menu, we need to check it has the transformed structure
@@ -240,7 +252,6 @@ describe('DotNavigationComponent expanded', () => {
         ],
         providers: [
             provideRouter([]),
-            DotMenuService,
             { provide: DotCurrentUserService, useClass: DotCurrentUserServiceMock },
             mockProvider(IframeOverlayService),
             mockProvider(DotNavigationService),
@@ -282,7 +293,7 @@ describe('DotNavigationComponent expanded', () => {
             ...dotMenuMock1(),
             menuItems: dotMenuMock1().menuItems.map((item) => ({ ...item, active: false }))
         };
-        globalStore.loadMenu([menuWithoutActive, menu1WithoutActive]);
+        seedMenu(globalStore, [menuWithoutActive, menu1WithoutActive]);
         // Set navigation as expanded
         globalStore.expandNavigation();
     });
@@ -478,7 +489,6 @@ describe('DotNavigationComponent click characterization', () => {
         ],
         providers: [
             provideRouter([]),
-            DotMenuService,
             { provide: DotCurrentUserService, useClass: DotCurrentUserServiceMock },
             mockProvider(IframeOverlayService),
             mockProvider(DotNavigationService),
@@ -524,7 +534,7 @@ describe('DotNavigationComponent click characterization', () => {
         dotRouterService = spectator.inject(DotRouterService);
         dotEventsService = spectator.inject(DotEventsService);
         iframeOverlayService = spectator.inject(IframeOverlayService);
-        globalStore.loadMenu(menus);
+        seedMenu(globalStore, menus);
         spectator.detectChanges();
     });
 
@@ -663,5 +673,84 @@ describe('DotNavigationComponent click characterization', () => {
             expect(globalStore.isNavigationCollapsed()).toBe(true);
             expect(globalStore.openParentMenuId()).toBe(LAYOUT_A);
         });
+    });
+});
+
+/**
+ * A failed menu request never blanks a navigation that works and never throws in the shell (issue
+ * #38078). The first load of a session, if it fails, leaves the bar empty.
+ */
+describe('DotNavigationComponent when the menu request fails', () => {
+    const MENU_URL = '/api/v1/menu';
+    const menus = [dotMenuMock(), dotMenuMock1()] as unknown as DotMenu[];
+
+    let spectator: Spectator<DotNavigationComponent>;
+    let globalStore: InstanceType<typeof GlobalStore>;
+    let httpMock: HttpTestingController;
+
+    const createComponent = createComponentFactory({
+        component: DotNavigationComponent,
+        imports: [
+            DotNavIconComponent,
+            DotIconComponent,
+            BrowserAnimationsModule,
+            TooltipModule,
+            DotRandomIconPipe
+        ],
+        providers: [
+            provideRouter([]),
+            { provide: DotCurrentUserService, useClass: DotCurrentUserServiceMock },
+            mockProvider(IframeOverlayService),
+            mockProvider(DotNavigationService),
+            mockProvider(DotEventsService),
+            mockProvider(DotRouterService, { currentPortlet: { id: '123', parentMenuId: '123' } }),
+            { provide: LoginService, useClass: LoginServiceMock },
+            { provide: DotSystemConfigService, useValue: { getSystemConfig: () => of({}) } },
+            GlobalStore,
+            provideHttpClient(),
+            provideHttpClientTesting()
+        ]
+    });
+
+    const failRequest = () =>
+        httpMock.expectOne(MENU_URL).flush('x', { status: 500, statusText: 'Server Error' });
+
+    beforeEach(() => {
+        spectator = createComponent({ detectChanges: false });
+        globalStore = spectator.inject(GlobalStore);
+        httpMock = TestBed.inject(HttpTestingController);
+    });
+
+    it('renders an empty bar, without throwing, when the first load fails', () => {
+        globalStore.reload();
+        failRequest();
+
+        expect(() => spectator.detectChanges()).not.toThrow();
+
+        expect(globalStore.status()).toBe('error');
+        expect(spectator.queryAll('.dot-nav__list-item')).toHaveLength(0);
+    });
+
+    it('shows the groups once a later load succeeds', () => {
+        globalStore.reload();
+        failRequest();
+        spectator.detectChanges();
+
+        seedMenu(globalStore, menus);
+        spectator.detectChanges();
+
+        expect(spectator.queryAll('.dot-nav__list-item')).toHaveLength(2);
+    });
+
+    it('keeps the groups that were showing when a reload fails', () => {
+        seedMenu(globalStore, menus);
+        spectator.detectChanges();
+
+        globalStore.reload();
+        failRequest();
+        spectator.detectChanges();
+
+        expect(globalStore.status()).toBe('error');
+        expect(spectator.queryAll('.dot-nav__list-item')).toHaveLength(2);
     });
 });

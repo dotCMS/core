@@ -35,7 +35,6 @@ import { DotNotLicenseComponent } from '@dotcms/ui';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 
 import { DotCustomEventHandlerService } from '../../../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
-import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { IframeComponent } from '../iframe-component/iframe.component';
 
 @Component({
@@ -48,7 +47,6 @@ import { IframeComponent } from '../iframe-component/iframe.component';
 export class IframePortletLegacyComponent implements OnInit, OnDestroy {
     private contentletService = inject(DotContentTypeService);
     private dotLoadingIndicatorService = inject(DotLoadingIndicatorService);
-    private dotMenuService = inject(DotMenuService);
     private dotRouterService = inject(DotRouterService);
     private route = inject(ActivatedRoute);
     private dotCustomEventHandlerService = inject(DotCustomEventHandlerService);
@@ -127,7 +125,7 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
     reloadIframePortlet(portletId?: string): void {
         this.dotLoadingIndicatorService.show();
         if (portletId) {
-            this.dotMenuService.getUrlById(portletId).subscribe((url: string) => {
+            this.#globalStore.loadFreshPortletUrl(portletId).subscribe((url: string) => {
                 this.setUrl(url);
             });
         } else {
@@ -167,7 +165,7 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
                 mergeMap(([id, url]) =>
                     url === 'add'
                         ? this.contentletService.getUrlById(id)
-                        : this.dotMenuService.getUrlById(id)
+                        : this.#globalStore.loadFreshPortletUrl(id)
                 )
             )
             .subscribe((url: string) => {

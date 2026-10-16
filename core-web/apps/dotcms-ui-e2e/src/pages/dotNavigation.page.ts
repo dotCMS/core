@@ -38,6 +38,21 @@ export class DotNavigationPage {
         });
     }
 
+    /**
+     * The whole `dot-nav-item` of a group: its title **and** its portlet links. The `nav-item` test id
+     * is only the title row, so links have to be looked up from here.
+     */
+    groupSection(name: string): Locator {
+        return this.nav.locator('dot-nav-item').filter({
+            has: this.page.getByTestId('nav-item-label').getByText(name, { exact: true })
+        });
+    }
+
+    /** The portlet links of one group. */
+    groupLinks(name: string): Locator {
+        return this.groupSection(name).locator('a.dot-nav-sub__link');
+    }
+
     /** Labels of the groups in on-screen order. */
     async groupNames(): Promise<string[]> {
         const labels = await this.nav.getByTestId('nav-item-label').allInnerTexts();

@@ -172,3 +172,85 @@ this branch (CI, or `nx serve` once the dev server works).
   ("exposes no menu cache or legacy query") passes because the stub has no members, and guards against regressions.
 - Two **behavior-free stubs** exist only so the imports resolve: `menu-routes-registrar.token.ts` (the injection
   token declaration) and `dot-menu.service.ts` (empty class). T031/T033 replace them with the real thing.
+
+## Implementation log
+
+- **Gates**: the developer authorized the whole run ("vamos con todo", 2026-10-16). Gate tasks after that message
+  (T028 onward) were passed on that blanket authorization, each with its evidence recorded here.
+- **Foundation (T030–T036)**: `MenuStatus`, real `DotMenuService` (`@dotcms/data-access`), `reload`/`ensureLoaded`/
+  `whenSettled`/`loadFreshPortletUrl` in `with-menu.feature.ts`, registrar token bound in `providers.ts`. Green:
+  global-store 232, data-access 1043, edit-content 2490, dotcms-ui 2382.
+- **US1 (T037–T043)**: Red = the rewritten `dot-navigation.service.spec.ts` failed with
+  `Path: DotNavigationService -> DotMenuService` (the service still depended on the legacy cache). T038 (E1/E2 as
+  D tests) was dropped: they are characterization tests since Phase 2a. `DotNavigationService` now only talks to
+  the store; the push-in `loadMenu(menus)` is gone and specs seed the store through the HTTP boundary.
+- **US2 (T044–T046)**: no production change; the characterization set stayed green.
+- **US3 (T047–T064)**: Red = 44 store failures + 2 service failures (`activeKey`, resolver and selection missing;
+  the title `indexOf` bug showed as `'Content Search'` where `''` was expected). Implemented: `getMenuItemKey` and
+  new entity fields, full-UUID entity key, `tabOrder`/`itemIndex`, pure `resolveMenuItem` (+ the pure
+  `getPortletIdFromUrl` extracted from `DotRouterService`), `activeKey` replacing the entity flag, the single
+  `withMenuSelection` reaction composed inside the breadcrumbs `withFeature`, the sub-nav reading `activeKey`.
+  `DotNavigationService` no longer highlights. Green: global-store 268, dotcms-ui 2412, data-access 1043.
+  - **Deviation**: the spec edge case "a stale `mId` falls back to the bookmark rule" is **not** implemented. The
+    existing breadcrumb spec pins the opposite ("should NOT match when mId does not match parentMenuId prefix"), and
+    that test is part of the approved characterization set. A stale `mId` resolves to no item, as before.
+  - T050 was folded into `with-menu-selection.feature.spec.ts` (highlight, last breadcrumb and title agree), and the
+    existing 1389-line breadcrumb spec passes unchanged on the shared resolver.
+  - The duplicate-portlet e2e (T052) passes on the old bundle too (the 4-character keys differ there), so it is a
+    guard, not a Red test; the 4-character collision is unit-only.
+- **US4 (T065–T072)**: Add-to-menu spec went Red (`No provider for DotMenuService`); the component now reads the groups
+  from `GlobalStore.menuGroup()` after `ensureLoaded()` and never requests the menu itself (dropdown label is the group
+  label = `tabName`, the one the bar shows). E6/E7 e2e written: **E6 "layout update keeps the highlight" is a real Red on
+  the old bundle** (the old websocket path omitted `bookmark`, so a URL without `mId` loses the highlight) and E7 passes.
+  The "Add to menu" dropdown e2e (E6 part 3) was not written: it needs the content-type actions UI; unit-covered.
+- **Parallelism finding**: a layout change is broadcast to every open admin session, so any test that changes a layout
+  breaks the request counts of tests running in parallel. Everything that counts menu requests or changes a layout
+  lives in `menu-layouts-and-requests.spec.ts` (serial). A first attempt with a separate Playwright project and a
+  `dependencies` link re-ran the **whole** e2e suite against the shared dev instance (Playwright runs dependency
+  projects completely, ignoring CLI file filters); it was reverted and `playwright.config.ts` is unchanged. That run
+  created and removed test data on the dev instance as the suite normally does; layouts were verified unchanged after.
+- **US5 (T073–T089)**: Red = 32 guard failures, 3 default-guard, 3 workflow, My Account/locales/current-user failing on the
+  legacy dependency. Implemented `hasPortlet`/`layoutIdForPortlet`, guards on `ensureLoaded` + store reads, workflow
+  `p_l_id`, My Account, locales selector (a `computed` over `hasPortlet`), and removed `#menuCache$`/`isPortletInMenu`
+  from `DotCurrentUserService`. Not written: locales-selector e2e (needs the content edit sidebar).
+- **US6 (T090–T095)**: iframe host asks `loadFreshPortletUrl` on open, on re-emitted route params and on reload;
+  `?url=` and `add` paths unchanged. The store answers an Angular item with `''` and no request. The E8 e2e
+  (open-time request, distinct `r=`) is in the serial file.
+- **US7 (T096–T102)**: tests for the bar (empty on first failure, keeps groups on a failed reload, recovers) and the
+  service (no throw, no navigation to a stale first portlet, retries on the next navigation) were **already green on
+  the Foundation**, as the plan anticipated; no extra production change was needed.
+- **US8 (T103–T113)**: Red = `providers.spec.ts` failed 6 of 9 (duplicate `DotNavigationService` in
+  `SharedModule.forRoot()`, legacy `DotMenuService` still in the root providers and in the content-types component and
+  edit module, the initializer file still present). Done: duplicate providers removed, `DynamicRouteInitializerService`
+  and the app `DotMenuService` (+ specs) deleted, ten specs that provided the old service cleaned up. The registrar
+  tests (called after load, after reload, optional) were already green from the Foundation. **E11 stays unit-only**
+  (no plugin portlet in the starter): `registerRoutesFromMenuItems` (module-federation, idempotent, malformed) and the
+  registrar are covered; no `test.fixme` was added so lint stays clean. Needs developer sign-off.
+- **Polish**: grep gate clean (remaining hits are a private `#reloadMenu` helper and `DotContentTypeService.getUrlById`,
+  a different method); `core-web/libs/dotcms-js` and `dotCMS/src/main/java` have an empty diff against `origin/main`;
+  `docs/frontend/BREADCRUMBS.md` and `core-web/libs/global-store/README.md` updated.
+
+## End-to-end evidence against a build of THIS branch
+
+`nx serve dotcms-ui --port=4300` (the dev server of this worktree, proxying `/api` to the dev instance on :8080), then
+`E2E_BASE_URL=http://localhost:4300 CURRENT_ENV=ci pnpm nx e2e dotcms-ui-e2e src/tests/menu`: **25/25 passed, twice**
+(24 tests + auth setup). Against the old bundle (:8080) the one real Red was "a layout update keeps the highlight":
+it fails there (the old websocket path omitted `bookmark`) and passes on this branch.
+
+Two e2e findings worth keeping:
+- The suite shares **one server session** (one saved login). A login-as on it turns every parallel test into the
+  impersonated user (401s on admin Basic-auth calls, other menus on screen). `menu-login-as.spec.ts` therefore starts
+  from an empty `storageState` and signs in again.
+- A layout change is broadcast to every open session, so tests that count menu requests or change layouts live in one
+  serial file (`menu-layouts-and-requests.spec.ts`), and removal tests use a portlet that lives in a single layout
+  (`tags`); removing a portlet that exists in two layouts correctly leaves it highlighted.
+
+## Final verification (T118–T120)
+
+`nx affected -t test,lint --base=origin/main` (40+ projects): everything passes **except** five targets in projects this
+branch does not touch (`git diff origin/main` is empty for them): `dotcms-js:lint` (an `any` in `dot-router.service.ts`),
+`dotcms-webcomponents:test` (Stencil needs Jest 27) and `:lint` (import order), `block-editor:lint` and
+`block-editor:test` (**35 failed | 88 passed, identical on a clean `origin/main` worktree**). Trunk debt, not this work.
+Counts on the touched projects: dotcms-ui 2434, global-store 275, data-access 1042, edit-content 2492, dotcms-models 16.
+Full production build of `dotcms-ui` was not run; the dev build (esbuild + type check) of this branch compiled and served
+the 25/25 e2e run.

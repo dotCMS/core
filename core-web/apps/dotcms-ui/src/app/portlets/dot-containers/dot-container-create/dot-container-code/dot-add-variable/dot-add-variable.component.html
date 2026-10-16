@@ -1,9 +1,9 @@
 @if (vm$ | async; as vm) {
     <div class="mb-8">
         @for (field of vm.fields; track field.variable) {
-            <div class="flex w-full py-2 px-6 justify-between items-center">
+            <div class="flex w-full items-center justify-between px-6 py-2">
                 <div>
-                    <h3 [attr.data-testId]="'h3' + field.variable" class="text-base m-0">
+                    <h3 [attr.data-testId]="'h3' + field.variable" class="m-0 text-base">
                         {{ field?.name }}
                     </h3>
                     <small class="m-0 text-gray-700">

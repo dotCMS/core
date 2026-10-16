@@ -1,7 +1,8 @@
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -22,8 +23,7 @@ const data: DotMenu = {
             ...dotMenuMock().menuItems[0]
         },
         {
-            ...dotMenuMock().menuItems[1],
-            active: true
+            ...dotMenuMock().menuItems[1]
         }
     ]
 };
@@ -40,7 +40,8 @@ describe('DotSubNavComponent', () => {
                 provide: DotSystemConfigService,
                 useValue: DOT_SYSTEM_CONFIG_SERVICE_MOCK
             },
-            mockProvider(GlobalStore),
+            // The highlighted item is the store's activeKey: portlet id + full layout id.
+            { provide: GlobalStore, useValue: { activeKey: signal('456__123') } },
             provideHttpClient(),
             provideHttpClientTesting()
         ]

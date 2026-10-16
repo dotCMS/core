@@ -2,8 +2,6 @@ import { createComponentFactory, mockProvider, Spectator } from '@openng/spectat
 import { BehaviorSubject, EMPTY, of, Subject } from 'rxjs';
 import { vi } from 'vitest';
 
-import { provideHttpClient } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { NO_ERRORS_SCHEMA, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
@@ -21,47 +19,24 @@ import { DotLoadingIndicatorService } from '@dotcms/utils';
 import { IframePortletLegacyComponent } from './iframe-porlet-legacy.component';
 
 import { DotCustomEventHandlerService } from '../../../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
-import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { IframeComponent } from '../iframe-component/iframe.component';
 
 /**
- * Characterization of how the legacy (JSP/Dojo) iframe host chooses its `src` (issue #38078).
- * Everything is observed at the HTTP boundary: the menu response a test flushes is the only source
- * of the portlet URL, so the same cases hold whether the URL comes from a service cache or from the
- * navigation store. They pin today's behavior and must keep passing through the consolidation.
+ * How the legacy (JSP/Dojo) iframe host chooses its `src` (issue #38078).
+ *
+ * A legacy portlet url carries a timestamp (`r=<currentTimeMillis>`) that changes on every request, so
+ * the menu snapshot cannot hold it: the host asks the store for the url when the portlet opens and
+ * every time it is reloaded. The store reads it with a request of its own and never touches the
+ * snapshot or the highlight; that is the store's contract and is tested there.
  */
 describe('IframePortletLegacyComponent', () => {
-    const MENU_URL = '/api/v1/menu';
-
-    const menuWith = (jspUrl: string) => ({
-        entity: [
-            {
-                id: 'aaaa1111-0000-4000-8000-000000000001',
-                name: 'Site',
-                tabName: 'Site',
-                tabIcon: 'icon',
-                url: '/pages',
-                menuItems: [
-                    { id: 'pages', label: 'Pages', url: '/pages', angular: true, ajax: false },
-                    {
-                        id: 'publishing-queue',
-                        label: 'Publishing Queue',
-                        url: jspUrl,
-                        angular: false,
-                        ajax: false
-                    }
-                ]
-            }
-        ]
-    });
-
     let spectator: Spectator<IframePortletLegacyComponent>;
-    let httpMock: HttpTestingController;
     let portletReload$: Subject<string>;
     let params$: BehaviorSubject<{ id: string }>;
     let queryParams$: BehaviorSubject<{ url?: string }>;
     let parentUrl$: BehaviorSubject<{ path: string }[]>;
     let contentTypeService: DotContentTypeService;
+    let globalStore: { loadFreshPortletUrl: ReturnType<typeof vi.fn> };
 
     const createComponent = createComponentFactory({
         component: IframePortletLegacyComponent,
@@ -76,9 +51,6 @@ describe('IframePortletLegacyComponent', () => {
             ]
         ],
         providers: [
-            provideHttpClient(),
-            provideHttpClientTesting(),
-            DotMenuService,
             mockProvider(DotContentTypeService, {
                 getUrlById: vi.fn().mockReturnValue(of('/add/contentlet/url'))
             }),
@@ -87,17 +59,31 @@ describe('IframePortletLegacyComponent', () => {
             mockProvider(LoggerService),
             mockProvider(DotIframeService),
             mockProvider(DotEventsSocket, { on: () => EMPTY }),
-            mockProvider(GlobalStore, { siteDetails: signal(null) })
+            mockProvider(GlobalStore, {
+                siteDetails: signal(null),
+                loadFreshPortletUrl: vi.fn()
+            })
         ]
     });
 
-    const open = (route: { id: string; parent?: string; url?: string }) => {
+    // The mocks are created once per factory, so their call counts must not leak between tests.
+    beforeEach(() => vi.clearAllMocks());
+
+    /**
+     * Opens the host on a route. `answers` are what the store returns, one per request for a url,
+     * like the fresh `r=` timestamp a real request brings.
+     */
+    const open = (
+        route: { id: string; parent?: string; url?: string; access?: boolean },
+        answers: string[] = []
+    ) => {
         params$ = new BehaviorSubject({ id: route.id });
         queryParams$ = new BehaviorSubject<{ url?: string }>(route.url ? { url: route.url } : {});
         parentUrl$ = new BehaviorSubject([{ path: route.parent ?? 'c' }]);
         portletReload$ = new Subject<string>();
 
         spectator = createComponent({
+            detectChanges: false,
             providers: [
                 {
                     provide: DotRouterService,
@@ -106,7 +92,7 @@ describe('IframePortletLegacyComponent', () => {
                 {
                     provide: ActivatedRoute,
                     useValue: {
-                        data: of({ canAccessPortlet: true }),
+                        data: of({ canAccessPortlet: route.access ?? true }),
                         params: params$,
                         queryParams: queryParams$,
                         parent: { url: parentUrl$ }
@@ -114,68 +100,85 @@ describe('IframePortletLegacyComponent', () => {
                 }
             ]
         });
-        httpMock = spectator.inject(HttpTestingController);
         contentTypeService = spectator.inject(DotContentTypeService);
+        globalStore = spectator.inject(GlobalStore) as unknown as typeof globalStore;
+        const pending = [...answers];
+        globalStore.loadFreshPortletUrl.mockImplementation(() => of(pending.shift() ?? ''));
         spectator.detectChanges();
     };
 
-    afterEach(() => {
-        httpMock.verify();
-    });
+    describe('opening a legacy portlet', () => {
+        it('sets the iframe src from a url the store reads at open time', () => {
+            open({ id: 'publishing-queue' }, ['/c/portal/layout?p_l_id=1&r=1000']);
 
-    it('sets the iframe src from the portlet url when a JSP portlet opens', () => {
-        open({ id: 'publishing-queue' });
-
-        httpMock.expectOne(MENU_URL).flush(menuWith('/c/portal/layout?p_l_id=1&r=1000'));
-
-        expect(spectator.component.url.getValue()).toBe('/c/portal/layout?p_l_id=1&r=1000');
-    });
-
-    it('never takes the iframe url from an Angular item, which navigates with its menuLink', () => {
-        open({ id: 'pages' });
-
-        httpMock.expectOne(MENU_URL).flush(menuWith('/jsp?r=1'));
-
-        expect(spectator.component.url.getValue()).toBe('');
-    });
-
-    it('sets the src from the ?url= query param without asking for the menu', () => {
-        open({ id: 'publishing-queue', url: '/html/edit?inode=77' });
-
-        httpMock.expectNone(MENU_URL);
-        expect(spectator.component.url.getValue()).toBe('/html/edit?inode=77');
-    });
-
-    it('asks the contentlet service, not the menu, on the add route', () => {
-        open({ id: 'blog', parent: 'add' });
-
-        httpMock.expectNone(MENU_URL);
-        expect(contentTypeService.getUrlById).toHaveBeenCalledWith('blog');
-        expect(spectator.component.url.getValue()).toBe('/add/contentlet/url');
-    });
-
-    it('shows nothing and asks for nothing when the user cannot access the portlet', () => {
-        const route = {
-            data: of({ canAccessPortlet: false }),
-            params: of({ id: 'publishing-queue' }),
-            queryParams: of({}),
-            parent: { url: of([{ path: 'c' }]) }
-        };
-        vi.spyOn(console, 'error').mockImplementation(() => undefined);
-        spectator = createComponent({
-            providers: [
-                {
-                    provide: DotRouterService,
-                    useValue: { portletReload$: new Subject<string>(), isJSPPortlet: () => true }
-                },
-                { provide: ActivatedRoute, useValue: route }
-            ]
+            expect(globalStore.loadFreshPortletUrl).toHaveBeenCalledWith('publishing-queue');
+            expect(globalStore.loadFreshPortletUrl).toHaveBeenCalledTimes(1);
+            expect(spectator.component.url.getValue()).toBe('/c/portal/layout?p_l_id=1&r=1000');
         });
-        httpMock = spectator.inject(HttpTestingController);
-        spectator.detectChanges();
 
-        httpMock.expectNone(MENU_URL);
-        expect(spectator.component.canAccessPortlet).toBe(false);
-        expect(spectator.component.url.getValue()).toBe('');
+        it('asks again, and takes the new url, every time the portlet opens', () => {
+            open({ id: 'publishing-queue' }, [
+                '/c/portal/layout?p_l_id=1&r=1000',
+                '/c/portal/layout?p_l_id=1&r=2000'
+            ]);
+
+            params$.next({ id: 'publishing-queue' });
+
+            expect(globalStore.loadFreshPortletUrl).toHaveBeenCalledTimes(2);
+            expect(spectator.component.url.getValue()).toBe('/c/portal/layout?p_l_id=1&r=2000');
+        });
+
+        it('reads a fresh url when the portlet is reloaded', () => {
+            open({ id: 'publishing-queue' }, [
+                '/c/portal/layout?p_l_id=1&r=1000',
+                '/c/portal/layout?p_l_id=1&r=2000'
+            ]);
+
+            portletReload$.next('publishing-queue');
+
+            expect(globalStore.loadFreshPortletUrl).toHaveBeenCalledTimes(2);
+            expect(globalStore.loadFreshPortletUrl).toHaveBeenLastCalledWith('publishing-queue');
+            expect(spectator.component.url.getValue()).toBe('/c/portal/layout?p_l_id=1&r=2000');
+        });
+
+        it('keeps the url it has when it is reloaded because the site changed', () => {
+            open({ id: 'publishing-queue' }, ['/c/portal/layout?p_l_id=1&r=1000']);
+
+            spectator.component.reloadIframePortlet();
+
+            expect(globalStore.loadFreshPortletUrl).toHaveBeenCalledTimes(1);
+            expect(spectator.component.url.getValue()).toBe('/c/portal/layout?p_l_id=1&r=1000');
+        });
+    });
+
+    describe('routes that do not use the portlet url', () => {
+        it('sets the src from the ?url= query param without asking the store', () => {
+            open({ id: 'publishing-queue', url: '/html/edit?inode=77' });
+
+            expect(globalStore.loadFreshPortletUrl).not.toHaveBeenCalled();
+            expect(spectator.component.url.getValue()).toBe('/html/edit?inode=77');
+        });
+
+        it('asks the contentlet service, not the store, on the add route', () => {
+            open({ id: 'blog', parent: 'add' });
+
+            expect(globalStore.loadFreshPortletUrl).not.toHaveBeenCalled();
+            expect(contentTypeService.getUrlById).toHaveBeenCalledWith('blog');
+            expect(spectator.component.url.getValue()).toBe('/add/contentlet/url');
+        });
+
+        it('shows nothing and asks for nothing when the user cannot access the portlet', () => {
+            open({ id: 'publishing-queue', access: false });
+
+            expect(globalStore.loadFreshPortletUrl).not.toHaveBeenCalled();
+            expect(spectator.component.canAccessPortlet).toBe(false);
+            expect(spectator.component.url.getValue()).toBe('');
+        });
+
+        it('gets an empty url for an Angular portlet, which navigates with its menuLink', () => {
+            open({ id: 'pages' }, ['']);
+
+            expect(spectator.component.url.getValue()).toBe('');
+        });
     });
 });
