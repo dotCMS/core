@@ -195,6 +195,11 @@ public class FileAsset extends Contentlet implements IFileAsset {
 
 	@JsonIgnore
 	public InputStream getInputStream() throws IOException {
+		if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+			try (var lease = APILocator.getBinaryAssetStorageAPI().acquireCacheLease()) {
+				return new BufferedInputStream(Files.newInputStream(getFileAsset().toPath()));
+			}
+		}
 		return new BufferedInputStream(Files.newInputStream(getFileAsset().toPath()));
 	}
 
@@ -214,7 +219,7 @@ public class FileAsset extends Contentlet implements IFileAsset {
 	public File getFileAsset() {
 		// Calling the getBinary method can be relatively expensive since it constantly verifies
 		// the existence of the file on disk. Therefore, we'll keep a file reference at hand
-		if (null == file) {
+        if (null == file || (com.dotcms.storage.AssetStorageFeature.isEnabled() && !file.isFile())) {
 			try {
 				file = getBinary(FileAssetAPI.BINARY_FIELD);
 			} catch (final IOException e) {

@@ -2571,7 +2571,16 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	public void deleteAllVersionsandBackup(List<Contentlet> contentlets,
 			User user, boolean respectFrontendRoles) throws DotDataException,
 			DotSecurityException, DotContentletStateException {
-		// Not implemented
+		if (!com.dotcms.storage.AssetStorageFeature.isEnabled()) return;
+		for (ContentletAPIPreHook pre : preHooks) {
+			if (!pre.delete(contentlets, user, respectFrontendRoles, true)) {
+				throw new DotRuntimeException(String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName()));
+			}
+		}
+		conAPI.deleteAllVersionsandBackup(contentlets, user, respectFrontendRoles);
+		for (ContentletAPIPostHook post : postHooks) {
+			post.delete(contentlets, user, respectFrontendRoles, true);
+		}
 	}
 
 	@Override

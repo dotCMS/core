@@ -102,6 +102,32 @@ class MetadataLocalCacheTest {
             Config.setProperty(AssetStorageFeature.FLAG, oldFlag);
         }
     }
+    @Test void sharedExtractionStorageFailureIsNotAnEmptySuccessfulParse() throws Exception {
+        final String oldFlag = Config.getStringProperty(AssetStorageFeature.FLAG, null);
+        final var file = Files.writeString(root.resolve("Extract.Txt"), "text").toFile();
+        final var shared = mock(SharedExtractedMetadata.class);
+        final var metadata = mock(FileMetadataAPI.class);
+        try (var locator = mockStatic(APILocator.class);
+             var sharedFactory = mockStatic(SharedExtractedMetadata.class);
+             var tika = mockConstruction(com.dotcms.tika.TikaUtils.class, (mock, context) -> {
+                 when(mock.extractorVersion()).thenReturn("test-parser");
+                 when(mock.getForcedMetaDataMap(any(), anyInt())).thenReturn(Map.of("content", "text"));
+             })) {
+            locator.when(APILocator::getFileMetadataAPI).thenReturn(metadata);
+            sharedFactory.when(SharedExtractedMetadata::getInstance).thenReturn(shared);
+            Config.setProperty(AssetStorageFeature.FLAG, true);
+            when(shared.get(eq(file), anyString(), anyInt(), anyInt(), any()))
+                    .thenThrow(new DotDataException("S3 unavailable"));
+            assertThrows(com.dotmarketing.exception.DotRuntimeException.class,
+                    () -> new MetadataGeneratorImpl().tikaBasedMetadata(file, 100));
+            Config.setProperty(AssetStorageFeature.FLAG, false);
+            clearInvocations(shared);
+            assertEquals("text", new MetadataGeneratorImpl().tikaBasedMetadata(file, 100).get("content"));
+            verifyNoInteractions(shared);
+        } finally {
+            Config.setProperty(AssetStorageFeature.FLAG, oldFlag);
+        }
+    }
 
     /**
      * A binary that is neither cached nor stored durably is absent, not a failed restore, so metadata

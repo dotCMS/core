@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TimeZone;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.imageio.ImageIO;
 import javax.imageio.spi.IIORegistry;
@@ -171,6 +172,9 @@ public class BinaryExporterServlet extends HttpServlet {
 	 * Processes incoming requests for binary files. Requests issued to this servlet might come directly
 	 * to it or through another servlet, such as the {@code SpeedyAssetServlet} class which is accessed using
 	 * the legacy {@code /dotAsset/} path to display files.
+	 * <p>With S3 asset storage on, the request holds a local cache lease while it resolves, exports
+	 * and opens the file, and releases it before streaming, so a slow client cannot defer eviction.
+	 * An open file on a local disk survives eviction.</p>
 	 *
 	 * @param req  The {@link HttpServletRequest} object.
 	 * @param resp The {@link HttpServletResponse} object.
@@ -181,6 +185,36 @@ public class BinaryExporterServlet extends HttpServlet {
 	@SuppressWarnings("unchecked")
 	@Override
 	public void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+            final var lease = APILocator.getBinaryAssetStorageAPI().acquireCacheLease();
+            // The lease is a read lock: release it once, on this thread, whichever happens first.
+            final AtomicBoolean released = new AtomicBoolean();
+            final Runnable releaseLease = () -> {
+                if (released.compareAndSet(false, true)) {
+                    lease.close();
+                }
+            };
+            try {
+                serveBinary(req, resp, releaseLease);
+            } finally {
+                releaseLease.run();
+            }
+        } else {
+            serveBinary(req, resp, () -> { });
+        }
+    }
+
+    /**
+     * Resolves, exports and streams the requested binary.
+     *
+     * @param req          the request
+     * @param resp         the response
+     * @param releaseLease releases the cache lease; called once the file to stream is open
+     * @throws ServletException if the request cannot be served
+     * @throws IOException      if the response cannot be written
+     */
+    private void serveBinary(HttpServletRequest req, HttpServletResponse resp, final Runnable releaseLease)
+            throws ServletException, IOException {
         String servletPath = req.getServletPath();
 		String uri = req.getRequestURI().substring(servletPath.length());
 		String[] uriPieces = uri.split("/");
@@ -583,6 +617,7 @@ public class BinaryExporterServlet extends HttpServlet {
 						if (ranges.isEmpty() || ranges.get(0).equals(full)) {
 							// Return full file.
 							input = new RandomAccessFile(data.getDataFile(), "r");
+							releaseLease.run();
 							SpeedyAssetServletUtil.ByteRange r = full;
 							resp.setContentType(fileAssetAPI.getMimeType(data.getDataFile().getName()));
 							resp.setHeader("Content-Range", "bytes " + r.start + "-" + r.end + "/" + r.total);
@@ -592,6 +627,7 @@ public class BinaryExporterServlet extends HttpServlet {
 						} else if (ranges.size() == 1){
 							SpeedyAssetServletUtil.ByteRange range = ranges.get(0);
 							input = new RandomAccessFile(data.getDataFile(), "r");
+							releaseLease.run();
 							// Check if Range is syntactically valid. If not, then return 416.
 							if (range.start > range.end) {
 								resp.setHeader("Content-Range", "bytes */" + fileLen); // Required in 416.
@@ -607,6 +643,7 @@ public class BinaryExporterServlet extends HttpServlet {
 							resp.setContentType("multipart/byteranges; boundary=" + SpeedyAssetServletUtil.MULTIPART_BOUNDARY);
 							resp.setStatus(HttpServletResponse.SC_PARTIAL_CONTENT);
 						    input = new RandomAccessFile(data.getDataFile(), "r");
+							releaseLease.run();
 							for (SpeedyAssetServletUtil.ByteRange r : ranges) {
 								if (r.start > r.end) {
 									resp.setHeader("Content-Range", "bytes */" + fileLen); // Required in 416.
@@ -635,6 +672,7 @@ public class BinaryExporterServlet extends HttpServlet {
 				}
 			}else{
 				is = java.nio.file.Files.newInputStream(data.getDataFile().toPath());
+				releaseLease.run();
 	            int count = 0;
 	            byte[] buffer = new byte[4096];
 	            out = resp.getOutputStream();

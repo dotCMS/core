@@ -42,6 +42,16 @@ public interface AbstractBinaryFieldType extends FieldValue<String> {
     @JsonDeserialize(using = MetadataMapDeserializer.class)
     Map<String, Object> metadata();
 
+    @Nullable
+    @JsonProperty("storageKey")
+    @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+    String storageKey();
+
+    @Nullable
+    @JsonProperty("metadataStorageKey")
+    @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+    String metadataStorageKey();
+
     @Hydration(properties = {
         @HydrateWith(delegate = MetadataDelegate.class, propertyName = "metadata")
     })

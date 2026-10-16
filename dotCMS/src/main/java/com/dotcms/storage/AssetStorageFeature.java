@@ -1,8 +1,12 @@
 package com.dotcms.storage;
 
 import com.dotcms.featureflag.FeatureFlagName;
+import com.dotcms.storage.binary.BinaryAssetCleanupProcessor;
+import com.dotcms.storage.binary.BinaryFieldCleanupProcessor;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+
+import java.util.Set;
 
 /**
  * Startup configuration for the opt-in S3 asset lifecycle. Disabled preserves filesystem/NFS behavior.
@@ -13,6 +17,10 @@ import com.dotmarketing.util.Logger;
  */
 public final class AssetStorageFeature {
     public static final String FLAG = FeatureFlagName.FEATURE_FLAG_S3_ASSET_STORAGE;
+
+    /** Job processors that belong to the S3 lifecycle and must not register while it is disabled. */
+    private static final Set<Class<?>> JOB_PROCESSORS = Set.of(BinaryAssetCleanupProcessor.class,
+            BinaryFieldCleanupProcessor.class);
 
     private static volatile Boolean enabled;
 
@@ -47,6 +55,17 @@ public final class AssetStorageFeature {
             }
         }
         return value;
+    }
+
+    /**
+     * Tells the job queue whether a discovered processor may register. S3 lifecycle processors are
+     * skipped while the feature is disabled, so their queues do not exist, as on a build without them.
+     *
+     * @param processor the discovered job processor class
+     * @return {@code false} only for an S3 lifecycle processor while the feature is disabled
+     */
+    public static boolean allowsJobProcessor(final Class<?> processor) {
+        return isEnabled() || !JOB_PROCESSORS.contains(processor);
     }
 
     /**

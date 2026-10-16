@@ -79,4 +79,20 @@ public class MetadataDelegateTest {
     }
 
 
+    @Test
+    public void s3NormalizationRetainsColdLegacyAndRevisionPaths() throws Exception {
+        org.junit.Assume.assumeTrue(com.dotcms.storage.AssetStorageFeature.isEnabled());
+        final String inode = java.util.UUID.randomUUID().toString();
+        final String prefix = inode.charAt(0) + "/" + inode.charAt(1) + "/" + inode + "/HeroImage/";
+        final MetadataDelegate delegate = new MetadataDelegate();
+        for (String suffix : java.util.List.of("Mixed-Case.PNG",
+                ".revisions/" + java.util.UUID.randomUUID() + "/Mixed-Case.PNG")) {
+            final String key = prefix + suffix;
+            final File expected = new File(ConfigUtils.getAssetPath(), key);
+            Assert.assertFalse(expected.exists());
+            Assert.assertEquals(expected, delegate.normalize(new File("/old/installation/assets", key)));
+            Assert.assertFalse("Normalization must not materialize the source", expected.exists());
+        }
+    }
+
 }
