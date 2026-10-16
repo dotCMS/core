@@ -50,6 +50,40 @@ import { EDIT_CONTENT_HOST } from '../../../../services/host/edit-content-host.m
 import { DotEditContentStore } from '../../../../store/edit-content.store';
 import { BaseControlValueAccessor } from '../../../shared/base-control-value-accesor';
 
+/**
+ * What the relationship field loads its related items from.
+ */
+interface RelationshipFieldInputs {
+    field: ContentTypeRelationshipField;
+    contentlet: DotCMSContentlet;
+    targetLanguageId?: number;
+    targetLanguage?: DotLanguage;
+}
+
+/**
+ * Tells whether two sets of inputs would load the same related items, so the field only reloads
+ * when something it shows actually changed: the field, the version of the content (its inode) or
+ * the locale the content is being copied into.
+ *
+ * Locking or unlocking the content hands the field a new contentlet object that differs only in
+ * its lock fields. Treating that as a change reloaded the saved relationships and threw away the
+ * editor's unsaved changes (#38034).
+ *
+ * @param previous - The inputs the field last loaded from.
+ * @param next - The new inputs.
+ * @returns `true` when reloading would show the same items.
+ */
+function loadsSameRelationships(
+    previous: RelationshipFieldInputs,
+    next: RelationshipFieldInputs
+): boolean {
+    return (
+        previous.field === next.field &&
+        previous.contentlet?.inode === next.contentlet?.inode &&
+        previous.targetLanguageId === next.targetLanguageId
+    );
+}
+
 @Component({
     selector: 'dot-relationship-field',
     imports: [
@@ -216,20 +250,27 @@ export class DotRelationshipFieldComponent
      * target language id and the full DotLanguage object so related items can be
      * resolved to their translated versions and the language column renders correctly.
      *
+     * It only emits when the field, the content version (inode) or the target locale
+     * changes. A contentlet that changed only its lock state does not count, so
+     * locking or unlocking keeps the editor's unsaved relationship changes.
+     *
      * @memberof DotEditContentRelationshipFieldComponent
      */
-    $inputs = computed(() => {
-        const locale = this.#editContentStore.isCopyingLocale()
-            ? this.#editContentStore.currentLocale()
-            : undefined;
+    $inputs = computed<RelationshipFieldInputs>(
+        () => {
+            const locale = this.#editContentStore.isCopyingLocale()
+                ? this.#editContentStore.currentLocale()
+                : undefined;
 
-        return {
-            field: this.$field(),
-            contentlet: this.$contentlet(),
-            targetLanguageId: locale?.id,
-            targetLanguage: locale
-        };
-    });
+            return {
+                field: this.$field(),
+                contentlet: this.$contentlet(),
+                targetLanguageId: locale?.id,
+                targetLanguage: locale ?? undefined
+            };
+        },
+        { equal: loadsSameRelationships }
+    );
 
     /**
      * Computed signal that holds the total number of columns.
@@ -265,7 +306,8 @@ export class DotRelationshipFieldComponent
      * Passes the signal reference (not its value) so that signalMethod creates a
      * reactive effect — the store re-initializes whenever $inputs changes. This is
      * required for manual translation, where this component is preserved (not flushed)
-     * and ngOnInit does not run again.
+     * and ngOnInit does not run again. $inputs ignores lock-only changes, so locking or
+     * unlocking does not reload the field and lose unsaved changes.
      *
      * @memberof DotEditContentRelationshipFieldComponent
      */
@@ -663,12 +705,7 @@ export class DotRelationshipFieldComponent
      * @param field - The field to initialize the store with.
      * @param contentlet - The contentlet to initialize the store with.
      */
-    readonly initialize = signalMethod<{
-        field: ContentTypeRelationshipField;
-        contentlet: DotCMSContentlet;
-        targetLanguageId?: number;
-        targetLanguage?: DotLanguage;
-    }>((params) => {
+    readonly initialize = signalMethod<RelationshipFieldInputs>((params) => {
         this.store.initialize(params);
     });
 

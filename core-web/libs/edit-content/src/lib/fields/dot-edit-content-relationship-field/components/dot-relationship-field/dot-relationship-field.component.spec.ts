@@ -6,6 +6,7 @@ vi.mock(
     () => ({ DotEditContentSidePanelComponent: class MockDotEditContentSidePanelComponent {} })
 );
 
+import { InferInputSignals } from '@openng/spectator';
 import {
     byTestId,
     createComponentFactory,
@@ -17,12 +18,13 @@ import { Mock, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { signal, WritableSignal } from '@angular/core';
 import { AbstractControl, FormControl, FormGroup, NgControl } from '@angular/forms';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentlet, FeaturedFlags } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotLanguage, FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotSidePanelConfig, DotSidePanelService } from '@dotcms/ui';
 import {
     createFakeContentlet,
@@ -1035,6 +1037,141 @@ describe('DotRelationshipFieldComponent', () => {
             const table = spectator.query(byTestId('relationship-field-table'));
 
             expect(table?.className).toContain('overflow-hidden');
+        });
+    });
+
+    /**
+     * #38034 — the field must re-initialize its store only when what it shows actually changes:
+     * the field, the contentlet version (`inode`) or the locale it is being copied into. Locking
+     * and unlocking hand the field a NEW contentlet object whose only difference is the lock
+     * fields; re-initializing on that wiped the editor's unsaved relationship changes.
+     */
+    describe('re-initialization on contentlet changes (#38034)', () => {
+        /** The edit-content store's locale state, as signals so the field's inputs react to it. */
+        let isCopyingLocale: WritableSignal<boolean>;
+        let currentLocale: WritableSignal<DotLanguage | null>;
+
+        /** Types an input alias as a Spectator props key. */
+        const inputAlias = (alias: string) =>
+            alias as keyof InferInputSignals<DotRelationshipFieldComponent>;
+
+        const mount = (contentlet: DotCMSContentlet | null = buildItem()) => {
+            sidePanels = { open: vi.fn(() => ({ close: vi.fn() })) };
+            storeMock = createStoreMock();
+            isCopyingLocale = signal(false);
+            currentLocale = signal<DotLanguage | null>(null);
+            spectator = createComponent({
+                providers: [
+                    { provide: RelationshipFieldStore, useValue: storeMock },
+                    mockProvider(DotEditContentStore, {
+                        hasAttemptedSubmit: vi.fn().mockReturnValue(false),
+                        contentType: vi.fn().mockReturnValue(null),
+                        isCopyingLocale,
+                        currentLocale,
+                        contentlet: vi.fn().mockReturnValue(null),
+                        translationSourceInode: vi.fn().mockReturnValue(null),
+                        locales: vi.fn().mockReturnValue([ENGLISH_LANGUAGE, SPANISH_LANGUAGE])
+                    })
+                ],
+                // Inputs are bound by alias (as the form does); Spectator types props by property name.
+                props: {
+                    [inputAlias('field')]: FIELD_MOCK,
+                    [inputAlias('contentlet')]: contentlet,
+                    [inputAlias('hasError')]: false,
+                    [inputAlias('isRequired')]: false
+                }
+            });
+            spectator.detectChanges();
+            spectator.flushEffects();
+        };
+
+        /** Hands the field a new `contentlet` input, the way the edit-content store does. */
+        const changeContentlet = (contentlet: DotCMSContentlet | null) => {
+            spectator.setInput('contentlet', contentlet);
+            spectator.detectChanges();
+            spectator.flushEffects();
+        };
+
+        it('loads the field once on mount', () => {
+            mount();
+
+            expect(storeMock.initialize).toHaveBeenCalledTimes(1);
+        });
+
+        it('keeps unsaved changes when the content is locked for editing', () => {
+            mount(buildItem({ locked: false }));
+
+            changeContentlet(
+                buildItem({
+                    locked: true,
+                    lockedBy: 'dotcms.org.1',
+                    lockedByName: 'Admin User',
+                    lockedOn: '2026-10-15 10:00:00'
+                })
+            );
+
+            expect(storeMock.initialize).toHaveBeenCalledTimes(1);
+        });
+
+        it('keeps unsaved changes when the content is unlocked (or its lock released)', () => {
+            mount(
+                buildItem({
+                    locked: true,
+                    lockedBy: 'dotcms.org.1',
+                    lockedByName: 'Admin User',
+                    lockedOn: '2026-10-15 10:00:00'
+                })
+            );
+
+            changeContentlet(
+                buildItem({ locked: false, lockedBy: '', lockedByName: '', lockedOn: '' })
+            );
+
+            expect(storeMock.initialize).toHaveBeenCalledTimes(1);
+        });
+
+        it('re-initializes when another version of the content is loaded', () => {
+            mount();
+            const newVersion = buildItem({ inode: 'inode-2' });
+
+            changeContentlet(newVersion);
+
+            expect(storeMock.initialize).toHaveBeenCalledTimes(2);
+            expect(storeMock.initialize).toHaveBeenLastCalledWith(
+                expect.objectContaining({ contentlet: newVersion })
+            );
+        });
+
+        it('re-initializes when the contentlet goes away (manual translation)', () => {
+            mount();
+
+            changeContentlet(null);
+
+            expect(storeMock.initialize).toHaveBeenCalledTimes(2);
+        });
+
+        it('re-initializes when the content starts being copied into another locale', () => {
+            mount();
+
+            currentLocale.set(SPANISH_LANGUAGE);
+            isCopyingLocale.set(true);
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            expect(storeMock.initialize).toHaveBeenCalledTimes(2);
+            expect(storeMock.initialize).toHaveBeenLastCalledWith(
+                expect.objectContaining({ targetLanguageId: SPANISH_LANGUAGE.id })
+            );
+        });
+
+        it('re-initializes when the field changes', () => {
+            mount();
+
+            spectator.setInput('field', { ...FIELD_MOCK, variable: 'otherRelationship' });
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            expect(storeMock.initialize).toHaveBeenCalledTimes(2);
         });
     });
 });

@@ -973,11 +973,18 @@ public class MapToContentletPopulator  {
     }
 
     /**
-     * Gets the query to be used for filtering related contentlet. It supports legacy and field relationships
-     * @param contentType
-     * @param fieldsMap
-     * @param relationship
-     * @return
+     * Finds the values sent for a relationship, keyed by the field (or legacy relation type) they
+     * were sent under. Each value is a query or a list of identifiers for the related content; an
+     * empty value means the relationship must be emptied. Legacy relationships are found by their
+     * relation type; field relationships by the relationship's child and parent relation names,
+     * and also by the other-side field that points to the relationship when the relationship has
+     * lost that field's name (see {@link #addOtherSideFieldsWithoutRelationName}).
+     *
+     * @param contentType  The content type of the contentlet being populated.
+     * @param fieldsMap    The values sent for the contentlet, by field variable.
+     * @param relationship A relationship of the content type.
+     * @return The values sent for the relationship by field variable or relation type; empty when
+     *         nothing was sent for it, which leaves the relationship untouched.
      */
     private Map<String, String> getRelationshipQuery(final ContentType contentType,
             final Map<String, Object> fieldsMap, final Relationship relationship) {
@@ -1006,9 +1013,45 @@ public class MapToContentletPopulator  {
                 queryMap.put(relationship.getParentRelationName(),
                         (String) fieldsMap.get(relationship.getParentRelationName()));
             }
+
+            addOtherSideFieldsWithoutRelationName(contentType, fieldsMap, relationship, queryMap);
         }
 
         return queryMap;
+    }
+
+    /**
+     * Maps the other-side field of a two-sided relationship even when the relationship has lost
+     * that field's name. The other-side field points to the relationship through its
+     * {@code relationType} (for example {@code Blog.author} points to {@code BlogAuthor.blog}),
+     * which is also how the field is resolved when the content is read. Relationships imported
+     * from the starter come without the other-side name ({@code parent_relation_name}), so
+     * without this lookup a change saved from that field was silently ignored.
+     *
+     * <p>Self-joined relationships are left alone: both of their fields point to the same
+     * relationship, and the relation names are what tell them apart.</p>
+     *
+     * @param contentType  The content type of the contentlet being populated.
+     * @param fieldsMap    The values sent for the contentlet, by field variable.
+     * @param relationship A relationship of the content type.
+     * @param queryMap     The values already mapped for the relationship, by field variable; any
+     *                     other-side field found here is added to it.
+     */
+    private void addOtherSideFieldsWithoutRelationName(final ContentType contentType,
+            final Map<String, Object> fieldsMap, final Relationship relationship,
+            final Map<String, String> queryMap) {
+
+        if (APILocator.getRelationshipAPI().sameParentAndChild(relationship)) {
+            return;
+        }
+
+        contentType.fields(RelationshipField.class).stream()
+                .filter(field -> relationship.getRelationTypeValue()
+                        .equalsIgnoreCase(field.relationType()))
+                .filter(field -> !queryMap.containsKey(field.variable()))
+                .filter(field -> fieldsMap.get(field.variable()) != null)
+                .forEach(field -> queryMap.put(field.variable(),
+                        (String) fieldsMap.get(field.variable())));
     }
 
     private void processIdentifier(final Contentlet contentlet,
