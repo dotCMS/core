@@ -8,10 +8,13 @@ import { DatePicker } from 'primeng/datepicker';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
+    CalendarFieldTypes,
+    ContentTypeCalendarField,
+    DotCMSClazzes,
     DotCMSContentlet,
     DotCMSContentType,
     DotCMSContentTypeField,
-    DotCMSFieldType,
+    DotCMSDataTypes,
     DotCMSFieldTypes,
     DotSystemTimezone
 } from '@dotcms/dotcms-models';
@@ -77,19 +80,37 @@ describe('DotCalendarFieldComponent', () => {
             [contentlet]="contentlet" />
     </form>`;
 
+    /** The class each calendar field type carries, so a built field keeps the two paired. */
+    const CALENDAR_CLAZZES = {
+        [DotCMSFieldTypes.DATE]: DotCMSClazzes.DATE,
+        [DotCMSFieldTypes.DATE_AND_TIME]: DotCMSClazzes.DATE_AND_TIME,
+        [DotCMSFieldTypes.TIME]: DotCMSClazzes.TIME
+    } as const;
+
     /**
      * Builds the host with a single control of the given field type.
+     *
+     * The field is a `ContentTypeCalendarField`: its `clazz` and `dataType` follow its
+     * `fieldType`, which is what the component's input is typed as. A `field` override is
+     * applied after `fieldType`, as before, so it decides the final type.
      *
      * @param fieldType which of the three calendar types to render
      * @param value initial value of the form control, as a UTC timestamp
      * @param overrides field/timezone/contentType overrides for the case under test
      */
     const buildHost = (
-        fieldType: DotCMSFieldType,
+        fieldType: CalendarFieldTypes,
         value: number | null = null,
         overrides: Partial<MockFormComponent> = {}
     ): SpectatorHost<DotCalendarFieldComponent, MockFormComponent> => {
-        const field = { ...DATE_FIELD_MOCK, fieldType, ...((overrides.field as object) ?? {}) };
+        const merged = { ...DATE_FIELD_MOCK, fieldType, ...overrides.field };
+        const finalType = merged.fieldType as CalendarFieldTypes;
+        const field = {
+            ...merged,
+            fieldType: finalType,
+            clazz: CALENDAR_CLAZZES[finalType],
+            dataType: DotCMSDataTypes.DATE
+        } as ContentTypeCalendarField;
 
         return createHost(TEMPLATE, {
             hostProps: {
@@ -177,62 +198,26 @@ describe('DotCalendarFieldComponent', () => {
     /**
      * On open, PrimeNG writes the input's width as an inline `min-width` on the popup's wrapper
      * (the `p-motion` element around `.p-datepicker-panel`), so a full-width field produced a
-     * full-width calendar (#37958). PrimeNG emits `onShow` with that wrapper right after writing
-     * the value; the component clears it there and re-aligns the now narrower popup.
-     *
-     * jsdom never runs the wrapper's enter hook, so PrimeNG's write doesn't happen in a test:
-     * these drive `onShow` with a wrapper that carries the value, the way the browser hands it
-     * over. The resulting width needs a layout engine and is checked in the browser.
+     * full-width calendar (#37958). The field hands that wrapper a `min-w-0!` class through
+     * PrimeNG's pass-through (`pt.motion.root`); an `!important` class wins over the inline
+     * value, so the popup keeps the date picker's own width. Which rule wins needs a real
+     * stylesheet and is checked in the browser; here we pin that the class reaches the wrapper.
      */
     describe('Popup width', () => {
-        /**
-         * Opens the popup through PrimeNG's own enter hook, the method the `p-motion` wrapper calls
-         * in the browser (jsdom never fires it). It writes the input's width as the wrapper's inline
-         * `min-width`, aligns it and emits `onShow` with whatever it emits there — so these tests
-         * break if PrimeNG stops writing the value or changes the `onShow` payload.
-         */
-        const openPopupStretchedTo = (inputWidth: number) => {
-            const picker = spectator.query(DatePicker) as DatePicker;
-            const overlay = document.createElement('div');
-            const minWidthAtAlign: string[] = [];
-            const align = picker.alignOverlay.bind(picker);
-            vi.spyOn(picker, 'alignOverlay').mockImplementation(() => {
-                minWidthAtAlign.push(overlay.style.minWidth);
-                align();
-            });
-
-            picker.overlayMinWidth = inputWidth;
-            picker.onOverlayBeforeEnter({ element: overlay } as Parameters<
-                DatePicker['onOverlayBeforeEnter']
-            >[0]);
-
-            return { overlay, minWidthAtAlign };
-        };
-
         it.each([...ALL_TYPES])(
             'should not let the %s popup stretch to the input width',
             (fieldType) => {
                 spectator = buildHost(fieldType);
                 spectator.detectChanges();
 
-                const { overlay } = openPopupStretchedTo(581);
+                openPicker();
 
-                expect(overlay.style.minWidth).toBe('');
+                const wrapper = document.querySelector('.p-datepicker-panel')?.parentElement;
+
+                expect(wrapper?.tagName).toBe('P-MOTION');
+                expect(wrapper).toHaveClass('min-w-0!');
             }
         );
-
-        /**
-         * PrimeNG aligns the popup while it still has the input's width; the narrower popup has to
-         * be placed again (above/below, inside the viewport) once the width is released.
-         */
-        it('should re-align the popup after its width is released', () => {
-            spectator = buildHost(DotCMSFieldTypes.DATE);
-            spectator.detectChanges();
-
-            const { minWidthAtAlign } = openPopupStretchedTo(581);
-
-            expect(minWidthAtAlign).toEqual(['581px', '']);
-        });
     });
 
     describe('Default value versus an explicit clear (FR-017)', () => {
