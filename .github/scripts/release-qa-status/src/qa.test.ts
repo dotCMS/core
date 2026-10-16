@@ -39,6 +39,42 @@ describe('computePRQA', () => {
     expect(result.linkedIssues).toEqual([]);
   });
 
+  it('excludes a spec-only PR even when it does link an issue', () => {
+    // A Spec-Kit PR 1 usually closes nothing, but when it does the linked issue
+    // is the *feature* issue, which QA will label once the implementation PR
+    // ships. Reading its label here would report the spec PR as un-QA'd.
+    const result = computePRQA(
+      pr({
+        linkedIssues: [37376],
+        changedFiles: ['specs/37376-uve-edit-pencil-permission/spec.md'],
+      }),
+      new Map([[37376, issue(37376, [])]])
+    );
+    expect(result.status).toBe('excluded');
+    expect(result.exclusionReason).toBe('spec-only');
+    expect(result.linkedIssues).toEqual([]);
+  });
+
+  it('excludes a docs-only PR', () => {
+    const result = computePRQA(
+      pr({ changedFiles: ['docs/core/GIT_WORKFLOWS.md'] }),
+      new Map()
+    );
+    expect(result.status).toBe('excluded');
+    expect(result.exclusionReason).toBe('docs-only');
+  });
+
+  it('still evaluates QA for a PR that ships a spec plus implementation', () => {
+    const result = computePRQA(
+      pr({
+        linkedIssues: [37376],
+        changedFiles: ['specs/37376-foo/spec.md', 'dotCMS/src/main/java/Foo.java'],
+      }),
+      new Map([[37376, issue(37376, ['QA : Passed'])]])
+    );
+    expect(result.status).toBe('passed');
+  });
+
   it('returns unlinked when no closing refs of either kind exist', () => {
     const result = computePRQA(pr(), new Map());
     expect(result.status).toBe('unlinked');
