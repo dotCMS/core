@@ -1,0 +1,276 @@
+# Publish README Docs
+#
+# Copies markdown files from this repo (mostly SDK and example READMEs) into their
+# documentation pages (DotcmsDocumentation contentlets) on the dotCMS authoring server, so
+# dev.dotcms.com serves and indexes the same text instead of mirroring it at request time.
+# The file is the single source of truth: each run overwrites the page body. dotCMS keeps
+# the version history.
+#
+# Which pages: every DotcmsDocumentation page whose `readmeSource` field holds a URL of the
+# form https://github.com/dotCMS/core/blob/main/<path>.md. Pages are added or removed by
+# editing that field in dotCMS; no change to this workflow is needed. URLs pointing anywhere
+# else are left alone.
+#
+# Each changed page goes through the authoring server's Push Publish workflow action (save,
+# publish, unlock, push to the `prod` environment), and the run waits for that push to
+# succeed. The token belongs to the CI Autodoc Publish User, which needs the Dev Publish role
+# on the site, on the Documentation content type, on the Push Publish action and on the
+# `prod` push environment.
+#
+# Runs on every merge that touches a markdown file, and manually (dry run by default).
+# Every run checks all mapped pages and writes only those whose body differs.
+
+name: Publish README Docs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '**/*.md'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Compare only and show the diffs in the run summary; write nothing to dotCMS'
+        type: boolean
+        default: true
+      pages:
+        description: 'Space-separated page urlTitles to sync (empty = all mapped pages)'
+        type: string
+        default: ''
+
+concurrency:
+  group: publish-readme-docs
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  # GitHub users DMed by dotBot when a sync fails (looked up in .github/data/slack-mappings.json).
+  NOTIFY_GITHUB_USERS: 'jdcmsd'
+
+jobs:
+  sync:
+    name: Sync READMEs to dotCMS
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+
+      - name: Sync pages
+        env:
+          DOTCMS_URL: ${{ vars.AUTODOC_DOTCMS_BASE_URL }}
+          DOTCMS_TOKEN: ${{ secrets.AUTODOC_DOTCMS_API_TOKEN_PUBLISH }}
+          # Empty on push, so merges always write.
+          DRY_RUN: ${{ inputs.dry_run }}
+          PAGES_FILTER: ${{ inputs.pages }}
+        run: |
+          python3 - <<'PY'
+          import difflib, json, os, posixpath, re, sys, time, urllib.error, urllib.request
+
+          REPO = "dotCMS/core"
+          # Authoring server's "Push Publish" action: Save, Publish, Unlock, Push/Remove Now (to `prod`).
+          PUSH_PUBLISH_ACTION = "0c5239e8-4aef-4dcd-b31f-ab5ca0394ea2"
+          PUSH_TIMEOUT = 180  # seconds to wait for a page's push bundle to succeed
+          SOURCE_PREFIX = f"https://github.com/{REPO}/blob/main/"
+          LINK_BASE = f"https://github.com/{REPO}/blob/main"
+          ASSET_BASE = f"https://raw.githubusercontent.com/{REPO}/main"
+          # Working versions of mapped pages. size is well above the number of pages.
+          PAGE_QUERY = ("+contenttype:dotcmsdocumentation +working:true +languageid:1 +deleted:false "
+                        "+dotcmsdocumentation.readmesource:*")
+
+          base = os.environ["DOTCMS_URL"].rstrip("/")
+          token = os.environ["DOTCMS_TOKEN"]
+          dry_run = os.environ.get("DRY_RUN") == "true"
+          selected = set(os.environ.get("PAGES_FILTER", "").split())
+          summary = open(os.environ["GITHUB_STEP_SUMMARY"], "a")
+
+          # --- README clean-up, matching the devsite's former live mirror ---
+          NOT_ABSOLUTE = r"(?!https?://)(?!/)(?!#)(?!data:)(?!mailto:)(?!tel:)(?:\./)?"
+
+          def outside_fences(lines):
+              """Indexes of lines not inside ``` / ~~~ code blocks."""
+              fence = None
+              for i, line in enumerate(lines):
+                  m = re.match(r"\s*(```|~~~)", line)
+                  if m:
+                      fence = None if fence == m[1] else (fence or m[1])
+                  elif fence is None:
+                      yield i
+
+          def clean(readme, path):
+              lines = readme.replace("\r\n", "\n").split("\n")
+              # Drop a "Table of Contents" section: its heading up to the next heading.
+              heads = [i for i in outside_fences(lines) if re.match(r"#+\s", lines[i])]
+              toc = next((i for i in heads if re.search(r"table\s+of\s+contents", lines[i], re.I)), None)
+              if toc is not None:
+                  end = next((i for i in heads if i > toc), len(lines))
+                  del lines[toc:end]
+              # Drop the first H1; the page renders its own title.
+              h1 = next((i for i in outside_fences(lines) if re.match(r"#\s", lines[i])), None)
+              if h1 is not None:
+                  del lines[h1]
+              text = "\n".join(lines)
+
+              # Relative links and images would resolve against dev.dotcms.com; point them at GitHub.
+              directory = posixpath.dirname(path)
+              def absolute(ref):
+                  target, sep, anchor = ref.partition("#")
+                  resolved = posixpath.normpath(posixpath.join(directory, target)) if target else directory
+                  return resolved + sep + anchor
+              text = re.sub(r"!\[([^\]]*)\]\(" + NOT_ABSOLUTE + r"([^)]+)\)",
+                            lambda m: f"![{m[1]}]({ASSET_BASE}/{absolute(m[2])})", text)
+              text = re.sub(r"(?<!!)\[([^\]]+)\]\(" + NOT_ABSOLUTE + r"([^)]+)\)",
+                            lambda m: f"[{m[1]}]({LINK_BASE}/{absolute(m[2])})", text)
+              text = re.sub(r"<img([^>]*)\s+src=[\"']" + NOT_ABSOLUTE + r"([^\"']+)[\"']",
+                            lambda m: f'<img{m[1]} src="{ASSET_BASE}/{absolute(m[2])}"', text)
+              return text.strip() + "\n"
+
+          def normalize(text):
+              return "\n".join(l.rstrip() for l in text.replace("\r\n", "\n").strip().split("\n"))
+
+          def source_path(url):
+              """Repo path from a readmeSource URL; None if the URL is not for this repo."""
+              if not url.startswith(SOURCE_PREFIX):
+                  return None
+              path = url[len(SOURCE_PREFIX):]
+              if (posixpath.normpath(path) != path or path.startswith(("/", "..")) or not path.lower().endswith(".md")):
+                  raise RuntimeError(f"readmeSource is not a markdown file path: {url}")
+              if not os.path.isfile(path):
+                  raise RuntimeError(f"readmeSource file not found on main: {path}")
+              return path
+
+          def call(method, url, payload=None):
+              req = urllib.request.Request(base + url, method=method,
+                                           data=json.dumps(payload).encode() if payload is not None else None)
+              req.add_header("Authorization", f"Bearer {token}")
+              req.add_header("Content-Type", "application/json")
+              try:
+                  with urllib.request.urlopen(req, timeout=60) as resp:
+                      return resp.status, json.loads(resp.read() or b"{}")
+              except urllib.error.HTTPError as e:
+                  return e.code, {"error": e.read().decode(errors="replace")[:300]}
+
+          def recent_bundles():
+              status, data = call("GET", "/api/v1/publishing?page=1&per_page=20")
+              if status != 200:
+                  raise RuntimeError(f"publishing queue unreadable: HTTP {status} {data}")
+              return data.get("entity") or []
+
+          def wait_for_push(ident, before):
+              """Find the push bundle created for this page and wait until it succeeds."""
+              seen, bundle = set(before), None
+              deadline = time.time() + PUSH_TIMEOUT
+              while time.time() < deadline:
+                  for b in recent_bundles():
+                      if bundle and b["bundleId"] == bundle["bundleId"]:
+                          bundle = b  # refresh status
+                      elif not bundle and b["bundleId"] not in seen:
+                          seen.add(b["bundleId"])
+                          status, assets = call("GET", f"/api/bundle/{b['bundleId']}/assets")
+                          if status == 200 and any(a.get("asset") == ident for a in assets):
+                              bundle = b
+                  if bundle:
+                      if bundle["status"] in ("SUCCESS", "SUCCESS_WITH_WARNINGS"):
+                          return bundle["bundleId"]
+                      if "FAIL" in bundle["status"]:
+                          raise RuntimeError(f"published, but push bundle {bundle['bundleId']} {bundle['status']}")
+                  time.sleep(5)
+              if not bundle:
+                  raise RuntimeError(f"published, but no push bundle appeared within {PUSH_TIMEOUT}s")
+              # The action succeeds even when the user may not push anywhere: the bundle then gets no
+              # environment and never leaves BUNDLE_REQUESTED. (A new bundle briefly shows 0 environments too.)
+              hint = (" (no environment: is the role allowed on the `prod` push environment?)"
+                      if not bundle.get("environmentCount") else "")
+              raise RuntimeError(f"published, but push bundle {bundle['bundleId']} still {bundle['status']} "
+                                 f"after {PUSH_TIMEOUT}s{hint}")
+
+          def push_publish(ident, body):
+              before = {b["bundleId"] for b in recent_bundles()}
+              payload = {"contentlet": {"identifier": ident, "languageId": 1, "documentation": body,
+                                        "disabledWYSIWYG": ["documentation"]}}
+              url = f"/api/v1/workflow/actions/{PUSH_PUBLISH_ACTION}/fire?identifier={ident}"
+              status, data = call("PUT", url, payload)
+              if status >= 500:  # dotCMS intermittently fails a save; a retry has always gone through
+                  status, data = call("PUT", url, payload)
+              if status != 200 or data.get("errors"):
+                  # A failed save can leave the page locked to this account; release it.
+                  call("PUT", f"/api/v1/content/_unlock/{ident}?language=1")
+                  raise RuntimeError(f"save/publish failed: HTTP {status} {data.get('errors') or data}")
+              return wait_for_push(ident, before)
+
+          # A bad token still reads the public pages as anonymous, so check it before anything else.
+          status, data = call("GET", "/api/v1/users/current/")
+          if status != 200:
+              sys.exit(f"dotCMS token rejected: HTTP {status} {data}")
+
+          status, data = call("POST", "/api/es/search", {"query": {"query_string": {"query": PAGE_QUERY}}, "size": 1000})
+          pages = data.get("contentlets") if status == 200 else None
+          if not pages:
+              # Never a valid state; most likely a token, permission or search index problem.
+              sys.exit(f"no mapped pages found (HTTP {status}): {data if status != 200 else 'empty result'}")
+          unknown = selected - {p.get("urlTitle") for p in pages}
+          if unknown:
+              sys.exit(f"not a mapped page urlTitle: {' '.join(sorted(unknown))}")
+
+          rows, diffs, failed = [], [], 0
+          for page in sorted(pages, key=lambda p: p.get("urlTitle") or ""):
+              slug, ident, url = page.get("urlTitle"), page["identifier"], page.get("readmeSource", "").strip()
+              if selected and slug not in selected:
+                  continue
+              path = None
+              try:
+                  path = source_path(url)
+                  if path is None:
+                      result = "other source, skipped"
+                  else:
+                      body = clean(open(path, encoding="utf-8").read(), path)
+                      # Search results can lag behind recent saves; compare with the page itself.
+                      status, data = call("GET", f"/api/v1/content/{ident}")
+                      if status != 200:
+                          raise RuntimeError(f"read failed: HTTP {status} {data}")
+                      current = data["entity"].get("documentation") or ""
+                      if normalize(current) == normalize(body):
+                          result = "unchanged"
+                      elif dry_run:
+                          result = "would update"
+                          diffs.append((slug, "".join(difflib.unified_diff(
+                              current.splitlines(True), body.splitlines(True), "dotCMS", path))))
+                      else:
+                          result = f"published and pushed (bundle {push_publish(ident, body)})"
+              except Exception as exc:
+                  failed += 1
+                  result = f"FAILED: {exc}"
+              print(f"{slug:24} {result}")
+              rows.append(f"| `{slug}` | {f'`{path}`' if path else url} | {result} |")
+
+          summary.write(f"## README docs sync{' (dry run)' if dry_run else ''}\n\n| Page | Source | Result |\n|---|---|---|\n")
+          summary.write("\n".join(rows) + "\n")
+          for slug, diff in diffs:
+              summary.write(f"\n<details><summary>{slug}</summary>\n\n```diff\n{diff}\n```\n</details>\n")
+          sys.exit(1 if failed else 0)
+          PY
+
+      - name: Notify on failure
+        if: failure()
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          text=":x: README docs sync failed. ${RUN_URL}"
+          for user in $NOTIFY_GITHUB_USERS; do
+            slack_id=$(jq -r --arg u "$user" '.[] | select(.github_user == $u) | .slack_id' .github/data/slack-mappings.json)
+            if [ -z "$slack_id" ]; then
+              echo "::warning::No Slack mapping for GitHub user ${user}"
+              continue
+            fi
+            jq -n --arg c "$slack_id" --arg t "$text" '{channel: $c, text: $t}' \
+              | curl -s -X POST https://slack.com/api/chat.postMessage \
+                  -H "Content-type: application/json; charset=utf-8" \
+                  -H "Authorization: Bearer ${SLACK_BOT_TOKEN}" \
+                  --data @- \
+              | jq -e '.ok' > /dev/null || echo "::warning::Slack DM to ${user} failed"
+          done
