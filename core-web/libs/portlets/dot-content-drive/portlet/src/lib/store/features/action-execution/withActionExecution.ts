@@ -1873,7 +1873,9 @@ export function withActionExecution() {
                         );
                     });
 
-                // A CSV import reports the same way (#37896); previews go to the import dialog.
+                // A CSV import reports the same way (#37896). Preview events are ignored: the
+                // dialog previews through the synchronous `/_preview`, which emits none, and a
+                // preview queued through `/_validate` has nothing here waiting on it.
                 eventsSocket
                     .on<DotImportCompletedEvent>(DotSystemEventType.IMPORT_CONTENTLETS_COMPLETED)
                     .pipe(takeUntilDestroyed(destroyRef))

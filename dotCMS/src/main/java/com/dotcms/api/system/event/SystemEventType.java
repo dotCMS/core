@@ -373,8 +373,9 @@ public enum SystemEventType {
 	 * A content import job ({@code POST /api/v1/content/_import} or its {@code /_validate} preview,
 	 * #37896) reached a terminal state, successful or failed.
 	 * <p>
-	 * Content Drive waits on this instead of polling the job: the import dialog for a preview, the
-	 * status toast for an import. Carries the job id, its state, whether it was a {@code preview} or
+	 * Content Drive's import status toast waits on this instead of polling the job. A preview queued
+	 * through {@code /_validate} emits it too, but nothing in Content Drive waits on that one: the
+	 * Drive previews through the synchronous {@code /_preview}, which queues no job. Carries the job id, its state, whether it was a {@code preview} or
 	 * a {@code publish}, the created / updated / failed counts when the job produced a result, and
 	 * the first error message when it failed. Pushed with {@link Visibility#USER} scoped to whoever
 	 * submitted the job. The same job can be reported more than once (a failed job moves to its
