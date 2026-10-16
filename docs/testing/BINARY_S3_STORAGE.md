@@ -203,7 +203,12 @@ Cleanup runs as a queued job, never inside the caller's request. It handles one 
 transaction: it locks that row, rechecks that it was not edited after the field was removed,
 uploads and verifies a recovery ZIP, clears the old field reference, records the exact cleanup
 inventory, and advances the job's saved cursor, all in the row's own commit. Only that row is locked
-while its archive uploads, and a retry resumes after the last committed row. A separate step checks that
+while its archive uploads, and a retry resumes after the last committed row. A row whose field
+points at a file that was already gone (a binary missing from the storage listing, or metadata
+that exists neither locally nor in S3) is still cleared: the file is listed in the ZIP's
+`missing.json` and logged as a warning, and it stays out of the recorded cleanup inventory. A
+storage error, a listed file that disappears before it is archived, or an archive S3 does not
+confirm still fails the row, and the job retries it. A separate step checks that
 the archived files are no longer referenced and that the ZIP is still available before deleting
 metadata, originals and renditions. It never deletes a whole field prefix, so uploads made after
 the inventory was captured survive a retry. Direct submissions through the public job endpoint are
@@ -372,7 +377,7 @@ docker run -d --rm --name binary-cleanup-postgres-test \
   -e POSTGRES_DB=binary_storage_test postgres:16-alpine
 
 ./mvnw test -pl :dotcms-core -Dmaven.build.cache.enabled=false \
-  -Dtest=AssetStorageFeatureTest,AssetStorageFeatureLatchTest,S3StorageConfigurationTest,NoWebIdentityCredentialsProviderChainTest,BinaryS3StorageTest,BinaryAssetReferenceTest,BinaryCacheEvictionJobTest,BinaryFileSystemStorageTest,BinaryAssetStorageAPIImplTest,MetadataLocalCacheTest,BinaryAssetCleanupTransactionTest,BinaryAssetCleanupProcessorTest,ContentletBackupStorageGateTest,ContentletBackupStorageMissingSourceTest,BinaryFieldCleanupProcessorTest,AssetJobEventSerializationTest \
+  -Dtest=AssetStorageFeatureTest,AssetStorageFeatureLatchTest,S3StorageConfigurationTest,NoWebIdentityCredentialsProviderChainTest,BinaryS3StorageTest,BinaryAssetReferenceTest,BinaryCacheEvictionJobTest,BinaryFileSystemStorageTest,BinaryAssetStorageAPIImplTest,MetadataLocalCacheTest,BinaryAssetCleanupTransactionTest,BinaryAssetCleanupProcessorTest,ContentletBackupStorageGateTest,ContentletBackupStorageMissingSourceTest,ContentletBackupStorageFieldArchiveTest,BinaryFieldCleanupProcessorTest,AssetJobEventSerializationTest \
   -Ds3.test.endpoint=http://127.0.0.1:19002 \
   -Ds3.test.jdbc=jdbc:postgresql://127.0.0.1:19003/binary_storage_test
 

@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
@@ -119,9 +120,7 @@ public final class ContentletBackupStorage {
                     }
                     content.getMap().put(field.getKey(), binary);
                     final String metadataPath = metadataAPI.getFileName(content, field.getKey());
-                    final var metadata = APILocator.getFileStorageAPI().retrieveRawMetaData(new StorageKey.Builder()
-                            .group(Config.getStringProperty(StoragePersistenceProvider.METADATA_GROUP_NAME, FileMetadataAPI.DOT_METADATA))
-                            .path(metadataPath).storage(StoragePersistenceProvider.getStorageType()).build());
+                    final var metadata = rawMetadata(metadataPath);
                     final String metadataEntry = "assets/" + metadataPath.substring(1).toLowerCase(java.util.Locale.ROOT);
                     if (metadata != null) {
                         text(zip, metadataEntry, mapper.writeValueAsString(metadata));
@@ -186,7 +185,7 @@ public final class ContentletBackupStorage {
      * @param path  the archive entry the file would have had
      * @return the manifest entry
      */
-    private static Map<String, String> missingEntry(final String inode, final String kind, final String field,
+    static Map<String, String> missingEntry(final String inode, final String kind, final String field,
                                                     final String path) {
         Logger.warn(ContentletBackupStorage.class, "Backup of content version " + inode + " leaves out the "
                 + kind + " of field '" + field + "' because it no longer exists (" + path + ")");
@@ -203,9 +202,42 @@ public final class ContentletBackupStorage {
         zip.closeEntry();
     }
 
-    /** Archive the exact field inventory while its owner row is locked by the caller. */
+    /**
+     * Reads one stored metadata file from the configured metadata chain, restoring it from S3 when
+     * it is not local.
+     *
+     * @param path the metadata path, starting with {@code /}
+     * @return the metadata, or {@code null} when it exists neither locally nor in S3
+     * @throws DotDataException if the metadata storage fails
+     */
+    static Map<String, Serializable> rawMetadata(final String path) throws DotDataException {
+        return APILocator.getFileStorageAPI().retrieveRawMetaData(new StorageKey.Builder()
+                .group(Config.getStringProperty(StoragePersistenceProvider.METADATA_GROUP_NAME, FileMetadataAPI.DOT_METADATA))
+                .path(path).storage(StoragePersistenceProvider.getStorageType()).build());
+    }
+
+    /**
+     * Archives the exact inventory of a removed binary field while the caller holds the owner row's
+     * lock, and uploads the archive to S3.
+     *
+     * <p>The caller decides what was already gone before the cleanup started and passes it in
+     * {@code missing}; those entries are written to {@value #MISSING_MANIFEST}, which only exists when
+     * the list is not empty. Every path in {@code binaries} and {@code metadata} came from a storage
+     * listing, so if one of them cannot be read now it changed concurrently, and the archive fails
+     * so the job retries and lists again. An S3 error, any other read or write error and an upload
+     * S3 does not confirm also fail it.</p>
+     *
+     * @param identifier the content identifier
+     * @param inode      the content version whose field is archived
+     * @param json       the row's {@code contentlet_as_json} before the field is removed
+     * @param binaries   listed binary paths to archive under {@code binary-assets/}
+     * @param metadata   listed or referenced metadata paths to archive under {@code dotmetadata/}
+     * @param missing    files the row references that no longer exist, as built by {@link #missingEntry}
+     * @return the S3 key of the stored archive
+     * @throws DotDataException if the flag is off, no transaction is active, or the archive fails
+     */
     String storeField(String identifier, String inode, String json, List<String> binaries,
-                      List<String> metadata) throws DotDataException {
+                      List<String> metadata, List<Map<String, String>> missing) throws DotDataException {
         if (!AssetStorageFeature.isEnabled() || !DbConnectionFactory.inTransaction()) {
             throw new DotDataException("Field backup requires the cleanup transaction");
         }
@@ -218,19 +250,19 @@ public final class ContentletBackupStorage {
                  var zip = new ZipOutputStream(Files.newOutputStream(archive))) {
                 text(zip, "contentlet.json", json);
                 for (String path : binaries) {
-                    zip.putNextEntry(new ZipEntry("binary-assets/" + path));
-                    try (var input = APILocator.getBinaryAssetStorageAPI().openLocalFile(
-                            new File(com.dotmarketing.util.ConfigUtils.getAssetPath(), path))) {
-                        input.transferTo(zip);
+                    if (!archiveBinary(APILocator.getBinaryAssetStorageAPI(),
+                            new File(com.dotmarketing.util.ConfigUtils.getAssetPath(), path), zip, "binary-assets/" + path)) {
+                        throw new NoSuchFileException("Listed field binary disappeared during backup: " + path);
                     }
-                    zip.closeEntry();
                 }
+                final var mapper = new ObjectMapper();
                 for (String path : metadata) {
-                    final var raw = APILocator.getFileStorageAPI().retrieveRawMetaData(new StorageKey.Builder()
-                            .group(Config.getStringProperty(StoragePersistenceProvider.METADATA_GROUP_NAME, FileMetadataAPI.DOT_METADATA))
-                            .path(path).storage(StoragePersistenceProvider.getStorageType()).build());
+                    final var raw = rawMetadata(path);
                     if (raw == null) throw new IOException("Missing field metadata " + path);
-                    text(zip, "dotmetadata/" + path.substring(1), new ObjectMapper().writeValueAsString(raw));
+                    text(zip, "dotmetadata/" + path.substring(1), mapper.writeValueAsString(raw));
+                }
+                if (!missing.isEmpty()) {
+                    text(zip, MISSING_MANIFEST, mapper.writeValueAsString(missing));
                 }
             }
             final String key = identifier + "/" + inode + "/" + UUID.randomUUID() + ".zip";
