@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.authentication;
 
 import com.dotcms.auth.providers.jwt.beans.ApiToken;
+import com.dotcms.auth.providers.jwt.factories.ApiTokenAPI;
 import com.dotcms.datagen.CompanyDataGen;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.rest.InitDataObject;
@@ -185,7 +186,7 @@ public class ApiTokenResourceTest {
         assertNotEquals(skinId, modifiedUser.getRememberMeToken());
     }
 
-    private Response getJwtAs(final User caller, final ApiToken token) {
+    private Response getJwtAs(final User caller, final String tokenId) {
 
         final HttpServletRequest  request     = mock(HttpServletRequest.class);
         final HttpServletResponse response    = mock(HttpServletResponse.class);
@@ -194,7 +195,7 @@ public class ApiTokenResourceTest {
         final InitDataObject initData = new InitDataObject();
         initData.setUser(caller);
         when(webResource.init(any(), anyBoolean(), any(), anyBoolean(), any())).thenReturn(initData);
-        return resource.getJwtFromApiToken(request, response, token.id);
+        return resource.getJwtFromApiToken(request, response, tokenId);
     }
 
     private ApiToken persistTokenFor(final User owner, final User requestedBy) {
@@ -215,7 +216,7 @@ public class ApiTokenResourceTest {
         final User owner = new UserDataGen().active(true).nextPersisted();
         final ApiToken token = persistTokenFor(owner, owner);
 
-        final Response restResponse = getJwtAs(owner, token);
+        final Response restResponse = getJwtAs(owner, token.id);
         assertEquals(Response.Status.OK.getStatusCode(), restResponse.getStatus());
     }
 
@@ -232,7 +233,60 @@ public class ApiTokenResourceTest {
         APILocator.getRoleAPI().addRoleToUser(APILocator.getRoleAPI().loadCMSAdminRole(), admin);
         final ApiToken token = persistTokenFor(owner, admin);
 
-        final Response restResponse = getJwtAs(admin, token);
+        final Response restResponse = getJwtAs(admin, token.id);
         assertEquals(Response.Status.FORBIDDEN.getStatusCode(), restResponse.getStatus());
+    }
+
+    /**
+     * Method to test: {@link ApiTokenResource#getJwtFromApiToken}
+     * Given Scenario: A regular user, neither an administrator nor the owner, asks for the JWT of another
+     *                 user's token.
+     * ExpectedResult: HTTP 403.
+     */
+    @Test
+    public void test_getJwtFromApiToken_nonAdmin_cannotRetrieveOtherUsersToken() throws DotDataException, DotSecurityException {
+
+        final User owner = new UserDataGen().active(true).nextPersisted();
+        final User other = new UserDataGen().active(true).nextPersisted();
+        final ApiToken token = persistTokenFor(owner, owner);
+
+        final Response restResponse = getJwtAs(other, token.id);
+        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), restResponse.getStatus());
+    }
+
+    /**
+     * Method to test: {@link ApiTokenResource#getJwtFromApiToken}
+     * Given Scenario: A non-owner asks for the JWT of a revoked token, and of a token id that doesn't exist.
+     * ExpectedResult: HTTP 403 both times, the same as for a valid token, so a non-owner can't tell
+     *                 whether a token exists or whether it is still valid.
+     */
+    @Test
+    public void test_getJwtFromApiToken_nonOwner_getsForbidden_whateverTheTokenState() throws DotDataException, DotSecurityException {
+
+        final User owner = new UserDataGen().active(true).nextPersisted();
+        final User admin = new UserDataGen().active(true).nextPersisted();
+        APILocator.getRoleAPI().addRoleToUser(APILocator.getRoleAPI().loadCMSAdminRole(), admin);
+        final ApiToken token = persistTokenFor(owner, owner);
+        APILocator.getApiTokenAPI().revokeToken(token, owner);
+
+        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), getJwtAs(admin, token.id).getStatus());
+        assertEquals(Response.Status.FORBIDDEN.getStatusCode(),
+                getJwtAs(admin, ApiTokenAPI.TOKEN_PREFIX + UUIDGenerator.generateUuid()).getStatus());
+    }
+
+    /**
+     * Method to test: {@link ApiTokenResource#getJwtFromApiToken}
+     * Given Scenario: The owner of a revoked token asks for its JWT.
+     * ExpectedResult: HTTP 400; the owner still learns that their token is no longer valid.
+     */
+    @Test
+    public void test_getJwtFromApiToken_owner_revokedToken_badRequest() throws DotDataException, DotSecurityException {
+
+        final User owner = new UserDataGen().active(true).nextPersisted();
+        final ApiToken token = persistTokenFor(owner, owner);
+        APILocator.getApiTokenAPI().revokeToken(token, owner);
+
+        final Response restResponse = getJwtAs(owner, token.id);
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), restResponse.getStatus());
     }
 }

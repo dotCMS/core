@@ -3957,9 +3957,8 @@ paths:
         "401":
           description: Invalid user
         "403":
-          description: Forbidden
-        "404":
-          description: Token not found
+          description: "Forbidden: the token does not exist or belongs to another\
+            \ user"
         "500":
           description: Unexpected server error
       summary: Generates a new JWT for an existing token

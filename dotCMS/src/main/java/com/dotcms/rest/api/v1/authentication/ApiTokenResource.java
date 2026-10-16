@@ -22,6 +22,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.SecurityUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -744,8 +745,8 @@ public class ApiTokenResource implements Serializable {
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"),
                     @ApiResponse(responseCode = "401", description = "Invalid user"),
-                    @ApiResponse(responseCode = "403", description = "Forbidden"),
-                    @ApiResponse(responseCode = "404", description = "Token not found"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden: the token does not exist or " +
+                            "belongs to another user"),
                     @ApiResponse(responseCode = "500", description = "Unexpected server error")
             }
     )
@@ -761,25 +762,23 @@ public class ApiTokenResource implements Serializable {
         final User user = initDataObject.getUser();
         final Optional<ApiToken> optToken = tokenApi.findApiToken(tokenId);
 
-        if (optToken.isEmpty()) {
+        // Only the token's owner may retrieve a working JWT. Administrators and user managers can list and
+        // revoke other users' tokens, but never read them. This runs before any check on the token's state,
+        // and a missing token gets the same 403, so a non-owner can't tell whether a token exists or is valid.
+        if (optToken.isEmpty() || !Objects.equals(user.getUserId(), optToken.get().getUserId())) {
 
-            return ExceptionMapperUtil.createResponse(new DotStateException("token id not found"), Response.Status.NOT_FOUND);
+            SecurityLogger.logInfo(this.getClass(), "Denied JWT retrieval for token: "
+                    + SecurityUtils.sanitizeForLogging(tokenId) + " owned by: "
+                    + optToken.map(ApiToken::getUserId).orElse("(token not found)")
+                    + " to user: " + user.getUserId() + " from: " + request.getRemoteAddr());
+            return ExceptionMapperUtil.createResponse(
+                    new DotStateException("Only the owner of a token can retrieve it"), Response.Status.FORBIDDEN);
         }
 
         final ApiToken token = optToken.get();
         if(token.isExpired() || token.isRevoked()) {
 
             return ExceptionMapperUtil.createResponse(new DotStateException("token not valid"), Response.Status.BAD_REQUEST);
-        }
-
-        // Only the token's owner may retrieve a working JWT for an existing token. Administrators and
-        // user managers can list and revoke other users' tokens, but never read them.
-        if (!Objects.equals(user.getUserId(), token.getUserId())) {
-
-            SecurityLogger.logInfo(this.getClass(), "Denied JWT retrieval for token: " + token.id + " owned by: "
-                    + token.getUserId() + " to user: " + user.getUserId() + " from: " + request.getRemoteAddr());
-            return ExceptionMapperUtil.createResponse(
-                    new DotStateException("Only the owner of a token can retrieve it"), Response.Status.FORBIDDEN);
         }
 
         SecurityLogger.logInfo(this.getClass(), "Revealing token to user: " + user.getUserId() + " from: " + request.getRemoteAddr() + " token:"  + token );
