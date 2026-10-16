@@ -6,6 +6,7 @@ vi.mock(
     () => ({ DotEditContentSidePanelComponent: class MockDotEditContentSidePanelComponent {} })
 );
 
+import { InferInputSignals } from '@openng/spectator';
 import {
     byTestId,
     createComponentFactory,
@@ -1050,6 +1051,10 @@ describe('DotRelationshipFieldComponent', () => {
         let isCopyingLocale: WritableSignal<boolean>;
         let currentLocale: WritableSignal<DotLanguage | null>;
 
+        /** Types an input alias as a Spectator props key. */
+        const inputAlias = (alias: string) =>
+            alias as keyof InferInputSignals<DotRelationshipFieldComponent>;
+
         const mount = (contentlet: DotCMSContentlet | null = buildItem()) => {
             sidePanels = { open: vi.fn(() => ({ close: vi.fn() })) };
             storeMock = createStoreMock();
@@ -1068,11 +1073,12 @@ describe('DotRelationshipFieldComponent', () => {
                         locales: vi.fn().mockReturnValue([ENGLISH_LANGUAGE, SPANISH_LANGUAGE])
                     })
                 ],
+                // Inputs are bound by alias (as the form does); Spectator types props by property name.
                 props: {
-                    field: FIELD_MOCK,
-                    contentlet,
-                    hasError: false,
-                    isRequired: false
+                    [inputAlias('field')]: FIELD_MOCK,
+                    [inputAlias('contentlet')]: contentlet,
+                    [inputAlias('hasError')]: false,
+                    [inputAlias('isRequired')]: false
                 }
             });
             spectator.detectChanges();

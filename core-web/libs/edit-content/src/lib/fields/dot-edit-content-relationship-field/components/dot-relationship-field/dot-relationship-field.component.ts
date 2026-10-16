@@ -266,7 +266,7 @@ export class DotRelationshipFieldComponent
                 field: this.$field(),
                 contentlet: this.$contentlet(),
                 targetLanguageId: locale?.id,
-                targetLanguage: locale
+                targetLanguage: locale ?? undefined
             };
         },
         { equal: loadsSameRelationships }
