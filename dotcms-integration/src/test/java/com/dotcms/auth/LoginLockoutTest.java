@@ -1,5 +1,6 @@
 package com.dotcms.auth;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.rest.api.v1.authentication.ResetPasswordTokenUtil;
 import com.dotcms.util.IntegrationTestInitService;
@@ -20,16 +21,19 @@ import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -37,13 +41,18 @@ import static org.mockito.Mockito.when;
 
 /**
  * Integration tests for {@link LoginLockout} through the real authentication paths: the main login flow, WebDAV,
- * the legacy {@link LoginFactory} logins, and the password reset and update flows.
+ * the legacy {@link LoginFactory} logins, and the password reset and update flows. Logins come from a client
+ * address set on the request thread-local, as the servlet container does for real requests.
  */
 public class LoginLockoutTest {
 
     private static final String PASSWORD = "Lockout-Test-9!xQ-correct";
     private static final String NEW_PASSWORD = "Lockout-Test-7#zR-renewed";
     private static final int LIMIT = 5;
+    // Documentation address ranges (RFC 5737), so they never collide with a real client.
+    private static final String ADDRESS = "203.0.113.10";
+    private static final String OTHER_ADDRESS = "198.51.100.20";
+    private static final String THIRD_ADDRESS = "192.0.2.30";
     private static Object delayEnabledBefore;
 
     @BeforeClass
@@ -59,15 +68,34 @@ public class LoginLockoutTest {
         Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED, delayEnabledBefore);
     }
 
-    private static User newUser() throws Exception {
-        final User user = new UserDataGen().nextPersisted();
-        APILocator.getUserAPI().updatePassword(user, PASSWORD, APILocator.systemUser(), false);
-        return user;
+    @Before
+    public void fromDefaultAddress() {
+        from(ADDRESS);
     }
 
     @After
     public void closeConnection() {
         DbConnectionFactory.closeSilently();
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(null);
+    }
+
+    /**
+     * Makes the following logins come from the given client address.
+     */
+    private static void from(final String address) {
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(requestFrom(address));
+    }
+
+    private static HttpServletRequest requestFrom(final String address) {
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getRemoteAddr()).thenReturn(address);
+        return request;
+    }
+
+    private static User newUser() throws Exception {
+        final User user = new UserDataGen().nextPersisted();
+        APILocator.getUserAPI().updatePassword(user, PASSWORD, APILocator.systemUser(), false);
+        return user;
     }
 
     /**
@@ -95,21 +123,6 @@ public class LoginLockoutTest {
         }
     }
 
-    /**
-     * The name WebDAV and the legacy logins look the user up by: the user ID or the email, per the company setting.
-     */
-    private static String loginName(final User user) {
-        return Company.AUTH_TYPE_ID.equals(PublicCompanyFactory.getDefaultCompany().getAuthType())
-                ? user.getUserId() : user.getEmailAddress();
-    }
-
-    private static void lockByFailedLogins(final User user) throws Exception {
-        for (int i = 0; i < LIMIT; i++) {
-            assertEquals(Authenticator.FAILURE, login(user, "wrong-" + i));
-        }
-        assertTrue(LoginLockout.getInstance().isLocked(user.getUserId()));
-    }
-
     private static boolean webdavLogin(final User user, final String password) throws Exception {
         try {
             return null != new DotWebdavHelper().authorizePrincipal(loginName(user), password);
@@ -120,17 +133,66 @@ public class LoginLockoutTest {
         }
     }
 
+    /**
+     * The name WebDAV and the legacy logins look the user up by: the user ID or the email, per the company setting.
+     */
+    private static String loginName(final User user) {
+        return Company.AUTH_TYPE_ID.equals(PublicCompanyFactory.getDefaultCompany().getAuthType())
+                ? user.getUserId() : user.getEmailAddress();
+    }
+
+    private static void failLogins(final User user, final int count) throws Exception {
+        for (int i = 0; i < count; i++) {
+            assertEquals(Authenticator.FAILURE, login(user, "wrong-" + i));
+        }
+    }
+
+    /**
+     * Locks the current address out of the account through the main login flow.
+     */
+    private static void lockByFailedLogins(final User user) throws Exception {
+        failLogins(user, LIMIT);
+        assertTrue(LoginLockout.getInstance().isLocked(user.getUserId(), LoginLockout.clientAddress()));
+    }
+
+    private static boolean lockedFrom(final User user, final String address) {
+        return LoginLockout.getInstance().isLocked(user.getUserId(), address);
+    }
+
     private static int failedLoginAttempts(final User user) throws Exception {
         return APILocator.getUserAPI().loadUserById(user.getUserId()).getFailedLoginAttempts();
     }
 
-    private static Map<String, Object> lockoutRow(final User user) throws Exception {
+    /**
+     * @return every lockout row of the account, keyed by source
+     */
+    private static Map<String, Map<String, Object>> lockoutRows(final User user) throws Exception {
         try {
             final List<Map<String, Object>> rows = new DotConnect()
-                    .setSQL("SELECT locked_until, lockout_count FROM login_lockout WHERE user_id = ?")
+                    .setSQL("SELECT source, failures, window_start, locked_until FROM login_lockout WHERE user_id = ?")
                     .addParam(user.getUserId())
                     .loadObjectResults();
-            return rows.isEmpty() ? Map.of() : rows.get(0);
+            final Map<String, Map<String, Object>> bySource = new HashMap<>();
+            rows.forEach(row -> bySource.put((String) row.get("source"), row));
+            return bySource;
+        } finally {
+            DbConnectionFactory.closeSilently();
+        }
+    }
+
+    private static long lockedUntil(final User user, final String source) throws Exception {
+        final Map<String, Object> row = lockoutRows(user).get(source);
+        assertNotNull("no lockout row for " + source, row);
+        return ((Number) row.get("locked_until")).longValue();
+    }
+
+    /**
+     * Makes every lock on the account run out now, as if the lock length had passed.
+     */
+    private static void expireLocks(final User user) throws Exception {
+        try {
+            new DotConnect().setSQL("UPDATE login_lockout SET locked_until = ? WHERE user_id = ? AND locked_until > 0")
+                    .addParam(System.currentTimeMillis() - 1000L).addParam(user.getUserId()).loadResult();
         } finally {
             DbConnectionFactory.closeSilently();
         }
@@ -142,9 +204,9 @@ public class LoginLockoutTest {
     }
 
     /**
-     * Given: an account and the default limit of 5 failures
-     * When: 5 wrong passwords are tried
-     * Then: the account is locked and the correct password is refused with the same result as a wrong one
+     * Given: an account and the default limit of 5 failures per address
+     * When: 5 wrong passwords are tried from one address
+     * Then: that address is locked out, and the correct password is refused from it with the same result as a wrong one
      */
     @Test
     public void test_lockout_after_limit_refuses_correct_password() throws Exception {
@@ -160,17 +222,132 @@ public class LoginLockoutTest {
     }
 
     /**
-     * Given: a locked account
-     * When: further logins are tried, with right and wrong passwords
-     * Then: they fail without moving the failure counter or extending the lock
+     * Given: an address locked out of an account by failed logins
+     * When: the owner logs in from another address, on every login path
+     * Then: the owner gets in, and the locked address is still refused
      */
     @Test
-    public void test_failure_counter_does_not_move_while_locked() throws Exception {
+    public void test_lock_applies_only_to_the_failing_address() throws Exception {
+        final User user = newUser();
+        try {
+            lockByFailedLogins(user);
+
+            from(OTHER_ADDRESS);
+            assertFalse(lockedFrom(user, OTHER_ADDRESS));
+            assertEquals(Authenticator.SUCCESS, login(user, PASSWORD));
+            assertTrue(webdavLogin(user, PASSWORD));
+            assertTrue(legacyLogin(user, PASSWORD));
+
+            from(ADDRESS);
+            assertEquals(Authenticator.FAILURE, login(user, PASSWORD));
+            assertFalse(webdavLogin(user, PASSWORD));
+            assertFalse(legacyLogin(user, PASSWORD));
+        } finally {
+            cleanUp(user);
+        }
+    }
+
+    /**
+     * Given: failures from two addresses, each below the per-address limit
+     * When: one address reaches the limit
+     * Then: only that address is locked; the other keeps its own count and can still log in
+     */
+    @Test
+    public void test_each_address_counts_separately() throws Exception {
+        final User user = newUser();
+        try {
+            failLogins(user, LIMIT - 1);
+            from(OTHER_ADDRESS);
+            failLogins(user, LIMIT - 1);
+            assertFalse(lockedFrom(user, ADDRESS));
+            assertFalse(lockedFrom(user, OTHER_ADDRESS));
+
+            from(ADDRESS);
+            failLogins(user, 1);
+            assertTrue(lockedFrom(user, ADDRESS));
+            assertFalse(lockedFrom(user, OTHER_ADDRESS));
+
+            from(OTHER_ADDRESS);
+            assertEquals(Authenticator.SUCCESS, login(user, PASSWORD));
+        } finally {
+            cleanUp(user);
+        }
+    }
+
+    /**
+     * Given: an account-wide limit of 8 and a per-address limit of 5
+     * When: two addresses each fail 4 times, so no single address reaches its limit
+     * Then: the account is locked for every address, including one that never failed, until a new password is set
+     */
+    @Test
+    public void test_account_wide_limit_locks_every_address() throws Exception {
+        final int accountLimitBefore = LoginLockout.accountMaxFailures();
+        Config.setProperty(LoginLockout.LOCKOUT_ACCOUNT_MAX_FAILURES, 8);
+        final User user = newUser();
+        try {
+            failLogins(user, 4);
+            from(OTHER_ADDRESS);
+            failLogins(user, 4);
+
+            assertTrue(LoginLockout.getInstance().isLocked(user.getUserId()));
+            assertTrue(lockedFrom(user, THIRD_ADDRESS));
+            assertTrue(lockedUntil(user, LoginLockout.ACCOUNT_WIDE) > System.currentTimeMillis());
+
+            from(THIRD_ADDRESS);
+            assertEquals(Authenticator.FAILURE, login(user, PASSWORD));
+            assertFalse(webdavLogin(user, PASSWORD));
+
+            APILocator.getUserAPI().updatePassword(APILocator.getUserAPI().loadUserById(user.getUserId()),
+                    NEW_PASSWORD, APILocator.systemUser(), false);
+            assertTrue(lockoutRows(user).isEmpty());
+            assertEquals(Authenticator.SUCCESS, login(user, NEW_PASSWORD));
+        } finally {
+            Config.setProperty(LoginLockout.LOCKOUT_ACCOUNT_MAX_FAILURES, accountLimitBefore);
+            cleanUp(user);
+        }
+    }
+
+    /**
+     * Given: an address that has been locked out once and whose lock has run out
+     * When: it fails once, and then reaches the limit again
+     * Then: one failure does not relock it, and the second lock is the same fixed length as the first
+     */
+    @Test
+    public void test_lock_length_is_fixed_and_count_starts_over() throws Exception {
+        final User user = newUser();
+        final long expectedMillis = LoginLockout.getInstance().lockSeconds() * 1000L;
+        try {
+            long before = System.currentTimeMillis();
+            lockByFailedLogins(user);
+            long length = lockedUntil(user, ADDRESS) - before;
+            assertTrue("first lock " + length + "ms", length >= expectedMillis && length < expectedMillis + 60_000L);
+
+            expireLocks(user);
+            failLogins(user, 1);
+            assertFalse(lockedFrom(user, ADDRESS));
+
+            failLogins(user, LIMIT - 1);
+            before = System.currentTimeMillis();
+            assertTrue(lockedFrom(user, ADDRESS));
+            length = lockedUntil(user, ADDRESS) - before;
+            assertTrue("second lock " + length + "ms", length <= expectedMillis && length > expectedMillis - 60_000L);
+        } finally {
+            cleanUp(user);
+        }
+    }
+
+    /**
+     * Given: a locked address
+     * When: further logins are tried from it, with right and wrong passwords, on every login path
+     * Then: they fail without moving any failure count or extending the lock
+     */
+    @Test
+    public void test_failure_counts_do_not_move_while_locked() throws Exception {
         final User user = newUser();
         try {
             lockByFailedLogins(user);
             assertEquals(0, failedLoginAttempts(user));
-            final Map<String, Object> rowAtLock = lockoutRow(user);
+            final Map<String, Map<String, Object>> rowsAtLock = lockoutRows(user);
 
             assertEquals(Authenticator.FAILURE, login(user, "wrong-while-locked"));
             assertEquals(Authenticator.FAILURE, login(user, PASSWORD));
@@ -178,16 +355,16 @@ public class LoginLockoutTest {
             assertFalse(legacyLogin(user, "wrong-while-locked"));
 
             assertEquals(0, failedLoginAttempts(user));
-            assertEquals(rowAtLock, lockoutRow(user));
+            assertEquals(rowsAtLock, lockoutRows(user));
         } finally {
             cleanUp(user);
         }
     }
 
     /**
-     * Given: a locked account
-     * When: the lock is cleared directly
-     * Then: the correct password works again and a success leaves no lock state behind
+     * Given: a locked address
+     * When: the account's lockout state is cleared directly
+     * Then: the correct password works again from that address and leaves nothing recorded for it
      */
     @Test
     public void test_clear_unlocks_and_success_resets_state() throws Exception {
@@ -196,31 +373,33 @@ public class LoginLockoutTest {
             lockByFailedLogins(user);
             LoginLockout.getInstance().clear(user.getUserId());
             assertEquals(Authenticator.SUCCESS, login(user, PASSWORD));
-            assertEquals(LoginLockout.Status.NONE, LoginLockout.getInstance().status(user.getUserId()));
+            assertEquals(LoginLockout.Status.NONE, LoginLockout.getInstance().status(user.getUserId(), ADDRESS));
         } finally {
             cleanUp(user);
         }
     }
 
     /**
-     * Given: an account whose lock has run out
-     * When: the correct password is used
-     * Then: the check reports the stored row as expired, the login succeeds, and the row is removed
+     * Given: failures recorded for an address, first below the limit and then as a lock that has run out
+     * When: the correct password is used from that address
+     * Then: the check reports the recorded failures, the login succeeds, and that address's count is removed
      */
     @Test
-    public void test_success_clears_expired_lock() throws Exception {
+    public void test_success_clears_the_count_for_its_address() throws Exception {
         final User user = newUser();
         try {
-            assertEquals(LoginLockout.Status.NONE, LoginLockout.getInstance().check(user.getUserId()));
-            lockByFailedLogins(user);
-            assertEquals(LoginLockout.Status.LOCKED, LoginLockout.getInstance().check(user.getUserId()));
-            new DotConnect().setSQL("UPDATE login_lockout SET locked_until = ? WHERE user_id = ?")
-                    .addParam(System.currentTimeMillis() - 1000L).addParam(user.getUserId()).loadResult();
-            DbConnectionFactory.closeSilently();
-            assertEquals(LoginLockout.Status.EXPIRED, LoginLockout.getInstance().check(user.getUserId()));
-
+            assertEquals(LoginLockout.Status.NONE, LoginLockout.getInstance().check(user.getUserId(), ADDRESS));
+            failLogins(user, 2);
+            assertEquals(LoginLockout.Status.RECORDED, LoginLockout.getInstance().check(user.getUserId(), ADDRESS));
             assertEquals(Authenticator.SUCCESS, login(user, PASSWORD));
-            assertEquals(LoginLockout.Status.NONE, LoginLockout.getInstance().status(user.getUserId()));
+            assertEquals(LoginLockout.Status.NONE, LoginLockout.getInstance().status(user.getUserId(), ADDRESS));
+
+            lockByFailedLogins(user);
+            assertEquals(LoginLockout.Status.LOCKED, LoginLockout.getInstance().check(user.getUserId(), ADDRESS));
+            expireLocks(user);
+            assertEquals(LoginLockout.Status.RECORDED, LoginLockout.getInstance().check(user.getUserId(), ADDRESS));
+            assertEquals(Authenticator.SUCCESS, login(user, PASSWORD));
+            assertEquals(LoginLockout.Status.NONE, LoginLockout.getInstance().status(user.getUserId(), ADDRESS));
         } finally {
             cleanUp(user);
         }
@@ -235,9 +414,7 @@ public class LoginLockoutTest {
     public void test_below_limit_does_not_lock() throws Exception {
         final User user = newUser();
         try {
-            for (int i = 0; i < LIMIT - 1; i++) {
-                login(user, "wrong-" + i);
-            }
+            failLogins(user, LIMIT - 1);
             assertFalse(LoginLockout.getInstance().isLocked(user.getUserId()));
             assertEquals(Authenticator.SUCCESS, login(user, PASSWORD));
         } finally {
@@ -246,12 +423,12 @@ public class LoginLockoutTest {
     }
 
     /**
-     * Given: a locked account
-     * When: the correct password is sent over WebDAV
+     * Given: an address locked out of an account
+     * When: the correct password is sent over WebDAV from that address
      * Then: it is refused like a wrong password, and accepted again once the lock is cleared
      */
     @Test
-    public void test_webdav_refuses_locked_account() throws Exception {
+    public void test_webdav_refuses_locked_address() throws Exception {
         final User user = newUser();
         try {
             assertTrue(webdavLogin(user, PASSWORD));
@@ -267,8 +444,8 @@ public class LoginLockoutTest {
 
     /**
      * Given: an account
-     * When: the limit of wrong passwords is sent over WebDAV
-     * Then: the account is locked, for every login path
+     * When: the limit of wrong passwords is sent over WebDAV from one address
+     * Then: that address is locked out, on every login path
      */
     @Test
     public void test_webdav_failures_count_toward_lock() throws Exception {
@@ -277,7 +454,7 @@ public class LoginLockoutTest {
             for (int i = 0; i < LIMIT; i++) {
                 assertFalse(webdavLogin(user, "wrong-" + i));
             }
-            assertTrue(LoginLockout.getInstance().isLocked(user.getUserId()));
+            assertTrue(lockedFrom(user, ADDRESS));
             assertEquals(Authenticator.FAILURE, login(user, PASSWORD));
         } finally {
             cleanUp(user);
@@ -285,21 +462,19 @@ public class LoginLockoutTest {
     }
 
     /**
-     * Given: a locked account
-     * When: the correct password is sent to the legacy {@link LoginFactory} logins used by the ajax endpoints
+     * Given: an address locked out of an account
+     * When: the correct password is sent from it to the legacy {@link LoginFactory} logins used by the ajax endpoints
      * Then: both overloads refuse it, and accept it again once the lock is cleared
      */
     @Test
-    public void test_legacy_doLogin_refuses_locked_account() throws Exception {
+    public void test_legacy_doLogin_refuses_locked_address() throws Exception {
         final User user = newUser();
         try {
             assertTrue(legacyLogin(user, PASSWORD));
             lockByFailedLogins(user);
 
             assertFalse(legacyLogin(user, PASSWORD));
-            final HttpServletRequest request = mock(HttpServletRequest.class);
-            when(request.getRemoteAddr()).thenReturn("127.0.0.1");
-            assertFalse(LoginFactory.doLogin(loginName(user), PASSWORD, false, request,
+            assertFalse(LoginFactory.doLogin(loginName(user), PASSWORD, false, requestFrom(ADDRESS),
                     mock(HttpServletResponse.class)));
             DbConnectionFactory.closeSilently();
 
@@ -312,8 +487,8 @@ public class LoginLockoutTest {
 
     /**
      * Given: an account
-     * When: the limit of wrong passwords is sent to the legacy {@link LoginFactory} login
-     * Then: the account is locked
+     * When: the limit of wrong passwords is sent to the legacy {@link LoginFactory} login from one address
+     * Then: that address is locked out
      */
     @Test
     public void test_legacy_doLogin_failures_count_toward_lock() throws Exception {
@@ -322,16 +497,16 @@ public class LoginLockoutTest {
             for (int i = 0; i < LIMIT; i++) {
                 assertFalse(legacyLogin(user, "wrong-" + i));
             }
-            assertTrue(LoginLockout.getInstance().isLocked(user.getUserId()));
+            assertTrue(lockedFrom(user, ADDRESS));
         } finally {
             cleanUp(user);
         }
     }
 
     /**
-     * Given: a locked account
+     * Given: a locked address
      * When: the user resets the password with an emailed reset token
-     * Then: the lock is cleared and the new password works
+     * Then: all lockout state for the account is cleared and the new password works
      */
     @Test
     public void test_password_reset_clears_lock() throws Exception {
@@ -347,7 +522,7 @@ public class LoginLockoutTest {
 
             UserManagerFactory.getManager().resetPassword(user.getUserId(), token, NEW_PASSWORD);
 
-            assertEquals(LoginLockout.Status.NONE, LoginLockout.getInstance().status(user.getUserId()));
+            assertTrue(lockoutRows(user).isEmpty());
             assertEquals(Authenticator.SUCCESS, login(user, NEW_PASSWORD));
         } finally {
             Config.setProperty("RECOVER_PASSWORD_TOKEN_AUTH_DELAY", tokenDelayBefore);
@@ -356,9 +531,9 @@ public class LoginLockoutTest {
     }
 
     /**
-     * Given: a locked account
+     * Given: a locked address
      * When: an administrator sets a new password through {@code UserAPI.updatePassword}
-     * Then: the lock and the failure count are cleared and the new password works
+     * Then: the lockout state and the failure count are cleared and the new password works
      */
     @Test
     public void test_admin_update_password_clears_lock() throws Exception {
@@ -374,7 +549,7 @@ public class LoginLockoutTest {
             APILocator.getUserAPI().updatePassword(APILocator.getUserAPI().loadUserById(user.getUserId()),
                     NEW_PASSWORD, APILocator.systemUser(), false);
 
-            assertEquals(LoginLockout.Status.NONE, LoginLockout.getInstance().status(user.getUserId()));
+            assertTrue(lockoutRows(user).isEmpty());
             assertEquals(0, failedLoginAttempts(user));
             assertEquals(Authenticator.SUCCESS, login(user, NEW_PASSWORD));
         } finally {
@@ -383,9 +558,9 @@ public class LoginLockoutTest {
     }
 
     /**
-     * Given: a locked account
+     * Given: a locked address
      * When: an administrator saves the user with a new password, as the Users portlet and the REST user update do
-     * Then: the lock is cleared and the new password works
+     * Then: the lockout state is cleared and the new password works
      */
     @Test
     public void test_admin_save_with_new_password_clears_lock() throws Exception {
@@ -397,7 +572,7 @@ public class LoginLockoutTest {
             toSave.setPassword(NEW_PASSWORD);
             APILocator.getUserAPI().save(toSave, APILocator.systemUser(), true, false);
 
-            assertEquals(LoginLockout.Status.NONE, LoginLockout.getInstance().status(user.getUserId()));
+            assertTrue(lockoutRows(user).isEmpty());
             assertEquals(Authenticator.SUCCESS, login(user, NEW_PASSWORD));
         } finally {
             cleanUp(user);
@@ -407,7 +582,7 @@ public class LoginLockoutTest {
     /**
      * Given: lockout switched off with {@code AUTH_LOCKOUT_ENABLED=false}
      * When: more wrong passwords than the limit are tried, on the main login and over WebDAV
-     * Then: nothing is locked and the correct password still works on every path
+     * Then: nothing is recorded or locked and the correct password still works on every path
      */
     @Test
     public void test_disabled_does_not_lock() throws Exception {
@@ -420,7 +595,7 @@ public class LoginLockoutTest {
                 assertEquals(Authenticator.FAILURE, login(user, "wrong-" + i));
                 assertFalse(webdavLogin(user, "wrong-" + i));
             }
-            assertEquals(LoginLockout.Status.NONE, LoginLockout.getInstance().status(user.getUserId()));
+            assertTrue(lockoutRows(user).isEmpty());
             assertTrue(webdavLogin(user, PASSWORD));
             assertTrue(legacyLogin(user, PASSWORD));
             assertEquals(Authenticator.SUCCESS, login(user, PASSWORD));
@@ -431,15 +606,12 @@ public class LoginLockoutTest {
     }
 
     /**
-     * The lock length doubles with each lockout and stops at the maximum.
+     * The client address falls back to a fixed source outside a request, and is cut to the column length.
      */
     @Test
-    public void test_lock_duration_doubles_and_is_capped() {
-        final LoginLockout lockout = new LoginLockout(System::currentTimeMillis);
-        assertEquals(900, lockout.lockSeconds(0));
-        assertEquals(1800, lockout.lockSeconds(1));
-        assertEquals(3600, lockout.lockSeconds(2));
-        assertEquals(86400, lockout.lockSeconds(10));
-        assertEquals(86400, lockout.lockSeconds(Integer.MAX_VALUE));
+    public void test_client_address() {
+        assertEquals(LoginLockout.UNKNOWN_SOURCE, LoginLockout.clientAddress((HttpServletRequest) null));
+        assertEquals(ADDRESS, LoginLockout.clientAddress(requestFrom(ADDRESS)));
+        assertEquals(64, LoginLockout.clientAddress(requestFrom("f".repeat(100))).length());
     }
 }

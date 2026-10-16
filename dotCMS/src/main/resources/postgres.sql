@@ -2472,13 +2472,16 @@ CREATE TABLE system_event_cursor (
     CONSTRAINT pk_system_event_cursor PRIMARY KEY (server_id)
 );
 
--- Per-account login lockout state, shared by every node of a cluster.
+-- Failed-login counts and locks per account and client address (source '*' is the account-wide
+-- count), shared by every node of a cluster.
 CREATE TABLE login_lockout (
-    user_id       VARCHAR(100) NOT NULL,
-    locked_until  BIGINT       NOT NULL,
-    lockout_count INT          NOT NULL,
-    mod_date      TIMESTAMPTZ  NOT NULL,
-    CONSTRAINT pk_login_lockout PRIMARY KEY (user_id)
+    user_id      VARCHAR(100) NOT NULL,
+    source       VARCHAR(64)  NOT NULL,
+    failures     INT          NOT NULL,
+    window_start BIGINT       NOT NULL,
+    locked_until BIGINT       NOT NULL,
+    mod_date     TIMESTAMPTZ  NOT NULL,
+    CONSTRAINT pk_login_lockout PRIMARY KEY (user_id, source)
 );
 
 --Content Types improvement

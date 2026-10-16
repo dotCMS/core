@@ -8,18 +8,25 @@ import com.dotmarketing.util.Logger;
 import java.sql.SQLException;
 
 /**
- * Creates {@code login_lockout}, which holds per-account lockout state for
- * {@link com.dotcms.auth.LoginLockout}. A separate table keeps the migration additive: nothing on
- * {@code user_} changes, and an older release rolled back onto this schema never reads it.
+ * Creates {@code login_lockout}, which holds failed-login counts and locks for
+ * {@link com.dotcms.auth.LoginLockout}: one row per account and client address, plus one account-wide
+ * row (source {@code *}). A separate table keeps the migration additive: nothing on {@code user_}
+ * changes, and an older release rolled back onto this schema never reads it.
  */
 public class Task261015CreateLoginLockoutTable extends AbstractJDBCStartupTask {
 
     private static final String TABLE_NAME = "login_lockout";
 
+    /**
+     * Runs when the table is missing, or when it has the earlier per-account layout (no {@code source}
+     * column) from a pre-release build. Lockout state is short-lived, so that table is simply rebuilt.
+     */
     @Override
     public boolean forceRun() {
         try {
-            return !new DotDatabaseMetaData().tableExists(DbConnectionFactory.getConnection(), TABLE_NAME);
+            final DotDatabaseMetaData metaData = new DotDatabaseMetaData();
+            return !metaData.tableExists(DbConnectionFactory.getConnection(), TABLE_NAME)
+                    || !metaData.hasColumn(TABLE_NAME, "source");
         } catch (final SQLException e) {
             Logger.error(this, e.getMessage(), e);
             return false;
@@ -28,12 +35,15 @@ public class Task261015CreateLoginLockoutTable extends AbstractJDBCStartupTask {
 
     @Override
     public String getPostgresScript() {
-        return "CREATE TABLE IF NOT EXISTS login_lockout (" // nosemgrep: gitlab.find_sec_bugs.CUSTOM_INJECTION-2 -- fully hardcoded DDL, no user input
+        return "DROP TABLE IF EXISTS login_lockout;" // nosemgrep: gitlab.find_sec_bugs.CUSTOM_INJECTION-2 -- fully hardcoded DDL, no user input
+                + "CREATE TABLE login_lockout ("
                 + " user_id varchar(100) not null,"
+                + " source varchar(64) not null,"
+                + " failures int not null,"
+                + " window_start bigint not null,"
                 + " locked_until bigint not null,"
-                + " lockout_count int not null,"
                 + " mod_date timestamptz not null,"
-                + " constraint pk_login_lockout primary key (user_id)"
-                + ")";
+                + " constraint pk_login_lockout primary key (user_id, source)"
+                + ");";
     }
 }
