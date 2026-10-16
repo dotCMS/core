@@ -51,12 +51,13 @@ Derived in the Drive: rows read = `parsedRows - 1`; headers matched = `valid.len
 
 Terminal for the Drive: `SUCCESS`, `FAILED`, `FAILED_PERMANENTLY`, `ABANDONED*`, `CANCELED`.
 
-## ImportContentType (**new**, list item of `GET /_import/contenttypes`)
+## ContentTypeSummaryView (**new**, list item of `GET /api/v1/contenttype/_writable`)
 
-`{ id, variable, name, baseType, icon }`, sorted by name; only WRITE-permitted; never Host. Served
-a page at a time with `pagination` (see contracts/content-import-api.md). The Drive hands each page
-to the shared `dot-content-type` selector as `DotCMSContentType[]`: these are the only fields that
-selector reads.
+`{ id, variable, name, baseType, icon }`, sorted by name; only WRITE-permitted; the import excludes
+Host through `exclude=Host`. Served a page at a time with `pagination` (see
+contracts/content-import-api.md). The Drive hands each page to the shared `dot-content-type`
+selector as `DotCMSContentType[]`: these are the only fields that selector reads. Frontend model:
+`DotContentTypeSummary`, fetched by `DotContentTypeService.getWritableContentTypes`.
 
 ## IMPORT_CONTENTLETS_COMPLETED event payload (**new**) — see contracts/import-completed-event.md
 

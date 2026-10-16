@@ -29,17 +29,19 @@ instead of `/_validate`, whose queued job waited up to 30 s on the job queue's i
 `entity.result.destinations: [{path, rows, source}]`, present in PREVIEW and PUBLISH results when
 there is at least one placed row. Additive; existing clients ignore it.
 
-## GET `/contenttypes` (new)
+## GET `/api/v1/contenttype/_writable` (new, in `ContentTypeResource`)
+
+Moved out of the import resource in the PR #38054 review (nollymar), so any selector can use it.
 
 - Query: `filter` (optional; kept when the type's name or variable contains it, ignoring case),
-  `page` (default 1), `per_page` (default 40, as `/api/v1/contenttype`).
+  `page` (default 1), `per_page` (default 40, as `/api/v1/contenttype`), `exclude` (optional,
+  comma-separated variables to leave out, ignoring case).
 - 200: `{entity: [{id, variable, name, baseType, icon}], pagination: {currentPage, perPage,
-  totalEntries}}` — one page of the WRITE-permitted types, Host excluded, sorted by name. The
-  permission rule and Host are applied before paging, so `totalEntries` counts matching types
-  exactly. Empty page when none.
+  totalEntries}}`: one page of the WRITE-permitted types, sorted by name. The permission rule and
+  the exclusions are applied before paging, so `totalEntries` counts matching types exactly.
 - 400: `page` or `per_page` below 1.
-- Consumer: the shared `dot-content-type` selector, through its optional `pageLoader` input
-  (UI review, 2026-10-14).
+- Consumer: the import dialog, through the shared `dot-content-type` selector's `pageLoader`, sends
+  `exclude=Host` (Host is never offered, as in Content Search's import).
 
 ## GET `/_sample?contentType={idOrVar}` (new)
 
