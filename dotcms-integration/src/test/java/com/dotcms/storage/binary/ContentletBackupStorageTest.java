@@ -267,6 +267,87 @@ public class ContentletBackupStorageTest {
         }
     }
 
+    /**
+     * A deleted inode can come back before its cleanup job runs (push publishing keeps the sender's
+     * inodes). The job must then finish: delete the recorded revisions the returned row no longer
+     * references, with their metadata, and keep everything the row does reference.
+     */
+    @Test
+    void cleanupOfAReturnedInodeDeletesOnlyUnreferencedRevisions() throws Exception {
+        final var type = new ContentTypeDataGen().nextPersisted();
+        try {
+            for (String name : List.of("heroImage", "attachment")) {
+                ContentTypeDataGen.addField(new FieldDataGen().velocityVarName(name).contentTypeId(type.id())
+                        .type(BinaryField.class).nextPersisted());
+            }
+            final var generator = new ContentletDataGen(type);
+            generator.setProperty("heroImage", source("returned-old", "old hero"));
+            generator.setProperty("attachment", source("returned-kept", "kept attachment"));
+            Contentlet content = generator.nextPersisted();
+            final String inode = content.getInode();
+            // Custom attributes give the old hero revision a metadata file of its own.
+            APILocator.getFileMetadataAPI().putCustomMetadataAttributes(content,
+                    Map.of("heroImage", Map.of("credit", "Old author")));
+            content = APILocator.getContentletAPI().find(inode, APILocator.systemUser(), false);
+            final var binaries = APILocator.getBinaryAssetStorageAPI();
+            final String oldHero = BinaryAssetReference.keyOf(content.getBinary("heroImage"));
+            final String oldHeroMetadata = BinaryAssetReference.metadataKeyOf(content.getBinary("heroImage"));
+            final String keptAttachment = BinaryAssetReference.keyOf(content.getBinary("attachment"));
+            assertNotNull(oldHero);
+            assertNotNull(oldHeroMetadata);
+            assertNotNull(keptAttachment);
+
+            // The deletion records the inode's inventory...
+            com.dotmarketing.db.HibernateUtil.startTransaction();
+            try {
+                BinaryAssetCleanupProcessor.enqueue(inode);
+                com.dotmarketing.db.HibernateUtil.commitTransaction();
+            } catch (Exception failure) {
+                com.dotmarketing.db.HibernateUtil.rollbackTransaction();
+                throw failure;
+            }
+            final var jobs = new DotConnect().setSQL("select id from job where queue_name = ? and parameters ->> 'inode' = ?")
+                    .addParam(BinaryAssetCleanupProcessor.QUEUE).addParam(inode).loadObjectResults();
+            assertEquals(1, jobs.size());
+            final var recorded = APILocator.getJobQueueManagerAPI().getJob(jobs.getFirst().get("id").toString());
+            assertTrue(((List<?>) recorded.parameters().get("binaries")).containsAll(List.of(oldHero, keptAttachment)));
+            assertTrue(((List<?>) recorded.parameters().get("metadata")).contains(oldHeroMetadata));
+
+            // ...and the inode comes back referencing the recorded attachment plus a new hero revision.
+            final var newHero = binaries.storeRevision(inode, "heroImage", "Shared-Mixed.Txt", source("returned-new", "new hero"));
+            final String newHeroKey = BinaryAssetReference.keyOf(newHero);
+            final var mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            final var json = (com.fasterxml.jackson.databind.node.ObjectNode) mapper.readTree(new DotConnect()
+                    .setSQL("select contentlet_as_json from contentlet where inode = ?").addParam(inode)
+                    .getString("contentlet_as_json"));
+            ((com.fasterxml.jackson.databind.node.ObjectNode) json.path("fields")).set("heroImage", mapper.valueToTree(
+                    com.dotcms.content.model.type.system.BinaryFieldType.builder().value(newHero.getName())
+                            .storageKey(newHeroKey).build()));
+            new DotConnect().setSQL("update contentlet set contentlet_as_json = ?::jsonb where inode = ?")
+                    .addParam(mapper.writeValueAsString(json)).addParam(inode).loadResult();
+            com.dotmarketing.business.CacheLocator.getContentletCache().remove(inode);
+
+            new BinaryAssetCleanupProcessor().process(recorded);
+
+            final var remaining = binaries.listBinaryPaths(inode);
+            assertFalse(remaining.contains(oldHero), "The unreferenced old revision is deleted");
+            assertTrue(remaining.contains(keptAttachment), "A recorded key the returned row references is kept");
+            assertTrue(remaining.contains(newHeroKey), "A revision uploaded after the deletion is kept");
+            final var metadataKey = new com.dotcms.storage.StorageKey.Builder()
+                    .group(com.dotcms.storage.FileMetadataAPI.DOT_METADATA)
+                    .storage(com.dotcms.storage.StoragePersistenceProvider.getStorageType());
+            assertNull(APILocator.getFileStorageAPI().retrieveRawMetaData(metadataKey.path(oldHeroMetadata).build()),
+                    "The old revision's metadata goes with it");
+            final var returned = APILocator.getContentletAPI().find(inode, APILocator.systemUser(), false);
+            assertEquals("kept attachment", Files.readString(returned.getBinary("attachment").toPath()));
+            assertEquals("new hero", Files.readString(returned.getBinary("heroImage").toPath()));
+            new BinaryAssetCleanupProcessor().process(recorded); // A retry after success is harmless.
+            assertTrue(binaries.listBinaryPaths(inode).containsAll(List.of(keptAttachment, newHeroKey)));
+        } finally {
+            ContentTypeDataGen.remove(type);
+        }
+    }
+
     @Test
     void failedBackupAbortsDeletionAndPreservesSources() throws Exception {
         final String previous = Config.getStringProperty("BACKUP_DELETED_CONTENTLETS_TO_DISK", null);

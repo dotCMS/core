@@ -182,13 +182,19 @@ recovery archives like the other deletion paths.
 
 The job carries the exact binary and metadata paths stored for the inode when it was recorded, so
 recording it lists the inode's objects inside the deletion transaction, and a storage listing
-failure aborts the deletion. The worker refuses while a content version with that inode exists,
-then deletes the recorded metadata before the recorded source objects, so a failure leaves the
-sources available for a retry. It never deletes by prefix: an inode can be re-created after the
-deletion (push publishing keeps the sender's inodes), and the revisions it uploads survive. Objects
-uploaded under the deleted inode by a transaction that overlapped the deletion are therefore not
-reclaimed. The inode's completed renditions and legacy image cache are still removed whole, since
-they regenerate on demand. S3 failures use the job queue's retry policy; after retries are
+failure aborts the deletion. The worker deletes the recorded metadata before the recorded source
+objects, so a failure leaves the sources available for a retry. It never deletes by prefix: an
+inode can be re-created after the deletion (push publishing keeps the sender's inodes), and the
+revisions it uploads survive. Objects uploaded under the deleted inode by a transaction that
+overlapped the deletion are therefore not reclaimed. The inode's completed renditions and legacy
+image cache are removed whole, since they regenerate on demand.
+
+If a content version with that inode exists again when the job runs, the worker locks that row
+and deletes only the recorded revision files (`.revisions/<uuid>/` binaries and the metadata in
+those folders) whose folder the row does not reference through any `storageKey` or
+`metadataStorageKey`. It keeps recorded older-layout binaries and metadata, renditions and the
+legacy image cache, logs what it kept, and completes. If the row's JSON is empty or cannot be
+read, it keeps every recorded file. S3 failures use the job queue's retry policy; after retries are
 exhausted the job stays failed and can be retried through the job management API. Direct
 submissions through the public job endpoint are rejected. With the flag off, workers do not touch
 storage and pending jobs are not silently completed.
