@@ -33,6 +33,16 @@ public class ContentletBackupStorageTest {
     @BeforeAll static void initialize() throws Exception { IntegrationTestInitService.getInstance().init(); }
     @TempDir Path uploads;
 
+    /**
+     * Deletes content whose binaries and metadata have been evicted from local disk, so the backup
+     * must restore them from S3, and checks that each deleted version gets its own recovery ZIP with
+     * the exact bytes and metadata the database row points to. Runs once per deletion mode: full
+     * destroy, all versions, a single version and one language. Versions the deletion keeps must
+     * still serve their binaries afterwards.
+     *
+     * @param deletion the deletion mode to exercise
+     * @throws Exception if the content setup, the deletion or reading the archives fails
+     */
     @ParameterizedTest
     @ValueSource(strings = {"destroy", "allVersions", "version", "language"})
     void coldBackupsSurviveCommittedBinaryAndMetadataCleanup(String deletion) throws Exception {
@@ -71,7 +81,7 @@ public class ContentletBackupStorageTest {
                     entries.put("assets/" + BinaryAssetReference.keyOf(binary), Files.readAllBytes(binary.toPath()));
                     org.awaitility.Awaitility.await().atMost(java.time.Duration.ofSeconds(5))
                             .until(() -> APILocator.getBinaryAssetStorageAPI().evictLocalFile(binary));
-                    final String metadataPath = APILocator.getFileMetadataAPI().getFileName(content, field);
+                    final String metadataPath = storedMetadataPath(content, field);
                     final var metadataKey = new com.dotcms.storage.StorageKey.Builder()
                             .group(com.dotcms.storage.FileMetadataAPI.DOT_METADATA).path(metadataPath)
                             .storage(com.dotcms.storage.StoragePersistenceProvider.getStorageType()).build();
@@ -134,6 +144,7 @@ public class ContentletBackupStorageTest {
                 assertTrue(new String(entries.get("contentlet.xml"), java.nio.charset.StandardCharsets.UTF_8).contains(inode));
                 assertNotNull(new com.fasterxml.jackson.databind.ObjectMapper().readTree(entries.get("contentlet.json")).get("fields"));
                 for (var entry : expected.get(inode).entrySet()) {
+                    assertTrue(entries.containsKey(entry.getKey()), "Backup " + key + " is missing " + entry.getKey());
                     if (entry.getKey().endsWith("-metadata.json")) {
                         final var mapper = new com.fasterxml.jackson.databind.ObjectMapper();
                         assertEquals(mapper.readTree(entry.getValue()), mapper.readTree(entries.get(entry.getKey())));
@@ -562,6 +573,24 @@ public class ContentletBackupStorageTest {
         final var jobs = new java.util.ArrayList<com.dotcms.jobs.business.job.Job>();
         for (var row : rows) jobs.add(APILocator.getJobQueueManagerAPI().getJob(row.get("id").toString()));
         return jobs;
+    }
+
+    /**
+     * Returns the metadata path that the content row records for a field, which is the file the
+     * backup archives. The Contentlet a test holds can be older than the row: indexing may publish
+     * a new metadata key from another copy of the same version, and then this copy still points
+     * at the earlier file.
+     *
+     * @param content the content version
+     * @param field   the binary field variable name
+     * @return the metadata path, starting with {@code /}
+     * @throws Exception if the row cannot be read or names no binary for the field
+     */
+    private static String storedMetadataPath(Contentlet content, String field) throws Exception {
+        final var stored = new Contentlet(content);
+        stored.getMap().put(field, BinaryAssetReference.fromContentJson(BinaryAssetReference.contentJson(
+                content.getInode()), content.getInode()).get(field).localFile(content.getInode(), field));
+        return APILocator.getFileMetadataAPI().getFileName(stored, field);
     }
 
     private void removeBackups(String identifier) throws Exception {
