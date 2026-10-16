@@ -772,6 +772,16 @@ public class ApiTokenResource implements Serializable {
             return ExceptionMapperUtil.createResponse(new DotStateException("token not valid"), Response.Status.BAD_REQUEST);
         }
 
+        // Only the token's owner may retrieve a working JWT for an existing token. Administrators and
+        // user managers can list and revoke other users' tokens, but never read them.
+        if (!Objects.equals(user.getUserId(), token.getUserId())) {
+
+            SecurityLogger.logInfo(this.getClass(), "Denied JWT retrieval for token: " + token.id + " owned by: "
+                    + token.getUserId() + " to user: " + user.getUserId() + " from: " + request.getRemoteAddr());
+            return ExceptionMapperUtil.createResponse(
+                    new DotStateException("Only the owner of a token can retrieve it"), Response.Status.FORBIDDEN);
+        }
+
         SecurityLogger.logInfo(this.getClass(), "Revealing token to user: " + user.getUserId() + " from: " + request.getRemoteAddr() + " token:"  + token );
         final String jwt = tokenApi.getJWT(token, user);
         return Response.ok(new ResponseEntityMapView(Map.of("jwt", jwt))).build(); // 200
