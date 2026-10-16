@@ -77,6 +77,8 @@ import com.dotcms.mock.request.CachedParameterDecoratorTest;
 import com.dotcms.publisher.bundle.business.BundleAPITest;
 import com.dotcms.publisher.bundle.business.BundleFactoryTest;
 import com.dotcms.publisher.business.PublishAuditAPITest;
+import com.dotcms.publisher.endpoint.ajax.PublishingEndpointAjaxActionTest;
+import com.dotcms.publisher.environment.ajax.EnvironmentAjaxActionTest;
 import com.dotcms.publisher.receiver.BundlePublisherTest;
 import com.dotcms.publisher.util.DependencyManagerTest;
 import com.dotcms.publisher.util.PushedAssetUtilTest;
@@ -96,6 +98,7 @@ import com.dotcms.rendering.velocity.viewtools.MessageToolTest;
 import com.dotcms.rendering.velocity.viewtools.XmlToolTest;
 import com.dotcms.rendering.velocity.viewtools.content.StoryBlockMapTest;
 import com.dotcms.rendering.velocity.viewtools.content.StoryBlockTest;
+import com.dotcms.rest.BundlePublisherResourceTest;
 import com.dotcms.rest.BundleResourceTest;
 import com.dotcms.rest.api.v1.announcements.AnnouncementsHelperIntegrationTest;
 import com.dotcms.rest.api.v1.announcements.RemoteAnnouncementsLoaderIntegrationTest;
@@ -558,6 +561,9 @@ import org.junit.runners.Suite.SuiteClasses;
         SamlConfigurationServiceTest.class,
         ClusterFactoryTest.class,
         BundleResourceTest.class,
+        BundlePublisherResourceTest.class,
+        PublishingEndpointAjaxActionTest.class,
+        EnvironmentAjaxActionTest.class,
         IdentityProviderConfigurationFactoryTest.class,
         GoogleTranslationServiceIntegrationTest.class,
         Task240131UpdateLanguageVariableContentTypeTest.class,
