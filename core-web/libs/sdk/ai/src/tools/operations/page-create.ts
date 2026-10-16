@@ -1,14 +1,30 @@
+import { isContentLive } from './shared/page-common';
+import { splitUrlPath } from './shared/page-path';
+import { RESOLVE_ENDPOINTS, resolveLanguageId, resolveSite } from './shared/resolve';
+
 import {
     HttpError,
+    ValidationError,
     type ContentTypeSummary,
     type DotCMSRuntime,
     type RequestOptions
-} from '@dotcms/ai/runtime';
+} from '../../runtime';
+import { CONTEXT_ENDPOINTS, type Endpoint } from '../toolkit/endpoints';
+import { errorMessage, withMessage } from '../toolkit/tool-runtime';
 
-import { isContentLive } from './page-common';
-import { splitUrlPath } from './page-path';
-import { resolveLanguageId, resolveSite } from './resolve';
-import { errorMessage } from './runtime';
+/**
+ * Every endpoint `createPage` calls — the `page_create` tool enforces exactly this list, and
+ * `page-create.spec.ts` checks every request against it. Add a request, add it here.
+ */
+export const PAGE_CREATE_ENDPOINTS: readonly Endpoint[] = [
+    ...CONTEXT_ENDPOINTS,
+    ...RESOLVE_ENDPOINTS,
+    'GET /api/v1/contenttype/id/{idOrVar}',
+    'GET /api/v1/templates/{identifier}/working',
+    'POST /api/v1/folder/createfolders/{site}',
+    'PUT /api/v1/workflow/actions/default/fire/PUBLISH',
+    'GET /api/v1/content/{identifier}'
+];
 
 /** The default page content type when the caller does not name one. */
 export const DEFAULT_PAGE_CONTENT_TYPE = 'htmlpageasset';
@@ -289,7 +305,7 @@ async function resolvePageContentType(
     }
 
     if (!definition) {
-        throw new Error(
+        throw new ValidationError(
             `Content type "${wanted}" was not found on this instance. ` +
                 `Available page content types: ${availablePageTypes()}.`
         );
@@ -298,7 +314,7 @@ async function resolvePageContentType(
     // Checked against the FETCHED definition, not the cached summary — the fetch is the
     // authority and is present on every path.
     if (definition.baseType !== PAGE_BASE_TYPE) {
-        throw new Error(
+        throw new ValidationError(
             `Content type "${definition.variable}" is base type ${definition.baseType}, not a page ` +
                 `(HTMLPAGE). page_create only creates pages. Available page content types: ` +
                 `${availablePageTypes()}.`
@@ -387,7 +403,7 @@ function assertRequiredFieldsSatisfied(
     });
 
     if (missing.length > 0) {
-        throw new Error(
+        throw new ValidationError(
             `Content type "${contentType.variable}" has required field(s) with no value: ` +
                 `${missing.join(', ')}. Pass them via extraFields, e.g. ` +
                 `{ "${missing[0]}": <value> }.`
@@ -576,7 +592,7 @@ async function assertTemplateExists(dotcms: DotCMSRuntime, template: string): Pr
         });
     } catch (error) {
         if (error instanceof HttpError && error.status === 404) {
-            throw new Error(
+            throw new ValidationError(
                 `Template "${template}" was not found. This must be the template's IDENTIFIER ` +
                     `(a UUID), not its name — passing a human-readable title here is the most ` +
                     `common cause. Nothing has been created; fix the template and re-run.`
@@ -606,10 +622,12 @@ async function fireCreate(
         const created = folderId
             ? `Folder "${folder}" (${folderId}) WAS created before this failure and still exists. `
             : '';
-        throw new Error(
-            `${errorMessage(error)}\n\n${created}Re-running this call after fixing the input is ` +
-                `SAFE: folder creation is idempotent, so no duplicate folder is made.`
-        );
+        const note =
+            `${created}Re-running this call after fixing the input is SAFE: folder creation ` +
+            `is idempotent, so no duplicate folder is made.`;
+        // Add the note to the fire's OWN error rather than wrapping it: its class is what says
+        // whether to retry — a 503 or a timeout is worth another try, a 400 is not.
+        throw withMessage(error, `${errorMessage(error)}\n\n${note}`);
     }
 }
 

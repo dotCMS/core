@@ -1,14 +1,35 @@
-import { HttpError, type DotCMSRuntime } from '@dotcms/ai/runtime';
+import { LayoutRow } from './shared/page-common';
+import { normalizePagePath } from './shared/page-path';
+import { RESOLVE_ENDPOINTS, resolveSite } from './shared/resolve';
 
-import { LayoutRow } from './page-common';
-import { normalizePagePath } from './page-path';
-import { resolveSite } from './resolve';
+import { HttpError, type DotCMSRuntime } from '../../runtime';
+import { CONTEXT_ENDPOINTS, type Endpoint } from '../toolkit/endpoints';
+
+/**
+ * Every endpoint `verifyPage` calls — all reads. The `page_verify` tool enforces exactly this
+ * list, and `page-verify.spec.ts` checks every request against it. Add a request, add it here.
+ */
+export const PAGE_VERIFY_ENDPOINTS: readonly Endpoint[] = [
+    ...CONTEXT_ENDPOINTS,
+    ...RESOLVE_ENDPOINTS,
+    'GET /api/v1/page/render/**'
+];
 
 /** Render modes the verify tool supports. LIVE = published; WORKING = latest saved (pre-publish). */
 export type VerifyMode = 'LIVE' | 'WORKING';
 
 /** The default render mode when the caller does not name one. */
 export const DEFAULT_MODE: VerifyMode = 'LIVE';
+
+/**
+ * The `mode` the render endpoint is sent for each {@link VerifyMode}.
+ *
+ * dotCMS defines a `PageMode.WORKING`, but its velocity renderer (`VelocityModeHandler`)
+ * registers no handler for it, so `mode=WORKING` fails with a 500 — a NullPointerException —
+ * on every page. `PREVIEW_MODE` has the same flags (working versions, anonymous permissions
+ * respected) and renders. The caller still says `WORKING`, and the manifest reports it.
+ */
+const RENDER_MODE: Record<VerifyMode, string> = { LIVE: 'LIVE', WORKING: 'PREVIEW_MODE' };
 /** The default language id when the caller does not name one. */
 export const DEFAULT_LANGUAGE_ID = 1;
 
@@ -147,10 +168,10 @@ export async function verifyPage(options: VerifyPageOptions): Promise<VerifyPage
 
     const query: Record<string, string | number> = {
         language_id: languageId,
-        mode
+        mode: RENDER_MODE[mode]
     };
     if (resolvedSite) {
-        query.host_id = resolvedSite.identifier;
+        query['host_id'] = resolvedSite.identifier;
     }
 
     const { status, body } = await renderPage(options.dotcms, uri, query);
