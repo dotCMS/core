@@ -7,6 +7,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.WebKeys;
@@ -17,6 +18,7 @@ import com.liferay.portal.ejb.UserManagerUtil;
 import com.liferay.portal.ejb.UserUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -63,9 +65,34 @@ public class LoginLockoutTest {
         return user;
     }
 
+    @After
+    public void closeConnection() {
+        DbConnectionFactory.closeSilently();
+    }
+
+    /**
+     * Each login here stands for one request. A request ends by closing its DB connection and Hibernate session;
+     * without that, the main login path would keep reading the user row it loaded earlier on this thread and miss a
+     * password changed since through {@code UserAPI}.
+     */
     private static int login(final User user, final String password) throws Exception {
-        return UserManagerUtil.authenticateByUserId(
-                PublicCompanyFactory.getDefaultCompany().getCompanyId(), user.getUserId(), password);
+        try {
+            return UserManagerUtil.authenticateByUserId(
+                    PublicCompanyFactory.getDefaultCompany().getCompanyId(), user.getUserId(), password);
+        } finally {
+            DbConnectionFactory.closeSilently();
+        }
+    }
+
+    /**
+     * The legacy login used by the publishing and maintenance ajax endpoints, as one request.
+     */
+    private static boolean legacyLogin(final User user, final String password) throws Exception {
+        try {
+            return LoginFactory.doLogin(loginName(user), password);
+        } finally {
+            DbConnectionFactory.closeSilently();
+        }
     }
 
     /**
@@ -88,6 +115,8 @@ public class LoginLockoutTest {
             return null != new DotWebdavHelper().authorizePrincipal(loginName(user), password);
         } catch (final DotSecurityException e) {
             return false;
+        } finally {
+            DbConnectionFactory.closeSilently();
         }
     }
 
@@ -96,11 +125,15 @@ public class LoginLockoutTest {
     }
 
     private static Map<String, Object> lockoutRow(final User user) throws Exception {
-        final List<Map<String, Object>> rows = new DotConnect()
-                .setSQL("SELECT locked_until, lockout_count FROM login_lockout WHERE user_id = ?")
-                .addParam(user.getUserId())
-                .loadObjectResults();
-        return rows.isEmpty() ? Map.of() : rows.get(0);
+        try {
+            final List<Map<String, Object>> rows = new DotConnect()
+                    .setSQL("SELECT locked_until, lockout_count FROM login_lockout WHERE user_id = ?")
+                    .addParam(user.getUserId())
+                    .loadObjectResults();
+            return rows.isEmpty() ? Map.of() : rows.get(0);
+        } finally {
+            DbConnectionFactory.closeSilently();
+        }
     }
 
     private static void cleanUp(final User user) {
@@ -142,7 +175,7 @@ public class LoginLockoutTest {
             assertEquals(Authenticator.FAILURE, login(user, "wrong-while-locked"));
             assertEquals(Authenticator.FAILURE, login(user, PASSWORD));
             assertFalse(webdavLogin(user, "wrong-while-locked"));
-            assertFalse(LoginFactory.doLogin(loginName(user), "wrong-while-locked"));
+            assertFalse(legacyLogin(user, "wrong-while-locked"));
 
             assertEquals(0, failedLoginAttempts(user));
             assertEquals(rowAtLock, lockoutRow(user));
@@ -183,6 +216,7 @@ public class LoginLockoutTest {
             assertEquals(LoginLockout.Status.LOCKED, LoginLockout.getInstance().check(user.getUserId()));
             new DotConnect().setSQL("UPDATE login_lockout SET locked_until = ? WHERE user_id = ?")
                     .addParam(System.currentTimeMillis() - 1000L).addParam(user.getUserId()).loadResult();
+            DbConnectionFactory.closeSilently();
             assertEquals(LoginLockout.Status.EXPIRED, LoginLockout.getInstance().check(user.getUserId()));
 
             assertEquals(Authenticator.SUCCESS, login(user, PASSWORD));
@@ -259,17 +293,18 @@ public class LoginLockoutTest {
     public void test_legacy_doLogin_refuses_locked_account() throws Exception {
         final User user = newUser();
         try {
-            assertTrue(LoginFactory.doLogin(loginName(user), PASSWORD));
+            assertTrue(legacyLogin(user, PASSWORD));
             lockByFailedLogins(user);
 
-            assertFalse(LoginFactory.doLogin(loginName(user), PASSWORD));
+            assertFalse(legacyLogin(user, PASSWORD));
             final HttpServletRequest request = mock(HttpServletRequest.class);
             when(request.getRemoteAddr()).thenReturn("127.0.0.1");
             assertFalse(LoginFactory.doLogin(loginName(user), PASSWORD, false, request,
                     mock(HttpServletResponse.class)));
+            DbConnectionFactory.closeSilently();
 
             LoginLockout.getInstance().clear(user.getUserId());
-            assertTrue(LoginFactory.doLogin(loginName(user), PASSWORD));
+            assertTrue(legacyLogin(user, PASSWORD));
         } finally {
             cleanUp(user);
         }
@@ -285,7 +320,7 @@ public class LoginLockoutTest {
         final User user = newUser();
         try {
             for (int i = 0; i < LIMIT; i++) {
-                assertFalse(LoginFactory.doLogin(loginName(user), "wrong-" + i));
+                assertFalse(legacyLogin(user, "wrong-" + i));
             }
             assertTrue(LoginLockout.getInstance().isLocked(user.getUserId()));
         } finally {
@@ -387,7 +422,7 @@ public class LoginLockoutTest {
             }
             assertEquals(LoginLockout.Status.NONE, LoginLockout.getInstance().status(user.getUserId()));
             assertTrue(webdavLogin(user, PASSWORD));
-            assertTrue(LoginFactory.doLogin(loginName(user), PASSWORD));
+            assertTrue(legacyLogin(user, PASSWORD));
             assertEquals(Authenticator.SUCCESS, login(user, PASSWORD));
         } finally {
             Config.setProperty(LoginLockout.LOCKOUT_ENABLED, enabledBefore);

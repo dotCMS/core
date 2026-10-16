@@ -1,6 +1,7 @@
 package com.dotcms.auth;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.cms.login.factories.LoginFactory;
@@ -104,6 +105,7 @@ public final class LoginLockout {
      * Returns the stored lock state, whether or not lockout is switched on. A database error is treated
      * as {@link Status#NONE} so an outage of this table never blocks every login; the error is logged.
      */
+    @CloseDBIfOpened
     public Status status(final String userId) {
         try {
             final List<Map<String, Object>> rows = new DotConnect()
@@ -134,6 +136,7 @@ public final class LoginLockout {
      *
      * @return the lock length in seconds
      */
+    @CloseDBIfOpened
     public long lock(final String userId, final String remoteAddress) throws DotDataException {
         final List<Map<String, Object>> rows = new DotConnect()
                 .setSQL("SELECT lockout_count FROM login_lockout WHERE user_id = ?")
@@ -157,6 +160,7 @@ public final class LoginLockout {
      * Clears any lockout state for the account. Login paths call this only when {@link #check(String)}
      * found a row, so an ordinary successful login does not write to the table.
      */
+    @CloseDBIfOpened
     public void clear(final String userId) {
         try {
             new DotConnect().setSQL("DELETE FROM login_lockout WHERE user_id = ?").addParam(userId).loadResult();
