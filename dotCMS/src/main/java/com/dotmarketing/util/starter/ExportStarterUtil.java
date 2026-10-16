@@ -481,21 +481,127 @@ public class ExportStarterUtil {
      * any backup or temporary location.
      *
      * @param zip        The {@link ZipOutputStream} which will receive all the streamed data.
-     * @param fileFilter The {@link FileFilter} being used to get the appropriate asset data.
+     * @param fileFilter The {@link AssetFileNameFilter} being used to get the appropriate asset data.
      */
-    private void getAssets(final ZipOutputStream zip, final FileFilter fileFilter) {
+    private void getAssets(final ZipOutputStream zip, final AssetFileNameFilter fileFilter) throws Exception {
 
         Logger.info(this, "Adding all Assets into compressed file:");
-        // add all our b-tree directories
-        for (int i = 0; i < assetDirs.length; i++) {
-            for (int j = 0; j < assetDirs.length; j++) {
-                final File source = Paths.get(ConfigUtils.getAssetPath() , assetDirs[i] , assetDirs[j]).toFile();
-                addFolderToZip(zip, fileFilter, source);
+        final Set<String> exported = com.dotcms.storage.AssetStorageFeature.isEnabled()
+                ? addStoredAssetsToZip(zip, fileFilter) : Set.of();
+        final FileFilter remainingFiles = exported.isEmpty() ? fileFilter : file -> fileFilter.accept(file)
+                && !exported.contains(Paths.get(ConfigUtils.getAssetPath()).toAbsolutePath().normalize()
+                .relativize(file.toPath().toAbsolutePath().normalize()).toString().replace('\\', '/'));
+        // With S3 storage on, eviction must not delete a file between this walk listing it and reading it.
+        // The walk only reads files that are already local, so the lease does not grow the cache.
+        try (var lease = com.dotcms.storage.AssetStorageFeature.isEnabled()
+                ? APILocator.getBinaryAssetStorageAPI().acquireCacheLease() : null) {
+            // add all our b-tree directories
+            for (int i = 0; i < assetDirs.length; i++) {
+                for (int j = 0; j < assetDirs.length; j++) {
+                    final File source = Paths.get(ConfigUtils.getAssetPath() , assetDirs[i] , assetDirs[j]).toFile();
+                    addFolderToZip(zip, remainingFiles, source);
+                }
+            }
+            // finally add the messages folder
+            final File source = Paths.get(ConfigUtils.getAssetPath() , "messages").toFile();
+            addFolderToZip(zip, remainingFiles, source);
+        }
+    }
+
+    /**
+     * Adds every binary and metadata record that content rows reference, restoring originals from S3
+     * as needed, so content references rather than cache residency determine the durable assets to
+     * export. Rows are paged by inode with the page size in the SQL, and each accepted row's JSON is
+     * loaded on its own, so a page never holds more than one row's JSON. A binary whose stored
+     * metadata says it exceeds the size limit is skipped before it is restored, and the cache lease
+     * is held per binary so eviction can keep trimming the restored files during a long export.
+     *
+     * @param zip    the archive being written
+     * @param filter the export's inode, name and size filter
+     * @return the asset-relative paths written, which the local folder walk then skips
+     * @throws Exception if a referenced binary or its referenced metadata cannot be read
+     */
+    private Set<String> addStoredAssetsToZip(final ZipOutputStream zip, final AssetFileNameFilter filter) throws Exception {
+        final Set<String> exported = new HashSet<>();
+        final var metadataAPI = APILocator.getFileMetadataAPI();
+        final var binaryAPI = APILocator.getBinaryAssetStorageAPI();
+        final ObjectMapper mapper = new ObjectMapper();
+        String afterInode = "";
+        while (true) {
+            // The limit must be in the SQL: DotConnect.setMaxRows only trims rows that were already fetched.
+            final var rows = new DotConnect().setSQL("select inode from contentlet where inode > ? order by inode", 500)
+                    .addParam(afterInode).loadObjectResults();
+            if (rows.isEmpty()) {
+                return exported;
+            }
+            for (final var row : rows) {
+                final String inode = row.get("inode").toString();
+                afterInode = inode;
+                final String inodePath = inode.charAt(0) + "/" + inode.charAt(1) + "/" + inode;
+                if (!filter.accept(new File(ConfigUtils.getAssetPath(), inodePath))) {
+                    continue;
+                }
+                final Contentlet content = new Contentlet(APILocator.getContentletAPI().find(inode, APILocator.systemUser(), false));
+                final var persistedRows = new DotConnect().setSQL("select contentlet_as_json from contentlet where inode = ?")
+                        .addParam(inode).loadObjectResults();
+                final Object persisted = persistedRows.isEmpty() ? null : persistedRows.get(0).get("contentlet_as_json");
+                final String snapshot = persisted == null || persisted.toString().isBlank()
+                        ? APILocator.getContentletJsonAPI().toJson(content) : persisted.toString();
+                for (final var field : com.dotcms.storage.binary.BinaryAssetReference
+                        .fromContentJson(snapshot, inode).entrySet()) {
+                    final File binary = field.getValue().localFile(inode, field.getKey());
+                    content.getMap().put(field.getKey(), binary);
+                    final String metadataPath = metadataAPI.getFileName(content, field.getKey());
+                    final var metadata = APILocator.getFileStorageAPI().retrieveRawMetaData(
+                            new com.dotcms.storage.StorageKey.Builder()
+                                    .group(Config.getStringProperty(com.dotcms.storage.StoragePersistenceProvider.METADATA_GROUP_NAME,
+                                            com.dotcms.storage.FileMetadataAPI.DOT_METADATA))
+                                    .path(metadataPath).storage(com.dotcms.storage.StoragePersistenceProvider.getStorageType()).build());
+                    final Object length = metadata == null ? null
+                            : metadata.get(com.dotcms.storage.model.BasicMetadataFields.LENGTH_META_KEY.key());
+                    if (filter.maxFileSize > 0 && !binary.isFile() && length instanceof Number
+                            && ((Number) length).longValue() > filter.maxFileSize) {
+                        Logger.warn(this, "Skipping " + binary.getAbsolutePath() + ", size: " + length
+                                + ", Max allowed: " + filter.maxFileSize);
+                        continue;
+                    }
+                    try (var lease = binaryAPI.acquireCacheLease()) {
+                        if (!binary.isFile()) {
+                            try (var ignored = binaryAPI.openLocalFile(binary)) { }
+                        }
+                        if (!filter.accept(binary)) {
+                            continue;
+                        }
+                        boolean excludedParent = false;
+                        for (File parent = binary.getParentFile(); parent != null
+                                && parent.toPath().startsWith(Paths.get(ConfigUtils.getAssetPath())); parent = parent.getParentFile()) {
+                            if (!filter.accept(parent)) {
+                                excludedParent = true;
+                                break;
+                            }
+                        }
+                        if (excludedParent) {
+                            continue;
+                        }
+                        final String revision = com.dotcms.storage.binary.BinaryAssetReference.keyOf(binary, inode, field.getKey());
+                        final String binaryPath = revision == null
+                                ? inodePath + "/" + field.getKey() + "/" + binary.getName() : revision;
+                        addFileToZip(new FileEntry(ZIP_FILE_ASSETS_FOLDER.get() + "/" + binaryPath, binary), zip);
+                        exported.add(binaryPath);
+                    }
+
+                    if (metadata != null) {
+                        // Metadata's filesystem provider uses lowercase paths, independently of binary names.
+                        final String path = metadataPath.substring(1).toLowerCase(java.util.Locale.ROOT);
+                        addFileToZip(new FileEntry(ZIP_FILE_ASSETS_FOLDER.get() + "/" + path,
+                                mapper.writeValueAsString(metadata)), zip);
+                        exported.add(path);
+                    } else if (com.dotcms.storage.binary.BinaryAssetReference.metadataKeyOf(binary) != null) {
+                        throw new IOException("Missing referenced metadata during starter export: " + metadataPath);
+                    }
+                }
             }
         }
-        // finally add the messages folder
-        final File source = Paths.get(ConfigUtils.getAssetPath() , "messages").toFile();
-        addFolderToZip(zip, fileFilter, source);
     }
 
     private void addFolderToZip(final ZipOutputStream zip, final FileFilter fileFilter, final File source){
@@ -523,6 +629,9 @@ public class ExportStarterUtil {
                 this.addFileToZip(entry, zip);
 
             } catch (Exception e) {
+                if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+                    throw new DotRuntimeException("Unable to export asset: " + file.getPath(), e);
+                }
                 Logger.error(this, String.format("Error processing file path for %s: %s",
                         file.getPath(), e.getMessage()));
             }
@@ -578,36 +687,78 @@ public class ExportStarterUtil {
      *                                    {@code true}.
      * @param includeOldAssets            If absolutely all versions of the assets must be included in the compressed
      *                                    file, set this to {@code true}.
+     * @param maxFileSize                 Asset files larger than this many bytes are left out; zero or less means
+     *                                    no limit.
      */
     private void streamCompressedData(final OutputStream output, boolean includeStarterData,
                                      final boolean includeStarterDataAndAssets, boolean includeAssetsOnly, boolean includeOldAssets, long maxFileSize) {
 
-
-
-
-        try (final ZipOutputStream zip = new ZipOutputStream(new BufferedOutputStream(output))) {
-            if (includeStarterData) {
-                Logger.debug(this, "Including Starter Data");
-                this.getStarterDataAsJSON(zip);
+        if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+            // Closing a ZipOutputStream writes the central directory that makes the archive readable, so a
+            // failed export must not close it: the client then receives a truncated, unreadable archive
+            // instead of a valid one that silently lacks the remaining entries.
+            final ZipOutputStream zip = new ZipOutputStream(new BufferedOutputStream(output));
+            try {
+                writeCompressedData(zip, includeStarterData, includeStarterDataAndAssets, includeAssetsOnly,
+                        includeOldAssets, maxFileSize);
+                zip.close();
+            } catch (final Exception e) {
+                throw compressionFailure(e, includeStarterData, includeStarterDataAndAssets, includeAssetsOnly,
+                        includeOldAssets);
             }
-            final AssetFileNameFilter fileFilter = includeOldAssets
-                    ? new AssetFileNameFilter(maxFileSize)
-                    : new AssetFileNameFilter(getLiveWorkingBloomFilter(),maxFileSize);
-            if (includeStarterDataAndAssets) {
-                Logger.debug(this, "Including Starter Data and Assets");
-                this.getAssets(zip, fileFilter);
-            }
-            if (includeAssetsOnly) {
-                Logger.debug(this, "Including Assets only");
-                this.getAssets(zip, fileFilter);
-            }
-        } catch (final Exception e) {
-            Logger.error(this, String.format("An error occurred when generating compressed data file with [ " +
-                    "includeStarterData = %s, includeStarterDataAndAssets = %s, includeAssetsOnly = %s, " +
-                    "includeOldAssets = %s ] : %s", includeStarterData, includeStarterDataAndAssets,
-                    includeAssetsOnly, includeOldAssets, e.getMessage()), e);
-            throw new DotRuntimeException(e);
+            return;
         }
+        try (final ZipOutputStream zip = new ZipOutputStream(new BufferedOutputStream(output))) {
+            writeCompressedData(zip, includeStarterData, includeStarterDataAndAssets, includeAssetsOnly,
+                    includeOldAssets, maxFileSize);
+        } catch (final Exception e) {
+            throw compressionFailure(e, includeStarterData, includeStarterDataAndAssets, includeAssetsOnly,
+                    includeOldAssets);
+        }
+    }
+
+    /**
+     * Writes the requested starter data and assets into the archive without finishing it.
+     *
+     * @param zip The archive being written. The other parameters are those of
+     *            {@link #streamCompressedData(OutputStream, boolean, boolean, boolean, boolean, long)}.
+     * @throws Exception If any data or asset cannot be written.
+     */
+    private void writeCompressedData(final ZipOutputStream zip, boolean includeStarterData,
+                                     final boolean includeStarterDataAndAssets, boolean includeAssetsOnly,
+                                     boolean includeOldAssets, long maxFileSize) throws Exception {
+        if (includeStarterData) {
+            Logger.debug(this, "Including Starter Data");
+            this.getStarterDataAsJSON(zip);
+        }
+        final AssetFileNameFilter fileFilter = includeOldAssets
+                ? new AssetFileNameFilter(maxFileSize)
+                : new AssetFileNameFilter(getLiveWorkingBloomFilter(),maxFileSize);
+        if (includeStarterDataAndAssets) {
+            Logger.debug(this, "Including Starter Data and Assets");
+            this.getAssets(zip, fileFilter);
+        }
+        if (includeAssetsOnly) {
+            Logger.debug(this, "Including Assets only");
+            this.getAssets(zip, fileFilter);
+        }
+    }
+
+    /**
+     * Logs a failed export together with its options and wraps the cause for the caller.
+     *
+     * @param e The failure. The other parameters are the export options, as passed to
+     *          {@link #streamCompressedData(OutputStream, boolean, boolean, boolean, boolean, long)}.
+     * @return The exception to throw.
+     */
+    private DotRuntimeException compressionFailure(final Exception e, boolean includeStarterData,
+                                                   final boolean includeStarterDataAndAssets,
+                                                   boolean includeAssetsOnly, boolean includeOldAssets) {
+        Logger.error(this, String.format("An error occurred when generating compressed data file with [ " +
+                "includeStarterData = %s, includeStarterDataAndAssets = %s, includeAssetsOnly = %s, " +
+                "includeOldAssets = %s ] : %s", includeStarterData, includeStarterDataAndAssets,
+                includeAssetsOnly, includeOldAssets, e.getMessage()), e);
+        return new DotRuntimeException(e);
     }
 
     /**
@@ -738,15 +889,14 @@ public class ExportStarterUtil {
             "and " +
             "  deleted = false";
 
-    private static final String SELECT_ALL_LIVE_WORKING_CONTENTLETS_COUNT=
-            "select " +
-            "count(*) as my_count " +
-            "from (" + SELECT_ALL_LIVE_WORKING_CONTENTLETS + ") testing ";
-
     @CloseDBIfOpened
     BloomFilter<String> getLiveWorkingBloomFilter()  {
+        final String selection = com.dotcms.storage.AssetStorageFeature.isEnabled()
+                ? SELECT_ALL_LIVE_WORKING_CONTENTLETS.replace("working_inode <> live_inode",
+                        "(live_inode is null or working_inode <> live_inode)")
+                : SELECT_ALL_LIVE_WORKING_CONTENTLETS;
         long contentCount = new DotConnect()
-                .setSQL(SELECT_ALL_LIVE_WORKING_CONTENTLETS_COUNT)
+                .setSQL("select count(*) as my_count from (" + selection + ") testing ")
                 .getInt("my_count");
 
         Logger.info(this.getClass(), "Creating BloomFilter with " + contentCount + " expected size");
@@ -757,7 +907,7 @@ public class ExportStarterUtil {
                 0.01);
 
         try (final Connection conn = DbConnectionFactory.getDataSource().getConnection();
-            final PreparedStatement statement = conn.prepareStatement(SELECT_ALL_LIVE_WORKING_CONTENTLETS)){
+            final PreparedStatement statement = conn.prepareStatement(selection)){
             statement.setFetchSize(5000);
             try (final ResultSet rs = statement.executeQuery()) {
                 int i = 0;
