@@ -22,9 +22,8 @@ import java.util.Optional;
 /**
  * Tells whoever submitted a content import job — a preview or an import — that it ended (#37896).
  * <p>
- * Content Drive's import status toast waits on this instead of polling the job. A preview queued
- * through {@code /_validate} is announced too, but nothing in Content Drive waits on it: the Drive
- * previews through the synchronous {@code /_preview}, which queues no job. It listens to both {@link JobCompletedEvent} and
+ * Content Drive waits on this instead of polling the job: the import dialog for a preview queued
+ * through {@code /_validate}, the status toast for an import. It listens to both {@link JobCompletedEvent} and
  * {@link JobFailedEvent}, because a job that throws while processing ends with the failed event
  * only. A failed job can be reported twice (failed, then permanently failed); clients de-duplicate
  * by job id.

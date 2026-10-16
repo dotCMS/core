@@ -9,7 +9,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dotcms.Junit5WeldBaseTest;
-import com.dotcms.jobs.business.job.JobState;
 import java.util.Map;
 import com.dotcms.jobs.business.job.JobResult;
 import com.dotcms.jobs.business.job.JobView;
@@ -760,80 +759,18 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
     }
 
     /**
-     * Given scenario: a preview is requested through the synchronous preview endpoint.
-     * Expected result: 200 with an already finished job — state SUCCESS, type PREVIEW and the
-     * summary of the two CSV rows — answered in the same request, with no job left in the queue
-     * (#37896: Content Search's preview is instantaneous, and the Drive's must be too).
-     */
-    @Test
-    @SuppressWarnings("unchecked")
-    void test_preview_runs_in_the_request() throws Exception {
-        final int activeBefore = importResource.activeJobs(request, response, 1, 100)
-                .getEntity().jobs().size();
-        final ContentImportForm form = createContentImportForm(contentType.name(),
-                String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID,
-                List.of(fieldId));
-
-        final Response result = importResource.previewContentImport(request, response,
-                createContentImportParams(csvFile, form));
-
-        assertEquals(Response.Status.OK.getStatusCode(), result.getStatus());
-        final JobView job = ((ResponseEntityView<JobView>) result.getEntity()).getEntity();
-        assertEquals(JobState.SUCCESS, job.state());
-        final Map<String, Object> metadata =
-                job.result().flatMap(JobResult::metadata).orElseThrow();
-        assertEquals("PREVIEW", String.valueOf(metadata.get("type")));
-        final Map<String, Object> summary = (Map<String, Object>)
-                ((Map<String, Object>) metadata.get("data")).get("summary");
-        assertEquals(2, ((Number) summary.get("created")).intValue(),
-                "Both CSV rows would be created");
-        assertEquals(activeBefore, importResource.activeJobs(request, response, 1, 100)
-                .getEntity().jobs().size(), "A synchronous preview leaves no job in the queue");
-    }
-
-    /**
-     * Given scenario: the synchronous preview is requested without a file.
-     * Expected result: 400, as the job-based validate endpoint answers.
-     */
-    @Test
-    void test_preview_without_file_is_refused() throws Exception {
-        final ContentImportParams params = new ContentImportParams();
-        params.setJsonForm(mapper.writeValueAsString(createContentImportForm(contentType.name(),
-                String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID,
-                List.of(fieldId))));
-
-        assertBadRequestResponse(importResource.previewContentImport(request, response, params));
-    }
-
-    /**
-     * Given scenario: the synchronous preview names a site that doesn't exist.
-     * Expected result: 400, with the reason in the failed job's errors.
-     */
-    @Test
-    void test_preview_with_unknown_site_is_refused() throws Exception {
-        final ContentImportForm form = createContentImportForm(contentType.name(),
-                String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID,
-                List.of(fieldId), "no-such-site-" + System.currentTimeMillis() + ".example");
-
-        assertBadRequestResponse(importResource.previewContentImport(request, response,
-                createContentImportParams(csvFile, form)));
-    }
-
-    /**
-     * Given scenario: a preview runs, and the import is then started with the preview's
-     * {@code tempFileId} instead of uploading the CSV again.
+     * Given scenario: a preview is queued through {@code /_validate}, and the import is then
+     * started with the preview job's {@code tempFileId} instead of uploading the CSV again.
      * Expected result: the import job reads the very file that was previewed (same temp file id)
      * and keeps its original name (#37896, FR-017; PR #38054 review).
      */
     @Test
-    @SuppressWarnings("unchecked")
     void test_import_reuses_the_previewed_file() throws Exception {
         final ContentImportForm form = createContentImportForm(contentType.name(),
                 String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID,
                 List.of(fieldId));
-        final JobView preview = ((ResponseEntityView<JobView>) importResource
-                .previewContentImport(request, response, createContentImportParams(csvFile, form))
-                .getEntity()).getEntity();
+        final Job preview = jobOf(importResource.validateContentImport(request, response,
+                createContentImportParams(csvFile, form)));
         final String tempFileId = String.valueOf(preview.parameters().get("tempFileId"));
 
         final ContentImportParams params = new ContentImportParams();

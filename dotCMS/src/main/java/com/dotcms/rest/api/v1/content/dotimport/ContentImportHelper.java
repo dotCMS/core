@@ -3,10 +3,6 @@ package com.dotcms.rest.api.v1.content.dotimport;
 import com.dotcms.jobs.business.api.JobQueueManagerAPI;
 import com.dotcms.jobs.business.error.JobProcessorNotFoundException;
 import com.dotcms.jobs.business.error.JobValidationException;
-import com.dotcms.jobs.business.error.JobProcessingException;
-import com.dotcms.jobs.business.processor.DefaultProgressTracker;
-import com.dotcms.jobs.business.processor.impl.ImportContentletsProcessor;
-import com.dotmarketing.util.UUIDGenerator;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
 import com.dotcms.jobs.business.job.JobResult;
@@ -506,57 +502,6 @@ public class ContentImportHelper {
                 );
             }
 
-            throw e;
-        }
-    }
-
-    /**
-     * Runs a content import preview in the request, the way Content Search's preview does (#37896):
-     * the same parameters, temp file and validation as a queued preview job, then the processor
-     * itself, synchronously. Nothing is queued and nothing is written.
-     *
-     * @param params         the CSV file and the import form
-     * @param initDataObject the initialized request data, with the user
-     * @param request        the HTTP servlet request
-     * @return 200 with the finished preview job, or 400 with a failed job naming the error
-     * @throws DotDataException if the import data can't be read
-     * @throws IOException      if the file can't be read
-     */
-    Response handlePreview(final ContentImportParams params, final InitDataObject initDataObject,
-            final HttpServletRequest request) throws DotDataException, IOException {
-
-        final User user = initDataObject.getUser();
-        try {
-            params.checkValid();
-            final Map<String, Object> jobParameters =
-                    createJobParameters(CMD_PREVIEW, params, user, request);
-            processFileUpload(params, jobParameters, request);
-
-            final ImportContentletsProcessor processor = new ImportContentletsProcessor();
-            processor.validate(jobParameters);
-
-            final Job job = Job.builder()
-                    .id(UUIDGenerator.generateUuid())
-                    .queueName(IMPORT_CONTENTLETS_QUEUE_NAME)
-                    .state(JobState.RUNNING)
-                    .parameters(jobParameters)
-                    .progressTracker(new DefaultProgressTracker())
-                    .build();
-            processor.process(job);
-
-            final Job finished = job.withState(JobState.SUCCESS)
-                    .withResult(JobResult.builder()
-                            .metadata(processor.getResultMetadata(job))
-                            .build());
-            return Response.ok(new ResponseEntityView<>(view(finished))).build();
-        } catch (final JobProcessingException e) {
-            // A file the processor can't read is the user's to fix, so it is answered like a
-            // validation error: a failed job that names it.
-            return responseForValidationException(CMD_PREVIEW, params, user, request, e);
-        } catch (final Exception e) {
-            if (isValidationException(e)) {
-                return responseForValidationException(CMD_PREVIEW, params, user, request, e);
-            }
             throw e;
         }
     }
