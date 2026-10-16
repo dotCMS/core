@@ -123,8 +123,9 @@ logged in as a CMS Administrator.
   the alive servers in database order (`startup_time`, then `server_id`).
   - **Identity, for every node, from the server's database row:** `serverId`, `displayServerId`
     (`LicenseManager.getDisplayServerId`), `name`, `clusterName` (`cluster_server.cluster_id`),
-    `ipAddress`, `version` (`cluster_server.key_`), `lastContactSeconds` (never null, never
-    negative: the alive list only holds servers with a heartbeat).
+    `ipAddress`, `version` (`cluster_server.key_`), `lastContactSeconds` (never null: the alive
+    list only holds servers with a heartbeat; never negative: when server or database clocks
+    differ and the age comes out negative, it is reported as 0).
   - **`responded`:** the server answered this call's status request within the wait window.
   - **`status`**, with `threshold` = `CLUSTER_NODE_STALE_HEARTBEAT_SECONDS` (default
     3 × `SERVER_HEARTBEAT_RUN_EVERY_SECONDS`, 180 s):
@@ -134,6 +135,9 @@ logged in as a CMS Administrator.
     - `DOWN`: not responded, and `lastContactSeconds` > threshold; or responded with a failed
       assets check (`assetsStatus` red), whatever the heartbeat. The legacy Network tab shows
       that server red, so the new screen must not show it as up.
+
+    A server that keeps its heartbeat but can't build its report never replies, so it stays
+    `LAGGING`; it becomes `DOWN` only once its heartbeat is older than the threshold.
   - **Typed sections:**
     - `cache`: `clusterName`, `transport`, `numberOfNodes`, `open`, `address`, `port`,
       `receivedBytes`, `sentBytes`.
@@ -148,7 +152,10 @@ logged in as a CMS Administrator.
 
     `null` means unknown; there are no empty strings and no `-1`.
   - **Access:** `configuration` or `network-beta` in a layout, or a CMS Administrator. No
-    license check.
+    license check. Every other caller gets 401: anonymous, front-end-only, and back-end users who
+    have neither portlet and aren't CMS Administrators.
+  - **Errors:** if the alive servers can't be read from the database, the call fails with 500; it
+    never returns 200 with an empty `nodes`.
   - **One cluster status request per call.**
   - **Docs:** `@Schema` matching the return type.
 - **`PortletID.NETWORK_BETA`** (`network-beta`), documented as the Beta-period alias.
@@ -159,15 +166,34 @@ logged in as a CMS Administrator.
   - one new `default` read method, overridden in `ESIndexAPI`, `OSIndexAPIImpl` and
     `IndexAPIImpl`;
   - routed with `router.read(...)` like other reads;
-  - both engines ask for whole-cluster health with no index filter, matching the previous call
-    (Elasticsearch keeps the same `ES_INDEX_OPERATIONS_TIMEOUT` parameter);
-  - each engine names itself in its result and throws on failure.
+  - both engines ask for the health of this install's indices only (`getClusterPrefix() + "*"`,
+    the filter `OSIndexAPIImpl.getClusterHealth()` already uses), so another install's indices on
+    a shared cluster can't change our status or shard counts. The status and the active, primary,
+    relocating, initializing and unassigned shard counts cover only our indices; the cluster name,
+    node and data-node counts, pending tasks, task wait and delayed unassigned shards come from
+    the whole cluster. The active-shards percentage is the engine's own figure: 100 while our
+    indices are green, otherwise computed over the whole cluster. Elasticsearch keeps the same
+    `ES_INDEX_OPERATIONS_TIMEOUT` parameter;
+  - when no index matches yet, the health result is `green` (the legacy `esStatus`) with zero
+    shard counts;
+  - **by migration phase:** `nodes` always lists the dotCMS servers, never search-engine nodes. The
+    `search` section shows the engine that serves reads: Elasticsearch in phases 0–1, OpenSearch in
+    phases 2–3, and Elasticsearch when the phase 2 fallback answered (`search.engine` says which).
+    The engine that only receives dual writes is not shown, for any user. In phase 2 this
+    deliberately differs from the Indices portlet, which keeps showing Elasticsearch indices until
+    phase 3; the Indices portlet is unchanged;
+  - each engine names itself in its result and throws on failure;
+  - each engine's call has a client-side time limit, `CLUSTER_SEARCH_HEALTH_TIMEOUT_MILLIS`
+    (default 750 ms), so a slow engine can't hold the report past the requester's wait window. In
+    phase 2 the router may try OpenSearch and then Elasticsearch, so both tries fit inside the
+    default wait window, which is at least 2 s. The search client providers and `PhaseRouter` are
+    unchanged.
 - **`ClusterUtil.getNodeInfo`:**
   - uses that method;
   - on a search failure, empties only the search keys (`esEngine` included), sets
     `esStatus=red` and logs a warning;
   - adds `esEngine` and `esTaskMaxWaitingTimeMillis` (milliseconds). Existing keys and values
-    are unchanged.
+    are unchanged, apart from the index scoping above (AC-020).
 - **`CLUSTER_REQ` handler:** builds the report once. If building fails, the failure is logged
   and no reply is sent, so the requester lists the server as not responding, as it always has.
 - **Request id:** each status request carries one, and replies are collected by it.
@@ -253,7 +279,8 @@ logged in as a CMS Administrator.
 | `assets.canRead`, `assets.canWrite` | boolean | yes |
 
 Inside a section, `null` means unknown; when a server answered but its search check failed, every
-`search` value is `null`. Errors: 401 for a caller without access.
+`search` value is `null`. Errors: 401 for a caller without access, and 500 if the servers can't be
+read.
 
 **Explicitly out of scope / non-goals**:
 
@@ -261,9 +288,9 @@ Inside a section, `null` means unknown; when a server answered but its search ch
   `esTaskMaxWaitingInQueueMillis` (`"0s"`). The old tab reads them.
 - **A license check** and an unlicensed state.
 - **`PortletID.NETWORK`** and accepting `network`. Added when the Network portlet is promoted.
-- **The rest of #37877:** a time limit on the search health call, building the report off the
-  pub/sub listener thread, the serving server reporting on itself in-process, and the `startup`
-  report value. The Network portlet doesn't need them, and the legacy tab behaves the same.
+- **The rest of #37877:** building the report off the pub/sub listener thread, the serving server
+  reporting on itself in-process, and the `startup` report value. The Network portlet doesn't
+  need them.
 - **Data the frontend spec doesn't show:**
   - `licenseId`, `host`, `clusterHealth`;
   - per-section status;
@@ -286,7 +313,9 @@ Inside a section, `null` means unknown; when a server answered but its search ch
   - `/api/v1/appconfiguration`;
   - `PortletAPIImpl.isCustomContentPortlet`.
 - **Backward compatibility**:
-  - **Old endpoint:** same access and the same keys and values. Each answered server's entry
+  - **Old endpoint:** same access and the same keys and values, except that `esStatus`, the
+    shard values and the active-shards percentage now cover only this install's indices, which differs from before only on a
+    cluster shared with other installs. Each answered server's entry
     gains `esEngine`, `esTaskMaxWaitingTimeMillis` and `clusterRequestId` (a reply carries the
     request's payload, as it already carries the pub/sub keys `t`, `top` and `o`). The old tab
     reads keys by name and ignores them.
@@ -309,13 +338,15 @@ Inside a section, `null` means unknown; when a server answered but its search ch
 *New endpoint `GET /api/v1/cluster/nodes` (#37875):*
 
 - **AC-001**: The endpoint returns 200 with a `ResponseEntityView` whose entity has
-  `currentServerId` (the server that handled the request) and `nodes`.
+  `currentServerId` (the server that handled the request) and `nodes`. If the alive servers
+  can't be read from the database, it returns 500, never 200 with an empty `nodes`.
 - **AC-002**: `nodes` holds exactly the servers from `ServerAPI.getAliveServers`, in that order,
   whether or not they answered. A reply from a server not in that list does not appear.
 - **AC-003**: Every node, answered or not, has `serverId`, `displayServerId`, `name`,
   `clusterName`, `ipAddress`, `version` and `lastContactSeconds`, all from its database row.
   - `displayServerId` comes from `LicenseManager.getDisplayServerId`.
-  - `lastContactSeconds` is never negative.
+  - `lastContactSeconds` is never negative: an age below zero, caused by server or database
+    clocks differing, is reported as 0.
 - **AC-004**: `responded` is `true` only when the server's reply to this call's request arrived
   within the wait window.
 - **AC-005**: `status` follows the rule in Fix Scope at its boundaries. A server that answered
@@ -343,12 +374,14 @@ Inside a section, `null` means unknown; when a server answered but its search ch
   - A backend user with `configuration` or `network-beta` in a layout gets 200.
   - A CMS Administrator with neither gets 200.
   - Any other backend user gets 401.
-  - Anonymous and front-end-only users are rejected.
+  - Anonymous and front-end-only users get 401.
 
 *App configuration and portlet ids:*
 
 - **AC-012**: For a backend user, `GET /api/v1/appconfiguration` has `cluster.heartbeatEnabled`,
-  a boolean from `ENABLE_SERVER_HEARTBEAT` (default `true`).
+  a boolean from `ENABLE_SERVER_HEARTBEAT` (default `true`). With `ENABLE_SERVER_HEARTBEAT=false`,
+  `cluster.heartbeatEnabled` is `false` and `GET /api/v1/cluster/nodes` still lists the alive
+  servers, built the same way.
 - **AC-013**: The rest of that response is unchanged, including `cluster.clusterId`,
   `cluster.companyKeyDigest` and who sees the digest. For anonymous and front-end users the
   `cluster` section is exactly as before, without `heartbeatEnabled`.
@@ -364,19 +397,27 @@ Inside a section, `null` means unknown; when a server answered but its search ch
   - Phases 2 and 3: OpenSearch.
   - Elasticsearch when the phase 2 fallback answered.
 
-  Both engines report whole-cluster health with no index filter, as the previous call did.
+  The engine that only receives dual writes is never shown.
+
+  Both engines report the health of this install's indices only, as described in Fix Scope.
   `DotRestHighLevelClientProvider` is no longer used by `ClusterUtil`.
 - **AC-017**: In phase 3 with `ES_ENDPOINTS` unset, every server answers, with search values
   from OpenSearch.
-- **AC-018**: When the search health call fails:
+- **AC-018**: When the search health call fails, including when it takes longer than the time
+  limit:
   - only the search keys are emptied, `esEngine` included, and `esStatus` is `red`;
   - the cache and assets keys are filled;
   - the server still answers.
 - **AC-019**: The migration code listed in the non-goals is unchanged in behaviour, and the new
-  `IndexAPI` method is a `default`. The only new log line is one warning in the status report
-  when the search health call fails (the failure used to be logged when it escaped the report).
+  `IndexAPI` method is a `default`. The status report logs one warning when the search health
+  call fails (the failure used to be logged when it escaped the report). In phase 2, an OpenSearch
+  failure or timeout also produces `PhaseRouter`'s existing fallback ERROR before Elasticsearch is
+  asked: the router's existing logging, which this call now goes through like every other routed
+  read.
 - **AC-020**: The existing report keys keep their names and values. Only `esEngine` and
-  `esTaskMaxWaitingTimeMillis` are added to the report.
+  `esTaskMaxWaitingTimeMillis` are added to the report. One exception: `esStatus`, the shard
+  values and the active-shards percentage cover only this install's indices, so on a cluster shared with other installs they can
+  differ from before.
 - **AC-021**: The `CLUSTER_REQ` handler builds the report once and its reply echoes the request
   id. If building fails, the failure is logged and no reply is sent, so the server is listed as
   not responding on both screens.
@@ -404,7 +445,8 @@ Inside a section, `null` means unknown; when a server answered but its search ch
 - **AC-027**: With `NullTransport`, it returns 200 and lists every alive server as not
   responding.
 - **AC-028**: Otherwise it returns the same structure (`myServerId`, `clusterHealth`,
-  `serverInfo`) with every existing key and value unchanged. Each answered server's entry only
+  `serverInfo`) with every existing key and value unchanged, apart from the index scoping in
+  AC-020. Each answered server's entry only
   gains `esEngine`, `esTaskMaxWaitingTimeMillis` and `clusterRequestId`.
 - **AC-029**: Its access rule (`configuration` portlet) is unchanged. The other `/api/cluster`
   endpoints are untouched.
@@ -417,18 +459,23 @@ Inside a section, `null` means unknown; when a server answered but its search ch
   - the conversion of current and old-format reports (AC-006 to AC-008);
   - the answered and unanswered node shape, and one status request per call (AC-002 to AC-004,
     AC-009);
+  - a database failure reading the alive servers gives 500, not an empty list (AC-001);
   - the phase 2 fallback, and OpenSearch failures surfacing as unchecked exceptions so the
     fallback can fire (AC-016). That `IndexAPIImpl` never calls the Elasticsearch implementation
     in phase 3 proves AC-017 without `ES_ENDPOINTS`;
   - the handler: one build, the request id echoed, and no reply when the report fails (AC-021);
   - the per-notification guard (AC-022);
+  - each engine's health request is limited to this install's indices, and with no matching
+    index it reports `green` with zero shard counts (AC-016, AC-020);
+  - a search engine that accepts the connection but never answers: the call gives up at the time
+    limit, and the server still answers with an empty search section (AC-018);
   - request id collection, and two status checks under 1.5 s apart answered the way an
     older-version server answers (AC-024 to AC-026).
 - **Integration tests**, appended to a `MainSuite` free of `Config.CONTEXT` leakers:
   - access for an admin, a `network-beta` user, a user with neither portlet, and an anonymous
     caller (AC-011);
   - the endpoint's shape for a server that didn't answer (AC-001, AC-003, AC-006);
-  - `heartbeatEnabled` for back-end users only (AC-012, AC-013);
+  - `heartbeatEnabled` for back-end users only, and `false` when the flag is off (AC-012, AC-013);
   - `getNodeInfo` in phase 0 (AC-016, AC-020), and with the search engine unreachable (AC-018);
   - the old endpoint with `NullTransport` (AC-027).
 
@@ -439,7 +486,9 @@ Inside a section, `null` means unknown; when a server answered but its search ch
 - **CI OpenAPI check** for AC-010.
 - **Code review** for:
   - AC-014 and AC-015: only `network-beta` is added;
-  - AC-019: the migration code is unchanged, and only the one warning is added;
+  - AC-012: the endpoint doesn't read `ENABLE_SERVER_HEARTBEAT`, so `nodes` is built the same way
+    with the flag off;
+  - AC-019: the migration code is unchanged, and the report adds only the one warning;
   - AC-028 to AC-030: the old endpoint is unchanged;
   - AC-023: the other callers.
 
@@ -450,9 +499,20 @@ Inside a section, `null` means unknown; when a server answered but its search ch
 - `CLUSTER_NODE_STALE_HEARTBEAT_SECONDS` is configured below `HEARTBEAT_TIMEOUT` (default 600 s), the
   age after which a server leaves the alive list. Otherwise a server that stops answering never
   becomes `DOWN`.
+- `CLUSTER_SERVER_THREAD_SLEEP`, if configured, stays at least twice
+  `CLUSTER_SEARCH_HEALTH_TIMEOUT_MILLIS`, so both phase 2 tries of the search health call fit in the
+  wait window.
+- Each server's `sitelic` row is its own heartbeat row (a placeholder license under the server's
+  id); nothing checks its content. Every server creates it on startup and the heartbeat recreates it
+  if it's missing, so a running server is missing from `nodes` only while it has no recent
+  heartbeat.
 - The wait window for replies is the one the legacy endpoint already uses:
   `CLUSTER_SERVER_THREAD_SLEEP`, default `max(2000 ms, 1000 ms × alive servers)`. A call returns
   early once it has as many replies as there are alive servers.
+- The server heartbeat runs whether or not `ENABLE_SERVER_HEARTBEAT` is on: since #19291 (2020)
+  the heartbeat job is scheduled unconditionally, so `nodes` is built the same way either way. The
+  flag now turns off the dead-server cleanup, the `heartbeat.dat` file and the old Network tab, and
+  `cluster.heartbeatEnabled` reports it.
 - The Network portlet ships as `network-beta` during the Beta; `network` is added when it is
   promoted.
 - A reply keeps being built from its request (`new DotPubSubEvent.Builder(event)`), so servers
