@@ -51,11 +51,8 @@ import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.*;
 import com.google.common.annotations.VisibleForTesting;
-import com.liferay.portal.auth.AuthException;
-import com.liferay.portal.auth.Authenticator;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
-import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.FileUtil;
 import io.vavr.control.Try;
 import java.io.File;
@@ -96,7 +93,6 @@ import javax.servlet.http.HttpServletRequest;
  */
 public class DotWebdavHelper {
 
-	private static final String PRE_AUTHENTICATOR = PropsUtil.get("auth.pipeline.pre");
 	private static ThreadLocal<Perl5Matcher> localP5Matcher = new ThreadLocal<Perl5Matcher>(){
 		protected Perl5Matcher initialValue() {
 			return new Perl5Matcher();
@@ -169,35 +165,19 @@ public class DotWebdavHelper {
 		}
 	}
 
+	/**
+	 * Authenticates a WebDAV user with a local password or an API-token JWT for that user.
+	 *
+	 * @param username the user ID or email address, according to the company's login setting
+	 * @param passwd the password or JWT supplied by the WebDAV client
+	 * @return the authenticated {@link User}
+	 * @throws DotSecurityException if the user cannot be resolved or the credentials do not match
+	 * @throws NoSuchUserException if the user lookup fails
+	 * @throws DotDataException if the user cannot be loaded
+	 */
 	public User authorizePrincipal(final String username, final String passwd) throws DotSecurityException, NoSuchUserException, DotDataException {
 
-
-		final Company company         = com.dotmarketing.cms.factories.PublicCompanyFactory.getDefaultCompany();
-		final boolean useEmailAsLogin = !company.getAuthType().equals(Company.AUTH_TYPE_ID);
-
-		try {
-
-			if (PRE_AUTHENTICATOR != null && !PRE_AUTHENTICATOR.equals("")) {
-
-				final Authenticator authenticator = (Authenticator) new com.dotcms.repackage.bsh.
-						Interpreter().eval("new " + PRE_AUTHENTICATOR + "()");
-				if (useEmailAsLogin) {
-
-					authenticator.authenticateByEmailAddress(company.getCompanyId(), username, passwd);
-				} else {
-
-					authenticator.authenticateByUserId      (company.getCompanyId(), username, passwd);
-				}
-			}
-		} catch (AuthException ae) {
-
-			Logger.debug(this, "Username : " + username + " failed to login", ae);
-			throw new DotSecurityException(ae.getMessage(),ae);
-		} catch (Exception e) {
-
-			Logger.error(this, e.getMessage(), e);
-			throw new DotSecurityException(e.getMessage(),e);
-		}
+		final Company company = com.dotmarketing.cms.factories.PublicCompanyFactory.getDefaultCompany();
 
 		final UserAPI userAPI = APILocator.getUserAPI();
 		final User user       = company.getAuthType().equals(Company.AUTH_TYPE_ID)?
