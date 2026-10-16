@@ -80,6 +80,29 @@ describe('DotMyAccountComponent', () => {
         component = spectator.component;
     });
 
+    describe('Getting started checkbox initial state', () => {
+        // The checkbox is always rendered; it starts checked only when the `starter` portlet is in the
+        // user's menu (issue #38078). Pinned through the menu answer the component receives.
+        it('starts checked when the starter portlet is in the menu', () => {
+            const menuService = spectator.inject(DotMenuService);
+            vi.spyOn(menuService, 'isPortletInMenu').mockReturnValue(of(true));
+
+            spectator.component.ngOnInit();
+
+            expect(menuService.isPortletInMenu).toHaveBeenCalledWith('starter');
+            expect(spectator.component.showStarter()).toBe(true);
+        });
+
+        it('starts unchecked when the starter portlet is not in the menu', () => {
+            const menuService = spectator.inject(DotMenuService);
+            vi.spyOn(menuService, 'isPortletInMenu').mockReturnValue(of(false));
+
+            spectator.component.ngOnInit();
+
+            expect(spectator.component.showStarter()).toBe(false);
+        });
+    });
+
     describe('Dialog Visibility', () => {
         it('should be hidden by default', () => {
             // Check that the dialog has visible=false

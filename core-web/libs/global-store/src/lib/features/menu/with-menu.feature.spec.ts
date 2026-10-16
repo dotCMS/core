@@ -1,9 +1,13 @@
 import { signalStore, withState } from '@ngrx/signals';
+import { vi } from 'vitest';
 
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
 import { DotMenu } from '@dotcms/dotcms-models';
 
+import { DOT_MENU_ROUTES_REGISTRAR } from './menu-routes-registrar.token';
 import { withMenu } from './with-menu.feature';
 
 describe('withMenu Feature', () => {
@@ -785,6 +789,450 @@ describe('withMenu Feature', () => {
             const openGroups = groups.filter((g) => g.isOpen);
             expect(openGroups.length).toBe(1);
             expect(openGroups[0].id).toBe('3');
+        });
+    });
+});
+
+/**
+ * Characterization of the collapsed/expanded state persistence (issue #38078): the bar restores
+ * itself from `localStorage` key `dotcms.menu.status` after a browser reload, and writes it back on
+ * every change. These cases pin today's behavior and must keep passing through the consolidation.
+ */
+describe('withMenu navigation status persistence', () => {
+    const STATUS_KEY = 'dotcms.menu.status';
+    const PersistentStore = signalStore(withState({}), withMenu());
+
+    const createStore = (stored?: string) => {
+        TestBed.resetTestingModule();
+        localStorage.clear();
+        if (stored !== undefined) {
+            localStorage.setItem(STATUS_KEY, stored);
+        }
+        TestBed.configureTestingModule({ providers: [PersistentStore] });
+
+        return TestBed.inject(PersistentStore);
+    };
+
+    afterEach(() => {
+        localStorage.clear();
+    });
+
+    it('starts collapsed when nothing is stored', () => {
+        expect(createStore().isNavigationCollapsed()).toBe(true);
+    });
+
+    it('restores an expanded bar from a stored false', () => {
+        expect(createStore('false').isNavigationCollapsed()).toBe(false);
+    });
+
+    it('restores a collapsed bar from a stored true', () => {
+        expect(createStore('true').isNavigationCollapsed()).toBe(true);
+    });
+
+    it('falls back to collapsed, without throwing, when the stored value is not a boolean', () => {
+        expect(() => createStore('{not-json')).not.toThrow();
+        expect(createStore('{not-json').isNavigationCollapsed()).toBe(true);
+        expect(createStore('0').isNavigationCollapsed()).toBe(true);
+    });
+
+    it('writes the state back to localStorage when it changes', () => {
+        const store = createStore('true');
+        TestBed.tick();
+
+        store.toggleNavigation();
+        TestBed.tick();
+
+        expect(localStorage.getItem(STATUS_KEY)).toBe('false');
+
+        store.toggleNavigation();
+        TestBed.tick();
+
+        expect(localStorage.getItem(STATUS_KEY)).toBe('true');
+    });
+
+    it('follows a change made in another tab through the storage event', () => {
+        const store = createStore('true');
+
+        window.dispatchEvent(new StorageEvent('storage', { key: STATUS_KEY, newValue: 'false' }));
+        expect(store.isNavigationCollapsed()).toBe(false);
+
+        window.dispatchEvent(new StorageEvent('storage', { key: STATUS_KEY, newValue: 'true' }));
+        expect(store.isNavigationCollapsed()).toBe(true);
+    });
+
+    it('ignores storage events for other keys', () => {
+        const store = createStore('true');
+
+        window.dispatchEvent(
+            new StorageEvent('storage', { key: 'another.key', newValue: 'false' })
+        );
+
+        expect(store.isNavigationCollapsed()).toBe(true);
+    });
+
+    it('starts with no open group and no active item, as the bar does after a browser reload', () => {
+        const store = createStore('false');
+
+        expect(store.openParentMenuId()).toBeNull();
+        expect(store.activeMenuItem()).toBeNull();
+        expect(store.menuItemsEntities()).toEqual([]);
+    });
+});
+
+/**
+ * The menu feature owns the fetch (issue #38078). These cases use the real feature with the HTTP
+ * layer faked at its boundary, so what they assert is what the shell observes: requests sent,
+ * `status`, and the entities that stay on screen.
+ */
+describe('withMenu loading', () => {
+    const MENU_URL = '/api/v1/menu';
+    const LoadingStore = signalStore(withState({}), withMenu());
+
+    const layoutA = 'aaaa1111-0000-4000-8000-000000000001';
+    const layoutB = 'bbbb2222-0000-4000-8000-000000000002';
+
+    const menuA = [
+        {
+            id: layoutA,
+            name: 'Site',
+            tabName: 'Site',
+            tabIcon: 'icon-a',
+            url: '/pages',
+            menuItems: [
+                { id: 'pages', label: 'Pages', url: '/pages', angular: true, ajax: false },
+                { id: 'legacy', label: 'Legacy', url: '/c/legacy?r=1', angular: false, ajax: false }
+            ]
+        }
+    ] as unknown as DotMenu[];
+
+    const menuB = [
+        {
+            id: layoutB,
+            name: 'Content',
+            tabName: 'Content',
+            tabIcon: 'icon-b',
+            url: '/content-drive',
+            menuItems: [
+                {
+                    id: 'content-drive',
+                    label: 'Content Drive',
+                    url: '/content-drive',
+                    angular: true,
+                    ajax: false
+                }
+            ]
+        }
+    ] as unknown as DotMenu[];
+
+    let store: InstanceType<typeof LoadingStore>;
+    let httpMock: HttpTestingController;
+    let registrar: ReturnType<typeof vi.fn>;
+    let statusSeenByRegistrar: string[];
+
+    const setup = (withRegistrar = true) => {
+        statusSeenByRegistrar = [];
+        registrar = vi.fn(() => statusSeenByRegistrar.push(store.status()));
+        TestBed.resetTestingModule();
+        TestBed.configureTestingModule({
+            providers: [
+                LoadingStore,
+                provideHttpClient(),
+                provideHttpClientTesting(),
+                ...(withRegistrar
+                    ? [{ provide: DOT_MENU_ROUTES_REGISTRAR, useValue: registrar }]
+                    : [])
+            ]
+        });
+        store = TestBed.inject(LoadingStore);
+        httpMock = TestBed.inject(HttpTestingController);
+    };
+
+    const settled = () => {
+        let completed = false;
+        let emissions = 0;
+        store.ensureLoaded().subscribe({
+            next: () => (emissions += 1),
+            complete: () => (completed = true)
+        });
+
+        return {
+            get completed() {
+                return completed;
+            },
+            get emissions() {
+                return emissions;
+            }
+        };
+    };
+
+    const flushOk = (menus: DotMenu[]) => {
+        httpMock.expectOne(MENU_URL).flush({ entity: menus });
+        TestBed.tick();
+    };
+
+    beforeEach(() => setup());
+
+    afterEach(() => {
+        httpMock.verify();
+        localStorage.clear();
+    });
+
+    describe('ensureLoaded', () => {
+        it('starts as idle with no request', () => {
+            expect(store.status()).toBe('idle');
+            httpMock.expectNone(MENU_URL);
+        });
+
+        it('on idle sends one request, loads the entities and settles at ready', () => {
+            const result = settled();
+
+            expect(store.status()).toBe('loading');
+            expect(result.completed).toBe(false);
+
+            flushOk(menuA);
+
+            expect(store.status()).toBe('ready');
+            expect(store.menuItemsEntities().map((item) => item.id)).toEqual(['pages', 'legacy']);
+            expect(result.completed).toBe(true);
+            expect(result.emissions).toBeLessThanOrEqual(1);
+        });
+
+        it('on ready completes without sending a request', () => {
+            settled();
+            flushOk(menuA);
+
+            const again = settled();
+
+            httpMock.expectNone(MENU_URL);
+            expect(again.completed).toBe(true);
+        });
+
+        it('while loading joins the load in flight: still one request for every caller', () => {
+            store.reload();
+            const first = settled();
+            const second = settled();
+
+            flushOk(menuA);
+
+            expect(first.completed).toBe(true);
+            expect(second.completed).toBe(true);
+            expect(store.status()).toBe('ready');
+        });
+
+        it('settles, without erroring or hanging, when the load fails', () => {
+            const result = settled();
+
+            httpMock
+                .expectOne(MENU_URL)
+                .flush({ message: 'boom' }, { status: 500, statusText: 'Server Error' });
+            TestBed.tick();
+
+            expect(store.status()).toBe('error');
+            expect(result.completed).toBe(true);
+        });
+
+        it('on error starts a new request', () => {
+            settled();
+            httpMock.expectOne(MENU_URL).flush('x', { status: 500, statusText: 'Server Error' });
+            TestBed.tick();
+
+            const retry = settled();
+
+            expect(store.status()).toBe('loading');
+            flushOk(menuA);
+            expect(store.status()).toBe('ready');
+            expect(retry.completed).toBe(true);
+        });
+    });
+
+    describe('reload', () => {
+        beforeEach(() => {
+            settled();
+            flushOk(menuA);
+        });
+
+        it('always sends a request and shows loading at once, keeping the entities on screen', () => {
+            store.reload();
+
+            expect(store.status()).toBe('loading');
+            expect(store.menuItemsEntities().map((item) => item.id)).toEqual(['pages', 'legacy']);
+            flushOk(menuB);
+        });
+
+        it('replaces the whole snapshot with the new menu', () => {
+            store.reload();
+            flushOk(menuB);
+
+            expect(store.status()).toBe('ready');
+            expect(store.menuItemsEntities().map((item) => item.id)).toEqual(['content-drive']);
+        });
+
+        it('keeps only the latest response when reload is called twice', () => {
+            store.reload();
+            store.reload();
+
+            const requests = httpMock.match(MENU_URL);
+            expect(requests).toHaveLength(2);
+            expect(requests[0].cancelled).toBe(true);
+            requests[1].flush({ entity: menuB });
+            TestBed.tick();
+
+            expect(store.menuItemsEntities().map((item) => item.id)).toEqual(['content-drive']);
+            expect(store.status()).toBe('ready');
+        });
+
+        it('a failed reload sets error and keeps the entities that were showing', () => {
+            store.reload();
+
+            httpMock.expectOne(MENU_URL).flush('x', { status: 500, statusText: 'Server Error' });
+            TestBed.tick();
+
+            expect(store.status()).toBe('error');
+            expect(store.menuItemsEntities().map((item) => item.id)).toEqual(['pages', 'legacy']);
+        });
+
+        it('the next successful load after a failure replaces the snapshot', () => {
+            store.reload();
+            httpMock.expectOne(MENU_URL).flush('x', { status: 500, statusText: 'Server Error' });
+            TestBed.tick();
+
+            store.reload();
+            flushOk(menuB);
+
+            expect(store.status()).toBe('ready');
+            expect(store.menuItemsEntities().map((item) => item.id)).toEqual(['content-drive']);
+        });
+
+        it('leaves the collapsed state and the open group alone', () => {
+            store.expandNavigation();
+            store.toggleParent(layoutA);
+
+            store.reload();
+            flushOk(menuB);
+
+            expect(store.isNavigationCollapsed()).toBe(false);
+            expect(store.openParentMenuId()).toBe(layoutA);
+        });
+    });
+
+    describe('first load failure', () => {
+        it('leaves the entities empty and does not throw', () => {
+            expect(() => {
+                settled();
+                httpMock.expectOne(MENU_URL).flush('x', { status: 0, statusText: 'Unknown' });
+                TestBed.tick();
+            }).not.toThrow();
+
+            expect(store.status()).toBe('error');
+            expect(store.menuItemsEntities()).toEqual([]);
+            expect(store.menuGroup()).toEqual([]);
+            expect(store.firstMenuItem()).toBeNull();
+        });
+    });
+
+    describe('routes registrar', () => {
+        it('is called with every menu item, before the status becomes ready', () => {
+            settled();
+            flushOk(menuA);
+
+            expect(registrar).toHaveBeenCalledTimes(1);
+            expect(registrar.mock.calls[0][0].map((item: { id: string }) => item.id)).toEqual([
+                'pages',
+                'legacy'
+            ]);
+            expect(statusSeenByRegistrar).toEqual(['loading']);
+        });
+
+        it('is called again after every reload', () => {
+            settled();
+            flushOk(menuA);
+
+            store.reload();
+            flushOk(menuB);
+
+            expect(registrar).toHaveBeenCalledTimes(2);
+            expect(registrar.mock.calls[1][0].map((item: { id: string }) => item.id)).toEqual([
+                'content-drive'
+            ]);
+        });
+
+        it('is not called when the load fails', () => {
+            settled();
+            httpMock.expectOne(MENU_URL).flush('x', { status: 500, statusText: 'Server Error' });
+            TestBed.tick();
+
+            expect(registrar).not.toHaveBeenCalled();
+        });
+
+        it('is optional: the load works when nothing provides it', () => {
+            setup(false);
+
+            settled();
+            flushOk(menuA);
+
+            expect(store.status()).toBe('ready');
+        });
+    });
+
+    describe('loadFreshPortletUrl', () => {
+        beforeEach(() => {
+            settled();
+            flushOk(menuA);
+        });
+
+        it('requests the menu now and returns the url of the first non-Angular item with that id', () => {
+            let url: string | undefined;
+
+            store.loadFreshPortletUrl('legacy').subscribe((value) => (url = value));
+            httpMock.expectOne(MENU_URL).flush({
+                entity: [
+                    {
+                        ...menuA[0],
+                        menuItems: [
+                            { id: 'legacy', label: 'Legacy', url: '/c/legacy?r=2', angular: false }
+                        ]
+                    }
+                ]
+            });
+
+            expect(url).toBe('/c/legacy?r=2');
+        });
+
+        it('never changes the entities, the status or the highlight', () => {
+            const before = store.menuItemsEntities();
+            store.reload();
+            flushOk(menuA);
+            const statusBefore = store.status();
+
+            store.loadFreshPortletUrl('legacy').subscribe();
+            httpMock.expectOne(MENU_URL).flush({ entity: menuB });
+            TestBed.tick();
+
+            expect(store.menuItemsEntities().map((item) => item.id)).toEqual(
+                before.map((item) => item.id)
+            );
+            expect(store.status()).toBe(statusBefore);
+            expect(store.activeMenuItem()).toBeNull();
+        });
+
+        it('returns an empty string for an Angular item or an unknown id', () => {
+            const urls: string[] = [];
+
+            store.loadFreshPortletUrl('pages').subscribe((value) => urls.push(value));
+            httpMock.expectOne(MENU_URL).flush({ entity: menuA });
+            store.loadFreshPortletUrl('nope').subscribe((value) => urls.push(value));
+            httpMock.expectOne(MENU_URL).flush({ entity: menuA });
+
+            expect(urls).toEqual(['', '']);
+        });
+
+        it('falls back to the url already in the snapshot when the request fails', () => {
+            let url: string | undefined;
+
+            store.loadFreshPortletUrl('legacy').subscribe((value) => (url = value));
+            httpMock.expectOne(MENU_URL).flush('x', { status: 500, statusText: 'Server Error' });
+
+            expect(url).toBe('/c/legacy?r=1');
         });
     });
 });

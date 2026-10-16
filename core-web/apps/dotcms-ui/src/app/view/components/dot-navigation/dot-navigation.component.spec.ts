@@ -21,6 +21,7 @@ import {
     DotSystemConfigService
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
+import { DotMenu } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { DotIconComponent } from '@dotcms/ui';
 import { DotCurrentUserServiceMock, LoginServiceMock } from '@dotcms/utils-testing';
@@ -414,6 +415,253 @@ describe('DotNavigationComponent expanded', () => {
 
             expect(dotEventsService.notify).toHaveBeenCalledWith('dot-side-nav-toggle');
             expect(dotEventsService.notify).toHaveBeenCalledTimes(1);
+        });
+    });
+});
+
+/**
+ * Characterization of the navigation clicks (issue #38078). These cases pin what the bar does today
+ * so the menu consolidation cannot change it: they must pass on the old code and keep passing.
+ * The layout ids are full UUIDs because `mId` is the first four characters of the layout id, which
+ * the short ids used by the fixtures above cannot prove.
+ */
+describe('DotNavigationComponent click characterization', () => {
+    const LAYOUT_A = 'aaaa1111-0000-4000-8000-000000000001';
+    const LAYOUT_B = 'bbbb2222-0000-4000-8000-000000000002';
+
+    const menus = [
+        {
+            id: LAYOUT_A,
+            name: 'Site',
+            tabName: 'Site',
+            tabIcon: 'icon-a',
+            url: '/pages',
+            active: false,
+            isOpen: false,
+            label: 'Site',
+            tabDescription: '',
+            menuItems: [
+                { id: 'pages', label: 'Pages', url: '/pages', angular: true, ajax: false },
+                { id: 'legacy', label: 'Legacy', url: '/legacy?r=1', angular: false, ajax: false }
+            ]
+        },
+        {
+            id: LAYOUT_B,
+            name: 'Content',
+            tabName: 'Content',
+            tabIcon: 'icon-b',
+            url: '/pages',
+            active: false,
+            isOpen: false,
+            label: 'Content',
+            tabDescription: '',
+            menuItems: [
+                { id: 'pages', label: 'Pages (copy)', url: '/pages', angular: true, ajax: false }
+            ]
+        }
+    ] as unknown as DotMenu[];
+
+    let spectator: Spectator<DotNavigationComponent>;
+    let globalStore: InstanceType<typeof GlobalStore>;
+    let dotRouterService: SpyObject<DotRouterService>;
+    let dotEventsService: SpyObject<DotEventsService>;
+    let iframeOverlayService: SpyObject<IframeOverlayService>;
+
+    const createComponent = createComponentFactory({
+        component: DotNavigationComponent,
+        imports: [
+            DotNavIconComponent,
+            DotIconComponent,
+            BrowserAnimationsModule,
+            TooltipModule,
+            DotRandomIconPipe
+        ],
+        providers: [
+            provideRouter([]),
+            DotMenuService,
+            { provide: DotCurrentUserService, useClass: DotCurrentUserServiceMock },
+            mockProvider(IframeOverlayService),
+            mockProvider(DotNavigationService),
+            mockProvider(DotEventsService),
+            mockProvider(DotRouterService, {
+                currentPortlet: { id: 'pages', parentMenuId: LAYOUT_A }
+            }),
+            { provide: LoginService, useClass: LoginServiceMock },
+            { provide: DotSystemConfigService, useValue: { getSystemConfig: () => of({}) } },
+            GlobalStore,
+            provideHttpClient(),
+            provideHttpClientTesting()
+        ]
+    });
+
+    const click = (
+        item: Parameters<DotNavigationComponent['onItemClick']>[0]['data'],
+        keys = {}
+    ) => {
+        const stopPropagation = vi.fn();
+        spectator.component.onItemClick({
+            originalEvent: {
+                stopPropagation,
+                ctrlKey: false,
+                metaKey: false,
+                ...keys
+            } as unknown as MouseEvent,
+            data: item
+        });
+
+        return stopPropagation;
+    };
+
+    const itemOf = (layoutId: string, portletId: string) =>
+        globalStore
+            .menuGroup()
+            .find((group) => group.id === layoutId)
+            .menuItems.find((item) => item.id === portletId);
+
+    beforeEach(() => {
+        spectator = createComponent({ detectChanges: false });
+        globalStore = spectator.inject(GlobalStore);
+        dotRouterService = spectator.inject(DotRouterService);
+        dotEventsService = spectator.inject(DotEventsService);
+        iframeOverlayService = spectator.inject(IframeOverlayService);
+        globalStore.loadMenu(menus);
+        spectator.detectChanges();
+    });
+
+    describe('item click', () => {
+        it('opens the item menuLink with mId set to the first 4 characters of the layout id', () => {
+            click(itemOf(LAYOUT_A, 'legacy'));
+
+            expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/c/legacy', {
+                queryParams: { mId: 'aaaa' }
+            });
+            expect(dotRouterService.reloadCurrentPortlet).not.toHaveBeenCalled();
+            expect(iframeOverlayService.hide).toHaveBeenCalledTimes(1);
+        });
+
+        it('keeps the Angular item url as its menuLink', () => {
+            click(itemOf(LAYOUT_B, 'pages'));
+
+            expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/pages', {
+                queryParams: { mId: 'bbbb' }
+            });
+        });
+
+        it('does not navigate, reload or hide the overlay on Cmd-click', () => {
+            const stopPropagation = click(itemOf(LAYOUT_A, 'legacy'), { metaKey: true });
+
+            expect(stopPropagation).toHaveBeenCalled();
+            expect(dotRouterService.gotoPortlet).not.toHaveBeenCalled();
+            expect(dotRouterService.reloadCurrentPortlet).not.toHaveBeenCalled();
+            expect(iframeOverlayService.hide).not.toHaveBeenCalled();
+        });
+
+        it('does not navigate on Ctrl-click', () => {
+            click(itemOf(LAYOUT_A, 'legacy'), { ctrlKey: true });
+
+            expect(dotRouterService.gotoPortlet).not.toHaveBeenCalled();
+            expect(iframeOverlayService.hide).not.toHaveBeenCalled();
+        });
+
+        it('reloads the portlet when the clicked item is the one already open', () => {
+            click(itemOf(LAYOUT_A, 'pages'));
+
+            expect(dotRouterService.reloadCurrentPortlet).toHaveBeenCalledWith('pages');
+            expect(dotRouterService.gotoPortlet).not.toHaveBeenCalled();
+        });
+
+        it('navigates, instead of reloading, to the same portlet id in another layout', () => {
+            click(itemOf(LAYOUT_B, 'pages'));
+
+            expect(dotRouterService.reloadCurrentPortlet).not.toHaveBeenCalled();
+            expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('group click', () => {
+        const group = (layoutId: string) =>
+            globalStore.menuGroup().find((candidate) => candidate.id === layoutId);
+
+        it('expanded and closed: navigates to the first item with mId and opens the group', () => {
+            globalStore.expandNavigation();
+            globalStore.closeAllParents();
+
+            spectator.component.onMenuClick({
+                originalEvent: {} as unknown as MouseEvent,
+                data: group(LAYOUT_A)
+            });
+
+            expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/pages', {
+                queryParams: { mId: 'aaaa' }
+            });
+            expect(globalStore.openParentMenuId()).toBe(LAYOUT_A);
+        });
+
+        it('expanded and open: closes the group without navigating', () => {
+            globalStore.expandNavigation();
+            globalStore.toggleParent(LAYOUT_A);
+
+            spectator.component.onMenuClick({
+                originalEvent: {} as unknown as MouseEvent,
+                data: group(LAYOUT_A)
+            });
+
+            expect(dotRouterService.gotoPortlet).not.toHaveBeenCalled();
+            expect(globalStore.openParentMenuId()).toBeNull();
+        });
+
+        it('toggleOnly on a closed group opens it without navigating', () => {
+            globalStore.expandNavigation();
+            globalStore.closeAllParents();
+
+            spectator.component.onMenuClick({
+                originalEvent: {} as unknown as MouseEvent,
+                data: group(LAYOUT_B),
+                toggleOnly: true
+            });
+
+            expect(dotRouterService.gotoPortlet).not.toHaveBeenCalled();
+            expect(globalStore.openParentMenuId()).toBe(LAYOUT_B);
+        });
+
+        it('collapsed: navigates to the first item of the group with mId and does not toggle it', () => {
+            globalStore.collapseNavigation();
+
+            spectator.component.onMenuClick({
+                originalEvent: {} as unknown as MouseEvent,
+                data: group(LAYOUT_B)
+            });
+
+            expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/pages', {
+                queryParams: { mId: 'bbbb' }
+            });
+            expect(globalStore.openParentMenuId()).toBeNull();
+        });
+    });
+
+    describe('collapse control', () => {
+        it('toggles the bar and emits dot-side-nav-toggle', () => {
+            globalStore.collapseNavigation();
+
+            spectator.component.handleCollapseButtonClick();
+
+            expect(globalStore.isNavigationCollapsed()).toBe(false);
+            expect(dotEventsService.notify).toHaveBeenCalledWith('dot-side-nav-toggle');
+
+            spectator.component.handleCollapseButtonClick();
+
+            expect(globalStore.isNavigationCollapsed()).toBe(true);
+            expect(dotEventsService.notify).toHaveBeenCalledTimes(2);
+        });
+
+        it('collapsing does not close the open group (preserved behavior)', () => {
+            globalStore.expandNavigation();
+            globalStore.toggleParent(LAYOUT_A);
+
+            spectator.component.handleCollapseButtonClick();
+
+            expect(globalStore.isNavigationCollapsed()).toBe(true);
+            expect(globalStore.openParentMenuId()).toBe(LAYOUT_A);
         });
     });
 });
