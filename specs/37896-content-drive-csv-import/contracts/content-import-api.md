@@ -12,17 +12,17 @@ multipart: `file` (`.csv`), `form` (JSON, see data-model.md).
 - 403: `site` exists but isn't readable by the user.
 - Response unchanged: `{entity: {jobId, statusUrl}}`.
 
-## POST `/_preview` (new, synchronous)
+## POST `/_validate` (existing; the Drive's preview)
 
-multipart: `file` (`.csv`), `form` (JSON, see data-model.md). Runs the import in preview mode inside
-the request — same parameters, temp file, validation and processor as a queued preview job — and
-answers with the finished job. Nothing is queued and nothing is written. Content Drive uses this
-instead of `/_validate`, whose queued job waited up to 30 s on the job queue's idle backoff.
+multipart: `file` (`.csv`) or `tempFileId`, and `form` (JSON, see data-model.md). Queues the import
+in preview mode and answers `{entity: {jobId, statusUrl}}`; form errors are a 400 before anything is
+queued. Content Drive waits for the job: the `IMPORT_CONTENTLETS_COMPLETED` event for that `jobId`,
+or `GET /{jobId}` every second as a fallback, then reads the finished job.
 
-- 200: `{entity: JobView}` with `state: SUCCESS` and `result` (ImportResult, including `destinations`).
-- 400: invalid form, missing file, unknown `site`, or a file the processor can't read; the body is a
-  failed job whose `result.error[]` names the problem.
-- 403: `site` not readable by the user.
+A synchronous `POST /_preview` existed for a while because a queued job waited up to 30 s on the
+job queue's idle backoff. The PR #38054 review asked to use the queue instead, so the backoff was
+fixed (`JobQueueManagerAPIImpl`: creating a job wakes an idle worker once it commits) and
+`/_preview` was removed.
 
 ## GET `/{jobId}` (changed: result gains `destinations`)
 

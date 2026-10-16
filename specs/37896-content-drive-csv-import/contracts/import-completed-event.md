@@ -1,7 +1,8 @@
 # Contract: IMPORT_CONTENTLETS_COMPLETED system event (#37896)
 
-Content Drive listens to it for the background import (`cmd: publish`) only; previews use the
-synchronous `POST /_preview` and never wait on this event.
+Content Drive listens to it for both: the import dialog waits on it for its preview
+(`cmd: preview`, queued through `/_validate`), polling the job every second as a fallback, and the
+status toast for the background import (`cmd: publish`).
 
 Pushed by `ImportContentletsCompletionListener` on `JobCompletedEvent` and `JobFailedEvent` for queue
 `importContentlets`. Visibility: `USER`, the job's submitting user (`parameters.userId`). Delivered over

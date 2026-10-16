@@ -70,7 +70,7 @@ selector as `DotCMSContentType[]`: these are the only fields that selector reads
   `successCount = created + updated`, `failedCount`, plus new `createdCount`, `updatedCount`,
   optional `message` (server error).
 - **Dialog state** (local to the component): `step: 'form' | 'previewing' | 'preview'`, `preview?`
-  (the finished job from `POST /_preview`), `error?`. While previewing, the form stays visible and
+  (the finished preview job, queued through `POST /_validate` and read once it ends), `error?`. While previewing, the form stays visible and
   disabled. Any form/file change from `preview` → back to `form`
   with the result discarded.
 - **Working language**: the single language in `filters.languageId`, else `defaultLanguageId`.
