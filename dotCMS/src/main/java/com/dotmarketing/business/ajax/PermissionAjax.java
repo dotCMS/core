@@ -348,10 +348,9 @@ public class PermissionAjax {
 	 */
 	public void resetAssetPermissions (String assetId, Long languageId) throws DotDataException, PortalException, SystemException, DotSecurityException {
 
+		HibernateUtil.startTransaction();
+
 		try {
-
-			HibernateUtil.startTransaction();
-
 			UserWebAPI userWebAPI = WebAPILocator.getUserWebAPI();
 			WebContext ctx = WebContextFactory.get();
 			HttpServletRequest request = ctx.getHttpServletRequest();
@@ -365,12 +364,12 @@ public class PermissionAjax {
 			checkEditPermissions(asset, user);
 			permissionAPI.removePermissions(asset);
 
-		} catch (DotDataException | DotSecurityException e) {
+			HibernateUtil.closeAndCommitTransaction();
+		} catch (Exception e) {
 			HibernateUtil.rollbackTransaction();
 			throw e;
 		} finally {
-
-			HibernateUtil.closeAndCommitTransaction();
+			HibernateUtil.closeSession();
 		}
 	}
 

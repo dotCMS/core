@@ -165,7 +165,7 @@ class PermissionAjaxTest {
      * Method to test: {@link PermissionAjax#resetAssetPermissions(String, Long)}
      * Given: a user who can read a folder but lacks EDIT_PERMISSIONS on it
      * Expected: DotSecurityException naming only the user and the folder, written to the security
-     * log; the folder's permissions are not removed and the transaction is rolled back
+     * log; the folder's permissions are not removed, and the transaction is rolled back, not committed
      */
     @Test
     void resetAssetPermissions_withoutEditPermissions_isRejected() throws Exception {
@@ -180,6 +180,7 @@ class PermissionAjaxTest {
         securityLogger.verify(() -> SecurityLogger.logInfo(PermissionAjax.class, exception.getMessage()));
         verify(permissionAPI, never()).removePermissions(any(Permissionable.class));
         hibernateUtil.verify(HibernateUtil::rollbackTransaction);
+        hibernateUtil.verify(HibernateUtil::closeAndCommitTransaction, never());
     }
 
     /**
@@ -208,7 +209,7 @@ class PermissionAjaxTest {
     /**
      * Method to test: {@link PermissionAjax#resetAssetPermissions(String, Long)}
      * Given: a user with EDIT_PERMISSIONS on a folder
-     * Expected: the folder's permissions are removed, so it inherits again
+     * Expected: the folder's permissions are removed, so it inherits again, and the transaction is committed
      */
     @Test
     void resetAssetPermissions_withEditPermissions_removesPermissions() throws Exception {
@@ -219,6 +220,8 @@ class PermissionAjaxTest {
         new PermissionAjax().resetAssetPermissions(FOLDER_ID, LANGUAGE_ID);
 
         verify(permissionAPI).removePermissions(folder);
+        hibernateUtil.verify(HibernateUtil::closeAndCommitTransaction);
+        hibernateUtil.verify(HibernateUtil::rollbackTransaction, never());
     }
 
     /**
