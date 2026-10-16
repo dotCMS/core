@@ -617,9 +617,7 @@ describe('DotContentDriveDialogImportComponent', () => {
 
             clickTestId('import-confirm-btn');
 
-            const confirm = spectator.inject(DotAlertConfirmService).confirm as unknown as Mocked<
-                (options: { message: string }) => void
-            >;
+            const confirm = vi.mocked(spectator.inject(DotAlertConfirmService).confirm);
             expect(confirm).toHaveBeenCalledTimes(1);
             expect(confirm.mock.calls[0][0].message).toContain(
                 'content-drive.import.preview.errors-will-be-skipped'
@@ -631,9 +629,7 @@ describe('DotContentDriveDialogImportComponent', () => {
 
             clickTestId('import-confirm-btn');
 
-            const confirm = spectator.inject(DotAlertConfirmService).confirm as unknown as Mocked<
-                (options: { message: string }) => void
-            >;
+            const confirm = vi.mocked(spectator.inject(DotAlertConfirmService).confirm);
             expect(confirm.mock.calls[0][0].message).toContain(
                 'message.contentlet.proceed.importing'
             );

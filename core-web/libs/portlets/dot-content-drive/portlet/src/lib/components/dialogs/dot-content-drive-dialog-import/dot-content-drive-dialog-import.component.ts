@@ -551,7 +551,7 @@ export class DotContentDriveDialogImportComponent {
             return selected[0];
         }
 
-        const defaultLanguageId = this.#store.defaultLanguageId();
+        const defaultLanguageId = this.#store.defaultLanguageId?.();
 
         return defaultLanguageId === undefined || defaultLanguageId === null
             ? null

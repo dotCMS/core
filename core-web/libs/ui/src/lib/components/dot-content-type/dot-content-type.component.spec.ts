@@ -1033,14 +1033,14 @@ describe('DotContentTypeComponent', () => {
         it('keeps the default empty message when none is given', () => {
             spectator.detectChanges();
 
-            expect(spectator.query(Select).emptyMessage).toBeFalsy();
+            expect(spectator.query(Select)?.emptyMessage).toBeFalsy();
         });
 
         it('shows the given message when there is no search', () => {
             spectator.setInput('emptyMessage', 'Nothing you can import into');
             spectator.detectChanges();
 
-            expect(spectator.query(Select).emptyMessage).toBe('Nothing you can import into');
+            expect(spectator.query(Select)?.emptyMessage).toBe('Nothing you can import into');
         });
 
         it('keeps the default message while searching', fakeAsync(() => {
@@ -1051,7 +1051,7 @@ describe('DotContentTypeComponent', () => {
             tick(300);
             spectator.detectChanges();
 
-            expect(spectator.query(Select).emptyMessage).toBeFalsy();
+            expect(spectator.query(Select)?.emptyMessage).toBeFalsy();
         }));
     });
 
