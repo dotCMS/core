@@ -180,5 +180,13 @@ describe('DotUploadTypeSelectorComponent', () => {
         it('shows both types when it is not set', () => {
             expect(spectator.queryAll('[data-testid^="upload-selector-option-"]').length).toBe(2);
         });
+
+        /** PR #38054 review: an empty list restricts nothing, so it can never empty the menu. */
+        it('shows both types when it is empty', () => {
+            spectator.setInput('allowedBaseTypes', []);
+            spectator.detectChanges();
+
+            expect(spectator.queryAll('[data-testid^="upload-selector-option-"]').length).toBe(2);
+        });
     });
 });

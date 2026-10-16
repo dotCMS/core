@@ -43,7 +43,7 @@ export class DotUploadTypeSelectorComponent {
     $restrictionLabel = input<string>('', { alias: 'restrictionLabel' });
 
     /**
-     * The upload types to offer, in the default order; both when unset. Content Drive narrows it to
+     * The upload types to offer, in the default order; both when unset or empty. Content Drive narrows it to
      * the type a folder pins (#37896); the asset picker never sets it.
      */
     $allowedBaseTypes = input<DotUploadBaseType[] | undefined>(undefined, {
@@ -53,10 +53,14 @@ export class DotUploadTypeSelectorComponent {
     /** Emits the chosen base type plus the upload context when the user picks an option. */
     selectUploadType = output<DotUploadSelection>();
 
+    /**
+     * The options to render. Filtered only by a non-empty `allowedBaseTypes`: an empty list
+     * restricts nothing, so it can never leave the menu without options.
+     */
     protected readonly $options = computed(() => {
         const allowed = this.$allowedBaseTypes();
 
-        return allowed
+        return allowed?.length
             ? UPLOAD_SELECTOR_OPTIONS.filter((option) => allowed.includes(option.baseType))
             : UPLOAD_SELECTOR_OPTIONS;
     });
