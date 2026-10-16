@@ -74,13 +74,23 @@ visible until the next permission change above it.
 
 - **Affected area**: Folder listing for Content Drive (`GET /api/v1/folder/search`): the folders
   returned, whether each one is shown as having subfolders, and the edit, publish,
-  edit-permissions and add-children flags returned per folder. Other features that use the same
-  batch READ filter may have the same gap: today that includes the related-content check during
-  content import.
+  edit-permissions and add-children flags returned per folder. Four features call the same batch
+  filter and share the gap:
+  - **Content Drive folder search** (`FolderAPIImpl`): which folders the tree lists, their
+    per-folder flags, and "has subfolders".
+  - **Content import** (`RelationshipUtil`): which related items an import accepts (READ).
+  - **Publishing Queue, Pending tab** (`PublishQueuePermissionFilter`, used by
+    `view_publish_queue_list.jsp`): which pending bundles a non-admin sees, and so can select
+    for delete. It checks PUBLISH on each bundle's first asset, or EDIT when that asset is a
+    folder.
+  - **Folder bulk duplicate** (`FolderBulkDuplicateProcessor`): whether each folder can be
+    duplicated. It checks READ on the source folder and add-children on the destination.
 - **Suspected surface**: Legacy. The batch permission filter lives in
   `com.dotmarketing.business` (`PermissionBitAPIImpl`, `PermissionBitFactoryImpl`) and is called
-  from `com.dotmarketing.portlets.folders.business.FolderAPIImpl`. The REST resource is modern
-  (`com.dotcms.rest`) but is not expected to change.
+  from `com.dotmarketing.portlets.folders.business.FolderAPIImpl`, `com.dotcms.util`,
+  `com.dotcms.publisher.business` and `com.dotcms.jobs.business.processor.impl`. None of the
+  callers is expected to change; the REST resource (`com.dotcms.rest`) is not expected to change
+  either.
 - **Related known decisions**: The batch filter exists to avoid one permission query per folder
   (#36940, #36308), and project standards prefer it over per-item checks
   (`docs/backend/JAVA_STANDARDS.md`, "Permission Checks — batch vs scalar"). The fix must keep
@@ -117,18 +127,36 @@ CMS Administrators skip the filter entirely, so they never see the problem.
 - Changing how or when the permission reference cache is written or cleared.
 - Changing the legacy list filter (`filterCollection(List, int, boolean, User)`) or its callers.
 - Changing the Content Drive front end, the folder search request or its response shape.
-- Changing the folder bulk duplicate.
+- Changing the code of the folder bulk duplicate or the Publishing Queue. Their behavior does
+  change, because they call the shared filter (see Regression Risk, AC-013 and AC-014).
+- Two places where the batch filter and the one-at-a-time check disagree for reasons that have
+  nothing to do with the cache. Both are known, separate gaps that deserve their own issue:
+  - **Folder owner**: the one-at-a-time check grants a permission given to the CMS Owner role
+    when the user owns the item. The batch query matches only the user's own roles, so it never
+    sees that grant.
+  - **PUBLISH on folders**: the one-at-a-time check treats PUBLISH on a folder as EDIT. Folder
+    search asks the batch filter for PUBLISH on folders as-is, so Content Drive's publish flag
+    follows the PUBLISH permission. The Publishing Queue already works around this by asking
+    for EDIT on folders.
 - Making `permission_reference` an unlogged table (#35186). This fix should make that change
   safer, but it is not part of it.
 - A one-off data repair. Missing cache rows are expected and should be handled at read time.
 
 ## Regression Risk *(mandatory)*
 
-- **Blast radius**: All callers of the batch filter: the folder search (folders listed, the
-  "has subfolders" indicator, and per-folder edit/publish/edit-permissions/add-children flags)
-  and the related-content READ check during content import (`RelationshipUtil`). Any of them
-  could start returning items it wrongly hid before, which is the intended change. None of them
-  should start returning items the one-at-a-time check denies.
+- **Blast radius**: All four callers of the batch filter. Any of them could start allowing items
+  it wrongly refused before, which is the intended change. None of them should start allowing
+  items the one-at-a-time check denies.
+  - **Folder search**: folders listed, "has subfolders", and per-folder
+    edit/publish/edit-permissions/add-children flags.
+  - **Content import**: related items an import accepts.
+  - **Publishing Queue, Pending tab**: a non-admin starts seeing a pending bundle whose first
+    asset inherits and has no cached row, with its delete checkbox. That matches what the page
+    did before #36861, when it checked each bundle one at a time.
+  - **Folder bulk duplicate**: a duplicate that was refused as `PERMISSION_DENIED` or
+    `PARENT_PERMISSION_DENIED` because the source or destination had no cached row now goes
+    through. A likely trigger, from reading the code: duplicate a folder, then duplicate the copy
+    before anything else checks it.
 - **Performance**: Only items with neither a cached row nor permissions of their own fall back to
   the one-at-a-time check, with no cap per request. That set is not the same as "every item the
   batch query did not return": a missed item may simply be denied. Today's batch query returns
@@ -139,13 +167,26 @@ CMS Administrators skip the filter entirely, so they never see the problem.
   - Denied items that have a cached row are resolved in the batch query and never take the slow
     path.
   - The one-at-a-time check writes the cached row whether it grants or denies access, so an
-    uncached item, readable or denied, takes the slow path at most once.
-  - The worst case is the first request after a permission change on a site, when a recursive
-    search can run many checks. This is accepted: the next request is one query again.
+    uncached item, readable or denied, walks up to its parent at most once.
+  - The row is written on a background thread by default (`PERMISSION_REFERENCES_UPDATE_ASYNC`),
+    and a failed write is only logged. The result goes into the in-memory permission cache right
+    away. Requests that arrive before the row is saved, such as the tree's parallel requests,
+    still take the one-at-a-time check, answered from the in-memory cache rather than by walking
+    up again. So "at most once" holds for the walk-up, not for the number of one-at-a-time checks.
   - Edge case: when the one-at-a-time check is answered from the in-memory permission cache, it
-    does not write the cached row today. Such an item could take the slow path on later requests
-    too; each of those checks is a memory lookup, not a database query. The plan decides
-    whether the fix must also make sure the row is written.
+    does not write the cached row today. If the background write failed, such an item keeps
+    taking the slow path; each of those checks is a memory lookup, not a database query. The plan
+    decides whether the fix must also make sure the row is written.
+  - The worst case is the first request after a permission change on a site. Paging does not
+    limit it: folder search loads every matching folder and runs the READ filter on all of them
+    before it pages. So a recursive search can run one check for every inheriting folder on the
+    site in a single request. The per-folder flags are checked only for the current page, so
+    page size limits them. This is accepted for now, pending the measurement below; the next
+    request is one query again.
+  - The plan measures that worst case on a large site (a recursive search right after a
+    permission change on a site with a few thousand folders) and states an acceptable latency.
+    If the result is too slow, the "no cap" decision in Clarifications is revisited with that
+    data.
   - The common case (cache already filled) must stay one query, with no per-folder query
     (#36940).
 - **Backward compatibility**: No database, index, API contract or serialized-state change. Safe
@@ -160,13 +201,17 @@ CMS Administrators skip the filter entirely, so they never see the problem.
   opening the Site Browser first.
 - **AC-002**: Right after a permission change on a site or parent folder, a non-admin user sees
   the same folders in the Content Drive tree as in the Site Browser.
-- **AC-003**: For any set of folders, the batch filter returns exactly the folders that
-  `PermissionAPI.doesUserHavePermission` allows for the same user, permission type and
-  `respectFrontendRoles` value: no missing folders and no extra ones. Both sides must use the
-  same inputs, because that flag adds the anonymous and logged-in-site roles, and a missing user
-  is treated as the anonymous user. The same condition applies to AC-004.
-- **AC-004**: The edit, publish, edit-permissions and add-children flags returned by the folder
-  search for an inheriting, uncached folder match the one-at-a-time check.
+- **AC-003**: For any set of folders that inherit their permissions and have no cached row, the
+  batch filter returns exactly the folders that `PermissionAPI.doesUserHavePermission` allows
+  for the same user, permission type and `respectFrontendRoles` value: no missing folders and no
+  extra ones. Both sides must use the same inputs, because that flag adds the anonymous and
+  logged-in-site roles, and a missing user is treated as the anonymous user. The folder-owner
+  grant and PUBLISH on folders are excluded (see Non-goals). The same conditions apply to AC-004.
+- **AC-004**: The edit, edit-permissions and add-children flags returned by the folder search for
+  an inheriting, uncached folder match the one-at-a-time check. The publish flag for an uncached
+  folder is the same as the flag the folder gets once it is cached, which today follows the
+  PUBLISH permission. A folder's publish flag must not depend on whether it happens to be cached,
+  even though the one-at-a-time check would answer with EDIT (see Non-goals).
 - **AC-005**: The "has subfolders" indicator is true for a folder whose only readable child
   inherits and is uncached.
 - **AC-006**: A folder created by Content Drive's bulk duplicate, as a non-admin, appears in the
@@ -185,7 +230,15 @@ CMS Administrators skip the filter entirely, so they never see the problem.
   its permissions and has no cached row, is accepted as related content rather than rejected.
 - **AC-012**: For a low-privilege user who is denied most folders on a site, repeated recursive
   folder searches with a filled cache run no one-at-a-time checks. A denied folder with no
-  cached row is checked one at a time at most once, until its row is written.
+  cached row walks up to its parent at most once; requests that arrive before its row is saved
+  are answered from the in-memory permission cache.
+- **AC-013**: In the Publishing Queue's Pending tab, a non-admin sees a bundle when
+  `doesUserHavePermission` says they can publish its first asset (or edit it, if it is a folder),
+  even when that asset inherits its permissions and has no cached row. A bundle the one-at-a-time
+  check denies stays hidden.
+- **AC-014**: The folder bulk duplicate accepts a source folder the user can read and a
+  destination they can add children to, even when either has no cached row. It still reports
+  `PERMISSION_DENIED` or `PARENT_PERMISSION_DENIED` when the one-at-a-time check denies.
 - **Verification method**:
   - Integration tests (registered in a `MainSuite*` so CI runs them) that delete the reference
     rows for an inheriting subfolder, then call the folder search and the batch filter as a
@@ -197,11 +250,20 @@ CMS Administrators skip the filter entirely, so they never see the problem.
     Covers AC-011.
   - An integration test that runs the batch filter twice on an uncached item and confirms the
     second run finds it through the cache. Covers AC-010.
+  - An uncached case added to `PublisherAPIImplTest`, which already compares
+    `PublishQueuePermissionFilter` with the one-at-a-time check on each bundle. Covers AC-013.
+  - An uncached source and destination case added to `FolderBulkDuplicateProcessorIT`. Covers
+    AC-014.
   - Manual: repeat the issue's demo steps and the duplicate variant on a build with the fix.
     Covers AC-002, AC-006.
   - AC-007 and AC-012 checked by a test that counts one-at-a-time checks across two requests
     from a user denied most folders, or by review if counting is not practical; the plan
     decides.
+  - Tests for AC-010 and AC-012 set `PERMISSION_REFERENCES_UPDATE_ASYNC=false`, or wait for the
+    background write, before the second request. Otherwise the second request can arrive before
+    the row exists and the test fails or passes only sometimes.
+  - The worst-case measurement described under Regression Risk → Performance, recorded in the
+    plan with the latency it is judged against.
 
 ## Assumptions
 
