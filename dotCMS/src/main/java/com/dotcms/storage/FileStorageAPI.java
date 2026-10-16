@@ -97,6 +97,30 @@ public interface FileStorageAPI {
      */
     Map<String, Serializable> retrieveMetaData(final FetchMetadataParams requestMetaData) throws DotDataException;
 
+    /**
+     * Reads stored metadata without cache projection or derived UI fields. Only the S3 asset
+     * lifecycle calls this.
+     *
+     * @param storageKey the metadata location
+     * @return the stored metadata, or {@code null} if absent
+     * @throws DotDataException if the metadata cannot be read
+     */
+    default Map<String, Serializable> retrieveRawMetaData(StorageKey storageKey) throws DotDataException {
+        throw new UnsupportedOperationException("S3 asset storage requires the default FileStorageAPI");
+    }
+
+    /**
+     * Copies existing metadata to durable storage without overwriting a conflicting object. Only the
+     * S3 asset lifecycle calls this.
+     *
+     * @param storageKey the metadata location
+     * @return {@code false} if no metadata exists at the key
+     * @throws DotDataException if the copy fails
+     */
+    default boolean backfillMetadata(StorageKey storageKey) throws DotDataException {
+        throw new UnsupportedOperationException("S3 asset storage requires the default FileStorageAPI");
+    }
+
 
     /**
      * Deletes all related metadata for the given contentlet

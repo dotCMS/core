@@ -680,11 +680,11 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
         final MutableObject<File> file = new MutableObject<>(null);
 
         try (Connection connection = getConnection()) {
-            final List<Map<String, Object>> storageResult = Try.of(() ->
-                    new DotConnect()
-                            .setSQL("SELECT hash FROM storage WHERE group_name = ? AND path = ?")
-                            .addParam(groupNameLC).addParam(pathLC)
-                            .loadObjectResults(connection)).getOrElse(Collections::emptyList);
+            final var query = Try.of(() -> new DotConnect()
+                    .setSQL("SELECT hash FROM storage WHERE group_name = ? AND path = ?")
+                    .addParam(groupNameLC).addParam(pathLC).loadObjectResults(connection));
+            final List<Map<String, Object>> storageResult = AssetStorageFeature.isEnabled()
+                    ? query.getOrElseThrow(DotDataException::new) : query.getOrElse(Collections::emptyList);
 
             if (!storageResult.isEmpty()) {
 
@@ -696,6 +696,9 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
                     file.setValue(this.createJoinFile(objectHash, connection));
                 }
             } else {
+                if (AssetStorageFeature.isEnabled()) {
+                    return null;
+                }
                 throw new DoesNotExistException(
                         "The storage, group: " + groupName + ", path: " + path
                                 + " does not exists");
@@ -770,8 +773,7 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
         final File file = pullFile(groupName, path);
 
         if (null != file) {
-            object =
-                    Try.of(() -> {
+            final var read = Try.of(() -> {
                                 try (InputStream inputStream = file instanceof BinaryFileWrapper?
                                         new ByteArrayInputStream(BinaryFileWrapper.class.cast(file).getBufferByte()):
                                         Files.newInputStream(file.toPath())) {
@@ -779,7 +781,8 @@ public class DataBaseStoragePersistenceAPIImpl implements StoragePersistenceAPI 
                                     return readerDelegate.read(inputStream);
                                 }
                             }
-                    ).getOrNull();
+                    );
+            object = AssetStorageFeature.isEnabled() ? read.getOrElseThrow(DotDataException::new) : read.getOrNull();
         }
 
         return object;

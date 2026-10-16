@@ -151,6 +151,10 @@ public interface StoragePersistenceAPI {
      */
     File pullFile (final String groupName, final String path) throws DotDataException;
 
+    /** Releases provider-owned download staging after the caller has copied or consumed it. */
+    default void releaseRetrievedFile(final File file) throws DotDataException { }
+
+
     /**
      * Pull a stream from the storage and read as an object
      *
@@ -194,6 +198,89 @@ public interface StoragePersistenceAPI {
      */
     default Iterable<? extends ObjectPath> toIterable(String group) {
         return new EmptyIterable<>();
+    }
+
+    /**
+     * Lists object paths under a given prefix within a group. Returns paths relative to the
+     * group root. For example, if objects exist at {@code a/b/inode/field/file.pdf}, calling
+     * with prefix {@code a/b/inode} returns {@code ["a/b/inode/field/file.pdf"]}.
+     *
+     * <p>Default implementation returns an empty list, which is safe for providers that do not
+     * support prefix-based listing.</p>
+     *
+     * @param groupName  The group (bucket/folder) to list within.
+     * @param pathPrefix The path prefix to filter objects by.
+     * @return A list of relative object paths matching the prefix.
+     * @throws DotDataException If a storage error occurs during listing.
+     */
+    default List<String> listObjectPaths(final String groupName,
+                                         final String pathPrefix) throws DotDataException {
+        return List.of();
+    }
+
+    /** Returns true only when a durable provider verifies the same file contents. */
+    default boolean hasDurableCopy(final String groupName, final String path,
+                                   final File file) throws DotDataException {
+        return false;
+    }
+
+    /** Copies to durable storage without overwriting a conflicting object. False means unsupported. */
+    default boolean backfillFile(final String groupName, final String path,
+                                 final File file) throws DotDataException {
+        return false;
+    }
+
+    /** Backfills an object using its reader to compare existing contents independently of serialization order. */
+    default boolean backfillObject(final String groupName, final String path, final ObjectWriterDelegate writer,
+            final ObjectReaderDelegate reader, final Serializable object) throws DotDataException {
+        return false;
+    }
+
+    /**
+     * Reads an object together with its version and the store's timestamp, from one response.
+     *
+     * @param groupName the group to read from
+     * @param path      the object's path
+     * @param reader    deserializes the stored value
+     * @return the snapshot, or {@code null} if the object does not exist
+     * @throws DotDataException if the read fails, or the store does not support versioned objects
+     */
+    default ObjectSnapshot readObjectSnapshot(final String groupName, final String path,
+            final ObjectReaderDelegate reader) throws DotDataException {
+        throw unsupportedVersionedObjects();
+    }
+
+    /**
+     * Lists the objects under a prefix with their versions and the store's timestamps, without values.
+     *
+     * @param groupName the group to list
+     * @param prefix    the path prefix
+     * @return one snapshot per object, each with a {@code null} value
+     * @throws DotDataException if the listing fails, or the store does not support versioned objects
+     */
+    default List<ObjectSnapshot> listObjectSnapshots(final String groupName, final String prefix)
+            throws DotDataException {
+        throw unsupportedVersionedObjects();
+    }
+
+    /**
+     * Writes an object only if it is still at the given version, or only if it is absent when the
+     * version is {@code null}. Concurrent writers use this to detect each other instead of overwriting.
+     *
+     * @param groupName the group to write to
+     * @param path      the object's path
+     * @param value     the value to store
+     * @param version   the expected current version, or {@code null} to require that the object is absent
+     * @return the new version, or {@code null} if the object changed concurrently
+     * @throws DotDataException if the write fails, or the store does not support versioned objects
+     */
+    default String writeObjectIfMatch(final String groupName, final String path, final Serializable value,
+            final String version) throws DotDataException {
+        throw unsupportedVersionedObjects();
+    }
+
+    private DotDataException unsupportedVersionedObjects() {
+        return new DotDataException(getClass().getSimpleName() + " does not support versioned objects");
     }
 
     /**

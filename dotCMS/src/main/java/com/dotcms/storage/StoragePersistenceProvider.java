@@ -185,6 +185,28 @@ public final class StoragePersistenceProvider {
        storagePersistenceInstances.clear();
     }
 
+    /**
+     * Returns the durable remote object store with plain, listable keys, for features that keep their
+     * own records there (temporary uploads, WebDAV staging, recovery archives, publishing bundles and
+     * shared extraction). Today this is always S3; callers depend on {@link StoragePersistenceAPI} so
+     * another remote provider can be added here.
+     *
+     * @return a new store instance using plain paths
+     */
+    public static StoragePersistenceAPI remoteObjectStorage() {
+        return AmazonS3StoragePersistenceAPIImpl.withPlainPaths();
+    }
+
+    /**
+     * Returns the storage type of the durable remote store, for code that routes through
+     * {@link StorageKey} or {@link #getStorage(StorageType)}.
+     *
+     * @return the remote storage type, today always {@link StorageType#S3}
+     */
+    public static StorageType remoteStorageType() {
+        return StorageType.S3;
+    }
+
     public enum INSTANCE {
 
         INSTANCE;
