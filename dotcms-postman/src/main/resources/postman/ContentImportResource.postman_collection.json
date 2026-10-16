@@ -4651,6 +4651,252 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "Test Content Drive Import Helpers (#37896)",
+			"item": [
+				{
+					"name": "Get Writable Content Types Expect Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Finds the collection's content type when searched for, and never Host\", function () {",
+									"    const types = pm.response.json().entity;",
+									"    pm.expect(types).to.be.an('array');",
+									"    const variables = types.map((type) => type.variable);",
+									"    pm.expect(variables).to.include(pm.collectionVariables.get(\"contentType\"));",
+									"    pm.expect(variables.map((variable) => variable.toLowerCase())).to.not.include('host');",
+									"});",
+									"",
+									"pm.test(\"Each item has id, variable, name and baseType\", function () {",
+									"    const types = pm.response.json().entity;",
+									"    types.forEach((type) => {",
+									"        pm.expect(type).to.have.property('id');",
+									"        pm.expect(type).to.have.property('variable');",
+									"        pm.expect(type).to.have.property('name');",
+									"        pm.expect(type).to.have.property('baseType');",
+									"    });",
+									"});",
+									"",
+									"pm.test(\"Carries the page, the page size and the total\", function () {",
+									"    const pagination = pm.response.json().pagination;",
+									"    pm.expect(pagination.currentPage).to.eql(1);",
+									"    pm.expect(pagination.perPage).to.eql(40);",
+									"    pm.expect(pagination.totalEntries).to.be.at.least(1);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype/_writable?filter={{contentType}}&page=1&per_page=40&exclude=Host",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype",
+								"_writable"
+							],
+							"query": [
+								{
+									"key": "filter",
+									"value": "{{contentType}}"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "per_page",
+									"value": "40"
+								},
+								{
+									"key": "exclude",
+									"value": "Host"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Validate Content Import With Site Expect Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"A known site is accepted\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(pm.response.json().entity.jobId).to.be.a('string').and.not.empty;",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/ContentImportResource/test-import-content-job-final.csv"
+								},
+								{
+									"key": "form",
+									"value": "{\"contentType\":\"{{contentType}}\",\"language\":\"{{language}}\",\"workflowActionId\":\"{{workflowActionId}}\", \"fields\": {{fields}}, \"site\": \"SYSTEM_HOST\"}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_import/_validate",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_import",
+								"_validate"
+							]
+						},
+						"description": "Creates a new job in the specified queue."
+					},
+					"response": []
+				},
+				{
+					"name": "Validate Content Import With Unknown Site Expect Failure",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"An unknown site is refused with 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "multipart/form-data"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/ContentImportResource/test-import-content-job-final.csv"
+								},
+								{
+									"key": "form",
+									"value": "{\"contentType\":\"{{contentType}}\",\"language\":\"{{language}}\",\"workflowActionId\":\"{{workflowActionId}}\", \"fields\": {{fields}}, \"site\": \"no-such-site-37896.example\"}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_import/_validate",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_import",
+								"_validate"
+							]
+						},
+						"description": "Creates a new job in the specified queue."
+					},
+					"response": []
+				},
+				{
+					"name": "Download Sample CSV Expect Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Is a CSV attachment named CSV_Template.csv\", function () {",
+									"    pm.expect(pm.response.headers.get('Content-Type')).to.include('text/csv');",
+									"    pm.expect(pm.response.headers.get('Content-Disposition')).to.include('CSV_Template.csv');",
+									"});",
+									"",
+									"pm.test(\"Header row lists the content type's title field\", function () {",
+									"    const header = pm.response.text().split('\\n')[0];",
+									"    pm.expect(header.split(',')).to.include('title');",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_import/_sample?contentType={{contentType}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_import",
+								"_sample"
+							],
+							"query": [
+								{
+									"key": "contentType",
+									"value": "{{contentType}}"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
 		}
 	],
 	"auth": {

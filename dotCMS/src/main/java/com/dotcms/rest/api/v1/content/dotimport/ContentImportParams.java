@@ -15,7 +15,6 @@ import org.glassfish.jersey.media.multipart.FormDataParam;
  */
 public class ContentImportParams extends Validated {
 
-    @NotNull(message = "The file is required.")
     @FormDataParam("file")
     private InputStream fileInputStream;
 
@@ -29,6 +28,13 @@ public class ContentImportParams extends Validated {
     @NotNull(message = "The form data is required.")
     @FormDataParam("form")
     private String jsonForm;
+
+    /**
+     * A CSV the caller already uploaded, such as the one a preview stored, sent instead of the
+     * file so it isn't uploaded again (#37896).
+     */
+    @FormDataParam("tempFileId")
+    private String tempFileId;
 
     public InputStream getFileInputStream() {
         return fileInputStream;
@@ -54,6 +60,24 @@ public class ContentImportParams extends Validated {
         return jsonForm;
     }
 
+    /**
+     * The id of an already uploaded CSV to import instead of a new file.
+     *
+     * @return the temp file id, or {@code null} when a file is sent
+     */
+    public String getTempFileId() {
+        return tempFileId;
+    }
+
+    /**
+     * Sets the id of an already uploaded CSV to import instead of a new file.
+     *
+     * @param tempFileId the temp file id
+     */
+    public void setTempFileId(final String tempFileId) {
+        this.tempFileId = tempFileId;
+    }
+
     public void setForm(ContentImportForm form) {
         this.form = form;
     }
@@ -74,6 +98,7 @@ public class ContentImportParams extends Validated {
         return "ContentImportParams{" +
                 "form=" + getJsonForm() +
                 ", hasFile=" + (fileInputStream != null) +
+                ", tempFileId=" + tempFileId +
                 ", fileName=" + (contentDisposition != null ? contentDisposition.getFileName() : "null") +
                 '}';
     }
@@ -86,6 +111,14 @@ public class ContentImportParams extends Validated {
             throw new ValidationException("The form data is required.");
         }
 
+        final boolean hasTempFile = tempFileId != null && !tempFileId.isBlank();
+        if (fileInputStream != null && hasTempFile) {
+            throw new ValidationException("Send either the file or a tempFileId, not both.");
+        }
+        if (hasTempFile) {
+            // The temp file's existence and ownership are checked when it is resolved.
+            return;
+        }
         if (fileInputStream == null) {
             throw new ValidationException("The file is required.");
         }

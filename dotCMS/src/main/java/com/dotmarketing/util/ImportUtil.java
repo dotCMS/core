@@ -80,6 +80,9 @@ import com.dotmarketing.util.importer.model.FileInfo;
 import com.dotmarketing.util.importer.model.FileInfo.Builder;
 import com.dotmarketing.util.importer.model.HeaderInfo;
 import com.dotmarketing.util.importer.model.HeaderValidationResult;
+import com.dotmarketing.util.importer.ContentImportTemplateGenerator;
+import com.dotmarketing.util.importer.model.AbstractImportDestination.Source;
+import com.dotmarketing.util.importer.model.ImportDestination;
 import com.dotmarketing.util.importer.model.ImportResult;
 import com.dotmarketing.util.importer.model.LineImportResult;
 import com.dotmarketing.util.importer.model.ProcessedContentResult;
@@ -113,6 +116,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -479,6 +483,7 @@ public class ImportUtil {
                                 final var lineResult = resultBuilder.build();
                                 parseLineResults(counters, lineResult, messages, savedInodes,
                                         updatedInodes, true);
+                                lineResult.destination().ifPresent(counters::addDestination);
 
                                 //Storing the record keys we just imported for a later reference...
                                 if (!keyFields.isEmpty()) {
@@ -734,6 +739,7 @@ public class ImportUtil {
                 .info(infoMessages)
                 .warning(warningMessages)
                 .error(errorMessages)
+                .destinations(counters.getDestinations())
                 .build();
     }
 
@@ -1895,6 +1901,9 @@ public class ImportUtil {
                 }
             }
         }
+        resultBuilder.setDestination(resolveDestination(
+                siteAndFolder, contentlets, resultBuilder.isNewContent(), contentType));
+
          //Here we save the contentlet(s) and process the results
         final ProcessedContentResult processResult = processContent(
                 lineNumber,
@@ -1928,6 +1937,87 @@ public class ImportUtil {
         resultBuilder.incrementContentToUpdate(processResult.contentToUpdate());
         resultBuilder.incrementUpdatedContent(processResult.updatedContent());
         resultBuilder.incrementDuplicateContent(processResult.duplicateContent());
+    }
+
+    /**
+     * Works out where a line's content lands, the same way the import places it (#37896).
+     * <p>
+     * A site/folder from the line wins. Without one, content that already exists keeps its place,
+     * and new content goes to its content type's own site/folder, which is what checkin falls back
+     * to. Nothing here changes where content is placed; it only reports it.
+     *
+     * @param siteAndFolder the site and folder the line names, or {@code null}
+     * @param contentlets   the contentlets the line creates or updates
+     * @param isNewContent  whether the line creates new content
+     * @param contentType   the content type being imported
+     * @return the destination, or {@code null} when it can't be resolved
+     */
+    private static ImportDestination resolveDestination(final Pair<Host, Folder> siteAndFolder,
+            final List<Contentlet> contentlets, final boolean isNewContent,
+            final Structure contentType) {
+        try {
+            if (siteAndFolder != null && siteAndFolder.getLeft() != null) {
+                return destination(siteAndFolder.getLeft().getHostname(),
+                        folderPath(siteAndFolder.getRight()), Source.CSV);
+            }
+
+            final String existingIdentifier = contentlets.stream()
+                    .map(Contentlet::getIdentifier)
+                    .filter(UtilMethods::isSet)
+                    .findFirst().orElse(null);
+            if (existingIdentifier != null) {
+                final Identifier identifier =
+                        APILocator.getIdentifierAPI().find(existingIdentifier);
+                if (identifier != null && UtilMethods.isSet(identifier.getHostId())) {
+                    final Host host = APILocator.getHostAPI()
+                            .find(identifier.getHostId(), APILocator.systemUser(), false);
+                    return destination(host.getHostname(), identifier.getParentPath(),
+                            Source.EXISTING);
+                }
+            }
+
+            if (isNewContent) {
+                final Host host = APILocator.getHostAPI()
+                        .find(contentType.getHost(), APILocator.systemUser(), false);
+                final Folder folder = APILocator.getFolderAPI()
+                        .find(contentType.getFolder(), APILocator.systemUser(), false);
+                return destination(host.getHostname(), folderPath(folder),
+                        Source.CONTENT_TYPE_DEFAULT);
+            }
+        } catch (final DotDataException | DotSecurityException e) {
+            Logger.debug(ImportUtil.class, () -> "Could not resolve a line's destination: "
+                    + e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * A folder's path for a destination; the system folder, or no folder, is the site root.
+     *
+     * @param folder the folder, possibly {@code null}
+     * @return the folder path, starting and ending with {@code /}
+     */
+    private static String folderPath(final Folder folder) {
+        return folder == null || folder.isSystemFolder() || !UtilMethods.isSet(folder.getPath())
+                ? "/"
+                : folder.getPath();
+    }
+
+    /**
+     * Builds a one-row destination.
+     *
+     * @param hostname the site's hostname
+     * @param path     the folder path within the site
+     * @param source   why the row lands there
+     * @return the destination
+     */
+    private static ImportDestination destination(final String hostname, final String path,
+            final Source source) {
+        return ImportDestination.builder()
+                .path("//" + hostname + (path.startsWith("/") ? path : "/" + path))
+                .rows(1)
+                .source(source)
+                .build();
     }
 
     /**
@@ -4800,6 +4890,28 @@ public class ImportUtil {
 
         private String lastInode = "";
 
+        /** Rows per destination path and source, in the order first seen (#37896). */
+        private final Map<String, ImportDestination> destinations = new LinkedHashMap<>();
+
+        /**
+         * Counts one more row towards a destination.
+         *
+         * @param destination a line's destination
+         */
+        public void addDestination(final ImportDestination destination) {
+            destinations.merge(destination.source() + "|" + destination.path(), destination,
+                    (counted, added) -> counted.withRows(counted.rows() + added.rows()));
+        }
+
+        /**
+         * The destinations counted so far.
+         *
+         * @return one entry per destination path and source
+         */
+        public List<ImportDestination> getDestinations() {
+            return new ArrayList<>(destinations.values());
+        }
+
         public int getContentToCreate() {
             return contentToCreate;
         }
@@ -4904,20 +5016,14 @@ public class ImportUtil {
     }
 
     /**
-     * 
-     * @param field
-     * @return
+     * Whether a CSV import has a column for a field: layout and tab fields hold no content.
+     *
+     * @param field a content type field
+     * @return {@code true} when the field can be imported
      */
-    public static boolean isImportableField ( Field field ) {
-        return !(
-                field.getFieldType().equals( Field.FieldType.BUTTON.toString() ) ||
-                field.getFieldType().equals( Field.FieldType.LINE_DIVIDER.toString() ) ||
-                field.getFieldType().equals( Field.FieldType.TAB_DIVIDER.toString() ) ||
-                field.getFieldType().equals( Field.FieldType.PERMISSIONS_TAB.toString()) ||
-                field.getFieldType().equals(Field.FieldType.COLUMN.toString())      ||  
-                field.getFieldType().equals(Field.FieldType.ROW.toString())    
-                        
-                );
+    public static boolean isImportableField(final Field field) {
+        // One rule for the import and its sample CSV (#37896)
+        return ContentImportTemplateGenerator.isImportableField(field);
     }
 
     /**
@@ -5004,6 +5110,7 @@ public class ImportUtil {
         private String lastInode;
         private boolean ignoreLine;
         private boolean isNewContent;
+        private ImportDestination destination;
 
         public LineImportResultBuilder(int lineNumber) {
             this.builder = LineImportResult.builder();
@@ -5029,6 +5136,15 @@ public class ImportUtil {
 
         public void setUpdatedInodes(List<String> updatedInodes) {
             this.updatedInodes.addAll(updatedInodes);
+        }
+
+        /**
+         * Records where this line's content lands (#37896).
+         *
+         * @param destination the line's destination
+         */
+        public void setDestination(final ImportDestination destination) {
+            this.destination = destination;
         }
 
         public void setIgnoreLine(boolean ignoreLine) {
@@ -5089,6 +5205,7 @@ public class ImportUtil {
                     .updatedContent(updatedContentCount)
                     .duplicateContent(duplicateContentCount)
                     .lastInode(lastInode)
+                    .destination(Optional.ofNullable(destination))
                     .build();
         }
     }

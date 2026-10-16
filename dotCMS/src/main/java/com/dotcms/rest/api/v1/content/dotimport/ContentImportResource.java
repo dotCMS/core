@@ -3,6 +3,14 @@ package com.dotcms.rest.api.v1.content.dotimport;
 import static com.dotcms.rest.api.v1.content.dotimport.ContentImportHelper.CMD_PREVIEW;
 import static com.dotcms.rest.api.v1.content.dotimport.ContentImportHelper.CMD_PUBLISH;
 
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.cache.FieldsCache;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.importer.ContentImportTemplateGenerator;
+import java.nio.charset.StandardCharsets;
+import javax.ws.rs.BadRequestException;
+import javax.ws.rs.core.StreamingOutput;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
 import com.dotcms.jobs.business.job.JobView;
@@ -13,9 +21,11 @@ import com.dotcms.rest.ResponseEntityJobView;
 import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.rest.api.v1.job.SSEMonitorUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,6 +39,7 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
+import java.util.List;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -227,6 +238,81 @@ public class ContentImportResource {
         return importHelper.handleJobCreation(
                 CMD_PREVIEW, params, initDataObject, request
         );
+    }
+
+    /**
+     * Downloads the sample CSV for a content type: a header row of its importable fields and a row
+     * of placeholders showing each field's format. It is the same file Content Search's import
+     * offers (#37896).
+     *
+     * @param request     the HTTP servlet request
+     * @param response    the HTTP servlet response
+     * @param contentType the content type's id or variable
+     * @return the CSV as an attachment named {@code CSV_Template.csv}
+     * @throws DotDataException     if the content type can't be read (404 when it doesn't exist)
+     * @throws DotSecurityException if the user can't read the content type (403)
+     */
+    @GET
+    @Path("/_sample")
+    @Produces("text/csv")
+    @NoCache
+    @Operation(
+            operationId = "downloadContentImportSample",
+            summary = "Downloads a sample CSV for importing a content type",
+            description = "Returns the sample CSV Content Search's import offers: a header row of "
+                    + "the content type's importable fields, in their order on the type, and a row "
+                    + "of placeholders showing each field's expected format (for example "
+                    + "MM/dd/yyyy for date fields).",
+            tags = {"Content Import"},
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "The sample CSV.",
+                            content = @Content(mediaType = "text/csv",
+                                    schema = @Schema(type = "string", format = "binary",
+                                            description = "Two CSV lines: field variables, then "
+                                                    + "placeholders."))),
+                    @ApiResponse(responseCode = "400", description = "Bad Request: contentType is missing."),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized: Invalid or missing user authentication."),
+                    @ApiResponse(responseCode = "403", description = "Forbidden: The user can't read the content type."),
+                    @ApiResponse(responseCode = "404", description = "Not Found: The content type doesn't exist.")
+            }
+    )
+    public Response downloadSample(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @QueryParam("contentType")
+            @Parameter(
+                    name = "contentType",
+                    in = ParameterIn.QUERY,
+                    required = true,
+                    description = "The content type's identifier or variable name.",
+                    schema = @Schema(type = "string", example = "Blog")
+            )
+            final String contentType
+    ) throws DotDataException, DotSecurityException {
+
+        final var initDataObject = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+
+        if (!UtilMethods.isSet(contentType)) {
+            throw new BadRequestException("The contentType query parameter is required");
+        }
+
+        // Checks READ for the backend user (frontend roles don't count here, as in the writable
+        // types list) and throws NotFoundInDbException for an unknown type
+        final ContentType type = APILocator.getContentTypeAPI(initDataObject.getUser(), false)
+                .find(contentType);
+        final String csv = ContentImportTemplateGenerator.generate(
+                FieldsCache.getFieldsByStructureInode(type.inode()));
+
+        final StreamingOutput body = output ->
+                output.write(csv.getBytes(StandardCharsets.ISO_8859_1));
+        return Response.ok(body, "text/csv")
+                .header("Content-Disposition", "attachment; filename=\"CSV_Template.csv\"")
+                .build();
     }
 
     /**

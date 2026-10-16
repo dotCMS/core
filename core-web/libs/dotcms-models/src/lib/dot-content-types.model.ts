@@ -14,6 +14,8 @@ export const DotCMSClazzes = {
     COLUMN: 'com.dotcms.contenttype.model.field.ImmutableColumnField',
     TAB_DIVIDER: 'com.dotcms.contenttype.model.field.ImmutableTabDividerField',
     LINE_DIVIDER: 'com.dotcms.contenttype.model.field.ImmutableLineDividerField',
+    RELATIONSHIPS_TAB: 'com.dotcms.contenttype.model.field.ImmutableRelationshipsTabField',
+    PERMISSION_TAB: 'com.dotcms.contenttype.model.field.ImmutablePermissionTabField',
     COLUMN_BREAK: 'contenttype.column.break',
     // Content Type Fields
     BINARY: 'com.dotcms.contenttype.model.field.ImmutableBinaryField',
@@ -680,6 +682,26 @@ export interface DotContentTypePaginationOptions {
     per_page?: number; // Number of results per page
     type?: string;
     ensure?: string;
+}
+
+/**
+ * Options of `GET /api/v1/contenttype/_writable`: a page and a search, plus the variables of
+ * content types to leave out (#37896).
+ */
+export interface DotWritableContentTypesOptions {
+    filter?: string;
+    page?: number;
+    per_page?: number;
+    exclude?: string[];
+}
+
+/** A content type in the short form `GET /api/v1/contenttype/_writable` returns (#37896). */
+export interface DotContentTypeSummary {
+    id: string;
+    variable: string;
+    name: string;
+    baseType: string;
+    icon?: string;
 }
 
 /**

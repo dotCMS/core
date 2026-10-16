@@ -9,10 +9,28 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dotcms.Junit5WeldBaseTest;
+import java.util.Map;
+import com.dotcms.jobs.business.job.JobResult;
+import com.dotcms.jobs.business.job.JobView;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.cache.FieldsCache;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
+import javax.ws.rs.core.StreamingOutput;
+import javax.ws.rs.BadRequestException;
+import java.nio.charset.StandardCharsets;
+import java.io.ByteArrayOutputStream;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.rest.exception.ForbiddenException;
+import com.dotcms.datagen.SiteDataGen;
+import java.util.stream.Collectors;
+import java.util.Arrays;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.beans.Permission;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobViewPaginatedResult;
 import com.dotcms.jobs.business.util.JobUtil;
@@ -24,6 +42,7 @@ import com.dotcms.rest.exception.ValidationException;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.util.importer.ContentImportTemplateGenerator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -34,6 +53,7 @@ import com.liferay.portal.model.User;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.List;
 import javax.inject.Inject;
@@ -548,6 +568,305 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
         assertBadRequestResponse(importResource.validateContentImport(request, response, params));
     }
 
+    /**
+     * Given scenario: a preview is requested with {@code site} set to another site's identifier.
+     * Expected result: the job runs against that site, not the session's (#37896, FR-023).
+     */
+    @Test
+    void test_validate_with_site_id_uses_that_site() throws Exception {
+        final Host otherSite = new SiteDataGen().nextPersisted();
+        final ContentImportForm form = createContentImportForm(contentType.name(),
+                String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID,
+                List.of(fieldId), otherSite.getIdentifier());
+
+        final Response result = importResource.validateContentImport(request, response,
+                createContentImportParams(csvFile, form));
+
+        final Job job = jobOf(result);
+        assertEquals(otherSite.getIdentifier(), job.parameters().get("siteIdentifier"));
+        assertEquals(otherSite.getHostname(), job.parameters().get("siteName"));
+    }
+
+    /**
+     * Given scenario: an import is requested with {@code site} set to another site's hostname.
+     * Expected result: the hostname resolves, and the job runs against that site (#37896, FR-023).
+     */
+    @Test
+    void test_import_with_site_hostname_uses_that_site() throws Exception {
+        final Host otherSite = new SiteDataGen().nextPersisted();
+        final ContentImportForm form = createContentImportForm(contentType.name(),
+                String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID,
+                List.of(fieldId), otherSite.getHostname());
+
+        final Response result = importResource.importContent(request, response,
+                createContentImportParams(csvFile, form));
+
+        assertEquals(otherSite.getIdentifier(), jobOf(result).parameters().get("siteIdentifier"));
+    }
+
+    /**
+     * Given scenario: {@code site} names a site that doesn't exist.
+     * Expected result: the request is refused with 400 and no job runs (#37896, FR-023).
+     */
+    @Test
+    void test_validate_with_unknown_site_is_refused() throws Exception {
+        final ContentImportForm form = createContentImportForm(contentType.name(),
+                String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID,
+                List.of(fieldId), "no-such-site-" + System.currentTimeMillis() + ".example");
+
+        assertBadRequestResponse(importResource.validateContentImport(request, response,
+                createContentImportParams(csvFile, form)));
+    }
+
+    /**
+     * Given scenario: a limited backend user names a site they have no permission to read.
+     * Expected result: the request is refused as forbidden, which the REST layer answers with 403
+     * (#37896, FR-023).
+     */
+    @Test
+    void test_validate_with_unreadable_site_is_forbidden() throws Exception {
+        final Host privateSite = new SiteDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen()
+                .roles(TestUserUtils.getBackendRole()).nextPersisted();
+        final HttpServletRequest limitedRequest =
+                JobUtil.generateMockRequest(limitedUser, defaultSite.getHostname());
+        final ContentImportForm form = createContentImportForm(contentType.name(),
+                String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID,
+                List.of(fieldId), privateSite.getIdentifier());
+
+        assertThrows(ForbiddenException.class, () -> importResource.validateContentImport(
+                limitedRequest, response, createContentImportParams(csvFile, form)));
+    }
+
+    /**
+     * Given scenario: an import job is created from an uploaded CSV.
+     * Expected result: the job records the CSV's original file name, so Content Drive can name the
+     * import in its status toast after a reload (#37896).
+     */
+    @Test
+    void test_import_job_records_the_file_name() throws Exception {
+        final ContentImportForm form = createContentImportForm(contentType.name(),
+                String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID,
+                List.of(fieldId));
+
+        final Response result = importResource.importContent(request, response,
+                createContentImportParams(csvFile, form));
+
+        assertEquals(csvFile.getName(), jobOf(result).parameters().get("fileName"));
+    }
+
+    /**
+     * Given scenario: the sample CSV for the suite's content type is requested.
+     * Expected result: 200 {@code text/csv} named {@code CSV_Template.csv}, whose body is what the
+     * template generator writes for that type's fields — the same file Content Search offers
+     * (#37896, FR-024).
+     */
+    @Test
+    void test_sample_csv_is_the_content_search_template() throws Exception {
+        final Response result =
+                importResource.downloadSample(request, response, contentType.variable());
+
+        assertEquals(Response.Status.OK.getStatusCode(), result.getStatus());
+        assertTrue(String.valueOf(result.getMediaType()).startsWith("text/csv"));
+        assertEquals("attachment; filename=\"CSV_Template.csv\"",
+                result.getHeaderString("Content-Disposition"));
+
+        final ByteArrayOutputStream body = new ByteArrayOutputStream();
+        ((StreamingOutput) result.getEntity()).write(body);
+        assertEquals(ContentImportTemplateGenerator.generate(
+                        FieldsCache.getFieldsByStructureInode(contentType.inode())),
+                body.toString(StandardCharsets.UTF_8));
+    }
+
+    /**
+     * Given scenario: the sample CSV is requested with no content type.
+     * Expected result: the request is refused as a bad request (400).
+     */
+    @Test
+    void test_sample_csv_without_content_type_is_refused() {
+        assertThrows(BadRequestException.class,
+                () -> importResource.downloadSample(request, response, null));
+    }
+
+    /**
+     * Given scenario: the sample CSV is requested for a content type that doesn't exist.
+     * Expected result: not found (404).
+     */
+    @Test
+    void test_sample_csv_for_unknown_type_is_not_found() {
+        assertThrows(NotFoundInDbException.class, () -> importResource.downloadSample(request,
+                response, "noSuchType" + System.currentTimeMillis()));
+    }
+
+    /**
+     * Given scenario: a limited backend user asks for the sample of a type they can't read.
+     * Expected result: refused (403), so the endpoint doesn't reveal a type's fields.
+     */
+    @Test
+    void test_sample_csv_for_unreadable_type_is_forbidden() throws Exception {
+        final ContentType privateType = new ContentTypeDataGen()
+                .name("ImportPrivate" + System.currentTimeMillis()).nextPersisted();
+        // Individual permissions for the admin only, so the type stops inheriting the site's
+        // permissions and the limited user really can't read it
+        APILocator.getPermissionAPI().save(new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                        privateType.getPermissionId(),
+                        APILocator.getRoleAPI().loadRoleByKey(adminUser.getUserId()).getId(),
+                        PermissionAPI.PERMISSION_READ, true),
+                privateType, APILocator.systemUser(), false);
+        try {
+            final User limitedUser = new UserDataGen()
+                    .roles(TestUserUtils.getBackendRole()).nextPersisted();
+            final HttpServletRequest limitedRequest =
+                    JobUtil.generateMockRequest(limitedUser, defaultSite.getHostname());
+
+            assertThrows(DotSecurityException.class, () -> importResource.downloadSample(
+                    limitedRequest, response, privateType.variable()));
+        } finally {
+            ContentTypeDataGen.remove(privateType);
+        }
+    }
+
+    /**
+     * Given scenario: a preview is requested for a CSV that has a header and no data rows.
+     * Expected result: 400 with a failed job whose result carries an error message the Drive's
+     * import dialog can show (#37896, US5).
+     */
+    @Test
+    @SuppressWarnings("unchecked")
+    void test_validate_empty_csv_explains_the_failure() throws Exception {
+        final File headerOnly = File.createTempFile("header-only", ".csv");
+        try {
+            Files.write(headerOnly.toPath(), "title,body\n".getBytes());
+            final ContentImportForm form = createContentImportForm(contentType.name(),
+                    String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID,
+                    List.of(fieldId));
+
+            final Response result = importResource.validateContentImport(request, response,
+                    createContentImportParams(headerOnly, form));
+
+            assertBadRequestResponse(result);
+            final JobView job = ((ResponseEntityView<JobView>) result.getEntity()).getEntity();
+            final Map<String, Object> metadata =
+                    job.result().flatMap(JobResult::metadata).orElseThrow();
+            final List<Map<String, Object>> errors =
+                    (List<Map<String, Object>>) metadata.get("error");
+            assertFalse(errors.isEmpty(), "The failed job should explain why");
+            assertFalse(String.valueOf(errors.get(0).get("message")).isBlank(),
+                    "The first error should carry a message");
+        } finally {
+            headerOnly.delete();
+        }
+    }
+
+    /**
+     * Given scenario: a preview is queued through {@code /_validate}, and the import is then
+     * started with the preview job's {@code tempFileId} instead of uploading the CSV again.
+     * Expected result: the import job reads the very file that was previewed (same temp file id)
+     * and keeps its original name (#37896, FR-017; PR #38054 review).
+     */
+    @Test
+    void test_import_reuses_the_previewed_file() throws Exception {
+        final ContentImportForm form = createContentImportForm(contentType.name(),
+                String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID,
+                List.of(fieldId));
+        final Job preview = jobOf(importResource.validateContentImport(request, response,
+                createContentImportParams(csvFile, form)));
+        final String tempFileId = String.valueOf(preview.parameters().get("tempFileId"));
+
+        final ContentImportParams params = new ContentImportParams();
+        params.setJsonForm(mapper.writeValueAsString(form));
+        params.setTempFileId(tempFileId);
+        final Job job = jobOf(importResource.importContent(request, response, params));
+
+        assertEquals(tempFileId, job.parameters().get("tempFileId"));
+        assertEquals(csvFile.getName(), job.parameters().get("fileName"));
+    }
+
+    /**
+     * Given scenario: an import names a temp file id that doesn't exist.
+     * Expected result: 400, and no job is created.
+     */
+    @Test
+    void test_import_with_unknown_temp_file_is_refused() throws Exception {
+        final ContentImportParams params = new ContentImportParams();
+        params.setJsonForm(mapper.writeValueAsString(createContentImportForm(contentType.name(),
+                String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID,
+                List.of(fieldId))));
+        params.setTempFileId("temp_" + System.currentTimeMillis());
+
+        assertBadRequestResponse(importResource.importContent(request, response, params));
+    }
+
+    /**
+     * Given scenario: another backend user uploaded a temp file, and the admin's import names it.
+     * Expected result: 400. A temp file can only be used by whoever uploaded it, so one user can't
+     * import another user's CSV by its id.
+     */
+    @Test
+    void test_import_with_another_users_temp_file_is_refused() throws Exception {
+        final User otherUser = new UserDataGen().roles(TestUserUtils.getBackendRole())
+                .nextPersisted();
+        final HttpServletRequest otherRequest =
+                JobUtil.generateMockRequest(otherUser, defaultSite.getHostname());
+        final String othersTempFileId;
+        try (final InputStream csv = new FileInputStream(csvFile)) {
+            othersTempFileId = APILocator.getTempFileAPI()
+                    .createTempFile(csvFile.getName(), otherRequest, csv).id;
+        }
+
+        final ContentImportParams params = new ContentImportParams();
+        params.setJsonForm(mapper.writeValueAsString(createContentImportForm(contentType.name(),
+                String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID,
+                List.of(fieldId))));
+        params.setTempFileId(othersTempFileId);
+
+        assertBadRequestResponse(importResource.importContent(request, response, params));
+    }
+
+    /**
+     * Given scenario: an import sends both a CSV and a temp file id.
+     * Expected result: 400, since it is ambiguous which file should be imported.
+     */
+    @Test
+    void test_import_with_file_and_temp_file_is_refused() throws Exception {
+        final ContentImportParams params = createContentImportParams(csvFile,
+                createContentImportForm(contentType.name(),
+                        String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID,
+                        List.of(fieldId)));
+        params.setTempFileId("temp_" + System.currentTimeMillis());
+
+        assertBadRequestResponse(importResource.importContent(request, response, params));
+    }
+
+    /**
+     * Reads the job a successful create/validate response refers to.
+     *
+     * @param result the endpoint's response
+     * @return the job
+     */
+    private Job jobOf(final Response result) throws DotDataException {
+        assertEquals(Response.Status.OK.getStatusCode(), result.getStatus());
+        final ResponseEntityJobStatusView view = (ResponseEntityJobStatusView) result.getEntity();
+        return contentImportHelper.getJob(view.getEntity().jobId());
+    }
+
+    /**
+     * Grants a limited user's individual role the given permissions on a permissionable.
+     *
+     * @param permissionable what the permissions apply to
+     * @param limitedUser    the user whose personal role receives them
+     * @param permissions    the permission bits to add together
+     * @throws Exception if the permission can't be saved
+     */
+    private static void addPermission(final Permissionable permissionable, final User limitedUser,
+            final int... permissions) throws Exception {
+        final Permission permission = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                permissionable.getPermissionId(),
+                APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
+                Arrays.stream(permissions).sum(), true);
+        APILocator.getPermissionAPI().save(permission, permissionable, APILocator.systemUser(), false);
+    }
+
     private void validateJobPaginatedResult(ResponseEntityView<JobViewPaginatedResult> result, long expectedTotalJobs) {
         assertNotNull(result, "Response should not be null");
 
@@ -693,6 +1012,17 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
     private ContentImportForm createContentImportForm(String contentType, String language,
             String workflowActionId, List<String> fields) {
         return new ContentImportForm(contentType, language, workflowActionId, fields, null, null);
+    }
+
+    /**
+     * Creates a ContentImportForm that names the site the import runs against (#37896).
+     *
+     * @param site the site's identifier or hostname
+     */
+    private ContentImportForm createContentImportForm(String contentType, String language,
+            String workflowActionId, List<String> fields, String site) {
+        return new ContentImportForm(contentType, language, workflowActionId, fields, null, null,
+                site);
     }
 
     /**

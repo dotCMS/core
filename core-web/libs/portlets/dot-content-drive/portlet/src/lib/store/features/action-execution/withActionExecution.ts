@@ -45,6 +45,8 @@ import {
     DotWorkflowPushPublishValue
 } from '@dotcms/dotcms-models';
 
+import { withImportRuns } from './withImportRuns';
+
 import {
     DELETE_FOLDER_OPERATION,
     DUPLICATE_FOLDER_OPERATION,
@@ -202,6 +204,22 @@ interface WithActionExecutionState {
  * what stops the same action being fired twice over the same rows.
  */
 export function withActionExecution() {
+    return signalStoreFeature(
+        {
+            state: type<DotContentDriveState>()
+        },
+        withRunExecution(),
+        // CSV imports (#37896) in their own feature, on top of the public run methods.
+        withImportRuns()
+    );
+}
+
+/**
+ * The runs, their status indicator and their outcomes, shared by every operation. Kept apart from
+ * {@link withActionExecution} so a feature such as {@link withImportRuns} can be composed on top of
+ * its public methods: chained in one feature, the methods type widens and cannot be required.
+ */
+function withRunExecution() {
     return signalStoreFeature(
         {
             state: type<DotContentDriveState>()

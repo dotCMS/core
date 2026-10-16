@@ -13,10 +13,12 @@ import com.dotcms.jobs.business.util.JobUtil;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityJobStatusView;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.api.v1.job.JobResponseUtil;
 import com.dotcms.rest.api.v1.job.JobStatusResponse;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.util.JsonUtil;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DoesNotExistException;
@@ -24,6 +26,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.importer.model.AbstractImportResult.OperationType;
 import com.dotmarketing.util.importer.model.AbstractValidationMessage.ValidationMessageType;
 import com.dotmarketing.util.importer.model.ImportResult;
@@ -274,12 +277,13 @@ public class ContentImportHelper {
      * @param request The HTTP request associated with the operation.
      * @return A map containing the job parameters.
      * @throws JsonProcessingException If there is an error processing JSON data.
+     * @throws DotDataException        If the requested site can't be looked up.
      */
     private Map<String, Object> createJobParameters(
             final String command,
             final ContentImportParams params,
             final User user,
-            final HttpServletRequest request) throws JsonProcessingException {
+            final HttpServletRequest request) throws JsonProcessingException, DotDataException {
 
         final Map<String, Object> jobParameters = new HashMap<>();
 
@@ -292,8 +296,13 @@ public class ContentImportHelper {
         // Add optional parameters
         addOptionalParameters(params, jobParameters);
 
-        // Add site information
-        addSiteInformation(request, jobParameters);
+        // Add site information: the form's site when it names one (#37896), else the session's
+        final String requestedSite = params.getForm().getSite();
+        if (UtilMethods.isSet(requestedSite)) {
+            addRequestedSite(requestedSite, user, jobParameters);
+        } else {
+            addSiteInformation(request, jobParameters);
+        }
 
         return jobParameters;
     }
@@ -363,6 +372,34 @@ public class ContentImportHelper {
     }
 
     /**
+     * Adds the site the form names to the job parameters, in place of the session's site (#37896).
+     * <p>
+     * The session's site is shared by every tab of the user's session, so a tab browsing another
+     * site would otherwise resolve the import's in-row references (File and Image values) against
+     * the wrong site. Row placement is not affected: rows still go where their CSV column says.
+     *
+     * @param site          the site's identifier or hostname
+     * @param user          the user running the import; must be able to read the site
+     * @param jobParameters the job parameters to add the site to
+     * @throws DotDataException    if the site can't be looked up
+     * @throws ForbiddenException  if the user can't read the site (answered as 403)
+     * @throws ValidationException if no site matches (answered as 400)
+     */
+    private void addRequestedSite(final String site, final User user,
+            final Map<String, Object> jobParameters) throws DotDataException {
+        final Host host;
+        try {
+            host = APILocator.getHostAPI().findByIdOrKey(site, user, false)
+                    .orElseThrow(() -> new ValidationException(
+                            String.format("Site [%s] does not exist", site)));
+        } catch (final DotSecurityException e) {
+            throw new ForbiddenException(e);
+        }
+        jobParameters.put("siteName", host.getHostname());
+        jobParameters.put("siteIdentifier", host.getIdentifier());
+    }
+
+    /**
      * Adds the current site information to the job parameters.
      *
      * @param request       The HTTP request associated with the operation.
@@ -378,12 +415,18 @@ public class ContentImportHelper {
     }
 
     /**
-     * Processes the file upload and adds the file-related parameters to the job.
+     * Adds the CSV to the job's parameters: either the uploaded file, stored as a new temp file, or
+     * the temp file the caller names by id, such as the one its preview stored (#37896). A named
+     * temp file must exist and must have been uploaded by this same user. The temp file API on its
+     * own also accepts a matching session or browser fingerprint, which two users behind the same
+     * browser or proxy can share; matching the user only keeps one user from importing another
+     * user's CSV by its id.
      *
      * @param params        The content import parameters.
      * @param jobParameters The map of job parameters.
      * @param request       The HTTP request containing the uploaded file.
-     * @throws DotDataException If there is an error processing the file upload.
+     * @throws DotDataException    If there is an error processing the file upload.
+     * @throws ValidationException If the named temp file doesn't exist or can't be used (400).
      */
     private void processFileUpload(
             final ContentImportParams params,
@@ -391,12 +434,24 @@ public class ContentImportHelper {
             final HttpServletRequest request) throws DotDataException {
 
         try {
-            final DotTempFile tempFile = APILocator.getTempFileAPI().createTempFile(
-                    params.getContentDisposition().getFileName(),
-                    request,
-                    params.getFileInputStream()
-            );
+            final DotTempFile tempFile;
+            final String fileName;
+            if (UtilMethods.isSet(params.getTempFileId())) {
+                tempFile = APILocator.getTempFileAPI()
+                        .getTempFile(List.of(String.valueOf(jobParameters.get("userId"))),
+                                params.getTempFileId())
+                        .orElseThrow(() -> new ValidationException(
+                                "The temporary file doesn't exist or can't be used: "
+                                        + params.getTempFileId()));
+                fileName = tempFile.fileName;
+            } else {
+                fileName = params.getContentDisposition().getFileName();
+                tempFile = APILocator.getTempFileAPI().createTempFile(
+                        fileName, request, params.getFileInputStream());
+            }
             jobParameters.put("tempFileId", tempFile.id);
+            // Lets Content Drive name a running import after a reload (#37896).
+            jobParameters.put("fileName", fileName);
             jobParameters.put("requestFingerPrint",
                     APILocator.getTempFileAPI().getRequestFingerprint(request));
         } catch (DotSecurityException e) {

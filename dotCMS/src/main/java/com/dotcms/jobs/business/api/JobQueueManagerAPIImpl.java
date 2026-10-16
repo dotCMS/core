@@ -40,6 +40,7 @@ import com.dotcms.system.event.local.model.EventSubscriber;
 import com.dotcms.util.AnnotationUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -55,6 +56,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -129,6 +131,17 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
     private static final int MAX_EMPTY_QUEUE_COUNT = 30;
     // Arbitrary threshold to reset
     private static final int EMPTY_QUEUE_RESET_THRESHOLD = Integer.MAX_VALUE - 1000;
+
+    /**
+     * Wakes an idle worker when a job is created on this node (#37896, PR #38054 review).
+     * <p>
+     * A worker that finds the queue empty backs off (1s, 2s, 4s... up to 30s), and without this a
+     * job created meanwhile waited for that backoff to run out. Each permit lets one waiting worker
+     * poll at once; the backoff timeout still bounds every wait, so a missed or extra permit costs
+     * at most one poll, never a job. Jobs created on another node of a cluster are still found by
+     * the normal polling.
+     */
+    private final Semaphore newJobSignal = new Semaphore(0);
 
     /**
      * Constructs a new JobQueueManagerAPIImpl. This constructor initializes the job queue manager
@@ -318,6 +331,9 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
             // But first we need the job id
             final String jobId = jobQueue.createJob(queueName, parameters);
             addInstanceRef(jobId, processor);
+
+            // Once the job is committed, so the worker that wakes up can see it.
+            HibernateUtil.addCommitListenerNoThrow(this::signalNewJob);
 
             // Send the job created events
             JobUtil.sendEvents(
@@ -685,10 +701,15 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
                         sleepTime = Math.min(sleepTime, 100); // Max 100ms during shutdown
                     }
                     
-                    Thread.sleep(sleepTime);
-                    emptyQueueCount = incrementAndResetEmptyQueueCount(
-                            emptyQueueCount, MAX_EMPTY_QUEUE_COUNT, EMPTY_QUEUE_RESET_THRESHOLD
-                    );
+                    // Waits like a sleep of the same length, but a job created on this node
+                    // wakes it at once (see newJobSignal).
+                    if (newJobSignal.tryAcquire(sleepTime, TimeUnit.MILLISECONDS)) {
+                        emptyQueueCount = 0;
+                    } else {
+                        emptyQueueCount = incrementAndResetEmptyQueueCount(
+                                emptyQueueCount, MAX_EMPTY_QUEUE_COUNT, EMPTY_QUEUE_RESET_THRESHOLD
+                        );
+                    }
                 }
             } catch (InterruptedException e) {
                 Logger.debug(this, "Job processing thread interrupted during shutdown");
@@ -1295,6 +1316,16 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
         }
 
         return progress;
+    }
+
+    /**
+     * Lets one idle worker poll right away for a job just created on this node. Permits are capped
+     * at the number of workers: more could only make idle workers poll an empty queue.
+     */
+    private void signalNewJob() {
+        if (newJobSignal.availablePermits() < threadPoolSize) {
+            newJobSignal.release();
+        }
     }
 
     /**

@@ -36,7 +36,18 @@ export interface BuildTreeFolderNodesParams {
  * portlet keeps its own naming.
  */
 export type DotContentDriveUploadBaseType = DotUploadBaseType;
-export type DotContentDriveUploadSelectorPayload = DotUploadSelectorPayload;
+/**
+ * What the Upload menu or the drop prompt shows. The Upload button's menu (#37896) also offers
+ * Import CSV, and narrows the upload types to what the folder allows; a drop never imports.
+ */
+export type DotContentDriveUploadSelectorPayload = DotUploadSelectorPayload & {
+    /** Opened from the Upload button, so Import CSV is offered too. */
+    fromButton?: boolean;
+    /** Whether the user may upload into the folder at all; `false` hides the upload types. */
+    showUploadTypes?: boolean;
+    /** The upload types to offer when the folder pins one; all when unset. */
+    allowedBaseTypes?: DotUploadBaseType[];
+};
 export type DotContentDriveUploadSelection = DotUploadSelection;
 
 /**
@@ -302,7 +313,8 @@ export interface DotContentDriveRun extends DotContentDriveActionExecution {
 export const OUTCOME_KIND = {
     UPLOAD: 'upload',
     FOLDER_DELETE: 'folderDelete',
-    FOLDER_DUPLICATE: 'folderDuplicate'
+    FOLDER_DUPLICATE: 'folderDuplicate',
+    IMPORT: 'import'
 } as const;
 
 export type DotContentDriveOutcomeKind = (typeof OUTCOME_KIND)[keyof typeof OUTCOME_KIND];
@@ -416,6 +428,23 @@ export interface DotContentDriveActionExecutionResult {
      * they are in the middle of.
      */
     backgrounded?: boolean;
+    /**
+     * Items a CSV import created (#37896).
+     *
+     * An import reports created and updated separately, because "12 imported" hides whether the
+     * author just added content or overwrote what was there. `successCount` stays their sum, so
+     * the code that only asks "did anything work" needs no special case.
+     */
+    createdCount?: number;
+    /** Items a CSV import updated (#37896). See {@link createdCount}. */
+    updatedCount?: number;
+    /**
+     * The server's own message for a run that failed outright (#37896).
+     *
+     * An import that never got to its rows has no per-item results to describe; its single error
+     * is the only thing that tells the author what to fix in the file or the form.
+     */
+    message?: string;
 }
 
 /**

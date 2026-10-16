@@ -29,6 +29,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.workflow.form.WorkflowSystemActionForm;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -61,6 +62,8 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Set;
+import java.util.Collection;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -1151,4 +1154,35 @@ public class ContentTypeHelper implements Serializable {
             return false;
         }
     }
-} // E:O:F:ContentTypeHelper.
+
+    /**
+     * Lists the content types a user can write to, sorted by name, for a selector that must not
+     * offer types the user can only read (#37896: Content Drive's CSV import). Permissions are
+     * resolved for the whole list in one round-trip, rather than once per type.
+     *
+     * @param user    the user whose WRITE permission decides the list
+     * @param filter  text the name or variable must contain, ignoring case, or {@code null} for all
+     * @param exclude variables of content types to leave out, compared ignoring case; may be empty
+     * @return the matching content types, never {@code null}
+     * @throws DotDataException     if the content types or their permissions can't be read
+     * @throws DotSecurityException if the user can't list content types
+     */
+    public List<ContentTypeSummaryView> getWritableContentTypes(final User user, final String filter,
+            final Collection<String> exclude) throws DotDataException, DotSecurityException {
+        final String search = UtilMethods.isSet(filter) ? filter.trim().toLowerCase() : null;
+        final Set<String> excluded = exclude.stream()
+                .map(String::toLowerCase).collect(Collectors.toSet());
+        final List<ContentType> types = APILocator.getContentTypeAPI(user, false).findAll();
+        return APILocator.getPermissionAPI()
+                .filterCollection(types, PermissionAPI.PERMISSION_WRITE, user, false)
+                .stream()
+                .filter(type -> !excluded.contains(type.variable().toLowerCase()))
+                .filter(type -> search == null
+                        || type.name().toLowerCase().contains(search)
+                        || type.variable().toLowerCase().contains(search))
+                .sorted(Comparator.comparing(ContentType::name, String.CASE_INSENSITIVE_ORDER))
+                .map(type -> new ContentTypeSummaryView(type.id(), type.variable(), type.name(),
+                        type.baseType().name(), type.icon()))
+                .collect(Collectors.toList());
+    }
+}

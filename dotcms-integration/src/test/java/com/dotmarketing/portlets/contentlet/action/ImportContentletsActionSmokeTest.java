@@ -4,8 +4,22 @@ import static com.dotmarketing.portlets.workflows.business.SystemWorkflowConstan
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.mock;
 
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.repackage.org.apache.struts.action.ActionForm;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.WriteListener;
+import javax.servlet.ServletOutputStream;
+import com.dotcms.repackage.javax.portlet.PortletConfig;
+import com.dotcms.repackage.javax.portlet.ActionResponse;
+import com.dotcms.repackage.javax.portlet.ActionRequest;
+import java.lang.reflect.Method;
+import java.io.ByteArrayOutputStream;
+import com.liferay.portlet.ActionResponseImpl;
+import com.dotmarketing.cache.FieldsCache;
+import com.dotmarketing.util.importer.ContentImportTemplateGenerator;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.jobs.business.util.JobUtil;
 import com.dotcms.repackage.com.csvreader.CsvReader;
@@ -181,6 +195,55 @@ public class ImportContentletsActionSmokeTest {
                     errors == null || errors.isEmpty()
             );
 
+        } finally {
+            APILocator.getContentTypeAPI(systemUser).delete(contentType);
+        }
+    }
+
+    /**
+     * Given scenario: Content Search's "download a CSV sample" runs for a content type.
+     * Expected result: it writes exactly the bytes {@link ContentImportTemplateGenerator} produces
+     * for that type, so Content Search and Content Drive's REST endpoint keep offering the same file
+     * (#37896, FR-024).
+     */
+    @Test
+    public void downloadCSVTemplate_writesTheSharedTemplate() throws Exception {
+        final ContentType contentType = TestDataUtils.getRichTextLikeContentType();
+        try {
+            final ByteArrayOutputStream written = new ByteArrayOutputStream();
+            final HttpServletResponse httpResponse = mock(HttpServletResponse.class);
+            when(httpResponse.getOutputStream()).thenReturn(new ServletOutputStream() {
+                @Override
+                public boolean isReady() {
+                    return true;
+                }
+
+                @Override
+                public void setWriteListener(final WriteListener writeListener) {
+                    // not used: the action writes synchronously
+                }
+
+                @Override
+                public void write(final int b) {
+                    written.write(b);
+                }
+            });
+            final ActionResponseImpl actionResponse = mock(ActionResponseImpl.class);
+            when(actionResponse.getHttpServletResponse()).thenReturn(httpResponse);
+
+            final ImportContentletsForm form = new ImportContentletsForm();
+            form.setStructure(contentType.inode());
+
+            final Method download = ImportContentletsAction.class.getDeclaredMethod(
+                    "_downloadCSVTemplate", ActionRequest.class, ActionResponse.class,
+                    PortletConfig.class, ActionForm.class);
+            download.setAccessible(true);
+            download.invoke(new ImportContentletsAction(), mock(ActionRequest.class),
+                    actionResponse, null, form);
+
+            assertEquals(ContentImportTemplateGenerator.generate(
+                            FieldsCache.getFieldsByStructureInode(contentType.inode())),
+                    written.toString(StandardCharsets.ISO_8859_1));
         } finally {
             APILocator.getContentTypeAPI(systemUser).delete(contentType);
         }
