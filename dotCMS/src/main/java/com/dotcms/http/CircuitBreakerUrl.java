@@ -20,6 +20,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Serializable;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Map;
 import java.util.Optional;
@@ -40,7 +41,9 @@ import net.jodah.failsafe.FailsafeException;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.http.Header;
+import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
+import org.apache.http.ProtocolException;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
@@ -50,7 +53,9 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.DefaultRedirectStrategy;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.protocol.HttpContext;
 
 /**
  * Defaults to GET requests with 2000 timeout
@@ -332,6 +337,7 @@ public class CircuitBreakerUrl {
                                 .setSocketTimeout(Math.toIntExact(this.timeoutMs)).build();
                         try (final CloseableHttpClient httpclient = HttpClientBuilder.create()
                                 .setMaxConnTotal(circuitBreakerMaxConnTotal.get())
+                                .setRedirectStrategy(PrivateSubnetRedirectStrategy.INSTANCE)
                                 .setDefaultRequestConfig(config).build()) {
                             
                             if(IPUtils.isIpPrivateSubnet(this.request.getURI().getHost()) && !allowAccessToPrivateSubnets.get()){
@@ -426,6 +432,7 @@ public class CircuitBreakerUrl {
                                 .setSocketTimeout(Math.toIntExact(this.timeoutMs)).build();
                         try (final CloseableHttpClient httpclient = HttpClientBuilder.create()
                                 .setMaxConnTotal(circuitBreakerMaxConnTotal.get())
+                                .setRedirectStrategy(PrivateSubnetRedirectStrategy.INSTANCE)
                                 .setDefaultRequestConfig(config).build()) {
 
                             if(IPUtils.isIpPrivateSubnet(this.request.getURI().getHost()) && !allowAccessToPrivateSubnets.get()){
@@ -637,4 +644,35 @@ public class CircuitBreakerUrl {
 
     }
 
+    /**
+     * Redirect strategy that applies the private-subnet check to every redirect target, not only
+     * to the first URL. Without it, a public URL that redirects to loopback, a cluster address or
+     * a cloud metadata endpoint is followed when redirects are enabled.
+     */
+    @VisibleForTesting
+    static final class PrivateSubnetRedirectStrategy extends DefaultRedirectStrategy {
+
+        static final PrivateSubnetRedirectStrategy INSTANCE = new PrivateSubnetRedirectStrategy();
+
+        @Override
+        public URI getLocationURI(final HttpRequest request, final HttpResponse response,
+                                  final HttpContext context) throws ProtocolException {
+            final URI location = super.getLocationURI(request, response, context);
+            checkRedirectTarget(location, allowAccessToPrivateSubnets.get());
+            return location;
+        }
+
+        @VisibleForTesting
+        static void checkRedirectTarget(final URI location, final boolean allowPrivateSubnets)
+                throws ProtocolException {
+            final String scheme = location.getScheme() == null ? "" : location.getScheme().toLowerCase();
+            if (!"http".equals(scheme) && !"https".equals(scheme)) {
+                throw new ProtocolException("Redirect to scheme '" + scheme + "' is not allowed");
+            }
+            if (!allowPrivateSubnets && IPUtils.isIpPrivateSubnet(location.getHost())) {
+                throw new ProtocolException("Remote HttpRequests cannot be redirected to private subnets: "
+                        + location.getHost());
+            }
+        }
+    }
 }
