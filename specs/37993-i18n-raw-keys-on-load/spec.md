@@ -110,14 +110,17 @@ always asks for the `default` language, so it discards the language the login pa
 
 **In scope**:
 
-- Admin UI startup: translations are available before translatable text is first shown — from
-  the saved copy immediately when it is valid, or from a download when it is not.
+- Admin UI startup: translations are available before translatable text is first shown. The UI
+  waits for the configuration request, which says whether the saved copy is current, then uses
+  the saved copy when it is valid or downloads translations when it is not. The 2.5-second limit
+  covers both requests together.
 - During a download that replaces a saved copy, lookups keep returning the saved text instead of
   raw keys.
 - Configuration request failure: translations still load (saved copy, or a fresh download of the
   default language).
-- Translations request failure, or no answer within 2.5 seconds: the UI still loads; raw keys
-  are acceptable only in this case, and the failure or timeout is logged.
+- Translations request failure, or no translations within 2.5 seconds: the UI still loads; raw
+  keys are acceptable only in this case, and the failure or timeout is logged to the browser
+  console.
 - Login-page language choice: it stays in effect after login and is not replaced by the default
   language.
 - The consumers named in the issue — the user menu, translate-pipe template labels, and the My
@@ -142,8 +145,9 @@ always asks for the `default` language, so it discards the language the login pa
 - **Blast radius**: The message service and translate pipe are shared by the admin UI and every
   portlet library (`libs/portlets`, `libs/edit-content`, `libs/ui`, the block editors, the
   template builder, the image editor). Any change to when translations load or how a lookup
-  behaves reaches all of them. Delaying the first render on startup adds the translations
-  download time (at most 2.5 seconds) to the cold-load time; on a valid saved copy it must add nothing. The login page
+  behaves reaches all of them. Every load now waits for the configuration request before the
+  first render (today it does not); a cold load also waits for the translations download, both
+  together capped at 2.5 seconds. On a valid saved copy no download is waited for. The login page
   and its language selector use the same service before the user is authenticated, so they must
   keep working without a session.
 - **Backward compatibility**: No API, content, database or index change. The saved translations
@@ -161,17 +165,19 @@ always asks for the `default` language, so it discards the language the login pa
   translatable text is shown as a raw key: the user menu, translate-pipe template labels, and the
   validation messages in My Account and Report an Issue. The reproduction steps above show the
   translated menu at step 5. (A download that fails or takes longer is covered by AC-005.)
-- **AC-002**: When a valid saved copy exists, the UI renders with it immediately, without waiting
-  for any network request: the fix adds no delay to the first render compared to today on these
-  loads.
+- **AC-002**: When a valid saved copy exists — same language, and the configuration request
+  reports the same build — the UI renders with it as soon as the configuration request returns,
+  without requesting translations. The only request the first render waits for is the
+  configuration request.
 - **AC-003**: While newer translations are downloading, lookups return the saved text rather than
   raw keys.
 - **AC-004**: If `/api/v1/appconfiguration` fails, the UI still shows translated labels, using the
   saved copy or a fresh download of the default language.
 - **AC-005**: If the translations request itself fails, the UI still loads; raw keys are
-  acceptable only in this case, and the failure is logged. The same applies when the request
-  has neither succeeded nor failed after 2.5 seconds: the UI stops waiting, renders with whatever
-  translations it has (the saved copy, if any), and the timeout is logged.
+  acceptable only in this case, and the failure is logged to the browser console. The same
+  applies when translations are still not available 2.5 seconds after startup (counting the
+  configuration and translations requests together): the UI stops waiting, renders with whatever
+  translations it has (the saved copy, if any), and the timeout is logged to the browser console.
 - **AC-006**: A language chosen on the login page is still in effect after login. It is not
   replaced by the default language, and the UI never shows a mix of the two.
 - **AC-007**: Regression — the login page, its language selector, and the separately bootstrapped
@@ -179,9 +185,9 @@ always asks for the `default` language, so it discards the language the login pa
 - **Verification method**:
   - Unit tests (Vitest + Spectator) on the message service and the admin UI startup covering: no
     saved copy; a stale saved copy (build date changed, and language changed); a valid saved copy
-    used without a request; a failed configuration request; a failed translations request
-    (logged, UI still loads); a translations request still pending after 2.5 seconds (UI renders,
-    timeout logged); lookups during a download returning the saved text; and the user's
+    used without a translations request; a failed configuration request; a failed translations request
+    (logged to the console, UI still loads); configuration or translations still pending after
+    2.5 seconds (UI renders, timeout logged to the console); lookups during a download returning the saved text; and the user's
     data arriving before the translations — the user menu labels are translated.
   - Unit test on the login flow: the language chosen on the login page is the one loaded after
     login.
@@ -191,8 +197,8 @@ always asks for the `default` language, so it discards the language the login pa
 ## Assumptions
 
 - The translations endpoint answers without a session, as the login page already relies on.
-- A slower first render on a cold load (by the translations download time, capped at 2.5
-  seconds) is acceptable in exchange for never showing raw keys; loads with a valid saved copy
-  keep today's speed.
+- Waiting for the configuration request on every load, plus the translations download on a cold
+  load (capped together at 2.5 seconds), is acceptable in exchange for never showing raw keys —
+  including keys added by a new build, which a saved copy from the previous build lacks.
 - "The language chosen on the login page" means the locale picked in the login page's language
   selector, saved in the browser; the user's profile language is not involved.
