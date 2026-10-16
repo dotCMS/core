@@ -21,6 +21,7 @@ import {
     DotFolderBulkDeleteService,
     DotFolderBulkDuplicateService,
     DotLanguagesService,
+    DotRouterService,
     DotSessionStorageService,
     DotUploadFileService,
     DotActiveImport,
@@ -46,14 +47,17 @@ import { withFolderDeleteRuns } from './features/folder-delete-runs/with-folder-
 import { withPushPublishEnvironments } from './features/push-publish-environments/withPushPublishEnvironments';
 import { withSidebar } from './features/sidebar/withSidebar';
 import { withSitePermissions } from './features/site-permissions/withSitePermissions';
+import { withSourceEditor } from './features/source-editor/withSourceEditor';
 
 import {
+    CONTENT_DRIVE_VIEW_PARAM,
     DEFAULT_PAGE,
     DEFAULT_PAGINATION,
     DEFAULT_PATH,
     DEFAULT_SEARCH_SCOPE,
     DEFAULT_SORT,
     DEFAULT_TREE_EXPANDED,
+    DEFAULT_VIEW_TYPE,
     MAP_NUMBERS_TO_BASE_TYPES,
     SEARCH_SCOPE_FILTER_KEY,
     SHARED_ASSETS_DISABLED_VALUE,
@@ -69,7 +73,8 @@ import {
     DotContentDriveSearchScope,
     DotContentDriveSort,
     DotContentDriveState,
-    DotContentDriveStatus
+    DotContentDriveStatus,
+    DotContentDriveViewType
 } from '../shared/models';
 import {
     buildUserSearchablePayload,
@@ -82,6 +87,13 @@ import {
     toRequestLocation,
     withFilterDefaults
 } from '../utils/functions';
+import {
+    browserStorage,
+    readStoredViewType,
+    resolveViewType,
+    viewTypeStorageKey,
+    writeStoredViewType
+} from '../utils/view-type';
 
 const initialState: DotContentDriveState = {
     currentSite: undefined, // So we have the actual site selected on start
@@ -104,7 +116,9 @@ const initialState: DotContentDriveState = {
     defaultLanguageLoaded: false,
     // Pessimistic default: until `getCurrentUser` answers, the user is treated as a non-admin. See
     // `DotContentDriveState.currentUserIsAdmin` for why over-warning is the right way to fail here.
-    currentUserIsAdmin: false
+    currentUserIsAdmin: false,
+    viewType: DEFAULT_VIEW_TYPE,
+    viewTypeStorageKey: viewTypeStorageKey('')
 };
 
 export const DotContentDriveStore = signalStore(
@@ -377,6 +391,21 @@ export const DotContentDriveStore = signalStore(
                 patchState(store, { isTreeExpanded });
             },
             /**
+             * Shows the table or the grid.
+             *
+             * @param viewType The listing to show.
+             * @param options `remember: true` when the user picked it with the view switcher, so the
+             * choice is also kept for this screen's next visit. Every other source (the URL, a tool's
+             * default) only shows the view and leaves what is remembered alone.
+             */
+            setViewType(viewType: DotContentDriveViewType, options?: { remember?: boolean }) {
+                patchState(store, { viewType });
+
+                if (options?.remember) {
+                    writeStoredViewType(browserStorage(), store.viewTypeStorageKey(), viewType);
+                }
+            },
+            /**
              * Sets the side panel's transient tree-collapse override (see `isTreeVisuallyExpanded`).
              * Never touches `isTreeExpanded` — the real, shareable preference — so a panel-forced
              * collapse can never be persisted to the URL or survive a refresh as if it were the
@@ -645,6 +674,7 @@ export const DotContentDriveStore = signalStore(
         const globalStore = inject(GlobalStore);
         const location = inject(Location);
         const dotSessionStorageService = inject(DotSessionStorageService);
+        const dotRouterService = inject(DotRouterService);
         let initEffect: EffectRef;
         let searchEffect: EffectRef;
         let locationSub: SubscriptionLike;
@@ -664,6 +694,20 @@ export const DotContentDriveStore = signalStore(
                 // The content type last opened in the Content Types editor (#37903). Read once per
                 // Drive entry and forgotten right away, whether or not it ends up applied.
                 let rememberedContentType = dotSessionStorageService.consumeLastContentType();
+
+                // Which listing opens (#37930). Decided once per Drive open, outside the init
+                // effect: that one re-runs when the site changes, and switching site must not undo
+                // a view the user picked since.
+                const openingParams = route.snapshot.queryParams;
+                const storageKey = viewTypeStorageKey(dotRouterService.currentPortlet?.id ?? '');
+                patchState(store, {
+                    viewTypeStorageKey: storageKey,
+                    viewType: resolveViewType({
+                        urlViewType: openingParams[CONTENT_DRIVE_VIEW_PARAM.VIEW_TYPE],
+                        storedViewType: readStoredViewType(browserStorage(), storageKey),
+                        defaultViewType: openingParams[CONTENT_DRIVE_VIEW_PARAM.DEFAULT_VIEW_TYPE]
+                    })
+                });
 
                 initEffect = effect(() => {
                     const queryParams = route.snapshot.queryParams;
@@ -715,6 +759,8 @@ export const DotContentDriveStore = signalStore(
                  * turns into a fresh load.
                  */
                 locationSub = location.subscribe((event) => {
+                    // `viewType` is not read here: the view is a preference, so Back and Forward
+                    // keep the one showing rather than the one the entry was saved with (#37930).
                     const params = new URLSearchParams(event.url?.split('?')[1] ?? '');
                     const path = params.get('path') || DEFAULT_PATH;
                     const filtersRaw = params.get('filters') || '';
@@ -773,6 +819,7 @@ export const DotContentDriveStore = signalStore(
     }),
     withContextMenu(),
     withDialog(),
+    withSourceEditor(),
     withSidebar(),
     withDragging(),
     withActionExecution(),

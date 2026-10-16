@@ -373,6 +373,48 @@ describe('DotUveIframeComponent', () => {
             expect(stopPropagationSpy).not.toHaveBeenCalled();
         });
 
+        it('should not stop propagation for a click on a hash-only anchor', () => {
+            // Regression test: a second QA verification round on
+            // dotCMS/core#37961 failed the link-scoped fix above — `#…`
+            // anchors never navigate anywhere, but still counted as
+            // `hasLink`, so a page's own link-shaped toggle (an inline
+            // `onclick` accordion, a Bootstrap-style `data-toggle="collapse"`
+            // delegate on `document`) never got the click.
+            // The hash branch (below the stopPropagation check) still runs
+            // and scrolls the iframe, hence the document/scrollTo stubs.
+            Object.assign(mockWindow, {
+                document: document.implementation.createHTMLDocument(),
+                scrollTo: vi.fn()
+            });
+            (component as any).handleInlineScripts(false);
+
+            const hashLink = document.createElement('a');
+            hashLink.setAttribute('href', '#panel');
+            const clickEvent = createClickWithTarget(hashLink);
+            const stopPropagationSpy = vi.spyOn(clickEvent, 'stopPropagation');
+
+            captureClickHandler?.(clickEvent);
+
+            expect(stopPropagationSpy).not.toHaveBeenCalled();
+        });
+
+        it('should not stop propagation for a click on a javascript:-href anchor', () => {
+            // Same QA regression as the hash-only case above: `javascript:…`
+            // is a page's own click handler invoked via the href itself
+            // (instead of a real `onclick`/listener), not a navigation —
+            // e.g. `<a href="javascript:void(0)" onclick="toggle()">`.
+            (component as any).handleInlineScripts(false);
+
+            const jsVoidLink = document.createElement('a');
+            jsVoidLink.setAttribute('href', 'javascript:void(0)');
+            const clickEvent = createClickWithTarget(jsVoidLink);
+            const stopPropagationSpy = vi.spyOn(clickEvent, 'stopPropagation');
+
+            captureClickHandler?.(clickEvent);
+
+            expect(stopPropagationSpy).not.toHaveBeenCalled();
+        });
+
         it('should not stop propagation for a link click inside a block-editor inline-edit target', () => {
             // Regression test for the block-editor inline-editing regression
             // introduced while fixing dotCMS/core#37961: the `@dotcms/uve` SDK
@@ -533,6 +575,28 @@ describe('DotUveIframeComponent', () => {
             bubbleClickHandler?.(createClickWithTarget(navRow));
             expect(internalNavSpy).toHaveBeenCalledTimes(1);
             expect(inlineEditingSpy).toHaveBeenCalledTimes(1);
+        });
+
+        it('should not defer a javascript:-href anchor inside a contentlet to the bubble-phase listener', () => {
+            // The bubble-phase listener applies the same navigability check as
+            // the capture-phase one above — a `javascript:…` href inside a
+            // contentlet is page-owned UI, not a second click confirming
+            // navigation, so neither listener should ever emit for it.
+            (component as any).handleInlineScripts(false);
+
+            const contentletLink = document.createElement('a');
+            contentletLink.setAttribute('href', 'javascript:void(0)');
+            const contentletWrapper = document.createElement('div');
+            contentletWrapper.setAttribute('data-dot-object', 'contentlet');
+            contentletWrapper.appendChild(contentletLink);
+
+            const internalNavSpy = vi.spyOn(component.internalNav, 'emit');
+            const inlineEditingSpy = vi.spyOn(component.inlineEditing, 'emit');
+
+            bubbleClickHandler?.(createClickWithTarget(contentletLink));
+
+            expect(internalNavSpy).not.toHaveBeenCalled();
+            expect(inlineEditingSpy).not.toHaveBeenCalled();
         });
 
         it('should emit internalNav on click', () => {
@@ -768,6 +832,24 @@ describe('DotUveIframeComponent', () => {
                 const a = doc.createElement('a');
                 a.setAttribute('href', '#page-section');
                 wrapper.appendChild(a);
+
+                const internalNavSpy = vi.spyOn(component.internalNav, 'emit');
+                const inlineEditingSpy = vi.spyOn(component.inlineEditing, 'emit');
+
+                captureClickHandler?.(createClickWithTarget(a));
+
+                expect(internalNavSpy).not.toHaveBeenCalled();
+                expect(inlineEditingSpy).not.toHaveBeenCalled();
+            });
+
+            it('should not emit for javascript:-href anchors', () => {
+                // Regression test: a `javascript:…` href never navigates —
+                // it's a page's own click handler invoked via the href itself
+                // — so, unlike a real link, a click on one should neither
+                // stop propagation (covered above) nor be treated as
+                // navigation here.
+                const a = doc.createElement('a');
+                a.setAttribute('href', 'javascript:void(0)');
 
                 const internalNavSpy = vi.spyOn(component.internalNav, 'emit');
                 const inlineEditingSpy = vi.spyOn(component.inlineEditing, 'emit');
