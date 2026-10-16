@@ -927,5 +927,8 @@ public class UserFactoryImpl implements UserFactory {
         dotConnect.setSQL("delete from user_ where userid = ?");
         dotConnect.addParam(userToDelete.getUserId());
         dotConnect.loadResult();
+        // Login lockout state (see com.dotcms.auth.LoginLockout) belongs to the user and goes with them
+        new DotConnect().setSQL("delete from login_lockout where user_id = ?")
+                .addParam(userToDelete.getUserId()).loadResult();
     }
 }

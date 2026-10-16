@@ -4,6 +4,7 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDRE
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.auth.LoginLockout;
 import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.rendering.velocity.services.DotResourceCache;
 import com.bradmcevoy.http.CollectionResource;
@@ -29,7 +30,6 @@ import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.Versionable;
 import com.dotmarketing.cache.FolderCache;
-import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -209,8 +209,11 @@ public class DotWebdavHelper {
 			throw new DotSecurityException("The user was returned NULL");
 		}
 
-		// Validate password and rehash when is needed
-		if (!LoginFactory.passwordMatch(passwd, user) && !this.tryMatchJsonWebToken(passwd, user)) {
+		// Validate password and rehash when is needed. Refused while locked out; WebDAV attempts are
+		// counted apart from other logins from this address, so a client retrying a stale password does
+		// not lock its user out of the backend.
+		if (!LoginLockout.getInstance().passwordMatch(passwd, user, LoginLockout.webdavSource(),
+				this::tryMatchJsonWebToken)) {
 
 			Logger.debug(this, ()-> "The user's passwords didn't match");
 			throw new DotSecurityException("The user's passwords didn't match");
