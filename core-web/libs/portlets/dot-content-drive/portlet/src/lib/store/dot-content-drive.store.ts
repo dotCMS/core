@@ -1008,7 +1008,9 @@ export const DotContentDriveStore = signalStore(
                         .pipe(catchError(() => of([] as DotActiveImport[]))),
                     user: currentUserService.getCurrentUser().pipe(catchError(() => of(null)))
                 })
-                    .pipe(take(1), takeUntilDestroyed(destroyRef))
+                    // `forkJoin` emits once and completes; this only unsubscribes if the store is
+                    // destroyed before it answers.
+                    .pipe(takeUntilDestroyed(destroyRef))
                     .subscribe(({ duplicates, uploads, imports, user }) => {
                         // With no author, no run can be told apart as theirs, so none is restored.
                         // The upload restore still runs, with nothing: it is what stops holding
