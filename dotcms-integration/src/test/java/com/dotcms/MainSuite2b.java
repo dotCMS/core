@@ -139,6 +139,7 @@ import com.dotmarketing.business.PermissionBitFactoryImplTest;
 import com.dotmarketing.business.VersionableFactoryImplTest;
 import com.dotmarketing.business.helper.PermissionHelperTest;
 import com.dotmarketing.common.db.DBTimeZoneCheckTest;
+import com.dotmarketing.business.ajax.RoleAjaxSecurityTest;
 import com.dotmarketing.filters.AutoLoginFilterTest;
 import com.dotmarketing.filters.CMSUrlUtilIntegrationTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
@@ -483,6 +484,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.business.IdentifierAPITest.class,
         com.dotmarketing.business.CommitListenerCacheWrapperTest.class,
         com.dotmarketing.business.RoleAPITest.class,
+        RoleAjaxSecurityTest.class,
         com.dotmarketing.business.IdentifierConsistencyIntegrationTest.class,
         com.dotmarketing.business.LayoutAPITest.class,
         com.dotmarketing.business.PermissionAPIIntegrationTest.class,
