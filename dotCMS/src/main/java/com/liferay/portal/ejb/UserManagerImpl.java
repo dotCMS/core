@@ -20,6 +20,8 @@
 package com.liferay.portal.ejb;
 
 import com.dotcms.api.system.user.UserService;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.auth.LoginLockout;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.enterprise.AuthPipeProxy;
 import com.dotcms.enterprise.PasswordFactoryProxy;
@@ -41,6 +43,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.EmailUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.NoSuchUserException;
@@ -547,6 +550,14 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
             return Authenticator.DNE;
         }
         this.checkPasswordExpiration(login, user);
+        if (this.isLockedOut(user)) {
+            // Same work and same result as a wrong password, so a locked account gives no signal about
+            // whether the guess was right. The failure counter is left alone while locked.
+            LoginFactory.passwordMatch(password, user);
+            SecurityLogger.logInfo(this.getClass(), "Login refused, account locked: user " + user.getUserId()
+                    + " from " + this.remoteAddress());
+            return Authenticator.FAILURE;
+        }
         if (authResult == Authenticator.SUCCESS) {
             authResult = LoginFactory.passwordMatch(password, user) ? Authenticator.SUCCESS : Authenticator.FAILURE;
             Logger.debug(this, String.format("Does password for User '%s' match? %s", login,
@@ -563,6 +574,9 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
                             user.getUserId()));
                     user.setFailedLoginAttempts(0);
                     UserUtil.update(user);
+                }
+                if (authResult == Authenticator.SUCCESS) {
+                    LoginLockout.getInstance().clear(user.getUserId());
                 }
             }
         }
@@ -764,8 +778,32 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
         if ((failedLoginAttempts >= maxFailures) && (maxFailures != 0)) {
             Logger.debug(this, String.format("User '%s' failed to authenticate via '%s' after %s failed attempts",
                     login, byEmailAddress ? "email" : "user ID", failedLoginAttempts));
+            if (LoginLockout.getInstance().isEnabled(maxFailures)) {
+                try {
+                    LoginLockout.getInstance().lock(user.getUserId(), this.remoteAddress());
+                    // The next window starts from zero; repeated lockouts get longer instead.
+                    user.setFailedLoginAttempts(0);
+                    UserUtil.update(user);
+                } catch (final DotDataException e) {
+                    Logger.error(this, String.format("Unable to lock account '%s': %s", login, e.getMessage()), e);
+                }
+            }
             this.runCustomMaxFailuresHandlers(login, companyId, byEmailAddress);
         }
+    }
+
+    /**
+     * Returns whether lockout is enabled and the given user is currently locked.
+     */
+    private boolean isLockedOut(final User user) {
+        final int maxFailures = GetterUtil.get(PropsUtil.get(PropsUtil.AUTH_MAX_FAILURES_LIMIT), 0);
+        return LoginLockout.getInstance().isEnabled(maxFailures)
+                && LoginLockout.getInstance().isLocked(user.getUserId());
+    }
+
+    private String remoteAddress() {
+        final javax.servlet.http.HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        return null != request ? request.getRemoteAddr() : "unknown";
     }
 
     /**
@@ -826,6 +864,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
                 final User user = APILocator.getUserAPI().loadUserById(userId);
                 ResetPasswordTokenUtil.checkToken(user, token);
                 APILocator.getUserAPI().updatePassword(user, newPassword, APILocator.getUserAPI().getSystemUser(), false);
+                LoginLockout.getInstance().clear(user.getUserId());
         } catch (DotDataException e) {
             throw new IllegalArgumentException();
         }

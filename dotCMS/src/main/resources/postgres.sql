@@ -2472,6 +2472,15 @@ CREATE TABLE system_event_cursor (
     CONSTRAINT pk_system_event_cursor PRIMARY KEY (server_id)
 );
 
+-- Per-account login lockout state, shared by every node of a cluster.
+CREATE TABLE login_lockout (
+    user_id       VARCHAR(100) NOT NULL,
+    locked_until  BIGINT       NOT NULL,
+    lockout_count INT          NOT NULL,
+    mod_date      TIMESTAMPTZ  NOT NULL,
+    CONSTRAINT pk_login_lockout PRIMARY KEY (user_id)
+);
+
 --Content Types improvement
 CREATE INDEX idx_lower_structure_name ON structure (LOWER(velocity_var_name));
 
