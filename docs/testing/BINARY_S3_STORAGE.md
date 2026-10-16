@@ -380,13 +380,41 @@ docker stop binary-s3-test binary-cleanup-postgres-test
 ```
 
 The CMS integration checks are registered in `Junit5Suite1` and run against the full integration
-stack:
+stack. Their flag-on cases are skipped unless `s3.cms.enabled=true` is set, and that property must
+match `DOT_FEATURE_FLAG_S3_ASSET_STORAGE`. They need a MinIO bucket of their own, so start the
+same disposable MinIO as above (or keep it running) and create the bucket first. The metadata
+chain must include S3 (`DOT_STORAGE_FILE_METADATA_DEFAULT_CHAIN=FILE_SYSTEM,S3`); without it the
+backup cases fail with "Metadata backfill requires a durable provider in the configured metadata
+chain".
 
 ```sh
+docker run -d --rm --name binary-s3-test \
+  -p 127.0.0.1:19002:9000 \
+  -e MINIO_ROOT_USER=binary-storage-test \
+  -e MINIO_ROOT_PASSWORD=binary-storage-test \
+  cgr.dev/chainguard/minio@sha256:dc455cdd4db6e390b1b26514f15ff37681a777bf8dab41aac445a0259f751e56 \
+  server /data
+
+curl --aws-sigv4 "aws:amz:us-east-1:s3" --user binary-storage-test:binary-storage-test \
+  -X PUT http://127.0.0.1:19002/binary-storage-it
+
 ./mvnw install -pl :dotcms-core --am -DskipTests -Ddocker.skip
 ./mvnw verify -pl :dotcms-integration -Dmaven.build.cache.enabled=false -Dcoreit.test.skip=false \
-  -Dit.test=BinaryAssetStorageIntegrationTest,ContentletBackupStorageTest,SharedAssetStorageIntegrationTest
+  -Dit.test=BinaryAssetStorageIntegrationTest,ContentletBackupStorageTest,SharedAssetStorageIntegrationTest \
+  -Ds3.cms.enabled=true \
+  -DDOT_FEATURE_FLAG_S3_ASSET_STORAGE=true \
+  -DDOT_STORAGE_FILE_METADATA_DEFAULT_CHAIN=FILE_SYSTEM,S3 \
+  -DDOT_STORAGE_FILE_METADATA_S3_ENDPOINT=http://127.0.0.1:19002 \
+  -DDOT_STORAGE_FILE_METADATA_S3_BUCKET_NAME=binary-storage-it \
+  -DDOT_STORAGE_FILE_METADATA_S3_BUCKET_REGION=us-east-1 \
+  -DDOT_STORAGE_FILE_METADATA_S3_ACCESS_KEY=binary-storage-test \
+  -DDOT_STORAGE_FILE_METADATA_S3_SECRET_ACCESS_KEY=binary-storage-test
+
+docker stop binary-s3-test
 ```
+
+A green build is not proof that these checks ran: confirm `Tests run:` and `Skipped:` in
+`dotcms-integration/target/failsafe-reports/*.txt`.
 
 CI does not yet provide the MinIO service, so `BinaryS3StorageTest` does not run there.
 Wiring MinIO into the CI build is planned before the feature is enabled for customers.
