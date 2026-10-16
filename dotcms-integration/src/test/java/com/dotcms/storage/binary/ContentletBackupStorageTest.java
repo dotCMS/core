@@ -158,6 +158,104 @@ public class ContentletBackupStorageTest {
         }
     }
 
+    /**
+     * A binary and its metadata that are already gone everywhere (no local copy and no S3 object)
+     * must not block deleting the content. The archive still holds every other field and lists the
+     * missing files in {@code missing.json}.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"destroy", "version"})
+    void alreadyMissingSourcesAreRecordedWithoutBlockingDeletion(String deletion) throws Exception {
+        final String previous = Config.getStringProperty("BACKUP_DELETED_CONTENTLETS_TO_DISK", null);
+        final var type = new ContentTypeDataGen().nextPersisted();
+        final var backups = ContentletBackupStorage.getInstance();
+        String identifier = null;
+        try {
+            for (String name : List.of("heroImage", "attachment")) {
+                ContentTypeDataGen.addField(new FieldDataGen().velocityVarName(name).contentTypeId(type.id())
+                        .type(BinaryField.class).nextPersisted());
+            }
+            final var generator = new ContentletDataGen(type);
+            generator.setProperty("heroImage", source("lost", "lost image"));
+            generator.setProperty("attachment", source("kept", "kept attachment"));
+            final var api = APILocator.getContentletAPI();
+            final var user = APILocator.systemUser();
+            Contentlet first = generator.nextPersisted();
+            identifier = first.getIdentifier();
+            // Custom attributes give heroImage a metadata revision that the content row references.
+            APILocator.getFileMetadataAPI().putCustomMetadataAttributes(first,
+                    Map.of("heroImage", Map.of("credit", "Lost author")));
+            first = api.find(first.getInode(), user, false);
+            final Contentlet target = first;
+            if (deletion.equals("version")) {
+                // deleteVersion only removes a version that is not the working one.
+                final Contentlet edit = api.checkout(first.getInode(), user, false);
+                edit.setBinary("heroImage", source("current", "current image"));
+                api.checkin(edit, user, false);
+            }
+
+            final var binaries = APILocator.getBinaryAssetStorageAPI();
+            final var lost = target.getBinary("heroImage");
+            final String lostKey = BinaryAssetReference.keyOf(lost);
+            final String lostMetadataKey = BinaryAssetReference.metadataKeyOf(lost);
+            assertNotNull(lostMetadataKey, "The test needs a referenced metadata revision");
+            org.awaitility.Awaitility.await().atMost(java.time.Duration.ofSeconds(5))
+                    .until(() -> binaries.evictLocalFile(lost));
+            binaries.deleteBinaryPaths(target.getInode(), "heroImage", List.of(lostKey));
+            final String metadataPath = APILocator.getFileMetadataAPI().getFileName(target, "heroImage");
+            com.dotcms.storage.StoragePersistenceProvider.INSTANCE.get()
+                    .getStorage(com.dotcms.storage.StoragePersistenceProvider.getStorageType())
+                    .deleteObjectAndReferences(com.dotcms.storage.FileMetadataAPI.DOT_METADATA, metadataPath);
+            Files.deleteIfExists(Path.of(com.dotmarketing.util.ConfigUtils.getAssetPath(),
+                    metadataPath.substring(1).toLowerCase(java.util.Locale.ROOT)));
+            assertThrows(java.nio.file.NoSuchFileException.class, () -> binaries.openLocalFile(lost).close(),
+                    "Precondition: the binary must be gone locally and in S3");
+            assertNull(APILocator.getFileStorageAPI().retrieveRawMetaData(new com.dotcms.storage.StorageKey.Builder()
+                    .group(com.dotcms.storage.FileMetadataAPI.DOT_METADATA).path(metadataPath)
+                    .storage(com.dotcms.storage.StoragePersistenceProvider.getStorageType()).build()),
+                    "Precondition: the metadata must be gone locally and in S3");
+            final var attachment = target.getBinary("attachment");
+            final byte[] attachmentBytes = Files.readAllBytes(attachment.toPath());
+
+            Config.setProperty("BACKUP_DELETED_CONTENTLETS_TO_DISK", true);
+            switch (deletion) {
+                case "destroy" -> api.destroy(target, user, false);
+                case "version" -> api.deleteVersion(target, user, false);
+                default -> throw new AssertionError(deletion);
+            }
+            assertTrue(new DotConnect().setSQL("select inode from contentlet where inode = ?")
+                    .addParam(target.getInode()).loadObjectResults().isEmpty(), "Deletion must go through");
+
+            final var keys = backups.list(identifier).stream()
+                    .filter(key -> key.split("/")[1].equals(target.getInode())).toList();
+            assertEquals(1, keys.size(), "The deleted version still needs its recovery archive");
+            final var entries = new HashMap<String, byte[]>();
+            try (var zip = new ZipInputStream(backups.open(keys.getFirst()))) {
+                for (var entry = zip.getNextEntry(); entry != null; entry = zip.getNextEntry()) {
+                    assertNull(entries.put(entry.getName(), zip.readAllBytes()));
+                }
+            }
+            assertNotNull(entries.get("contentlet.json"));
+            assertArrayEquals(attachmentBytes, entries.get("assets/" + BinaryAssetReference.keyOf(attachment)),
+                    "Fields that still have their bytes must be archived");
+            assertFalse(entries.containsKey("assets/" + lostKey), "A missing binary must not leave an empty entry");
+            final var manifest = new com.fasterxml.jackson.databind.ObjectMapper().readTree(entries.get("missing.json"));
+            assertNotNull(manifest, "The archive must list what it could not include");
+            final var missing = new HashMap<String, String>();
+            for (var item : manifest) {
+                assertEquals("heroImage", item.get("field").asText());
+                missing.put(item.get("kind").asText(), item.get("path").asText());
+            }
+            assertEquals(Map.of("binary", "assets/" + lostKey,
+                    "metadata", "assets/" + metadataPath.substring(1).toLowerCase(java.util.Locale.ROOT)), missing);
+        } finally {
+            Config.setProperty("BACKUP_DELETED_CONTENTLETS_TO_DISK", false);
+            ContentTypeDataGen.remove(type);
+            if (identifier != null) removeBackups(identifier);
+            Config.setProperty("BACKUP_DELETED_CONTENTLETS_TO_DISK", previous);
+        }
+    }
+
     @Test
     void failedBackupAbortsDeletionAndPreservesSources() throws Exception {
         final String previous = Config.getStringProperty("BACKUP_DELETED_CONTENTLETS_TO_DISK", null);

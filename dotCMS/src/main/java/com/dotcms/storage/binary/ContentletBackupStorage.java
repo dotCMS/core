@@ -13,6 +13,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.FilterInputStream;
@@ -20,8 +21,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -29,6 +34,8 @@ import java.util.zip.ZipOutputStream;
 /** Self-contained, immutable recovery archives, independent of normal binary cleanup. */
 public final class ContentletBackupStorage {
     public static final String GROUP = "deleted-content-backups";
+    /** Archive entry listing the files that were already gone when the backup was taken. */
+    public static final String MISSING_MANIFEST = "missing.json";
     private StoragePersistenceAPI storage;
     private boolean initialized;
 
@@ -54,7 +61,22 @@ public final class ContentletBackupStorage {
         if (id == null || !id.matches("[A-Za-z0-9_-]{2,}")) throw new IllegalArgumentException("Invalid backup owner");
     }
 
-    /** Lock the persisted snapshot until deletion commits; never move or remove its source files. */
+    /**
+     * Writes a recovery ZIP for one content version to S3 before that version is deleted. Runs inside
+     * the deletion transaction and locks the version's row until the deletion commits. Source files
+     * are only read, never moved or removed.
+     *
+     * <p>A file that is already gone does not stop the deletion. When a binary has no local copy and
+     * no copy in S3, or a metadata file the row points to no longer exists, the archive leaves it
+     * out, lists it in a {@value #MISSING_MANIFEST} entry and a warning is logged. The manifest is
+     * only written when something is missing. Any other problem still fails the backup and so the
+     * deletion: an S3 error while restoring a file, any other read error, a failure writing the
+     * archive, or S3 not confirming the uploaded archive.</p>
+     *
+     * @param requested the content version about to be deleted
+     * @return the S3 key of the stored archive
+     * @throws DotDataException if the flag is off, no transaction is active, or the backup fails
+     */
     public String store(Contentlet requested) throws DotDataException {
         if (!AssetStorageFeature.isEnabled() || !DbConnectionFactory.inTransaction()) {
             throw new DotDataException("S3 content backup requires the content deletion transaction");
@@ -83,6 +105,7 @@ public final class ContentletBackupStorage {
                 zip.closeEntry();
                 final var metadataAPI = APILocator.getFileMetadataAPI();
                 final var mapper = new ObjectMapper();
+                final List<Map<String, String>> missing = new ArrayList<>();
                 for (final var field : BinaryAssetReference.fromContentJson(json, content.getInode()).entrySet()) {
                     final var reference = field.getValue();
                     final File binary = reference.localFile(content.getInode(), field.getKey());
@@ -91,20 +114,23 @@ public final class ContentletBackupStorage {
                             ? content.getInode().charAt(0) + "/" + content.getInode().charAt(1) + "/"
                                     + content.getInode() + "/" + field.getKey() + "/" + binary.getName()
                             : revision;
-                    zip.putNextEntry(new ZipEntry("assets/" + path));
-                    try (var input = APILocator.getBinaryAssetStorageAPI().openLocalFile(binary)) { input.transferTo(zip); }
-                    zip.closeEntry();
+                    if (!archiveBinary(APILocator.getBinaryAssetStorageAPI(), binary, zip, "assets/" + path)) {
+                        missing.add(missingEntry(content.getInode(), "binary", field.getKey(), "assets/" + path));
+                    }
                     content.getMap().put(field.getKey(), binary);
                     final String metadataPath = metadataAPI.getFileName(content, field.getKey());
                     final var metadata = APILocator.getFileStorageAPI().retrieveRawMetaData(new StorageKey.Builder()
                             .group(Config.getStringProperty(StoragePersistenceProvider.METADATA_GROUP_NAME, FileMetadataAPI.DOT_METADATA))
                             .path(metadataPath).storage(StoragePersistenceProvider.getStorageType()).build());
+                    final String metadataEntry = "assets/" + metadataPath.substring(1).toLowerCase(java.util.Locale.ROOT);
                     if (metadata != null) {
-                        text(zip, "assets/" + metadataPath.substring(1).toLowerCase(java.util.Locale.ROOT),
-                                mapper.writeValueAsString(metadata));
+                        text(zip, metadataEntry, mapper.writeValueAsString(metadata));
                     } else if (BinaryAssetReference.metadataKeyOf(binary) != null) {
-                        throw new IOException("Missing referenced backup metadata " + field.getKey());
+                        missing.add(missingEntry(content.getInode(), "metadata", field.getKey(), metadataEntry));
                     }
+                }
+                if (!missing.isEmpty()) {
+                    text(zip, MISSING_MANIFEST, mapper.writeValueAsString(missing));
                 }
             }
             if (!storage().backfillFile(GROUP, key, archive.toFile())) {
@@ -119,6 +145,56 @@ public final class ContentletBackupStorage {
                 catch (IOException failure) { com.dotmarketing.util.Logger.warn(ContentletBackupStorage.class, "Unable to remove backup staging file", failure); }
             }
         }
+    }
+
+    /**
+     * Copies one binary into the archive under {@code entryName}. The entry is only created once the
+     * file is open, so a skipped binary leaves nothing behind in the archive.
+     *
+     * @param binaries  the binary storage that opens, and if needed restores, the file
+     * @param binary    the binary's local path
+     * @param zip       the archive being written
+     * @param entryName the archive entry for the binary's bytes
+     * @return {@code true} when the bytes were archived, {@code false} when storage confirms the file
+     *         is gone: it is not on local disk and S3 has no copy either
+     * @throws IOException      for any other read or archive write failure
+     * @throws DotDataException if restoring the file from S3 fails
+     */
+    static boolean archiveBinary(final BinaryAssetStorageAPI binaries, final File binary,
+                                 final ZipOutputStream zip, final String entryName) throws IOException, DotDataException {
+        final InputStream input;
+        try {
+            input = binaries.openLocalFile(binary);
+        } catch (final NoSuchFileException absent) {
+            return false;
+        }
+        try (input) {
+            zip.putNextEntry(new ZipEntry(entryName));
+            input.transferTo(zip);
+            zip.closeEntry();
+        }
+        return true;
+    }
+
+    /**
+     * Describes one file the archive could not include and logs a warning, so operators can see it
+     * was already lost before the backup.
+     *
+     * @param inode the content version being backed up
+     * @param kind  {@code binary} or {@code metadata}
+     * @param field the field variable name
+     * @param path  the archive entry the file would have had
+     * @return the manifest entry
+     */
+    private static Map<String, String> missingEntry(final String inode, final String kind, final String field,
+                                                    final String path) {
+        Logger.warn(ContentletBackupStorage.class, "Backup of content version " + inode + " leaves out the "
+                + kind + " of field '" + field + "' because it no longer exists (" + path + ")");
+        final Map<String, String> entry = new LinkedHashMap<>();
+        entry.put("kind", kind);
+        entry.put("field", field);
+        entry.put("path", path);
+        return entry;
     }
 
     private static void text(ZipOutputStream zip, String name, String value) throws IOException {

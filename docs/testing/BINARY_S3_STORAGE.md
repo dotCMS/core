@@ -217,7 +217,11 @@ writes a verified S3 recovery ZIP before removing content. Archives live in the
 `deleted-content-backups` group at `<identifier>/<inode>/<uuid>.zip`. Full destruction and
 all-version deletion archive each version, deleting one language archives each version in that
 language, and single-version deletion archives only that version. A failed backup aborts the
-deletion. Binary cleanup never deletes recovery archives. Field trash ZIPs use the same group and
+deletion: an S3 error, a read or write error, or an upload S3 does not confirm. A file that was
+already gone before the deletion does not: a binary with no local copy and no S3 copy, or metadata
+the row points to that no longer exists, is left out of the ZIP, listed in a `missing.json` entry
+(`kind`, `field`, and the `path` it would have had) and logged as a warning. Binary cleanup never
+deletes recovery archives. Field trash ZIPs use the same group and
 layout.
 
 Each ZIP contains `contentlet.json` (the row's complete typed field data), `contentlet.xml`, and
@@ -368,7 +372,7 @@ docker run -d --rm --name binary-cleanup-postgres-test \
   -e POSTGRES_DB=binary_storage_test postgres:16-alpine
 
 ./mvnw test -pl :dotcms-core -Dmaven.build.cache.enabled=false \
-  -Dtest=AssetStorageFeatureTest,AssetStorageFeatureLatchTest,S3StorageConfigurationTest,NoWebIdentityCredentialsProviderChainTest,BinaryS3StorageTest,BinaryAssetReferenceTest,BinaryCacheEvictionJobTest,BinaryFileSystemStorageTest,BinaryAssetStorageAPIImplTest,MetadataLocalCacheTest,BinaryAssetCleanupTransactionTest,BinaryAssetCleanupProcessorTest,ContentletBackupStorageGateTest,BinaryFieldCleanupProcessorTest,AssetJobEventSerializationTest \
+  -Dtest=AssetStorageFeatureTest,AssetStorageFeatureLatchTest,S3StorageConfigurationTest,NoWebIdentityCredentialsProviderChainTest,BinaryS3StorageTest,BinaryAssetReferenceTest,BinaryCacheEvictionJobTest,BinaryFileSystemStorageTest,BinaryAssetStorageAPIImplTest,MetadataLocalCacheTest,BinaryAssetCleanupTransactionTest,BinaryAssetCleanupProcessorTest,ContentletBackupStorageGateTest,ContentletBackupStorageMissingSourceTest,BinaryFieldCleanupProcessorTest,AssetJobEventSerializationTest \
   -Ds3.test.endpoint=http://127.0.0.1:19002 \
   -Ds3.test.jdbc=jdbc:postgresql://127.0.0.1:19003/binary_storage_test
 
