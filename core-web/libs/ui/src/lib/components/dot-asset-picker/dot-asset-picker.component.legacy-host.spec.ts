@@ -100,6 +100,7 @@ describe('DotAssetPickerComponent — legacy Dojo host (no Router, no app shell)
          * rationale would be unfixable except by deleting the explanation.
          */
         const FORBIDDEN = [
+            'DotContentDriveStore',
             'Router',
             'DotRouterService',
             'DotHttpErrorManagerService',
@@ -128,7 +129,13 @@ describe('DotAssetPickerComponent — legacy Dojo host (no Router, no app shell)
 
         it.each([
             ['the AssetPicker', __dirname],
-            ['the shared filter bar', join(__dirname, '..', 'dot-filter-bar')]
+            ['the shared filter bar', join(__dirname, '..', 'dot-filter-bar')],
+            // The search bar the picker shares with Content Drive: it must work in this host too, so
+            // it may not reach for the Router, the app shell, or a surface's store.
+            [
+                'the shared search-with-scope control',
+                join(__dirname, '..', 'dot-search-scope-input')
+            ]
         ])('should keep %s free of app-shell dependencies', (_name, dir) => {
             const offenders = sourcesUnder(dir).flatMap((file) => {
                 const code = codeOf(file);

@@ -65,7 +65,6 @@ import {
     MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB,
     MOCK_WORKFLOW_STATUS
 } from '../../utils/edit-content.mock';
-import { generatePageEditUrl, generatePreviewUrl } from '../../utils/functions.util';
 import { CHECKBOX_FIELD_MOCK } from '../../utils/mocks';
 
 describe('DotFormComponent', () => {
@@ -517,7 +516,7 @@ describe('DotFormComponent', () => {
                 expect(appendArea).toBeTruthy();
             });
 
-            it('should render the status tag, command bar actions and sidebar toggle in append area', () => {
+            it('should render the command bar actions and sidebar toggle in append area, without the status chip', () => {
                 const sidebarToggle = spectator.query(byTestId('sidebar-toggle'));
                 const sidebarButton =
                     spectator.query(byTestId('sidebar-toggle-button')) ??
@@ -525,7 +524,8 @@ describe('DotFormComponent', () => {
                 const statusTag = spectator.query(byTestId('content-status-tag'));
                 const commandBar = spectator.query(byTestId('command-bar-actions'));
 
-                expect(statusTag).toBeTruthy();
+                // The chip now sits next to the title (global header / panel / dialog header).
+                expect(statusTag).toBeFalsy();
                 expect(commandBar).toBeTruthy();
                 expect(sidebarToggle).toBeTruthy();
                 expect(sidebarButton).toBeTruthy();
@@ -962,175 +962,66 @@ describe('DotFormComponent', () => {
         });
     });
 
-    describe('Preview Button', () => {
-        let windowOpenSpy: MockInstance;
+    describe('Preview (moved to the sidebar Actions tab)', () => {
+        const load = (contentlet: DotCMSContentlet) => {
+            dotContentTypeService.getContentTypeWithRender.mockReturnValue(
+                of(MOCK_CONTENTTYPE_2_TABS)
+            );
+            dotEditContentService.getContentById.mockReturnValue(of(contentlet));
+            workflowActionsService.getByInode.mockReturnValue(
+                of(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
+            );
+            workflowActionsService.getWorkFlowActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
+            dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
+            dotContentletService.canLock.mockReturnValue(
+                of({ canLock: true } as DotContentletCanLock)
+            );
 
-        afterEach(() => {
-            // Restore the original implementation of window.open
-            windowOpenSpy.mockRestore();
+            store.initializeExistingContent({
+                inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                depth: DotContentletDepths.ONE
+            });
+            spectator.detectChanges();
+        };
+
+        it('should not render a preview button in the tab bar for content with a URL map', () => {
+            load({
+                ...MOCK_CONTENTLET_1_OR_2_TABS,
+                URL_MAP_FOR_CONTENT: '/blog/post/5-snow-sports-to-try-this-winter'
+            });
+
+            expect(spectator.query(byTestId('preview-button'))).toBeFalsy();
         });
 
-        describe('With URL Map', () => {
-            beforeEach(() => {
-                // Mock window.open
-                windowOpenSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
-
-                dotContentTypeService.getContentTypeWithRender.mockReturnValue(
-                    of(MOCK_CONTENTTYPE_2_TABS)
-                );
-                dotEditContentService.getContentById.mockReturnValue(
-                    of({
-                        ...MOCK_CONTENTLET_1_OR_2_TABS,
-                        URL_MAP_FOR_CONTENT: '/blog/post/5-snow-sports-to-try-this-winter'
-                    })
-                );
-                workflowActionsService.getByInode.mockReturnValue(
-                    of(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
-                );
-                workflowActionsService.getWorkFlowActions.mockReturnValue(
-                    of(MOCK_SINGLE_WORKFLOW_ACTIONS)
-                );
-                dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
-                dotContentletService.canLock.mockReturnValue(
-                    of({ canLock: true } as DotContentletCanLock)
-                );
-
-                store.initializeExistingContent({
-                    inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
-                    depth: DotContentletDepths.ONE
-                });
-                spectator.detectChanges();
-            });
-            it('should render the preview button when $showPreviewLink is true', () => {
-                const previewButton = spectator.query(byTestId('preview-button'));
-                expect(previewButton).toBeTruthy();
-            });
-
-            it('should call showPreview when the preview button is clicked', () => {
-                const showPreviewSpy = vi.spyOn(component, 'showPreview');
-                const previewButton = spectator.query(byTestId('preview-button'));
-
-                spectator.click(previewButton);
-
-                expect(showPreviewSpy).toHaveBeenCalled();
-            });
-
-            it('should call window.open when showPreview is executed', () => {
-                const expectedUrl = generatePreviewUrl({
-                    ...MOCK_CONTENTLET_1_OR_2_TABS,
-                    URL_MAP_FOR_CONTENT: '/blog/post/5-snow-sports-to-try-this-winter'
-                });
-                component.showPreview();
-                expect(windowOpenSpy).toHaveBeenCalledWith(expectedUrl, '_blank');
-            });
-        });
-
-        describe('Without URL Map', () => {
-            beforeEach(() => {
-                // Mock window.open
-                windowOpenSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
-
-                dotContentTypeService.getContentTypeWithRender.mockReturnValue(
-                    of(MOCK_CONTENTTYPE_2_TABS)
-                );
-                dotEditContentService.getContentById.mockReturnValue(
-                    of(MOCK_CONTENTLET_1_OR_2_TABS)
-                );
-                workflowActionsService.getByInode.mockReturnValue(
-                    of(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
-                );
-                workflowActionsService.getWorkFlowActions.mockReturnValue(
-                    of(MOCK_SINGLE_WORKFLOW_ACTIONS)
-                );
-                dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
-                dotContentletService.canLock.mockReturnValue(
-                    of({ canLock: true } as DotContentletCanLock)
-                );
-
-                store.initializeExistingContent({
-                    inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
-                    depth: DotContentletDepths.ONE
-                });
-                spectator.detectChanges();
-            });
-
-            it('should not render the preview button when $showPreviewLink is false', () => {
-                const previewButton = spectator.query(byTestId('preview-button'));
-                expect(previewButton).toBeFalsy();
-            });
-        });
-
-        describe('HTML Page', () => {
-            const pageContentlet = {
+        it('should not render a preview button in the tab bar for an HTML page', () => {
+            load({
                 ...MOCK_CONTENTLET_1_OR_2_TABS,
                 baseType: DotCMSBaseTypesContentTypes.HTMLPAGE
-            } as DotCMSContentlet;
+            } as DotCMSContentlet);
 
-            beforeEach(() => {
-                windowOpenSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
-
-                dotContentTypeService.getContentTypeWithRender.mockReturnValue(
-                    of(MOCK_CONTENTTYPE_2_TABS)
-                );
-                dotEditContentService.getContentById.mockReturnValue(of(pageContentlet));
-                workflowActionsService.getByInode.mockReturnValue(
-                    of(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
-                );
-                workflowActionsService.getWorkFlowActions.mockReturnValue(
-                    of(MOCK_SINGLE_WORKFLOW_ACTIONS)
-                );
-                dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
-                dotContentletService.canLock.mockReturnValue(
-                    of({ canLock: true } as DotContentletCanLock)
-                );
-
-                store.initializeExistingContent({
-                    inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
-                    depth: DotContentletDepths.ONE
-                });
-                spectator.detectChanges();
-            });
-
-            it('should render the preview button for an HTML page', () => {
-                const previewButton = spectator.query(byTestId('preview-button'));
-                expect(previewButton).toBeTruthy();
-            });
-
-            it('should use generatePageEditUrl when showPreview runs for an HTML page', () => {
-                const expectedUrl = generatePageEditUrl(pageContentlet);
-                expect(expectedUrl).toBeTruthy();
-
-                component.showPreview();
-
-                expect(windowOpenSpy).toHaveBeenCalledWith(expectedUrl, '_blank');
-            });
+            expect(spectator.query(byTestId('preview-button'))).toBeFalsy();
         });
 
-        describe('New content', () => {
-            beforeEach(() => {
-                windowOpenSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+        it('should not render a preview button in the tab bar for plain content or new content', () => {
+            load(MOCK_CONTENTLET_1_OR_2_TABS);
+            expect(spectator.query(byTestId('preview-button'))).toBeFalsy();
 
-                dotContentTypeService.getContentTypeWithRender.mockReturnValue(
-                    of(MOCK_CONTENTTYPE_1_TAB)
-                );
-                workflowActionsService.getDefaultActions.mockReturnValue(
-                    of(MOCK_SINGLE_WORKFLOW_ACTIONS)
-                );
-                workflowActionsService.getWorkFlowActions.mockReturnValue(
-                    of(MOCK_SINGLE_WORKFLOW_ACTIONS)
-                );
-                dotContentletService.canLock.mockReturnValue(
-                    of({ canLock: true } as DotContentletCanLock)
-                );
+            dotContentTypeService.getContentTypeWithRender.mockReturnValue(
+                of(MOCK_CONTENTTYPE_1_TAB)
+            );
+            workflowActionsService.getDefaultActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
+            store.initializeNewContent('TestMock');
+            spectator.detectChanges();
 
-                store.initializeNewContent('TestMock');
-                spectator.detectChanges();
-            });
+            expect(spectator.query(byTestId('preview-button'))).toBeFalsy();
+        });
 
-            it('should not render the preview button for new content', () => {
-                const previewButton = spectator.query(byTestId('preview-button'));
-                expect(previewButton).toBeFalsy();
-            });
+        it('should no longer own the preview action (it lives with the sidebar button)', () => {
+            expect((component as unknown as { showPreview?: unknown }).showPreview).toBeUndefined();
         });
     });
 
@@ -1155,15 +1046,15 @@ describe('DotFormComponent', () => {
             );
         });
 
-        it('should render the status tag for existing content', () => {
+        it('should not render the status tag in the tab bar for existing content', () => {
             store.initializeExistingContent({
                 inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
                 depth: DotContentletDepths.ONE
             });
             spectator.detectChanges();
 
-            const statusTag = spectator.query(byTestId('content-status-tag'));
-            expect(statusTag).toBeTruthy();
+            expect(spectator.query(byTestId('content-status-tag'))).toBeFalsy();
+            expect(spectator.query(byTestId('status-separator'))).toBeFalsy();
         });
 
         it('should render the command bar actions for existing content', () => {
@@ -1186,25 +1077,23 @@ describe('DotFormComponent', () => {
         });
 
         describe('status badge', () => {
-            it('should pass the contentlet as the badge state for existing content', () => {
+            it('should not render a status badge or separator in the tab bar for existing content', () => {
                 store.initializeExistingContent({
                     inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
                     depth: DotContentletDepths.ONE
                 });
                 spectator.detectChanges();
 
-                const badge = spectator.query(DotContentletStatusBadgeComponent);
-                expect(badge).toBeTruthy();
-                expect(badge?.state()).toEqual(store.contentlet());
+                expect(spectator.query(DotContentletStatusBadgeComponent)).toBeFalsy();
+                expect(spectator.query(byTestId('status-separator'))).toBeFalsy();
             });
 
-            it('should pass null as the badge state for new content', () => {
+            it('should not render a status badge in the tab bar for new content', () => {
                 store.initializeNewContent('TestMock');
                 spectator.detectChanges();
 
-                const badge = spectator.query(DotContentletStatusBadgeComponent);
-                expect(badge).toBeTruthy();
-                expect(badge?.state()).toBeNull();
+                expect(spectator.query(DotContentletStatusBadgeComponent)).toBeFalsy();
+                expect(spectator.query(byTestId('status-separator'))).toBeFalsy();
             });
         });
     });
@@ -1896,16 +1785,15 @@ describe('DotFormComponent', () => {
         });
 
         describe('Historical Version UI Elements', () => {
-            it('should hide the status tag and command bar when viewing historical version', () => {
+            it('should hide the command bar when viewing historical version', () => {
                 // Initially the normal-view command bar should be visible
-                expect(spectator.query(byTestId('content-status-tag'))).toBeTruthy();
                 expect(spectator.query(byTestId('command-bar-actions'))).toBeTruthy();
 
                 // Simulate loading a historical version using the store's public method
                 store.loadVersionContent('historical-inode');
                 spectator.detectChanges();
 
-                // The status tag and command bar should be hidden
+                // The command bar should be hidden; the chip is never in the tab bar
                 expect(spectator.query(byTestId('content-status-tag'))).toBeFalsy();
                 expect(spectator.query(byTestId('command-bar-actions'))).toBeFalsy();
             });
@@ -1935,7 +1823,7 @@ describe('DotFormComponent', () => {
                 const commandBar = spectator.query(byTestId('command-bar-actions'));
                 const previewingLabel = spectator.query(byTestId('previewing-label'));
 
-                expect(statusTag).toBeTruthy();
+                expect(statusTag).toBeFalsy();
                 expect(commandBar).toBeTruthy();
                 expect(previewingLabel).toBeFalsy();
 
@@ -1974,7 +1862,7 @@ describe('DotFormComponent', () => {
                 const commandBar = spectator.query(byTestId('command-bar-actions'));
                 const previewingLabel = spectator.query(byTestId('previewing-label'));
 
-                expect(statusTag).toBeTruthy();
+                expect(statusTag).toBeFalsy();
                 expect(commandBar).toBeTruthy();
                 expect(previewingLabel).toBeFalsy();
             });
