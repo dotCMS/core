@@ -1,0 +1,98 @@
+name: Weekly License Date Update
+
+on:
+  schedule:
+    # Every Saturday night at 23:00 UTC.
+    - cron: '0 23 * * 6'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: weekly-license-date-update
+  cancel-in-progress: false
+
+jobs:
+  update-license:
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    timeout-minutes: 10
+    env:
+      TZ: UTC
+      LC_ALL: C
+      CI_MACHINE_USER: ${{ secrets.CI_MACHINE_USER || 'dotcmsmachineuser' }}
+    steps:
+      - name: Checkout default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          # Direct pushes use the job token, not the organization-admin PAT.
+          token: ${{ github.token }}
+
+      - name: Test license update workflow
+        run: python3 .github/workflows/tests/update-license-date.test.py
+
+      - name: Update license date
+        id: update-license
+        shell: bash
+        run: |
+          bash .github/actions/update-license-date.sh
+
+      - name: Try committing directly to the default branch
+        id: publish
+        shell: bash
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          if git diff --quiet HEAD -- LICENSE; then
+            echo 'License date is already current.'
+            echo 'create_pr=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          git config user.name "$CI_MACHINE_USER"
+          git config user.email "${CI_MACHINE_USER}@users.noreply.github.com"
+          git add -- LICENSE
+          git commit -m 'chore: update LICENSE change date'
+
+          # The job token cannot inherit the machine user's admin bypass rights.
+          # Never force-push the default branch.
+          if git push origin "HEAD:refs/heads/${DEFAULT_BRANCH}"; then
+            echo 'create_pr=false' >> "$GITHUB_OUTPUT"
+          else
+            echo 'Direct push failed; preparing a machine-user pull request.'
+            # Leave the LICENSE change staged for create-pull-request to commit.
+            git reset --soft HEAD^
+            echo 'create_pr=true' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Require machine credentials for PR fallback
+        id: check-pr-token
+        if: steps.publish.outputs.create_pr == 'true'
+        shell: bash
+        env:
+          CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
+        run: |
+          if [[ -z "$CI_MACHINE_TOKEN" ]]; then
+            echo '::error::Direct push failed and CI_MACHINE_TOKEN is unavailable. Grant this repository access to the organization machine-user secret to create a PR.'
+            exit 1
+          fi
+
+      - name: Create or update machine-user PR
+        if: steps.publish.outputs.create_pr == 'true'
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          token: ${{ secrets.CI_MACHINE_TOKEN }}
+          base: ${{ github.event.repository.default_branch }}
+          branch: automation/update-license-date
+          add-paths: LICENSE
+          commit-message: 'chore: update LICENSE change date'
+          author: '${{ env.CI_MACHINE_USER }} <${{ env.CI_MACHINE_USER }}@users.noreply.github.com>'
+          committer: '${{ env.CI_MACHINE_USER }} <${{ env.CI_MACHINE_USER }}@users.noreply.github.com>'
+          title: 'chore: update LICENSE change date'
+          body: |
+            Refs #31844 — automate BSL license-date updates.
+
+            Weekly update of the LICENSE Change Date to the current UTC date.
+            Preserves "Four years from" and leaves all other license terms unchanged.
+            Direct push to the default branch was rejected; this PR requires normal review.

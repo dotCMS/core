@@ -211,7 +211,13 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.nio.file.FileSystemException;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -3249,21 +3255,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return noErrors;
     }
 
-    /**
-     * at destroying/deleting time this will take care of removing all metadata entries
-     *
-     * @param contentlets
-     */
-    private void destroyMetadata(final List<Contentlet> contentlets) {
-        for (final Contentlet contentlet : contentlets) {
-            fileMetadataAPI.removeMetadata(contentlet);
-            Logger.debug(ESContentletAPIImpl.class,
-                    String.format("metadata removed for %s", contentlet.getIdentifier()));
-        }
-        Logger.debug(ESContentletAPIImpl.class,
-                String.format("Done removing metadata for %d elements.", contentlets.size()));
-    }
-
     private void forceUnpublishArchiveOnDestroy(final User user, final Contentlet contentlet)
             throws DotSecurityException, DotDataException {
 
@@ -3792,8 +3783,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         deleteBinaryFiles(contentlets, null);
 
+        // With S3 asset storage on, the cleanup job recorded by deleteBinaryFiles owns this
+        // version's metadata, so it is not removed here.
         if (!com.dotcms.storage.AssetStorageFeature.isEnabled()) {
-            fileMetadataAPI.removeVersionMetadata(contentlet);
+            // Waits for the commit like the rest of the removal, after it (#37782).
+            BinaryRemovalAfterCommit.schedule("the version metadata of " + contentlet.getInode(),
+                    fileMetadataAPI.prepareVersionMetadataRemoval(contentlet));
         }
 
     }
@@ -9587,16 +9582,25 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     /**
-     * Deletes the binary files of the given content versions. With S3 asset storage on and no field
-     * given, it records one durable cleanup job per distinct inode in the current transaction instead,
-     * because callers can pass the same version more than once. Otherwise it removes the metadata and
-     * the local binary and resized-image folders, as before.
+     * Removes destroyed versions' stored metadata, binary directories and resized-image caches,
+     * once the transaction destroying them commits (#37782).
+     * <p>
+     * What to remove is worked out now, while the content type and the binary directory still
+     * exist; only the removal waits. Removing during the destroy would lose the files for good if
+     * the transaction later rolls back, as a folder delete refused partway through its tree does.
+     * Outside a transaction the removal runs at once, as before.
+     * <p>
+     * With S3 asset storage on and no field given, nothing is removed here: one durable cleanup job
+     * per distinct inode is recorded in the current transaction instead, since callers can pass the
+     * same version more than once. The job row commits or rolls back with the delete, so the
+     * cleanup already waits for the commit without being scheduled after it.
      *
-     * @param contentlets the deleted content versions
-     * @param field       the field whose files to delete, or {@code null} for every field
+     * @param contentlets the destroyed versions
+     * @param field       the binary field to remove, or null for every binary of each version
      * @throws DotDataException if a cleanup job cannot be recorded
      */
-    private void deleteBinaryFiles(List<Contentlet> contentlets, Field field) throws DotDataException {
+    private void deleteBinaryFiles(final List<Contentlet> contentlets, final Field field)
+            throws DotDataException {
         if (com.dotcms.storage.AssetStorageFeature.isEnabled() && field == null) {
             final Set<String> enqueued = new HashSet<>();
             for (final Contentlet contentlet : contentlets) {
@@ -9606,18 +9610,126 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
             return;
         }
-        this.destroyMetadata(contentlets);
-        contentlets.forEach(con -> {
+        final int count = contentlets.size();
+        for (int index = 0; index < count; index++) {
+            final Contentlet contentlet = contentlets.get(index);
+            final Runnable metadataRemoval = fileMetadataAPI.prepareMetadataRemoval(contentlet);
+            // Only strings are captured: the part is held until commit, and a folder delete
+            // destroys its whole subtree in one transaction, so capturing the Contentlet would
+            // keep every destroyed version in memory until the end.
+            final String identifier = contentlet.getIdentifier();
+            final boolean last = index == count - 1;
+            BinaryRemovalAfterCommit.schedule("the metadata of " + contentlet.getInode(), () -> {
+                metadataRemoval.run();
+                Logger.debug(ESContentletAPIImpl.class,
+                        String.format("metadata removed for %s", identifier));
+                if (last) {
+                    Logger.debug(ESContentletAPIImpl.class,
+                            String.format("Done removing metadata for %d elements.", count));
+                }
+            });
+        }
+        for (final Contentlet contentlet : contentlets) {
+            final File assetDirectory = new File(getContentletAssetPath(contentlet, field));
+            final File cacheDirectory = new File(getContentletCacheAssetPath(contentlet, field));
+            BinaryRemovalAfterCommit.schedule(assetDirectory.getAbsolutePath(),
+                    () -> deleteDirectory(assetDirectory));
+            BinaryRemovalAfterCommit.schedule(cacheDirectory.getAbsolutePath(),
+                    () -> deleteDirectory(cacheDirectory));
+        }
+    }
 
-            String contentletAssetPath = getContentletAssetPath(con, field);
-            String contentletAssetCachePath = getContentletCacheAssetPath(con, field);
+    /**
+     * Deletes a directory and everything in it, deepest first, failing once at the end with every
+     * entry that could not be deleted.
+     * <p>
+     * Kept local rather than reusing {@link FileUtil#deltree(File)}, which only logs a file it
+     * cannot delete at debug level, so a removal that failed after commit would leave files on
+     * disk without a trace. Failures are detected during the delete rather than by checking the
+     * directory again afterwards, which on a networked asset store would cost an extra round
+     * trip per directory on the committing thread. A directory that does not exist, the usual
+     * case for the resized-image cache, costs a single attribute read. Like {@code deltree}, it
+     * keeps deleting after a failure; unlike it, it does not follow symbolic links.
+     *
+     * @param directory the directory to delete
+     * @throws IllegalStateException naming each entry left on disk and why
+     */
+    private static void deleteDirectory(final File directory) {
+        final Path root = directory.toPath();
+        final List<String> failures = new ArrayList<>();
+        try {
+            Files.walkFileTree(root, new SimpleFileVisitor<>() {
 
-            // To delete binary files
-            FileUtil.deltree(new File(contentletAssetPath));
+                @Override
+                public FileVisitResult visitFile(final Path file,
+                        final BasicFileAttributes attributes) {
+                    deleteEntry(file, failures);
+                    return FileVisitResult.CONTINUE;
+                }
 
-            // To delete resized images
-            FileUtil.deltree(new File(contentletAssetCachePath));
-        });
+                @Override
+                public FileVisitResult visitFileFailed(final Path file, final IOException e) {
+                    // Missing means nothing to remove, including the root itself.
+                    if (!(e instanceof NoSuchFileException)) {
+                        failures.add(describe(file, e));
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult postVisitDirectory(final Path dir, final IOException e) {
+                    if (e != null) {
+                        failures.add(describe(dir, e));
+                    }
+                    deleteEntry(dir, failures);
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (final IOException e) {
+            failures.add(describe(root, e));
+        }
+        if (!failures.isEmpty()) {
+            throw new IllegalStateException(String.format(
+                    "could not delete %d entr%s under %s: %s", failures.size(),
+                    failures.size() == 1 ? "y" : "ies", root,
+                    String.join(", ", failures.subList(0, Math.min(failures.size(), 20)))
+                            + (failures.size() > 20 ? ", ..." : "")));
+        }
+    }
+
+    /**
+     * Deletes one file or empty directory, recording why when it cannot be deleted. Already gone
+     * counts as deleted.
+     *
+     * @param path     the entry to delete
+     * @param failures where a failure is recorded
+     */
+    private static void deleteEntry(final Path path, final List<String> failures) {
+        try {
+            Files.delete(path);
+        } catch (final NoSuchFileException e) {
+            // Already gone.
+        } catch (final IOException e) {
+            failures.add(describe(path, e));
+        }
+    }
+
+    /**
+     * An entry left on disk and why, for the failure message. On a networked mount the cause is
+     * often only in the text of a generic {@link FileSystemException} ("Stale file handle"), so
+     * that text is kept: {@link FileSystemException#getReason()}, which leaves out the path
+     * already printed, or the message of any other {@link IOException}.
+     *
+     * @param path the entry
+     * @param e    why it was left
+     * @return the entry, the exception's type and its reason when there is one
+     */
+    private static String describe(final Path path, final IOException e) {
+        final String reason = e instanceof FileSystemException
+                ? ((FileSystemException) e).getReason()
+                : e.getMessage();
+        return path + " (" + e.getClass().getSimpleName()
+                + (UtilMethods.isSet(reason) ? ": " + reason : "") + ")";
     }
 
     /**

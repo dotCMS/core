@@ -9,15 +9,19 @@ import org.junit.jupiter.api.io.TempDir;
 import org.mockito.MockedStatic;
 
 import java.io.File;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermission;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.Mockito.*;
 
 class BinaryFileSystemStorageTest {
@@ -98,6 +102,39 @@ class BinaryFileSystemStorageTest {
 
             assertEquals(List.of("mixed"), List.of(groupDir.toFile().list()));
             assertEquals(List.of("name.pdf"), List.of(groupDir.resolve("mixed").toFile().list()));
+        } finally {
+            Config.setProperty(AssetStorageFeature.FLAG, previousFlag);
+        }
+    }
+
+    /**
+     * With the flag on, staged writes must get the same permissions as an ordinary file write, so
+     * the process umask applies as it does on main. A temp-file staging path would leave them
+     * owner-only and lock out group readers such as a sidecar container.
+     */
+    @Test
+    void flagOnWritesHonourUmaskLikeOrdinaryFiles() throws Exception {
+        assumeTrue(root.getFileSystem().supportedFileAttributeViews().contains("posix"));
+        final String previousFlag = Config.getStringProperty(AssetStorageFeature.FLAG, null);
+        Config.setProperty(AssetStorageFeature.FLAG, true);
+        try {
+            final Path plain = root.resolve("plain.txt");
+            try (OutputStream out = Files.newOutputStream(plain)) {
+                out.write(1);
+            }
+            final Set<PosixFilePermission> expected = Files.getPosixFilePermissions(plain);
+            final Path groupDir = Files.createDirectories(root.resolve("group"));
+            final FileSystemStoragePersistenceAPIImpl storage = new FileSystemStoragePersistenceAPIImpl();
+            storage.createGroup(BinaryAssetStorageAPI.BINARY_ASSETS_GROUP,
+                    Map.of(FileSystemStoragePersistenceAPIImpl.GROUP_DIRECTORY, groupDir.toFile()));
+            final File source = Files.writeString(root.resolve("Upload.tmp"), "payload").toFile();
+
+            storage.pushFile(BinaryAssetStorageAPI.BINARY_ASSETS_GROUP, "a/Asset.PDF", source, Map.of());
+            storage.pushObject(BinaryAssetStorageAPI.BINARY_ASSETS_GROUP, "a/Asset.PDF-metadata.json",
+                    (stream, object) -> stream.write(object.toString().getBytes()), "{}", Map.of());
+
+            assertEquals(expected, Files.getPosixFilePermissions(groupDir.resolve("a/Asset.PDF")));
+            assertEquals(expected, Files.getPosixFilePermissions(groupDir.resolve("a/Asset.PDF-metadata.json")));
         } finally {
             Config.setProperty(AssetStorageFeature.FLAG, previousFlag);
         }

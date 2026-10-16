@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -37,6 +38,21 @@ import io.vavr.control.Try;
  *
  */
 public class SecurityUtils {
+
+  /**
+   * Session key holding the query string of the protected page a signed-out visitor requested, saved next to
+   * {@link WebKeys#REDIRECT_AFTER_LOGIN} (which holds the path only) so an SSO login can return the visitor
+   * to the full URL. Saved here because the 401 error page runs after the request's forward attributes are gone.
+   */
+  public static final String REDIRECT_AFTER_LOGIN_QUERY_STRING = "REDIRECT_AFTER_LOGIN_QUERY_STRING";
+
+  /**
+   * Session key holding the original path of the page whose query string is in
+   * {@link #REDIRECT_AFTER_LOGIN_QUERY_STRING}, saved at the same moment so an SSO login can tell that the query
+   * belongs to the page it is returning to. {@link WebKeys#REDIRECT_AFTER_LOGIN} cannot be relied on for that:
+   * the 401 error page writes it, and with Redis-backed sessions writes made by the error page are not persisted.
+   */
+  public static final String REDIRECT_AFTER_LOGIN_QUERY_PATH = "REDIRECT_AFTER_LOGIN_QUERY_PATH";
 
   private static final List<SecureFileValidator> secureFileValidatorList = new ImmutableList.Builder<SecureFileValidator>()
           .add(new IllegalTraversalFilePathValidator())
@@ -99,10 +115,13 @@ public class SecurityUtils {
    *   {@link WebKeys#REDIRECT_AFTER_LOGIN} intent is cleared so the container error page does
    *   <b>not</b> bounce the browser back through the login/SSO flow &mdash; re-authenticating
    *   can never grant a missing permission, which is exactly what produces the infinite SAML
-   *   redirect loop (see issue #36541).</li>
+   *   redirect loop (see issue #36541). Any saved {@link #REDIRECT_AFTER_LOGIN_QUERY_STRING} is
+   *   cleared as well.</li>
    *   <li><b>Anonymous / not-logged-in user</b> &rarr; {@code 401 Unauthorized} and
    *   {@link WebKeys#REDIRECT_AFTER_LOGIN} is set to {@code originalUri} so the legitimate
-   *   login flow can return the user to the resource afterwards.</li>
+   *   login flow can return the user to the resource afterwards. The original query string is kept
+   *   separately in {@link #REDIRECT_AFTER_LOGIN_QUERY_STRING} (removed when there is none), since
+   *   the error page that handles the 401 can no longer see it.</li>
    * </ul>
    * The user is considered anonymous when it is {@code null} or {@link User#isAnonymousUser()}
    * is {@code true}.
@@ -125,6 +144,8 @@ public class SecurityUtils {
       final HttpSession session = request.getSession(false);
       if (session != null) {
         session.removeAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
+        session.removeAttribute(REDIRECT_AFTER_LOGIN_QUERY_STRING);
+        session.removeAttribute(REDIRECT_AFTER_LOGIN_QUERY_PATH);
       }
       response.sendError(HttpServletResponse.SC_FORBIDDEN);
     } else {
@@ -134,8 +155,57 @@ public class SecurityUtils {
         Logger.debug(SecurityUtils.class, () -> "Setting redirect after login to requested uri: " + originalUri);
         session.setAttribute(WebKeys.REDIRECT_AFTER_LOGIN, originalUri);
       }
+      rememberLoginQueryString(request);
       response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
     }
+  }
+
+  /**
+   * Saves the query string of the page a signed-out visitor requested in the session, under
+   * {@link #REDIRECT_AFTER_LOGIN_QUERY_STRING}, together with the page's path under
+   * {@link #REDIRECT_AFTER_LOGIN_QUERY_PATH}, or removes stale ones when the request has no query string. Call it where the
+   * 401 is raised: the error page that handles the 401 runs after the request's forward attributes are gone, so
+   * the original query string is only available at that point. An SSO login uses it to return the visitor to the
+   * full URL.
+   *
+   * @param request the request being denied
+   */
+  public static void rememberLoginQueryString(final HttpServletRequest request) {
+
+    final HttpSession session = request.getSession();
+    if (session == null) {
+      return;
+    }
+    final String queryString = originalQueryString(request);
+    final String path        = originalPath(request);
+    if (UtilMethods.isSet(queryString) && UtilMethods.isSet(path)) {
+      session.setAttribute(REDIRECT_AFTER_LOGIN_QUERY_STRING, queryString);
+      session.setAttribute(REDIRECT_AFTER_LOGIN_QUERY_PATH, path);
+    } else if (UtilMethods.isSet(queryString)) {
+      session.setAttribute(REDIRECT_AFTER_LOGIN_QUERY_STRING, queryString);
+      session.removeAttribute(REDIRECT_AFTER_LOGIN_QUERY_PATH);
+    } else {
+      session.removeAttribute(REDIRECT_AFTER_LOGIN_QUERY_STRING);
+      session.removeAttribute(REDIRECT_AFTER_LOGIN_QUERY_PATH);
+    }
+  }
+
+  /**
+   * Returns the path of the page originally requested: the forward attribute when the request was forwarded to a
+   * rendering servlet, otherwise the request's own URI. This is what the 401 error page puts in {@code referrer}.
+   */
+  private static String originalPath(final HttpServletRequest request) {
+    final Object forwardRequestUri = request.getAttribute(RequestDispatcher.FORWARD_REQUEST_URI);
+    return null != forwardRequestUri ? forwardRequestUri.toString() : request.getRequestURI();
+  }
+
+  /**
+   * Returns the query string of the page originally requested: the forward attribute when the request was
+   * forwarded to a rendering servlet, otherwise the request's own query string.
+   */
+  private static String originalQueryString(final HttpServletRequest request) {
+    final Object forwardQueryString = request.getAttribute(RequestDispatcher.FORWARD_QUERY_STRING);
+    return null != forwardQueryString ? forwardQueryString.toString() : request.getQueryString();
   }
 
   /**
