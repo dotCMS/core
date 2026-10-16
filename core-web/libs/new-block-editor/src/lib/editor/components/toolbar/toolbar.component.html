@@ -429,20 +429,26 @@
         <span aria-hidden="true" class="material-symbols-outlined">audiotrack</span>
     </button>
 }
-@if (showAssetByUrl()) {
-    <button
-        type="button"
-        [attr.aria-label]="'dot.block.editor.toolbar.insert-asset-by-url' | dm"
-        [pTooltip]="'dot.block.editor.toolbar.insert-asset-by-url' | dm"
-        [tooltipPosition]="TOOLTIP_POSITION"
-        [tooltipOptions]="overlayTooltipOptions()"
-        [showDelay]="TOOLTIP_SHOW_DELAY"
-        data-testid="toolbar-asset-by-url"
-        [class]="btnClass(popovers.isOpen('asset-by-url'))"
-        (mousedown)="openAssetByUrlDialog($event)">
-        <span aria-hidden="true" class="material-symbols-outlined">media_link</span>
-    </button>
-}
+<!--
+    "Add asset by URL" is never gated. It offers image, plain video and a YouTube embed, and
+    `youtube` is NOT selectable in Allowed Blocks — that list comes from `getEditorBlockOptions()`,
+    which offers block nodes only — so YouTube is always on offer and the trigger always is too
+    (#37601, defect B). `image` and `video` ARE producible, so the popover disables those two tabs
+    individually; see `asset-by-url-popover.component.ts`. Pinned by `toolbar.component.spec.ts`
+    and enforced by `capability-keys.i1.spec.ts`.
+-->
+<button
+    type="button"
+    [attr.aria-label]="'dot.block.editor.toolbar.insert-asset-by-url' | dm"
+    [pTooltip]="'dot.block.editor.toolbar.insert-asset-by-url' | dm"
+    [tooltipPosition]="TOOLTIP_POSITION"
+    [tooltipOptions]="overlayTooltipOptions()"
+    [showDelay]="TOOLTIP_SHOW_DELAY"
+    data-testid="toolbar-asset-by-url"
+    [class]="btnClass(popovers.isOpen('asset-by-url'))"
+    (mousedown)="openAssetByUrlDialog($event)">
+    <span aria-hidden="true" class="material-symbols-outlined">media_link</span>
+</button>
 @if (isAllowed('table')) {
     <button
         type="button"

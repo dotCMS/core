@@ -164,12 +164,12 @@ What actions are available on each node type. **Slash** = appears in `/` menu (`
 | `dotImage` | `image.extension.ts` | Image (modal picker) | Insert image, wrap-left/right (node-scoped), align, image properties popover (node-scoped) | `image` |
 | `dotVideo` | `video.extension.ts` | Video (modal picker) | Insert video | `video` |
 | `dotAudio` | `audio.extension.ts` | Audio (modal picker) | Insert audio | `audio` |
-| `youtube` | `@tiptap/extension-youtube` | — (legacy slash entry) | — | none — always registered. `youtube` is not an Allowed Blocks option, so gating it only dropped stored embeds on restricted fields (#37175). Insertion is gated in the UI via `showAssetByUrl()`. |
+| `youtube` | `@tiptap/extension-youtube` | — (legacy slash entry) | — | none — always registered, and since #37601 **never gated for authoring either**. `youtube` is not an Allowed Blocks option, so gating registration dropped stored embeds on restricted fields (#37175) and gating the UI removed the tab from every restricted field (#37601). The "Add asset by URL" trigger is now unconditional — its `showAssetByUrl` computed was **deleted** rather than left as an always-true condition, same as `showInsertGroup` in #37340; `image`/`video` stay gated inside the popover because they ARE producible. |
 | `emoji` | `dot-emoji.extension.ts` (extends `@tiptap/extension-emoji`) | — (toolbar popover, **never gated**) | — | none — always registered, same reason as `youtube` (#37175). **Nothing creates this node any more (#37340)** — see below. Authoring is NOT gated: `emoji` is not selectable in Allowed Blocks, so gating it only ever misfired. |
 | `dotContent` | `contentlet/contentlet.extension.ts` | Content type → submenu | Edit contentlet (node-scoped) | `dotContent` |
 | `gridBlock` | `grid.extension.ts` | Grid (2 columns) | — | `gridBlock` |
 | `gridColumn` | `grid.extension.ts` | — (created by `insertGrid`) | — | inherits gridBlock |
-| `aiContent` | `ai-content.extension.ts` | Ask AI (centered modal) | — | `aiContent` |
+| `aiContent` | `ai-content.extension.ts` | Ask AI (centered modal) | — | `aiContentPrompt` — the Settings identifier, NOT the node name. The slash entry consulted `aiContent` until #37601, so ticking "AI Content" was exactly what hid it. |
 | `uploadPlaceholder` | `upload-placeholder.extension.ts` | — (transient) | — | always (transient) |
 
 ### Marks
@@ -337,3 +337,67 @@ is empty. See `toolbar.component.ts`.
 insert group unconditional — it always holds at least that button — so the computed and its two
 template guards were deleted rather than left as always-true conditions. Consequence: a heavily
 restricted field now shows an insert group it previously collapsed.
+
+---
+
+## The Allowed Blocks capability-key contract (enforced — #37601)
+
+> A capability may be gated on Allowed Blocks **only if** the Settings tab can produce its
+> identifier. A key that is consulted but not producible is permanently forbidden the instant an
+> administrator restricts the field to anything at all — an outcome nobody chose and nobody can
+> undo. **Gating such a capability is always a defect, never a configuration.**
+
+There is exactly **one** producer: `getEditorBlockOptions()` in `libs/block-editor`, exported from
+`@dotcms/block-editor`. Everything else in this library is a consumer.
+
+### Before adding a gate
+
+Ask whether the key you are about to pass to `store.isAllowed(...)` or set as
+`BlockItem.blockName` is something the Settings tab can actually write. If it is not, do not gate —
+the gate can only ever be satisfied on an unrestricted field, which means it does nothing there and
+silently removes the capability everywhere else. `link`, `emoji` and `youtube` all learned this the
+hard way.
+
+Note the producer emits `code`, not `id`.
+
+### Two specs enforce it
+
+| Spec | Invariant |
+|---|---|
+| `extensions/capability-keys.i1.spec.ts` | Every consulted key is producible, or explicitly exempt |
+| `extensions/capability-keys.i2.spec.ts` | Every producible option has a consumer |
+
+Shared extraction is in `extensions/capability-keys.testing.ts`, which is hybrid by necessity: the
+slash-menu catalog is read **structurally** (`blockName` off the factories), while the toolbar and
+popovers are **scanned textually**, because a literal inside an Angular `@if` is not reachable as
+data.
+
+Three things about it will bite you if you change it:
+
+1. **Comments are stripped before scanning.** These files carry long comments explaining why a
+   capability is no longer gated, quoting the removed call verbatim. Scanned raw, that prose reads
+   as a live gate — and the quickest way to green would be deleting the explanation.
+2. **The regex is anchored to `isAllowed(` / `has(`.** `popovers.isOpen('link')`,
+   `popovers.toggle('emoji')` and `m.type.name === 'link'` are not gates. A guard test asserts
+   `link` and `emoji` are never reported; if it fails, fix the regex, not the production code.
+3. **The scan walks `editor/`; it is not a list.** `scannedFiles()` recurses the tree for `*.ts`
+   and `*.html`, skipping specs and `*.testing.ts`, so a gate added in a **new** file is caught
+   with no bookkeeping. An earlier draft did keep a fixed list of four paths, and it omitted
+   `extensions/editor-extensions.ts` — the most consequential file of all, because its gates
+   decide which extensions are registered at all: a bad key there does not hide a button, it
+   leaves the editor unable to parse content that uses the node.
+
+### Resolution pattern
+
+| Situation | Do |
+|---|---|
+| Key is not producible (`youtube`, `link`, `emoji`) | **Ungate the capability.** Do not add a Settings toggle — that is a product decision with its own spec. |
+| Key is wrong but the capability IS producible (`aiContent` → `aiContentPrompt`) | **Fix the key.** The gate is legitimate. |
+
+### Why this exists
+
+Six rounds in sixteen months, each triaged as an isolated incident: #22164, #23764, #24370,
+#27101, #29772, #34110, #35032, then #36351 / #37145 / #37175 / #37340. Support gave the same
+workaround — *"uncheck everything under Allowed Blocks and save"* — to four customers, and closed a
+fifth ticket as **user error** while the real issue sat open for two more months. A prose contract
+did not stop any of it.

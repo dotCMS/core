@@ -20,6 +20,7 @@
         "src/**/*.spec.ts",
         "src/**/*.test.tsx",
         "src/**/*.spec.tsx",
+        "src/**/*.testing.ts",
         "src/**/*.d.ts"
     ]
 }

@@ -119,3 +119,54 @@ describe('ToolbarComponent — the link button is never gated (#36351)', () => {
         expect(buttonWithIcon('code_blocks')).toBeFalsy();
     });
 });
+
+/**
+ * The "Add asset by URL" trigger appears when the popover can offer at least one asset type.
+ *
+ * `image` and `video` are producible by the Settings tab and correctly gated. `youtube` is not —
+ * `getEditorBlockOptions()` offers block nodes only — so including it in the trigger's condition
+ * meant the trigger showed on a field that allows nothing relevant, while the YouTube tab inside
+ * the popover was disabled anyway (#37601, defect B). Ungating `youtube` makes the trigger honest:
+ * it is always available, because YouTube always is.
+ */
+describe('ToolbarComponent — the asset-by-URL trigger never depends on youtube (#37601)', () => {
+    const { buildWith, buttonWithIcon } = createToolbarHarness();
+
+    // `media_link`, not `link` — the latter is the hyperlink button. The harness matches the icon
+    // exactly for this reason.
+    const assetByUrlButton = () => buttonWithIcon('media_link');
+
+    it('shows on an unrestricted field', () => {
+        buildWith(undefined);
+
+        expect(assetByUrlButton()).toBeTruthy();
+    });
+
+    it('shows when image or video is allowed', () => {
+        buildWith(['image']);
+
+        expect(assetByUrlButton()).toBeTruthy();
+    });
+
+    it('shows even when neither image nor video is allowed — YouTube is always on offer', () => {
+        buildWith(['bulletList']);
+
+        expect(assetByUrlButton()).toBeTruthy();
+    });
+
+    // Pinning the contract rather than the symptom: a field that lists `youtube` explicitly is not
+    // a configuration anyone can create, so it must behave identically to one that does not. Two
+    // separate cases because the harness overrides providers per build and cannot be rebuilt
+    // inside a single test.
+    it('behaves identically when allowedBlocks explicitly contains youtube', () => {
+        buildWith(['bulletList', 'youtube']);
+
+        expect(assetByUrlButton()).toBeTruthy();
+    });
+
+    it('behaves identically when allowedBlocks omits youtube', () => {
+        buildWith(['bulletList']);
+
+        expect(assetByUrlButton()).toBeTruthy();
+    });
+});

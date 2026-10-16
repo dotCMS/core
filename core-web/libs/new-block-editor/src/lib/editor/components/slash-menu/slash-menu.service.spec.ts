@@ -150,3 +150,82 @@ describe('SlashMenuService — async sub-menu search', () => {
         expect(service.isOpen()).toBe(false);
     });
 });
+
+/**
+ * Allowed Blocks gating of the AI slash entries.
+ *
+ * The Settings tab emits `aiContentPrompt` / `aiImagePrompt` (`getEditorBlockOptions()` maps the
+ * option ids from `suggestion.utils.ts`), but the catalog consulted `aiContent` / `aiImage`. The
+ * result was perverse: ticking "AI Content" in Allowed Blocks is precisely what hid AI Content,
+ * because ticking anything restricts the field and the mismatched key then evaluates false. Not
+ * ticking it hid it too — on a restricted field no configuration showed it at all (#37601,
+ * defect C).
+ *
+ * Unlike `youtube`, the resolution here is NOT to ungate: these two ARE producible, so the gate is
+ * legitimate and only the key was wrong. Enforced by `capability-keys.i1.spec.ts` (the key must be
+ * producible) and `capability-keys.i2.spec.ts` (the producible option must have a consumer).
+ */
+describe('SlashMenuService — AI entries honour Allowed Blocks (#37601)', () => {
+    let allowedBlocks: string[] | undefined;
+    let aiInstalled: boolean;
+
+    const createService = createServiceFactory({
+        service: SlashMenuService,
+        providers: [
+            {
+                provide: EditorStore,
+                useValue: {
+                    languageId: () => 1,
+                    allowedContentTypes: () => '',
+                    aiInstalled: () => aiInstalled,
+                    isAllowed: (block: string) => !allowedBlocks || allowedBlocks.includes(block)
+                }
+            },
+            mockProvider(EditorPopoverService),
+            mockProvider(EditorModalService),
+            mockProvider(DotContentTypeService),
+            mockProvider(DotContentSearchService),
+            mockProvider(DotMessageService, { get: (key: string) => key })
+        ]
+    });
+
+    const blockNamesFor = (blocks: string[] | undefined, installed = true) => {
+        allowedBlocks = blocks;
+        aiInstalled = installed;
+
+        return createService()
+            .service.filterItems('')
+            .map((item) => item.blockName);
+    };
+
+    it('shows both AI entries when the field allows them', () => {
+        const names = blockNamesFor(['bulletList', 'aiContentPrompt', 'aiImagePrompt']);
+
+        expect(names).toContain('aiContentPrompt');
+        expect(names).toContain('aiImagePrompt');
+    });
+
+    it('hides both when the field is restricted and does not allow them', () => {
+        // The gate still works — it is simply reading the key the Settings tab actually writes.
+        const names = blockNamesFor(['bulletList']);
+
+        expect(names).not.toContain('aiContentPrompt');
+        expect(names).not.toContain('aiImagePrompt');
+    });
+
+    it('shows both on an unrestricted field, as before', () => {
+        const names = blockNamesFor(undefined);
+
+        expect(names).toContain('aiContentPrompt');
+        expect(names).toContain('aiImagePrompt');
+    });
+
+    it('keeps the dotAI availability check winning over Allowed Blocks', () => {
+        // Allowed explicitly, but the plugin is not installed: still hidden. `aiInstalled()` is a
+        // separate and correct gate and this change must not weaken it.
+        const names = blockNamesFor(['aiContentPrompt', 'aiImagePrompt'], false);
+
+        expect(names).not.toContain('aiContentPrompt');
+        expect(names).not.toContain('aiImagePrompt');
+    });
+});
