@@ -98,15 +98,16 @@ describe('DotExperimentsConfigureFooterComponent', () => {
         spectator.detectChanges();
     };
 
-    beforeEach(() => {
-        storeMock = createStoreMock();
-        spectator = createComponent();
-        dispatch = vi.spyOn(spectator.inject(Dispatcher), 'dispatch');
-    });
-
     afterEach(() => {
         vi.restoreAllMocks();
     });
+
+    describe('in full mode', () => {
+        beforeEach(() => {
+            storeMock = createStoreMock();
+            spectator = createComponent();
+            dispatch = vi.spyOn(spectator.inject(Dispatcher), 'dispatch');
+        });
 
     describe('hint', () => {
         it('should name what Save Draft covers while there is nothing to save', () => {
@@ -209,6 +210,8 @@ describe('DotExperimentsConfigureFooterComponent', () => {
             expect(spectator.query(byTestId('experiments-configure-start-btn'))).toBeNull();
         });
     });
+
+    }); // end 'in full mode'
 
     /**
      * Limited-mode paths for the Start button. The outer describe uses tier:'full' throughout,
