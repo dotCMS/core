@@ -879,17 +879,19 @@ describe('DotContentDriveToolbarComponent', () => {
             await settleToolbarAnimation(spectator);
         };
 
-        it('should disable Upload and Add New without CAN_ADD_CHILDREN', async () => {
+        // Asserted on the rendered button, not on the component's protected signal (PR #38054
+        // review): the signal is an implementation detail, the disabled control is the behavior.
+        it('should disable Add New without CAN_ADD_CHILDREN', async () => {
             await withPermissions(['READ', 'EDIT']);
 
             expect(spectator.query(byTestId('upload-asset-button'))).toBeTruthy();
-            expect(spectator.component.$canAddChildren()).toBe(false);
+            expect(addNewButton(spectator)?.disabled).toBe(true);
         });
 
-        it('should enable them when the folder accepts children', async () => {
+        it('should enable Add New when the folder accepts children', async () => {
             await withPermissions(['READ', 'EDIT', 'CAN_ADD_CHILDREN']);
 
-            expect(spectator.component.$canAddChildren()).toBe(true);
+            expect(addNewButton(spectator)?.disabled).toBe(false);
         });
 
         // #37896: Upload now also holds "Import CSV", and an import places rows by its CSV, not in
@@ -962,13 +964,13 @@ describe('DotContentDriveToolbarComponent', () => {
             it('should refuse creation when the site root refuses children', async () => {
                 await atRootWithSite(false);
 
-                expect(spectator.component.$canAddChildren()).toBe(false);
+                expect(addNewButton(spectator)?.disabled).toBe(true);
             });
 
             it('should allow creation when the site root accepts children', async () => {
                 await atRootWithSite(true);
 
-                expect(spectator.component.$canAddChildren()).toBe(true);
+                expect(addNewButton(spectator)?.disabled).toBe(false);
             });
 
             // Optimistic while in flight, so the buttons do not start disabled and then flip on for
@@ -976,7 +978,7 @@ describe('DotContentDriveToolbarComponent', () => {
             it('should allow creation while the site lookup is still in flight', async () => {
                 await atRootWithSite(undefined);
 
-                expect(spectator.component.$canAddChildren()).toBe(true);
+                expect(addNewButton(spectator)?.disabled).toBe(false);
             });
 
             // A folder's own permissions are the more specific answer and must win: the root can
@@ -985,16 +987,16 @@ describe('DotContentDriveToolbarComponent', () => {
                 siteCanAddChildrenSignal.set(false);
                 await withPermissions(['READ', 'CAN_ADD_CHILDREN']);
 
-                expect(spectator.component.$canAddChildren()).toBe(true);
+                expect(addNewButton(spectator)?.disabled).toBe(false);
             });
         });
 
         it('should say why the buttons are off', async () => {
             await withPermissions(['READ']);
 
-            expect(spectator.component.$addChildrenTooltip()).toBe(
-                'content-drive.add-new.no-add-children'
-            );
+            const tooltip = spectator.query('[data-testid="add-new-tooltip"]', { read: Tooltip });
+
+            expect(tooltip?.content).toBe('content-drive.add-new.no-add-children');
         });
 
         // A disabled button computes `pointer-events: none`, so a tooltip bound to it would never
