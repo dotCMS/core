@@ -11,10 +11,7 @@ import { CUSTOM_ELEMENTS_SCHEMA, signal } from '@angular/core';
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
-import {
-    DotPublishingQueueToolbarComponent,
-    SELECT_BUNDLE_ITEM_ID
-} from './dot-publishing-queue-toolbar.component';
+import { DotPublishingQueueToolbarComponent } from './dot-publishing-queue-toolbar.component';
 
 import { DotPublishingQueueStore } from '../../store/dot-publishing-queue.store';
 import { DotPublishingQueueStatusFilterComponent } from '../dot-publishing-queue-status-filter/dot-publishing-queue-status-filter.component';
@@ -25,7 +22,6 @@ describe('DotPublishingQueueToolbarComponent', () => {
 
     const bundlesSelectedIds = signal<string[]>([]);
     const bundlesTotal = signal<number>(0);
-    const draftBundlesTotal = signal<number | null>(null);
 
     function makeStoreStub() {
         return {
@@ -34,7 +30,6 @@ describe('DotPublishingQueueToolbarComponent', () => {
             refresh: vi.fn(),
             bundlesSelectedIds,
             bundlesTotal,
-            draftBundlesTotal,
             retryBundles: vi.fn()
         };
     }
@@ -63,10 +58,7 @@ describe('DotPublishingQueueToolbarComponent', () => {
                     'publishing-queue.retry-send': 'Retry Send',
                     'publishing-queue.delete-bundles': 'Remove',
                     'publishing-queue.selected': 'selected',
-                    'publishing-queue.bundles': 'Bundles',
-                    'publishing-queue.bundles.count': 'Bundles ({0})',
-                    'publishing-queue.add-bundle.select': 'Select Bundle',
-                    'publishing-queue.add-bundle.upload': 'Upload'
+                    'publishing-queue.publishing-environments': 'Publishing Environments'
                 })
             }
         ],
@@ -77,7 +69,6 @@ describe('DotPublishingQueueToolbarComponent', () => {
         vi.useFakeTimers();
         bundlesSelectedIds.set([]);
         bundlesTotal.set(0);
-        draftBundlesTotal.set(null);
         spectator = createComponent();
         store = spectator.inject(DotPublishingQueueStore, true) as unknown as ReturnType<
             typeof makeStoreStub
@@ -90,115 +81,49 @@ describe('DotPublishingQueueToolbarComponent', () => {
     });
 
     describe('layout', () => {
-        it('renders search, status filter, refresh, add bundle dropdown', () => {
+        it('renders search, status filter, refresh, Publishing Environments and Upload Bundle', () => {
             expect(spectator.query(byTestId('pq-search-input'))).toBeTruthy();
             expect(spectator.query(byTestId('pq-status-filter-stub'))).toBeTruthy();
             expect(spectator.query(byTestId('pq-refresh-btn'))).toBeTruthy();
-            expect(spectator.query(byTestId('pq-add-bundle-btn'))).toBeTruthy();
+            expect(spectator.query(byTestId('pq-publishing-environments-btn'))).toBeTruthy();
+            expect(spectator.query(byTestId('pq-upload-bundle-btn'))).toBeTruthy();
+        });
+
+        it('no longer renders the Bundles (N) menu', () => {
+            expect(spectator.query(byTestId('pq-add-bundle-btn'))).toBeFalsy();
         });
     });
 
-    describe('Bundles (N) trigger', () => {
-        it('shows the draft count in the button label', () => {
-            draftBundlesTotal.set(22);
-            spectator.detectChanges();
-
-            expect(spectator.query(byTestId('pq-add-bundle-btn-label'))?.textContent?.trim()).toBe(
-                'Bundles (22)'
-            );
-        });
-
-        it('shows a bare "Bundles" while the count is unknown, never "(0)"', () => {
-            draftBundlesTotal.set(null);
-            spectator.detectChanges();
-
-            expect(spectator.query(byTestId('pq-add-bundle-btn-label'))?.textContent?.trim()).toBe(
-                'Bundles'
-            );
-        });
-
-        it('shows "(0)" when the user genuinely has no drafts', () => {
-            draftBundlesTotal.set(0);
-            spectator.detectChanges();
-
-            expect(spectator.query(byTestId('pq-add-bundle-btn-label'))?.textContent?.trim()).toBe(
-                'Bundles (0)'
-            );
-        });
-
-        it('keeps the aria-label in sync with the visible count', () => {
-            draftBundlesTotal.set(7);
-            spectator.detectChanges();
-
-            expect(spectator.query(byTestId('pq-add-bundle-btn'))?.getAttribute('aria-label')).toBe(
-                'Bundles (7)'
-            );
-        });
-    });
-
-    describe('Add Bundle dropdown', () => {
-        /** The menu is `appendTo="body"`, so its rows live outside the fixture. */
-        const queryMenu = (selector: string) => document.body.querySelector(selector);
-
-        function openMenu() {
-            spectator.click(
-                spectator.query(byTestId('pq-add-bundle-btn'))?.querySelector('button') ??
-                    (spectator.query(byTestId('pq-add-bundle-btn')) as HTMLElement)
-            );
-            spectator.detectChanges();
-        }
-
-        it('repeats the draft count next to Select Bundle so it matches the button', () => {
-            draftBundlesTotal.set(22);
-            spectator.detectChanges();
-            openMenu();
-
-            expect(queryMenu('[data-testid="pq-select-bundle-count"]')?.textContent?.trim()).toBe(
-                '22'
-            );
-        });
-
-        it('omits the count next to Select Bundle while it is unknown', () => {
-            draftBundlesTotal.set(null);
-            spectator.detectChanges();
-            openMenu();
-
-            expect(queryMenu('[data-testid="pq-select-bundle-count"]')).toBeNull();
-        });
-
-        it('does not put a count on the Upload row', () => {
-            draftBundlesTotal.set(22);
-            spectator.detectChanges();
-            openMenu();
-
-            expect(
-                document.body.querySelectorAll('[data-testid="pq-select-bundle-count"]').length
-            ).toBe(1);
-        });
-
-        it('tags the Select Bundle row so the item template can add the count', () => {
-            expect(spectator.component.addBundleItems[0].id).toBe(SELECT_BUNDLE_ITEM_ID);
-            expect(spectator.component.addBundleItems[1].id).toBeUndefined();
-        });
-
-        it('exposes two menu items: Select Bundle + Upload', () => {
-            expect(spectator.component.addBundleItems.length).toBe(2);
-            expect(spectator.component.addBundleItems[0].label).toBeTruthy();
-            expect(spectator.component.addBundleItems[1].label).toBeTruthy();
-        });
-
-        it('Upload item → emits uploadClick', () => {
+    describe('Upload Bundle', () => {
+        it('emits uploadClick when clicked', () => {
             const emit = vi.fn();
             spectator.component.$uploadClick.subscribe(emit);
-            spectator.component.addBundleItems[1].command?.({} as never);
+            spectator.click(spectator.query(byTestId('pq-upload-bundle-btn')) as HTMLElement);
             expect(emit).toHaveBeenCalled();
         });
 
-        it('Select Bundle item → emits selectBundleClick (placeholder for future dialog)', () => {
+        it('is labelled "Upload Bundle"', () => {
+            expect(spectator.query(byTestId('pq-upload-bundle-btn'))?.textContent?.trim()).toBe(
+                'Upload Bundle'
+            );
+        });
+    });
+
+    describe('Publishing Environments', () => {
+        it('is an outlined button labelled "Publishing Environments"', () => {
+            const btn = spectator.query(byTestId('pq-publishing-environments-btn'));
+            expect(btn?.textContent?.trim()).toBe('Publishing Environments');
+            expect(btn?.classList).toContain('p-button-outlined');
+        });
+
+        it('does nothing yet when clicked — the dialog ships separately', () => {
             const emit = vi.fn();
-            spectator.component.$selectBundleClick.subscribe(emit);
-            spectator.component.addBundleItems[0].command?.({} as never);
-            expect(emit).toHaveBeenCalled();
+            spectator.component.$uploadClick.subscribe(emit);
+            spectator.click(
+                spectator.query(byTestId('pq-publishing-environments-btn')) as HTMLElement
+            );
+            expect(emit).not.toHaveBeenCalled();
+            expect(store.refresh).not.toHaveBeenCalled();
         });
     });
 
@@ -243,19 +168,20 @@ describe('DotPublishingQueueToolbarComponent', () => {
         });
     });
 
-    describe('Retry Send (selection-gated, swaps with Add Bundle)', () => {
-        it('is hidden when nothing is selected — Add Bundle is the primary', () => {
+    describe('Retry Send (selection-gated, swaps with Upload Bundle)', () => {
+        it('is hidden when nothing is selected — Upload Bundle is the primary', () => {
             bundlesSelectedIds.set([]);
             spectator.detectChanges();
             expect(spectator.query(byTestId('pq-bulk-retry'))).toBeFalsy();
-            expect(spectator.query(byTestId('pq-add-bundle-btn'))).toBeTruthy();
+            expect(spectator.query(byTestId('pq-upload-bundle-btn'))).toBeTruthy();
         });
 
-        it('replaces Add Bundle as the primary when there is a selection', () => {
+        it('replaces Publishing Environments and Upload Bundle when there is a selection', () => {
             bundlesSelectedIds.set(['b1', 'b2']);
             spectator.detectChanges();
             expect(spectator.query(byTestId('pq-bulk-retry'))).toBeTruthy();
-            expect(spectator.query(byTestId('pq-add-bundle-btn'))).toBeFalsy();
+            expect(spectator.query(byTestId('pq-upload-bundle-btn'))).toBeFalsy();
+            expect(spectator.query(byTestId('pq-publishing-environments-btn'))).toBeFalsy();
         });
 
         it('does not show a separate selected-count label', () => {

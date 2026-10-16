@@ -1,7 +1,7 @@
 <!-- Table: flex-1 min-h-0 so pagination stays at bottom with scrollable body -->
 <div class="flex min-h-0 flex-1 flex-col overflow-hidden" data-testid="pq-bundles-table-wrapper">
     <p-table
-        [value]="store.bundlesRows()"
+        [value]="store.tableRows()"
         [lazy]="true"
         (onLazyLoad)="onLazyLoad($event)"
         [paginator]="true"
@@ -66,7 +66,7 @@
                     {{ 'publishing-queue.column.status' | dm }}
                 </th>
                 <th
-                    style="width: 3rem"
+                    [style.width]="$actionsColumnWidth()"
                     pFrozenColumn
                     alignFrozen="right"
                     data-testid="pq-bundles-col-actions"></th>
@@ -129,6 +129,7 @@
                     class="group cursor-pointer"
                     (click)="onRowClick(row)"
                     (contextmenu)="onRowContextMenu($event, row)"
+                    [attr.data-new]="row.isNew || null"
                     data-testid="pq-bundles-row">
                     <td pFrozenColumn (click)="$event.stopPropagation()">
                         <p-tableCheckbox [value]="row" />
@@ -174,16 +175,17 @@
                              passive badge, so users didn't discover it opens the
                              bundle's contents. Empty bundles have nothing to
                              open, so they render as plain text. -->
-                        @if ((row.assetCount ?? 0) > 0) {
+                        @if (row.assetCount === null) {
+                            <!-- Only a New row whose count the server didn't send. -->
+                            <span class="text-color-secondary">—</span>
+                        } @else if (row.assetCount > 0) {
                             <button
                                 type="button"
                                 class="cursor-pointer border-none bg-transparent p-0 text-inherit underline-offset-2 hover:underline"
                                 [pTooltip]="'publishing-queue.column.items.view' | dm"
                                 tooltipPosition="top"
                                 [attr.aria-label]="'publishing-queue.column.items.view' | dm"
-                                (click)="
-                                    $event.stopPropagation(); store.openAssetList(row.bundleId)
-                                "
+                                (click)="$event.stopPropagation(); onItemsClick(row)"
                                 data-testid="pq-bundles-items-btn">
                                 {{ itemsLabel(row.assetCount ?? 0) }}
                             </button>
@@ -199,13 +201,18 @@
                     <td
                         class="text-color-secondary whitespace-nowrap"
                         data-testid="pq-bundles-modified">
-                        {{
-                            (row.statusUpdated || row.createDate
-                                | dotRelativeDate: 'MMM d, y - h:mm:ss a') || '—'
-                        }}
+                        <!-- A New bundle whose id isn't a ULID has no known date. -->
+                        @if (row.isNew && !row.createDate) {
+                            —
+                        } @else {
+                            {{
+                                (row.statusUpdated || row.createDate
+                                    | dotRelativeDate: 'MMM d, y - h:mm:ss a') || '—'
+                            }}
+                        }
                     </td>
                     <td class="whitespace-nowrap" data-testid="pq-bundles-status">
-                        <dot-publishing-status-chip [status]="row.status" />
+                        <dot-publishing-status-chip [status]="row.isNew ? 'NEW' : row.status" />
                     </td>
                     <td
                         class="text-right"
@@ -222,13 +229,23 @@
                             (onHide)="onKebabHide(kebab)"
                             data-testid="pq-bundles-kebab-menu" />
                         <div
-                            class="opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+                            class="flex items-center justify-end gap-1"
+                            [style.min-width]="$actionsContentMinWidth()"
+                            data-testid="pq-bundles-actions">
+                            @if (row.isNew) {
+                                <p-button
+                                    [label]="'publishing-queue.row.set-up' | dm"
+                                    [outlined]="true"
+                                    size="small"
+                                    (onClick)="store.openSetup(row.bundleId)"
+                                    [pt]="{ root: { 'data-testid': 'pq-bundles-setup-btn' } }" />
+                            }
                             <p-button
                                 [text]="true"
                                 [rounded]="true"
                                 size="small"
                                 severity="secondary"
-                                styleClass="w-9 h-9 p-0"
+                                styleClass="w-9 h-9 p-0 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
                                 (onClick)="onKebabToggle(kebab, $event)"
                                 [attr.aria-label]="'publishing-queue.row.actions' | dm"
                                 data-testid="pq-bundles-kebab-btn">

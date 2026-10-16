@@ -1,6 +1,7 @@
 package com.dotcms.publisher.business;
 
 import com.dotcms.business.WrapInTransaction;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -327,6 +328,19 @@ public abstract class PublisherAPI {
 	 * @throws DotPublisherException
 	 */
 	public abstract Integer countQueueElementsGroupByBundleId() throws DotPublisherException;
+
+	/**
+	 * Counts the assets queued in each of the given bundles, in one query per batch of
+	 * bundle ids rather than one per bundle. For an unsent bundle these are the same rows
+	 * {@link #getQueueElementsByBundleId(String)} returns.
+	 *
+	 * @param bundleIds the bundles to count; {@code null} or empty returns an empty map
+	 * @return the number of queued assets per bundle id. A bundle with no queued assets is
+	 *         absent from the map rather than mapped to zero.
+	 * @throws DotPublisherException if the count query fails
+	 */
+	public abstract Map<String, Integer> countQueueElementsByBundleIds(Collection<String> bundleIds)
+			throws DotPublisherException;
 
 	/**
 	 * Get queue element by asset

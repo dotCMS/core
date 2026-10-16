@@ -6,6 +6,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import {
     DotPublishingStatusChipComponent,
+    NEW_BUNDLE_STATUS,
     publishingStatusBucket
 } from './dot-publishing-status-chip.component';
 
@@ -58,7 +59,8 @@ describe('DotPublishingStatusChipComponent', () => {
                     'publishing-queue.status.FAILED_TO_PUBLISH': 'Publish error',
                     'publishing-queue.status.BUNDLING': 'Bundling',
                     'publishing-queue.status.BUNDLE_SENT_SUCCESSFULLY': 'Sent',
-                    'publishing-queue.status.WAITING_FOR_PUBLISHING': 'Waiting'
+                    'publishing-queue.status.WAITING_FOR_PUBLISHING': 'Waiting',
+                    'publishing-queue.status.NEW': 'New'
                 })
             }
         ],
@@ -118,5 +120,15 @@ describe('DotPublishingStatusChipComponent', () => {
         });
         spectator.detectChanges();
         expect(spectator.component.$bucket()).toBe('info');
+    });
+
+    it('renders an unsent bundle as "New" with a primary tint instead of a severity', () => {
+        spectator = createComponent();
+        spectator.setInput('status', NEW_BUNDLE_STATUS);
+        spectator.detectChanges();
+        const chip = spectator.query(byTestId('pq-status-chip'));
+        expect(chip).toHaveText('New');
+        expect(chip?.className).toContain('bg-primary-50');
+        expect(spectator.component.$bucket()).toBeNull();
     });
 });

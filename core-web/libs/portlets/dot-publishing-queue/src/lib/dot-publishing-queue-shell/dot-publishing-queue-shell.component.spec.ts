@@ -25,6 +25,7 @@ import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-di
 
 import { DotPublishingQueueShellComponent } from './dot-publishing-queue-shell.component';
 
+import { DotPublishingQueueSetupBundleDialogComponent } from '../dialogs/dot-publishing-queue-setup-bundle-dialog/dot-publishing-queue-setup-bundle-dialog.component';
 import { DotPublishingQueueStore } from '../store/dot-publishing-queue.store';
 
 describe('DotPublishingQueueShellComponent', () => {
@@ -60,9 +61,14 @@ describe('DotPublishingQueueShellComponent', () => {
                 getPublishingJobDetails: vi.fn().mockReturnValue(of({})),
                 probeBundleDownload: vi.fn().mockReturnValue(of(true)),
                 probeBundleManifest: vi.fn().mockReturnValue(of(true)),
-                getUnsendBundles: vi
-                    .fn()
-                    .mockReturnValue(of({ identifier: 'id', label: 'name', items: [], numRows: 0 }))
+                getUnsendBundles: vi.fn().mockReturnValue(
+                    of({
+                        identifier: 'id',
+                        label: 'name',
+                        items: [{ id: 'N-1', name: 'Draft 1' }],
+                        numRows: 1
+                    })
+                )
             }),
             mockProvider(DotCurrentUserService, {
                 getCurrentUser: vi.fn().mockReturnValue(of({ userId: 'user-1' }))
@@ -175,6 +181,36 @@ describe('DotPublishingQueueShellComponent', () => {
             store.openDetail('B-2');
             spectator.detectChanges();
             expect(dialogService.open).toHaveBeenCalled();
+        });
+    });
+
+    describe('setup dialog sync', () => {
+        it('opens the Set Up dialog with the bundle id and name when setupBundleId becomes set', () => {
+            store.openSetup('N-1');
+            spectator.detectChanges();
+
+            expect(dialogService.open).toHaveBeenCalledWith(
+                DotPublishingQueueSetupBundleDialogComponent,
+                expect.objectContaining({
+                    closable: true,
+                    closeOnEscape: true,
+                    data: { bundleId: 'N-1', bundleName: 'Draft 1' }
+                })
+            );
+        });
+
+        it('clears setupBundleId and refreshes the table when the dialog closes', () => {
+            store.openSetup('N-1');
+            spectator.detectChanges();
+            const service = spectator.inject(DotPublishingQueueService);
+            vi.mocked(service.listPublishingJobs).mockClear();
+            vi.mocked(service.getUnsendBundles).mockClear();
+
+            onCloseSubject.next(undefined);
+
+            expect(store.setupBundleId()).toBeNull();
+            expect(service.listPublishingJobs).toHaveBeenCalled();
+            expect(service.getUnsendBundles).toHaveBeenCalled();
         });
     });
 
