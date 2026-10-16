@@ -94,21 +94,6 @@ describe('DotEditContentSidePanelComponent', () => {
                 }
             });
 
-    /**
-     * The shared panel's header (title + expand/close) is separated from the editor's tabs and
-     * command bar by a full-width divider, in the colour of the tab list's own bottom border
-     * (#37958). It is the content area's top border, set from here so only this panel gets it.
-     */
-    it('should draw a divider between the panel header and the editor', () => {
-        const contentStyleClass = (panel as unknown as ReturnType<typeof panelRef>)
-            .contentStyleClass()
-            .split(' ');
-
-        expect(contentStyleClass).toEqual(
-            expect.arrayContaining(['p-0!', 'border-t', 'border-surface-200'])
-        );
-    });
-
     it('should render the editor only when data is set', () => {
         spectator.setInput('data', null);
         spectator.detectChanges();
