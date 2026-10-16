@@ -1125,6 +1125,45 @@ describe('withActionExecution', () => {
             );
         });
 
+        /**
+         * PR #38054 review (nicobytes): the import's job id reaches the dialog over HTTP, and its
+         * completion over the websocket. For a small CSV the completion can land first, long
+         * after the restore on load. It must still end the run the dialog then starts.
+         */
+        it('should settle an import whose completion arrives before the dialog starts its run', () => {
+            build();
+            store.restoreImportRuns([]);
+
+            importSocketEvents.next(importCompleted({ jobId: 'import-9' }));
+            store.startImportRun('import-9', 'fast.csv');
+
+            expect(store.toolbarRunCount()).toBe(0);
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'fast.csv',
+                    outcomeKind: 'import',
+                    createdCount: 3,
+                    updatedCount: 1,
+                    failedCount: 2
+                })
+            );
+        });
+
+        it('should hold only the most recent early completions', () => {
+            build();
+            store.restoreImportRuns([]);
+
+            // Other tabs' imports keep arriving; only a bounded number is held for a claim.
+            for (let index = 0; index <= 20; index++) {
+                importSocketEvents.next(importCompleted({ jobId: `other-${index}` }));
+            }
+            store.startImportRun('other-0', 'oldest.csv');
+
+            // The oldest was dropped, so its run starts as running.
+            expect(store.toolbarRunCount()).toBe(1);
+            expect(store.actionExecutionResult()).toBeUndefined();
+        });
+
         it('should not report an early completion that no restore claims', () => {
             build();
 

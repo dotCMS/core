@@ -17,7 +17,6 @@ import { catchError, take } from 'rxjs/operators';
 
 import {
     AddToBundleService,
-    DotActiveImport,
     DotBulkRefreshService,
     DotFolderBulkDuplicateRefusal,
     DotFolderBulkDuplicateRefusalKind,
@@ -41,11 +40,12 @@ import {
     DotBulkUploadActiveRun,
     DotBundle,
     DotFolderBulkDuplicateCompletedEvent,
-    DotImportCompletedEvent,
     DotFolderBulkDuplicateSubmitResponse,
     DotFolderDuplicateActiveRun,
     DotWorkflowPushPublishValue
 } from '@dotcms/dotcms-models';
+
+import { withImportRuns } from './withImportRuns';
 
 import {
     DELETE_FOLDER_OPERATION,
@@ -107,28 +107,6 @@ interface WithActionExecutionState {
      * by the time the event lands the author may be looking somewhere else entirely.
      */
     uploadJobs: Record<string, DotContentDriveUploadJob>;
-    /**
-     * CSV imports this store started or restored, by job id (#37896): the run each belongs to and
-     * the name the outcome is reported under. Same reasoning as {@link uploadJobs}: the completion
-     * reaches every tab of the submitting user, and only ids in here are acted on.
-     */
-    importJobs: Record<string, { runId: string; fileName: string }>;
-    /**
-     * CSV imports already reported, by job id. A failed job is announced twice (failed, then
-     * permanently failed), so this is what keeps the outcome from being shown twice.
-     */
-    settledImportJobs: string[];
-    /**
-     * Completions of CSV imports this page doesn't track yet, by job id (PR #38054 review).
-     *
-     * After a reload the running imports are read, then restored. One that ends in between reports
-     * its completion before it is tracked; held here, the restore reports it instead of putting
-     * back a status nothing would end. Same lifetime as {@link unclaimedUploadCompletions}: held
-     * only until that restore has run.
-     */
-    unclaimedImportCompletions: Record<string, DotImportCompletedEvent>;
-    /** Whether the imports' restore on load has run, after which no completion is held for it. */
-    importRunsRestored: boolean;
     /**
      * Bulk folder deletes this store submitted, by job id, valued by the run they belong to.
      *
@@ -230,15 +208,27 @@ export function withActionExecution() {
         {
             state: type<DotContentDriveState>()
         },
+        withRunExecution(),
+        // CSV imports (#37896) in their own feature, on top of the public run methods.
+        withImportRuns()
+    );
+}
+
+/**
+ * The runs, their status indicator and their outcomes, shared by every operation. Kept apart from
+ * {@link withActionExecution} so a feature such as {@link withImportRuns} can be composed on top of
+ * its public methods: chained in one feature, the methods type widens and cannot be required.
+ */
+function withRunExecution() {
+    return signalStoreFeature(
+        {
+            state: type<DotContentDriveState>()
+        },
         withState<WithActionExecutionState>({
             runs: {},
             actionExecutionResults: [],
             refreshJobIds: [],
             uploadJobs: {},
-            importJobs: {},
-            settledImportJobs: [],
-            unclaimedImportCompletions: {},
-            importRunsRestored: false,
             folderDeleteJobs: {},
             settledFolderDeleteJobs: [],
             folderDeleteRefusal: undefined,
@@ -900,73 +890,6 @@ export function withActionExecution() {
                     run.assetPaths.length > 0 && !isKnownDuplicate(run.id);
 
                 /** Puts back one running duplicate's status, tracked as a fresh submission is. */
-                /**
-                 * Shows a CSV import on the status indicator and remembers it, so its completion
-                 * event can end the run and name the file (#37896). An import already tracked or
-                 * already reported is left alone: a reload can list a job that this page started,
-                 * or one whose completion arrived while the listing was being read.
-                 */
-                const trackImportRun = (jobId: string, fileName: string): void => {
-                    if (store.importJobs()[jobId] || store.settledImportJobs().includes(jobId)) {
-                        return;
-                    }
-
-                    const runId = startRun({
-                        operation: `import:${jobId}`,
-                        total: 1,
-                        targets: [],
-                        labelKey: 'content-drive.import.indicator',
-                        backgrounded: true
-                    });
-
-                    patchState(store, {
-                        importJobs: { ...store.importJobs(), [jobId]: { runId, fileName } }
-                    });
-                };
-
-                /**
-                 * Ends a tracked import's run with its created, updated and failed counts, or the
-                 * server's reason when it failed outright, and remembers it as reported.
-                 */
-                const settleImportRun = (event: DotImportCompletedEvent): void => {
-                    const tracked = store.importJobs()[event.jobId];
-                    const remaining = { ...store.importJobs() };
-                    delete remaining[event.jobId];
-                    patchState(store, {
-                        importJobs: remaining,
-                        settledImportJobs: [...store.settledImportJobs(), event.jobId]
-                    });
-
-                    const created = event.created ?? 0;
-                    const updated = event.updated ?? 0;
-
-                    onSettled(tracked.runId, {
-                        actionName: tracked.fileName,
-                        outcomeKind: OUTCOME_KIND.IMPORT,
-                        successCount: created + updated,
-                        createdCount: created,
-                        updatedCount: updated,
-                        failedCount: event.failed ?? 0,
-                        skippedCount: 0,
-                        message: event.message,
-                        backgrounded: true
-                    });
-                };
-
-                /**
-                 * Puts back one running import after a reload, or reports it at once when its
-                 * completion already arrived while the running imports were being read.
-                 */
-                const restoreImportRun = (run: DotActiveImport): void => {
-                    const early = store.unclaimedImportCompletions()[run.id];
-
-                    trackImportRun(run.id, run.fileName ?? '');
-
-                    if (early && store.importJobs()[run.id]) {
-                        settleImportRun(early);
-                    }
-                };
-
                 const restoreDuplicateRun = (run: DotFolderDuplicateActiveRun): void => {
                     const runId = startDuplicateRun(run.id, run.assetPaths.length);
 
@@ -1741,55 +1664,6 @@ export function withActionExecution() {
                      *
                      * @param runs the author's own batches from the queue's active listing
                      */
-                    /**
-                     * Shows a CSV import the import dialog just started on the status indicator
-                     * until its completion arrives (#37896).
-                     */
-                    startImportRun: (jobId: string, fileName: string): void =>
-                        trackImportRun(jobId, fileName),
-                    /** Puts back the status of CSV imports still running after a reload (#37896). */
-                    restoreImportRuns: (runs: DotActiveImport[]): void => {
-                        runs.forEach(restoreImportRun);
-                        // Nothing claims a completion after the restore: drop what is left (other
-                        // tabs' imports) and stop holding new ones.
-                        patchState(store, {
-                            unclaimedImportCompletions: {},
-                            importRunsRestored: true
-                        });
-                    },
-                    /**
-                     * Ends an import's run with its created, updated and failed counts, or the
-                     * server's reason when it failed outright (#37896). Previews and a job already
-                     * reported are ignored: a failed job is announced twice (failed, then
-                     * permanently failed). An import this page doesn't track is held until the
-                     * restore on load, which reports it if it is this page's.
-                     */
-                    reportImportCompleted: (event: DotImportCompletedEvent): void => {
-                        if (
-                            event.cmd !== 'publish' ||
-                            store.settledImportJobs().includes(event.jobId)
-                        ) {
-                            return;
-                        }
-
-                        if (!store.importJobs()[event.jobId]) {
-                            // Not tracked: another tab's import, or one of this author's ending
-                            // before the restore has placed it. Held until that restore, which
-                            // reports it if it is this page's; ignored once the restore has run.
-                            if (!store.importRunsRestored()) {
-                                patchState(store, {
-                                    unclaimedImportCompletions: {
-                                        ...store.unclaimedImportCompletions(),
-                                        [event.jobId]: event
-                                    }
-                                });
-                            }
-
-                            return;
-                        }
-
-                        settleImportRun(event);
-                    },
                     restoreUploadRuns: (runs: DotBulkUploadActiveRun[]): void => {
                         runs.forEach(reportEarlyUploadCompletion);
                         runs.filter(isRestorableUpload).forEach(restoreUploadRun);
@@ -1872,14 +1746,6 @@ export function withActionExecution() {
                             event
                         );
                     });
-
-                // A CSV import reports the same way (#37896). Preview events are ignored: the
-                // dialog previews through the synchronous `/_preview`, which emits none, and a
-                // preview queued through `/_validate` has nothing here waiting on it.
-                eventsSocket
-                    .on<DotImportCompletedEvent>(DotSystemEventType.IMPORT_CONTENTLETS_COMPLETED)
-                    .pipe(takeUntilDestroyed(destroyRef))
-                    .subscribe((event) => store.reportImportCompleted(event));
 
                 // Duplication reports the same way: the run settles itself, nothing here polls.
                 eventsSocket
