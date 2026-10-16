@@ -233,12 +233,15 @@ describe('DotRelationshipFieldComponent', () => {
         storeMock = createStoreMock(storeOverrides);
         spectator = createComponent({
             providers: [{ provide: RelationshipFieldStore, useValue: storeMock }],
-            props: {
-                field: FIELD_MOCK,
-                contentlet: buildItem(),
-                hasError: false,
-                isRequired: false
-            }
+            detectChanges: false
+        });
+        // The inputs are declared with aliases (`$field` → `field`), so they are set by their
+        // public binding name; `createComponent`'s `props` is typed by the class member names.
+        spectator.setInput({
+            field: FIELD_MOCK,
+            contentlet: buildItem(),
+            hasError: false,
+            isRequired: false
         });
         spectator.detectChanges();
     };
