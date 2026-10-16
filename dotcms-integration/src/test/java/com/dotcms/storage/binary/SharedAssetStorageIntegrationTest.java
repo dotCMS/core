@@ -80,7 +80,9 @@ public class SharedAssetStorageIntegrationTest {
                 assertEquals(text, Files.readString(first.toPath()), "Historical revision must not resolve latest bytes");
             }
         } finally {
-            assets.deleteBinary(inode, field);
+            final String fieldPrefix = inode.charAt(0) + "/" + inode.charAt(1) + "/" + inode + "/" + field + "/";
+            assets.deleteBinaryPaths(inode, field, assets.listBinaryPaths(inode).stream()
+                    .filter(path -> path.startsWith(fieldPrefix)).toList());
         }
 
         final var type = new com.dotcms.datagen.ContentTypeDataGen().nextPersisted();

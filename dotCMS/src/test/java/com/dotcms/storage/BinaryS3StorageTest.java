@@ -240,7 +240,7 @@ class BinaryS3StorageTest {
                 writer.createStatement().execute("update contentlet set contentlet_as_json = '{}'");
                 writer.commit();
                 assertNull(contentApi.getBinaryFile("abc123", "HeroImage"));
-                contentApi.deleteAllBinaries("abc123");
+                contentApi.deleteBinaryPaths("abc123", "HeroImage", contentApi.listBinaryPaths("abc123"));
                 assertTrue(client.listObjectsV2(bucket, GROUP + "/a/b/abc123/").getObjectSummaries().isEmpty());
             } finally {
                 writer.rollback();

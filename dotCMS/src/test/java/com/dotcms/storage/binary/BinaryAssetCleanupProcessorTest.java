@@ -71,7 +71,6 @@ class BinaryAssetCleanupProcessorTest {
                     .thenThrow(new DotDataException("database unavailable"));
             assertThrows(DotDataException.class, () -> BinaryAssetCleanupProcessor.enqueue(INODE));
             verify(storage, never()).deleteBinaryPaths(anyString(), anyString(), anyList());
-            verify(storage, never()).deleteAllBinaries(anyString());
         }
     }
 
@@ -126,7 +125,6 @@ class BinaryAssetCleanupProcessorTest {
             verify(storage).deleteBinaryPaths(INODE, "heroImage", List.of(OLD_REVISION));
             verify(storage, never()).deleteBinaryPaths(anyString(), anyString(),
                     argThat(paths -> paths.contains(NEW_REVISION)));
-            verify(storage, never()).deleteAllBinaries(anyString());
         }
     }
 
