@@ -50,8 +50,10 @@ it shows up when the translations response arrives after the logged-in user's da
 
 1. Log in to the admin UI.
 2. In DevTools → Application → Local Storage, delete `dotMessagesKeys` and `buildDate`.
-3. Make `/api/v2/languages/default/keys` slow: throttle or block it in the DevTools Network
-   panel, or put a proxy in front that delays only that path by about 3 seconds.
+3. Make `/api/v2/languages/default/keys` slow, so it answers in about 1.5 seconds: put a proxy
+   in front that delays only that path, or throttle the network in the DevTools Network panel.
+   Keep the delay under 2.5 seconds — that is the longest the fixed UI waits for translations
+   (AC-005); with a longer delay or a blocked request, raw keys after the fix are expected.
 4. Reload the page.
 5. Once the page has finished loading, open the avatar menu in the top-right toolbar.
 6. Reload again.
@@ -155,11 +157,13 @@ always asks for the `default` language, so it discards the language the login pa
 ## Acceptance & Verification *(mandatory)*
 
 - **AC-001**: On a load where the translations must be downloaded — no saved copy, or a saved
-  copy from a different build or language — no translatable text is shown as a raw key: the user
-  menu, translate-pipe template labels, and the validation messages in My Account and Report an
-  Issue. The reproduction steps above show the translated menu at step 5.
+  copy from a different build or language — and the download completes within 2.5 seconds, no
+  translatable text is shown as a raw key: the user menu, translate-pipe template labels, and the
+  validation messages in My Account and Report an Issue. The reproduction steps above show the
+  translated menu at step 5. (A download that fails or takes longer is covered by AC-005.)
 - **AC-002**: When a valid saved copy exists, the UI renders with it immediately, without waiting
-  for any network request.
+  for any network request: the fix adds no delay to the first render compared to today on these
+  loads.
 - **AC-003**: While newer translations are downloading, lookups return the saved text rather than
   raw keys.
 - **AC-004**: If `/api/v1/appconfiguration` fails, the UI still shows translated labels, using the
