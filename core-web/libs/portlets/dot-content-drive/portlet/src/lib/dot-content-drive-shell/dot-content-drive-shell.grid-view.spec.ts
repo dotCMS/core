@@ -358,6 +358,8 @@ describe('DotContentDriveShellComponent — grid view', () => {
                     selectSystemHost: vi.fn(),
                     sidebarLoading: vi.fn(),
                     closeDialog: vi.fn(),
+                    sourceEditor: signal(null),
+                    closeSourceEditor: vi.fn(),
                     patchContextMenu: vi.fn(),
                     resetContextMenu: vi.fn(),
                     setDragItems: vi.fn(),

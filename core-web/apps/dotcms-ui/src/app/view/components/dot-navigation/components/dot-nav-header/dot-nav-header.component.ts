@@ -3,7 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 
 import { ButtonModule } from 'primeng/button';
 
-import { DotNavLogoService } from '../../../../../api/services/dot-nav-logo/dot-nav-logo.service';
+import { DotNavLogoService } from '@dotcms/data-access';
 
 @Component({
     selector: 'dot-nav-header',

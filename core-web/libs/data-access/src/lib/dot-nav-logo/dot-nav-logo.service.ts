@@ -5,7 +5,7 @@ import { Injectable } from '@angular/core';
     providedIn: 'root'
 })
 export class DotNavLogoService {
-    navBarLogo$: BehaviorSubject<string> = new BehaviorSubject('');
+    navBarLogo$ = new BehaviorSubject<string | null>('');
 
     /**
      * Sets a logo for the nav bar
