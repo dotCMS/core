@@ -71,6 +71,29 @@ public final class LoginLockout {
     private static final int MAX_SOURCE_LENGTH = 64;
 
     /**
+     * Adds one failure for an account and source. Both CASE conditions mean the count starts over: it is
+     * older than the window, or its lock has run out. Parameters: user, source, now, mod date, then
+     * window cutoff and now (failures), window cutoff, now and now (window start), now (lock), mod date.
+     */
+    private static final String COUNT_FAILURE_SQL =
+            "INSERT INTO login_lockout (user_id, source, failures, window_start, locked_until, mod_date)"
+                    + " VALUES (?, ?, 1, ?, 0, ?) ON CONFLICT (user_id, source) DO UPDATE SET"
+                    + " failures = CASE WHEN (login_lockout.window_start < ? OR (login_lockout.locked_until > 0"
+                    + " AND login_lockout.locked_until <= ?)) THEN 1 ELSE login_lockout.failures + 1 END,"
+                    + " window_start = CASE WHEN (login_lockout.window_start < ? OR (login_lockout.locked_until > 0"
+                    + " AND login_lockout.locked_until <= ?)) THEN ? ELSE login_lockout.window_start END,"
+                    + " locked_until = CASE WHEN login_lockout.locked_until <= ? THEN 0"
+                    + " ELSE login_lockout.locked_until END,"
+                    + " mod_date = ?";
+
+    private static final String READ_FAILURES_SQL =
+            "SELECT failures FROM login_lockout WHERE user_id = ? AND source = ?";
+
+    private static final String LOCK_SQL =
+            "UPDATE login_lockout SET locked_until = ?, failures = 0, window_start = ?, mod_date = ?"
+                    + " WHERE user_id = ? AND source = ?";
+
+    /**
      * Lock state of one account as seen from one client address.
      */
     public enum Status {
@@ -317,16 +340,8 @@ public final class LoginLockout {
         final long now = clock.getAsLong();
         final long windowCutoff = now - windowSeconds() * 1000L;
         final Date modDate = new Date(now);
-        final String startsOver = "(login_lockout.window_start < ? OR "
-                + "(login_lockout.locked_until > 0 AND login_lockout.locked_until <= ?))";
         new DotConnect()
-                .setSQL("INSERT INTO login_lockout (user_id, source, failures, window_start, locked_until, mod_date)"
-                        + " VALUES (?, ?, 1, ?, 0, ?) ON CONFLICT (user_id, source) DO UPDATE SET"
-                        + " failures = CASE WHEN " + startsOver + " THEN 1 ELSE login_lockout.failures + 1 END,"
-                        + " window_start = CASE WHEN " + startsOver + " THEN ? ELSE login_lockout.window_start END,"
-                        + " locked_until = CASE WHEN login_lockout.locked_until <= ? THEN 0"
-                        + " ELSE login_lockout.locked_until END,"
-                        + " mod_date = ?")
+                .setSQL(COUNT_FAILURE_SQL)
                 .addParam(userId).addParam(source).addParam(now).addParam(modDate)
                 .addParam(windowCutoff).addParam(now)
                 .addParam(windowCutoff).addParam(now).addParam(now)
@@ -334,7 +349,7 @@ public final class LoginLockout {
                 .addParam(modDate)
                 .loadResult();
         final List<Map<String, Object>> rows = new DotConnect()
-                .setSQL("SELECT failures FROM login_lockout WHERE user_id = ? AND source = ?")
+                .setSQL(READ_FAILURES_SQL)
                 .addParam(userId).addParam(source)
                 .loadObjectResults();
         final int failures = rows.isEmpty() ? 0 : ((Number) rows.get(0).get("failures")).intValue();
@@ -343,8 +358,7 @@ public final class LoginLockout {
         }
         final long seconds = lockSeconds();
         new DotConnect()
-                .setSQL("UPDATE login_lockout SET locked_until = ?, failures = 0, window_start = ?, mod_date = ?"
-                        + " WHERE user_id = ? AND source = ?")
+                .setSQL(LOCK_SQL)
                 .addParam(now + seconds * 1000L).addParam(now).addParam(modDate)
                 .addParam(userId).addParam(source)
                 .loadResult();
