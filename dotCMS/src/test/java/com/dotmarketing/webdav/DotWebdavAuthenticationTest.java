@@ -76,6 +76,8 @@ public class DotWebdavAuthenticationTest {
         when(userAPI.getSystemUser()).thenReturn(systemUser);
         when(userAPI.loadUserById(USERNAME, systemUser, false)).thenReturn(user);
         when(user.getUserId()).thenReturn(USERNAME);
+        // WebDAV auth rejects inactive users, and an unstubbed mock reports inactive.
+        when(user.isActive()).thenReturn(true);
 
         // Only the authentication methods are under test; skip API-dependent instance fields.
         try (MockedConstruction<Timer> timers = mockConstruction(Timer.class)) {
