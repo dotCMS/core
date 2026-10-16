@@ -1,15 +1,29 @@
-import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/vitest';
+import {
+    createHttpFactory,
+    HttpMethod,
+    mockProvider,
+    SpectatorHttp
+} from '@openng/spectator/vitest';
+import { Subject } from 'rxjs';
+import { vi } from 'vitest';
 
-import { DotContentImportForm, DotImportJob } from '@dotcms/dotcms-models';
+import { DotContentImportForm, DotImportCompletedEvent, DotImportJob } from '@dotcms/dotcms-models';
 
 import { DotContentImportService } from './dot-content-import.service';
+
+import { DotEventsSocket } from '../dot-websocket/dot-events-socket.service';
 
 const IMPORT_URL = '/api/v1/content/_import';
 
 describe('DotContentImportService', () => {
     let spectator: SpectatorHttp<DotContentImportService>;
 
-    const createHttp = createHttpFactory(DotContentImportService);
+    let completions: Subject<DotImportCompletedEvent>;
+
+    const createHttp = createHttpFactory({
+        service: DotContentImportService,
+        providers: [mockProvider(DotEventsSocket, { on: vi.fn(() => completions) })]
+    });
 
     const FORM: DotContentImportForm = {
         contentType: 'Blog',
@@ -21,34 +35,76 @@ describe('DotContentImportService', () => {
     const CSV = new File(['title\nHello'], 'blogs.csv', { type: 'text/csv' });
 
     beforeEach(() => {
+        completions = new Subject<DotImportCompletedEvent>();
         spectator = createHttp();
     });
 
     /**
-     * #37896 FR-012: the preview is a dry run the server answers in the same request, as Content
-     * Search's does — no job queue to wait on. The `form` part always names the language (leaving it
-     * out turns on multilingual mode) and the Drive's site.
+     * #37896 FR-012 (PR #38054 review): the preview is a job on the queue, through `/_validate`.
+     * The service waits for it: the completion event ends the wait as soon as it lands, and the
+     * job is also read every second in case the event is missed. The `form` part always names the
+     * language (leaving it out turns on multilingual mode) and the Drive's site.
      */
     describe('preview', () => {
-        it('posts the CSV and the form to the preview endpoint and returns the finished job', async () => {
-            const finishedJob: DotImportJob = {
-                id: 'preview-1',
-                state: 'SUCCESS',
-                result: { data: { summary: { created: 1, updated: 0, failed: 0 } } }
-            };
+        const finishedJob: DotImportJob = {
+            id: 'preview-1',
+            state: 'SUCCESS',
+            result: { data: { summary: { created: 1, updated: 0, failed: 0 } } }
+        };
+
+        const startPreview = () => {
             let job: DotImportJob | undefined;
             spectator.service.preview(CSV, FORM).subscribe((value) => (job = value));
+            const req = spectator.expectOne(`${IMPORT_URL}/_validate`, HttpMethod.POST);
 
-            const req = spectator.expectOne(`${IMPORT_URL}/_preview`, HttpMethod.POST);
+            return { req, received: () => job };
+        };
+
+        afterEach(() => vi.useRealTimers());
+
+        it('queues the CSV and the form through /_validate', async () => {
+            const { req } = startPreview();
+
             const body = req.request.body as FormData;
             expect(body.get('file')).toBe(CSV);
             const form = JSON.parse(await (body.get('form') as Blob).text());
             expect(form).toEqual(FORM);
             expect(form.language).toBe('1');
             expect(form.site).toBe('demo.dotcms.com');
+        });
 
-            req.flush({ entity: finishedJob });
-            expect(job).toEqual(finishedJob);
+        it('returns the finished job as soon as its completion arrives', () => {
+            const { req, received } = startPreview();
+            req.flush({ entity: { jobId: 'preview-1' } });
+
+            completions.next({ jobId: 'other-job', state: 'SUCCESS', cmd: 'preview' });
+            spectator.controller.expectNone(`${IMPORT_URL}/other-job`);
+
+            completions.next({ jobId: 'preview-1', state: 'SUCCESS', cmd: 'preview' });
+            spectator.expectOne(`${IMPORT_URL}/preview-1`, HttpMethod.GET).flush({
+                entity: finishedJob
+            });
+
+            expect(received()).toEqual(finishedJob);
+        });
+
+        it('reads the job every second when no completion arrives', () => {
+            vi.useFakeTimers();
+            const { req, received } = startPreview();
+            req.flush({ entity: { jobId: 'preview-1' } });
+
+            vi.advanceTimersByTime(1000);
+            spectator.expectOne(`${IMPORT_URL}/preview-1`, HttpMethod.GET).flush({
+                entity: { id: 'preview-1', state: 'RUNNING' }
+            });
+            expect(received()).toBeUndefined();
+
+            vi.advanceTimersByTime(1000);
+            spectator.expectOne(`${IMPORT_URL}/preview-1`, HttpMethod.GET).flush({
+                entity: finishedJob
+            });
+
+            expect(received()).toEqual(finishedJob);
         });
     });
 

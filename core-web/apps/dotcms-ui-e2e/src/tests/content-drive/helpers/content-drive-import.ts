@@ -1,8 +1,9 @@
 import { expect, type Download, type Locator, type Page } from '@playwright/test';
 
 /**
- * How long a preview may take. It runs the whole import as a dry run inside the request, so it
- * grows with the file; the files here are a few rows, and this only bounds a sick instance.
+ * How long a preview may take. It is a job on the queue (`/_validate`) that runs the whole import
+ * as a dry run, so it grows with the file; the files here are a few rows, and this only bounds a
+ * busy or sick instance.
  */
 const PREVIEW_TIMEOUT = 60000;
 
@@ -81,14 +82,14 @@ export class ImportDialog {
         await expect(this.fileName).toHaveText(name);
     }
 
-    /** Runs the preview and waits for it to be on screen. */
+    /** Queues the preview and waits for its result to be on screen. */
     async runPreview() {
-        const previewed = this.page.waitForResponse(
-            (response) => response.url().includes('/api/v1/content/_import/_preview'),
+        const queued = this.page.waitForResponse(
+            (response) => response.url().includes('/api/v1/content/_import/_validate'),
             { timeout: PREVIEW_TIMEOUT }
         );
         await this.previewButton.click();
-        await previewed;
+        await queued;
         await expect(this.preview).toBeVisible({ timeout: PREVIEW_TIMEOUT });
     }
 

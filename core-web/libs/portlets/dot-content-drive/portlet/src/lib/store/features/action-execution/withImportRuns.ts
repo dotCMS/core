@@ -193,9 +193,8 @@ export function withImportRuns() {
                 const eventsSocket = inject(DotEventsSocket);
                 const destroyRef = inject(DestroyRef);
 
-                // Preview events are ignored: the dialog previews through the synchronous
-                // `/_preview`, which emits none, and a preview queued through `/_validate` has
-                // nothing here waiting on it.
+                // Preview events are ignored here: the import dialog waits on its own preview's
+                // completion (`DotContentImportService.preview`).
                 eventsSocket
                     .on<DotImportCompletedEvent>(DotSystemEventType.IMPORT_CONTENTLETS_COMPLETED)
                     .pipe(takeUntilDestroyed(destroyRef))

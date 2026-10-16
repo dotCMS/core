@@ -1,8 +1,8 @@
 import { DotJobState } from './dot-job.model';
 
 /**
- * The `form` part of a content import request (#37896): `POST /api/v1/content/_import`, and the
- * previews `/_preview` (synchronous, what Content Drive uses) and `/_validate` (queued as a job).
+ * The `form` part of a content import request (#37896): `POST /api/v1/content/_import`, and its
+ * preview `/_validate`, queued as a job.
  *
  * `language` is always sent by Content Drive: leaving it out turns on multilingual mode on the
  * server, which is what `'-1'` asks for explicitly. `site` is the site the Drive is browsing; the

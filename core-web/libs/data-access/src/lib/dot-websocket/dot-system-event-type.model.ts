@@ -36,9 +36,8 @@ export enum DotSystemEventType {
     BULK_FOLDER_DUPLICATE_COMPLETED = 'BULK_FOLDER_DUPLICATE_COMPLETED',
     /**
      * A content import job (#37896) ended, successfully or not; scoped to the submitter. Content
-     * Drive's import status toast waits on it. A preview queued through `/_validate` emits it too,
-     * but nothing waits on that one: the Drive previews through the synchronous `/_preview`. The
-     * same job may be reported twice, so consumers de-duplicate by `jobId`.
+     * Drive's import dialog waits on it for a preview queued through `/_validate`, and the status
+     * toast for an import. The same job may be reported twice, so consumers de-duplicate by `jobId`.
      */
     IMPORT_CONTENTLETS_COMPLETED = 'IMPORT_CONTENTLETS_COMPLETED'
 }
