@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -568,5 +569,22 @@ public class DotAuthResourceTest {
             list.add(h);
         }
         return list;
+    }
+    // ---- metadata / discovery proxy redirect handling ----
+
+    @Test
+    void nextHop_resolvesRelativeAndAbsoluteLocations() {
+        assertEquals("https://idp.example.com/saml/metadata",
+                DotAuthResource.nextHop("https://idp.example.com/a/b", "/saml/metadata"));
+        assertEquals("https://other.example.com/x",
+                DotAuthResource.nextHop("https://idp.example.com/a", "https://other.example.com/x"));
+    }
+
+    @Test
+    void nextHop_missingOrInvalidLocation_isRejected() {
+        assertThrows(javax.ws.rs.BadRequestException.class,
+                () -> DotAuthResource.nextHop("https://idp.example.com/a", null));
+        assertThrows(javax.ws.rs.BadRequestException.class,
+                () -> DotAuthResource.nextHop("https://idp.example.com/a", "http://bad host/"));
     }
 }
