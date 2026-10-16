@@ -4700,16 +4700,15 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/content/_import/contenttypes?filter={{contentType}}&page=1&per_page=40",
+							"raw": "{{serverURL}}/api/v1/contenttype/_writable?filter={{contentType}}&page=1&per_page=40&exclude=Host",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
 								"v1",
-								"content",
-								"_import",
-								"contenttypes"
+								"contenttype",
+								"_writable"
 							],
 							"query": [
 								{
@@ -4723,6 +4722,10 @@
 								{
 									"key": "per_page",
 									"value": "40"
+								},
+								{
+									"key": "exclude",
+									"value": "Host"
 								}
 							]
 						}

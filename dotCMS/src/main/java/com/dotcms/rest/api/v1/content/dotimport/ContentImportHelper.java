@@ -1,6 +1,5 @@
 package com.dotcms.rest.api.v1.content.dotimport;
 
-import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.jobs.business.api.JobQueueManagerAPI;
 import com.dotcms.jobs.business.error.JobProcessorNotFoundException;
 import com.dotcms.jobs.business.error.JobValidationException;
@@ -25,7 +24,6 @@ import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -45,7 +43,6 @@ import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 import java.io.IOException;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -676,36 +673,6 @@ public class ContentImportHelper {
                         .code(VALIDATION_ERROR_CODE)
                         .type(ValidationMessageType.ERROR)
                         .build())
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Lists the content types a user can import content into, as Content Search's import does:
-     * every type the user has WRITE permission on, except Host, sorted by name. When a search is
-     * given, only the types whose name or variable contains it, ignoring case, are kept.
-     * <p>
-     * Permissions are resolved for the whole list in one round-trip, rather than once per type.
-     *
-     * @param user   the user the import would run as
-     * @param filter text the name or variable must contain, or {@code null} for every type
-     * @return the writable content types, never {@code null}
-     * @throws DotDataException     if the content types or their permissions can't be read
-     * @throws DotSecurityException if the user can't list content types
-     */
-    List<ImportContentTypeView> getWritableContentTypes(final User user, final String filter)
-            throws DotDataException, DotSecurityException {
-        final String search = UtilMethods.isSet(filter) ? filter.trim().toLowerCase() : null;
-        final List<ContentType> types = APILocator.getContentTypeAPI(user, false).findAll();
-        return APILocator.getPermissionAPI()
-                .filterCollection(types, PermissionAPI.PERMISSION_WRITE, user, false)
-                .stream()
-                .filter(type -> !Host.HOST_VELOCITY_VAR_NAME.equalsIgnoreCase(type.variable()))
-                .filter(type -> search == null
-                        || type.name().toLowerCase().contains(search)
-                        || type.variable().toLowerCase().contains(search))
-                .sorted(Comparator.comparing(ContentType::name, String.CASE_INSENSITIVE_ORDER))
-                .map(type -> new ImportContentTypeView(type.id(), type.variable(), type.name(),
-                        type.baseType().name(), type.icon()))
                 .collect(Collectors.toList());
     }
 

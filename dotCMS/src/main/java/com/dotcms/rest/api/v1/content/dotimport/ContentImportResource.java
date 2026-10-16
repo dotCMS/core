@@ -15,7 +15,6 @@ import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
 import com.dotcms.jobs.business.job.JobView;
 import com.dotcms.jobs.business.job.JobViewPaginatedResult;
-import com.dotcms.rest.Pagination;
 import com.dotcms.rest.ResponseEntityJobPaginatedResultView;
 import com.dotcms.rest.ResponseEntityJobStatusView;
 import com.dotcms.rest.ResponseEntityJobView;
@@ -67,9 +66,6 @@ import org.glassfish.jersey.media.sse.SseFeature;
 @Path("/v1/content/_import")
 @Tag(name = "Content")
 public class ContentImportResource {
-
-    /** Page size of {@code GET /contenttypes} when none is asked for, as the general listing. */
-    static final int DEFAULT_CONTENT_TYPES_PER_PAGE = 40;
 
     private final WebResource webResource;
     private final ContentImportHelper importHelper;
@@ -242,86 +238,6 @@ public class ContentImportResource {
         return importHelper.handleJobCreation(
                 CMD_PREVIEW, params, initDataObject, request
         );
-    }
-
-    /**
-     * Lists, a page at a time, the content types the current user can import content into: those
-     * they have WRITE permission on, except Host, sorted by name. This is the list Content Search's
-     * import offers, and the one Content Drive's import form pages through (#37896).
-     *
-     * @param request  the HTTP servlet request
-     * @param response the HTTP servlet response
-     * @param filter   text the name or variable must contain, ignoring case; optional
-     * @param page     the page to return, starting at 1; defaults to 1
-     * @param perPage  how many content types a page holds; defaults to 40
-     * @return the page of content types the user can import into, with the page, its size and the
-     *         total number of matching types
-     * @throws DotDataException     if the content types or their permissions can't be read
-     * @throws DotSecurityException if the user can't list content types
-     */
-    @GET
-    @Path("/contenttypes")
-    @Produces(MediaType.APPLICATION_JSON)
-    @Operation(
-            operationId = "getImportableContentTypes",
-            summary = "Lists the content types the user can import into",
-            description = "Returns, a page at a time, the content types the current user has WRITE "
-                    + "permission on, except Host, sorted by name. These are the content types a "
-                    + "CSV import can target, the same list Content Search's import offers. The "
-                    + "response carries the page, its size and the total number of matching types.",
-            tags = {"Content Import"},
-            responses = {
-                    @ApiResponse(
-                            responseCode = "200",
-                            description = "A page of the content types the user can import into (possibly empty).",
-                            content = @Content(
-                                    mediaType = MediaType.APPLICATION_JSON,
-                                    schema = @Schema(implementation = ResponseEntityImportContentTypeListView.class)
-                            )
-                    ),
-                    @ApiResponse(responseCode = "400", description = "Bad Request: page or per_page is below 1."),
-                    @ApiResponse(responseCode = "401", description = "Unauthorized: Invalid or missing user authentication."),
-                    @ApiResponse(responseCode = "500", description = "Internal Server Error: The content types could not be read.")
-            }
-    )
-    public ResponseEntityImportContentTypeListView getWritableContentTypes(
-            @Context final HttpServletRequest request,
-            @Context final HttpServletResponse response,
-            @Parameter(description = "Text the content type's name or variable must contain, ignoring case.")
-            @QueryParam("filter") final String filter,
-            @Parameter(description = "The page to return, starting at 1.",
-                    schema = @Schema(type = "integer", defaultValue = "1"))
-            @QueryParam("page") final Integer page,
-            @Parameter(description = "How many content types a page holds.",
-                    schema = @Schema(type = "integer", defaultValue = "40"))
-            @QueryParam("per_page") final Integer perPage)
-            throws DotDataException, DotSecurityException {
-
-        final var initDataObject = new WebResource.InitBuilder(webResource)
-                .requiredBackendUser(true)
-                .requiredFrontendUser(false)
-                .requestAndResponse(request, response)
-                .rejectWhenNoUser(true)
-                .init();
-
-        final int pageNumber = page == null ? 1 : page;
-        final int pageSize = perPage == null ? DEFAULT_CONTENT_TYPES_PER_PAGE : perPage;
-        if (pageNumber < 1 || pageSize < 1) {
-            throw new BadRequestException("page and per_page must be 1 or more");
-        }
-
-        final List<ImportContentTypeView> types =
-                importHelper.getWritableContentTypes(initDataObject.getUser(), filter);
-        final int from = (int) Math.min((long) (pageNumber - 1) * pageSize, types.size());
-        final int to = (int) Math.min((long) from + pageSize, types.size());
-
-        return new ResponseEntityImportContentTypeListView(
-                types.subList(from, to),
-                new Pagination.Builder()
-                        .currentPage(pageNumber)
-                        .perPage(pageSize)
-                        .totalEntries(types.size())
-                        .build());
     }
 
     /**

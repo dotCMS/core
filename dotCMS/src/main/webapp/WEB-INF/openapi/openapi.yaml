@@ -7222,53 +7222,6 @@ paths:
       tags:
       - Content Import
       - Content
-  /v1/content/_import/contenttypes:
-    get:
-      description: "Returns, a page at a time, the content types the current user\
-        \ has WRITE permission on, except Host, sorted by name. These are the content\
-        \ types a CSV import can target, the same list Content Search's import offers.\
-        \ The response carries the page, its size and the total number of matching\
-        \ types."
-      operationId: getImportableContentTypes
-      parameters:
-      - description: "Text the content type's name or variable must contain, ignoring\
-          \ case."
-        in: query
-        name: filter
-        schema:
-          type: string
-      - description: "The page to return, starting at 1."
-        in: query
-        name: page
-        schema:
-          type: integer
-          format: int64
-          default: 1
-      - description: How many content types a page holds.
-        in: query
-        name: per_page
-        schema:
-          type: integer
-          format: int64
-          default: 40
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityImportContentTypeListView"
-          description: A page of the content types the user can import into (possibly
-            empty).
-        "400":
-          description: "Bad Request: page or per_page is below 1."
-        "401":
-          description: "Unauthorized: Invalid or missing user authentication."
-        "500":
-          description: "Internal Server Error: The content types could not be read."
-      summary: Lists the content types the user can import into
-      tags:
-      - Content Import
-      - Content
   /v1/content/_import/failed:
     get:
       description: Fetches a paginated list of failed content import jobs (jobs with
@@ -8710,6 +8663,59 @@ paths:
         "500":
           description: Internal Server Error
       summary: Filters content types
+      tags:
+      - Content Type
+  /v1/contenttype/_writable:
+    get:
+      description: "Returns, a page at a time, the content types the current user\
+        \ has WRITE permission on, sorted by name, in a short form (id, variable,\
+        \ name, base type, icon). Unlike the general listing, which filters by READ,\
+        \ it only offers types the user can create content in. The permission rule\
+        \ and the exclusions are applied before paging, so the total counts matching\
+        \ types exactly."
+      operationId: getWritableContentTypes
+      parameters:
+      - description: "Text the content type's name or variable must contain, ignoring\
+          \ case."
+        in: query
+        name: filter
+        schema:
+          type: string
+      - description: "The page to return, starting at 1."
+        in: query
+        name: page
+        schema:
+          type: integer
+          format: int64
+          default: 1
+      - description: How many content types a page holds.
+        in: query
+        name: per_page
+        schema:
+          type: integer
+          format: int64
+          default: 40
+      - description: "Comma-separated variables of content types to leave out, ignoring\
+          \ case (for example `Host`)."
+        in: query
+        name: exclude
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityContentTypeSummaryListView"
+          description: A page of the content types the user can write to (possibly
+            empty).
+        "400":
+          description: "Bad Request: page or per_page is below 1."
+        "401":
+          description: "Unauthorized: Invalid or missing user authentication."
+        "500":
+          description: "Internal Server Error: The content types could not be read."
+      summary: Lists the content types the user can write to
       tags:
       - Content Type
   /v1/contenttype/basetypes:
@@ -28140,6 +28146,19 @@ components:
       required:
       - clazz
       - name
+    ContentTypeSummaryView:
+      type: object
+      properties:
+        baseType:
+          type: string
+        icon:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+        variable:
+          type: string
     ContentTypeView:
       type: object
       properties:
@@ -32050,19 +32069,6 @@ components:
         empty:
           type: boolean
       uniqueItems: true
-    ImportContentTypeView:
-      type: object
-      properties:
-        baseType:
-          type: string
-        icon:
-          type: string
-        id:
-          type: string
-        name:
-          type: string
-        variable:
-          type: string
     InferenceErrorView:
       type: object
       description: Error response in the OpenAI-compatible error shape
@@ -34895,6 +34901,31 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityContentTypeSummaryListView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContentTypeSummaryView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityContentTypeWorkflowSchemesView:
       type: object
       properties:
@@ -35585,31 +35616,6 @@ components:
       properties:
         entity:
           $ref: "#/components/schemas/Host"
-        errors:
-          type: array
-          items:
-            $ref: "#/components/schemas/ErrorEntity"
-        i18nMessagesMap:
-          type: object
-          additionalProperties:
-            type: string
-        messages:
-          type: array
-          items:
-            $ref: "#/components/schemas/MessageEntity"
-        pagination:
-          $ref: "#/components/schemas/Pagination"
-        permissions:
-          type: array
-          items:
-            type: string
-    ResponseEntityImportContentTypeListView:
-      type: object
-      properties:
-        entity:
-          type: array
-          items:
-            $ref: "#/components/schemas/ImportContentTypeView"
         errors:
           type: array
           items:
