@@ -2472,11 +2472,11 @@ CREATE TABLE system_event_cursor (
     CONSTRAINT pk_system_event_cursor PRIMARY KEY (server_id)
 );
 
--- Failed-login counts and locks per account and client address (source '*' is the account-wide
--- count), shared by every node of a cluster.
+-- Login attempt counts and locks per account and source (client address, 'webdav:' + address, or
+-- '*' for the account-wide count), shared by every node of a cluster.
 CREATE TABLE login_lockout (
     user_id      VARCHAR(100) NOT NULL,
-    source       VARCHAR(64)  NOT NULL,
+    source       VARCHAR(100) NOT NULL,
     failures     INT          NOT NULL,
     window_start BIGINT       NOT NULL,
     locked_until BIGINT       NOT NULL,

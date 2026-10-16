@@ -1,15 +1,19 @@
 package com.dotcms.auth;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotcms.datagen.UserDataGen;
+import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.rest.api.v1.authentication.ResetPasswordTokenUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.startup.runonce.Task261015CreateLoginLockoutTable;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.webdav.DotWebdavHelper;
@@ -27,9 +31,19 @@ import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -159,6 +173,42 @@ public class LoginLockoutTest {
         return LoginLockout.getInstance().isLocked(user.getUserId(), address);
     }
 
+    private static String webdav(final String address) {
+        return LoginLockout.WEBDAV_SOURCE_PREFIX + address;
+    }
+
+    /**
+     * Runs the task on many threads at once, each as a request from the given address, and returns the results.
+     */
+    private static <T> List<T> inParallel(final int threads, final String address, final Callable<T> task)
+            throws Exception {
+        final ExecutorService pool = Executors.newFixedThreadPool(threads);
+        final CountDownLatch start = new CountDownLatch(1);
+        try {
+            final List<Future<T>> futures = new ArrayList<>();
+            for (int i = 0; i < threads; i++) {
+                futures.add(pool.submit(() -> {
+                    from(address);
+                    start.await();
+                    try {
+                        return task.call();
+                    } finally {
+                        DbConnectionFactory.closeSilently();
+                        HttpServletRequestThreadLocal.INSTANCE.setRequest(null);
+                    }
+                }));
+            }
+            start.countDown();
+            final List<T> results = new ArrayList<>();
+            for (final Future<T> future : futures) {
+                results.add(future.get(2, TimeUnit.MINUTES));
+            }
+            return results;
+        } finally {
+            pool.shutdownNow();
+        }
+    }
+
     private static int failedLoginAttempts(final User user) throws Exception {
         return APILocator.getUserAPI().loadUserById(user.getUserId()).getFailedLoginAttempts();
     }
@@ -240,8 +290,9 @@ public class LoginLockoutTest {
 
             from(ADDRESS);
             assertEquals(Authenticator.FAILURE, login(user, PASSWORD));
-            assertFalse(webdavLogin(user, PASSWORD));
             assertFalse(legacyLogin(user, PASSWORD));
+            // WebDAV is counted on its own, so a lock from backend logins does not reach it
+            assertTrue(webdavLogin(user, PASSWORD));
         } finally {
             cleanUp(user);
         }
@@ -351,7 +402,6 @@ public class LoginLockoutTest {
 
             assertEquals(Authenticator.FAILURE, login(user, "wrong-while-locked"));
             assertEquals(Authenticator.FAILURE, login(user, PASSWORD));
-            assertFalse(webdavLogin(user, "wrong-while-locked"));
             assertFalse(legacyLogin(user, "wrong-while-locked"));
 
             assertEquals(0, failedLoginAttempts(user));
@@ -423,18 +473,33 @@ public class LoginLockoutTest {
     }
 
     /**
-     * Given: an address locked out of an account
-     * When: the correct password is sent over WebDAV from that address
-     * Then: it is refused like a wrong password, and accepted again once the lock is cleared
+     * Given: an account
+     * When: the limit of wrong passwords is sent over WebDAV from one address, as a client retrying a stale
+     *       password does
+     * Then: WebDAV from that address is locked out and refuses even the correct password, without counting
+     *       further attempts; backend logins from the same address still work; clearing the lock lets WebDAV in
      */
     @Test
-    public void test_webdav_refuses_locked_address() throws Exception {
+    public void test_webdav_failures_lock_only_webdav() throws Exception {
         final User user = newUser();
         try {
             assertTrue(webdavLogin(user, PASSWORD));
-            lockByFailedLogins(user);
+            for (int i = 0; i < LIMIT; i++) {
+                assertFalse(webdavLogin(user, "wrong-" + i));
+            }
+            assertTrue(lockedFrom(user, webdav(ADDRESS)));
+            assertFalse(lockedFrom(user, ADDRESS));
+
+            final Map<String, Map<String, Object>> rowsAtLock = lockoutRows(user);
             assertThrows(DotSecurityException.class,
                     () -> new DotWebdavHelper().authorizePrincipal(loginName(user), PASSWORD));
+            DbConnectionFactory.closeSilently();
+            assertFalse(webdavLogin(user, "wrong-while-locked"));
+            assertEquals(rowsAtLock, lockoutRows(user));
+
+            assertEquals(Authenticator.SUCCESS, login(user, PASSWORD));
+            assertTrue(legacyLogin(user, PASSWORD));
+
             LoginLockout.getInstance().clear(user.getUserId());
             assertTrue(webdavLogin(user, PASSWORD));
         } finally {
@@ -443,19 +508,101 @@ public class LoginLockoutTest {
     }
 
     /**
-     * Given: an account
-     * When: the limit of wrong passwords is sent over WebDAV from one address
-     * Then: that address is locked out, on every login path
+     * Given: WebDAV from an address locked out of an account
+     * When: one of the user's API tokens is sent in the WebDAV password field
+     * Then: it is accepted, since a token is not a password, and nothing is counted for it
      */
     @Test
-    public void test_webdav_failures_count_toward_lock() throws Exception {
+    public void test_webdav_token_accepted_while_locked() throws Exception {
         final User user = newUser();
         try {
+            final ApiToken token = APILocator.getApiTokenAPI().persistApiToken(ApiToken.builder()
+                    .withIssuer(ClusterFactory.getClusterId())
+                    .withExpires(Date.from(Instant.now().plus(Duration.ofDays(1))))
+                    .withUserId(user.getUserId())
+                    .withRequestingUserId(APILocator.systemUser().getUserId())
+                    .withRequestingIp(ADDRESS)
+                    .build(), APILocator.systemUser());
+            final String jwt = APILocator.getApiTokenAPI().getJWT(token, APILocator.systemUser());
+            DbConnectionFactory.closeSilently();
+
+            assertTrue(webdavLogin(user, jwt));
             for (int i = 0; i < LIMIT; i++) {
                 assertFalse(webdavLogin(user, "wrong-" + i));
             }
+            assertTrue(lockedFrom(user, webdav(ADDRESS)));
+            final Map<String, Map<String, Object>> rowsAtLock = lockoutRows(user);
+
+            assertTrue(webdavLogin(user, jwt));
+            assertFalse(webdavLogin(user, PASSWORD));
+            assertEquals(rowsAtLock, lockoutRows(user));
+        } finally {
+            cleanUp(user);
+        }
+    }
+
+    /**
+     * Given: an address with no failures
+     * When: 20 login attempts from it start at the same moment, before any password is checked
+     * Then: exactly the limit of them may check a password, because each is counted before its check
+     */
+    @Test
+    public void test_attempts_are_counted_before_the_password_check() throws Exception {
+        final User user = newUser();
+        try {
+            final List<Boolean> refused = inParallel(20, ADDRESS,
+                    () -> LoginLockout.getInstance().begin(user.getUserId(), ADDRESS).isRefused());
+            assertEquals(LIMIT, refused.stream().filter(r -> !r).count());
+        } finally {
+            cleanUp(user);
+        }
+    }
+
+    /**
+     * Given: an account
+     * When: 10 wrong passwords arrive from one address at the same moment, on the main login flow
+     * Then: all fail and the address ends up locked out
+     */
+    @Test
+    public void test_concurrent_wrong_logins_lock_the_address() throws Exception {
+        final User user = newUser();
+        try {
+            final List<Integer> results = inParallel(10, ADDRESS, () -> login(user, "wrong-in-parallel"));
+            assertTrue(results.stream().allMatch(r -> r == Authenticator.FAILURE));
             assertTrue(lockedFrom(user, ADDRESS));
             assertEquals(Authenticator.FAILURE, login(user, PASSWORD));
+        } finally {
+            cleanUp(user);
+        }
+    }
+
+    /**
+     * Given: an account whose stored failed-login count is far above the limit, as dormant accounts can carry
+     *        from before this change
+     * When: one wrong password is tried, and then the upgrade task runs
+     * Then: the wrong password does not lock the account, and the task restarts the count at zero
+     */
+    @Test
+    public void test_counter_above_limit_from_before_upgrade() throws Exception {
+        final User user = newUser();
+        try {
+            final User counted = APILocator.getUserAPI().loadUserById(user.getUserId());
+            counted.setFailedLoginAttempts(50);
+            APILocator.getUserAPI().save(counted, APILocator.systemUser(), false);
+
+            assertEquals(Authenticator.FAILURE, login(user, "wrong-after-upgrade"));
+            assertFalse(LoginLockout.getInstance().isLocked(user.getUserId()));
+            assertEquals(Authenticator.SUCCESS, login(user, PASSWORD));
+
+            final User countedAgain = APILocator.getUserAPI().loadUserById(user.getUserId());
+            countedAgain.setFailedLoginAttempts(50);
+            APILocator.getUserAPI().save(countedAgain, APILocator.systemUser(), false);
+            new Task261015CreateLoginLockoutTable().executeUpgrade();
+            DbConnectionFactory.closeSilently();
+            CacheLocator.getUserCache().remove(user.getUserId());
+            assertEquals(0, failedLoginAttempts(user));
+            assertTrue(lockoutRows(user).isEmpty());
+            assertEquals(Authenticator.SUCCESS, login(user, PASSWORD));
         } finally {
             cleanUp(user);
         }
