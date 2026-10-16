@@ -1499,25 +1499,6 @@
 
 
 
-    function getJwt(keyId){
-
-
-        var xhrArgs = {
-            url : "/api/v1/apitoken/" + keyId +"/jwt",
-            handleAs : "json",
-            load : function(data){
-
-            	revealJWT(data.entity.jwt);
-
-            },
-            error : function(error) {
-                console.error("Error getting JWT data for keyId [" + keyId + "]", error);
-
-            }
-        };
-
-        dojo.xhrGet(xhrArgs);
-    }
 
 
 	   function deleteKey(keyId){
@@ -1657,7 +1638,7 @@
           myRow +=(token.valid)   ? `<td >{token.allowNetwork}</td>`:`<td>{token.allowNetwork}</td>`;
           myRow +=(token.expired || token.revoked)
                 ? `<td style="text-align:center"><a style="text-decoration:underline" href='javascript:deleteKey(\"{token.id}\")'><%=LanguageUtil.get(pageContext, "api.token.delete") %></a> </td>`
-                : `<td style="text-align:center"><a style="text-decoration:underline" href='javascript:revokeKey(\"{token.id}\")'><%=LanguageUtil.get(pageContext, "api.token.revoke") %></a> | <a style="text-decoration:underline" href='javascript:getJwt("{token.id}")'><%=LanguageUtil.get(pageContext, "api.token.get.token") %></a></td>`;
+                : `<td style="text-align:center"><a style="text-decoration:underline" href='javascript:revokeKey(\"{token.id}\")'><%=LanguageUtil.get(pageContext, "api.token.revoke") %></a></td>`;
           myRow+=`</tr>`;
 
 

@@ -22,7 +22,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.SecurityLogger;
-import com.dotmarketing.util.SecurityUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -705,88 +704,6 @@ public class ApiTokenResource implements Serializable {
     private Client getRestClient() {
         return RestClientBuilder.newClient();
     }
-
-    /**
-     * Get a JWT issued from a token
-     * @param request
-     * @param response
-     * @param tokenId
-     * @return
-     */
-    @GET
-    @Path("/{tokenId}/jwt")
-    @JSONP
-    @NoCache
-    @Produces(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "getJwtFromApiTokenV1",
-            summary = "Generates a new JWT for an existing token",
-            description = "Returns a JSON web token. This overwrites the JWT value associated with the " +
-                    "specified token object.",
-            tags = {"API Token"},
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "JSON web token successfully created",
-                            content = @Content(mediaType = "application/json",
-                                              schema = @Schema(implementation = ResponseEntityJwtView.class),
-                                    examples = {
-                                            @ExampleObject(
-                                                    value = "{\n" +
-                                                            "    \"entity\": {\n" +
-                                                            "        \"jwt\": \"string\"\n" +
-                                                            "    },\n" +
-                                                            "    \"errors\": [],\n" +
-                                                            "    \"i18nMessagesMap\": {},\n" +
-                                                            "    \"messages\": [],\n" +
-                                                            "    \"pagination\": null,\n" +
-                                                            "    \"permissions\": []\n" +
-                                                            "}"
-                                            )
-                                    }
-                            )
-                    ),
-                    @ApiResponse(responseCode = "400", description = "Bad request"),
-                    @ApiResponse(responseCode = "401", description = "Invalid user"),
-                    @ApiResponse(responseCode = "403", description = "Forbidden: the token does not exist or " +
-                            "belongs to another user"),
-                    @ApiResponse(responseCode = "500", description = "Unexpected server error")
-            }
-    )
-    public final Response getJwtFromApiToken(@Context final HttpServletRequest request,
-            @Context final HttpServletResponse response,
-            @PathParam("tokenId") @Parameter(
-                    required = true,
-                    description = "Identifier of API token to receive a new JWT.",
-                    schema = @Schema(type = "string")
-            ) final String tokenId) {
-
-        final InitDataObject initDataObject = this.webResource.init(null, true, request, true, "users");
-        final User user = initDataObject.getUser();
-        final Optional<ApiToken> optToken = tokenApi.findApiToken(tokenId);
-
-        // Only the token's owner may retrieve a working JWT. Administrators and user managers can list and
-        // revoke other users' tokens, but never read them. This runs before any check on the token's state,
-        // and a missing token gets the same 403, so a non-owner can't tell whether a token exists or is valid.
-        if (optToken.isEmpty() || !Objects.equals(user.getUserId(), optToken.get().getUserId())) {
-
-            SecurityLogger.logInfo(this.getClass(), "Denied JWT retrieval for token: "
-                    + SecurityUtils.sanitizeForLogging(tokenId) + " owned by: "
-                    + optToken.map(ApiToken::getUserId).orElse("(token not found)")
-                    + " to user: " + user.getUserId() + " from: " + request.getRemoteAddr());
-            return ExceptionMapperUtil.createResponse(
-                    new DotStateException("Only the owner of a token can retrieve it"), Response.Status.FORBIDDEN);
-        }
-
-        final ApiToken token = optToken.get();
-        if(token.isExpired() || token.isRevoked()) {
-
-            return ExceptionMapperUtil.createResponse(new DotStateException("token not valid"), Response.Status.BAD_REQUEST);
-        }
-
-        SecurityLogger.logInfo(this.getClass(), "Revealing token to user: " + user.getUserId() + " from: " + request.getRemoteAddr() + " token:"  + token );
-        final String jwt = tokenApi.getJWT(token, user);
-        return Response.ok(new ResponseEntityMapView(Map.of("jwt", jwt))).build(); // 200
-    }
-
-
 
     @PUT
     @Path("/users/{userId}/revoke")
