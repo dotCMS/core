@@ -32,7 +32,8 @@ until something else checks it. A customer reported it (Freshdesk #39531).
 
 ### Session 2026-10-16
 
-- Q: When folders have no cached permission row yet, can the first load be slower, checking those folders one at a time? → A: Yes. Uncached items fall back to the one-at-a-time check, which fills the cache, so later loads are one query again. No cap on these checks, and no rewrite of the batch SQL to resolve inheritance.
+- Q: When folders have no cached permission row yet, can the first load be slower, checking those folders one at a time? → A: Yes. Uncached items fall back to a one-at-a-time walk up to the parent they inherit from, which fills the cache, so later loads are one query again. No cap on these checks, and no rewrite of the batch SQL to resolve inheritance. (Amended after review: the walk-up decides which permissions apply, but the answer follows the batch filter's rules, so an item gets the same answer before and after it is cached. See the next question.)
+- Q: When the fallback and the batch query disagree for reasons unrelated to the cache (folder owner, Liferay admin, PUBLISH on folders), which answer does an uncached item get? → A: The batch filter's. An item must get the same answer whether or not it is cached; the three differences stay as they are today and go to a follow-up issue.
 - Q: Should the fix go in the shared batch permission filter, so content import's related-content check gets it too, or only in Content Drive's folder search? → A: The shared filter. Every caller is fixed, including content import's related-content check, which gets its own test.
 
 ## Reproduction *(mandatory)*
@@ -114,7 +115,8 @@ CMS Administrators skip the filter entirely, so they never see the problem.
 **In scope**:
 
 - The batch READ filter returns every item the user can read according to the one-at-a-time
-  permission check, including items that inherit and have no cached reference yet.
+  permission check, including items that inherit and have no cached reference yet, apart from
+  the three known differences listed under Non-goals.
 - The same holds for the other permission types the folder search asks for (edit, publish,
   edit-permissions, add-children), so the per-folder flags are right for those folders.
 - The "has subfolders" indicator in the folder search counts children with the same corrected
@@ -129,11 +131,17 @@ CMS Administrators skip the filter entirely, so they never see the problem.
 - Changing the Content Drive front end, the folder search request or its response shape.
 - Changing the code of the folder bulk duplicate or the Publishing Queue. Their behavior does
   change, because they call the shared filter (see Regression Risk, AC-013 and AC-014).
-- Two places where the batch filter and the one-at-a-time check disagree for reasons that have
-  nothing to do with the cache. Both are known, separate gaps that deserve their own issue:
+- Three places where the batch filter and the one-at-a-time check disagree for reasons that have
+  nothing to do with the cache. They are known, separate gaps for a follow-up issue. The fix
+  keeps the batch filter's current answer in all three, for cached and uncached items alike
+  (AC-003, AC-004):
   - **Folder owner**: the one-at-a-time check grants a permission given to the CMS Owner role
     when the user owns the item. The batch query matches only the user's own roles, so it never
-    sees that grant.
+    sees that grant. This touches the bulk duplicate, because a copy is owned by the user who
+    made it.
+  - **Liferay admin**: the one-at-a-time check grants everything to a user whose Liferay
+    `isAdmin()` is true. The batch filter deliberately bypasses only for the CMS Administrator
+    role and the system user.
   - **PUBLISH on folders**: the one-at-a-time check treats PUBLISH on a folder as EDIT. Folder
     search asks the batch filter for PUBLISH on folders as-is, so Content Drive's publish flag
     follows the PUBLISH permission. The Publishing Queue already works around this by asking
@@ -158,7 +166,8 @@ CMS Administrators skip the filter entirely, so they never see the problem.
     through. A likely trigger, from reading the code: duplicate a folder, then duplicate the copy
     before anything else checks it.
 - **Performance**: Only items with neither a cached row nor permissions of their own fall back to
-  the one-at-a-time check, with no cap per request. That set is not the same as "every item the
+  the one-at-a-time check, with no cap per request. Here that means its walk up to the parent;
+  the final answer still follows the batch filter's rules (see Clarifications). That set is not the same as "every item the
   batch query did not return": a missed item may simply be denied. Today's batch query returns
   only the permitted ids, so it cannot tell a denied item from an uncached one; the fix needs a
   way to tell them apart. Without it, every denied item would be re-checked one at a time on
@@ -202,16 +211,18 @@ CMS Administrators skip the filter entirely, so they never see the problem.
 - **AC-002**: Right after a permission change on a site or parent folder, a non-admin user sees
   the same folders in the Content Drive tree as in the Site Browser.
 - **AC-003**: For any set of folders that inherit their permissions and have no cached row, the
-  batch filter returns exactly the folders that `PermissionAPI.doesUserHavePermission` allows
-  for the same user, permission type and `respectFrontendRoles` value: no missing folders and no
-  extra ones. Both sides must use the same inputs, because that flag adds the anonymous and
-  logged-in-site roles, and a missing user is treated as the anonymous user. The folder-owner
-  grant and PUBLISH on folders are excluded (see Non-goals). The same conditions apply to AC-004.
-- **AC-004**: The edit, edit-permissions and add-children flags returned by the folder search for
-  an inheriting, uncached folder match the one-at-a-time check. The publish flag for an uncached
-  folder is the same as the flag the folder gets once it is cached, which today follows the
-  PUBLISH permission. A folder's publish flag must not depend on whether it happens to be cached,
-  even though the one-at-a-time check would answer with EDIT (see Non-goals).
+  batch filter returns exactly the folders it returns once those folders are cached: no missing
+  folders and no extra ones. Apart from the three known differences in Non-goals (folder owner,
+  Liferay admin, PUBLISH on folders), that is also exactly what
+  `PermissionAPI.doesUserHavePermission` allows for the same user, permission type and
+  `respectFrontendRoles` value. Both sides must use the same inputs, because that flag adds the
+  anonymous and logged-in-site roles, and a missing user is treated as the anonymous user. The
+  same conditions apply to AC-004.
+- **AC-004**: The edit, publish, edit-permissions and add-children flags returned by the folder
+  search for an inheriting, uncached folder are the same as the flags the folder gets once it is
+  cached. A folder's flags must not depend on whether it happens to be cached. In particular,
+  the publish flag keeps following the PUBLISH permission, even though the one-at-a-time check
+  would answer with EDIT, and ownership does not grant a flag the cached path would not.
 - **AC-005**: The "has subfolders" indicator is true for a folder whose only readable child
   inherits and is uncached.
 - **AC-006**: A folder created by Content Drive's bulk duplicate, as a non-admin, appears in the
@@ -223,7 +234,8 @@ CMS Administrators skip the filter entirely, so they never see the problem.
   from denied ones, which today's batch query does not do.
 - **AC-008**: A folder the user cannot read is still left out, whether or not it has a cached
   row.
-- **AC-009**: CMS Administrators and the system user see the same results as before.
+- **AC-009**: CMS Administrators and the system user see the same results as before. A Liferay
+  admin without the CMS Administrator role is still filtered by role, as today.
 - **AC-010**: After a request that took the one-at-a-time check for an uncached item, a later
   request for the same item resolves it in the batch query, once the cache row is written.
 - **AC-011**: During content import, a related item the importing user can read, which inherits
@@ -234,10 +246,11 @@ CMS Administrators skip the filter entirely, so they never see the problem.
   are answered from the in-memory permission cache.
 - **AC-013**: In the Publishing Queue's Pending tab, a non-admin sees a bundle when
   `doesUserHavePermission` says they can publish its first asset (or edit it, if it is a folder),
-  even when that asset inherits its permissions and has no cached row. A bundle the one-at-a-time
-  check denies stays hidden.
+  even when that asset inherits its permissions and has no cached row, apart from the known
+  differences in Non-goals. A bundle the one-at-a-time check denies stays hidden.
 - **AC-014**: The folder bulk duplicate accepts a source folder the user can read and a
-  destination they can add children to, even when either has no cached row. It still reports
+  destination they can add children to, even when either has no cached row, apart from the known
+  differences in Non-goals (a copy readable only through ownership stays refused). It still reports
   `PERMISSION_DENIED` or `PARENT_PERMISSION_DENIED` when the one-at-a-time check denies.
 - **Verification method**:
   - Integration tests (registered in a `MainSuite*` so CI runs them) that delete the reference
@@ -246,6 +259,10 @@ CMS Administrators skip the filter entirely, so they never see the problem.
   - An integration test that compares the batch filter with `doesUserHavePermission` over a mixed
     set (own permissions, cached inheriting, uncached inheriting, denied). Covers AC-003, AC-008,
     AC-009.
+  - Rows in that test for the three known differences (an owner-only grant, a Liferay admin
+    without the CMS Administrator role, a folder with EDIT but not PUBLISH). Each row asserts
+    that the uncached answer equals the cached answer, and documents where it differs from
+    `doesUserHavePermission`. Covers AC-003, AC-004, AC-009.
   - An integration test for the related-content check on import with an uncached related item.
     Covers AC-011.
   - An integration test that runs the batch filter twice on an uncached item and confirms the
@@ -267,8 +284,9 @@ CMS Administrators skip the filter entirely, so they never see the problem.
 
 ## Assumptions
 
-- The one-at-a-time check (`doesUserHavePermission`) is the correct answer, and the batch filter
-  must agree with it.
+- For inherited permissions, the one-at-a-time check (`doesUserHavePermission`) is the correct
+  answer, and the batch filter must agree with it. The three known differences in Non-goals are
+  the exception until a follow-up issue settles them.
 - Folders are not the only items that can inherit without a cached row, so the fix belongs in
   the shared batch filter, not in the folder search alone.
 - The permission-change trigger in AC-002 has not been reproduced directly. It comes from
