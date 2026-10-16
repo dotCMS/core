@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.authentication;
 import com.dotcms.datagen.CompanyDataGen;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityMapView;
 import com.dotcms.rest.RestUtilTest;
 import com.dotcms.rest.WebResource;
 import com.dotcms.util.IntegrationTestInitService;
@@ -23,6 +24,7 @@ import org.junit.Test;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -76,6 +78,11 @@ public class ApiTokenResourceTest {
         assertNotNull(restResponse);
         assertEquals("Non-admin user should be able to issue a token for themselves",
                 Response.Status.OK.getStatusCode(), restResponse.getStatus());
+
+        // Creation is the only time the JWT is returned, so it must be in this response.
+        final Map<String, Object> entity = ((ResponseEntityMapView) restResponse.getEntity()).getEntity();
+        assertTrue("The JWT should be returned when the token is created",
+                entity.get("jwt") instanceof String && !((String) entity.get("jwt")).isEmpty());
     }
 
     /**
