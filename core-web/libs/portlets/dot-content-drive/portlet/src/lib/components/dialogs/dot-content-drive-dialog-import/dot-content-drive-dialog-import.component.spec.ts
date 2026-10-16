@@ -106,7 +106,6 @@ describe('DotContentDriveDialogImportComponent', () => {
         component: DotContentDriveDialogImportComponent,
         providers: [
             mockProvider(DotContentImportService, {
-                getWritableContentTypes: vi.fn().mockReturnValue(of(CONTENT_TYPES_PAGE)),
                 preview: vi.fn(),
                 importContent: vi.fn(),
                 importPreviewed: vi.fn(),
@@ -118,7 +117,8 @@ describe('DotContentDriveDialogImportComponent', () => {
                 getContentType: vi.fn((variable: string) =>
                     of(CONTENT_TYPES.find((type) => type.variable === variable))
                 ),
-                getContentTypesWithPagination: vi.fn()
+                getContentTypesWithPagination: vi.fn(),
+                getWritableContentTypes: vi.fn().mockReturnValue(of(CONTENT_TYPES_PAGE))
             }),
             mockProvider(DotWorkflowsActionsService, {
                 getDefaultActions: vi.fn((contentType: string) =>
@@ -185,30 +185,31 @@ describe('DotContentDriveDialogImportComponent', () => {
             expect(spectator.query(byTestId('import-content-type'))).toBeTruthy();
         });
 
-        it('feeds the selector pages of the types the user can write to', () => {
+        it('feeds the selector pages of the types the user can write to, never Host', () => {
             setup();
-            importService.getWritableContentTypes.mockClear();
+            const contentTypeService = spectator.inject(DotContentTypeService);
+            vi.mocked(contentTypeService.getWritableContentTypes).mockClear();
 
             let page: unknown;
             selector()
                 ?.pageLoader()?.({ page: 2, per_page: 40, filter: 'blo' })
                 .subscribe((value) => (page = value));
 
-            expect(importService.getWritableContentTypes).toHaveBeenCalledWith({
+            expect(contentTypeService.getWritableContentTypes).toHaveBeenCalledWith({
                 page: 2,
                 per_page: 40,
-                filter: 'blo'
+                filter: 'blo',
+                exclude: ['Host']
             });
             expect(page).toEqual(CONTENT_TYPES_PAGE);
         });
 
         it('never asks the general content type listing', () => {
             setup();
+            const contentTypeService = spectator.inject(DotContentTypeService);
 
-            expect(
-                spectator.inject(DotContentTypeService).getContentTypesWithPagination
-            ).not.toHaveBeenCalled();
-            expect(importService.getWritableContentTypes).toHaveBeenCalled();
+            expect(contentTypeService.getContentTypesWithPagination).not.toHaveBeenCalled();
+            expect(contentTypeService.getWritableContentTypes).toHaveBeenCalled();
         });
 
         /** Spec Edge Cases: a user who can write to no content type is told so. */

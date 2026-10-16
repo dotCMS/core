@@ -13,7 +13,9 @@ import {
     ContentTypeView,
     DotCopyContentTypeDialogFormFields,
     DotPagination,
-    DotContentTypePaginationOptions
+    DotContentTypePaginationOptions,
+    DotContentTypeSummary,
+    DotWritableContentTypesOptions
 } from '@dotcms/dotcms-models';
 import { hasValidValue } from '@dotcms/utils';
 
@@ -153,6 +155,50 @@ export class DotContentTypeService {
                 pagination: DotPagination;
             }>('/api/v1/contenttype', { params: this.getContentTypePaginationParams(options) })
             .pipe(map((data) => ({ contentTypes: data.entity, pagination: data.pagination })));
+    }
+
+    /**
+     * One page of the content types the current user can WRITE to, sorted by name, optionally
+     * narrowed by a search on name or variable and leaving out the given variables (#37896). The
+     * server applies the permission rule and the exclusions before paging.
+     *
+     * The answer has the shape `getContentTypesWithPagination` answers, so it can be handed to the
+     * shared `dot-content-type` selector as its page loader. The endpoint sends each type in a
+     * short form (id, variable, name, base type, icon), which is all that selector reads.
+     *
+     * @param options the page, its size, the search and the variables to leave out
+     */
+    getWritableContentTypes(
+        options: DotWritableContentTypesOptions
+    ): Observable<{ contentTypes: DotCMSContentType[]; pagination: DotPagination }> {
+        let params = new HttpParams();
+        if (options.page !== undefined) {
+            params = params.set('page', options.page);
+        }
+
+        if (options.per_page !== undefined) {
+            params = params.set('per_page', options.per_page);
+        }
+
+        if (options.filter) {
+            params = params.set('filter', options.filter);
+        }
+
+        if (options.exclude?.length) {
+            params = params.set('exclude', options.exclude.join(','));
+        }
+
+        return this.#httpClient
+            .get<{
+                entity: DotContentTypeSummary[];
+                pagination: DotPagination;
+            }>('/api/v1/contenttype/_writable', { params })
+            .pipe(
+                map((response) => ({
+                    contentTypes: response.entity as unknown as DotCMSContentType[],
+                    pagination: response.pagination
+                }))
+            );
     }
 
     /**

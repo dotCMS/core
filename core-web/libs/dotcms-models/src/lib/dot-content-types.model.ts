@@ -685,6 +685,26 @@ export interface DotContentTypePaginationOptions {
 }
 
 /**
+ * Options of `GET /api/v1/contenttype/_writable`: a page and a search, plus the variables of
+ * content types to leave out (#37896).
+ */
+export interface DotWritableContentTypesOptions {
+    filter?: string;
+    page?: number;
+    per_page?: number;
+    exclude?: string[];
+}
+
+/** A content type in the short form `GET /api/v1/contenttype/_writable` returns (#37896). */
+export interface DotContentTypeSummary {
+    id: string;
+    variable: string;
+    name: string;
+    baseType: string;
+    icon?: string;
+}
+
+/**
  * Describes an available field type as returned by the `/api/v1/fieldTypes` endpoint.
  * Used to render the list of fields that can be added to a content type.
  */

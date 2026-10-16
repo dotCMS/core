@@ -1,6 +1,6 @@
 import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/vitest';
 
-import { DotContentImportForm, DotImportContentType, DotImportJob } from '@dotcms/dotcms-models';
+import { DotContentImportForm, DotImportJob } from '@dotcms/dotcms-models';
 
 import { DotContentImportService } from './dot-content-import.service';
 
@@ -22,40 +22,6 @@ describe('DotContentImportService', () => {
 
     beforeEach(() => {
         spectator = createHttp();
-    });
-
-    /**
-     * #37896 FR-004: the import form lists only the content types the user can write to. The
-     * server owns that rule and pages it, so the service only asks for a page and hands it to the
-     * shared content type selector in the shape that selector reads.
-     */
-    describe('getWritableContentTypes', () => {
-        it('asks the import endpoint for one page of a search and returns types and pagination', () => {
-            const types: DotImportContentType[] = [
-                { id: '1', variable: 'Blog', name: 'Blog', baseType: 'CONTENT', icon: 'article' },
-                { id: '2', variable: 'News', name: 'News', baseType: 'CONTENT' }
-            ];
-            const pagination = { currentPage: 2, perPage: 40, totalEntries: 42 };
-            let received: unknown;
-
-            spectator.service
-                .getWritableContentTypes({ page: 2, per_page: 40, filter: 'b' })
-                .subscribe((value) => (received = value));
-
-            const req = spectator.expectOne(
-                `${IMPORT_URL}/contenttypes?page=2&per_page=40&filter=b`,
-                HttpMethod.GET
-            );
-            req.flush({ entity: types, pagination });
-
-            expect(received).toEqual({ contentTypes: types, pagination });
-        });
-
-        it('leaves out the search when there is none', () => {
-            spectator.service.getWritableContentTypes({ page: 1, per_page: 40 }).subscribe();
-
-            spectator.expectOne(`${IMPORT_URL}/contenttypes?page=1&per_page=40`, HttpMethod.GET);
-        });
     });
 
     /**

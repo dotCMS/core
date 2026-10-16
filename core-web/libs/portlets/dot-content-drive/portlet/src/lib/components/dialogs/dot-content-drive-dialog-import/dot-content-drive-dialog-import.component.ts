@@ -27,6 +27,7 @@ import { catchError, distinctUntilChanged, finalize, map, switchMap } from 'rxjs
 import {
     DotAlertConfirmService,
     DotContentImportService,
+    DotContentTypeService,
     DotFieldService,
     DotMessageService,
     DotWorkflowsActionsService
@@ -47,6 +48,9 @@ import {
 import { getDownloadLink } from '@dotcms/utils';
 
 import { DotContentDriveStore } from '../../../store/dot-content-drive.store';
+
+/** The Host content type's variable: sites are not imported from a CSV, as in Content Search. */
+const HOST_CONTENT_TYPE = 'Host';
 
 /** The language value that asks for a multilingual file, as Content Search's import sends it. */
 export const MULTILINGUAL_LANGUAGE = '-1';
@@ -119,6 +123,7 @@ export class DotContentDriveDialogImportComponent {
     readonly #formBuilder = inject(FormBuilder);
     readonly #store = inject(DotContentDriveStore);
     readonly #importService = inject(DotContentImportService);
+    readonly #contentTypeService = inject(DotContentTypeService);
     readonly #workflowsService = inject(DotWorkflowsActionsService);
     readonly #fieldService = inject(DotFieldService);
     readonly #dotMessageService = inject(DotMessageService);
@@ -142,7 +147,12 @@ export class DotContentDriveDialogImportComponent {
      * only those they can write to, never Host, as Content Search's import (FR-004).
      */
     readonly contentTypePageLoader: DotContentTypePageLoader = (options) =>
-        this.#importService.getWritableContentTypes(options);
+        this.#contentTypeService.getWritableContentTypes({
+            page: options.page,
+            per_page: options.per_page,
+            filter: options.filter,
+            exclude: [HOST_CONTENT_TYPE]
+        });
     /**
      * Keeps Key Fields as tall as the other selects whatever it holds. With chips, the theme halves
      * the label's padding and the chip sets the height, so the field shrank once a chip was added

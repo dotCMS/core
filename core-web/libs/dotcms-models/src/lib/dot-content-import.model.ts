@@ -103,15 +103,6 @@ export interface DotImportJobParameters {
     tempFileId?: string;
 }
 
-/** A content type the user can import into (`GET /api/v1/content/_import/contenttypes`). */
-export interface DotImportContentType {
-    id: string;
-    variable: string;
-    name: string;
-    baseType: string;
-    icon?: string;
-}
-
 /**
  * The payload of an `IMPORT_CONTENTLETS_COMPLETED` system event.
  *
