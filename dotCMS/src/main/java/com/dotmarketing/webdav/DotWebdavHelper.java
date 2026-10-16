@@ -210,9 +210,26 @@ public class DotWebdavHelper {
 		}
 
 		// Validate password and rehash when is needed
-		if (!LoginFactory.passwordMatch(passwd, user) && !this.tryMatchJsonWebToken(passwd, user)) {
+		final boolean passwordMatches = LoginFactory.passwordMatch(passwd, user);
+		if (!passwordMatches && !this.tryMatchJsonWebToken(passwd, user)) {
 
 			Logger.debug(this, ()-> "The user's passwords didn't match");
+			throw new DotSecurityException("The user's passwords didn't match");
+		}
+
+		// Same checks as the back-end login. Inactive users and expired passwords get the same
+		// response as a wrong password, so WebDAV can't be used to learn an account's status.
+		if (!user.isActive()) {
+
+			Logger.debug(this, ()-> "WebDAV login rejected: user '" + user.getUserId() + "' is not active");
+			throw new DotSecurityException("The user's passwords didn't match");
+		}
+
+		// WebDAV has no password-reset flow, so an expired password can't be used here.
+		// API tokens are not passwords and are checked by their own expiry.
+		if (passwordMatches && user.isPasswordExpired()) {
+
+			Logger.debug(this, ()-> "WebDAV login rejected: password for user '" + user.getUserId() + "' has expired");
 			throw new DotSecurityException("The user's passwords didn't match");
 		}
 
