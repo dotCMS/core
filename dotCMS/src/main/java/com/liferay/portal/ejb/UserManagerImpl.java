@@ -550,12 +550,14 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
             return Authenticator.DNE;
         }
         this.checkPasswordExpiration(login, user);
-        if (this.isLockedOut(user)) {
-            // Same work and same result as a wrong password, so a locked account gives no signal about
-            // whether the guess was right. The failure counter is left alone while locked.
+        final LoginLockout.Status lockStatus = LoginLockout.getInstance().check(user.getUserId());
+        if (lockStatus == LoginLockout.Status.LOCKED) {
+            // Same work, delay, failure handlers and result as a wrong password, so a locked account gives
+            // no signal about whether the guess was right. The failure counter is left alone while locked.
             LoginFactory.passwordMatch(password, user);
             SecurityLogger.logInfo(this.getClass(), "Login refused, account locked: user " + user.getUserId()
                     + " from " + this.remoteAddress());
+            this.processFailedLogin(user, login, companyId, byEmailAddress, true);
             return Authenticator.FAILURE;
         }
         if (authResult == Authenticator.SUCCESS) {
@@ -575,13 +577,14 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
                     user.setFailedLoginAttempts(0);
                     UserUtil.update(user);
                 }
-                if (authResult == Authenticator.SUCCESS) {
+                if (authResult == Authenticator.SUCCESS && lockStatus != LoginLockout.Status.NONE) {
+                    // Only an expired lock gets here; clearing it also resets the doubling.
                     LoginLockout.getInstance().clear(user.getUserId());
                 }
             }
         }
         if (authResult == Authenticator.FAILURE) {
-            this.processFailedLogin(user, login, companyId, byEmailAddress);
+            this.processFailedLogin(user, login, companyId, byEmailAddress, false);
         }
         return authResult;
     }
@@ -709,13 +712,19 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
      * @param companyId      The current Company ID.
      * @param byEmailAddress If the current authentication method is via email, set this to {@code true}. If it's
      *                       done via User ID, set to {@code false}.
+     * @param locked         If the login was refused because the account is locked out, set this to {@code true}:
+     *                       the request is delayed the same way, but the failure counter is not changed.
      */
     private void processFailedLogin(final User user, final String login, final String companyId,
-                                    final boolean byEmailAddress) {
+                                    final boolean byEmailAddress, final boolean locked) {
         Logger.debug(this, String.format("Authentication for user '%s' has failed.", login));
         try {
             this.runCustomOnFailureHandlers(companyId, login, byEmailAddress);
-            this.handleFailedLoginAttempt(user, login, companyId, byEmailAddress);
+            if (locked) {
+                this.delayFailedLogin(user, login);
+            } else {
+                this.handleFailedLoginAttempt(user, login, companyId, byEmailAddress);
+            }
         } catch (final Exception e) {
             final String errorMsg = String.format("An error occurred when handling failed login for User '%s': " +
                                                           "%s", login, e.getMessage());
@@ -765,10 +774,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
         int failedLoginAttempts = user.getFailedLoginAttempts();
         Logger.debug(this, String.format("Current failed login attempts for user '%s' is %s", login,
                 failedLoginAttempts));
-        if (Config.getBooleanProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED, true)) {
-            Logger.debug(this, String.format("Delaying login attempts for user '%s'", login));
-            this.delayRequest(failedLoginAttempts);
-        }
+        this.delayFailedLogin(user, login);
         user.setFailedLoginAttempts(++failedLoginAttempts);
         Logger.debug(this, String.format("Setting failed login attempts for user '%s' to %s", login,
                 user.getFailedLoginAttempts()));
@@ -793,12 +799,16 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
     }
 
     /**
-     * Returns whether lockout is enabled and the given user is currently locked.
+     * Applies the login-delaying strategy for a failed login, based on the User's current failed login count.
+     *
+     * @param user  The {@link User} that failed to log in.
+     * @param login The User's email or ID.
      */
-    private boolean isLockedOut(final User user) {
-        final int maxFailures = GetterUtil.get(PropsUtil.get(PropsUtil.AUTH_MAX_FAILURES_LIMIT), 0);
-        return LoginLockout.getInstance().isEnabled(maxFailures)
-                && LoginLockout.getInstance().isLocked(user.getUserId());
+    private void delayFailedLogin(final User user, final String login) {
+        if (Config.getBooleanProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED, true)) {
+            Logger.debug(this, String.format("Delaying login attempts for user '%s'", login));
+            this.delayRequest(user.getFailedLoginAttempts());
+        }
     }
 
     private String remoteAddress() {
@@ -863,8 +873,8 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
         try {
                 final User user = APILocator.getUserAPI().loadUserById(userId);
                 ResetPasswordTokenUtil.checkToken(user, token);
+                // Also clears any login lockout on the account.
                 APILocator.getUserAPI().updatePassword(user, newPassword, APILocator.getUserAPI().getSystemUser(), false);
-                LoginLockout.getInstance().clear(user.getUserId());
         } catch (DotDataException e) {
             throw new IllegalArgumentException();
         }

@@ -1,5 +1,6 @@
 package com.dotmarketing.cms.login.factories;
 
+import com.dotcms.auth.LoginLockout;
 import com.dotcms.cms.login.PreventSessionFixationUtil;
 import com.dotcms.concurrent.lock.DotKeyLockManager;
 import com.dotcms.concurrent.lock.DotKeyLockManagerBuilder;
@@ -191,7 +192,7 @@ public class LoginFactory {
 					auth = Authenticator.SUCCESS;
 				}
 
-    			match = auth == Authenticator.SUCCESS;
+    			match = auth == Authenticator.SUCCESS && (skipPasswordCheck || !isLockedOut(user));
         	} else {
 	            if (comp.getAuthType().equals(Company.AUTH_TYPE_EA)) {
 	            	user = APILocator.getUserAPI().loadByUserByEmail(userName, APILocator.getUserAPI().getSystemUser(), false);
@@ -213,8 +214,9 @@ public class LoginFactory {
 	            }
 	            match = true;
 	            if (!skipPasswordCheck) {
-	            // Validate password and rehash when is needed
-	            match = passwordMatch(password, user);
+	            // Validate password and rehash when is needed. Refused while the account is locked out;
+	            // a failure counts toward the lock.
+	            match = LoginLockout.getInstance().passwordMatch(password, user);
 	            }
 
 	            if (match) {
@@ -225,9 +227,6 @@ public class LoginFactory {
 
 	            } else {
 
-					match = false;
-					user.setFailedLoginAttempts(user.getFailedLoginAttempts()+1);
-					APILocator.getUserAPI().save(user,APILocator.getUserAPI().getSystemUser(),false);
 					SecurityLogger.logInfo(LoginFactory.class,"An invalid attempt to login as " + userName + " from IP: " + request.getRemoteAddr());
 
 	            }
@@ -266,6 +265,13 @@ public class LoginFactory {
 
         return false;
     }
+
+	/**
+	 * LDAP checked the password; an account locked out by repeated failed logins is still refused.
+	 */
+	private static boolean isLockedOut(final User user) {
+		return null != user && LoginLockout.getInstance().check(user.getUserId()) == LoginLockout.Status.LOCKED;
+	}
 
 	private static void syncPassword(User user) {
 		try {
@@ -364,7 +370,7 @@ public class LoginFactory {
     				Logger.debug(LoginFactory.class, "syncPassword not set or unable to load user", e);
     			}
 
-    			match = auth == Authenticator.SUCCESS;
+    			match = auth == Authenticator.SUCCESS && !isLockedOut(user);
         	} else {
         	    // Liferay authentication
  	            if (comp.getAuthType().equals(Company.AUTH_TYPE_EA)) {
@@ -386,11 +392,8 @@ public class LoginFactory {
  	            	return false;
  	            }
 
-                match = passwordMatch(password, user);
-                if (match == false) {
-                    user.setFailedLoginAttempts(user.getFailedLoginAttempts() + 1);
-                    APILocator.getUserAPI().save(user, APILocator.getUserAPI().getSystemUser(), false);
-                }
+                // Refused while the account is locked out; a failure counts toward the lock.
+                match = LoginLockout.getInstance().passwordMatch(password, user);
         	}
 
             // if passwords match

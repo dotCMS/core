@@ -1,5 +1,6 @@
 package com.dotmarketing.business;
 
+import com.dotcms.auth.LoginLockout;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.enterprise.PasswordFactoryProxy;
@@ -494,8 +495,13 @@ public class UserAPIImpl implements UserAPI {
                 Logger.error(UserAPIImpl.class, "An error occurred generating the hashed password for userId: " + userToSave.getUserId(), e);
                 throw new DotDataException("An error occurred generating the hashed password.");
             }
+            userToSave.setFailedLoginAttempts(0);
         }
         save(userToSave, user, respectFrontEndRoles);
+        if (validatePassword) {
+            // A new password set by an administrator (or the user) unlocks an account locked out by failed logins
+            LoginLockout.getInstance().clear(userToSave.getUserId());
+        }
     }
 
     @Override
@@ -680,7 +686,10 @@ public class UserAPIImpl implements UserAPI {
         user.setIcqId("");
         user.setPasswordReset(GetterUtil.getBoolean(
                 PropsUtil.get(PropsUtil.PASSWORDS_CHANGE_ON_FIRST_USE)));
+        user.setFailedLoginAttempts(0);
         save(user, currentUser, respectFrontEndRoles);
+        // A new password (reset token flow or set by an administrator) unlocks an account locked out by failed logins
+        LoginLockout.getInstance().clear(user.getUserId());
 
     }
 
