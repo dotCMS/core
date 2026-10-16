@@ -129,11 +129,25 @@ CMS Administrators skip the filter entirely, so they never see the problem.
   and the related-content READ check during content import (`RelationshipUtil`). Any of them
   could start returning items it wrongly hid before, which is the intended change. None of them
   should start returning items the one-at-a-time check denies.
-- **Performance**: Items that miss the batch query fall back to the one-at-a-time check, with no
-  cap per request. In the worst case (right after a permission change on a site, a recursive
-  search over many folders) one request may run many checks. This is accepted: each check fills
-  the cache, so the next request is one query again. The common case (cache already filled)
-  must stay one query, with no per-folder query (#36940).
+- **Performance**: Only items with neither a cached row nor permissions of their own fall back to
+  the one-at-a-time check, with no cap per request. That set is not the same as "every item the
+  batch query did not return": a missed item may simply be denied. Today's batch query returns
+  only the permitted ids, so it cannot tell a denied item from an uncached one; the fix needs a
+  way to tell them apart. Without it, every denied item would be re-checked one at a time on
+  every request, which for a low-privilege user browsing a large site is a permanent cost, not a
+  one-time one.
+  - Denied items that have a cached row are resolved in the batch query and never take the slow
+    path.
+  - The one-at-a-time check writes the cached row whether it grants or denies access, so an
+    uncached item, readable or denied, takes the slow path at most once.
+  - The worst case is the first request after a permission change on a site, when a recursive
+    search can run many checks. This is accepted: the next request is one query again.
+  - Edge case: when the one-at-a-time check is answered from the in-memory permission cache, it
+    does not write the cached row today. Such an item could take the slow path on later requests
+    too; each of those checks is a memory lookup, not a database query. The plan decides
+    whether the fix must also make sure the row is written.
+  - The common case (cache already filled) must stay one query, with no per-folder query
+    (#36940).
 - **Backward compatibility**: No database, index, API contract or serialized-state change. Safe
   to roll back.
 - **Data considerations**: None. Existing data stays as it is. The slower check may fill missing
@@ -147,8 +161,10 @@ CMS Administrators skip the filter entirely, so they never see the problem.
 - **AC-002**: Right after a permission change on a site or parent folder, a non-admin user sees
   the same folders in the Content Drive tree as in the Site Browser.
 - **AC-003**: For any set of folders, the batch filter returns exactly the folders that
-  `PermissionAPI.doesUserHavePermission` allows for the same user and permission type: no
-  missing folders and no extra ones.
+  `PermissionAPI.doesUserHavePermission` allows for the same user, permission type and
+  `respectFrontendRoles` value: no missing folders and no extra ones. Both sides must use the
+  same inputs, because that flag adds the anonymous and logged-in-site roles, and a missing user
+  is treated as the anonymous user. The same condition applies to AC-004.
 - **AC-004**: The edit, publish, edit-permissions and add-children flags returned by the folder
   search for an inheriting, uncached folder match the one-at-a-time check.
 - **AC-005**: The "has subfolders" indicator is true for a folder whose only readable child
@@ -157,14 +173,19 @@ CMS Administrators skip the filter entirely, so they never see the problem.
   folder search as soon as the duplicate finishes.
 - **AC-007**: When every folder already has a cached reference row or permissions of its own,
   the batch filter still resolves them in one query, with no per-folder permission query. Only
-  items with neither a cached row nor permissions of their own take the one-at-a-time check.
+  items with neither a cached row nor permissions of their own take the one-at-a-time check;
+  an item that is simply denied does not. Meeting this requires telling uncached items apart
+  from denied ones, which today's batch query does not do.
+- **AC-008**: A folder the user cannot read is still left out, whether or not it has a cached
+  row.
+- **AC-009**: CMS Administrators and the system user see the same results as before.
 - **AC-010**: After a request that took the one-at-a-time check for an uncached item, a later
   request for the same item resolves it in the batch query, once the cache row is written.
 - **AC-011**: During content import, a related item the importing user can read, which inherits
   its permissions and has no cached row, is accepted as related content rather than rejected.
-- **AC-008**: A folder the user cannot read is still left out, whether or not it has a cached
-  row.
-- **AC-009**: CMS Administrators and the system user see the same results as before.
+- **AC-012**: For a low-privilege user who is denied most folders on a site, repeated recursive
+  folder searches with a filled cache run no one-at-a-time checks. A denied folder with no
+  cached row is checked one at a time at most once, until its row is written.
 - **Verification method**:
   - Integration tests (registered in a `MainSuite*` so CI runs them) that delete the reference
     rows for an inheriting subfolder, then call the folder search and the batch filter as a
@@ -178,8 +199,9 @@ CMS Administrators skip the filter entirely, so they never see the problem.
     second run finds it through the cache. Covers AC-010.
   - Manual: repeat the issue's demo steps and the duplicate variant on a build with the fix.
     Covers AC-002, AC-006.
-  - AC-007 checked by a test that counts permission queries, or by review if counting is not
-    practical; the plan decides.
+  - AC-007 and AC-012 checked by a test that counts one-at-a-time checks across two requests
+    from a user denied most folders, or by review if counting is not practical; the plan
+    decides.
 
 ## Assumptions
 
