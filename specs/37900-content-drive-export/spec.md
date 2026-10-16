@@ -90,6 +90,10 @@ CSV.
    `<ContentType>_contents_<M_d_yyyy>.csv` downloads, and a toast reports the number of rows.
 10. **Given** an export is running, **When** the user looks at the Export button, **Then** it shows a
    loading state and cannot be clicked again until the export ends.
+11. **Given** a filter-mode export with a text filter whose search has to scan more rows than the
+   database scan budget (`BROWSER_DB_MAX_SCAN_ROWS`, 50,000 by default), **When** it is exported,
+   **Then** every matching row is in the CSV. The integration test can lower that property instead
+   of creating 50,000 contentlets.
 
 ---
 
@@ -191,12 +195,16 @@ nor Z. Neither response gives a count of skipped items.
 4. **Given** the request names a folder the user cannot read, or a folder that does not exist,
    **When** it is submitted, **Then** both are refused with the same "not found" response, so a
    limited user cannot tell whether the folder exists, and no file is produced.
-5. **Given** a hand-built request names a folder from a site other than the one being browsed, or
-   a contentlet that is neither in that site nor in System Host, **When** it is submitted, **Then**
-   it is refused with the same "not found" response.
-6. **Given** some items were skipped for permissions, **When** the export finishes, **Then** neither
+5. **Given** a hand-built request names a folder from a site other than the one being browsed,
+   **When** it is submitted, **Then** it is refused with the same "not found" response.
+6. **Given** a selection holds a contentlet that does not exist, one the user cannot read, and one
+   that is outside the browsed site and System Host, **When** it is exported, **Then** all three
+   are skipped the same way, and the response is the same in all three cases (the rest of the
+   selection is exported, or "no content" if nothing is left), so it never reveals which of the
+   three applied.
+7. **Given** some items were skipped for permissions, **When** the export finishes, **Then** neither
    the file, the counts, nor the toast reveals how many were skipped.
-7. **Given** a contentlet stops being readable between the moment the export counts it and the
+8. **Given** a contentlet stops being readable between the moment the export counts it and the
    moment its row is written, **When** the export runs, **Then** that row is skipped, the export
    still succeeds, and the reported row count matches the rows actually written.
 
@@ -280,10 +288,13 @@ file.
   zip must be. Both CSVs are kept, under distinct names (FR-019).
 - **Content type name with characters not allowed in a file name** (`/`, `:`, …). The file name is
   made safe and the CSV is still produced (FR-019).
-- **Same contentlet version sent twice in a selection.** Exported once (FR-017).
+- **Same contentlet and language sent twice in a selection.** Exported once (FR-017).
+- **Contentlet edited after it was selected, and also inside a selected folder.** Its working
+  version is now a different inode from the one selected. It is still exported once, as the
+  current working version (FR-002, FR-017).
 - **A contentlet selected in one language that is also inside a selected folder.** The folder brings
   every language version of its content (FR-006), so all of them are exported, and the selected
-  version still appears once (FR-017).
+  language still appears once (FR-017).
 - **Content type with no exportable fields.** Its CSV still has the Identifier, languageCode and
   countryCode columns.
 - **A field's value cannot be formatted.** As in legacy, the cell is left empty and the export
@@ -303,6 +314,8 @@ file.
 - **Published contentlet edited afterwards.** It has a live and a working version in the same
   language. Only the working version is exported, so the file never holds two rows with the same
   Identifier and language (FR-017a).
+- **Selected contentlet deleted, made unreadable or outside the site.** Skipped silently, all three
+  the same way; the rest of the selection is still exported (FR-002a).
 - **Selected folder deleted between selection and export.** The path no longer resolves and the
   request is refused with the same "not found" response as an unreadable folder (FR-014).
 - **Permissions change while the export runs.** A contentlet that stops being readable after it was
@@ -321,11 +334,17 @@ file.
   type. Any Drive view is accepted: All Site Content, the site root, a folder, or System Host.
 - **FR-002**: The system MUST export in **selection mode** when the request carries a selection: a
   list of site-qualified folder paths (`//site/path/`, the form Drive sends for bulk duplicate)
-  and/or a list of the selected contentlet versions, each naming one contentlet in one language. The
-  request MUST also name the site being browsed in Drive.
-- **FR-002a**: Every selected folder MUST belong to the site being browsed, and every selected
-  contentlet MUST belong to that site or to System Host (which All Site Content can list). Any other
-  entry MUST be refused with the same "not found" response as an unreadable folder (FR-014).
+  and/or a list of selected contentlets, each entry naming an identifier and a language. An entry
+  always resolves to the working version of that identifier in that language at export time, not
+  to the version that was on screen when it was selected. The request MUST also name the site being
+  browsed in Drive.
+- **FR-002a**: Every selected folder MUST belong to the site being browsed; a folder outside it MUST
+  be refused with the same "not found" response as an unreadable folder (FR-014). Every selected
+  contentlet MUST belong to that site or to System Host (which All Site Content can list). A
+  selected contentlet that does not exist, that the user cannot read, or that is outside the
+  browsed site and System Host MUST be skipped silently, all three in the same way (FR-012), so the
+  response never reveals that an identifier exists or which site it belongs to. A stale entry, such
+  as content deleted by someone else after it was selected, therefore never fails the whole export.
 - **FR-003**: When a request carries both a selection and a listing query, the selection MUST win
   and the listing query MUST be ignored.
 - **FR-004**: A filter-mode request whose listing query names no content type or more than one MUST
@@ -371,7 +390,9 @@ file.
 
 **Permissions**
 
-- **FR-012**: A contentlet the user cannot read MUST NOT be exported in either mode.
+- **FR-012**: A contentlet the user cannot read MUST NOT be exported in either mode. In selection
+  mode it is skipped silently, exactly like a selected contentlet that does not exist or is outside
+  the browsed site (FR-002a).
 - **FR-013**: In selection mode, content in a subfolder the user cannot read MUST NOT be exported, at
   any depth below that subfolder.
 - **FR-014**: A request naming a folder the user cannot read, or a folder that does not exist, MUST
@@ -385,9 +406,12 @@ file.
 - **FR-016**: A filter-mode export MUST produce a single CSV, not a zip. A selection-mode export MUST
   produce a zip named `<SiteName>_export_<M_d_yyyy>.zip`, where `<SiteName>` is the site the user is
   browsing in Drive and the date is the export date.
-- **FR-017**: Each contentlet version (inode) MUST appear at most once. This applies when a
-  contentlet is selected and also inside a selected folder, when nested folders are both selected,
-  and when the same version is sent twice.
+- **FR-017**: Each contentlet MUST appear at most once per language: duplicates are removed by
+  identifier and language, not by inode. This applies when a contentlet is selected and also inside
+  a selected folder, when nested folders are both selected, when the same entry is sent twice, and
+  when the contentlet was edited after it was selected (its working version is then a different
+  inode from the one the user saw). Together with FR-017a, every identifier and language gives
+  exactly one row, the working version.
 - **FR-017a**: Every row MUST be the working version of its contentlet in its language, in both
   modes, as the Content Search export does (its search adds `+working:true`,
   `ContentletAjax.java:1049`). There MUST be at most one row per identifier and language. A live
@@ -491,10 +515,11 @@ file.
 - **Listing query**: The Drive listing's location (All Site Content, site root, a folder, System
   Host) and filters, restricted to one content type.
 - **Export selection**: The site being browsed, plus the folders (as site-qualified paths) and
-  contentlet versions (each one contentlet in one language) the user selected in Drive.
+  contentlets (each an identifier and a language) the user selected in Drive.
 - **Readable folder set**: In selection mode, the selected folders plus every subfolder the user can
   read, reached only through folders the user can read, without duplicates.
-- **Export row**: The working version of one contentlet in one language, written once.
+- **Export row**: The working version of one contentlet in one language, written once per
+  identifier and language.
 - **Content-type CSV**: All export rows of one content type, with one header row, named
   `<ContentType>_contents_<M_d_yyyy>.csv`.
 - **Export file**: A single content-type CSV (filter mode) or a zip of content-type CSVs (selection
@@ -516,8 +541,8 @@ file.
   folder, for content in a folder, at a site root and in System Host.
 - **SC-005**: With a limited user, 0 items the user cannot read appear in any export, across every
   permission scenario in User Story 4.
-- **SC-006**: In every export, each contentlet version appears exactly once and each content type
-  has exactly one CSV with one header row.
+- **SC-006**: In every export, each contentlet appears exactly once per language and each content
+  type has exactly one CSV with one header row.
 - **SC-007**: 0 exports are silently truncated. Every export over 100,000 rows is refused with a
   message saying it has more than 100,000 rows and that 100,000 is the limit.
 - **SC-008**: After any export, successful or failed, 0 temporary export files remain on the server.
@@ -602,6 +627,13 @@ file.
   permissions one folder at a time. Parity with legacy output is required. Speeding these up is
   not, but the plan should measure an export near 100,000 rows and a deep folder tree so the cost is
   known.
+- **That measurement decides the limit.** The export builds the whole file before sending anything
+  (FR-031), so the connection stays silent while it is built. If an export near 100,000 rows takes
+  longer than the idle timeout of the load balancer or proxy in front of dotCMS, the user would get
+  a generic gateway error instead of the server's message (FR-038), and the server would finish a
+  file nobody downloads. If the measurement does not fit within that timeout, the plan MUST either
+  lower the row limit to what fits or bring the background-job export (currently out of scope) into
+  scope. It must not ship a limit that the proxy cannot serve.
 - **The browser holds the file in memory.** The 100,000-row limit bounds its size.
 - **Files and pages are content.** File assets, dotAssets and pages are contentlets and are exported
   in their own types' CSVs. Menu links are not contentlets and are not exported.
