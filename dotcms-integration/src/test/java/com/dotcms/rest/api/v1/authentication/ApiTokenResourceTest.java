@@ -235,4 +235,39 @@ public class ApiTokenResourceTest {
         final Response restResponse = getJwtAs(admin, token);
         assertEquals(Response.Status.FORBIDDEN.getStatusCode(), restResponse.getStatus());
     }
+
+    /**
+     * Method to test: {@link ApiTokenResource#getJwtFromApiToken}
+     * Given Scenario: A CMS Administrator asks for the JWT of a revoked token that belongs to another user.
+     * ExpectedResult: HTTP 403, not 400; the ownership check runs before the validity check so a non-owner
+     * cannot learn whether another user's token is revoked or expired.
+     */
+    @Test
+    public void test_getJwtFromApiToken_admin_revokedTokenOfOtherUser_isForbidden() throws DotDataException, DotSecurityException {
+
+        final User owner = new UserDataGen().active(true).nextPersisted();
+        final User admin = new UserDataGen().active(true).nextPersisted();
+        APILocator.getRoleAPI().addRoleToUser(APILocator.getRoleAPI().loadCMSAdminRole(), admin);
+        final ApiToken token = persistTokenFor(owner, admin);
+        APILocator.getApiTokenAPI().revokeToken(token, owner);
+
+        final Response restResponse = getJwtAs(admin, token);
+        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), restResponse.getStatus());
+    }
+
+    /**
+     * Method to test: {@link ApiTokenResource#getJwtFromApiToken}
+     * Given Scenario: The owner of a revoked token asks for its JWT.
+     * ExpectedResult: HTTP 400; the owner still gets the "token not valid" response.
+     */
+    @Test
+    public void test_getJwtFromApiToken_owner_revokedToken_isBadRequest() throws DotDataException, DotSecurityException {
+
+        final User owner = new UserDataGen().active(true).nextPersisted();
+        final ApiToken token = persistTokenFor(owner, owner);
+        APILocator.getApiTokenAPI().revokeToken(token, owner);
+
+        final Response restResponse = getJwtAs(owner, token);
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), restResponse.getStatus());
+    }
 }

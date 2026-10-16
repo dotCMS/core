@@ -767,19 +767,22 @@ public class ApiTokenResource implements Serializable {
         }
 
         final ApiToken token = optToken.get();
-        if(token.isExpired() || token.isRevoked()) {
-
-            return ExceptionMapperUtil.createResponse(new DotStateException("token not valid"), Response.Status.BAD_REQUEST);
-        }
 
         // Only the token's owner may retrieve a working JWT for an existing token. Administrators and
-        // user managers can list and revoke other users' tokens, but never read them.
+        // user managers can list and revoke other users' tokens, but never read them. This runs before
+        // the validity check so a non-owner always gets 403 and cannot probe whether a token is expired
+        // or revoked.
         if (!Objects.equals(user.getUserId(), token.getUserId())) {
 
             SecurityLogger.logInfo(this.getClass(), "Denied JWT retrieval for token: " + token.id + " owned by: "
                     + token.getUserId() + " to user: " + user.getUserId() + " from: " + request.getRemoteAddr());
             return ExceptionMapperUtil.createResponse(
                     new DotStateException("Only the owner of a token can retrieve it"), Response.Status.FORBIDDEN);
+        }
+
+        if(token.isExpired() || token.isRevoked()) {
+
+            return ExceptionMapperUtil.createResponse(new DotStateException("token not valid"), Response.Status.BAD_REQUEST);
         }
 
         SecurityLogger.logInfo(this.getClass(), "Revealing token to user: " + user.getUserId() + " from: " + request.getRemoteAddr() + " token:"  + token );
