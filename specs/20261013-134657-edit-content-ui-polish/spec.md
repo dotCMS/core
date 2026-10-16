@@ -88,10 +88,11 @@ copy button that looks like every other icon-only button.
 1. **Divider** — the side panel's drawer header (since #37965 the shared `dot-side-panel` in
    `libs/ui`, used by every side panel in the admin) has no bottom border, and neither does
    the Edit Content area under it; the tab list right below already draws
-   `border-b border-surface-200`, but only under its own width. The Edit Content panel sets
-   its content area's classes through `DotSidePanelRef.contentStyleClass` (as the legacy
-   editor panel does), so the divider is that area's top border and other panels are
-   unaffected.
+   `border-b border-surface-200`, but only under its own width. The divider is the drawer
+   header's bottom border, set in the shared panel through PrimeNG's pass-through
+   (`pt.header.class`), so every side panel gets it: Edit Content (opened from Content Drive,
+   Query Tool, the page editor and the relationship field) and Content Drive's legacy editor
+   panel.
 2. **Date picker** — in the installed PrimeNG `DatePicker`, `showOverlay()` records the host
    element's `offsetWidth`, and `onOverlayBeforeEnter()` writes it as an **inline**
    `min-width` on the popup's wrapper (the `p-motion` element around `.p-datepicker-panel`)
@@ -99,8 +100,9 @@ copy button that looks like every other icon-only button.
    wide as the field, so the popup is too.
    *Correction to the issue text*: the issue ties this to `[appendTo]="'body'"`, but the code
    applies the `min-width` regardless of `appendTo`, so removing `appendTo` would not fix it.
-   No PrimeNG input reaches the wrapper (`panelStyleClass` / `panelStyle` land on the panel
-   inside it), so the fix clears the value when PrimeNG emits `onShow` and re-aligns the popup.
+   `panelStyleClass` / `panelStyle` land on the panel inside the wrapper; the pass-through
+   `pt.motion.root` reaches the wrapper itself, so the fix gives it a `min-w-0!` class, whose
+   `!important` wins over the inline value.
 3. **Relationship table icons** — the drag handle is drawn as two overlapping
    `pi pi-ellipsis-v` glyphs at `text-[14px]`, which together read larger and heavier than the
    single-glyph `+` and `×`. The `+` and `×` are small `p-button`s with PrimeIcons, and the
@@ -144,7 +146,9 @@ copy button that looks like every other icon-only button.
 
 ## Regression Risk *(mandatory)*
 
-- **Blast radius**: four `libs/edit-content` components. The calendar field is used by every
+- **Blast radius**: three `libs/edit-content` components and the shared `dot-side-panel`
+  (`libs/ui`), whose header divider now shows in every side panel (Edit Content and Content
+  Drive's legacy editor panel). The calendar field is used by every
   Date / Time / Date and Time field in the editor; the relationship field by every
   relationship. Risks: a popup misplaced after its width changes; the drag handle losing its
   keyboard focus or its `pReorderableRowHandle`; the add/remove buttons losing their
@@ -204,9 +208,9 @@ copy button that looks like every other icon-only button.
 
 **Verification method**:
 
-- Unit (Vitest + Spectator), written first and confirmed Red, per point: the Edit Content panel
-  sets its content area's top border (`border-t border-surface-200`); on `onShow` the popup wrapper's inline `min-width` is cleared
-  and the popup re-aligned; the drag handle renders one `drag_indicator` and still has
+- Unit (Vitest + Spectator), written first and confirmed Red, per point: the shared side panel's
+  drawer header carries `border-b border-surface-200`; the date picker's popup wrapper
+  (`p-motion`) carries `min-w-0!`; the drag handle renders one `drag_indicator` and still has
   `pReorderableRowHandle` / is absent when disabled; the add/remove buttons render `add` /
   `close`, not small, rounded; the empty state renders `folder_open`; the copy button has no
   `size="small"` and its glyph has no `text-lg`.

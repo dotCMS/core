@@ -21,6 +21,6 @@ working; the only removed selectors are the relationship table's PrimeIcons attr
 | Relationship add / remove | `icon="pi pi-plus"` / `icon="pi pi-times"`, `size="small"` | no `icon` attribute; `#icon` template with `add` / `close`; default size; `[rounded]="true"` |
 | Relationship empty state | `<i class="pi pi-folder-open">` | `<span class="material-symbols-outlined" aria-hidden="true">folder_open</span>` |
 | Drag handle | two `i.pi.pi-ellipsis-v` | one `span.material-symbols-outlined` = `drag_indicator` |
-| Date picker overlay | inline `min-width` = input width wins | `(onShow)` → `onPopupShow()` clears it and re-aligns |
+| Date picker overlay | inline `min-width` = input width wins | `pt.motion.root.class` = `min-w-0!` on the popup wrapper |
 | Copy button | `size="small"`, glyph `text-lg` | default size, glyph without `text-lg` |
-| Side-panel content area (Edit Content only) | `contentStyleClass` = `p-0!` | `p-0! border-t border-surface-200` |
+| Side-panel drawer header (shared `dot-side-panel`, every side panel) | no border | `pt.header.class` = `border-b border-surface-200` |
