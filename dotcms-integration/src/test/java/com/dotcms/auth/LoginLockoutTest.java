@@ -727,6 +727,59 @@ public class LoginLockoutTest {
     }
 
     /**
+     * Given: a user with lockout rows
+     * When: the user is deleted
+     * Then: the rows are deleted with them
+     */
+    @Test
+    public void test_user_delete_removes_lockout_rows() throws Exception {
+        final User user = newUser();
+        final User replacement = new UserDataGen().nextPersisted();
+        try {
+            lockByFailedLogins(user);
+            assertFalse(lockoutRows(user).isEmpty());
+
+            APILocator.getUserAPI().delete(user, replacement, APILocator.systemUser(), false);
+            DbConnectionFactory.closeSilently();
+
+            assertTrue(lockoutRows(user).isEmpty());
+        } finally {
+            LoginLockout.getInstance().clear(user.getUserId());
+            UserDataGen.remove(replacement);
+        }
+    }
+
+    /**
+     * Given: failures recorded for one account long ago, never locked and never cleared by a success
+     * When: any lock is set
+     * Then: those expired rows are removed, so failing addresses do not stay in the table for good
+     */
+    @Test
+    public void test_expired_rows_are_purged_when_a_lock_is_set() throws Exception {
+        final User stale = newUser();
+        final User user = newUser();
+        try {
+            failLogins(stale, 2);
+            assertFalse(lockoutRows(stale).isEmpty());
+            try {
+                new DotConnect().setSQL("UPDATE login_lockout SET window_start = ? WHERE user_id = ?")
+                        .addParam(System.currentTimeMillis() - 2 * LoginLockout.getInstance().windowSeconds() * 1000L)
+                        .addParam(stale.getUserId()).loadResult();
+            } finally {
+                DbConnectionFactory.closeSilently();
+            }
+
+            lockByFailedLogins(user);
+
+            assertTrue(lockoutRows(stale).isEmpty());
+            assertFalse(lockoutRows(user).isEmpty());
+        } finally {
+            cleanUp(stale);
+            cleanUp(user);
+        }
+    }
+
+    /**
      * Given: lockout switched off with {@code AUTH_LOCKOUT_ENABLED=false}
      * When: more wrong passwords than the limit are tried, on the main login and over WebDAV
      * Then: nothing is recorded or locked and the correct password still works on every path

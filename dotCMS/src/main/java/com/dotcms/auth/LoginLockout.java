@@ -105,6 +105,13 @@ public final class LoginLockout {
                     + " locked_until = ?, failures = 0, window_start = ?, mod_date = ?";
 
     /**
+     * Removes rows that no longer affect any login: their lock has run out (or never existed) and their
+     * count is older than the window. Parameters: now, window cutoff.
+     */
+    private static final String PURGE_SQL =
+            "DELETE FROM login_lockout WHERE locked_until <= ? AND window_start < ?";
+
+    /**
      * Lock state of one account as seen from one source.
      */
     public enum Status {
@@ -466,6 +473,22 @@ public final class LoginLockout {
                         + " for " + seconds + "s, last attempt from " + clientAddress()
                 : "Source locked out of account after " + attempts + " login attempts: user " + userId
                         + " from " + source + " for " + seconds + "s");
+        purgeExpired(now);
+    }
+
+    /**
+     * Deletes rows, for any account, that no longer affect a login. Sources that fail and never succeed
+     * would otherwise stay in the table for good. Run whenever a lock is set, so the table is trimmed
+     * most often exactly when failures are frequent.
+     */
+    private void purgeExpired(final long now) {
+        try {
+            new DotConnect().setSQL(PURGE_SQL)
+                    .addParam(now).addParam(now - windowSeconds() * 1000L)
+                    .loadResult();
+        } catch (final DotDataException | RuntimeException e) {
+            Logger.warn(this, "Unable to remove expired login lockout rows: " + e.getMessage());
+        }
     }
 
     /**
