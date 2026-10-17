@@ -35,6 +35,12 @@ describe('DotSearchScopeInputComponent', () => {
         detectChanges: false
     });
 
+    /**
+     * Spectator types `props` by class member (`$term`) but sets them by public alias (`term`), so
+     * the aliased inputs can only be passed through this cast.
+     */
+    const byAlias = (props: Record<string, unknown>) => props as never;
+
     const searchInput = () =>
         spectator.fixture.debugElement.query(By.directive(DotSearchInputComponent));
 
@@ -44,7 +50,7 @@ describe('DotSearchScopeInputComponent', () => {
     const trigger = () => spectator.query(byTestId('search-scope-trigger')) as HTMLElement;
 
     const open = (scope: DotSearchScope = 'TITLE', term = '') => {
-        spectator = createComponent({ props: { term, scope } });
+        spectator = createComponent({ props: byAlias({ term, scope }) });
         spectator.detectChanges();
     };
 
@@ -79,7 +85,11 @@ describe('DotSearchScopeInputComponent', () => {
 
         it('should let the host name the text box, for hosts with more than one search box', () => {
             spectator = createComponent({
-                props: { term: '', scope: 'TITLE', testId: 'asset-picker-search-input' }
+                props: byAlias({
+                    term: '',
+                    scope: 'TITLE',
+                    testId: 'asset-picker-search-input'
+                })
             });
             spectator.detectChanges();
 

@@ -250,10 +250,10 @@ describe('DotCrumbtrailComponent', () => {
             const chip = spectator.query(byTestId('title-status-chip'));
 
             expect(chip).toBeTruthy();
-            expect(chip.textContent.trim()).toBe('Published');
-            expect(
-                title.compareDocumentPosition(chip) & Node.DOCUMENT_POSITION_FOLLOWING
-            ).toBeTruthy();
+            expect(chip?.textContent?.trim()).toBe('Published');
+            const position = title?.compareDocumentPosition(chip as Node) ?? 0;
+
+            expect(position & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
         });
 
         it('should read "New" for content that has not been saved', () => {
@@ -261,7 +261,7 @@ describe('DotCrumbtrailComponent', () => {
             store.setTitleStatus({ state: null });
             spectator.detectChanges();
 
-            expect(spectator.query(byTestId('title-status-chip')).textContent.trim()).toBe('New');
+            expect(spectator.query(byTestId('title-status-chip'))?.textContent?.trim()).toBe('New');
         });
 
         it('should update the chip when the status changes without a reload', () => {
@@ -272,7 +272,7 @@ describe('DotCrumbtrailComponent', () => {
             store.setTitleStatus({ state: { live: false, working: true, hasLiveVersion: false } });
             spectator.detectChanges();
 
-            expect(spectator.query(byTestId('title-status-chip')).textContent.trim()).toBe('Draft');
+            expect(spectator.query(byTestId('title-status-chip'))?.textContent?.trim()).toBe('Draft');
         });
 
         it('should remove the chip when the status is cleared', () => {
@@ -302,9 +302,9 @@ describe('DotCrumbtrailComponent', () => {
             const title = spectator.query(byTestId('breadcrumb-title'));
             const chip = spectator.query(byTestId('title-status-chip'));
 
-            expect(title.classList.contains('min-w-0')).toBe(true);
-            expect(title.classList.contains('truncate-text')).toBe(true);
-            expect(chip.classList.contains('shrink-0')).toBe(true);
+            expect(title?.classList.contains('min-w-0')).toBe(true);
+            expect(title?.classList.contains('truncate-text')).toBe(true);
+            expect(chip?.classList.contains('shrink-0')).toBe(true);
         });
     });
 });

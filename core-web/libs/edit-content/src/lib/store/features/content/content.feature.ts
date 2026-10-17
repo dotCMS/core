@@ -64,7 +64,7 @@ export function withContent() {
                     store.initialContentletState() !== 'new' &&
                     !store.isViewingHistoricalVersion() &&
                     (contentlet?.baseType === DotCMSBaseTypesContentTypes.HTMLPAGE ||
-                        !!contentlet?.URL_MAP_FOR_CONTENT)
+                        !!contentlet?.['URL_MAP_FOR_CONTENT'])
                 );
             }),
 
