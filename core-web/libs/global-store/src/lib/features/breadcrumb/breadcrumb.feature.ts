@@ -19,6 +19,8 @@ import { MenuItemEntity } from '@dotcms/dotcms-models';
 
 import { processSpecialRoute, shouldReplaceLastCrumb } from './breadcrumb.utils';
 
+import { resolveMenuItem } from '../menu/menu-resolver';
+
 /**
  * State interface for the Breadcrumb feature.
  * Contains the breadcrumb navigation items.
@@ -192,27 +194,10 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
                 }
 
                 const breadcrumbs = store.breadcrumbs();
-                const [urlPath, queryString] = url.split('?');
-                const shortMenuId = new URLSearchParams(queryString || '').get('mId');
 
-                const item = menu.find((item) => {
-                    const pathMatches = item.menuLink === urlPath;
-
-                    const hasQueryParams = queryString && queryString.length > 0;
-
-                    // If we have query params but no mId, it's likely an old bookmark - don't match
-                    if (hasQueryParams && !shortMenuId) {
-                        return false;
-                    }
-
-                    // If we have mId, validate both path and parent match
-                    if (shortMenuId) {
-                        return pathMatches && item.parentMenuId.startsWith(shortMenuId);
-                    }
-
-                    // Default: no query params, no mId - match by path only
-                    return pathMatches;
-                });
+                // The same rule the highlight and the document title use. The trail is not passed:
+                // the bookmark-by-label fallback reads the trail this very call is about to rebuild.
+                const item = resolveMenuItem({ url, items: menu });
 
                 if (item) {
                     const newUrl = `/dotAdmin/#${url}`;

@@ -4,7 +4,7 @@ import { Injectable, inject } from '@angular/core';
 
 import { map, mergeMap } from 'rxjs/operators';
 
-import { DotMenuService } from '../../../../api/services/dot-menu.service';
+import { GlobalStore } from '@dotcms/store';
 
 export interface DotTaskAction {
     header?: string;
@@ -19,7 +19,7 @@ export interface DotTaskAction {
  */
 @Injectable()
 export class DotWorkflowTaskDetailService {
-    private dotMenuService = inject(DotMenuService);
+    readonly #globalStore = inject(GlobalStore);
 
     private data: BehaviorSubject<DotTaskAction> = new BehaviorSubject(null);
     private _header: BehaviorSubject<string> = new BehaviorSubject('');
@@ -54,11 +54,14 @@ export class DotWorkflowTaskDetailService {
     private getViewUrl(action: DotTaskAction): Observable<string> {
         return action === null
             ? of('')
-            : this.dotMenuService.getDotMenuId('workflow').pipe(
-                  map((portletId: string) => {
+            : this.#globalStore.ensureLoaded().pipe(
+                  map(() => {
+                      // The legacy workflow portlet is addressed by the layout that contains it.
+                      const layoutId = this.#globalStore.layoutIdForPortlet('workflow');
+
                       return [
                           `/c/portal/layout`,
-                          `?p_l_id=${portletId}`,
+                          `?p_l_id=${layoutId}`,
                           `&p_p_id=workflow`,
                           `&p_p_action=1`,
                           `&p_p_state=maximized`,

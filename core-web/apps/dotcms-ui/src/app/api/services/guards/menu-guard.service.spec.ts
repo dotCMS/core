@@ -1,6 +1,6 @@
 import { mockProvider } from '@openng/spectator/vitest';
-import { of as observableOf, throwError } from 'rxjs';
-import { vi } from 'vitest';
+import { of as observableOf, Subject, throwError } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -27,14 +27,6 @@ import { GlobalStore } from '@dotcms/store';
 import { MenuGuardService } from './menu-guard.service';
 
 import { DotNavigationService } from '../../../view/components/dot-navigation/services/dot-navigation.service';
-import { DotMenuService } from '../dot-menu.service';
-
-@Injectable()
-class MockDotMenuService {
-    isPortletInMenu() {
-        //
-    }
-}
 
 @Injectable()
 class MockDotNavigationService {
@@ -43,7 +35,7 @@ class MockDotNavigationService {
 
 describe('ValidMenuGuardService', () => {
     let menuGuardService: MenuGuardService;
-    let dotMenuService: DotMenuService;
+    let globalStore: { hasPortlet: Mock; ensureLoaded: Mock };
     let dotNavigationService: DotNavigationService;
     let dotRouterService: DotRouterService;
     let mockRouterStateSnapshot: RouterStateSnapshot;
@@ -62,7 +54,6 @@ describe('ValidMenuGuardService', () => {
                         isJSPPortletURL: () => false
                     }
                 },
-                { provide: DotMenuService, useClass: MockDotMenuService },
                 {
                     provide: DotNavigationService,
                     useClass: MockDotNavigationService
@@ -74,7 +65,10 @@ describe('ValidMenuGuardService', () => {
                         identifier: 'demo-id',
                         hostname: 'demo.dotcms.com'
                     } as DotSite),
-                    switchCurrentSite: vi.fn()
+                    switchCurrentSite: vi.fn(),
+                    // The menu is read from the store snapshot once it is ready.
+                    ensureLoaded: vi.fn().mockReturnValue(observableOf(undefined)),
+                    hasPortlet: vi.fn()
                 }),
                 mockProvider(DotSiteService, {
                     getSites: vi.fn().mockReturnValue(
@@ -94,7 +88,7 @@ describe('ValidMenuGuardService', () => {
         });
 
         menuGuardService = TestBed.inject(MenuGuardService);
-        dotMenuService = TestBed.inject(DotMenuService);
+        globalStore = TestBed.inject(GlobalStore) as unknown as typeof globalStore;
         dotRouterService = TestBed.inject(DotRouterService);
         dotNavigationService = TestBed.inject(DotNavigationService);
         mockRouterStateSnapshot = { toString: vi.fn() } as unknown as RouterStateSnapshot;
@@ -102,26 +96,47 @@ describe('ValidMenuGuardService', () => {
     });
 
     it('should allow access to Menu Portlets', () => {
-        let result: boolean | UrlTree;
+        let result: boolean | UrlTree | undefined;
         mockRouterStateSnapshot.url = '/test';
-        vi.spyOn(dotMenuService, 'isPortletInMenu').mockReturnValue(observableOf(true));
+        globalStore.hasPortlet.mockReturnValue(true);
         menuGuardService
             .canActivate(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
             .subscribe((res) => (result = res));
-        expect(dotMenuService.isPortletInMenu).toHaveBeenCalledWith('test', false);
-        expect(dotMenuService.isPortletInMenu).toHaveBeenCalledTimes(1);
+        expect(globalStore.hasPortlet).toHaveBeenCalledWith('test', { jspOnly: false });
+        expect(globalStore.hasPortlet).toHaveBeenCalledTimes(1);
         expect(result).toBe(true);
+    });
+
+    it('waits for the menu to be ready before deciding', () => {
+        const ready = new Subject<void>();
+        let result: boolean | UrlTree | undefined;
+        mockRouterStateSnapshot.url = '/test';
+        globalStore.ensureLoaded.mockReturnValue(ready.asObservable());
+        globalStore.hasPortlet.mockReturnValue(true);
+
+        menuGuardService
+            .canActivate(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
+            .subscribe((res) => (result = res));
+
+        expect(result).toBeUndefined();
+        expect(globalStore.hasPortlet).not.toHaveBeenCalled();
+
+        ready.next();
+        ready.complete();
+
+        expect(result).toBe(true);
+        expect(globalStore.hasPortlet).toHaveBeenCalledWith('test', { jspOnly: false });
     });
 
     it('should prevent access to Menu Portlets', () => {
         let result: boolean | UrlTree;
         mockRouterStateSnapshot.url = '/test';
-        vi.spyOn(dotMenuService, 'isPortletInMenu').mockReturnValue(observableOf(false));
+        globalStore.hasPortlet.mockReturnValue(false);
         menuGuardService
             .canActivate(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
             .subscribe((res) => (result = res));
-        expect(dotMenuService.isPortletInMenu).toHaveBeenCalledWith('test', false);
-        expect(dotMenuService.isPortletInMenu).toHaveBeenCalledTimes(1);
+        expect(globalStore.hasPortlet).toHaveBeenCalledWith('test', { jspOnly: false });
+        expect(globalStore.hasPortlet).toHaveBeenCalledTimes(1);
         expect(dotNavigationService.goToFirstPortlet).toHaveBeenCalled();
         expect(result).toBe(false);
     });
@@ -129,24 +144,24 @@ describe('ValidMenuGuardService', () => {
     it('should allow children access to Menu Portlets', () => {
         let result: boolean | UrlTree;
         mockRouterStateSnapshot.url = '/test';
-        vi.spyOn(dotMenuService, 'isPortletInMenu').mockReturnValue(observableOf(true));
+        globalStore.hasPortlet.mockReturnValue(true);
         menuGuardService
             .canActivateChild(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
             .subscribe((res) => (result = res));
-        expect(dotMenuService.isPortletInMenu).toHaveBeenCalledWith('test', false);
-        expect(dotMenuService.isPortletInMenu).toHaveBeenCalledTimes(1);
+        expect(globalStore.hasPortlet).toHaveBeenCalledWith('test', { jspOnly: false });
+        expect(globalStore.hasPortlet).toHaveBeenCalledTimes(1);
         expect(result).toBe(true);
     });
 
     it('should prevent children access to Menu Portlets', () => {
         let result: boolean | UrlTree;
         mockRouterStateSnapshot.url = '/test';
-        vi.spyOn(dotMenuService, 'isPortletInMenu').mockReturnValue(observableOf(false));
+        globalStore.hasPortlet.mockReturnValue(false);
         menuGuardService
             .canActivateChild(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
             .subscribe((res) => (result = res));
-        expect(dotMenuService.isPortletInMenu).toHaveBeenCalledWith('test', false);
-        expect(dotMenuService.isPortletInMenu).toHaveBeenCalledTimes(1);
+        expect(globalStore.hasPortlet).toHaveBeenCalledWith('test', { jspOnly: false });
+        expect(globalStore.hasPortlet).toHaveBeenCalledTimes(1);
         expect(dotNavigationService.goToFirstPortlet).toHaveBeenCalled();
         expect(result).toBe(false);
     });
@@ -159,32 +174,28 @@ describe('ValidMenuGuardService', () => {
 
         it('should allow children access to Menu Portlets if JSPPortlet is in menu', () =>
             new Promise<void>((done) => {
-                const spy = vi
-                    .spyOn(dotMenuService, 'isPortletInMenu')
-                    .mockReturnValue(observableOf(true));
+                const spy = globalStore.hasPortlet.mockReturnValue(true);
                 menuGuardService
                     .canActivateChild(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
                     .subscribe((res) => {
                         expect(res).toBe(true);
                         done();
                     });
-                expect(spy).toHaveBeenCalledWith('test', true);
+                expect(spy).toHaveBeenCalledWith('test', { jspOnly: true });
                 expect(spy).toHaveBeenCalledTimes(1);
                 expect(dotNavigationService.goToFirstPortlet).not.toHaveBeenCalled();
             }));
 
         it('should prevent children access to Menu Portlets if JSPPortlet is in menu', () =>
             new Promise<void>((done) => {
-                const spy = vi
-                    .spyOn(dotMenuService, 'isPortletInMenu')
-                    .mockReturnValue(observableOf(false));
+                const spy = globalStore.hasPortlet.mockReturnValue(false);
                 menuGuardService
                     .canActivateChild(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
                     .subscribe((res) => {
                         expect(res).toBe(false);
                         done();
                     });
-                expect(spy).toHaveBeenCalledWith('test', true);
+                expect(spy).toHaveBeenCalledWith('test', { jspOnly: true });
                 expect(spy).toHaveBeenCalledTimes(1);
                 expect(dotNavigationService.goToFirstPortlet).toHaveBeenCalled();
             }));
@@ -193,9 +204,7 @@ describe('ValidMenuGuardService', () => {
         let router: Router;
 
         const givenMenu = (portletIds: string[]) =>
-            vi
-                .spyOn(dotMenuService, 'isPortletInMenu')
-                .mockImplementation((id: string) => observableOf(portletIds.includes(id)));
+            globalStore.hasPortlet.mockImplementation((id: string) => portletIds.includes(id));
 
         const runGuard = (url: string, portletId: string) => {
             let result: boolean | UrlTree | undefined;

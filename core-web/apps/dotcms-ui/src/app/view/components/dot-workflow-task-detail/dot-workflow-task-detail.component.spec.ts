@@ -8,12 +8,12 @@ import { ActivatedRoute } from '@angular/router';
 
 import { DotIframeService, DotRouterService, DotUiColorsService } from '@dotcms/data-access';
 import { DotcmsConfigService, LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
+import { GlobalStore } from '@dotcms/store';
 import { LoginServiceMock, MockDotRouterService } from '@dotcms/utils-testing';
 
 import { DotWorkflowTaskDetailComponent } from './dot-workflow-task-detail.component';
 import { DotWorkflowTaskDetailService } from './services/dot-workflow-task-detail.service';
 
-import { DotMenuService } from '../../../api/services/dot-menu.service';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 import { DotIframeDialogComponent } from '../dot-iframe-dialog/dot-iframe-dialog.component';
 
@@ -45,11 +45,10 @@ describe('DotWorkflowTaskDetailComponent', () => {
                 }
             },
             {
-                provide: DotMenuService,
+                provide: GlobalStore,
                 useValue: {
-                    getDotMenuId() {
-                        return observableOf('999');
-                    }
+                    ensureLoaded: () => observableOf(undefined),
+                    layoutIdForPortlet: () => '999'
                 }
             }
         ],

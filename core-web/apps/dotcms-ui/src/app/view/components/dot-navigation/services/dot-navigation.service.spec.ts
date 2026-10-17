@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Observable, of, Subject } from 'rxjs';
+import { of, Subject } from 'rxjs';
 import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { Title } from '@angular/platform-browser';
 import { NavigationEnd, Router } from '@angular/router';
@@ -13,19 +13,17 @@ import { RouterTestingModule } from '@angular/router/testing';
 import {
     DotCurrentUserService,
     DotEventsService,
+    DotEventsSocket,
+    DotSystemEventType,
     DotIframeService,
     DotRouterService,
     DotSystemConfigService
 } from '@dotcms/data-access';
 import { Auth, LoginService } from '@dotcms/dotcms-js';
-import { DotMenu } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { DotCurrentUserServiceMock, LoginServiceMock } from '@dotcms/utils-testing';
 
 import { DotNavigationService } from './dot-navigation.service';
-
-import { DotMenuService } from '../../../../api/services/dot-menu.service';
-import { DynamicRouteService } from '../../../../api/services/dynamic-route.service';
 
 class RouterMock {
     _events: Subject<any> = new Subject();
@@ -65,23 +63,6 @@ class RouterMock {
         /* */
     }
 }
-export class DotMenuServiceMock {
-    loadMenu(_force?: boolean): Observable<DotMenu[]> {
-        return of([
-            {
-                ...dotMenuMock(),
-                active: true,
-                isOpen: true
-            },
-            dotMenuMock1()
-        ]);
-    }
-
-    reloadMenu(): Observable<DotMenu[]> {
-        return of([dotMenuMock(), dotMenuMock1()]);
-    }
-}
-
 class TitleServiceMock {
     getTitle(): string {
         return 'dotCMS platform';
@@ -164,25 +145,37 @@ const baseMockAuth: Auth = {
 describe('DotNavigationService', () => {
     vi.setConfig({ testTimeout: 10000 }); // Increase timeout for this test suite
 
+    const MENU_URL = '/api/v1/menu';
+
     let service: DotNavigationService;
     let dotRouterService: DotRouterService;
-    let dotEventService: DotEventsService;
-    let dotMenuService: DotMenuService;
     let loginService: LoginService;
     let router: RouterMock;
     let titleService: Title;
+    let httpMock: HttpTestingController;
+    let globalStore: InstanceType<typeof GlobalStore>;
+    let layoutUpdated$: Subject<void>;
     let dotRouterServiceMock: any;
 
-    beforeEach(() => {
+    const menuResponse = (menus = [dotMenuMock(), dotMenuMock1()]) => ({ entity: menus });
+
+    /** Answers the single menu request that is pending and lets the store settle. */
+    const flushMenu = (menus = [dotMenuMock(), dotMenuMock1()]) => {
+        httpMock.expectOne(MENU_URL).flush(menuResponse(menus));
+    };
+
+    const setup = (url = '') => {
         router = new RouterMock();
-        const getPortletIdFn = vi.fn((url: string) => {
+        router.url = url;
+        layoutUpdated$ = new Subject<void>();
+        const getPortletIdFn = vi.fn((routeUrl: string) => {
             // Extract portlet id from URL like /c/123 -> '123'
-            if (!url) return '123-567';
-            url = decodeURIComponent(url);
-            if (url.indexOf('?') > 0) {
-                url = url.substring(0, url.indexOf('?'));
+            if (!routeUrl) return '123-567';
+            routeUrl = decodeURIComponent(routeUrl);
+            if (routeUrl.indexOf('?') > 0) {
+                routeUrl = routeUrl.substring(0, routeUrl.indexOf('?'));
             }
-            const urlSegments = url
+            const urlSegments = routeUrl
                 .split('/')
                 .filter((item) => item !== '' && item !== '#' && item !== 'c');
             return urlSegments.indexOf('add') > -1
@@ -192,10 +185,10 @@ describe('DotNavigationService', () => {
 
         dotRouterServiceMock = {
             get currentPortlet() {
-                const url = router.routerState.snapshot.url;
+                const routeUrl = router.routerState.snapshot.url;
                 return {
-                    id: getPortletIdFn(url),
-                    url: url
+                    id: getPortletIdFn(routeUrl),
+                    url: routeUrl
                 };
             },
             get queryParams() {
@@ -210,160 +203,251 @@ describe('DotNavigationService', () => {
             providers: [
                 DotEventsService,
                 DotNavigationService,
-                {
-                    provide: Title,
-                    useClass: TitleServiceMock
-                },
-                {
-                    provide: DotMenuService,
-                    useClass: DotMenuServiceMock
-                },
-                {
-                    provide: LoginService,
-                    useClass: LoginServiceMock
-                },
-                {
-                    provide: Router,
-                    useValue: router
-                },
-                {
-                    provide: DotIframeService,
-                    useValue: {
-                        reload: vi.fn()
-                    }
-                },
-                {
-                    provide: DotRouterService,
-                    useValue: dotRouterServiceMock
-                },
-                {
-                    provide: DotSystemConfigService,
-                    useValue: { getSystemConfig: () => of({}) }
-                },
-                {
-                    provide: DynamicRouteService,
-                    useValue: {
-                        registerRoutesFromMenuItems: vi.fn().mockReturnValue(0),
-                        getRegisteredRoutes: vi.fn().mockReturnValue([])
-                    }
-                },
+                { provide: Title, useClass: TitleServiceMock },
+                { provide: LoginService, useClass: LoginServiceMock },
+                { provide: Router, useValue: router },
+                { provide: DotIframeService, useValue: { reload: vi.fn() } },
+                { provide: DotRouterService, useValue: dotRouterServiceMock },
+                { provide: DotSystemConfigService, useValue: { getSystemConfig: () => of({}) } },
                 { provide: DotCurrentUserService, useClass: DotCurrentUserServiceMock },
-                GlobalStore,
                 {
+                    provide: DotEventsSocket,
                     useValue: {
                         connect: vi.fn().mockReturnValue(of(null)),
                         status$: vi.fn().mockReturnValue(of('connected')),
-                        on: vi.fn().mockReturnValue(of()),
+                        messages: vi.fn().mockReturnValue(of()),
+                        on: vi.fn((event: string) =>
+                            event === DotSystemEventType.UPDATE_PORTLET_LAYOUTS
+                                ? layoutUpdated$.asObservable()
+                                : of()
+                        ),
                         destroy: vi.fn()
                     }
                 },
+                GlobalStore,
                 provideHttpClient(),
                 provideHttpClientTesting()
             ],
             imports: [RouterTestingModule]
         });
 
+        httpMock = TestBed.inject(HttpTestingController);
+        globalStore = TestBed.inject(GlobalStore);
         service = TestBed.inject(DotNavigationService);
         dotRouterService = TestBed.inject(DotRouterService);
-        dotMenuService = TestBed.inject(DotMenuService);
         loginService = TestBed.inject(LoginService);
-        dotEventService = TestBed.inject(DotEventsService);
         titleService = TestBed.inject(Title);
 
         vi.spyOn(titleService, 'setTitle');
-        vi.spyOn(dotEventService, 'notify');
-        vi.spyOn(dotMenuService, 'reloadMenu');
         localStorage.clear();
+    };
+
+    beforeEach(() => setup());
+
+    describe('loading', () => {
+        it('asks the store for the menu once when it is created', () => {
+            expect(httpMock.match(MENU_URL)).toHaveLength(1);
+        });
+
+        it('leaves the store ready with the menu it received', () => {
+            flushMenu();
+
+            expect(globalStore.status()).toBe('ready');
+            expect(globalStore.menuGroup().map((group) => group.id)).toEqual(['123', '456']);
+        });
+
+        it('does not send a menu request on NavigationEnd, however many times it fires', () => {
+            flushMenu();
+
+            router.triggerNavigationEnd('/c/123');
+            router.triggerNavigationEnd('/c/456');
+            router.triggerNavigationEnd('url/one');
+
+            httpMock.expectNone(MENU_URL);
+        });
+
+        it('highlights the portlet of the current url once the first load ends', () => {
+            TestBed.resetTestingModule();
+            setup('/c/123');
+
+            flushMenu();
+            TestBed.tick();
+
+            expect(globalStore.activeMenuItem()?.id).toBe('123');
+        });
+
+        it('does not drive the highlight itself: the store owns it', () => {
+            expect('setActiveMenu' in globalStore).toBe(false);
+        });
+    });
+
+    describe('UPDATE_PORTLET_LAYOUTS', () => {
+        it('keeps the highlight of the portlet the user is on, even when the url has no mId', () => {
+            TestBed.resetTestingModule();
+            setup('/c/123');
+            flushMenu();
+            TestBed.tick();
+
+            layoutUpdated$.next();
+            httpMock.expectOne(MENU_URL).flush(menuResponse([dotMenuMock(), dotMenuMock1()]));
+            TestBed.tick();
+
+            expect(globalStore.activeMenuItem()?.id).toBe('123');
+        });
+
+        it('leaves nothing highlighted when the update removes that portlet', () => {
+            TestBed.resetTestingModule();
+            setup('/c/123');
+            flushMenu();
+            TestBed.tick();
+
+            // The fixtures reuse labels between menus; rename them so a label cannot stand in for the portlet.
+            const withoutThePortlet = {
+                ...dotMenuMock1(),
+                menuItems: dotMenuMock1().menuItems.map((item) => ({
+                    ...item,
+                    label: `Other ${item.id}`
+                }))
+            };
+
+            layoutUpdated$.next();
+            httpMock.expectOne(MENU_URL).flush(menuResponse([withoutThePortlet]));
+            TestBed.tick();
+
+            expect(globalStore.activeMenuItem()).toBeNull();
+        });
+
+        it('reloads the menu exactly once and replaces the groups', () => {
+            flushMenu();
+
+            layoutUpdated$.next();
+            const requests = httpMock.match(MENU_URL);
+
+            expect(requests).toHaveLength(1);
+            requests[0].flush(menuResponse([dotMenuMock1()]));
+            expect(globalStore.menuGroup().map((group) => group.id)).toEqual(['456']);
+        });
     });
 
     describe('goToFirstPortlet', () => {
-        it('should go to first portlet with menuId', () => {
+        it('goes to the first portlet with its group id as mId', () => {
+            flushMenu();
+
             service.goToFirstPortlet();
+
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('url/one', {
                 queryParams: { mId: '123' }
             });
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
         });
-    });
 
-    it('should go to first portlet on auth change', () => {
-        (loginService as unknown as LoginServiceMock).triggerNewAuth(baseMockAuth);
-
-        vi.spyOn(dotMenuService, 'loadMenu').mockReturnValue(
-            of([
-                {
-                    active: false,
-                    id: '123',
-                    isOpen: false,
-                    menuItems: [
-                        {
-                            active: false,
-                            ajax: true,
-                            angular: true,
-                            id: '123',
-                            label: 'Label 1',
-                            url: 'url/one',
-                            menuLink: 'url/one',
-                            parentMenuId: '123'
-                        }
-                    ],
-                    name: 'Nav 1',
-                    tabDescription: 'Navigation 1',
-                    tabIcon: 'icon',
-                    tabName: 'name',
-                    url: 'abc-def'
-                }
-            ])
-        );
-
-        expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('url/one', {
-            queryParams: { mId: '123' }
+        it('resolves false when there is no menu', () => {
+            return expect(service.goToFirstPortlet()).resolves.toBe(false);
         });
-        expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
     });
 
-    it('should expand and set active menu option by url when is not collapsed', () =>
-        new Promise<void>((done) => {
-            const globalStore = TestBed.inject(GlobalStore);
+    describe('login and login-as', () => {
+        it('reloads the menu and then goes to the first portlet of the new menu', () => {
+            flushMenu();
+            vi.mocked(dotRouterService.gotoPortlet).mockClear();
 
-            // Mock loadMenu to return the same menu structure when navigation event is triggered
-            vi.spyOn(dotMenuService, 'loadMenu').mockReturnValue(
-                of([dotMenuMock(), dotMenuMock1()])
-            );
+            (loginService as unknown as LoginServiceMock).triggerNewAuth(baseMockAuth);
+            const requests = httpMock.match(MENU_URL);
 
-            // Set up initial state
-            globalStore.loadMenu([dotMenuMock(), dotMenuMock1()]);
-            globalStore.expandNavigation();
+            expect(requests).toHaveLength(1);
+            expect(dotRouterService.gotoPortlet).not.toHaveBeenCalled();
 
-            // Use URL that matches the item id (123) - getTheUrlId extracts the first segment or last if /c/
-            // For /c/123, getTheUrlId returns '123' which matches the item id
-            router.triggerNavigationEnd('/c/123');
+            requests[0].flush(menuResponse([dotMenuMock1()]));
 
-            // Wait for async operations - need to wait for the menu service to load and setActiveMenu to be called
-            setTimeout(() => {
-                const menuGroups = globalStore.menuGroup();
-                const activeItem = globalStore.activeMenuItem();
-                if (menuGroups.length > 0) {
-                    // When navigating to /c/123, the menu group should be open and the item should be active
-                    // Note: setActiveMenu opens the parent menu only if navigation is not collapsed
-                    expect(menuGroups[0].isOpen).toBe(true);
-                    expect(activeItem?.id).toBe('123');
-                    expect(activeItem?.active).toBe(true);
-                } else {
-                    // If menu groups are not loaded yet, the test setup might need adjustment
-                    console.warn('Menu groups not loaded yet');
-                }
-                done();
-            }, 2000); // Increased timeout to allow async operations to complete
-        }));
+            expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('url/one', {
+                queryParams: { mId: '456' }
+            });
+            expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
+        });
 
-    it('should set Page title based on url', () =>
-        new Promise<void>((done) => {
+        it('does the same when the new auth is a login-as', () => {
+            flushMenu();
+            vi.mocked(dotRouterService.gotoPortlet).mockClear();
+
+            (loginService as unknown as LoginServiceMock).triggerNewAuth({
+                ...baseMockAuth,
+                loginAsUser: { ...basemockUser, userId: '456' } as never
+            });
+            httpMock.expectOne(MENU_URL).flush(menuResponse([dotMenuMock1()]));
+
+            expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
+            expect(globalStore.menuGroup().map((group) => group.id)).toEqual(['456']);
+        });
+
+        it('ignores an auth event that carries no user', () => {
+            flushMenu();
+
+            (loginService as unknown as LoginServiceMock).triggerNewAuth({
+                loginAsUser: null,
+                user: null
+            } as unknown as Auth);
+
+            httpMock.expectNone(MENU_URL);
+        });
+    });
+
+    describe('document title', () => {
+        it('is set from the menu item of the url, once', () => {
+            flushMenu();
+
             router.triggerNavigationEnd('url/one');
-            setTimeout(() => {
-                expect(titleService.setTitle).toHaveBeenCalledWith('Label 1 - dotCMS platform');
-                expect(titleService.setTitle).toHaveBeenCalledTimes(1);
-                done();
-            }, 100);
-        }));
+
+            expect(titleService.setTitle).toHaveBeenCalledWith('Label 1 - dotCMS platform');
+            expect(titleService.setTitle).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('when the menu request fails', () => {
+        const failRequest = () =>
+            httpMock.expectOne(MENU_URL).flush('x', { status: 500, statusText: 'Server Error' });
+
+        it('records the error and throws nothing when the first load fails', () => {
+            expect(() => failRequest()).not.toThrow();
+
+            expect(globalStore.status()).toBe('error');
+            expect(globalStore.menuGroup()).toEqual([]);
+        });
+
+        it('has nowhere to go when there is no menu', async () => {
+            failRequest();
+
+            await expect(service.goToFirstPortlet()).resolves.toBe(false);
+            expect(dotRouterService.gotoPortlet).not.toHaveBeenCalled();
+        });
+
+        it('keeps the menu that was showing when a layout update reload fails', () => {
+            flushMenu();
+
+            layoutUpdated$.next();
+            expect(() => failRequest()).not.toThrow();
+
+            expect(globalStore.status()).toBe('error');
+            expect(globalStore.menuGroup().map((group) => group.id)).toEqual(['123', '456']);
+        });
+
+        it('does not go to a first portlet of a stale menu when the login reload fails', () => {
+            flushMenu();
+            vi.mocked(dotRouterService.gotoPortlet).mockClear();
+
+            (loginService as unknown as LoginServiceMock).triggerNewAuth(baseMockAuth);
+            failRequest();
+
+            expect(dotRouterService.gotoPortlet).not.toHaveBeenCalled();
+        });
+
+        it('tries again on the next navigation and recovers', () => {
+            failRequest();
+
+            router.triggerNavigationEnd('url/one');
+            flushMenu();
+
+            expect(globalStore.status()).toBe('ready');
+            expect(titleService.setTitle).toHaveBeenCalledWith('Label 1 - dotCMS platform');
+        });
+    });
 });
