@@ -43,6 +43,8 @@ export class MyComponent {
 | `truncateBreadcrumbs(index)` | Keep breadcrumbs from 0 to `index` (0-based). Used internally when navigating back to an existing URL. |
 | `loadBreadcrumbs()` | Restore trail from `sessionStorage` (used on init). |
 | `clearBreadcrumbs()` | Clear the trail. |
+| `setTitleStatus(status)` | Show a content-state chip right after the last crumb's title (`DotTitleStatus`: `null` hides it, `{ state: null }` reads "New", `{ state }` derives Published/Draft/Archived/Revision). Only Edit Content uses it, through its host. |
+| `clearTitleStatus()` | Hide the chip. The page that set it calls this when it leaves; it is **not** cleared on navigation, because Edit Content's route is reused for locale switches and related content. |
 
 ### Signals (read-only)
 
@@ -53,6 +55,7 @@ export class MyComponent {
 | `hasBreadcrumbs()` | `true` if the trail is not empty. |
 | `lastBreadcrumb()` | Last item or `null`. |
 | `selectLastBreadcrumbLabel()` | Label of the last item or `null`. |
+| `titleStatus()` | The chip next to the title, or `null` (the default for every page). Not persisted with the trail. |
 
 ## Item shape (PrimeNG MenuItem)
 

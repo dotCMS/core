@@ -128,6 +128,27 @@
                             (actionFired)="workflowActionFired.emit($event)" />
                     }
 
+                    <!-- Preview: after the workflow actions, and outside their @if so it also shows when the
+                         tab lists none (then it sits right under Lock for Editing). The divider above it is
+                         the border of whatever precedes it (the lock section or the actions); its own bottom
+                         border separates it from the collapsible sections. -->
+                    @if ($store.showPreviewLink()) {
+                        <div
+                            class="mt-4 border-b border-surface-200 pb-4"
+                            data-testid="sidebar-preview-section">
+                            <button
+                                pButton
+                                type="button"
+                                severity="secondary"
+                                icon="pi pi-eye"
+                                [outlined]="true"
+                                [fluid]="true"
+                                [label]="'edit.content.preview-link' | dm"
+                                data-testid="sidebar-preview-button"
+                                (click)="onPreview()"></button>
+                        </div>
+                    }
+
                     <!-- Content details section -->
                     <dot-edit-content-sidebar-section
                         key="actions.details"

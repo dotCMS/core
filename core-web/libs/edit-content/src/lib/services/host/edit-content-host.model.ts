@@ -2,7 +2,7 @@ import { Observable } from 'rxjs';
 
 import { InjectionToken, Signal } from '@angular/core';
 
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotTitleStatus } from '@dotcms/dotcms-models';
 
 import { DotRelatedContentCrumb } from '../../store/dot-related-content-navigation.store';
 
@@ -89,6 +89,17 @@ export interface EditContentHost {
      * @param label Human-readable content label (the host adds any suffix).
      */
     setContentTitle(label: string): void;
+
+    /**
+     * Shows, or hides, the content state chip next to the content title. Full-screen hands it to the
+     * global header; the dialog and the side panel expose it for their own header to draw.
+     *
+     * Called whenever the state changes (load, workflow action, save, restore, locale switch,
+     * historical view), so the chip never needs a reload to catch up.
+     *
+     * @param status `null` hides the chip; `{ state: null }` reads "New"; `{ state }` shows its status.
+     */
+    setTitleStatus(status: DotTitleStatus): void;
 
     /**
      * Contributes a breadcrumb entry to the global shell trail.

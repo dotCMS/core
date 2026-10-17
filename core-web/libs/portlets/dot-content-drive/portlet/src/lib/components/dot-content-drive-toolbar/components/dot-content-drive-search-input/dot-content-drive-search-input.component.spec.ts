@@ -116,7 +116,8 @@ describe('DotContentDriveSearchInputComponent', () => {
             withScope('TITLE');
             spectator.detectChanges();
 
-            expect(spectator.component['$activeScopeLabel']()).toBe(
+            // The label now lives in the shared control the wrapper renders; read it where it shows.
+            expect(spectator.query(byTestId('search-scope-active'))?.textContent?.trim()).toBe(
                 'content-drive.search.scope.title'
             );
         });

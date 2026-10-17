@@ -26,6 +26,7 @@ import {
 } from '@dotcms/data-access';
 import {
     ComponentStatus,
+    DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
     DotCMSWorkflowAction,
     FeaturedFlags
@@ -316,6 +317,182 @@ describe('ContentFeature', () => {
 
             expect(store.isEnabledNewContentEditor()).toBe(true);
         }));
+    });
+
+    describe('titleStatus', () => {
+        const publishedContentlet = {
+            inode: '123',
+            live: true,
+            working: true,
+            hasLiveVersion: true
+        } as unknown as DotCMSContentlet;
+
+        it('should hide the chip before anything has loaded', () => {
+            expect(store.titleStatus()).toBeNull();
+        });
+
+        it('should hide the chip while existing content is loading', () => {
+            patchState(store, {
+                state: ComponentStatus.LOADING,
+                initialContentletState: 'existing',
+                contentlet: null
+            });
+
+            expect(store.titleStatus()).toBeNull();
+        });
+
+        it('should hide the chip during an in-place reload that still holds the previous content', () => {
+            patchState(store, {
+                state: ComponentStatus.LOADING,
+                initialContentletState: 'existing',
+                contentType: CONTENT_TYPE_MOCK,
+                contentlet: publishedContentlet
+            });
+
+            expect(store.titleStatus()).toBeNull();
+        });
+
+        it('should hide the chip when loading new content, never a default "New"', () => {
+            patchState(store, {
+                state: ComponentStatus.LOADING,
+                initialContentletState: 'new',
+                contentlet: null
+            });
+
+            expect(store.titleStatus()).toBeNull();
+        });
+
+        it('should show "New" (a null state) for loaded content that has not been saved', () => {
+            patchState(store, {
+                state: ComponentStatus.LOADED,
+                initialContentletState: 'new',
+                contentlet: null
+            });
+
+            expect(store.titleStatus()).toEqual({ state: null });
+        });
+
+        it('should hand the loaded contentlet to the chip for existing content', () => {
+            patchState(store, {
+                state: ComponentStatus.LOADED,
+                initialContentletState: 'existing',
+                contentlet: publishedContentlet
+            });
+
+            expect(store.titleStatus()).toEqual({ state: publishedContentlet });
+        });
+
+        it('should keep showing the chip while the content is saving', () => {
+            patchState(store, {
+                state: ComponentStatus.SAVING,
+                initialContentletState: 'existing',
+                contentlet: publishedContentlet
+            });
+
+            expect(store.titleStatus()).toEqual({ state: publishedContentlet });
+        });
+
+        it('should follow the contentlet when a workflow action changes its state', () => {
+            patchState(store, {
+                state: ComponentStatus.LOADED,
+                initialContentletState: 'existing',
+                contentlet: publishedContentlet
+            });
+
+            const unpublished = {
+                ...publishedContentlet,
+                live: false,
+                hasLiveVersion: false
+            } as unknown as DotCMSContentlet;
+            patchState(store, { contentlet: unpublished });
+
+            expect(store.titleStatus()).toEqual({ state: unpublished });
+        });
+
+        it('should hide the chip while a historical version is viewed', () => {
+            patchState(store, {
+                state: ComponentStatus.LOADED,
+                initialContentletState: 'existing',
+                contentlet: publishedContentlet,
+                isViewingHistoricalVersion: true
+            });
+
+            expect(store.titleStatus()).toBeNull();
+        });
+
+        it('should show the chip again once the historical view is left', () => {
+            patchState(store, {
+                state: ComponentStatus.LOADED,
+                initialContentletState: 'existing',
+                contentlet: publishedContentlet,
+                isViewingHistoricalVersion: true
+            });
+
+            patchState(store, { isViewingHistoricalVersion: false });
+
+            expect(store.titleStatus()).toEqual({ state: publishedContentlet });
+        });
+    });
+
+    describe('showPreviewLink', () => {
+        const existing = (extra: Partial<DotCMSContentlet>) =>
+            ({ inode: '123', ...extra }) as unknown as DotCMSContentlet;
+
+        const load = (contentlet: DotCMSContentlet | null, extra = {}) =>
+            patchState(store, {
+                state: ComponentStatus.LOADED,
+                initialContentletState: 'existing',
+                contentlet,
+                ...extra
+            });
+
+        it('should be false before anything has loaded', () => {
+            expect(store.showPreviewLink()).toBe(false);
+        });
+
+        it('should be true for an existing HTML page', () => {
+            load(existing({ baseType: DotCMSBaseTypesContentTypes.HTMLPAGE }));
+
+            expect(store.showPreviewLink()).toBe(true);
+        });
+
+        it('should be true for existing content that has a URL map', () => {
+            load(existing({ URL_MAP_FOR_CONTENT: '/blog/post/5-snow-sports' }));
+
+            expect(store.showPreviewLink()).toBe(true);
+        });
+
+        it('should be false for existing content that is neither a page nor URL-mapped', () => {
+            load(existing({ baseType: DotCMSBaseTypesContentTypes.CONTENT }));
+
+            expect(store.showPreviewLink()).toBe(false);
+        });
+
+        it('should be false for content that has not been saved yet', () => {
+            load(existing({ baseType: DotCMSBaseTypesContentTypes.HTMLPAGE }), {
+                initialContentletState: 'new'
+            });
+
+            expect(store.showPreviewLink()).toBe(false);
+        });
+
+        it('should be false while a historical version is viewed', () => {
+            load(existing({ baseType: DotCMSBaseTypesContentTypes.HTMLPAGE }), {
+                isViewingHistoricalVersion: true
+            });
+
+            expect(store.showPreviewLink()).toBe(false);
+        });
+
+        it('should come back once the historical view is left', () => {
+            load(existing({ baseType: DotCMSBaseTypesContentTypes.HTMLPAGE }), {
+                isViewingHistoricalVersion: true
+            });
+
+            patchState(store, { isViewingHistoricalVersion: false });
+
+            expect(store.showPreviewLink()).toBe(true);
+        });
     });
 
     describe('initializeNewContent', () => {
