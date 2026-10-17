@@ -26,7 +26,7 @@ jobs:
           cd core-web
           npm run build:docs:dotcms-models
       - name: Deploy to GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@4.1.0
+        uses: JamesIves/github-pages-deploy-action@fa24774553152dd7873cd16ebd8d959b010c5445 # v4.9.0
         with:
           branch: gh-pages
           folder: dist-docs
