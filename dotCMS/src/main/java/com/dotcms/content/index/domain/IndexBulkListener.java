@@ -46,4 +46,22 @@ public interface IndexBulkListener {
      * @param failure     the exception that caused the batch to fail
      */
     void afterBulk(long executionId, Throwable failure);
+
+    /**
+     * Tells the listener that one document of this identifier was withheld from the batch and its
+     * reindex entry already recorded the failure (#37269).
+     *
+     * <p>From this call on, the listener must not delete the entry when a sibling document of the
+     * same identifier (another language, or the other of working/live) is indexed successfully,
+     * and must not mark it failed again if the whole request fails, so the recorded reason is
+     * kept. Callers invoke it before queueing any sibling document, because the processor may
+     * flush while documents are still being added.</p>
+     *
+     * <p>The default does nothing, which suits listeners that never touch the reindex journal.</p>
+     *
+     * @param identifier the contentlet identifier whose entry already holds a failure
+     */
+    default void withhold(final String identifier) {
+        // nothing to track by default
+    }
 }

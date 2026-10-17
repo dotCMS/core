@@ -21,4 +21,16 @@ public interface IndexBulkProcessor extends AutoCloseable {
      */
     @Override
     void close() throws Exception;
+
+    /**
+     * Forwards {@link IndexBulkListener#withhold(String)} to the listener(s) of this processor,
+     * so a sibling's success cannot erase the failure recorded for a withheld document (#37269).
+     *
+     * <p>The default does nothing, for processors that have no listener to inform.</p>
+     *
+     * @param identifier the contentlet identifier whose entry already holds a failure
+     */
+    default void withhold(final String identifier) {
+        // nothing to forward by default
+    }
 }
