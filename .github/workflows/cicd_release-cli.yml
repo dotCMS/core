@@ -177,12 +177,14 @@ jobs:
         env:
           JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           JRELEASER_PROJECT_VERSION: ${{ needs.precheck.outputs.RELEASE_VERSION }}
-          JRELEASER_DRY_RUN: ${{ github.event.inputs.dry-run || 'false' }}
         with:
           cleanup-runner: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
           stage-name: "JReleaser"
-          maven-args: "-Prelease validate -DartifactsDir=artifacts -Dm2Dir=$HOME/.m2/repository -Djreleaser.git.root.search=true -pl :dotcms-cli-parent -Dmaven.plugin.validation=VERBOSE"
+          # The plugin's dry-run is the Maven property jreleaser.dry.run (it does not
+          # read JRELEASER_DRY_RUN), so set it explicitly; otherwise a dry-run
+          # dispatch would create a real GitHub release.
+          maven-args: "-Prelease validate -DartifactsDir=artifacts -Dm2Dir=$HOME/.m2/repository -Djreleaser.git.root.search=true -pl :dotcms-cli-parent -Dmaven.plugin.validation=VERBOSE ${{ github.event.inputs.dry-run == 'true' && '-Djreleaser.dry.run=true' || '' }}"
           artifacts-from: ${{ env.ARTIFACT_RUN_ID }}
           version: ${{ needs.precheck.outputs.RELEASE_VERSION }}
 
@@ -229,7 +231,8 @@ jobs:
   # Publish NPM package
   publish-npm-package:
     name: "Publish NPM Package"
-    if: success()  # Run only if explicitly indicated and successful
+    # Never publish on a dry-run dispatch (this job runs `npm publish` for real).
+    if: success() && github.event.inputs.dry-run != 'true'
     needs: [ precheck, build, build-cli, release ]
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     steps:
@@ -395,7 +398,9 @@ jobs:
   # Clean up temporary branches
   clean-up:
     name: "Clean Up"
-    if: ${{ needs.precheck.outputs.AUXILIARY_BRANCH != '' }}
+    # always(): the auxiliary branch must be deleted even when an earlier job is
+    # skipped (e.g. publish-npm-package on a dry-run) or has failed.
+    if: ${{ always() && needs.precheck.outputs.AUXILIARY_BRANCH != '' }}
     needs: [ precheck, build, build-cli, release, publish-npm-package ]
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     steps:
