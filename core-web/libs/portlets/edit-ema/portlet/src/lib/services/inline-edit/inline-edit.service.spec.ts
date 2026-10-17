@@ -174,13 +174,48 @@ describe('InlineEditService', () => {
         spectator.service.injectInlineEdit(iframeElement);
 
         const wysiwygScript = iframe.contentDocument.querySelector(
-            'script[src="/html/js/tinymce/js/tinymce/tinymce.min.js"]'
+            'script[src="/ext/tinymce/tinymce.min.js"]'
         );
 
         const style = iframe.contentDocument.querySelector('style');
 
         expect(wysiwygScript).toBeTruthy();
         expect(style.innerHTML).toBe(INLINE_CONTENT_STYLES);
+    });
+
+    it('should point the injected script at the new vendored path, not the deleted /html/js/tinymce path', () => {
+        const iframe = document.createElement('iframe');
+        const iframeElement = new ElementRef<HTMLIFrameElement>(iframe);
+        document.body.appendChild(iframe);
+        spectator.service.injectInlineEdit(iframeElement);
+
+        const script = iframe.contentDocument?.querySelector('script[data-inline="true"]');
+
+        expect(script).toBeTruthy();
+        expect(script?.getAttribute('src')).toBe('/ext/tinymce/tinymce.min.js');
+    });
+
+    it.each([
+        { mode: 'minimal', label: 'minimal' },
+        { mode: 'full', label: 'full' },
+        { mode: '', label: 'default (minimal)' }
+    ])('should set license_key: gpl on tinymce.init ($label)', ({ mode }) => {
+        const initMock = vi.fn().mockResolvedValue([]);
+        const iframeWindow = {
+            tinymce: { init: initMock }
+        } as unknown as Window;
+
+        spectator.service.setIframeWindow(iframeWindow);
+        spectator.service.setTargetInlineMCEDataset({
+            inode: '1',
+            fieldName: 'body',
+            language: 'en',
+            mode
+        });
+
+        spectator.service.initEditor();
+
+        expect(initMock.mock.calls[0][0].license_key).toBe('gpl');
     });
 
     it('should set target inline MCE dataset', () => {

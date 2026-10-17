@@ -33,7 +33,6 @@ dotCMS/src/main/webapp/html/ng
 dotCMS/src/main/webapp/WEB-INF/felix/felix-cache
 dotCMS/src/main/webapp/WEB-INF/felix/osgi-extra-generated.conf
 dotCMS/src/main/webapp/WEB-INF/felix/osgi-extra.conf
-dotCMS/src/main/webapp/html/js/tinymce/jscripts/tiny_mce/*.gz
 
 _original
 # OS generated files #
