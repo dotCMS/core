@@ -57,8 +57,10 @@ export class DotNavigationService {
             .subscribe(() => this.goToFirstPortlet());
     }
 
-    onNavigationEnd(): Observable<Event> {
-        return this.router.events.pipe(filter((event: Event) => event instanceof NavigationEnd));
+    onNavigationEnd(): Observable<NavigationEnd> {
+        return this.router.events.pipe(
+            filter((event: Event): event is NavigationEnd => event instanceof NavigationEnd)
+        );
     }
 
     /**

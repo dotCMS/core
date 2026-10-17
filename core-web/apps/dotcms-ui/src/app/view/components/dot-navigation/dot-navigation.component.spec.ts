@@ -22,7 +22,7 @@ import {
     DotSystemConfigService
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
-import { DotMenu } from '@dotcms/dotcms-models';
+import { DotMenu, MenuGroup, MenuItemEntity } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { DotIconComponent } from '@dotcms/ui';
 import { DotCurrentUserServiceMock, LoginServiceMock } from '@dotcms/utils-testing';
@@ -522,11 +522,18 @@ describe('DotNavigationComponent click characterization', () => {
         return stopPropagation;
     };
 
-    const itemOf = (layoutId: string, portletId: string) =>
-        globalStore
+    const itemOf = (layoutId: string, portletId: string): MenuItemEntity => {
+        const item = globalStore
             .menuGroup()
             .find((group) => group.id === layoutId)
-            .menuItems.find((item) => item.id === portletId);
+            ?.menuItems.find((candidate) => candidate.id === portletId);
+
+        if (!item) {
+            throw new Error(`No menu item '${portletId}' in layout '${layoutId}'`);
+        }
+
+        return item;
+    };
 
     beforeEach(() => {
         spectator = createComponent({ detectChanges: false });
@@ -589,8 +596,15 @@ describe('DotNavigationComponent click characterization', () => {
     });
 
     describe('group click', () => {
-        const group = (layoutId: string) =>
-            globalStore.menuGroup().find((candidate) => candidate.id === layoutId);
+        const group = (layoutId: string): MenuGroup => {
+            const found = globalStore.menuGroup().find((candidate) => candidate.id === layoutId);
+
+            if (!found) {
+                throw new Error(`No menu group '${layoutId}'`);
+            }
+
+            return found;
+        };
 
         it('expanded and closed: navigates to the first item with mId and opens the group', () => {
             globalStore.expandNavigation();

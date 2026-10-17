@@ -1,12 +1,12 @@
-import { patchState, signalStore, withState } from '@ngrx/signals';
-import { setAllEntities } from '@ngrx/signals/entities';
+import { patchState, signalStore, withState, WritableStateSource } from '@ngrx/signals';
+import { NamedEntityState, setAllEntities } from '@ngrx/signals/entities';
 import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { DotMenu, getMenuItemKey } from '@dotcms/dotcms-models';
+import { DotMenu, getMenuItemKey, MenuItemEntity } from '@dotcms/dotcms-models';
 
 import { DOT_MENU_ROUTES_REGISTRAR } from './menu-routes-registrar.token';
 import { menuConfig } from './menu.slice';
@@ -1072,7 +1072,15 @@ describe('withMenu identity and highlight', () => {
         it('does not depend on the order the entities are stored in', () => {
             seed([group(SITE, ['pages', 'templates', 'containers']), group(CONTENT, ['drive'])]);
 
-            patchState(store, setAllEntities([...store.menuItemsEntities()].reverse(), menuConfig));
+            // The feature's state reaches the store type as read-only signals, so `patchState` rejects it;
+            // this test only needs the entity half of the state, which is writable at runtime.
+            const entityState = store as unknown as WritableStateSource<
+                NamedEntityState<MenuItemEntity, 'menuItems'>
+            >;
+            patchState(
+                entityState,
+                setAllEntities([...store.menuItemsEntities()].reverse(), menuConfig)
+            );
 
             expect(store.menuGroup().map((g) => g.id)).toEqual([SITE, CONTENT]);
             expect(store.menuGroup()[0].menuItems.map((item) => item.id)).toEqual([

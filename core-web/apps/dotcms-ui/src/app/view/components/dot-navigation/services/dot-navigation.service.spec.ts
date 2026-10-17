@@ -385,7 +385,7 @@ describe('DotNavigationService', () => {
             (loginService as unknown as LoginServiceMock).triggerNewAuth({
                 loginAsUser: null,
                 user: null
-            } as Auth);
+            } as unknown as Auth);
 
             httpMock.expectNone(MENU_URL);
         });

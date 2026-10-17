@@ -96,7 +96,7 @@ describe('ValidMenuGuardService', () => {
     });
 
     it('should allow access to Menu Portlets', () => {
-        let result: boolean | UrlTree;
+        let result: boolean | UrlTree | undefined;
         mockRouterStateSnapshot.url = '/test';
         globalStore.hasPortlet.mockReturnValue(true);
         menuGuardService
