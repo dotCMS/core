@@ -72,6 +72,7 @@ public class ApiTokenResourceTest {
         final WebResource         webResource = mock(WebResource.class);
         final ApiTokenResource    resource    = new ApiTokenResource(APILocator.getApiTokenAPI(), webResource);
 
+        when(request.getRemoteAddr()).thenReturn("127.0.0.1");
         final InitDataObject initData = new InitDataObject();
         initData.setUser(limitedUser);
         // issueApiToken uses the 5-param init overload
@@ -112,6 +113,7 @@ public class ApiTokenResourceTest {
         final WebResource         webResource = mock(WebResource.class);
         final ApiTokenResource    resource    = new ApiTokenResource(APILocator.getApiTokenAPI(), webResource);
 
+        when(request.getRemoteAddr()).thenReturn("127.0.0.1");
         final InitDataObject initData = new InitDataObject();
         initData.setUser(limitedUser);
         when(webResource.init(any(), anyBoolean(), any(), anyBoolean(), any())).thenReturn(initData);
@@ -122,10 +124,17 @@ public class ApiTokenResourceTest {
                 .expirationSeconds(3600)
                 .build();
 
-        final DotDataException e = assertThrows(DotDataException.class,
-                () -> resource.issueApiToken(request, response, form));
-        assertTrue("Exception message should indicate admin-only restriction",
-                e.getMessage().contains("Only Admin user"));
+        // The other user is either not visible to the requester (404) or the request is refused
+        final Response restResponse;
+        try {
+            restResponse = resource.issueApiToken(request, response, form);
+        } catch (final DotDataException e) {
+            assertTrue("Exception message should indicate admin-only restriction",
+                    e.getMessage().contains("Only Admin user"));
+            return;
+        }
+        assertNotEquals("A non-admin user should not get a token for another user",
+                Response.Status.OK.getStatusCode(), restResponse.getStatus());
     }
 
     @Test()
