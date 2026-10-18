@@ -302,7 +302,7 @@ public class OSSearchAPIImpl implements SearchAPI {
         }
 
         final StringBuffer perms = new StringBuffer();
-        if (!isAdmin && !queryJson.has("permissions:")) {
+        if (!isAdmin) {
             final ContentletAPI contentletAPI = APILocator.getContentletAPIImpl();
             contentletAPI.addPermissionsToQuery(perms, user, roles, respectFrontendRoles);
             // Secondary category-permission filter: mirror the ES path

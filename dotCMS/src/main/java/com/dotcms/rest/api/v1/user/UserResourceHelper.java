@@ -30,6 +30,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.AdminLogger;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -66,6 +67,12 @@ import static com.dotcms.util.ConversionUtils.toInt;
  *
  */
 public class UserResourceHelper implements Serializable {
+
+	/**
+	 * When {@code true} (the default), only Administrators or CMS Administrators can use Login As
+	 * to impersonate an Administrator or CMS Administrator user.
+	 */
+	public static final String LOGIN_AS_ADMIN_REQUIRES_ADMIN = "LOGIN_AS_ADMIN_REQUIRES_ADMIN";
 
 	private final RoleAPI roleAPI;
 	private final UserAPI userAPI;
@@ -177,8 +184,11 @@ public class UserResourceHelper implements Serializable {
 	 *            user.
 	 * @param loginAsUserPwd
 	 *            - If the user to imitate is an Administrator or CMS
-	 *            Administrator, that user's password is required (for security
-	 *            reasons).
+	 *            Administrator, the current user must re-enter their own
+	 *            password to confirm the operation. In that case, unless
+	 *            {@link #LOGIN_AS_ADMIN_REQUIRES_ADMIN} is set to
+	 *            {@code false}, the current user must also be an
+	 *            Administrator or CMS Administrator.
 	 * @param serverName
 	 *            - The server name obtained via the request URL to try to
 	 *            figure out the Site that will be displayed.
@@ -210,9 +220,11 @@ public class UserResourceHelper implements Serializable {
 			throw new DotDataException("User [" + loginAsUser.getUserId() + "] does not have any layouts.",
 					"loginas.error.nolayouts");
 		}
-		final Role administratorRole = roleAPI.findRoleByFQN(Role.SYSTEM + " --> " + Role.ADMINISTRATOR);
-		if (this.roleAPI.doesUserHaveRole(loginAsUser, administratorRole) || this.roleAPI.doesUserHaveRole(loginAsUser,
-				com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole())) {
+		if (isAdministrator(loginAsUser)) {
+			if (Config.getBooleanProperty(LOGIN_AS_ADMIN_REQUIRES_ADMIN, true) && !isAdministrator(currentUser)) {
+				throw new DotSecurityException("User [" + currentUser.getUserId()
+						+ "] must be an administrator to Login As administrator user [" + loginAsUser.getUserId() + "].");
+			}
 			if (!UtilMethods.isSet(loginAsUserPwd)) {
 				throw new DotDataException("The 'Login As' user password is required.", "loginas.error.missingloginaspwd");
 			} else if (!LoginFactory.passwordMatch(loginAsUserPwd, currentUser)) {
@@ -243,6 +255,15 @@ public class UserResourceHelper implements Serializable {
 	 * @param user
 	 * @throws DotDataException if the user doesn't have the Login_AS Role.
 	 */
+	/**
+	 * Determines whether the given user has the Administrator or the CMS Administrator role.
+	 */
+	private boolean isAdministrator(final User user) throws DotDataException {
+		final Role administratorRole = this.roleAPI.findRoleByFQN(Role.SYSTEM + " --> " + Role.ADMINISTRATOR);
+		return this.roleAPI.doesUserHaveRole(user, administratorRole)
+				|| this.roleAPI.doesUserHaveRole(user, this.roleAPI.loadCMSAdminRole());
+	}
+
 	private void checkLoginAsRole(User user) throws DotDataException {
 		final Role loginAsRole = this.roleAPI.findRoleByFQN(Role.SYSTEM + " --> " + Role.LOGIN_AS);
 		if (!this.roleAPI.doesUserHaveRole(user, loginAsRole)) {

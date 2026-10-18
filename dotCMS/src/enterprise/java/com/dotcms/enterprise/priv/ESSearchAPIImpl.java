@@ -283,11 +283,11 @@ public class ESSearchAPIImpl implements ESSeachAPI {
         final SearchRequest request = new SearchRequest(indexToHit);
 
         /*
-        Getting the permissions query but only for non admin users
-        and if the user is not already passing permissions on the query.
+        Getting the permissions query for non admin users. The filter is always built on the server
+        side, regardless of the keys present in the request body.
          */
 		StringBuffer perms = new StringBuffer();
-		if (!isAdmin && !jsonObject.has("permissions:")) {
+		if (!isAdmin) {
 			APILocator.getContentletAPIImpl().addPermissionsToQuery(perms, user, roles, respectFrontendRoles);
 		}
 

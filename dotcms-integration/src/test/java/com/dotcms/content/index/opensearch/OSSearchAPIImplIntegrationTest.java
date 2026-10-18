@@ -19,6 +19,7 @@ import com.dotcms.content.index.domain.IndexBulkRequest;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
@@ -456,6 +457,39 @@ public class OSSearchAPIImplIntegrationTest extends IntegrationTestBase {
 
         Logger.info(this,
                 "✅ test_searchRaw_nonAdminUser_isFilteredByInjectedPermissions passed");
+    }
+
+    /**
+     * Given scenario: the same hidden document as above, searched by a non-admin user with a request
+     * body that carries an extra top-level {@code "permissions:"} key.
+     * Expected: the permission filter is still injected, so the document is never returned. The
+     * extra key is not part of the search DSL, so OpenSearch may also reject the request; either
+     * outcome is acceptable, returning the hidden document is not.
+     */
+    @Test
+    public void test_searchRaw_nonAdminUser_extraTopLevelKey_isStillFiltered() throws Exception {
+
+        final String unheldRoleId = "unheld-role-key-" + RUN_ID;
+        final String docId = "perm-key-hidden-" + RUN_ID + "_1_default";
+        final String docJson =
+                "{\"identifier\":\"perm-key-hidden-" + RUN_ID + "\","
+                + "\"inode\":\"perm-key-hidden-inode-" + RUN_ID + "\","
+                + "\"live\":true,"
+                + "\"contenttype\":\"testtype\","
+                + "\"permissions\":\"P" + unheldRoleId + ".1P \"}";
+        indexDocument(physicalWorking, docId, docJson);
+
+        final User limitedUser = new UserDataGen().nextPersisted();
+        final String query = "{\"permissions:\":\"x\",\"query\":{\"match_all\":{}}}";
+
+        try {
+            final ContentSearchResponse limitedResp =
+                    osSearchAPI.searchRaw(query, false, limitedUser, false);
+            assertEquals("Non-admin user must NOT see a document they lack read permission on",
+                    0L, limitedResp.hits().getTotalHits().value());
+        } catch (final DotStateException e) {
+            Logger.info(this, "Request with an unknown top-level key was rejected: " + e.getMessage());
+        }
     }
 
     // =======================================================================
