@@ -15,6 +15,14 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletResponseWrapper;
+import javax.servlet.http.HttpSession;
+import com.dotcms.rendering.velocity.viewtools.VelocityRequestWrapper;
+import com.dotcms.rendering.velocity.viewtools.VelocitySessionWrapper;
 import com.dotmarketing.util.Config;
 import org.apache.velocity.util.introspection.SecureIntrospectorImpl;
 import org.junit.Test;
@@ -226,6 +234,59 @@ public class SecureIntrospectorImplTest {
     public void ordinary_types_are_not_runtime_restricted() {
         assertAllowed(HashMap.class, "get");
         assertAllowed(ArrayList.class, "size");
+    }
+
+    /**
+     * Templates may not unwrap the request or response handed to them, nor reach the servlet
+     * context or async context through a request or session.
+     */
+    @Test
+    public void request_and_session_cannot_be_unwrapped_to_container_objects() {
+        assertDenied(VelocityRequestWrapper.class, "getRequest");
+        assertDenied(HttpServletRequestWrapper.class, "getRequest");
+        assertDenied(HttpServletResponseWrapper.class, "getResponse");
+        assertDenied(HttpServletRequest.class, "getServletContext");
+        assertDenied(VelocityRequestWrapper.class, "getServletContext");
+        assertDenied(VelocityRequestWrapper.class, "getAsyncContext");
+        assertDenied(VelocityRequestWrapper.class, "startAsync");
+        assertDenied(HttpSession.class, "getServletContext");
+        assertDenied(VelocitySessionWrapper.class, "getServletContext");
+        assertDeniedIfPresent("org.apache.catalina.connector.RequestFacade", "getServletContext");
+        assertDeniedIfPresent("org.apache.catalina.session.StandardSessionFacade", "getServletContext");
+    }
+
+    /**
+     * The servlet context and the CDI, expression-language and JSP container objects reachable
+     * from it must be denied, including implementations reached only through their hierarchy.
+     */
+    @Test
+    public void servlet_context_and_container_service_types_are_denied() {
+        assertDenied(ServletContext.class, "getAttribute");
+        assertDeniedIfPresent("org.apache.catalina.core.ApplicationContextFacade", "getAttribute");
+        assertDeniedIfPresent("javax.enterprise.inject.spi.BeanManager", "createInstance");
+        assertDeniedIfPresent("org.jboss.weld.manager.BeanManagerImpl", "getContextId");
+        assertDeniedIfPresent("javax.el.ExpressionFactory", "createValueExpression");
+        assertDeniedIfPresent("javax.el.ELContext", "getELResolver");
+        assertDeniedIfPresent("org.jboss.weld.module.web.el.WeldExpressionFactory", "createValueExpression");
+        assertDeniedIfPresent("org.apache.jasper.runtime.JspApplicationContextImpl", "getExpressionFactory");
+    }
+
+    /**
+     * Ordinary use of the request, response and session from templates keeps working.
+     */
+    @Test
+    public void ordinary_request_response_and_session_calls_are_allowed() {
+        assertAllowed(VelocityRequestWrapper.class, "getParameter");
+        assertAllowed(VelocityRequestWrapper.class, "getAttribute");
+        assertAllowed(VelocityRequestWrapper.class, "setAttribute");
+        assertAllowed(VelocityRequestWrapper.class, "getSession");
+        assertAllowed(VelocityRequestWrapper.class, "getRequestURI");
+        assertAllowed(VelocityRequestWrapper.class, "getHeader");
+        assertAllowed(VelocitySessionWrapper.class, "getAttribute");
+        assertAllowed(VelocitySessionWrapper.class, "setAttribute");
+        assertAllowed(VelocitySessionWrapper.class, "getId");
+        assertAllowed(HttpServletResponse.class, "setHeader");
+        assertAllowed(HttpServletResponse.class, "sendRedirect");
     }
 
     private void assertDeniedIfPresent(final String className, final String method) {

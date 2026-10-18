@@ -40,6 +40,11 @@ import java.util.Deque;
 import java.util.HashSet;
 import java.util.Set;
 
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletRequestWrapper;
+import javax.servlet.ServletResponseWrapper;
+import javax.servlet.http.HttpSession;
+
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 
@@ -176,6 +181,15 @@ public class SecureIntrospectorImpl extends Introspector implements SecureIntros
          * method on them may be called from a template.
          */
         if (isRestrictedRuntimeType(clazz))
+        {
+            return false;
+        }
+
+        /**
+         * Templates work with the request, response and session handed to them; they may not
+         * unwrap those to the underlying container objects or reach the servlet context.
+         */
+        if (isRestrictedContainerAccessor(clazz, methodName))
         {
             return false;
         }
@@ -355,7 +369,8 @@ public class SecureIntrospectorImpl extends Introspector implements SecureIntros
             "bsh.", "com.dotcms.repackage.bsh.",
             "groovy.lang.", "org.codehaus.groovy.", "org.mozilla.javascript.",
             "jdk.nashorn.", "org.openjdk.nashorn.", "org.graalvm.polyglot.",
-            "javax.naming.", "java.lang.invoke."
+            "javax.naming.", "java.lang.invoke.",
+            "javax.el.", "jakarta.el.", "org.apache.el.", "org.apache.jasper.", "org.jboss.weld."
     };
 
     /**
@@ -368,7 +383,12 @@ public class SecureIntrospectorImpl extends Introspector implements SecureIntros
             "javax.naming.Context",
             "javax.script.ScriptEngineFactory",
             "java.lang.ProcessHandle",
-            "java.lang.ProcessHandle$Info"
+            "java.lang.ProcessHandle$Info",
+            "javax.servlet.ServletContext",
+            "javax.servlet.AsyncContext",
+            "javax.enterprise.inject.spi.BeanManager",
+            "javax.el.ELContext",
+            "javax.el.ExpressionFactory"
     );
 
     /**
@@ -417,5 +437,43 @@ public class SecureIntrospectorImpl extends Introspector implements SecureIntros
         }
 
         return false;
+    }
+
+    /**
+     * Methods on request and session objects that hand back the underlying container objects:
+     * the wrapped request or response, the servlet context, and the async context (which
+     * exposes the original request).
+     */
+    private static final Set<String> RESTRICTED_CONTAINER_ACCESSORS = Set.of(
+            "getServletContext", "getSessionContext", "getAsyncContext", "startAsync"
+    );
+
+    /**
+     * Determines whether the call would unwrap a request, response or session to the
+     * underlying container object, or reach the servlet context through it.
+     *
+     * @param clazz class a method is about to be resolved on
+     * @param methodName name of the method to be called
+     * @return {@code true} if the call is restricted (deny), {@code false} otherwise
+     */
+    private static boolean isRestrictedContainerAccessor(final Class<?> clazz, final String methodName)
+    {
+        if (clazz == null || methodName == null)
+        {
+            return false;
+        }
+
+        if (ServletRequestWrapper.class.isAssignableFrom(clazz) && "getRequest".equals(methodName))
+        {
+            return true;
+        }
+
+        if (ServletResponseWrapper.class.isAssignableFrom(clazz) && "getResponse".equals(methodName))
+        {
+            return true;
+        }
+
+        return (ServletRequest.class.isAssignableFrom(clazz) || HttpSession.class.isAssignableFrom(clazz))
+                && RESTRICTED_CONTAINER_ACCESSORS.contains(methodName);
     }
 }
