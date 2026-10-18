@@ -1,13 +1,16 @@
 package com.dotcms.rest.api.v1.authentication;
 
+import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotcms.datagen.CompanyDataGen;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityMapView;
 import com.dotcms.rest.RestUtilTest;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.UUIDGenerator;
@@ -24,9 +27,15 @@ import org.junit.Test;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Date;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
@@ -187,5 +196,159 @@ public class ApiTokenResourceTest {
         final User modifiedUser = APILocator.getUserAPI().loadUserById(limitedUser.getUserId());
         assertNotNull(modifiedUser);
         assertNotEquals(skinId, modifiedUser.getRememberMeToken());
+    }
+
+    /**
+     * Method to test: {@link ApiTokenResource#getApiTokens}
+     * Given Scenario: The owner of a token lists their own tokens.
+     * ExpectedResult: The token is listed and the response does not contain its JWT.
+     */
+    @Test
+    public void test_getApiTokens_owner_listsOwnTokenWithoutJwt() throws Exception {
+
+        final User owner = new UserDataGen().active(true).nextPersisted();
+        final ApiToken token = persistToken(owner);
+        final String jwt = APILocator.getApiTokenAPI().getJWT(token, owner);
+
+        final Response restResponse = resourceFor(owner).getApiTokens(
+                mock(HttpServletRequest.class), mock(HttpServletResponse.class), owner.getUserId(), false);
+
+        assertEquals(Response.Status.OK.getStatusCode(), restResponse.getStatus());
+        assertTrue("The owner should see their own token", tokenIds(restResponse).contains(token.getId()));
+        assertResponseHasNoJwt(restResponse, jwt);
+    }
+
+    /**
+     * Method to test: {@link ApiTokenResource#getApiTokens}
+     * Given Scenario: A CMS administrator lists the tokens of another user.
+     * ExpectedResult: The token is listed so it can be revoked, but its JWT is not returned.
+     */
+    @Test
+    public void test_getApiTokens_admin_listsOtherUsersTokenWithoutJwt() throws Exception {
+
+        final User owner = new UserDataGen().active(true).nextPersisted();
+        final User admin = newCmsAdmin();
+        final ApiToken token = persistToken(owner);
+        final String jwt = APILocator.getApiTokenAPI().getJWT(token, owner);
+
+        final Response restResponse = resourceFor(admin).getApiTokens(
+                mock(HttpServletRequest.class), mock(HttpServletResponse.class), owner.getUserId(), false);
+
+        assertEquals(Response.Status.OK.getStatusCode(), restResponse.getStatus());
+        assertTrue("An admin should see the other user's token", tokenIds(restResponse).contains(token.getId()));
+        assertResponseHasNoJwt(restResponse, jwt);
+    }
+
+    /**
+     * Method to test: {@link ApiTokenResource#getApiTokens}
+     * Given Scenario: A non-admin user without user-management rights lists another user's tokens.
+     * ExpectedResult: No tokens are returned.
+     */
+    @Test
+    public void test_getApiTokens_otherNonAdminUser_seesNoTokens() throws Exception {
+
+        final User owner = new UserDataGen().active(true).nextPersisted();
+        final User other = new UserDataGen().active(true).nextPersisted();
+        persistToken(owner);
+
+        final Response restResponse = resourceFor(other).getApiTokens(
+                mock(HttpServletRequest.class), mock(HttpServletResponse.class), owner.getUserId(), false);
+
+        assertEquals(Response.Status.OK.getStatusCode(), restResponse.getStatus());
+        assertTrue("A user without rights should not see another user's tokens", tokenIds(restResponse).isEmpty());
+    }
+
+    /**
+     * Method to test: {@link ApiTokenResource#revokeApiToken}
+     * Given Scenario: A non-admin user without user-management rights tries to revoke another user's token.
+     * ExpectedResult: The request is rejected and the token stays active.
+     */
+    @Test
+    public void test_revokeApiToken_otherNonAdminUser_isRejected() throws Exception {
+
+        final User owner = new UserDataGen().active(true).nextPersisted();
+        final User other = new UserDataGen().active(true).nextPersisted();
+        final ApiToken token = persistToken(owner);
+
+        assertThrows(DotStateException.class, () -> resourceFor(other).revokeApiToken(
+                mock(HttpServletRequest.class), mock(HttpServletResponse.class), token.getId()));
+        assertFalse("The token should not be revoked",
+                APILocator.getApiTokenAPI().findApiToken(token.getId()).orElseThrow().isRevoked());
+    }
+
+    /**
+     * Method to test: {@link ApiTokenResource#deleteApiToken}
+     * Given Scenario: A non-admin user without user-management rights tries to delete another user's token.
+     * ExpectedResult: The request is rejected and the token still exists.
+     */
+    @Test
+    public void test_deleteApiToken_otherNonAdminUser_isRejected() throws Exception {
+
+        final User owner = new UserDataGen().active(true).nextPersisted();
+        final User other = new UserDataGen().active(true).nextPersisted();
+        final ApiToken token = persistToken(owner);
+
+        assertThrows(DotStateException.class, () -> resourceFor(other).deleteApiToken(
+                mock(HttpServletRequest.class), mock(HttpServletResponse.class), token.getId()));
+        assertTrue("The token should still exist",
+                APILocator.getApiTokenAPI().findApiToken(token.getId()).isPresent());
+    }
+
+    /**
+     * Method to test: {@link ApiTokenResource#revokeApiToken}
+     * Given Scenario: A CMS administrator revokes another user's token.
+     * ExpectedResult: The token is revoked.
+     */
+    @Test
+    public void test_revokeApiToken_admin_canRevokeOtherUsersToken() throws Exception {
+
+        final User owner = new UserDataGen().active(true).nextPersisted();
+        final User admin = newCmsAdmin();
+        final ApiToken token = persistToken(owner);
+
+        final Response restResponse = resourceFor(admin).revokeApiToken(
+                mock(HttpServletRequest.class), mock(HttpServletResponse.class), token.getId());
+
+        assertEquals(Response.Status.OK.getStatusCode(), restResponse.getStatus());
+        assertTrue("The token should be revoked",
+                APILocator.getApiTokenAPI().findApiToken(token.getId()).orElseThrow().isRevoked());
+    }
+
+    private static ApiTokenResource resourceFor(final User user) {
+
+        final WebResource webResource = mock(WebResource.class);
+        final InitDataObject initData = new InitDataObject();
+        initData.setUser(user);
+        when(webResource.init(any(), anyBoolean(), any(), anyBoolean(), any())).thenReturn(initData);
+        return new ApiTokenResource(APILocator.getApiTokenAPI(), webResource);
+    }
+
+    private static ApiToken persistToken(final User owner) {
+
+        return APILocator.getApiTokenAPI().persistApiToken(owner.getUserId(),
+                Date.from(Instant.now().plus(1, ChronoUnit.DAYS)), owner.getUserId(), "127.0.0.1");
+    }
+
+    private static User newCmsAdmin() throws DotDataException {
+
+        final User admin = new UserDataGen().active(true).nextPersisted();
+        APILocator.getRoleAPI().addRoleToUser(APILocator.getRoleAPI().loadCMSAdminRole(), admin);
+        return admin;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<String> tokenIds(final Response restResponse) {
+
+        final Map<String, Object> entity = ((ResponseEntityMapView) restResponse.getEntity()).getEntity();
+        return ((List<ApiToken>) entity.get("tokens")).stream().map(ApiToken::getId)
+                .collect(Collectors.toList());
+    }
+
+    private static void assertResponseHasNoJwt(final Response restResponse, final String jwt) throws Exception {
+
+        final String json = DotObjectMapperProvider.getInstance().getDefaultObjectMapper()
+                .writeValueAsString(restResponse.getEntity());
+        assertFalse("The token list should not contain a JWT", json.contains(jwt));
+        assertFalse("The token list should not have a jwt field", json.contains("\"jwt\""));
     }
 }

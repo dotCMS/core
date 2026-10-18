@@ -494,8 +494,10 @@ public class ApiTokenResource implements Serializable {
 
         token = this.tokenApi.persistApiToken(token, requestingUser);
         final String jwt = this.tokenApi.getJWT(token, requestingUser);
-        SecurityLogger.logInfo(this.getClass(), "API token issued for user: " + forUser.getUserId()
-                + " by: " + requestingUser.getUserId() + " ip: " + request.getRemoteAddr());
+        // The JWT is only returned here, so this entry records every time a token's JWT is handed out
+        SecurityLogger.logInfo(this.getClass(), "API token issued, id: " + token.getId()
+                + " for user: " + forUser.getUserId() + " by: " + requestingUser.getUserId()
+                + " ip: " + request.getRemoteAddr());
         return Response.ok(new ResponseEntityMapView(Map.of("token", token, "jwt", jwt)))
                 .build(); // 200
     }
