@@ -1,6 +1,8 @@
 package com.dotmarketing.business.ajax;
 
 import static org.junit.Assert.assertThrows;
+import static org.mockito.ArgumentMatchers.contains;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
@@ -13,14 +15,18 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.liferay.portal.model.User;
+import java.util.List;
+import java.util.Map;
 import org.junit.Test;
+import org.junit.function.ThrowingRunnable;
 import org.mockito.MockedStatic;
 
 /**
  * Unit tests for the admin gates on {@link RoleAjax} role assignment and
- * removal. Non-admin callers must be rejected before any role mutation
- * happens, even when they hold the roles-portlet permission. Also covers the
- * refusal to delete the Getting Started section (#37353).
+ * removal, role layouts, layouts and role permissions. Non-admin callers must
+ * be rejected before any change happens, even when they hold the
+ * roles-portlet permission. Also covers the refusal to delete the Getting
+ * Started section (#37353).
  */
 public class RoleAjaxTest {
 
@@ -61,6 +67,49 @@ public class RoleAjaxTest {
             assertThrows(DotSecurityException.class,
                     () -> newRoleAjax().removeUsersFromRole(
                             new String[] {"some-user"}, "some-role"));
+        }
+    }
+
+    @Test
+    public void saveRoleLayouts_rejectsNonAdmin() {
+        assertNonAdminRejectedAndLogged(() -> newRoleAjax().saveRoleLayouts(
+                "some-role", new String[] {"some-layout"}));
+    }
+
+    @Test
+    public void updateLayout_rejectsNonAdmin() {
+        assertNonAdminRejectedAndLogged(() -> newRoleAjax().updateLayout(
+                "some-layout", "name", "description", 0, List.of("roles")));
+    }
+
+    @Test
+    public void deleteLayout_rejectsNonAdmin() {
+        assertNonAdminRejectedAndLogged(() -> newRoleAjax().deleteLayout("some-layout"));
+    }
+
+    @Test
+    public void saveRolePermission_rejectsNonAdmin() {
+        assertNonAdminRejectedAndLogged(() -> newRoleAjax().saveRolePermission(
+                "some-role", "some-site", Map.of("individual", "1"), false));
+    }
+
+    /**
+     * Runs {@code call} as a non-admin who passes the roles-portlet check and
+     * asserts it is refused with {@link DotSecurityException} and recorded in
+     * the security log.
+     */
+    private void assertNonAdminRejectedAndLogged(final ThrowingRunnable call) {
+        final User nonAdmin = mock(User.class);
+        when(nonAdmin.isAdmin()).thenReturn(false);
+        when(nonAdmin.getUserId()).thenReturn("non-admin-user");
+
+        try (MockedStatic<DwrUtil> dwrUtil = mockStatic(DwrUtil.class);
+                MockedStatic<SecurityLogger> securityLogger = mockStatic(SecurityLogger.class)) {
+            dwrUtil.when(DwrUtil::getLoggedInUser).thenReturn(nonAdmin);
+
+            assertThrows(DotSecurityException.class, call);
+            securityLogger.verify(() -> SecurityLogger.logInfo(
+                    eq(RoleAjax.class), contains("non-admin-user")));
         }
     }
 

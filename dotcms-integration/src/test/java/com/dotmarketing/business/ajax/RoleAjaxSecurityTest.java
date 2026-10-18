@@ -20,6 +20,7 @@ import com.liferay.portal.util.WebKeys;
 import com.liferay.util.servlet.SessionMessages;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -28,25 +29,18 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
- * Regression tests for the admin-gate hardening of the portlet-only gated {@link RoleAjax} DWR
- * methods (private-issues#642 / private-issues#643).
+ * Integration tests for the CMS Administrator check on the {@link RoleAjax} DWR methods that
+ * change role membership, role layouts, layouts and role permissions.
  *
- * <p>Each test models a non-admin backend user who legitimately holds <strong>roles-portlet
- * access only</strong> (no "users" portlet, not a CMS Administrator) — the exact actor the
- * portlet-only gate used to let through. The layout deliberately grants only the "roles" portlet
- * so that {@code getAdminUser()} — which authorizes on "users"-portlet access OR CMS Admin — is
- * actually exercised as a gate rather than being satisfied by an incidental "users" grant.</p>
- *
- * <ul>
- *   <li>{@code addUserToRole} — step 2 of the #642 escalation chain, blocked by {@code isAdmin()}.</li>
- *   <li>{@code saveRolePermission} — the method fixed by #36345 (admin check restored).</li>
- *   <li>{@code saveRoleLayouts} — admin check moved before any DB read (fail-fast).</li>
- * </ul>
+ * <p>Every test runs as a non-admin backend user who can open both the Roles and the Users
+ * portlets. That user passes the Roles portlet check and the Users portlet check, so each call can
+ * only be rejected by the CMS Administrator check.</p>
  */
 public class RoleAjaxSecurityTest extends IntegrationTestBase {
 
     private static User backendUser;
-    private static Layout rolesPortletLayout;
+    private static Layout userLayout;
+    private static Layout targetLayout;
     private static String cmsAdminRoleId;
 
     @BeforeClass
@@ -57,17 +51,21 @@ public class RoleAjaxSecurityTest extends IntegrationTestBase {
         APILocator.getRoleAPI().addRoleToUser(
                 APILocator.getRoleAPI().loadBackEndUserRole(), backendUser);
 
-        // Give the backend user access to the roles portlet ONLY. Not the "users" portlet, so
-        // getAdminUser() (which checks "users"-portlet access OR CMS Admin) is a real gate here,
-        // and not a layout that incidentally satisfies it.
-        rolesPortletLayout = new LayoutDataGen().name("RoleAjaxSecurityTest-roles-layout")
-                .portletIds("roles")
+        // Grant both the Roles and the Users portlets, so portlet access alone cannot be what
+        // rejects the calls below.
+        userLayout = new LayoutDataGen().name("RoleAjaxSecurityTest-user-layout")
+                .portletIds("roles", "users")
                 .nextPersisted();
-        APILocator.getRoleAPI().addLayoutToRole(rolesPortletLayout, backendUser.getUserRole());
+        APILocator.getRoleAPI().addLayoutToRole(userLayout, backendUser.getUserRole());
 
-        assertTrue("backend user should now have roles portlet access",
+        // Layout targeted by the update and delete tests, so they never touch shared data.
+        targetLayout = new LayoutDataGen().name("RoleAjaxSecurityTest-target-layout")
+                .nextPersisted();
+
+        assertTrue("backend user should have Roles portlet access",
                 APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("roles", backendUser));
-
+        assertTrue("backend user should have Users portlet access",
+                APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("users", backendUser));
         assertFalse("backend user must not be a CMS Administrator for this test to be meaningful",
                 backendUser.isAdmin());
 
@@ -83,10 +81,13 @@ public class RoleAjaxSecurityTest extends IntegrationTestBase {
     @AfterClass
     public static void cleanUp() throws Exception {
         try {
-            if (rolesPortletLayout != null) {
-                APILocator.getRoleAPI().removeLayoutFromRole(rolesPortletLayout,
+            if (userLayout != null) {
+                APILocator.getRoleAPI().removeLayoutFromRole(userLayout,
                         backendUser.getUserRole());
-                APILocator.getLayoutAPI().removeLayout(rolesPortletLayout);
+                APILocator.getLayoutAPI().removeLayout(userLayout);
+            }
+            if (targetLayout != null) {
+                APILocator.getLayoutAPI().removeLayout(targetLayout);
             }
             if (backendUser != null) {
                 APILocator.getUserAPI().delete(backendUser, APILocator.systemUser(), false);
@@ -97,57 +98,69 @@ public class RoleAjaxSecurityTest extends IntegrationTestBase {
             // LayoutAPITest and PermissionAPITest, which call RoleAjax.saveRolePermission — rely on
             // a system-user context being attached by earlier tests. Restore that context here so
             // this test's non-admin backend-user context does not leak and make them fail the
-            // getAdminUser() gate.
+            // CMS Administrator check.
             setUpDwrContext(APILocator.systemUser());
         }
     }
 
     /**
-     * Method to test: {@link RoleAjax#addUserToRole}
-     * Given Scenario: A low-privilege backend user has already obtained roles-portlet access
-     *                 (simulating a successful step 1), then calls the DWR endpoint to add
-     *                 themselves to the CMS Administrator role (step 2 of the attack chain).
-     * Expected Result: {@link DotSecurityException} is thrown by the {@code getAdminUser()}
-     *                  admin check — the self-escalation is blocked.
+     * Method to test: {@link RoleAjax#addUserToRole(String, String)}
+     * Given Scenario: A non-admin backend user with Roles and Users portlet access adds their own
+     *                 user to the CMS Administrator role.
+     * Expected Result: {@link DotSecurityException} is thrown by the CMS Administrator check.
      */
     @Test(expected = DotSecurityException.class)
-    public void test_addUserToRole_withRolesPortletAccess_cannotSelfEscalateToAdmin()
-            throws Exception {
-        final RoleAjax roleAjax = new RoleAjax();
-        roleAjax.addUserToRole(backendUser.getUserId(), cmsAdminRoleId);
+    public void test_addUserToRole_nonAdmin_throwsDotSecurityException() throws Exception {
+        new RoleAjax().addUserToRole(backendUser.getUserId(), cmsAdminRoleId);
     }
 
     /**
      * Method to test: {@link RoleAjax#saveRolePermission(String, String, Map, boolean)}
-     * Given Scenario: A non-admin backend user holding only roles-portlet access — which passes
-     *                 {@code validateRolesPortletPermissions} — calls {@code saveRolePermission}.
-     *                 This is the method whose admin guard was accidentally dropped in 2018 and
-     *                 is restored by #36345.
-     * Expected Result: {@link DotSecurityException} is thrown by the {@code getAdminUser()} check
-     *                  before any permission is persisted.
+     * Given Scenario: A non-admin backend user with Roles and Users portlet access saves
+     *                 permissions for a role.
+     * Expected Result: {@link DotSecurityException} is thrown by the CMS Administrator check,
+     *                  before any permission is saved.
      */
     @Test(expected = DotSecurityException.class)
-    public void test_saveRolePermission_withRolesPortletAccess_throwsDotSecurityException()
-            throws Exception {
-        final RoleAjax roleAjax = new RoleAjax();
+    public void test_saveRolePermission_nonAdmin_throwsDotSecurityException() throws Exception {
         final Map<String, String> permissions = new HashMap<>();
         permissions.put("individual", "1");
-        roleAjax.saveRolePermission(cmsAdminRoleId, Host.SYSTEM_HOST, permissions, false);
+        new RoleAjax().saveRolePermission(cmsAdminRoleId, Host.SYSTEM_HOST, permissions, false);
     }
 
     /**
      * Method to test: {@link RoleAjax#saveRoleLayouts(String, String[])}
-     * Given Scenario: A non-admin backend user holding only roles-portlet access — which passes
-     *                 {@code validateRolesPortletPermissions} — calls {@code saveRoleLayouts}.
-     * Expected Result: {@link DotSecurityException} is thrown by the {@code getAdminUser()} check,
-     *                  which #36345 moved ahead of every DB read (fail-fast), so no role or layout
-     *                  is loaded for an unauthorized caller.
+     * Given Scenario: A non-admin backend user with Roles and Users portlet access saves the
+     *                 layouts of a role.
+     * Expected Result: {@link DotSecurityException} is thrown by the CMS Administrator check,
+     *                  before the role or its layouts are loaded.
      */
     @Test(expected = DotSecurityException.class)
-    public void test_saveRoleLayouts_withRolesPortletAccess_throwsDotSecurityException()
-            throws Exception {
-        final RoleAjax roleAjax = new RoleAjax();
-        roleAjax.saveRoleLayouts(cmsAdminRoleId, new String[]{rolesPortletLayout.getId()});
+    public void test_saveRoleLayouts_nonAdmin_throwsDotSecurityException() throws Exception {
+        new RoleAjax().saveRoleLayouts(cmsAdminRoleId, new String[]{userLayout.getId()});
+    }
+
+    /**
+     * Method to test: {@link RoleAjax#updateLayout(String, String, String, int, List)}
+     * Given Scenario: A non-admin backend user with Roles and Users portlet access renames a
+     *                 layout and changes its portlets.
+     * Expected Result: {@link DotSecurityException} is thrown by the CMS Administrator check.
+     */
+    @Test(expected = DotSecurityException.class)
+    public void test_updateLayout_nonAdmin_throwsDotSecurityException() throws Exception {
+        new RoleAjax().updateLayout(targetLayout.getId(), "RoleAjaxSecurityTest-renamed",
+                targetLayout.getDescription(), targetLayout.getTabOrder(), List.of("roles"));
+    }
+
+    /**
+     * Method to test: {@link RoleAjax#deleteLayout(String)}
+     * Given Scenario: A non-admin backend user with Roles and Users portlet access deletes a
+     *                 layout.
+     * Expected Result: {@link DotSecurityException} is thrown by the CMS Administrator check.
+     */
+    @Test(expected = DotSecurityException.class)
+    public void test_deleteLayout_nonAdmin_throwsDotSecurityException() throws Exception {
+        new RoleAjax().deleteLayout(targetLayout.getId());
     }
 
     private static void setUpDwrContext(final User user) {
