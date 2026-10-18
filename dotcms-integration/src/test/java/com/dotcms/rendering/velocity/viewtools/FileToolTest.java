@@ -259,7 +259,7 @@ public class FileToolTest {
 
     /**
      * Method to test: {@link FileTool#getFile(String, boolean, long)}
-     * When: the anonymous user is allowed to read the File Asset
+     * When: the anonymous user is allowed to read the live File Asset
      * Should: return it to the anonymous user
      */
     @Test
@@ -275,9 +275,11 @@ public class FileToolTest {
                         APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
                         PermissionAPI.PERMISSION_READ),
                 fileAsset, APILocator.systemUser(), false);
+        // anonymous users can only read live content
+        ContentletDataGen.publish(fileAsset);
 
         final Contentlet result = fileToolFor(APILocator.getUserAPI().getAnonymousUser())
-                .getFile(fileAsset.getIdentifier(), false, fileAsset.getLanguageId());
+                .getFile(fileAsset.getIdentifier(), true, fileAsset.getLanguageId());
         assertNotNull(result);
         assertEquals(fileAsset.getIdentifier(), result.getIdentifier());
     }

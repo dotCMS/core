@@ -19,6 +19,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.contentlet.transform.strategy.RenderFieldStrategy;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UUIDGenerator;
@@ -117,15 +118,16 @@ public class RestrictedViewToolAccessTest {
      * Should: keep the configuration tool and return the configured value
      */
     @Test
-    public void adminAuthor_anonymousCaller_canReadConfiguration() {
+    public void adminAuthor_anonymousCaller_canReadConfiguration() throws Exception {
         final ContentType contentType = new ContentTypeDataGen()
                 .fields(List.of(new FieldDataGen().type(TextAreaField.class)
                         .velocityVarName("code").next()))
                 .nextPersisted();
-        final Contentlet contentlet = new ContentletDataGen(contentType.id())
-                .user(admin)
+        final Contentlet draft = new ContentletDataGen(contentType.id())
                 .setProperty("code", "text")
-                .nextPersisted();
+                .next();
+        draft.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        final Contentlet contentlet = APILocator.getContentletAPI().checkin(draft, admin, false);
         assertEquals(admin.getUserId(), contentlet.getModUser());
 
         final String result = render(request(null), contentlet);
