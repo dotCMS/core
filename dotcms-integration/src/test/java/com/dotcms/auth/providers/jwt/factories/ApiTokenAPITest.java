@@ -576,14 +576,15 @@ public class ApiTokenAPITest extends IntegrationTestBase {
      * Method to test: {@link ApiTokenAPI#getJWT(ApiToken, User)}
      * Given scenario: a user with access to the Users portlet, who neither owns nor requested a
      * token, asks for a JWT
-     * Expected result: the request is refused, while listing the token still works
+     * Expected result: the request is refused, while revoking the token still works
      */
     @Test
-    public void test_getJWT_userManagerNotOwner_isRefused() {
+    public void test_getJWT_userManagerNotOwner_isRefused() throws DotDataException {
 
         final Layout usersLayout = new LayoutDataGen().portletIds("users").nextPersisted();
         final Role userManagerRole = new RoleDataGen().layout(usersLayout).nextPersisted();
-        final User userManager = new UserDataGen().roles(userManagerRole).nextPersisted();
+        final User userManager = new UserDataGen()
+                .roles(APILocator.getRoleAPI().loadBackEndUserRole(), userManagerRole).nextPersisted();
         assertTrue(APILocator.getPortletAPI().hasUserAdminRights(userManager));
 
         final User owner = new UserDataGen().nextPersisted();
@@ -597,8 +598,7 @@ public class ApiTokenAPITest extends IntegrationTestBase {
             // expected
         }
 
-        assertTrue(apiTokenAPI.findApiTokensByUserId(owner.getUserId(), false, userManager).stream()
-                .anyMatch(token -> token.id.equals(apiToken.id)));
+        assertTrue(apiTokenAPI.revokeToken(apiToken, userManager));
     }
 
     @Test
