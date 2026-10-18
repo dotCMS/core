@@ -20,7 +20,7 @@ import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.util.WebKeys;
+import com.liferay.portal.util.WebKeys;
 import com.dotcms.datagen.RoleDataGen;
 import com.liferay.portal.model.User;
 import org.apache.velocity.tools.view.context.ViewContext;

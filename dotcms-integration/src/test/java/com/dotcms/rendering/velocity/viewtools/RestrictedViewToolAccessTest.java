@@ -22,7 +22,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.strategy.RenderFieldStrategy;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UUIDGenerator;
-import com.dotmarketing.util.WebKeys;
+import com.liferay.portal.util.WebKeys;
 import com.liferay.portal.model.User;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
