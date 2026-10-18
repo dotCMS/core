@@ -22,8 +22,8 @@ import { ControlContainer, FormControl, ReactiveFormsModule } from '@angular/for
 import { PaginatorModule } from 'primeng/paginator';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { ensureDotVelocityLanguageRegistered } from '@dotcms/ui';
 
-import { dotVelocityLanguageDefinition } from '../../custom-languages/velocity-monaco-language';
 import {
     isHtml,
     isJavascript,
@@ -36,15 +36,6 @@ import {
     DEFAULT_MONACO_LANGUAGE
 } from '../../models/dot-edit-content-field.constant';
 import { getFieldVariablesParsed, stringToJson } from '../../utils/functions.util';
-
-interface WindowWithMonaco extends Window {
-    monaco?: {
-        languages: {
-            register: (language: { id: string }) => void;
-            setMonarchTokensProvider: (id: string, provider: unknown) => void;
-        };
-    };
-}
 
 /**
  * DotEditContentMonacoEditorControl is an Angular component utilizing Monaco Editor.
@@ -234,23 +225,11 @@ export class DotEditContentMonacoEditorControlComponent implements OnDestroy {
     }
 
     /**
-     * Registers the Velocity language for the Monaco editor.
+     * Registers the Velocity language for the Monaco editor: the shared grammar from `@dotcms/ui`,
+     * under the `velocity` id this field's detection and forced language use.
      */
     registerVelocityLanguage() {
-        this.#ngZone.runOutsideAngular(() => {
-            const windowWithMonaco = window as WindowWithMonaco;
-            if (windowWithMonaco.monaco) {
-                windowWithMonaco.monaco.languages.register({
-                    id: AvailableLanguageMonaco.Velocity
-                });
-                windowWithMonaco.monaco.languages.setMonarchTokensProvider(
-                    AvailableLanguageMonaco.Velocity,
-                    dotVelocityLanguageDefinition
-                );
-            } else {
-                console.warn('Monaco is not available globally');
-            }
-        });
+        this.#ngZone.runOutsideAngular(() => ensureDotVelocityLanguageRegistered());
     }
 
     private readonly languageDetectors = {

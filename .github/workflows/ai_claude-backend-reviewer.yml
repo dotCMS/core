@@ -18,7 +18,7 @@ jobs:
   # Gate 1 — Pilot author allowlist
   # ─────────────────────────────────────────────────────────────────
   authorized-authors:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     permissions:
       contents: read
     outputs:
@@ -45,7 +45,7 @@ jobs:
   detect-backend-changes:
     needs: authorized-authors
     if: needs.authorized-authors.outputs.authorized == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     permissions:
       contents: read
     outputs:
@@ -101,7 +101,7 @@ jobs:
       bedrock_role_arn: ${{ vars.BEDROCK_ROLE_ARN }}
       trigger_mode: automatic
       timeout_minutes: 30
-      runner: ubuntu-latest
+      runner: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
       enable_mention_detection: false
       # No progress comment: claude-code-action finds the comment to reuse by
       # "authored by the Claude app bot" with no per-workflow marker, so this
@@ -342,7 +342,7 @@ jobs:
   finalize-backend-review:
     needs: [detect-backend-changes, claude-backend-review]
     if: ${{ !cancelled() && needs.claude-backend-review.result == 'success' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     permissions:
       pull-requests: write
     steps:
