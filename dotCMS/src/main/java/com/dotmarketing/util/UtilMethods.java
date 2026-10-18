@@ -72,6 +72,7 @@ import java.util.Enumeration;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -1477,19 +1478,32 @@ public class UtilMethods {
 
 
 
-    public static String cleanFileSystemPathURI(String path) {
-        if (path.indexOf("..") != -1 && path.indexOf("WEB-INF") != -1 && path.indexOf("META-INF") != -1 && path.indexOf("!") != -1
-                && path.indexOf(":") != -1 && path.indexOf(";") != -1 && path.indexOf(";") != -1 && path.indexOf("&") != -1
-                && path.indexOf("?") != -1 && path.indexOf("$") != -1 && path.indexOf("*") != -1 && path.indexOf("\"") != -1
-                && path.indexOf("/") != -1 && path.indexOf("[") != -1 && path.indexOf("]") != -1 && path.indexOf("=") != -1
-                && path.indexOf("|") != -1 && path.indexOf(",") != -1) {
+    private static final String FILE_SYSTEM_PATH_DISALLOWED_CHARS = "\\!:;&?$*\"[]=|,%<>~";
+
+    /**
+     * Validates a path or file name relative to the web application root.
+     *
+     * @param path The path to validate.
+     *
+     * @return The same path, or {@code null} if it is not set, contains a parent-directory
+     * segment ({@code ..}), refers to {@code WEB-INF} or {@code META-INF} or contains any of
+     * {@code \ ! : ; & ? $ * " [ ] = | , % < > ~} or control characters.
+     */
+    public static String cleanFileSystemPathURI(final String path) {
+        if (path == null || path.isEmpty()) {
             return null;
-
-        } else {
-            return path;
-
         }
-
+        final String upperCasePath = path.toUpperCase(Locale.ROOT);
+        if (path.contains("..") || upperCasePath.contains("WEB-INF") || upperCasePath.contains("META-INF")) {
+            return null;
+        }
+        for (int i = 0; i < path.length(); i++) {
+            final char character = path.charAt(i);
+            if (Character.isISOControl(character) || FILE_SYSTEM_PATH_DISALLOWED_CHARS.indexOf(character) != -1) {
+                return null;
+            }
+        }
+        return path;
     }
 
 

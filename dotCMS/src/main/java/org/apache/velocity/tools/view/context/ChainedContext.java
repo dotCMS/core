@@ -142,6 +142,18 @@ public class ChainedContext extends VelocityContext implements ViewContext
 
 
     /**
+     * <p>Removes a view tool from this context's toolbox.</p>
+     *
+     * @param key the key of the tool to remove
+     * @return the removed tool, or null if there was none
+     */
+    public Object removeTool(String key)
+    {
+        return toolbox == null ? null : toolbox.remove(key);
+    }
+
+
+    /**
      * <p>Looks up and returns the object with the specified key.</p>
      * <p>See the class documentation for more details.</p>
      *

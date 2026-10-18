@@ -93,6 +93,7 @@ import com.dotcms.rendering.velocity.directive.DotParseTest;
 import com.dotcms.rendering.velocity.servlet.VelocityServletIntegrationTest;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateToolTest;
 import com.dotcms.rendering.velocity.viewtools.FileToolTest;
+import com.dotcms.rendering.velocity.viewtools.RestrictedViewToolAccessTest;
 import com.dotcms.rendering.velocity.viewtools.JSONToolTest;
 import com.dotcms.rendering.velocity.viewtools.MessageToolTest;
 import com.dotcms.rendering.velocity.viewtools.XmlToolTest;
@@ -333,6 +334,7 @@ import org.junit.runners.Suite.SuiteClasses;
         ContentletCacheImplTest.class,
         HostTest.class,
         FileToolTest.class,
+        RestrictedViewToolAccessTest.class,
         Task210719CleanUpTitleFieldTest.class,
         Task210802UpdateStructureTableTest.class,
         MaintenanceUtilTest.class,

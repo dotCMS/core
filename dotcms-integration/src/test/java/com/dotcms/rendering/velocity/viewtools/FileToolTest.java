@@ -16,7 +16,14 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.beans.Permission;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.WebKeys;
+import com.dotcms.datagen.RoleDataGen;
+import com.liferay.portal.model.User;
+import org.apache.velocity.tools.view.context.ViewContext;
 import java.io.File;
 import javax.servlet.http.HttpServletRequest;
 import org.junit.BeforeClass;
@@ -69,6 +76,7 @@ public class FileToolTest {
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getParameter(VariantAPI.VARIANT_KEY)).thenReturn(variant.name());
+        when(request.getAttribute(WebKeys.USER)).thenReturn(APILocator.systemUser());
 
         HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
 
@@ -106,6 +114,7 @@ public class FileToolTest {
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getParameter(VariantAPI.VARIANT_KEY)).thenReturn(variant.name());
+        when(request.getAttribute(WebKeys.USER)).thenReturn(APILocator.systemUser());
 
         HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
 
@@ -142,6 +151,7 @@ public class FileToolTest {
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getParameter(VariantAPI.VARIANT_KEY)).thenReturn(variant.name());
+        when(request.getAttribute(WebKeys.USER)).thenReturn(APILocator.systemUser());
 
         HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
 
@@ -181,6 +191,7 @@ public class FileToolTest {
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getParameter(VariantAPI.VARIANT_KEY)).thenReturn(variant_1.name());
+        when(request.getAttribute(WebKeys.USER)).thenReturn(APILocator.systemUser());
 
         HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
 
@@ -199,5 +210,75 @@ public class FileToolTest {
         } catch (DotDataException e) {
 
         }
+    }
+
+    private static FileTool fileToolFor(final User user) {
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getAttribute(WebKeys.USER)).thenReturn(user);
+        final ViewContext viewContext = mock(ViewContext.class);
+        when(viewContext.getRequest()).thenReturn(request);
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+        final FileTool fileTool = new FileTool();
+        fileTool.init(viewContext);
+        return fileTool;
+    }
+
+    /**
+     * Method to test: {@link FileTool#getFile(String, boolean, long)} and
+     * {@link FileTool#getFileAsContentlet(String, boolean, long)}
+     * When: the File Asset can only be read by a role the request user does not have
+     * Should: return null for the anonymous user, and the File Asset for a user that can read it
+     */
+    @Test
+    public void getFile_usesRequestUserPermissions() throws DotDataException, DotSecurityException {
+        final File binary = new File(Thread.currentThread()
+                .getContextClassLoader().getResource("images/test.jpg").getFile());
+        final Host site = new SiteDataGen().nextPersisted();
+        final Contentlet fileAsset = new FileAssetDataGen(site, binary)
+                .languageId(APILocator.getLanguageAPI().getDefaultLanguage().getId())
+                .nextPersisted();
+
+        final Role otherRole = new RoleDataGen().nextPersisted();
+        APILocator.getPermissionAPI().save(new Permission(fileAsset.getPermissionId(),
+                        otherRole.getId(), PermissionAPI.PERMISSION_READ),
+                fileAsset, APILocator.systemUser(), false);
+
+        final User anonymous = APILocator.getUserAPI().getAnonymousUser();
+        assertNull(fileToolFor(anonymous).getFile(fileAsset.getIdentifier(), false,
+                fileAsset.getLanguageId()));
+        assertNull(fileToolFor(anonymous).getFileAsContentlet(fileAsset.getIdentifier(), false,
+                fileAsset.getLanguageId()));
+        assertNull(fileToolFor(null).getFile(fileAsset.getIdentifier(), false,
+                fileAsset.getLanguageId()));
+
+        final Contentlet result = fileToolFor(APILocator.systemUser())
+                .getFile(fileAsset.getIdentifier(), false, fileAsset.getLanguageId());
+        assertNotNull(result);
+        assertEquals(fileAsset.getIdentifier(), result.getIdentifier());
+    }
+
+    /**
+     * Method to test: {@link FileTool#getFile(String, boolean, long)}
+     * When: the anonymous user is allowed to read the File Asset
+     * Should: return it to the anonymous user
+     */
+    @Test
+    public void getFile_anonymousCanReadPublicFile() throws DotDataException, DotSecurityException {
+        final File binary = new File(Thread.currentThread()
+                .getContextClassLoader().getResource("images/test.jpg").getFile());
+        final Host site = new SiteDataGen().nextPersisted();
+        final Contentlet fileAsset = new FileAssetDataGen(site, binary)
+                .languageId(APILocator.getLanguageAPI().getDefaultLanguage().getId())
+                .nextPersisted();
+
+        APILocator.getPermissionAPI().save(new Permission(fileAsset.getPermissionId(),
+                        APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
+                        PermissionAPI.PERMISSION_READ),
+                fileAsset, APILocator.systemUser(), false);
+
+        final Contentlet result = fileToolFor(APILocator.getUserAPI().getAnonymousUser())
+                .getFile(fileAsset.getIdentifier(), false, fileAsset.getLanguageId());
+        assertNotNull(result);
+        assertEquals(fileAsset.getIdentifier(), result.getIdentifier());
     }
 }

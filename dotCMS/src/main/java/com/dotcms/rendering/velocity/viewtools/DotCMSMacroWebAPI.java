@@ -247,16 +247,22 @@ public class DotCMSMacroWebAPI implements ViewTool {
 				null, null, categoriesList, true, false, 0, limit, userAPI.getSystemUser(), false);
 	}
 
+	/**
+	 * Lists the files of a folder of the web application. Paths that leave the web application
+	 * root or point to {@code WEB-INF} / {@code META-INF} return an empty list.
+	 *
+	 * @param folder Folder path relative to the web application root, e.g. {@code /html/images}.
+	 *
+	 * @return One map per file with its name, size, link and modification date.
+	 */
 	public List getFileSystemFolder(String folder) {
 		List list = new ArrayList();
-		/*
-		if(session.getAttribute(WebKeys.CMS_USER) == null){
+		folder = UtilMethods.cleanFileSystemPathURI(folder);
+		if (folder == null) {
 			return list;
 		}
-		*/
-		folder = UtilMethods.cleanFileSystemPathURI(folder);
-		java.io.File file = new java.io.File(FileUtil.getRealPath(folder));
-		if (!file.exists() || !file.isDirectory()) {
+		final java.io.File file = resolveWebAppFolder(folder);
+		if (file == null || !file.exists() || !file.isDirectory()) {
 			return list;
 		}
 		String[] files = file.list(new SystemFileNameFilter());
@@ -284,6 +290,28 @@ public class DotCMSMacroWebAPI implements ViewTool {
 
 		return list;
 
+	}
+
+	/**
+	 * Resolves a folder path against the web application root, returning {@code null} if the
+	 * canonical location is outside of it or inside {@code WEB-INF} / {@code META-INF}.
+	 */
+	static java.io.File resolveWebAppFolder(final String folder) {
+		try {
+			final java.nio.file.Path root = java.nio.file.Paths.get(FileUtil.getRealPath("/"))
+					.toFile().getCanonicalFile().toPath();
+			final java.nio.file.Path target = java.nio.file.Paths.get(FileUtil.getRealPath(folder))
+					.toFile().getCanonicalFile().toPath();
+			if (!target.startsWith(root) || target.startsWith(root.resolve("WEB-INF"))
+					|| target.startsWith(root.resolve("META-INF"))) {
+				Logger.debug(DotCMSMacroWebAPI.class, "Folder outside of the allowed location: " + folder);
+				return null;
+			}
+			return target.toFile();
+		} catch (final Exception e) {
+			Logger.debug(DotCMSMacroWebAPI.class, "Unable to resolve folder " + folder + ": " + e.getMessage());
+			return null;
+		}
 	}
 
 	private class SystemFileNameFilter implements FilenameFilter {

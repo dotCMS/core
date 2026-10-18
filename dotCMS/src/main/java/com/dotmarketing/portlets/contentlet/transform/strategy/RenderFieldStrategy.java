@@ -15,6 +15,7 @@ import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
+import com.dotcms.rendering.velocity.viewtools.RestrictedViewToolAccess;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -34,6 +35,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.apache.velocity.tools.view.context.ChainedContext;
 
 /**
  * Class intended to collect the {@link Field}s that are velocity renderable and present them in their
@@ -127,6 +129,7 @@ public class RenderFieldStrategy extends AbstractTransformStrategy<Contentlet> {
         final Language lang = WebAPILocator.getLanguageWebAPI().getLanguage(request);
         final PageMode pageMode = PageMode.get(request);
 
+        restrictViewTools(context, request, contentlet);
         context.put("content", contentlet);
         context.put("contentlet", contentlet);
         context.put("dotJSON", new DotJSON());
@@ -152,15 +155,17 @@ public class RenderFieldStrategy extends AbstractTransformStrategy<Contentlet> {
                 ? VelocityUtil.getInstance().getContext(request, response)
                 : VelocityUtil.getBasicContext();
 
+        restrictViewTools(context, request, contentlet);
         context.put("content", contentlet);
         context.put("contentlet", contentlet);
         context.put("dotJSON", new DotJSON());
 
         final StringWriter evalResult = new StringWriter();
+        final String templateName = getFieldTemplateName(contentlet, fieldVar);
 
         Try.runRunnable(()-> com.dotmarketing.util.VelocityUtil
                 .getEngine()
-                .evaluate(context, evalResult, "", fieldValue)).onFailure((error)->
+                .evaluate(context, evalResult, templateName, fieldValue)).onFailure((error)->
                 Logger.warnAndDebug(RenderFieldStrategy.class, "Unable to render velocity in field: "
                         + fieldVar, error)
         );
@@ -171,5 +176,37 @@ public class RenderFieldStrategy extends AbstractTransformStrategy<Contentlet> {
                 ? dotJSON.size() > 0
                     ? dotJSON.getMap() : evalResult.toString()
                 : fieldValue;
+    }
+
+    /**
+     * Name under which a field value is evaluated. It follows the same pattern as the Velocity
+     * resource of a content field ({@code /MODE/contentInode/field}) so that view tools can
+     * resolve the content being rendered.
+     */
+    static String getFieldTemplateName(final Contentlet contentlet, final String fieldVar) {
+        return null != contentlet && UtilMethods.isSet(contentlet.getInode())
+                ? "/" + PageMode.LIVE.name() + "/" + contentlet.getInode() + "/" + fieldVar
+                : "";
+    }
+
+    /**
+     * Removes the view tools listed in
+     * {@link RestrictedViewToolAccess#RESTRICTED_TOOLS_PROPERTY} from the context unless the user
+     * that last modified the content or the user of the request is allowed to use them.
+     *
+     * @return {@code true} if tools were removed.
+     */
+    static boolean restrictViewTools(final org.apache.velocity.context.Context context,
+            final HttpServletRequest request, final Contentlet contentlet) {
+        if (!(context instanceof ChainedContext)) {
+            return false;
+        }
+        if ((null != contentlet && RestrictedViewToolAccess.userIdHasAccess(contentlet.getModUser()))
+                || RestrictedViewToolAccess.requestUserHasAccess(request)) {
+            return false;
+        }
+        final ChainedContext chainedContext = (ChainedContext) context;
+        RestrictedViewToolAccess.restrictedToolKeys().forEach(chainedContext::removeTool);
+        return true;
     }
 }
