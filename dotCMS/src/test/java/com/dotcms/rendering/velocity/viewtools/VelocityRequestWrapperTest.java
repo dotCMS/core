@@ -1,6 +1,7 @@
 package com.dotcms.rendering.velocity.viewtools;
 
 import com.dotcms.UnitTestBase;
+import com.dotmarketing.business.LoginAsSession;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.util.WebKeys;
 import org.junit.AfterClass;
@@ -11,7 +12,10 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
@@ -23,6 +27,9 @@ public class VelocityRequestWrapperTest extends UnitTestBase {
 
     @Mock
     private HttpServletRequest mockRequest;
+
+    @Mock
+    private HttpSession mockSession;
 
     private static boolean originalConfigValue;
 
@@ -90,6 +97,52 @@ public class VelocityRequestWrapperTest extends UnitTestBase {
         
         // Then: setAttribute should be called on the wrapped request
         verify(mockRequest, times(1)).setAttribute(testKey, testValue);
+    }
+
+    /**
+     * Tests that Velocity code cannot set the Login As principal on the session or the request;
+     * only the Login As endpoint sets it.
+     */
+    @Test
+    public void testSetAttribute_withLoginAsPrincipal_shouldNotSetAttribute() {
+        when(mockRequest.getSession()).thenReturn(mockSession);
+        final VelocityRequestWrapper wrapper = VelocityRequestWrapper.wrapVelocityRequest(mockRequest);
+
+        wrapper.getSession().setAttribute(WebKeys.PRINCIPAL_USER_ID, "dotcms.org.1");
+        wrapper.setAttribute(WebKeys.PRINCIPAL_USER_ID, "dotcms.org.1");
+
+        verify(mockSession, never()).setAttribute(eq(WebKeys.PRINCIPAL_USER_ID), any());
+        verify(mockRequest, never()).setAttribute(eq(WebKeys.PRINCIPAL_USER_ID), any());
+    }
+
+    /**
+     * Tests that Velocity code cannot remove the Login As record from the session, while ordinary
+     * session attributes can still be removed.
+     */
+    @Test
+    public void testSessionRemoveAttribute_withLoginAsSession_shouldNotRemoveAttribute() {
+        when(mockRequest.getSession()).thenReturn(mockSession);
+        final VelocityRequestWrapper wrapper = VelocityRequestWrapper.wrapVelocityRequest(mockRequest);
+
+        wrapper.getSession().removeAttribute(LoginAsSession.SESSION_KEY);
+        wrapper.getSession().removeValue(LoginAsSession.SESSION_KEY);
+        wrapper.getSession().removeAttribute("testAttribute");
+
+        verify(mockSession, never()).removeAttribute(LoginAsSession.SESSION_KEY);
+        verify(mockSession, times(1)).removeAttribute("testAttribute");
+    }
+
+    /**
+     * Tests that ordinary session attributes set from Velocity still reach the session.
+     */
+    @Test
+    public void testSessionSetAttribute_withNonBlacklistedAttribute_shouldSetAttribute() {
+        when(mockRequest.getSession()).thenReturn(mockSession);
+        final VelocityRequestWrapper wrapper = VelocityRequestWrapper.wrapVelocityRequest(mockRequest);
+
+        wrapper.getSession().setAttribute("testAttribute", "testValue");
+
+        verify(mockSession, times(1)).setAttribute("testAttribute", "testValue");
     }
 
     /**
