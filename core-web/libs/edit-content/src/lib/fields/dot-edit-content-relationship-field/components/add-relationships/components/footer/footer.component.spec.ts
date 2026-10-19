@@ -103,6 +103,16 @@ describe('AddRelationshipsFooterComponent (US2)', () => {
         expect(confirm?.textContent?.trim()).toBe('Add Relationships');
     });
 
+    /** Only the confirm action is primary (blue); Cancel is gray (secondary). */
+    it('draws Cancel gray (secondary) and leaves Add Relationships primary', () => {
+        const button = (testId: string) =>
+            spectator.query(byTestId(testId))?.querySelector('button');
+
+        expect(button('add-relationships-cancel')).toHaveClass('p-button-secondary');
+        expect(button('add-relationships-cancel')).not.toHaveClass('p-button-primary');
+        expect(button('add-relationships-confirm')).not.toHaveClass('p-button-secondary');
+    });
+
     it('emits cancel when the cancel action is pressed', () => {
         const cancelled = vi.fn();
         spectator.output('cancel').subscribe(cancelled);
