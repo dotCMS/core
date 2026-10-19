@@ -1,6 +1,6 @@
 import { DotNavigationPage } from '@pages';
 import { expect, test } from '@playwright/test';
-import { getLayouts } from '@requests/layouts';
+import { getGroupHolding, getLayouts } from '@requests/layouts';
 
 import { startWithBar } from './helpers/menu-state';
 
@@ -13,13 +13,15 @@ import { startWithBar } from './helpers/menu-state';
  */
 test.describe('Admin navigation — reload and deep links', () => {
     test('browser reload restores the expanded bar and highlights the URL portlet @critical', async ({
-        page
+        page,
+        request
     }) => {
         await startWithBar(page, 'expanded');
+        const site = await getGroupHolding(request, 'templates');
         const nav = new DotNavigationPage(page);
         await nav.goto('/pages');
-        await nav.openGroup('Site');
-        await nav.clickItem('Templates');
+        await nav.openGroup(site.tabName);
+        await nav.clickItem('Templates', [], site.tabName);
         await expect(nav.activeItem()).toHaveText('Templates');
 
         await page.reload();

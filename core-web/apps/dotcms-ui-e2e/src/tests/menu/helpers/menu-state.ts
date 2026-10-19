@@ -25,6 +25,11 @@ export async function startWithBar(page: Page, state: 'expanded' | 'collapsed'):
     );
 }
 
+/** Escapes `text` so it matches literally inside a `RegExp`. */
+export function escapeRegExp(text: string): string {
+    return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 /** The `mId` query param of the current hash route, or `null` when the URL has none. */
 export function mIdOf(url: string): string | null {
     return new URL(url.replace('#', '')).searchParams.get('mId');

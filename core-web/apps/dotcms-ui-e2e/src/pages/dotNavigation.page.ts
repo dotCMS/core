@@ -60,9 +60,14 @@ export class DotNavigationPage {
         return labels.map((label) => label.trim());
     }
 
-    /** The portlet link labelled `label` (first match across groups). */
-    itemByLabel(label: string): Locator {
-        return this.nav.getByRole('link', { name: label, exact: true }).first();
+    /**
+     * The portlet link labelled `label`: the first match across groups, or inside the group named
+     * `group` when a portlet is in several groups (Publishing Queue is in two in the empty starter).
+     */
+    itemByLabel(label: string, group?: string): Locator {
+        const scope = group ? this.groupSection(group) : this.nav;
+
+        return scope.getByRole('link', { name: label, exact: true }).first();
     }
 
     /** The portlet link that is currently highlighted. */
@@ -107,8 +112,8 @@ export class DotNavigationPage {
         await this.groupByName(name).getByTestId('nav-item-main').dispatchEvent('click');
     }
 
-    /** Clicks a portlet link. Pass modifiers to test Ctrl/Cmd-click. */
-    async clickItem(label: string, modifiers: ('Control' | 'Meta')[] = []) {
-        await this.itemByLabel(label).click({ modifiers });
+    /** Clicks a portlet link. Pass modifiers to test Ctrl/Cmd-click, `group` to pick the group. */
+    async clickItem(label: string, modifiers: ('Control' | 'Meta')[] = [], group?: string) {
+        await this.itemByLabel(label, group).click({ modifiers });
     }
 }

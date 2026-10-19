@@ -1,6 +1,12 @@
 import { DotNavigationPage } from '@pages';
 import { expect, test } from '@playwright/test';
-import { getLayouts, getMenu, restoreLayoutTools, setLayoutTools } from '@requests/layouts';
+import {
+    getGroupHolding,
+    getLayouts,
+    getMenu,
+    restoreLayoutTools,
+    setLayoutTools
+} from '@requests/layouts';
 
 import { failMenuRequests, restoreMenuRequests, trackMenuRequests } from './helpers/menu-requests';
 import { mIdOf, startWithBar } from './helpers/menu-state';
@@ -16,6 +22,13 @@ import { mIdOf, startWithBar } from './helpers/menu-state';
  * layouts are put back in `finally`, so a failing test does not leave the instance altered.
  */
 test.describe.configure({ mode: 'serial' });
+
+/**
+ * A portlet of the group that is not the Templates one: `Content Model` in a demo instance, `Schema`
+ * in the empty starter. The tests below take Tags out of its layout for a while, so the group is
+ * found through Content Types, which stays put.
+ */
+const MODEL_PORTLET = 'content-types-angular';
 
 test.describe('Admin navigation — request count and live updates', () => {
     test('load shows the groups in tabOrder with one menu request @critical', async ({
@@ -43,9 +56,11 @@ test.describe('Admin navigation — request count and live updates', () => {
     });
 
     test('moving across three portlets from the bar sends no further menu request @critical', async ({
-        page
+        page,
+        request
     }) => {
         await startWithBar(page, 'expanded');
+        const site = await getGroupHolding(request, 'templates');
         const tracker = trackMenuRequests(page);
         const nav = new DotNavigationPage(page);
 
@@ -54,9 +69,9 @@ test.describe('Admin navigation — request count and live updates', () => {
         await page.waitForLoadState('load');
         tracker.reset();
 
-        await nav.openGroup('Site');
+        await nav.openGroup(site.tabName);
         for (const label of ['Templates', 'Containers', 'Pages']) {
-            await nav.clickItem(label);
+            await nav.clickItem(label, [], site.tabName);
             await expect(nav.activeItem()).toHaveText(label);
             expect(mIdOf(page.url())).toMatch(/^[0-9a-f]{4}$/);
         }
@@ -69,9 +84,10 @@ test.describe('Admin navigation — request count and live updates', () => {
         request
     }) => {
         await startWithBar(page, 'expanded');
+        const model = await getGroupHolding(request, MODEL_PORTLET);
         const layouts = await getLayouts(request);
-        const target = layouts.find((layout) => layout.name === 'Content Model');
-        expect(target, 'the starter Content Model layout').toBeDefined();
+        const target = layouts.find((layout) => layout.id === model.id);
+        expect(target, 'the layout of the group that holds Content Types').toBeDefined();
         const original = target?.portletIds ?? [];
         const nav = new DotNavigationPage(page);
         const tracker = trackMenuRequests(page);
@@ -79,7 +95,7 @@ test.describe('Admin navigation — request count and live updates', () => {
         try {
             await nav.goto('/templates');
             await expect(nav.activeItem()).toHaveText('Templates');
-            const links = nav.groupLinks('Content Model');
+            const links = nav.groupLinks(model.tabName);
             const before = await links.count();
             tracker.reset();
 
@@ -128,13 +144,14 @@ test.describe('Admin navigation — request count and live updates', () => {
         request
     }) => {
         await startWithBar(page, 'expanded');
+        const siteGroup = await getGroupHolding(request, 'templates');
+        const otherGroup = await getGroupHolding(request, MODEL_PORTLET);
         const layouts = await getLayouts(request);
-        const site = layouts.find((layout) => layout.portletIds.includes('templates'));
-        const other = layouts.find(
-            (layout) => layout.id !== site?.id && layout.name === 'Content Model'
-        );
+        const site = layouts.find((layout) => layout.id === siteGroup.id);
+        const other = layouts.find((layout) => layout.id === otherGroup.id);
         expect(site, 'a layout with the templates portlet').toBeDefined();
-        expect(other, 'the starter Content Model layout').toBeDefined();
+        expect(other, 'a layout with the content types portlet').toBeDefined();
+        expect(other?.id).not.toBe(site?.id);
         const original = other?.portletIds ?? [];
 
         try {
@@ -143,12 +160,12 @@ test.describe('Admin navigation — request count and live updates', () => {
 
             await nav.goto(`/templates?mId=${other?.id.substring(0, 4)}`);
             await expect(
-                nav.groupSection('Content Model').locator('a.dot-nav-sub__link--active')
+                nav.groupSection(otherGroup.tabName).locator('a.dot-nav-sub__link--active')
             ).toHaveText('Templates');
 
             await nav.goto(`/templates?mId=${site?.id.substring(0, 4)}`);
             await expect(
-                nav.groupSection('Site').locator('a.dot-nav-sub__link--active')
+                nav.groupSection(siteGroup.tabName).locator('a.dot-nav-sub__link--active')
             ).toHaveText('Templates');
         } finally {
             await restoreLayoutTools(request, other?.id ?? '', original);
@@ -187,31 +204,33 @@ test.describe('Admin navigation — request count and live updates', () => {
     });
 
     test('a legacy portlet reads its iframe url at open time and an Angular one asks for nothing', async ({
-        page
+        page,
+        request
     }) => {
         await startWithBar(page, 'expanded');
+        const site = await getGroupHolding(request, 'templates');
         const tracker = trackMenuRequests(page);
         const nav = new DotNavigationPage(page);
         await nav.goto('/pages');
         await expect(nav.activeItem()).toHaveText('Pages');
-        await nav.openGroup('Site');
+        await nav.openGroup(site.tabName);
         tracker.reset();
 
         // The legacy url carries `r=<currentTimeMillis>`, so it is requested when the portlet opens.
-        await nav.clickItem('Publishing Queue');
-        await expect(page.locator('#detailFrame')).toBeVisible();
+        await nav.clickItem('Publishing Queue', [], site.tabName);
+        // The frame is visible a moment before its `src` is set, so the url is waited for.
+        await expect(page.locator('#detailFrame')).toHaveAttribute('src', /[?&]r=\d+/);
         const firstSrc = await page.locator('#detailFrame').getAttribute('src');
         expect(tracker.count()).toBe(1);
-        expect(firstSrc).toMatch(/[?&]r=\d+/);
 
         // An Angular portlet navigates with its menuLink and never goes through that url.
         tracker.reset();
-        await nav.clickItem('Templates');
+        await nav.clickItem('Templates', [], site.tabName);
         await expect(nav.activeItem()).toHaveText('Templates');
         expect(tracker.count()).toBe(0);
 
         // Opening the legacy portlet again reads a new url, with a different timestamp.
-        await nav.clickItem('Publishing Queue');
+        await nav.clickItem('Publishing Queue', [], site.tabName);
         await expect(page.locator('#detailFrame')).toBeVisible();
         await expect
             .poll(() => page.locator('#detailFrame').getAttribute('src'))
@@ -237,9 +256,10 @@ test.describe('Admin navigation — request count and live updates', () => {
         await startWithBar(page, 'expanded');
         const errors: string[] = [];
         page.on('pageerror', (error) => errors.push(error.message));
+        const model = await getGroupHolding(request, MODEL_PORTLET);
         const layouts = await getLayouts(request);
-        const target = layouts.find((layout) => layout.name === 'Content Model');
-        expect(target, 'the starter Content Model layout').toBeDefined();
+        const target = layouts.find((layout) => layout.id === model.id);
+        expect(target, 'the layout of the group that holds Content Types').toBeDefined();
         const original = target?.portletIds ?? [];
         const nav = new DotNavigationPage(page);
         const tracker = trackMenuRequests(page);

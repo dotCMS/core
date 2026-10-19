@@ -92,3 +92,21 @@ export async function getMenu(request: APIRequestContext): Promise<MenuGroup[]> 
 
     return entity as MenuGroup[];
 }
+
+/**
+ * The admin's menu group that holds `portletId`, so a test names a group by what it contains and
+ * not by its label: the starters do not agree on labels (`Site` in a demo instance, `Site Manager`
+ * in the empty starter, `Content Model` against `Schema`). When a portlet sits in several groups
+ * the first one in on-screen order is returned.
+ */
+export async function getGroupHolding(
+    request: APIRequestContext,
+    portletId: string
+): Promise<MenuGroup> {
+    const group = (await getMenu(request)).find((candidate) =>
+        candidate.menuItems.some((item) => item.id === portletId)
+    );
+    expect(group, `no menu group holds the ${portletId} portlet`).toBeDefined();
+
+    return group as MenuGroup;
+}
