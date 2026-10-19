@@ -33,9 +33,12 @@ Two related failures share the same cause:
 
 - When the configuration request (`/api/v1/appconfiguration`) fails, the saved translations are
   never loaded and every label in that session can show as a raw key.
-- A language chosen on the login page does not survive the login: the admin UI loads the
-  default language right after, overwriting the user's choice, and labels captured before that
-  download finishes can stay in the chosen language — so one screen can mix two languages.
+- A language chosen on the login page does not last. Logging in does not reload the page, so
+  the chosen language stays in effect for the rest of that page load; but the next full load (a
+  refresh, or coming back after logging out) asks for the default language again, discards the
+  saved copy in the chosen language and downloads the default one. Labels read from the saved
+  copy before that download finishes stay in the chosen language — so one screen can mix two
+  languages.
 
 **Severity / Impact**: Medium. Every admin user hits it on the first load after each deploy,
 plus anyone on a new browser or changing language at login. Nothing is lost or blocked — the
@@ -104,7 +107,8 @@ login answers first the menu is built from empty translations.
 
 The related paths follow from the same design: when the configuration request fails, the error
 handler leaves no build date and the translations are never loaded at all; and the startup load
-always asks for the `default` language, so it discards the language the login page saved.
+always asks for the `default` language — which the server resolves to the company's default
+language, not the user's — so every full load discards the language the login page saved.
 
 ## Fix Scope & Non-Goals *(mandatory)*
 
@@ -113,16 +117,22 @@ always asks for the `default` language, so it discards the language the login pa
 - Admin UI startup: translations are available before translatable text is first shown. The UI
   waits for the configuration request, which says whether the saved copy is current, then uses
   the saved copy when it is valid or downloads translations when it is not. The 2.5-second limit
-  covers both requests together.
-- During a download that replaces a saved copy, lookups keep returning the saved text instead of
-  raw keys.
-- Configuration request failure: translations still load (saved copy, or a fresh download of the
-  default language).
+  covers both requests together and is measured from when the startup sends the configuration
+  request.
+- During a download that replaces a saved copy from an older build in the same language,
+  lookups keep returning the saved text instead of raw keys. A saved copy in a different language
+  is never used.
+- Configuration request failure: translations still load (the saved copy, or a fresh download
+  of the language in effect).
 - Translations request failure, or no translations within 2.5 seconds: the UI still loads; raw
   keys are acceptable only in this case, and the failure or timeout is logged to the browser
   console.
-- Login-page language choice: it stays in effect after login and is not replaced by the default
-  language.
+- Login-page language choice: the language chosen on the login page is used for every later
+  load in that browser — including the download after a deploy — until it is changed again on
+  the login page. It is per browser, not per user: on a shared browser the next user starts from
+  the last choice and can change it on the login page.
+- The user menu rebuilds its labels when translations arrive, so it shows translated text even
+  when the first render happened before them (after the 2.5-second timeout).
 - The consumers named in the issue — the user menu, translate-pipe template labels, and the My
   Account and Report an Issue validation messages — show translated text on a cold load.
 - Unit tests for the startup and lookup behavior listed in Acceptance & Verification.
@@ -133,12 +143,20 @@ always asks for the `default` language, so it discards the language the login pa
   translated text once. The fix makes translations available before the UI renders, which covers
   those consumers without touching each of them; a consumer that still misbehaves after the fix
   gets its own issue.
+- Recovering read-once text after the 2.5-second timeout, other than the user menu. When the UI
+  renders before translations arrive, translate-pipe template labels and the My Account and
+  Report an Issue validation messages can keep raw keys until the next load. This is an accepted
+  trade-off: making the translate pipe re-evaluate on every change detection across the app is
+  too costly for a path that only a slow or failing translations request reaches.
+- Using the user's profile language. The language in effect is the login-page choice saved in
+  the browser, or the default language when there is none.
 - Live language switching inside the admin UI (changing language without a reload).
 - Changes to the translations or configuration endpoints, to how translations are cached on the
   server, or to the content of the translation files.
 - The separately bootstrapped apps and libraries that load translations on their own (the binary
   field builder, the block editor) — beyond keeping them working.
-- Showing a loading indicator or splash screen while translations download.
+- Showing a loading indicator or splash screen while translations download. As an accepted
+  trade-off, a cold load can show an empty screen for up to 2.5 seconds.
 
 ## Regression Risk *(mandatory)*
 
@@ -169,30 +187,38 @@ always asks for the `default` language, so it discards the language the login pa
   reports the same build — the UI renders with it as soon as the configuration request returns,
   without requesting translations. The only request the first render waits for is the
   configuration request.
-- **AC-003**: While newer translations are downloading, lookups return the saved text rather than
-  raw keys.
+- **AC-003**: When the saved copy is in the language in effect but from an older build, lookups
+  return the saved text rather than raw keys while the newer translations download. A saved copy
+  in a different language is never used, during the download or after a timeout.
 - **AC-004**: If `/api/v1/appconfiguration` fails, the UI still shows translated labels, using the
-  saved copy or a fresh download of the default language.
+  saved copy in the language in effect, or a fresh download of that language.
 - **AC-005**: If the translations request itself fails, the UI still loads; raw keys are
   acceptable only in this case, and the failure is logged to the browser console. The same
-  applies when translations are still not available 2.5 seconds after startup (counting the
-  configuration and translations requests together): the UI stops waiting, renders with whatever
-  translations it has (the saved copy, if any), and the timeout is logged to the browser console.
-- **AC-006**: A language chosen on the login page is still in effect after login. It is not
-  replaced by the default language, and the UI never shows a mix of the two.
+  applies when translations are still not available 2.5 seconds after the startup sends the
+  configuration request (counting the configuration and translations requests together): the UI
+  stops waiting, renders with the saved copy if it is in the language in effect (otherwise with
+  raw keys), and the timeout is logged to the browser console. When the translations arrive
+  later, the user menu shows translated labels; other read-once text may keep raw keys until the
+  next load (see non-goals).
+- **AC-006**: A language chosen on the login page is in effect after login and on every later
+  load in that browser — including the first load after a deploy — until it is changed again on
+  the login page. It is not replaced by the default language, and the UI never shows a mix of
+  the two.
 - **AC-007**: Regression — the login page, its language selector, and the separately bootstrapped
   apps that load translations themselves keep showing translated text as they do today.
 - **Verification method**:
   - Unit tests (Vitest + Spectator) on the message service and the admin UI startup covering: no
-    saved copy; a stale saved copy (build date changed, and language changed); a valid saved copy
-    used without a translations request; a failed configuration request; a failed translations request
-    (logged to the console, UI still loads); configuration or translations still pending after
-    2.5 seconds (UI renders, timeout logged to the console); lookups during a download returning the saved text; and the user's
-    data arriving before the translations — the user menu labels are translated.
+    saved copy; a saved copy from an older build (saved text returned during the download); a
+    saved copy in a different language (never used); a valid saved copy used without a
+    translations request; a failed configuration request; a failed translations request (logged
+    to the console, UI still loads); configuration or translations still pending 2.5 seconds
+    after the configuration request is sent (UI renders, timeout logged to the console); and the
+    user's data arriving before the translations — the user menu labels are translated, including
+    when the translations arrive after the timeout.
   - Unit test on the login flow: the language chosen on the login page is the one loaded after
-    login.
+    login and on a later load with a new build date.
   - Manual: the reproduction steps above, plus the same steps after changing the language on the
-    login page, and with `/api/v1/appconfiguration` blocked in DevTools.
+    login page (and reloading), and with `/api/v1/appconfiguration` blocked in DevTools.
 
 ## Assumptions
 
@@ -202,3 +228,5 @@ always asks for the `default` language, so it discards the language the login pa
   including keys added by a new build, which a saved copy from the previous build lacks.
 - "The language chosen on the login page" means the locale picked in the login page's language
   selector, saved in the browser; the user's profile language is not involved.
+- The configuration request is already sent on every load today, so waiting for it adds its
+  response time to the first render, not an extra request.
