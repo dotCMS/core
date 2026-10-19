@@ -13,6 +13,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.DateUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import java.time.Instant;
@@ -65,6 +66,8 @@ public class DotWebdavAuthenticationIntegrationTest {
             assertEquals(owner.getUserId(), helper.authorizePrincipal(login, jwt).getUserId());
 
             tokens.revokeToken(token, APILocator.systemUser());
+            // isRevoked requires the revocation timestamp to be strictly before the current time.
+            DateUtil.sleep(1000);
             assertThrows(DotSecurityException.class,
                     () -> helper.authorizePrincipal(login, jwt));
         } finally {
