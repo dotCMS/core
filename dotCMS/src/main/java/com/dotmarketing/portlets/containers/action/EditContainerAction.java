@@ -43,6 +43,8 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.Validator;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
+import com.dotmarketing.exception.DotDataValidationException;
+import com.dotmarketing.portlets.containers.business.ContainerSortBy;
 import com.liferay.portal.struts.ActionException;
 import com.liferay.portal.util.Constants;
 import com.liferay.portlet.ActionRequestImpl;
@@ -522,6 +524,12 @@ public class EditContainerAction extends DotPortletAction implements
 				SessionMessages.add(httpReq, "message", "message.insufficient.permissions.to.save");
 				throw new ActionException(WebKeys.USER_PERMISSIONS_EXCEPTION);
 			}
+		}
+
+		// Only a supported "sort contentlets by" value can be stored on a container
+		if (!ContainerSortBy.isSupported(container.getSortContentletsBy())) {
+			throw new DotDataValidationException(
+					"sortContentletsBy must be one of the supported sort columns");
 		}
 
 		// Current associated templates

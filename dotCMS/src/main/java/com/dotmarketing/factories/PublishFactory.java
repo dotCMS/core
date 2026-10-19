@@ -38,6 +38,7 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 
+import com.dotmarketing.portlets.containers.business.ContainerSortBy;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -590,7 +591,11 @@ public class PublishFactory {
                     Set contentletSet = new HashSet();
 
                     String condition = "working=" + com.dotmarketing.db.DbConnectionFactory.getDBTrue() + " and deleted=" + com.dotmarketing.db.DbConnectionFactory.getDBFalse();
-                    String sort = (container.getSortContentletsBy() == null) ? "sort_order" : container.getSortContentletsBy();
+                    // Only a supported container sort is used; the page order does not apply to
+                    // this query, which falls back to the contentlet sort order instead
+                    final String sort = ContainerSortBy.resolve(container.getSortContentletsBy())
+                            .filter(resolved -> !ContainerSortBy.DEFAULT_ORDER_BY.equals(resolved))
+                            .orElse("contentlet.sort_order");
 
                     while ( catsIter.hasNext() ) {
                         Category category = (Category) catsIter.next();

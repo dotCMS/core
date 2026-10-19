@@ -28,9 +28,9 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.util.Constants;
-import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import java.io.File;
 import java.io.IOException;
@@ -376,15 +376,64 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
     @Test
     public void saveContainerWithUnsupportedSortContentletsBy() throws DotSecurityException, DotDataException {
         final Host host = new SiteDataGen().nextPersisted();
-        final Container container = new ContainerDataGen().site(host).sortContenletsBy("tree_order, title").next();
+        final String title = "unsupported-sort-" + System.currentTimeMillis();
+        final Container container = new ContainerDataGen().site(host).title(title)
+                .sortContenletsBy("tree_order, title").next();
 
         try {
             APILocator.getContainerAPI()
                     .save(container, Collections.emptyList(), host, APILocator.systemUser(), false);
             fail("A container with an unsupported sort value must not be saved");
         } catch (final DotDataValidationException expected) {
-            assertFalse(UtilMethods.isSet(container.getInode()));
+            final int stored = new DotConnect()
+                    .setSQL("select count(*) as x from dot_containers where title = ?")
+                    .addParam(title).getInt("x");
+            assertEquals(0, stored);
         }
+    }
+
+    /**
+     * Method to Test: {@link ContainerAPIImpl#copy(Container, Host, User, boolean)}
+     * When: the source container carries a "sort contentlets by" value that is not supported
+     * (for example data stored before the value was validated)
+     * Should: copy the container with the default order instead of the stored value
+     */
+    @Test
+    public void copyContainerWithUnsupportedStoredSortContentletsBy() throws DotSecurityException, DotDataException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().site(host).nextPersisted();
+        // Write the table directly to simulate a value stored before it was validated on save
+        new DotConnect().setSQL("update dot_containers set sort_contentlets_by = ? where inode = ?")
+                .addParam("title, mod_date").addParam(container.getInode()).loadResult();
+        CacheLocator.getContainerCache().remove(container);
+        final Container stored = APILocator.getContainerAPI().find(container.getInode(), APILocator.systemUser(), false);
+        assertEquals("title, mod_date", stored.getSortContentletsBy());
+
+        // Saving the container again with the stored value untouched is allowed and clears it
+        final Container resaved = APILocator.getContainerAPI()
+                .save(stored, Collections.emptyList(), host, APILocator.systemUser(), false);
+        assertTrue(ContainerSortBy.isSupported(APILocator.getContainerAPI()
+                .find(resaved.getInode(), APILocator.systemUser(), false).getSortContentletsBy()));
+
+        // Changing it to another unsupported value is still rejected
+        stored.setSortContentletsBy("title, inode");
+        try {
+            APILocator.getContainerAPI()
+                    .save(stored, Collections.emptyList(), host, APILocator.systemUser(), false);
+            fail("A changed unsupported sort value must not be saved");
+        } catch (final DotDataValidationException expected) {
+            // nothing else to check
+        }
+
+        stored.setSortContentletsBy("title, mod_date");
+        final Container copy = APILocator.getContainerAPI().copy(stored, host, APILocator.systemUser(), false);
+
+        final Container copyFromDatabase = APILocator.getContainerAPI()
+                .find(copy.getInode(), APILocator.systemUser(), false);
+        assertFalse(copyFromDatabase.getIdentifier().equals(stored.getIdentifier()));
+        assertTrue(ContainerSortBy.isSupported(copyFromDatabase.getSortContentletsBy()));
+        assertEquals(ContainerSortBy.DEFAULT_ORDER_BY,
+                ContainerSortBy.resolveOrDefault(copyFromDatabase.getSortContentletsBy()));
     }
 
     /**
