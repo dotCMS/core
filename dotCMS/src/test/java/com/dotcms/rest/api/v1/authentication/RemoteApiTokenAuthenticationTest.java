@@ -108,6 +108,7 @@ public class RemoteApiTokenAuthenticationTest extends UnitTestBase {
         remote.assertRedirectsDisabled();
         remote.assertResponsesClosed();
         assertEquals(Response.Status.OK.getStatusCode(), result.getStatus());
+        assertEquals(remote.tokenBody(), result.getEntity());
         verify(remote.builder, times(2)).post(any());
         verify(remote.client, times(1)).close();
     }
@@ -348,8 +349,10 @@ public class RemoteApiTokenAuthenticationTest extends UnitTestBase {
             authResponse = response(Response.Status.OK.getStatusCode());
             loginBody = "{\"entity\":{\"userId\":\"admin\"}}";
             when(authResponse.readEntity(String.class)).thenReturn(loginBody);
+            // A login may also set unrelated cookies; only JSESSIONID may be forwarded on.
             when(authResponse.getCookies()).thenReturn(
-                    Map.of(SESSION_COOKIE, new NewCookie(SESSION_COOKIE, "session-value")));
+                    Map.of(SESSION_COOKIE, new NewCookie(SESSION_COOKIE, "session-value"),
+                            "access_token", new NewCookie("access_token", "unrelated-value")));
         }
 
         private void loginSucceedsWithoutCookie() {

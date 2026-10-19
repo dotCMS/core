@@ -28,8 +28,9 @@ import org.junit.rules.ExternalResource;
  *
  * <p>The token object is retained until the delete call, so cleanup never has to look the token up
  * again. {@code ApiTokenAPI.deleteToken} revalidates the owning user, so a token whose owner was
- * removed before cleanup cannot be deleted through the public API; such a token is logged and the
- * remaining tokens are still cleaned up.</p>
+ * already removed fails the first delete; the deletion copy is then re-homed to the system user and
+ * deleted by the same token id. Both calls are best-effort: if each one fails the failure is logged
+ * and the remaining tokens are still cleaned up.</p>
  */
 public class ApiTokenTestUtils extends ExternalResource implements AutoCloseable {
 
@@ -156,6 +157,7 @@ public class ApiTokenTestUtils extends ExternalResource implements AutoCloseable
         }
     }
 
+    /** Returns the token API, resolving it from the locator on first use. */
     private ApiTokenAPI apiTokenAPI() {
         if (tokenAPI == null) {
             tokenAPI = APILocator.getApiTokenAPI();
@@ -163,6 +165,7 @@ public class ApiTokenTestUtils extends ExternalResource implements AutoCloseable
         return tokenAPI;
     }
 
+    /** Returns the deleting user, resolving the system user from the locator on first use. */
     private User deletingUser() {
         if (deletingUser == null) {
             deletingUser = APILocator.systemUser();

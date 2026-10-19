@@ -181,6 +181,9 @@ public class ServletTestUtils {
             verify(dispatcher, times(2)).forward(any(), any());
 
         } finally {
+            // Delete the fixture token first, while its owner still exists. Host/role cleanup can
+            // throw, and doing this last would skip it and orphan the token.
+            tokenUtils.close();
             // Clean up
             if (testHost != null) {
                 final User systemUser = APILocator.systemUser();
@@ -192,8 +195,6 @@ public class ServletTestUtils {
             if (testRole != null) {
                 RoleDataGen.remove(testRole);
             }
-            // Delete the fixture token while its owner still exists, then remove the owner.
-            tokenUtils.close();
             if (testUser != null) {
                 UserDataGen.remove(testUser);
             }
