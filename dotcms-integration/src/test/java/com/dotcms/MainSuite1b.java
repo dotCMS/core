@@ -52,6 +52,8 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rendering.velocity.SecureIntrospectorRenderTest.class,
         com.dotcms.rendering.velocity.VelocityMacroCacheTest.class,
         com.dotcms.rendering.velocity.VelocityUtilTest.class,
+        com.dotcms.rendering.velocity.WidgetRendererTest.class,
+        com.dotcms.rendering.velocity.viewtools.CMSUsersWebAPIIntegrationTest.class,
         com.dotcms.rendering.velocity.viewtools.navigation.NavToolTest.class,
         com.dotcms.rendering.velocity.viewtools.navigation.NavToolCacheTest.class,
         com.dotcms.rendering.velocity.viewtools.content.ContentMapTest.class,

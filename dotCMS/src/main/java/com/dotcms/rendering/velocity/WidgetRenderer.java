@@ -1,12 +1,18 @@
 package com.dotcms.rendering.velocity;
 
+import com.dotcms.featureflag.FeatureFlagName;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
+import com.liferay.portal.model.User;
 import io.vavr.Lazy;
 import java.io.StringWriter;
 import java.util.List;
@@ -23,6 +29,12 @@ import org.apache.velocity.context.Context;
  * under the {@code widget} prefix, so the widget code can use either {@code $title} or
  * {@code $widgettitle}. The web context (request, session, view tools) is added on top
  * and overrides any property with the same name.
+ * <p>
+ * The widget code is evaluated once, and that is the result. Evaluating the produced text a
+ * second time, which makes Velocity written inside the widget field values run, is available
+ * only when {@link FeatureFlagName#FEATURE_FLAG_WIDGET_FIELD_VELOCITY_RENDER} is on and the
+ * widget was last modified by a user holding the {@link Role#SCRIPTING_DEVELOPER} role, the
+ * same rule the {@code $sql} and {@code $secrets} view tools apply.
  */
 public class WidgetRenderer {
 
@@ -54,7 +66,6 @@ public class WidgetRenderer {
         }
 
         final StringWriter firstEval = new StringWriter();
-        final StringWriter secondEval = new StringWriter();
         final StringBuilder widgetExecuteCode = new StringBuilder();
 
         Context context = VelocityUtil.getBasicContext();
@@ -89,8 +100,62 @@ public class WidgetRenderer {
         widgetExecuteCode.append(fval).append("\n");
 
         VelocityUtil.getEngine().evaluate(context, firstEval, "", widgetExecuteCode.toString());
+        if (!rendersFieldVelocity(widget)) {
+            return firstEval.toString();
+        }
+
+        final StringWriter secondEval = new StringWriter();
         VelocityUtil.getEngine().evaluate(context, secondEval, "", firstEval.toString());
         return secondEval.toString();
+    }
+
+    /**
+     * Tells whether the text produced by the widget code gets evaluated once more as Velocity,
+     * which runs any Velocity found in the widget field values.
+     *
+     * @param widget the widget being rendered
+     * @return {@code true} only when the feature flag is on and the widget's last modifier
+     * holds the Scripting Developer role
+     */
+    boolean rendersFieldVelocity(final Contentlet widget) {
+        if (!Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_WIDGET_FIELD_VELOCITY_RENDER, false)) {
+            Logger.debug(this, () -> String.format("Widget %s: field values render as text, %s is off",
+                    widget.getIdentifier(), FeatureFlagName.FEATURE_FLAG_WIDGET_FIELD_VELOCITY_RENDER));
+            return false;
+        }
+        return lastModifiedByScriptingDeveloper(widget);
+    }
+
+    /**
+     * Resolves the user who last modified the widget and checks the Scripting Developer role on it.
+     *
+     * @param widget the widget being rendered
+     * @return {@code true} when that user exists and holds the role; {@code false} otherwise or on any lookup error
+     */
+    private boolean lastModifiedByScriptingDeveloper(final Contentlet widget) {
+        final String modUserId = widget.getModUser();
+        if (!UtilMethods.isSet(modUserId)) {
+            Logger.debug(this, () -> String.format("Widget %s: field values render as text, no last modifier recorded",
+                    widget.getIdentifier()));
+            return false;
+        }
+        try {
+            final User modUser = APILocator.getUserAPI().loadUserById(modUserId, APILocator.systemUser(), false);
+            final Role scriptingDeveloper = APILocator.getRoleAPI().loadRoleByKey(Role.SCRIPTING_DEVELOPER);
+            final boolean hasRole = modUser != null && scriptingDeveloper != null
+                    && APILocator.getRoleAPI().doesUserHaveRole(modUser, scriptingDeveloper);
+            if (!hasRole) {
+                Logger.debug(this, () -> String.format(
+                        "Widget %s: field values render as text, last modifier %s lacks the %s role",
+                        widget.getIdentifier(), modUserId, Role.SCRIPTING_DEVELOPER));
+            }
+            return hasRole;
+        } catch (final Exception e) {
+            Logger.warnAndDebug(this.getClass(), String.format(
+                    "Widget %s: field values render as text, could not resolve last modifier %s: %s",
+                    widget.getIdentifier(), modUserId, e.getMessage()), e);
+            return false;
+        }
     }
 
 }

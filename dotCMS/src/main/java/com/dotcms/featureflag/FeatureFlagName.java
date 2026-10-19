@@ -38,6 +38,13 @@ public interface FeatureFlagName {
     // Unique Fields
     String FEATURE_FLAG_DB_UNIQUE_FIELD_VALIDATION = "FEATURE_FLAG_DB_UNIQUE_FIELD_VALIDATION";
 
+    /**
+     * When on, the widget REST render ({@code /api/widget} and {@code /api/content?render=true})
+     * evaluates Velocity found in the widget field values, provided the widget was last modified
+     * by a user holding the Scripting Developer role. Off by default: field values render as text.
+     */
+    String FEATURE_FLAG_WIDGET_FIELD_VELOCITY_RENDER = "FEATURE_FLAG_WIDGET_FIELD_VELOCITY_RENDER";
+
     // others
     String FULLSCREEN_FIELD_FEATURE_FLAG = "content.edit.ui.fullscreen";
 

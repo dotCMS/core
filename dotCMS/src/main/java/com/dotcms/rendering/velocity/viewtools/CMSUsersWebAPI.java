@@ -45,6 +45,16 @@ public class CMSUsersWebAPI implements ViewTool {
 		this.categoryAPI = categoryAPI;
 	}
 
+	/**
+	 * Returns the copy of a user that templates get to see.
+	 *
+	 * @param user the user loaded through the API, possibly {@code null}
+	 * @return a {@link TemplateUser} carrying the profile data, or {@code null} when the user is {@code null}
+	 */
+	static User forTemplate(final User user) {
+		return user == null ? null : new TemplateUser(user);
+	}
+
 	public void init(Object obj) {
 		ViewContext context = (ViewContext) obj;
 		this.request = context.getRequest();
@@ -66,7 +76,7 @@ public class CMSUsersWebAPI implements ViewTool {
 
 	public User getUserByEmail(String email) {
 		try {
-			return APILocator.getUserAPI().loadByUserByEmail(email, APILocator.getUserAPI().getSystemUser(), false);
+			return forTemplate(APILocator.getUserAPI().loadByUserByEmail(email, APILocator.getUserAPI().getSystemUser(), false));
 		} catch (Exception e) {
 			Logger.error(CMSUsersWebAPI.class,e.getMessage(), e);
 			return null;
@@ -91,7 +101,7 @@ public class CMSUsersWebAPI implements ViewTool {
 	public User getUserByUserId(String userId) {
 		if (UtilMethods.isSet(userId)) {
 			try{
-				return APILocator.getUserAPI().loadUserById(userId,APILocator.getUserAPI().getSystemUser(),false);
+				return forTemplate(APILocator.getUserAPI().loadUserById(userId,APILocator.getUserAPI().getSystemUser(),false));
 			} catch (Exception e1) {
 				Logger.error(CMSUsersWebAPI.class,e1.getMessage(), e1);
 				return null;
@@ -141,7 +151,7 @@ public class CMSUsersWebAPI implements ViewTool {
 		
 		for (String userId : uids) {
 			try {
-				ret.add(APILocator.getUserAPI().loadUserById(userId, APILocator.getUserAPI().getSystemUser(), true));
+				ret.add(forTemplate(APILocator.getUserAPI().loadUserById(userId, APILocator.getUserAPI().getSystemUser(), true)));
 			} catch (Exception e1) {
 				Logger.error(this, e1.getMessage(), e1);
 			}	
