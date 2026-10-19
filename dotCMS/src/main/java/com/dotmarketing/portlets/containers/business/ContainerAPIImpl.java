@@ -16,8 +16,10 @@ import com.dotmarketing.beans.*;
 import com.dotmarketing.business.*;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
@@ -696,6 +698,24 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 		return containerFactory.findContainersUnder(parentPermissionable);
 	}
 
+	/**
+	 * Checks that the "sort contentlets by" setting of a container, when present, names one of
+	 * the supported sort columns. The stored value is later used to order the contentlets of the
+	 * container, so only values accepted by {@link SQLUtil#sanitizeSortBy(String)} can be saved.
+	 *
+	 * @param container the container about to be saved
+	 * @throws DotDataValidationException if the value is set and is not a supported sort column
+	 */
+	private void validateSortContentletsBy(final Container container)
+			throws DotDataValidationException {
+		final String sortContentletsBy = container.getSortContentletsBy();
+		if (UtilMethods.isSet(sortContentletsBy)
+				&& !UtilMethods.isSet(SQLUtil.sanitizeSortBy(sortContentletsBy))) {
+			throw new DotDataValidationException(
+					"sortContentletsBy must be one of the supported sort columns");
+		}
+	}
+
 	@WrapInTransaction
 	@Override
 	@SuppressWarnings("unchecked")
@@ -707,6 +727,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 			throw new IllegalArgumentException(
 					"System Container and its associated data cannot be saved.");
 		}
+		validateSortContentletsBy(container);
 		if (!APILocator.getPermissionAPI()
 				.doesUserHavePermission(host, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user,
 						respectFrontendRoles)

@@ -1483,9 +1483,7 @@ public class ESContentFactoryImpl implements ContentletFactory {
             condition.append(" and contentletvi.lang = ").append(languageId);
         }
 
-        if (!UtilMethods.isSet(orderby) || orderby.equals("tree_order")) {
-            orderby = "multi_tree.tree_order";
-        }
+        final String effectiveOrderBy = resolvePageContentletsOrderBy(orderby);
         final StringBuilder query = new StringBuilder();
         query.append("SELECT contentlet.*, contentlet_1_.owner FROM contentlet JOIN inode contentlet_1_ ON (contentlet.inode=contentlet_1_.inode) ")
                 .append(" JOIN multi_tree ON (multi_tree.child = contentlet.identifier) ")
@@ -1493,7 +1491,7 @@ public class ESContentFactoryImpl implements ContentletFactory {
                 .append(" where multi_tree.parent1 = ? and multi_tree.parent2 = ? and ")
                 .append(condition.toString())
                 .append(" order by ")
-                .append(orderby);
+                .append(effectiveOrderBy);
 
         final DotConnect dotConnect = new DotConnect();
         dotConnect.setSQL(query.toString());
@@ -1508,14 +1506,31 @@ public class ESContentFactoryImpl implements ContentletFactory {
 	}
 
 
+    /**
+     * Resolves the {@code order by} used when loading the contentlets of a page container.
+     * <p>
+     * The requested value is checked against {@link SQLUtil#sanitizeSortBy(String)} before it is
+     * placed in the query, so only a column from the supported sort list can be used. An empty
+     * value, the {@code tree_order} alias, or a value that is not on that list all resolve to the
+     * multi-tree position, which is the default order of a container.
+     *
+     * @param orderby the requested sort, typically the container's "sort contentlets by" setting
+     * @return the sort expression to append after {@code order by}
+     */
+    static String resolvePageContentletsOrderBy(final String orderby) {
+        final String sanitized = SQLUtil.sanitizeSortBy(orderby);
+        if (!UtilMethods.isSet(sanitized) || "tree_order".equals(sanitized)) {
+            return "multi_tree.tree_order";
+        }
+        return sanitized;
+    }
+
 	public List<Contentlet> findPageContentletFromCache(final String HTMLPageIdentifier,
             final String containerIdentifier, String orderby, final boolean working,
             long languageId) throws DotDataException, DotStateException, DotSecurityException {
         StringBuilder condition = new StringBuilder();
 
-        if (!UtilMethods.isSet(orderby) || orderby.equals("tree_order")) {
-            orderby = " multi_tree.tree_order ";
-        }
+        orderby = resolvePageContentletsOrderBy(orderby);
         languageId = (languageId==0) ?  languageAPI.getDefaultLanguage().getId() : languageId;
 
         condition

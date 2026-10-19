@@ -28,7 +28,9 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.util.Constants;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import java.io.File;
 import java.io.IOException;
@@ -348,6 +350,41 @@ public class ContainerAPIImplTest extends IntegrationTestBase  {
 
         final VersionInfo versionInfo = APILocator.getVersionableAPI().getVersionInfo(container.getIdentifier());
         assertEquals(versionInfo.getWorkingInode(), containerFromDatabase.get().getInode());
+    }
+
+    /**
+     * Method to Test: {@link ContainerAPIImpl#save(Container, List, Host, User, boolean)}
+     * When: the "sort contentlets by" value is one of the supported sort columns
+     * Should: save the container and keep the value
+     */
+    @Test
+    public void saveContainerWithSupportedSortContentletsBy() throws DotSecurityException, DotDataException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().site(host).sortContenletsBy("mod_date desc").nextPersisted();
+
+        final Container containerFromDatabase = APILocator.getContainerAPI()
+                .find(container.getInode(), APILocator.systemUser(), false);
+
+        assertEquals("mod_date desc", containerFromDatabase.getSortContentletsBy());
+    }
+
+    /**
+     * Method to Test: {@link ContainerAPIImpl#save(Container, List, Host, User, boolean)}
+     * When: the "sort contentlets by" value is not a supported sort column
+     * Should: reject the container with a validation error and save nothing
+     */
+    @Test
+    public void saveContainerWithUnsupportedSortContentletsBy() throws DotSecurityException, DotDataException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().site(host).sortContenletsBy("tree_order, title").next();
+
+        try {
+            APILocator.getContainerAPI()
+                    .save(container, Collections.emptyList(), host, APILocator.systemUser(), false);
+            fail("A container with an unsupported sort value must not be saved");
+        } catch (final DotDataValidationException expected) {
+            assertFalse(UtilMethods.isSet(container.getInode()));
+        }
     }
 
     /**

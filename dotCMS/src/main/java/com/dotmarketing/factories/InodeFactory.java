@@ -65,13 +65,16 @@ public class InodeFactory {
 		try {
 			final String tableName = c.getDeclaredConstructor().newInstance().getType();
 			final HibernateUtil dh = new HibernateUtil(c);
+			// Only a column from the supported sort list may order this query
+			final String sanitizedOrderBy = SQLUtil.sanitizeSortBy(orderby);
 
 			String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
 					+ tableName + "_1_ where tree.parent = ? and tree.child = " + tableName + ".inode and " + tableName
-					+ "_1_.inode = " + tableName + ".inode and "+tableName+"_1_.type = '"+tableName+"' and " + condition + " order by " + orderby;
+					+ "_1_.inode = " + tableName + ".inode and "+tableName+"_1_.type = '"+tableName+"' and " + condition + " order by " + sanitizedOrderBy;
 
-			if(!UtilMethods.isSet(orderby))
+			if(!UtilMethods.isSet(sanitizedOrderBy)) {
 				sql +=  tableName + ".inode desc";
+			}
 
 			//sql += (sql.toLowerCase().indexOf("limit") == -1 ? ", " + tableName + ".inode desc" : "");
 
