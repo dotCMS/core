@@ -144,4 +144,16 @@ public class LinkCheckerAPIImplTest extends UnitTestBase {
         assertFalse(LinkCheckerAPIImpl.isHostAllowed("127.0.0.1"));
         assertFalse(LinkCheckerAPIImpl.isHostAllowed("10.1.2.3"));
     }
+    /**
+     * When: the host of the link cannot be resolved
+     * Should: report it as broken without checking whether the host is allowed
+     */
+    @Test
+    public void unresolvableHost_isBroken() {
+        final List<String> checkedHosts = new CopyOnWriteArrayList<>();
+        final Optional<Integer> status = LinkCheckerAPIImpl.getExternalLinkStatus(new HttpClient(),
+                "http://does-not-exist.invalid/page", null, host -> checkedHosts.add(host) && false);
+        assertEquals(Optional.of(-1), status);
+        assertTrue(checkedHosts.isEmpty());
+    }
 }

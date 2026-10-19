@@ -370,8 +370,14 @@ public class LinkCheckerAPIImpl implements LinkCheckerAPI {
                 return Optional.of(-1);
             }
             final String protocol = target.getProtocol();
-            if (!(HTTP.equalsIgnoreCase(protocol) || HTTPS.equalsIgnoreCase(protocol))
-                    || !isHostAllowed.test(target.getHost())) {
+            if (!(HTTP.equalsIgnoreCase(protocol) || HTTPS.equalsIgnoreCase(protocol))) {
+                return Optional.empty();
+            }
+            if (!isResolvable(target.getHost())) {
+                // a host that does not exist is a broken link
+                return Optional.of(-1);
+            }
+            if (!isHostAllowed.test(target.getHost())) {
                 return Optional.empty();
             }
 
@@ -398,6 +404,14 @@ public class LinkCheckerAPIImpl implements LinkCheckerAPI {
         }
         return Optional.of(-1);
     } // getExternalLinkStatus.
+
+    private static boolean isResolvable(final String host) {
+        try {
+            return UtilMethods.isSet(host) && java.net.InetAddress.getAllByName(host).length > 0;
+        } catch (final java.net.UnknownHostException e) {
+            return false;
+        }
+    }
 
     @WrapInTransaction
     @Override
