@@ -2,6 +2,7 @@ package com.dotcms.rendering.velocity.viewtools;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
@@ -10,6 +11,7 @@ import javax.servlet.http.HttpSession;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
+import com.dotcms.rendering.velocity.viewtools.bean.UserProfile;
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
@@ -20,7 +22,7 @@ import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.categories.business.CategoryAPI;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
@@ -29,21 +31,27 @@ import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 
+/**
+ * The {@code $cmsuser} Velocity tool: user lookups and role checks for templates.
+ *
+ * <p>Looked-up accounts are returned as read-only {@link UserProfile} objects. Installations
+ * whose templates pass looked-up accounts to methods that require a {@link User} can set
+ * {@value #LEGACY_USER_OBJECTS_PROP} to {@code true}; lookups then return detached {@link User}
+ * copies with the credential fields cleared. Only enable it when templates need it, because those
+ * copies are accepted wherever a {@link User} is.
+ */
 public class CMSUsersWebAPI implements ViewTool {
+
+	/**
+	 * dotCMS Config key (env: {@code DOT_VELOCITY_CMSUSER_LEGACY_USER_OBJECTS}). When
+	 * {@code true}, lookups return {@link User} copies instead of {@link UserProfile} objects.
+	 * Defaults to {@code false}.
+	 */
+	public static final String LEGACY_USER_OBJECTS_PROP = "velocity.cmsuser.legacy.user.objects";
 
 	private HttpServletRequest request;
 	Context ctx;
 	User user = null;
-
-	private CategoryAPI categoryAPI = APILocator.getCategoryAPI();
-
-	public CategoryAPI getCategoryAPI() {
-		return categoryAPI;
-	}
-
-	public void setCategoryAPI(CategoryAPI categoryAPI) {
-		this.categoryAPI = categoryAPI;
-	}
 
 	public void init(Object obj) {
 		ViewContext context = (ViewContext) obj;
@@ -60,13 +68,16 @@ public class CMSUsersWebAPI implements ViewTool {
 	}
 
 	/**
-	 * @param email
-	 * @return
+	 * Looks up an account by email address.
+	 *
+	 * @param email the email address of the account
+	 * @return a read-only {@link UserProfile} of the account (a detached {@link User} copy
+	 *         without credential fields when {@value #LEGACY_USER_OBJECTS_PROP} is on), or
+	 *         {@code null} if no account matches
 	 */
-
-	public User getUserByEmail(String email) {
+	public Object getUserByEmail(final String email) {
 		try {
-			return APILocator.getUserAPI().loadByUserByEmail(email, APILocator.getUserAPI().getSystemUser(), false);
+			return forTemplate(APILocator.getUserAPI().loadByUserByEmail(email, APILocator.getUserAPI().getSystemUser(), false));
 		} catch (Exception e) {
 			Logger.error(CMSUsersWebAPI.class,e.getMessage(), e);
 			return null;
@@ -82,16 +93,17 @@ public class CMSUsersWebAPI implements ViewTool {
 
 
 	/**
-	 * get User by user id
-	 * 
-	 * @param userId
-	 *            userid of the user to be obtained
-	 * @return User
+	 * Looks up an account by user id.
+	 *
+	 * @param userId the id of the account
+	 * @return a read-only {@link UserProfile} of the account (a detached {@link User} copy
+	 *         without credential fields when {@value #LEGACY_USER_OBJECTS_PROP} is on), or
+	 *         {@code null} if no account matches
 	 */
-	public User getUserByUserId(String userId) {
+	public Object getUserByUserId(final String userId) {
 		if (UtilMethods.isSet(userId)) {
 			try{
-				return APILocator.getUserAPI().loadUserById(userId,APILocator.getUserAPI().getSystemUser(),false);
+				return forTemplate(APILocator.getUserAPI().loadUserById(userId,APILocator.getUserAPI().getSystemUser(),false));
 			} catch (Exception e1) {
 				Logger.error(CMSUsersWebAPI.class,e1.getMessage(), e1);
 				return null;
@@ -124,14 +136,16 @@ public class CMSUsersWebAPI implements ViewTool {
 
 
 	/**
-	 * This method return a list of users with the specified group
-	 * @param groupId compare string
-	 * @return List<User>
+	 * Lists the accounts that hold the given role.
+	 *
+	 * @param groupId the id of the role
+	 * @return read-only {@link UserProfile} objects for the accounts (detached {@link User}
+	 *         copies without credential fields when {@value #LEGACY_USER_OBJECTS_PROP} is on)
 	 * @deprecated will now return a list of roles
 	 */
-	public List<User> getAllUsersInGroup(String groupId) {
+	public List<Object> getAllUsersInGroup(final String groupId) {
 		List<String> uids;
-		List<User> ret = new ArrayList<>();
+		List<Object> ret = new ArrayList<>();
 		try {
 			uids = APILocator.getRoleAPI().findUserIdsForRole(APILocator.getRoleAPI().loadRoleById(groupId));
 		} catch (Exception e1) {
@@ -141,7 +155,7 @@ public class CMSUsersWebAPI implements ViewTool {
 		
 		for (String userId : uids) {
 			try {
-				ret.add(APILocator.getUserAPI().loadUserById(userId, APILocator.getUserAPI().getSystemUser(), true));
+				ret.add(forTemplate(APILocator.getUserAPI().loadUserById(userId, APILocator.getUserAPI().getSystemUser(), true)));
 			} catch (Exception e1) {
 				Logger.error(this, e1.getMessage(), e1);
 			}	
@@ -151,24 +165,31 @@ public class CMSUsersWebAPI implements ViewTool {
 
 
 	/**
-	 * This method return all the groups joined by the specified user
-	 * @param user User
-	 * @return List<Group>
+	 * Returns the roles held by the given account.
+	 *
+	 * @param user a {@link User} or a {@link UserProfile} returned by this tool's lookups
+	 * @return the roles of the account
 	 */
-	public List<Role> getUserGroups(User user) {
+	public List<Role> getUserGroups(final Object user) {
 		return getUserRoles(user);
 	}
 
 
 
 	/**
-	 * This method return all the roles joined by the specified user
-	 * @param user User
-	 * @return List<Role>
+	 * Returns the roles held by the given account.
+	 *
+	 * @param user a {@link User} or a {@link UserProfile} returned by this tool's lookups
+	 * @return the roles of the account, an empty list if no account is given, or {@code null}
+	 *         if the roles cannot be loaded
 	 */
-	public List<Role> getUserRoles(User user) {
+	public List<Role> getUserRoles(final Object user) {
+		final String userId = userIdOf(user);
+		if (userId == null) {
+			return Collections.emptyList();
+		}
 		try {
-			return APILocator.getRoleAPI().loadRolesForUser(user.getUserId());
+			return APILocator.getRoleAPI().loadRolesForUser(userId);
 		} catch (DotDataException e) {
 			Logger.error(this, e.getMessage(), e);
 			return null;
@@ -177,21 +198,22 @@ public class CMSUsersWebAPI implements ViewTool {
 
 
 	/**
-	 * This method return true|false if the user has
-	 * a specific role
-	 * @param user User
-	 * @param roleName String the name of the role
-	 * @return List<Role>
+	 * Checks whether the given account holds the role with the given name.
+	 *
+	 * @param user a {@link User} or a {@link UserProfile} returned by this tool's lookups
+	 * @param roleName the name of the role
+	 * @return {@code true} if the account holds the role
 	 */
-	public boolean isUserRole(User user, String roleName) {
+	public boolean isUserRole(final Object user, final String roleName) {
 		boolean retVal = false;
-		if(roleName == null){
+		final String userId = userIdOf(user);
+		if(roleName == null || userId == null){
 			return retVal;
 		}
 
 		List<Role> roles;
 		try {
-			roles = APILocator.getRoleAPI().loadRolesForUser(user.getUserId());
+			roles = APILocator.getRoleAPI().loadRolesForUser(userId);
 		} catch (DotDataException e) {
 			Logger.error(this, e.getMessage(), e);
 			return retVal;
@@ -220,18 +242,71 @@ public class CMSUsersWebAPI implements ViewTool {
 	
 	
 	/**
-	 * This method return true|false if the user has
-	 * a CMSAdmin role
-	 * @param user User
-	 * 
+	 * Checks whether the given account holds the CMS Administrator role.
+	 *
+	 * @param user a {@link User} or a {@link UserProfile} returned by this tool's lookups
+	 * @return {@code true} if the account is a CMS Administrator
 	 */
-	public boolean isCMSAdmin(User user) {
-		if(user==null) {
-		    return false;
+	public boolean isCMSAdmin(final Object user) {
+		if (user instanceof UserProfile) {
+			return ((UserProfile) user).isAdmin();
 		}
-		return user.isAdmin();
-	}	
-	
-	
-	
+		if (user instanceof User) {
+			return ((User) user).isAdmin();
+		}
+		return false;
+	}
+
+	/**
+	 * Resolves the user id of an account passed in by a template.
+	 *
+	 * @param user a {@link User}, a {@link UserProfile}, or anything else
+	 * @return the user id, or {@code null} if {@code user} is not an account
+	 */
+	private static String userIdOf(final Object user) {
+		if (user instanceof UserProfile) {
+			return ((UserProfile) user).getUserId();
+		}
+		if (user instanceof User) {
+			return ((User) user).getUserId();
+		}
+		return null;
+	}
+
+	/**
+	 * Prepares a looked-up account for a template: a read-only {@link UserProfile} by default,
+	 * or a detached {@link User} copy without credential fields when
+	 * {@value #LEGACY_USER_OBJECTS_PROP} is on.
+	 *
+	 * @param user the looked-up account, may be {@code null}
+	 * @return the object handed to the template, or {@code null}
+	 */
+	private static Object forTemplate(final User user) {
+		if (user == null) {
+			return null;
+		}
+		return Config.getBooleanProperty(LEGACY_USER_OBJECTS_PROP, false)
+				? detachedCopyWithoutCredentials(user)
+				: new UserProfile(user);
+	}
+
+	/**
+	 * Copies a user so that templates never hold the cached record, and clears the password,
+	 * the password-reset and remember-me tokens, the additional info and the login IP addresses
+	 * on the copy.
+	 *
+	 * @param user the cached account
+	 * @return a detached copy without credential fields
+	 */
+	private static User detachedCopyWithoutCredentials(final User user) {
+		final User copy = (User) user.clone();
+		copy.setPassword(null);
+		copy.setIcqId(null);
+		copy.setRememberMeToken(null);
+		copy.setAdditionalInfo(new HashMap<>());
+		copy.setLoginIP(null);
+		copy.setLastLoginIP(null);
+		return copy;
+	}
+
 }

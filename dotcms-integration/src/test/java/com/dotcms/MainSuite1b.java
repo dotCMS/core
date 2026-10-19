@@ -59,6 +59,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rendering.velocity.viewtools.ContentSearchToolTest.class,
         com.dotmarketing.sitesearch.viewtool.SiteSearchWebAPITest.class,
         com.dotcms.rendering.velocity.viewtools.WorkflowToolTest.class,
+        com.dotcms.rendering.velocity.viewtools.CMSUsersWebAPITest.class,
         com.dotcms.rendering.velocity.viewtools.WebsiteToolTest.class,
         com.dotcms.rendering.velocity.viewtools.LanguageWebAPITest.class,
         com.dotcms.rendering.velocity.viewtools.ContainerWebAPIIntegrationTest.class,
