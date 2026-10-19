@@ -35,6 +35,9 @@ public final class ACheckerRequestValidator {
     public static final String UNSUPPORTED_LANG_MESSAGE =
             "'" + ACheckerAPI.LANG + "' parameter must be a 2 or 3 letter language code";
 
+    /** Largest number of guideline abbreviations accepted in one {@code guidelines} value. */
+    public static final int MAX_GUIDELINE_TOKENS = 20;
+
     private static final String GUIDELINE_SEPARATOR = ",";
     private static final Pattern GUIDELINE_TOKEN = Pattern.compile("[A-Za-z0-9._-]{1,100}");
     private static final Pattern LANGUAGE_TAG = Pattern.compile("[A-Za-z]{2,3}([-_][A-Za-z0-9]{2,8})*");
@@ -52,8 +55,10 @@ public final class ACheckerRequestValidator {
      *
      * @param guidelines the raw {@code guidelines} value, e.g. {@code "WCAG2-AA,508"}
      * @return the abbreviations in submitted order, as a list that cannot be modified
-     * @throws DotValidationException if any abbreviation is longer than 100 characters or contains
-     *                                anything other than letters, digits, '.', '_' or '-'
+     * @throws DotValidationException if there are more than {@value #MAX_GUIDELINE_TOKENS}
+     *                                abbreviations, or any abbreviation is longer than 100
+     *                                characters or contains anything other than letters, digits,
+     *                                '.', '_' or '-'
      */
     public static List<String> guidelineTokens(final String guidelines) {
         if (guidelines == null) {
@@ -65,7 +70,7 @@ public final class ACheckerRequestValidator {
             if (token.isEmpty()) {
                 continue;
             }
-            if (!GUIDELINE_TOKEN.matcher(token).matches()) {
+            if (!GUIDELINE_TOKEN.matcher(token).matches() || tokens.size() == MAX_GUIDELINE_TOKENS) {
                 throw new DotValidationException(UNSUPPORTED_GUIDELINES_MESSAGE);
             }
             tokens.add(token);

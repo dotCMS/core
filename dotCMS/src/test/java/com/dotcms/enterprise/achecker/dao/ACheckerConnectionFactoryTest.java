@@ -35,6 +35,13 @@ class ACheckerConnectionFactoryTest {
     /** H2 error code for a statement the account has no rights for. */
     private static final int NOT_ENOUGH_RIGHTS = 90096;
 
+    /** Statements that need database administrator rights. */
+    private static final List<String> ADMINISTRATOR_ONLY_STATEMENTS = List.of(
+            "CALL FILE_READ('nothing')",
+            "SELECT * FROM CSVREAD('nothing')",
+            "CALL LINK_SCHEMA('X', '', 'jdbc:h2:mem:x', 'sa', '', 'PUBLIC')",
+            "RUNSCRIPT FROM 'nothing'");
+
     private final List<Connection> openConnections = new ArrayList<>();
 
     private String restrictedUrl;
@@ -92,6 +99,20 @@ class ACheckerConnectionFactoryTest {
             final SQLException error = assertThrows(SQLException.class,
                     () -> statement.execute("CREATE ALIAS ABS_VALUE FOR 'java.lang.Math.abs(int)'"));
             assertEquals(ADMIN_RIGHTS_REQUIRED, error.getErrorCode());
+        }
+    }
+
+    @Test
+    void administratorOnlyStatementsAreRefused() throws SQLException {
+        // Given a connection opened with the restricted credentials
+        // When each statement that needs administrator rights runs
+        // Then every one fails with H2 error code 90040 (admin rights required)
+        for (final String sql : ADMINISTRATOR_ONLY_STATEMENTS) {
+            try (Statement statement = restricted.createStatement()) {
+                final SQLException error = assertThrows(SQLException.class, () -> statement.execute(sql),
+                        "Expected a refusal for: " + sql);
+                assertEquals(ADMIN_RIGHTS_REQUIRED, error.getErrorCode(), "Unexpected error code for: " + sql);
+            }
         }
     }
 

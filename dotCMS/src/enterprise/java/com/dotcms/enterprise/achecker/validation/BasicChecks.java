@@ -118,8 +118,14 @@ public class BasicChecks {
 	}
 
 	/**
-	 * check if the inner text is in one of the search string defined in checks.search_str
-	 * return true if in, otherwise, return false 
+	 * Tells whether the given text matches one of the search strings of a check. When the check
+	 * defines a single search string, any text matches. When the check is not found in the
+	 * database, or reading its search strings fails, the text is treated as not matching.
+	 *
+	 * @param text the inner text of the element being checked
+	 * @param check_id the id of the check whose search strings are used
+	 * @param e the element being checked; not used
+	 * @return {@code true} if the text matches, {@code false} otherwise
 	 */
 	public boolean isTextInSearchString( String text, int check_id, Node e)
 	{
@@ -129,6 +135,10 @@ public class BasicChecks {
 			ChecksDAO  checksDAO = new ChecksDAO(); 
 
 			CheckBean  row = checksDAO.getCheckByID(check_id);
+			if (row == null) {
+				Logger.warn(BasicChecks.class, "Accessibility check " + check_id + " was not found");
+				return false;
+			}
 
 			String  search_strings  = LanguageUtility._AC(row.getSearch_str());
 

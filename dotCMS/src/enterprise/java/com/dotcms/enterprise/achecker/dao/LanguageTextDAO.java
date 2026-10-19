@@ -35,6 +35,16 @@ public class LanguageTextDAO extends BaseDAO {
 		super();
 	}
 
+	/**
+	 * Creates a DAO that runs its queries through the given {@link DAO}. Mainly for tests, where
+	 * the {@link DAO} can point at a throw-away database.
+	 *
+	 * @param dao the {@link DAO} that runs the queries
+	 */
+	public LanguageTextDAO(final DAO dao) {
+		super(dao);
+	}
+
 //	/**
 //	* Create a new entry
 //	* @access  public

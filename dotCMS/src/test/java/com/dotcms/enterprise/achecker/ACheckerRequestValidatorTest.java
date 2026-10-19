@@ -78,6 +78,27 @@ class ACheckerRequestValidatorTest {
     }
 
     @Test
+    void guidelineListAtMaximumSizeIsAccepted() {
+        final String guidelines = String.join(",",
+                Collections.nCopies(ACheckerRequestValidator.MAX_GUIDELINE_TOKENS, "WCAG2-AA"));
+
+        final List<String> tokens = ACheckerRequestValidator.guidelineTokens(guidelines);
+
+        assertEquals(20, tokens.size());
+    }
+
+    @Test
+    void guidelineListOverMaximumSizeIsRejected() {
+        final String guidelines = String.join(",",
+                Collections.nCopies(ACheckerRequestValidator.MAX_GUIDELINE_TOKENS + 1, "WCAG2-AA"));
+
+        final DotValidationException exception = assertThrows(DotValidationException.class,
+                () -> ACheckerRequestValidator.guidelineTokens(guidelines));
+
+        assertEquals(ACheckerRequestValidator.UNSUPPORTED_GUIDELINES_MESSAGE, exception.getMessage());
+    }
+
+    @Test
     void absentLangIsNull() {
         assertNull(ACheckerRequestValidator.lang(null));
         assertNull(ACheckerRequestValidator.lang(""));

@@ -37,7 +37,8 @@ public class ACheckerConnectionFactory {
 	/** Name of the read-only database account the connection pool signs in with. */
 	static final String RESTRICTED_USER = "ACHECKER_READER";
 
-	private static final String UNAVAILABLE_MESSAGE = "Accessibility Checker database is not available";
+	/** Message of the exception thrown when no connection to the database can be handed out. */
+	static final String UNAVAILABLE_MESSAGE = "Accessibility Checker database is not available";
 
 	private static final String DATABASE_RELATIVE_PATH = "h2db/1/achecker_db1";
 
@@ -45,7 +46,7 @@ public class ACheckerConnectionFactory {
 
 	private static final int PASSWORD_BYTES = 32;
 
-	private static final int MAX_POOL_CONNECTIONS = 1000;
+	private static final int MAX_POOL_CONNECTIONS = 10;
 
 	private static final int POOL_LOGIN_TIMEOUT_SECONDS = 3;
 
@@ -71,19 +72,91 @@ public class ACheckerConnectionFactory {
 	 * @throws SQLException with a fixed message when the database cannot be reached or bootstrapped
 	 */
 	public static synchronized Connection getConnection() throws SQLException {
+		if (isConnectionOpen()) {
+			return connection;
+		}
+		final String dynamicContentPath;
+		final String bootstrapScriptPath;
 		try {
-			if (connection == null || connection.isClosed()) {
-				connection = openConnection();
+			dynamicContentPath = ConfigUtils.getDynamicContentPath();
+			bootstrapScriptPath = ConfigUtils.getACheckerPath() + File.separator + BOOTSTRAP_SCRIPT_NAME;
+		} catch (final RuntimeException e) {
+			throw unavailable(e);
+		}
+		return getConnection(dynamicContentPath, bootstrapScriptPath);
+	}
+
+	/**
+	 * Returns the shared connection, opening it on first use from the database under the given
+	 * directory and bootstrapping it with the given script. Behaves exactly like
+	 * {@link #getConnection()}, which calls it with the dotCMS locations; tests call it with
+	 * temporary ones.
+	 *
+	 * @param dynamicContentPath the directory the database file lives under
+	 * @param bootstrapScriptPath the location of the script that loads the database
+	 * @return an open connection signed in with the read-only account; never {@code null}
+	 * @throws SQLException with a fixed message when the database cannot be reached or bootstrapped
+	 */
+	static synchronized Connection getConnection(final String dynamicContentPath, final String bootstrapScriptPath)
+			throws SQLException {
+		try {
+			if (!isConnectionOpen()) {
+				connection = openConnection(dynamicContentPath, bootstrapScriptPath);
 				Logger.debug(ACheckerConnectionFactory.class, "Accessibility Checker database connection opened");
 			}
 			return connection;
 		} catch (final Exception e) {
-			Logger.error(ACheckerConnectionFactory.class,
-					"Unable to open the Accessibility Checker database: " + e.getClass().getName());
-			Logger.debug(ACheckerConnectionFactory.class,
-					"Accessibility Checker database bootstrap failure details", e);
-			throw new SQLException(UNAVAILABLE_MESSAGE);
+			throw unavailable(e);
 		}
+	}
+
+	/**
+	 * Closes the shared connection and disposes the read-only pool, so the next connection request
+	 * bootstraps the database again. Only meant for tests, which need a clean state between runs.
+	 */
+	static synchronized void resetForTests() {
+		try {
+			if (connection != null) {
+				connection.close();
+			}
+		} catch (final SQLException e) {
+			Logger.warn(ACheckerConnectionFactory.class,
+					"Unable to close the Accessibility Checker database connection: " + e.getClass().getName());
+		} finally {
+			connection = null;
+			if (pool != null) {
+				discardPool();
+			}
+		}
+	}
+
+	/**
+	 * Tells whether the shared connection exists and is still open. A connection whose state
+	 * cannot be read is treated as closed, so a new one is opened.
+	 *
+	 * @return {@code true} if the shared connection can be handed out as it is
+	 */
+	private static boolean isConnectionOpen() {
+		try {
+			return connection != null && !connection.isClosed();
+		} catch (final SQLException e) {
+			return false;
+		}
+	}
+
+	/**
+	 * Logs why no connection could be opened and builds the exception reported to the caller. The
+	 * ERROR line carries only the exception type; the full exception is written at DEBUG level.
+	 *
+	 * @param cause the failure raised while opening the connection
+	 * @return a new exception with the fixed "not available" message and no cause attached
+	 */
+	private static SQLException unavailable(final Exception cause) {
+		Logger.error(ACheckerConnectionFactory.class,
+				"Unable to open the Accessibility Checker database: " + cause.getClass().getName());
+		Logger.debug(ACheckerConnectionFactory.class,
+				"Accessibility Checker database bootstrap failure details", cause);
+		return new SQLException(UNAVAILABLE_MESSAGE);
 	}
 
 	/**
@@ -155,10 +228,13 @@ public class ACheckerConnectionFactory {
 	 * Opens a new read-only connection. An existing pool is tried first; if it fails, it is
 	 * discarded and the database is bootstrapped again, which provisions a fresh password and pool.
 	 *
+	 * @param dynamicContentPath the directory the database file lives under
+	 * @param bootstrapScriptPath the location of the script that loads the database
 	 * @return an open connection from the read-only pool
 	 * @throws SQLException if the bootstrap fails
 	 */
-	private static Connection openConnection() throws SQLException {
+	private static Connection openConnection(final String dynamicContentPath, final String bootstrapScriptPath)
+			throws SQLException {
 		if (pool != null) {
 			try {
 				return pool.getConnection();
@@ -171,7 +247,7 @@ public class ACheckerConnectionFactory {
 				discardPool();
 			}
 		}
-		return bootstrap();
+		return bootstrap(dynamicContentPath, bootstrapScriptPath);
 	}
 
 	/**
@@ -194,12 +270,14 @@ public class ACheckerConnectionFactory {
 	 * opens the read-only pool. The pool is only kept when its first connection opens; the
 	 * administrator connection is always closed before returning.
 	 *
+	 * @param dynamicContentPath the directory the database file lives under
+	 * @param bootstrapScriptPath the location of the script that loads the database
 	 * @return the first connection from the read-only pool
 	 * @throws SQLException if the database cannot be loaded or the read-only account cannot sign in
 	 */
-	private static Connection bootstrap() throws SQLException {
-		final String urlPrefix = databaseUrlPrefix(ConfigUtils.getDynamicContentPath());
-		final String bootstrapScriptPath = ConfigUtils.getACheckerPath() + File.separator + BOOTSTRAP_SCRIPT_NAME;
+	private static Connection bootstrap(final String dynamicContentPath, final String bootstrapScriptPath)
+			throws SQLException {
+		final String urlPrefix = databaseUrlPrefix(dynamicContentPath);
 
 		final JdbcDataSource adminDataSource = new JdbcDataSource();
 		adminDataSource.setURL(adminBootstrapUrl(urlPrefix, bootstrapScriptPath));

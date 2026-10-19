@@ -72,12 +72,14 @@ public class ACheckerAPIImpl implements ACheckerAPI {
      * @return The result of the validation, as a JSON object.
      *
      * @throws DotValidationException If the {@code guidelines} or {@code lang} value is not
-     *                                accepted, if a requested guideline does not exist, or, with
-     *                                the message "The accessibility check could not be completed",
-     *                                if the check fails for any other reason.
+     *                                accepted, or a requested guideline does not exist.
+     * @throws DotDataException       With the message "The accessibility check could not be
+     *                                completed" if the check fails for any other reason; the
+     *                                underlying error is logged and not attached.
      */
     @EnterpriseFeature
-    public ACheckerResponse validate(final Map<String, String> validationData) throws DotValidationException {
+    public ACheckerResponse validate(final Map<String, String> validationData)
+            throws DotValidationException, DotDataException {
         final List<String> guidelineTokens =
                 ACheckerRequestValidator.guidelineTokens(validationData.get(GUIDELINES));
         final String lang = ACheckerRequestValidator.lang(validationData.get(LANG));
@@ -91,7 +93,7 @@ public class ACheckerAPIImpl implements ACheckerAPI {
             throw e;
         } catch (final Exception e) {
             Logger.error(this, "Accessibility check failed: " + e.getClass().getName(), e);
-            throw new DotValidationException(CHECK_FAILED_MESSAGE);
+            throw new DotDataException(CHECK_FAILED_MESSAGE);
         }
     }
 
