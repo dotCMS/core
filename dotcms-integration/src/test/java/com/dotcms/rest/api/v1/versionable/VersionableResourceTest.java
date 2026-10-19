@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v1.versionable;
 
+import com.dotcms.test.util.ApiTokenTestUtils;
+
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.LinkDataGen;
@@ -29,7 +31,6 @@ import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
-import com.liferay.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
@@ -56,8 +57,15 @@ public class VersionableResourceTest {
         response = new MockHttpResponse();
     }
 
+    /**
+     * Builds a request that authenticates as the given user with a Bearer API token. The password
+     * argument is retained for call-site compatibility; credentials are no longer sent on the wire.
+     *
+     * @param userEmail the fixture user to authenticate as
+     * @param password retained for call-site compatibility; not used
+     * @return the authenticated request
+     */
     private HttpServletRequest getHttpRequest(final String userEmail,final String password) {
-        final String userEmailAndPassword = userEmail + ":" + password;
         final MockHeaderRequest request = new MockHeaderRequest(
                 new MockSessionRequest(
                         new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request())
@@ -65,7 +73,7 @@ public class VersionableResourceTest {
                         .request());
 
         request.setHeader("Authorization",
-                "Basic " + new String(Base64.encode(userEmailAndPassword.getBytes())));
+                ApiTokenTestUtils.bearerHeaderForEmail(userEmail));
 
 
         return request;

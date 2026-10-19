@@ -1,5 +1,7 @@
 package com.dotcms.contenttype.test;
 
+import com.dotcms.test.util.ApiTokenTestUtils;
+
 
 import com.dotcms.DataProviderWeldRunner;
 import com.dotcms.IntegrationTestBase;
@@ -49,7 +51,6 @@ import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.Tuple2;
-import java.util.Base64;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -1356,6 +1357,14 @@ public class ContentResourceTest extends IntegrationTestBase {
 
     }
 
+    /**
+     * Builds a request that authenticates with a Bearer API token: the admin token when no user is
+     * supplied, the given user's token otherwise, and no credential for the anonymous user.
+     *
+     * @param jsonPayload the request body, or null
+     * @param user the fixture user to authenticate as, or null for the admin
+     * @return the request
+     */
     private HttpServletRequest createHttpRequest(final String jsonPayload, final User user) throws Exception{
 
         MockHeaderRequest request = new MockHeaderRequest(
@@ -1366,10 +1375,10 @@ public class ContentResourceTest extends IntegrationTestBase {
         );
 
         if (user == null){
-            request.setHeader("Authorization", "Basic " + Base64.getEncoder().encodeToString(("admin@dotcms.com:admin").getBytes()));
+            request.setHeader("Authorization", ApiTokenTestUtils.adminBearerHeader());
 
         } else if (!user.equals(userAPI.getAnonymousUser())){
-            request.setHeader("Authorization", "Basic " + Base64.getEncoder().encodeToString((user.getEmailAddress() + ":" + user.getPassword()).getBytes()));
+            request.setHeader("Authorization", ApiTokenTestUtils.bearerHeader(user));
         }
 
         if (jsonPayload != null) {

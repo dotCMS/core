@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v1.asset;
 
+import com.dotcms.test.util.ApiTokenTestUtils;
+
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -55,7 +57,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.RandomStringUtils;
-import java.util.Base64;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
@@ -481,6 +482,11 @@ public class WebAssetHelperIntegrationTest {
      * @return
      */
     @NotNull
+    /**
+     * Builds an admin request authenticated with a Bearer API token.
+     *
+     * @return the request
+     */
     private static MockHeaderRequest getMockHeaderRequest() {
         final MockHeaderRequest request = new MockHeaderRequest(
                 (
@@ -488,7 +494,7 @@ public class WebAssetHelperIntegrationTest {
                 ).request()
         );
 
-        request.setHeader("Authorization", "Basic " + Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes()));
+        request.setHeader("Authorization", ApiTokenTestUtils.adminBearerHeader());
         request.setHeader("User-Agent", "Fake-Agent");
         request.setHeader("Host", "localhost");
         request.setHeader("Origin", "localhost");

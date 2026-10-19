@@ -5,9 +5,6 @@ Feature: Management Endpoints Port Restriction Tests
     * def managementUrl = karate.properties['karate.management.url'] || 'http://localhost:8090'
     * def regularPort = karate.properties['karate.regular.port'] || '8080'
     * def managementPort = karate.properties['karate.management.port'] || '8090'
-    * def authString = 'admin@dotcms.com:admin'
-    * def encodedAuth = function(s) { return java.util.Base64.getEncoder().encodeToString(s.getBytes('UTF-8')); }
-    * def authHeader = 'Basic ' + encodedAuth(authString)
     * def commonHeaders = { 'Content-Type': 'application/json', 'Authorization': '#(authHeader)' }
     
     # Wait for application to be ready before running tests

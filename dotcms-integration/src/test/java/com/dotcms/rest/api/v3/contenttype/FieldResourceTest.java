@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v3.contenttype;
 
+import com.dotcms.test.util.ApiTokenTestUtils;
+
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.ColumnField;
 import com.dotcms.contenttype.model.field.Field;
@@ -32,7 +34,6 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.dotmarketing.util.json.JSONException;
-import java.util.Base64;
 import org.jetbrains.annotations.NotNull;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -1047,6 +1048,11 @@ public class FieldResourceTest {
     }
 
 
+    /**
+     * Builds an admin request authenticated with a Bearer API token.
+     *
+     * @return the request
+     */
     private static HttpServletRequest getHttpRequest() {
         final MockHeaderRequest request = new MockHeaderRequest(
                 (
@@ -1054,7 +1060,7 @@ public class FieldResourceTest {
                 ).request()
         );
 
-        request.setHeader("Authorization", "Basic " + Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes()));
+        request.setHeader("Authorization", ApiTokenTestUtils.adminBearerHeader());
 
         return request;
     }

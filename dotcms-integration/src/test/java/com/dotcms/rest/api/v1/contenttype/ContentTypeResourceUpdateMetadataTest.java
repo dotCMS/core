@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v1.contenttype;
 
+import com.dotcms.test.util.ApiTokenTestUtils;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -31,7 +33,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -414,6 +415,11 @@ public class ContentTypeResourceUpdateMetadataTest {
         return ((ResponseEntityView<?>) response.getEntity()).getErrors();
     }
 
+    /**
+     * Builds an admin request authenticated with a Bearer API token.
+     *
+     * @return the request
+     */
     private static HttpServletRequest getHttpRequest() {
         final MockHeaderRequest request = new MockHeaderRequest(
                 new MockSessionRequest(
@@ -423,8 +429,7 @@ public class ContentTypeResourceUpdateMetadataTest {
                 ).request()
         );
         request.setHeader("Authorization",
-                "Basic " + Base64.getEncoder().encodeToString(
-                        "admin@dotcms.com:admin".getBytes()));
+                ApiTokenTestUtils.adminBearerHeader());
         return request;
     }
 }

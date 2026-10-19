@@ -1,5 +1,7 @@
 package com.dotcms.rest.elasticsearch;
 
+import com.dotcms.test.util.ApiTokenTestUtils;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -55,7 +57,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import java.util.Base64;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -612,6 +613,11 @@ public class ESContentResourcePortletTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Builds an admin request authenticated with a Bearer API token unless the request is anonymous.
+     *
+     * @return the request
+     */
     private HttpServletRequest createHttpRequest(final boolean anonymous) throws Exception{
         final MockHeaderRequest request = new MockHeaderRequest(new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request())
@@ -619,7 +625,7 @@ public class ESContentResourcePortletTest extends IntegrationTestBase {
 
         if (!anonymous){
             request.setHeader("Authorization",
-                    "Basic " + Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes()));
+                    ApiTokenTestUtils.adminBearerHeader());
         }
 
         when(request.getContentType()).thenReturn(MediaType.APPLICATION_JSON);

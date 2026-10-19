@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v1.experiments;
 
+import com.dotcms.test.util.ApiTokenTestUtils;
+
 import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -30,7 +32,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.liferay.portal.model.User;
-import com.liferay.util.Base64;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -382,8 +383,12 @@ public class ExperimentsResourceIntegrationTest {
                 before, after);
     }
 
+    /**
+     * Builds a request that authenticates as the fixture admin with a Bearer API token.
+     *
+     * @return the authenticated request
+     */
     private HttpServletRequest getHttpRequest() {
-        final String userEmailAndPassword = adminUser.getEmailAddress() + ":admin";
         final MockHeaderRequest request = new MockHeaderRequest(
                 new MockSessionRequest(
                         new MockAttributeRequest(
@@ -392,7 +397,7 @@ public class ExperimentsResourceIntegrationTest {
                         .request());
 
         request.setHeader("Authorization",
-                "Basic " + new String(Base64.encode(userEmailAndPassword.getBytes())));
+                ApiTokenTestUtils.bearerHeader(adminUser));
 
         return request;
     }

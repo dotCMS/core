@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v2.asset;
 
+import com.dotcms.test.util.ApiTokenTestUtils;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -50,7 +52,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.util.Base64;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -707,7 +708,7 @@ public class WebAssetResourceV2IntegrationTest extends IntegrationTestBase {
                 ).request()
         );
         request.setHeader("Authorization",
-                "Basic " + Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes()));
+                ApiTokenTestUtils.adminBearerHeader());
         request.setHeader("User-Agent", "Fake-Agent");
         request.setHeader("Host", "localhost");
         request.setHeader("Origin", "localhost");

@@ -1,11 +1,8 @@
 Feature: Checking JSON Attributes
 
   Background:
-    * def authString = 'admin@dotcms.com:admin'
-    * def encodedAuth = function(s) { return java.util.Base64.getEncoder().encodeToString(s.getBytes('UTF-8')); }
     * def baseUrl = 'http://localhost:8080'
-    * def commonHeaders = { 'Content-Type': 'application/json'}
-    * commonHeaders['Authorization'] = 'Basic ' + encodedAuth(authString)
+    * def commonHeaders = { 'Content-Type': 'application/json', 'Authorization': '#(authHeader)' }
     * def extractErrors =
       """
       function(response) {
@@ -96,6 +93,8 @@ Feature: Checking JSON Attributes
     And match response.message contains 'The contentlet wrongID and language 1 does not exist'
 
   Scenario: Creating Test Generic Content - No auth
+    # Never let a bootstrap session cookie authenticate this request.
+    * configure cookies = null
     Given url baseUrl + '/api/v1/workflow/actions/default/fire/PUBLISH'
     And request
       """

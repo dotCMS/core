@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v1.theme;
 
+import com.dotcms.test.util.ApiTokenTestUtils;
+
 
 import static com.dotmarketing.business.ThemeAPI.THEME_PNG;
 import static com.dotmarketing.business.ThemeAPI.THEME_THUMBNAIL_KEY;
@@ -403,9 +405,15 @@ public class ThemeResourceIntegrationTest {
     }
 
 
+    /**
+     * Builds a request that authenticates as the given user with a Bearer API token, defaulting to
+     * the admin account when no email is supplied.
+     *
+     * @param userEmail the fixture user to authenticate as, or blank for the admin
+     * @return the authenticated request
+     */
     private HttpServletRequest getHttpRequest(String userEmail) {
         userEmail = UtilMethods.isSet(userEmail) ? userEmail : "admin@dotcms.com";
-        final String userEmailAndPassword = userEmail + ":admin";
         final MockHeaderRequest request = new MockHeaderRequest(
                 new MockSessionRequest(
                         new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request())
@@ -413,7 +421,7 @@ public class ThemeResourceIntegrationTest {
                         .request());
 
         request.setHeader("Authorization",
-                "Basic " + new String(com.liferay.util.Base64.encode(userEmailAndPassword.getBytes())));
+                ApiTokenTestUtils.bearerHeaderForEmail(userEmail));
 
 
         return request;

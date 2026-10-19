@@ -1,5 +1,7 @@
 package com.dotcms.contenttype.test;
 
+import com.dotcms.test.util.ApiTokenTestUtils;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import com.dotcms.business.WrapInTransaction;
@@ -33,7 +35,6 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Response;
 import org.apache.commons.io.IOUtils;
-import java.util.Base64;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -151,7 +152,7 @@ public class ContentTypeResourceTest extends ContentTypeBaseTest {
 				new MockSessionRequest(new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
 				.request());
 
-		request.setHeader("Authorization", "Basic " + Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes()));
+		request.setHeader("Authorization", ApiTokenTestUtils.adminBearerHeader());
 
 		return request;
 	}

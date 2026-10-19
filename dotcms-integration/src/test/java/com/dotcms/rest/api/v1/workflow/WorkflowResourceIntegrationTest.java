@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v1.workflow;
 
+import com.dotcms.test.util.ApiTokenTestUtils;
+
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.ADMIN_DEFAULT_ID;
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.ADMIN_DEFAULT_MAIL;
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.ADMIN_NAME;
@@ -140,7 +142,6 @@ import com.liferay.portal.util.WebKeys;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.input.ReaderInputStream;
 import org.apache.commons.lang.RandomStringUtils;
-import java.util.Base64;
 import org.glassfish.jersey.media.multipart.BodyPart;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataBodyPart;
@@ -2928,6 +2929,11 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
     }
 
+    /**
+     * Builds an admin request authenticated with a Bearer API token.
+     *
+     * @return the request
+     */
     private static HttpServletRequest getHttpRequest() {
         MockHeaderRequest request = new MockHeaderRequest(
                 (
@@ -2938,7 +2944,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         );
 
         request.setHeader("Authorization",
-                "Basic " + Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes()));
+                ApiTokenTestUtils.adminBearerHeader());
 
         return request;
     }

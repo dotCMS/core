@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v1.system.role;
 
+import com.dotcms.test.util.ApiTokenTestUtils;
+
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
@@ -23,7 +25,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -84,6 +85,11 @@ public class RoleResourceCountsIntegrationTest {
         return user;
     }
 
+    /**
+     * Builds an admin request authenticated with a Bearer API token.
+     *
+     * @return the request
+     */
     private static HttpServletRequest mockAdminRequest() {
         final MockHeaderRequest request = new MockHeaderRequest(
                 new MockSessionRequest(
@@ -92,7 +98,7 @@ public class RoleResourceCountsIntegrationTest {
                                 .request())
                         .request());
         request.setHeader("Authorization",
-                "Basic " + Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes()));
+                ApiTokenTestUtils.adminBearerHeader());
         return request;
     }
 

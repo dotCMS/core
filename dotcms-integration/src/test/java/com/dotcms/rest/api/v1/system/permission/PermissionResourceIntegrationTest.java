@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v1.system.permission;
 
+import com.dotcms.test.util.ApiTokenTestUtils;
+
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.RoleDataGen;
@@ -26,7 +28,6 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import com.liferay.util.Base64;
 import static org.junit.Assert.*;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -159,6 +160,11 @@ public class PermissionResourceIntegrationTest {
         HttpServletRequestThreadLocal.INSTANCE.setRequest(null);
     }
 
+    /**
+     * Builds a request that authenticates as the admin fixture with a Bearer API token.
+     *
+     * @return the authenticated request
+     */
     private static HttpServletRequest mockRequest() {
         final MockHeaderRequest request = new MockHeaderRequest(
                 new MockSessionRequest(
@@ -167,7 +173,7 @@ public class PermissionResourceIntegrationTest {
                         .request());
 
         request.setHeader("Authorization",
-                "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
+                ApiTokenTestUtils.adminBearerHeader());
 
         request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST, testHost);
         request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, testHost.getIdentifier());
@@ -176,11 +182,12 @@ public class PermissionResourceIntegrationTest {
     }
 
     /**
-     * Creates a mock HTTP request with custom credentials.
+     * Creates a mock HTTP request that authenticates as the given user with a Bearer API token.
+     * The password argument is retained for call-site compatibility; it is not sent on the wire.
      *
-     * @param email User email for authentication
-     * @param password User password for authentication
-     * @return Mock HTTP request with specified credentials
+     * @param email User email to authenticate as
+     * @param password retained for call-site compatibility; not used
+     * @return Mock HTTP request authenticated as the given user
      */
     private static HttpServletRequest getHttpRequest(final String email, final String password) {
         final MockHeaderRequest request = new MockHeaderRequest(
@@ -190,7 +197,7 @@ public class PermissionResourceIntegrationTest {
                         .request());
 
         request.setHeader("Authorization",
-                "Basic " + new String(Base64.encode((email + ":" + password).getBytes())));
+                ApiTokenTestUtils.bearerHeaderForEmail(email));
 
         request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST, testHost);
         request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, testHost.getIdentifier());

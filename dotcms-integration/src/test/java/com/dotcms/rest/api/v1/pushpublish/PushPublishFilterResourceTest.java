@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v1.pushpublish;
 
+import com.dotcms.test.util.ApiTokenTestUtils;
+
 import com.dotcms.datagen.FilterDescriptorDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
@@ -14,7 +16,6 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.google.common.collect.ImmutableMap;
-import java.util.Base64;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -58,6 +59,11 @@ public class PushPublishFilterResourceTest {
         APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptor);
     }
 
+    /**
+     * Builds an admin request authenticated with a Bearer API token when authorization is requested.
+     *
+     * @return the request
+     */
     private HttpServletRequest getHttpRequest(final boolean authorization) {
         final MockHeaderRequest request = new MockHeaderRequest(
                 new MockSessionRequest(
@@ -67,7 +73,7 @@ public class PushPublishFilterResourceTest {
 
         if(authorization) {
             request.setHeader("Authorization",
-                    "Basic " + Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes()));
+                    ApiTokenTestUtils.adminBearerHeader());
 
         }
 

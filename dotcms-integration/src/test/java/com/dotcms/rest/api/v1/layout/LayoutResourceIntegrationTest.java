@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v1.layout;
 
+import com.dotcms.test.util.ApiTokenTestUtils;
+
 import com.dotcms.datagen.LayoutDataGen;
 import com.dotcms.datagen.PortletDataGen;
 import com.dotcms.datagen.RoleDataGen;
@@ -25,7 +27,6 @@ import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
-import com.liferay.util.Base64;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -161,7 +162,7 @@ public class LayoutResourceIntegrationTest {
     private static HttpServletRequest adminRequest() {
         final MockHeaderRequest request = baseRequest();
         request.setHeader("Authorization",
-                "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
+                ApiTokenTestUtils.adminBearerHeader());
         return request;
     }
 

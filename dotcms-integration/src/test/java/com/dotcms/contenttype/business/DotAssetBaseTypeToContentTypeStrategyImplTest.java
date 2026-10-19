@@ -1,5 +1,7 @@
 package com.dotcms.contenttype.business;
 
+import com.dotcms.test.util.ApiTokenTestUtils;
+
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
@@ -24,7 +26,6 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.util.WebKeys;
-import java.util.Base64;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -98,7 +99,7 @@ public class DotAssetBaseTypeToContentTypeStrategyImplTest  extends IntegrationT
                 ).request()
         );
 
-        request.setHeader("Authorization", "Basic " + Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes()));
+        request.setHeader("Authorization", ApiTokenTestUtils.adminBearerHeader());
         request.setHeader("User-Agent", "Fake-Agent");
         request.setHeader("Host", "localhost");
         request.setHeader("Origin", "localhost");
