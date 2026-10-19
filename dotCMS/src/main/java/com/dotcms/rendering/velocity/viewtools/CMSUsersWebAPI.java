@@ -11,6 +11,7 @@ import javax.servlet.http.HttpSession;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
+import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.rendering.velocity.viewtools.bean.UserProfile;
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.UserProxy;
@@ -34,20 +35,14 @@ import com.liferay.portal.util.PortalUtil;
 /**
  * The {@code $cmsuser} Velocity tool: user lookups and role checks for templates.
  *
- * <p>Looked-up accounts are returned as read-only {@link UserProfile} objects. Installations
- * whose templates pass looked-up accounts to methods that require a {@link User} can set
- * {@value #LEGACY_USER_OBJECTS_PROP} to {@code true}; lookups then return detached {@link User}
- * copies with the credential fields cleared. Only enable it when templates need it, because those
- * copies are accepted wherever a {@link User} is.
+ * <p>Looked-up accounts are returned as read-only {@link UserProfile} objects while the
+ * {@link FeatureFlagName#FEATURE_FLAG_CMSUSER_READ_ONLY_PROFILES} feature flag is on (the default).
+ * Installations whose templates pass looked-up accounts to methods that require a {@link User}
+ * can turn the flag off; lookups then return detached {@link User} copies with the credential
+ * fields cleared. Only turn it off when templates need it, because those copies are accepted
+ * wherever a {@link User} is.
  */
 public class CMSUsersWebAPI implements ViewTool {
-
-	/**
-	 * dotCMS Config key (env: {@code DOT_VELOCITY_CMSUSER_LEGACY_USER_OBJECTS}). When
-	 * {@code true}, lookups return {@link User} copies instead of {@link UserProfile} objects.
-	 * Defaults to {@code false}.
-	 */
-	public static final String LEGACY_USER_OBJECTS_PROP = "velocity.cmsuser.legacy.user.objects";
 
 	private HttpServletRequest request;
 	Context ctx;
@@ -72,7 +67,7 @@ public class CMSUsersWebAPI implements ViewTool {
 	 *
 	 * @param email the email address of the account
 	 * @return a read-only {@link UserProfile} of the account (a detached {@link User} copy
-	 *         without credential fields when {@value #LEGACY_USER_OBJECTS_PROP} is on), or
+	 *         without credential fields when the read-only profiles flag is off), or
 	 *         {@code null} if no account matches
 	 */
 	public Object getUserByEmail(final String email) {
@@ -97,7 +92,7 @@ public class CMSUsersWebAPI implements ViewTool {
 	 *
 	 * @param userId the id of the account
 	 * @return a read-only {@link UserProfile} of the account (a detached {@link User} copy
-	 *         without credential fields when {@value #LEGACY_USER_OBJECTS_PROP} is on), or
+	 *         without credential fields when the read-only profiles flag is off), or
 	 *         {@code null} if no account matches
 	 */
 	public Object getUserByUserId(final String userId) {
@@ -140,7 +135,7 @@ public class CMSUsersWebAPI implements ViewTool {
 	 *
 	 * @param groupId the id of the role
 	 * @return read-only {@link UserProfile} objects for the accounts (detached {@link User}
-	 *         copies without credential fields when {@value #LEGACY_USER_OBJECTS_PROP} is on)
+	 *         copies without credential fields when the read-only profiles flag is off)
 	 * @deprecated will now return a list of roles
 	 */
 	public List<Object> getAllUsersInGroup(final String groupId) {
@@ -274,9 +269,9 @@ public class CMSUsersWebAPI implements ViewTool {
 	}
 
 	/**
-	 * Prepares a looked-up account for a template: a read-only {@link UserProfile} by default,
-	 * or a detached {@link User} copy without credential fields when
-	 * {@value #LEGACY_USER_OBJECTS_PROP} is on.
+	 * Prepares a looked-up account for a template: a read-only {@link UserProfile} while
+	 * {@link FeatureFlagName#FEATURE_FLAG_CMSUSER_READ_ONLY_PROFILES} is on (the default), or a
+	 * detached {@link User} copy without credential fields when it is off.
 	 *
 	 * @param user the looked-up account, may be {@code null}
 	 * @return the object handed to the template, or {@code null}
@@ -285,9 +280,9 @@ public class CMSUsersWebAPI implements ViewTool {
 		if (user == null) {
 			return null;
 		}
-		return Config.getBooleanProperty(LEGACY_USER_OBJECTS_PROP, false)
-				? detachedCopyWithoutCredentials(user)
-				: new UserProfile(user);
+		return Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_CMSUSER_READ_ONLY_PROFILES, true)
+				? new UserProfile(user)
+				: detachedCopyWithoutCredentials(user);
 	}
 
 	/**

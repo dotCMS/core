@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.UserDataGen;
+import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
@@ -36,13 +37,13 @@ import org.junit.Test;
  * {@code getAllUsersInGroup}) give templates a read-only profile of the account: the display
  * fields templates print (id, names, email, ...) without the credential fields kept on the user
  * record, and without a way back to the underlying {@link User}. The tool's own role helpers
- * accept those profiles. Installations whose templates still need full {@link User} objects can
- * turn on {@code velocity.cmsuser.legacy.user.objects}, which returns a detached copy with the
- * credential fields cleared.
+ * accept those profiles. This is controlled by the {@code FEATURE_FLAG_CMSUSER_READ_ONLY_PROFILES}
+ * feature flag, on by default; installations whose templates still need full {@link User} objects
+ * can turn it off, which makes lookups return a detached copy with the credential fields cleared.
  */
 public class CMSUsersWebAPITest {
 
-    private static final String LEGACY_USER_OBJECTS_PROP = "velocity.cmsuser.legacy.user.objects";
+    private static final String READ_ONLY_PROFILES_FLAG = FeatureFlagName.FEATURE_FLAG_CMSUSER_READ_ONLY_PROFILES;
 
     /** Accessors for fields that must never reach a template through a looked-up account. */
     private static final Set<String> CREDENTIAL_ACCESSORS = Set.of(
@@ -131,12 +132,12 @@ public class CMSUsersWebAPITest {
     }
 
     /**
-     * A user copy returned in legacy mode keeps the identity and display fields but carries none
+     * A user copy returned with the flag off keeps the identity and display fields but carries none
      * of the credential fields, and is detached from the cached user record.
      */
     private static void assertDetachedCopyWithoutCredentials(final Object lookedUp, final User source)
             throws Exception {
-        assertTrue("Legacy mode returns User objects", lookedUp instanceof User);
+        assertTrue("With the flag off, lookups return User objects", lookedUp instanceof User);
         final User copy = (User) lookedUp;
         assertEquals(source.getUserId(), copy.getUserId());
         assertEquals(source.getEmailAddress(), copy.getEmailAddress());
@@ -204,12 +205,30 @@ public class CMSUsersWebAPITest {
     }
 
     /**
-     * With {@code velocity.cmsuser.legacy.user.objects} on, lookups return {@link User} objects
-     * again for templates that need them, as detached copies without credential fields.
+     * The read-only profiles are on by default: with the feature flag not set at all, lookups
+     * still return profiles.
      */
     @Test
-    public void legacy_mode_returns_user_copies_without_credential_fields() throws Exception {
-        Config.setProperty(LEGACY_USER_OBJECTS_PROP, true);
+    public void lookups_return_profiles_when_the_flag_is_not_set() {
+        final String flagValue = Config.getStringProperty(READ_ONLY_PROFILES_FLAG, null);
+        Config.setProperty(READ_ONLY_PROFILES_FLAG, null);
+        try {
+            assertReadOnlyProfile(cmsUserTool(requester).getUserByEmail(profiledUser.getEmailAddress()));
+        } finally {
+            Config.setProperty(READ_ONLY_PROFILES_FLAG, flagValue);
+        }
+    }
+
+    /**
+     * With the {@code FEATURE_FLAG_CMSUSER_READ_ONLY_PROFILES} flag off, lookups return
+     * {@link User} objects again for templates that need them, as detached copies without
+     * credential fields.
+     */
+    @Test
+    public void flag_off_returns_user_copies_without_credential_fields() throws Exception {
+        // restore the raw value afterwards (null clears it) so other tests see the shipped default
+        final String flagValue = Config.getStringProperty(READ_ONLY_PROFILES_FLAG, null);
+        Config.setProperty(READ_ONLY_PROFILES_FLAG, false);
         try {
             final CMSUsersWebAPI tool = cmsUserTool(requester);
 
@@ -222,7 +241,7 @@ public class CMSUsersWebAPITest {
 
             assertEquals("true", render("$cmsuser.isUserRole($cmsuser.getUserByEmail($email), $roleName)"));
         } finally {
-            Config.setProperty(LEGACY_USER_OBJECTS_PROP, false);
+            Config.setProperty(READ_ONLY_PROFILES_FLAG, flagValue);
         }
     }
 }
