@@ -1,7 +1,7 @@
 // Static migration guards, not proof of live modes, cookie behavior or token subjects.
 // ALL-only negatives and JWT_TOKEN DAV still need isolated server/CI selection and NONE denial runs.
 const assert = require('node:assert/strict');
-const { readdirSync, readFileSync } = require('node:fs');
+const { readdirSync, readFileSync, existsSync } = require('node:fs');
 const { createHash } = require('node:crypto');
 const path = require('node:path');
 const { test } = require('node:test');
@@ -77,6 +77,58 @@ test('every ordinary configured collection resolves to an existing file', () => 
   for (const group of config) for (const collection of group.collections) {
     assert.ok(topLevel.has(`${collection}.json`), `Missing configured collection: ${collection}`);
   }
+});
+
+test('moved ALL upload fixtures still resolve real original payloads from Newman workingDir', () => {
+  const uploads = requests.filter((r) => r.file.startsWith('compatibility/all/')).flatMap((r) => {
+    const files = r.request.body?.mode === 'file' ? [r.request.body.file] :
+      (r.request.body?.formdata || []).filter((f) => f.type === 'file');
+    return files.map((f) => ({ r, src: f.src }));
+  });
+  assert.equal(uploads.length, 2);
+  for (const { r, src } of uploads) {
+    const file = path.resolve(path.dirname(path.join(root, r.file)), src);
+    assert.ok(existsSync(file), `Missing real upload payload: ${r.file}: ${src}`);
+    assert.equal(file, path.join(root, 'resources/Push_publish/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz'));
+    assert.ok(readFileSync(file).length > 0);
+  }
+});
+
+for (const file of ['PagesResourceTests.json', 'resources/PagesResourceTests.json']) {
+  test(`${file} logout/cache sequence retains supplied JWT while remaining anonymous and cookie-free`, () => {
+    const collection = JSON.parse(readFileSync(path.join(root, file), 'utf8'));
+    const logout = collection.item.find((i) => i.name === 'invalidateSession');
+    const values = new Map([['jwt', 'synthetic.supplied.jwt'], ['serverURL', 'http://dotcms.invalid']]);
+    const environment = { get: (key) => values.get(key), unset: (key) => values.delete(key) };
+    let clears = 0;
+    const pm = { environment, test() {}, cookies: { jar: () => ({ clear(url, callback) {
+      assert.equal(url, 'http://dotcms.invalid'); clears++; callback(null);
+    } }) } };
+    for (const event of logout.event || []) vm.runInNewContext(eventCode(event), { pm });
+    assert.equal(clears, 1, 'Logout clears its ambient cookie jar');
+    assert.equal(values.get('jwt'), 'synthetic.supplied.jwt', 'Logout must not remove the API JWT needed by collection guards');
+    for (const event of collection.event || []) if (event.listen === 'prerequest') {
+      vm.runInNewContext(eventCode(event), { pm: { environment } });
+    }
+    const allItems = (node) => [node, ...(node.item || []).flatMap(allItems)];
+    const anonymous = allItems(collection).filter((i) => ['invalidateSession', 'Check Cache-Control'].includes(i.name));
+    assert.ok(anonymous.length >= 3);
+    for (const item of anonymous) {
+      assert.equal(item.request.auth?.type, 'noauth', item.name);
+      assert.match((item.event || []).filter((e) => e.listen === 'prerequest').map(eventCode).join('\n'),
+        /pm\.cookies\.jar\(\)\.clear\(/, 'Anonymous request must not inherit an earlier session');
+    }
+    const cache = collection.item.find((i) => i.name === 'Check Cache-Control');
+    assert.match((cache.event || []).map(eventCode).join('\n'), /header\(['"]Cache-Control['"],\s*['"]max-age=100['"]\)/);
+  });
+}
+
+test('Maven defers failed CLI exit until Docker stop and JaCoCo dump have run', () => {
+  const pom = readFileSync(path.resolve(__dirname, '../pom.xml'), 'utf8');
+  assert.ok(pom.includes('run start --deferFailureExit'), 'Defer only the Maven invocation, never the default CLI');
+  assert.ok(pom.indexOf('<artifactId>docker-maven-plugin</artifactId>') < pom.indexOf('<artifactId>maven-failsafe-plugin</artifactId>'),
+    'Docker stop runs in verify after JaCoCo post-integration-test, before failsafe:verify can fail the build');
+  assert.match(pom, /<id>stop<\/id>[\s\S]*?<phase>verify<\/phase>/);
 });
 
 test('ordinary effective auth and manual headers have no password-Basic dependency', () => {

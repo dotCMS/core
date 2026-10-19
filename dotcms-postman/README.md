@@ -65,6 +65,11 @@ jobs must use these directory/collection selections and independent server modes
 installs/node/node --test dotcms-postman/test/*.test.cjs
 ```
 
+Direct CLI runs exit nonzero for bootstrap/load/execution/assertion failures and
+zero-execution runs. Maven alone passes `--deferFailureExit`: a failing summary is
+written first, JaCoCo dumps and Docker stop run, then `failsafe:verify` fails the
+build. Do not use that flag in direct automation without checking the XML result.
+
 The tests execute the entire runner with mocked fetch/Newman boundaries, exercise
 actor provisioning scripts with synthetic responses, and inspect effective
 collection auth. They do not prove live token subjects, permissions, HTTP cookies,

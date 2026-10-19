@@ -109,7 +109,7 @@ async function fetchJWT(serverUrl) {
  */
 function generateFailsafeSummaryXml(postmanTestsResultsDir) {
   const builder = new xml2js.Builder();
-  const result = summaryResults.failures > 0 ? 255 : 0;
+  const result = summaryResults.failures + summaryResults.errors > 0 ? 255 : 0;
   const xmlObj = {
     "failsafe-summary": {
       $: { result: result },
@@ -120,8 +120,8 @@ function generateFailsafeSummaryXml(postmanTestsResultsDir) {
     },
   };
 
-  if (summaryResults.failures > 0) {
-    xmlObj["failsafe-summary"]["failureMessage"] = "There are test failures.";
+  if (result !== 0) {
+    xmlObj["failsafe-summary"]["failureMessage"] = "There are test failures or execution errors.";
   }
 
   const xml = builder.buildObject(xmlObj);
@@ -143,8 +143,8 @@ function generateFailsafeSummaryXml(postmanTestsResultsDir) {
  * @param {string} postmanTestsDir - Directory containing Postman collections
  * @param {string} postmanTestsResultsDir - Directory for test results
  * @param {string} jwt - JWT token for authentication
- * @returns {Promise<void>}
- * @throws {Error} If collection execution fails
+ * @returns {Promise<boolean>} Whether all executed assertions passed
+ * @throws {Error} If the collection cannot be loaded or executed
  */
 async function runNewman(
   serverUrl,
@@ -204,66 +204,21 @@ async function runNewman(
 
     newman.run(newmanConfig, function (err, summary) {
       if (err) {
-        // Enhanced error handling for Node.js 22
-        if (err.code === "ERR_INVALID_IP_ADDRESS") {
-          console.warn(
-            `Warning: IP address validation error in ${collectionName}, continuing...`
-          );
-          summaryResults.errors++;
-          resolve();
-          return;
-        }
-
-        // Handle other common Node.js 22 errors
-        if (
-          err.code === "ERR_NETWORK_IMPORT_DISALLOWED" ||
-          err.code === "ERR_IMPORT_ASSERTION_TYPE_MISSING" ||
-          err.code === "ERR_NETWORK_IMPORT_DISALLOWED"
-        ) {
-          console.warn(
-            `Warning: Node.js 22 specific error in ${collectionName}: ${err.code}`
-          );
-          summaryResults.errors++;
-          resolve();
-          return;
-        }
-
-        console.error(`Error running collection ${collectionName}:`, err.code || err.name);
-        summaryResults.errors++;
-        reject(
-          new Error(
-            `Error running collection ${collectionName}`
-          )
-        );
+        reject(new Error("Newman execution failed"));
         return;
       }
-
       try {
-        const failures = summary.run.failures.length;
-        summaryResults.failures += failures;
-        summaryResults.completed += summary.run.executions.length;
-
-        if (failures > 0) {
-          console.error(`Collection ${collectionName} had failures. Details:`);
-          summary.run.failures.forEach((failure, index) => {
-            if (failure.error?.code === "ERR_INVALID_IP_ADDRESS") {
-              console.warn(
-                `Warning: IP validation error in test ${
-                  index + 1
-                }, continuing...`
-              );
-              return;
-            }
-            console.error(`Failure #${index + 1}:`, failure.error?.name || "Collection assertion failed");
-          });
-          reject(new Error(`Collection ${collectionName} had failures`));
-          return;
+        if (!Array.isArray(summary?.run?.failures) || !Array.isArray(summary?.run?.executions)) {
+          throw new Error("Missing Newman execution results");
         }
-
-        resolve();
+        const failures = summary.run.failures.length;
+        const completed = summary.run.executions.length;
+        summaryResults.failures += failures;
+        summaryResults.completed += completed;
+        if (completed === 0) throw new Error("Newman executed zero requests");
+        if (failures > 0) console.error(`Collection ${collectionName} had ${failures} assertion failures.`);
+        resolve(failures === 0);
       } catch (error) {
-        console.error(`Error processing results for ${collectionName}`);
-        summaryResults.errors++;
         reject(error);
       }
     });
@@ -318,24 +273,25 @@ async function processCollections(
     if (configItem) {
       collectionsToRun = configItem.collections;
     } else {
-      console.error(`Collection or groupname '${groupname}' not found.`);
-      process.exit(1);
+      throw new Error("Collection or group not found");
     }
   }
 
   // Run Newman for each collection and track failures
   for (let collection of collectionsToRun) {
     try {
-      await runNewman(
+      const passed = await runNewman(
         serverUrl,
         collection,
         postmanTestsDir,
         postmanTestsResultsDir,
         jwt
       );
-      console.log(`Collection ${collection} executed successfully.`);
+      if (passed) console.log(`Collection ${collection} executed successfully.`);
     } catch (error) {
-      console.error("Error in collection:", collection, error.message);
+      // Includes require/JSON failures and synchronous Newman throws, exactly once per collection.
+      summaryResults.errors++;
+      console.error("Collection could not execute:", collection);
     }
   }
 
@@ -397,6 +353,7 @@ async function processAllCollections(
  * - postmanTestsDir (-d): Directory containing Postman collections
  * - configFilePath (-c): Path to the configuration JSON file
  * - postmanTestsResultsDir (-r): Directory for storing test results
+ * - deferFailureExit: Maven-only deferral until verification, after container cleanup
  *
  * @async
  * @returns {Promise<void>}
@@ -433,6 +390,11 @@ async function main() {
       default: defaultPostmanTestsResultsDir,
       type: "string",
     })
+    .option("deferFailureExit", {
+      describe: "Write a failing summary but defer nonzero exit until Maven verify, after container cleanup",
+      default: false,
+      type: "boolean",
+    })
     .demandCommand(
       1,
       "You need at least one command (group name) to run the script"
@@ -448,21 +410,13 @@ async function main() {
     argv.postmanTestsResultsDir
   );
 
-  const jwt = await fetchJWT(serverUrl);
-
-  // Ensure results directory exists
-  if (!fs.existsSync(postmanTestsResultsDir)) {
-    fs.mkdirSync(postmanTestsResultsDir, { recursive: true });
-  }
-
-  // Read and parse the configuration file
-  const config = JSON.parse(fs.readFileSync(configFilePath, "utf8"));
-
-  // Change working directory to postman tests directory
-  process.chdir(postmanTestsDir);
-
-  // Process collections based on groupname
   try {
+    if (!fs.existsSync(postmanTestsResultsDir)) {
+      fs.mkdirSync(postmanTestsResultsDir, { recursive: true });
+    }
+    const jwt = await fetchJWT(serverUrl);
+    const config = JSON.parse(fs.readFileSync(configFilePath, "utf8"));
+    process.chdir(postmanTestsDir);
     if (groupname === "all") {
       console.log("All collections");
       await processAllCollections(
@@ -485,22 +439,23 @@ async function main() {
         );
       }
     }
-
-    generateFailsafeSummaryXml(postmanTestsResultsDir);
-
-    // Check if any collections failed and exit with a non-zero status code
-    if (summaryResults.failures > 0) {
-      console.error("Some collections failed.");
-      process.exit(0);
-    }
   } catch (error) {
-    console.error("An error occurred:", error);
-    process.exit(1);
+    summaryResults.errors++;
+    console.error("Postman setup or collection selection failed.");
+  }
+  if (summaryResults.completed === 0 && summaryResults.errors === 0 && summaryResults.failures === 0) {
+    summaryResults.errors++;
+    console.error("Postman executed zero requests.");
+  }
+  generateFailsafeSummaryXml(postmanTestsResultsDir);
+  if (summaryResults.failures + summaryResults.errors > 0) {
+    console.error("Postman assertions or execution failed.");
+    if (!argv.deferFailureExit) process.exit(1);
   }
 }
 
 // Run the main function and handle any errors
-main().catch((err) => {
-  console.error("Unhandled error:", err);
+main().catch(() => {
+  console.error("Postman could not write execution results.");
   process.exit(1);
 });

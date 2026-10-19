@@ -68,7 +68,7 @@
 								"body": {
 									"mode": "file",
 									"file": {
-										"src": "resources/Push_publish/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
+										"src": "../../resources/Push_publish/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
 									}
 								},
 								"url": {

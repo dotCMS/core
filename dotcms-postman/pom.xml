@@ -73,29 +73,7 @@
                         <configuration>
                             <skip>${postman.test.skip}</skip>
                             <!-- 'start' is the script name defined in package.json -->
-                            <commandlineArgs>run start --serverUrl=${postman.server.url} --postmanTestsDir=${postman.collection.dir} ${postman.collections}</commandlineArgs>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-failsafe-plugin</artifactId>
-                <configuration>
-                    <skipTests>${postman.test.skip}</skipTests> <!-- This will skip the test execution -->
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>integration-test</id>
-                        <phase>none</phase> <!-- This disables automatic test execution in the integration-test phase -->
-                    </execution>
-                    <execution>
-                        <id>verify</id>
-                        <goals>
-                            <goal>verify</goal> <!-- This ensures the verify goal is still active -->
-                        </goals>
-                        <configuration>
-                            <!-- Configuration specific to verify goal can go here if needed -->
+                            <commandlineArgs>run start --deferFailureExit --serverUrl=${postman.server.url} --postmanTestsDir=${postman.collection.dir} ${postman.collections}</commandlineArgs>
                         </configuration>
                     </execution>
                 </executions>
@@ -177,6 +155,28 @@
                         <!-- should be post-integration test but need to make sure it does not stop
                         before dump of jacoco -->
                         <phase>verify</phase>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <configuration>
+                    <skipTests>${postman.test.skip}</skipTests> <!-- This will skip the test execution -->
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>integration-test</id>
+                        <phase>none</phase> <!-- This disables automatic test execution in the integration-test phase -->
+                    </execution>
+                    <execution>
+                        <id>verify</id>
+                        <goals>
+                            <goal>verify</goal> <!-- This ensures the verify goal is still active -->
+                        </goals>
+                        <configuration>
+                            <!-- Configuration specific to verify goal can go here if needed -->
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

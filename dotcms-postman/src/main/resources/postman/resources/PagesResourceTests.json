@@ -2007,6 +2007,17 @@
           "name": "invalidateSession",
           "event": [
             {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.cookies.jar().clear(pm.environment.get('serverURL'), function (err) {",
+                  "    if (err) throw new Error('Could not isolate anonymous request cookies');",
+                  "});"
+                ]
+              }
+            },
+            {
               "listen": "test",
               "script": {
                 "exec": [
@@ -2031,6 +2042,9 @@
                 "v1",
                 "logout"
               ]
+            },
+            "auth": {
+              "type": "noauth"
             }
           },
           "response": []
@@ -2383,6 +2397,17 @@
           "name": "invalidateSession",
           "event": [
             {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.cookies.jar().clear(pm.environment.get('serverURL'), function (err) {",
+                  "    if (err) throw new Error('Could not isolate anonymous request cookies');",
+                  "});"
+                ]
+              }
+            },
+            {
               "listen": "test",
               "script": {
                 "exec": [
@@ -2407,6 +2432,9 @@
                 "v1",
                 "logout"
               ]
+            },
+            "auth": {
+              "type": "noauth"
             }
           },
           "response": []
@@ -5970,6 +5998,17 @@
       "name": "invalidateSession",
       "event": [
         {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.cookies.jar().clear(pm.environment.get('serverURL'), function (err) {",
+              "    if (err) throw new Error('Could not isolate anonymous request cookies');",
+              "});"
+            ]
+          }
+        },
+        {
           "listen": "test",
           "script": {
             "exec": [
@@ -5981,7 +6020,6 @@
               "    pm.expect(pm.response.text()).to.include(\"Logout successfully\");",
               "});",
               "",
-              "pm.environment.unset('jwt');",
               ""
             ],
             "type": "text/javascript",
@@ -6002,6 +6040,9 @@
             "v1",
             "logout"
           ]
+        },
+        "auth": {
+          "type": "noauth"
         }
       },
       "response": []
@@ -6009,6 +6050,17 @@
     {
       "name": "Check Cache-Control",
       "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.cookies.jar().clear(pm.environment.get('serverURL'), function (err) {",
+              "    if (err) throw new Error('Could not isolate anonymous request cookies');",
+              "});"
+            ]
+          }
+        },
         {
           "listen": "test",
           "script": {
@@ -6033,6 +6085,9 @@
           "path": [
             "pageassetsystemtemplate"
           ]
+        },
+        "auth": {
+          "type": "noauth"
         }
       },
       "response": []

@@ -16,27 +16,33 @@ const loginCookies = [
 ];
 
 // Execute the WHOLE CLI, not a copied/extracted fetchJWT; no packages, network or disk writes.
-async function runRunner({ login, token, failAt, abortAt } = {}) {
+async function runRunner({ login, token, failAt, abortAt, collectionError, newmanError, newmanThrow,
+  newmanSummary, deferFailureExit = false, emptyGroup = false } = {}) {
   const calls = [], newmanRuns = [], logs = [], exits = [], timers = new Map();
-  const scheduledTimers = [], aborts = [];
+  const scheduledTimers = [], aborts = [], summaries = [], writes = [];
   let timerId = 0;
   const argv = {
-    _: ['probe'], serverUrl: 'http://dotcms.invalid',
+    _: [emptyGroup ? 'default' : 'probe'], serverUrl: 'http://dotcms.invalid', deferFailureExit,
     postmanTestsDir: '/virtual/collections', configFilePath: '/virtual/config.json',
     postmanTestsResultsDir: '/virtual/results',
   };
   const cli = { argv };
   for (const method of ['command', 'demandCommand', 'option', 'help']) cli[method] = () => cli;
   const modules = {
-    fs: { existsSync: () => true, readFileSync: () => '[]', writeFileSync() {} },
+    fs: { existsSync: (file) => !(emptyGroup && file.endsWith('/default.json')),
+      readdirSync: () => [], readFileSync: () => '[]', writeFileSync: (...args) => writes.push(args) },
     path,
     'yargs/yargs': () => cli,
     'yargs/helpers': { hideBin: (args) => args.slice(2) },
     newman: { run(config, callback) {
       newmanRuns.push(config);
-      callback(null, { run: { failures: [], executions: [{}] } });
+      if (newmanThrow) throw newmanThrow;
+      callback(newmanError || null, newmanSummary || { run: { failures: [], executions: [{}] } });
     } },
-    xml2js: { Builder: class { buildObject() { return '<failsafe-summary/>'; } } },
+    xml2js: { Builder: class { buildObject(value) {
+      summaries.push(JSON.parse(JSON.stringify(value['failsafe-summary'])));
+      return '<failsafe-summary/>';
+    } } },
     '/virtual/collections/probe.json': { info: { name: 'probe' }, item: [{
       name: 'protected', request: { url: '{{serverURL}}/api/v1/site/currentSite',
         auth: { type: 'bearer', bearer: [{ key: 'token', value: '{{jwt}}' }] } },
@@ -45,6 +51,7 @@ async function runRunner({ login, token, failAt, abortAt } = {}) {
   await vm.runInNewContext(source, {
     __dirname: runnerDir, Buffer, URL, Headers, Request, Response, AbortController,
     require(name) {
+      if (name === '/virtual/collections/probe.json' && collectionError) throw collectionError;
       assert.ok(Object.hasOwn(modules, name), `Unexpected runner dependency: ${name}`);
       return modules[name];
     },
@@ -73,7 +80,7 @@ async function runRunner({ login, token, failAt, abortAt } = {}) {
       return token ? token() : Response.json({ entity: { jwt } });
     },
   }, { filename: path.join(runnerDir, 'index.js') });
-  return { calls, newmanRuns, logs: logs.join('\n'), exits, timers, scheduledTimers, aborts };
+  return { calls, newmanRuns, logs: logs.join('\n'), exits, timers, scheduledTimers, aborts, summaries, writes };
 }
 
 function assertNoSecrets(logs) {
@@ -121,10 +128,51 @@ test('JSON login -> isolated JSESSIONID -> API JWT -> Bearer-only Newman environ
   assertNoSecrets(result.logs);
   assert.equal(result.timers.size, 0);
   assert.ok(!result.exits.some((code) => code !== 0));
+  assert.equal(result.summaries.length, 1);
+  assert.equal(result.summaries[0].$.result, 0);
+  assert.equal(result.summaries[0].completed, 1);
+  assert.equal(result.summaries[0].errors, 0);
+  assert.equal(result.summaries[0].failures, 0);
 });
 
 test('successful CLI execution never logs the returned API JWT', async () => {
   assertNoSecrets((await runRunner()).logs);
+});
+
+const executionFailures = [
+  ['missing collection', { collectionError: Object.assign(new Error(jwt), { code: 'MODULE_NOT_FOUND' }) }, 0, 1, 0],
+  ['malformed collection', { collectionError: new SyntaxError(jwt) }, 0, 1, 0],
+  ['synchronous Newman throw', { newmanThrow: new Error(jwt) }, 0, 1, 0],
+  ['Newman callback error', { newmanError: new Error(jwt) }, 0, 1, 0],
+  ['IP callback error is not success', { newmanError: Object.assign(new Error(jwt), { code: 'ERR_INVALID_IP_ADDRESS' }) }, 0, 1, 0],
+  ['assertion failure', { newmanSummary: { run: { executions: [{}], failures: [{ error: { message: jwt } }] } } }, 1, 0, 1],
+  ['zero executions', { newmanSummary: { run: { executions: [], failures: [] } } }, 0, 1, 0],
+  ['empty collection selection', { emptyGroup: true }, 0, 1, 0],
+];
+for (const [name, scenario, completed, errors, failures] of executionFailures) {
+  for (const deferFailureExit of [false, true]) test(`${name}: accurate summary and ${deferFailureExit ? 'Maven-deferred' : 'direct failing'} exit`, async () => {
+    const result = await runRunner({ ...scenario, deferFailureExit });
+    assert.equal(result.summaries.length, 1);
+    const summary = result.summaries[0];
+    assert.equal(summary.$.result, 255, 'Errors/failures/empty runs cannot report XML success');
+    assert.equal(summary.completed, completed);
+    assert.equal(summary.errors, errors, 'Count each error exactly once, including load/sync errors');
+    assert.equal(summary.failures, failures);
+    assert.ok(result.writes.some(([file]) => file.endsWith('/failsafe-summary.xml')));
+    assert.equal(result.exits.some((code) => code !== 0), !deferFailureExit,
+      'Only the Maven invocation defers failure until verify, after container cleanup');
+    assertNoSecrets(result.logs);
+  });
+}
+
+test('Maven bootstrap errors are recorded and deferred, never silently successful', async () => {
+  const result = await runRunner({ failAt: 'login', deferFailureExit: true });
+  assert.equal(result.summaries.length, 1);
+  assert.equal(result.summaries[0].$.result, 255);
+  assert.equal(result.summaries[0].errors, 1);
+  assert.equal(result.summaries[0].completed, 0);
+  assert.ok(!result.exits.some((code) => code !== 0));
+  assertNoSecrets(result.logs);
 });
 
 const failures = [
