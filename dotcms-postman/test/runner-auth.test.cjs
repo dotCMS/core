@@ -18,6 +18,7 @@ const loginCookies = [
 // Execute the WHOLE CLI, not a copied/extracted fetchJWT; no packages, network or disk writes.
 async function runRunner({ login, token, failAt, abortAt } = {}) {
   const calls = [], newmanRuns = [], logs = [], exits = [], timers = new Map();
+  const scheduledTimers = [], aborts = [];
   let timerId = 0;
   const argv = {
     _: ['probe'], serverUrl: 'http://dotcms.invalid',
@@ -49,7 +50,11 @@ async function runRunner({ login, token, failAt, abortAt } = {}) {
     },
     process: { argv: ['node', 'index.js', 'probe'], env: {}, chdir() {}, exit(code) { exits.push(code); } },
     console: Object.fromEntries(['log', 'warn', 'error'].map((level) => [level, (...args) => logs.push(format(...args))])),
-    setTimeout(callback, delay) { timers.set(++timerId, { callback, delay }); return timerId; },
+    setTimeout(callback, delay) {
+      scheduledTimers.push(delay);
+      timers.set(++timerId, { callback, delay });
+      return timerId;
+    },
     clearTimeout(id) { timers.delete(id); },
     async fetch(input, options) {
       const request = new Request(input, options);
@@ -57,18 +62,18 @@ async function runRunner({ login, token, failAt, abortAt } = {}) {
       const stage = request.url.endsWith('/authentication') ? 'login' : 'token';
       if (abortAt === stage) {
         for (const timer of timers.values()) timer.callback();
-        assert.ok(request.signal.aborted, 'Bootstrap timeout must abort the fetch');
+        aborts.push({ stage, aborted: request.signal.aborted, activeTimers: timers.size });
         throw Object.assign(new Error('request aborted'), { name: 'AbortError' });
       }
       if (failAt === stage) throw Object.assign(new Error('synthetic connection failure'), {
         request: { headers: { Cookie: `JSESSIONID=${session}`, Authorization: `Bearer ${jwt}` } },
       });
-      if (stage === 'login') return login ? login() : Response.json({ entity: { user: {} } }, { headers: loginCookies });
+      if (stage === 'login') return login ? login() : Response.json({ entity: { userId: 'dotcms.org.1', emailAddress: 'admin@dotcms.com' } }, { headers: loginCookies });
       assert.ok(request.url.endsWith('/apitoken'), 'Only designated login and API-token routes are allowed');
       return token ? token() : Response.json({ entity: { jwt } });
     },
   }, { filename: path.join(runnerDir, 'index.js') });
-  return { calls, newmanRuns, logs: logs.join('\n'), exits, timers };
+  return { calls, newmanRuns, logs: logs.join('\n'), exits, timers, scheduledTimers, aborts };
 }
 
 function assertNoSecrets(logs) {
@@ -141,6 +146,15 @@ const failures = [
 for (const [name, scenario, expectedCalls] of failures) {
   test(`bootstrap fails closed: ${name}`, async () => {
     const result = await runRunner(scenario);
+    if (scenario.abortAt) {
+      assert.equal(result.aborts.length, 1, 'Reach the requested bootstrap timeout stage');
+      assert.equal(result.aborts[0].stage, scenario.abortAt);
+      assert.ok(result.aborts[0].activeTimers > 0, 'Schedule an abort timeout before fetching');
+      assert.equal(result.aborts[0].aborted, true, 'The scheduled callback must abort the fetch signal');
+      assert.ok(result.scheduledTimers.length > 0);
+      assert.ok(result.scheduledTimers.every((delay) => Number.isFinite(delay) && delay > 0 && delay <= 30000),
+        'Bootstrap requests need finite, positive timeouts bounded by 30 seconds');
+    }
     assert.equal(result.calls.length, expectedCalls, 'Stop immediately at failed bootstrap stage');
     assert.equal(result.newmanRuns.length, 0, 'Never run collections with missing/invalid authentication');
     assert.ok(result.exits.some((code) => code !== 0), 'Bootstrap failure must fail the CLI');
