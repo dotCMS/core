@@ -212,8 +212,8 @@ test('ALL/JWT_TOKEN compatibility is outside ordinary discovery; NONE retains me
     assert.match((r.node.event || []).map(eventCode).join('\n'), /\.status\(401\)/);
   }
   const pom = readFileSync(path.resolve(__dirname, '../pom.xml'), 'utf8');
-  assert.match(pom, /<postman.allow.basic.auth>NONE<\/postman.allow.basic.auth>/);
-  assert.match(pom, /<DOT_ALLOW_BASIC_AUTH>\$\{postman.allow.basic.auth\}<\/DOT_ALLOW_BASIC_AUTH>/);
+  assert.match(pom, /<postman.basic.auth.mode>NONE<\/postman.basic.auth.mode>/);
+  assert.match(pom, /<DOT_ALLOW_BASIC_AUTH>\$\{postman.basic.auth.mode\}<\/DOT_ALLOW_BASIC_AUTH>/);
 });
 
 test('DAV CRUD keeps username/API-JWT auth, REST setup uses Bearer, no conflicting header', () => {

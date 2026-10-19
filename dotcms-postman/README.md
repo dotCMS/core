@@ -23,7 +23,7 @@ legacy login JWT (`entity.token`). Do not export live tokens or log them. Clear
 cached `chrisJwt`/`billJwt` collection variables before a new standalone run if
 those fixture tokens have expired; Newman loads fresh collection JSON each run.
 
-The module defaults `postman.allow.basic.auth` to `NONE`. Ordinary discovery is
+The module defaults `postman.basic.auth.mode` to `NONE`. Ordinary discovery is
 nonrecursive, so the compatibility directories below are excluded from normal
 `all`/`default` shards. The normal shard includes `WebDav_Basic_Denied`, which
 checks password and API-JWT Basic rejection for all 12 DAV methods (including
@@ -40,14 +40,14 @@ to that server as `DOT_ALLOW_BASIC_AUTH`.
 # Existing 13 DAV operations, using username + matching API JWT as the Basic password.
 # REST setup remains Bearer; a real-password REST denial distinguishes JWT_TOKEN from ALL.
 ./mvnw verify -pl :dotcms-postman -Dpostman.test.skip=false \
-  -Dpostman.allow.basic.auth=JWT_TOKEN \
+  -Dpostman.basic.auth.mode=JWT_TOKEN \
   -Dpostman.collection.dir=src/main/resources/postman/compatibility/jwt-token \
   -Dpostman.collections=WebDav.postman_collection
 
 # The two original "valid Basic instead of required JWT" cases still assert 401.
 # A successful password-Basic REST control proves that Basic is actually enabled.
 ./mvnw verify -pl :dotcms-postman -Dpostman.test.skip=false \
-  -Dpostman.allow.basic.auth=ALL \
+  -Dpostman.basic.auth.mode=ALL \
   -Dpostman.collection.dir=src/main/resources/postman/compatibility/all \
   -Dpostman.collections=Push_Publish_JWT_Token_Test.postman_collection,Integrity_Checker_JWT_Token_Test.postman_collection
 ```

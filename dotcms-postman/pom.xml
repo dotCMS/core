@@ -26,7 +26,7 @@
         <cleanup.before.tests>true</cleanup.before.tests>
         <postman.test.skip>true</postman.test.skip>
         <!-- Ordinary shards stay at NONE; compatibility jobs provision their own server explicitly. -->
-        <postman.allow.basic.auth>NONE</postman.allow.basic.auth>
+        <postman.basic.auth.mode>NONE</postman.basic.auth.mode>
         <pnpm.install.args>install --frozen-lockfile</pnpm.install.args>
         <skip.npm.install>false</skip.npm.install>
         <postman.server.url>http://localhost:${tomcat.port}</postman.server.url>
@@ -140,7 +140,7 @@
                                     <DOT_ANNOUNCEMENTS_BASE_URL>http://localhost:8080</DOT_ANNOUNCEMENTS_BASE_URL>
                                     <DOT_ALLOW_ACCESS_TO_PRIVATE_SUBNETS>true</DOT_ALLOW_ACCESS_TO_PRIVATE_SUBNETS>
                                     <DOT_DOTCMS_DEV_MODE>true</DOT_DOTCMS_DEV_MODE>
-                                    <DOT_ALLOW_BASIC_AUTH>${postman.allow.basic.auth}</DOT_ALLOW_BASIC_AUTH>
+                                    <DOT_ALLOW_BASIC_AUTH>${postman.basic.auth.mode}</DOT_ALLOW_BASIC_AUTH>
                                     <DOT_AI_API_URL>http://wm:8080/c</DOT_AI_API_URL>
                                     <DOT_AI_IMAGE_API_URL>http://wm:8080/i</DOT_AI_IMAGE_API_URL>
                                     <DOT_AI_EMBEDDINGS_API_URL>http://wm:8080/e</DOT_AI_EMBEDDINGS_API_URL>
