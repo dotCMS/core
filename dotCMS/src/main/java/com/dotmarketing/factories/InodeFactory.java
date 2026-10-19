@@ -87,15 +87,14 @@ public class InodeFactory {
 			final String tableName = c.getDeclaredConstructor().newInstance().getType();
 			final HibernateUtil dh = new HibernateUtil(c);
 			// Only a plain column name, optionally qualified and with a direction, may order this query
-			final String sanitizedOrderBy = plainOrderBy(orderby);
+			orderby = plainOrderBy(orderby);
 
 			String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
 					+ tableName + "_1_ where tree.parent = ? and tree.child = " + tableName + ".inode and " + tableName
-					+ "_1_.inode = " + tableName + ".inode and "+tableName+"_1_.type = '"+tableName+"' and " + condition + " order by " + sanitizedOrderBy;
+					+ "_1_.inode = " + tableName + ".inode and "+tableName+"_1_.type = '"+tableName+"' and " + condition + " order by " + orderby;
 
-			if(!UtilMethods.isSet(sanitizedOrderBy)) {
+			if(!UtilMethods.isSet(orderby))
 				sql +=  tableName + ".inode desc";
-			}
 
 			//sql += (sql.toLowerCase().indexOf("limit") == -1 ? ", " + tableName + ".inode desc" : "");
 
