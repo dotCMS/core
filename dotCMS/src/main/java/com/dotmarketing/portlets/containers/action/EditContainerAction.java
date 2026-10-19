@@ -63,7 +63,12 @@ import org.apache.commons.beanutils.BeanUtils;
 /**
  * Portlet action used to maintain the containers
  * @author Maria
+ * @deprecated Containers are created, edited, copied and published through the REST API
+ * ({@code /api/v1/containers}, see {@code ContainerResource}) and the Angular container editor.
+ * This Struts action belongs to the legacy JSP portlet, which has no caller in the current UI; it
+ * is kept only so existing URLs keep working and will be removed in a future version.
  */
+@Deprecated
 public class EditContainerAction extends DotPortletAction implements
 		DotPortletActionInterface {
 
