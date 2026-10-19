@@ -291,7 +291,7 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 		if (null != optionalName) {
 
 			var xhrArgs = {
-				url: "/api/v1/workflow/schemes/" + schemeId + "/copy?name=" + optionalName,
+				url: "/api/v1/workflow/schemes/" + schemeId + "/copy?name=" + encodeURIComponent(optionalName),
 
 				postData: '',
 				handleAs: 'json',
