@@ -10,16 +10,11 @@
 			"name": "CreateNewLimitedRole",
 			"request": {
 				"auth": {
-					"type": "basic",
-					"basic": [
+					"type": "bearer",
+					"bearer": [
 						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
+							"key": "token",
+							"value": "{{jwt}}",
 							"type": "string"
 						}
 					]
@@ -73,16 +68,11 @@
 			],
 			"request": {
 				"auth": {
-					"type": "basic",
-					"basic": [
+					"type": "bearer",
+					"bearer": [
 						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
+							"key": "token",
+							"value": "{{jwt}}",
 							"type": "string"
 						}
 					]
@@ -122,16 +112,11 @@
 			],
 			"request": {
 				"auth": {
-					"type": "basic",
-					"basic": [
+					"type": "bearer",
+					"bearer": [
 						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
+							"key": "token",
+							"value": "{{jwt}}",
 							"type": "string"
 						}
 					]
@@ -206,7 +191,24 @@
 							"    pm.expect(responseData.entity.user.userId).to.exist.and.to.be.a('string').and.to.have.lengthOf.at.least(1);",
 							"});",
 							"",
-							""
+							"",
+							"",
+							"// Keep this fixture's permissions: issue an API token for its returned canonical user ID.",
+							"const createdEntity = pm.response.json().entity;",
+							"const actorId = createdEntity.user.id || createdEntity.userID;",
+							"if (typeof actorId !== 'string' || !actorId) throw new Error('Missing fixture user ID');",
+							"pm.sendRequest({",
+							"    url: pm.environment.get('serverURL') + '/api/v1/apitoken',",
+							"    method: 'POST',",
+							"    header: { Authorization: 'Bearer ' + pm.environment.get('jwt'), 'Content-Type': 'application/json' },",
+							"    body: { mode: 'raw', raw: JSON.stringify({ userId: actorId, expirationSeconds: 60000,",
+							"        network: '0.0.0.0/0', claims: { label: 'postman-limited' } }) }",
+							"}, function (err, response) {",
+							"    if (err || response.code !== 200) throw new Error('Fixture API token issuance failed');",
+							"    const token = response.json().entity.jwt;",
+							"    if (typeof token !== 'string' || !token.trim()) throw new Error('Missing fixture API JWT');",
+							"    pm.collectionVariables.set('limitedUserJwt', token);",
+							"});"
 						],
 						"type": "text/javascript"
 					}
@@ -233,6 +235,16 @@
 						"api",
 						"v1",
 						"users"
+					]
+				},
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
 					]
 				}
 			},
@@ -266,6 +278,9 @@
 						"v1",
 						"logout"
 					]
+				},
+				"auth": {
+					"type": "noauth"
 				}
 			},
 			"response": []
@@ -288,16 +303,11 @@
 			],
 			"request": {
 				"auth": {
-					"type": "basic",
-					"basic": [
+					"type": "bearer",
+					"bearer": [
 						{
-							"key": "password",
-							"value": "dotcms123456",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "mylimiteduser@dotcms.com",
+							"key": "token",
+							"value": "{{limitedUserJwt}}",
 							"type": "string"
 						}
 					]
@@ -359,6 +369,9 @@
 						"v1",
 						"logout"
 					]
+				},
+				"auth": {
+					"type": "noauth"
 				}
 			},
 			"response": []
@@ -387,6 +400,9 @@
 						"v1",
 						"authentication"
 					]
+				},
+				"auth": {
+					"type": "noauth"
 				}
 			},
 			"response": []

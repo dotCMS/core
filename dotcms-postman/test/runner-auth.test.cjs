@@ -116,6 +116,8 @@ test('JSON login -> isolated JSESSIONID -> API JWT -> Bearer-only Newman environ
   assert.ok(!JSON.stringify(config).includes('synthetic-login-token'));
   assert.equal(config.workingDir, '/virtual/collections', 'Keep multipart upload fixture resolution');
   assert.notEqual(config.reporter.cli.showRequestData, true, 'Verbose request data can expose Authorization');
+  assert.equal(config.reporter.cli.noConsole, true, 'Collection debug logs can contain token response bodies');
+  assert.equal(config.reporter.cli.silent, true, 'CLI assertion output can include secret response values');
   assertNoSecrets(result.logs);
   assert.equal(result.timers.size, 0);
   assert.ok(!result.exits.some((code) => code !== 0));

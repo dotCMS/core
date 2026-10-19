@@ -55,43 +55,49 @@ const defaultPostmanTestsResultsDir = "target/failsafe-reports"; // Default resu
 async function fetchJWT(serverUrl) {
   const username = "admin@dotcms.com";
   const password = "admin";
-  const base64 = Buffer.from(`${username}:${password}`).toString("base64");
+
+  // Node fetch has no cookie jar: retain only this login's servlet session for token issuance.
+  async function post(endpoint, body, headers = {}) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    try {
+      const response = await fetch(serverUrl + endpoint, {
+        method: "POST",
+        headers: { "content-type": "application/json", ...headers },
+        body: JSON.stringify(body),
+        redirect: "error",
+        signal: controller.signal,
+      });
+      if (response.status !== 200) {
+        throw new Error(`Authentication request failed (HTTP ${response.status})`);
+      }
+      return { data: await response.json(), headers: response.headers };
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
 
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-
-    const response = await fetch(serverUrl + "/api/v1/apitoken", {
-      headers: {
-        accept: "*/*",
-        "content-type": "application/json",
-        Authorization: `Basic ${base64}`,
-      },
-      body: JSON.stringify({
-        expirationSeconds: 60000,
-        userId: "dotcms.org.1",
-        network: "0.0.0.0/0",
-        claims: { label: "postman-tests" },
-      }),
-      method: "POST",
-      signal: controller.signal,
+    const login = await post("/api/v1/authentication", {
+      userId: username, password, backEndLogin: true,
     });
+    const sessionCookie = login.headers.getSetCookie()
+      .map((cookie) => cookie.split(";", 1)[0].trim())
+      .filter((cookie) => /^JSESSIONID=\S+$/.test(cookie)).pop();
+    if (!sessionCookie) throw new Error("Authentication did not return a session");
 
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data.entity.jwt;
+    const token = await post("/api/v1/apitoken", {
+      expirationSeconds: 60000,
+      userId: "dotcms.org.1",
+      network: "0.0.0.0/0",
+      claims: { label: "postman-tests" },
+    }, { Cookie: sessionCookie });
+    const jwt = token.data?.entity?.jwt;
+    if (typeof jwt !== "string" || !jwt.trim()) throw new Error("Missing API JWT");
+    return jwt;
   } catch (error) {
-    if (error.name === "AbortError") {
-      throw new Error("JWT fetch request timed out");
-    }
-    console.log(`Failed to fetch JWT:` + JSON.stringify(error,
-        Object.getOwnPropertyNames(error)))
-    throw new Error(`Failed to fetch JWT: ${error.message}`);
+    // Fetch errors may contain request headers. Never serialize errors, response bodies or credentials.
+    throw new Error(error.name === "AbortError" ? "JWT bootstrap timed out" : "JWT bootstrap failed");
   }
 }
 
@@ -155,7 +161,6 @@ async function runNewman(
     );
 
     console.log("Running collection:", collectionName);
-    console.log("using jwt:", jwt);
 
     // Validate and sanitize environment variables
     const envVars = [
@@ -171,10 +176,11 @@ async function runNewman(
       reporter: {
         junit: { export: resultPath },
         cli: {
-          silent: false,
-          verbose: true,
-          requestErrors: true,
-          showRequestData: true,
+          silent: true,
+          verbose: false,
+          noConsole: true,
+          requestErrors: false,
+          showRequestData: false,
         },
       },
       // Where a formdata `src` is resolved from. Without it Newman resolves against the process
@@ -222,11 +228,11 @@ async function runNewman(
           return;
         }
 
-        console.error(`Error running collection ${collectionName}:`, err);
+        console.error(`Error running collection ${collectionName}:`, err.code || err.name);
         summaryResults.errors++;
         reject(
           new Error(
-            `Error running collection ${collectionName}: ${err.message}`
+            `Error running collection ${collectionName}`
           )
         );
         return;
@@ -248,7 +254,7 @@ async function runNewman(
               );
               return;
             }
-            console.error(`Failure #${index + 1}:`, failure.error || failure);
+            console.error(`Failure #${index + 1}:`, failure.error?.name || "Collection assertion failed");
           });
           reject(new Error(`Collection ${collectionName} had failures`));
           return;
@@ -256,7 +262,7 @@ async function runNewman(
 
         resolve();
       } catch (error) {
-        console.error(`Error processing results for ${collectionName}:`, error);
+        console.error(`Error processing results for ${collectionName}`);
         summaryResults.errors++;
         reject(error);
       }
@@ -444,7 +450,6 @@ async function main() {
 
   const jwt = await fetchJWT(serverUrl);
 
-  console.log(`Got jwt: ${jwt}`);
   // Ensure results directory exists
   if (!fs.existsSync(postmanTestsResultsDir)) {
     fs.mkdirSync(postmanTestsResultsDir, { recursive: true });

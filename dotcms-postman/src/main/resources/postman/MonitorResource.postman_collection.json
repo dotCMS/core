@@ -87,7 +87,10 @@
 						"system-status"
 					]
 				},
-				"description": "# System Status API\n\nThis API endpoint makes an HTTP GET request to retrieve the system status with extended details.\n\n## Request\n\n- Method: GET\n    \n- Endpoint: `{{serverURL}}/api/v1/system-status`\n    \n\n## Response\n\n- Status: 200 OK\n    \n- Content-Type: application/json\n    \n\n``` json\n{\n    \"backendHealthy\": true,\n    \"dotCMSHealthy\": true,\n    \"frontendHealthy\": true,\n    \"subsystems\": {\n        \"assetFSHealthy\": true,\n        \"cacheHealthy\": true,\n        \"dbSelectHealthy\": true,\n        \"esHealthy\": true,\n        \"localFSHealthy\": true\n    }\n}\n\n ```\n\nThe response contains detailed information about the health status of different subsystems within the system."
+				"description": "# System Status API\n\nThis API endpoint makes an HTTP GET request to retrieve the system status with extended details.\n\n## Request\n\n- Method: GET\n    \n- Endpoint: `{{serverURL}}/api/v1/system-status`\n    \n\n## Response\n\n- Status: 200 OK\n    \n- Content-Type: application/json\n    \n\n``` json\n{\n    \"backendHealthy\": true,\n    \"dotCMSHealthy\": true,\n    \"frontendHealthy\": true,\n    \"subsystems\": {\n        \"assetFSHealthy\": true,\n        \"cacheHealthy\": true,\n        \"dbSelectHealthy\": true,\n        \"esHealthy\": true,\n        \"localFSHealthy\": true\n    }\n}\n\n ```\n\nThe response contains detailed information about the health status of different subsystems within the system.",
+				"auth": {
+					"type": "noauth"
+				}
 			},
 			"response": []
 		},
@@ -127,7 +130,10 @@
 						"probes"
 					]
 				},
-				"description": "# Get Probes\n\nThis endpoint retrieves a list of probes from the server.\n\n## Request\n\n- Method: GET\n    \n- URL: `{{serverURL}}/api/v1/probes`\n    \n\n## Response\n\n- Status: 200 OK\n    \n- Content-Type: application/json\n    \n\n``` json\n{\n    \"backendHealthy\": true,\n    \"dotCMSHealthy\": true,\n    \"frontendHealthy\": true,\n    \"subsystems\": {\n        \"assetFSHealthy\": true,\n        \"cacheHealthy\": true,\n        \"dbSelectHealthy\": true,\n        \"esHealthy\": true,\n        \"localFSHealthy\": true\n    }\n}\n\n ```\n\nThe response contains detailed information about the health status of different subsystems within the system."
+				"description": "# Get Probes\n\nThis endpoint retrieves a list of probes from the server.\n\n## Request\n\n- Method: GET\n    \n- URL: `{{serverURL}}/api/v1/probes`\n    \n\n## Response\n\n- Status: 200 OK\n    \n- Content-Type: application/json\n    \n\n``` json\n{\n    \"backendHealthy\": true,\n    \"dotCMSHealthy\": true,\n    \"frontendHealthy\": true,\n    \"subsystems\": {\n        \"assetFSHealthy\": true,\n        \"cacheHealthy\": true,\n        \"dbSelectHealthy\": true,\n        \"esHealthy\": true,\n        \"localFSHealthy\": true\n    }\n}\n\n ```\n\nThe response contains detailed information about the health status of different subsystems within the system.",
+				"auth": {
+					"type": "noauth"
+				}
 			},
 			"response": []
 		},
@@ -168,7 +174,10 @@
 						"ready"
 					]
 				},
-				"description": "This endpoint makes an HTTP GET request to retrieve the readiness status of a probe. The response is in the form of a JSON schema.\n\n## Response\n\n- Status: 200 OK\n    \n- Content-Type: application/json\n    \n\n``` json\n{\n    \"backendHealthy\": true,\n    \"dotCMSHealthy\": true,\n    \"frontendHealthy\": true,\n    \"subsystems\": {\n        \"assetFSHealthy\": true,\n        \"cacheHealthy\": true,\n        \"dbSelectHealthy\": true,\n        \"esHealthy\": true,\n        \"localFSHealthy\": true\n    }\n}\n\n ```\n\nThe response contains detailed information about the health status of different subsystems within the system."
+				"description": "This endpoint makes an HTTP GET request to retrieve the readiness status of a probe. The response is in the form of a JSON schema.\n\n## Response\n\n- Status: 200 OK\n    \n- Content-Type: application/json\n    \n\n``` json\n{\n    \"backendHealthy\": true,\n    \"dotCMSHealthy\": true,\n    \"frontendHealthy\": true,\n    \"subsystems\": {\n        \"assetFSHealthy\": true,\n        \"cacheHealthy\": true,\n        \"dbSelectHealthy\": true,\n        \"esHealthy\": true,\n        \"localFSHealthy\": true\n    }\n}\n\n ```\n\nThe response contains detailed information about the health status of different subsystems within the system.",
+				"auth": {
+					"type": "noauth"
+				}
 			},
 			"response": []
 		},
@@ -205,7 +214,10 @@
 						"alive"
 					]
 				},
-				"description": "This /alive probe is lightweight - it checks if the server is up by requesting a common object from the dotCMS cache layer twice in a row. By the time a request gets here it has already run through the CMSFilter) .\n\n## Response\n\n- Status: 200 OK\n    \n- An empty String or JSON Object."
+				"description": "This /alive probe is lightweight - it checks if the server is up by requesting a common object from the dotCMS cache layer twice in a row. By the time a request gets here it has already run through the CMSFilter) .\n\n## Response\n\n- Status: 200 OK\n    \n- An empty String or JSON Object.",
+				"auth": {
+					"type": "noauth"
+				}
 			},
 			"response": []
 		}

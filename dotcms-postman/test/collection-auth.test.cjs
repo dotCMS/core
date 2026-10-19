@@ -63,12 +63,28 @@ const davPaths = [
 ];
 const isDavCompatibility = (r) => path.basename(r.file) === 'WebDav.postman_collection.json' &&
   davPaths.includes(r.names.join(' / ')) && /\/webdav\//i.test(url(r));
+const davMethods = ['OPTIONS', 'PROPFIND', 'PROPPATCH', 'LOCK', 'UNLOCK', 'COPY', 'MOVE', 'MKCOL', 'GET', 'HEAD', 'PUT', 'DELETE'];
+const isDavDenial = (r) => r.file === 'WebDav_Basic_Denied.postman_collection.json' &&
+  davMethods.some((method) => ['password', 'api-jwt'].some((credential) => r.names.join(' / ') === `${method} / ${credential}`));
+const modeControls = [
+  ['compatibility/all/Push_Publish_JWT_Token_Test.postman_collection.json', 'ALL accepts a valid user password on REST', 200],
+  ['compatibility/jwt-token/WebDav.postman_collection.json', 'JWT_TOKEN rejects a user password on REST', 401],
+];
+
+test('every ordinary configured collection resolves to an existing file', () => {
+  const config = JSON.parse(readFileSync(path.resolve(__dirname, '../config.json'), 'utf8'));
+  const topLevel = new Set(readdirSync(root));
+  for (const group of config) for (const collection of group.collections) {
+    assert.ok(topLevel.has(`${collection}.json`), `Missing configured collection: ${collection}`);
+  }
+});
 
 test('ordinary effective auth and manual headers have no password-Basic dependency', () => {
   assert.ok(requests.length >= 2915, 'Do not pass by silently dropping collections or requests');
   const violations = requests.filter((r) => {
     // DAV is a separate JWT_TOKEN compatibility protocol; these two negatives belong in isolated ALL.
-    if (isDavCompatibility(r) || isJwtOnlyNegative(r)) return false;
+    if (isDavCompatibility(r) || isJwtOnlyNegative(r) || isDavDenial(r) ||
+      modeControls.some(([file, name]) => r.file === file && r.names.join(' / ') === name)) return false;
     return r.auth?.type === 'basic' || manualAuth(r).some((h) => {
       const header = resolve(h.value, effectiveVariables(r));
       return /\{\{/.test(header) || !/^Bearer\s+\S+$/i.test(header);
@@ -125,6 +141,36 @@ for (const file of ['JobQueueResourceAPITests', 'BulkUploadResource', 'BulkRefre
   });
 }
 
+test('workflow resolves exact starter emails and provisions canonical chris/bill API JWTs', async () => {
+  const vars = { jwt: 'synthetic.runner.jwt', serverURL: 'http://dotcms.invalid' };
+  const subjects = [], sent = [];
+  const scope = { get: (key) => vars[key], set: (key, val) => { vars[key] = val; } };
+  const pm = { environment: scope, collectionVariables: scope, variables: scope,
+    sendRequest(request, callback) {
+      sent.push(request);
+      let data;
+      if (request.method === 'GET') {
+        const email = new URL(request.url).searchParams.get('query');
+        const actor = email.split('@')[0];
+        data = { entity: [{ id: 'dotcms.org.1', emailAddress: 'admin@dotcms.com' },
+          { id: `canonical-${actor}-id`, emailAddress: email }] };
+      } else {
+        const subject = JSON.parse(request.body.raw).userId;
+        subjects.push(subject);
+        data = { entity: { jwt: `synthetic.${subject}.jwt` } };
+      }
+      callback(null, { code: 200, json: () => data });
+    },
+  };
+  for (const { event } of scripts.filter((s) => path.basename(s.file) === 'Workflow_Resource_Tests.json' &&
+    s.names.length === 0 && s.event.listen === 'prerequest')) {
+    await vm.runInNewContext(eventCode(event), { pm, encodeURIComponent });
+  }
+  assert.deepEqual(subjects.sort(), ['canonical-bill-id', 'canonical-chris-id']);
+  for (const actor of ['chris', 'bill']) assert.equal(vars[`${actor}Jwt`], `synthetic.canonical-${actor}-id.jwt`);
+  for (const request of sent) assert.equal(request.header.Authorization, 'Bearer synthetic.runner.jwt');
+});
+
 test('valid-Basic-vs-required-JWT negatives remain Basic and assert 401 (ALL-only boundary)', () => {
   for (const [file, names] of jwtOnlyNegatives) {
     const r = find(file, names);
@@ -133,6 +179,41 @@ test('valid-Basic-vs-required-JWT negatives remain Basic and assert 401 (ALL-onl
     assert.equal(value(r.auth, 'password'), 'admin');
     assert.match((r.node.event || []).map(eventCode).join('\n'), /\.status\(401\)/);
   }
+});
+
+test('ALL/JWT_TOKEN compatibility is outside ordinary discovery; NONE retains method-complete DAV denials', () => {
+  for (const [file, names] of jwtOnlyNegatives) {
+    const r = find(file, names);
+    assert.ok(r.file.startsWith('compatibility/all/'));
+    assert.match((r.node.event || []).filter((e) => e.listen === 'prerequest').map(eventCode).join('\n'),
+      /pm\.cookies\.jar\(\)\.clear\(/, 'Clear sessions established by the ALL positive control');
+  }
+  for (const names of davPaths) assert.ok(find('WebDav.postman_collection.json', names).file.startsWith('compatibility/jwt-token/'));
+  for (const [file, name, status] of modeControls) {
+    const r = find(path.basename(file), name);
+    assert.equal(r.file, file);
+    assert.equal(r.auth?.type, 'basic');
+    assert.equal(value(r.auth, 'password'), 'admin');
+    assert.ok(/\/api\/v1\/site\/currentSite$/.test(url(r)));
+    assert.match((r.node.event || []).map(eventCode).join('\n'), new RegExp(`\\.status\\(${status}\\)`));
+  }
+  const denials = requests.filter(isDavDenial);
+  assert.equal(denials.length, davMethods.length * 2);
+  for (const method of davMethods) for (const credential of ['password', 'api-jwt']) {
+    const r = find('WebDav_Basic_Denied.postman_collection.json', `${method} / ${credential}`);
+    assert.equal(r.request.method, method);
+    assert.equal(r.auth?.type, 'basic');
+    assert.equal(value(r.auth, 'username'), 'admin@dotcms.com');
+    assert.equal(value(r.auth, 'password'), credential === 'password' ? 'admin' : '{{jwt}}');
+    assert.ok(/\/webdav\//.test(url(r)));
+    assert.equal(manualAuth(r).length, 0);
+    assert.match((r.node.event || []).filter((e) => e.listen === 'prerequest').map(eventCode).join('\n'),
+      /pm\.cookies\.jar\(\)\.clear\(/, 'A previous response must not mask a NONE denial with session auth');
+    assert.match((r.node.event || []).map(eventCode).join('\n'), /\.status\(401\)/);
+  }
+  const pom = readFileSync(path.resolve(__dirname, '../pom.xml'), 'utf8');
+  assert.match(pom, /<postman.allow.basic.auth>NONE<\/postman.allow.basic.auth>/);
+  assert.match(pom, /<DOT_ALLOW_BASIC_AUTH>\$\{postman.allow.basic.auth\}<\/DOT_ALLOW_BASIC_AUTH>/);
 });
 
 test('DAV CRUD keeps username/API-JWT auth, REST setup uses Bearer, no conflicting header', () => {
