@@ -1,5 +1,6 @@
 package com.dotcms.rest;
 
+import com.dotcms.rendering.velocity.WidgetRenderer;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -1064,7 +1065,7 @@ public class ContentResource {
         m.putAll(ContentletUtil.getContentPrintableMap(user, contentlet, allCategoriesInfo, doRender));
         if (BaseContentType.WIDGET.equals(type.baseType()) && Boolean.toString(true)
                 .equalsIgnoreCase(render)) {
-            m.put("parsedCode", WidgetResource.parseWidget(request, response, contentlet));
+            m.put("parsedCode", WidgetRenderer.getInstance().render(request, response, contentlet));
         }
 
         if (BaseContentType.HTMLPAGE.equals(type.baseType())) {

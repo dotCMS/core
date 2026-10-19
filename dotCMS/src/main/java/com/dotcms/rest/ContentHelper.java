@@ -1,5 +1,6 @@
 package com.dotcms.rest;
 
+import com.dotcms.rendering.velocity.WidgetRenderer;
 import com.dotcms.api.web.HttpServletRequestImpersonator;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategy;
@@ -478,7 +479,7 @@ public class ContentHelper {
         }
         if (BaseContentType.WIDGET.equals(type.baseType()) && "true".equalsIgnoreCase(render)) {
             final HttpServletRequestImpersonator impersonator = HttpServletRequestImpersonator.newInstance();
-            jsonObject.put("parsedCode", WidgetResource.parseWidget(impersonator.request(), response, contentlet));
+            jsonObject.put("parsedCode", WidgetRenderer.getInstance().render(impersonator.request(), response, contentlet));
         }
 
         if (BaseContentType.HTMLPAGE.equals(type.baseType())) {

@@ -1,19 +1,13 @@
 package com.dotcms.rest;
 
+import com.dotcms.rendering.velocity.WidgetRenderer;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.folders.business.FolderAPI;
-import com.dotmarketing.portlets.structure.model.Field;
-import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.VelocityUtil;
 import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
-import java.io.StringWriter;
-import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -81,54 +75,22 @@ public class WidgetResource {
 
 		}
 
-        return responseResource.response( parseWidget( request, response, widget ) );
+        return responseResource.response( WidgetRenderer.getInstance().render( request, response, widget ) );
     }
 
+	/**
+	 * Renders a widget contentlet.
+	 *
+	 * @deprecated use {@link WidgetRenderer#render(HttpServletRequest, HttpServletResponse, Contentlet)}
+	 * @param request  the current request
+	 * @param response the current response
+	 * @param widget   the widget contentlet
+	 * @return the rendered text
+	 * @throws IOException kept for binary compatibility with previous callers
+	 */
+	@Deprecated
 	public static String parseWidget(HttpServletRequest request, HttpServletResponse response, Contentlet widget) throws IOException {
-		Structure contStructure = widget.getStructure();
-		String result = "";
-
-		if (contStructure.getStructureType() == Structure.STRUCTURE_TYPE_WIDGET) {
-			StringWriter firstEval = new StringWriter();
-			StringWriter secondEval = new StringWriter();
-			StringBuilder widgetExecuteCode = new StringBuilder();
-
-			org.apache.velocity.context.Context context = VelocityUtil.getBasicContext();
-            for (String key : widget.getMap().keySet()) {
-                context.put(key, widget.getMap().get(key).toString());
-                context.put("widget" + key, widget.getMap().get(key).toString());
-            }
-            List<Field> fields = FieldsCache.getFieldsByStructureInode(contStructure.getInode());
-
-            for (Field field : fields) {
-                if (field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
-                    String host = widget.getHost();
-                    String folder = widget.getFolder();
-                    String fieldValue = UtilMethods.isSet(folder) && !folder.equals(FolderAPI.SYSTEM_FOLDER)?folder:host;
-                    context.put(field.getVelocityVarName(), fieldValue);
-                    context.put("widget" +field.getVelocityVarName(), fieldValue);
-                }
-            }
-            // web context should overwrite everything
-			context = VelocityUtil.getWebContext(context, request, response);
-
-  			Field field = contStructure.getFieldVar("widgetPreexecute");
-
-  			if(field!=null) {
-    			String fval = field.getValues()!=null ? field.getValues().trim() : "";
-    			widgetExecuteCode.append(fval + "\n");
-  			}
-
-			field = contStructure.getFieldVar("widgetCode");
-			String fval = field.getValues()!=null ? field.getValues().trim() : "";
-			widgetExecuteCode.append(fval + "\n");
-
-			VelocityUtil.getEngine().evaluate(context, firstEval, "", widgetExecuteCode.toString());
-			VelocityUtil.getEngine().evaluate(context, secondEval, "", firstEval.toString());
-			result = secondEval.toString();
-
-		}
-		return result;
+		return WidgetRenderer.getInstance().render(request, response, widget);
 	}
 
 }
