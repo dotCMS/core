@@ -19,12 +19,15 @@
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
-									"pm.test(\"sortContentletsBy is stored\", function () {",
+									"pm.test(\"A supported sortContentletsBy is accepted\", function () {",
+									"    ",
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData.errors.length).to.eql(0);",
-									"    pm.expect(jsonData.entity.sortContentletsBy).to.eql(\"mod_date desc\");",
-									"    pm.collectionVariables.set(\"sortByContainerId\", jsonData.entity.identifier);",
-									"});"
+									"    pm.expect(jsonData.entity.title).to.eql(\"SortBySupportedContainer\");",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"sortByContainerId\", jsonData.entity.identifier);"
 								],
 								"type": "text/javascript"
 							}
