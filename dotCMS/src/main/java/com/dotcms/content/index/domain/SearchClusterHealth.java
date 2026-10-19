@@ -1,6 +1,7 @@
 package com.dotcms.content.index.domain;
 
 import com.dotcms.content.index.IndexAPI;
+import com.dotmarketing.util.Config;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
@@ -87,6 +88,18 @@ public interface SearchClusterHealth {
 
     /** Returns the percentage of active shards, from 0 to 100. */
     double activeShardsPercent();
+
+    /**
+     * Returns the client-side time limit of the health call, read from {@link #TIMEOUT_PROPERTY} on
+     * every call. A value of zero or less would mean "no limit" to the HTTP clients, so it falls
+     * back to {@link #DEFAULT_TIMEOUT_MILLIS}.
+     *
+     * @return the time limit in milliseconds, always greater than zero
+     */
+    static int timeoutMillis() {
+        final int configured = Config.getIntProperty(TIMEOUT_PROPERTY, DEFAULT_TIMEOUT_MILLIS);
+        return configured > 0 ? configured : DEFAULT_TIMEOUT_MILLIS;
+    }
 
     /** Returns a builder for a cluster health summary. */
     static ImmutableSearchClusterHealth.Builder builder() {

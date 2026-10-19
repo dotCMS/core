@@ -540,8 +540,7 @@ public class ESIndexAPI implements IndexAPI {
     public SearchClusterHealth getClusterHealthSummary() {
         final ClusterHealthRequest request = new ClusterHealthRequest(getClusterPrefix() + "*");
         request.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
-        final int timeLimit = Config.getIntProperty(SearchClusterHealth.TIMEOUT_PROPERTY,
-                SearchClusterHealth.DEFAULT_TIMEOUT_MILLIS);
+        final int timeLimit = SearchClusterHealth.timeoutMillis();
         final RequestOptions options = RequestOptions.DEFAULT.toBuilder()
                 .setRequestConfig(RequestConfig.custom()
                         .setConnectTimeout(timeLimit)

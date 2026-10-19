@@ -555,8 +555,7 @@ public class OSIndexAPIImpl implements IndexAPI {
      */
     @Override
     public SearchClusterHealth getClusterHealthSummary() {
-        final Timeout timeLimit = Timeout.ofMilliseconds(Config.getIntProperty(
-                SearchClusterHealth.TIMEOUT_PROPERTY, SearchClusterHealth.DEFAULT_TIMEOUT_MILLIS));
+        final Timeout timeLimit = Timeout.ofMilliseconds(SearchClusterHealth.timeoutMillis());
         final ApacheHttpClient5Options options = ApacheHttpClient5Options.DEFAULT.toBuilder()
                 .setRequestConfig(RequestConfig.custom()
                         .setConnectTimeout(timeLimit)

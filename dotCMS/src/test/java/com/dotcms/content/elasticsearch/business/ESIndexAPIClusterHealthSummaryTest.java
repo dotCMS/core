@@ -4,7 +4,6 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -16,8 +15,8 @@ import com.dotcms.content.index.domain.SearchClusterHealth;
 import com.dotmarketing.util.Config;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import org.apache.http.HttpHost;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
@@ -90,6 +89,7 @@ public class ESIndexAPIClusterHealthSummaryTest {
         assertArrayEquals(new String[]{PREFIX + "*"}, request.getValue().indices());
         assertEquals(750, options.getValue().getRequestConfig().getSocketTimeout());
         assertEquals(750, options.getValue().getRequestConfig().getConnectTimeout());
+        assertEquals(750, options.getValue().getRequestConfig().getConnectionRequestTimeout());
     }
 
     /**
@@ -101,7 +101,7 @@ public class ESIndexAPIClusterHealthSummaryTest {
     @Test
     public void neverAnsweringEngine_givesUpAtTheTimeLimit() throws Exception {
         Config.setProperty(SearchClusterHealth.TIMEOUT_PROPERTY, 300);
-        final List<Socket> accepted = new ArrayList<>();
+        final List<Socket> accepted = new CopyOnWriteArrayList<>();
         try (ServerSocket silent = new ServerSocket(0)) {
             final Thread acceptor = new Thread(() -> {
                 try {
@@ -134,5 +134,17 @@ public class ESIndexAPIClusterHealthSummaryTest {
                 }
             }
         }
+    }
+
+    /**
+     * Given : a time limit of zero, which the HTTP clients would read as "no limit".
+     * When  : the time limit is read.
+     * Then  : the default of 750 ms is used instead.
+     */
+    @Test
+    public void nonPositiveTimeLimit_usesTheDefault() {
+        Config.setProperty(SearchClusterHealth.TIMEOUT_PROPERTY, 0);
+
+        assertEquals(SearchClusterHealth.DEFAULT_TIMEOUT_MILLIS, SearchClusterHealth.timeoutMillis());
     }
 }

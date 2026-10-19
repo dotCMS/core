@@ -15,9 +15,10 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
+import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.core5.http.HttpHost;
 import org.junit.After;
 import org.junit.Test;
@@ -118,8 +119,10 @@ public class OSIndexAPIImplClusterHealthSummaryTest {
 
         final HealthRequest sent = request.getValue().apply(new HealthRequest.Builder()).build();
         assertEquals(List.of(PREFIX + "*"), sent.index());
-        assertEquals(750L, ((ApacheHttpClient5Options) options.getValue())
-                .getRequestConfig().getResponseTimeout().toMilliseconds());
+        final RequestConfig config = ((ApacheHttpClient5Options) options.getValue()).getRequestConfig();
+        assertEquals(750L, config.getResponseTimeout().toMilliseconds());
+        assertEquals(750L, config.getConnectTimeout().toMilliseconds());
+        assertEquals(750L, config.getConnectionRequestTimeout().toMilliseconds());
     }
 
     /**
@@ -131,7 +134,7 @@ public class OSIndexAPIImplClusterHealthSummaryTest {
     @Test
     public void neverAnsweringEngine_givesUpAtTheTimeLimit() throws Exception {
         Config.setProperty(SearchClusterHealth.TIMEOUT_PROPERTY, 300);
-        final List<Socket> accepted = new ArrayList<>();
+        final List<Socket> accepted = new CopyOnWriteArrayList<>();
         try (ServerSocket silent = new ServerSocket(0)) {
             final Thread acceptor = new Thread(() -> {
                 try {
