@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.system;
 
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 import java.util.Map;
 import java.util.Set;
@@ -86,5 +87,23 @@ public class ConfigurationHelperTest {
 
         final Map<String, Object> anonymous = instance.clusterMap(APILocator.getUserAPI().getAnonymousUser());
         Assert.assertEquals(Set.of(ConfigurationHelper.CLUSTER_ID), anonymous.keySet());
+    }
+
+    /**
+     * Method to test {@link ConfigurationHelper#clusterMap(User)}
+     * Given Scenario: ENABLE_SERVER_HEARTBEAT is switched off
+     * Expected Result: a back-end user's cluster section reports heartbeatEnabled=false (issue #37875)
+     */
+    @Test
+    public void Test_Cluster_Map_HeartbeatEnabled_False_When_Flag_Off() throws Exception {
+        final String original = Config.getStringProperty("ENABLE_SERVER_HEARTBEAT", null);
+        try {
+            Config.setProperty("ENABLE_SERVER_HEARTBEAT", false);
+            final Map<String, Object> backend = instance.clusterMap(APILocator.getUserAPI().loadByUserByEmail(
+                    "admin@dotcms.com", APILocator.getUserAPI().getSystemUser(), false));
+            Assert.assertEquals(Boolean.FALSE, backend.get(ConfigurationHelper.HEARTBEAT_ENABLED));
+        } finally {
+            Config.setProperty("ENABLE_SERVER_HEARTBEAT", original);
+        }
     }
 }

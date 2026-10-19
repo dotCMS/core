@@ -2,7 +2,6 @@ package com.dotcms.rest.api.v1.cluster;
 
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.PortletID;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -59,7 +58,6 @@ public class ClusterNodesResource {
      * @param request  the current request
      * @param response the current response
      * @return the servers of the cluster
-     * @throws DotDataException if the servers can't be read from the database
      */
     @Operation(
             operationId = "getClusterNodes",
@@ -79,6 +77,9 @@ public class ClusterNodesResource {
             @ApiResponse(responseCode = "401",
                     description = "No authenticated back-end user, or the caller holds neither the configuration "
                             + "nor the network-beta portlet and is not a CMS Administrator",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "500",
+                    description = "The cluster's servers could not be read from the database",
                     content = @Content(mediaType = "application/json"))
     })
     @GET
@@ -87,7 +88,7 @@ public class ClusterNodesResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response getClusterNodes(@Context final HttpServletRequest request,
-                                    @Context final HttpServletResponse response) throws DotDataException {
+                                    @Context final HttpServletResponse response) {
         new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)

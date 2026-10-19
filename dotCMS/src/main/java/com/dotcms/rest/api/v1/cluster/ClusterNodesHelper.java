@@ -7,7 +7,9 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.cache.transport.CacheTransport;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import java.io.Serializable;
 import java.time.Clock;
 import java.util.Date;
@@ -58,10 +60,17 @@ public class ClusterNodesHelper {
      * transport that returns no replies at all ({@code null}) means no server answered.</p>
      *
      * @return the servers of the cluster
-     * @throws DotDataException if the servers can't be read from the database
+     * @throws DotRuntimeException if the servers can't be read from the database; the database
+     *         error is logged and not passed on, so the response is a 500 that carries no SQL
      */
-    public ClusterNodesView nodes() throws DotDataException {
-        final List<Server> alive = serverAPI.getAliveServers();
+    public ClusterNodesView nodes() {
+        final List<Server> alive;
+        try {
+            alive = serverAPI.getAliveServers();
+        } catch (final DotDataException e) {
+            Logger.error(this, "Could not read the cluster servers: " + e.getMessage(), e);
+            throw new DotRuntimeException("Could not read the cluster servers");
+        }
         final int waitMillis = Config.getIntProperty("CLUSTER_SERVER_THREAD_SLEEP",
                 Math.max(2000, alive.size() * 1000));
         final Map<String, Serializable> replies = transport.get().validateCacheInCluster(waitMillis);

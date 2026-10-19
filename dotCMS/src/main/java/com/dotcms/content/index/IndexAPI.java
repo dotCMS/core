@@ -381,14 +381,18 @@ public interface IndexAPI {
     ClusterStats getClusterStats();
 
     /**
-     * Returns the whole-cluster health of the search engine that serves reads: status, node and
-     * shard counts, and pending work, with the engine that answered stamped on the result. Used by
-     * the cluster status report that every dotCMS server sends to the Network screens.
+     * Returns the health of this install's indices on the search engine that serves reads: status,
+     * node and shard counts, and pending work, with the engine that answered stamped on the result.
+     * Used by the cluster status report that every dotCMS server sends to the Network screens.
      *
      * <p>Unlike {@link #getClusterHealth()}, which lists the health of each of this cluster's
-     * indices, this reads the cluster as a whole, with no index filter. Implementations throw an
-     * unchecked exception when the engine can't be asked; they never answer with an empty or
-     * default result, so the caller can tell an outage from a healthy cluster.</p>
+     * indices, this is one summary over all indices carrying {@link #getClusterPrefix()}: the
+     * status and shard counts cover only those indices, while node counts and pending work stay
+     * cluster-wide. Implementations give up after
+     * {@link com.dotcms.content.index.domain.SearchClusterHealth#TIMEOUT_PROPERTY} milliseconds and
+     * throw an unchecked exception when the engine can't be asked or doesn't answer in time; they
+     * never answer with an empty or default result, so the caller can tell an outage from a
+     * healthy cluster.</p>
      *
      * <p>The default throws, so implementations that predate this method keep compiling.</p>
      *

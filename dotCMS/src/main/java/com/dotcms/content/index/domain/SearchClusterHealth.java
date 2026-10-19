@@ -6,13 +6,20 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
 
 /**
- * Vendor-neutral, whole-cluster health of the search engine that serves reads, as returned by
+ * Vendor-neutral health of the search engine that serves reads, as returned by
  * {@link IndexAPI#getClusterHealthSummary()}.
  *
- * <p>Unlike {@link ClusterIndexHealth}, which describes one index, this describes the cluster as a
- * whole: node and shard counts, pending work and overall status. Each implementation stamps the
- * {@link Engine} that produced it, so a caller can tell which engine actually answered, including
- * when the phase 2 read falls back from OpenSearch to Elasticsearch.</p>
+ * <p>Unlike {@link ClusterIndexHealth}, which describes one index, this covers all of this
+ * install's indices (the cluster prefix). The status, shard counts and active-shards percentage
+ * describe only those indices; the cluster name, node counts, pending tasks and delayed unassigned
+ * shards stay cluster-wide. When the cluster holds none of this install's indices, the status is
+ * {@code green} with zero shards. Each implementation stamps the {@link Engine} that produced it,
+ * so a caller can tell which engine actually answered, including when the phase 2 read falls back
+ * from OpenSearch to Elasticsearch.</p>
+ *
+ * <p>Each engine gives up on the health call after {@value #TIMEOUT_PROPERTY} milliseconds
+ * (default {@value #DEFAULT_TIMEOUT_MILLIS}), so a slow engine cannot hold the cluster status
+ * report past the requester's wait window.</p>
  *
  * @author hassandotcms
  */
@@ -20,6 +27,12 @@ import org.immutables.value.Value;
 @JsonSerialize(as = ImmutableSearchClusterHealth.class)
 @JsonDeserialize(as = ImmutableSearchClusterHealth.class)
 public interface SearchClusterHealth {
+
+    /** Config key for the client-side time limit, in milliseconds, of the health call. */
+    String TIMEOUT_PROPERTY = "CLUSTER_SEARCH_HEALTH_TIMEOUT_MILLIS";
+
+    /** Default client-side time limit of the health call, in milliseconds. */
+    int DEFAULT_TIMEOUT_MILLIS = 750;
 
     /** The search engine a health summary came from. */
     enum Engine {

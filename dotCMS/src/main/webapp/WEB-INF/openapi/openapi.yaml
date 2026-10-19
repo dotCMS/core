@@ -5605,6 +5605,10 @@ paths:
             application/json: {}
           description: "No authenticated back-end user, or the caller holds neither\
             \ the configuration nor the network-beta portlet and is not a CMS Administrator"
+        "500":
+          content:
+            application/json: {}
+          description: The cluster's servers could not be read from the database
       summary: "List the cluster's servers with their status and cache, search and\
         \ assets details"
       tags:

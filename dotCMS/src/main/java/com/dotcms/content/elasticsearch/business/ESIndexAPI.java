@@ -11,6 +11,7 @@ import com.dotcms.repackage.org.dts.spell.utils.FileUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
@@ -46,6 +47,7 @@ import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.client.config.RequestConfig;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
@@ -524,20 +526,37 @@ public class ESIndexAPI implements IndexAPI {
     }
 
     /**
-     * Returns the whole-cluster health of Elasticsearch, with no index filter: the same call the
-     * cluster status report has always made, with the same server-side timeout. A failure to reach
-     * Elasticsearch propagates instead of being answered with an empty result.
+     * Returns the health of this install's indices in Elasticsearch (the cluster prefix), with the
+     * same server-side timeout the cluster status report has always used. The status and shard
+     * counts cover only those indices; node counts and pending work stay cluster-wide. The call
+     * gives up on the client side after {@link SearchClusterHealth#TIMEOUT_PROPERTY} milliseconds,
+     * so a slow Elasticsearch cannot hold the report past the requester's wait window. A failure
+     * to reach Elasticsearch propagates instead of being answered with an empty result.
      *
-     * @return the Elasticsearch cluster health, stamped as {@link SearchClusterHealth.Engine#ELASTICSEARCH}
+     * @return the Elasticsearch health, stamped as {@link SearchClusterHealth.Engine#ELASTICSEARCH}
+     * @throws DotRuntimeException if Elasticsearch can't be asked or doesn't answer in time
      */
     @Override
     public SearchClusterHealth getClusterHealthSummary() {
-        final ClusterHealthRequest request = new ClusterHealthRequest();
+        final ClusterHealthRequest request = new ClusterHealthRequest(getClusterPrefix() + "*");
         request.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
+        final int timeLimit = Config.getIntProperty(SearchClusterHealth.TIMEOUT_PROPERTY,
+                SearchClusterHealth.DEFAULT_TIMEOUT_MILLIS);
+        final RequestOptions options = RequestOptions.DEFAULT.toBuilder()
+                .setRequestConfig(RequestConfig.custom()
+                        .setConnectTimeout(timeLimit)
+                        .setSocketTimeout(timeLimit)
+                        .setConnectionRequestTimeout(timeLimit)
+                        .build())
+                .build();
 
-        final ClusterHealthResponse response = Sneaky.sneak(() ->
-                RestHighLevelClientProvider.getInstance().getClient()
-                        .cluster().health(request, RequestOptions.DEFAULT));
+        final ClusterHealthResponse response;
+        try {
+            response = RestHighLevelClientProvider.getInstance().getClient()
+                    .cluster().health(request, options);
+        } catch (final IOException e) {
+            throw new DotRuntimeException("Could not read Elasticsearch cluster health: " + e.getMessage(), e);
+        }
 
         return SearchClusterHealth.builder()
                 .engine(SearchClusterHealth.Engine.ELASTICSEARCH)

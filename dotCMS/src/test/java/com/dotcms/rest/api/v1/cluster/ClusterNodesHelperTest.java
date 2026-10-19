@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -17,6 +18,8 @@ import com.dotcms.content.index.domain.SearchClusterHealth.Engine;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotmarketing.business.cache.transport.CacheTransport;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import java.io.Serializable;
 import java.time.Clock;
 import java.time.Instant;
@@ -96,6 +99,7 @@ public class ClusterNodesHelperTest {
         assertEquals("name-aaaa", answered.name());
         assertEquals("cluster-1", answered.clusterName());
         assertEquals("26.10.01", answered.version());
+        assertEquals("10.0.0.4", answered.ipAddress());
         assertEquals(10, answered.lastContactSeconds());
         assertTrue(answered.responded());
         assertEquals(NodeStatus.UP, answered.status());
@@ -131,5 +135,27 @@ public class ClusterNodesHelperTest {
         assertFalse(node.responded());
         assertEquals(0, node.lastContactSeconds());
         assertEquals(NodeStatus.LAGGING, node.status());
+    }
+
+    /**
+     * Given : the alive servers can't be read from the database.
+     * When  : the nodes are built.
+     * Then  : the call fails with an unchecked error, which the REST layer turns into a 500,
+     *         instead of the 400 a {@code DotDataException} would give or a 200 with an empty
+     *         list; its message carries no SQL, because the database error is only logged.
+     */
+    @Test
+    public void databaseFailure_isAServerErrorWithoutTheSql() throws Exception {
+        final ServerAPI serverAPI = mock(ServerAPI.class);
+        when(serverAPI.getAliveServers()).thenThrow(new DotDataException("select * from sitelic failed"));
+
+        try {
+            new ClusterNodesHelper(serverAPI, () -> mock(CacheTransport.class),
+                    Clock.fixed(Instant.ofEpochMilli(NOW), ZoneOffset.UTC)).nodes();
+            fail("A database failure must not produce a list");
+        } catch (final DotRuntimeException e) {
+            assertFalse("the SQL must not reach the response", e.getMessage().contains("select"));
+            assertNull("the database error must not be the cause the REST layer reports", e.getCause());
+        }
     }
 }
