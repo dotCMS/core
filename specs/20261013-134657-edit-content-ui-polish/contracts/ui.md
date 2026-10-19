@@ -22,5 +22,5 @@ working; the only removed selectors are the relationship table's PrimeIcons attr
 | Relationship empty state | `<i class="pi pi-folder-open">` | `<span class="material-symbols-outlined" aria-hidden="true">folder_open</span>` |
 | Drag handle | two `i.pi.pi-ellipsis-v` | one `span.material-symbols-outlined` = `drag_indicator` |
 | Date picker overlay | inline `min-width` = input width wins | `pt.motion.root.class` = `min-w-0!` on the popup wrapper |
-| Copy button | `size="small"`, glyph `text-lg` | default size, glyph without `text-lg` |
+| Copy button | `size="small"` next to the field, glyph `text-lg` | input-group add-on of the trigger (`p-inputgroup` / `p-inputgroup-addon`), not small, glyph without `text-lg` |
 | Side-panel drawer header (shared `dot-side-panel`, every side panel) | no border | `pt.header.class` = `border-b border-surface-200` |

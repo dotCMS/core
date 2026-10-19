@@ -113,7 +113,9 @@ copy button that looks like every other icon-only button.
    glyph looks too big for it. Without `size="small"` the button takes the default icon-only
    size and the glyph is in proportion. The glyph also carries a `text-lg` class
    (`host-folder-field.component.html:93`) that the issue asks to remove; removing it does
-   not change the glyph's rendered size.
+   not change the glyph's rendered size. Sitting outside the field, the button also takes its
+   own width from the input, so the Host field is narrower than the fields around it; attached
+   to the field as a PrimeNG input-group add-on, field and button line up with them.
 
 ## Fix Scope & Non-Goals *(mandatory)*
 
@@ -127,9 +129,9 @@ copy button that looks like every other icon-only button.
   handle as one `drag_indicator` (hover/focus/keyboard/drag/disabled behavior unchanged), the
   add and remove buttons as `add` / `close` at the default, rounded icon-only button size, and
   the empty-state folder as `folder_open`.
-- The Host / Folder copy button at the default icon-only `p-button` size (removing
-  `size="small"`), its glyph at the default button icon size (removing `text-lg`), and
-  `check` the same size as `content_copy`.
+- The Host / Folder copy button as an input-group add-on attached to the field's trigger
+  (`p-inputgroup` / `p-inputgroup-addon`), not small, its glyph at the default button icon size
+  (removing `text-lg`), and `check` the same size as `content_copy`.
 - Unit specs for each point.
 
 **Explicitly out of scope / non-goals**:
@@ -196,7 +198,9 @@ copy button that looks like every other icon-only button.
 
 **4. Host / Folder copy button**
 
-- **AC-012**: The copy button uses the default icon-only `p-button` size (no `size="small"`).
+- **AC-012**: The copy button is not small (no `size="small"`) and is attached to the field as
+  an input-group add-on, so field and button together are as wide and as tall as the other
+  fields.
 - **AC-013**: Its glyph renders at the default button icon size, with no per-instance size
   override such as `text-lg`.
 - **AC-014**: The copied state (`check`) is the same size as `content_copy`.
@@ -213,10 +217,10 @@ copy button that looks like every other icon-only button.
   (`p-motion`) carries `min-w-0!`; the drag handle renders one `drag_indicator` and still has
   `pReorderableRowHandle` / is absent when disabled; the add/remove buttons render `add` /
   `close`, not small, rounded; the empty state renders `folder_open`; the copy button has no
-  `size="small"` and its glyph has no `text-lg`.
+  `size="small"`, its glyph has no `text-lg`, and it is an input-group add-on of the trigger.
   Run: `pnpm nx test edit-content` (`-- <file>` while iterating).
 - Manual, in the browser against the local instance (widths, viewport placement and pixel
-  sizes can't be proven in jsdom): AC-001–AC-006, AC-008, AC-010, AC-013/AC-014, plus
+  sizes can't be proven in jsdom): AC-001–AC-006, AC-008, AC-010, AC-012–AC-014, plus
   drag-to-reorder and keyboard focus for AC-009. Compare with the four issue screenshots.
 
 ## Assumptions
