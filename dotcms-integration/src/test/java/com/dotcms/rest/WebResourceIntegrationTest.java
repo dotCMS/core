@@ -1,12 +1,17 @@
 package com.dotcms.rest;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.dotcms.IntegrationTestBase;
@@ -64,6 +69,7 @@ public class WebResourceIntegrationTest extends IntegrationTestBase {
   private final String authenticationPassword = UUIDGenerator.generateUuid();
   private String previousBasicAuth;
   private String previousAnonymousAccess;
+  private String previousForceSsl;
   private String previousPrincipal;
   private HttpServletRequest previousRequest;
 
@@ -72,6 +78,7 @@ public class WebResourceIntegrationTest extends IntegrationTestBase {
   public void saveAuthenticationState() {
     previousBasicAuth = Config.getStringProperty("ALLOW_BASIC_AUTH", null);
     previousAnonymousAccess = Config.getStringProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, null);
+    previousForceSsl = Config.getStringProperty("FORCE_SSL_ON_RESP_API", null);
     previousPrincipal = PrincipalThreadLocal.getName();
     previousRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
   }
@@ -95,6 +102,7 @@ public class WebResourceIntegrationTest extends IntegrationTestBase {
     } finally {
       Config.setProperty("ALLOW_BASIC_AUTH", previousBasicAuth);
       Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, previousAnonymousAccess);
+      Config.setProperty("FORCE_SSL_ON_RESP_API", previousForceSsl);
       PrincipalThreadLocal.setName(previousPrincipal);
       HttpServletRequestThreadLocal.INSTANCE.setRequest(previousRequest);
     }
@@ -269,7 +277,29 @@ public class WebResourceIntegrationTest extends IntegrationTestBase {
     }
   }
 
-  /** A successful API-JWT request cannot mint a password session that survives revocation. */
+  /** Enabled credential modes must not bypass mandatory HTTPS for otherwise valid credentials. */
+  @Test
+  public void enabled_basic_credentials_cannot_bypass_force_ssl() throws Exception {
+    final User user = authenticationUser();
+    final String jwt = apiJwt(authenticationToken(user, null));
+    assertEquals(user.getUserId(), APILocator.getApiTokenAPI()
+        .userFromJwt(jwt, "127.0.0.1").get().getUserId());
+    Config.setProperty("FORCE_SSL_ON_RESP_API", true);
+    for (final String mode : new String[]{"JWT_TOKEN", "ALL"}) {
+      Config.setProperty("ALLOW_BASIC_AUTH", mode);
+      final String[] credentials = "ALL".equals(mode)
+          ? new String[]{jwt, authenticationPassword} : new String[]{jwt};
+      for (final String credential : credentials) {
+        final HttpServletRequest request = credentialRequest("Basic", loginName(user), credential);
+        assertFalse("The request must be insecure to exercise the SSL requirement", request.isSecure());
+        final SecurityException denied = assertThrows(SecurityException.class,
+            () -> new WebResource.InitBuilder().requestAndResponse(request, response).init());
+        assertEquals(403, denied.getResponse().getStatus());
+      }
+    }
+  }
+
+  /** A successful API-JWT request cannot mint a password session or cookie that survives revocation. */
   @Test
   public void api_jwt_basic_rechecks_revocation_without_creating_login_session() throws Exception {
     final User user = authenticationUser();
@@ -278,8 +308,12 @@ public class WebResourceIntegrationTest extends IntegrationTestBase {
       final ApiToken token = authenticationToken(user, null);
       final String jwt = apiJwt(token);
       final HttpServletRequest request = credentialRequest("Basic", loginName(user), jwt);
+      final HttpServletResponse tokenResponse = mock(HttpServletResponse.class);
       assertEquals(user.getUserId(), new WebResource.InitBuilder()
-          .requestAndResponse(request, response).init().getUser().getUserId());
+          .requestAndResponse(request, tokenResponse).init().getUser().getUserId());
+      verify(tokenResponse, never()).addCookie(any());
+      verify(tokenResponse, never()).setHeader(eq("Set-Cookie"), any());
+      verify(tokenResponse, never()).addHeader(eq("Set-Cookie"), any());
       final HttpSession session = request.getSession(false);
       if (session != null) {
         assertNull("API-JWT authentication must not establish a password login session",
