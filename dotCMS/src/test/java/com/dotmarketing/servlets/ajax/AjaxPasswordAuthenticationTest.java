@@ -40,8 +40,11 @@ import org.mockito.MockedStatic;
  * {@code ALLOW_BASIC_AUTH} at {@code NONE} or {@code JWT_TOKEN}, a missing user or a missing
  * portlet permission must never reach {@link LoginFactory#doLogin} through the {@code u/p} or
  * {@code user/passwd} URI parameters, and the existing 401 denial must remain. Only {@code ALL}
- * keeps the legacy fallback. These actions currently call the factory unconditionally, so the
- * restrictive cases are expected to be Red until the shared mode policy is applied.
+ * keeps the legacy fallback.
+ *
+ * <p>Limitation: {@link AjaxAction#setUser(HttpServletRequest)} is stubbed, so these tests prove
+ * that the submitted credentials never reach the password login factory; they do not exercise the
+ * WebResource Basic/JWT path that runs afterwards.</p>
  */
 public class AjaxPasswordAuthenticationTest extends UnitTestBase {
 
@@ -92,10 +95,11 @@ public class AjaxPasswordAuthenticationTest extends UnitTestBase {
         final HttpServletRequest request = mockRequest();
         final HttpServletResponse response = mock(HttpServletResponse.class);
         final AjaxAction action = preparedAction(actionType, params, user);
+        final LayoutAPI layoutAPI = layoutApiWithoutPortletAccess();
 
         try (MockedStatic<APILocator> apis = mockStatic(APILocator.class);
                 MockedStatic<LoginFactory> loginFactory = mockStatic(LoginFactory.class)) {
-            apis.when(APILocator::getLayoutAPI).thenReturn(layoutApiWithoutPortletAccess());
+            apis.when(APILocator::getLayoutAPI).thenReturn(layoutAPI);
             action.service(request, response);
             loginFactory.verify(
                     () -> LoginFactory.doLogin(any(), any(), anyBoolean(), any(), any()), never());
@@ -109,10 +113,11 @@ public class AjaxPasswordAuthenticationTest extends UnitTestBase {
         final HttpServletRequest request = mockRequest();
         final HttpServletResponse response = mock(HttpServletResponse.class);
         final AjaxAction action = preparedAction(actionType, params, user);
+        final LayoutAPI layoutAPI = layoutApiWithoutPortletAccess();
 
         try (MockedStatic<APILocator> apis = mockStatic(APILocator.class);
                 MockedStatic<LoginFactory> loginFactory = mockStatic(LoginFactory.class)) {
-            apis.when(APILocator::getLayoutAPI).thenReturn(layoutApiWithoutPortletAccess());
+            apis.when(APILocator::getLayoutAPI).thenReturn(layoutAPI);
             action.service(request, response);
             loginFactory.verify(
                     () -> LoginFactory.doLogin(any(), any(), anyBoolean(), any(), any()), atLeastOnce());

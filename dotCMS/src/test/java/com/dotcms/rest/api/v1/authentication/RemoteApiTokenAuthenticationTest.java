@@ -10,7 +10,6 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.startsWith;
 import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
@@ -33,15 +32,16 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.client.Client;
+import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.Invocation;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
+import org.glassfish.jersey.client.ClientProperties;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -51,16 +51,19 @@ import org.mockito.MockedStatic;
  * Contract test for {@link ApiTokenResource#getRemoteToken}. It pins the secure remote-issuance
  * sequence: a JSON login against {@code /api/v1/authentication} yields a {@code JSESSIONID}
  * session cookie that is carried to {@code /api/v1/apitoken}, and no Basic credential header is
- * ever sent on the wire. The admin gate, status pass-through and client close contract are
- * retained. The current implementation still posts directly with Basic, so the success and
- * failure cases are expected to be Red until the remote flow is migrated.
+ * ever sent on the wire. The admin gate, status pass-through and client-close contract are
+ * retained.
  *
- * <p>Limitation: the mocked client cannot observe redirect policy; the tests only prove that the
- * issuer does not send Basic credentials and does not issue a token without a login session.</p>
+ * <p>Limitations: the mocked client cannot observe real network redirects; the tests only prove
+ * that the issuer disables client redirects, never sends Basic credentials, and does not issue a
+ * token without a login session cookie.</p>
  */
 public class RemoteApiTokenAuthenticationTest extends UnitTestBase {
 
     private static final String ENABLE_PROXY_TOKEN_REQUESTS = "ENABLE_PROXY_TOKEN_REQUESTS";
+    private static final String LOGIN_PATH = "/api/v1/authentication";
+    private static final String TOKEN_PATH = "/api/v1/apitoken";
+    private static final String SESSION_COOKIE = "JSESSIONID";
 
     private String previousGate;
 
@@ -83,18 +86,17 @@ public class RemoteApiTokenAuthenticationTest extends UnitTestBase {
         final RemoteCall remote = new RemoteCall();
         remote.loginSucceeds();
         remote.tokenSucceeds();
-        final List<Cookie> cookiesOnTokenRequest = new ArrayList<>();
-        remote.recordCookies(cookiesOnTokenRequest);
+        final RemoteAPITokenForm form = remoteForm();
 
-        final Response result = newApiTokenResource(remote.admin())
-                .getRemoteToken(mock(HttpServletRequest.class), remoteForm());
+        final Response result = invokeRemote(remote, remote.admin(), form);
 
         remote.assertNeverSentBasic();
+        remote.assertLoginRequest();
+        remote.assertTokenRequest(form.getTokenInfo());
+        remote.assertOnlySessionCookieForwarded();
+        remote.assertRedirectsDisabled();
         assertEquals(Response.Status.OK.getStatusCode(), result.getStatus());
         verify(remote.builder, times(2)).post(any());
-        assertTrue("the login session cookie must be forwarded to the token request",
-                cookiesOnTokenRequest.stream()
-                        .anyMatch(cookie -> "JSESSIONID".equals(cookie.getName())));
         verify(remote.client, atLeastOnce()).close();
     }
 
@@ -105,10 +107,10 @@ public class RemoteApiTokenAuthenticationTest extends UnitTestBase {
         remote.loginFailsUnauthorized();
         remote.tokenSucceeds();
 
-        final Response result = newApiTokenResource(remote.admin())
-                .getRemoteToken(mock(HttpServletRequest.class), remoteForm());
+        final Response result = invokeRemote(remote, remote.admin(), remoteForm());
 
         remote.assertNeverSentBasic();
+        remote.assertLoginRequest();
         assertNotEquals(Response.Status.OK.getStatusCode(), result.getStatus());
         verify(remote.builder, times(1)).post(any());
         verify(remote.client, atLeastOnce()).close();
@@ -121,10 +123,10 @@ public class RemoteApiTokenAuthenticationTest extends UnitTestBase {
         remote.loginSucceedsWithoutCookie();
         remote.tokenSucceeds();
 
-        final Response result = newApiTokenResource(remote.admin())
-                .getRemoteToken(mock(HttpServletRequest.class), remoteForm());
+        final Response result = invokeRemote(remote, remote.admin(), remoteForm());
 
         remote.assertNeverSentBasic();
+        remote.assertLoginRequest();
         assertNotEquals(Response.Status.OK.getStatusCode(), result.getStatus());
         verify(remote.builder, times(1)).post(any());
         verify(remote.client, atLeastOnce()).close();
@@ -135,11 +137,28 @@ public class RemoteApiTokenAuthenticationTest extends UnitTestBase {
     public void remoteToken_nonAdmin_isForbiddenWithoutRemoteCalls() {
         final RemoteCall remote = new RemoteCall();
 
-        assertThrows(ForbiddenException.class,
-                () -> newApiTokenResource(remote.nonAdmin())
-                        .getRemoteToken(mock(HttpServletRequest.class), remoteForm()));
+        assertThrows(ForbiddenException.class, () -> {
+            try (MockedStatic<RestClientBuilder> builder = mockStatic(RestClientBuilder.class)) {
+                builder.when(RestClientBuilder::newClient).thenReturn(remote.client);
+                newApiTokenResource(remote.nonAdmin())
+                        .getRemoteToken(mock(HttpServletRequest.class), remoteForm());
+            }
+        });
 
         verifyNoInteractions(remote.client);
+    }
+
+    /**
+     * Wires the scoped {@link RestClientBuilder} static mock to the recording client and runs the
+     * remote-token call. The mock lives only for this call, so no static state leaks to other
+     * tests.
+     */
+    private Response invokeRemote(final RemoteCall remote, final User user,
+            final RemoteAPITokenForm form) throws Exception {
+        try (MockedStatic<RestClientBuilder> builder = mockStatic(RestClientBuilder.class)) {
+            builder.when(RestClientBuilder::newClient).thenReturn(remote.client);
+            return newApiTokenResource(user).getRemoteToken(mock(HttpServletRequest.class), form);
+        }
     }
 
     private ApiTokenResource newApiTokenResource(final User user) {
@@ -162,39 +181,70 @@ public class RemoteApiTokenAuthenticationTest extends UnitTestBase {
     }
 
     /**
-     * Mocks the Jersey client graph with a single recording builder. The login and token posts are
-     * distinguished by order only, so the test does not depend on the implementation's URL or path
-     * construction.
+     * Mocks the Jersey client graph with a single recording builder. Each request is keyed by the
+     * route it actually targets, so a request to the wrong URL or with the wrong entity fails
+     * instead of being accepted because it happened to be first.
      */
     private static final class RemoteCall {
 
         private final Client client = mock(Client.class);
-        private final WebTarget target = mock(WebTarget.class);
         private final Invocation.Builder builder = mock(Invocation.Builder.class);
         private final Response tokenResponse = mock(Response.class);
-        private final AtomicInteger posts = new AtomicInteger();
+        private final List<RecordedRequest> requests = new ArrayList<>();
+        private final List<Cookie> forwardedCookies = new ArrayList<>();
         private Response authResponse = mock(Response.class);
+        private String pendingRoute;
 
         private RemoteCall() {
-            when(client.target(anyString())).thenReturn(target);
-            when(target.path(anyString())).thenReturn(target);
-            when(target.request()).thenReturn(builder);
-            when(target.request(any(MediaType[].class))).thenReturn(builder);
-            when(target.request(anyString())).thenReturn(builder);
+            when(client.target(anyString())).thenAnswer(invocation -> target(invocation.getArgument(0)));
+            when(client.property(anyString(), any())).thenReturn(client);
+
             when(builder.accept(any(MediaType[].class))).thenReturn(builder);
             when(builder.accept(anyString())).thenReturn(builder);
             when(builder.header(anyString(), any())).thenReturn(builder);
-            when(builder.cookie(any(NewCookie.class))).thenReturn(builder);
-            when(builder.cookie(any(Cookie.class))).thenReturn(builder);
+            when(builder.cookie(any(NewCookie.class))).thenAnswer(invocation -> {
+                forwardedCookies.add(invocation.getArgument(0));
+                return builder;
+            });
+            when(builder.cookie(any(Cookie.class))).thenAnswer(invocation -> {
+                forwardedCookies.add(invocation.getArgument(0));
+                return builder;
+            });
             when(builder.cookie(anyString(), any())).thenReturn(builder);
-            when(builder.post(any())).thenAnswer(invocation ->
-                    posts.getAndIncrement() == 0 ? authResponse : tokenResponse);
+            when(builder.post(any())).thenAnswer(invocation -> {
+                requests.add(new RecordedRequest(pendingRoute, (Entity<?>) invocation.getArgument(0)));
+                return pendingRoute != null && pendingRoute.endsWith(LOGIN_PATH)
+                        ? authResponse : tokenResponse;
+            });
+        }
+
+        private WebTarget target(final String route) {
+            final WebTarget target = mock(WebTarget.class);
+            when(target.path(anyString())).thenAnswer(invocation ->
+                    target(join(route, invocation.getArgument(0))));
+            when(target.request()).thenAnswer(invocation -> {
+                pendingRoute = route;
+                return builder;
+            });
+            when(target.request(any(MediaType[].class))).thenAnswer(invocation -> {
+                pendingRoute = route;
+                return builder;
+            });
+            when(target.request(anyString())).thenAnswer(invocation -> {
+                pendingRoute = route;
+                return builder;
+            });
+            return target;
+        }
+
+        private static String join(final String route, final String segment) {
+            return route.endsWith("/") ? route + segment : route + "/" + segment;
         }
 
         private void loginSucceeds() {
             authResponse = response(Response.Status.OK.getStatusCode());
-            when(authResponse.getCookies())
-                    .thenReturn(Map.of("JSESSIONID", new NewCookie("JSESSIONID", "session-value")));
+            when(authResponse.getCookies()).thenReturn(
+                    Map.of(SESSION_COOKIE, new NewCookie(SESSION_COOKIE, "session-value")));
         }
 
         private void loginSucceedsWithoutCookie() {
@@ -212,19 +262,49 @@ public class RemoteApiTokenAuthenticationTest extends UnitTestBase {
             when(tokenResponse.readEntity(String.class)).thenReturn("{\"entity\":{\"jwt\":\"jwt\"}}");
         }
 
-        private void recordCookies(final List<Cookie> cookies) {
-            doAnswer(invocation -> {
-                cookies.add(invocation.getArgument(0));
-                return builder;
-            }).when(builder).cookie(any(NewCookie.class));
-            doAnswer(invocation -> {
-                cookies.add(invocation.getArgument(0));
-                return builder;
-            }).when(builder).cookie(any(Cookie.class));
-        }
-
         private void assertNeverSentBasic() {
             verify(builder, never()).header(eq("Authorization"), startsWith("Basic "));
+        }
+
+        private void assertLoginRequest() {
+            final RecordedRequest login = requestTo(LOGIN_PATH);
+            final Object body = login.entity.getEntity();
+            assertTrue("the login body must be a JSON object", body instanceof Map);
+            final Map<?, ?> payload = (Map<?, ?>) body;
+            assertEquals("admin@dotcms.com", payload.get("userId"));
+            assertEquals("password", payload.get("password"));
+            assertEquals(Boolean.TRUE, payload.get("backEndLogin"));
+            assertTrue("the login must be posted as JSON",
+                    MediaType.APPLICATION_JSON_TYPE.equals(login.entity.getMediaType()));
+        }
+
+        private void assertTokenRequest(final Map<String, Object> expectedBody) {
+            final RecordedRequest token = requestTo(TOKEN_PATH);
+            assertEquals(expectedBody, token.entity.getEntity());
+            assertTrue("the token must be posted as JSON",
+                    MediaType.APPLICATION_JSON_TYPE.equals(token.entity.getMediaType()));
+        }
+
+        private void assertOnlySessionCookieForwarded() {
+            assertTrue("the login session cookie must be forwarded to the token request",
+                    forwardedCookies.stream().anyMatch(this::isSessionCookie));
+            assertTrue("no cookie other than the login session may be forwarded",
+                    forwardedCookies.stream().allMatch(this::isSessionCookie));
+        }
+
+        private boolean isSessionCookie(final Cookie cookie) {
+            return SESSION_COOKIE.equals(cookie.getName()) && "session-value".equals(cookie.getValue());
+        }
+
+        private void assertRedirectsDisabled() {
+            verify(client).property(ClientProperties.FOLLOW_REDIRECTS, false);
+        }
+
+        private RecordedRequest requestTo(final String path) {
+            return requests.stream()
+                    .filter(request -> request.route != null && request.route.endsWith(path))
+                    .findFirst()
+                    .orElseThrow(() -> new AssertionError("no request was sent to " + path));
         }
 
         private User admin() {
@@ -246,6 +326,18 @@ public class RemoteApiTokenAuthenticationTest extends UnitTestBase {
             final User user = mock(User.class);
             when(user.isAdmin()).thenReturn(admin);
             return user;
+        }
+    }
+
+    /** A single recorded request: the route it targeted and the entity that was posted. */
+    private static final class RecordedRequest {
+
+        private final String route;
+        private final Entity<?> entity;
+
+        private RecordedRequest(final String route, final Entity<?> entity) {
+            this.route = route;
+            this.entity = entity;
         }
     }
 }
