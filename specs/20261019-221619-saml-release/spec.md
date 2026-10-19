@@ -66,7 +66,7 @@ As a customer using SAML, I want the newly bundled plugin to remain compatible w
 
 - **FR-001**: Core MUST build SAML from source versioned with core, without fetching mutable upstream source during the release.
 - **FR-002**: The SAML artifact MUST use the resolved core build version, including supported release suffixes, without an independent release-version pin.
-- **FR-003**: The normal release publication MUST upload the matching SAML JAR and POM under the existing `com.dotcms.samlbundle:com.dotcms.samlbundle` coordinates, with the same metadata and checksum handling as other release-built artifacts.
+- **FR-003**: The normal release publication MUST upload the matching SAML JAR and POM under the existing `com.dotcms.samlbundle:com.dotcms.samlbundle` coordinates, using the same publisher, metadata/checksum handling, and existing CI credentials (`MAVEN_BUNNY_RW_USERNAME` / `MAVEN_BUNNY_RW_PASSWORD`) as the other release-built plugins. It MUST NOT require new publication secrets, operator-local credentials, a separate SAML release workflow, or a manual upload.
 - **FR-004**: The published system-bundles dependency declaration and archive MUST reference and contain the matching SAML JAR; the packaged and published JARs MUST have identical checksums.
 - **FR-005**: Build verification MUST reject missing or incorrectly versioned SAML outputs before release image or Maven publication begins. Upload failures MUST fail the publication job.
 - **FR-006**: Integration MUST retain the upstream plugin's production classes, required resources, OSGi symbolic name and activator, external configuration contract, and existing regression tests. It MUST NOT introduce unrelated authentication or dependency changes.
