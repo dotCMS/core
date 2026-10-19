@@ -38,7 +38,11 @@ describe('resolveMenuItem', () => {
     const resolve = (
         url: string,
         items: MenuItemEntity[],
-        extra: { openParentMenuId?: string | null; breadcrumbs?: MenuItem[] } = {}
+        extra: {
+            openParentMenuId?: string | null;
+            breadcrumbs?: MenuItem[];
+            exactPath?: boolean;
+        } = {}
     ) => resolveMenuItem({ url, items, ...extra });
 
     describe('portlet id and mId', () => {
@@ -163,6 +167,24 @@ describe('resolveMenuItem', () => {
 
             expect(resolve('/c/content-types', items)).toBeNull();
             expect(resolve('/c/contents', items)).toBeNull();
+        });
+    });
+
+    describe('exactPath', () => {
+        const items = [entity('containers', SITE)];
+
+        it('follows an editor route to its portlet by default, for the highlight', () => {
+            expect(resolve('/containers/edit/123', items)?.id).toBe('containers');
+            expect(resolve('/containers/edit/123?mId=aaaa', items)?.id).toBe('containers');
+        });
+
+        it('matches only the link of the item itself, for the breadcrumbs', () => {
+            expect(resolve('/containers/edit/123', items, { exactPath: true })).toBeNull();
+            expect(resolve('/containers/edit/123?mId=aaaa', items, { exactPath: true })).toBeNull();
+            expect(resolve('/containers?mId=aaaa', items, { exactPath: true })?.id).toBe(
+                'containers'
+            );
+            expect(resolve('/containers', items, { exactPath: true })?.id).toBe('containers');
         });
     });
 

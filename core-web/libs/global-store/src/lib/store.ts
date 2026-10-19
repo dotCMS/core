@@ -49,6 +49,9 @@ export const GlobalStore = signalStore(
     withUser(),
     withMenu(),
     withFeature((menu) =>
-        signalStoreFeature(withBreadcrumbs(menu.menuItemsEntities), withMenuSelection(menu))
+        signalStoreFeature(
+            withBreadcrumbs(menu.menuItemsEntities, menu.openParentMenuId),
+            withMenuSelection(menu)
+        )
     )
 );

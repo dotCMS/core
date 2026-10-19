@@ -16,8 +16,8 @@ import {
     distinctUntilChanged,
     filter,
     map,
-    mergeMap,
     skip,
+    switchMap,
     takeUntil,
     withLatestFrom
 } from 'rxjs/operators';
@@ -162,11 +162,15 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
                         map((urlSegment: UrlSegment[]) => urlSegment[0].path)
                     )
                 ),
-                mergeMap(([id, url]) =>
+                // The portlet url is requested on every route change and the `/c/:id` host is reused,
+                // so only the latest request may answer: a slower reply for the portlet the user
+                // already left must not overwrite the iframe of the one they are on.
+                switchMap(([id, url]) =>
                     url === 'add'
                         ? this.contentletService.getUrlById(id)
                         : this.#globalStore.loadFreshPortletUrl(id)
-                )
+                ),
+                takeUntil(this.destroy$)
             )
             .subscribe((url: string) => {
                 this.setUrl(url);

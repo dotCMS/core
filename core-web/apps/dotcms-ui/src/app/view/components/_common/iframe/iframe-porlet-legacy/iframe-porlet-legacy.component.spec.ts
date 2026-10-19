@@ -128,6 +128,44 @@ describe('IframePortletLegacyComponent', () => {
             expect(spectator.component.url.getValue()).toBe('/c/portal/layout?p_l_id=1&r=2000');
         });
 
+        describe('when the answers come back out of order', () => {
+            /** Makes every url request wait until the test answers it. */
+            const holdRequests = (): Subject<string>[] => {
+                const requests: Subject<string>[] = [];
+                globalStore.loadFreshPortletUrl.mockImplementation(() => {
+                    const request = new Subject<string>();
+                    requests.push(request);
+
+                    return request;
+                });
+
+                return requests;
+            };
+
+            it('keeps the url of the portlet the user is on when the previous one answers late', () => {
+                open({ id: 'portlet-a' }, ['/c/a']);
+                const requests = holdRequests();
+
+                params$.next({ id: 'portlet-a' });
+                params$.next({ id: 'portlet-b' });
+                requests[1].next('/c/b');
+                requests[0].next('/c/a-late');
+
+                expect(spectator.component.url.getValue()).toBe('/c/b');
+            });
+
+            it('takes no answer once the host is gone', () => {
+                open({ id: 'portlet-a' }, ['/c/a']);
+                const requests = holdRequests();
+                params$.next({ id: 'portlet-b' });
+
+                spectator.fixture.destroy();
+                requests[0].next('/c/b-after-destroy');
+
+                expect(spectator.component.url.getValue()).toBe('/c/a');
+            });
+        });
+
         it('reads a fresh url when the portlet is reloaded', () => {
             open({ id: 'publishing-queue' }, [
                 '/c/portal/layout?p_l_id=1&r=1000',

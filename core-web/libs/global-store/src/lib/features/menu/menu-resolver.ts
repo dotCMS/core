@@ -12,6 +12,13 @@ export interface ResolveMenuItemParams {
     openParentMenuId?: string | null;
     /** The current breadcrumb trail; only used to resolve old bookmarks that carry no `mId`. */
     breadcrumbs?: MenuItem[];
+    /**
+     * Only items whose `menuLink` is the path of the URL can match. The highlight leaves it off so
+     * an editor route (`/containers/edit/1`) keeps its portlet lit; the breadcrumbs turn it on
+     * because an editor adds a crumb of its own and only the link of a menu item is a place the
+     * trail can be rebuilt from.
+     */
+    exactPath?: boolean;
 }
 
 interface ParsedUrl {
@@ -65,20 +72,25 @@ const pickOne = (
  *    the portlet id. A query without `mId` is not a bookmark and matches nothing.
  * 3. An exact match of the item's `menuLink` with the path, never a prefix of it.
  *
- * @param params the url, the menu snapshot and the context used to break ties
+ * With `exactPath`, every step above only looks at items whose `menuLink` is the path.
+ *
+ * @param params the url, the menu snapshot, the context used to break ties and `exactPath`
  * @returns the item the url belongs to, or `null` when it belongs to none
  */
 export function resolveMenuItem({
     url,
-    items,
+    items: allItems,
     openParentMenuId = null,
-    breadcrumbs = []
+    breadcrumbs = [],
+    exactPath = false
 }: ResolveMenuItemParams): MenuItemEntity | null {
+    const { path, mId, hasQuery } = parseUrl(url);
+    const items = exactPath ? allItems.filter((item) => item.menuLink === path) : allItems;
+
     if (!items.length) {
         return null;
     }
 
-    const { path, mId, hasQuery } = parseUrl(url);
     const portletId = getPortletIdFromUrl(path);
 
     if (mId) {
