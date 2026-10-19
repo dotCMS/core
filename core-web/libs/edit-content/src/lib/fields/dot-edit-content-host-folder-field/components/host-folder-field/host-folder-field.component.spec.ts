@@ -1268,5 +1268,18 @@ describe('DotHostFolderFieldComponent', () => {
             expect(icon).not.toHaveClass('text-lg');
             vi.useRealTimers();
         });
+
+        /**
+         * The copy button is an input-group add-on attached to the field, so the field and its
+         * action read as one control and line up with the other fields' width (#37958).
+         */
+        it('should attach the copy button to the trigger as an input-group add-on', () => {
+            const group = spectator.query(byTestId('host-folder-trigger'))?.parentElement;
+            const addon = spectator.query(byTestId('host-folder-copy'))?.parentElement;
+
+            expect(group?.tagName).toBe('P-INPUTGROUP');
+            expect(addon?.tagName).toBe('P-INPUTGROUP-ADDON');
+            expect(addon?.parentElement).toBe(group);
+        });
     });
 });

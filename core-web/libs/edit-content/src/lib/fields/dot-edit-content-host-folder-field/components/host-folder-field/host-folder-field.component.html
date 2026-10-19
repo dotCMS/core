@@ -32,68 +32,81 @@
     }
 
     @if ($showDefaultTrigger()) {
-        <button
-            type="button"
-            class="flex min-h-[calc(var(--p-form-field-padding-y)*2+1.4em+2px)] min-w-0 flex-auto cursor-pointer items-center gap-2 rounded-(--p-inputtext-border-radius) border border-(--p-inputtext-border-color) bg-(--p-inputtext-background) px-3 text-left hover:border-(--p-inputtext-hover-border-color) focus-visible:border-(--p-inputtext-focus-border-color) disabled:cursor-not-allowed disabled:bg-(--p-inputtext-disabled-background) disabled:text-(--p-inputtext-disabled-color)"
-            [class.ng-invalid]="hasError"
-            [class.ng-dirty]="hasError"
-            [class.border-(--p-inputtext-invalid-border-color)]="hasError"
-            [disabled]="isDisabled"
-            [attr.id]="$controlId() || null"
-            role="combobox"
-            aria-haspopup="tree"
-            [attr.aria-required]="$isRequired() ? 'true' : null"
-            [attr.aria-expanded]="store.overlayOpen()"
-            data-testid="host-folder-trigger"
-            (click)="toggleOverlay($event)">
-            @if (store.triggerIconType() === 'site') {
-                <span class="material-symbols-outlined flex-none text-lg text-surface-500">
-                    public
-                </span>
-            } @else {
-                <span class="material-symbols-outlined flex-none text-lg text-surface-500">
-                    folder
-                </span>
-            }
-
-            <span
-                class="min-w-0 flex-auto truncate text-(--p-inputtext-color)"
-                data-testid="host-folder-trigger-label">
-                @if (store.showTriggerLoading()) {
-                    <span data-testid="host-folder-trigger-skeleton">
-                        <p-skeleton width="60%" height="1rem" />
+        <!-- The copy action is an input-group add-on attached to the trigger, so the field and its
+             action read as one control as wide as the other fields. The trigger is our own
+             button, not a PrimeNG input, so it squares its own right corners; the add-on brings
+             the right border and radius. -->
+        <p-inputgroup class="min-w-0 flex-auto">
+            <button
+                type="button"
+                class="flex min-h-[calc(var(--p-form-field-padding-y)*2+1.4em+2px)] min-w-0 flex-auto cursor-pointer items-center gap-2 rounded-l-(--p-inputtext-border-radius) rounded-r-none border border-(--p-inputtext-border-color) bg-(--p-inputtext-background) px-3 text-left hover:border-(--p-inputtext-hover-border-color) focus-visible:border-(--p-inputtext-focus-border-color) disabled:cursor-not-allowed disabled:bg-(--p-inputtext-disabled-background) disabled:text-(--p-inputtext-disabled-color)"
+                [class.ng-invalid]="hasError"
+                [class.ng-dirty]="hasError"
+                [class.border-(--p-inputtext-invalid-border-color)]="hasError"
+                [disabled]="isDisabled"
+                [attr.id]="$controlId() || null"
+                role="combobox"
+                aria-haspopup="tree"
+                [attr.aria-required]="$isRequired() ? 'true' : null"
+                [attr.aria-expanded]="store.overlayOpen()"
+                data-testid="host-folder-trigger"
+                (click)="toggleOverlay($event)">
+                @if (store.triggerIconType() === 'site') {
+                    <span class="material-symbols-outlined flex-none text-lg text-surface-500">
+                        public
                     </span>
                 } @else {
-                    {{ displayPath || ('dot.file.field.host.folder.trigger.placeholder' | dm) }}
+                    <span class="material-symbols-outlined flex-none text-lg text-surface-500">
+                        folder
+                    </span>
                 }
-            </span>
 
-            <i
-                class="pi flex-none text-surface-500"
-                data-testid="host-folder-trigger-icon"
-                [class.pi-spin]="store.showTriggerLoading()"
-                [class.pi-spinner]="store.showTriggerLoading()"
-                [class.pi-chevron-up]="!store.showTriggerLoading() && store.overlayOpen()"
-                [class.pi-chevron-down]="!store.showTriggerLoading() && !store.overlayOpen()"></i>
-        </button>
-
-        <p-button
-            [text]="true"
-            [rounded]="true"
-            severity="secondary"
-            type="button"
-            data-testid="host-folder-copy"
-            [disabled]="!confirmedNode || isDisabled"
-            [attr.aria-label]="'dot.file.field.host.folder.copy.tooltip' | dm"
-            [pTooltip]="'dot.file.field.host.folder.copy.tooltip' | dm"
-            tooltipPosition="bottom"
-            (onClick)="copyPath()">
-            <ng-template #icon>
-                <span class="material-symbols-outlined" data-testid="host-folder-copy-icon">
-                    {{ $pathCopied() ? 'check' : 'content_copy' }}
+                <span
+                    class="min-w-0 flex-auto truncate text-(--p-inputtext-color)"
+                    data-testid="host-folder-trigger-label">
+                    @if (store.showTriggerLoading()) {
+                        <span data-testid="host-folder-trigger-skeleton">
+                            <p-skeleton width="60%" height="1rem" />
+                        </span>
+                    } @else {
+                        {{ displayPath || ('dot.file.field.host.folder.trigger.placeholder' | dm) }}
+                    }
                 </span>
-            </ng-template>
-        </p-button>
+
+                <i
+                    class="pi flex-none text-surface-500"
+                    data-testid="host-folder-trigger-icon"
+                    [class.pi-spin]="store.showTriggerLoading()"
+                    [class.pi-spinner]="store.showTriggerLoading()"
+                    [class.pi-chevron-up]="!store.showTriggerLoading() && store.overlayOpen()"
+                    [class.pi-chevron-down]="
+                        !store.showTriggerLoading() && !store.overlayOpen()
+                    "></i>
+            </button>
+
+            <p-inputgroup-addon>
+                <!-- No vertical padding and full height, so the field's height sets the group's
+                     instead of the button's 24px glyph plus padding stretching it. -->
+                <p-button
+                    [text]="true"
+                    severity="secondary"
+                    type="button"
+                    styleClass="h-full py-0!"
+                    class="h-full"
+                    data-testid="host-folder-copy"
+                    [disabled]="!confirmedNode || isDisabled"
+                    [attr.aria-label]="'dot.file.field.host.folder.copy.tooltip' | dm"
+                    [pTooltip]="'dot.file.field.host.folder.copy.tooltip' | dm"
+                    tooltipPosition="bottom"
+                    (onClick)="copyPath()">
+                    <ng-template #icon>
+                        <span class="material-symbols-outlined" data-testid="host-folder-copy-icon">
+                            {{ $pathCopied() ? 'check' : 'content_copy' }}
+                        </span>
+                    </ng-template>
+                </p-button>
+            </p-inputgroup-addon>
+        </p-inputgroup>
     }
 </div>
 
