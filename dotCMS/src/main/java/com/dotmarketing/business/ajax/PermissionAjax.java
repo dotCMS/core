@@ -326,6 +326,10 @@ public class PermissionAjax {
 			}
 			
 			HibernateUtil.closeAndCommitTransaction();
+		} catch (DotSecurityException e) {
+			// Already written to the security log by the check that refused it
+			HibernateUtil.rollbackTransaction();
+			throw e;
 		} catch (Exception e) {
 		    Logger.warn(this, e.getMessage(), e);
 			HibernateUtil.rollbackTransaction();
@@ -376,7 +380,10 @@ public class PermissionAjax {
 	/**
 	 * Fails unless the id resolved to an asset and the user has
 	 * {@link PermissionAPI#PERMISSION_EDIT_PERMISSIONS} on it. Front-end roles don't count, as in
-	 * the REST permission endpoints.
+	 * the REST permission endpoints. Only back-end users reach these DWR methods (front-end sessions
+	 * are turned away by the back-end login filter), so the request's {@code respectFrontendRoles}
+	 * is already {@code false} here; it is fixed rather than passed through so this check can't
+	 * drift from the REST one.
 	 *
 	 * @param asset the asset whose permissions are about to change
 	 * @param user  the logged-in user
@@ -389,10 +396,26 @@ public class PermissionAjax {
 		if (asset == null || !UtilMethods.isSet(asset.getPermissionId())) {
 			throw new DotDataException("No asset found for the given id");
 		}
-		if (!APILocator.getPermissionAPI().doesUserHavePermission(asset,
-				PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user, false)) {
-			final String message = "User id: " + user.getUserId()
-					+ " does not have permission to alter permissions on asset " + asset.getPermissionId();
+		requirePermission(asset, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user, "alter permissions on");
+	}
+
+	/**
+	 * Fails unless the user has the given permission on the asset, front-end roles not counting
+	 * (see {@link #checkEditPermissions(Permissionable, User)}). A refusal is written to the security
+	 * log with the user id and the asset's permission id only.
+	 *
+	 * @param asset          the asset to check
+	 * @param permissionType a {@code PermissionAPI.PERMISSION_*} bit
+	 * @param user           the logged-in user
+	 * @param action         what the user tried to do, for the message, e.g. "read"
+	 * @throws DotSecurityException if the user doesn't have the permission
+	 */
+	private void requirePermission(final Permissionable asset, final int permissionType,
+			final User user, final String action) throws DotDataException, DotSecurityException {
+
+		if (!APILocator.getPermissionAPI().doesUserHavePermission(asset, permissionType, user, false)) {
+			final String message = "User id: " + user.getUserId() + " does not have permission to "
+					+ action + " asset " + asset.getPermissionId();
 			SecurityLogger.logInfo(PermissionAjax.class, message);
 			throw new DotSecurityException(message);
 		}
@@ -401,9 +424,11 @@ public class PermissionAjax {
 	/**
 	 * Finds the asset for the given id: a site, contentlet, folder, template, link, container,
 	 * content type or category. Links, containers and any other inode are looked up without a
-	 * user, so for them the user's READ permission is checked here (front-end roles don't count);
-	 * the other finders check it themselves. When nothing matches, an empty {@link Inode} with no
-	 * permission id is returned, so a read finds no permissions.
+	 * user, so for them the user's READ permission is checked here, with front-end roles not
+	 * counting for the same reason as in {@link #checkEditPermissions(Permissionable, User)};
+	 * the other finders check it themselves. When nothing matches, or the id only resolves to a
+	 * plain {@link Inode} (e.g. a contentlet by inode), that Inode is returned as is: it has no
+	 * permissions of its own, so a read finds none.
 	 *
 	 * @param assetId              the identifier or inode of the asset
 	 * @param language             the language of the asset, when it is a contentlet
@@ -514,18 +539,26 @@ public class PermissionAjax {
 			foundWithoutUser = true;
 		}
 
-		if (foundWithoutUser && perm != null && UtilMethods.isSet(perm.getPermissionId())
-				&& !APILocator.getPermissionAPI().doesUserHavePermission(perm,
-						PermissionAPI.PERMISSION_READ, user, false)) {
-			final String message = "User id: " + user.getUserId()
-					+ " does not have permission to read asset " + perm.getPermissionId();
-			SecurityLogger.logInfo(PermissionAjax.class, message);
-			throw new DotSecurityException(message);
+		// A plain Inode (e.g. a contentlet loaded by inode) has no permissions of its own, so a read
+		// returns nothing and a change is still refused by the EDIT_PERMISSIONS check
+		if (foundWithoutUser && perm != null && perm.getClass() != Inode.class
+				&& UtilMethods.isSet(perm.getPermissionId())) {
+			requirePermission(perm, PermissionAPI.PERMISSION_READ, user, "read");
 		}
 
 		return perm;
 	}
 
+	/**
+	 * Gives the asset its own copy of the permissions it inherits from its parent, so they can be
+	 * changed on the asset alone. The logged-in user must have
+	 * {@link PermissionAPI#PERMISSION_EDIT_PERMISSIONS} on the asset.
+	 *
+	 * @param assetId    the identifier or inode of the asset
+	 * @param languageId the language of the asset, when it is a contentlet
+	 * @throws DotSecurityException if the user can't read the asset or can't edit its permissions
+	 * @throws DotDataException     if no asset matches the given id
+	 */
 	public void permissionIndividually(String assetId, Long languageId) throws Exception {
 		HibernateUtil.startTransaction();
 	   	try {
@@ -539,6 +572,7 @@ public class PermissionAjax {
 
 	   		PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 	   		Permissionable asset = retrievePermissionable(assetId, languageId, user, respectFrontendRoles);
+	   		checkEditPermissions(asset, user);
 	   		Permissionable parentPermissionable = APILocator.getPermissionAPI().findParentPermissionable(asset);
 
 	   		if(parentPermissionable!=null){
@@ -548,6 +582,8 @@ public class PermissionAjax {
 	   	} catch (Exception e) {
 	   		HibernateUtil.rollbackTransaction();
 	   		throw e;
+	   	} finally {
+	   		HibernateUtil.closeSession();
 	   	}
 	}
 

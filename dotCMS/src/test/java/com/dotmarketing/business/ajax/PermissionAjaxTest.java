@@ -1,6 +1,7 @@
 package com.dotmarketing.business.ajax;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -36,6 +37,8 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
@@ -145,10 +148,21 @@ class PermissionAjaxTest {
         return container;
     }
 
-    /** {@link #INODE_ID} is only found through the final inode lookup. */
+    /** {@link #INODE_ID} is only found through the final inode lookup, which loads it as a link. */
+    private Link givenLinkFromInodeLookup() {
+        final Link link = mock(Link.class);
+        when(link.getPermissionId()).thenReturn(INODE_ID);
+        inodeFactory.when(() -> InodeFactory.getInode(INODE_ID, Inode.class)).thenReturn(link);
+        return link;
+    }
+
+    /**
+     * {@link #INODE_ID} is only found through the final inode lookup, which loads it as a plain
+     * {@link Inode}, the way a contentlet's inode resolves there.
+     */
     private Inode givenPlainInode() {
-        final Inode inode = mock(Inode.class);
-        when(inode.getPermissionId()).thenReturn(INODE_ID);
+        final Inode inode = new Inode();
+        inode.setInode(INODE_ID);
         inodeFactory.when(() -> InodeFactory.getInode(INODE_ID, Inode.class)).thenReturn(inode);
         return inode;
     }
@@ -326,13 +340,13 @@ class PermissionAjaxTest {
 
     /**
      * Method to test: {@link PermissionAjax#getAssetPermissions(String, Long)}
-     * Given: a user without READ on an asset only found through the final inode lookup
+     * Given: a user without READ on a link only found through the final inode lookup
      * Expected: DotSecurityException, and its permissions are not read
      */
     @Test
-    void getAssetPermissions_inodeWithoutRead_isRejected() throws Exception {
-        final Inode inode = givenPlainInode();
-        givenPermission(inode, PermissionAPI.PERMISSION_READ, false);
+    void getAssetPermissions_linkFromInodeLookupWithoutRead_isRejected() throws Exception {
+        final Link link = givenLinkFromInodeLookup();
+        givenPermission(link, PermissionAPI.PERMISSION_READ, false);
 
         assertThrows(DotSecurityException.class,
                 () -> new PermissionAjax().getAssetPermissions(INODE_ID, LANGUAGE_ID));
@@ -434,5 +448,78 @@ class PermissionAjaxTest {
         assertThrows(DotSecurityException.class,
                 () -> new PermissionAjax().getAssetPermissions(FOLDER_ID, LANGUAGE_ID));
         verify(permissionAPI, never()).getPermissions(any(Permissionable.class), anyBoolean());
+    }
+
+    /**
+     * Method to test: {@link PermissionAjax#permissionIndividually(String, Long)}
+     * Given: a user who can read a folder but lacks EDIT_PERMISSIONS on it
+     * Expected: DotSecurityException before the folder's permissions are copied, the transaction
+     * is rolled back, not committed, and the session is closed
+     */
+    @Test
+    void permissionIndividually_withoutEditPermissions_isRejected() throws Exception {
+        final Folder folder = givenFolder();
+        givenPermission(folder, PermissionAPI.PERMISSION_READ, true);
+        givenPermission(folder, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, false);
+        when(permissionAPI.findParentPermissionable(folder)).thenReturn(mock(Folder.class));
+
+        assertThrows(DotSecurityException.class,
+                () -> new PermissionAjax().permissionIndividually(FOLDER_ID, LANGUAGE_ID));
+        verify(permissionAPI, never()).permissionIndividually(any(Permissionable.class),
+                any(Permissionable.class), any(User.class));
+        hibernateUtil.verify(HibernateUtil::rollbackTransaction);
+        hibernateUtil.verify(HibernateUtil::closeAndCommitTransaction, never());
+        hibernateUtil.verify(HibernateUtil::closeSession);
+    }
+
+    /**
+     * Method to test: {@link PermissionAjax#getAssetPermissions(String, Long)}
+     * Given: an id only found as a plain Inode (no permissions of its own), and a user without READ
+     * on it
+     * Expected: no exception; its (empty) permissions are read as before
+     */
+    @Test
+    void getAssetPermissions_plainInodeWithoutRead_returnsItsPermissions() throws Exception {
+        final Inode inode = givenPlainInode();
+        givenPermission(inode, PermissionAPI.PERMISSION_READ, false);
+
+        assertDoesNotThrow(() -> new PermissionAjax().getAssetPermissions(INODE_ID, LANGUAGE_ID));
+
+        verify(permissionAPI).getPermissions(inode, true);
+    }
+
+    /**
+     * Method to test: {@link PermissionAjax#resetAssetPermissions(String, Long)}
+     * Given: an id only found as a plain Inode, and a user without EDIT_PERMISSIONS on it
+     * Expected: DotSecurityException, and nothing is removed
+     */
+    @Test
+    void resetAssetPermissions_plainInodeWithoutEditPermissions_isRejected() throws Exception {
+        final Inode inode = givenPlainInode();
+        givenPermission(inode, PermissionAPI.PERMISSION_READ, false);
+        givenPermission(inode, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, false);
+
+        assertThrows(DotSecurityException.class,
+                () -> new PermissionAjax().resetAssetPermissions(INODE_ID, LANGUAGE_ID));
+        verify(permissionAPI, never()).removePermissions(any(Permissionable.class));
+    }
+
+    /**
+     * Method to test: {@link PermissionAjax#saveAssetPermissions(String, Long, List, boolean)}
+     * Given: a user who can read a folder but lacks EDIT_PERMISSIONS on it
+     * Expected: the refusal is not also written as a WARN to the main log (the security log has it)
+     */
+    @Test
+    void saveAssetPermissions_refused_doesNotWarn() throws Exception {
+        final Folder folder = givenFolder();
+        givenPermission(folder, PermissionAPI.PERMISSION_READ, true);
+        givenPermission(folder, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, false);
+
+        try (MockedStatic<Logger> logger = mockStatic(Logger.class)) {
+            assertThrows(DotSecurityException.class, () -> new PermissionAjax()
+                    .saveAssetPermissions(FOLDER_ID, LANGUAGE_ID, Collections.emptyList(), false));
+            logger.verify(() -> Logger.warn(any(Object.class), anyString(), any(Throwable.class)), never());
+        }
+        hibernateUtil.verify(HibernateUtil::rollbackTransaction);
     }
 }

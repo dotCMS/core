@@ -28,11 +28,13 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
+import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -52,6 +54,7 @@ public class PermissionAjaxIntegrationTest {
     private static Role ownerRole;
     private static User backendUser;
     private static Role backendUserRole;
+    private static WebContextFactory.WebContextBuilder previousWebContextBuilder;
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -66,7 +69,37 @@ public class PermissionAjaxIntegrationTest {
                 .nextPersisted();
         backendUserRole = APILocator.getRoleAPI().getUserRole(backendUser);
 
+        previousWebContextBuilder = currentWebContextBuilder();
         setUpDwrContext(backendUser);
+    }
+
+    /**
+     * Puts back the DWR context that was attached before this class ran, so later tests in the same
+     * JVM don't get this class's mocked request.
+     */
+    @AfterClass
+    public static void restoreDwrContext() {
+        attachWebContextBuilder(previousWebContextBuilder);
+    }
+
+    /**
+     * Reads the builder {@code WebContextFactory} currently uses; the field is private and has no
+     * getter.
+     */
+    private static WebContextFactory.WebContextBuilder currentWebContextBuilder() throws Exception {
+        final Field builder = WebContextFactory.class.getDeclaredField("builder");
+        builder.setAccessible(true);
+        return (WebContextFactory.WebContextBuilder) builder.get(null);
+    }
+
+    /**
+     * Makes {@code WebContextFactory} use the given builder ({@code null} detaches it).
+     */
+    private static void attachWebContextBuilder(final WebContextFactory.WebContextBuilder webContextBuilder) {
+        final com.dotcms.repackage.org.directwebremoting.Container dwrContainer =
+                mock(com.dotcms.repackage.org.directwebremoting.Container.class);
+        when(dwrContainer.getBean(WebContextFactory.WebContextBuilder.class)).thenReturn(webContextBuilder);
+        WebContextFactory.attach(dwrContainer);
     }
 
     /**
@@ -84,11 +117,7 @@ public class PermissionAjaxIntegrationTest {
                 mock(WebContextFactory.WebContextBuilder.class);
         when(webContextBuilder.get()).thenReturn(webContext);
 
-        final com.dotcms.repackage.org.directwebremoting.Container dwrContainer =
-                mock(com.dotcms.repackage.org.directwebremoting.Container.class);
-        when(dwrContainer.getBean(WebContextFactory.WebContextBuilder.class)).thenReturn(webContextBuilder);
-
-        WebContextFactory.attach(dwrContainer);
+        attachWebContextBuilder(webContextBuilder);
     }
 
     /**
