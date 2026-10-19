@@ -45,7 +45,12 @@ public class SecretTool implements ViewTool {
 	 */
 	private record ScriptingFile(Contentlet contentlet) { }
 
-	/** Template name Velocity reports when nothing has been pushed, as in the {@code /api/js} context. */
+	/**
+	 * Template name Velocity reports when nothing has been pushed, as in the {@code /api/js} context.
+	 * Velocity has no constant for it: {@code InternalContextBase.getCurrentTemplateName()} returns
+	 * this literal, so keep the two in step. The {@code /api/js} secrets tests in
+	 * {@code ScriptingAnonymousAccessIntegrationTest} fail if it changes.
+	 */
 	private static final String NO_TEMPLATE_NAME = "<undef>";
 
 	private Context context;
